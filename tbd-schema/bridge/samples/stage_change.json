@@ -1,0 +1,9 @@
+{
+  "v": 1,
+  "type": "stage_change",
+  "ts": 1781744100000,
+  "session": "evt_levie_0822",
+  "payload": {
+    "stage": "LIVE"
+  }
+}

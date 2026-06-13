@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "hello",
+  "ts": 1781740800000,
+  "session": "evt_levie_0822",
+  "payload": {
+    "role": "bridge",
+    "missionId": "msn_8f3a2c",
+    "schemaVersions": ["1.0"]
+  }
+}

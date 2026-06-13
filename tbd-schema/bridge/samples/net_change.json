@@ -1,0 +1,17 @@
+{
+  "v": 1,
+  "type": "net_change",
+  "ts": 1781745000000,
+  "session": "evt_levie_0822",
+  "player": {
+    "identityId": "rfl-7f1c2a",
+    "platform": "pc"
+  },
+  "payload": {
+    "radioClass": "manpack",
+    "nets": [
+      { "id": "net:cmd", "label": "BLUFOR Command", "freqMHz": 44.0, "transmit": true, "receive": true },
+      { "id": "net:alpha", "label": "Alpha Squad", "freqMHz": 42.5, "transmit": false, "receive": true }
+    ]
+  }
+}

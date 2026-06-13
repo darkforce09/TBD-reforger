@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/mission/v1.json",
+  "title": "TBD Mission",
+  "description": "Mission JSON contract v1. Authored by the web wizard / hand-written, validated by the web validator, and executed by the TBD-Framework Enfusion loader. Missions reference registry aliases, never raw prefab GUIDs.",
+  "type": "object",
+  "required": ["schemaVersion", "meta", "factions", "orbat", "zones", "flow", "winConditions"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0",
+      "description": "Frozen schema version. The framework advertises which versions it can run."
+    },
+    "meta": { "$ref": "#/$defs/meta" },
+    "environment": { "$ref": "#/$defs/environment" },
+    "factions": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/faction" }
+    },
+    "orbat": { "$ref": "#/$defs/orbat" },
+    "radioPlan": { "$ref": "#/$defs/radioPlan" },
+    "zones": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/zone" }
+    },
+    "entities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/entity" }
+    },
+    "layers": {
+      "type": "array",
+      "description": "Tier 2 decoration layer aliases attached to this mission.",
+      "items": { "type": "string", "pattern": "^layer:[a-z0-9_]+$" }
+    },
+    "flow": { "$ref": "#/$defs/flow" },
+    "winConditions": { "$ref": "#/$defs/winConditions" },
+    "briefings": { "$ref": "#/$defs/briefings" },
+    "settings": { "$ref": "#/$defs/settings" }
+  },
+  "$defs": {
+    "alias": {
+      "type": "string",
+      "description": "Registry alias resolved by the framework registry to a prefab GUID.",
+      "pattern": "^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"
+    },
+    "factionKey": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "netId": {
+      "type": "string",
+      "pattern": "^net:[a-z0-9_]+$"
+    },
+    "hexColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    },
+    "meta": {
+      "type": "object",
+      "required": ["name", "terrain", "templateId", "playerRange"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Content-hash id assigned on publish. Optional in hand-written drafts.",
+          "pattern": "^msn_[a-z0-9]+$"
+        },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "author": { "type": "string" },
+        "terrain": {
+          "type": "string",
+          "description": "Must match a framework scenario / terrain key.",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "templateId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "playerRange": {
+          "type": "array",
+          "description": "[min, max] supported players.",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dateTime": { "type": "string", "format": "date-time" },
+        "weatherPreset": { "type": "string" },
+        "windDirDeg": { "type": "number", "minimum": 0, "maximum": 360 }
+      }
+    },
+    "faction": {
+      "type": "object",
+      "required": ["key", "displayName", "presetId"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "$ref": "#/$defs/factionKey" },
+        "displayName": { "type": "string", "minLength": 1 },
+        "presetId": {
+          "type": "string",
+          "pattern": "^preset:[a-z0-9_]+$"
+        },
+        "tickets": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "0 = one-life, no respawn pool."
+        },
+        "color": { "$ref": "#/$defs/hexColor" }
+      }
+    },
+    "orbat": {
+      "type": "object",
+      "description": "Per-faction order of battle. Keys must match faction keys.",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/orbatFaction" }
+    },
+    "orbatFaction": {
+      "type": "object",
+      "required": ["groups"],
+      "additionalProperties": false,
+      "properties": {
+        "groups": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/group" }
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "required": ["callsign", "type", "roles"],
+      "additionalProperties": false,
+      "properties": {
+        "callsign": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 1 },
+        "roles": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/role" }
+        }
+      }
+    },
+    "role": {
+      "type": "object",
+      "required": ["slot", "kit", "count"],
+      "additionalProperties": false,
+      "properties": {
+        "slot": { "type": "string", "minLength": 1 },
+        "kit": {
+          "type": "string",
+          "pattern": "^kit:[a-z0-9_]+$"
+        },
+        "count": { "type": "integer", "minimum": 1 },
+        "radio": {
+          "type": "array",
+          "description": "Net ids this role spawns tuned to.",
+          "items": { "$ref": "#/$defs/netId" }
+        }
+      }
+    },
+    "radioPlan": {
+      "type": "object",
+      "description": "Shared contract consumed by the framework and the partner VOIP bridge. Nets map to voice channels.",
+      "required": ["nets"],
+      "additionalProperties": false,
+      "properties": {
+        "nets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/net" }
+        }
+      }
+    },
+    "net": {
+      "type": "object",
+      "required": ["id", "label", "freqMHz"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/netId" },
+        "label": { "type": "string", "minLength": 1 },
+        "freqMHz": { "type": "number", "minimum": 30, "maximum": 512 },
+        "faction": { "$ref": "#/$defs/factionKey" },
+        "range": {
+          "type": "string",
+          "description": "Radio class that can use this net.",
+          "enum": ["short", "long", "any"],
+          "default": "any"
+        }
+      }
+    },
+    "shape": {
+      "type": "object",
+      "description": "Exactly one of circle or polygon.",
+      "oneOf": [
+        {
+          "required": ["circle"],
+          "additionalProperties": false,
+          "properties": { "circle": { "$ref": "#/$defs/circle" } }
+        },
+        {
+          "required": ["polygon"],
+          "additionalProperties": false,
+          "properties": { "polygon": { "$ref": "#/$defs/polygon" } }
+        }
+      ]
+    },
+    "circle": {
+      "type": "object",
+      "required": ["x", "z", "r"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "r": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "polygon": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "array",
+        "items": { "type": "number" },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "zone": {
+      "type": "object",
+      "required": ["id", "type", "shape"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": {
+          "type": "string",
+          "enum": [
+            "spawn",
+            "objective_capture",
+            "objective_destroy",
+            "objective_hold_until",
+            "boundary",
+            "base_protection"
+          ]
+        },
+        "label": { "type": "string" },
+        "faction": { "$ref": "#/$defs/factionKey" },
+        "shape": { "$ref": "#/$defs/shape" },
+        "rules": {
+          "type": "object",
+          "description": "Zone-type specific rules (capture timer, grace seconds, points, penalty).",
+          "additionalProperties": true
+        }
+      }
+    },
+    "entity": {
+      "type": "object",
+      "required": ["alias", "x", "z"],
+      "additionalProperties": false,
+      "properties": {
+        "alias": { "$ref": "#/$defs/alias" },
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
+        "faction": { "$ref": "#/$defs/factionKey" }
+      }
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "briefingSeconds": { "type": "integer", "minimum": 0 },
+        "safeStartSeconds": { "type": "integer", "minimum": 0 },
+        "timeLimitSeconds": { "type": "integer", "minimum": 0 },
+        "jip": {
+          "type": "string",
+          "enum": ["disabled", "until_safestart_end", "always"]
+        }
+      }
+    },
+    "winConditions": {
+      "type": "object",
+      "required": ["mode", "endOn"],
+      "additionalProperties": false,
+      "properties": {
+        "mode": { "type": "string", "minLength": 1 },
+        "endOn": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "time_limit",
+              "all_objectives_captured",
+              "faction_eliminated",
+              "objective_destroyed",
+              "hold_expired"
+            ]
+          }
+        }
+      }
+    },
+    "briefings": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/briefing" }
+    },
+    "briefing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "situation": { "type": "string" },
+        "mission": { "type": "string" },
+        "execution": { "type": "string" },
+        "markers": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/marker" }
+        }
+      }
+    },
+    "marker": {
+      "type": "object",
+      "required": ["x", "z", "icon", "label"],
+      "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "icon": { "type": "string" },
+        "label": { "type": "string" }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "respawn": { "type": "string", "enum": ["none", "tickets", "wave"] },
+        "spectatorPolicy": {
+          "type": "string",
+          "enum": ["none", "own_side_delayed_60s", "free"]
+        },
+        "nightVision": { "type": "boolean" }
+      }
+    }
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/bridge/v1.json",
+  "title": "TBD Voice Bridge Message",
+  "description": "Messages exchanged between the in-game TBD-Radio bridge mod and the external TBD Voice client over the local transport (REST/WebSocket/pipe — decided in Phase 0.2). This is the integration contract between the main-team framework and the partner VOIP stack.",
+  "type": "object",
+  "oneOf": [
+    { "$ref": "#/$defs/hello" },
+    { "$ref": "#/$defs/ack" },
+    { "$ref": "#/$defs/spawn" },
+    { "$ref": "#/$defs/death" },
+    { "$ref": "#/$defs/netChange" },
+    { "$ref": "#/$defs/ptt" },
+    { "$ref": "#/$defs/stageChange" }
+  ],
+  "$defs": {
+    "platform": { "type": "string", "enum": ["pc", "xbox", "psn"] },
+    "radioClass": { "type": "string", "enum": ["none", "handheld", "manpack", "vehicle"] },
+    "player": {
+      "type": "object",
+      "required": ["identityId", "platform"],
+      "additionalProperties": false,
+      "properties": {
+        "identityId": { "type": "string", "minLength": 1 },
+        "platform": { "$ref": "#/$defs/platform" },
+        "name": { "type": "string" }
+      }
+    },
+    "netMembership": {
+      "type": "object",
+      "required": ["id", "freqMHz", "transmit", "receive"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^net:[a-z0-9_]+$" },
+        "label": { "type": "string" },
+        "freqMHz": { "type": "number", "minimum": 30, "maximum": 512 },
+        "transmit": { "type": "boolean" },
+        "receive": { "type": "boolean" }
+      }
+    },
+    "hello": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "hello" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "payload": {
+          "type": "object",
+          "required": ["role", "schemaVersions"],
+          "additionalProperties": false,
+          "properties": {
+            "role": { "type": "string", "enum": ["bridge", "client"] },
+            "missionId": { "type": "string" },
+            "schemaVersions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            }
+          }
+        }
+      }
+    },
+    "ack": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "ack" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "payload": {
+          "type": "object",
+          "required": ["ok"],
+          "additionalProperties": false,
+          "properties": {
+            "ok": { "type": "boolean" },
+            "message": { "type": "string" }
+          }
+        }
+      }
+    },
+    "spawn": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "player", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "spawn" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "player": { "$ref": "#/$defs/player" },
+        "payload": {
+          "type": "object",
+          "required": ["faction", "nets", "radioClass"],
+          "additionalProperties": false,
+          "properties": {
+            "faction": { "type": "string" },
+            "groupCallsign": { "type": "string" },
+            "slot": { "type": "string" },
+            "radioClass": { "$ref": "#/$defs/radioClass" },
+            "nets": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/netMembership" }
+            }
+          }
+        }
+      }
+    },
+    "death": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "player", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "death" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "player": { "$ref": "#/$defs/player" },
+        "payload": {
+          "type": "object",
+          "required": ["channel"],
+          "additionalProperties": false,
+          "properties": {
+            "channel": { "type": "string", "enum": ["dead", "spectator"] }
+          }
+        }
+      }
+    },
+    "netChange": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "player", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "net_change" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "player": { "$ref": "#/$defs/player" },
+        "payload": {
+          "type": "object",
+          "required": ["nets"],
+          "additionalProperties": false,
+          "properties": {
+            "radioClass": { "$ref": "#/$defs/radioClass" },
+            "nets": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/netMembership" }
+            }
+          }
+        }
+      }
+    },
+    "ptt": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "player", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "ptt" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "player": { "$ref": "#/$defs/player" },
+        "payload": {
+          "type": "object",
+          "required": ["state", "mode"],
+          "additionalProperties": false,
+          "properties": {
+            "state": { "type": "string", "enum": ["start", "stop"] },
+            "mode": { "type": "string", "enum": ["radio", "direct"] },
+            "netId": { "type": "string", "pattern": "^net:[a-z0-9_]+$" }
+          }
+        }
+      }
+    },
+    "stageChange": {
+      "type": "object",
+      "required": ["v", "type", "ts", "session", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "v": { "const": 1 },
+        "type": { "const": "stage_change" },
+        "ts": { "type": "integer" },
+        "session": { "type": "string", "minLength": 1 },
+        "payload": {
+          "type": "object",
+          "required": ["stage"],
+          "additionalProperties": false,
+          "properties": {
+            "stage": {
+              "type": "string",
+              "enum": ["LOADING", "LOBBY", "BRIEFING", "SAFE_START", "LIVE", "END", "DEBRIEF"]
+            }
+          }
+        }
+      }
+    }
+  }
+}

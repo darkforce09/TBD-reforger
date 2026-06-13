@@ -1,0 +1,15 @@
+SCR_BaseGameMode {
+ ID "2D0FF9E203CA93B6"
+ components {
+  RplComponent "{A1B2C3D4E5F60718}" {
+  }
+  SCR_RespawnSystemComponent "{2088B4D8D045C3DF}" {
+  }
+  TBD_FrameworkManager "{CF7EB40B6E5F2618}" {
+  }
+  TBD_RegistryPocComponent "{35B67CB8076CDF9C}" {
+  }
+  SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
+  }
+ }
+}

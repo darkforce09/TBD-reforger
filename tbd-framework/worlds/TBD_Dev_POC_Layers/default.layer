@@ -1,0 +1,3 @@
+SCR_BaseGameMode TBD_GameMode : "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et" {
+ coords 6400 0 6400
+}

@@ -1,0 +1,14 @@
+GameProject {
+ ID "TBD_Framework"
+ GUID "B2C3D4E5F6A78901"
+ TITLE "TBD Framework"
+ Dependencies {
+  "58D0FB3206B6F859"
+ }
+ Configurations {
+  GameProjectConfig PC {
+  }
+  GameProjectConfig HEADLESS {
+  }
+ }
+}
