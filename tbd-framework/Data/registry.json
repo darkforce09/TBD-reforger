@@ -22,13 +22,13 @@
     },
     {
       "alias": "preset:sov_vdv",
-      "guid": "{0000000000000000}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
-      "displayName": "Soviet VDV (POC — preset resolves to rifleman until TBD-Content) — PLACEHOLDER GUID, source real prefab via enfusion-mcp asset_search"
+      "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "displayName": "Soviet VDV (POC — preset resolves to rifleman until TBD-Content)"
     },
     {
       "alias": "kit:sov_rifleman",
-      "guid": "{0000000000000000}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
-      "displayName": "USSR Rifleman — PLACEHOLDER GUID, replace via enfusion-mcp asset_search (confirm GUID + path for Character_USSR_Rifleman.et) before opfor spawns work"
+      "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "displayName": "USSR Rifleman"
     },
     {
       "alias": "veh:m151_mg",
