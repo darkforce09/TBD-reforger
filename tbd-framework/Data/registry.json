@@ -21,6 +21,16 @@
       "displayName": "US Squad Leader (POC — GL stand-in; replace with Character_US_SL in Workbench)"
     },
     {
+      "alias": "preset:sov_vdv",
+      "guid": "{0000000000000000}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "displayName": "Soviet VDV (POC — preset resolves to rifleman until TBD-Content) — PLACEHOLDER GUID, source real prefab via enfusion-mcp asset_search"
+    },
+    {
+      "alias": "kit:sov_rifleman",
+      "guid": "{0000000000000000}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "displayName": "USSR Rifleman — PLACEHOLDER GUID, replace via enfusion-mcp asset_search (confirm GUID + path for Character_USSR_Rifleman.et) before opfor spawns work"
+    },
+    {
       "alias": "veh:m151_mg",
       "guid": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
       "displayName": "M151A2 (M2HB)",

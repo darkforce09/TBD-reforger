@@ -7,6 +7,8 @@ SCR_BaseGameMode {
   }
   TBD_FrameworkManager "{CF7EB40B6E5F2618}" {
   }
+  TBD_SpawnManager "{AC1D5E7F9B3D2610}" {
+  }
   TBD_RegistryPocComponent "{35B67CB8076CDF9C}" {
   }
   SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {

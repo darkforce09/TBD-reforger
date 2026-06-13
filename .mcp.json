@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "enfusion-mcp": {
+      "command": "npx",
+      "args": ["-y", "enfusion-mcp"]
+    }
+  }
+}

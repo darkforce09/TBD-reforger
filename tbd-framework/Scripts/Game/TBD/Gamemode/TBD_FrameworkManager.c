@@ -64,6 +64,11 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		m_Stage = stage;
 		Replication.BumpMe();
 		TBD_RadioBridgeStub.OnStageChanged(stage);
+
+		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+		if (sm)
+			sm.OnStageChanged(stage);
+
 		Print("[TBD] Stage → " + typename.EnumToString(TBD_EGameStage, stage));
 
 		if (stage == TBD_EGameStage.LOBBY)
