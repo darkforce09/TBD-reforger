@@ -93,7 +93,91 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//------------------------------------------------------------------------------------------------
 	protected void OnEnterLobby()
 	{
-		// ORBAT enforcement, briefing timers, and admin commands land in Phase 1 follow-ups.
+		// Preload the available-mission list so admins can browse/switch immediately.
+		TBD_MissionListLoader.Refresh();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Current mission's terrain key (empty if no mission loaded).
+	protected string GetCurrentTerrain()
+	{
+		TBD_MissionDocumentStruct m = TBD_MissionLoader.GetMission();
+		if (!m || !m.meta)
+			return string.Empty;
+		return m.meta.terrain;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Admin: numbered mission list as display lines.
+	array<string> BuildMissionListText()
+	{
+		array<string> lines = new array<string>();
+		array<ref TBD_MissionListEntry> entries = TBD_MissionListLoader.GetEntries();
+		if (!entries || entries.IsEmpty())
+		{
+			lines.Insert("TBD: no missions loaded yet — try '#tbd refresh' in a moment.");
+			return lines;
+		}
+
+		lines.Insert(string.Format("TBD missions (%1) — current terrain: %2", entries.Count(), GetCurrentTerrain()));
+		for (int i = 0; i < entries.Count(); i++)
+		{
+			TBD_MissionListEntry e = entries[i];
+			lines.Insert(string.Format("  %1) %2 [%3] %4 slots", i + 1, e.name, e.terrain, e.slotCount));
+		}
+		return lines;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Admin: refresh the mission list from the backend.
+	void RefreshMissionList()
+	{
+		TBD_MissionListLoader.Refresh();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Admin: select a mission by 1-based number — persist it and reload the world.
+	string SelectMissionByNumber(int number)
+	{
+		TBD_MissionListEntry e = TBD_MissionListLoader.GetEntryByNumber(number);
+		if (!e)
+			return string.Format("TBD: no mission #%1.", number);
+
+		if (e.slotCount <= 0)
+			Print(string.Format("[TBD] Selected mission %1 has 0 slots — players will have no spawn.", e.id), LogLevel.WARNING);
+
+		if (!TBD_BackendConfig.SetMissionId(e.id))
+			return "TBD: failed to persist mission selection.";
+
+		string target = e.terrain;
+		string current = GetCurrentTerrain();
+
+		if (target.IsEmpty() || target == current)
+		{
+			Print(string.Format("[TBD] Admin selected %1 (%2) — same terrain, restarting scenario.", e.id, target));
+			GameStateTransitions.RequestScenarioRestart();
+			return string.Format("TBD: loading %1…", e.name);
+		}
+
+		string scenario = TBD_ScenarioRouter.GetScenarioForTerrain(target);
+		if (scenario.IsEmpty())
+			return string.Format("TBD: no scenario for terrain '%1' yet (mission stays selected for next %1 load).", target);
+
+		Print(string.Format("[TBD] Admin selected %1 (%2) — switching scenario to %3.", e.id, target, scenario));
+		GameStateTransitions.RequestScenarioChangeTransition(scenario, string.Empty, TBD_ScenarioRouter.GetAddonList());
+		return string.Format("TBD: switching to %1 on %2…", e.name, target);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Admin: repoint the backend URL (and optionally token), then refresh the list.
+	string SetBackend(string url, string token)
+	{
+		if (url.IsEmpty())
+			return "Usage: #tbd backend <url> [token]";
+		if (!TBD_BackendConfig.SetBackend(url, token))
+			return "TBD: failed to set backend.";
+		TBD_MissionListLoader.Refresh();
+		return string.Format("TBD: backend set to %1 — refreshing list…", url);
 	}
 
 	//------------------------------------------------------------------------------------------------

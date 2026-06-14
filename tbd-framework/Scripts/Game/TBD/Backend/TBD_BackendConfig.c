@@ -77,4 +77,51 @@ class TBD_BackendConfig
 			return string.Empty;
 		return s_Config.eventId;
 	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Ensures s_Config exists (loads from disk on first use, else empty struct).
+	protected static void EnsureConfig()
+	{
+		if (!s_Config)
+			Load();
+		if (!s_Config)
+			s_Config = new TBD_BackendConfigStruct();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Persists the current config back to $profile so it survives a scenario reload.
+	protected static bool Save()
+	{
+		if (!s_Config)
+			return false;
+
+		SCR_JsonSaveContext ctx = new SCR_JsonSaveContext();
+		ctx.WriteValue("", s_Config);
+		if (!ctx.SaveToFile(s_ConfigPath))
+		{
+			Print("[TBD] Failed to write backend config to " + s_ConfigPath, LogLevel.ERROR);
+			return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Sets the active missionId and persists it (the loader re-reads it after a scenario reload).
+	static bool SetMissionId(string missionId)
+	{
+		EnsureConfig();
+		s_Config.missionId = missionId;
+		return Save();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Repoints the backend URL (and optionally the server token), then persists.
+	static bool SetBackend(string backendUrl, string serverToken = string.Empty)
+	{
+		EnsureConfig();
+		s_Config.backendUrl = backendUrl;
+		if (!serverToken.IsEmpty())
+			s_Config.serverToken = serverToken;
+		return Save();
+	}
 }

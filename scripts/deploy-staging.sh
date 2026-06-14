@@ -67,6 +67,7 @@ source "$ENV_FILE"
 : "${TBD_SERVER_NAME:=TBD Staging POC}"
 : "${TBD_ADMIN_PASSWORD:=tbd-admin}"
 : "${TBD_MAX_PLAYERS:=64}"
+: "${TBD_ADMIN_IDENTITY_IDS:=}"   # comma-separated identityIds → in-game admins (#tbd commands)
 : "${TBD_SERVER_CONFIG_REMOTE:=$(dirname "$TBD_PROFILE_DIR")/server.config.json}"
 
 if [[ "$TBD_REMOTE_DIR" == *prairielearn* ]]; then
@@ -214,6 +215,15 @@ else
   # In config mode, render the server config JSON on the host (registers the
   # backend room; the Workshop mod is downloaded from game.mods[]).
   if [ "$TBD_SERVER_MODE" = "config" ]; then
+    # Build a JSON array of admin identityIds from the comma-separated env var.
+    TBD_ADMINS_JSON=""
+    if [ -n "$TBD_ADMIN_IDENTITY_IDS" ]; then
+      IFS=',' read -ra _admin_ids <<< "$TBD_ADMIN_IDENTITY_IDS"
+      for _aid in "${_admin_ids[@]}"; do
+        _aid="$(echo "$_aid" | xargs)"
+        [ -n "$_aid" ] && TBD_ADMINS_JSON="${TBD_ADMINS_JSON:+$TBD_ADMINS_JSON, }\"$_aid\""
+      done
+    fi
     ssh_cmd "cat > '$TBD_SERVER_CONFIG_REMOTE'" <<EOF
 {
   "bindAddress": "0.0.0.0",
@@ -225,6 +235,7 @@ else
     "name": "${TBD_SERVER_NAME}",
     "password": "",
     "passwordAdmin": "${TBD_ADMIN_PASSWORD}",
+    "admins": [${TBD_ADMINS_JSON}],
     "scenarioId": "${TBD_SCENARIO}",
     "maxPlayers": ${TBD_MAX_PLAYERS},
     "visible": true,

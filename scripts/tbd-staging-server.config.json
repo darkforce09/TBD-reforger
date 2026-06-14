@@ -11,6 +11,7 @@
     "name": "TBD Staging POC",
     "password": "",
     "passwordAdmin": "tbd-admin",
+    "admins": [],
     "scenarioId": "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf",
     "maxPlayers": 64,
     "visible": true,

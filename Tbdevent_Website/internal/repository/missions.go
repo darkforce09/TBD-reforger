@@ -59,6 +59,35 @@ func (r *Repository) PublishMission(ctx context.Context, raw []byte, authorID *u
 	return &m, nil
 }
 
+// ListMissions returns lightweight summaries of all published missions for the
+// in-game admin mission browser. Terrain and slot count are extracted from the
+// mission content JSONB so the game can route a selection to the right scenario.
+func (r *Repository) ListMissions(ctx context.Context) ([]models.MissionSummary, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT id, name, schema_version,
+		       COALESCE(content->'meta'->>'terrain', '') AS terrain,
+		       CASE WHEN jsonb_typeof(content->'slots') = 'array'
+		            THEN jsonb_array_length(content->'slots') ELSE 0 END AS slot_count,
+		       published_at
+		FROM missions
+		ORDER BY published_at DESC
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("list missions: %w", err)
+	}
+	defer rows.Close()
+
+	out := make([]models.MissionSummary, 0)
+	for rows.Next() {
+		var m models.MissionSummary
+		if err := rows.Scan(&m.ID, &m.Name, &m.SchemaVersion, &m.Terrain, &m.SlotCount, &m.PublishedAt); err != nil {
+			return nil, fmt.Errorf("scan mission summary: %w", err)
+		}
+		out = append(out, m)
+	}
+	return out, rows.Err()
+}
+
 func (r *Repository) GetMissionCompiled(ctx context.Context, id string) ([]byte, error) {
 	var content []byte
 	err := r.pool.QueryRow(ctx, `SELECT content FROM missions WHERE id = $1`, id).Scan(&content)

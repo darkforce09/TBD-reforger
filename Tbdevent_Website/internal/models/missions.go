@@ -18,6 +18,25 @@ type Mission struct {
 	CreatedAt     time.Time       `json:"createdAt"`
 }
 
+// MissionSummary is a lightweight mission list entry for the in-game admin
+// mission browser (GET /api/missions). Terrain + slot count come from the
+// mission content so the game can route to the right scenario/world.
+type MissionSummary struct {
+	ID            string    `json:"id"`
+	Name          string    `json:"name"`
+	SchemaVersion string    `json:"schemaVersion"`
+	Terrain       string    `json:"terrain"`
+	SlotCount     int       `json:"slotCount"`
+	PublishedAt   time.Time `json:"publishedAt"`
+}
+
+// MissionListResponse wraps the mission list in a root object so the in-game
+// Enfusion JsonLoadContext loader can bind it (it does not bind bare arrays).
+type MissionListResponse struct {
+	Missions []MissionSummary `json:"missions"`
+	Count    int              `json:"count"`
+}
+
 type GameIdentity struct {
 	ID         uuid.UUID `json:"id"`
 	UserID     uuid.UUID `json:"userId"`

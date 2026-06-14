@@ -63,6 +63,7 @@ func NewRouter(deps Dependencies) http.Handler {
 		if deps.GameServerHandler != nil && deps.ServerTokenMW != nil {
 			api.Group(func(gs chi.Router) {
 				gs.Use(deps.ServerTokenMW.RequireServerToken)
+				gs.Get("/missions", deps.GameServerHandler.MissionList)
 				gs.Get("/missions/{id}/compiled", deps.GameServerHandler.MissionCompiled)
 				gs.Get("/game/events/{id}/roster", deps.GameServerHandler.GameRoster)
 				gs.Post("/link", deps.GameServerHandler.PostLink)

@@ -33,6 +33,7 @@ func newGameServerRouter(t *testing.T) (http.Handler, string) {
 	r.Route("/api", func(api chi.Router) {
 		api.Group(func(gs chi.Router) {
 			gs.Use(mw.RequireServerToken)
+			gs.Get("/missions", h.MissionList)
 			gs.Get("/missions/{id}/compiled", h.MissionCompiled)
 			gs.Post("/results", h.PostResults)
 			gs.Post("/telemetry", h.PostTelemetry)
@@ -105,6 +106,27 @@ func TestMissionCompiled_RejectsTraversal(t *testing.T) {
 	rec := do(t, r, http.MethodGet, "/api/missions/..%2f..%2fsecret/compiled", testToken, "")
 	if rec.Code != http.StatusBadRequest && rec.Code != http.StatusNotFound {
 		t.Fatalf("want 400 or 404, got %d", rec.Code)
+	}
+}
+
+func TestMissionList_RequiresToken(t *testing.T) {
+	r, _ := newGameServerRouter(t)
+	rec := do(t, r, http.MethodGet, "/api/missions", "", "")
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("want 401, got %d", rec.Code)
+	}
+}
+
+func TestMissionList_MergesDiskMissions(t *testing.T) {
+	// Nil repo (test harness) -> list falls back to disk, like MissionCompiled.
+	r, _ := newGameServerRouter(t)
+	rec := do(t, r, http.MethodGet, "/api/missions", testToken, "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "msn_test") || !strings.Contains(body, "Test Mission") {
+		t.Fatalf("disk mission not listed: %s", body)
 	}
 }
 

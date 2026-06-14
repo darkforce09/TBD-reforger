@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -70,6 +71,91 @@ func (h *GameServerHandler) MissionCompiled(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(data)
+}
+
+// MissionList serves GET /api/missions — lightweight list of published missions
+// for the in-game admin mission browser (id, name, terrain, slot count). Mirrors
+// MissionCompiled's DB-first-then-disk behavior: DB missions take precedence and
+// any mission JSON present only on disk is merged in (deduped by id).
+func (h *GameServerHandler) MissionList(w http.ResponseWriter, r *http.Request) {
+	summaries := make([]models.MissionSummary, 0)
+	seen := make(map[string]bool)
+
+	if h.repo != nil {
+		dbList, err := h.repo.ListMissions(r.Context())
+		if err != nil {
+			log.Printf("gameserver: list missions (db): %v", err)
+			writeError(w, http.StatusInternalServerError, "failed to list missions")
+			return
+		}
+		for _, m := range dbList {
+			summaries = append(summaries, m)
+			seen[m.ID] = true
+		}
+	}
+
+	for _, m := range listDiskMissions(h.missionsDir) {
+		if m.ID != "" && !seen[m.ID] {
+			summaries = append(summaries, m)
+			seen[m.ID] = true
+		}
+	}
+
+	// Wrapped in a root object so the Enfusion JsonLoadContext loader can bind it
+	// to a class with a `missions` array field (it does not bind bare arrays).
+	writeJSON(w, http.StatusOK, models.MissionListResponse{Missions: summaries, Count: len(summaries)})
+}
+
+// listDiskMissions scans missionsDir for *.json mission documents and returns
+// their summaries (best-effort; unreadable/invalid files are skipped).
+func listDiskMissions(dir string) []models.MissionSummary {
+	if dir == "" {
+		return nil
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+
+	var out []models.MissionSummary
+	for _, e := range entries {
+		if e.IsDir() || !strings.HasSuffix(e.Name(), ".json") {
+			continue
+		}
+		path := filepath.Join(dir, e.Name())
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var doc struct {
+			SchemaVersion string `json:"schemaVersion"`
+			Meta          struct {
+				ID      string `json:"id"`
+				Name    string `json:"name"`
+				Terrain string `json:"terrain"`
+			} `json:"meta"`
+			Slots []json.RawMessage `json:"slots"`
+		}
+		if err := json.Unmarshal(raw, &doc); err != nil {
+			continue
+		}
+		id := doc.Meta.ID
+		if id == "" {
+			id = strings.TrimSuffix(e.Name(), ".json")
+		}
+		s := models.MissionSummary{
+			ID:            id,
+			Name:          doc.Meta.Name,
+			SchemaVersion: doc.SchemaVersion,
+			Terrain:       doc.Meta.Terrain,
+			SlotCount:     len(doc.Slots),
+		}
+		if info, err := e.Info(); err == nil {
+			s.PublishedAt = info.ModTime()
+		}
+		out = append(out, s)
+	}
+	return out
 }
 
 // PostLink serves POST /api/link — game server registers a 6-digit lobby code.
