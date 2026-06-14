@@ -37,12 +37,29 @@ class TBD_MissionZoneStruct
 	ref TBD_MissionShapeStruct shape;
 }
 
+class TBD_MissionOrbatRoleStruct
+{
+	int count;
+}
+
+class TBD_MissionOrbatGroupStruct
+{
+	ref array<ref TBD_MissionOrbatRoleStruct> roles;
+}
+
+class TBD_MissionOrbatFactionStruct
+{
+	ref array<ref TBD_MissionOrbatGroupStruct> groups;
+}
+
 class TBD_MissionDocumentStruct
 {
 	string schemaVersion;
 	ref TBD_MissionMetaStruct meta;
 	ref array<ref TBD_MissionFactionStruct> factions;
 	ref array<ref TBD_MissionZoneStruct> zones;
+	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat;
+	ref array<ref TBD_MissionSlotStruct> slots;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -51,6 +68,7 @@ class TBD_MissionLoader
 	protected static ref TBD_MissionDocumentStruct s_Mission;
 	protected static string s_RawJson;
 	protected static bool s_Loaded;
+	protected static bool s_Valid;
 	protected static bool s_LoadInFlight;
 
 	protected static ref RestCallback s_RestCallback;
@@ -59,6 +77,38 @@ class TBD_MissionLoader
 	static bool IsLoaded()
 	{
 		return s_Loaded;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static bool IsValid()
+	{
+		return s_Valid;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Flattened slot instances (null until loaded + validated).
+	static array<ref TBD_MissionSlotStruct> GetSlots()
+	{
+		if (!s_Valid || !s_Mission)
+			return null;
+
+		return s_Mission.slots;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static TBD_MissionSlotStruct GetSlotById(string slotId)
+	{
+		array<ref TBD_MissionSlotStruct> slots = GetSlots();
+		if (!slots || slotId.IsEmpty())
+			return null;
+
+		foreach (TBD_MissionSlotStruct slot : slots)
+		{
+			if (slot && slot.id == slotId)
+				return slot;
+		}
+
+		return null;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -247,6 +297,7 @@ class TBD_MissionLoader
 	protected static bool ParseMissionJson(string data)
 	{
 		s_RawJson = data;
+		s_Valid = false;
 
 		// Parse a JSON string: JsonLoadContext.LoadFromString (ImportFromString /
 		// SCR_JsonLoadContext are both flagged obsolete by the engine).
@@ -272,7 +323,84 @@ class TBD_MissionLoader
 			return false;
 		}
 
+		if (!ValidateMissionSlots())
+		{
+			s_Mission = null;
+			return false;
+		}
+
+		s_Valid = true;
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! schemaVersion 1.1 requires non-empty slots[] matching ORBAT instance count.
+	protected static bool ValidateMissionSlots()
+	{
+		if (!s_Mission.schemaVersion || s_Mission.schemaVersion != "1.1")
+			return true;
+
+		if (!s_Mission.slots || s_Mission.slots.IsEmpty())
+		{
+			Print("[TBD] Mission schemaVersion 1.1 requires non-empty slots[].", LogLevel.ERROR);
+			return false;
+		}
+
+		int expected = CountOrbatInstances();
+		int actual = s_Mission.slots.Count();
+		if (expected > 0 && actual != expected)
+		{
+			Print(string.Format("[TBD] Mission slots count mismatch: orbat=%1 slots=%2", expected, actual), LogLevel.ERROR);
+			return false;
+		}
+
+		ref set<string> seen = new set<string>();
+		foreach (TBD_MissionSlotStruct slot : s_Mission.slots)
+		{
+			if (!slot || slot.id.IsEmpty())
+			{
+				Print("[TBD] Mission slot missing id.", LogLevel.ERROR);
+				return false;
+			}
+
+			if (seen.Contains(slot.id))
+			{
+				Print("[TBD] Mission duplicate slot id: " + slot.id, LogLevel.ERROR);
+				return false;
+			}
+
+			seen.Insert(slot.id);
+		}
+
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static int CountOrbatInstances()
+	{
+		int total = 0;
+		if (!s_Mission.orbat)
+			return total;
+
+		foreach (string factionKey, TBD_MissionOrbatFactionStruct faction : s_Mission.orbat)
+		{
+			if (!faction || !faction.groups)
+				continue;
+
+			foreach (TBD_MissionOrbatGroupStruct group : faction.groups)
+			{
+				if (!group || !group.roles)
+					continue;
+
+				foreach (TBD_MissionOrbatRoleStruct role : group.roles)
+				{
+					if (role)
+						total += role.count;
+				}
+			}
+		}
+
+		return total;
 	}
 
 	//------------------------------------------------------------------------------------------------

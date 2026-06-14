@@ -6,11 +6,29 @@
   "type": "object",
   "required": ["schemaVersion", "meta", "factions", "orbat", "zones", "flow", "winConditions"],
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": { "schemaVersion": { "const": "1.1" } },
+        "required": ["schemaVersion"]
+      },
+      "then": {
+        "properties": {
+          "slots": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/slot" }
+          }
+        },
+        "required": ["slots"]
+      }
+    }
+  ],
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "const": "1.0",
-      "description": "Frozen schema version. The framework advertises which versions it can run."
+      "enum": ["1.0", "1.1"],
+      "description": "1.1 adds required slots[] for per-player spawn positions."
     },
     "meta": { "$ref": "#/$defs/meta" },
     "environment": { "$ref": "#/$defs/environment" },
@@ -20,6 +38,12 @@
       "items": { "$ref": "#/$defs/faction" }
     },
     "orbat": { "$ref": "#/$defs/orbat" },
+    "slots": {
+      "type": "array",
+      "description": "Flattened ORBAT slot instances with exact spawn positions (required for schemaVersion 1.1).",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/slot" }
+    },
     "radioPlan": { "$ref": "#/$defs/radioPlan" },
     "zones": {
       "type": "array",
@@ -164,6 +188,28 @@
           "description": "Net ids this role spawns tuned to.",
           "items": { "$ref": "#/$defs/netId" }
         }
+      }
+    },
+    "slot": {
+      "type": "object",
+      "required": ["id", "faction", "groupCallsign", "role", "kit", "x", "z", "headingDeg"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable slot id: {faction}:{groupCallsign}:{role}:{index}"
+        },
+        "faction": { "$ref": "#/$defs/factionKey" },
+        "groupCallsign": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "kit": {
+          "type": "string",
+          "pattern": "^kit:[a-z0-9_]+$"
+        },
+        "x": { "type": "number" },
+        "z": { "type": "number" },
+        "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 }
       }
     },
     "radioPlan": {

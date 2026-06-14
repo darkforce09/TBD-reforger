@@ -41,4 +41,30 @@ if (!validate(data)) {
   process.exit(1);
 }
 
+if (data.schemaVersion === "1.1") {
+  let expected = 0;
+  for (const [factionKey, factionOrbat] of Object.entries(data.orbat || {})) {
+    for (const group of factionOrbat.groups || []) {
+      for (const role of group.roles || []) {
+        expected += role.count;
+      }
+    }
+  }
+  const actual = (data.slots || []).length;
+  if (actual !== expected) {
+    console.error(
+      `/slots ORBAT instance count mismatch: orbat expects ${expected}, slots has ${actual}`
+    );
+    process.exit(1);
+  }
+  const ids = new Set();
+  for (const slot of data.slots) {
+    if (ids.has(slot.id)) {
+      console.error(`/slots duplicate slot id '${slot.id}'`);
+      process.exit(1);
+    }
+    ids.add(slot.id);
+  }
+}
+
 console.log("ok");
