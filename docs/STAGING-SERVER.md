@@ -1,6 +1,8 @@
 # Staging server — 192.168.0.140
 
-Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Reforger dedicated server** on `sam@192.168.0.140`. Phase A uses **rsync + local mod symlink** — no Workshop publish yet.
+Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Reforger dedicated server** on `sam@192.168.0.140`.
+
+**Join status (2026-06-14): WORKS.** The mod is published to the Workshop and staging runs **`-config` mode** (`TBD_SERVER_MODE=config` in `deploy.env`) — the only Direct-Joinable mode. The earlier local-`-addons` "Phase A" path runs the server but is **not** Direct-Joinable (no backend room) — see "Client join".
 
 **Do not touch PrairieLearn:** all TBD paths live under `/home/sam/tbd/` only. Never deploy to `/home/sam/prairielearn/`.
 
@@ -244,9 +246,29 @@ on 0.0.0.0:2001` then immediately `NETWORK (E): Unable to start replication` →
 initialize the game` → `Game destroyed` (exits status 0, so `Restart=on-failure` does NOT
 restart it). Standard Reforger layout: **2001 game / 17777 A2S / 19999 RCON.**
 
-`-server` + `-addons` (local mod, current `tbd-reforger.service`) is useful for headless
-**log verification** (mission load, 18× slot spawn, `Stage → LOBBY`) but is **not joinable**
-— see the box above. Joining needs the `-config` + Workshop path.
+`-server` + `-addons` (local mod) is useful for headless **log verification** (mission load,
+18× slot spawn, `Stage → LOBBY`) but is **not joinable** — see the box above. Joining needs
+the `-config` + Workshop path.
+
+---
+
+## Dev loop — updating the mod after a script change
+
+The config-mode server runs the **Workshop** copy, so script changes require a re-publish:
+
+1. **Verify compile in Workbench** (the local server's compile check skips new files — see
+   Troubleshooting): MCP `wb_connect` → `wb_reload {scripts}` → grep the WB log for `Can't compile`.
+2. **Publish** in Workbench (File → Workshop Member Area → Publish; bumps the version, same modId
+   = gproj GUID `B2C3D4E5F6A78901`). ⚠️ Set the **License** to a real file, **not** a stray config
+   (a PrairieLearn-secrets `license.txt` was leaked this way — see CLAUDE-CONTINUATION.md §6).
+3. **Clear the read-only** the publish causes: `rm tbd-framework/{data.pak,meta,ServerData.json,*_manifest.json}`
+   (gitignored), restart the Launcher.
+4. **Redeploy:** `bash scripts/deploy-staging.sh` (with `TBD_SERVER_MODE=config`) — the server
+   re-downloads the new version and applies `game.admins[]` from `TBD_ADMIN_IDENTITY_IDS`.
+5. **Test:** Direct Join → the client pulls the update → play.
+
+For fast iteration that doesn't need a publish, deploy in `TBD_SERVER_MODE=addons` (local mod,
+headless log verification only — not joinable).
 
 ---
 

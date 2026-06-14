@@ -16,8 +16,8 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 | Workbench slot spawn | ✓ Per-slot `slots[]` deploy verified (2026-06-14) |
 | Dedicated server POC | ✓ Mission from API on Linux host |
 | Web backend (Phase 1 API) | ✓ Missions, link codes, roster, ORBAT slot assignment |
-| **Staging server** | Deployed on `192.168.0.140` — **LAN join in progress** — see [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md) |
-| **Phase 1 in progress** | ORBAT enforcement, capture objective, admin UI |
+| **Staging server** | `192.168.0.140` — **LAN Direct Join WORKS** (Workshop mod + `-config`; client joined + spawned 2026-06-14) — see [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md) |
+| **Phase 1 in progress** | In-game admin **mission browser** (last 5%: input actions — CLAUDE-CONTINUATION.md §16), capture objective, ORBAT enforcement, admin UI |
 | Milestone #1 target | **Sat 2026-08-22** — see [`MILESTONES.md`](MILESTONES.md) |
 
 ---
@@ -47,7 +47,7 @@ cp scripts/deploy.env.example scripts/deploy.env   # fill SSH + token
 bash scripts/deploy-staging.sh
 ```
 
-See [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md). Client: `bash scripts/setup-client-addons.sh` → Direct Join `192.168.0.140:2001`.
+See [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md). **Staging is Direct-Joinable** (Workshop mod + `-config`): set `TBD_SERVER_MODE=config` + `TBD_WORKSHOP_MOD_ID` in `deploy.env`, deploy, then Direct Join `192.168.0.140:2001` — the client auto-downloads the Workshop mod. (Legacy local-`-addons` join via `setup-client-addons.sh` is **not** Direct-Joinable — see STAGING-SERVER.md.)
 
 ### Website (local dev)
 
@@ -86,7 +86,7 @@ bash scripts/test-phase1-api.sh
 | [`scripts/setup-mcp-game-root.sh`](scripts/setup-mcp-game-root.sh) | Pak symlink farm for MCP |
 | [`scripts/deploy-staging.sh`](scripts/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |
 | [`scripts/debug-direct-join.sh`](scripts/debug-direct-join.sh) | LAN join diagnostics (A2S, SSH, builds) |
-| [`scripts/setup-client-addons.sh`](scripts/setup-client-addons.sh) | Client mod symlink + Steam launch options |
+| [`scripts/setup-client-addons.sh`](scripts/setup-client-addons.sh) | **Legacy** — local client mod symlink (not Direct-Joinable; use the Workshop mod instead) |
 | [`scripts/remote-log-grep.sh`](scripts/remote-log-grep.sh) | SSH log verify on staging server |
 | [`scripts/bootstrap-staging-server.sh`](scripts/bootstrap-staging-server.sh) | One-time SSH discovery + mkdir |
 | [`scripts/setup-server-profile.sh`](scripts/setup-server-profile.sh) | Dedicated server profile + mission fallback |

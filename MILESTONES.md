@@ -25,12 +25,12 @@ from [`docs/discord-milestone-1-post.md`](docs/discord-milestone-1-post.md) when
 
 - [x] Mission loads on the dedicated server from the backend REST endpoint
 - [x] File fallback proven as backup (`$profile:missions/{id}.json`)
-- [x] Per-slot spawn at mission JSON coords (Workbench verified 2026-06-14)
-- [ ] Staging server deploy on 192.168.0.140 (`scripts/deploy-staging.sh`)
+- [x] Per-slot spawn at mission JSON coords (staging dedicated server verified 2026-06-14)
+- [x] Staging server deploy on 192.168.0.140 (`scripts/deploy-staging.sh`) — Workshop mod + `-config`, client Direct-Joined + spawned 2026-06-14
 - [ ] Slots enforce: roster identity → assigned slot (round-robin only until linking)
 - [ ] A side wins via a real win condition (capture / hold / elimination)
 - [ ] Results POSTed back to the backend and visible on the event page
-- [ ] Nobody needed Workbench to play
+- [x] Nobody needed Workbench to play — players join the dedicated server via Direct Join (2026-06-14)
 
 ### Entry checklist (must be done before the date)
 
