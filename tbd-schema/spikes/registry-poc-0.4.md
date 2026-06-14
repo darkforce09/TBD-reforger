@@ -1,3 +1,5 @@
+> **Superseded for spawn (2026-06-14):** `TBD_RegistryPocComponent` is no longer on `TBD_GameMode.et`. Production spawn uses `TBD_SpawnManager` + mission `slots[]` (schema 1.1).
+
 # Registry POC 0.4 — five aliases end to end
 
 **Status:** GREEN — verified on Linux dedicated server (2026-06-13).

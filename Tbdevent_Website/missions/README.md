@@ -17,7 +17,7 @@ After a successful REST fetch, the Enfusion loader also caches to
 
 | File | Source golden mission |
 |------|-----------------------|
-| `msn_8f3a2c.json` | `bridgehead-at-levie.json` |
+| `msn_8f3a2c.json` | `bridgehead-at-levie.json` — **18 slots**, schema **1.1** |
 | `msn_2d91be.json` | `last-stand-at-montfort.json` |
 
 ## Dev token

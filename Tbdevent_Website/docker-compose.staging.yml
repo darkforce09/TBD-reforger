@@ -1,0 +1,49 @@
+# Staging stack on 192.168.0.140 — API + Postgres for dedicated game server.
+# Run from Tbdevent_Website/ with server .env (never rsync'd from dev PC).
+#
+#   cp .env.example .env   # once on server; set SESSION_SECRET + GAME_SERVER_TOKENS
+#   docker compose -f docker-compose.staging.yml up -d --build
+#
+# If host :5432 is taken, set TBD_POSTGRES_HOST_PORT=5433 in deploy.env and
+# change ports below to "5433:5432".
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tbdevent
+      POSTGRES_PASSWORD: tbdevent
+      POSTGRES_DB: tbdevent
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tbdevent -d tbdevent"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    env_file:
+      - .env
+    environment:
+      ENV: production
+      PORT: "8080"
+      DATABASE_URL: postgres://tbdevent:tbdevent@postgres:5432/tbdevent?sslmode=disable
+      MISSIONS_DIR: /app/missions
+      SCHEMA_DIR: /app/tbd-schema
+    volumes:
+      - ./missions:/app/missions:ro
+      - ../tbd-schema:/app/tbd-schema:ro
+
+volumes:
+  postgres_data:

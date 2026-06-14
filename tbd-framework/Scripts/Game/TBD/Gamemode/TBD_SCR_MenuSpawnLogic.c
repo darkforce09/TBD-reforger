@@ -2,10 +2,20 @@
 modded class SCR_MenuSpawnLogic
 {
 	//------------------------------------------------------------------------------------------------
+	override bool GetWaitForSpawnPoints()
+	{
+		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+		if (sm && !sm.AreSlotSpawnPointsBuilt())
+			return true;
+
+		return super.GetWaitForSpawnPoints();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	override void OnPlayerAuditSuccess_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		if (sm)
+		if (sm && sm.AreSlotSpawnPointsBuilt())
 			sm.AssignSlotForPlayer(playerId);
 
 		super.OnPlayerAuditSuccess_S(playerId);
@@ -15,56 +25,9 @@ modded class SCR_MenuSpawnLogic
 	override void DoSpawn_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		if (!sm)
-		{
-			super.DoSpawn_S(playerId);
+		if (sm && sm.DeployPlayer(playerId))
 			return;
-		}
 
-		TBD_MissionSlotStruct slot = sm.GetAssignedSlot(playerId);
-		if (!slot)
-		{
-			Print("[TBD] SpawnLogic: no slot assigned for player " + playerId, LogLevel.ERROR);
-			return;
-		}
-
-		SCR_SpawnPoint sp = sm.GetSpawnPointForSlot(slot.id);
-		if (!sp)
-		{
-			Print("[TBD] SpawnLogic: no spawn point for slot " + slot.id, LogLevel.ERROR);
-			return;
-		}
-
-		bool kitOk;
-		ResourceName prefab = TBD_Registry.Resolve(slot.kit, kitOk);
-		if (!kitOk || prefab.IsEmpty())
-		{
-			Print("[TBD] SpawnLogic: kit resolve failed: " + slot.kit, LogLevel.ERROR);
-			return;
-		}
-
-		SCR_PlayerFactionAffiliationComponent factionComp = GetPlayerFactionComponent_S(playerId);
-		if (factionComp)
-		{
-			string engineKey = sm.EngineFactionKey(slot.faction);
-			factionComp.SetAffiliatedFactionByKey(engineKey);
-		}
-
-		RplComponent rpl = RplComponent.Cast(sp.FindComponent(RplComponent));
-		if (!rpl)
-		{
-			Print("[TBD] SpawnLogic: spawn point missing RplComponent for " + slot.id, LogLevel.ERROR);
-			return;
-		}
-
-		SCR_SpawnPointSpawnData data = new SCR_SpawnPointSpawnData(prefab, rpl.Id());
-		SCR_RespawnComponent respawn = GetPlayerRespawnComponent_S(playerId);
-		if (!respawn || !respawn.RequestSpawn(data))
-		{
-			Print("[TBD] SpawnLogic: RequestSpawn failed for slot " + slot.id, LogLevel.ERROR);
-			return;
-		}
-
-		Print(string.Format("[TBD] SpawnLogic: spawn requested player %1 slot %2 kit %3", playerId, slot.id, slot.kit));
+		super.DoSpawn_S(playerId);
 	}
 }

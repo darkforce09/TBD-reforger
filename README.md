@@ -7,15 +7,17 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 
 ---
 
-## Status (2026-06-13)
+## Status (2026-06-14)
 
 | Area | Status |
 |---|---|
-| Phase 0 spikes | REST 0.1 ✓ · Registry 0.4 ✓ · Schema v1.0 ✓ |
-| `tbd-framework/` | Mission loader, registry POC, game mode prefab, dev scenario |
-| Dedicated server POC | ✓ Mission from API + 5 registry spawns on Linux host |
+| Phase 0 spikes | REST 0.1 ✓ · Registry 0.4 ✓ · Schema **1.1** ✓ |
+| `tbd-framework/` | Mission loader, slot spawn (`TBD_SpawnManager`), game mode prefab, dev scenario |
+| Workbench slot spawn | ✓ Per-slot `slots[]` deploy verified (2026-06-14) |
+| Dedicated server POC | ✓ Mission from API on Linux host |
 | Web backend (Phase 1 API) | ✓ Missions, link codes, roster, ORBAT slot assignment |
-| **Phase 1 in progress** | Spawn/factions, ORBAT enforcement, capture objective, admin UI |
+| **Staging server** | Deployed on `192.168.0.140` — **LAN join in progress** — see [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md) |
+| **Phase 1 in progress** | ORBAT enforcement, capture objective, admin UI |
 | Milestone #1 target | **Sat 2026-08-22** — see [`MILESTONES.md`](MILESTONES.md) |
 
 ---
@@ -31,12 +33,21 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 ### Dedicated server (local POC)
 
 ```bash
-# Prereq: Steam app 1890870 (Arma Reforger Server), API on :8080, Postgres for website
+# Prereq: Steam app 1874900 (Arma Reforger Server stable), API on :8080, Postgres for website
 bash scripts/setup-server-profile.sh          # default: .local-test-profile/
 bash scripts/run-dev-server.sh                # -server + -addons (local mod)
 ```
 
-Watch logs for `[TBD] Mission loaded` and `[TBD] Registry POC spawned` (×5).
+Watch logs for `[TBD] Mission loaded`, 18× `built slot spawn`, `assigned slot`, `spawn requested`.
+
+### Staging server (192.168.0.140)
+
+```bash
+cp scripts/deploy.env.example scripts/deploy.env   # fill SSH + token
+bash scripts/deploy-staging.sh
+```
+
+See [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md). Client: `bash scripts/setup-client-addons.sh` → Direct Join `192.168.0.140:2001`.
 
 ### Website (local dev)
 
@@ -57,10 +68,29 @@ bash scripts/test-phase1-api.sh
 | [`tbd-schema/`](tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
 | [`Tbdevent_Website/`](Tbdevent_Website/) | Go API + React UI |
 | [`Tbd_framework/`](Tbd_framework/) | CRF reference only — **do not open in Workbench** |
-| [`scripts/`](scripts/) | Workbench setup, server profile, dev server, API tests |
-| [`docs/`](docs/) | Ops copy (Discord milestone post, etc.) |
+| [`scripts/`](scripts/) | Workbench setup, server profile, dev server, staging deploy, MCP helpers, API tests |
+| [`docs/`](docs/) | Ops copy, [`STAGING-SERVER.md`](docs/STAGING-SERVER.md) |
 
 **Handoff docs:** [`CLAUDE-CONTINUATION.md`](CLAUDE-CONTINUATION.md) · [`MILESTONES.md`](MILESTONES.md) · [`tbd-reforger-platform-build-plan.md`](tbd-reforger-platform-build-plan.md)
+
+---
+
+## Scripts
+
+| Script | Purpose |
+|--------|---------|
+| [`scripts/mcp-call.sh`](scripts/mcp-call.sh) | JSON-RPC to enfusion-mcp from shell |
+| [`scripts/mcp-wb-logs.sh`](scripts/mcp-wb-logs.sh) | Grep latest Proton Workbench `console.log` |
+| [`scripts/tbd-spawn-verify.sh`](scripts/tbd-spawn-verify.sh) | MCP `wb_play` + log grep for spawn lines |
+| [`scripts/tbd-dev-bootstrap.sh`](scripts/tbd-dev-bootstrap.sh) | MCP root + `wb_connect` + `mod_validate` |
+| [`scripts/setup-mcp-game-root.sh`](scripts/setup-mcp-game-root.sh) | Pak symlink farm for MCP |
+| [`scripts/deploy-staging.sh`](scripts/deploy-staging.sh) | Rsync → 192.168.0.140, API, game server restart |
+| [`scripts/debug-direct-join.sh`](scripts/debug-direct-join.sh) | LAN join diagnostics (A2S, SSH, builds) |
+| [`scripts/setup-client-addons.sh`](scripts/setup-client-addons.sh) | Client mod symlink + Steam launch options |
+| [`scripts/remote-log-grep.sh`](scripts/remote-log-grep.sh) | SSH log verify on staging server |
+| [`scripts/bootstrap-staging-server.sh`](scripts/bootstrap-staging-server.sh) | One-time SSH discovery + mkdir |
+| [`scripts/setup-server-profile.sh`](scripts/setup-server-profile.sh) | Dedicated server profile + mission fallback |
+| [`scripts/run-dev-server.sh`](scripts/run-dev-server.sh) | Local dedicated server launcher |
 
 ---
 

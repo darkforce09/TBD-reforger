@@ -2,8 +2,8 @@
 
 > **Purpose:** Live handoff document for Claude CLI (or any fresh session) to continue TBD Reforger platform work without re-deriving context from Cursor chat history. **Keep this file updated** as decisions change.
 >
-> **Last updated:** 2026-06-13 · **Workspace:** `/home/Samuel/Projects/Arma reforger`  
-> **Phase:** 1 · **GitHub:** `darkforce09/tbd-reforger-platform`
+> **Last updated:** 2026-06-14 · **Workspace:** `/home/Samuel/Projects/Arma reforger`  
+> **Phase:** 1 · **GitHub:** `darkforce09/tbd-reforger-platform` · **Branch:** `main` only
 
 ---
 
@@ -78,18 +78,35 @@ Install (Linux/macOS):
 claude mcp add --scope user enfusion-mcp -- npx -y enfusion-mcp
 ```
 
-Cursor project config — create `.cursor/mcp.json`:
+Cursor project config — create `.cursor/mcp.json` (include env vars for parity with `.mcp.json`):
 
 ```json
 {
   "mcpServers": {
     "enfusion-mcp": {
       "command": "npx",
-      "args": ["-y", "enfusion-mcp"]
+      "args": ["-y", "enfusion-mcp"],
+      "env": {
+        "ENFUSION_GAME_PATH": "/path/to/Arma Reforger",
+        "ENFUSION_WORKBENCH_PATH": "/path/to/Arma Reforger Tools",
+        "ENFUSION_PROJECT_PATH": "/home/Samuel/Projects/Arma reforger/tbd-framework"
+      }
     }
   }
 }
 ```
+
+**Workbench test loop** (no `wb_log` tool in enfusion-mcp):
+
+```bash
+bash scripts/mcp-call.sh wb_connect '{}'
+bash scripts/mcp-call.sh wb_play '{}'
+sleep 25
+bash scripts/mcp-wb-logs.sh
+bash scripts/mcp-call.sh wb_stop '{}'
+```
+
+Or: `bash scripts/tbd-spawn-verify.sh`
 
 **Before writing any `.c` file:**
 
@@ -112,17 +129,22 @@ Key tools: `api_search`, `component_search`, `wiki_search`, `wiki_read`, `game_r
 ├── CLAUDE-CONTINUATION.md                # This file (live — keep updated)
 ├── MILESTONES.md                         # Milestone #1/#2 dates + criteria
 ├── docs/                                 # Ops copy (Discord post, etc.)
-├── scripts/                              # Workbench, server profile, dev server, tests
+├── scripts/                              # Workbench, server profile, dev server, staging, MCP, tests
 │   ├── setup-workbench-linux.sh
 │   ├── setup-server-profile.sh
 │   ├── run-dev-server.sh
+│   ├── deploy-staging.sh                   # rsync → 192.168.0.140
+│   ├── remote-log-grep.sh
+│   ├── bootstrap-staging-server.sh
+│   ├── mcp-call.sh / mcp-wb-logs.sh / tbd-spawn-verify.sh / tbd-dev-bootstrap.sh
+│   ├── setup-mcp-game-root.sh
 │   ├── tbd-dev-server.config.json        # For Workshop/config hosting (not local -addons)
 │   ├── test-phase1-api.sh
 │   └── manual-test.sh
 ├── .local-test-profile/                  # Default dedicated-server profile (gitignored)
 ├── .github/workflows/schema.yml          # tbd-schema compatibility CI
 ├── tbd-schema/                           # Schema, golden missions, bridge contract
-│   ├── VERSION                           # 1.0.0
+│   ├── VERSION                           # 1.1.0
 │   ├── schema/mission.schema.json
 │   ├── schema/registry.schema.json
 │   ├── golden-missions/
@@ -179,33 +201,36 @@ Partner repo (external): `tbd-voip` — voice client, server, game bridge.
 
 ### Schema (`tbd-schema/`)
 
-- Mission + registry JSON Schema v1.0.0 (`VERSION`, `CHANGELOG.md`)
+- Mission JSON Schema **1.1** (`slots[]` required) + registry JSON Schema v1.0.0 (`VERSION`, `CHANGELOG.md`)
 - Two golden missions + `npm run validate` (CI in `.github/workflows/schema.yml`)
+- `scripts/validate-file.mjs`, `scripts/flatten-orbat-slots.mjs`
 - Registry POC file, VOIP bridge contract + samples
 - Spikes: REST 0.1 GREEN, registry 0.4 GREEN, VOIP 0.2 brief (partner)
 
 ### Framework (`tbd-framework/`)
 
 - `TBD_BackendConfig.c`, `TBD_MissionLoader.c` (REST + profile fallback)
-- `TBD_Registry.c`, `TBD_RegistryPocComponent.c` (5 vanilla aliases)
+- `TBD_Registry.c` (alias resolution)
+- `TBD_SpawnManager.c`, modded `SCR_MenuSpawnLogic` — per-slot spawn from mission `slots[]`
+- `TBD_RosterLoader.c` — roster API poll
 - `TBD_FrameworkManager.c`, `TBD_GameStage.c`, radio bridge stubs
-- `TBD_GameMode.et` prefab (manager + registry POC + RplComponent)
+- `TBD_GameMode.et` prefab (manager + RplComponent; **no** Registry POC on game mode)
 - Dev scenario: Eden subscene + `Missions/TBD_Dev_POC.conf`
-- **Dedicated server verified:** mission from API + registry spawns ×5 on Linux
+- **Workbench verified (2026-06-14):** 18× built slot spawn, assigned slot, spawn requested
 
 ### Ops scripts
 
 - `setup-workbench-linux.sh`, `setup-server-profile.sh`, `run-dev-server.sh`
+- `deploy-staging.sh`, `remote-log-grep.sh`, `bootstrap-staging-server.sh`
+- `setup-client-addons.sh`, `debug-direct-join.sh`
+- `mcp-call.sh`, `mcp-wb-logs.sh`, `tbd-spawn-verify.sh`, `tbd-dev-bootstrap.sh`, `setup-mcp-game-root.sh`
 - `test-phase1-api.sh`, `manual-test.sh`, `seed-milestone-announcement.sh`
 
 ### Not done yet
 
-- Framework: spawn/factions, ORBAT enforcement in-game, capture objective, admin commands, results POST wiring
+- Framework: full ORBAT enforcement (identity linking), capture objective, admin commands, results POST wiring
 - Web: mission upload UI, slot assignment UI, results on event page
-- Map tiles spike 0.3 (Phase 2 wizard dependency)
-- Mission wizard (Phase 2)
-- Discord milestone post (draft ready; website announcement seeded)
-- Staging soak + 48 h freeze before Milestone #1
+- Staging LAN join on 192.168.0.140 — server deploy ✓, **client Direct Join still under debug** (see section 10)
 
 ---
 
@@ -217,9 +242,9 @@ Partner repo (external): `tbd-voip` — voice client, server, game bridge.
 
 Build in this order:
 
-1. **Spawn + factions** — `SCR_SpawnLogic`, land spawn coords, basic loadouts
-2. **ORBAT enforcement** — poll roster API; reject wrong slot/loadout
-3. **Capture objective** — win condition for internal test
+1. **Staging LAN join** — unblock Direct Join `192.168.0.140:2001` (see section 10); then confirm slot spawn from client
+2. **Capture objective** — win condition for internal test
+3. **Full ORBAT enforcement** — identity linking + roster slot assignment (round-robin spawn works today)
 4. **Stage machine + admin commands** — `#stage next`, safe start, boundary
 5. **Web admin UI** — mission upload, slot assignment, link-code UX
 6. **Results persistence** — wire `POST /api/results` to DB + event page
@@ -253,11 +278,11 @@ Phase 0.2 VOIP spike — [`tbd-schema/spikes/voip-spike-brief.md`](tbd-schema/sp
 |---|---|
 | Mission loads from backend | ✓ |
 | File fallback | ✓ |
-| Registry POC | ✓ |
-| Slots enforce | ✗ |
+| Per-slot spawn (round-robin) | ✓ Workbench 2026-06-14 |
+| Slots enforce (roster identity) | ✗ |
 | Side wins | ✗ |
 | Results on event page | ✗ |
-| No Workbench to play | ✗ (blocked on spawn/ORBAT) |
+| No Workbench to play | ✗ (blocked on staging LAN + capture) |
 
 ---
 
@@ -295,7 +320,51 @@ See master plan section 2 for full schema outline example.
 
 ---
 
-## 10. What NOT to do
+## 10. Staging server (192.168.0.140)
+
+Phase A: rsync repo + local mod symlink — no Workshop yet. **Never** deploy under `/home/sam/prairielearn/`.
+
+| Path | Value |
+|------|-------|
+| Host | `sam@192.168.0.140` |
+| Repo | `/home/sam/tbd/repo` |
+| Profile | `/home/sam/tbd/profile` |
+| Addons staging | `/home/sam/tbd/addons-staging` |
+| Game port | `2001` UDP/TCP — **A2S must be on 2001** for Direct Join (`-a2sPort 2001`) |
+| API | `127.0.0.1:8080` (Docker on server) |
+| Steam app | **1874900** (stable Arma Reforger Server) — not 1890870 Experimental |
+
+```bash
+cp scripts/deploy.env.example scripts/deploy.env
+bash scripts/bootstrap-staging-server.sh    # one-time discovery
+bash scripts/deploy-staging.sh
+bash scripts/remote-log-grep.sh
+bash scripts/debug-direct-join.sh           # LAN join diagnostics
+```
+
+Full guide: [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md).
+
+**Client join:** `bash scripts/setup-client-addons.sh` → Steam launch options with `-addonsDir` + `-addons B2C3D4E5F6A78901` → Direct Join `192.168.0.140:2001`.
+
+### LAN join debug status (2026-06-14)
+
+| Check | Status |
+|-------|--------|
+| Server `tbd-reforger.service` active, mission loaded, 18× slot spawn | ✓ |
+| API + roster smoke on server | ✓ |
+| Client mod loads (Proton log shows `B2C3D4E5F6A78901`) | ✓ |
+| Ping PC → server (WiFi vs LAN same `/24`) | ✓ — not an isolation issue |
+| A2S on `:2001` from dev PC | ✓ after `-a2sPort 2001` fix |
+| Client Direct Join end-to-end | **pending user retest** |
+| Steam build match (client vs server `buildid`) | **may differ** — sync via `steamcmd +app_update 1874900 validate` |
+
+**Known fix applied:** `-a2sPort 17777` caused **"No server found"** — Direct Join probes game port 2001, not 17777. Unit now uses `-bindIP 0.0.0.0 -a2sPort 2001`.
+
+**If join still fails after retest:** compare Steam `buildid`, watch server `console.log` during join for connect lines, grep client Proton log for `SERVER_NOT_FOUND` vs version mismatch.
+
+---
+
+## 11. What NOT to do
 
 - Do NOT build Stripe, payments, or entitlements
 - Do NOT build in-engine TBD-VON — partner builds external TFAR-like stack
@@ -306,7 +375,7 @@ See master plan section 2 for full schema outline example.
 
 ---
 
-## 11. Coding conventions
+## 12. Coding conventions
 
 **Website (Go):** chi router, pgx, goose migrations, scs sessions. Match existing patterns in `Tbdevent_Website/internal/`.
 
@@ -318,13 +387,14 @@ See master plan section 2 for full schema outline example.
 
 ---
 
-## 12. Key reference files
+## 13. Key reference files
 
 | File | Why |
 |---|---|
 | [`README.md`](README.md) | Project overview + quick start |
 | [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) | Claude Code entry |
 | [`MILESTONES.md`](MILESTONES.md) | Milestone gates |
+| [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md) | Staging deploy + verification |
 | [`scripts/run-dev-server.sh`](scripts/run-dev-server.sh) | Local dedicated server launcher |
 | [`tbd-framework/Prefabs/Systems/TBD_GameMode.et`](tbd-framework/Prefabs/Systems/TBD_GameMode.et) | Game mode prefab |
 | [`Tbdevent_Website/internal/server/server.go`](Tbdevent_Website/internal/server/server.go) | Route registration |
@@ -333,20 +403,20 @@ See master plan section 2 for full schema outline example.
 
 ---
 
-## 13. Open decisions
+## 14. Open decisions
 
 - **Console VOIP:** Partner decides in Phase 0.2. Desktop VOIP cannot run on Xbox/PS5. Likely v1 = PC full VOIP + console in-game VON fallback.
 - **Bridge contract:** Main team publishes draft in `tbd-schema` week 1 of Phase 0; finalize after partner spike.
 
 ---
 
-## 14. Session checklist for Claude CLI
+## 15. Session checklist for Claude CLI
 
 When starting a new session:
 
 - [ ] Read [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md) (or this file for full context)
 - [ ] Confirm Enfusion MCP is connected (`/mcp` in Claude Code)
-- [ ] Phase 1 task is clear — default: spawn/factions or ORBAT enforcement
+- [ ] Phase 1 task is clear — default: staging deploy or capture objective
 - [ ] For Enfusion: `api_search` first, then implement in `tbd-framework/` only
 - [ ] For web: read existing handler patterns before adding routes
 - [ ] Do not commit unless user asks

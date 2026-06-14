@@ -36,7 +36,7 @@ mkdir -p "$ADDONS_STAGING"
 ln -sfn "$REPO/tbd-framework" "$ADDONS_STAGING/tbd-framework"
 
 echo "Server log + cache go under: $PROFILE"
-echo "Watch for: [TBD] Registry POC spawned (x5) and [TBD] Mission loaded ..."
+echo "Watch for: [TBD] Mission loaded, built slot spawn, assigned slot, spawn requested"
 echo "(Mission loader hits http://127.0.0.1:8080; falls back to \$profile:missions/msn_8f3a2c.json if the web API is down.)"
 echo "(Hosting the SCENARIO .conf via -server + local mod via -addons. NOTE: -config conflicts with -addons, so it is NOT used for local mods.)"
 echo

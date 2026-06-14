@@ -13,6 +13,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected ref map<string, SCR_SpawnPoint> m_mSlotSpawnPoints;
 	protected int m_iRoundRobin;
 	protected bool m_bSlotSpawnPointsBuilt;
+	protected ref set<int> m_sDeployRequested;
 
 	//------------------------------------------------------------------------------------------------
 	void TBD_SpawnManager(IEntityComponentSource src, IEntity ent, IEntity parent)
@@ -20,12 +21,19 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		s_Instance = this;
 		m_mPlayerSlot = new map<int, ref TBD_MissionSlotStruct>();
 		m_mSlotSpawnPoints = new map<string, SCR_SpawnPoint>();
+		m_sDeployRequested = new set<int>();
 	}
 
 	//------------------------------------------------------------------------------------------------
 	static TBD_SpawnManager GetInstance()
 	{
 		return s_Instance;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool AreSlotSpawnPointsBuilt()
+	{
+		return m_bSlotSpawnPointsBuilt;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -165,11 +173,112 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		}
 
 		if (built > 0)
+		{
 			m_bSlotSpawnPointsBuilt = true;
+			ScheduleDeployAllConnectedPlayers();
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
 	void OnStageChanged(TBD_EGameStage stage)
 	{
+		if (stage == TBD_EGameStage.LOBBY)
+			ScheduleDeployAllConnectedPlayers();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ScheduleDeployAllConnectedPlayers()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (!m_bSlotSpawnPointsBuilt)
+			return;
+
+		GetGame().GetCallqueue().CallLater(DeployAllConnectedPlayers, 250, false);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void DeployAllConnectedPlayers()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		array<int> players = {};
+		int count = GetGame().GetPlayerManager().GetPlayers(players);
+		for (int i = 0; i < count; i++)
+			DeployPlayer(players[i]);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Authority: assign slot + request spawn at mission JSON position with kit prefab.
+	bool DeployPlayer(int playerId)
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return false;
+
+		if (!m_bSlotSpawnPointsBuilt)
+			return false;
+
+		if (m_sDeployRequested.Contains(playerId))
+			return false;
+
+		AssignSlotForPlayer(playerId);
+
+		TBD_MissionSlotStruct slot = GetAssignedSlot(playerId);
+		if (!slot)
+			return false;
+
+		SCR_SpawnPoint sp = GetSpawnPointForSlot(slot.id);
+		if (!sp)
+		{
+			Print("[TBD] SpawnManager: no spawn point for slot " + slot.id, LogLevel.ERROR);
+			return false;
+		}
+
+		bool kitOk;
+		ResourceName prefab = TBD_Registry.Resolve(slot.kit, kitOk);
+		if (!kitOk || prefab.IsEmpty())
+		{
+			Print("[TBD] SpawnManager: kit resolve failed: " + slot.kit, LogLevel.ERROR);
+			return false;
+		}
+
+		PlayerController pc = GetGame().GetPlayerManager().GetPlayerController(playerId);
+		if (pc)
+		{
+			SCR_PlayerFactionAffiliationComponent factionComp = SCR_PlayerFactionAffiliationComponent.Cast(
+				pc.FindComponent(SCR_PlayerFactionAffiliationComponent));
+			if (factionComp)
+			{
+				string engineKey = EngineFactionKey(slot.faction);
+				factionComp.SetAffiliatedFactionByKey(engineKey);
+			}
+		}
+
+		RplComponent rpl = RplComponent.Cast(sp.FindComponent(RplComponent));
+		if (!rpl)
+		{
+			Print("[TBD] SpawnManager: spawn point missing RplComponent for " + slot.id, LogLevel.ERROR);
+			return false;
+		}
+
+		SCR_RespawnComponent respawn = SCR_RespawnComponent.SGetPlayerRespawnComponent(playerId);
+		if (!respawn)
+		{
+			Print("[TBD] SpawnManager: no respawn component for player " + playerId, LogLevel.ERROR);
+			return false;
+		}
+
+		SCR_SpawnPointSpawnData data = new SCR_SpawnPointSpawnData(prefab, rpl.Id());
+		if (!respawn.RequestSpawn(data))
+		{
+			Print("[TBD] SpawnManager: RequestSpawn failed for slot " + slot.id, LogLevel.ERROR);
+			return false;
+		}
+
+		m_sDeployRequested.Insert(playerId);
+		Print(string.Format("[TBD] SpawnManager: spawn requested player %1 slot %2 kit %3", playerId, slot.id, slot.kit));
+		return true;
 	}
 }

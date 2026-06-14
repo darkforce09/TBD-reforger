@@ -23,11 +23,13 @@ cp "$ROOT/tbd-framework/Data/backend.example.json" "$PROFILE_ROOT/TBD_BackendCon
 
 # Point at local API + dev token from .env if present
 ENV_FILE="$ROOT/Tbdevent_Website/.env"
-if [ -f "$ENV_FILE" ]; then
+if [ -n "${GAME_SERVER_TOKEN:-}" ]; then
+  TOKEN="$GAME_SERVER_TOKEN"
+elif [ -f "$ENV_FILE" ]; then
   TOKEN=$(grep '^GAME_SERVER_TOKENS=' "$ENV_FILE" | head -1 | cut -d= -f2 | cut -d, -f1)
-  if [ -n "$TOKEN" ]; then
-    sed -i "s/replace-with-GAME_SERVER_TOKENS-value/$TOKEN/" "$PROFILE_ROOT/TBD_BackendConfig.json"
-  fi
+fi
+if [ -n "${TOKEN:-}" ]; then
+  sed -i "s/replace-with-GAME_SERVER_TOKENS-value/$TOKEN/" "$PROFILE_ROOT/TBD_BackendConfig.json"
 fi
 
 # Seed mission fallback on disk (matches golden mission served by API)

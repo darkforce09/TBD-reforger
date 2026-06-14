@@ -75,6 +75,12 @@ docker build -t tbdevent-website .
 docker run --env-file .env -p 8080:8080 tbdevent-website
 ```
 
+### Staging stack (192.168.0.140)
+
+[`docker-compose.staging.yml`](docker-compose.staging.yml) runs **Postgres + API** together. Create `.env` on the server only (never rsync from dev). Volume-mounts `missions/` and `../tbd-schema`. Deploy via [`scripts/deploy-staging.sh`](../scripts/deploy-staging.sh) — see [`docs/STAGING-SERVER.md`](../docs/STAGING-SERVER.md).
+
+Game servers authenticate with `GAME_SERVER_TOKENS` (same value as `TBD_GAME_SERVER_TOKEN` in `scripts/deploy.env`).
+
 ## Pages
 
 | Route | Content slug |

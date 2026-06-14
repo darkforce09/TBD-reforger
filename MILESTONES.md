@@ -25,7 +25,9 @@ from [`docs/discord-milestone-1-post.md`](docs/discord-milestone-1-post.md) when
 
 - [x] Mission loads on the dedicated server from the backend REST endpoint
 - [x] File fallback proven as backup (`$profile:missions/{id}.json`)
-- [ ] Slots enforce: players get the role they were assigned; no free-for-all
+- [x] Per-slot spawn at mission JSON coords (Workbench verified 2026-06-14)
+- [ ] Staging server deploy on 192.168.0.140 (`scripts/deploy-staging.sh`)
+- [ ] Slots enforce: roster identity → assigned slot (round-robin only until linking)
 - [ ] A side wins via a real win condition (capture / hold / elimination)
 - [ ] Results POSTed back to the backend and visible on the event page
 - [ ] Nobody needed Workbench to play
@@ -33,7 +35,7 @@ from [`docs/discord-milestone-1-post.md`](docs/discord-milestone-1-post.md) when
 ### Entry checklist (must be done before the date)
 
 - [x] Phase 0 spikes green: REST (0.1), registry (0.4), schema frozen (0.5)
-- [ ] Framework MVP: state machine, loader ✓, spawner, capture objective, loadouts,
+- [ ] Framework MVP: state machine, loader ✓, spawner ✓ (round-robin), capture objective, loadouts,
       safe start, boundary, admin commands
 - [ ] Web: mission upload + validation (API ✓, UI pending), event linked to mission,
       manual ORBAT assignment (API ✓, UI pending), identity linking (API ✓, UI pending)
