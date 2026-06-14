@@ -151,44 +151,43 @@ bash scripts/manual-test.sh
 
 ## Suggested first prompt (new Claude chat)
 
-### LAN join debug (current blocker)
+### Finish the mission browser (current focus)
 
 ```
-Read CLAUDE-CODE-START.md, CLAUDE-CONTINUATION.md section 10, and docs/STAGING-SERVER.md.
+Read CLAUDE-CODE-START.md, then CLAUDE-CONTINUATION.md §16 (mission browser handoff)
+and §17 (Enfusion/Workbench gotchas) — read §17 BEFORE touching .c or Workbench.
 
-Task: Find why Arma Reforger Direct Join to 192.168.0.140:2001 still fails (or confirm it works after the a2sPort fix).
+State: staging LAN Direct Join WORKS (Workshop mod + -config). The in-game admin
+mission browser is built and compiles in Workbench — backend GET /api/missions (live),
+TBD_MissionListLoader, select+reload, and the admin-gated client↔server RPC + keybind
+trigger (TBD_MissionBrowser.c). Chat commands are a DEAD END (no chat entity on dedicated).
 
-Context:
-- Staging server on sam@192.168.0.140 (WiFi); dev PC on LAN — same 192.168.0.0/24, ping OK.
-- Phase A: -server + -addons B2C3D4E5F6A78901, NOT -config.
-- Server logs show mission loaded, 18× built slot spawn, listening 0.0.0.0:2001.
-- Client (Proton): launch options load tbd-framework mod (verify in compatdata/1874880 console.log).
-- Fix already applied: -a2sPort 2001 (was 17777 — caused "No server found" because Direct Join probes :2001).
-- scripts/deploy.env has SSH credentials (gitignored). Use scripts/debug-direct-join.sh for runtime checks.
-- Never touch /home/sam/prairielearn/. Work on main only.
+Last 5%: define input actions TBD_MissionCycle / TBD_MissionLoad so the keybind fires
+the RPC. Plan in §16: a tiny ActionManager config (2 actions + a TBD_BrowserContext)
++ GetInputManager().ActivateContext("TBD_BrowserContext") from the local SCR_PlayerController.
+Open question: does a separate mod input config merge, or must it override the base
+Configs/System/chimeraInputCommon.conf? Iterate via the WB MCP (project_write → wb_reload →
+grep the WB log). Write config files directly (bypasses WB read-only + the crashy WB save).
 
-Investigate with runtime evidence:
-1. bash scripts/debug-direct-join.sh before and after a join attempt
-2. SSH: systemctl --user status tbd-reforger.service; tail server console.log during join
-3. Client Proton console.log: SEARCHING_SERVER / SERVER_NOT_FOUND / version mismatch
-4. Steam buildid: appmanifest 1874880 (client) vs 1874900 (server) — must match
-5. If discovery works but connect fails: firewall, mod mismatch, BattlEye
+Then: cross-terrain (build an Arland TBD scenario in Workbench).
 
-Do not redo spawn manager or mission loader work. Commit only when I ask.
+Rules: tbd-framework/ only; enfusion-mcp api_search before any .c edit; verify compiles
+in WORKBENCH (the local server skips new files — §17); never open Tbd_framework/; main
+branch only; commit only when asked. SECURITY: rotate the license.txt secrets (see §6).
 ```
 
-### General Phase 1 (after LAN join works)
+### General Phase 1 (alternative task)
 
 ```
-Read CLAUDE-CODE-START.md and CLAUDE-CONTINUATION.md section 7.
+Read CLAUDE-CODE-START.md and CLAUDE-CONTINUATION.md §7.
 
-Phase 1 toward Milestone #1 (2026-08-22). Slot spawn at JSON coords is done
-(Workbench verified). Do NOT redo loader/spawn manager work.
+Phase 1 toward Milestone #1 (2026-08-22). Slot spawn from mission slots[] is done
+(verified on the staging dedicated server). Do NOT redo loader/spawn manager work.
 
-Next task: [capture objective | ORBAT enforcement — pick one]
+Next task: [finish mission browser §16 | capture objective | ORBAT enforcement]
 
 Rules:
-- tbd-framework/ only, enfusion-mcp before any .c edit
+- tbd-framework/ only, enfusion-mcp before any .c edit, verify compiles in Workbench
 - Never open Tbd_framework/ in Workbench
 - main branch only
 ```
