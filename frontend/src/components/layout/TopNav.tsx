@@ -3,6 +3,8 @@ import { Link, useMatches } from 'react-router-dom'
 import { useAuthStore } from '@/store/useAuthStore'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { StatusPill } from '@/components/StatusPill'
+import { useLogout } from '@/hooks/mutations'
+import { DEFAULT_AVATAR } from '@/lib/avatar'
 
 interface RouteHandle {
   breadcrumb?: { parent: string; current: string }
@@ -12,7 +14,7 @@ export function TopNav() {
   const [open, setOpen] = useState(false)
   const user = useAuthStore((s) => s.user)
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
-  const clearSession = useAuthStore((s) => s.clearSession)
+  const logout = useLogout()
   const matches = useMatches()
   const handle = [...matches].reverse().find((m) => (m.handle as RouteHandle)?.breadcrumb)
     ?.handle as RouteHandle | undefined
@@ -48,7 +50,7 @@ export function TopNav() {
               className="flex items-center gap-2 rounded-lg p-1 pr-3 hover:bg-surface-container-high"
             >
               <img
-                src={user?.avatar_url || 'https://via.placeholder.com/32'}
+                src={user?.avatar_url || DEFAULT_AVATAR}
                 alt=""
                 className="h-8 w-8 rounded-full border border-border-subtle object-cover"
               />
@@ -76,7 +78,7 @@ export function TopNav() {
                   type="button"
                   className="block w-full px-4 py-2 text-left text-sm text-error hover:bg-surface-container-high"
                   onClick={() => {
-                    clearSession()
+                    logout.mutate()
                     setOpen(false)
                   }}
                 >

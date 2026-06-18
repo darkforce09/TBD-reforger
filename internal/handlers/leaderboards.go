@@ -58,7 +58,7 @@ func (h *Handler) GetLeaderboards(c *gin.Context) {
 		q = q.Where("u.username ILIKE ?", "%"+search+"%")
 	}
 
-	var rows []leaderboardRow
+	rows := []leaderboardRow{}
 	if err := q.Order(order).Limit(limit).Offset(offset).Scan(&rows).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load leaderboard"})
 		return

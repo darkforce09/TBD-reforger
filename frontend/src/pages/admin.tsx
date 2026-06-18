@@ -1,270 +1,526 @@
-import { MaterialIcon } from '@/components/MaterialIcon'
+import { useState } from 'react'
+import { toast } from 'sonner'
 import { OpsCard } from '@/components/OpsCard'
 import { PageHeader } from '@/components/PageHeader'
+import { AdminGate } from '@/components/AdminGate'
+import { QueryState } from '@/components/QueryState'
+import {
+  useApprovals,
+  useAuditLogs,
+  useEvents,
+  useMissions,
+  usePersonnel,
+} from '@/hooks/queries'
+import {
+  useApproveMission,
+  useBanUser,
+  useCreateEvent,
+  useDeleteEvent,
+  usePublishAnnouncement,
+  useRejectMission,
+  useUpdateUserRole,
+} from '@/hooks/mutations'
+import { formatLocalDateTime, terrainLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 export function EventManagerPage() {
-  const days = Array.from({ length: 31 }, (_, i) => i + 1)
+  const { data: eventsData } = useEvents('all')
+  const { data: missionsData } = useMissions('global')
+  const createEvent = useCreateEvent()
+  const deleteEvent = useDeleteEvent()
+
+  const [startTime, setStartTime] = useState('')
+  const [missionId, setMissionId] = useState('')
+  const [maxSlots, setMaxSlots] = useState(64)
+  const [nameOverride, setNameOverride] = useState('')
+  const [locked, setLocked] = useState(false)
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+
+  const missions = missionsData?.data ?? []
+  const events = eventsData?.data ?? []
+
+  const handlePublish = () => {
+    if (!missionId || !startTime) {
+      toast.error('Mission and start time are required')
+      return
+    }
+    createEvent.mutate(
+      {
+        mission_id: missionId,
+        start_time: new Date(startTime).toISOString(),
+        max_slots: maxSlots,
+        name_override: nameOverride || undefined,
+        registration_locked: locked,
+      },
+      {
+        onSuccess: () => toast.success('Event published'),
+        onError: () => toast.error('Failed to publish event'),
+      },
+    )
+  }
+
+  const handleDelete = () => {
+    if (!selectedEventId) return
+    deleteEvent.mutate(selectedEventId, {
+      onSuccess: () => {
+        toast.success('Event deleted')
+        setSelectedEventId(null)
+      },
+      onError: () => toast.error('Failed to delete event'),
+    })
+  }
 
   return (
-    <div className="mx-auto w-full max-w-6xl">
-      <PageHeader
-        title="Event Manager"
-        subtitle="Schedule upcoming deployments and toggle registration locks."
-      />
-      <div className="grid gap-6 lg:grid-cols-2">
-        <OpsCard className="bg-surface-container-high">
-          <h2 className="mb-4 text-lg font-semibold">October 2024</h2>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
-              <span key={d} className="py-1 font-semibold text-on-surface-variant">
-                {d}
-              </span>
-            ))}
-            {days.map((d) => (
-              <button
-                key={d}
-                type="button"
-                className={cn(
-                  'rounded py-2 hover:bg-surface-container',
-                  d === 28 && 'bg-primary text-on-primary',
-                )}
-              >
-                {d}
-              </button>
-            ))}
-          </div>
-        </OpsCard>
-        <OpsCard className="bg-surface-container-high">
-          <h2 className="mb-4 text-lg font-semibold">Schedule Operation</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="mb-1 block text-sm text-on-surface-variant">Date</label>
-              <p className="text-sm font-medium">Tuesday, October 28</p>
+    <AdminGate>
+      <div className="mx-auto w-full max-w-6xl">
+        <PageHeader
+          title="Event Manager"
+          subtitle="Schedule upcoming deployments and toggle registration locks."
+        />
+        <div className="grid gap-6 lg:grid-cols-2">
+          <OpsCard className="bg-surface-container-high">
+            <h2 className="mb-4 text-lg font-semibold">Scheduled Events</h2>
+            {events.length === 0 ? (
+              <p className="text-sm text-on-surface-variant">No events scheduled.</p>
+            ) : (
+              <ul className="max-h-80 space-y-2 overflow-y-auto text-sm">
+                {events.map((e) => (
+                  <li key={e.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedEventId(e.id)}
+                      className={cn(
+                        'w-full rounded-lg border px-3 py-2 text-left',
+                        selectedEventId === e.id
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border-subtle hover:bg-surface-container',
+                      )}
+                    >
+                      <span className="font-medium">{e.name_override || e.mission_title}</span>
+                      <span className="mt-1 block text-on-surface-variant">
+                        {formatLocalDateTime(e.start_time)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </OpsCard>
+          <OpsCard className="bg-surface-container-high">
+            <h2 className="mb-4 text-lg font-semibold">Schedule Operation</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm text-on-surface-variant">Start Time</label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-on-surface-variant">Mission</label>
+                <select
+                  value={missionId}
+                  onChange={(e) => setMissionId(e.target.value)}
+                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                >
+                  <option value="">Select from Mission Library...</option>
+                  {missions.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.title} ({terrainLabel(m.terrain)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-on-surface-variant">Name Override</label>
+                <input
+                  type="text"
+                  value={nameOverride}
+                  onChange={(e) => setNameOverride(e.target.value)}
+                  placeholder="Optional display name"
+                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-on-surface-variant">Max Slots</label>
+                <input
+                  type="number"
+                  value={maxSlots}
+                  onChange={(e) => setMaxSlots(Number(e.target.value))}
+                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm text-on-surface-variant">Registration</label>
+                <select
+                  value={locked ? 'locked' : 'open'}
+                  onChange={(e) => setLocked(e.target.value === 'locked')}
+                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                >
+                  <option value="open">Open</option>
+                  <option value="locked">Locked</option>
+                </select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={handlePublish}
+                  disabled={createEvent.isPending}
+                  className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-on-primary disabled:opacity-50"
+                >
+                  Publish Event
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={!selectedEventId || deleteEvent.isPending}
+                  className="rounded-lg border border-error/50 px-4 py-2 text-sm text-error disabled:opacity-50"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div>
-              <label className="mb-1 block text-sm text-on-surface-variant">Start Time</label>
-              <input type="text" defaultValue="20:00 EST" className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm text-on-surface-variant">Mission</label>
-              <select className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm">
-                <option>Select from Mission Library...</option>
-                <option>Operation Red Dawn</option>
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm text-on-surface-variant">Registration</label>
-              <select className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm">
-                <option>Open</option>
-                <option>Locked</option>
-              </select>
-            </div>
-            <div className="flex gap-2 pt-2">
-              <button type="button" className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-on-primary">
-                Publish Event
-              </button>
-              <button type="button" className="rounded-lg border border-error/50 px-4 py-2 text-sm text-error">
-                Delete
-              </button>
-            </div>
-          </div>
-        </OpsCard>
+          </OpsCard>
+        </div>
       </div>
-    </div>
+    </AdminGate>
   )
 }
 
 export function MissionApprovalsPage() {
-  const rows = [
-    { mission: 'Operation Sandstorm', author: 'PlayerOne', map: 'Arland', submitted: 'Oct 24, 14:00' },
-    { mission: 'Defend Morton', author: 'DeltaActual', map: 'Everon', submitted: 'Oct 23, 09:30' },
-  ]
+  const { data, isLoading, isError, error } = useApprovals()
+  const approve = useApproveMission()
+  const reject = useRejectMission()
+  const rows = data?.data ?? []
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <PageHeader
-        title="Mission Approvals"
-        subtitle="Review and authorize community-submitted missions for the live database."
-      />
-      <div className="overflow-hidden rounded-xl border border-border-subtle">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-container-high text-xs font-semibold uppercase text-on-surface-variant">
-            <tr>
-              <th className="px-4 py-3 text-left">Mission</th>
-              <th className="px-4 py-3 text-left">Author</th>
-              <th className="px-4 py-3 text-left">Map</th>
-              <th className="px-4 py-3 text-left">Submitted</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-subtle bg-surface-container">
-            {rows.map((r) => (
-              <tr key={r.mission}>
-                <td className="px-4 py-3 font-medium">{r.mission}</td>
-                <td className="px-4 py-3">{r.author}</td>
-                <td className="px-4 py-3">{r.map}</td>
-                <td className="px-4 py-3 text-on-surface-variant">{r.submitted}</td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="mr-2 text-primary hover:underline">
-                    Review
-                  </button>
-                  <button type="button" className="mr-2 text-success hover:underline">
-                    Approve
-                  </button>
-                  <button type="button" className="text-error hover:underline">
-                    Reject
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <p className="mt-4 text-sm text-on-surface-variant">Showing 2 of 24 pending</p>
-    </div>
+    <AdminGate>
+      <QueryState isLoading={isLoading} isError={isError} error={error as Error}>
+        <div className="mx-auto w-full max-w-5xl">
+          <PageHeader
+            title="Mission Approvals"
+            subtitle="Review and authorize community-submitted missions for the live database."
+          />
+          {rows.length === 0 ? (
+            <p className="text-on-surface-variant">No pending approvals.</p>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border-subtle">
+              <table className="w-full text-sm">
+                <thead className="bg-surface-container-high text-xs font-semibold uppercase text-on-surface-variant">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Mission</th>
+                    <th className="px-4 py-3 text-left">Author</th>
+                    <th className="px-4 py-3 text-left">Map</th>
+                    <th className="px-4 py-3 text-left">Submitted</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle bg-surface-container">
+                  {rows.map((r) => (
+                    <tr key={r.mission_id}>
+                      <td className="px-4 py-3 font-medium">{r.title}</td>
+                      <td className="px-4 py-3">{r.author_name}</td>
+                      <td className="px-4 py-3">{terrainLabel(r.terrain)}</td>
+                      <td className="px-4 py-3 text-on-surface-variant">
+                        {formatLocalDateTime(r.submitted_at)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <button
+                          type="button"
+                          className="mr-2 text-success hover:underline disabled:opacity-50"
+                          disabled={approve.isPending}
+                          onClick={() =>
+                            approve.mutate(r.mission_id, {
+                              onSuccess: () => toast.success('Mission approved'),
+                              onError: () => toast.error('Approval failed'),
+                            })
+                          }
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          className="text-error hover:underline disabled:opacity-50"
+                          disabled={reject.isPending}
+                          onClick={() =>
+                            reject.mutate(
+                              { id: r.mission_id },
+                              {
+                                onSuccess: () => toast.success('Mission rejected'),
+                                onError: () => toast.error('Rejection failed'),
+                              },
+                            )
+                          }
+                        >
+                          Reject
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {data && (
+            <p className="mt-4 text-sm text-on-surface-variant">
+              Showing {rows.length} of {data.total} pending
+            </p>
+          )}
+        </div>
+      </QueryState>
+    </AdminGate>
   )
 }
 
 export function PersonnelRosterPage() {
-  const users = [
-    { discord: 'Dave#1234', arma: '[TBD] Admin Dave', role: 'Platform Admin', warnings: 0 },
-    { discord: 'RandomGuy#9999', arma: 'Unlinked', role: 'Enlisted', warnings: 1 },
-  ]
+  const [q, setQ] = useState('')
+  const { data, isLoading, isError, error } = usePersonnel(q || undefined)
+  const updateRole = useUpdateUserRole()
+  const banUser = useBanUser()
+  const users = data?.data ?? []
 
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <PageHeader title="Personnel Roster" subtitle="Manage and audit registered platform users." />
-      <input
-        type="search"
-        placeholder="Search Discord ID or Arma Name..."
-        className="mb-6 w-full max-w-md rounded-lg border border-border-subtle bg-surface-container px-3 py-2 text-sm"
-      />
-      <div className="overflow-hidden rounded-xl border border-border-subtle">
-        <table className="w-full text-sm">
-          <thead className="bg-surface-container-high text-xs font-semibold uppercase text-on-surface-variant">
-            <tr>
-              <th className="px-4 py-3 text-left">Discord</th>
-              <th className="px-4 py-3 text-left">Arma Identity</th>
-              <th className="px-4 py-3 text-left">Role</th>
-              <th className="px-4 py-3 text-left">Warnings</th>
-              <th className="px-4 py-3 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-subtle bg-surface-container">
-            {users.map((u) => (
-              <tr key={u.discord}>
-                <td className="px-4 py-3">{u.discord}</td>
-                <td className="px-4 py-3">{u.arma}</td>
-                <td className="px-4 py-3">{u.role}</td>
-                <td className="px-4 py-3">{u.warnings}</td>
-                <td className="px-4 py-3 text-right">
-                  <button type="button" className="mr-2 text-primary hover:underline">
-                    Edit
-                  </button>
-                  <button type="button" className="text-error hover:underline">
-                    Ban
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <AdminGate>
+      <QueryState isLoading={isLoading} isError={isError} error={error as Error}>
+        <div className="mx-auto w-full max-w-5xl">
+          <PageHeader title="Personnel Roster" subtitle="Manage and audit registered platform users." />
+          <input
+            type="search"
+            placeholder="Search Discord ID or Arma Name..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="mb-6 w-full max-w-md rounded-lg border border-border-subtle bg-surface-container px-3 py-2 text-sm"
+          />
+          {users.length === 0 ? (
+            <p className="text-on-surface-variant">No users found.</p>
+          ) : (
+            <div className="overflow-hidden rounded-xl border border-border-subtle">
+              <table className="w-full text-sm">
+                <thead className="bg-surface-container-high text-xs font-semibold uppercase text-on-surface-variant">
+                  <tr>
+                    <th className="px-4 py-3 text-left">Discord</th>
+                    <th className="px-4 py-3 text-left">Arma Identity</th>
+                    <th className="px-4 py-3 text-left">Role</th>
+                    <th className="px-4 py-3 text-left">Warnings</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-subtle bg-surface-container">
+                  {users.map((u) => (
+                    <tr key={u.discord_id}>
+                      <td className="px-4 py-3">{u.discord_handle || u.username}</td>
+                      <td className="px-4 py-3">
+                        {u.arma_character || u.arma_id || 'Unlinked'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select
+                          value={u.role}
+                          onChange={(e) =>
+                            updateRole.mutate(
+                              { discordId: u.discord_id, role: e.target.value },
+                              {
+                                onSuccess: () => toast.success('Role updated'),
+                                onError: () => toast.error('Failed to update role'),
+                              },
+                            )
+                          }
+                          className="rounded border border-border-subtle bg-surface px-2 py-1 text-sm"
+                        >
+                          <option value="enlisted">Enlisted</option>
+                          <option value="mission_maker">Mission Maker</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
+                      <td className="px-4 py-3">{u.warnings}</td>
+                      <td className="px-4 py-3 text-right">
+                        {!u.is_banned && (
+                          <button
+                            type="button"
+                            className="text-error hover:underline"
+                            onClick={() => {
+                              const reason = window.prompt('Ban reason (optional):')
+                              banUser.mutate(
+                                { discordId: u.discord_id, reason: reason ?? undefined },
+                                {
+                                  onSuccess: () => toast.success('User banned'),
+                                  onError: () => toast.error('Ban failed'),
+                                },
+                              )
+                            }}
+                          >
+                            Ban
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </QueryState>
+    </AdminGate>
   )
 }
 
 export function ContentManagerPage() {
+  const publish = usePublishAnnouncement()
+  const [title, setTitle] = useState('')
+  const [body, setBody] = useState('')
+  const [tag, setTag] = useState('update')
+  const [pinned, setPinned] = useState(false)
+  const [pushDiscord, setPushDiscord] = useState(true)
+
+  const handlePublish = () => {
+    if (!title.trim() || !body.trim()) {
+      toast.error('Title and body are required')
+      return
+    }
+    publish.mutate(
+      {
+        title: title.trim(),
+        body: body.trim(),
+        tag,
+        is_pinned: pinned,
+        push_to_discord: pushDiscord,
+        status: 'published',
+      },
+      {
+        onSuccess: () => {
+          toast.success('Announcement published')
+          setTitle('')
+          setBody('')
+        },
+        onError: () => toast.error('Publish failed'),
+      },
+    )
+  }
+
   return (
-    <div className="mx-auto w-full max-w-3xl">
-      <PageHeader
-        title="Content Manager"
-        subtitle="Create and distribute operational updates across the network."
-      />
-      <div className="mb-6 flex gap-2">
-        <button type="button" className="rounded-lg bg-primary px-4 py-2 text-sm text-on-primary">
-          Publish News Announcement
-        </button>
-        <button type="button" className="rounded-lg bg-surface-container-high px-4 py-2 text-sm text-on-surface-variant">
-          Edit SOP Wiki Page
-        </button>
+    <AdminGate>
+      <div className="mx-auto w-full max-w-3xl">
+        <PageHeader
+          title="Content Manager"
+          subtitle="Create and distribute operational updates across the network."
+        />
+        <OpsCard className="bg-surface-container-high">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Post Title"
+            className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm font-medium"
+          />
+          <select
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+            className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+          >
+            <option value="update">Update</option>
+            <option value="event">Community Event</option>
+            <option value="modpack_update">Modpack Update</option>
+            <option value="important">Important</option>
+          </select>
+          <textarea
+            rows={8}
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Draft your briefing here..."
+            className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+          />
+          <label className="mb-2 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={pinned}
+              onChange={(e) => setPinned(e.target.checked)}
+              className="rounded"
+            />
+            Pin announcement
+          </label>
+          <label className="mb-4 flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={pushDiscord}
+              onChange={(e) => setPushDiscord(e.target.checked)}
+              className="rounded"
+            />
+            Push to Discord Webhook
+          </label>
+          <button
+            type="button"
+            onClick={handlePublish}
+            disabled={publish.isPending}
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
+          >
+            {publish.isPending ? 'Publishing…' : 'Publish Content'}
+          </button>
+        </OpsCard>
       </div>
-      <OpsCard className="bg-surface-container-high">
-        <input
-          type="text"
-          defaultValue="Operation Thunderstrike Briefing"
-          placeholder="Post Title"
-          className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm font-medium"
-        />
-        <select className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm">
-          <option>Modpack Update</option>
-          <option>Community Event</option>
-        </select>
-        <div className="mb-2 flex gap-1 border-b border-border-subtle pb-2">
-          {['bold', 'format_list_bulleted', 'link', 'image'].map((icon) => (
-            <button key={icon} type="button" className="rounded p-1.5 hover:bg-surface-container">
-              <MaterialIcon name={icon} className="text-sm" />
-            </button>
-          ))}
-        </div>
-        <textarea
-          rows={8}
-          placeholder="Draft your briefing here..."
-          className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-        />
-        <label className="mb-4 flex items-center gap-2 text-sm">
-          <input type="checkbox" defaultChecked className="rounded" />
-          Push to Discord Webhook
-        </label>
-        <div className="flex gap-2">
-          <button type="button" className="rounded-lg border border-border-subtle px-4 py-2 text-sm">
-            Save Draft
-          </button>
-          <button type="button" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary">
-            Publish Content
-          </button>
-        </div>
-      </OpsCard>
-    </div>
+    </AdminGate>
   )
 }
 
-const auditLines = [
-  { level: 'INFO', text: "Admin Dave approved mission 'Operation Sandstorm'.", color: 'text-success' },
-  { level: 'WARN', text: 'Active server FPS dropped below 20 for 15 seconds.', color: 'text-warning' },
-  { level: 'CRIT', text: 'Webhook failed to push payload to Discord channel #announcements.', color: 'text-error' },
-]
-
 export function AuditLogsPage() {
+  const [q, setQ] = useState('')
+  const { data, isLoading, isError, error } = useAuditLogs({ q: q || undefined })
+  const lines = data?.data ?? []
+
+  const severityClass = (s: string) => {
+    switch (s.toLowerCase()) {
+      case 'warn':
+      case 'warning':
+        return 'text-warning'
+      case 'crit':
+      case 'critical':
+      case 'error':
+        return 'text-error'
+      default:
+        return 'text-success'
+    }
+  }
+
   return (
-    <div className="mx-auto w-full max-w-5xl">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="mb-2 text-3xl font-bold">System Audit Logs</h1>
-          <p className="text-on-surface-variant">Real-time terminal view of all system events.</p>
+    <AdminGate>
+      <QueryState isLoading={isLoading} isError={isError} error={error as Error}>
+        <div className="mx-auto w-full max-w-5xl">
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="mb-2 text-3xl font-bold">System Audit Logs</h1>
+              <p className="text-on-surface-variant">Terminal view of system events.</p>
+            </div>
+          </div>
+          <input
+            type="search"
+            placeholder="Filter by admin, event, or keyword..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            className="mb-4 w-full rounded-lg border border-border-subtle bg-surface-container px-3 py-2 font-mono text-sm"
+          />
+          <div className="rounded-xl border border-border-subtle bg-[#0a0e18] p-4 font-mono text-sm">
+            {lines.length === 0 ? (
+              <p className="text-on-surface-variant">No audit logs.</p>
+            ) : (
+              lines.map((line) => (
+                <p key={line.id} className="mb-2">
+                  <span className={cn('font-semibold', severityClass(line.severity))}>
+                    [{line.severity.toUpperCase()}]
+                  </span>{' '}
+                  <span className="text-on-surface-variant">
+                    {line.actor_name ? `${line.actor_name}: ` : ''}
+                    {line.message}
+                  </span>
+                  <span className="ml-2 text-xs text-on-surface-variant/60">
+                    {formatLocalDateTime(line.created_at)}
+                  </span>
+                </p>
+              ))
+            )}
+          </div>
         </div>
-        <button type="button" className="rounded-lg border border-border-subtle px-4 py-2 text-sm hover:bg-surface-container-high">
-          Export CSV
-        </button>
-      </div>
-      <input
-        type="search"
-        placeholder="Filter by admin, event, or keyword..."
-        className="mb-4 w-full rounded-lg border border-border-subtle bg-surface-container px-3 py-2 font-mono text-sm"
-      />
-      <div className="rounded-xl border border-border-subtle bg-[#0a0e18] p-4 font-mono text-sm">
-        <div className="mb-3 flex items-center gap-2 text-xs text-success">
-          <span className="pulse-dot h-2 w-2 rounded-full bg-success" />
-          LIVE
-        </div>
-        {auditLines.map((line) => (
-          <p key={line.text} className="mb-2">
-            <span className={cn('font-semibold', line.color)}>[{line.level}]</span>{' '}
-            <span className="text-on-surface-variant">{line.text}</span>
-          </p>
-        ))}
-      </div>
-    </div>
+      </QueryState>
+    </AdminGate>
   )
 }

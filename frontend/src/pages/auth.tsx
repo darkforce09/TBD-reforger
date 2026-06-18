@@ -54,31 +54,48 @@ const AUTH_ERROR_COPY: Record<string, string> = {
 // here with the token pair in the URL fragment (kept out of the query string so
 // tokens are not logged upstream). We parse the fragment, persist the session,
 // fetch the profile via GET /me, then land the user on the dashboard.
+// parseCallback reads the OAuth callback fragment once. The fragment is present
+// synchronously at mount, so we derive the initial error / tokens during render
+// (via a lazy useState initializer) rather than calling setState inside an effect.
+function parseCallback(): { error?: string; tokens?: CallbackTokens } {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+  const errCode = params.get('error')
+  if (errCode) return { error: AUTH_ERROR_COPY[errCode] ?? AUTH_ERROR_COPY.server_error }
+
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token')
+  const expiresAt = params.get('expires_at')
+  if (!accessToken || !refreshToken || !expiresAt) return { error: AUTH_ERROR_COPY.no_session }
+
+  return {
+    tokens: {
+      accessToken,
+      refreshToken,
+      expiresAt,
+      armaLinked: params.get('arma_linked') === 'true',
+    },
+  }
+}
+
+interface CallbackTokens {
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+  armaLinked: boolean
+}
+
 export function AuthCallbackPage() {
   const navigate = useNavigate()
   const setSession = useAuthStore((s) => s.setSession)
   const setAccessToken = useAuthStore((s) => s.setAccessToken)
-  const [error, setError] = useState<string | null>(null)
+  const [parsed] = useState(parseCallback)
+  const [error, setError] = useState<string | null>(parsed.error ?? null)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''))
     // Scrub the fragment so tokens do not linger in the address bar / history.
     window.history.replaceState(null, '', window.location.pathname)
-
-    const errCode = params.get('error')
-    if (errCode) {
-      setError(AUTH_ERROR_COPY[errCode] ?? AUTH_ERROR_COPY.server_error)
-      return
-    }
-
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-    const expiresAt = params.get('expires_at')
-    if (!accessToken || !refreshToken || !expiresAt) {
-      setError(AUTH_ERROR_COPY.no_session)
-      return
-    }
-    const armaLinked = params.get('arma_linked') === 'true'
+    if (!parsed.tokens) return
+    const { accessToken, refreshToken, expiresAt, armaLinked } = parsed.tokens
 
     // Set the access token first so the api client attaches it to GET /me.
     setAccessToken(accessToken, expiresAt)
@@ -98,7 +115,7 @@ export function AuthCallbackPage() {
         useAuthStore.getState().clearSession()
         setError(AUTH_ERROR_COPY.server_error)
       })
-  }, [navigate, setSession, setAccessToken])
+  }, [navigate, setSession, setAccessToken, parsed])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">

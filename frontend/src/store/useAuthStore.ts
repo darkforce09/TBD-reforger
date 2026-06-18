@@ -9,6 +9,8 @@ interface AuthState {
   refreshToken: string | null
   expiresAt: string | null
   user: User | null
+  bootstrapping: boolean
+  setBootstrapping: (v: boolean) => void
   setSession: (session: AuthSession) => void
   setAccessToken: (token: string, expiresAt: string) => void
   clearSession: () => void
@@ -23,16 +25,25 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       expiresAt: null,
       user: null,
+      bootstrapping: false,
+      setBootstrapping: (bootstrapping) => set({ bootstrapping }),
       setSession: (session) =>
         set({
           accessToken: session.access_token,
           refreshToken: session.refresh_token,
           expiresAt: session.expires_at,
           user: session.user,
+          bootstrapping: false,
         }),
       setAccessToken: (token, expiresAt) => set({ accessToken: token, expiresAt }),
       clearSession: () =>
-        set({ accessToken: null, refreshToken: null, expiresAt: null, user: null }),
+        set({
+          accessToken: null,
+          refreshToken: null,
+          expiresAt: null,
+          user: null,
+          bootstrapping: false,
+        }),
       isAuthenticated: () => Boolean(get().accessToken && get().user),
       hasMinRole: (role) => hasMinRole(get().user?.role, role),
     }),

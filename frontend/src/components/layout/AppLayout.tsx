@@ -1,8 +1,10 @@
 import { Outlet } from 'react-router-dom'
 import { Sidebar, SidebarMobileToggle } from '@/components/layout/Sidebar'
 import { TopNav } from '@/components/layout/TopNav'
+import { useAuthBootstrap } from '@/hooks/useAuthBootstrap'
 
 export function AppLayout() {
+  useAuthBootstrap()
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <SidebarMobileToggle />

@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/useAuthStore'
+import { refreshSession } from '@/api/refresh'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
@@ -14,34 +15,34 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-let refreshing = false
-
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config
-    if (error.response?.status === 401 && !original._retry) {
+    if (error.response?.status === 401 && original && !original._retry) {
       original._retry = true
       const refreshToken = useAuthStore.getState().refreshToken
-      if (refreshToken && !refreshing) {
-        refreshing = true
+      if (refreshToken) {
         try {
-          const { data } = await axios.post(`${import.meta.env.VITE_API_URL ?? '/api/v1'}/auth/refresh`, {
-            refresh_token: refreshToken,
-          })
-          useAuthStore.getState().setSession({
-            access_token: data.access_token,
-            refresh_token: data.refresh_token,
-            expires_at: data.expires_at,
-            user: useAuthStore.getState().user!,
-            arma_linked: Boolean(useAuthStore.getState().user?.arma_id),
-          })
+          // Shared single-flight refresh: never double-spends the token even if
+          // several requests 401 at once or the bootstrap is refreshing too.
+          const data = await refreshSession()
+          const user = useAuthStore.getState().user
+          if (user) {
+            useAuthStore.getState().setSession({
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+              expires_at: data.expires_at,
+              user,
+              arma_linked: Boolean(user.arma_id),
+            })
+          } else {
+            useAuthStore.getState().setAccessToken(data.access_token, data.expires_at)
+          }
           original.headers.Authorization = `Bearer ${data.access_token}`
           return api(original)
         } catch {
           useAuthStore.getState().clearSession()
-        } finally {
-          refreshing = false
         }
       }
     }
