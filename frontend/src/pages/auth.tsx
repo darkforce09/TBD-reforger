@@ -1,6 +1,8 @@
-import { useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { api } from '@/api/client'
 import { useAuthStore } from '@/store/useAuthStore'
+import type { User } from '@/types/models/user'
 
 export function LoginPage() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated())
@@ -37,17 +39,86 @@ export function LoginPage() {
   )
 }
 
+// Human-readable copy for the error codes the backend returns in the fragment
+// (see redirectAuthError in internal/handlers/auth.go).
+const AUTH_ERROR_COPY: Record<string, string> = {
+  missing_code: 'Discord did not return an authorization code. Please try again.',
+  invalid_state: 'The sign-in request expired or was tampered with. Please try again.',
+  discord_unreachable: 'Could not reach Discord. Please try again in a moment.',
+  banned: 'This account is banned from the platform.',
+  server_error: 'Something went wrong completing sign-in. Please try again.',
+  no_session: 'No sign-in details were found. Please start from the login page.',
+}
+
+// AuthCallbackPage completes the Discord OAuth round-trip. The backend redirects
+// here with the token pair in the URL fragment (kept out of the query string so
+// tokens are not logged upstream). We parse the fragment, persist the session,
+// fetch the profile via GET /me, then land the user on the dashboard.
 export function AuthCallbackPage() {
+  const navigate = useNavigate()
+  const setSession = useAuthStore((s) => s.setSession)
+  const setAccessToken = useAuthStore((s) => s.setAccessToken)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    // Scrub the fragment so tokens do not linger in the address bar / history.
+    window.history.replaceState(null, '', window.location.pathname)
+
+    const errCode = params.get('error')
+    if (errCode) {
+      setError(AUTH_ERROR_COPY[errCode] ?? AUTH_ERROR_COPY.server_error)
+      return
+    }
+
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    const expiresAt = params.get('expires_at')
+    if (!accessToken || !refreshToken || !expiresAt) {
+      setError(AUTH_ERROR_COPY.no_session)
+      return
+    }
+    const armaLinked = params.get('arma_linked') === 'true'
+
+    // Set the access token first so the api client attaches it to GET /me.
+    setAccessToken(accessToken, expiresAt)
+    api
+      .get<{ user: User; arma_linked: boolean }>('/me')
+      .then(({ data }) => {
+        setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expires_at: expiresAt,
+          user: data.user,
+          arma_linked: data.arma_linked ?? armaLinked,
+        })
+        navigate('/', { replace: true })
+      })
+      .catch(() => {
+        useAuthStore.getState().clearSession()
+        setError(AUTH_ERROR_COPY.server_error)
+      })
+  }, [navigate, setSession, setAccessToken])
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="max-w-md rounded-xl border border-border-subtle bg-surface-container p-8 text-center">
-        <h1 className="text-xl font-semibold">Auth Callback</h1>
-        <p className="mt-2 text-sm text-on-surface-variant">
-          OAuth callback is scaffolded. Backend redirect pending (TRACKING T-002).
-        </p>
-        <Link to="/login" className="mt-4 inline-block text-primary hover:underline">
-          Back to login
-        </Link>
+        {error ? (
+          <>
+            <h1 className="text-xl font-semibold text-error">Sign-in failed</h1>
+            <p className="mt-2 text-sm text-on-surface-variant">{error}</p>
+            <Link to="/login" className="mt-4 inline-block text-primary hover:underline">
+              Back to login
+            </Link>
+          </>
+        ) : (
+          <>
+            <h1 className="text-xl font-semibold">Signing you in…</h1>
+            <p className="mt-2 text-sm text-on-surface-variant">
+              Completing the Discord handshake and loading your profile.
+            </p>
+          </>
+        )}
       </div>
     </div>
   )
