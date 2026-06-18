@@ -54,7 +54,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Git: **commit directly to `main`; never create a branch.** End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 
-## Status (latest feature work: T-008, commit 1252d18 — 2026-06-19)
+## Status (latest feature work: T-008, commit 2eef30b — 2026-06-19)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
