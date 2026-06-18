@@ -29,8 +29,13 @@ func TestEventLifecycleIntegration(t *testing.T) {
 		var evs []models.Event
 		gdb.Unscoped().Where("created_by = ?", adminID).Find(&evs)
 		for _, e := range evs {
-			gdb.Where("event_id = ?", e.ID).Delete(&models.OrbatSlot{})
-			gdb.Where("event_id = ?", e.ID).Delete(&models.EventRegistration{})
+			var ems []models.EventMission
+			gdb.Where("event_id = ?", e.ID).Find(&ems)
+			for _, em := range ems {
+				gdb.Where("event_mission_id = ?", em.ID).Delete(&models.OrbatSlot{})
+				gdb.Where("event_mission_id = ?", em.ID).Delete(&models.EventRegistration{})
+			}
+			gdb.Where("event_id = ?", e.ID).Delete(&models.EventMission{})
 		}
 		gdb.Unscoped().Where("created_by = ?", adminID).Delete(&models.Event{})
 		gdb.Where("discord_id IN ?", allUsers).Delete(&models.LeaveRequest{})
@@ -49,15 +54,9 @@ func TestEventLifecycleIntegration(t *testing.T) {
 	t2, _, _ := h.JWT().IssueAccess(u2, "enlisted", false)
 	t3, _, _ := h.JWT().IssueAccess(u3, "enlisted", false)
 
-	// --- schedule an operation with an ORBAT template and capacity 2 ---
+	// --- schedule an operation container ---
 	start := time.Now().Add(72 * time.Hour).UTC().Format(time.RFC3339)
-	createBody := fmt.Sprintf(`{
-		"mission_id":%q,"start_time":%q,"max_slots":2,"name_override":"Operation Enduring Freedom",
-		"orbat":[
-			{"faction":"US Army","callsign":"Platoon HQ","squad":"HQ","role":"Platoon Lead","count":1},
-			{"faction":"US Army","squad":"Alpha 1-1","role":"Squad Leader","count":1},
-			{"faction":"US Army","squad":"Alpha 1-1","role":"Combat Medic","count":1}
-		]}`, mission.ID.String(), start)
+	createBody := fmt.Sprintf(`{"start_time":%q,"name_override":"Operation Enduring Freedom"}`, start)
 	w := do(r, "POST", "/api/v1/events", reqOpt{bearer: adminTok, body: createBody})
 	if w.Code != http.StatusCreated {
 		t.Fatalf("create event = %d, body=%s", w.Code, w.Body.String())
@@ -66,8 +65,24 @@ func TestEventLifecycleIntegration(t *testing.T) {
 	mustJSON(t, w, &event)
 	eid := event.ID.String()
 
-	// --- ORBAT materialized: HQ(1) + Alpha 1-1(2) = 3 slots in 2 squads ---
-	w = do(r, "GET", "/api/v1/events/"+eid+"/orbat", reqOpt{bearer: t1})
+	// --- attach the mission with an explicit ORBAT (2 slots in 2 squads) ---
+	missionStart := time.Now().Add(73 * time.Hour).UTC().Format(time.RFC3339)
+	addBody := fmt.Sprintf(`{
+		"mission_id":%q,"start_time":%q,
+		"orbat":[
+			{"faction":"US Army","callsign":"Platoon HQ","squad":"HQ","role":"Platoon Lead","count":1},
+			{"faction":"US Army","squad":"Alpha 1-1","role":"Combat Medic","count":1}
+		]}`, mission.ID.String(), missionStart)
+	w = do(r, "POST", "/api/v1/events/"+eid+"/missions", reqOpt{bearer: adminTok, body: addBody})
+	if w.Code != http.StatusCreated {
+		t.Fatalf("add event mission = %d, body=%s", w.Code, w.Body.String())
+	}
+	var em models.EventMission
+	mustJSON(t, w, &em)
+	emid := em.ID.String()
+
+	// --- ORBAT materialized: HQ(1) + Alpha 1-1(1) = 2 slots in 2 squads ---
+	w = do(r, "GET", "/api/v1/event-missions/"+emid+"/orbat", reqOpt{bearer: t1})
 	var orbat struct {
 		Data []orbatSquadDTO `json:"data"`
 	}
@@ -82,12 +97,12 @@ func TestEventLifecycleIntegration(t *testing.T) {
 			}
 		}
 	}
-	if totalSlots != 3 || len(orbat.Data) != 2 || medicSlotID == "" {
+	if totalSlots != 2 || len(orbat.Data) != 2 || medicSlotID == "" {
 		t.Fatalf("unexpected ORBAT: squads=%d slots=%d medic=%q", len(orbat.Data), totalSlots, medicSlotID)
 	}
 
 	// --- u1 claims the medic slot -> registered with slot ---
-	w = do(r, "POST", "/api/v1/events/"+eid+"/register", reqOpt{bearer: t1, body: fmt.Sprintf(`{"slot_id":%q}`, medicSlotID)})
+	w = do(r, "POST", "/api/v1/event-missions/"+emid+"/register", reqOpt{bearer: t1, body: fmt.Sprintf(`{"slot_id":%q}`, medicSlotID)})
 	if w.Code != http.StatusOK {
 		t.Fatalf("u1 claim slot = %d, body=%s", w.Code, w.Body.String())
 	}
@@ -100,12 +115,12 @@ func TestEventLifecycleIntegration(t *testing.T) {
 	}
 
 	// --- u2 registers without a slot -> still within capacity (registered) ---
-	if w := do(r, "POST", "/api/v1/events/"+eid+"/register", reqOpt{bearer: t2}); w.Code != http.StatusOK {
+	if w := do(r, "POST", "/api/v1/event-missions/"+emid+"/register", reqOpt{bearer: t2}); w.Code != http.StatusOK {
 		t.Fatalf("u2 register = %d", w.Code)
 	}
 
-	// --- u3 registers -> capacity (2) exceeded -> waitlisted ---
-	w = do(r, "POST", "/api/v1/events/"+eid+"/register", reqOpt{bearer: t3})
+	// --- u3 registers -> capacity (2 slots) reached -> waitlisted ---
+	w = do(r, "POST", "/api/v1/event-missions/"+emid+"/register", reqOpt{bearer: t3})
 	var reg3 struct {
 		State string `json:"state"`
 	}
@@ -115,33 +130,33 @@ func TestEventLifecycleIntegration(t *testing.T) {
 	}
 
 	// --- u2 withdraws -> u3 promoted from waitlist to registered ---
-	if w := do(r, "DELETE", "/api/v1/events/"+eid+"/register", reqOpt{bearer: t2}); w.Code != http.StatusOK {
+	if w := do(r, "DELETE", "/api/v1/event-missions/"+emid+"/register", reqOpt{bearer: t2}); w.Code != http.StatusOK {
 		t.Fatalf("u2 withdraw = %d", w.Code)
 	}
 	var promoted models.EventRegistration
-	gdb.First(&promoted, "event_id = ? AND discord_id = ?", event.ID, u3)
+	gdb.First(&promoted, "event_mission_id = ? AND discord_id = ?", em.ID, u3)
 	if promoted.State != models.RegRegistered {
 		t.Fatalf("u3 not promoted: state=%q", promoted.State)
 	}
 
-	// --- event detail registration count = 2 (u1 + u3) ---
+	// --- event hub shows the mission dossier with the caller's state + fill ---
 	w = do(r, "GET", "/api/v1/events/"+eid, reqOpt{bearer: t1})
-	var detail struct {
-		Event struct {
-			Registered int64 `json:"registered"`
-			Percent    int   `json:"percent"`
-		} `json:"event"`
-		MyState string `json:"my_state"`
+	var hub struct {
+		Missions []struct {
+			Filled  int    `json:"filled"`
+			Total   int    `json:"total"`
+			MyState string `json:"my_state"`
+		} `json:"missions"`
 	}
-	mustJSON(t, w, &detail)
-	if detail.Event.Registered != 2 || detail.MyState != "registered" {
-		t.Fatalf("detail = %+v, want registered=2 my_state=registered", detail)
+	mustJSON(t, w, &hub)
+	if len(hub.Missions) != 1 || hub.Missions[0].Filled != 1 || hub.Missions[0].Total != 2 || hub.Missions[0].MyState != "registered" {
+		t.Fatalf("hub dossier = %+v, want 1 mission filled=1 total=2 my_state=registered", hub.Missions)
 	}
 
-	// --- admin assigns u3 to the squad-leader slot ---
-	var slSlot models.OrbatSlot
-	gdb.First(&slSlot, "event_id = ? AND role = ?", event.ID, "Squad Leader")
-	if w := do(r, "PUT", "/api/v1/events/"+eid+"/slots/"+slSlot.ID.String()+"/assign", reqOpt{bearer: adminTok, body: fmt.Sprintf(`{"discord_id":%q}`, u3)}); w.Code != http.StatusOK {
+	// --- admin assigns u3 to the Platoon Lead slot ---
+	var plSlot models.OrbatSlot
+	gdb.First(&plSlot, "event_mission_id = ? AND role = ?", em.ID, "Platoon Lead")
+	if w := do(r, "PUT", "/api/v1/event-missions/"+emid+"/slots/"+plSlot.ID.String()+"/assign", reqOpt{bearer: adminTok, body: fmt.Sprintf(`{"discord_id":%q}`, u3)}); w.Code != http.StatusOK {
 		t.Fatalf("assign slot = %d, body=%s", w.Code, w.Body.String())
 	}
 
@@ -163,7 +178,7 @@ func TestEventLifecycleIntegration(t *testing.T) {
 	gdb.Create(&models.User{DiscordID: newUser, Username: "Late Larry", Role: models.RoleEnlisted})
 	defer gdb.Unscoped().Where("discord_id = ?", newUser).Delete(&models.User{})
 	t4, _, _ := h.JWT().IssueAccess(newUser, "enlisted", false)
-	if w := do(r, "POST", "/api/v1/events/"+eid+"/register", reqOpt{bearer: t4}); w.Code != http.StatusForbidden {
+	if w := do(r, "POST", "/api/v1/event-missions/"+emid+"/register", reqOpt{bearer: t4}); w.Code != http.StatusForbidden {
 		t.Fatalf("register on locked event = %d, want 403", w.Code)
 	}
 

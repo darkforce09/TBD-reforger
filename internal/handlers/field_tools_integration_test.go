@@ -33,7 +33,6 @@ func TestFieldToolsIntegration(t *testing.T) {
 
 	gdb.Create(&models.User{DiscordID: mmID, Username: "Mortar Mike", Role: models.RoleMissionMaker})
 	gdb.Create(&mission)
-	event.MissionID = mission.ID
 	gdb.Create(&event)
 	mmTok, _, _ := h.JWT().IssueAccess(mmID, "mission_maker", false)
 

@@ -155,16 +155,68 @@ export interface MissionDetail extends MissionCard {
 
 export interface EventListItem {
   id: string
-  mission_id: string
   name_override?: string
   start_time: string
+  briefing?: string
+  banner_image_url?: string
   status: string
   registration_locked: boolean
   max_slots: number
-  mission_title: string
-  terrain: string
+  mission_count: number
   registered: number
+  filled: number
+  total_slots: number
   percent: number
+}
+
+// One mission "dossier" inside an Event Hub.
+export interface EventMissionDossier {
+  event_mission_id: string
+  mission_id: string
+  title: string
+  terrain: string
+  game_mode: string
+  briefing?: string
+  thumbnail_url?: string
+  start_time: string
+  factions: string[]
+  armory_by_faction: { faction: string; items: MissionArmory[] }[]
+  filled: number
+  total: number
+  my_state?: string
+  my_slot_id?: string | null
+}
+
+// The Event Hub: an event container plus its nested mission dossiers.
+export interface EventHub {
+  id: string
+  name_override?: string
+  start_time: string
+  briefing?: string
+  banner_image_url?: string
+  status: string
+  registration_locked: boolean
+  max_slots: number
+  missions: EventMissionDossier[]
+}
+
+// A single ORBAT slot row inside a squad (mirrors the Go orbatSlotDTO).
+export interface OrbatSlot {
+  id: string
+  role: string
+  slot_index: number
+  assigned_to?: string | null
+  assigned_name?: string
+}
+
+// A squad grouping of ORBAT slots (mirrors the Go orbatSquadDTO).
+export interface OrbatSquad {
+  faction: string
+  callsign?: string
+  squad: string
+  filled: number
+  total: number
+  slots: OrbatSlot[]
 }
 
 export interface WikiPage {

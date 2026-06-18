@@ -54,8 +54,8 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Git: **commit directly to `main`; never create a branch.** End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 
-## Status (latest feature work: T-004, commit fad698b — 2026-06-18)
-Commits after T-004 (T-005+) are documentation only; the feature status below is current.
+## Status (latest feature work: T-008, commit 1252d18 — 2026-06-19)
+T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
 - T-001 initial backend (full schema + all handlers) + frontend scaffold.
@@ -67,10 +67,30 @@ Commits after T-004 (T-005+) are documentation only; the feature status below is
   verification: refresh-token rotation/persistence + single-flight refresh, several
   TS↔Go contract mismatches (pending_code, armory quantity, next_cursor), leaderboards
   empty `[]`, external avatar fallback, lint.
+- T-008 **Event → Campaign refactor** (multi-mission events + ORBAT selection):
+  - An `Event` is now a container; missions attach via the new `event_missions` table
+    (`internal/models/event.go`). `orbat_slots`/`event_registrations` key on
+    `event_mission_id` (was `event_id`); `events.mission_id` dropped, `briefing` +
+    `banner_image_url` added. Migration `internal/db/migrations/02_campaign_refactor.sql`
+    (clean cutover, idempotent, `to_regclass`-guarded) runs pre-AutoMigrate.
+  - **Automated ORBAT:** `POST /events/:id/missions` parses the mission version's
+    `json_payload.orbat` (`{faction,callsign,squad,role,count}[]`) and materializes slots
+    — no manual squad creation. Reuses `parseOrbatTemplate`/`materializeSlots`.
+  - Slot/registration actions moved to top-level `/event-missions/:emid/...`
+    (orbat, register, slots/:slotId/assign). `GET /events/:id` returns the hub with
+    nested mission dossiers (factions, armory-by-faction, fill counts, caller's state).
+    Registration is per-mission; capacity = ORBAT slot count.
+  - Frontend: `pages/events.tsx` = **EventHubPage** + macOS split-pane
+    **OrbatSelectionPage**; Event Manager rebuilt as create-container + attach-mission;
+    schedule/dashboard now route to the hub. Date formatters in `lib/format.ts` are
+    invalid-date-safe.
+  - Verified: `make test-it`, frontend build+lint, and a live dev-login API smoke
+    (create event → attach mission → auto-ORBAT → claim slot → withdraw).
 
 **Not yet built / next:**
 - The 2D mission editor UI (backend stores/serves `json_payload`; the visual editor
-  page is the big remaining frontend piece).
+  page is the big remaining frontend piece). The Event Hub "Open in Mission Planner"
+  button is a deliberate disabled stub until this lands.
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API

@@ -16,17 +16,53 @@ export function useLogout() {
   })
 }
 
-export function useRegisterEvent() {
+// Register for a specific mission within an event, optionally claiming a slot.
+export function useRegisterMission(emid: string) {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (eventId: string) => {
-      const { data } = await api.post(`/events/${eventId}/register`, {})
+    mutationFn: async (slotId?: string) => {
+      const { data } = await api.post(`/event-missions/${emid}/register`, {
+        slot_id: slotId,
+      })
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orbat', emid] })
+      qc.invalidateQueries({ queryKey: ['events'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      qc.invalidateQueries({ queryKey: ['deployments'] })
+    },
+  })
+}
+
+export function useWithdrawMission(emid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.delete(`/event-missions/${emid}/register`)
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orbat', emid] })
+      qc.invalidateQueries({ queryKey: ['events'] })
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      qc.invalidateQueries({ queryKey: ['deployments'] })
+    },
+  })
+}
+
+// Attach a mission to an event; the backend auto-materializes the ORBAT from
+// the mission.json payload.
+export function useAddEventMission(eventId: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (body: { mission_id: string; start_time: string }) => {
+      const { data } = await api.post(`/events/${eventId}/missions`, body)
       return data
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['events'] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
-      qc.invalidateQueries({ queryKey: ['deployments'] })
+      qc.invalidateQueries({ queryKey: ['events', eventId] })
     },
   })
 }
@@ -75,10 +111,11 @@ export function useCreateEvent() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (body: {
-      mission_id: string
       start_time: string
-      max_slots: number
       name_override?: string
+      briefing?: string
+      banner_image_url?: string
+      max_slots?: number
       registration_locked?: boolean
     }) => {
       const { data } = await api.post('/events', body)

@@ -7,8 +7,10 @@ import type {
   AuditLogResponse,
   DashboardResponse,
   DeploymentsResponse,
+  EventHub,
   EventListItem,
   LeaderboardResponse,
+  OrbatSquad,
   LinkStatus,
   MeResponse,
   MissionCard,
@@ -115,6 +117,25 @@ export function useEvents(scope = 'upcoming') {
     queryFn: async () =>
       (await api.get<Paginated<EventListItem>>('/events', { params: { scope } })).data,
     enabled: authed,
+  })
+}
+
+export function useEvent(id: string | undefined) {
+  const authed = useAuthed()
+  return useQuery({
+    queryKey: ['events', id],
+    queryFn: async () => (await api.get<EventHub>(`/events/${id}`)).data,
+    enabled: authed && Boolean(id),
+  })
+}
+
+export function useOrbat(emid: string | undefined) {
+  const authed = useAuthed()
+  return useQuery({
+    queryKey: ['orbat', emid],
+    queryFn: async () =>
+      (await api.get<{ data: OrbatSquad[] }>(`/event-missions/${emid}/orbat`)).data.data,
+    enabled: authed && Boolean(emid),
   })
 }
 

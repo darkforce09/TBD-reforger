@@ -53,11 +53,16 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 		Where("start_time > ? AND status::text IN ?", now, []string{"scheduled", "open", "live"}).
 		Order("start_time ASC").First(&ev).Error
 	if err == nil {
+		// Earliest mission in the event provides the terrain headline.
+		var em models.EventMission
 		var m models.Mission
-		_ = h.db.First(&m, "id = ?", ev.MissionID).Error
+		if e := h.db.Where("event_id = ?", ev.ID).Order("start_time ASC").First(&em).Error; e == nil {
+			_ = h.db.First(&m, "id = ?", em.MissionID).Error
+		}
 		var registered int64
 		h.db.Model(&models.EventRegistration{}).
-			Where("event_id = ? AND state::text IN ?", ev.ID, []string{"registered", "waitlisted"}).
+			Joins("JOIN event_missions ON event_missions.id = event_registrations.event_mission_id").
+			Where("event_missions.event_id = ? AND event_registrations.state::text IN ?", ev.ID, []string{"registered", "waitlisted"}).
 			Count(&registered)
 		name := ev.NameOverride
 		if name == "" {
@@ -77,23 +82,26 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 		return
 	}
 
-	// Caller's assigned ORBAT slot for an upcoming operation.
+	// Caller's assigned ORBAT slot for an upcoming mission.
 	var slot models.OrbatSlot
 	err = h.db.
-		Joins("JOIN events ON events.id = orbat_slots.event_id").
-		Where("orbat_slots.assigned_to = ? AND events.start_time > ? AND events.deleted_at IS NULL", me, now).
-		Order("events.start_time ASC").First(&slot).Error
+		Joins("JOIN event_missions ON event_missions.id = orbat_slots.event_mission_id").
+		Joins("JOIN events ON events.id = event_missions.event_id").
+		Where("orbat_slots.assigned_to = ? AND event_missions.start_time > ? AND events.deleted_at IS NULL", me, now).
+		Order("event_missions.start_time ASC").First(&slot).Error
 	if err == nil {
+		var aem models.EventMission
+		_ = h.db.First(&aem, "id = ?", slot.EventMissionID).Error
 		var aev models.Event
-		_ = h.db.First(&aev, "id = ?", slot.EventID).Error
+		_ = h.db.First(&aev, "id = ?", aem.EventID).Error
 		var m models.Mission
-		_ = h.db.First(&m, "id = ?", aev.MissionID).Error
+		_ = h.db.First(&m, "id = ?", aem.MissionID).Error
 		name := aev.NameOverride
 		if name == "" {
 			name = m.Title
 		}
 		resp["my_assignment"] = assignmentSummary{
-			EventID: slot.EventID.String(),
+			EventID: aem.EventID.String(),
 			Name:    name,
 			Faction: slot.Faction,
 			Squad:   slot.Squad,

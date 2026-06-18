@@ -3,7 +3,6 @@ import { MaterialIcon } from '@/components/MaterialIcon'
 import { AuthGate } from '@/components/AuthGate'
 import { QueryState } from '@/components/QueryState'
 import { useDashboard } from '@/hooks/queries'
-import { useRegisterEvent } from '@/hooks/mutations'
 import {
   countdownLabel,
   formatBytes,
@@ -11,25 +10,15 @@ import {
   formatShortDate,
   terrainLabel,
 } from '@/lib/format'
-import { toast } from 'sonner'
 
 export function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
-  const register = useRegisterEvent()
 
   const next = data?.next_event
   const assignment = data?.my_assignment
   const server = data?.server_status
   const modpack = data?.current_modpack
   const announcements = data?.recent_announcements ?? []
-
-  const handleRegister = () => {
-    if (!next?.event_id) return
-    register.mutate(next.event_id, {
-      onSuccess: () => toast.success('Registered for deployment'),
-      onError: () => toast.error('Registration failed'),
-    })
-  }
 
   return (
     <AuthGate>
@@ -53,14 +42,12 @@ export function DashboardPage() {
               </p>
             </div>
             {next && (
-              <button
-                type="button"
-                onClick={handleRegister}
-                disabled={register.isPending}
-                className="z-10 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary disabled:opacity-50"
+              <Link
+                to={`/events/${next.event_id}`}
+                className="z-10 rounded-xl bg-primary px-6 py-3 text-sm font-medium text-on-primary"
               >
-                Register for Deployment
-              </button>
+                Open Operation Hub
+              </Link>
             )}
           </section>
 

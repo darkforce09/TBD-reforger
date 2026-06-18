@@ -23,6 +23,7 @@ var migrationsFS embed.FS
 var preMigrationFiles = []string{
 	"migrations/00_extensions.sql",
 	"migrations/01_enums.sql",
+	"migrations/02_campaign_refactor.sql",
 }
 
 // postMigrationFiles run after AutoMigrate: index types and materialized views
@@ -47,6 +48,7 @@ func allModels() []any {
 		&models.MissionArmory{},
 		&models.MissionBookmark{},
 		&models.Event{},
+		&models.EventMission{},
 		&models.OrbatSlot{},
 		&models.EventRegistration{},
 		&models.LeaveRequest{},

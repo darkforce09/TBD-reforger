@@ -111,12 +111,13 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	authed.POST("/missions/:id/bookmark", h.BookmarkMission)
 	authed.DELETE("/missions/:id/bookmark", h.RemoveBookmark)
 
-	// Events & ORBAT (M6): member reads + registration; My Deployments + LOA.
+	// Events & ORBAT (M6): event hub reads, then per-mission ORBAT + registration
+	// keyed on event_mission_id (a campaign event holds many missions).
 	authed.GET("/events", h.ListEvents)
 	authed.GET("/events/:id", h.GetEvent)
-	authed.GET("/events/:id/orbat", h.GetOrbat)
-	authed.POST("/events/:id/register", h.RegisterForEvent)
-	authed.DELETE("/events/:id/register", h.WithdrawFromEvent)
+	authed.GET("/event-missions/:emid/orbat", h.GetOrbat)
+	authed.POST("/event-missions/:emid/register", h.RegisterForEventMission)
+	authed.DELETE("/event-missions/:emid/register", h.WithdrawFromEventMission)
 	authed.GET("/me/deployments", h.GetMyDeployments)
 	authed.POST("/me/leave-requests", h.SubmitLeave)
 	authed.GET("/me/leave-requests", h.ListMyLeave)
@@ -148,8 +149,10 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	admin.POST("/events", h.CreateEvent)
 	admin.PATCH("/events/:id", h.UpdateEvent)
 	admin.DELETE("/events/:id", h.DeleteEvent)
-	admin.PUT("/events/:id/slots/:slotId/assign", h.AssignSlot)
-	admin.DELETE("/events/:id/slots/:slotId/assign", h.ClearSlot)
+	admin.POST("/events/:id/missions", h.AddEventMission)
+	admin.DELETE("/events/:id/missions/:emid", h.RemoveEventMission)
+	admin.PUT("/event-missions/:emid/slots/:slotId/assign", h.AssignSlot)
+	admin.DELETE("/event-missions/:emid/slots/:slotId/assign", h.ClearSlot)
 	admin.GET("/admin/leave-requests", h.ListAllLeave)
 	admin.PATCH("/admin/leave-requests/:id", h.ReviewLeave)
 

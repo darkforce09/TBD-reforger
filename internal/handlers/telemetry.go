@@ -280,8 +280,8 @@ func (h *Handler) recomputeUserStats(discordID string) {
 	h.db.Model(&models.EventRegistration{}).
 		Where("discord_id = ? AND state::text = ?", discordID, "attended").Count(&attended)
 	h.db.Model(&models.EventRegistration{}).
-		Joins("JOIN events ON events.id = event_registrations.event_id").
-		Where("event_registrations.discord_id = ? AND events.start_time <= ?", discordID, time.Now()).
+		Joins("JOIN event_missions ON event_missions.id = event_registrations.event_mission_id").
+		Where("event_registrations.discord_id = ? AND event_missions.start_time <= ?", discordID, time.Now()).
 		Count(&pastRegistered)
 
 	rate := 0.0

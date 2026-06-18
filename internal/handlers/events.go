@@ -49,6 +49,8 @@ type orbatTemplateItem struct {
 }
 
 // parseOrbatTemplate extracts an "orbat" array from a mission version payload.
+// This is the automated ORBAT source: factions/squads/roles are derived from the
+// uploaded mission.json rather than created by hand.
 func parseOrbatTemplate(payload []byte) []orbatTemplateItem {
 	var p struct {
 		Orbat []orbatTemplateItem `json:"orbat"`
@@ -57,9 +59,10 @@ func parseOrbatTemplate(payload []byte) []orbatTemplateItem {
 	return p.Orbat
 }
 
-// materializeSlots expands template rows into OrbatSlot records. slot_index is
-// sequential within a squad (across roles) to satisfy the unique constraint.
-func materializeSlots(tx *gorm.DB, eventID uuid.UUID, items []orbatTemplateItem) error {
+// materializeSlots expands template rows into OrbatSlot records for one mission
+// within an event. slot_index is sequential within a squad (across roles) to
+// satisfy the unique constraint.
+func materializeSlots(tx *gorm.DB, eventMissionID uuid.UUID, items []orbatTemplateItem) error {
 	squadIdx := map[string]int{}
 	rows := make([]models.OrbatSlot, 0)
 	for _, it := range items {
@@ -69,12 +72,12 @@ func materializeSlots(tx *gorm.DB, eventID uuid.UUID, items []orbatTemplateItem)
 		}
 		for i := 0; i < count; i++ {
 			rows = append(rows, models.OrbatSlot{
-				EventID:   eventID,
-				Faction:   it.Faction,
-				Callsign:  it.Callsign,
-				Squad:     it.Squad,
-				Role:      it.Role,
-				SlotIndex: squadIdx[it.Squad],
+				EventMissionID: eventMissionID,
+				Faction:        it.Faction,
+				Callsign:       it.Callsign,
+				Squad:          it.Squad,
+				Role:           it.Role,
+				SlotIndex:      squadIdx[it.Squad],
 			})
 			squadIdx[it.Squad]++
 		}
@@ -85,32 +88,87 @@ func materializeSlots(tx *gorm.DB, eventID uuid.UUID, items []orbatTemplateItem)
 	return tx.Create(&rows).Error
 }
 
-// createEventInput is the Event Manager "Schedule Operation" body.
-type createEventInput struct {
-	MissionID          string              `json:"mission_id" binding:"required"`
-	StartTime          time.Time           `json:"start_time" binding:"required"`
-	MaxSlots           int                 `json:"max_slots" binding:"required"`
-	NameOverride       string              `json:"name_override"`
-	RegistrationLocked bool                `json:"registration_locked"`
-	Status             string              `json:"status"`
-	Orbat              []orbatTemplateItem `json:"orbat"` // optional; else taken from mission
+// orbatTemplateForMission resolves a mission's ORBAT template from its current
+// published version payload.
+func (h *Handler) orbatTemplateForMission(m *models.Mission) []orbatTemplateItem {
+	if m.CurrentVersionID == nil {
+		return nil
+	}
+	var v models.MissionVersion
+	if err := h.db.First(&v, "id = ?", *m.CurrentVersionID).Error; err != nil {
+		return nil
+	}
+	return parseOrbatTemplate(v.JSONPayload)
 }
 
-// CreateEvent schedules an operation and materializes its ORBAT (admin only).
+// --- Event container CRUD ---
+
+// createEventInput is the Event Manager "Schedule Operation" body. An event is
+// now a container; missions are attached separately via AddEventMission.
+type createEventInput struct {
+	StartTime          time.Time `json:"start_time" binding:"required"`
+	NameOverride       string    `json:"name_override"`
+	Briefing           string    `json:"briefing"`
+	BannerImageURL     string    `json:"banner_image_url"`
+	MaxSlots           int       `json:"max_slots"`
+	RegistrationLocked bool      `json:"registration_locked"`
+	Status             string    `json:"status"`
+}
+
+// CreateEvent schedules an operation container (admin only). ORBAT slots are
+// materialized per mission when missions are attached.
 func (h *Handler) CreateEvent(c *gin.Context) {
 	var in createEventInput
 	if err := c.ShouldBindJSON(&in); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "mission_id, start_time and max_slots are required"})
-		return
-	}
-	missionID, err := uuid.Parse(in.MissionID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission_id"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "start_time is required"})
 		return
 	}
 	status, ok := validEventStatus(in.Status)
 	if !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
+		return
+	}
+
+	event := models.Event{
+		NameOverride:       in.NameOverride,
+		StartTime:          in.StartTime,
+		Briefing:           in.Briefing,
+		BannerImageURL:     in.BannerImageURL,
+		Status:             status,
+		RegistrationLocked: in.RegistrationLocked,
+		MaxSlots:           in.MaxSlots,
+		CreatedBy:          middleware.DiscordID(c),
+	}
+	if err := h.db.Create(&event).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create event"})
+		return
+	}
+	c.JSON(http.StatusCreated, event)
+}
+
+// addMissionInput attaches a mission to an event with its own start time. An
+// explicit orbat overrides the mission payload; otherwise the payload is parsed.
+type addMissionInput struct {
+	MissionID string              `json:"mission_id" binding:"required"`
+	StartTime time.Time           `json:"start_time" binding:"required"`
+	Orbat     []orbatTemplateItem `json:"orbat"`
+}
+
+// AddEventMission attaches a mission to an event and auto-materializes its ORBAT
+// from the mission.json payload (admin only).
+func (h *Handler) AddEventMission(c *gin.Context) {
+	ev, ok := h.loadEvent(c)
+	if !ok {
+		return
+	}
+	var in addMissionInput
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "mission_id and start_time are required"})
+		return
+	}
+	missionID, err := uuid.Parse(in.MissionID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission_id"})
 		return
 	}
 	var mission models.Mission
@@ -121,44 +179,71 @@ func (h *Handler) CreateEvent(c *gin.Context) {
 
 	// Resolve the ORBAT template: explicit input wins, else the mission payload.
 	template := in.Orbat
-	if len(template) == 0 && mission.CurrentVersionID != nil {
-		var v models.MissionVersion
-		if err := h.db.First(&v, "id = ?", *mission.CurrentVersionID).Error; err == nil {
-			template = parseOrbatTemplate(v.JSONPayload)
-		}
+	if len(template) == 0 {
+		template = h.orbatTemplateForMission(&mission)
 	}
 
-	event := models.Event{
-		MissionID:          missionID,
-		NameOverride:       in.NameOverride,
-		StartTime:          in.StartTime,
-		Status:             status,
-		RegistrationLocked: in.RegistrationLocked,
-		MaxSlots:           in.MaxSlots,
-		CreatedBy:          middleware.DiscordID(c),
+	em := models.EventMission{
+		EventID:   ev.ID,
+		MissionID: missionID,
+		StartTime: in.StartTime,
 	}
 	err = h.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Create(&event).Error; err != nil {
+		if err := tx.Create(&em).Error; err != nil {
 			return err
 		}
-		return materializeSlots(tx, event.ID, template)
+		return materializeSlots(tx, em.ID, template)
 	})
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create event"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not attach mission"})
 		return
 	}
-
-	_ = h.db.First(&event, "id = ?", event.ID).Error
-	c.JSON(http.StatusCreated, event)
+	c.JSON(http.StatusCreated, em)
 }
 
-// eventListItem is an Upcoming Operations row.
+// RemoveEventMission detaches a mission from an event, removing its ORBAT slots
+// and registrations (admin only).
+func (h *Handler) RemoveEventMission(c *gin.Context) {
+	ev, ok := h.loadEvent(c)
+	if !ok {
+		return
+	}
+	emID, err := uuid.Parse(c.Param("emid"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission id"})
+		return
+	}
+	txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		var em models.EventMission
+		if err := tx.First(&em, "id = ? AND event_id = ?", emID, ev.ID).Error; err != nil {
+			return gorm.ErrRecordNotFound
+		}
+		tx.Where("event_mission_id = ?", emID).Delete(&models.EventRegistration{})
+		tx.Where("event_mission_id = ?", emID).Delete(&models.OrbatSlot{})
+		return tx.Delete(&em).Error
+	})
+	if txErr == gorm.ErrRecordNotFound {
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found in event"})
+		return
+	}
+	if txErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not remove mission"})
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
+// --- Event lists ---
+
+// eventListItem is an Upcoming Operations row. An event no longer maps to a
+// single mission, so it carries an aggregate mission count and fill stats.
 type eventListItem struct {
 	models.Event
-	MissionTitle string `json:"mission_title"`
-	Terrain      string `json:"terrain"`
-	Registered   int64  `json:"registered"`
-	Percent      int    `json:"percent"`
+	MissionCount int   `json:"mission_count"`
+	Registered   int64 `json:"registered"`
+	Filled       int   `json:"filled"`
+	TotalSlots   int   `json:"total_slots"`
+	Percent      int   `json:"percent"`
 }
 
 // ListEvents returns operations for the Upcoming/Calendar views.
@@ -194,85 +279,211 @@ func (h *Handler) ListEvents(c *gin.Context) {
 	})
 }
 
-// decorateEvents batch-loads mission titles/terrain and registration counts.
+// decorateEvents batch-loads per-event mission counts, registration counts, and
+// ORBAT fill totals aggregated across each event's missions.
 func (h *Handler) decorateEvents(events []models.Event) []eventListItem {
-	missionIDs := make([]uuid.UUID, 0, len(events))
 	eventIDs := make([]uuid.UUID, 0, len(events))
 	for _, e := range events {
-		missionIDs = append(missionIDs, e.MissionID)
 		eventIDs = append(eventIDs, e.ID)
 	}
 
-	missions := map[uuid.UUID]models.Mission{}
-	if len(missionIDs) > 0 {
-		var ms []models.Mission
-		h.db.Where("id IN ?", missionIDs).Find(&ms)
-		for _, m := range ms {
-			missions[m.ID] = m
+	// Map each event to its event_mission ids.
+	type emRow struct {
+		ID      uuid.UUID
+		EventID uuid.UUID
+	}
+	missionsByEvent := map[uuid.UUID][]uuid.UUID{}
+	emToEvent := map[uuid.UUID]uuid.UUID{}
+	if len(eventIDs) > 0 {
+		var ems []emRow
+		h.db.Model(&models.EventMission{}).Select("id, event_id").
+			Where("event_id IN ?", eventIDs).Scan(&ems)
+		for _, r := range ems {
+			missionsByEvent[r.EventID] = append(missionsByEvent[r.EventID], r.ID)
+			emToEvent[r.ID] = r.EventID
 		}
 	}
 
-	counts := map[uuid.UUID]int64{}
-	if len(eventIDs) > 0 {
-		type row struct {
-			EventID uuid.UUID
-			N       int64
+	emIDs := make([]uuid.UUID, 0, len(emToEvent))
+	for id := range emToEvent {
+		emIDs = append(emIDs, id)
+	}
+
+	// Registration counts per event_mission, summed into the parent event.
+	regByEvent := map[uuid.UUID]int64{}
+	slotTotalByEvent := map[uuid.UUID]int{}
+	slotFilledByEvent := map[uuid.UUID]int{}
+	if len(emIDs) > 0 {
+		type cntRow struct {
+			EventMissionID uuid.UUID
+			N              int64
 		}
-		var rows []row
+		var regRows []cntRow
 		h.db.Model(&models.EventRegistration{}).
-			Select("event_id, count(*) as n").
-			Where("event_id IN ? AND state::text = ?", eventIDs, "registered").
-			Group("event_id").Scan(&rows)
-		for _, r := range rows {
-			counts[r.EventID] = r.N
+			Select("event_mission_id, count(*) as n").
+			Where("event_mission_id IN ? AND state::text = ?", emIDs, "registered").
+			Group("event_mission_id").Scan(&regRows)
+		for _, r := range regRows {
+			regByEvent[emToEvent[r.EventMissionID]] += r.N
+		}
+
+		type slotRow struct {
+			EventMissionID uuid.UUID
+			Total          int
+			Filled         int
+		}
+		var slotRows []slotRow
+		h.db.Model(&models.OrbatSlot{}).
+			Select("event_mission_id, count(*) as total, count(assigned_to) as filled").
+			Where("event_mission_id IN ?", emIDs).
+			Group("event_mission_id").Scan(&slotRows)
+		for _, r := range slotRows {
+			slotTotalByEvent[emToEvent[r.EventMissionID]] += r.Total
+			slotFilledByEvent[emToEvent[r.EventMissionID]] += r.Filled
 		}
 	}
 
 	out := make([]eventListItem, 0, len(events))
 	for _, e := range events {
-		m := missions[e.MissionID]
-		name := e.NameOverride
-		if name == "" {
-			name = m.Title
-		}
-		registered := counts[e.ID]
+		total := slotTotalByEvent[e.ID]
+		filled := slotFilledByEvent[e.ID]
 		percent := 0
-		if e.MaxSlots > 0 {
-			percent = int(registered * 100 / int64(e.MaxSlots))
+		if total > 0 {
+			percent = filled * 100 / total
 		}
-		item := eventListItem{Event: e, MissionTitle: name, Terrain: string(m.Terrain), Registered: registered, Percent: percent}
-		out = append(out, item)
+		out = append(out, eventListItem{
+			Event:        e,
+			MissionCount: len(missionsByEvent[e.ID]),
+			Registered:   regByEvent[e.ID],
+			Filled:       filled,
+			TotalSlots:   total,
+			Percent:      percent,
+		})
 	}
 	return out
 }
 
-// GetEvent returns event detail including the caller's registration state.
+// --- Event Hub (nested missions) ---
+
+type armoryFactionDTO struct {
+	Faction string                 `json:"faction"`
+	Items   []models.MissionArmory `json:"items"`
+}
+
+// eventMissionDossier is one mission's "dossier" inside the Event Hub.
+type eventMissionDossier struct {
+	EventMissionID string             `json:"event_mission_id"`
+	MissionID      string             `json:"mission_id"`
+	Title          string             `json:"title"`
+	Terrain        string             `json:"terrain"`
+	GameMode       string             `json:"game_mode"`
+	Briefing       string             `json:"briefing,omitempty"`
+	ThumbnailURL   string             `json:"thumbnail_url,omitempty"`
+	StartTime      time.Time          `json:"start_time"`
+	Factions       []string           `json:"factions"`
+	Armory         []armoryFactionDTO `json:"armory_by_faction"`
+	Filled         int                `json:"filled"`
+	Total          int                `json:"total"`
+	MyState        string             `json:"my_state,omitempty"`
+	MySlotID       *string            `json:"my_slot_id,omitempty"`
+}
+
+type eventHubDTO struct {
+	models.Event
+	Missions []eventMissionDossier `json:"missions"`
+}
+
+// armoryByFaction groups a mission's armory rows by faction, preserving order.
+func (h *Handler) armoryByFaction(missionID uuid.UUID) []armoryFactionDTO {
+	var items []models.MissionArmory
+	h.db.Where("mission_id = ?", missionID).Order("sort_order ASC").Find(&items)
+	order := make([]string, 0)
+	groups := map[string][]models.MissionArmory{}
+	for _, it := range items {
+		if _, ok := groups[it.Faction]; !ok {
+			order = append(order, it.Faction)
+		}
+		groups[it.Faction] = append(groups[it.Faction], it)
+	}
+	out := make([]armoryFactionDTO, 0, len(order))
+	for _, f := range order {
+		out = append(out, armoryFactionDTO{Faction: f, Items: groups[f]})
+	}
+	return out
+}
+
+// GetEvent returns the Event Hub: event fields plus its nested mission dossiers
+// (briefing, assets per faction, fill counts, and the caller's registration).
 func (h *Handler) GetEvent(c *gin.Context) {
 	ev, ok := h.loadEvent(c)
 	if !ok {
 		return
 	}
-	item := h.decorateEvents([]models.Event{*ev})[0]
+	me := middleware.DiscordID(c)
 
-	var reg models.EventRegistration
-	myState := ""
-	var mySlot *string
-	if err := h.db.First(&reg, "event_id = ? AND discord_id = ?", ev.ID, middleware.DiscordID(c)).Error; err == nil {
-		myState = string(reg.State)
-		if reg.SlotID != nil {
-			s := reg.SlotID.String()
-			mySlot = &s
+	var ems []models.EventMission
+	h.db.Where("event_id = ?", ev.ID).Order("start_time ASC").Find(&ems)
+
+	missions := make([]eventMissionDossier, 0, len(ems))
+	for _, em := range ems {
+		var m models.Mission
+		if err := h.db.First(&m, "id = ?", em.MissionID).Error; err != nil {
+			continue
 		}
+
+		// Slot fill counts + distinct factions for this mission.
+		var slots []models.OrbatSlot
+		h.db.Where("event_mission_id = ?", em.ID).Find(&slots)
+		filled := 0
+		factionSeen := map[string]bool{}
+		factions := make([]string, 0)
+		for _, s := range slots {
+			if s.AssignedTo != nil {
+				filled++
+			}
+			if !factionSeen[s.Faction] {
+				factionSeen[s.Faction] = true
+				factions = append(factions, s.Faction)
+			}
+		}
+
+		d := eventMissionDossier{
+			EventMissionID: em.ID.String(),
+			MissionID:      m.ID.String(),
+			Title:          m.Title,
+			Terrain:        string(m.Terrain),
+			GameMode:       string(m.GameMode),
+			Briefing:       m.Briefing,
+			ThumbnailURL:   m.ThumbnailURL,
+			StartTime:      em.StartTime,
+			Factions:       factions,
+			Armory:         h.armoryByFaction(m.ID),
+			Filled:         filled,
+			Total:          len(slots),
+		}
+
+		// Caller's registration state for this mission.
+		var reg models.EventRegistration
+		if err := h.db.First(&reg, "event_mission_id = ? AND discord_id = ?", em.ID, me).Error; err == nil {
+			d.MyState = string(reg.State)
+			if reg.SlotID != nil {
+				s := reg.SlotID.String()
+				d.MySlotID = &s
+			}
+		}
+		missions = append(missions, d)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"event": item, "my_state": myState, "my_slot_id": mySlot})
+	c.JSON(http.StatusOK, eventHubDTO{Event: *ev, Missions: missions})
 }
 
-// patchEventInput edits schedule/lock/status.
+// patchEventInput edits schedule/lock/status and event lore.
 type patchEventInput struct {
 	StartTime          *time.Time `json:"start_time"`
 	MaxSlots           *int       `json:"max_slots"`
 	NameOverride       *string    `json:"name_override"`
+	Briefing           *string    `json:"briefing"`
+	BannerImageURL     *string    `json:"banner_image_url"`
 	RegistrationLocked *bool      `json:"registration_locked"`
 	Status             *string    `json:"status"`
 }
@@ -297,6 +508,12 @@ func (h *Handler) UpdateEvent(c *gin.Context) {
 	}
 	if in.NameOverride != nil {
 		updates["name_override"] = *in.NameOverride
+	}
+	if in.Briefing != nil {
+		updates["briefing"] = *in.Briefing
+	}
+	if in.BannerImageURL != nil {
+		updates["banner_image_url"] = *in.BannerImageURL
 	}
 	if in.RegistrationLocked != nil {
 		updates["registration_locked"] = *in.RegistrationLocked
@@ -332,7 +549,7 @@ func (h *Handler) DeleteEvent(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// --- ORBAT ---
+// --- ORBAT (per event_mission) ---
 
 type orbatSlotDTO struct {
 	ID           string  `json:"id"`
@@ -351,14 +568,14 @@ type orbatSquadDTO struct {
 	Slots    []orbatSlotDTO `json:"slots"`
 }
 
-// GetOrbat returns the ORBAT grouped by squad with filled/total counts.
+// GetOrbat returns a mission's ORBAT grouped by squad with filled/total counts.
 func (h *Handler) GetOrbat(c *gin.Context) {
-	ev, ok := h.loadEvent(c)
+	em, ok := h.loadEventMission(c)
 	if !ok {
 		return
 	}
 	var slots []models.OrbatSlot
-	h.db.Where("event_id = ?", ev.ID).
+	h.db.Where("event_mission_id = ?", em.ID).
 		Order("faction ASC").Order("squad ASC").Order("slot_index ASC").
 		Find(&slots)
 
@@ -404,17 +621,23 @@ func (h *Handler) GetOrbat(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": out})
 }
 
-// --- Registration ---
+// --- Registration (per event_mission) ---
 
 type registerBody struct {
 	SlotID string `json:"slot_id"`
 }
 
-// RegisterForEvent signs the caller up, claiming a slot if provided, otherwise
-// granting a confirmed spot or a waitlist place based on capacity.
-func (h *Handler) RegisterForEvent(c *gin.Context) {
-	ev, ok := h.loadEvent(c)
+// RegisterForEventMission signs the caller up for a specific mission within an
+// event, claiming a slot if provided, otherwise granting a confirmed spot or a
+// waitlist place based on the mission's slot capacity.
+func (h *Handler) RegisterForEventMission(c *gin.Context) {
+	em, ok := h.loadEventMission(c)
 	if !ok {
+		return
+	}
+	var ev models.Event
+	if err := h.db.First(&ev, "id = ?", em.EventID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "event not found"})
 		return
 	}
 	me := middleware.DiscordID(c)
@@ -432,9 +655,11 @@ func (h *Handler) RegisterForEvent(c *gin.Context) {
 
 	var result models.EventRegistration
 	txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		var capacity int64
+		tx.Model(&models.OrbatSlot{}).Where("event_mission_id = ?", em.ID).Count(&capacity)
 		var registered int64
 		tx.Model(&models.EventRegistration{}).
-			Where("event_id = ? AND state::text = ? AND discord_id <> ?", ev.ID, "registered", me).
+			Where("event_mission_id = ? AND state::text = ? AND discord_id <> ?", em.ID, "registered", me).
 			Count(&registered)
 
 		state := models.RegRegistered
@@ -446,7 +671,7 @@ func (h *Handler) RegisterForEvent(c *gin.Context) {
 				return errBadSlot
 			}
 			var slot models.OrbatSlot
-			if err := tx.First(&slot, "id = ? AND event_id = ?", sid, ev.ID).Error; err != nil {
+			if err := tx.First(&slot, "id = ? AND event_mission_id = ?", sid, em.ID).Error; err != nil {
 				return errSlotNotFound
 			}
 			if slot.AssignedTo != nil && *slot.AssignedTo != me {
@@ -458,18 +683,18 @@ func (h *Handler) RegisterForEvent(c *gin.Context) {
 				return err
 			}
 			slotID = &sid
-		} else if registered >= int64(ev.MaxSlots) {
+		} else if capacity > 0 && registered >= capacity {
 			state = models.RegWaitlisted
 		}
 
 		reg := models.EventRegistration{
-			EventID:   ev.ID,
-			DiscordID: me,
-			SlotID:    slotID,
-			State:     state,
+			EventMissionID: em.ID,
+			DiscordID:      me,
+			SlotID:         slotID,
+			State:          state,
 		}
 		if err := tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "event_id"}, {Name: "discord_id"}},
+			Columns:   []clause.Column{{Name: "event_mission_id"}, {Name: "discord_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"slot_id", "state"}),
 		}).Create(&reg).Error; err != nil {
 			return err
@@ -490,10 +715,10 @@ func (h *Handler) RegisterForEvent(c *gin.Context) {
 	}
 }
 
-// WithdrawFromEvent removes the caller's registration and promotes the oldest
-// waitlisted member if a confirmed spot was freed.
-func (h *Handler) WithdrawFromEvent(c *gin.Context) {
-	ev, ok := h.loadEvent(c)
+// WithdrawFromEventMission removes the caller's registration for a mission and
+// promotes the oldest waitlisted member if a confirmed spot was freed.
+func (h *Handler) WithdrawFromEventMission(c *gin.Context) {
+	em, ok := h.loadEventMission(c)
 	if !ok {
 		return
 	}
@@ -501,7 +726,7 @@ func (h *Handler) WithdrawFromEvent(c *gin.Context) {
 
 	txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		var reg models.EventRegistration
-		if err := tx.First(&reg, "event_id = ? AND discord_id = ?", ev.ID, me).Error; err != nil {
+		if err := tx.First(&reg, "event_mission_id = ? AND discord_id = ?", em.ID, me).Error; err != nil {
 			return gorm.ErrRecordNotFound
 		}
 		// Free any claimed slot.
@@ -516,7 +741,7 @@ func (h *Handler) WithdrawFromEvent(c *gin.Context) {
 		// Promote the oldest waitlisted member into the freed spot.
 		if wasRegistered {
 			var next models.EventRegistration
-			if err := tx.Where("event_id = ? AND state::text = ?", ev.ID, "waitlisted").
+			if err := tx.Where("event_mission_id = ? AND state::text = ?", em.ID, "waitlisted").
 				Order("registered_at ASC").First(&next).Error; err == nil {
 				tx.Model(&models.EventRegistration{}).Where("id = ?", next.ID).
 					Update("state", models.RegRegistered)
@@ -535,16 +760,16 @@ func (h *Handler) WithdrawFromEvent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"withdrawn": true})
 }
 
-// --- Slot assignment (admin) ---
+// --- Slot assignment (admin, per event_mission) ---
 
 type assignSlotInput struct {
 	DiscordID string `json:"discord_id" binding:"required"`
 }
 
 // AssignSlot assigns or reassigns a user to an ORBAT slot and ensures they have
-// a confirmed registration (admin only).
+// a confirmed registration for that mission (admin only).
 func (h *Handler) AssignSlot(c *gin.Context) {
-	ev, ok := h.loadEvent(c)
+	em, ok := h.loadEventMission(c)
 	if !ok {
 		return
 	}
@@ -566,7 +791,7 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 
 	txErr := h.db.Transaction(func(tx *gorm.DB) error {
 		var slot models.OrbatSlot
-		if err := tx.First(&slot, "id = ? AND event_id = ?", slotID, ev.ID).Error; err != nil {
+		if err := tx.First(&slot, "id = ? AND event_mission_id = ?", slotID, em.ID).Error; err != nil {
 			return gorm.ErrRecordNotFound
 		}
 		now := time.Now()
@@ -575,13 +800,13 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 			return err
 		}
 		reg := models.EventRegistration{
-			EventID:   ev.ID,
-			DiscordID: in.DiscordID,
-			SlotID:    &slotID,
-			State:     models.RegRegistered,
+			EventMissionID: em.ID,
+			DiscordID:      in.DiscordID,
+			SlotID:         &slotID,
+			State:          models.RegRegistered,
 		}
 		return tx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "event_id"}, {Name: "discord_id"}},
+			Columns:   []clause.Column{{Name: "event_mission_id"}, {Name: "discord_id"}},
 			DoUpdates: clause.AssignmentColumns([]string{"slot_id", "state"}),
 		}).Create(&reg).Error
 	})
@@ -598,7 +823,7 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 
 // ClearSlot unassigns an ORBAT slot (admin only).
 func (h *Handler) ClearSlot(c *gin.Context) {
-	ev, ok := h.loadEvent(c)
+	em, ok := h.loadEventMission(c)
 	if !ok {
 		return
 	}
@@ -608,9 +833,9 @@ func (h *Handler) ClearSlot(c *gin.Context) {
 		return
 	}
 	h.db.Transaction(func(tx *gorm.DB) error {
-		tx.Model(&models.OrbatSlot{}).Where("id = ? AND event_id = ?", slotID, ev.ID).
+		tx.Model(&models.OrbatSlot{}).Where("id = ? AND event_mission_id = ?", slotID, em.ID).
 			Updates(map[string]any{"assigned_to": nil, "assigned_at": nil})
-		tx.Model(&models.EventRegistration{}).Where("event_id = ? AND slot_id = ?", ev.ID, slotID).
+		tx.Model(&models.EventRegistration{}).Where("event_mission_id = ? AND slot_id = ?", em.ID, slotID).
 			Update("slot_id", nil)
 		return nil
 	})
@@ -631,4 +856,18 @@ func (h *Handler) loadEvent(c *gin.Context) (*models.Event, bool) {
 		return nil, false
 	}
 	return &ev, true
+}
+
+func (h *Handler) loadEventMission(c *gin.Context) (*models.EventMission, bool) {
+	id, err := uuid.Parse(c.Param("emid"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+		return nil, false
+	}
+	var em models.EventMission
+	if err := h.db.First(&em, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
+		return nil, false
+	}
+	return &em, true
 }

@@ -1,11 +1,19 @@
 import { format, formatDistanceToNowStrict } from 'date-fns'
 
+function isValidDate(d: Date): boolean {
+  return !Number.isNaN(d.getTime())
+}
+
 export function formatLocalDateTime(iso: string): string {
-  return format(new Date(iso), 'EEE MMM d, HH:mm zzz')
+  const d = new Date(iso)
+  if (!isValidDate(d)) return '—'
+  return format(d, 'EEE MMM d, HH:mm zzz')
 }
 
 export function formatShortDate(iso: string): string {
-  return format(new Date(iso), 'MMM d')
+  const d = new Date(iso)
+  if (!isValidDate(d)) return '—'
+  return format(d, 'MMM d')
 }
 
 export function formatUptime(seconds: number): string {
@@ -25,6 +33,7 @@ export function formatBytes(bytes: number): string {
 
 export function countdownLabel(iso: string): string {
   const target = new Date(iso)
+  if (!isValidDate(target)) return '—'
   if (target.getTime() <= Date.now()) return 'LIVE NOW'
   return formatDistanceToNowStrict(target, { addSuffix: false }).toUpperCase()
 }

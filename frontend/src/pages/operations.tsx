@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { toast } from 'sonner'
+import { Link } from 'react-router-dom'
 import { OpsCard } from '@/components/OpsCard'
 import { PageHeader } from '@/components/PageHeader'
 import { AuthGate } from '@/components/AuthGate'
@@ -10,7 +10,6 @@ import {
   useEvents,
   useLeaderboards,
 } from '@/hooks/queries'
-import { useRegisterEvent } from '@/hooks/mutations'
 import {
   formatLocalDateTime,
   formatShortDate,
@@ -275,15 +274,7 @@ export function LeaderboardsPage() {
 
 export function EventSchedulePage() {
   const { data, isLoading, isError, error } = useEvents('upcoming')
-  const register = useRegisterEvent()
   const events = data?.data ?? []
-
-  const handleRegister = (eventId: string) => {
-    register.mutate(eventId, {
-      onSuccess: () => toast.success('Registered for operation'),
-      onError: () => toast.error('Registration failed'),
-    })
-  }
 
   const statusLabel = (status: string, locked: boolean) => {
     if (status === 'live') return 'LIVE'
@@ -308,9 +299,9 @@ export function EventSchedulePage() {
                   <tr>
                     <th className="px-4 py-3 text-left">Operation</th>
                     <th className="px-4 py-3 text-left">Schedule</th>
-                    <th className="px-4 py-3 text-left">Terrain</th>
+                    <th className="px-4 py-3 text-right">Missions</th>
                     <th className="px-4 py-3 text-left">Status</th>
-                    <th className="px-4 py-3 text-right">Capacity</th>
+                    <th className="px-4 py-3 text-right">Slots Filled</th>
                     <th className="px-4 py-3 text-right" />
                   </tr>
                 </thead>
@@ -320,12 +311,14 @@ export function EventSchedulePage() {
                     return (
                       <tr key={e.id}>
                         <td className="px-4 py-3 font-medium">
-                          {e.name_override || e.mission_title}
+                          {e.name_override || 'Untitled Operation'}
                         </td>
                         <td className="px-4 py-3 text-on-surface-variant">
                           {formatLocalDateTime(e.start_time)}
                         </td>
-                        <td className="px-4 py-3">{terrainLabel(e.terrain)}</td>
+                        <td className="px-4 py-3 text-right text-on-surface-variant">
+                          {e.mission_count}
+                        </td>
                         <td className="px-4 py-3">
                           <span
                             className={cn(
@@ -339,19 +332,15 @@ export function EventSchedulePage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-right text-on-surface-variant">
-                          {e.registered}/{e.max_slots}
+                          {e.filled}/{e.total_slots}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {!e.registration_locked && e.status !== 'live' && (
-                            <button
-                              type="button"
-                              onClick={() => handleRegister(e.id)}
-                              disabled={register.isPending}
-                              className="text-sm text-primary hover:underline disabled:opacity-50"
-                            >
-                              Register
-                            </button>
-                          )}
+                          <Link
+                            to={`/events/${e.id}`}
+                            className="text-sm text-primary hover:underline"
+                          >
+                            Open Hub
+                          </Link>
                         </td>
                       </tr>
                     )

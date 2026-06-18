@@ -7,6 +7,7 @@ import {
   EventSchedulePage,
   LeaderboardsPage,
 } from '@/pages/operations'
+import { EventHubPage, OrbatSelectionPage } from '@/pages/events'
 import { DashboardPage } from '@/pages/Dashboard'
 import { ServerIntelPage } from '@/pages/ServerIntel'
 import {
@@ -78,6 +79,16 @@ export const router = createBrowserRouter([
         path: 'events',
         element: <EventSchedulePage />,
         ...breadcrumb('Operations', 'Event Schedule'),
+      },
+      {
+        path: 'events/:id',
+        element: <EventHubPage />,
+        ...breadcrumb('Operations', 'Event Hub'),
+      },
+      {
+        path: 'events/:id/missions/:emid/orbat',
+        element: <OrbatSelectionPage />,
+        ...breadcrumb('Operations', 'ORBAT Selection'),
       },
       { path: 'wiki', element: <WikiPage />, ...breadcrumb('Doctrine & Info', 'SOPs & Manuals') },
       { path: 'wiki/:slug', element: <WikiPage />, ...breadcrumb('Doctrine & Info', 'SOPs & Manuals') },

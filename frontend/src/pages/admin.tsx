@@ -12,6 +12,7 @@ import {
   usePersonnel,
 } from '@/hooks/queries'
 import {
+  useAddEventMission,
   useApproveMission,
   useBanUser,
   useCreateEvent,
@@ -30,31 +31,58 @@ export function EventManagerPage() {
   const deleteEvent = useDeleteEvent()
 
   const [startTime, setStartTime] = useState('')
-  const [missionId, setMissionId] = useState('')
   const [maxSlots, setMaxSlots] = useState(64)
   const [nameOverride, setNameOverride] = useState('')
+  const [briefing, setBriefing] = useState('')
   const [locked, setLocked] = useState(false)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
+
+  // Attach-mission form (operates on the selected event).
+  const [missionId, setMissionId] = useState('')
+  const [missionStart, setMissionStart] = useState('')
+  const addMission = useAddEventMission(selectedEventId ?? '')
 
   const missions = missionsData?.data ?? []
   const events = eventsData?.data ?? []
 
   const handlePublish = () => {
-    if (!missionId || !startTime) {
-      toast.error('Mission and start time are required')
+    if (!startTime) {
+      toast.error('Start time is required')
       return
     }
     createEvent.mutate(
       {
-        mission_id: missionId,
         start_time: new Date(startTime).toISOString(),
         max_slots: maxSlots,
         name_override: nameOverride || undefined,
+        briefing: briefing || undefined,
         registration_locked: locked,
       },
       {
-        onSuccess: () => toast.success('Event published'),
-        onError: () => toast.error('Failed to publish event'),
+        onSuccess: () => toast.success('Operation created — select it to attach missions'),
+        onError: () => toast.error('Failed to create operation'),
+      },
+    )
+  }
+
+  const handleAttach = () => {
+    if (!selectedEventId) {
+      toast.error('Select an operation first')
+      return
+    }
+    if (!missionId || !missionStart) {
+      toast.error('Mission and start time are required')
+      return
+    }
+    addMission.mutate(
+      { mission_id: missionId, start_time: new Date(missionStart).toISOString() },
+      {
+        onSuccess: () => {
+          toast.success('Mission attached — ORBAT generated from mission.json')
+          setMissionId('')
+          setMissionStart('')
+        },
+        onError: () => toast.error('Failed to attach mission'),
       },
     )
   }
@@ -63,10 +91,10 @@ export function EventManagerPage() {
     if (!selectedEventId) return
     deleteEvent.mutate(selectedEventId, {
       onSuccess: () => {
-        toast.success('Event deleted')
+        toast.success('Operation deleted')
         setSelectedEventId(null)
       },
-      onError: () => toast.error('Failed to delete event'),
+      onError: () => toast.error('Failed to delete operation'),
     })
   }
 
@@ -75,13 +103,13 @@ export function EventManagerPage() {
       <div className="mx-auto w-full max-w-6xl">
         <PageHeader
           title="Event Manager"
-          subtitle="Schedule upcoming deployments and toggle registration locks."
+          subtitle="Create campaign operations, then attach missions — ORBATs generate automatically."
         />
         <div className="grid gap-6 lg:grid-cols-2">
           <OpsCard className="bg-surface-container-high">
-            <h2 className="mb-4 text-lg font-semibold">Scheduled Events</h2>
+            <h2 className="mb-4 text-lg font-semibold">Operations</h2>
             {events.length === 0 ? (
-              <p className="text-sm text-on-surface-variant">No events scheduled.</p>
+              <p className="text-sm text-on-surface-variant">No operations scheduled.</p>
             ) : (
               <ul className="max-h-80 space-y-2 overflow-y-auto text-sm">
                 {events.map((e) => (
@@ -96,93 +124,139 @@ export function EventManagerPage() {
                           : 'border-border-subtle hover:bg-surface-container',
                       )}
                     >
-                      <span className="font-medium">{e.name_override || e.mission_title}</span>
+                      <span className="font-medium">{e.name_override || 'Untitled Operation'}</span>
                       <span className="mt-1 block text-on-surface-variant">
-                        {formatLocalDateTime(e.start_time)}
+                        {formatLocalDateTime(e.start_time)} • {e.mission_count} mission
+                        {e.mission_count === 1 ? '' : 's'}
                       </span>
                     </button>
                   </li>
                 ))}
               </ul>
             )}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={!selectedEventId || deleteEvent.isPending}
+                className="rounded-lg border border-error/50 px-4 py-2 text-sm text-error disabled:opacity-50"
+              >
+                Delete Selected
+              </button>
+            </div>
           </OpsCard>
-          <OpsCard className="bg-surface-container-high">
-            <h2 className="mb-4 text-lg font-semibold">Schedule Operation</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm text-on-surface-variant">Start Time</label>
-                <input
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-on-surface-variant">Mission</label>
-                <select
-                  value={missionId}
-                  onChange={(e) => setMissionId(e.target.value)}
-                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-                >
-                  <option value="">Select from Mission Library...</option>
-                  {missions.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title} ({terrainLabel(m.terrain)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-on-surface-variant">Name Override</label>
-                <input
-                  type="text"
-                  value={nameOverride}
-                  onChange={(e) => setNameOverride(e.target.value)}
-                  placeholder="Optional display name"
-                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-on-surface-variant">Max Slots</label>
-                <input
-                  type="number"
-                  value={maxSlots}
-                  onChange={(e) => setMaxSlots(Number(e.target.value))}
-                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm text-on-surface-variant">Registration</label>
-                <select
-                  value={locked ? 'locked' : 'open'}
-                  onChange={(e) => setLocked(e.target.value === 'locked')}
-                  className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-                >
-                  <option value="open">Open</option>
-                  <option value="locked">Locked</option>
-                </select>
-              </div>
-              <div className="flex gap-2 pt-2">
+
+          <div className="flex flex-col gap-6">
+            <OpsCard className="bg-surface-container-high">
+              <h2 className="mb-4 text-lg font-semibold">Create Operation</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm text-on-surface-variant">Start Time</label>
+                  <input
+                    type="datetime-local"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-on-surface-variant">Name</label>
+                  <input
+                    type="text"
+                    value={nameOverride}
+                    onChange={(e) => setNameOverride(e.target.value)}
+                    placeholder="e.g. Twin Theaters"
+                    className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-on-surface-variant">Briefing</label>
+                  <textarea
+                    value={briefing}
+                    onChange={(e) => setBriefing(e.target.value)}
+                    placeholder="Overarching operation lore / briefing"
+                    rows={3}
+                    className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm text-on-surface-variant">Max Slots</label>
+                    <input
+                      type="number"
+                      value={maxSlots}
+                      onChange={(e) => setMaxSlots(Number(e.target.value))}
+                      className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm text-on-surface-variant">Registration</label>
+                    <select
+                      value={locked ? 'locked' : 'open'}
+                      onChange={(e) => setLocked(e.target.value === 'locked')}
+                      className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+                    >
+                      <option value="open">Open</option>
+                      <option value="locked">Locked</option>
+                    </select>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={handlePublish}
                   disabled={createEvent.isPending}
-                  className="flex-1 rounded-lg bg-primary py-2 text-sm font-medium text-on-primary disabled:opacity-50"
+                  className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-on-primary disabled:opacity-50"
                 >
-                  Publish Event
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDelete}
-                  disabled={!selectedEventId || deleteEvent.isPending}
-                  className="rounded-lg border border-error/50 px-4 py-2 text-sm text-error disabled:opacity-50"
-                >
-                  Delete
+                  Create Operation
                 </button>
               </div>
-            </div>
-          </OpsCard>
+            </OpsCard>
+
+            <OpsCard className="bg-surface-container-high">
+              <h2 className="mb-1 text-lg font-semibold">Attach Mission</h2>
+              <p className="mb-4 text-sm text-on-surface-variant">
+                {selectedEventId
+                  ? 'ORBAT squads/slots are parsed from the mission.json payload.'
+                  : 'Select an operation on the left to attach missions.'}
+              </p>
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm text-on-surface-variant">Mission</label>
+                  <select
+                    value={missionId}
+                    onChange={(e) => setMissionId(e.target.value)}
+                    disabled={!selectedEventId}
+                    className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm disabled:opacity-50"
+                  >
+                    <option value="">Select from Mission Library...</option>
+                    {missions.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.title} ({terrainLabel(m.terrain)})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm text-on-surface-variant">Mission Start Time</label>
+                  <input
+                    type="datetime-local"
+                    value={missionStart}
+                    onChange={(e) => setMissionStart(e.target.value)}
+                    disabled={!selectedEventId}
+                    className="w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm disabled:opacity-50"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAttach}
+                  disabled={!selectedEventId || addMission.isPending}
+                  className="w-full rounded-lg bg-primary py-2 text-sm font-medium text-on-primary disabled:opacity-50"
+                >
+                  Attach Mission
+                </button>
+              </div>
+            </OpsCard>
+          </div>
         </div>
       </div>
     </AdminGate>

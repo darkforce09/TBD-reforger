@@ -44,20 +44,25 @@ func (h *Handler) GetMyDeployments(c *gin.Context) {
 		return
 	}
 
-	// Upcoming: my registrations on future events.
+	// Upcoming: my registrations on future missions within events.
 	var regs []models.EventRegistration
-	h.db.Joins("JOIN events ON events.id = event_registrations.event_id").
-		Where("event_registrations.discord_id = ? AND events.start_time > ? AND events.deleted_at IS NULL", me, now).
-		Order("events.start_time ASC").Find(&regs)
+	h.db.Joins("JOIN event_missions ON event_missions.id = event_registrations.event_mission_id").
+		Joins("JOIN events ON events.id = event_missions.event_id").
+		Where("event_registrations.discord_id = ? AND event_missions.start_time > ? AND events.deleted_at IS NULL", me, now).
+		Order("event_missions.start_time ASC").Find(&regs)
 
 	upcoming := make([]deploymentUpcoming, 0, len(regs))
 	for _, reg := range regs {
+		var em models.EventMission
+		if err := h.db.First(&em, "id = ?", reg.EventMissionID).Error; err != nil {
+			continue
+		}
 		var ev models.Event
-		if err := h.db.First(&ev, "id = ?", reg.EventID).Error; err != nil {
+		if err := h.db.First(&ev, "id = ?", em.EventID).Error; err != nil {
 			continue
 		}
 		var m models.Mission
-		_ = h.db.First(&m, "id = ?", ev.MissionID).Error
+		_ = h.db.First(&m, "id = ?", em.MissionID).Error
 		name := ev.NameOverride
 		if name == "" {
 			name = m.Title
@@ -66,12 +71,12 @@ func (h *Handler) GetMyDeployments(c *gin.Context) {
 			EventID:   ev.ID.String(),
 			Name:      name,
 			Terrain:   string(m.Terrain),
-			StartTime: ev.StartTime,
+			StartTime: em.StartTime,
 			State:     string(reg.State),
 		}
-		// Resolve assigned slot (by registration link or direct assignment).
+		// Resolve assigned slot for this mission.
 		var slot models.OrbatSlot
-		if err := h.db.First(&slot, "event_id = ? AND assigned_to = ?", ev.ID, me).Error; err == nil {
+		if err := h.db.First(&slot, "event_mission_id = ? AND assigned_to = ?", em.ID, me).Error; err == nil {
 			d.Faction, d.Squad, d.Role = slot.Faction, slot.Squad, slot.Role
 		}
 		upcoming = append(upcoming, d)
