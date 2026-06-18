@@ -2,6 +2,10 @@
 
 **Purpose:** This document contains the complete context, UI blueprints, and system architecture for the "TBD Reforger Event Platform." It is designed to be fed into an LLM (like Claude) to provide 100% project context for generating backend code, data models, and integration scripts.
 
+> **Status:** This is the original product/UI blueprint (the target design). Much of it
+> is built — see **`CLAUDE.md`** in the repo root for current status, how to run the
+> stack, and conventions. The main page still unbuilt is the 2D mission editor.
+
 ---
 
 ## 1. Project Overview

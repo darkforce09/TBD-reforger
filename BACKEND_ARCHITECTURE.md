@@ -5,6 +5,10 @@
 **Scope:** PostgreSQL schema + Go REST API for the TBD Arma Reforger Event Platform.
 **Sources:** `Claude_Context_Handoff.md` + all 18 Stitch page mockups in `stitch-exports/`.
 
+> **Status:** This is the original *design* plan. The schema and REST API described
+> here are implemented (T-001…T-004). For current build status, how to run the
+> stack, and conventions, see **`CLAUDE.md`** in the repo root.
+
 ---
 
 ## 0. Architectural Principles

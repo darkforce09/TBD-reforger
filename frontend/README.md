@@ -1,73 +1,40 @@
-# React + TypeScript + Vite
+# TBD Reforger — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + TypeScript + Vite SPA for the TBD Arma Reforger platform. Talks to the
+Go API (see the repo root `CLAUDE.md` and `BACKEND_ARCHITECTURE.md`).
 
-Currently, two official plugins are available:
+## Stack
+- **React 19** + **Vite** (HMR, `tsc -b && vite build`)
+- **TanStack Query** for server state (`src/hooks/queries.ts`, `src/hooks/mutations.ts`)
+- **Zustand** for auth/session (`src/store/useAuthStore.ts`, persisted to localStorage)
+- **axios** client with a Bearer interceptor + single-flight token refresh (`src/api/`)
+- **Tailwind** styling
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Develop
+Requires the backend running (see root `Makefile`: `make db-up && make api`).
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev      # Vite on http://localhost:5173, proxies /api -> http://localhost:8080
+npm run build    # type-check (tsc -b) + production build
+npm run lint     # eslint (keep at 0 errors)
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Config: `VITE_API_URL` (defaults to `/api/v1`), `VITE_DEFAULT_SERVER_NAME`. See
+`.env.example`. The dev proxy is in `vite.config.ts`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Logging in during development
+With the backend in `APP_ENV=development`, open
+`http://localhost:5173/api/v1/auth/dev-login?role=admin` — it mints a session and
+lands you on the dashboard (no Discord needed). `role` can be `admin`,
+`mission_maker`, or `enlisted`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+## Layout
+- `src/api/` — axios instance (`client.ts`) and shared `refreshSession` (`refresh.ts`).
+- `src/hooks/` — `queries.ts` (reads), `mutations.ts` (writes), `useAuthBootstrap.ts`
+  (restores the session from the persisted refresh token on load), `useServerTelemetry.ts` (SSE).
+- `src/store/useAuthStore.ts` — tokens + user; persists `refreshToken`, `user`, `expiresAt` only.
+- `src/components/` — `AuthGate`/`AdminGate` route guards, `QueryState` (loading/error/empty), layout.
+- `src/pages/` — one per route (see `src/router.tsx`).
+- `src/types/` — **hand-written** API types; must match the Go JSON (snake_case). Update
+  them alongside any backend model change.
