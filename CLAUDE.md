@@ -73,7 +73,9 @@ Commits after T-004 (T-005+) are documentation only; the feature status below is
   page is the big remaining frontend piece).
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
-- No seed script — a fresh DB is empty (seed via the API or `psql`).
+- A fresh DB is empty of content (events, missions, etc.) — seed those via the API
+  or `psql`. The one committed seed is the Discord role→permission mappings
+  (`internal/db/seeds/discord_roles.sql`, applied with `make seed`).
 
 ## Verifying changes
 Source of truth for the API contract is the Go handlers + `internal/models` tags;

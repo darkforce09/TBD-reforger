@@ -2,7 +2,7 @@
 # Uses `docker compose` if available, otherwise `podman compose`.
 COMPOSE := $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
 
-.PHONY: help db-up db-down db-logs api web test build tidy
+.PHONY: help db-up db-down db-logs seed api web test build tidy
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -16,6 +16,9 @@ db-down: ## Stop local Postgres (keeps the data volume)
 
 db-logs: ## Tail the Postgres logs
 	$(COMPOSE) logs -f db
+
+seed: ## Apply data seeds (Discord role mappings) to the running DB
+	$(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
 
 api: ## Run the Go API (loads .env; runs migrations on boot)
 	go run ./cmd/api
