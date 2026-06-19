@@ -30,7 +30,7 @@ func (h *Handler) DevLogin(c *gin.Context) {
 
 	role := models.UserRole(c.DefaultQuery("role", "admin"))
 	switch role {
-	case models.RoleEnlisted, models.RoleMissionMaker, models.RoleAdmin:
+	case models.RoleEnlisted, models.RoleLeader, models.RoleMissionMaker, models.RoleAdmin:
 	default:
 		role = models.RoleAdmin
 	}

@@ -127,6 +127,15 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	authed.POST("/fire-missions", h.SaveFire)
 	authed.GET("/events/:id/fire-missions", h.ListEventFireMissions)
 
+	// Squad leadership (M6): reserve/hold a squad, fill it, and look up members.
+	// Available to leader and above (mission_maker/admin inherit).
+	leader := rg.Group("", middleware.RequireAuth(h.jwt), middleware.RequireMinRole("leader"))
+	leader.POST("/event-missions/:emid/squads/reserve", h.ReserveSquad)
+	leader.POST("/event-missions/:emid/squads/release", h.ReleaseSquad)
+	leader.PUT("/event-missions/:emid/slots/:slotId/assign", h.AssignSlot)
+	leader.DELETE("/event-missions/:emid/slots/:slotId/assign", h.ClearSlot)
+	leader.GET("/members", h.SearchMembers)
+
 	// Mission authoring + export require at least mission_maker.
 	mm := rg.Group("", middleware.RequireAuth(h.jwt), middleware.RequireMinRole("mission_maker"))
 	mm.POST("/missions", h.CreateMission)
@@ -151,8 +160,6 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	admin.DELETE("/events/:id", h.DeleteEvent)
 	admin.POST("/events/:id/missions", h.AddEventMission)
 	admin.DELETE("/events/:id/missions/:emid", h.RemoveEventMission)
-	admin.PUT("/event-missions/:emid/slots/:slotId/assign", h.AssignSlot)
-	admin.DELETE("/event-missions/:emid/slots/:slotId/assign", h.ClearSlot)
 	admin.GET("/admin/leave-requests", h.ListAllLeave)
 	admin.PATCH("/admin/leave-requests/:id", h.ReviewLeave)
 

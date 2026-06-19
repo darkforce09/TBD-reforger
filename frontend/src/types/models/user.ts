@@ -1,4 +1,4 @@
-export type UserRole = 'enlisted' | 'mission_maker' | 'admin'
+export type UserRole = 'enlisted' | 'leader' | 'mission_maker' | 'admin'
 
 export interface User {
   discord_id: string

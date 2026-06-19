@@ -50,6 +50,7 @@ func allModels() []any {
 		&models.Event{},
 		&models.EventMission{},
 		&models.OrbatSlot{},
+		&models.OrbatReservation{},
 		&models.EventRegistration{},
 		&models.LeaveRequest{},
 		&models.Match{},

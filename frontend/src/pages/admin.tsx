@@ -403,6 +403,7 @@ export function PersonnelRosterPage() {
                           className="rounded border border-border-subtle bg-surface px-2 py-1 text-sm"
                         >
                           <option value="enlisted">Enlisted</option>
+                          <option value="leader">Leader</option>
                           <option value="mission_maker">Mission Maker</option>
                           <option value="admin">Admin</option>
                         </select>

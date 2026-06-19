@@ -11,8 +11,10 @@ import (
 func roleRank(r string) int {
 	switch r {
 	case "admin":
-		return 3
+		return 4
 	case "mission_maker":
+		return 3
+	case "leader":
 		return 2
 	case "enlisted":
 		return 1

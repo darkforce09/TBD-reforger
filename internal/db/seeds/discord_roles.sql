@@ -19,6 +19,8 @@
 INSERT INTO discord_roles (discord_role_id, name, mapped_role, priority) VALUES
   ('1517285898817896559', 'Command Staff', 'admin',         100),
   ('1517286228851032115', 'Mission Maker', 'mission_maker',  50),
+  -- Example squad-leader mapping; replace the snowflake with the real guild role id.
+  ('1517290000000000000', 'Squad Leader',  'leader',         30),
   ('1517293152195711036', 'Player',        'enlisted',       10)
 ON CONFLICT (discord_role_id) DO UPDATE
   SET name        = EXCLUDED.name,

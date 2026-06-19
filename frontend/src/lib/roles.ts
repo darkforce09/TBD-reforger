@@ -2,8 +2,9 @@ import type { UserRole } from '@/types/models/user'
 
 const RANK: Record<UserRole, number> = {
   enlisted: 1,
-  mission_maker: 2,
-  admin: 3,
+  leader: 2,
+  mission_maker: 3,
+  admin: 4,
 }
 
 export function hasMinRole(userRole: UserRole | undefined, min: UserRole): boolean {

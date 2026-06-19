@@ -6,8 +6,15 @@ import { PageHeader } from '@/components/PageHeader'
 import { AuthGate } from '@/components/AuthGate'
 import { QueryState } from '@/components/QueryState'
 import { MaterialIcon } from '@/components/MaterialIcon'
-import { useCurrentModpack, useEvent, useOrbat } from '@/hooks/queries'
-import { useRegisterMission, useWithdrawMission } from '@/hooks/mutations'
+import { useCurrentModpack, useEvent, useMemberSearch, useOrbat } from '@/hooks/queries'
+import {
+  useAssignSlot,
+  useRegisterMission,
+  useReleaseSquad,
+  useReserveSquad,
+  useWithdrawMission,
+} from '@/hooks/mutations'
+import { useAuthStore } from '@/store/useAuthStore'
 import { DEFAULT_AVATAR } from '@/lib/avatar'
 import {
   countdownLabel,
@@ -166,6 +173,12 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
   const { data: squads, isLoading } = useOrbat(emid)
   const register = useRegisterMission(emid)
   const withdraw = useWithdrawMission(emid)
+  const reserve = useReserveSquad(emid)
+  const release = useReleaseSquad(emid)
+
+  const user = useAuthStore((s) => s.user)
+  const isLeader = useAuthStore((s) => s.hasMinRole('leader'))
+  const isAdmin = useAuthStore((s) => s.hasMinRole('admin'))
 
   const factions = useMemo(() => [...new Set((squads ?? []).map((s) => s.faction))], [squads])
   const [faction, setFaction] = useState<string | null>(null)
@@ -176,6 +189,13 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
   const activeSquad = factionSquads.find((s) => s.squad === squadKey) ?? factionSquads[0] ?? null
 
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [assigning, setAssigning] = useState<string | null>(null) // slot id with picker open
+
+  const pickSquad = (squad: string) => {
+    setSquadKey(squad)
+    setSelectedSlot(null)
+    setAssigning(null)
+  }
 
   const handleRegister = () => {
     if (!selectedSlot) return
@@ -202,6 +222,12 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
     return <p className="text-sm text-on-surface-variant">No ORBAT slots defined for this mission.</p>
   }
 
+  const reservedBy = activeSquad?.reserved_by
+  const iAmReserver = Boolean(reservedBy && reservedBy === user?.discord_id)
+  const canManage = Boolean(activeSquad) && (isAdmin || iAmReserver) // may assign slots
+  const lockedForMe = Boolean(reservedBy) && !canManage // held by someone else
+  const selfRegister = Boolean(activeSquad) && !canManage && !lockedForMe // open self-claim
+
   return (
     <div className="grid overflow-hidden rounded-xl border border-border-subtle md:grid-cols-[240px_1fr]">
       {/* Left: navigation sidebar */}
@@ -214,8 +240,7 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                 type="button"
                 onClick={() => {
                   setFaction(f)
-                  setSquadKey(null)
-                  setSelectedSlot(null)
+                  pickSquad('')
                 }}
                 className={cn(
                   'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
@@ -233,10 +258,7 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
             <li key={s.squad}>
               <button
                 type="button"
-                onClick={() => {
-                  setSquadKey(s.squad)
-                  setSelectedSlot(null)
-                }}
+                onClick={() => pickSquad(s.squad)}
                 className={cn(
                   'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition-colors',
                   activeSquad?.squad === s.squad
@@ -244,7 +266,8 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                     : 'text-on-surface-variant hover:bg-surface-container-high',
                 )}
               >
-                <span>
+                <span className="flex items-center gap-1.5">
+                  {s.reserved_by && <MaterialIcon name="lock" className="text-sm text-on-surface-variant" />}
                   <span className="font-medium text-on-surface">{s.squad}</span>
                   {s.callsign && <span className="ml-1 text-xs">{s.callsign}</span>}
                 </span>
@@ -262,62 +285,120 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
         <div className="flex-1 p-4">
           {activeSquad ? (
             <>
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h4 className="font-semibold">
                   {activeSquad.squad}
                   {activeSquad.callsign && (
-                    <span className="text-sm font-normal text-on-surface-variant"> — {activeSquad.callsign}</span>
+                    <span className="text-sm font-normal text-on-surface-variant"> | {activeSquad.callsign}</span>
                   )}
                 </h4>
-                <span className="text-xs uppercase text-on-surface-variant">{activeFaction}</span>
-              </div>
-              <div className="overflow-hidden rounded-lg border border-border-subtle">
-                <table className="w-full text-sm">
-                  <thead className="bg-surface-container text-xs font-semibold uppercase text-on-surface-variant">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Role</th>
-                      <th className="px-4 py-2 text-left">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border-subtle">
-                    {activeSquad.slots.map((slot) => {
-                      const taken = Boolean(slot.assigned_to)
-                      const selected = selectedSlot === slot.id
-                      return (
-                        <tr
-                          key={slot.id}
-                          onClick={() => !taken && setSelectedSlot(selected ? null : slot.id)}
-                          className={cn(
-                            !taken && 'cursor-pointer',
-                            selected && 'bg-primary/10',
-                            !taken && !selected && 'hover:bg-surface-container',
-                          )}
+                <div className="flex items-center gap-2">
+                  {reservedBy ? (
+                    <>
+                      <span className="flex items-center gap-1 rounded bg-surface-container-highest px-2 py-0.5 text-xs text-on-surface-variant">
+                        <MaterialIcon name="lock" className="text-sm" />
+                        Reserved by {activeSquad.reserved_by_name || 'a leader'}
+                      </span>
+                      {(iAmReserver || isAdmin) && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            release.mutate(activeSquad.squad, {
+                              onSuccess: () => toast.success('Squad released'),
+                              onError: () => toast.error('Could not release squad'),
+                            })
+                          }
+                          disabled={release.isPending}
+                          className="rounded-lg border border-border-subtle px-3 py-1 text-xs text-on-surface-variant disabled:opacity-50"
                         >
-                          <td className="px-4 py-2 font-medium">{slot.role}</td>
-                          <td className="px-4 py-2">
-                            {taken ? (
-                              <span className="flex items-center gap-2 text-on-surface-variant">
-                                <img src={DEFAULT_AVATAR} alt="" className="h-6 w-6 rounded-full" />
-                                {slot.assigned_name || slot.assigned_to}
-                              </span>
-                            ) : (
-                              <span
-                                className={cn(
-                                  'flex items-center gap-2',
-                                  selected ? 'text-primary' : 'text-success',
-                                )}
-                              >
-                                <span className="h-2 w-2 rounded-full bg-current" />
-                                {selected ? 'Selected' : 'Available'}
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          Release
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    isLeader && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          reserve.mutate(activeSquad.squad, {
+                            onSuccess: () => toast.success(`Reserved ${activeSquad.squad}`),
+                            onError: () => toast.error('Could not reserve squad'),
+                          })
+                        }
+                        disabled={reserve.isPending}
+                        className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1 text-xs font-medium text-on-primary disabled:opacity-50"
+                      >
+                        <MaterialIcon name="lock" className="text-sm" /> Reserve Squad
+                      </button>
+                    )
+                  )}
+                </div>
               </div>
+
+              <ul className="overflow-hidden rounded-lg border border-border-subtle divide-y divide-border-subtle">
+                {activeSquad.slots.map((slot) => {
+                  const taken = Boolean(slot.assigned_to)
+                  const selected = selectedSlot === slot.id
+                  const clickable = selfRegister && !taken
+                  return (
+                    <li key={slot.id}>
+                      <div
+                        onClick={() => clickable && setSelectedSlot(selected ? null : slot.id)}
+                        className={cn(
+                          'flex items-center justify-between gap-3 px-4 py-2 text-sm',
+                          clickable && 'cursor-pointer',
+                          selected && 'bg-primary/10',
+                          clickable && !selected && 'hover:bg-surface-container',
+                        )}
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="text-on-surface-variant tabular-nums">{slot.number}:</span>
+                          <span className="font-medium">{slot.role}</span>
+                          {slot.loadout && (
+                            <span className="text-on-surface-variant">({slot.loadout})</span>
+                          )}
+                          {slot.tag && (
+                            <span className="rounded bg-surface-container-highest px-1.5 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+                              {slot.tag}
+                            </span>
+                          )}
+                        </span>
+                        <span className="shrink-0">
+                          {taken ? (
+                            <span className="flex items-center gap-2 text-on-surface-variant">
+                              <img src={DEFAULT_AVATAR} alt="" className="h-6 w-6 rounded-full" />
+                              {slot.assigned_name || slot.assigned_to}
+                            </span>
+                          ) : canManage ? (
+                            <button
+                              type="button"
+                              onClick={() => setAssigning(assigning === slot.id ? null : slot.id)}
+                              className="rounded-lg border border-border-subtle px-3 py-1 text-xs text-primary"
+                            >
+                              {assigning === slot.id ? 'Cancel' : 'Assign'}
+                            </button>
+                          ) : lockedForMe ? (
+                            <span className="text-xs text-on-surface-variant">Reserved</span>
+                          ) : (
+                            <span
+                              className={cn(
+                                'flex items-center gap-2',
+                                selected ? 'text-primary' : 'text-success',
+                              )}
+                            >
+                              <span className="h-2 w-2 rounded-full bg-current" />
+                              {selected ? 'Selected' : 'Available'}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      {canManage && !taken && assigning === slot.id && (
+                        <AssignPicker emid={emid} slotId={slot.id} onClose={() => setAssigning(null)} />
+                      )}
+                    </li>
+                  )
+                })}
+              </ul>
             </>
           ) : (
             <p className="text-on-surface-variant">Select a squad to view its slots.</p>
@@ -329,7 +410,11 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
           <div className="text-sm text-on-surface-variant">
             {myState
               ? `You are ${myState} for this mission.`
-              : 'Select an open slot to deploy.'}
+              : lockedForMe
+                ? 'This squad is reserved by a leader.'
+                : canManage
+                  ? 'Assign members to fill this squad.'
+                  : 'Select an open slot to deploy.'}
           </div>
           <div className="flex gap-2">
             {myState && (
@@ -342,17 +427,75 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                 Withdraw
               </button>
             )}
-            <button
-              type="button"
-              onClick={handleRegister}
-              disabled={!selectedSlot || register.isPending}
-              className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
-            >
-              Register for Deployment
-            </button>
+            {selfRegister && (
+              <button
+                type="button"
+                onClick={handleRegister}
+                disabled={!selectedSlot || register.isPending}
+                className="rounded-lg bg-primary px-6 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
+              >
+                Register for Deployment
+              </button>
+            )}
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+// AssignPicker is the leader's inline member typeahead for filling a reserved
+// squad's slot.
+function AssignPicker({
+  emid,
+  slotId,
+  onClose,
+}: {
+  emid: string
+  slotId: string
+  onClose: () => void
+}) {
+  const [q, setQ] = useState('')
+  const { data: members } = useMemberSearch(q)
+  const assign = useAssignSlot(emid)
+
+  return (
+    <div className="border-t border-border-subtle bg-surface p-2">
+      <input
+        autoFocus
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search members…"
+        className="w-full rounded-lg border border-border-subtle bg-surface-container px-3 py-1.5 text-sm"
+      />
+      <ul className="mt-2 max-h-40 overflow-y-auto">
+        {(members ?? []).map((m) => (
+          <li key={m.discord_id}>
+            <button
+              type="button"
+              onClick={() =>
+                assign.mutate(
+                  { slotId, discordId: m.discord_id },
+                  {
+                    onSuccess: () => {
+                      toast.success(`Assigned ${m.username}`)
+                      onClose()
+                    },
+                    onError: () => toast.error('Could not assign member'),
+                  },
+                )
+              }
+              className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm hover:bg-surface-container-high"
+            >
+              <img src={m.avatar_url || DEFAULT_AVATAR} alt="" className="h-5 w-5 rounded-full" />
+              {m.username}
+            </button>
+          </li>
+        ))}
+        {members && members.length === 0 && (
+          <li className="px-2 py-1 text-xs text-on-surface-variant">No matching members.</li>
+        )}
+      </ul>
     </div>
   )
 }

@@ -13,6 +13,7 @@ type UserRole string
 
 const (
 	RoleEnlisted     UserRole = "enlisted"
+	RoleLeader       UserRole = "leader" // community/squad leader: can reserve squads
 	RoleMissionMaker UserRole = "mission_maker"
 	RoleAdmin        UserRole = "admin"
 )

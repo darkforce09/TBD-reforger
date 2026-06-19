@@ -7,6 +7,9 @@ DO $$ BEGIN
     CREATE TYPE user_role AS ENUM ('enlisted','mission_maker','admin');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- 'leader' added after the initial release; idempotent so existing DBs pick it up.
+ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'leader';
+
 DO $$ BEGIN
     CREATE TYPE mission_status AS ENUM ('draft','pending_approval','live','rejected','archived');
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;

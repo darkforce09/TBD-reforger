@@ -17,9 +17,10 @@ import (
 
 // Sentinel errors used to map registration transaction failures to HTTP codes.
 var (
-	errBadSlot      = errors.New("invalid slot id")
-	errSlotNotFound = errors.New("slot not found")
-	errSlotTaken    = errors.New("slot taken")
+	errBadSlot       = errors.New("invalid slot id")
+	errSlotNotFound  = errors.New("slot not found")
+	errSlotTaken     = errors.New("slot taken")
+	errSquadReserved = errors.New("squad reserved")
 )
 
 func validEventStatus(s string) (models.EventStatus, bool) {
@@ -39,47 +40,52 @@ func canRegisterStatus(s models.EventStatus) bool {
 	return s == models.EventScheduled || s == models.EventOpen
 }
 
-// orbatTemplateItem describes a squad row to expand into individual slots.
-type orbatTemplateItem struct {
-	Faction  string `json:"faction"`
-	Callsign string `json:"callsign"`
-	Squad    string `json:"squad"`
-	Role     string `json:"role"`
-	Count    int    `json:"count"`
+// orbatSlotTemplate is one ordered, distinct slot in a squad: a role with its
+// loadout and an optional specialization tag (e.g. "MED" / "ENG").
+type orbatSlotTemplate struct {
+	Role    string `json:"role"`
+	Loadout string `json:"loadout"`
+	Tag     string `json:"tag"`
 }
 
-// parseOrbatTemplate extracts an "orbat" array from a mission version payload.
-// This is the automated ORBAT source: factions/squads/roles are derived from the
-// uploaded mission.json rather than created by hand.
-func parseOrbatTemplate(payload []byte) []orbatTemplateItem {
+// orbatSquadTemplate is a squad and its ordered slot list. The slot's position in
+// the list is its 1-based number on the ORBAT.
+type orbatSquadTemplate struct {
+	Faction  string              `json:"faction"`
+	Callsign string              `json:"callsign"`
+	Squad    string              `json:"squad"`
+	Slots    []orbatSlotTemplate `json:"slots"`
+}
+
+// parseOrbatTemplate extracts the "orbat" squad list from a mission version
+// payload. This is the automated ORBAT source: factions/squads/roles/loadouts are
+// derived from the uploaded mission.json (authored in the mission editor) rather
+// than created by hand.
+func parseOrbatTemplate(payload []byte) []orbatSquadTemplate {
 	var p struct {
-		Orbat []orbatTemplateItem `json:"orbat"`
+		Orbat []orbatSquadTemplate `json:"orbat"`
 	}
 	_ = json.Unmarshal(payload, &p)
 	return p.Orbat
 }
 
-// materializeSlots expands template rows into OrbatSlot records for one mission
-// within an event. slot_index is sequential within a squad (across roles) to
-// satisfy the unique constraint.
-func materializeSlots(tx *gorm.DB, eventMissionID uuid.UUID, items []orbatTemplateItem) error {
-	squadIdx := map[string]int{}
+// materializeSlots expands the parsed squads into OrbatSlot records for one
+// mission within an event. slot_index is the slot's 0-based position within its
+// squad, preserving the authored order and satisfying the unique constraint.
+func materializeSlots(tx *gorm.DB, eventMissionID uuid.UUID, squads []orbatSquadTemplate) error {
 	rows := make([]models.OrbatSlot, 0)
-	for _, it := range items {
-		count := it.Count
-		if count <= 0 {
-			count = 1
-		}
-		for i := 0; i < count; i++ {
+	for _, sq := range squads {
+		for i, sl := range sq.Slots {
 			rows = append(rows, models.OrbatSlot{
 				EventMissionID: eventMissionID,
-				Faction:        it.Faction,
-				Callsign:       it.Callsign,
-				Squad:          it.Squad,
-				Role:           it.Role,
-				SlotIndex:      squadIdx[it.Squad],
+				Faction:        sq.Faction,
+				Callsign:       sq.Callsign,
+				Squad:          sq.Squad,
+				Role:           sl.Role,
+				Loadout:        sl.Loadout,
+				Tag:            sl.Tag,
+				SlotIndex:      i,
 			})
-			squadIdx[it.Squad]++
 		}
 	}
 	if len(rows) == 0 {
@@ -90,7 +96,7 @@ func materializeSlots(tx *gorm.DB, eventMissionID uuid.UUID, items []orbatTempla
 
 // orbatTemplateForMission resolves a mission's ORBAT template from its current
 // published version payload.
-func (h *Handler) orbatTemplateForMission(m *models.Mission) []orbatTemplateItem {
+func (h *Handler) orbatTemplateForMission(m *models.Mission) []orbatSquadTemplate {
 	if m.CurrentVersionID == nil {
 		return nil
 	}
@@ -149,9 +155,9 @@ func (h *Handler) CreateEvent(c *gin.Context) {
 // addMissionInput attaches a mission to an event with its own start time. An
 // explicit orbat overrides the mission payload; otherwise the payload is parsed.
 type addMissionInput struct {
-	MissionID string              `json:"mission_id" binding:"required"`
-	StartTime time.Time           `json:"start_time" binding:"required"`
-	Orbat     []orbatTemplateItem `json:"orbat"`
+	MissionID string               `json:"mission_id" binding:"required"`
+	StartTime time.Time            `json:"start_time" binding:"required"`
+	Orbat     []orbatSquadTemplate `json:"orbat"`
 }
 
 // AddEventMission attaches a mission to an event and auto-materializes its ORBAT
@@ -553,22 +559,28 @@ func (h *Handler) DeleteEvent(c *gin.Context) {
 
 type orbatSlotDTO struct {
 	ID           string  `json:"id"`
+	Number       int     `json:"number"` // 1-based position within the squad
 	Role         string  `json:"role"`
+	Loadout      string  `json:"loadout,omitempty"`
+	Tag          string  `json:"tag,omitempty"`
 	SlotIndex    int     `json:"slot_index"`
 	AssignedTo   *string `json:"assigned_to"`
 	AssignedName string  `json:"assigned_name,omitempty"`
 }
 
 type orbatSquadDTO struct {
-	Faction  string         `json:"faction"`
-	Callsign string         `json:"callsign,omitempty"`
-	Squad    string         `json:"squad"`
-	Filled   int            `json:"filled"`
-	Total    int            `json:"total"`
-	Slots    []orbatSlotDTO `json:"slots"`
+	Faction        string         `json:"faction"`
+	Callsign       string         `json:"callsign,omitempty"`
+	Squad          string         `json:"squad"`
+	Filled         int            `json:"filled"`
+	Total          int            `json:"total"`
+	ReservedBy     string         `json:"reserved_by,omitempty"`
+	ReservedByName string         `json:"reserved_by_name,omitempty"`
+	Slots          []orbatSlotDTO `json:"slots"`
 }
 
-// GetOrbat returns a mission's ORBAT grouped by squad with filled/total counts.
+// GetOrbat returns a mission's ORBAT grouped by squad with filled/total counts,
+// per-slot loadout/tag, and any leader squad reservations.
 func (h *Handler) GetOrbat(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -579,33 +591,56 @@ func (h *Handler) GetOrbat(c *gin.Context) {
 		Order("faction ASC").Order("squad ASC").Order("slot_index ASC").
 		Find(&slots)
 
-	// Resolve assigned usernames.
-	ids := make([]string, 0)
+	// Squad reservations for this mission, keyed by squad.
+	var reservations []models.OrbatReservation
+	h.db.Where("event_mission_id = ?", em.ID).Find(&reservations)
+	reservedBy := map[string]string{}
+	for _, r := range reservations {
+		reservedBy[r.Squad] = r.ReservedBy
+	}
+
+	// Resolve display names for assignees + reservers in one lookup.
+	idSet := map[string]struct{}{}
 	for _, s := range slots {
 		if s.AssignedTo != nil {
-			ids = append(ids, *s.AssignedTo)
+			idSet[*s.AssignedTo] = struct{}{}
 		}
 	}
+	for _, who := range reservedBy {
+		idSet[who] = struct{}{}
+	}
 	names := map[string]string{}
-	if len(ids) > 0 {
+	if len(idSet) > 0 {
 		var us []models.User
-		h.db.Where("discord_id IN ?", ids).Find(&us)
+		h.db.Where("discord_id IN ?", keys(idSet)).Find(&us)
 		for _, u := range us {
 			names[u.DiscordID] = u.Username
 		}
 	}
 
-	// Group by squad, preserving order.
+	// Group by squad, preserving query order.
 	order := make([]string, 0)
 	groups := map[string]*orbatSquadDTO{}
 	for _, s := range slots {
 		g, exists := groups[s.Squad]
 		if !exists {
 			g = &orbatSquadDTO{Faction: s.Faction, Callsign: s.Callsign, Squad: s.Squad}
+			if who, ok := reservedBy[s.Squad]; ok {
+				g.ReservedBy = who
+				g.ReservedByName = names[who]
+			}
 			groups[s.Squad] = g
 			order = append(order, s.Squad)
 		}
-		dto := orbatSlotDTO{ID: s.ID.String(), Role: s.Role, SlotIndex: s.SlotIndex, AssignedTo: s.AssignedTo}
+		dto := orbatSlotDTO{
+			ID:         s.ID.String(),
+			Number:     s.SlotIndex + 1,
+			Role:       s.Role,
+			Loadout:    s.Loadout,
+			Tag:        s.Tag,
+			SlotIndex:  s.SlotIndex,
+			AssignedTo: s.AssignedTo,
+		}
 		if s.AssignedTo != nil {
 			dto.AssignedName = names[*s.AssignedTo]
 			g.Filled++
@@ -677,6 +712,16 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 			if slot.AssignedTo != nil && *slot.AssignedTo != me {
 				return errSlotTaken
 			}
+			// A reserved squad is held for its leader: only the reserver (or an
+			// admin) may self-claim slots inside it.
+			if middleware.Role(c) != "admin" {
+				var res models.OrbatReservation
+				if err := tx.First(&res, "event_mission_id = ? AND squad = ?", em.ID, slot.Squad).Error; err == nil {
+					if res.ReservedBy != me {
+						return errSquadReserved
+					}
+				}
+			}
 			now := time.Now()
 			if err := tx.Model(&models.OrbatSlot{}).Where("id = ?", sid).
 				Updates(map[string]any{"assigned_to": me, "assigned_at": now}).Error; err != nil {
@@ -710,6 +755,8 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "slot not found"})
 	case errSlotTaken:
 		c.JSON(http.StatusConflict, gin.H{"error": "slot already taken"})
+	case errSquadReserved:
+		c.JSON(http.StatusConflict, gin.H{"error": "squad is reserved by a leader"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not register"})
 	}
@@ -766,8 +813,22 @@ type assignSlotInput struct {
 	DiscordID string `json:"discord_id" binding:"required"`
 }
 
-// AssignSlot assigns or reassigns a user to an ORBAT slot and ensures they have
-// a confirmed registration for that mission (admin only).
+// canManageSquad reports whether the caller may fill/assign a squad's slots: an
+// admin always can; a leader can only manage a squad they have reserved.
+func (h *Handler) canManageSquad(c *gin.Context, emID uuid.UUID, squad string) bool {
+	if middleware.Role(c) == "admin" {
+		return true
+	}
+	var res models.OrbatReservation
+	if err := h.db.First(&res, "event_mission_id = ? AND squad = ?", emID, squad).Error; err != nil {
+		return false
+	}
+	return res.ReservedBy == middleware.DiscordID(c)
+}
+
+// AssignSlot assigns or reassigns a user to an ORBAT slot and ensures they have a
+// confirmed registration for that mission. Allowed for an admin, or the leader who
+// reserved the slot's squad.
 func (h *Handler) AssignSlot(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -788,12 +849,17 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
 		return
 	}
+	var slot models.OrbatSlot
+	if err := h.db.First(&slot, "id = ? AND event_mission_id = ?", slotID, em.ID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "slot not found"})
+		return
+	}
+	if !h.canManageSquad(c, em.ID, slot.Squad) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "reserve this squad to assign its slots"})
+		return
+	}
 
 	txErr := h.db.Transaction(func(tx *gorm.DB) error {
-		var slot models.OrbatSlot
-		if err := tx.First(&slot, "id = ? AND event_mission_id = ?", slotID, em.ID).Error; err != nil {
-			return gorm.ErrRecordNotFound
-		}
 		now := time.Now()
 		if err := tx.Model(&models.OrbatSlot{}).Where("id = ?", slotID).
 			Updates(map[string]any{"assigned_to": in.DiscordID, "assigned_at": now}).Error; err != nil {
@@ -810,10 +876,6 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 			DoUpdates: clause.AssignmentColumns([]string{"slot_id", "state"}),
 		}).Create(&reg).Error
 	})
-	if txErr == gorm.ErrRecordNotFound {
-		c.JSON(http.StatusNotFound, gin.H{"error": "slot not found"})
-		return
-	}
 	if txErr != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not assign slot"})
 		return
@@ -821,7 +883,8 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"assigned_to": in.DiscordID})
 }
 
-// ClearSlot unassigns an ORBAT slot (admin only).
+// ClearSlot unassigns an ORBAT slot. Allowed for an admin, or the leader who
+// reserved the slot's squad.
 func (h *Handler) ClearSlot(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -832,6 +895,15 @@ func (h *Handler) ClearSlot(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid slot id"})
 		return
 	}
+	var slot models.OrbatSlot
+	if err := h.db.First(&slot, "id = ? AND event_mission_id = ?", slotID, em.ID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "slot not found"})
+		return
+	}
+	if !h.canManageSquad(c, em.ID, slot.Squad) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "reserve this squad to manage its slots"})
+		return
+	}
 	h.db.Transaction(func(tx *gorm.DB) error {
 		tx.Model(&models.OrbatSlot{}).Where("id = ? AND event_mission_id = ?", slotID, em.ID).
 			Updates(map[string]any{"assigned_to": nil, "assigned_at": nil})
@@ -840,6 +912,106 @@ func (h *Handler) ClearSlot(c *gin.Context) {
 		return nil
 	})
 	c.JSON(http.StatusOK, gin.H{"cleared": true})
+}
+
+// --- Squad reservation (leader: hold an entire squad in one click) ---
+
+type squadBody struct {
+	Squad string `json:"squad" binding:"required"`
+}
+
+// ReserveSquad places a one-click hold on a whole squad for the calling leader.
+// While held, only the reserver (or an admin) may fill its slots.
+func (h *Handler) ReserveSquad(c *gin.Context) {
+	em, ok := h.loadEventMission(c)
+	if !ok {
+		return
+	}
+	var in squadBody
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "squad is required"})
+		return
+	}
+	me := middleware.DiscordID(c)
+
+	// The squad must exist in this mission's ORBAT.
+	var n int64
+	h.db.Model(&models.OrbatSlot{}).Where("event_mission_id = ? AND squad = ?", em.ID, in.Squad).Count(&n)
+	if n == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "squad not found in this ORBAT"})
+		return
+	}
+
+	// Reject if already reserved by someone else.
+	var existing models.OrbatReservation
+	if err := h.db.First(&existing, "event_mission_id = ? AND squad = ?", em.ID, in.Squad).Error; err == nil {
+		if existing.ReservedBy != me {
+			c.JSON(http.StatusConflict, gin.H{"error": "squad is already reserved"})
+			return
+		}
+		c.JSON(http.StatusOK, existing) // idempotent: already yours
+		return
+	}
+
+	res := models.OrbatReservation{EventMissionID: em.ID, Squad: in.Squad, ReservedBy: me}
+	if err := h.db.Create(&res).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not reserve squad"})
+		return
+	}
+	c.JSON(http.StatusCreated, res)
+}
+
+// ReleaseSquad lifts a squad hold. Only the reserver or an admin may release.
+func (h *Handler) ReleaseSquad(c *gin.Context) {
+	em, ok := h.loadEventMission(c)
+	if !ok {
+		return
+	}
+	var in squadBody
+	if err := c.ShouldBindJSON(&in); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "squad is required"})
+		return
+	}
+	var res models.OrbatReservation
+	if err := h.db.First(&res, "event_mission_id = ? AND squad = ?", em.ID, in.Squad).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "squad is not reserved"})
+		return
+	}
+	if res.ReservedBy != middleware.DiscordID(c) && middleware.Role(c) != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "only the reserver or an admin can release this squad"})
+		return
+	}
+	if err := h.db.Delete(&res).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not release squad"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"released": true})
+}
+
+// --- Member directory (leader: pick assignees for a reserved squad) ---
+
+type memberDTO struct {
+	DiscordID string `json:"discord_id"`
+	Username  string `json:"username"`
+	AvatarURL string `json:"avatar_url,omitempty"`
+}
+
+// SearchMembers returns a slim member list for leaders filling a reserved squad.
+// Query: ?q= matches username/handle (case-insensitive). Excludes banned users.
+func (h *Handler) SearchMembers(c *gin.Context) {
+	q := c.Query("q")
+	db := h.db.Model(&models.User{}).Where("is_banned = ?", false)
+	if q != "" {
+		like := "%" + q + "%"
+		db = db.Where("username ILIKE ? OR discord_handle ILIKE ?", like, like)
+	}
+	var users []models.User
+	db.Order("username ASC").Limit(20).Find(&users)
+	out := make([]memberDTO, 0, len(users))
+	for _, u := range users {
+		out = append(out, memberDTO{DiscordID: u.DiscordID, Username: u.Username, AvatarURL: u.AvatarURL})
+	}
+	c.JSON(http.StatusOK, gin.H{"data": out})
 }
 
 // --- helpers ---

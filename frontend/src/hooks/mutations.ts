@@ -51,6 +51,46 @@ export function useWithdrawMission(emid: string) {
   })
 }
 
+// Leader: reserve / release a whole squad in one click.
+export function useReserveSquad(emid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (squad: string) => {
+      const { data } = await api.post(`/event-missions/${emid}/squads/reserve`, { squad })
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['orbat', emid] }),
+  })
+}
+
+export function useReleaseSquad(emid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (squad: string) => {
+      const { data } = await api.post(`/event-missions/${emid}/squads/release`, { squad })
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['orbat', emid] }),
+  })
+}
+
+// Leader/admin: assign a member to a slot in a reserved squad.
+export function useAssignSlot(emid: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ slotId, discordId }: { slotId: string; discordId: string }) => {
+      const { data } = await api.put(`/event-missions/${emid}/slots/${slotId}/assign`, {
+        discord_id: discordId,
+      })
+      return data
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['orbat', emid] })
+      qc.invalidateQueries({ queryKey: ['events'] })
+    },
+  })
+}
+
 // Attach a mission to an event; the backend auto-materializes the ORBAT from
 // the mission.json payload.
 export function useAddEventMission(eventId: string) {

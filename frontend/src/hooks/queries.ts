@@ -10,6 +10,7 @@ import type {
   EventHub,
   EventListItem,
   LeaderboardResponse,
+  Member,
   OrbatSquad,
   LinkStatus,
   MeResponse,
@@ -136,6 +137,18 @@ export function useOrbat(emid: string | undefined) {
     queryFn: async () =>
       (await api.get<{ data: OrbatSquad[] }>(`/event-missions/${emid}/orbat`)).data.data,
     enabled: authed && Boolean(emid),
+  })
+}
+
+// Leader-only member directory for picking assignees for a reserved squad.
+export function useMemberSearch(q: string, enabled = true) {
+  const authed = useAuthed()
+  return useQuery({
+    queryKey: ['members', q],
+    queryFn: async () =>
+      (await api.get<{ data: Member[] }>('/members', { params: { q } })).data.data,
+    enabled: authed && enabled,
+    staleTime: 30_000,
   })
 }
 

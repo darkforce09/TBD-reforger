@@ -203,7 +203,10 @@ export interface EventHub {
 // A single ORBAT slot row inside a squad (mirrors the Go orbatSlotDTO).
 export interface OrbatSlot {
   id: string
+  number: number // 1-based position within the squad
   role: string
+  loadout?: string
+  tag?: string
   slot_index: number
   assigned_to?: string | null
   assigned_name?: string
@@ -216,7 +219,16 @@ export interface OrbatSquad {
   squad: string
   filled: number
   total: number
+  reserved_by?: string
+  reserved_by_name?: string
   slots: OrbatSlot[]
+}
+
+// A slim member row for the leader's assignee picker (Go memberDTO).
+export interface Member {
+  discord_id: string
+  username: string
+  avatar_url?: string
 }
 
 export interface WikiPage {
