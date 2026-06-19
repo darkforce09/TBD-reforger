@@ -16,6 +16,22 @@ export function formatShortDate(iso: string): string {
   return format(d, 'MMM d')
 }
 
+/** UTC time-of-day for tactical log lines, e.g. `14:02:00Z`. */
+export function formatZuluTime(iso: string): string {
+  const d = new Date(iso)
+  if (!isValidDate(d)) return '--:--:--Z'
+  return `${d.toISOString().slice(11, 19)}Z`
+}
+
+/** Strip HTML tags (bodies are stored as HTML) and collapse whitespace for plain previews. */
+export function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
 export function formatUptime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
