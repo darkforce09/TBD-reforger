@@ -54,7 +54,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Git: **commit directly to `main`; never create a branch.** End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 
-## Status (latest feature work: T-009, commit cc2eed3 — 2026-06-19)
+## Status (latest feature work: T-010, commit 12a0463 — 2026-06-19)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
@@ -90,6 +90,16 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
   faction/squad/slot selector + Register button inline (no "Open ORBAT" step). The
   split-pane is a reusable `OrbatSelector` in `pages/events.tsx`; the standalone
   `/events/:id/missions/:emid/orbat` route reuses it for deep-links.
+- T-010 rich ORBAT slots + squad reservation:
+  - Per-slot ORBAT schema in `json_payload`: `orbat[].slots[]` with `role`,
+    `loadout`, optional `tag` (parsed in `events.go`; `OrbatSlot` gained
+    `loadout`/`tag`). Rendered as a numbered list ("1: Squad Leader (L85A3 + GL) | MED").
+  - New `leader` role (`enlisted<leader<mission_maker<admin` in `authz.go`; enum
+    `ALTER TYPE` in `01_enums.sql`; dev-login + role-sync seed updated).
+  - One-click squad **reservation/hold**: `OrbatReservation` model + `POST
+    /event-missions/:emid/squads/{reserve,release}` (leader+). A held squad blocks
+    others' claims; the reserver/admin fill it via `AssignSlot` + a `GET /members`
+    directory search. Slot/assign routes moved to the leader tier.
 
 **Not yet built / next:**
 - The 2D mission editor UI (backend stores/serves `json_payload`; the visual editor
