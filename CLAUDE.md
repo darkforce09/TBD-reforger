@@ -54,7 +54,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Git: **commit directly to `main`; never create a branch.** End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 
-## Status (latest feature work: T-012, commit b6f0a1c — 2026-06-19)
+## Status (latest feature work: T-013 — 2026-06-19)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
@@ -117,8 +117,15 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
   table/queue + slide-over dossier / review HUD; Event & Content Manager forms moved into
   frosted `Dialog`s (kills the form-over-list anti-pattern); new **Vehicle Database** page
   (`/vehicles`, split-pane dossier) + nav entry. Verified: tsc/build/lint clean + live
-  dev-login API contract smoke. **Phase 3 (dashboards/grids: Dashboard, Server Intel,
-  Leaderboards, Mission Library/Overview, Modpacks, Mortar, Settings) not yet restyled.**
+  dev-login API contract smoke.
+- T-013 **macOS dashboards & grids restyle** (Phase 3; presentation-only). Dashboard →
+  glass bento (hero countdown + status cards + intel feed); Server Intel & Settings →
+  glass cards + `Badge` chips; Leaderboards podium → glass; Mission Library → featured
+  card grid with thumbnails that opens the mission dossier in a `Sheet` slide-over
+  (shared `MissionDossierBody` reused by the `/missions/:id` deep-link page); Modpacks &
+  Mortar → glass. Verified: tsc/build/lint clean + live dev-login API contract smoke.
+  All blueprint pages now on the Aegis design language; the **2D Mission Creator** remains
+  the one unbuilt piece (separate effort).
 
 **Not yet built / next:**
 - The 2D mission editor UI (backend stores/serves `json_payload`; the visual editor

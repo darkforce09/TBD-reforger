@@ -34,7 +34,7 @@ export function ModpacksPage() {
               title="Server Modpacks"
               subtitle="Required dependencies for deployment. Arma Reforger handles mod downloads automatically when you connect."
             />
-            <OpsCard className="bg-surface-container-high">
+            <OpsCard glass>
               <h2 className="text-xl font-semibold">
                 {modpack.name} (v{modpack.version})
               </h2>
@@ -46,12 +46,12 @@ export function ModpacksPage() {
                 {modpack.mods.map((m) => (
                   <li
                     key={m.id}
-                    className="flex items-center gap-2 rounded-lg border border-border-subtle bg-surface-container px-3 py-2 text-sm"
+                    className="flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container px-3 py-2 text-label-md"
                   >
                     <MaterialIcon name="extension" className="text-primary" />
                     {m.name}
                     {m.is_key_dependency && (
-                      <span className="ml-auto text-xs text-warning">Required</span>
+                      <span className="ml-auto"><Badge variant="warning">Required</Badge></span>
                     )}
                   </li>
                 ))}
@@ -309,7 +309,7 @@ export function MortarCalculatorPage() {
     <AuthGate>
       <div className="mx-auto w-full max-w-6xl">
         <PageHeader title="Mortar Calculator" subtitle="Enter grid coordinates for M252 81mm solution." />
-        <OpsCard className="mb-4 grid gap-4 bg-surface-container-high sm:grid-cols-2 lg:grid-cols-4">
+        <OpsCard glass className="mb-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-sm">
             FP X
             <input
@@ -372,7 +372,7 @@ export function MortarCalculatorPage() {
             className="absolute top-1/2 left-2/3 h-4 w-4 rounded-full border-2 border-error bg-error/30"
             title="Target"
           />
-          <OpsCard className="absolute right-4 bottom-4 w-72 border-primary/30 bg-surface-container-high/95 backdrop-blur">
+          <OpsCard glass className="absolute right-4 bottom-4 w-72 border-t-2 border-tertiary">
             <h2 className="text-sm font-semibold text-primary">
               Firing Solution — {solution?.weapon_system ?? 'M252 81mm'}
             </h2>

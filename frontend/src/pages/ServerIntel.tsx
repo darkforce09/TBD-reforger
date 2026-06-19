@@ -4,6 +4,7 @@ import { MaterialIcon } from '@/components/MaterialIcon'
 import { OpsCard } from '@/components/OpsCard'
 import { AuthGate } from '@/components/AuthGate'
 import { QueryState } from '@/components/QueryState'
+import { Badge } from '@/components/ui/badge'
 import { useServers } from '@/hooks/queries'
 import { useServerTelemetry } from '@/hooks/useServerTelemetry'
 import { pickDefaultServer } from '@/lib/defaultServer'
@@ -20,7 +21,7 @@ function IntelField({
   className?: string
 }) {
   return (
-    <div className={cn('rounded-lg border border-border-subtle bg-surface-container p-4', className)}>
+    <div className={cn('rounded-lg border border-outline-variant/30 bg-surface-variant/20 p-4', className)}>
       <span className="mb-1 block text-xs font-semibold tracking-widest text-on-surface-variant uppercase">
         {label}
       </span>
@@ -72,7 +73,7 @@ export function ServerIntelPage() {
             <p className="text-on-surface-variant">No servers configured.</p>
           ) : (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              <OpsCard className="h-full border-primary/30 bg-surface-container-high">
+              <OpsCard glass glow className="h-full">
                 <header className="mb-4 flex items-center justify-between border-b border-border-subtle pb-4">
                   <h2 className="text-lg font-semibold">Server Status</h2>
                   <div className="flex items-center gap-2">
@@ -123,7 +124,7 @@ export function ServerIntelPage() {
                 </div>
               </OpsCard>
 
-              <OpsCard className="h-full border-primary/30 bg-surface-container-high">
+              <OpsCard glass glow className="h-full">
                 <header className="mb-4 border-b border-border-subtle pb-4">
                   <h2 className="text-lg font-semibold">Active Deployment</h2>
                 </header>
@@ -169,7 +170,7 @@ export function ServerIntelPage() {
                 </ul>
               </OpsCard>
 
-              <OpsCard className="h-full border-primary/30 bg-surface-container-high">
+              <OpsCard glass glow className="h-full">
                 <header className="mb-4 border-b border-border-subtle pb-4">
                   <h2 className="text-lg font-semibold">Connection Gateway</h2>
                 </header>
@@ -202,8 +203,8 @@ export function ServerIntelPage() {
                             : 'No modpack required'}
                         </span>
                         {modpack?.is_current && (
-                          <span className="ml-auto rounded border border-green-700/50 bg-success-muted px-2 py-0.5 text-xs font-semibold tracking-widest text-on-surface">
-                            Verified
+                          <span className="ml-auto">
+                            <Badge variant="success">Verified</Badge>
                           </span>
                         )}
                       </div>
@@ -216,7 +217,7 @@ export function ServerIntelPage() {
                   </div>
                   <button
                     type="button"
-                    className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-medium text-on-primary shadow-[0_0_15px_rgba(59,130,246,0.3)] transition-colors hover:bg-primary/90"
+                    className="mt-auto flex w-full items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-medium text-on-primary shadow-[0_0_15px_rgba(173,198,255,0.25)] transition-colors hover:bg-primary/90"
                     onClick={() => toast.message('Launch requires the Reforger client')}
                   >
                     <MaterialIcon name="play_arrow" className="text-lg" />

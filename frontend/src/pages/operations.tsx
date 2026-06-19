@@ -274,13 +274,14 @@ export function LeaderboardsPage() {
             <div className="mb-8 grid grid-cols-3 items-end gap-4">
               {[podium[1], podium[0], podium[2]].filter(Boolean).map((p) => (
                 <OpsCard
+                  glass
                   key={p.discord_id}
                   className={cn(
-                    'bg-surface-container-high text-center',
+                    'text-center',
                     p.rank === 1 && 'border-primary/40 py-8',
                   )}
                 >
-                  <span className="text-3xl font-bold text-primary">#{p.rank}</span>
+                  <span className="font-mono text-headline-lg text-primary">#{p.rank}</span>
                   <p className="mt-2 font-semibold">{p.username}</p>
                   <p className="text-sm text-on-surface-variant">
                     {category === 'kd' && p.kd_ratio != null && `${p.kd_ratio.toFixed(2)} K/D`}

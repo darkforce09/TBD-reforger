@@ -5,6 +5,7 @@ import { OpsCard } from '@/components/OpsCard'
 import { PageHeader } from '@/components/PageHeader'
 import { AuthGate } from '@/components/AuthGate'
 import { QueryState } from '@/components/QueryState'
+import { Badge } from '@/components/ui/badge'
 import { useLinkStatus, useMe } from '@/hooks/queries'
 import { useGenerateLinkCode, useUnlinkArma } from '@/hooks/mutations'
 import { DEFAULT_AVATAR } from '@/lib/avatar'
@@ -45,7 +46,7 @@ export function SettingsPage() {
           <div className="mx-auto w-full max-w-2xl">
             <PageHeader title="Settings" subtitle="Account profile, Arma identity, and service statistics." />
 
-            <OpsCard className="mb-6 bg-surface-container-high">
+            <OpsCard glass className="mb-6">
               <h2 className="mb-4 text-lg font-semibold">Profile</h2>
               <div className="flex items-center gap-4">
                 <img
@@ -58,14 +59,14 @@ export function SettingsPage() {
                   <p className="text-sm text-on-surface-variant">
                     {user.discord_handle ?? user.discord_id}
                   </p>
-                  <span className="mt-2 inline-block rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary uppercase">
-                    {user.role}
+                  <span className="mt-2 inline-block">
+                    <Badge variant="primary">{user.role}</Badge>
                   </span>
                 </div>
               </div>
             </OpsCard>
 
-            <OpsCard className="mb-6 bg-surface-container-high">
+            <OpsCard glass className="mb-6">
               <h2 className="mb-4 text-lg font-semibold">Arma Identity</h2>
               <p className="mb-4 text-sm text-on-surface-variant">
                 Status:{' '}
@@ -107,7 +108,7 @@ export function SettingsPage() {
               </div>
             </OpsCard>
 
-            <OpsCard className="bg-surface-container-high">
+            <OpsCard glass>
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                 <MaterialIcon name="military_tech" className="text-primary" />
                 Service Stats
@@ -115,11 +116,11 @@ export function SettingsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-on-surface-variant">Total Operations</span>
-                  <p className="text-2xl font-bold text-primary">{user.total_deployments ?? 0}</p>
+                  <p className="font-mono text-headline-lg text-primary">{user.total_deployments ?? 0}</p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant">Attendance</span>
-                  <p className="text-2xl font-bold text-success">{user.attendance_rate ?? 0}%</p>
+                  <p className="font-mono text-headline-lg text-success">{user.attendance_rate ?? 0}%</p>
                 </div>
               </div>
             </OpsCard>
