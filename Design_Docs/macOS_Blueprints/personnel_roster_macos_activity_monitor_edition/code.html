@@ -1,0 +1,304 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Personnel Roster</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "tactical-yellow": "#facc15",
+                "surface-container-highest": "#2f3445",
+                "on-secondary-fixed": "#001a42",
+                "primary-container": "#adc6ff",
+                "secondary-container": "#0566d9",
+                "inverse-on-surface": "#2a3040",
+                "tertiary-fixed-dim": "#7cd0ff",
+                "background": "#0d1322",
+                "error-alert": "#f87171",
+                "surface": "#0d1322",
+                "on-primary": "#122f5f",
+                "surface-container-high": "#242a3a",
+                "outline-variant": "#44474f",
+                "surface-container-lowest": "#080e1d",
+                "surface-variant": "#2f3445",
+                "outline": "#8e909a",
+                "inverse-primary": "#455e90",
+                "on-primary-fixed-variant": "#2c4677",
+                "on-tertiary-container": "#005979",
+                "on-primary-container": "#385283",
+                "on-error": "#690005",
+                "surface-bright": "#333949",
+                "inverse-surface": "#dde2f7",
+                "border-subtle": "#374151",
+                "on-tertiary-fixed": "#001e2c",
+                "surface-dim": "#0d1322",
+                "on-secondary": "#002e6a",
+                "surface-container": "#191f2f",
+                "success-muted": "#064e3b",
+                "secondary-fixed-dim": "#adc6ff",
+                "on-primary-fixed": "#001a42",
+                "tertiary": "#c3e7ff",
+                "tertiary-fixed": "#c4e7ff",
+                "on-tertiary": "#00344a",
+                "surface-container-low": "#151b2b",
+                "secondary-fixed": "#d8e2ff",
+                "tertiary-container": "#7bd0ff",
+                "on-error-container": "#ffdad6",
+                "on-surface-variant": "#c4c6d0",
+                "primary-fixed-dim": "#adc6ff",
+                "primary-fixed": "#d8e2ff",
+                "error-container": "#93000a",
+                "on-surface": "#dde2f7",
+                "on-secondary-container": "#e6ecff",
+                "error": "#ffb4ab",
+                "on-background": "#dde2f7",
+                "primary": "#d8e2ff",
+                "surface-glass": "rgba(31, 41, 55, 0.7)",
+                "on-secondary-fixed-variant": "#004395",
+                "surface-tint": "#adc6ff",
+                "secondary": "#adc6ff",
+                "on-tertiary-fixed-variant": "#004c69"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "container-max": "1440px",
+                "stack-sm": "0.5rem",
+                "stack-md": "1rem",
+                "margin-mobile": "1rem",
+                "stack-lg": "2rem",
+                "gutter": "1.5rem"
+        },
+        "fontFamily": {
+                "headline-sm": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "headline-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "label-sm": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "headline-sm": [
+                        "20px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "code-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-lg": [
+                        "30px",
+                        {
+                                "lineHeight": "38px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen relative overflow-hidden">
+<!-- Decorative Background Elements for that 'military profile' vibe -->
+<div class="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary/5 via-background to-background opacity-50"></div>
+<main class="w-full max-w-7xl mx-auto px-4 py-8 h-screen flex flex-col relative z-10">
+<!-- Header & Search -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shrink-0">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Personnel Roster</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Manage and audit registered platform users.</p>
+</div>
+<div class="relative w-full md:w-80">
+<span class="absolute inset-y-0 left-0 flex items-center pl-3 text-on-surface-variant pointer-events-none material-symbols-outlined">search</span>
+<input class="w-full bg-slate-800/50 backdrop-blur-sm border border-white/10 rounded-lg text-on-surface placeholder-on-surface-variant pl-10 pr-4 py-2 focus:outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary/50 font-body-md transition-all" placeholder="Search ID or Name..." type="text">
+</div><div class="flex items-center gap-2">
+<button class="px-3 py-2 font-label-sm text-xs text-on-surface-variant bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors">
+        [ Sort by Warnings ]
+    </button>
+<button class="px-3 py-2 font-label-sm text-xs text-on-surface-variant bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-colors">
+        [ Filter by Rank ]
+    </button>
+</div>
+</div>
+<!-- Main Split-Pane Container -->
+<div class="flex-1 relative overflow-hidden rounded-2xl bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-2xl flex">
+<!-- Full-Width List Area -->
+<div class="flex-1 flex flex-col min-w-0">
+<!-- Table Header -->
+<div class="grid grid-cols-5 px-6 py-4 border-b border-white/5 bg-white/5">
+<span class="font-label-sm text-on-surface-variant/60 uppercase tracking-widest">User</span>
+<span class="font-label-sm text-on-surface-variant/60 uppercase tracking-widest">Arma Character</span>
+<span class="font-label-sm text-on-surface-variant/60 uppercase tracking-widest">Rank</span>
+<span class="font-label-sm text-on-surface-variant/60 uppercase tracking-widest">Warnings</span>
+<span class="font-label-sm text-on-surface-variant/60 uppercase tracking-widest">Status</span>
+</div>
+<!-- Table Body -->
+<div class="flex-1 overflow-y-auto custom-scrollbar">
+<!-- Row 1 (Selected) -->
+<div class="grid grid-cols-5 px-6 py-4 border-b border-white/5 items-center bg-primary/5">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-8 h-8 rounded-full border border-primary/30" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbytRc-taZSIV4Y-TVcfgqYJJA7umKF9UGNIi-IQyhhbSwnVNSPq4iAejGpw5oqvbbcOzFpUvYQyPtUOj3GwVt5SJxLcrsNMaUMSkvRR0oE97lyz5wqVPasScfMK3tUPXCr258eMIKwBanYhHm3W9V6ornvQDGJZhLZ7N0F8Pc896SAcipMti2SloM_Q-L1_cmaEww58pt-f009B1SROoLXcR4B-ppOwQ1-5RP118YGqEVf1s9V1qaD629f5YPUgSqUm46Emp81Vs">
+<span class="font-label-md text-on-surface">Dave#1234</span>
+</div>
+<span class="text-on-surface-variant">[TBD] Admin Dave</span>
+<span class="text-primary font-medium">Platform Admin</span>
+<span class="font-code-md text-on-surface-variant">0</span>
+<span class="text-emerald-400 text-xs font-semibold uppercase tracking-wider">Active</span>
+</div>
+<!-- Row 2 -->
+<div class="grid grid-cols-5 px-6 py-4 border-b border-white/5 items-center hover:bg-white/5 transition-colors cursor-pointer">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-on-surface-variant border border-white/10">
+<span class="material-symbols-outlined text-sm">person</span>
+</div>
+<span class="font-label-md text-on-surface-variant">RandomGuy#9999</span>
+</div>
+<span class="text-on-surface-variant/60">-</span>
+<span class="text-on-surface-variant">Enlisted</span>
+<span class="font-code-md text-amber-500">1</span>
+<span class="text-on-surface-variant/60 text-xs font-semibold uppercase tracking-wider">Active</span>
+</div>
+</div>
+<!-- Footer Stats -->
+<div class="px-6 py-3 border-t border-white/5 bg-slate-900/40">
+<span class="font-code-md text-[10px] text-on-surface-variant/40 uppercase tracking-widest">Total Records: 002</span>
+</div>
+</div>
+<!-- Slide-Over Dossier Panel -->
+<div class="w-1/3 shrink-0 border-l border-white/10 bg-slate-900/80 backdrop-blur-xl flex flex-col shadow-2xl relative z-20">
+<div class="p-8 flex-1 overflow-y-auto">
+<div class="flex flex-col items-center text-center mb-8">
+<img alt="Avatar" class="w-32 h-32 rounded-2xl border border-white/10 shadow-2xl mb-4 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDbytRc-taZSIV4Y-TVcfgqYJJA7umKF9UGNIi-IQyhhbSwnVNSPq4iAejGpw5oqvbbcOzFpUvYQyPtUOj3GwVt5SJxLcrsNMaUMSkvRR0oE97lyz5wqVPasScfMK3tUPXCr258eMIKwBanYhHm3W9V6ornvQDGJZhLZ7N0F8Pc896SAcipMti2SloM_Q-L1_cmaEww58pt-f009B1SROoLXcR4B-ppOwQ1-5RP118YGqEVf1s9V1qaD629f5YPUgSqUm46Emp81Vs">
+<h2 class="font-headline-md text-on-surface">Dave#1234</h2>
+<p class="text-on-surface-variant">[TBD] Admin Dave</p>
+</div>
+<div class="space-y-6">
+<div class="border-t border-white/5 pt-6">
+<h3 class="font-label-sm text-on-surface-variant/50 uppercase tracking-widest mb-4">Service Telemetry</h3>
+<div class="grid grid-cols-1 gap-4">
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface-variant">Deployments</span>
+<span class="font-code-md text-on-surface">42</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface-variant">Current Rank</span>
+<span class="text-primary">Admin</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface-variant">Warnings</span>
+<span class="font-code-md text-on-surface">0</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-sm text-on-surface-variant">Status</span>
+<span class="text-emerald-400">ACTIVE</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Docked Actions -->
+<div class="p-6 bg-slate-900/90 border-t border-white/10 flex flex-col gap-2">
+<button class="w-full py-2.5 font-code-md text-sm text-on-surface bg-white/5 border border-white/10 rounded hover:bg-white/10 transition-all">[ Edit Roles ]</button>
+<div class="grid grid-cols-2 gap-2">
+<button class="py-2.5 font-code-md text-sm text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded hover:bg-amber-500/20 transition-all">[ Warning ]</button>
+<button class="py-2.5 font-code-md text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded hover:bg-red-500/20 transition-all">[ Ban ]</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<style>
+    /* Custom Scrollbar for Directory */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+</style>
+</body></html>

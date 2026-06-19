@@ -1,0 +1,289 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Mission Editor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-tint": "#adc6ff",
+                        "primary": "#adc6ff",
+                        "background": "#0d1322",
+                        "inverse-primary": "#005ac2",
+                        "surface-container-lowest": "#080e1d",
+                        "surface-container-low": "#151b2b",
+                        "on-tertiary-container": "#002d40",
+                        "on-tertiary": "#00354a",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-surface": "#ffffff",
+                        "secondary-container": "#404a59",
+                        "border-subtle": "#374151",
+                        "surface-container": "#191f2f",
+                        "tertiary": "#7bd0ff",
+                        "on-secondary": "#27313f",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-secondary-container": "#afb9cb",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#dde2f8",
+                        "surface-container-high": "#242a3a",
+                        "primary-container": "#4d8eff",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-variant": "#2f3445",
+                        "surface-container-highest": "#2f3445",
+                        "outline": "#8c909f",
+                        "surface-bright": "#33394a",
+                        "on-secondary-fixed": "#121c2a",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "tertiary-container": "#009bd1",
+                        "on-error": "#690005",
+                        "success-muted": "#064e3b",
+                        "on-background": "#dde2f8",
+                        "surface": "#0d1322",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004395",
+                        "surface-dim": "#0d1322",
+                        "outline-variant": "#424754",
+                        "on-primary-container": "#00285d",
+                        "inverse-on-surface": "#2a3040",
+                        "on-tertiary-fixed": "#001e2c",
+                        "secondary": "#bdc7d9",
+                        "on-surface-variant": "#c2c6d6",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "on-primary-fixed": "#001a42",
+                        "secondary-fixed": "#d9e3f6",
+                        "error": "#f87171",
+                        "on-primary": "#002e6a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "container-max": "1440px",
+                        "stack-sm": "0.5rem",
+                        "margin-mobile": "1rem",
+                        "stack-lg": "2rem",
+                        "stack-md": "1rem",
+                        "gutter": "1.5rem"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "headline-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(31, 41, 55, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex flex-col font-body-md text-body-md">
+<!-- Topographic Map Background -->
+<div class="absolute inset-0 z-0 bg-cover bg-center" data-alt="A highly detailed, technical 2D topographical map in a dark, tactical aesthetic. The map features intricate contour lines, grid coordinates, and subtle elevation shading, rendered in deep navy blues, charcoals, and muted cyans. It evokes a military command center display, optimized for high-density information layout with sharp, precise linework and a modern, minimalist interface style." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDcqhVMf9MMSLooAMsukTcCO7UF4gPv6PxJXa97H_787MmyXERmR7RNHG21XItZJTEvWvAVzTovkcpXJGyLkOmZJ3s71wA99l9X9qCd9id8RbRkSZbJPSuW4Gv7Qr9Na9GlKIunFagt2rgNqElaI1d3b4xZS-ge0zjwIb-wdQuhhLq70P7GeBDvGNl0R97bVFzexAJCT8_oFcio7VJkyIswhGb4loorSuiaoRA212MwWuF3g33GQSfkoDWwnsRYDNQm5B_MQa9qDtY')"></div>
+<!-- TopNavBar -->
+<header class="relative z-50 flex justify-between items-center px-gutter h-16 w-full bg-surface-container-low/80 backdrop-blur-md border-b border-border-subtle shadow-sm">
+<div class="flex items-center gap-4">
+<span class="font-headline-sm text-headline-sm font-bold tracking-tighter text-primary">ARMA MISSION OPS</span>
+</div>
+<div class="flex items-center gap-6 glass-panel px-4 py-2 rounded-lg">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">schedule</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Time</span>
+<input class="w-24 accent-primary" max="23.99" min="0" step="0.25" type="range" value="12">
+<span class="font-code-md text-code-md text-primary ml-1">12:00</span>
+</div>
+<div class="w-px h-6 bg-border-subtle"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">cloud</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase">Weather</span>
+<select class="bg-surface-container border border-border-subtle text-on-surface font-label-md text-label-md rounded px-2 py-1 focus:ring-1 focus:ring-primary focus:border-primary outline-none">
+<option>Clear</option>
+<option>Overcast</option>
+<option>Stormy</option>
+</select>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-4 py-2 rounded border border-primary text-primary font-label-md text-label-md hover:bg-primary/10 transition-colors">
+                Lore Editor
+            </button>
+<button class="px-4 py-2 rounded bg-[#3b82f6] text-white font-label-md text-label-md hover:bg-blue-600 transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">rocket_launch</span>
+                Deploy
+            </button>
+<div class="flex items-center gap-2 ml-2">
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80"><span class="material-symbols-outlined">save</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80"><span class="material-symbols-outlined">undo</span></button>
+<button class="p-1.5 text-on-surface-variant hover:text-primary transition-colors cursor-pointer active:opacity-80"><span class="material-symbols-outlined">redo</span></button>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<div class="relative z-10 flex-1 flex overflow-hidden p-4 gap-4">
+<!-- Left Sidebar (Outliner) -->
+<aside class="w-64 glass-panel rounded-xl flex flex-col shadow-xl">
+<div class="p-4 border-b border-border-subtle flex justify-between items-center">
+<h2 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Outliner</h2>
+<div class="flex gap-1">
+<button class="p-1 text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">filter_list</span></button>
+<button class="p-1 text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-sm">add</span></button>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-2">
+<!-- Tree Node: Factions -->
+<div class="mb-1">
+<div class="flex items-center gap-2 p-1.5 hover:bg-surface-variant/50 rounded cursor-pointer text-on-surface">
+<span class="material-symbols-outlined text-sm">expand_more</span>
+<span class="material-symbols-outlined text-sm text-tertiary">category</span>
+<span class="font-label-md text-label-md">Factions</span>
+</div>
+<!-- Tree Node: US Army -->
+<div class="ml-4 border-l border-border-subtle pl-2">
+<div class="flex items-center gap-2 p-1.5 hover:bg-surface-variant/50 rounded cursor-pointer text-on-surface">
+<span class="material-symbols-outlined text-sm">expand_more</span>
+<span class="material-symbols-outlined text-sm text-blue-400">flag</span>
+<span class="font-label-md text-label-md">US Army</span>
+</div>
+<!-- Tree Node: Alpha Squad -->
+<div class="ml-4 border-l border-border-subtle pl-2">
+<div class="flex items-center gap-2 p-1.5 hover:bg-surface-variant/50 rounded cursor-pointer text-on-surface">
+<span class="material-symbols-outlined text-sm">expand_more</span>
+<span class="material-symbols-outlined text-sm text-yellow-400">group</span>
+<span class="font-label-md text-label-md">Alpha Squad</span>
+</div>
+<!-- Tree Nodes: Units -->
+<div class="ml-4 border-l border-border-subtle pl-2">
+<div class="flex items-center gap-2 p-1.5 bg-primary-container/20 text-primary border-l-2 border-primary rounded cursor-pointer">
+<span class="material-symbols-outlined text-sm ml-4">person</span>
+<span class="font-label-md text-label-md">Rifleman</span>
+</div>
+<div class="flex items-center gap-2 p-1.5 hover:bg-surface-variant/50 rounded cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-sm ml-4">health_and_safety</span>
+<span class="font-label-md text-label-md">Medic</span>
+</div>
+<div class="flex items-center gap-2 p-1.5 hover:bg-surface-variant/50 rounded cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-sm ml-4">rocket</span>
+<span class="font-label-md text-label-md">Anti-Tank</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Tree Node: Markers -->
+<div class="mb-1">
+<div class="flex items-center gap-2 p-1.5 hover:bg-surface-variant/50 rounded cursor-pointer text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="material-symbols-outlined text-sm text-tertiary">location_on</span>
+<span class="font-label-md text-label-md">Markers</span>
+</div>
+</div>
+</div>
+</aside>
+<!-- Center Workspace Spacer -->
+<main class="flex-1 relative"></main>
+<!-- Right Sidebar (Asset Palette) -->
+<aside class="w-80 glass-panel rounded-xl flex flex-col shadow-xl">
+<div class="p-4 border-b border-border-subtle flex justify-between items-center">
+<h2 class="font-label-md text-label-md text-on-surface uppercase tracking-wider">Asset Palette</h2>
+<span class="material-symbols-outlined text-on-surface-variant text-sm cursor-pointer hover:text-primary">search</span>
+</div>
+<!-- Tabs -->
+<div class="flex border-b border-border-subtle">
+<button class="flex-1 py-2 font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors uppercase">Factions</button>
+<button class="flex-1 py-2 font-label-sm text-label-sm text-primary border-b-2 border-primary uppercase">Vehicles</button>
+<button class="flex-1 py-2 font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors uppercase">Crates</button>
+<button class="flex-1 py-2 font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-colors uppercase">Markers</button>
+</div>
+<!-- Content Grid (Vehicles) -->
+<div class="flex-1 overflow-y-auto p-4">
+<div class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container border border-border-subtle rounded flex flex-col items-center justify-center p-3 hover:border-primary cursor-pointer group transition-colors">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary mb-2">airport_shuttle</span>
+<span class="font-label-sm text-label-sm text-center">HMMWV</span>
+</div>
+<div class="bg-surface-container border border-border-subtle rounded flex flex-col items-center justify-center p-3 hover:border-primary cursor-pointer group transition-colors">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary mb-2">directions_car</span>
+<span class="font-label-sm text-label-sm text-center">M1A2 Abrams</span>
+</div>
+<div class="bg-surface-container border border-border-subtle rounded flex flex-col items-center justify-center p-3 hover:border-primary cursor-pointer group transition-colors">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary mb-2">flight</span>
+<span class="font-label-sm text-label-sm text-center text-wrap leading-tight">UH-60 Blackhawk</span>
+</div>
+<div class="bg-surface-container border border-border-subtle rounded flex flex-col items-center justify-center p-3 hover:border-primary cursor-pointer group transition-colors">
+<span class="material-symbols-outlined text-3xl text-on-surface-variant group-hover:text-primary mb-2">local_shipping</span>
+<span class="font-label-sm text-label-sm text-center text-wrap leading-tight">Supply Truck</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+<!-- Bottom Context Panel -->
+<div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 w-full max-w-2xl z-50">
+<div class="glass-panel rounded-xl shadow-2xl border-t border-[#38bdf8]/30 flex flex-col">
+<div class="p-3 border-b border-border-subtle bg-surface-container-high/50 rounded-t-xl flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">settings</span>
+<h3 class="font-label-md text-label-md text-primary uppercase tracking-wider">Properties: Alpha 1-1 Rifleman</h3>
+</div>
+<button class="text-on-surface-variant hover:text-white"><span class="material-symbols-outlined text-sm">close</span></button>
+</div>
+<div class="p-4 flex items-end justify-between gap-6">
+<div class="flex-1 flex gap-6">
+<!-- Callsign Input -->
+<div class="flex flex-col gap-2 flex-1">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Callsign</label>
+<input class="bg-surface-container-lowest border border-border-subtle text-on-surface font-code-md text-code-md rounded px-3 py-2 focus:ring-2 focus:ring-primary focus:border-transparent outline-none w-full" type="text" value="Viper-1">
+</div>
+<!-- Rotation Slider -->
+<div class="flex flex-col gap-2 flex-1">
+<div class="flex justify-between items-center">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Rotation</label>
+<span class="font-code-md text-code-md text-primary">0°</span>
+</div>
+<div class="flex items-center h-full">
+<input class="w-full accent-primary" max="360" min="0" type="range" value="0">
+</div>
+</div>
+</div>
+<!-- Primary Action -->
+<div>
+<button class="px-6 py-2.5 rounded bg-[#3b82f6] text-white font-label-md text-label-md hover:bg-blue-600 transition-colors flex items-center gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-sm">build</span>
+                        Open Loadout Forge
+                    </button>
+</div>
+</div>
+</div>
+</div>
+</body></html>
