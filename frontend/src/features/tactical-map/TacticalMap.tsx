@@ -6,17 +6,42 @@
 
 import { useCallback, useMemo } from 'react'
 import DeckGL from '@deck.gl/react'
+import type { PickingInfo } from '@deck.gl/core'
 import { getTerrain } from './coords/terrains'
 import { useOrthographicView } from './view/useOrthographicView'
 import { useBaseMapLayer } from './layers/useBaseMapLayer'
+import { useIconLayer } from './layers/useIconLayer'
 import { MapContextProvider, createMapContextValue } from './context/MapContext'
 import { worldToPixel } from './coords/projection'
+import { useMapStore } from './state/useMapStore'
+import type { ID } from './state/schema'
 import type { MapViewState, TacticalMapProps } from './types'
 
-export function TacticalMap({ terrain: terrainId, className }: TacticalMapProps) {
+export function TacticalMap({
+  terrain: terrainId,
+  className,
+  onMapClick,
+}: TacticalMapProps) {
   const terrain = useMemo(() => getTerrain(terrainId), [terrainId])
   const { view, viewState, onViewStateChange } = useOrthographicView(terrain)
   const baseMap = useBaseMapLayer(terrain)
+  const iconLayer = useIconLayer()
+  const setSelection = useMapStore((s) => s.setSelection)
+
+  const onClick = useCallback(
+    (info: PickingInfo) => {
+      if (info.layer?.id === 'slot-icons' && info.object) {
+        setSelection({ kind: 'slot', id: (info.object as { id: ID }).id })
+        return
+      }
+      // Empty-map click: let the host act (e.g. move the selected slot), then clear.
+      if (info.coordinate) {
+        onMapClick?.({ x: info.coordinate[0], y: info.coordinate[1] })
+      }
+      setSelection({ kind: 'none', id: null })
+    },
+    [setSelection, onMapClick],
+  )
 
   const flyTo = useCallback(
     (world: { x: number; y: number }) => {
@@ -41,7 +66,9 @@ export function TacticalMap({ terrain: terrainId, className }: TacticalMapProps)
             onViewStateChange({ viewState: params.viewState as MapViewState })
           }
           controller={{ doubleClickZoom: false }}
-          layers={[baseMap]}
+          layers={[baseMap, iconLayer]}
+          onClick={onClick}
+          getCursor={({ isHovering }) => (isHovering ? 'pointer' : 'grab')}
           style={{ position: 'absolute', width: '100%', height: '100%' }}
         />
       </div>

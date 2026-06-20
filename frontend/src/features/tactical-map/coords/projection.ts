@@ -1,35 +1,33 @@
-// World (Arma meters) <-> canvas pixel conversions for the OrthographicView.
+// World (Arma meters) <-> Deck common space for the OrthographicView.
 //
-// Under COORDINATE_SYSTEM.CARTESIAN the Deck.gl "common space" already *is* the
-// world space in meters, so an entity at world (x, y) is drawn at common (x, y).
-// The only mismatch is the Y axis: Deck's screen-space Y grows downward, while
-// Arma world Y (north) grows upward. We render with positions whose Y is flipped
-// against the terrain height so that +Y on screen visually points north.
-//
-// These helpers are pure and allocation-light; they feed flyTo() and the live
-// cursor read-out in later phases.
+// The view is configured with `flipY: false` (see view/useOrthographicView.ts), so
+// Deck's common space already matches Arma world space: origin bottom-left, +Y =
+// north (up on screen). Under CARTESIAN there is therefore NO remapping — common
+// space == world space — so these conversions are identity passthroughs. The base
+// map grid, the icon layer and flyTo() all place entities at raw [x, y]; keeping a
+// single shared convention here prevents the classic double-flip bug.
 
 import type { TerrainDef } from './terrains'
 
-/** World meters -> Deck common/pixel space (Y flipped so north is up on screen). */
+/** World meters -> Deck common space (identity under flipY:false / CARTESIAN). */
 export function worldToPixel(
-  terrain: TerrainDef,
+  _terrain: TerrainDef,
   x: number,
   y: number,
 ): [number, number] {
-  return [x, terrain.height - y]
+  return [x, y]
 }
 
-/** Inverse of worldToPixel: Deck common/pixel space -> world meters. */
+/** Deck common space -> world meters (identity under flipY:false / CARTESIAN). */
 export function pixelToWorld(
-  terrain: TerrainDef,
+  _terrain: TerrainDef,
   px: number,
   py: number,
 ): [number, number] {
-  return [px, terrain.height - py]
+  return [px, py]
 }
 
-/** Center of the terrain in pixel space — the default camera target. */
+/** Center of the terrain in world/common space — the default camera target. */
 export function terrainCenterPixel(terrain: TerrainDef): [number, number] {
   return [terrain.width / 2, terrain.height / 2]
 }

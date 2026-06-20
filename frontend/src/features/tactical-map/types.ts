@@ -20,4 +20,6 @@ export interface TacticalMapProps {
   terrain?: TerrainId
   /** Extra classes for the absolutely-positioned canvas container. */
   className?: string
+  /** Fired on an empty-map click with the world (meters) position picked. */
+  onMapClick?: (world: { x: number; y: number }) => void
 }
