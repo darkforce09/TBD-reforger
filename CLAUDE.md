@@ -54,7 +54,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Git: **commit directly to `main`; never create a branch.** End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 
-## Status (latest feature work: T-013 — 2026-06-19)
+## Status (latest feature work: T-025 — 2026-06-20)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
@@ -126,6 +126,30 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
   Mortar → glass. Verified: tsc/build/lint clean + live dev-login API contract smoke.
   All blueprint pages now on the Aegis design language; the **2D Mission Creator** remains
   the one unbuilt piece (separate effort).
+- T-018..T-025 **Global Aegis consistency refactor** (presentation-only; no API/query/
+  contract changes). A platform-wide audit collapsed the remaining inconsistencies into
+  four systemic defects, fixed across eight build/lint-verified commits:
+  - **R3 mono telemetry** (T-018, T-022, T-023): player-count heroes (Dashboard, Server
+    Intel, Server Control) and ORBAT slot counts now render in JetBrains Mono.
+  - **R4 token sweep** (T-020, T-023, T-025): all off-palette vivid `blue/slate/red/amber`
+    replaced with Aegis tokens — active/selection → `primary`, CTAs → `action`, body →
+    `on-surface-variant`, markdown callouts → `error`/`tactical-yellow`/`primary`. The
+    `white`/`black`-opacity utilities are kept (shared glass vocabulary, used on the
+    reference-clean pages too); the leaderboard silver-podium tint is intentional.
+  - **R5 shared primitives** (T-019, T-025): the mission dossier moved off a hand-rolled
+    `DialogPrimitive` onto the shared `Sheet` (new `bleed` edge-to-edge mode +
+    `SheetTitle`/`SheetDescription` exports).
+  - **R1/R2 full-bleed + SplitPane** (T-021, T-022, T-023, T-025): Modpacks, Wiki, Vehicle
+    Database, Server Control and Comms Broadcaster migrated to the shared `SplitPane` (via a
+    `GlassSplit`/`SidebarSearch` helper pair in `doctrine.tsx`); Mortar Calculator and Event
+    Hub converted to full-bleed (routes gained the `fullBleed` handle).
+  - **R6 anti-pattern** (T-024): Event Manager's always-on form-beside-calendar replaced by
+    a calendar + per-day op list, with create moved into a frosted `Dialog`.
+  - Deliberately left as-is (not master/detail; `SplitPane` would degrade them): the
+    embedded `OrbatSelector` card widget, the Deployments service-record dossier, and the
+    wide-table Personnel roster (token-fixed only).
+  - Verified: `npm run build` + `npm run lint` clean after every commit. Runtime layout of
+    the migrated split-pane/full-bleed pages is worth an in-browser pass (`make web`).
 
 **Not yet built / next:**
 - The 2D mission editor UI (backend stores/serves `json_payload`; the visual editor
