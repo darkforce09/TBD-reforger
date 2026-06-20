@@ -59,11 +59,11 @@ export function ServerIntelPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           </div>
 
-          <div className="relative z-10 mx-auto flex w-full max-w-[var(--spacing-container-max)] flex-col p-8 lg:p-12">
+          <div className="relative z-10 flex w-full flex-col">
           {!server ? (
             <p className="text-on-surface-variant">No servers configured.</p>
           ) : (
-            <div className="flex w-full flex-col overflow-hidden rounded-xl border border-white/10 bg-surface-glass shadow-2xl backdrop-blur-xl">
+            <div className="flex w-full flex-col overflow-hidden bg-surface-glass backdrop-blur-xl">
               {/* Panel Header */}
               <div className="flex flex-col justify-between gap-6 border-b border-white/5 bg-surface/40 px-8 py-6 md:flex-row md:items-center">
                 <div>

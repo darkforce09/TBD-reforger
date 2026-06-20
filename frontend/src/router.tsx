@@ -53,7 +53,7 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: <DashboardPage />, ...breadcrumb('Command Center', 'Dashboard') },
+      { index: true, element: <DashboardPage />, ...breadcrumb('Command Center', 'Dashboard', { fullBleed: true }) },
       {
         path: 'server-intel',
         element: <ServerIntelPage />,

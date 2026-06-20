@@ -35,7 +35,7 @@ export function DashboardPage() {
   return (
     <AuthGate>
       <QueryState isLoading={isLoading} isError={isError} error={error as Error}>
-        <div className="mx-auto flex w-full max-w-[var(--spacing-container-max)] flex-col gap-8 p-8 lg:p-12">
+        <div className="custom-scrollbar flex h-full w-full flex-col gap-8 overflow-y-auto p-6 md:p-8">
           {/* Hero Banner */}
           <div className="glass border-glow relative flex min-h-[300px] flex-col justify-end overflow-hidden rounded-xl p-8">
             <div className="absolute inset-0 z-0">
