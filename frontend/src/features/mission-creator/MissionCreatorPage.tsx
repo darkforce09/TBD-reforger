@@ -1,32 +1,29 @@
-// Full-bleed route shell for the 2D Mission Creator. Phase 3 frames the live map
-// with the Aegis-glass application shell (Ultra Plan §5): Top Command Strip,
-// Left Outliner, Right Inspector, Bottom Toolbelt — all wired to the Phase-4 Y.Doc
-// state. The route carries the `fullBleed` handle so AppLayout runs it full-height.
+// Full-bleed route shell for the 2D Mission Creator. The Aegis-glass shell (Ultra Plan
+// §5) frames the live map as floating frosted overlays: Top Command Strip, Left
+// "Placed Entities" tree, Right Asset Browser tree, Bottom Toolbelt — plus the Mission
+// Settings + Attributes modals. The route carries the `fullBleed` handle so AppLayout
+// runs it full-height.
 
 import { useCallback, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import {
-  TacticalMap,
-  moveEntity,
-  useMapStore,
-  type TacticalMapApi,
-} from '@/features/tactical-map'
+import { TacticalMap, moveEntity, useMapStore } from '@/features/tactical-map'
 import { useMissionDoc } from './hooks/useMissionDoc'
 import { TopCommandStrip } from './layout/TopCommandStrip'
 import { BottomToolbelt } from './layout/BottomToolbelt'
 import { OutlinerPanel } from './layout/LeftOutliner/OutlinerPanel'
 import { InspectorPanel } from './layout/RightInspector/InspectorPanel'
+import { AttributesModal } from './layout/AttributesModal'
 import { FpsCounter } from './FpsCounter'
 
 export default function MissionCreatorPage() {
   const { id } = useParams<{ id: string }>()
   const { md, undo } = useMissionDoc(id)
 
-  const [mapApi, setMapApi] = useState<TacticalMapApi | null>(null)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
+  const [attributesId, setAttributesId] = useState<string | null>(null)
 
-  // Click empty map with a slot selected → reposition it. (Placement is via the
-  // Asset Browser; the Toolbelt no longer places — Ultra Plan §5.3.)
+  // Click empty map with a slot selected → reposition it. (Placement is drag-and-drop
+  // from the Asset Browser; the Toolbelt no longer places — Ultra Plan §5.3.)
   const onMapClick = useCallback(
     (world: { x: number; y: number }) => {
       const { selection } = useMapStore.getState()
@@ -45,7 +42,7 @@ export default function MissionCreatorPage() {
         className="absolute inset-0 z-0"
         onMapClick={onMapClick}
         onCursorMove={setCursor}
-        onReady={setMapApi}
+        onEntityActivate={setAttributesId}
       />
 
       {/* Floating overlay layer: spans the screen and ignores pointer events so
@@ -57,11 +54,11 @@ export default function MissionCreatorPage() {
         </div>
 
         <div className="absolute bottom-[5.5rem] left-4 top-[4.75rem]">
-          <OutlinerPanel md={md} flyTo={mapApi?.flyTo} />
+          <OutlinerPanel />
         </div>
 
         <div className="absolute bottom-[5.5rem] right-4 top-[4.75rem]">
-          <InspectorPanel md={md} flyTo={mapApi?.flyTo} />
+          <InspectorPanel md={md} />
         </div>
 
         <div className="absolute bottom-5 left-1/2 -translate-x-1/2">
@@ -70,6 +67,11 @@ export default function MissionCreatorPage() {
 
         <FpsCounter />
       </div>
+
+      <AttributesModal
+        slotId={attributesId}
+        onOpenChange={(open) => !open && setAttributesId(null)}
+      />
     </div>
   )
 }

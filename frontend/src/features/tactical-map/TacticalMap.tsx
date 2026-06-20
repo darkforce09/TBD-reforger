@@ -4,7 +4,7 @@
 // layers (Ultra Plan §4.3). Deck owns all entity rendering — React never draws
 // per-entity DOM — which is what holds 60 fps with hundreds of slots.
 
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import DeckGL from '@deck.gl/react'
 import type { PickingInfo } from '@deck.gl/core'
 import { getTerrain } from './coords/terrains'
@@ -22,6 +22,7 @@ export function TacticalMap({
   onMapClick,
   onCursorMove,
   onReady,
+  onEntityActivate,
 }: TacticalMapProps) {
   const terrain = useMemo(() => getTerrain(terrainId), [terrainId])
   const { view, viewState, onViewStateChange, flyTo: viewFlyTo } =
@@ -29,20 +30,32 @@ export function TacticalMap({
   const baseMap = useBaseMapLayer(terrain)
   const iconLayer = useIconLayer()
   const setSelection = useMapStore((s) => s.setSelection)
+  // Manual double-click detection (Deck has no onDblClick) for entity activation.
+  const lastClick = useRef<{ id: string; ts: number } | null>(null)
 
   const onClick = useCallback(
     (info: PickingInfo) => {
       if (info.layer?.id === 'slot-icons' && info.object) {
-        setSelection({ kind: 'slot', id: (info.object as { id: ID }).id })
+        const id = (info.object as { id: ID }).id
+        setSelection({ kind: 'slot', id })
+        const prev = lastClick.current
+        const now = Date.now()
+        if (prev && prev.id === id && now - prev.ts < 350) {
+          onEntityActivate?.(id)
+          lastClick.current = null
+        } else {
+          lastClick.current = { id, ts: now }
+        }
         return
       }
+      lastClick.current = null
       // Empty-map click: let the host act (e.g. move the selected slot), then clear.
       if (info.coordinate) {
         onMapClick?.({ x: info.coordinate[0], y: info.coordinate[1] })
       }
       setSelection({ kind: 'none', id: null })
     },
-    [setSelection, onMapClick],
+    [setSelection, onMapClick, onEntityActivate],
   )
 
   const onHover = useCallback(

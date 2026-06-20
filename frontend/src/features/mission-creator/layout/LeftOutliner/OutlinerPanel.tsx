@@ -1,112 +1,39 @@
-// Left Outliner — cascading Miller columns (Faction → Squad → Slot, Ultra Plan §5.1).
-// Reads the Y.Doc-backed store via memoized selectors; selecting a slot centers the
-// map (flyTo) and drives the shared selection (which tints its icon). Structural
-// edits go through the ydoc action helpers (one undoable transaction each).
+// Left panel — "Placed Entities" as an Eden-style recursive tree of custom folders
+// (Ultra Plan §5.1). Visual shell only this phase: mock folder data + local selection
+// highlight; real Y.Doc-backed layers + reparent DnD land later.
 
 import { useState } from 'react'
-import {
-  addFaction,
-  addSlot,
-  addSquad,
-  getTerrain,
-  removeEntity,
-  selectFactionList,
-  selectSlotsOf,
-  selectSquadsOf,
-  useMapStore,
-  type MissionDoc,
-  type TacticalMapApi,
-} from '@/features/tactical-map'
+import { FolderPlus } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { overlayPanel } from '../overlay'
-import { OutlinerColumn } from './OutlinerColumn'
+import { TreeView } from '../tree/TreeView'
+import { PLACED_ENTITIES } from './placedEntitiesMock'
 
-interface OutlinerPanelProps {
-  md: MissionDoc
-  flyTo: TacticalMapApi['flyTo'] | undefined
-}
-
-const TERRAIN = getTerrain('everon')
-
-export function OutlinerPanel({ md, flyTo }: OutlinerPanelProps) {
-  const factionsById = useMapStore((s) => s.factionsById)
-  const squadsById = useMapStore((s) => s.squadsById)
-  const slotsById = useMapStore((s) => s.slotsById)
-  const selection = useMapStore((s) => s.selection)
-  const setSelection = useMapStore((s) => s.setSelection)
-
-  const [openFactionId, setOpenFactionId] = useState<string | null>(null)
-  const [openSquadId, setOpenSquadId] = useState<string | null>(null)
-
-  const factions = selectFactionList(factionsById)
-  const squads = selectSquadsOf(squadsById, openFactionId)
-  const slots = selectSlotsOf(slotsById, openSquadId)
-
-  const selectedSlotId = selection.kind === 'slot' ? selection.id : null
+export function OutlinerPanel() {
+  const [selectedId, setSelectedId] = useState<string | null>(null)
 
   return (
-    <div className={cn(overlayPanel, 'flex h-full overflow-hidden')}>
-      <OutlinerColumn
-        title="Factions"
-        items={factions.map((f) => ({ id: f.id, label: f.name }))}
-        activeId={openFactionId}
-        onSelect={(id) => {
-          setOpenFactionId(id)
-          setOpenSquadId(null)
-        }}
-        onAdd={() => setOpenFactionId(addFaction(md))}
-        onRemove={(id) => {
-          removeEntity(md, 'factions', id)
-          if (id === openFactionId) {
-            setOpenFactionId(null)
-            setOpenSquadId(null)
-          }
-        }}
-        emptyHint="No factions yet"
-      />
-
-      {openFactionId && (
-        <OutlinerColumn
-          title="Squads"
-          items={squads.map((s) => ({ id: s.id, label: s.name }))}
-          activeId={openSquadId}
-          onSelect={(id) => {
-            setOpenSquadId(id)
-            setSelection({ kind: 'squad', id })
-          }}
-          onAdd={() => setOpenSquadId(addSquad(md, openFactionId))}
-          onRemove={(id) => {
-            removeEntity(md, 'squads', id)
-            if (id === openSquadId) setOpenSquadId(null)
-          }}
-          emptyHint="No squads yet"
+    <div className={cn(overlayPanel, 'flex h-full w-60 flex-col overflow-hidden')}>
+      <div className="flex shrink-0 items-center justify-between border-b border-white/5 px-3 py-2">
+        <span className="text-label-sm uppercase tracking-wider text-outline">
+          Placed Entities
+        </span>
+        <button
+          type="button"
+          aria-label="New folder"
+          title="New folder"
+          className="rounded p-0.5 text-on-surface-variant transition-colors hover:bg-primary/15 hover:text-primary"
+        >
+          <FolderPlus className="size-3.5" />
+        </button>
+      </div>
+      <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
+        <TreeView
+          nodes={PLACED_ENTITIES}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
         />
-      )}
-
-      {openSquadId && (
-        <OutlinerColumn
-          title="Slots"
-          items={slots.map((s) => ({ id: s.id, label: s.role, tag: s.tag }))}
-          activeId={selectedSlotId}
-          onSelect={(id) => {
-            setSelection({ kind: 'slot', id })
-            const pos = slotsById[id]?.position
-            if (pos) flyTo?.({ x: pos.x, y: pos.y })
-          }}
-          onAdd={() => {
-            const jitter = () => (Math.random() - 0.5) * 400
-            const pos = {
-              x: TERRAIN.width / 2 + jitter(),
-              y: TERRAIN.height / 2 + jitter(),
-            }
-            const id = addSlot(md, pos, { squadId: openSquadId })
-            setSelection({ kind: 'slot', id })
-            flyTo?.(pos)
-          }}
-          onRemove={(id) => removeEntity(md, 'slots', id)}
-          emptyHint="No slots yet"
-        />
-      )}
+      </div>
     </div>
   )
 }

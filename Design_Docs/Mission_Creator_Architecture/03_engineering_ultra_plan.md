@@ -365,23 +365,24 @@ right **Inspector**, and a bottom **Toolbelt** — all glass panels built on the
 `components/ui` primitives (`SplitPane`, `GlassPanel`, `Sheet`, `Dialog`, `Badge`, `Switch`) and
 Aegis tokens (`--color-primary #adc6ff`, `.glass`, `.bg-topo-map`, `.bg-grid-overlay`).
 
-### 5.1 Left Outliner — Miller columns (Finder-style)
+### 5.1 Left Outliner — Placed Entities (Tree View)
 ```
 OutlinerPanel
-  FactionColumn  →  SquadColumn  →  SlotColumn      (cascading)
-    each row: OutlinerRow
+  TreeView (recursive)
+    EditorLayerNode (Folder) → EditorLayerNode (Folder) → SlotNode
 ```
 | Component | Key props |
 |-----------|-----------|
-| `OutlinerPanel` | `factions: Faction[]`, `selection`, `onSelect(kind, id)`, `onReparent(slotId, squadId)`, `onAdd(kind, parentId)`, `onRemove(kind, id)` |
-| `FactionColumn`/`SquadColumn`/`SlotColumn` | `items`, `selectedId`, `onSelect`, drag/drop handlers |
-| `OutlinerRow` | `label`, `tag?`, `assigneeName?`, `selected`, `onClick` |
+| `OutlinerPanel` | `layers: EditorLayer[]`, `selection`, `onSelect(kind, id)`, `onReparent(childId, parentFolderId)` |
+| `TreeNode` | `label`, `children`, `isExpanded`, `selected`, `onSelect`, drag/drop handlers |
 
-- Drag a slot from Alpha → Bravo → `onReparent(slotId, squadId)` (one Y.Doc transaction).
+- **Design:** Classic Eden Editor nested file-tree.
+- **Custom Folders (Layers):** Users can create infinite arbitrary folders (e.g., "Assault Team", "Support", "BLUFOR") to organize entities. These folders are purely for workflow and do not affect the exported mission file. Default folders (BLUFOR, OPFOR) can be provided but are not rigidly enforced.
+- Drag and drop works to reorganize entities between folders.
 - Selecting any row calls `MapContext.flyTo(entity.position)` to center the map.
 
 ### 5.2 Right Panel — Asset Browser & Inspector
-The right panel defaults to the **Asset Browser**, a catalog of units, vehicles, and objects used to drag and drop entities onto the map.
+The right panel defaults to the **Asset Browser**. This MUST be a nested, collapsible tree view (e.g., Faction → Category → Class) mimicking the Eden Editor, NOT a flat list of pill buttons. Users drag items from this tree directly onto the map.
 When an entity is selected, it switches to the `InspectorPanel` based on `selection.kind`:
 | State | Component | Props |
 |-------|-----------|-------|
@@ -390,6 +391,7 @@ When an entity is selected, it switches to the `InspectorPanel` based on `select
 | `objective` | `ObjectiveInspector` | `objective: Objective`, `onChange(patch)` |
 
 *Note: Mission Settings are NOT in the right panel. They belong in a dedicated modal dialog.*
+*Note: Double-clicking an entity on the map opens the **Attributes Modal**. This is vital for editing positions, skills (medic/engineer), and launching the full Arsenal.*
 
 `ArsenalInspector` renders `SoldierDoll` (2D paper-doll: helmet/vest/uniform/primary/backpack) +
 a list of `SlotCategory` (collapsible) each opening an `ItemPicker` (registry-backed search grid).
@@ -452,7 +454,7 @@ map and read true elevation; hillshade overlay toggles.
 **Phase 6 — Arsenal Inspector** → `RightInspector/ArsenalInspector/*`, `arsenal/useArsenalValidation.ts`.
 **Deliverable:** select a slot, dress the soldier via drag/drop with live registry validation.
 
-**Phase 7 — Outliner + map sync** → finish `LeftOutliner/*` (Miller columns + reparent DnD),
+**Phase 7 — Outliner + map sync** → finish `LeftOutliner/*` (Tree View + Custom Layers + reparent DnD),
 bind `useIconLayer` to `slotsById`, wire click-to-center. **Deliverable:** manage 200 slots from
 the tree with the map staying in sync.
 

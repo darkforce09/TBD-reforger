@@ -26,6 +26,8 @@ export interface TacticalMapProps {
   onCursorMove?: (world: { x: number; y: number } | null) => void
   /** Receives the imperative map API (e.g. flyTo) for use by sibling panels. */
   onReady?: (api: TacticalMapApi) => void
+  /** Fired when an entity icon is double-clicked (e.g. open the Attributes modal). */
+  onEntityActivate?: (id: string) => void
 }
 
 /** Imperative handle exposed via onReady. */
