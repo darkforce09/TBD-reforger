@@ -37,9 +37,13 @@ import { NotFoundPage, ServerControlPage } from '@/pages/utility'
 const breadcrumb = (
   parent: string,
   current: string,
-  opts?: { fullBleed?: boolean },
+  opts?: { fullBleed?: boolean; chromeless?: boolean },
 ) => ({
-  handle: { breadcrumb: { parent, current }, fullBleed: opts?.fullBleed },
+  handle: {
+    breadcrumb: { parent, current },
+    fullBleed: opts?.fullBleed,
+    chromeless: opts?.chromeless,
+  },
 })
 
 export const router = createBrowserRouter([
@@ -140,7 +144,10 @@ export const router = createBrowserRouter([
                 <MissionEditorPage />
               </Suspense>
             ),
-            ...breadcrumb('Mission Hub', 'Mission Creator', { fullBleed: true }),
+            ...breadcrumb('Mission Hub', 'Mission Creator', {
+              fullBleed: true,
+              chromeless: true,
+            }),
           },
         ],
       },

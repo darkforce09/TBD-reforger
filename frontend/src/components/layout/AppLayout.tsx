@@ -6,12 +6,25 @@ import { cn } from '@/lib/utils'
 
 interface RouteHandle {
   fullBleed?: boolean
+  /** Chromeless routes (the Mission Creator editor) own the full viewport — no
+   *  platform Sidebar/TopNav. See 04_eden_editor_ux_spec.md. */
+  chromeless?: boolean
 }
 
 export function AppLayout() {
   useAuthBootstrap()
   const matches = useMatches()
   const fullBleed = matches.some((m) => (m.handle as RouteHandle)?.fullBleed)
+  const chromeless = matches.some((m) => (m.handle as RouteHandle)?.chromeless)
+
+  // Fullscreen Eden editor: render the route alone, no Sidebar/TopNav.
+  if (chromeless) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-background">
+        <Outlet />
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

@@ -18,6 +18,7 @@ import { ASSET_DND_MIME, type AssetDropPayload, type MapViewState, type Tactical
 
 export function TacticalMap({
   terrain: terrainId,
+  showGrid = false,
   className,
   onMapClick,
   onCursorMove,
@@ -137,7 +138,7 @@ export function TacticalMap({
             onViewStateChange({ viewState: params.viewState as MapViewState })
           }
           controller={{ doubleClickZoom: false }}
-          layers={[baseMap, iconLayer]}
+          layers={showGrid ? [baseMap, iconLayer] : [iconLayer]}
           onClick={onClick}
           onHover={onHover}
           getCursor={({ isHovering }) => (isHovering ? 'pointer' : 'grab')}

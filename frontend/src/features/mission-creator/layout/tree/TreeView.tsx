@@ -5,7 +5,7 @@
 // Indentation comes purely from nested <ul> margins (one guide line per level).
 
 import { useState } from 'react'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, FolderOpen } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -88,7 +88,8 @@ function TreeNode({
   const isFolder = !!node.children?.length
   const isOpen = expanded.has(node.id)
   const selected = selectedId === node.id
-  const Icon = node.icon
+  // Folders show an "open" glyph when expanded; leaves keep their own icon.
+  const Icon = isFolder && isOpen ? FolderOpen : node.icon
   const draggable = !isFolder && !!onNodeDragStart
 
   return (
@@ -102,11 +103,11 @@ function TreeNode({
         }}
         onDoubleClick={() => !isFolder && onActivate?.(node.id)}
         className={cn(
-          'group flex items-center gap-1.5 rounded-md py-1 pr-2 pl-1.5 text-label-md transition-colors',
+          'group flex items-center gap-1.5 rounded-md border-l-2 py-1 pr-2 pl-1.5 text-label-md transition-colors',
           draggable ? 'cursor-grab' : 'cursor-pointer',
           selected
-            ? 'bg-primary/15 text-on-surface'
-            : 'text-on-surface-variant hover:bg-white/5 hover:text-on-surface',
+            ? 'border-primary bg-primary/15 text-on-surface'
+            : 'border-transparent text-on-surface-variant hover:bg-white/5 hover:text-on-surface',
         )}
       >
         <ChevronRight

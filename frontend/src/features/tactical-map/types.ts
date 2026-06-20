@@ -31,6 +31,8 @@ export interface AssetDropPayload {
 export interface TacticalMapProps {
   /** Which terrain's world bounds the camera and base map are sized to. */
   terrain?: TerrainId
+  /** Draw the procedural 1 km grid (off by default while the shell is in test mode). */
+  showGrid?: boolean
   /** Extra classes for the absolutely-positioned canvas container. */
   className?: string
   /** Fired on an empty-map click with the world (meters) position picked. */
