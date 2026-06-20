@@ -6,6 +6,7 @@ import { AdminGate } from '@/components/AdminGate'
 import { QueryState } from '@/components/QueryState'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { SplitPane, SplitPaneEmpty } from '@/components/ui/split-pane'
+import { ListDetailItem } from '@/components/ui/list-detail-item'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -551,7 +552,7 @@ export function MissionApprovalsPage() {
                   className={cn(
                     'flex-1 rounded-full py-2 text-center text-label-sm font-medium whitespace-nowrap transition-all',
                     tab === t.value
-                      ? 'bg-blue-600 text-white shadow-md'
+                      ? 'bg-action text-on-action shadow-md'
                       : 'text-white/50 hover:text-white',
                   )}
                 >
@@ -581,14 +582,14 @@ export function MissionApprovalsPage() {
                     className={cn(
                       'group w-full rounded-r-xl border-l-4 px-4 py-3 text-left transition-all duration-200',
                       active
-                        ? 'border-blue-500 bg-blue-600/20 shadow-[inset_0_0_18px_rgba(59,130,246,0.15)]'
+                        ? 'border-primary bg-primary/15 shadow-[inset_0_0_18px_rgba(173,198,255,0.15)]'
                         : 'border-transparent hover:bg-white/[0.03]',
                     )}
                   >
                     <span
                       className={cn(
                         'font-mono text-code-md',
-                        active ? 'text-blue-300' : 'text-outline',
+                        active ? 'text-primary' : 'text-outline',
                       )}
                     >
                       [{formatShortDate(r.submitted_at)}]
@@ -1014,13 +1015,13 @@ export function PersonnelRosterPage() {
                           onClick={() => setSelectedId(u.discord_id)}
                           className={cn(
                             'cursor-pointer transition-colors',
-                            active ? 'bg-blue-600/20' : 'hover:bg-white/[0.03]',
+                            active ? 'bg-primary/15' : 'hover:bg-white/[0.03]',
                           )}
                         >
                           <td
                             className={cn(
                               'border-l-4 px-4 py-3',
-                              active ? 'border-blue-500' : 'border-transparent',
+                              active ? 'border-primary' : 'border-transparent',
                             )}
                           >
                             <div className="flex items-center gap-3">
@@ -1064,7 +1065,7 @@ export function PersonnelRosterPage() {
         </div>
 
         {/* ── Right: fixed dossier (30%) ──────────────────────────── */}
-        <aside className="flex min-w-0 flex-[3] flex-col bg-slate-900/40">
+        <aside className="flex min-w-0 flex-[3] flex-col bg-surface-container-lowest/40">
           {selected ? (
             <PersonnelDossier
               key={selected.discord_id}
@@ -1294,64 +1295,54 @@ export function ContentManagerPage() {
 
   return (
     <AdminGate>
-      <div className="flex h-full w-full flex-1 overflow-hidden bg-surface-glass backdrop-blur-xl">
-        {/* ── Left: document list (30%) ───────────────────────────── */}
-        <div className="flex min-w-0 flex-[3] flex-col border-r border-white/10">
-          <div className="flex items-center justify-between gap-3 border-b border-white/5 p-6">
-            <h1 className="text-headline-lg text-on-surface">Comms Broadcaster</h1>
-            <button
-              type="button"
-              onClick={newPost}
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-2 text-label-sm text-on-surface transition hover:bg-white/5"
-            >
-              <MaterialIcon name="add" className="text-[18px]" />
-              New Post
-            </button>
-          </div>
-          <nav className="custom-scrollbar flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
-            {docs.map((d) => {
-              const active = d.id === selected?.id
-              return (
+      <div className="relative h-full w-full overflow-hidden">
+        {/* Global topo-map background */}
+        <div className="bg-topo-map bg-grid-overlay absolute inset-0 z-0" />
+        <div className="relative z-10 flex h-full w-full bg-surface-glass backdrop-blur-xl">
+          <SplitPane
+            transparent
+            masterWidth="20rem"
+            masterHeader={
+              <>
+                <h1 className="text-label-md font-semibold tracking-wide text-on-surface uppercase">
+                  Comms Broadcaster
+                </h1>
                 <button
-                  key={d.id}
                   type="button"
-                  onClick={() => setSelectedId(d.id)}
-                  className={cn(
-                    'rounded-r-xl border-l-4 px-4 py-3 text-left transition-all duration-200',
-                    active
-                      ? 'border-blue-500 bg-blue-600/20'
-                      : 'border-transparent hover:bg-white/[0.03]',
-                  )}
+                  onClick={newPost}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-label-sm text-on-surface transition hover:bg-white/5"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <span
-                      className={cn(
-                        'truncate text-label-md font-semibold',
-                        active ? 'text-on-surface' : 'text-on-surface-variant',
-                      )}
-                    >
-                      {d.title || 'Untitled Post'}
-                    </span>
-                    <Badge variant={d.status === 'published' ? 'success' : 'warning'}>
-                      {d.status === 'published' ? 'Published' : 'Draft'}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 font-mono text-code-md text-outline">{d.date}</p>
+                  <MaterialIcon name="add" className="text-[18px]" />
+                  New
                 </button>
+              </>
+            }
+            master={docs.map((d) => (
+              <ListDetailItem
+                key={d.id}
+                active={d.id === selected?.id}
+                onClick={() => setSelectedId(d.id)}
+                meta={d.date}
+                title={d.title || 'Untitled Post'}
+                trailing={
+                  <Badge variant={d.status === 'published' ? 'success' : 'warning'}>
+                    {d.status === 'published' ? 'Published' : 'Draft'}
+                  </Badge>
+                }
+              />
+            ))}
+            detail={
+              selected ? (
+                <ContentEditor key={selected.id} doc={selected} publish={publish} onChange={saveDoc} />
+              ) : (
+                <SplitPaneEmpty
+                  icon={<MaterialIcon name="edit_note" className="text-4xl" />}
+                  message="Select a post or create a new one."
+                />
               )
-            })}
-          </nav>
+            }
+          />
         </div>
-
-        {/* ── Right: distraction-free editor (70%) ────────────────── */}
-        {selected ? (
-          <ContentEditor key={selected.id} doc={selected} publish={publish} onChange={saveDoc} />
-        ) : (
-          <div className="flex flex-[7] flex-col items-center justify-center gap-3 bg-slate-900/40 text-on-surface-variant">
-            <MaterialIcon name="edit_note" className="text-4xl opacity-50" />
-            <p className="text-label-md">Select a post or create a new one</p>
-          </div>
-        )}
       </div>
     </AdminGate>
   )
@@ -1425,7 +1416,7 @@ function ContentEditor({
   }
 
   return (
-    <div className="relative flex min-w-0 flex-[7] flex-col bg-slate-900/40">
+    <div className="relative flex h-full min-w-0 flex-1 flex-col">
       {/* Title header */}
       <div className="flex items-start justify-between gap-4 p-8 pb-4">
         <input
@@ -1500,7 +1491,7 @@ function ContentEditor({
             type="button"
             onClick={handlePublish}
             disabled={publish.isPending}
-            className="rounded-full bg-blue-600 px-7 py-3 text-label-md font-bold text-white shadow-[0_0_30px_rgba(37,99,235,0.4)] transition hover:bg-blue-500 disabled:opacity-50"
+            className="rounded-full bg-action px-7 py-3 text-label-md font-bold text-on-action shadow-[0_0_30px_rgba(59,130,246,0.4)] transition hover:bg-action/90 disabled:opacity-50"
           >
             {publish.isPending ? 'Publishing…' : 'Publish & Broadcast'}
           </button>
