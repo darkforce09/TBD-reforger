@@ -344,6 +344,103 @@ export function removeEditorLayer(md: MissionDoc, id: ID): void {
   })
 }
 
+/** Repopulate the Y.Doc from a compiled json_payload (Phase 9 load/hydrate). Runs as a
+ *  NON-undo transaction (INIT_ORIGIN) — loading a server version is not a user edit. Prefers
+ *  the lossless `editor` block (full normalized entities incl. positions + folders) our own
+ *  compiler emits; falls back to reconstructing from the backend `orbat[]` (lossy: default
+ *  positions, one Default Layer) for missions authored elsewhere. Title/id in meta are kept. */
+export function hydrateMissionDoc(md: MissionDoc, payload: Record<string, unknown>): void {
+  const p = payload ?? {}
+  const editor = p.editor as
+    | { factions?: unknown[]; squads?: unknown[]; slots?: unknown[]; editorLayers?: unknown[] }
+    | undefined
+  const map = p.map as { terrain?: string } | undefined
+  const setEach = (name: EntityMapName, rows: unknown[] | undefined) => {
+    for (const row of rows ?? []) {
+      const r = row as Record<string, unknown>
+      if (r && typeof r.id === 'string') {
+        md.entities[name].set(r.id, entityToYMap(r))
+      }
+    }
+  }
+
+  md.doc.transact(() => {
+    for (const name of ENTITY_MAPS) md.entities[name].clear()
+    if (p.environment) md.meta.set('environment', p.environment)
+    if (map?.terrain) md.meta.set('terrain', map.terrain)
+
+    // Top-level export entities (same on both paths).
+    setEach('objectives', p.objectives as unknown[] | undefined)
+    setEach('vehicles', p.vehicles as unknown[] | undefined)
+    setEach('markers', p.markers as unknown[] | undefined)
+    const loadouts = p.loadouts as Record<string, unknown> | undefined
+    if (loadouts) for (const v of Object.values(loadouts)) setEach('loadouts', [v])
+
+    if (editor) {
+      // Lossless path — restore the exact normalized graph (positions + folders).
+      setEach('factions', editor.factions)
+      setEach('squads', editor.squads)
+      setEach('slots', editor.slots)
+      setEach('editorLayers', editor.editorLayers)
+      if (md.entities.editorLayers.size === 0) ensureDefaultLayer(md)
+      return
+    }
+
+    // Lossy path — rebuild factions/squads/slots from the ORBAT contract block.
+    const layerId = ensureDefaultLayer(md)
+    const layer = md.entities.editorLayers.get(layerId)!
+    const filed: ID[] = []
+    const byKey = new Map<string, ID>()
+    const squads = (p.orbat as Record<string, unknown>[] | undefined) ?? []
+    for (const sq of squads) {
+      const key = String(sq.faction ?? 'BLUFOR')
+      let factionId = byKey.get(key)
+      if (!factionId) {
+        factionId = newId()
+        byKey.set(key, factionId)
+        md.entities.factions.set(
+          factionId,
+          entityToYMap({ id: factionId, key, name: key, squadIds: [] }),
+        )
+      }
+      const faction = md.entities.factions.get(factionId)!
+      const squadId = newId()
+      const slotIds: ID[] = []
+      const slots = (sq.slots as Record<string, unknown>[] | undefined) ?? []
+      slots.forEach((sl, i) => {
+        const slotId = newId()
+        md.entities.slots.set(
+          slotId,
+          entityToYMap({
+            id: slotId,
+            squadId,
+            index: i,
+            role: String(sl.role ?? 'Rifleman'),
+            ...(sl.tag ? { tag: String(sl.tag) } : {}),
+            position: { x: 0, y: 0, z: 0, rotation: 0 },
+            stance: 'stand',
+            loadoutId: null,
+          }),
+        )
+        slotIds.push(slotId)
+        filed.push(slotId)
+      })
+      md.entities.squads.set(
+        squadId,
+        entityToYMap({
+          id: squadId,
+          factionId,
+          callsign: String(sq.callsign ?? ''),
+          name: String(sq.squad ?? 'Squad'),
+          slotIds,
+        }),
+      )
+      faction.set('squadIds', [...(faction.get('squadIds') as ID[]), squadId])
+    }
+    layer.set('entityIds', filed)
+  }, INIT_ORIGIN)
+}
+
 export function setTitle(md: MissionDoc, title: string): void {
   transact(md, () => md.meta.set('title', title))
 }

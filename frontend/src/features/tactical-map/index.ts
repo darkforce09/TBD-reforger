@@ -37,6 +37,7 @@ export {
   moveSlotToLayer,
   removeEditorLayer,
   ensureDefaultLayer,
+  hydrateMissionDoc,
   LOCAL_ORIGIN,
 } from './state/ydoc'
 export type { MissionDoc, EntityMapName } from './state/ydoc'
@@ -56,6 +57,10 @@ export type {
   Squad,
   Faction,
   EditorLayer,
+  Loadout,
+  Objective,
+  Vehicle,
+  MapMarker,
   Selection,
   SelectionKind,
   ToolId,

@@ -5,7 +5,7 @@
 // snapshot loads, its inserts flow through observeDeep into the store automatically,
 // so no extra "ready" plumbing is needed.
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import {
   bindStoreToDoc,
@@ -23,7 +23,22 @@ export interface MissionDocHandle {
   undo: UndoController
 }
 
-export function useMissionDoc(missionId: string | undefined): MissionDocHandle {
+export interface UseMissionDocOptions {
+  /** Fired once after the IndexedDB snapshot has synced and defaults are seeded — the
+   *  hook point for backend hydrate / conflict checks (Phase 9 useMissionEditor). */
+  onSynced?: (md: MissionDoc) => void
+}
+
+export function useMissionDoc(
+  missionId: string | undefined,
+  options?: UseMissionDocOptions,
+): MissionDocHandle {
+  // Keep the latest onSynced without re-running the lifecycle effect.
+  const onSyncedRef = useRef(options?.onSynced)
+  useEffect(() => {
+    onSyncedRef.current = options?.onSynced
+  })
+
   // One doc + undo manager per mission id; recreated if the id changes.
   const { md, undo, dbName } = useMemo(() => {
     const md = createMissionDoc()
@@ -42,6 +57,7 @@ export function useMissionDoc(missionId: string | undefined): MissionDocHandle {
     persistence.once('synced', () => {
       seedMeta(md, { id: missionId ?? 'draft', title: 'Untitled Mission' })
       seedDefaultLayer(md)
+      onSyncedRef.current?.(md)
     })
 
     return () => {

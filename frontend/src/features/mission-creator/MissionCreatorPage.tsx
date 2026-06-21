@@ -8,7 +8,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { TacticalMap, addSlot, moveEntities, removeEntities, useMapStore } from '@/features/tactical-map'
 import type { AssetDropPayload, TacticalMapApi } from '@/features/tactical-map'
-import { useMissionDoc } from './hooks/useMissionDoc'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { useMissionEditor } from './hooks/useMissionEditor'
 import { TopCommandStrip } from './layout/TopCommandStrip'
 import { BottomToolbelt } from './layout/BottomToolbelt'
 import { LeftSidebar } from './layout/LeftOutliner/LeftSidebar'
@@ -18,7 +19,8 @@ import { FpsCounter } from './FpsCounter'
 
 export default function MissionCreatorPage() {
   const { id } = useParams<{ id: string }>()
-  const { md, undo } = useMissionDoc(id)
+  const editor = useMissionEditor(id)
+  const { md, undo } = editor
 
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
   const [attributesId, setAttributesId] = useState<string | null>(null)
@@ -99,7 +101,14 @@ export default function MissionCreatorPage() {
           each docked panel re-enables hits via the `overlayDocked` recipe. */}
       <div className="pointer-events-none absolute inset-0 z-10">
         <div className="absolute inset-x-0 top-0 h-12">
-          <TopCommandStrip md={md} undo={undo} />
+          <TopCommandStrip
+            md={md}
+            undo={undo}
+            dirty={editor.dirty}
+            suggestedSemver={editor.suggestedSemver}
+            onExport={editor.exportJson}
+            onSaveVersion={editor.saveVersion}
+          />
         </div>
 
         <div className="absolute bottom-0 left-0 top-12 w-64">
@@ -122,6 +131,31 @@ export default function MissionCreatorPage() {
         slotId={attributesId}
         onOpenChange={(open) => !open && setAttributesId(null)}
       />
+
+      {/* Load conflict: the server has a saved version and the local draft has edits. */}
+      <Dialog open={editor.conflict != null} onOpenChange={() => {}}>
+        <DialogContent
+          title="Unsaved local changes"
+          description="This mission has a saved version on the server, and your local draft has changes. Which do you want to keep?"
+        >
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => editor.resolveConflict('server')}
+              className="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+            >
+              Load saved version
+            </button>
+            <button
+              type="button"
+              onClick={() => editor.resolveConflict('local')}
+              className="rounded-md bg-primary/20 px-3 py-1.5 text-label-md text-primary transition-colors hover:bg-primary/30"
+            >
+              Keep local draft
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
