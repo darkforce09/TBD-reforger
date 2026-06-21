@@ -25,7 +25,13 @@ export interface MissionEditorHandle extends MissionDocHandle {
   /** Server payload awaiting a keep-local / load-server decision; null when none. */
   conflict: Record<string, unknown> | null
   resolveConflict: (choice: 'local' | 'server') => void
+  /** The route :id isn't a real mission UUID — server persistence can't work. */
+  invalidMissionId: boolean
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const NEEDS_REAL_ID =
+  'This editor URL needs a real mission id — create one from Mission Library first.'
 
 const bumpPatch = (semver: string | null): string => {
   const m = semver?.match(/^(\d+)\.(\d+)\.(\d+)/)
@@ -85,9 +91,11 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
     }
   }, [md])
 
+  const invalidMissionId = !!missionId && !UUID_RE.test(missionId)
+
   const saveVersion = useCallback(
     async (semver: string, notes?: string): Promise<SaveResult> => {
-      if (!missionId) return { ok: false, error: 'No mission id' }
+      if (!missionId || invalidMissionId) return { ok: false, error: NEEDS_REAL_ID }
       const payload = compileMission(useMapStore.getState())
       try {
         await api.post(`/missions/${missionId}/versions`, {
@@ -101,14 +109,17 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
         }
         return { ok: true }
       } catch (e) {
-        const status = (e as { response?: { status?: number } }).response?.status
+        const resp = (e as { response?: { status?: number; data?: { error?: string } } }).response
+        // Prefer the backend's message ("version already exists", "not your mission", …).
         return {
           ok: false,
-          error: status === 409 ? `Version ${semver} already exists` : 'Could not save version',
+          error:
+            resp?.data?.error ??
+            (resp?.status === 409 ? `Version ${semver} already exists` : 'Could not save version'),
         }
       }
     },
-    [missionId],
+    [missionId, invalidMissionId],
   )
 
   const exportJson = useCallback(() => {
@@ -146,5 +157,6 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
     exportJson,
     conflict,
     resolveConflict,
+    invalidMissionId,
   }
 }

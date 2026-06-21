@@ -123,6 +123,14 @@ export default function MissionCreatorPage() {
           <BottomToolbelt cursorWorld={cursor} />
         </div>
 
+        {editor.invalidMissionId && (
+          <div className="absolute left-1/2 top-14 -translate-x-1/2">
+            <p className="pointer-events-auto rounded-md border border-tactical-yellow/40 bg-tactical-yellow/15 px-3 py-1.5 text-label-sm normal-case text-tactical-yellow">
+              This editor URL needs a real mission id — create one from Mission Library first.
+            </p>
+          </div>
+        )}
+
         <FpsCounter />
       </div>
 
