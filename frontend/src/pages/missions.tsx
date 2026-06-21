@@ -411,6 +411,7 @@ export function MissionCreatorPage() {
   const [gameMode, setGameMode] = useState('pve_coop')
   const [weather, setWeather] = useState('clear')
   const [timeOfDay, setTimeOfDay] = useState('14:00')
+  const [maxPlayers, setMaxPlayers] = useState(64)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -425,13 +426,18 @@ export function MissionCreatorPage() {
         game_mode: gameMode,
         weather,
         time_of_day: timeOfDay,
+        max_players: maxPlayers,
       },
       {
         onSuccess: (data: { id?: string }) => {
           toast.success('Mission created')
-          if (data?.id) navigate(`/missions/${data.id}`)
+          if (data?.id) navigate(`/missions/${data.id}/edit`)
         },
-        onError: () => toast.error('Failed to create mission'),
+        onError: (e: unknown) =>
+          toast.error(
+            (e as { response?: { data?: { error?: string } } }).response?.data?.error ??
+              'Failed to create mission',
+          ),
       },
     )
   }
@@ -488,14 +494,28 @@ export function MissionCreatorPage() {
               onChange={(e) => setTimeOfDay(e.target.value)}
               className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
             />
+            <label className="mb-2 block text-sm font-medium">Weather</label>
             <select
               value={weather}
               onChange={(e) => setWeather(e.target.value)}
-              className="mb-6 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+              className="mb-4 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
             >
               <option value="clear">Clear (Default)</option>
               <option value="overcast">Overcast</option>
-              <option value="rain">Light Rain</option>
+              <option value="heavy_rain">Heavy Rain</option>
+              <option value="dense_fog">Dense Fog</option>
+            </select>
+            <label className="mb-2 block text-sm font-medium">Max Players</label>
+            <select
+              value={maxPlayers}
+              onChange={(e) => setMaxPlayers(Number(e.target.value))}
+              className="mb-6 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+            >
+              {[16, 32, 48, 64, 96, 128].map((n) => (
+                <option key={n} value={n}>
+                  {n} Operators
+                </option>
+              ))}
             </select>
             <button
               type="submit"
