@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator Eden fidelity. Canonical repo path: Design_Docs/Mission_Creator_Architecture/agent_execution.md. Execute phases in strict order; verify build/lint after each phase."
+overview: "Self-contained agent handoff for Mission Creator Eden fidelity. Canonical repo path: Design_Docs/Mission_Creator_Architecture/agent_execution.md. Shell phases (PRE-3.5-9) are complete (T-033-T-040); start at ROADMAP.md for open work and execute only open/deferred items. Verify build/lint after each phase."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to Design_Docs/Mission_Creator_Architecture/agent_execution.md"
@@ -274,15 +274,15 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Load conflict** | When API `json_payload` and local IndexedDB disagree → **prompt user** to choose which to keep. |
 | **Autosave** | **Debounced autosave** overwrites a single server **draft** on the mission. **Undo** = in-session. Manual **Save Version** creates semver snapshots for future Visual-Git/history. |
 | **Time of day** | Match **Arma 3 Eden** environment control (slider/scrub in environment UI — not preset-only dropdowns). Expose quick readout in top bar; fine control in Mission Settings. |
-| **Phase order** | **Commit/finish uncommitted tree wiring FIRST** (pre-3.5), then DOC-0 → 3.5 → 7b → 7a → 9. |
-| **Eden completeness** | **`00`–`09` docs** + scrape artifacts are the Eden parity checklist. Read `07a`/`07b` before implementing UI/attrs. Implement from `08` P0 backlog. New TBD features → FEDS row in `06`. Re-run `node scripts/tools/scrape-eden-wiki.mjs` when wiki updates. |
+| **Phase order** | Shell phases **PRE-3.5 → DOC-0 → 3.5 → 7b → 7a → 9 are complete** (T-033–T-040). Historically the tree wiring landed before shell fidelity, but that is done — there is no mandatory next shell phase. For open work see **`ROADMAP.md`**: Tracks A/B/C, Phase 2 DEM, Phases 5–6 registry, Phase 8 tools. |
+| **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement the P0 backlog from `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
 
 ---
 
 ## Agent rules (mandatory)
 
 1. **Read first:** `CLAUDE.md` (conventions), then this file, then `engineering_plan.md` §0–§2.
-2. **Phase order is strict:** PRE-3.5 wiring commit → DOC-0 → 3.5 → 7b → 7a → 9. Never start a later phase until the current phase's acceptance criteria pass.
+2. **Start at `ROADMAP.md`:** the shell phases (PRE-3.5 → DOC-0 → 3.5 → 7b → 7a → 9) are **done** (T-033–T-040). Execute only the open/deferred items listed in `ROADMAP.md` (Tracks A/B/C) and this file's completion log — do not restart a completed shell phase.
 3. **Verify gate** after every phase:
    ```bash
    cd frontend && npm run build && npm run lint

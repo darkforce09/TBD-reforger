@@ -45,9 +45,6 @@ categories:
       - slug: Eden_Editor:_Setting_Attributes
         priority: P0
         status: scraped
-      - slug: Eden_Editor:_Scenario_Attributes
-        priority: P0
-        status: scraped
       - slug: Eden_Editor:_Transforming_Crew
         priority: P2
         status: scraped
