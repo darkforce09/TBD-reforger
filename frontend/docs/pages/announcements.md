@@ -9,7 +9,8 @@
 - **What:** Blog-style feed of community news and patch notes.
 - **Why:** Central place for updates; complements Discord webhooks.
 - **Route:** `/announcements`
-- **Stitch reference:** `frontend/stitch-exports/command_announcements_feed/code.html`
+- **Live source:** `frontend/src/pages/operations.tsx` (`AnnouncementsPage`)
+- **Stitch reference:** `frontend/src/stitch-exports/command_announcements_feed/code.html` (archived)
 - **Min role:** `public-nav`
 - **Blueprint ref:** §4.2
 

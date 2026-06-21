@@ -1,4 +1,4 @@
-// Right-panel Asset Palette (Ultra Plan §5.2; locked in 04_eden_editor_ux_spec.md) —
+// Right-panel Asset Palette (Ultra Plan §5.2; locked in 04_eden_ux_spec.md) —
 // docked flush right, ALWAYS visible (it never swaps to an inspector; properties edit via
 // the double-click Attributes modal instead). A tab strip switches the catalog the user
 // drags from. Phase 3.5: Factions = the live Asset Browser tree; the other tabs are stubs

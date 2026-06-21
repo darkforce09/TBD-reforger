@@ -11,7 +11,7 @@
 - **Route:** `/login`
 - **Stitch reference:** none
 - **Min role:** `public-nav`
-- **Blueprint ref:** Handoff §2.A
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §2.A
 
 ## Element Inventory
 
@@ -28,7 +28,7 @@
 ### Primary flow
 1. User lands on `/login` (optional — CTAs across app also link here).
 2. Click Discord → browser navigates to `GET /api/v1/auth/discord/login` → Discord consent.
-3. On success (when T-002 fixed) → `/auth/callback` with tokens.
+3. On success → `/auth/callback` with tokens (FD-002 resolved).
 
 ### States
 - **Already authenticated:** Redirect to `/`.
@@ -52,7 +52,7 @@
 - [ ] Auto-redirect if session exists
 
 ### M4 — Complete
-- [ ] End-to-end login when T-002 resolved
+- [x] End-to-end login (FD-002 resolved)
 
 ## Test Plan
 
@@ -66,4 +66,4 @@
 
 ## Open Questions / Blockers
 
-- [T-002](TRACKING.md): Backend must redirect to frontend `/auth/callback` with tokens.
+- None (~~FD-002~~ resolved).

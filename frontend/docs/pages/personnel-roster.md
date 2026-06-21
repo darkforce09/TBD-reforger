@@ -9,9 +9,10 @@
 - **What:** Admin user management table with search, edit, ban.
 - **Why:** Manage Discord/Arma linked accounts, roles, warnings.
 - **Route:** `/admin/personnel`
-- **Stitch reference:** `frontend/stitch-exports/personnel_roster_admin_management/code.html`
+- **Live source:** `frontend/src/pages/admin.tsx` (`PersonnelPage`); data via `usePersonnel`
+- **Stitch reference:** `frontend/src/stitch-exports/personnel_roster_admin_management/code.html` (archived)
 - **Min role:** `admin`
-- **Blueprint ref:** §4.10
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.10
 
 ## Element Inventory
 
@@ -33,21 +34,21 @@
 
 | Endpoint | Method | When | Response |
 |----------|--------|------|----------|
-| `GET /admin/users` | GET | Load roster | `User[]` (T-004 stub empty) |
+| `GET /admin/users` | GET | Load roster | `User[]` via `usePersonnel(q)` |
 
 ## Milestones
 
 ### M1 — [x] Admin route
-### M2 — [ ] Table static
-### M3 — [ ] Hook stub until T-004
+### M2 — [x] Table layout (wide roster + slide-over dossier)
+### M3 — [x] `usePersonnel` live (~~FD-004~~)
 ### M4 — [ ] Edit/ban when API exists
 
 ## Test Plan
 
-1. Admin page renders table with sample rows (static).
-2. Search input filters client-side on static data.
-3. When T-004 resolved → live data.
+1. Admin page renders table from API.
+2. Search input passes `q` to `usePersonnel`.
+3. Row selection opens dossier slide-over.
 
 ## Open Questions / Blockers
 
-- [T-004](../TRACKING.md)
+- Edit/ban mutations not yet implemented. API read path resolved (~~FD-004~~).

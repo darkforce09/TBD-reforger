@@ -9,9 +9,10 @@
 - **What:** Terminal-style live feed of system audit events.
 - **Why:** Admin paper trail for security and debugging.
 - **Route:** `/admin/audit`
-- **Stitch reference:** `frontend/stitch-exports/system_audit_logs_admin_console/code.html`
+- **Live source:** `frontend/src/pages/admin.tsx` (`AuditLogsPage`); data via `useAuditLogs`
+- **Stitch reference:** `frontend/src/stitch-exports/system_audit_logs_admin_console/code.html` (archived)
 - **Min role:** `admin`
-- **Blueprint ref:** §4.12
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.12
 
 ## Element Inventory
 
@@ -31,22 +32,22 @@
 
 | Endpoint | Method | When | Response |
 |----------|--------|------|----------|
-| `GET /admin/audit-logs` | GET | Load logs | `AuditLog[]` (T-005) |
+| `GET /admin/audit-logs` | GET | Load logs | `AuditLog[]` via `useAuditLogs({ q })` |
 | `GET /admin/audit-logs/stream` | GET SSE | Live | stream (future) |
 
 ## Milestones
 
 ### M1 — [x] Admin route
-### M2 — [ ] Terminal UI with sample lines static
-### M3 — [ ] Hook stub T-005
-### M4 — [ ] Live stream + CSV export
+### M2 — [x] Terminal UI with log lines
+### M3 — [x] `useAuditLogs` live (~~FD-005~~)
+### M4 — [ ] Live SSE stream + CSV export wired
 
 ## Test Plan
 
-1. Admin sees monospace log viewer.
-2. Filter narrows static sample lines.
-3. Export button disabled until T-005.
+1. Admin sees monospace log viewer with API data.
+2. Filter passes `q` to `useAuditLogs`.
+3. Export button calls CSV endpoint when enabled.
 
 ## Open Questions / Blockers
 
-- [T-005](../TRACKING.md)
+- SSE live stream deferred. List query resolved (~~FD-005~~).

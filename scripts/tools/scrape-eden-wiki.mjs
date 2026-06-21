@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Scrape Eden Editor wiki pages from 09_eden_wiki_manifest.yaml.
+ * Scrape Eden Editor wiki pages from eden/wiki_manifest.yaml.
  * Outputs:
  *   artifacts/eden-wiki/<slug>.md
  *   artifacts/eden-feds-draft.jsonl
@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const MANIFEST = path.join(
   ROOT,
-  'Design_Docs/Mission_Creator_Architecture/09_eden_wiki_manifest.yaml',
+  'Design_Docs/Mission_Creator_Architecture/eden/wiki_manifest.yaml',
 );
 const OUT_DIR = path.join(ROOT, 'artifacts/eden-wiki');
 const JSONL = path.join(ROOT, 'artifacts/eden-feds-draft.jsonl');

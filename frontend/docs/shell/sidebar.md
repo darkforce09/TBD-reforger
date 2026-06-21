@@ -9,7 +9,7 @@
 - **What:** Fixed left navigation panel listing all app sections and routes.
 - **Why:** Primary way members navigate TBD Reforger; mirrors Stitch ops-center layout.
 - **Route:** (shell component — no route)
-- **Stitch reference:** `frontend/stitch-exports/restructured_operations_sidebar/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/restructured_operations_sidebar/code.html`
 - **Min role:** `public-nav` (admin section hidden unless `admin`)
 - **Blueprint ref:** —
 
@@ -95,4 +95,4 @@
 
 ## Open Questions / Blockers
 
-- Server Control nav links to T-001 stub page.
+- Server Control nav links to FD-001 stub page.

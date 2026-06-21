@@ -1,6 +1,7 @@
 # Dev Runbook — spin up the stack
 
-Quick steps to bring up DB + API + Vite locally. See `CLAUDE.md` for full context.
+Quick steps to bring up DB + API + Vite locally. See [`CLAUDE.md`](CLAUDE.md) for full context.
+Backend docs: [`docs/backend/README.md`](docs/backend/README.md).
 
 ## Start everything
 

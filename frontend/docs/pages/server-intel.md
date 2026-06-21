@@ -9,7 +9,7 @@
 - **What:** Real-time server health, active mission context, and connection info for **TBD Main**.
 - **Why:** Anti-ghosting safe telemetry; players join without tactical leaks.
 - **Route:** `/server-intel`
-- **Stitch reference:** `frontend/stitch-exports/server_intel_dashboard/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/server_intel_dashboard/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** §4.1
 
@@ -43,7 +43,7 @@
 | 24 | Verified pill | span | Verified | Modpack OK | Static |
 | 25 | Launch CTA | button | Launch Reforger & Connect | Join server | `steam://` or copy |
 
-**Server assumption:** Display name **TBD Main**; ID from `VITE_DEFAULT_SERVER_ID` or first `GET /servers` result (T-009).
+**Server assumption:** Display name **TBD Main**; ID from `VITE_DEFAULT_SERVER_ID` or first `GET /servers` result (FD-009).
 
 ## Behavior
 
@@ -87,4 +87,4 @@
 
 ## Open Questions / Blockers
 
-- [T-009](TRACKING.md): Multi-server picker deferred.
+- [FD-009](TRACKING.md): Multi-server picker deferred.

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 interface RouteHandle {
   fullBleed?: boolean
   /** Chromeless routes (the Mission Creator editor) own the full viewport — no
-   *  platform Sidebar/TopNav. See 04_eden_editor_ux_spec.md. */
+   *  platform Sidebar/TopNav. See 04_eden_ux_spec.md. */
   chromeless?: boolean
 }
 

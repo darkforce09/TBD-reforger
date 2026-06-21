@@ -34,7 +34,7 @@ Because the mission is saved as a strict JSON data contract, we can build true v
 ### UI Layout: The "macOS" Arma Editor
 
 > **Authoritative UX is now `Design_Docs/Mission_Creator_Architecture/05_agent_execution_plan.md`
-> + `04_eden_editor_ux_spec.md`** (the **Arma 3 Eden Editor docked shell**, modernized with Aegis
+> + `04_eden_ux_spec.md`** (the **Arma 3 Eden Editor docked shell**, modernized with Aegis
 > glass). The product intent below still holds; two interaction details were superseded by the
 > locked Decisions log — see the **bold** notes. The `Mission_Creator_Mock_Up/**/code.html` and
 > `macOS_Blueprints/**` HTML mockups are **historical explorations only** — do not execute against them.

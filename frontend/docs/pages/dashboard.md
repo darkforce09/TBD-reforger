@@ -9,7 +9,7 @@
 - **What:** Home page with next operation hero, quick intel cards, and recent announcements.
 - **Why:** Command center entry point; surfaces countdown, server status, assignment, and news.
 - **Route:** `/`
-- **Stitch reference:** `frontend/stitch-exports/tbd_reforger_dashboard_content/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/tbd_reforger_dashboard_content/code.html`
 - **Min role:** `public-nav` (live data requires auth)
 - **Blueprint ref:** —
 

@@ -9,7 +9,8 @@
 - **What:** Competitive stats rankings with search, category tabs, podium, and table.
 - **Why:** Community engagement; telemetry-driven stats.
 - **Route:** `/leaderboards`
-- **Stitch reference:** `frontend/stitch-exports/global_leaderboards_player_rankings/code.html`
+- **Live source:** `frontend/src/pages/operations.tsx` (`LeaderboardsPage`)
+- **Stitch reference:** `frontend/src/stitch-exports/global_leaderboards_player_rankings/code.html` (archived)
 - **Min role:** `public-nav`
 - **Blueprint ref:** §4.4
 

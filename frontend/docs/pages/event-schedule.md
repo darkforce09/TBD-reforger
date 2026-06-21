@@ -6,10 +6,11 @@
 
 ## Summary
 
-- **What:** Member view of upcoming operations with registration actions.
-- **Why:** Players find and register for Tuesday events.
+- **What:** Split-pane upcoming operations list with embedded Event Hub in the detail column.
+- **Why:** Players browse Tuesday ops and register without a full-page navigation away from the schedule.
 - **Route:** `/events`
-- **Stitch reference:** `frontend/stitch-exports/upcoming_operations_event_schedule/code.html`
+- **Live source:** `frontend/src/pages/operations.tsx` (`EventSchedulePage`); detail embeds `EventHubView` from `frontend/src/pages/events.tsx`
+- **Stitch reference:** `frontend/src/stitch-exports/upcoming_operations_event_schedule/code.html` (archived — layout replaced by `SplitPane`)
 - **Min role:** `public-nav`
 - **Blueprint ref:** —
 
@@ -17,40 +18,50 @@
 
 | # | Element | Type | Text / Content | Purpose | Data source |
 |---|---------|------|----------------|---------|-------------|
-| 1 | Page H1 | h1 | Upcoming Operations | Title | Static |
-| 2 | View toggle | button | List View | Active view | Static |
-| 3 | View toggle | button | Calendar View | Future | Static |
-| 4 | Col | th | Date/Time | Table | UTC→local |
-| 5 | Col | th | Operation | Table | `event.name` |
-| 6 | Col | th | Terrain | Table | `event.terrain` |
-| 7 | Col | th | Registration | Progress bar | `registered/max` |
-| 8 | Col | th | Status | Badge OPEN/FULL/LIVE | `event.status` |
-| 9 | Col | th | Action | Buttons | Static |
-| 10 | Action btn | button | View & Register | Register | `POST /events/:id/register` |
-| 11 | Action btn | button | Waitlist | Waitlist | API |
-| 12 | Action btn | button | Join Spectator | Spectate | Future |
-| 13 | Pagination | nav | Showing x of y | Footer | `limit/offset` |
+| 1 | Master header | h2 | Upcoming Ops | List title | Static |
+| 2 | Op card | button | Date, status badge, name, mission count, fill bar | Select operation | `GET /events?status=upcoming` |
+| 3 | Status badge | `Badge` | OPEN / LOCKED / LIVE | Registration state | `event.status`, `registration_locked` |
+| 4 | Fill bar | progress | filled/total_slots | Capacity | `EventListItem` |
+| 5 | Detail column | panel | Embedded hub | Mission dossiers + ORBAT | `useEvent(selectedId)` → `EventHubView` |
+| 6 | Empty master | p | No upcoming operations | No events | Static |
+| 7 | Empty detail | `SplitPaneEmpty` | Select an operation… | No selection | Static |
+
+## Behavior
+
+### Primary flow
+1. `EventSchedulePage` loads upcoming events via `useEvents('upcoming')`.
+2. `SplitPane` master (`masterWidth="24rem"`) lists op cards; first item auto-selected.
+3. Clicking a card sets `selectedId`; detail column fetches `useEvent(id)` and renders `EventHubView` (same body as [/events/:id](event-hub.md)).
+4. User registers inline via mission dossier ORBAT — no separate "Open ORBAT" step.
+5. Full-page hub still available at `/events/:id` for deep links and back-navigation UX.
+
+### States
+- **Loading:** `QueryState` wraps entire split-pane.
+- **Empty schedule:** Master shows "No upcoming operations scheduled."
+- **No selection:** Detail shows calendar `SplitPaneEmpty`.
 
 ## API Dependencies
 
 | Endpoint | Method | When | Response |
 |----------|--------|------|----------|
-| `GET /events` | GET | Auth | `Event[]` |
-| `POST /events/:id/register` | POST | Register | registration |
+| `GET /events` | GET | Auth (`status=upcoming`) | `Event[]` list items |
+| `GET /events/:id` | GET | Detail selection | `EventHub` |
+| `POST /event-missions/:emid/register` | POST | Inline register | registration |
 
 ## Milestones
 
 ### M1 — [x] Route `/events`
-### M2 — [ ] Table static
-### M3 — [ ] `useEvents()`
-### M4 — [ ] Register flow
+### M2 — [x] `SplitPane` master list (replaces table/list toggle)
+### M3 — [x] `useEvents('upcoming')` + selection state
+### M4 — [x] Embedded `EventHubView` + inline ORBAT register flow
 
 ## Test Plan
 
-1. Page shows event table.
-2. OPEN row → Register enabled when logged in.
-3. FULL row → Waitlist shown.
+1. Page shows split-pane; upcoming ops in master column.
+2. Select op → detail shows hub hero + mission dossiers (not a redirect).
+3. Register on a mission dossier → fill bar updates on master card.
+4. Navigate to `/events/:id` → same hub content with back link.
 
 ## Open Questions / Blockers
 
-- Calendar view deferred past M2.
+- Calendar view deferred; master list is the only view. See [event-hub.md](event-hub.md) for standalone hub and ORBAT deep-link.

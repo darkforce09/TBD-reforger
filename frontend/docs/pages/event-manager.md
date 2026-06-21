@@ -9,7 +9,7 @@
 - **What:** Admin calendar + form to schedule Tuesday operations.
 - **Why:** Admins publish events linked to mission library.
 - **Route:** `/admin/events`
-- **Stitch reference:** `frontend/stitch-exports/event_manager_admin_scheduling/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/event_manager_admin_scheduling/code.html`
 - **Min role:** `admin`
 - **Blueprint ref:** §4.8
 

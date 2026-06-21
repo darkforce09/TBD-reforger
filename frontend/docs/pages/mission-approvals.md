@@ -9,7 +9,7 @@
 - **What:** Admin queue of missions pending approval.
 - **Why:** Quality control before missions go live.
 - **Route:** `/admin/approvals`
-- **Stitch reference:** `frontend/stitch-exports/mission_approvals_queue_admin_dashboard/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/mission_approvals_queue_admin_dashboard/code.html`
 - **Min role:** `admin`
 - **Blueprint ref:** §4.9
 

@@ -9,7 +9,7 @@
 - **What:** Fixed 64px header with breadcrumbs and user profile controls.
 - **Why:** Shows context (where am I) and account actions (settings, link Arma, sign out).
 - **Route:** (shell component)
-- **Stitch reference:** `frontend/stitch-exports/tbd_reforger_top_navigation_bar/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/tbd_reforger_top_navigation_bar/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** `tbd_reforger_topbar/DESIGN.md`
 

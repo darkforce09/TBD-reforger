@@ -9,9 +9,12 @@
 - **What:** [One sentence]
 - **Why:** [Business reason]
 - **Route:** `/path` or `(shell component)`
-- **Stitch reference:** `frontend/stitch-exports/<folder>/code.html` or none
+- **Live source:** `frontend/src/pages/...` or `frontend/src/features/...`
+- **Stitch reference:** `frontend/src/stitch-exports/<folder>/code.html` or none (archived — see [stitch-exports README](../../src/stitch-exports/README.md))
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
-- **Blueprint ref:** Claude_Context_Handoff.md §4.x (if applicable)
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../docs/platform/context_handoff.md) §4.x (if applicable)
+
+**Doc hub:** [docs/frontend/README.md](../../docs/frontend/README.md)
 
 ## Element Inventory
 
@@ -70,4 +73,4 @@
 
 ## Open Questions / Blockers
 
-- None, or link to [TRACKING.md](TRACKING.md) IDs (e.g. T-001)
+- None, or link to [TRACKING.md](TRACKING.md) IDs (e.g. FD-001)

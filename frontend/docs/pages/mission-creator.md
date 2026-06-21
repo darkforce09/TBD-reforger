@@ -7,34 +7,36 @@
 ## Summary
 
 - **What:** Wizard to initialize a new mission before 2D canvas editing.
-- **Why:** Authors set terrain, time, weather before map work.
+- **Why:** Authors set terrain, time, weather, and max players before map work.
 - **Route:** `/missions/create`
-- **Stitch reference:** `frontend/stitch-exports/mission_creator_setup_wizard/code.html`
+- **Live source:** `frontend/src/pages/missions.tsx` (`MissionCreatorPage`)
+- **Stitch reference:** `frontend/src/stitch-exports/mission_creator_setup_wizard/code.html` (archived)
 - **Min role:** `mission_maker`
-- **Blueprint ref:** Handoff §3 Mission Library
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §3 Mission Library
 
 ## Element Inventory
 
 | # | Element | Type | Text / Content | Purpose | Data source |
 |---|---------|------|----------------|---------|-------------|
 | 1 | Page H1 | h1 | Initialize New Mission | Title | Static |
-| 2 | Subtitle | p | Define environment parameters before launching the 2D Editor Canvas. | Context | Static |
-| 3 | Op name label | label | Operation Name | Form | Static |
-| 4 | Op name input | input | Enter operation designation... | Title field | Form state |
+| 2 | Subtitle | p | Define environment parameters… | Context | Static |
+| 3 | Op name label | label | Operation Designation | Form | Static |
+| 4 | Op name input | input | Enter operation designation… | Title field | Form state |
 | 5 | Terrain label | label | Select Terrain | Form | Static |
-| 6 | Terrain card | radio | Everon 51 km² | Terrain option | `everon` |
-| 7 | Terrain card | radio | Arland 16 km² | Terrain option | `arland` |
+| 6 | Terrain card | radio | Everon / Arland | Terrain option | `everon`, `arland` |
+| 7 | Game mode | select | PvE Co-op, etc. | Mode | `game_mode` |
 | 8 | Time label | label | Insertion Time | Form | Static |
-| 9 | Time slider | range | 00:00–24:00 | Time of day | Form state |
-| 10 | Time display | span | 14:00 | Current slider value | Computed |
-| 11 | Weather label | label | Weather Conditions | Form | Static |
-| 12 | Weather select | select | Clear / Overcast / Rain / Fog | Weather | `WeatherType` enum |
-| 13 | Submit btn | button | Initialize 2D Canvas | Create + open editor | `POST /missions` T-003 |
+| 9 | Time input | input | HH:MM | Time of day | Form state |
+| 10 | Weather label | label | Weather Conditions | Form | Static |
+| 11 | Weather select | select | Clear / Overcast / Rain / Fog | Weather | backend `WeatherType` enum |
+| 12 | Max players | input | number | Capacity | `max_players` (T-040) |
+| 13 | Submit btn | button | Initialize 2D Canvas | Create + open editor | `POST /missions` → `/missions/:id/edit` |
 
 ## Behavior
 
 - ProtectedRoute `mission_maker`.
-- Submit creates draft mission then stubs editor (T-003).
+- Submit calls `useCreateMission` with `title`, `terrain`, `game_mode`, `weather`, `time_of_day`, `max_players`.
+- On success navigates to `/missions/:id/edit` (T-040).
 
 ## API Dependencies
 
@@ -45,16 +47,16 @@
 ## Milestones
 
 ### M1 — [x] Route protected
-### M2 — [ ] Wizard form static + zod validation
-### M3 — [ ] POST /missions on submit
-### M4 — [ ] Editor navigation (T-003)
+### M2 — [x] Wizard form + validation
+### M3 — [x] POST /missions on submit
+### M4 — [x] Navigate to editor on success (T-040)
 
 ## Test Plan
 
 1. Enlisted user → cannot access route.
-2. Mission maker → form renders all fields.
-3. Submit with invalid name → validation errors.
+2. Mission maker → form renders all fields including max players.
+3. Submit with valid data → mission created → redirect to `/missions/:id/edit`.
 
 ## Open Questions / Blockers
 
-- [T-003](TRACKING.md)
+- None. Remaining editor work tracked under [mission-editor.md](mission-editor.md) / [FD-003](../TRACKING.md).

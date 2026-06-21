@@ -3,7 +3,7 @@
 **Status:** Authoritative engineering blueprint (supersedes the renderer/stack choices in `01_technical_specification.md`)
 **Audience:** Implementing engineers. Read `01_technical_specification.md` (problem statement) and `mission_creator_design.md` (product/UX) first; this document is *how we build it, file by file.*
 
-> **UX/layout authority is `05_agent_execution_plan.md` + `04_eden_editor_ux_spec.md`.**
+> **UX/layout authority is `05_agent_execution_plan.md` + `04_eden_ux_spec.md`.**
 > The locked UX is the **Arma 3 Eden Editor docked shell** (fullscreen, panels flush to the
 > edges, always-on Asset Palette, Attributes modal on double-click). Where §5 of this file still
 > describes earlier explorations (floating panels, a right-panel inspector swap, a "popover"
@@ -95,6 +95,10 @@ features/tactical-map/
 ```
 
 ### 1.2 The Creator wrapper — `features/mission-creator/`
+
+> **Superseded (T-035):** Actual layout uses docked `LeftSidebar`/`AssetPalette`/`AttributesModal`.
+> File tree below is historical — see live tree in [`05_agent_execution_plan.md`](05_agent_execution_plan.md).
+
 ```
 features/mission-creator/
 ├── MissionCreatorPage.tsx         # full-bleed route shell (uses AppLayout fullBleed handle)
@@ -410,6 +414,11 @@ OutlinerPanel
 - Selecting any row calls `MapContext.flyTo(entity.position)` to center the map.
 
 ### 5.2 Right Panel — Asset Browser & Inspector
+
+> **Superseded (T-035):** The right panel is **always-on `AssetPalette`** — it does NOT swap to
+> `InspectorPanel` on selection. Attributes edit via **double-click → AttributesModal**. See
+> [`05_agent_execution_plan.md`](05_agent_execution_plan.md) Decisions log.
+
 The right panel defaults to the **Asset Browser**. This MUST be a nested, collapsible tree view (e.g., Faction → Category → Class) mimicking the Eden Editor, NOT a flat list of pill buttons. Users drag items from this tree directly onto the map.
 When an entity is selected, it switches to the `InspectorPanel` based on `selection.kind`:
 | State | Component | Props |

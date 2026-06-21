@@ -9,7 +9,7 @@
 - **What:** Server modpack dependencies and download/workshop links.
 - **Why:** Players sync mods before joining.
 - **Route:** `/modpacks`
-- **Stitch reference:** `frontend/stitch-exports/server_modpacks_deployment_dependencies/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/server_modpacks_deployment_dependencies/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** §4.7
 

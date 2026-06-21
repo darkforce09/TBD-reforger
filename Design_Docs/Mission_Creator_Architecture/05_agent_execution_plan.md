@@ -7,22 +7,22 @@ todos:
     status: completed
   - id: phase-pre-35
     content: "PHASE PRE-3.5: Land uncommitted tree wiring — verify build/lint; commit only if user asks"
-    status: pending
+    status: completed
   - id: phase-doc-0
     content: "PHASE DOC-0: Create 04_eden_editor_ux_spec.md + patch 03_engineering_ultra_plan.md + mission_creator_design.md + CLAUDE.md"
-    status: pending
+    status: completed
   - id: phase-3-5
     content: "PHASE 3.5: Eden shell fidelity — docked layout, top bar, left sidebar sections, tabbed asset palette, modal-only inspector, topo skin"
-    status: pending
+    status: completed
   - id: phase-7b
     content: "PHASE 7b: Map drag-to-move, marquee multi-select, group move, Spacebar center, Delete key; remove click-to-teleport"
-    status: pending
+    status: completed
   - id: phase-7a
     content: "PHASE 7a: Outliner reparent DnD, folder rename/delete, slot delete; commit in-flight tree wiring"
-    status: pending
+    status: completed
   - id: phase-9
     content: "PHASE 9: Compiler + Export + useMissionEditor autosave (only after 3.5, 7b, 7a complete)"
-    status: pending
+    status: completed
   - id: phase-blocked
     content: "DEFERRED (blocked): Phase 2 DEM, Phases 5-6 registry/Arsenal, Phase 8 tools — do not start without user approval"
     status: pending
@@ -31,18 +31,21 @@ isProject: false
 
 # AGENT EXECUTION CONTRACT
 
-> **For the human:** Open a new Cursor Agent / CLI session and paste the prompt below. The agent reads this file and executes phases in order without re-planning.
+> **Phase completion log (T-033–T-040):** PRE-3.5 ✅ DOC-0 ✅ 3.5 ✅ 7b ✅ 7a ✅ 9 ✅.
+> Shipped status lives in [`CLAUDE.md`](../../CLAUDE.md) §Status. **Decisions log below remains authoritative** for UX choices. Open work: Phase 2 DEM, Phases 5–6 registry, Phase 8 tools — see [`02_roadmap.md`](02_roadmap.md).
+
+> **For the human:** Open a new Cursor Agent / CLI session and paste the prompt below. The agent reads this file; execute **open** phases only.
 
 ## One-line prompt (copy this)
 
 ```
-Follow Design_Docs/Mission_Creator_Architecture/05_agent_execution_plan.md exactly. Read the Decisions log first. Execute from PHASE PRE-3.5 (or DOC-0 if wiring is done). After each phase run `cd frontend && npm run build && npm run lint`. Do not skip phases. Do not commit unless I ask. Read CLAUDE.md first.
+Read CLAUDE.md first. Follow Design_Docs/Mission_Creator_Architecture/README.md → 05_agent_execution_plan.md Decisions log → 02_roadmap.md → 06_tbd_feature_inventory.md. Execute only OPEN work from 02/TRACKING — phases PRE-3.5, DOC-0, 3.5, 7b, 7a, 9 are DONE (T-033–T-040). After each phase run `cd frontend && npm run build && npm run lint`. Do not commit unless I ask.
 ```
 
 Shorter variant:
 
 ```
-@05_agent_execution_plan.md — execute from PHASE DOC-0, phase by phase, verify build/lint each phase.
+@05_agent_execution_plan.md — read Decisions log; execute open phases from 02_roadmap only; verify build/lint each phase.
 ```
 
 ## Document hierarchy (read in this order — do not mix sources)
@@ -51,14 +54,15 @@ Shorter variant:
 |----------|----------|-------------------|
 | **1** | **This file** (`05_agent_execution_plan.md`) | **Execution authority.** Phases, tasks, acceptance criteria, Decisions log. If anything else conflicts, **this file wins**. |
 | **2** | **Decisions log** (below) | Locked human choices. Do not re-litigate. |
-| **3** | `04_eden_editor_ux_spec.md` | UX contract — created in PHASE DOC-0; copies Decisions log + interaction table. |
-| **3b** | `00_feature_entry_schema.md` | **FEDS v2** — normative per-feature record format (UI Surface, Wiki anchor). |
-| **3c** | `06_tbd_mission_creator_feature_inventory.md` | **What TBD has** — code-evidenced feature inventory. |
-| **3d** | `07a_eden_ui_anatomy.md` | **Eden UI** — panel-by-panel layout (Asset Browser, Toolbar, Entity List). |
-| **3e** | `07b_eden_attribute_catalog.md` | **Eden attributes** — `ATTR-FIELD-*` per entity type. |
-| **3f** | `07_arma3_eden_editor_feature_reference.md` | **Eden interactions** — wiki-anchored FEDS (toolbar, compositions, connect, …). |
-| **3g** | `08_eden_gap_analysis.md` | **Gap + backlog** — ID-linked parity; P0–P3. |
-| **3h** | `09_eden_wiki_manifest.yaml` + `scripts/tools/scrape-eden-wiki.mjs` | Wiki scrape manifest + automation; cache in `artifacts/eden-wiki/`. |
+| **3** | `04_eden_ux_spec.md` | UX contract — copies Decisions log + interaction table. |
+| **3b** | `reference/feds_schema.md` | **FEDS v2** — normative per-feature record format (UI Surface, Wiki anchor). |
+| **3c** | `06_tbd_feature_inventory.md` | **What TBD has** — code-evidenced feature inventory. |
+| **3d** | `eden/ui_anatomy.md` | **Eden UI** — panel-by-panel layout (Asset Browser, Toolbar, Entity List). |
+| **3e** | `eden/attributes.md` | **Eden attributes** — `ATTR-FIELD-*` per entity type. |
+| **3f** | `eden/interactions.md` | **Eden interactions** — wiki-anchored FEDS (toolbar, compositions, connect, …). |
+| **3g** | `eden/gap_analysis.md` | **Gap + backlog** — ID-linked parity; P0–P3. |
+| **3i** | `02_roadmap.md` | **Master roadmap** — DONE vs must-work (Tracks A/B/C); kits vs armory clarified. |
+| **3h** | `eden/wiki_manifest.yaml` + `scripts/tools/scrape-eden-wiki.mjs` | Wiki scrape manifest + automation; cache in `artifacts/eden-wiki/`. |
 | **4** | `03_engineering_ultra_plan.md` | Engineering ADRs, Y.Doc schema, compiler/export contract, file tree. |
 | **5** | `CLAUDE.md` | Repo conventions, run commands, commit tags. |
 | **6** | Aegis design tokens | `frontend/src/index.css` + label/spacing scale (`text-label-sm`, `overlayPanel`, etc.). Glass palette only — **not layout**. |
@@ -72,7 +76,7 @@ Shorter variant:
 
 | Path | Use for |
 |------|---------|
-| `Mission ccreator/DESIGN.md` | Aegis color tokens, typography scale, **256px / 320px** panel widths |
+| `aegis_tokens/DESIGN.md` | Aegis color tokens, typography scale, **256px / 320px** panel widths |
 | `frontend/src/index.css` + `overlay.ts` | Live glass palette, semantic classes |
 | `mission_creator_design.md` | Long-term product vision (Forge, Visual-Git, Briefing UI) — **deferred** items |
 | `01_technical_specification.md` | *Why* the four hard problems exist (200 slots, DEM, nesting, registry) |

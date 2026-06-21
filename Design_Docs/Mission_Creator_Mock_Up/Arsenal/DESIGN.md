@@ -1,3 +1,5 @@
+> **Canonical copy:** [`aegis_tokens/DESIGN.md`](../aegis_tokens/DESIGN.md) — this file is identical.
+
 ---
 name: Aegis Tactical Command
 colors:

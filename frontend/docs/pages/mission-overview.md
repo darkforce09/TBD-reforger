@@ -9,7 +9,8 @@
 - **What:** Detail page for a single mission: lore, map, armory, ORBAT, actions.
 - **Why:** Players and authors review mission before play or edit.
 - **Route:** `/missions/:id`
-- **Stitch reference:** `frontend/stitch-exports/operation_enduring_freedom_mission_overview/code.html`
+- **Live source:** `frontend/src/pages/missions.tsx` (`MissionOverviewPage`, `MissionDossierBody`)
+- **Stitch reference:** `frontend/src/stitch-exports/operation_enduring_freedom_mission_overview/code.html` (archived)
 - **Min role:** `public-nav`
 - **Blueprint ref:** —
 
@@ -28,10 +29,10 @@
 | 9 | Faction tabs | tabs | US / USSR / FIA | Armory filter | `GET /missions/:id/armory` |
 | 10 | Armory item | row | Weapon + qty | Assets | `MissionArmory` |
 | 11 | Command actions | h2 | Command Actions | Author tools | Static |
-| 12 | Editor btn | button | Launch 2D Mission Editor | Open editor | T-003 stub |
+| 12 | Editor btn | button | Launch 2D Mission Editor | Open editor | Navigate `/missions/:id/edit` |
 | 13 | Planner btn | button | Open Tactical Planner | External | Future |
 | 14 | AAR btn | button | View AAR Replay | Disabled until live | `aar_replay_url` |
-| 15 | ORBAT section | h2 | Order of Battle | Slots | `GET /events/:id/orbat` or static |
+| 15 | ORBAT section | h2 | Order of Battle | Slots | static from version payload |
 | 16 | ORBAT row | row | Squad name fill | Slot status | `OrbatSlot` |
 
 ## API Dependencies
@@ -44,16 +45,16 @@
 ## Milestones
 
 ### M1 — [x] Route `/missions/:id`
-### M2 — [ ] Full Stitch layout static
-### M3 — [ ] Mission + armory hooks
-### M4 — [ ] Editor button gated by role
+### M2 — [x] Dossier layout (Sheet + deep-link page)
+### M3 — [x] Mission + armory hooks
+### M4 — [x] Editor button navigates to `/missions/:id/edit` (mission_maker+)
 
 ## Test Plan
 
-1. Navigate to `/missions/1` → title and sections render.
+1. Navigate to `/missions/:id` → title and sections render.
 2. Breadcrumb shows Mission Hub / {title}.
-3. Editor button shows T-003 notice for non-makers.
+3. Mission maker clicks Edit → navigates to `/missions/:id/edit`.
 
 ## Open Questions / Blockers
 
-- [T-003](TRACKING.md): 2D editor not built.
+- None. Editor surface documented in [mission-editor.md](mission-editor.md).

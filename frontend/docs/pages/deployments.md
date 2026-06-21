@@ -9,7 +9,8 @@
 - **What:** Personal service record: upcoming deployments and attendance history.
 - **Why:** Players see ORBAT assignment and past operations.
 - **Route:** `/deployments`
-- **Stitch reference:** `frontend/stitch-exports/my_deployments_service_record/code.html`
+- **Live source:** `frontend/src/pages/operations.tsx` (`DeploymentsPage`)
+- **Stitch reference:** `frontend/src/stitch-exports/my_deployments_service_record/code.html` (archived)
 - **Min role:** `public-nav` (personal data requires auth)
 - **Blueprint ref:** §4.3
 

@@ -9,6 +9,7 @@
 - **What:** OAuth return URL that parses tokens and establishes session.
 - **Why:** Completes Discord login flow in the SPA.
 - **Route:** `/auth/callback`
+- **Live source:** `frontend/src/pages/auth.tsx` (`AuthCallbackPage`)
 - **Stitch reference:** none
 - **Min role:** `public-nav`
 - **Blueprint ref:** —
@@ -25,18 +26,20 @@
 
 ## Behavior
 
-### Primary flow (when T-002 implemented)
-1. Backend redirects to `http://localhost:5173/auth/callback#access_token=...&refresh_token=...` (or query).
-2. Parse hash/query → `useAuthStore.setSession()`.
-3. Redirect to `/` or `returnUrl`.
+### Primary flow
+1. Backend redirects to `FRONTEND_URL/auth/callback#access_token=...&refresh_token=...`.
+2. `AuthCallbackPage` parses hash → `useAuthStore.setSession()`.
+3. Fetches `/me` to populate user; redirects to `/` or `returnUrl`.
 
-### Current scaffold
-- Show message: "OAuth callback ready — backend redirect pending (T-002)."
+### States
+- **Invalid/missing tokens:** Error UI with retry link to `/login`.
+- **Dev-login:** Same callback path — backend 302 with fragment tokens.
 
 ## API Dependencies
 
 | Endpoint | Method | When called | Response shape |
 |----------|--------|-------------|----------------|
+| `GET /me` | GET | After token parse | `User` |
 | `POST /auth/refresh` | POST | Later token refresh | tokens |
 
 ## Milestones
@@ -45,19 +48,19 @@
 - [x] Route exists outside AppLayout
 
 ### M2 — Static Stitch
-- [ ] Loading and error UI
+- [x] Loading and error UI
 
 ### M3 — API wired
-- [ ] Parse tokens and set session (blocked T-002)
+- [x] Parse tokens and set session (FD-002 resolved)
 
 ### M4 — Complete
-- [ ] Full OAuth round trip
+- [x] Full OAuth round trip + dev-login
 
 ## Test Plan
 
 ### Manual
-1. Visit `/auth/callback` → loading or scaffold message shown.
-2. Simulate hash with mock tokens in dev → session stored.
+1. Visit `/auth/callback` without hash → error + retry.
+2. Dev-login redirect → session stored, lands on dashboard.
 3. Invalid callback → error + retry link.
 
 ### Automated (future)
@@ -65,4 +68,4 @@
 
 ## Open Questions / Blockers
 
-- [T-002](TRACKING.md): Backend JSON callback must become frontend redirect.
+- None (~~FD-002~~ resolved).

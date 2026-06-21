@@ -9,7 +9,7 @@
 - **What:** Searchable grid of community missions with filters and tabs.
 - **Why:** Browse and open missions before events or authoring.
 - **Route:** `/missions`
-- **Stitch reference:** `frontend/stitch-exports/mission_library_tactical_browser/code.html`
+- **Stitch reference:** `frontend/src/stitch-exports/mission_library_tactical_browser/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** §4.5
 
