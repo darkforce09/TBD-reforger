@@ -52,6 +52,7 @@ export interface Slot {
   index: number // 0-based authored order -> json_payload slot_index
   role: string // "Squad Leader"
   tag?: string // "MED" | "ENG"
+  assetId?: string // catalog asset id from the palette drop (registry classname later)
   position: { x: number; y: number; z: number; rotation: number } // x/y meters, z from DEM
   stance: 'stand' | 'crouch' | 'prone'
   loadoutId: ID | null

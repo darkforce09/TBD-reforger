@@ -32,6 +32,10 @@ export {
   addFaction,
   addSquad,
   addEditorLayer,
+  renameEditorLayer,
+  reparentEditorLayer,
+  moveSlotToLayer,
+  removeEditorLayer,
   ensureDefaultLayer,
   LOCAL_ORIGIN,
 } from './state/ydoc'

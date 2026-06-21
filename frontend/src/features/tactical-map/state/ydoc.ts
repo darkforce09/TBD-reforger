@@ -112,7 +112,7 @@ export function ensureDefaultLayer(md: MissionDoc): ID {
 export function addSlot(
   md: MissionDoc,
   position: { x: number; y: number },
-  opts?: { squadId?: ID; layerId?: ID; role?: string; tag?: string },
+  opts?: { squadId?: ID; layerId?: ID; role?: string; tag?: string; assetId?: string },
 ): ID {
   let id = ''
   transact(md, () => {
@@ -128,6 +128,7 @@ export function addSlot(
       index: slotIds.length,
       role: opts?.role ?? 'Rifleman',
       ...(opts?.tag ? { tag: opts.tag } : {}),
+      ...(opts?.assetId ? { assetId: opts.assetId } : {}),
       position: { x: position.x, y: position.y, z: 0, rotation: 0 },
       stance: 'stand',
       loadoutId: null,
@@ -265,6 +266,82 @@ export function addEditorLayer(
     md.entities.editorLayers.set(id, entityToYMap(layer as unknown as Record<string, unknown>))
   })
   return id
+}
+
+/** Rename an Outliner folder. */
+export function renameEditorLayer(md: MissionDoc, id: ID, name: string): void {
+  const layer = md.entities.editorLayers.get(id)
+  if (!layer) return
+  transact(md, () => layer.set('name', name))
+}
+
+/** Is `nodeId` inside `ancestorId`'s subtree (or equal to it)? Walks up via parentId. */
+function isLayerDescendant(md: MissionDoc, ancestorId: ID, nodeId: ID): boolean {
+  const { editorLayers } = md.entities
+  let cur: ID | null = nodeId
+  while (cur) {
+    if (cur === ancestorId) return true
+    cur = (editorLayers.get(cur)?.get('parentId') as ID | null) ?? null
+  }
+  return false
+}
+
+/** Reparent an Outliner folder. Rejects cycles (dropping a folder into its own subtree). */
+export function reparentEditorLayer(md: MissionDoc, id: ID, newParentId: ID | null): void {
+  const layer = md.entities.editorLayers.get(id)
+  if (!layer) return
+  if (newParentId === id) return
+  if (newParentId && isLayerDescendant(md, id, newParentId)) return
+  transact(md, () => layer.set('parentId', newParentId))
+}
+
+/** Refile a slot into a different Outliner folder (workflow-only; squad unchanged). */
+export function moveSlotToLayer(md: MissionDoc, slotId: ID, targetLayerId: ID): void {
+  const { editorLayers } = md.entities
+  const target = editorLayers.get(targetLayerId)
+  if (!target) return
+  transact(md, () => {
+    for (const layer of editorLayers.values()) {
+      const ids = layer.get('entityIds') as ID[]
+      if (ids.includes(slotId)) layer.set('entityIds', ids.filter((e) => e !== slotId))
+    }
+    const tIds = target.get('entityIds') as ID[]
+    if (!tIds.includes(slotId)) target.set('entityIds', [...tIds, slotId])
+  })
+}
+
+/** Delete an Outliner folder AND its whole subtree — every nested folder plus all units
+ *  filed in any of them — in ONE transaction (Eden expectation). No-op if it is the only
+ *  layer (keep ≥1); if the subtree was every layer, a fresh default layer is reseeded so
+ *  the editor is never layer-less (one undo restores the entire subtree + units). */
+export function removeEditorLayer(md: MissionDoc, id: ID): void {
+  const { editorLayers } = md.entities
+  if (!editorLayers.get(id) || editorLayers.size <= 1) return
+  // Collect the subtree: `id` plus every layer whose parent chain reaches it.
+  const subtree = new Set<ID>([id])
+  for (let added = true; added; ) {
+    added = false
+    for (const l of editorLayers.values()) {
+      const lid = l.get('id') as ID
+      const pid = l.get('parentId') as ID | null
+      if (pid && subtree.has(pid) && !subtree.has(lid)) {
+        subtree.add(lid)
+        added = true
+      }
+    }
+  }
+  transact(md, () => {
+    for (const layerId of subtree) {
+      const layer = editorLayers.get(layerId)
+      if (!layer) continue
+      for (const slotId of [...(layer.get('entityIds') as ID[])]) {
+        removeEntityInner(md, 'slots', slotId)
+      }
+      editorLayers.delete(layerId)
+    }
+    // Never leave the editor without a folder to file new placements into.
+    if (editorLayers.size === 0) ensureDefaultLayer(md)
+  })
 }
 
 export function setTitle(md: MissionDoc, title: string): void {

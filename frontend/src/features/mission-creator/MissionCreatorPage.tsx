@@ -47,7 +47,7 @@ export default function MissionCreatorPage() {
     (payload: AssetDropPayload, world: { x: number; y: number }) => {
       if (payload.kind !== 'slot') return
       const layerId = useMapStore.getState().activeLayerId ?? undefined
-      const newId = addSlot(md, world, { role: payload.role, layerId })
+      const newId = addSlot(md, world, { role: payload.role, layerId, assetId: payload.assetId })
       useMapStore.getState().setSelection({ kind: 'slot', ids: [newId] })
     },
     [md],

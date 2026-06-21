@@ -1,8 +1,11 @@
 // Reusable recursive tree view — the Eden Editor nested-file-tree paradigm, shared by
-// the left "Placed Entities" panel and the right "Asset Browser". Presentation-only:
-// folders (nodes with `children`) collapse/expand; leaves select; double-click fires
-// onActivate. Drag affordance is cosmetic (cursor-grab) — no DnD logic is wired yet.
-// Indentation comes purely from nested <ul> margins (one guide line per level).
+// the left "Editor Layers" / "ORBAT" panels and the right "Asset Browser". Folders
+// (nodes with `children`) collapse/expand; leaves select; double-click fires onActivate.
+// Optional, opt-in behaviours (Phase 7a): HTML5 drag of nodes (onNodeDragStart) and drop
+// onto folders (onNodeDrop) for reparenting, per-row hover actions (renderNodeActions), and
+// inline rename (renamingId + onRenameCommit/Cancel). Folder-ness is data-driven via
+// TreeNodeData.isFolder so empty folders still accept drops. Consumers that pass none of
+// these get the original read-only behaviour.
 
 import { useState } from 'react'
 import { ChevronRight, FolderOpen } from 'lucide-react'
@@ -16,6 +19,9 @@ export interface TreeNodeData {
   badge?: string
   children?: TreeNodeData[]
   defaultExpanded?: boolean
+  /** Force folder semantics (drop target, folder chrome) even with no children — an
+   *  empty Editor-Layers folder. Defaults to "has children" when unset. */
+  isFolder?: boolean
 }
 
 interface TreeViewProps {
@@ -25,9 +31,18 @@ interface TreeViewProps {
   selectedIds?: ReadonlySet<string>
   onSelect?: (id: string) => void
   onActivate?: (id: string) => void
-  /** Native HTML5 drag-start on a leaf (e.g. drag an asset onto the map). When
-   *  omitted, leaves are not draggable. */
+  /** Native HTML5 drag-start on a node. When omitted, nodes are not draggable. */
   onNodeDragStart?: (node: TreeNodeData, e: React.DragEvent) => void
+  /** Also let folders (not just leaves) initiate a drag — outliner reparent (Phase 7a). */
+  allowFolderDrag?: boolean
+  /** Drop onto a folder node (reparent / refile). Folders become drop targets when set. */
+  onNodeDrop?: (node: TreeNodeData, e: React.DragEvent) => void
+  /** Right-aligned hover actions per node (rename/delete buttons). */
+  renderNodeActions?: (node: TreeNodeData) => React.ReactNode
+  /** Node currently being renamed inline; its label becomes an input. */
+  renamingId?: string | null
+  onRenameCommit?: (id: string, name: string) => void
+  onRenameCancel?: () => void
 }
 
 function collectExpanded(nodes: TreeNodeData[], acc: Set<string>): Set<string> {
@@ -45,10 +60,17 @@ export function TreeView({
   onSelect,
   onActivate,
   onNodeDragStart,
+  allowFolderDrag,
+  onNodeDrop,
+  renderNodeActions,
+  renamingId,
+  onRenameCommit,
+  onRenameCancel,
 }: TreeViewProps) {
   const [expanded, setExpanded] = useState<Set<string>>(() =>
     collectExpanded(nodes, new Set()),
   )
+  const [dragOverId, setDragOverId] = useState<string | null>(null)
 
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -58,7 +80,23 @@ export function TreeView({
       return next
     })
 
-  const shared = { expanded, toggle, selectedId, selectedIds, onSelect, onActivate, onNodeDragStart }
+  const shared = {
+    expanded,
+    toggle,
+    selectedId,
+    selectedIds,
+    onSelect,
+    onActivate,
+    onNodeDragStart,
+    allowFolderDrag,
+    onNodeDrop,
+    renderNodeActions,
+    renamingId,
+    onRenameCommit,
+    onRenameCancel,
+    dragOverId,
+    setDragOverId,
+  }
 
   return (
     <ul className="flex flex-col">
@@ -78,6 +116,14 @@ interface TreeNodeProps {
   onSelect?: (id: string) => void
   onActivate?: (id: string) => void
   onNodeDragStart?: (node: TreeNodeData, e: React.DragEvent) => void
+  allowFolderDrag?: boolean
+  onNodeDrop?: (node: TreeNodeData, e: React.DragEvent) => void
+  renderNodeActions?: (node: TreeNodeData) => React.ReactNode
+  renamingId?: string | null
+  onRenameCommit?: (id: string, name: string) => void
+  onRenameCancel?: () => void
+  dragOverId: string | null
+  setDragOverId: (id: string | null) => void
 }
 
 function TreeNode({
@@ -89,22 +135,57 @@ function TreeNode({
   onSelect,
   onActivate,
   onNodeDragStart,
+  allowFolderDrag,
+  onNodeDrop,
+  renderNodeActions,
+  renamingId,
+  onRenameCommit,
+  onRenameCancel,
+  dragOverId,
+  setDragOverId,
 }: TreeNodeProps) {
-  const isFolder = !!node.children?.length
+  // Folder-ness is data-driven (empty Editor-Layers folders are still folders); expand
+  // chrome keys off whether there's actually anything to expand.
+  const isFolder = node.isFolder ?? !!node.children?.length
+  const hasChildren = !!node.children?.length
   const isOpen = expanded.has(node.id)
   const selected = selectedId === node.id || (selectedIds?.has(node.id) ?? false)
   // Folders show an "open" glyph when expanded; leaves keep their own icon.
-  const Icon = isFolder && isOpen ? FolderOpen : node.icon
-  const draggable = !isFolder && !!onNodeDragStart
+  const Icon = isFolder && isOpen && hasChildren ? FolderOpen : node.icon
+  const draggable = !!onNodeDragStart && (allowFolderDrag || !isFolder)
+  const isDropTarget = !!onNodeDrop && isFolder
+  const renaming = renamingId === node.id
 
   return (
     <li>
       <div
         draggable={draggable}
         onDragStart={draggable ? (e) => onNodeDragStart!(node, e) : undefined}
+        onDragOver={
+          isDropTarget
+            ? (e) => {
+                e.preventDefault()
+                e.dataTransfer.dropEffect = 'move'
+                setDragOverId(node.id)
+              }
+            : undefined
+        }
+        onDragLeave={
+          isDropTarget ? () => dragOverId === node.id && setDragOverId(null) : undefined
+        }
+        onDrop={
+          isDropTarget
+            ? (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onNodeDrop!(node, e)
+                setDragOverId(null)
+              }
+            : undefined
+        }
         onClick={() => {
           onSelect?.(node.id)
-          if (isFolder) toggle(node.id)
+          if (hasChildren) toggle(node.id)
         }}
         onDoubleClick={() => !isFolder && onActivate?.(node.id)}
         className={cn(
@@ -113,27 +194,49 @@ function TreeNode({
           selected
             ? 'border-primary bg-primary/15 text-on-surface'
             : 'border-transparent text-on-surface-variant hover:bg-white/5 hover:text-on-surface',
+          dragOverId === node.id && 'ring-1 ring-inset ring-primary',
         )}
       >
         <ChevronRight
           className={cn(
             'size-3.5 shrink-0 transition-transform',
-            isFolder ? 'text-outline' : 'invisible',
+            hasChildren ? 'text-outline' : 'invisible',
             isOpen && 'rotate-90',
           )}
         />
         {Icon && (
           <Icon className={cn('size-3.5 shrink-0', isFolder ? 'text-tertiary' : 'text-primary')} />
         )}
-        <span className="min-w-0 flex-1 truncate">{node.label}</span>
-        {node.badge && (
+
+        {renaming ? (
+          <input
+            autoFocus
+            defaultValue={node.label}
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onRenameCommit?.(node.id, (e.target as HTMLInputElement).value)
+              else if (e.key === 'Escape') onRenameCancel?.()
+            }}
+            onBlur={(e) => onRenameCommit?.(node.id, e.target.value)}
+            className="min-w-0 flex-1 rounded bg-surface-container-lowest/60 px-1 text-on-surface outline-none ring-1 ring-primary/60"
+          />
+        ) : (
+          <span className={cn('min-w-0 flex-1 truncate', isFolder && 'font-medium')}>{node.label}</span>
+        )}
+
+        {!renaming && node.badge && (
           <span className="shrink-0 rounded bg-surface-variant/60 px-1.5 text-label-sm text-outline">
             {node.badge}
           </span>
         )}
+        {!renaming && renderNodeActions && (
+          <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+            {renderNodeActions(node)}
+          </span>
+        )}
       </div>
 
-      {isFolder && isOpen && (
+      {hasChildren && isOpen && (
         <ul className="ml-[1.1rem] flex flex-col border-l border-white/5 pl-0">
           {node.children!.map((c) => (
             <TreeNode
@@ -146,6 +249,14 @@ function TreeNode({
               onSelect={onSelect}
               onActivate={onActivate}
               onNodeDragStart={onNodeDragStart}
+              allowFolderDrag={allowFolderDrag}
+              onNodeDrop={onNodeDrop}
+              renderNodeActions={renderNodeActions}
+              renamingId={renamingId}
+              onRenameCommit={onRenameCommit}
+              onRenameCancel={onRenameCancel}
+              dragOverId={dragOverId}
+              setDragOverId={setDragOverId}
             />
           ))}
         </ul>
