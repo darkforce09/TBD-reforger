@@ -58,6 +58,18 @@ export interface Slot {
   loadoutId: ID | null
 }
 
+// A slot snapshot held on the editor clipboard (Ctrl+C, T-056). Plain/serializable —
+// it carries no id; pasteSlots() mints fresh ids and re-resolves the squad/layer so a
+// paste re-attaches to the source squad (or the default) and files into the active folder.
+export interface ClipboardSlot {
+  role: string
+  tag?: string
+  assetId?: string
+  stance: Slot['stance']
+  position: { x: number; y: number; z: number; rotation: number }
+  squadId: ID // source squad, re-attached on paste if it still exists
+}
+
 export interface Loadout {
   id: ID
   containers: { uniform?: ID; vest?: ID; backpack?: ID; helmet?: ID }

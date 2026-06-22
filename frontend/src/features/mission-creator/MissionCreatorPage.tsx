@@ -6,8 +6,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { TacticalMap, addSlot, moveEntities, removeEntities, useMapStore } from '@/features/tactical-map'
-import type { AssetDropPayload, TacticalMapApi } from '@/features/tactical-map'
+import { TacticalMap, addSlot, moveEntities, pasteSlots, removeEntities, useMapStore } from '@/features/tactical-map'
+import type { AssetDropPayload, ClipboardSlot, TacticalMapApi } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useMissionEditor } from './hooks/useMissionEditor'
 import { TopCommandStrip } from './layout/TopCommandStrip'
@@ -24,6 +24,15 @@ export default function MissionCreatorPage() {
 
   const [cursor, setCursor] = useState<{ x: number; y: number; z: number } | null>(null)
   const [attributesId, setAttributesId] = useState<string | null>(null)
+
+  // In-editor clipboard for Ctrl+C/V copy-paste (T-056); a ref so a copy/paste never
+  // re-renders the page. `cursorRef` mirrors the live cursor so the keydown handler can read
+  // the paste anchor without taking `cursor` as a dependency (it updates on every mouse move).
+  const clipboardRef = useRef<ClipboardSlot[]>([])
+  const cursorRef = useRef(cursor)
+  useEffect(() => {
+    cursorRef.current = cursor
+  }, [cursor])
 
   // Terrain comes from the hydrated mission meta (Everon 12.8km vs Arland 10.24km); the
   // `key` remounts the viewport so the camera/base-map resize to the new bounds.
@@ -86,6 +95,40 @@ export default function MissionCreatorPage() {
       if (mod && !e.altKey && ((e.code === 'KeyZ' && e.shiftKey) || e.code === 'KeyY')) {
         e.preventDefault()
         if (undo.canRedo()) undo.redo()
+        return
+      }
+      // Copy/paste (T-056): Cmd/Ctrl+C snapshots the slot selection to the in-editor
+      // clipboard; Cmd/Ctrl+V pastes at the cursor (relative layout preserved). Both no-op
+      // (no preventDefault) when they can't act, so native text copy/paste is unaffected.
+      if (mod && !e.altKey && !e.shiftKey && e.code === 'KeyC') {
+        const { selection, slotsById } = useMapStore.getState()
+        if (selection.kind !== 'slot' || !selection.ids.length) return
+        const clip: ClipboardSlot[] = selection.ids
+          .map((sid) => slotsById[sid])
+          .filter((s): s is NonNullable<typeof s> => Boolean(s))
+          .map((s) => ({
+            role: s.role,
+            ...(s.tag ? { tag: s.tag } : {}),
+            ...(s.assetId ? { assetId: s.assetId } : {}),
+            stance: s.stance,
+            position: { ...s.position },
+            squadId: s.squadId,
+          }))
+        if (!clip.length) return
+        clipboardRef.current = clip
+        e.preventDefault()
+        return
+      }
+      if (mod && !e.altKey && !e.shiftKey && e.code === 'KeyV') {
+        if (!clipboardRef.current.length) return
+        e.preventDefault()
+        const { activeLayerId, setSelection: setSel } = useMapStore.getState()
+        const cur = cursorRef.current
+        const ids = pasteSlots(md, clipboardRef.current, {
+          anchorAt: cur ? { x: cur.x, y: cur.y } : null,
+          layerId: activeLayerId ?? undefined,
+        })
+        if (ids.length) setSel({ kind: 'slot', ids })
         return
       }
       const { selection, slotsById, setSelection } = useMapStore.getState()

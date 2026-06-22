@@ -136,7 +136,7 @@
 ### P1 — Eden feel
 
 7. ~~**P1-01** Ctrl+LMB additive select (`SEL-MOD-001`)~~ — ✅ shipped T-053
-8. **P1-02** Ctrl+C/V copy paste (`ACTION-CopyUnit` / `PasteUnit`)
+8. ~~**P1-02** Ctrl+C/V copy paste (`ACTION-CopyUnit` / `PasteUnit`)~~ — ✅ shipped T-056
 9. ~~**P1-03** Ctrl+Z/Y (`TOP-UNDO-001`)~~ — ✅ shipped T-052
 10. ~~**P1-04** Asset browser search (`RIGHT-SEARCH-001`)~~ — ✅ shipped T-055
 11. **P1-05** Ctrl multi-place (`PLACE-004`)

@@ -50,6 +50,7 @@
 | Cmd/Ctrl+Z | Undo last edit |
 | Cmd/Ctrl+Shift+Z or Ctrl+Y | Redo |
 | Ctrl/Cmd + click (map icon) | Toggle slot in/out of selection; Ctrl/Cmd+empty map preserves selection (T-053) |
+| Cmd/Ctrl+C / Cmd/Ctrl+V | Copy slot selection / paste at cursor (relative layout; off-map +20m nudge); pasted slots become the selection (T-056) |
 
 Skipped when focus is in an input, select, textarea, or contentEditable field (T-052).
 
@@ -77,6 +78,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M3.8 — [x] T-053 Ctrl/Cmd+LMB additive toggle select on map
 ### M3.9 — [x] T-054 Attributes entry — map dbl-click + ORBAT tree dbl-click
 ### M3.10 — [x] T-055 Asset browser search (filters Factions tree; folder-name match shows subtree)
+### M3.11 — [x] T-056 Ctrl+C/V copy-paste at cursor (slots; relative layout, off-map +20m nudge; one undo step)
 ### M4 — [ ] DEM, registry worker, ruler/LoS tools (blocked on external assets/API; Eden P0–P2 first)
 
 ## Test Plan

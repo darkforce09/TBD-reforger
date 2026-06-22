@@ -36,7 +36,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/leaderboards` | [leaderboards.md](../../frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | **in-progress** — Eden-first active (T-053–T-055: additive select, Attributes entry, asset search); tiles/DEM deferred |
+| `/missions/:id/edit` | [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | **in-progress** — Eden-first active (T-053–T-056: additive select, Attributes entry, asset search, copy-paste); tiles/DEM deferred |
 | `/events` | [event-schedule.md](../../frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../frontend/docs/pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../frontend/docs/pages/event-hub.md) | |
@@ -74,6 +74,7 @@ Full table: [`frontend/docs/TRACKING.md`](../../frontend/docs/TRACKING.md).
 
 | Item | Spec | Notes |
 |------|------|-------|
+| **T-056 Ctrl+C/V copy-paste** | [t056_eden_p1_copy_paste.md](../../Design_Docs/Mission_Creator_Architecture/t056_eden_p1_copy_paste.md) | Ctrl/Cmd+C copies slot selection; Ctrl/Cmd+V pastes at cursor (relative layout; off-map +20m nudge); pasted slots selected; one undo step (P1-02) |
 | **T-055 Asset browser search** | [t055_asset_browser_search.md](../../Design_Docs/Mission_Creator_Architecture/t055_asset_browser_search.md) | Search field filters the Asset Browser (Factions) tree by name; folder-name match shows subtree; X/Esc clears; filtered leaves still drag (P1-04) |
 | **T-054 Attributes entry points** | [t054_attributes_entry_points.md](../../Design_Docs/Mission_Creator_Architecture/t054_attributes_entry_points.md) | Map native dbl-click + ORBAT tree dbl-click → Attributes modal (P1-09); multi-select suppress unchanged |
 | **T-053 Ctrl/Cmd additive select** | [t053_eden_p1_additive_select.md](../../Design_Docs/Mission_Creator_Architecture/t053_eden_p1_additive_select.md) | Ctrl/Cmd+LMB toggles slot in/out of selection; Ctrl/Cmd+empty preserves; Shift unbound (P1-01) |

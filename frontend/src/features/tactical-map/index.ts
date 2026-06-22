@@ -19,6 +19,7 @@ export type { MapStoreState, MapSnapshot } from './state/useMapStore'
 export {
   createMissionDoc,
   addSlot,
+  pasteSlots,
   moveEntity,
   moveEntities,
   removeEntity,
@@ -56,6 +57,7 @@ export type { SlotIcon } from './state/selectors'
 export type {
   ID,
   Slot,
+  ClipboardSlot,
   Squad,
   Faction,
   EditorLayer,

@@ -26,7 +26,7 @@
 
 Work [`eden/gap_analysis.md`](eden/gap_analysis.md) **numbered backlog** in priority tier, interleaving small **P1** slices between heavier **P0** blocks:
 
-1. **P1 quick (code-only)** — ~~P1-01 Ctrl+LMB additive select (T-053)~~ → ~~P1-09 ORBAT dbl-click attributes (T-054)~~ → ~~P1-04 asset search (T-055)~~ → P1-02 copy/paste → …
+1. **P1 quick (code-only)** — ~~P1-01 Ctrl+LMB additive select (T-053)~~ → ~~P1-09 ORBAT dbl-click attributes (T-054)~~ → ~~P1-04 asset search (T-055)~~ → ~~P1-02 copy/paste (T-056)~~ → …
 2. **P0 ship-blocking** — P0-01 registry (+ thin B-01) → P0-02 markers → P0-03 vehicles → P0-05 ORBAT authoring UI
 3. **P1 remainder** — P1-05..P1-11 (multi-place, rotate, Space conflict, vehicle crew, …)
 4. **P2 power-user** — P2-01..P2-07
@@ -55,6 +55,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | **[`scripts/tools/scrape-eden-wiki.mjs`](../../scripts/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
 | **[`artifacts/eden-feds-draft.jsonl`](../../artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
 | **[`artifacts/README.md`](../../artifacts/README.md)** | Generated artifacts policy |
+| **[`t056_eden_p1_copy_paste.md`](t056_eden_p1_copy_paste.md)** | **T-056** — Eden P1-02: Ctrl+C/V copy-paste at cursor (slots) (shipped) |
 | **[`t055_asset_browser_search.md`](t055_asset_browser_search.md)** | **T-055** — Eden P1-04: Asset browser search (filters Factions tree) (shipped) |
 | **[`t054_attributes_entry_points.md`](t054_attributes_entry_points.md)** | **T-054** — Eden P1-09: Attributes entry points (map native dblclick + ORBAT dbl-click) (shipped) |
 | **[`t053_eden_p1_additive_select.md`](t053_eden_p1_additive_select.md)** | **T-053** — Eden P1-01: Ctrl/Cmd+LMB additive (toggle) select (shipped) |
@@ -65,7 +66,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | [`frontend/docs/pages/mission-library.md`](../../frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | Git milestones T-029–T-055 shipped work |
+| [`CLAUDE.md`](../../CLAUDE.md) §Status | Git milestones T-029–T-056 shipped work |
 
 ---
 
@@ -128,6 +129,12 @@ Tracks A and B can progress in parallel **during the Eden push** (registry serve
 
 ---
 
+## DONE — T-056 (Eden P1 copy-paste)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Ctrl+C/V copy-paste** | [`t056_eden_p1_copy_paste.md`](t056_eden_p1_copy_paste.md) | ✅ Ctrl/Cmd+C snapshots the slot selection to an in-editor clipboard (`ClipboardSlot[]` ref); Ctrl/Cmd+V pastes at the map cursor preserving relative layout (centroid → cursor; off-map → +20m/+20m nudge). New batched `pasteSlots(md, clip, { anchorAt, layerId })` in `state/ydoc.ts` (one transact; re-attaches to source squad or default, files into active layer, clamps to terrain bounds, returns new ids → selection). Two keydown branches in `MissionCreatorPage` behind the form-field guard (native text copy/paste preserved); cursor read via ref. Scope: copy+paste, slots only (Cut / paste-orig out). Closes gap_analysis **P1-02** / ACTION-COPY-001 / ACTION-PASTE-001. |
+
 ## DONE — T-055 (Eden P1 asset browser search)
 
 | Item | Spec | Deliverable |
@@ -152,7 +159,7 @@ Tracks A and B can progress in parallel **during the Eden push** (registry serve
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **P1-03** / KEY-UNDO-001. |
 
-**Next (Eden-first — see §Current strategy):** T-056+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-02** copy/paste, then **P1-07** faction submode (`RIGHT-SUBMODE-001`). **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
+**Next (Eden-first — see §Current strategy):** T-057+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-07** faction submode (`RIGHT-SUBMODE-001`), then **P1-05** Ctrl multi-place / **P1-06** rotation. **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
 
 ---
 

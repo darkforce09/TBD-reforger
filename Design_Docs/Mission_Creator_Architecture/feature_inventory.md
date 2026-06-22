@@ -1291,7 +1291,7 @@
 | KEY-SPACE-001 | working | `Space` → flyTo selection | `MissionCreatorPage.tsx` |
 | KEY-DEL-001 | working | Delete/Backspace → remove slots | `MissionCreatorPage.tsx` |
 | KEY-UNDO-001 | working | Buttons + Cmd/Ctrl+Z/Shift+Z/Ctrl+Y keyboard (T-052) | `TopCommandStrip.tsx`, `MissionCreatorPage.tsx`, `useMissionDoc.ts` |
-| KEY-COPY-001 | not_built | Ctrl+C/V | — |
+| KEY-COPY-001 | working | Ctrl/Cmd+C copy slot selection + Ctrl/Cmd+V paste at cursor (relative layout; off-map +20m nudge); pasted slots selected (T-056) | `MissionCreatorPage.tsx`, `state/ydoc.ts` (`pasteSlots`), `state/schema.ts` (`ClipboardSlot`) |
 | KEY-SELALL-001 | not_built | Ctrl+A | — |
 
 ---

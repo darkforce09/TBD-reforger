@@ -8,7 +8,7 @@
 
 import * as Y from 'yjs'
 import { ENTITY_MAPS } from './schema'
-import type { EditorLayer, ID, MissionMeta, Slot } from './schema'
+import type { ClipboardSlot, EditorLayer, ID, MissionMeta, Slot } from './schema'
 import { getTerrain } from '../coords/terrains'
 import type { TerrainId } from '../coords/terrains'
 
@@ -149,6 +149,62 @@ export function addSlot(
     if (layer) layer.set('entityIds', [...(layer.get('entityIds') as ID[]), id])
   })
   return id
+}
+
+/** Distance (m) a paste is offset from its originals when the cursor is off-map. */
+const PASTE_NUDGE = 20
+
+/** Paste copied slots (Ctrl+V, T-056) in ONE transaction (one undo step). Positions are
+ *  translated so the clip's centroid lands at `anchorAt` (the map cursor); if `anchorAt` is
+ *  null (mouse off-map) the clip is nudged +PASTE_NUDGE on x/y from its originals so copies
+ *  don't perfectly overlap. Each new slot re-attaches to its source squad (or the default if
+ *  it was deleted) and files into `opts.layerId` (or the default layer), then x/y are clamped
+ *  to the terrain bounds. Returns the new slot ids (in clip order) for selection. */
+export function pasteSlots(
+  md: MissionDoc,
+  clip: ClipboardSlot[],
+  opts?: { anchorAt?: { x: number; y: number } | null; layerId?: ID },
+): ID[] {
+  if (!clip.length) return []
+  const terrain = getTerrain(md.meta.get('terrain') as TerrainId | undefined)
+  const cx = clip.reduce((a, s) => a + s.position.x, 0) / clip.length
+  const cy = clip.reduce((a, s) => a + s.position.y, 0) / clip.length
+  const anchor = opts?.anchorAt
+  const dx = anchor ? anchor.x - cx : PASTE_NUDGE
+  const dy = anchor ? anchor.y - cy : PASTE_NUDGE
+  const newIds: ID[] = []
+  transact(md, () => {
+    const { slots, squads, editorLayers } = md.entities
+    for (const c of clip) {
+      const targetSquad = squads.get(c.squadId) ? c.squadId : ensureDefaultSquad(md)
+      const targetLayer =
+        opts?.layerId && editorLayers.get(opts.layerId) ? opts.layerId : ensureDefaultLayer(md)
+      const squad = squads.get(targetSquad)!
+      const id = newId()
+      const slot: Slot = {
+        id,
+        squadId: targetSquad,
+        index: (squad.get('slotIds') as ID[]).length,
+        role: c.role,
+        ...(c.tag ? { tag: c.tag } : {}),
+        ...(c.assetId ? { assetId: c.assetId } : {}),
+        position: {
+          x: clamp(c.position.x + dx, 0, terrain.width),
+          y: clamp(c.position.y + dy, 0, terrain.height),
+          z: c.position.z,
+          rotation: c.position.rotation,
+        },
+        stance: c.stance,
+        loadoutId: null,
+      }
+      slots.set(id, entityToYMap(slot as unknown as Record<string, unknown>))
+      squad.set('slotIds', [...(squad.get('slotIds') as ID[]), id])
+      const layer = editorLayers.get(targetLayer)
+      if (layer) layer.set('entityIds', [...(layer.get('entityIds') as ID[]), id])
+      newIds.push(id)
+    }
+  })
+  return newIds
 }
 
 /** Move any positioned entity (slot/vehicle/objective) to a new world x/y. */

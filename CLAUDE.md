@@ -77,10 +77,27 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
-## Status (latest feature work: T-055 — 2026-06-22)
+## Status (latest feature work: T-056 — 2026-06-22)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
+- T-056 **Mission Creator — Ctrl+C/V copy-paste (Eden P1-02)**. Placed slots can now be
+  duplicated: **Ctrl/Cmd+C** snapshots the current slot selection to an in-editor clipboard and
+  **Ctrl/Cmd+V** pastes it at the **map cursor**, preserving the group's relative layout
+  (translate so the clip's centroid lands at the cursor; mouse off-map → fixed **+20m/+20m**
+  nudge from originals). New batched `pasteSlots(md, clip, { anchorAt, layerId })` in
+  `tactical-map/state/ydoc.ts` — one `transact()` (one undo step), mirrors `addSlot`: re-attaches
+  each copy to its **source squad** (or `ensureDefaultSquad` if it was deleted), files into the
+  **active Outliner layer** (or `ensureDefaultLayer`), clamps x/y to terrain bounds, and returns
+  the new ids; the paste becomes the selection. New serializable `ClipboardSlot` type
+  (`state/schema.ts`). The two keydown branches live in `MissionCreatorPage` next to undo/Space/
+  Delete, behind the existing INPUT/SELECT/TEXTAREA/contentEditable guard (so Ctrl+C/V in an
+  Attributes field stays **native** text copy/paste); the clipboard + cursor are read via refs
+  (`cursorRef` mirrors the live cursor so the `window` keydown listener isn't re-bound on every
+  mouse move). Both no-op without `preventDefault` when they can't act. **Scope:** copy+paste,
+  slots only — Cut (Ctrl+X) and paste-at-original (Ctrl+Shift+V) stay out. Four files, no
+  backend / `useSelectTool` / compiler change. Closes gap_analysis P1-02 (`ACTION-COPY-001` /
+  `ACTION-PASTE-001`). Verified: frontend build + lint clean.
 - T-055 **Mission Creator — asset browser search (Eden P1-04)**. The right palette's
   **Asset Browser** (Factions tab) gets a search field so finding a unit no longer means
   hand-expanding the Faction → Category → Class tree. `RightInspector/AssetBrowser.tsx` filters
@@ -334,7 +351,7 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-056+ (P1-02 copy/paste, P1-07 faction submode, …; P1-01 Ctrl+LMB additive select shipped T-053, P1-09 ORBAT dbl-click attributes shipped T-054, P1-04 asset browser search shipped T-055).
+**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-057+ (P1-07 faction submode, P1-05 Ctrl multi-place, P1-06 rotation, …; P1-01 Ctrl+LMB additive select shipped T-053, P1-09 ORBAT dbl-click attributes shipped T-054, P1-04 asset browser search shipped T-055, P1-02 copy/paste shipped T-056).
 - **Deferred until after Eden P0–P2:** Phase 2 **DEM / Z-axis** + aligned map tiles (A-01/A-03; blocked on hosted assets).
 - **During Eden P0:** thin **registry** (Phase 5 / B-01) as needed for real palette + markers/vehicles — not full Track C.
 - Phase 8 **ruler/LoS/viewshed** (needs DEM for LoS) — after heightmap phase.
