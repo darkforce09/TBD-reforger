@@ -143,7 +143,7 @@
 12. **P1-06** Map rotation / Shift rotate (`XFORM-SHIFT-001`)
 13. **P1-07** Faction submode or catalog structure (`RIGHT-SUBMODE-001`)
 14. **P1-08** Resolve Space conflict: flyTo vs widget cycle (`WIDGET-CYCLE-001` vs `MAP-FLY-001`)
-15. **P1-09** ORBAT dbl-click opens attributes (`SEL-ORBAT-DBL-001`)
+15. ~~**P1-09** ORBAT dbl-click opens attributes (`SEL-ORBAT-DBL-001`)~~ — ✅ shipped T-054
 16. **P1-10** Vehicle crew UI (`CREW-PANEL-001`, `CREW-BOARD-001`)
 17. **P1-11** Empty vehicle place Alt (`PLACE-CREW-001`)
 

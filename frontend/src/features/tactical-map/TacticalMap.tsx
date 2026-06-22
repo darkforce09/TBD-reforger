@@ -36,8 +36,6 @@ export function TacticalMap({
   const iconLayer = useIconLayer()
   const selectionLayer = useSelectionLayer()
   const setSelection = useMapStore((s) => s.setSelection)
-  // Manual double-click detection (Deck has no onDblClick) for entity activation.
-  const lastClick = useRef<{ id: string; ts: number } | null>(null)
   // Drop zone + pointer-gesture host: Deck's controller ignores HTML5 drag/drop and
   // (with dragPan off) our custom drags, so both bubble to this container.
   const containerRef = useRef<HTMLDivElement>(null)
@@ -66,27 +64,39 @@ export function TacticalMap({
           const cur = sel.kind === 'slot' ? sel.ids : []
           const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
           setSelection(next.length ? { kind: 'slot', ids: next } : { kind: 'none', ids: [] })
-          lastClick.current = null // additive click never arms the dbl-click timer
           return
         }
         setSelection({ kind: 'slot', ids: [id] })
-        const prev = lastClick.current
-        const now = Date.now()
-        if (prev && prev.id === id && now - prev.ts < 350) {
-          onEntityActivate?.(id)
-          lastClick.current = null
-        } else {
-          lastClick.current = { id, ts: now }
-        }
         return
       }
-      lastClick.current = null
       // Ctrl/Cmd + empty click preserves the selection; a plain empty click deselects
       // (no teleport — Phase 7b removed it).
       if (additive) return
       setSelection({ kind: 'none', ids: [] })
     },
-    [setSelection, onEntityActivate],
+    [setSelection],
+  )
+
+  // Double-click a slot icon → activate it (host opens the Attributes modal). Deck has no
+  // onDblClick, so we listen for the container's native dblclick and pick the slot under the
+  // cursor — the same pick useSelectTool.onPointerDown does. Matches the outliner trees,
+  // which open Attributes via TreeView's native onDoubleClick.
+  const onDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      const el = containerRef.current
+      const deck = deckRef.current
+      if (!el || !deck) return
+      const r = el.getBoundingClientRect()
+      const info = deck.pickObject({
+        x: e.clientX - r.left,
+        y: e.clientY - r.top,
+        radius: 4,
+        layerIds: ['slot-icons'],
+      })
+      const id = (info?.object as { id: ID } | undefined)?.id
+      if (id) onEntityActivate?.(id)
+    },
+    [onEntityActivate],
   )
 
   const onHover = useCallback(
@@ -160,6 +170,7 @@ export function TacticalMap({
         onPointerDown={selectTool.onPointerDown}
         onPointerMove={selectTool.onPointerMove}
         onPointerUp={selectTool.onPointerUp}
+        onDoubleClick={onDoubleClick}
         onContextMenu={selectTool.onContextMenu}
       >
         <DeckGL

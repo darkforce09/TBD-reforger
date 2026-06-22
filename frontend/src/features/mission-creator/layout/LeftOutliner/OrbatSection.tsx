@@ -43,7 +43,12 @@ function buildOrbat(
   }))
 }
 
-export function OrbatSection() {
+interface OrbatSectionProps {
+  /** Double-click a slot row → open its Attributes modal (mirrors EditorLayersSection). */
+  onActivateSlot?: (id: ID) => void
+}
+
+export function OrbatSection({ onActivateSlot }: OrbatSectionProps) {
   const factionsById = useMapStore((s) => s.factionsById)
   const squadsById = useMapStore((s) => s.squadsById)
   const slotsById = useMapStore((s) => s.slotsById)
@@ -64,6 +69,10 @@ export function OrbatSection() {
     if (slotsById[id]) setSelection({ kind: 'slot', ids: [id] })
   }
 
+  const onActivate = (id: string) => {
+    if (slotsById[id]) onActivateSlot?.(id)
+  }
+
   return (
     <Section title="ORBAT">
       {nodes.length === 0 ? (
@@ -71,7 +80,7 @@ export function OrbatSection() {
           No factions yet. Placed units are filed under a default squad.
         </p>
       ) : (
-        <TreeView nodes={nodes} selectedIds={selectedIds} onSelect={onSelect} />
+        <TreeView nodes={nodes} selectedIds={selectedIds} onSelect={onSelect} onActivate={onActivate} />
       )}
     </Section>
   )

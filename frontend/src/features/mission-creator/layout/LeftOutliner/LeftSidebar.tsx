@@ -36,7 +36,7 @@ export function LeftSidebar({ md, onActivateSlot }: LeftSidebarProps) {
       </header>
 
       <div className="custom-scrollbar min-h-0 flex-1 divide-y divide-white/5 overflow-y-auto py-1">
-        <OrbatSection />
+        <OrbatSection onActivateSlot={onActivateSlot} />
         <EditorLayersSection md={md} onActivateSlot={onActivateSlot} />
       </div>
 

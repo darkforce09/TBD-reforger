@@ -26,7 +26,7 @@
 
 Work [`eden/gap_analysis.md`](eden/gap_analysis.md) **numbered backlog** in priority tier, interleaving small **P1** slices between heavier **P0** blocks:
 
-1. **P1 quick (code-only)** — ~~P1-01 Ctrl+LMB additive select (T-053)~~ → P1-04 asset search → P1-09 ORBAT dbl-click attributes → P1-02 copy/paste → …
+1. **P1 quick (code-only)** — ~~P1-01 Ctrl+LMB additive select (T-053)~~ → ~~P1-09 ORBAT dbl-click attributes (T-054)~~ → P1-04 asset search → P1-02 copy/paste → …
 2. **P0 ship-blocking** — P0-01 registry (+ thin B-01) → P0-02 markers → P0-03 vehicles → P0-05 ORBAT authoring UI
 3. **P1 remainder** — P1-05..P1-11 (multi-place, rotate, Space conflict, vehicle crew, …)
 4. **P2 power-user** — P2-01..P2-07
@@ -55,6 +55,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | **[`scripts/tools/scrape-eden-wiki.mjs`](../../scripts/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
 | **[`artifacts/eden-feds-draft.jsonl`](../../artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
 | **[`artifacts/README.md`](../../artifacts/README.md)** | Generated artifacts policy |
+| **[`t054_attributes_entry_points.md`](t054_attributes_entry_points.md)** | **T-054** — Eden P1-09: Attributes entry points (map native dblclick + ORBAT dbl-click) (shipped) |
 | **[`t053_eden_p1_additive_select.md`](t053_eden_p1_additive_select.md)** | **T-053** — Eden P1-01: Ctrl/Cmd+LMB additive (toggle) select (shipped) |
 | **[`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md)** | **T-052** — Eden P1-03: Ctrl/Cmd+Z/Y undo-redo keyboard (shipped) |
 | **[`t050_cursor_z_readout.md`](t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
@@ -126,6 +127,12 @@ Tracks A and B can progress in parallel **during the Eden push** (registry serve
 
 ---
 
+## DONE — T-054 (Eden P1 Attributes entry points)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Attributes entry points** | [`t054_attributes_entry_points.md`](t054_attributes_entry_points.md) | ✅ Map double-click moved off the hand-rolled 350ms `lastClick` timer to a native `onDoubleClick` on the container + `deckRef.pickObject('slot-icons')` → `onEntityActivate`; `OrbatSection` gains `onActivateSlot` (threaded via `LeftSidebar`) and passes `onActivate` to its `TreeView` so an ORBAT slot row's dbl-click opens Attributes — mirrors `EditorLayersSection`. Multi-select suppression (`ids.length <= 1`) and T-053 Ctrl/Cmd toggle unchanged. Closes gap_analysis **P1-09** / SEL-ORBAT-DBL-001 (and hardens SEL-MAP-004). |
+
 ## DONE — T-053 (Eden P1 additive select)
 
 | Item | Spec | Deliverable |
@@ -138,7 +145,7 @@ Tracks A and B can progress in parallel **during the Eden push** (registry serve
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **P1-03** / KEY-UNDO-001. |
 
-**Next (Eden-first — see §Current strategy):** T-054+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-04** asset browser search, then **P1-09** ORBAT dbl-click attributes, **P1-02** copy/paste. **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
+**Next (Eden-first — see §Current strategy):** T-055+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-04** asset browser search, then **P1-02** copy/paste. **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
 
 ---
 

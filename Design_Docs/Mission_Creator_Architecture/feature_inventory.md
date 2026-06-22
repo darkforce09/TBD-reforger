@@ -286,15 +286,15 @@
 | **Goal** | Eden attributes entry via dbl-click |
 | **Trigger** | Two LMB clicks same icon within 350ms |
 | **Preconditions** | `selection.ids.length <= 1` at activate |
-| **Procedure** | Manual dbl-click detect in `TacticalMap` → `onEntityActivate` → `setAttributesId` |
+| **Procedure** | Native `dblclick` on the map container → `deckRef.pickObject('slot-icons')` → `onEntityActivate` → `setAttributesId` (T-054; replaced the 350ms `lastClick` timer) |
 | **Postconditions** | `AttributesModal` open |
 | **Inputs** | LMB ×2 |
 | **Outputs** | `attributesId` |
-| **Edge cases** | Suppressed when multi-select |
-| **Acceptance** | `- [ ] Dbl-click unit opens modal` |
+| **Edge cases** | Suppressed when multi-select (`onEntityActivate` `ids.length <= 1` guard) |
+| **Acceptance** | `- [x] Dbl-click unit opens modal` |
 | **Eden parity** | Eden:ATTR-OPEN-001 |
 | **Status** | working |
-| **Evidence** | `TacticalMap.tsx`, `MissionCreatorPage.tsx`, `AttributesModal.tsx` |
+| **Evidence** | `TacticalMap.tsx` (`onDoubleClick`), `MissionCreatorPage.tsx`, `AttributesModal.tsx` |
 
 #### SEL-MOD-001 — Shift/Ctrl additive selection
 
@@ -1357,15 +1357,15 @@ Items verified in code + scrape cross-check; added after initial `06` draft.
 | **Status** | working |
 | **Evidence** | `useSelectTool.ts`, `selectors.ts` |
 
-#### SEL-ORBAT-DBL-001 — ORBAT dbl-click does NOT open attributes
+#### SEL-ORBAT-DBL-001 — ORBAT dbl-click opens attributes
 
 | Field | Value |
 |-------|-------|
 | **Domain** | SEL |
 | **Goal** | Eden parity: tree dbl-click opens attrs |
-| **Procedure** | `OrbatSection` has no `onActivate`; only `EditorLayersSection` does |
-| **Status** | not_built |
-| **Evidence** | `OrbatSection.tsx` vs `EditorLayersSection.tsx` L208 |
+| **Procedure** | T-054: `OrbatSection` gains `onActivateSlot` (threaded from `LeftSidebar`) and passes `onActivate` to its `TreeView` — mirrors `EditorLayersSection`; `TreeView` fires it on a slot row's native `onDoubleClick` → `setAttributesId` |
+| **Status** | working |
+| **Evidence** | `OrbatSection.tsx`, `LeftSidebar.tsx`, `TreeView.tsx` L190 |
 
 #### SEL-ORBAT-MULTI-001 — ORBAT click collapses multi-select
 

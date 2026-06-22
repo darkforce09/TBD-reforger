@@ -77,10 +77,23 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
-## Status (latest feature work: T-053 — 2026-06-22)
+## Status (latest feature work: T-054 — 2026-06-22)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
+- T-054 **Mission Creator — Attributes modal entry points (Eden P1-09)**. Unifies how the
+  **Attributes** modal opens onto one native-`dblclick` contract. **Map (`SEL-MAP-004` harden):**
+  `tactical-map/TacticalMap.tsx` drops the hand-rolled 350ms `lastClick` double-click timer in
+  `onClick` for a native `onDoubleClick` on the gesture-host container `<div>` that picks the slot
+  under the cursor via `deckRef.pickObject({ layerIds: ['slot-icons'] })` (the same pick
+  `useSelectTool.onPointerDown` does) → `onEntityActivate`; `onClick` now only selects/toggles.
+  **ORBAT (`SEL-ORBAT-DBL-001`):** `OrbatSection` gains an `onActivateSlot` prop (threaded through
+  `LeftSidebar`, mirroring `EditorLayersSection`) and passes `onActivate` to its `TreeView`, whose
+  existing native `onDoubleClick` on a slot row now opens Attributes. Three-file change — no
+  `TreeView`/`MissionCreatorPage`/store change. `MissionCreatorPage.onEntityActivate` keeps its
+  `selection.ids.length <= 1` guard, so the **T-053 Ctrl/Cmd toggle** is unchanged (a Ctrl-built
+  multi still suppresses dbl-click→Attributes). Closes gap_analysis P1-09 / `SEL-ORBAT-DBL-001`.
+  Verified: frontend build + lint clean.
 - T-053 **Mission Creator — Ctrl/Cmd+LMB additive (toggle) select (Eden P1-01)**. Marquee
   box-select already did multi-select, but a single click on a unit always **replaced** the
   selection — so trimming/extending a multi-selection meant redrawing a marquee. This adds
@@ -307,7 +320,7 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-054+ (P1-04 asset search, P1-09 ORBAT dbl-click attributes, P1-02 copy/paste, …; P1-01 Ctrl+LMB additive select shipped T-053).
+**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-055+ (P1-04 asset search, P1-02 copy/paste, …; P1-01 Ctrl+LMB additive select shipped T-053, P1-09 ORBAT dbl-click attributes shipped T-054).
 - **Deferred until after Eden P0–P2:** Phase 2 **DEM / Z-axis** + aligned map tiles (A-01/A-03; blocked on hosted assets).
 - **During Eden P0:** thin **registry** (Phase 5 / B-01) as needed for real palette + markers/vehicles — not full Track C.
 - Phase 8 **ruler/LoS/viewshed** (needs DEM for LoS) — after heightmap phase.
