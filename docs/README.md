@@ -18,7 +18,7 @@ Central index. For backlog and doc links, open the **ROADMAP** for your domain.
 |------|---------|
 | [Frontend ROADMAP](frontend/ROADMAP.md) | Routes shipped/deferred + surface spec links |
 | [Backend ROADMAP](backend/ROADMAP.md) | API areas + deferred BE work |
-| [Mission Creator ROADMAP](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) | Editor Tracks A/B/C |
+| [Mission Creator ROADMAP](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) | Eden-first editor (Tracks A/B/C after Eden P0–P2) |
 | [Archive master](archive/README.md) | Historical HTML mockups |
 | [TAGS.md](TAGS.md) | Naming + T / FD / BE / A-B-C glossary |
 | [AGENT_COMMIT_CHECKLIST.md](AGENT_COMMIT_CHECKLIST.md) | Same-commit doc sync for AI agents |

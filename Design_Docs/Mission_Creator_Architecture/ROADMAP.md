@@ -65,7 +65,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | [`frontend/docs/pages/mission-library.md`](../../frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | Git milestones T-029–T-054 shipped work |
+| [`CLAUDE.md`](../../CLAUDE.md) §Status | Git milestones T-029–T-055 shipped work |
 
 ---
 

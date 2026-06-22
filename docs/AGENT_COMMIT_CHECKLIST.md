@@ -30,7 +30,9 @@ If a spec exists for the task (e.g. [`t048_library_create_dialog.md`](../Design_
 | **API / model change** | `internal/models/` JSON tags + matching `frontend/src/types/`; note handler if behavior changed |
 | **Mission Creator UX lock** | [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) **Decisions log** row |
 | **Mission Creator new capability** | [`feature_inventory.md`](../Design_Docs/Mission_Creator_Architecture/feature_inventory.md) FEDS row |
-| **Eden parity gap closed** | [`eden/gap_analysis.md`](../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) P0 item |
+| **Eden parity gap closed** | [`eden/gap_analysis.md`](../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) P-item + table row |
+| **Frontend surface (MC route)** | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) recently shipped + [`frontend/docs/pages/mission-editor.md`](../frontend/docs/pages/mission-editor.md) milestones |
+| **New T-0xx tag** | [`docs/TAGS.md`](TAGS.md) row |
 | **Deferred / blocked (not shipped)** | **FD-0xx** in [`frontend/docs/TRACKING.md`](../frontend/docs/TRACKING.md) or **BE-0xx** in backend ROADMAP — **never** T-0xx |
 | **Doc-only reorg** | Own T-0xx commit; §Status note if authority changed |
 
@@ -44,17 +46,17 @@ If a spec exists for the task (e.g. [`t048_library_create_dialog.md`](../Design_
 | New user-facing editor feature | `feature_inventory.md` |
 | Engineering contract (schema, compiler, workers) | `engineering_plan.md` |
 | Eden UI parity | `eden/gap_analysis.md` + maybe `eden/ui_anatomy.md` |
-| Shipped git milestone | `CLAUDE.md` §Status only |
+| Shipped git milestone | [`CLAUDE.md`](../CLAUDE.md) §Status + rows above (MC ROADMAP, frontend ROADMAP, TAGS, mission-editor, gap_analysis, feature_inventory, agent_execution as applicable) |
 
 Shell phases PRE-3.5–9 are **done** (T-033–T-040). **Open work = the Eden P0–P2 backlog** ([`eden/gap_analysis.md`](../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md)) per MC ROADMAP **§Current strategy** (Eden-first); Track A map tiles/DEM deferred until after.
 
 ### Mission Creator slice workflow
 
-Eden slices ship as **T-053+** following the **spec → code → same-commit docs** pattern proven by T-048..T-052:
+Eden slices ship as **T-053+** following the **spec → code → same-commit docs** pattern proven by T-048..T-055:
 
 1. **Spec** — write or locate the `t0xx_*.md` spec under `Design_Docs/Mission_Creator_Architecture/` for the gap_analysis item.
 2. **Code** — implement; `cd frontend && npm run build && npm run lint`.
-3. **Docs (same commit)** — sync [`CLAUDE.md`](../CLAUDE.md) §Status + MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) + the closed [`eden/gap_analysis.md`](../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) item + [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) Decisions log.
+3. **Docs (same commit)** — sync [`CLAUDE.md`](../CLAUDE.md) §Status + MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) + [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) + [`docs/TAGS.md`](TAGS.md) + relevant [`frontend/docs/pages/mission-editor.md`](../frontend/docs/pages/mission-editor.md) + the closed [`eden/gap_analysis.md`](../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) item + [`feature_inventory.md`](../Design_Docs/Mission_Creator_Architecture/feature_inventory.md) FEDS row + [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) Decisions log.
 
 ---
 

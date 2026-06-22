@@ -51,7 +51,9 @@ Left and right panels are **docked flush** to the viewport edges; the map fills 
 | Click-drag selected group | Move all selected together; one undo step |
 | Spacebar | Center camera on selection |
 | Delete / Backspace | Delete selected entities (undoable) |
-| Click empty map | Clear selection only |
+| Click empty map | Clear selection only (**plain** LMB; Ctrl/Cmd+empty preserves — T-053) |
+| Ctrl/Cmd + click entity | Toggle in/out of selection (T-053); Shift unbound |
+| Asset Browser search | Filter Factions catalog tree by name; X/Esc clears (T-055) |
 | Click outliner row | Select entity (**no** camera move until Spacebar) |
 
 ---
@@ -66,7 +68,7 @@ Left and right panels are **docked flush** to the viewport edges; the map fills 
 | **Right palette** | **Docked flush right** — mirror left sidebar (~`w-80` / 320px), full height below top bar, no floating gap. Map sits between two glass panels. |
 | **Inspector** | Asset Palette always visible. **Attributes modal on double-click only** (no right-panel inspector swap). |
 | **Map pan** | **Middle-mouse or right-drag** = pan/zoom. **Left-drag on empty map** = marquee box-select. |
-| **Multi-select** | **Marquee box** is the primary multi-select method. Shift+click additive toggle is optional bonus, not required for v1. |
+| **Multi-select** | **Marquee box** is the primary multi-select method. **Ctrl/Cmd+click** toggles slots in/out (T-053). Shift+click range-select is optional bonus, not shipped yet. |
 | **Center camera** | **No auto flyTo on click.** Select unit → press **Spacebar** to center camera on selection (map or outliner). |
 | **Delete** | **Delete/Backspace** removes selected entities; **undoable** (one transaction). No confirmation dialog. |
 | **Load conflict** | When API `json_payload` and local IndexedDB disagree → **prompt user** to choose which to keep. |
