@@ -4,6 +4,8 @@
 **Inputs:** [feature_inventory.md](../feature_inventory.md) + [interactions](./interactions.md) + [ui_anatomy](./ui_anatomy.md) + [attributes](./attributes.md)  
 **Schema:** [reference/feds_schema.md](../reference/feds_schema.md)
 
+**Execution order (locked):** Complete **P0 remaining + P1 + P2** in this file **before** Track A Phase 2 (map tiles, DEM/heightmap). See [ROADMAP.md §Current strategy](../ROADMAP.md#current-strategy-locked--2026-06). P3 items that require DEM (P3-02/03) stay deferred with heightmap work.
+
 ---
 
 ## Parity legend

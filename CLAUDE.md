@@ -295,12 +295,10 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** the Eden editor (phases 3.5/7b/7a/9) is shipped;
-the remaining phases are blocked on external assets/backend.
-- Phase 2 **DEM / Z-axis** — blocked on hosted heightmap assets (see Ultra Plan §0.3).
-- Phase 5/6 **Asset Registry worker + Arsenal** (needs backend `GET /api/v1/registry`); until then
-  the Asset Palette catalog + slot `loadout` export are mock/empty.
-- Phase 8 **tools & objectives** (ruler/LoS/viewshed GLSL; needs DEM for LoS).
+**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-053+ (P1-01 Ctrl+LMB select, P1-04 asset search, …).
+- **Deferred until after Eden P0–P2:** Phase 2 **DEM / Z-axis** + aligned map tiles (A-01/A-03; blocked on hosted assets).
+- **During Eden P0:** thin **registry** (Phase 5 / B-01) as needed for real palette + markers/vehicles — not full Track C.
+- Phase 8 **ruler/LoS/viewshed** (needs DEM for LoS) — after heightmap phase.
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API

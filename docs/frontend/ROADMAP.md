@@ -81,8 +81,8 @@ Full table: [`frontend/docs/TRACKING.md`](../../frontend/docs/TRACKING.md).
 
 ## Recommended next work
 
-1. **Mission editor Track A Phase 2+** — map tiles (A-01), DEM (A-03) — blocked on assets
-2. **Eden P1 code-only** — P1-01 Ctrl+LMB additive select, P1-04 asset browser search
+1. **Mission Creator — Eden-first (T-053+)** — [`eden/gap_analysis.md`](../../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) P0 remaining + P1 + P2 **before** map tiles/DEM. Next slices: **P1-01** Ctrl+LMB additive select, **P1-04** asset search. See [MC ROADMAP §Current strategy](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06).
+2. **Mission editor Track A Phase 2+** — map tiles (A-01), DEM (A-03) — **deferred until Eden P0–P2**
 3. **FD-008** — wiki markdown (low risk, high UX)
 4. **FD-001** — when backend exposes server/RCON endpoints
 

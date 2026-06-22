@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator Eden fidelity. Canonical repo path: Design_Docs/Mission_Creator_Architecture/agent_execution.md. Shell phases (PRE-3.5-9) are complete (T-033-T-040); start at ROADMAP.md for open work and execute only open/deferred items. Verify build/lint after each phase."
+overview: "Self-contained agent handoff for Mission Creator Eden fidelity. Canonical repo path: Design_Docs/Mission_Creator_Architecture/agent_execution.md. Shell phases (PRE-3.5-9) are complete (T-033-T-040). Program order is Eden-first (locked 2026-06): open work is the Eden parity backlog (eden/gap_analysis.md P0 remaining + P1 + P2) shipped as T-053+ slices; Track A tiles/DEM (Phase 2) + full registry/Arsenal (5-6) + Phase 8 tools are deferred until after Eden P0-P2. Start at ROADMAP.md §Current strategy. Verify build/lint after each slice."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to Design_Docs/Mission_Creator_Architecture/agent_execution.md"
@@ -23,8 +23,11 @@ todos:
   - id: phase-9
     content: "PHASE 9: Compiler + Export + useMissionEditor autosave (only after 3.5, 7b, 7a complete)"
     status: completed
+  - id: eden-backlog
+    content: "ACTIVE (Eden-first): Eden parity backlog (eden/gap_analysis.md P0 remaining + P1 + P2) as T-053+ slices — before Track A Phase 2 tiles/DEM. A thin Track B registry (B-01) for Eden P0 (P0-01..03) is in scope."
+    status: in_progress
   - id: phase-blocked
-    content: "DEFERRED (blocked): Phase 2 DEM, Phases 5-6 registry/Arsenal, Phase 8 tools — do not start without user approval"
+    content: "DEFERRED until after Eden P0-P2: Phase 2 DEM/tiles, full registry/Arsenal (Phases 5-6), Phase 8 tools — do not start without user approval"
     status: pending
 isProject: false
 ---
@@ -32,20 +35,27 @@ isProject: false
 # AGENT EXECUTION CONTRACT
 
 > **Phase completion log (T-033–T-040):** PRE-3.5 ✅ DOC-0 ✅ 3.5 ✅ 7b ✅ 7a ✅ 9 ✅.
-> Shipped status lives in [`CLAUDE.md`](../../CLAUDE.md) §Status. **Decisions log below remains authoritative** for UX choices. Open work: Phase 2 DEM, Phases 5–6 registry, Phase 8 tools — see [`ROADMAP.md`](ROADMAP.md).
+> Shipped status lives in [`CLAUDE.md`](../../CLAUDE.md) §Status. **Decisions log below remains authoritative** for UX choices. **Program order is Eden-first (locked 2026-06):** open work = the **Eden parity backlog** ([`eden/gap_analysis.md`](eden/gap_analysis.md) **P0 remaining + P1 + P2**) shipped as **T-053+** slices — see [`ROADMAP.md` §Current strategy](ROADMAP.md#current-strategy-locked--2026-06). Track A map tiles/DEM (Phase 2), full registry/Arsenal (Phases 5–6), and Phase 8 tools are **deferred until after Eden P0–P2**.
 
 > **For the human:** Open a new Cursor Agent / CLI session and paste the prompt below. The agent reads this file; execute **open** phases only.
 
 ## One-line prompt (copy this)
 
 ```
-Read CLAUDE.md first. Open [`ROADMAP.md`](ROADMAP.md) for Tracks A/B/C and open work → this file for Decisions log when executing UX phases. Execute only OPEN items. Shell phases PRE-3.5–9 are DONE (T-033–T-040). After each phase: `cd frontend && npm run build && npm run lint`. Do not commit unless I ask.
+Read CLAUDE.md first. Mission Creator is Eden-first (locked 2026-06): the shell phases
+PRE-3.5–9 are DONE (T-033–T-040). Open work = the Eden parity backlog in
+eden/gap_analysis.md — P0 remaining + P1 + P2 — shipped as T-053+ slices BEFORE Track A
+Phase 2 (map tiles A-01, DEM A-03/A-04) and DEM-dependent Phase 8 tools. Authority:
+ROADMAP.md §Current strategy → this file's Decisions log for UX locks. Next slices:
+P1-01 Ctrl+LMB additive select, P1-04 asset search. A thin Track B registry (B-01) for
+Eden P0 (P0-01..03) is in scope; full registry/Arsenal and tiles/DEM are deferred. After
+each slice: `cd frontend && npm run build && npm run lint`. Do not commit unless I ask.
 ```
 
 Shorter variant:
 
 ```
-@ROADMAP.md then @agent_execution.md — open work only; verify build/lint each phase.
+@ROADMAP.md §Current strategy + @eden/gap_analysis.md backlog (P0 remaining + P1 + P2) → @agent_execution.md Decisions log. Eden-first as T-053+; tiles/DEM deferred. Verify build/lint each slice.
 ```
 
 ## Document hierarchy (read in this order — do not mix sources)
@@ -182,9 +192,13 @@ flowchart LR
 
 **Entity maps in Y.Doc:** `meta`, `factions`, `squads`, `slots`, `loadouts`, `items`, `objectives`, `vehicles`, `markers`, `editorLayers`.
 
-**What works end-to-end today:** open `/missions/:id/edit`, pan/zoom grid, drag mock catalog unit onto map, see in outliner, select/move via click-then-click, undo/redo, local IndexedDB per mission id.
+**What works end-to-end today (post T-052):** fullscreen Eden docked shell (no platform chrome) on `/missions/:id/edit`; pan/zoom grid with terrain-driven bounds (`meta.terrain`, T-049); drag mock catalog unit onto map → active Editor Layer; **drag-to-move icons + marquee multi-select + group move** (T-036); Delete/Backspace; Spacebar centers on selection; **keyboard undo/redo** Cmd/Ctrl+Z / Shift+Z / Ctrl+Y (T-052); double-click → Attributes modal with **editable numeric X/Y/Z + rotation** (T-049) and role/tag/stance; **title/terrain/env hydrate** from the mission row on load (T-049); outliner reparent/rename/delete (T-037); **compiler → `json_payload`, manual Save Version + Export, IndexedDB↔server conflict prompt** (T-038); cursor X/Y/Z readout (Z=0 flat, T-050); local IndexedDB per mission id.
 
-**What does not work yet:** backend save/load, export JSON, real asset catalog, DEM Z-axis, map drag, multi-select, Eden docked layout, fullscreen editor, Arsenal, tools/objectives.
+**Open Eden gaps (the active backlog — `eden/gap_analysis.md`):**
+- **P0 ship-blocking:** P0-01 real asset registry + catalog parity, P0-02 markers on map, P0-03 vehicles placeable, P0-05 ORBAT authoring UI (currently read-only).
+- **P1 Eden feel:** P1-01 Ctrl+LMB additive select, P1-02 Ctrl+C/V copy-paste, P1-04 asset browser search, P1-05 Ctrl multi-place, P1-06 Shift/map rotate, P1-07 faction submode, P1-08 Space conflict, P1-09 ORBAT dbl-click attrs, P1-10 vehicle crew, P1-11 empty-vehicle Alt place.
+- **P2 power-user:** compositions, triggers/waypoints/systems, connection/sync, transform widget + snap grids, full attribute fields, menu bar, class:/mod: search.
+- **Deferred until after Eden P0–P2:** DEM Z-axis + Z auto-sample, aligned map tiles, full registry/Arsenal (Track C loadouts), Phase 8 ruler/LoS/viewshed.
 
 ---
 
@@ -281,8 +295,9 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Numeric transform** (T-049) | Editable X/Y/Z/rotation lives in the **Attributes modal Transform tab** (commit on blur/Enter, one undo step). The **bottom toolbelt is readout-only** — selection-aware (single slot → SEL X/Y/Z; else CUR cursor X/Y/Z). x/y clamp to terrain bounds; Z is manual until DEM. |
 | **Cursor readout** (T-050) | The toolbelt **CUR** mode shows cursor **X/Y/Z**; **Z = 0** on the flat map (a real ground-plane value, not `—`), carrying real elevation once Phase 2 DEM feeds z. Off-map hover → `—` on all axes. |
 | **Undo keyboard** (T-052) | Keyboard undo/redo lives in the `MissionCreatorPage` host keydown handler and **reuses the existing `UndoController`** (no second stack): **Cmd/Ctrl+Z** undo, **Cmd/Ctrl+Shift+Z** or **Ctrl+Y** redo. Skipped while focus is in `INPUT`/`SELECT`/`TEXTAREA`/contentEditable (same guard as Space/Delete); `preventDefault` on match, drives the stack only when `canUndo()`/`canRedo()`. Toolbar buttons unchanged. **`useMissionDoc` StrictMode fix:** one-shot `instanceKey` bump on teardown so dev `<StrictMode>` gets a live `UndoController` (without it, undo was permanently dead in dev). Undo = **session edits only** (`LOCAL_ORIGIN`); IndexedDB/server hydrate not undoable. |
+| **Eden-first program order** (2026-06) | Complete Eden parity backlog (**gap_analysis P0 remaining + P1 + P2**) **before** Track A Phase 2+ (A-01 map tiles, A-03/A-04 DEM, DEM-dependent tools). Work Eden as T-053+ slices. Thin Track B registry only as needed for Eden P0 (P0-01..03). Flat grid + manual Z is acceptable during Eden push. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049; Save Version still compiles payload only. |
-| **Phase order** | Shell phases **PRE-3.5 → DOC-0 → 3.5 → 7b → 7a → 9 are complete** (T-033–T-040). Historically the tree wiring landed before shell fidelity, but that is done — there is no mandatory next shell phase. For open work see **`ROADMAP.md`**: Tracks A/B/C, Phase 2 DEM, Phases 5–6 registry, Phase 8 tools. |
+| **Phase order** | Shell phases **PRE-3.5 → DOC-0 → 3.5 → 7b → 7a → 9 are complete** (T-033–T-040). **Next:** Eden P0–P2 per **`ROADMAP.md` §Current strategy** and **`eden/gap_analysis.md`**. Track A tiles/DEM **after** Eden. Track C loadouts deferred. |
 | **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement the P0 backlog from `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
 
 ---
@@ -290,13 +305,13 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 ## Agent rules (mandatory)
 
 1. **Read first:** `CLAUDE.md` (conventions), then this file, then `engineering_plan.md` §0–§2.
-2. **Start at `ROADMAP.md`:** the shell phases (PRE-3.5 → DOC-0 → 3.5 → 7b → 7a → 9) are **done** (T-033–T-040). Execute only the open/deferred items listed in `ROADMAP.md` (Tracks A/B/C) and this file's completion log — do not restart a completed shell phase.
+2. **Start at `ROADMAP.md` §Current strategy — Eden-first:** the shell phases (PRE-3.5 → DOC-0 → 3.5 → 7b → 7a → 9) are **done** (T-033–T-040). Open work = the **Eden parity backlog** (`eden/gap_analysis.md` **P0 remaining + P1 + P2**) shipped as **T-053+** slices, **before** Track A Phase 2 tiles/DEM. Execute Eden backlog items first; do not restart a completed shell phase and do not jump ahead to tiles/DEM.
 3. **Verify gate** after every phase:
    ```bash
    cd frontend && npm run build && npm run lint
    ```
 4. **Do not commit** unless the user explicitly asks.
-5. **Do not** start Phases 2, 5, 6, or 8 without user approval (external blockers).
+5. **Eden-first deferrals:** do **not** start Phase 2 (map tiles/DEM), full Phases 5–6 (registry completeness / Arsenal), or Phase 8 (tools) without user approval — these wait until after Eden P0–P2. **Exception:** a **thin Track B registry (B-01)** — classname, displayName, category, iconUrl — is **in scope** when needed to unblock Eden P0 (P0-01..03); keep it minimal, not full registry completeness.
 6. **Visual target:** Arma 3 Eden Editor + Aegis tokens. **Never** derive layout from `code.html` / `screen.png` mockups — use Decisions log + this plan only.
 7. **State rule:** Entity mutations go through `tactical-map/state/ydoc.ts` → `bindings.ts` → `useMapStore`. Never set entity data directly on Zustand.
 8. **Inspector rule:** Asset Palette stays on the right always. Properties edit via **AttributesModal on double-click only** — no right-panel inspector swap.

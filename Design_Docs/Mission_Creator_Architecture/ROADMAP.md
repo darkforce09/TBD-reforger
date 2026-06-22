@@ -8,6 +8,34 @@
 
 ---
 
+## Current strategy (locked — 2026-06)
+
+**Eden-first:** Finish the **Eden parity backlog** ( [`eden/gap_analysis.md`](eden/gap_analysis.md) **P0 remaining + P1 + P2** ) **before** Track A Phase 2+ (aligned map tiles **A-01**, DEM/heightmap **A-03/A-04**, and tools that depend on DEM such as Phase 8 LoS/viewshed).
+
+| Do now | Defer until after Eden (+ assets where noted) |
+|--------|-----------------------------------------------|
+| Eden **P0** remaining — registry, markers, vehicles, ORBAT authoring (P0-01..03, P0-05) | Track A **A-01** map imagery |
+| Eden **P1** — selection, copy/paste, search, rotation, ORBAT dbl-click, etc. | Track A **A-03/A-04** DEM + Z sampling |
+| Eden **P2** — compositions, triggers, connections, widgets, menus, class search | **A-08** mod golden coord test (needs mod team + accurate map) |
+| Thin **Track B** registry as needed to unblock Eden P0 (not “full registry completeness”) | gap_analysis **P3-02/03** (DEM snap, full loadout forge — Track C) |
+| Continue Eden quick slices as **T-053+** (spec → code → docs, same as T-048..T-052) | **T-051** title PATCH sync (optional; not Eden-blocking) |
+
+**Rationale:** Eden interaction + entity UX should feel complete on the **flat grid** before investing in hosted heightmaps and satellite tiles. X/Y/Z remain manual/zero until DEM lands; that is acceptable during the Eden push.
+
+### Eden execution order (recommended)
+
+Work [`eden/gap_analysis.md`](eden/gap_analysis.md) **numbered backlog** in priority tier, interleaving small **P1** slices between heavier **P0** blocks:
+
+1. **P1 quick (code-only)** — P1-01 Ctrl+LMB additive select → P1-04 asset search → P1-09 ORBAT dbl-click attributes → P1-02 copy/paste → …
+2. **P0 ship-blocking** — P0-01 registry (+ thin B-01) → P0-02 markers → P0-03 vehicles → P0-05 ORBAT authoring UI
+3. **P1 remainder** — P1-05..P1-11 (multi-place, rotate, Space conflict, vehicle crew, …)
+4. **P2 power-user** — P2-01..P2-07
+5. **Then** Track A Phase 2 — A-01 tiles → A-03/A-04 DEM → A-08 golden test
+
+Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.md) + [`eden/interactions.md`](eden/interactions.md).
+
+---
+
 ## Documentation (read from here)
 
 | Doc | When to open it |
@@ -34,7 +62,7 @@
 | [`frontend/docs/pages/mission-library.md`](../../frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | Git milestones T-029–T-040 shipped work |
+| [`CLAUDE.md`](../../CLAUDE.md) §Status | Git milestones T-029–T-052 shipped work |
 
 ---
 
@@ -46,7 +74,7 @@
 | **B — Entity & Asset Pipeline** | Can I place **the right entity types** (unit, vehicle, marker, prop) from real game data? | **Yes** (for full missions) |
 | **C — Kits & Loadouts** | Can I assign **per-slot gear** (uniform, vest, weapon, attachments) validated against the game? | **Yes** (for ORBAT loadout strings) — but **depends on C-prereqs** |
 
-Tracks A and B can progress in parallel once map assets exist. **Track C is its own program** — do not block Track A on it.
+Tracks A and B can progress in parallel **during the Eden push** (registry serves Eden P0). **Track A Phase 2+ (tiles/DEM) is deferred until Eden P0–P2 are done.** Track C remains its own program — do not block Eden on full loadout matrix.
 
 ---
 
@@ -103,7 +131,7 @@ Tracks A and B can progress in parallel once map assets exist. **Track C is its 
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **P1-03** / KEY-UNDO-001. |
 
-**Next (code-only Eden P1):** P1-01 Ctrl+LMB additive select, P1-04 asset browser search. **Deferred:** T-051 title PATCH sync.
+**Next (Eden-first — see §Current strategy):** T-053+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-01** Ctrl+LMB additive select, **P1-04** asset search. **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
 
 ---
 
@@ -141,10 +169,10 @@ These are **required** for “it functions” with **positioning you can trust**
 
 | ID | Requirement | Status | Notes |
 |----|-------------|--------|-------|
-| A-01 | **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **Missing** | Today: grid only. Ultra Plan §0.3 asset hosting. Without this, X/Y are mathematically consistent but **not visually verifiable** against the real island. |
+| A-01 | **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **Deferred (Eden-first)** | After Eden P0–P2. Today: grid only. Ultra Plan §0.3 asset hosting. |
 | A-02 | **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change (Everon 12800 / Arland 10240). |
-| A-03 | **DEM / heightmap** (16-bit, per terrain) | **Missing** | No `dem/` module. All placements get `z: 0`. |
-| A-04 | **Z on place & move** (sample DEM at x,y) | **Missing** | `addSlot` / `moveEntity` set `z: 0`. Schema expects `z from DEM`. |
+| A-03 | **DEM / heightmap** (16-bit, per terrain) | **Deferred (Eden-first)** | After Eden P0–P2. No `dem/` module yet. |
+| A-04 | **Z on place & move** (sample DEM at x,y) | **Deferred (Eden-first)** | After A-03. `addSlot` / `moveEntity` set `z: 0` until DEM. |
 | A-05 | **Z in UI** (toolbelt + Attributes, editable) | **Done (T-049/T-050, manual)** | Transform Z editable (T-049); toolbelt shows selected-slot Z (SEL) **and cursor Z (CUR, =0 flat)** (T-050). Auto-sample from DEM still pending (A-03/A-04). |
 | A-06 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | A-07 | **Rotation** (numeric + map) | **Partial (T-049)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle still missing. |
@@ -154,13 +182,15 @@ These are **required** for “it functions” with **positioning you can trust**
 
 **Accuracy note:** Deck.gl `unproject` is exact in **world meters** for the defined terrain bounds. “Off by 10%” failures usually mean **(1)** map tiles not aligned to world origin, **(2)** wrong terrain bounds vs game, or **(3)** Z always zero. Fix A-01 + A-03/A-04 + A-06 before tuning icons.
 
-### Track A — suggested build order
-1. A-02 Wire terrain + A-09 title (quick)
+### Track A — suggested build order (after Eden P0–P2)
+
+1. ~~A-02 Wire terrain + A-09 title~~ (done T-049)
 2. A-01 Host/import aligned map tiles for Everon
 3. A-03/A-04 DEM load + `sampleElevation(x,y)` on place/move/drag-end
-4. A-05/A-06 Z (and X/Y) in toolbelt + Attributes — editable, mono font
-5. A-08 Golden-file test with mod: one slot at known coords → spawn in-game at same point
-6. A-10 Autosave polish
+4. A-08 Golden-file test with mod: one slot at known coords → spawn in-game at same point
+5. A-10 Autosave polish
+
+*(A-05/A-06 Z in UI — done T-049/T-050; manual Z until A-04.)*
 
 ---
 
@@ -224,16 +254,23 @@ Required to place **objects**, not just generic slots.
 
 ---
 
-## Explicitly deferred (not required for “functions now”)
+## Scope of the Eden backlog vs truly deferred
 
-- Eden toolbar (widget, snap grids, vision modes)
-- Compositions F2, triggers, waypoints, connections
-- Comments, crew seat UI, copy/paste
-- y-websocket multiplayer
-- Workshop publish
-- Full Eden tree parity
+**Eden-first** means much of what used to be parked is now **in the active backlog** as P1/P2 slices — only the post-Eden / P3 set stays deferred.
 
-See [`eden/gap_analysis.md`](eden/gap_analysis.md) P1–P3.
+**In the Eden backlog (P1/P2 — do these before tiles/DEM):**
+- Copy/paste (P1-02), Ctrl multi-place (P1-05), Shift/map rotate (P1-06), crew UI (P1-10)
+- Compositions, triggers, waypoints, connection/sync, transform widget + snap grids (P2)
+- Menu bar, class:/mod: search, fuller attribute fields (P2)
+
+**Truly deferred (post-Eden / P3 / external blockers):**
+- Track A **map tiles A-01** + **DEM A-03/A-04** (and DEM-dependent Phase 8 LoS/viewshed)
+- **P3-01** Workshop compositions
+- **P3-02** DEM / 3D snap
+- **P3-03** Arsenal / full loadout matrix (Track C)
+- **P3-04** y-websocket multiplayer
+
+Item-level priorities: [`eden/gap_analysis.md`](eden/gap_analysis.md) P1–P3.
 
 ---
 
@@ -255,19 +292,22 @@ Local IndexedDB + manual save  Autosave + semver versions
 
 ## Recommended program order
 
+**Active strategy: Eden-first** (see §Current strategy). Phases 2–4 below run **after** Eden P0–P2.
+
 | Phase | Track | Deliverable | Depends on |
 |-------|-------|-------------|------------|
-| **1** | A | Terrain wired, title hydrate, numeric X/Y | — |
-| **2** | A | Map tiles hosted + aligned; visual parity with island | Art/export from Reforger tools |
+| **1** | A | Terrain wired, title hydrate, numeric X/Y | — ✅ T-049 |
+| **1b** | Eden | P0 remaining + P1 + P2 (gap_analysis backlog) | T-052+ slices; P0 needs thin registry |
+| **2** | A | Map tiles hosted + aligned; visual parity with island | **Eden P0–P2 done** + art/export |
 | **3** | A | DEM + Z on place/move + editable Z | Phase 2 heightmap asset |
 | **4** | A | Mod golden test (one coordinate round-trip) | Mod team JSON spec |
-| **5** | B | Registry v1 API + ingest + palette | In-game classname list |
-| **6** | B | Vehicles + markers on map | Phase 5 |
-| **7** | B | ORBAT authoring | Phase 5 |
+| **5** | B | Registry v1 API + ingest + palette (expand beyond Eden-minimal) | In-game classname list |
+| **6** | B | Vehicles + markers on map (if not closed in Eden P0) | Phase 5 |
+| **7** | B | ORBAT authoring (if not closed in Eden P0) | Phase 5 |
 | **8** | C | Loadout Forge MVP | Phase 5 + Armory Forger export |
 | **9** | C | Full item matrix + compiler loadouts | Phase 8 |
 
-Phases 1–4 = **“map + accurate positions.”** Phases 5–7 = **“real objects.”** Phases 8–9 = **“kits.”**
+Phases **1b** = **Eden parity on flat grid.** Phases 2–4 = **map + accurate positions (heightmap).** Phases 5–7 = **real objects at scale.** Phases 8–9 = **kits.**
 
 ---
 
@@ -286,7 +326,7 @@ All linked in **Documentation** section above. Quick pointers:
 
 ## Open decisions (need human input)
 
-1. **Map assets** — Do we have Everon top-down tiles + heightmap exports, or must we generate them from Reforger/workshop tools?
+1. **Map assets** — Do we have Everon top-down tiles + heightmap exports, or must we generate them from Reforger/workshop tools? *(Gather in parallel; **implementation deferred** until Eden P0–P2 per §Current strategy.)*
 2. **Mod JSON contract** — Who provides the golden `json_payload` / spawn format for position + loadout verification?
 3. **Armory Forger export** — Exact file/API format for ingest (this unlocks Track C scope: “50 vests” = count rows in export).
 4. **Mission Armory vs slot loadouts** — Should Forge changes update `MissionArmory` quantities automatically, or stay separate?
