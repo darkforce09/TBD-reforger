@@ -54,9 +54,21 @@ export function TacticalMap({
   })
 
   const onClick = useCallback(
-    (info: PickingInfo) => {
+    // Deck passes the gesture event as the 2nd arg; its srcEvent carries the modifiers.
+    (info: PickingInfo, event?: { srcEvent?: { ctrlKey?: boolean; metaKey?: boolean } }) => {
+      const src = event?.srcEvent
+      const additive = !!(src && (src.ctrlKey || src.metaKey)) // Ctrl/Cmd toggle (P1-01)
       if (info.layer?.id === 'slot-icons' && info.object) {
         const id = (info.object as { id: ID }).id
+        if (additive) {
+          // Ctrl/Cmd-click toggles this slot in/out of the current selection.
+          const sel = useMapStore.getState().selection
+          const cur = sel.kind === 'slot' ? sel.ids : []
+          const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+          setSelection(next.length ? { kind: 'slot', ids: next } : { kind: 'none', ids: [] })
+          lastClick.current = null // additive click never arms the dbl-click timer
+          return
+        }
         setSelection({ kind: 'slot', ids: [id] })
         const prev = lastClick.current
         const now = Date.now()
@@ -69,7 +81,9 @@ export function TacticalMap({
         return
       }
       lastClick.current = null
-      // Empty-map click only deselects (no teleport — Phase 7b removed it).
+      // Ctrl/Cmd + empty click preserves the selection; a plain empty click deselects
+      // (no teleport — Phase 7b removed it).
+      if (additive) return
       setSelection({ kind: 'none', ids: [] })
     },
     [setSelection, onEntityActivate],

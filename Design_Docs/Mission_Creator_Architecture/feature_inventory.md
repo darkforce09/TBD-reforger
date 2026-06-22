@@ -302,17 +302,17 @@
 |-------|-------|
 | **Domain** | SEL |
 | **Goal** | Eden modifier multi-select |
-| **Trigger** | UNVERIFIED — not implemented |
-| **Preconditions** | — |
-| **Procedure** | Not in codebase |
-| **Postconditions** | — |
-| **Inputs** | Shift, Ctrl |
-| **Outputs** | — |
-| **Edge cases** | 04 spec: Shift optional bonus |
-| **Acceptance** | `- [ ] N/A until built` |
+| **Trigger** | Ctrl/Cmd + LMB click on a slot icon |
+| **Preconditions** | Select tool effective (always) |
+| **Procedure** | `TacticalMap onClick` reads `event.srcEvent.ctrlKey/metaKey`; toggles id in/out of `useMapStore.getState().selection.ids` → `setSelection` (empties → `none`) |
+| **Postconditions** | Slot added or removed from selection; one undo-irrelevant UI op |
+| **Inputs** | Ctrl, Cmd (Shift unbound — reserved for future range-select) |
+| **Outputs** | `selection.ids[]` |
+| **Edge cases** | Ctrl/Cmd + empty-click preserves selection (no deselect); marquee still replaces; Ctrl-built multi (>1) suppresses dbl-click attributes |
+| **Acceptance** | `- [x] Ctrl-click adds units` `- [x] Ctrl-click selected removes it` `- [x] Ctrl-click empty preserves` |
 | **Eden parity** | Eden:SEL-MOD-001 |
-| **Status** | not_built |
-| **Evidence** | No handler in `useSelectTool.ts` / `TacticalMap.tsx` |
+| **Status** | working |
+| **Evidence** | `TacticalMap.tsx` `onClick` (T-053) |
 
 #### SEL-SYNC-001 — Map ↔ outliner selection sync
 

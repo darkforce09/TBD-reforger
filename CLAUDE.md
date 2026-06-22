@@ -77,10 +77,22 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
-## Status (latest feature work: T-052 — 2026-06-22)
+## Status (latest feature work: T-053 — 2026-06-22)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
+- T-053 **Mission Creator — Ctrl/Cmd+LMB additive (toggle) select (Eden P1-01)**. Marquee
+  box-select already did multi-select, but a single click on a unit always **replaced** the
+  selection — so trimming/extending a multi-selection meant redrawing a marquee. This adds
+  modifier-click additive select in the Deck `onClick` of `tactical-map/TacticalMap.tsx`
+  (the gesture machine in `useSelectTool` owns only drags; sub-threshold clicks fall through to
+  Deck, whose `onClick` 2nd arg is a `MjolnirGestureEvent` carrying `srcEvent.ctrlKey/metaKey`).
+  **Ctrl or Cmd** + click a slot **toggles** it in/out of `selection.ids` (removing the last id →
+  `none`); **Ctrl/Cmd + empty-click preserves** the selection (only a plain empty click
+  deselects). **Shift stays unbound** (reserved for a future range-select); marquee still
+  replaces; a Ctrl-built multi (>1) keeps dbl-click→Attributes suppressed. One-file change — no
+  store/schema or `useSelectTool` change. Closes gap_analysis P1-01 / `SEL-MOD-001`. Verified:
+  frontend build + lint clean.
 - T-052 **Mission Creator — undo/redo keyboard shortcuts (Eden P1-03)**. The editor toolbar's
   Undo/Redo buttons already drove the `Y.UndoManager`; this adds the matching keyboard shortcuts
   to the host keydown handler in `MissionCreatorPage` (reusing the existing `UndoController` — no
@@ -295,7 +307,7 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-053+ (P1-01 Ctrl+LMB select, P1-04 asset search, …).
+**Not yet built / next (Mission Creator):** **Eden-first** — complete [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) **P0 remaining + P1 + P2** before Track A Phase 2 (map tiles, DEM). See [MC ROADMAP §Current strategy](Design_Docs/Mission_Creator_Architecture/ROADMAP.md#current-strategy-locked--2026-06). Next slices: T-054+ (P1-04 asset search, P1-09 ORBAT dbl-click attributes, P1-02 copy/paste, …; P1-01 Ctrl+LMB additive select shipped T-053).
 - **Deferred until after Eden P0–P2:** Phase 2 **DEM / Z-axis** + aligned map tiles (A-01/A-03; blocked on hosted assets).
 - **During Eden P0:** thin **registry** (Phase 5 / B-01) as needed for real palette + markers/vehicles — not full Track C.
 - Phase 8 **ruler/LoS/viewshed** (needs DEM for LoS) — after heightmap phase.

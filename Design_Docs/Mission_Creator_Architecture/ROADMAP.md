@@ -26,7 +26,7 @@
 
 Work [`eden/gap_analysis.md`](eden/gap_analysis.md) **numbered backlog** in priority tier, interleaving small **P1** slices between heavier **P0** blocks:
 
-1. **P1 quick (code-only)** — P1-01 Ctrl+LMB additive select → P1-04 asset search → P1-09 ORBAT dbl-click attributes → P1-02 copy/paste → …
+1. **P1 quick (code-only)** — ~~P1-01 Ctrl+LMB additive select (T-053)~~ → P1-04 asset search → P1-09 ORBAT dbl-click attributes → P1-02 copy/paste → …
 2. **P0 ship-blocking** — P0-01 registry (+ thin B-01) → P0-02 markers → P0-03 vehicles → P0-05 ORBAT authoring UI
 3. **P1 remainder** — P1-05..P1-11 (multi-place, rotate, Space conflict, vehicle crew, …)
 4. **P2 power-user** — P2-01..P2-07
@@ -55,6 +55,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | **[`scripts/tools/scrape-eden-wiki.mjs`](../../scripts/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
 | **[`artifacts/eden-feds-draft.jsonl`](../../artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
 | **[`artifacts/README.md`](../../artifacts/README.md)** | Generated artifacts policy |
+| **[`t053_eden_p1_additive_select.md`](t053_eden_p1_additive_select.md)** | **T-053** — Eden P1-01: Ctrl/Cmd+LMB additive (toggle) select (shipped) |
 | **[`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md)** | **T-052** — Eden P1-03: Ctrl/Cmd+Z/Y undo-redo keyboard (shipped) |
 | **[`t050_cursor_z_readout.md`](t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
 | **[`t049_track_a_quick_p0.md`](t049_track_a_quick_p0.md)** | **T-049** — Track A quick P0: terrain + title + numeric position (shipped) |
@@ -125,13 +126,19 @@ Tracks A and B can progress in parallel **during the Eden push** (registry serve
 
 ---
 
+## DONE — T-053 (Eden P1 additive select)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Ctrl/Cmd+LMB additive select** | [`t053_eden_p1_additive_select.md`](t053_eden_p1_additive_select.md) | ✅ `TacticalMap onClick` reads `event.srcEvent.ctrlKey/metaKey`; Ctrl/Cmd-click toggles a slot in/out of `selection.ids` (empties → `none`); Ctrl/Cmd + empty-click preserves selection. **Shift unbound** (reserved for range-select); marquee still replaces. One file, no store/`useSelectTool` change. Closes gap_analysis **P1-01** / SEL-MOD-001. |
+
 ## DONE — T-052 (Eden P1 undo keyboard)
 
 | Item | Spec | Deliverable |
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **P1-03** / KEY-UNDO-001. |
 
-**Next (Eden-first — see §Current strategy):** T-053+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-01** Ctrl+LMB additive select, **P1-04** asset search. **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
+**Next (Eden-first — see §Current strategy):** T-054+ Eden P1/P0 slices per [`eden/gap_analysis.md`](eden/gap_analysis.md). Immediate: **P1-04** asset browser search, then **P1-09** ORBAT dbl-click attributes, **P1-02** copy/paste. **Deferred:** T-051 title PATCH; Track A A-01/A-03 until Eden P0–P2 complete.
 
 ---
 

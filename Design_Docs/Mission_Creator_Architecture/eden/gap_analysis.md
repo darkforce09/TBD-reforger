@@ -95,7 +95,7 @@
 |---------|--------|--------|----------|-----------|
 | LAYER-CREATE-001 | LEFT-LAYER-005 | tbd_only | — | Editor Layers ≠ Eden layers |
 | LAYER-DEL-001 | LEFT-LAYER-007 | partial | — | TBD deletes slots in folder |
-| SEL-MOD-001 | SEL-MOD-001 | missing | P1 | Ctrl+LMB |
+| SEL-MOD-001 | SEL-MOD-001 | match | P1 | ✅ T-053 — Ctrl/Cmd+LMB toggle additive select (Shift unbound) |
 | SEL-ALL-001 | KEY-SELALL-001 | missing | P2 | Select all |
 | ATTR-FIELD-OBJ-SKILL | ATTR-TAB-003 | missing | P2 | States stub |
 | ATTR-FIELD-OBJ-FUEL | — | missing | P2 | Vehicles |
@@ -135,7 +135,7 @@
 
 ### P1 — Eden feel
 
-7. **P1-01** Ctrl+LMB additive select (`SEL-MOD-001`)
+7. ~~**P1-01** Ctrl+LMB additive select (`SEL-MOD-001`)~~ — ✅ shipped T-053
 8. **P1-02** Ctrl+C/V copy paste (`ACTION-CopyUnit` / `PasteUnit`)
 9. ~~**P1-03** Ctrl+Z/Y (`TOP-UNDO-001`)~~ — ✅ shipped T-052
 10. **P1-04** Asset browser search (`RIGHT-SEARCH-001`)
