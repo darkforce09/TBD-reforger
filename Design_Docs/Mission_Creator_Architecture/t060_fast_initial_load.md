@@ -16,7 +16,7 @@ is added alongside the sync `compileMission` (export still uses the sync one).
 
 | # | Blocker | Status | Fix |
 |---|---------|--------|-----|
-| 1 | **IDB replay dead zone / stuck 0%** | ✅ **T-060.1.1** — restoring label within 1–2 s; 0→300k jump acceptable | Incremental counts → **T-062** |
+| 1 | **IDB replay dead zone / stuck 0%** | ✅ **T-060.1.1** — restoring label within 1–2 s; 0→300k jump acceptable | Incremental counts → **T-062.1+** |
 | 2 | **Load snapshot sync cost** | ✅ **T-060.1** — `docToSnapshotWithProgress` | — |
 | 3 | **Hydrate outside bulk window** | ✅ **T-060.1** — `endBulkSync` after hydrate | — |
 | 4 | **Save instant proxy drop @ 0%** | ✅ **T-060.1.2 E3b** | Auto direct `:8080` in dev |
@@ -102,7 +102,7 @@ Evidence:
 | **Global JSON cap** | **Keep 1 MB** for all other routes |
 | **Load phases (execution order)** | restoring 0–15% → download 15–35% → apply 35–55% → local 55–100% |
 | **Save phases** | compiling → preparing → uploading |
-| **Batch upload** | **Not T-060** — needs T-062 incremental API |
+| **Batch upload** | **Not T-060** — needs **T-062.1+** incremental save API |
 | **≤10 s @ 1M** | Out of scope — **T-062** / **T-066** |
 
 ---

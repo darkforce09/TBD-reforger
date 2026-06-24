@@ -55,6 +55,43 @@ export function rebuildFromSlots(slotsById: Record<ID, Slot>, selection: Selecti
   bump()
 }
 
+/** O(k) append new slots to `dense` (slot-add fast path, T-062.0). Selection drives the
+ *  highlight flag (a freshly-placed slot is normally unselected). Dense-only — never touches
+ *  the `excluded` map, so an in-flight drag is unaffected. */
+export function append(slots: Slot[], selection: Selection): void {
+  const selected = selectedSet(selection)
+  for (const s of slots) {
+    if (index.has(s.id)) continue // defensive: already present
+    index.set(s.id, dense.length)
+    dense.push({
+      id: s.id,
+      x: s.position.x,
+      y: s.position.y,
+      selected: selected?.has(s.id) ?? false,
+    })
+  }
+  bump()
+}
+
+/** O(k) remove ids from `dense` via swap-and-pop (slot-remove fast path, T-062.0). Mirror of
+ *  `exclude` minus the `excluded` write. Ids not in `dense` are skipped — an id mid-drag lives
+ *  in `excluded`; we leave it there (the active drag owns it). */
+export function remove(ids: ID[]): void {
+  for (const id of ids) {
+    const i = index.get(id)
+    if (i === undefined) continue
+    const last = dense.length - 1
+    if (i !== last) {
+      const moved = dense[last]
+      dense[i] = moved
+      index.set(moved.id, i)
+    }
+    dense.pop()
+    index.delete(id)
+  }
+  bump()
+}
+
 /** O(k) swap-and-pop the given ids out of `dense` into `excluded` (drag start). */
 export function exclude(ids: ID[]): void {
   for (const id of ids) {

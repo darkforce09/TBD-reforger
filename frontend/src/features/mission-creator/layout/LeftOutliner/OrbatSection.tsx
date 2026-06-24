@@ -59,12 +59,15 @@ export function OrbatSection({ onActivateSlot }: OrbatSectionProps) {
   const factionsById = useMapStore((s) => s.factionsById)
   const squadsById = useMapStore((s) => s.squadsById)
   const slotsById = useMapStore((s) => s.slotsById)
+  // Rebuild signal for in-place slot add/remove, where slotsById's ref doesn't change (T-062.0.1).
+  const slotsRevision = useMapStore((s) => s.slotsRevision)
   const selection = useMapStore((s) => s.selection)
   const setSelection = useMapStore((s) => s.setSelection)
 
   const nodes = useMemo(
     () => buildOrbat(factionsById, squadsById, slotsById),
-    [factionsById, squadsById, slotsById],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [factionsById, squadsById, slotsById, slotsRevision],
   )
 
   const selectedIds = useMemo(

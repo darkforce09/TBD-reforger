@@ -87,8 +87,9 @@ Dual IconLayer + split drag state + rAF-coalesced delta. Fixed sustained 5–10 
 
 ## After T-061
 
-- **Active:** **T-062** full incremental `bindings.ts` (all entity maps, load UX, delete cascades, asset-drop lag)
-- **T-063..T-067** — spatial index, virtualization, LOD, worker, chunks
+- ~~**T-062** incremental bindings~~ ✅ — spec [`t062_incremental_bindings.md`](t062_incremental_bindings.md)
+- **Active:** **T-063..T-067** — spatial index, virtualization, LOD, worker, chunks
+- **Stretch:** **T-062.1+** IDB streaming UX + save batch API (not T-062.0)
 - **Deferred mega optimizations** — [ROADMAP.md](ROADMAP.md) §Deferred mega optimizations (T-061.1 typed-array, release repack collapse, T-066 worker, T-070+ terrain, 1M–10M stretch)
 
 ---

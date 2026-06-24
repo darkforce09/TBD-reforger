@@ -84,7 +84,8 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M3.14 — [x] T-059 Bulk paste/delete at scale (batch O(n) append; selection cap 500; outliner leaf cap 500 both trees; validated **360k @ 100+ fps** pan)
 ### M3.15 — [x] T-060 scale load/save (shipped `b1fd25a` — load partial pass @ ~360k; Save ~142 MB → 201)
 ### M3.16 — [x] T-061 drag-move @ 360k (good enough — motion ~60 fps; boundaries via `slotIconCache` — spec: [t061_drag_move_hotfix.md](../../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md))
-### M4 — [ ] T-062+ scale program + DEM/registry (see MC ROADMAP §Map performance)
+### M3.17 — [x] T-062 incremental bindings @ 360k (classifier + bulk delete ≤10k — spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md))
+### M4 — [ ] T-063+ scale program + DEM/registry (see MC ROADMAP §Map performance)
 
 ## Test Plan
 
@@ -98,7 +99,8 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 
 - **[PERF-001] ~~Map pan/zoom FPS collapse~~** — **Resolved T-057** (100+ fps @ 10k validated); **T-058** OBJ/SEL entity-count telemetry shipped.
 - **[PERF-002] ~~Bulk paste 10k freeze~~** — **Resolved T-059** (validated **360k @ 100+ fps** pan; 6k paste loops smooth).
-- **[PERF-003] Initial load** — **Shipped T-060:** restoring label within 1–2 s; ~30 s–1 min @ 360k; 0→300k jump (incremental → **T-062**). Pan **100+ fps** @ 360k when idle.
+- **[PERF-003] Initial load** — **Shipped T-060:** restoring label within 1–2 s; ~30 s–1 min @ 360k; 0→300k jump remains (**T-062.1+** IDB streaming). Pan **100+ fps** @ 360k when idle.
 - **[PERF-004] Save Version** — **Resolved T-060.1.4 / shipped T-060.** Verified: curl 140 MB → 201; browser Save @ ~367k/~142 MB → 201 (2026-06-23).
 - **[PERF-005] Drag-move @ 360k** — **Resolved T-061 (good enough).** Motion ~60 fps sustained; pickup/release materially improved via `slotIconCache` + bindings slot fast path. Mega optimizations deferred ([MC ROADMAP §Deferred mega optimizations](../../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md)). Spec: [t061_drag_move_hotfix.md](../../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md).
+- **[PERF-006] Incremental bindings @ 360k** — **Resolved T-062.** Asset drop, delete (≤10k/batch), meta, editor-layers on O(k) path; batched `removeEntities` + `slotCount`. Verified delete 4k + undo 6k. Spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md).
 - [FD-003](../TRACKING.md): Phases 2/5/6/8 — see [Mission Creator hub](../../../Design_Docs/Mission_Creator_Architecture/README.md).

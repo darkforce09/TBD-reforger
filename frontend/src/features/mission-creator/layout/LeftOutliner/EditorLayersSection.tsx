@@ -76,6 +76,8 @@ function buildTree(
 export function EditorLayersSection({ md, onActivateSlot }: EditorLayersSectionProps) {
   const layersById = useMapStore((s) => s.editorLayersById)
   const slotsById = useMapStore((s) => s.slotsById)
+  // Rebuild signal for in-place slot add/remove, where slotsById's ref doesn't change (T-062.0.1).
+  const slotsRevision = useMapStore((s) => s.slotsRevision)
   const selection = useMapStore((s) => s.selection)
   const activeLayerId = useMapStore((s) => s.activeLayerId)
   const setSelection = useMapStore((s) => s.setSelection)
@@ -83,7 +85,12 @@ export function EditorLayersSection({ md, onActivateSlot }: EditorLayersSectionP
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [rootOver, setRootOver] = useState(false)
 
-  const nodes = useMemo(() => buildTree(layersById, slotsById), [layersById, slotsById])
+  // slotsRevision: rebuild when slotsById is mutated in place (add/remove) without a ref change.
+  const nodes = useMemo(
+    () => buildTree(layersById, slotsById),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layersById, slotsById, slotsRevision],
+  )
 
   // Highlight selected slots (multi-select) plus the active folder.
   const selectedIds = useMemo(

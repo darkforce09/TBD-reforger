@@ -72,12 +72,38 @@ export interface MapStoreState extends MapSnapshot {
    *  this instead of `slotsById`, so drag boundaries refresh the layer without an O(n)
    *  re-derive from the dictionary. */
   iconCacheVersion: number
+  /** Live placed-slot count (T-062.0.1). Maintained incrementally by the add/remove fast paths
+   *  (which mutate `slotsById` in place, leaving its ref unchanged), so the toolbelt OBJ readout
+   *  updates without an O(n) `Object.keys(slotsById)` over ~360k. */
+  slotCount: number
+  /** Bumped whenever `slotsById`'s contents change via an in-place fast-path mutation
+   *  (slot add/remove). Subscribers that derive from `slotsById` but can't rely on its object
+   *  ref changing (the Outliner trees) subscribe this to know they must rebuild (T-062.0.1). */
+  slotsRevision: number
 
   // Internal: bindings push a fresh snapshot here on every Y.Doc change.
   _applySnapshot: (snapshot: MapSnapshot) => void
   /** Bindings fast path (T-061.0.1): shallow-merge changed slots without replacing the
    *  whole snapshot, and patch the icon cache positions in lockstep. */
   _patchSlots: (patches: Record<ID, Slot>) => void
+  /** Bindings fast path (T-062.0): replace meta without re-deriving the snapshot. */
+  _patchMeta: (meta: MissionMeta) => void
+  /** Bindings fast path (T-062.0): shallow-merge changed Outliner folders. */
+  _patchEditorLayers: (patches: Record<ID, EditorLayer>) => void
+  /** Bindings fast path (T-062.0): O(k) add one slot (asset drop). Also merges any squad /
+   *  layer whose slotIds / entityIds changed in the same transaction, and appends the new icon. */
+  _patchAddSlot: (
+    slot: Slot,
+    squadPatches: Record<ID, Squad>,
+    layerPatches: Record<ID, EditorLayer>,
+  ) => void
+  /** Bindings fast path (T-062.0): O(k) remove slots (Delete). Drops the ids from slotsById,
+   *  merges changed squads/layers, and removes the icons. */
+  _patchRemoveSlots: (
+    ids: ID[],
+    squadPatches: Record<ID, Squad>,
+    layerPatches: Record<ID, EditorLayer>,
+  ) => void
   /** Publish the icon cache's current version after a direct cache mutation made outside
    *  the store (drag exclude/restore/patch in useSelectTool), so the base layer refreshes. */
   _syncIconCache: () => void
@@ -117,16 +143,60 @@ export const useMapStore = create<MapStoreState>()((set, get) => ({
   marquee: null,
   cursor: null,
   iconCacheVersion: 0,
+  slotCount: 0,
+  slotsRevision: 0,
   _applySnapshot: (snapshot) => {
     set(snapshot)
     slotIconCache.rebuildFromSlots(snapshot.slotsById, get().selection)
-    set({ iconCacheVersion: slotIconCache.getVersion() })
+    set({
+      iconCacheVersion: slotIconCache.getVersion(),
+      slotCount: Object.keys(snapshot.slotsById).length,
+      slotsRevision: get().slotsRevision + 1,
+    })
   },
   _patchSlots: (patches) => {
     set({ slotsById: { ...get().slotsById, ...patches } })
     const positions: Record<ID, { x: number; y: number }> = {}
     for (const id in patches) positions[id] = { x: patches[id].position.x, y: patches[id].position.y }
     slotIconCache.setPositions(positions)
+    set({ iconCacheVersion: slotIconCache.getVersion() })
+  },
+  _patchMeta: (meta) => set({ meta }),
+  _patchEditorLayers: (patches) =>
+    set({ editorLayersById: { ...get().editorLayersById, ...patches } }),
+  _patchAddSlot: (slot, squadPatches, layerPatches) => {
+    const s = get()
+    // In-place insert — leaves the slotsById ref unchanged (the O(n) spread of ~360k keys is the
+    // cost we're avoiding). slotCount / slotsRevision are the signals consumers subscribe instead.
+    s.slotsById[slot.id] = slot
+    set({
+      slotCount: s.slotCount + 1,
+      slotsRevision: s.slotsRevision + 1,
+      squadsById: Object.keys(squadPatches).length
+        ? { ...s.squadsById, ...squadPatches }
+        : s.squadsById,
+      editorLayersById: Object.keys(layerPatches).length
+        ? { ...s.editorLayersById, ...layerPatches }
+        : s.editorLayersById,
+    })
+    slotIconCache.append([slot], get().selection)
+    set({ iconCacheVersion: slotIconCache.getVersion() })
+  },
+  _patchRemoveSlots: (ids, squadPatches, layerPatches) => {
+    const s = get()
+    // In-place delete — no O(n) spread; slotsById ref unchanged (see _patchAddSlot).
+    for (const id of ids) delete s.slotsById[id]
+    set({
+      slotCount: s.slotCount - ids.length,
+      slotsRevision: s.slotsRevision + 1,
+      squadsById: Object.keys(squadPatches).length
+        ? { ...s.squadsById, ...squadPatches }
+        : s.squadsById,
+      editorLayersById: Object.keys(layerPatches).length
+        ? { ...s.editorLayersById, ...layerPatches }
+        : s.editorLayersById,
+    })
+    slotIconCache.remove(ids)
     set({ iconCacheVersion: slotIconCache.getVersion() })
   },
   _syncIconCache: () => set({ iconCacheVersion: slotIconCache.getVersion() }),
@@ -153,6 +223,8 @@ export const useMapStore = create<MapStoreState>()((set, get) => ({
       marquee: null,
       cursor: null,
       iconCacheVersion: slotIconCache.getVersion(),
+      slotCount: 0,
+      slotsRevision: get().slotsRevision + 1,
     })
   },
 }))

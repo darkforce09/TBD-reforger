@@ -48,7 +48,7 @@ Use `text-code-md font-mono tabular-nums text-on-surface-variant` with values in
 | Decision | Choice |
 |----------|--------|
 | Entity type | **Slots** in `slotsById` only — the only map-placed entity type today |
-| Count source | Memoized `selectSlotCount(slotsById)` in `state/selectors.ts` (O(n) when `slotsById` ref changes, not per cursor frame) |
+| Count source | **T-062:** `useMapStore((s) => s.slotCount)` — O(1) maintained by bindings patches. **T-058 original:** memoized `selectSlotCount(slotsById)` in `state/selectors.ts` |
 | Selection | Reuse existing `selection` slice — no new store field |
 | Placement | `BottomToolbelt.tsx` only — do **not** duplicate on `FpsCounter` |
 | Performance | Subscribe inside already-memoized `BottomToolbelt`; do **not** lift counts to `MissionCreatorPage` state |
@@ -131,4 +131,4 @@ Re-export: `selectSlotCount` alongside `selectSlotIcons`.
 
 **T-059 (bulk paste/delete):** fix O(n²) spreads, cap selection/outliner after bulk paste, optional chunked paste — **10k paste without hard freeze**. Use **OBJ** to confirm totals. Spec: [`t059_bulk_paste_operations.md`](t059_bulk_paste_operations.md).
 
-**T-060.1.4** Fix mid-upload @ ~135 MB — ✅ (`b1fd25a`). **T-061** ✅. **Active: T-062..T-067.** **Eden T-068+.**
+**T-060.1.4** Fix mid-upload @ ~135 MB — ✅ (`b1fd25a`). **T-061** ✅. **T-062** ✅. **Active: T-063..T-067.** **Eden T-068+.**

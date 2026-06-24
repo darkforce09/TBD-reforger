@@ -21,7 +21,7 @@ Make **bulk copy/paste and delete** usable at **10k+** objects without freezing 
 - Copy 10k + paste once still works (Eden T-056 relative-layout contract preserved).
 - `cd frontend && npm run build && npm run lint` clean.
 
-**Out of scope (later tags):** fast load + save (T-060), typed-array IconLayer (T-061), full incremental bindings (T-062), virtualization (T-064).
+**Out of scope (later tags):** fast load + save (T-060), typed-array IconLayer (T-061), incremental bindings (~~T-062~~ ✅ shipped), virtualization (T-064).
 
 ---
 
@@ -160,4 +160,4 @@ items d/e (design preserved above).
 
 ## After T-059
 
-**T-060.1.4:** Fix mid-upload @ ~135 MB — ✅ (`b1fd25a`). **T-061** ✅ drag-move good enough. **Active: T-062..T-067.** Spec: [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md). **Eden T-068+.**
+**T-060.1.4:** Fix mid-upload @ ~135 MB — ✅ (`b1fd25a`). **T-061** ✅ drag-move good enough. **T-062** ✅ incremental bindings. **Active: T-063..T-067.** Spec: [`t062_incremental_bindings.md`](t062_incremental_bindings.md). **Eden T-068+.**

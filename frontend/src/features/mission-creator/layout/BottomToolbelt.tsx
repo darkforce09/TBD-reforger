@@ -6,7 +6,7 @@
 import { memo, useEffect, useState } from 'react'
 import { Eye, MousePointer2, Ruler } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
-import { selectSlotCount, useMapStore, type ToolId } from '@/features/tactical-map'
+import { useMapStore, type ToolId } from '@/features/tactical-map'
 import { cn } from '@/lib/utils'
 import { estimateCompiledBytes, formatBytes } from '../lib/missionSize'
 import { overlayPanel } from './overlay'
@@ -44,9 +44,10 @@ function BottomToolbeltInner() {
 
   // Scale telemetry (T-058): OBJ = total placed slots, SEL = selected count. Both subscribe
   // here in the already-memoized toolbelt — they update on add/remove/paste/delete/selection,
-  // never on a cursor move (the cursor lives in its own store slice, T-057).
-  const slotsById = useMapStore((s) => s.slotsById)
-  const totalSlots = selectSlotCount(slotsById)
+  // never on a cursor move (the cursor lives in its own store slice, T-057). OBJ reads the
+  // store's incrementally-maintained slotCount (T-062.0.1) rather than re-counting slotsById,
+  // which the add/remove fast paths now mutate in place (ref unchanged).
+  const totalSlots = useMapStore((s) => s.slotCount)
   const selectedCount = useMapStore((s) =>
     s.selection.kind === 'slot' ? s.selection.ids.length : 0,
   )

@@ -36,7 +36,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/leaderboards` | [leaderboards.md](../../frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | **in-progress** — T-062..T-067 scale program active; Eden T-068+ after |
+| `/missions/:id/edit` | [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | **in-progress** — T-063..T-067 scale program active; Eden T-068+ after |
 | `/events` | [event-schedule.md](../../frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../frontend/docs/pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../frontend/docs/pages/event-hub.md) | |
@@ -90,7 +90,7 @@ Full table: [`frontend/docs/TRACKING.md`](../../frontend/docs/TRACKING.md).
 
 ## Recommended next work
 
-1. **Mission Creator — T-062 incremental bindings** (MC [ROADMAP](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance) → **T-063..T-067** → Eden **T-068+** → **T-070+** terrain base. Mega optimizations deferred (MC ROADMAP §Deferred mega optimizations).
+1. **Mission Creator — T-063 spatial index** (MC [ROADMAP](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance) → **T-064..T-067** → Eden **T-068+** → **T-070+** terrain base. Mega optimizations deferred (MC ROADMAP §Deferred mega optimizations).
 2. **Mission editor Track A Phase 2+** — map tiles (A-01), DEM (A-03) — **deferred until Eden P0–P2**
 3. **FD-008** — wiki markdown (low risk, high UX)
 4. **FD-001** — when backend exposes server/RCON endpoints

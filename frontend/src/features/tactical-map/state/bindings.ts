@@ -19,38 +19,37 @@ import type {
 } from './schema'
 import { trackedTypes, type MissionDoc } from './ydoc'
 import { useMapStore, type MapSnapshot } from './useMapStore'
+import { classifyTransaction, type PatchPlan } from './incPatchPlan'
 import { yieldToUi } from './yieldToUi'
 
-/** Largest changed-slot count the incremental fast path will handle; above this the full
- *  snapshot is cheaper / safer. Drag-move + single-slot edits sit far under this. */
-const FAST_PATCH_CAP = 512
-
-/** Decide whether a transaction is a pure "existing slots' positions/fields changed" edit
- *  that the O(k) fast path can apply, and if so return the changed slot ids. Returns null
- *  for anything structural or multi-map (add/delete/paste/hydrate) → caller does a full
- *  snapshot. Eligibility reads the WHOLE transaction (`txn.changed`) so a per-subtree
- *  observeDeep firing can't mistake a multi-map txn for a slot-only one; the ids come from
- *  this firing's `events` (paths relative to the slots map). */
-function fastSlotPatchIds(md: MissionDoc, events: Y.YEvent<Y.AbstractType<unknown>>[], txn: Y.Transaction): ID[] | null {
-  const slotsMap = md.entities.slots as unknown as Y.AbstractType<unknown>
-  // Whole-transaction eligibility: every changed type must be a slot's own child map.
-  for (const type of txn.changed.keys()) {
-    const t = type as unknown as Y.AbstractType<unknown>
-    if (t === slotsMap) return null // structural slots add/delete
-    if (t.parent !== slotsMap) return null // some other map (or its child) changed
+/** Apply a classified incremental PatchPlan to the store (T-062.0). Each kind maps to one
+ *  O(k) store method; `slot-fields` reads the changed slots from the Y.Doc here (T-061
+ *  pattern), the other kinds carry their data on the plan. */
+function applyPlan(md: MissionDoc, plan: PatchPlan): void {
+  const store = useMapStore.getState()
+  switch (plan.kind) {
+    case 'slot-fields': {
+      const patches: Record<ID, Slot> = {}
+      for (const id of plan.ids) {
+        const slot = md.entities.slots.get(id)
+        if (slot) patches[id] = slot.toJSON() as Slot
+      }
+      store._patchSlots(patches)
+      break
+    }
+    case 'slot-add':
+      store._patchAddSlot(plan.slot, plan.squads, plan.layers)
+      break
+    case 'slot-remove':
+      store._patchRemoveSlots(plan.ids, plan.squads, plan.layers)
+      break
+    case 'meta':
+      store._patchMeta(plan.meta)
+      break
+    case 'editor-layers':
+      store._patchEditorLayers(plan.patches)
+      break
   }
-  if (txn.changed.size === 0) return null
-  // Collect changed slot ids from this firing's events (path is relative to the slots map).
-  const ids: ID[] = []
-  const seen = new Set<ID>()
-  for (const e of events) {
-    const id = e.path[0]
-    if (typeof id !== 'string' || seen.has(id)) continue
-    seen.add(id)
-    ids.push(id)
-    if (ids.length > FAST_PATCH_CAP) return null
-  }
-  return ids.length ? ids : null
 }
 
 export function docToSnapshot(md: MissionDoc): MapSnapshot {
@@ -162,20 +161,17 @@ export function bindStoreToDoc(md: MissionDoc): () => void {
     }
     // A full flush already queued for this microtask wins — don't also fast-patch.
     if (scheduled) return
-    // O(k) fast path: pure slot position/field edits (drag-move, updateSlot) patch only the
-    // changed slots instead of re-deriving the whole 360k snapshot. Anything ambiguous or
-    // structural falls through to the full snapshot — never wrong state (T-061.0.1).
+    // O(k) incremental fast path (T-062.0): classify the transaction (slot add/remove/fields,
+    // meta, editor-layers) and patch only what changed instead of re-deriving the whole 360k
+    // snapshot. Anything ambiguous, structural, or bulk falls through to the full snapshot —
+    // never wrong state. The classifier reads the WHOLE txn so it returns the same plan no
+    // matter which observeDeep subtree fired; `lastFastTxn` dedups the extra firings.
     try {
       if (txn !== lastFastTxn) {
-        const ids = fastSlotPatchIds(md, events, txn)
-        if (ids) {
+        const plan = classifyTransaction(md, events, txn)
+        if (plan) {
           lastFastTxn = txn
-          const patches: Record<ID, Slot> = {}
-          for (const id of ids) {
-            const slot = md.entities.slots.get(id)
-            if (slot) patches[id] = slot.toJSON() as Slot
-          }
-          useMapStore.getState()._patchSlots(patches)
+          applyPlan(md, plan)
           return
         }
       } else {

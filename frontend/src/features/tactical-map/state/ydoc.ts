@@ -299,9 +299,40 @@ export function removeEntity(md: MissionDoc, mapName: EntityMapName, id: ID): vo
 }
 
 /** Remove several entities from one map in ONE transaction (one undo step) — Eden's
- *  Delete/Backspace on a multi-selection (Phase 7b). */
+ *  Delete/Backspace on a multi-selection (Phase 7b). For a multi-slot delete this batches the
+ *  ref-detach work (T-062.0.1): one `slotIds` filter per affected squad and one `entityIds`
+ *  filter per Outliner folder, instead of `removeEntityInner`'s per-id squad filter + full
+ *  editorLayers scan (O(n·k) → O(n+k) at scale). The resulting transaction shape (squad/layer
+ *  child field updates + slots structural deletes) is unchanged, so the bindings classifier
+ *  still sees a `slot-remove`. */
 export function removeEntities(md: MissionDoc, mapName: EntityMapName, ids: ID[]): void {
   if (!ids.length) return
+  if (mapName === 'slots' && ids.length > 1) {
+    const { squads, slots, editorLayers } = md.entities
+    const idSet = new Set(ids)
+    transact(md, () => {
+      // One filter per affected squad (not per slot).
+      const affectedSquads = new Set<ID>()
+      for (const id of ids) {
+        const sid = slots.get(id)?.get('squadId') as ID | undefined
+        if (sid) affectedSquads.add(sid)
+      }
+      for (const sid of affectedSquads) {
+        const squad = squads.get(sid)
+        if (!squad) continue
+        squad.set('slotIds', (squad.get('slotIds') as ID[]).filter((s) => !idSet.has(s)))
+      }
+      // One pass over the folders; only rewrite a folder whose entityIds actually held a deleted id.
+      for (const layer of editorLayers.values()) {
+        const eids = layer.get('entityIds') as ID[]
+        if (eids.some((e) => idSet.has(e))) {
+          layer.set('entityIds', eids.filter((e) => !idSet.has(e)))
+        }
+      }
+      for (const id of ids) slots.delete(id)
+    })
+    return
+  }
   transact(md, () => {
     for (const id of ids) removeEntityInner(md, mapName, id)
   })

@@ -1141,14 +1141,14 @@
 | Field | Value |
 |-------|-------|
 | **Domain** | PERF |
-| **Goal** | Open **10k–1M** missions with **determinate progress bar**; coalesce boot snapshots; **≤10 s ideal @ 1M** (stretch → T-062) |
+| **Goal** | Open **10k–1M** missions with **determinate progress bar**; coalesce boot snapshots; **≤10 s ideal @ 1M** (stretch → **T-062.1+** / T-066) |
 | **Trigger** | Navigate to `/missions/:id/edit` |
 | **Preconditions** | Y.Doc persisted in IndexedDB (possibly 100k–360k+ slots) |
 | **Procedure** | Bulk-sync window; `docStatus` gate; **four-phase** overlay from `loadProgress`: **restoring** (IDB rAF poll, T-060.1.1) → download → apply → local flush; `docToSnapshotWithProgress` + `hydrateMissionDocWithProgress` + `onDownloadProgress`; `endBulkSync` async after hydrate; LeftSidebar deferred until ready |
 | **Postconditions** | Map interactive; OBJ correct; pan ≥55 fps |
 | **Inputs** | IndexedDB snapshot, optional server `json_payload` |
 | **Outputs** | `docStatus: ready`; `loadProgress` with determinate % (or count-only during restoring) |
-| **Edge cases** | T-060.1.1: count **0→300k jump** (single `Y.applyUpdate`); ~30 s–1 min @ 360k. Incremental IDB → **T-062** |
+| **Edge cases** | T-060.1.1: count **0→300k jump** (single `Y.applyUpdate`); ~30 s–1 min @ 360k. Incremental IDB → **T-062.1+** (T-062.0 shipped interactive bindings only) |
 | **Acceptance** | `- [x] Overlay + bulk-sync (T-060)` `- [x] Determinate % + chunked snapshot/hydrate (T-060.1)` `- [x] Hydrate inside bulk window (T-060.1)` `- [x] Restoring phase + label within 1–2 s @ ~360k (T-060.1.1)` `- [ ] Pan regression clean (manual)` |
 | **Eden parity** | — |
 | **Status** | **shipped (T-060)** — load partial pass @ ~360k; pan ≥55 fps @ 360k (T-057/T-059 validated) |
@@ -1168,7 +1168,7 @@
 | **Postconditions** | Version 201; dirty cleared |
 | **Inputs** | `useMapStore` snapshot |
 | **Outputs** | POST body; progress UI |
-| **Edge cases** | Mid-upload `ERR_NETWORK` @ ~4% / ~135 MB with `direct` route → **FIXED T-060.1.4** (1 MB global cap had reached the version route; not the 256 MB cap); payload >256 MB → pre-gate block + route 413; batch upload → **T-062** only |
+| **Edge cases** | Mid-upload `ERR_NETWORK` @ ~4% / ~135 MB with `direct` route → **FIXED T-060.1.4** (1 MB global cap had reached the version route; not the 256 MB cap); payload >256 MB → pre-gate block + route 413; batch upload → **T-062.1+** only |
 | **Acceptance** | `- [x] E1/E2/E3b` `- [x] SZ toolbelt + exact MB in Save dialog (T-060.1.3)` `- [x] Debug panel on fail + 256 MB pre-gate + server logs (T-060.1.3)` `- [x] ~360k failure fully diagnosed (T-060.1.3)` `- [x] version POST 140 MB → 201 via curl + production-like make test-it (T-060.1.4)` `- [x] browser Save @ ~367k → 201 (2026-06-23)` |
 | **Status** | **shipped** — T-060..T-060.1.4; browser + curl @ ~140 MB verified |
 | **Evidence** | `useMissionEditor.ts`, `compiler/compile.ts`, `lib/missionSize.ts`, `BottomToolbelt.tsx`, `TopCommandStrip.tsx`, `internal/handlers/missions.go`, `internal/middleware/bodylimit.go` (`isMissionVersionPOST`), `internal/handlers/missions_bodylimit_integration_test.go`, `internal/middleware/bodylimit_test.go`, `scripts/mission-version-upload-repro.sh` |
@@ -1187,11 +1187,31 @@
 | **Postconditions** | Icons follow pointer smoothly; commit on release; undo reverts |
 | **Inputs** | Pointer gesture in `useSelectTool` |
 | **Outputs** | Transient store preview; Y.Doc update on release |
-| **Edge cases** | 1 vs N selected; asset palette drop lag → **T-062** (full incremental bindings; single-slot add may hit T-061.0.1 fast path). Release: possible single dropped frame (two cache bumps) — **deferred** |
-| **Acceptance** | `- [x] Drag motion 1 slot @ 360k ≥55 fps` `- [x] Drag motion ~10 selected @ 360k ≥55 fps` `- [x] Pickup/release good enough (not perfect)` `- [x] build + lint clean` `- [ ] Full regression sweep documented` |
+| **Edge cases** | 1 vs N selected; asset palette drop lag → **resolved T-062** (slot-add path). Release: possible single dropped frame (two cache bumps) — **deferred** |
+| **Acceptance** | `- [x] Drag motion 1 slot @ 360k ≥55 fps` `- [x] Drag motion ~10 selected @ 360k ≥55 fps` `- [x] Pickup/release good enough (not perfect)` `- [x] build + lint clean` `- [x] Full regression sweep documented` |
 | **Eden parity** | Eden:XFORM-MOVE-001 |
 | **Status** | **shipped (good enough)** — spec [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md) |
 | **Evidence** | `slotIconCache.ts`, `useMapStore.ts`, `bindings.ts`, `useIconLayer.ts`, `useSelectTool.ts`, `selectors.ts`, `TacticalMap.tsx` |
+
+---
+
+#### PERF-BIND-001 — Incremental bindings @ 360k (T-062)
+
+| Field | Value |
+|-------|-------|
+| **Domain** | PERF |
+| **Goal** | Patch Zustand O(k) on everyday Y.Doc edits @ ~360k instead of full `docToSnapshot(n)` |
+| **Trigger** | Asset drop, Delete, title/env edit, outliner layer rename/reparent/move |
+| **Preconditions** | T-061 drag path shipped; mission @ scale (stress @ 360k) |
+| **Procedure** | **T-062.0:** `incPatchPlan.classifyTransaction` → `PatchPlan` (`slot-fields`, `slot-add`, `slot-remove`, `meta`, `editor-layers`) → store patch methods + `slotIconCache.append`/`remove`. **T-062.0.1:** batched `removeEntities('slots')`; `slotCount`/`slotsRevision`; `REMOVE_PATCH_CAP` 10_000 |
+| **Postconditions** | Store mirror updated without `e.slots.toJSON()` over all slots for classified txns |
+| **Inputs** | Y.Doc observer events |
+| **Outputs** | Incremental Zustand patches; `iconCacheVersion` bumps |
+| **Edge cases** | Bulk paste / `addEditorLayer` / empty-doc bootstrap / `removeEditorLayer` → full snapshot fallback. Undo large multi-delete → full snapshot (verified OK @ 6k undo). IDB 0→300k jump → **T-062.1+**. `_patchSlots` drag release still O(n) spread — deferred mega opt |
+| **Acceptance** | `- [x] Asset drop instant @ 360k` `- [x] Delete 150/4000 no crash` `- [x] Drag not regressed` `- [x] Undo 6000 delete OK` `- [x] build + lint clean` |
+| **Eden parity** | Eden:XFORM-PLACE-001 (drop), Eden:DELETE-001 |
+| **Status** | **shipped** — spec [`t062_incremental_bindings.md`](t062_incremental_bindings.md) |
+| **Evidence** | `incPatchPlan.ts`, `bindings.ts`, `useMapStore.ts`, `slotIconCache.ts`, `ydoc.ts`, `BottomToolbelt.tsx`, `EditorLayersSection.tsx`, `OrbatSection.tsx` |
 
 ---
 

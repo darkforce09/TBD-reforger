@@ -79,10 +79,16 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
-## Status (latest: **T-061 shipped (good enough)** — 2026-06; drag @ ~360k motion ~60 fps; boundaries via `slotIconCache`)
+## Status (latest: **T-062 shipped** — 2026-06; incremental bindings @ 360k — drop/delete/meta/layers + bulk delete ≤10k)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
+- T-062 **Mission Creator — incremental bindings @ 360k**. T-062.0: `incPatchPlan.classifyTransaction`
+  → O(k) Zustand patches (`slot-fields`, `slot-add`, `slot-remove`, `meta`, `editor-layers`) instead of full
+  `docToSnapshot(n)` on everyday edits. T-062.0.1: batched `removeEntities('slots')` (pasteSlots-style detach),
+  `slotCount`/`slotsRevision` (no O(n) `slotsById` spread on add/remove), `REMOVE_PATCH_CAP` 10_000. Manual verify
+  @ ~360k: delete 4k, undo 6k, asset drop, drag OK. IDB 0→300k + save batch API → **T-062.1+** stretch. Spec:
+  [`t062_incremental_bindings.md`](Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md).
 - T-061 **Mission Creator — drag-move performance @ 360k (good enough)**. T-061.0: dual
   IconLayer + split `dragPreviewIds`/`dragPreviewDelta` + rAF-coalesced delta — sustained
   ~60 fps while dragging @ ~360k (was 5–10 fps). T-061.0.1: `slotIconCache` O(k) exclude/restore
@@ -452,9 +458,9 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** **T-061 shipped (good enough).** **Active: T-062..T-067**
-scale program toward **1M–10M** authored mission entities (full incremental bindings → spatial index →
-virtualized outliner → LOD → worker → spatial chunks). Mega render/bindings optimizations **deferred**
+**Not yet built / next (Mission Creator):** **T-062 shipped.** **Active: T-063..T-067**
+scale program toward **1M–10M** (spatial index → virtualized outliner → LOD → worker → spatial chunks).
+**T-062.1+** stretch: IDB streaming UX + save batch API. Mega render/bindings optimizations **deferred**
 — MC [`ROADMAP.md`](Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Deferred mega optimizations.
 **T-070+** (after Eden T-068+): optional **terrain base + sparse deltas** for millions of map props — dual-layer model; do **not** replace Y.Doc/ORBAT. See [t070_terrain_base_mission_layers.md](Design_Docs/Mission_Creator_Architecture/t070_terrain_base_mission_layers.md). **Eden P1-07+** resumes at **T-068+**.
 - **Deferred until after Eden P0–P2:** Phase 2 **DEM / Z-axis** + aligned map tiles (A-01/A-03; blocked on hosted assets).

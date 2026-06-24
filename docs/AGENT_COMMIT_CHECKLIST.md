@@ -50,11 +50,11 @@ If a spec exists for the task (e.g. [`t048_library_create_dialog.md`](../Design_
 | Eden UI parity | `eden/gap_analysis.md` + maybe `eden/ui_anatomy.md` |
 | Shipped git milestone | [`CLAUDE.md`](../CLAUDE.md) §Status + rows above (MC ROADMAP, frontend ROADMAP, TAGS, mission-editor, gap_analysis, feature_inventory, agent_execution as applicable) |
 
-Shell phases PRE-3.5–9 are **done**. **T-057–T-061 shipped** (T-061 drag-move good enough @ 360k). **Active: T-062..T-067** ([`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance; mega opts §Deferred mega optimizations) → Eden **T-068+** → **T-070+** terrain base.
+Shell phases PRE-3.5–9 are **done**. **T-057–T-062 shipped** (T-062 incremental bindings @ 360k). **Active: T-063..T-067** ([`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance; mega opts §Deferred mega optimizations) → Eden **T-068+** → **T-070+** terrain base.
 
 ### Mission Creator slice workflow
 
-Eden slices ship as **T-053+** following the **spec → code → same-commit docs** pattern proven by T-048..T-056. **Perf/scale slices** (T-057+) follow the same pattern — see [`t057`](../Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md) … [`t061`](../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md). **T-061 shipped (good enough)**; **active T-062..T-067**.
+Eden slices ship as **T-053+** following the **spec → code → same-commit docs** pattern proven by T-048..T-056. **Perf/scale slices** (T-057+) follow the same pattern — see [`t057`](../Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md) … [`t062`](../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md). **T-062 shipped**; **active T-063..T-067**.
 
 1. **Spec** — **Cursor** writes or updates the `t0xx_*.md` spec under `Design_Docs/Mission_Creator_Architecture/` (Claude Code reads it; does not author specs).
 2. **Code** — **Claude Code** (or Cursor) implements; `cd frontend && npm run build && npm run lint`; `make test-it` when backend touched.

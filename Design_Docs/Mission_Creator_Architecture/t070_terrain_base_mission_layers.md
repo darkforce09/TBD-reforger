@@ -73,7 +73,7 @@ flowchart TB
 
 - Keep **Y.Doc** normalized model ([`schema.ts`](../../frontend/src/features/tactical-map/state/schema.ts)).
 - **T-061.0.1 ✅ shipped:** Slot-position fast path in `bindings.ts` + `slotIconCache` (drag @ 360k — good enough).
-- **T-062:** Full incremental `bindings.ts` — patch Zustand for all entity maps instead of full `docToSnapshot(n)` on every transaction.
+- **T-062:** Interactive incremental `bindings.ts` — patch Zustand O(k) on classified everyday edits @ 360k (**shipped**). IDB streaming / batch save → **T-062.1+**.
 - **T-066:** Worker `compileMission` for export/save assembly.
 - **Save payload:** `orbat[]` (backend contract) + compact `editor` patch or full block for missions under ~50k; avoid duplicating orbat in editor block long-term.
 
@@ -111,7 +111,7 @@ flowchart TB
 - Replacing ORBAT / Event Hub `parseOrbatTemplate` contract
 - Storing 10M full JSON objects in Postgres `json_payload`
 - Second undo system parallel to Y.UndoManager without a source-of-truth decision
-- Implementing before **T-062..T-067** scale milestones + Eden **T-068+**
+- Implementing before **T-063..T-067** scale milestones + Eden **T-068+**
 
 ---
 
@@ -120,7 +120,7 @@ flowchart TB
 | Symptom | Fix now | Fix long-term |
 |---------|---------|---------------|
 | Save `ERR_NETWORK` | **T-060.1.2** pre-built POST + **T-060.1.3** diagnosed | **T-060.1.4** middleware fix; T-062 patch payload; T-066 worker |
-| Load 0→300k IDB jump | T-060.1.1 ✅ | T-062 incremental bindings |
+| Load 0→300k IDB jump | T-060.1.1 ✅ | **T-062.1+** IDB streaming (T-062.0 shipped interactive bindings) |
 | 360k authored **slots** | Mission layer scale program | Not terrain base (unless those slots *are* terrain props — product decision) |
 
 If the 360k test mission is **authored units**, stay on mission-layer fixes. If product later needs **millions of editable props**, add terrain base under T-070+.

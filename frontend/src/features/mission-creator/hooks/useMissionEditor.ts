@@ -292,7 +292,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
             ok: false,
             error:
               `Compiled payload is ${formatBytes(body.size)} — server limit is ${SERVER_VERSION_BODY_LIMIT >> 20} MB. ` +
-              `This mission duplicates slot data (orbat + editor); needs T-062 incremental save, or raise ` +
+              `This mission duplicates slot data (orbat + editor); needs T-062.1+ incremental save, or raise ` +
               `MISSION_VERSION_MAX_BODY_BYTES on the dev API.`,
             debug: { ...report },
           }
