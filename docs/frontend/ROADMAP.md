@@ -75,6 +75,8 @@ Full table: [`frontend/docs/TRACKING.md`](../../frontend/docs/TRACKING.md).
 | Item | Spec | Notes |
 |------|------|-------|
 | **T-061 drag-move @ 360k (shipped — good enough)** | [t061_drag_move_hotfix.md](../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md) | T-061.0 motion ~60 fps + T-061.0.1 `slotIconCache` + slot fast path; mega opts deferred |
+| **T-062 incremental bindings (shipped)** | [t062_incremental_bindings.md](../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md) | Classifier + bulk delete @ 360k |
+| **T-062.2 editor session (shipped)** | [t062_2_editor_session_persistence.md](../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) | Alt-tab / warm session fast path |
 | **T-060 scale load/save (shipped `b1fd25a`)** | [t060_1](../../Design_Docs/Mission_Creator_Architecture/t060_1_scale_load_save_completion.md) · [t060](../../Design_Docs/Mission_Creator_Architecture/t060_fast_initial_load.md) | Four-phase load; Save @ ~367k/~142 MB → 201 |
 | **T-059 Bulk paste at scale** | [t059_bulk_paste_operations.md](../../Design_Docs/Mission_Creator_Architecture/t059_bulk_paste_operations.md) | Batch O(n) `pasteSlots`; selection cap 500; outliner leaf cap 500 (Editor Layers + ORBAT). **Validated: 360k @ 100+ fps** pan; 6k paste loops smooth |
 | **T-058 Toolbelt OBJ/SEL counts** | [t058_entity_count_readout.md](../../Design_Docs/Mission_Creator_Architecture/t058_entity_count_readout.md) | Bottom toolbelt shows OBJ (total placed slots, memoized `selectSlotCount`) + SEL (selected count); mono, right of X/Y/Z; subscribes in the memoized toolbelt so no cursor-move re-render; scale telemetry |

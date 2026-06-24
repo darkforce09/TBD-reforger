@@ -94,6 +94,7 @@ Stop everyday Y.Doc edits from flushing the entire Zustand mirror via `docToSnap
 
 ## After T-062
 
+- **T-062.2 shipped** — editor session / alt-tab. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md)
 - **Active:** **T-063** spatial index (rbush pick/marquee) → T-064..T-067
 - **Stretch:** **T-062.1+** IDB incremental load UX + save batch API
 - **Eden T-068+** after scale milestones

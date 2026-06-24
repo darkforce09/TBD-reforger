@@ -31,14 +31,14 @@
 
 ### Primary flow
 1. Navigate from Mission Library **+ New Mission** dialog (T-048) or dossier **OPEN IN MISSION CREATOR** → `/missions/:id/edit`.
-2. `useMissionDoc` hydrates Y.Doc from y-indexeddb; `useMissionEditor` loads current version from API with conflict prompt. The mission **row** (`title`, `terrain`, time/weather) hydrates into `meta` on every load — including new missions whose `json_payload` is `{}` (T-049). Terrain drives viewport bounds. **T-060:** a bulk-sync window (`beginBulkSync`/`endBulkSync`) coalesces the IndexedDB replay + seed into one store flush, and `docStatus` gates a full-bleed loading overlay (held until local sync **and** server hydrate settle); the LeftSidebar mount is deferred until ready.
+2. `useMissionDoc` hydrates Y.Doc from y-indexeddb; `useMissionEditor` reconciles with the server on **cold** load (`GET /missions/:id` + conflict prompt when both IDB and server have content). **T-062.2:** warm same-tab return (`editorSession` + `sessionStorage`) skips the multi-MB GET when IndexedDB already holds the mission; dev `viteReloadGuard` blocks Vite HMR full reload on alt-tab. The mission **row** (`title`, `terrain`, time/weather) hydrates into `meta` on cold load — including new missions whose `json_payload` is `{}` (T-049). Terrain drives viewport bounds. **T-060:** bulk-sync window + `docStatus` loading overlay (restoring → download → apply → local on cold; restoring → local only on warm); LeftSidebar deferred until ready.
 3. Author places entities via palette drop, moves selection on map, organizes layers in outliner.
 4. **Save Version** → `POST /missions/:id/versions` with compiled `json_payload`.
 5. **Export** downloads camelCase mod envelope without saving.
 
 ### States
 - **Chromeless:** No platform Sidebar/TopNav (`fullBleed` + `chromeless` route handles).
-- **Loading:** Four-phase overlay: **restoring** (T-060.1.1 ✅) → download → apply → local flush. Manual @ ~360k: ~30 s–1 min; 0→~300k jump. **Save:** upload ~4% / ~135 MB then `ERR_NETWORK` — **T-060.1.4 FIXED** (the 1 MB global body cap had been reaching the version route; hardened `GlobalBodyLimit` skip + production-like IT; curl 140 MB → 201).
+- **Loading:** Four-phase overlay on **cold** load: **restoring** (T-060.1.1 ✅) → download → apply → local flush. **Warm return** (T-062.2): restoring → local flush only (no download/apply). Manual @ ~360k cold: ~30 s–1 min; 0→~300k jump. **Dev alt-tab:** overlay should not reappear after extended background (T-062.2). **Save:** T-060.1.4 FIXED.
 - **Dirty:** Local autosave to y-indexeddb; server save is manual semver POST.
 - **Blocked phases:** DEM/Z-axis (Phase 2), asset registry (Phase 5/6), ruler/LoS viewshed (Phase 8).
 
@@ -62,7 +62,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 
 | Endpoint | Method | When called | Response shape |
 |----------|--------|-------------|----------------|
-| `GET /missions/:id` | GET | Boot | `Mission` |
+| `GET /missions/:id` | GET | **Cold** boot only (warm return skips — T-062.2) | `Mission` |
 | `GET /missions/:id/versions/current` | GET | Hydrate | `MissionVersion` |
 | `POST /missions/:id/versions` | POST | Save Version | `MissionVersion` (409 dup semver; **256 MB** route cap → **413** over it, T-060; other JSON routes stay 1 MB) |
 | `GET /missions/:id/export` | GET | Export preview | camelCase envelope |
@@ -85,6 +85,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M3.15 — [x] T-060 scale load/save (shipped `b1fd25a` — load partial pass @ ~360k; Save ~142 MB → 201)
 ### M3.16 — [x] T-061 drag-move @ 360k (good enough — motion ~60 fps; boundaries via `slotIconCache` — spec: [t061_drag_move_hotfix.md](../../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md))
 ### M3.17 — [x] T-062 incremental bindings @ 360k (classifier + bulk delete ≤10k — spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md))
+### M3.18 — [x] T-062.2 editor session / alt-tab resilience (Vite reload guard + warm session — spec: [t062_2_editor_session_persistence.md](../../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md))
 ### M4 — [ ] T-063+ scale program + DEM/registry (see MC ROADMAP §Map performance)
 
 ## Test Plan
@@ -102,5 +103,6 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 - **[PERF-003] Initial load** — **Shipped T-060:** restoring label within 1–2 s; ~30 s–1 min @ 360k; 0→300k jump remains (**T-062.1+** IDB streaming). Pan **100+ fps** @ 360k when idle.
 - **[PERF-004] Save Version** — **Resolved T-060.1.4 / shipped T-060.** Verified: curl 140 MB → 201; browser Save @ ~367k/~142 MB → 201 (2026-06-23).
 - **[PERF-005] Drag-move @ 360k** — **Resolved T-061 (good enough).** Motion ~60 fps sustained; pickup/release materially improved via `slotIconCache` + bindings slot fast path. Mega optimizations deferred ([MC ROADMAP §Deferred mega optimizations](../../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md)). Spec: [t061_drag_move_hotfix.md](../../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md).
-- **[PERF-006] Incremental bindings @ 360k** — **Resolved T-062.** Asset drop, delete (≤10k/batch), meta, editor-layers on O(k) path; batched `removeEntities` + `slotCount`. Verified delete 4k + undo 6k. Spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md).
+- **[PERF-006] Incremental bindings @ 360k** — **Resolved T-062.** Spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md).
+- **[PERF-007] Alt-tab / session reload @ 360k** — **Resolved T-062.2.** Extended alt-tab (Firefox dev) no longer re-triggers full load overlay; warm session skips server GET on same-tab return. Spec: [t062_2_editor_session_persistence.md](../../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md).
 - [FD-003](../TRACKING.md): Phases 2/5/6/8 — see [Mission Creator hub](../../../Design_Docs/Mission_Creator_Architecture/README.md).

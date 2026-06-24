@@ -9,6 +9,14 @@ interface Scheduler {
 }
 
 export async function yieldToUi(): Promise<void> {
+  // Backgrounded tab (T-062.2): rAF is suspended/throttled when the document is hidden, so a
+  // chunk loop awaiting requestAnimationFrame would stall until the tab regains focus — an
+  // in-progress load freezes mid-flight. There's nothing to paint while hidden anyway, so a
+  // bare macrotask yield keeps the loop advancing to completion in the background.
+  if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+    await new Promise((r) => setTimeout(r, 0))
+    return
+  }
   const sched = (globalThis as { scheduler?: Scheduler }).scheduler
   if (sched && typeof sched.yield === 'function') await sched.yield()
   else await new Promise((r) => setTimeout(r, 0))

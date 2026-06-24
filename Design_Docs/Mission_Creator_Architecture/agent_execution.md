@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator. T-057–T-062 shipped (T-062 incremental bindings @ 360k). Active: T-063..T-067. Eden T-068+."
+overview: "Self-contained agent handoff for Mission Creator. T-057–T-062.2 shipped. Active: T-063..T-067. Eden T-068+."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to Design_Docs/Mission_Creator_Architecture/agent_execution.md"
@@ -24,7 +24,7 @@ todos:
     content: "PHASE 9: Compiler + Export + useMissionEditor autosave (only after 3.5, 7b, 7a complete)"
     status: completed
   - id: eden-backlog
-    content: "T-057–T-062 SHIPPED (T-062 incremental bindings @ 360k). Active: T-063..T-067. Eden T-068+."
+    content: "T-057–T-062.2 SHIPPED. Active: T-063..T-067. Eden T-068+."
     status: in_progress
   - id: phase-blocked
     content: "DEFERRED until after Eden P0-P2: Phase 2 DEM/tiles, full registry/Arsenal (Phases 5-6), Phase 8 tools — do not start without user approval"
@@ -35,7 +35,7 @@ isProject: false
 # AGENT EXECUTION CONTRACT
 
 > **Phase completion log (T-033–T-040):** PRE-3.5 ✅ DOC-0 ✅ 3.5 ✅ 7b ✅ 7a ✅ 9 ✅.
-> **North star:** **1M–10M editable entities** via **T-059..T-067**. **T-060 shipped** (`b1fd25a`). **T-061 shipped (good enough)** — drag @ ~360k. **T-062 shipped** — incremental bindings (drop/delete/meta/layers + bulk delete @ 360k). **Active: T-063..T-067.** Mega optimizations deferred ([ROADMAP.md](ROADMAP.md) §Deferred mega optimizations). Eden **T-068+**.
+> **North star:** **1M–10M editable entities** via **T-059..T-067**. **T-060 shipped** (`b1fd25a`). **T-061 shipped (good enough)** — drag @ ~360k. **T-062 shipped** — incremental bindings @ 360k. **T-062.2 shipped** — editor session / alt-tab resilience (Vite reload guard + warm session fast path). **Active: T-063..T-067.** Mega optimizations deferred ([ROADMAP.md](ROADMAP.md) §Deferred mega optimizations). Eden **T-068+**.
 
 > **For the human:** Open a new Cursor Agent / CLI session and paste the prompt below. The agent reads this file; execute **open** phases only.
 
@@ -46,7 +46,7 @@ Read CLAUDE.md first. Mission Creator is Eden-first (locked 2026-06): the shell 
 PRE-3.5–9 are DONE (T-033–T-040). Open work = the Eden parity backlog in
 eden/gap_analysis.md — P0 remaining + P1 + P2 — shipped as T-053+ slices BEFORE Track A
 Phase 2 (map tiles A-01, DEM A-03/A-04) and DEM-dependent Phase 8 tools. Authority:
-ROADMAP.md §Current strategy → this file's Decisions log for UX locks. **T-060–T-062 shipped.** **Active: T-063..T-067** → Eden **T-068+**.
+ROADMAP.md §Current strategy → this file's Decisions log for UX locks. **T-060–T-062.2 shipped.** **Active: T-063..T-067** → Eden **T-068+**.
 A thin Track B registry (B-01) for Eden P0 (P0-01..03) is in scope; full registry/Arsenal and
 tiles/DEM are deferred. After each slice: `cd frontend && npm run build && npm run lint`. Do not
 commit unless I ask.
@@ -55,7 +55,7 @@ commit unless I ask.
 Shorter variant:
 
 ```
-ROADMAP.md §Current strategy → @agent_execution.md §ACTIVE SLICE. **T-062 shipped.** **Active: T-063..T-067** → Eden **T-068+**.
+ROADMAP.md §Current strategy → @agent_execution.md §ACTIVE SLICE. **T-062.2 shipped.** **Active: T-063..T-067** → Eden **T-068+**.
 ```
 
 ## Agent roles — Cursor vs Claude Code (locked 2026-06)
@@ -305,7 +305,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Multi-select** | **Marquee box** is the primary multi-select method. Shift+click additive toggle is optional bonus, not required for v1. |
 | **Center camera** | **No auto flyTo on click.** Select unit → press **Spacebar** to center camera on selection (map or outliner). |
 | **Delete** | **Delete/Backspace** removes selected entities; **undoable** (one transaction). No confirmation dialog. |
-| **Load conflict** | When API `json_payload` and local IndexedDB disagree → **prompt user** to choose which to keep. |
+| **Load conflict** | When API `json_payload` and local IndexedDB disagree on a **cold** load → **prompt user** to choose which to keep. **Warm return** (T-062.2): same-tab session marker + local IDB content → skip GET — no spurious conflict after alt-tab reload. |
 | **Autosave** | **Debounced autosave** overwrites a single server **draft** on the mission. **Undo** = in-session. Manual **Save Version** creates semver snapshots for future Visual-Git/history. |
 | **Time of day** | Match **Arma 3 Eden** environment control (slider/scrub in environment UI — not preset-only dropdowns). Expose quick readout in top bar; fine control in Mission Settings. |
 | **Mission create entry** | **No standalone `/missions/create` route or sidebar tab** (T-048). `mission_maker+` creates from **New Mission** header (tooltip **⌘N/Ctrl+N**), **My Missions true-empty CTA** (no filters active), or **Cmd/Ctrl+N**. Close dossier Sheet before opening dialog. Form resets on every dialog close. Editor surfaces keep **Mission Creator** naming. |
@@ -325,9 +325,10 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Bulk paste at scale** (T-059) | `pasteSlots` batch O(n) append (`Map<squadId, ID[]>` + layer accumulator); post-paste selection cap (`BULK_SELECT_CAP = 500` → `none`); outliner leaf cap (`OUTLINER_LEAF_CAP = 500`) in **both** `EditorLayersSection.buildTree` and `OrbatSection.buildOrbat`. Chunked paste not needed. **Validated:** 6k paste loops smooth; **360k @ 100+ fps** pan. Spec: [`t059_bulk_paste_operations.md`](t059_bulk_paste_operations.md). |
 | **Drag-move @ 360k** (T-061 — **shipped, good enough**) | **T-061.0:** dual IconLayer + split drag state + rAF delta → ~60 fps sustained. **T-061.0.1:** `slotIconCache` O(k) + bindings slot fast path → pickup/release materially improved (minor release frame possible — deferred). Mega opts → [ROADMAP.md](ROADMAP.md) §Deferred mega optimizations. Spec: [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md). |
 | **Incremental bindings @ 360k** (T-062 — **shipped**) | **T-062.0:** `classifyTransaction` → O(k) Zustand patches (drop, delete, meta, editor-layers). **T-062.0.1:** batched `removeEntities`, `slotCount`/`slotsRevision`, `REMOVE_PATCH_CAP` 10k. Verified delete 4k + undo 6k @ ~360k. IDB streaming / save batch → **T-062.1+**. Spec: [`t062_incremental_bindings.md`](t062_incremental_bindings.md). |
-| **Eden-first program order** (2026-06) | … **Exception:** **T-057..T-067** perf/scale program runs first (**T-062 shipped**; **active T-063..T-067**). Eden **T-068+**; **T-070+** terrain base after that. … |
+| **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
+| **Eden-first program order** (2026-06) | … **Exception:** **T-057..T-067** perf/scale program runs first (**T-062.2 shipped**; **active T-063..T-067**). Eden **T-068+**; **T-070+** terrain base after that. … |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049; Save Version still compiles payload only. |
-| **Phase order** | … **T-057–T-062 shipped.** **Active: T-063..T-067** → Eden **T-068+** → **T-070+** terrain base (optional). … |
+| **Phase order** | … **T-057–T-062.2 shipped.** **Active: T-063..T-067** → Eden **T-068+** → **T-070+** terrain base (optional). … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. Do **not** pursue T-061.1 / release repack collapse until T-063..T-067 + Eden milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement the P0 backlog from `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
 
@@ -336,7 +337,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 ## Agent rules (mandatory)
 
 1. **Read first:** `CLAUDE.md` (conventions), then this file, then `engineering_plan.md` §0–§2.
-2. **Start at `ROADMAP.md` §Current strategy + §Map performance:** **T-062 shipped.** **Active: T-063** spatial index. Eden **T-068+** after scale milestones.
+2. **Start at `ROADMAP.md` §Current strategy + §Map performance:** **T-062.2 shipped.** **Active: T-063** spatial index. Eden **T-068+** after scale milestones.
 3. **Verify gate** after every phase:
    ```bash
    cd frontend && npm run build && npm run lint
@@ -355,9 +356,9 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ## ACTIVE SLICE — T-063 spatial index (then T-064..T-067)
 
-**T-060 + T-060.1.* shipped** in commit `b1fd25a` (2026-06-23). **T-061 shipped (good enough)** — spec: [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md). **T-062 shipped** — T-062.0 classifier + T-062.0.1 bulk delete (`incPatchPlan`, batched `removeEntities`, `slotCount`/`slotsRevision`, `REMOVE_PATCH_CAP` 10k). Spec: [`t062_incremental_bindings.md`](t062_incremental_bindings.md).
+**T-060 + T-060.1.* shipped** in commit `b1fd25a` (2026-06-23). **T-061 shipped (good enough)** — spec: [`t061_drag_move_hotfix.md`](t061_drag_move_hotfix.md). **T-062 shipped** — T-062.0 classifier + T-062.0.1 bulk delete. Spec: [`t062_incremental_bindings.md`](t062_incremental_bindings.md). **T-062.2 shipped** — editor session / alt-tab resilience (`viteReloadGuard`, `editorSession`, background-safe yields). Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md).
 
-**T-062 acceptance (shipped):** asset drop instant @ ~360k; delete 150/4000 incremental (no crash); drag not regressed; undo 6000 delete OK (full snapshot on undo txn — acceptable). IDB 0→300k jump and save batch API remain **T-062.1+** stretch.
+**T-062.2 acceptance (shipped):** Firefox dev alt-tab 30+ min → no automatic load overlay @ ~360k; edits preserved; cold load + Save regression OK.
 
 **Next:** **T-063** rbush spatial index (pick/marquee @ scale) → T-064..T-067. **Eden T-068+** after scale milestones.
 

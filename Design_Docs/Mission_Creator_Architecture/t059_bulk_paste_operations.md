@@ -160,4 +160,4 @@ items d/e (design preserved above).
 
 ## After T-059
 
-**T-060.1.4:** Fix mid-upload @ ~135 MB — ✅ (`b1fd25a`). **T-061** ✅ drag-move good enough. **T-062** ✅ incremental bindings. **Active: T-063..T-067.** Spec: [`t062_incremental_bindings.md`](t062_incremental_bindings.md). **Eden T-068+.**
+**T-060.1.4:** Fix mid-upload @ ~135 MB — ✅ (`b1fd25a`). **T-061** ✅. **T-062** ✅. **T-062.2** ✅. **Active: T-063..T-067.** **Eden T-068+.**

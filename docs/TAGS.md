@@ -44,6 +44,7 @@ Supporting docs use **descriptive snake_case** filenames (no numeric prefixes): 
 | **T-062** | Incremental bindings @ 360k — classifier + bulk delete (**shipped**) | [`t062_incremental_bindings.md`](../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md) |
 | **T-062.0** | (sub) `incPatchPlan` + O(k) store patches (**shipped**) | [`t062_incremental_bindings.md`](../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md) §T-062.0 |
 | **T-062.0.1** | (sub) Batched delete + `slotCount`/`slotsRevision` (**shipped**) | [`t062_incremental_bindings.md`](../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md) §T-062.0.1 |
+| **T-062.2** | Editor session / alt-tab resilience — Vite reload guard + warm session (**shipped**) | [`t062_2_editor_session_persistence.md`](../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) |
 | **T-062.1+** | IDB streaming + save batch API (**stretch — not shipped**) | MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance |
 | **T-063..T-067** | Scale program → 1M–10M (**active — after T-062**) | MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance |
 | **T-070+** | Terrain base + sparse deltas (future — millions of map props) | [`t070_terrain_base_mission_layers.md`](../Design_Docs/Mission_Creator_Architecture/t070_terrain_base_mission_layers.md) |

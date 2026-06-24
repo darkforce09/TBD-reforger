@@ -74,7 +74,7 @@ Left and right panels are **docked flush** to the viewport edges; the map fills 
 | **Multi-select** | **Marquee box** is the primary multi-select method. **Ctrl/Cmd+click** toggles slots in/out (T-053). Shift+click range-select is optional bonus, not shipped yet. |
 | **Center camera** | **No auto flyTo on click.** Select unit → press **Spacebar** to center camera on selection (map or outliner). |
 | **Delete** | **Delete/Backspace** removes selected entities; **undoable** (one transaction). No confirmation dialog. |
-| **Load conflict** | When API `json_payload` and local IndexedDB disagree → **prompt user** to choose which to keep. |
+| **Load conflict** | When API `json_payload` and local IndexedDB disagree on a **cold** load → **prompt user** to choose which to keep. **Warm return** (T-062.2): skip GET when session marker + local content — no spurious conflict after alt-tab. |
 | **Autosave** | **Debounced autosave** overwrites a single server **draft** on the mission. **Undo** = in-session. Manual **Save Version** creates semver snapshots for future Visual-Git/history. |
 | **Time of day** | Match **Arma 3 Eden** environment control (slider/scrub in environment UI — not preset-only dropdowns). Expose quick readout in top bar; fine control in Mission Settings. |
 | **Copy/paste** (T-056) | **Ctrl/Cmd+C** copies selected **slots** to an in-editor clipboard; **Ctrl/Cmd+V** pastes at the map cursor preserving relative layout (centroid → cursor; off-map → +20m/+20m). One undo step. Cut / paste-at-original deferred. |

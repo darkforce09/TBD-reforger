@@ -140,6 +140,7 @@ export function useMissionDoc(
 
   useEffect(() => {
     let mountedHere = true
+    if (import.meta.env.DEV) console.debug('[mission-doc] mount', { missionKey, instanceKey })
     // Open a bulk-sync window BEFORE binding + before IndexedDB replay, so the async
     // replay (which lands between here and 'synced') and the prime coalesce into one
     // store flush at endBulkSync instead of flushing per-transaction (T-060 load).
@@ -152,15 +153,40 @@ export function useMissionDoc(
     // BEFORE 'synced' fires, with no per-entity signal. Poll the slot count each animation
     // frame so the overlay shows "Reading local save…" with a growing count within ~1–2s of
     // open — fixing the stuck-at-0% dead zone. Cancelled on 'synced' or unmount.
+    // Visibility-aware (T-062.2): rAF is suspended in a backgrounded tab, so a load that
+    // starts (or continues) while hidden would stop reporting progress. When hidden, poll on
+    // a setInterval instead; switch back to rAF when the tab is visible. Only one timer is
+    // ever live at a time.
     let restoreRaf: number | null = null
-    const pollRestore = () => {
-      reportLoad(restoringPhase(md.entities.slots.size))
-      restoreRaf = requestAnimationFrame(pollRestore)
-    }
-    restoreRaf = requestAnimationFrame(pollRestore)
-    const stopRestorePoll = () => {
+    let restoreInterval: ReturnType<typeof setInterval> | null = null
+    let polling = true
+    const tick = () => reportLoad(restoringPhase(md.entities.slots.size))
+    const clearTimers = () => {
       if (restoreRaf != null) cancelAnimationFrame(restoreRaf)
       restoreRaf = null
+      if (restoreInterval != null) clearInterval(restoreInterval)
+      restoreInterval = null
+    }
+    const startPoll = () => {
+      if (!polling) return
+      clearTimers()
+      if (document.visibilityState === 'hidden') {
+        restoreInterval = setInterval(tick, 500)
+      } else {
+        const rafPoll = () => {
+          tick()
+          restoreRaf = requestAnimationFrame(rafPoll)
+        }
+        restoreRaf = requestAnimationFrame(rafPoll)
+      }
+    }
+    const onVisibilityChange = () => startPoll()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    startPoll()
+    const stopRestorePoll = () => {
+      polling = false
+      clearTimers()
+      document.removeEventListener('visibilitychange', onVisibilityChange)
     }
 
     // Once the local snapshot has loaded, seed defaults if this is a fresh mission
@@ -184,6 +210,7 @@ export function useMissionDoc(
 
     return () => {
       mountedHere = false
+      if (import.meta.env.DEV) console.debug('[mission-doc] unmount', { missionKey, instanceKey })
       stopRestorePoll()
       unbind()
       // Balance the bulk window if we unmounted before 'synced' fired. After unbind,
@@ -204,7 +231,10 @@ export function useMissionDoc(
         setInstanceKey((k) => k + 1)
       }
     }
-  }, [md, undo, dbName, missionKey, reportLoad])
+    // instanceKey is only read for the dev mount/unmount log; an instanceKey bump already
+    // recreates md (via the useMemo above), so the effect re-runs regardless. Listed to
+    // satisfy exhaustive-deps without changing behavior.
+  }, [md, undo, dbName, missionKey, reportLoad, instanceKey])
 
   return { md, undo, docStatus, loadProgress }
 }

@@ -1208,6 +1208,16 @@
 | **Inputs** | Y.Doc observer events |
 | **Outputs** | Incremental Zustand patches; `iconCacheVersion` bumps |
 | **Edge cases** | Bulk paste / `addEditorLayer` / empty-doc bootstrap / `removeEditorLayer` → full snapshot fallback. Undo large multi-delete → full snapshot (verified OK @ 6k undo). IDB 0→300k jump → **T-062.1+**. `_patchSlots` drag release still O(n) spread — deferred mega opt |
+
+#### PERF-SESSION-001 — Editor session / alt-tab (T-062.2)
+
+| Field | Value |
+|-------|-------|
+| **Goal** | Alt-tab back to editor without automatic full load overlay; warm same-tab return skips multi-MB server GET |
+| **Trigger** | Extended background tab (dev: Vite WS disconnect); same-tab reload with warm `sessionStorage` marker |
+| **Procedure** | Dev: `viteReloadGuard` blocks `vite:beforeFullReload` on `/missions/:id/edit`. `editorSession.ts` marks ready → on reboot, `onSynced` skips GET when warm + `hasLocalContent(md)`. `yieldToUi` + restore poll visibility-aware |
+| **Acceptance** | `- [x] Alt-tab 30+ min → no overlay (Firefox dev @ ~360k)` `- [x] Edits preserved` `- [x] Cold load unchanged` |
+| **Edge cases** | Warm path trusts local IDB — remote server changes undetected until cold load. New tab = cold. `dirty` UI flag resets on reload (data in IDB). Undo stack session-only |
 | **Acceptance** | `- [x] Asset drop instant @ 360k` `- [x] Delete 150/4000 no crash` `- [x] Drag not regressed` `- [x] Undo 6000 delete OK` `- [x] build + lint clean` |
 | **Eden parity** | Eden:XFORM-PLACE-001 (drop), Eden:DELETE-001 |
 | **Status** | **shipped** — spec [`t062_incremental_bindings.md`](t062_incremental_bindings.md) |

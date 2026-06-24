@@ -22,6 +22,11 @@ import {
   type LoadProgress,
   type MissionDocHandle,
 } from './useMissionDoc'
+import {
+  clearEditorSession,
+  markEditorSessionReady,
+  readWarmEditorSession,
+} from './editorSession'
 import { buildVersionBlob, compileMission, compileMissionWithProgress } from '../compiler/compile'
 import { toMissionExport } from '../compiler/exportSchema'
 import {
@@ -153,6 +158,20 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
   const onSynced = useCallback(
     (md: MissionDoc, onLoadProgress?: (p: LoadProgress) => void) => {
       if (!missionId) return
+      // Warm session fast path (T-062.2): if THIS mission was marked ready earlier this tab
+      // session (e.g. before an alt-tab HMR reload) and IndexedDB has already replayed its
+      // content into the doc, skip the multi-MB GET entirely. Title/terrain/env are already
+      // in md.meta from y-indexeddb; restore currentSemver from the session record. Trusts
+      // local IDB — remote changes aren't seen until a cold load (see editorSession.ts).
+      const warm = readWarmEditorSession(missionId)
+      if (warm && hasLocalContent(md)) {
+        lastRowMeta.current = null
+        setCurrentSemver(warm.currentSemver)
+        return Promise.resolve()
+      }
+      // Cold load (no warm record, a different mission, or no local content yet): drop any
+      // stale marker so a mid-boot reload can't wrongly trust it. The ready effect re-marks.
+      if (!hasLocalContent(md)) clearEditorSession()
       // Return the chain so useMissionDoc holds the loading overlay until the server
       // payload is hydrated (or the request fails); the .catch resolves either way.
       return api
@@ -200,6 +219,19 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
   )
 
   const { md, undo, docStatus, loadProgress } = useMissionDoc(missionId, { onSynced })
+
+  // Once the editor is ready, record a warm session marker (T-062.2) so a subsequent boot
+  // of this mission in the same tab (e.g. an alt-tab HMR reload) can skip the server GET.
+  // Reads slotCount straight off the store (no O(n) recompute) and carries currentSemver,
+  // which lives here, not in useMissionDoc.
+  useEffect(() => {
+    if (docStatus === 'ready' && missionId) {
+      markEditorSessionReady(missionId, {
+        slotCount: useMapStore.getState().slotCount,
+        currentSemver,
+      })
+    }
+  }, [docStatus, missionId, currentSemver])
 
   // Mark unsaved on any local (user) edit; INIT/persistence-origin updates don't count.
   useEffect(() => {
@@ -331,6 +363,14 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
           setCurrentSemver(semver)
           setDirty(false)
         }
+        // Keep the warm marker's semver current so a post-save reload restores the right
+        // version without a GET (T-062.2).
+        if (missionId) {
+          markEditorSessionReady(missionId, {
+            slotCount: useMapStore.getState().slotCount,
+            currentSemver: semver,
+          })
+        }
         return { ok: true, debug: { ...report } }
       } catch (e) {
         // Surface the real failure (T-060): the body cap (413) and backend messages were
@@ -393,6 +433,9 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
         hydrateMissionDoc(md, conflict)
         if (lastRowMeta.current) applyMissionRowMeta(md, lastRowMeta.current)
         setDirty(false)
+        // Adopted the server payload — drop any warm marker so the next boot re-validates
+        // against the server (the ready effect re-marks once this state settles). T-062.2.
+        clearEditorSession()
       } else {
         setDirty(true) // local kept → it differs from the server, so it's unsaved
       }
