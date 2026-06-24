@@ -79,10 +79,14 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
-## Status (latest: **T-062.1 shipped** — 2026-06; chunked IDB slot restore @ 360k)
+## Status (latest: **T-062.1.1 shipped** — 2026-06; Save orbat dedup)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
+- T-062.1.1 **Mission Creator — Save orbat payload dedup**. Save Version omits duplicate `orbat[]`
+  (editor-only POST); Go `services.ParseOrbatTemplate` derives ORBAT from `editor` for Event attach.
+  Export keeps full superset. `make test-it` + FE build/lint clean. Spec:
+  [`t062_1_1_batch_save.md`](Design_Docs/Mission_Creator_Architecture/t062_1_1_batch_save.md).
 - T-062.1 **Mission Creator — chunked IDB slot restore @ 360k**. v2 persistence (`tbd-mission-persist`):
   meta JSON + 5k slot chunks via `idb`; v2 boot skips y-indexeddb; one-time v1→v2 migration deletes
   legacy `tbd-mission-${id}`. Determinate restoring progress (no 0→300k jump on 2nd+ load). Debounced
@@ -470,8 +474,7 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** **T-062.1 shipped.** **Active: T-062.1.1** batch save
-(orbat dedup) → **T-063..T-067** scale program (spatial index → virtualized outliner → LOD → worker → spatial chunks).
+**Not yet built / next (Mission Creator):** **T-062.1.1 shipped.** **Active: T-063..T-067** scale program (spatial index → virtualized outliner → LOD → worker → spatial chunks).
 Mega render/bindings optimizations **deferred**
 — MC [`ROADMAP.md`](Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Deferred mega optimizations.
 **T-070+** (after Eden T-068+): optional **terrain base + sparse deltas** for millions of map props — dual-layer model; do **not** replace Y.Doc/ORBAT. See [t070_terrain_base_mission_layers.md](Design_Docs/Mission_Creator_Architecture/t070_terrain_base_mission_layers.md). **Eden P1-07+** resumes at **T-068+**.

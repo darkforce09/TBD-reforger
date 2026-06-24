@@ -25,8 +25,9 @@ export function formatBytes(n: number): string {
 const utf8Bytes = (s: string): number => new TextEncoder().encode(s).length
 
 /** Fast, sampled estimate of the compiled version payload size (bytes). Samples up to 20 slots,
- *  averages their JSON byte length, and extrapolates over the slot count with a ~1.35× factor for
- *  the orbat + editor.slots duplication, plus a small envelope constant. No full compile. */
+ *  averages their JSON byte length, and extrapolates over the slot count, plus a small envelope
+ *  constant. Save Version omits the top-level orbat (T-062.1.1), so the body is just editor.slots
+ *  + envelope — no duplication factor. No full compile. */
 export function estimateCompiledBytes(state: MapSnapshot): number {
   const ids = Object.keys(state.slotsById)
   const n = ids.length
@@ -38,8 +39,7 @@ export function estimateCompiledBytes(state: MapSnapshot): number {
     sampleBytes += utf8Bytes(JSON.stringify(state.slotsById[ids[i]]))
   }
   const avgSlotBytes = sampleBytes / sampleCount
-  // editor.slots (full slot objects) + orbat (role/loadout/tag per slot) ≈ 1.35× editor.slots.
-  return Math.round(avgSlotBytes * n * 1.35 + ENVELOPE)
+  return Math.round(avgSlotBytes * n + ENVELOPE)
 }
 
 /** Exact local Y.Doc footprint in bytes (the CRDT / IndexedDB size, not the compiled upload). */

@@ -24,18 +24,30 @@ export interface MissionPayload {
   schemaVersion: 1
   map: { terrain: string; bounds: [number, number, number, number] }
   environment: Record<string, unknown>
-  orbat: OrbatSquad[]
+  /** Backend ORBAT contract. Omitted on Save Version (T-062.1.1) to halve the payload —
+   *  the server derives it from `editor` when absent (services.ParseOrbatTemplate). Export
+   *  (compileMission) still includes it. */
+  orbat?: OrbatSquad[]
   loadouts: Record<string, unknown>
   objectives: unknown[]
   vehicles: unknown[]
   markers: unknown[]
-  /** Editor-only fidelity block — ignored by the backend ORBAT parser. */
+  /** Editor-only fidelity block — the lossless reload source and (when `orbat` is omitted)
+   *  the server's ORBAT-derivation source. */
   editor: {
     factions: unknown[]
     squads: unknown[]
     slots: unknown[]
     editorLayers: unknown[]
   }
+}
+
+/** Compile knobs (T-062.1.1). `omitOrbat` drops the redundant top-level `orbat[]` from the
+ *  payload (Save Version) — slots already live in `editor.slots`, and the server re-derives
+ *  ORBAT from the editor graph. Export leaves it false so the file is self-contained. */
+export interface CompileOptions {
+  omitOrbat?: boolean
+  chunkSize?: number
 }
 
 /** Compile the store snapshot (useMapStore.getState()) into the json_payload superset. */
@@ -69,16 +81,20 @@ export function compileMission(s: MapSnapshot): MissionPayload {
 
 /** Async, chunked compile for large missions (T-060): yields to the event loop every
  *  `chunkSize` slots so the tab stays responsive at 50k+, and reports compile progress
- *  (`done`/`total` slots) for the Save Version bar. Same payload shape as compileMission. */
+ *  (`done`/`total` slots) for the Save Version bar. With `omitOrbat` (T-062.1.1) the
+ *  redundant top-level `orbat[]` is dropped — the squad/slot pass still runs to drive the
+ *  progress bar, it just doesn't materialize the array. Same payload shape otherwise. */
 export async function compileMissionWithProgress(
   s: MapSnapshot,
   onProgress?: (done: number, total: number) => void,
-  chunkSize = 5000,
+  options?: CompileOptions,
 ): Promise<MissionPayload> {
   const terrainId = s.meta?.terrain ?? 'everon'
   const terrain = getTerrain(terrainId)
+  const chunkSize = options?.chunkSize ?? 5000
+  const buildOrbat = !options?.omitOrbat
 
-  const orbat: OrbatSquad[] = []
+  const orbat: OrbatSquad[] | undefined = buildOrbat ? [] : undefined
   let processed = 0
   let sinceYield = 0
   const total = Object.keys(s.slotsById).length
@@ -92,13 +108,14 @@ export async function compileMissionWithProgress(
         .map((slid) => s.slotsById[slid])
         .filter(Boolean)
         .sort((a, b) => a.index - b.index)
-        .map((slot) => ({ role: slot.role, loadout: '', tag: slot.tag ?? '' }))
-      orbat.push({
-        faction: faction.key,
-        callsign: squad.callsign ?? '',
-        squad: squad.name,
-        slots,
-      })
+      if (orbat) {
+        orbat.push({
+          faction: faction.key,
+          callsign: squad.callsign ?? '',
+          squad: squad.name,
+          slots: slots.map((slot) => ({ role: slot.role, loadout: '', tag: slot.tag ?? '' })),
+        })
+      }
       processed += slots.length
       sinceYield += slots.length
       // Yield to the event loop every ~chunkSize slots so the tab stays responsive.
@@ -131,7 +148,7 @@ async function assemblePayloadWithProgress(
   s: MapSnapshot,
   terrainId: string,
   terrain: { width: number; height: number },
-  orbat: OrbatSquad[],
+  orbat: OrbatSquad[] | undefined,
   chunkSize: number,
 ): Promise<MissionPayload> {
   const slots = await chunkedValues(s.slotsById, chunkSize)
@@ -139,7 +156,7 @@ async function assemblePayloadWithProgress(
     schemaVersion: 1,
     map: { terrain: terrainId, bounds: [0, 0, terrain.width, terrain.height] },
     environment: { ...(s.meta?.environment ?? {}) },
-    orbat,
+    ...(orbat ? { orbat } : {}),
     loadouts: { ...s.loadoutsById },
     objectives: Object.values(s.objectivesById),
     vehicles: Object.values(s.vehiclesById),

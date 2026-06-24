@@ -1168,10 +1168,10 @@
 | **Postconditions** | Version 201; dirty cleared |
 | **Inputs** | `useMapStore` snapshot |
 | **Outputs** | POST body; progress UI |
-| **Edge cases** | Mid-upload `ERR_NETWORK` @ ~4% / ~135 MB with `direct` route → **FIXED T-060.1.4** (1 MB global cap had reached the version route; not the 256 MB cap); payload >256 MB → pre-gate block + route 413; batch upload → **T-062.1.1** only |
-| **Acceptance** | `- [x] E1/E2/E3b` `- [x] SZ toolbelt + exact MB in Save dialog (T-060.1.3)` `- [x] Debug panel on fail + 256 MB pre-gate + server logs (T-060.1.3)` `- [x] ~360k failure fully diagnosed (T-060.1.3)` `- [x] version POST 140 MB → 201 via curl + production-like make test-it (T-060.1.4)` `- [x] browser Save @ ~367k → 201 (2026-06-23)` |
-| **Status** | **shipped** — T-060..T-060.1.4; browser + curl @ ~140 MB verified |
-| **Evidence** | `useMissionEditor.ts`, `compiler/compile.ts`, `lib/missionSize.ts`, `BottomToolbelt.tsx`, `TopCommandStrip.tsx`, `internal/handlers/missions.go`, `internal/middleware/bodylimit.go` (`isMissionVersionPOST`), `internal/handlers/missions_bodylimit_integration_test.go`, `internal/middleware/bodylimit_test.go`, `scripts/mission-version-upload-repro.sh` |
+| **Edge cases** | Mid-upload `ERR_NETWORK` @ ~4% / ~135 MB → **FIXED T-060.1.4**; payload >256 MB → pre-gate 413; **T-062.1.1:** Save omits duplicate `orbat[]` (editor-only POST); Go derives ORBAT for events |
+| **Acceptance** | `- [x] E1/E2/E3b` `- [x] SZ + Save dialog (T-060.1.3)` `- [x] browser Save @ ~367k → 201` `- [x] T-062.1.1 IT: editor-only → event ORBAT` `- [ ] Manual Save @ ~360k smaller body (pending)` |
+| **Status** | **shipped** — T-060..T-060.1.4 + **T-062.1.1** orbat dedup |
+| **Evidence** | `useMissionEditor.ts`, `compiler/compile.ts`, `lib/missionSize.ts`, `internal/services/mission_payload.go`, `internal/handlers/missions_orbat_integration_test.go`, `t062_1_1_batch_save.md` |
 
 ---
 

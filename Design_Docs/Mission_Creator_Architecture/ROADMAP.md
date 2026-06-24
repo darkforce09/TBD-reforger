@@ -27,7 +27,7 @@
 
 Work [`eden/gap_analysis.md`](eden/gap_analysis.md) **numbered backlog** in priority tier, interleaving small **P1** slices between heavier **P0** blocks:
 
-1. **P1 quick (code-only)** — … → ~~**T-062.2**~~ ✅ editor session → ~~**T-062.1**~~ ✅ chunked IDB load → **T-062.1.1 batch save → T-063..T-067 scale** → …
+1. **P1 quick (code-only)** — … → ~~**T-062.1**~~ ✅ chunked IDB load → ~~**T-062.1.1**~~ ✅ Save orbat dedup → **T-063..T-067 scale** → …
 2. **P0 ship-blocking** — P0-01 registry (+ thin B-01) → P0-02 markers → P0-03 vehicles → P0-05 ORBAT authoring UI
 3. **P1 remainder** — P1-05..P1-11 (multi-place, rotate, Space conflict, vehicle crew, …)
 4. **P2 power-user** — P2-01..P2-07
@@ -48,7 +48,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | Pan | `useOrthographicView` `setViewState` every pan frame re-renders `TacticalMap` + children | ✅ `useSelectTool` rAF-coalesces pan to one `setViewState`/frame (layers already memoized) |
 | Gestures | `pickObject` on pointerdown + hover during pan | ✅ Hover picking removed entirely; pointerdown pick (icon vs empty) unchanged; pan never picks |
 
-**1M–10M editable entities** is the **north star** (Arma 3 reference ~8M map objects); reach it **step-by-step** (not one commit). **Validated (2026-06):** pan/zoom **100+ fps @ 360k** (T-057 + T-059); repeat **6k paste** loops smooth. **Bulk paste — fixed (T-059).** **T-060 shipped** (`b1fd25a`): load partial pass @ ~360k; Save @ ~367k/~142 MB → **201**. **T-061 shipped (good enough):** drag motion ~60 fps @ 360k. **T-062 shipped:** incremental bindings — asset drop, delete (≤10k/batch), meta, editor-layers @ 360k. **T-062.2 shipped:** editor session / alt-tab — no automatic reload overlay after extended background (dev Vite guard + warm session fast path). **T-062.1 shipped:** chunked IDB slot restore — v2 `tbd-mission-persist`; determinate restoring @ ~360k (no 0→300k jump on 2nd+ load). **Active: T-062.1.1 batch save → T-063..T-067.** Remaining bottlenecks: full `docToSnapshot` on paste/hydrate/undo-multi-add, linear picking, sidebar virtualization. Phased track:
+**1M–10M editable entities** is the **north star** (Arma 3 reference ~8M map objects); reach it **step-by-step** (not one commit). **Validated (2026-06):** pan/zoom **100+ fps @ 360k** (T-057 + T-059); repeat **6k paste** loops smooth. **Bulk paste — fixed (T-059).** **T-060 shipped** (`b1fd25a`): load partial pass @ ~360k; Save @ ~367k/~142 MB → **201**. **T-061 shipped (good enough):** drag motion ~60 fps @ 360k. **T-062 shipped:** incremental bindings — asset drop, delete (≤10k/batch), meta, editor-layers @ 360k. **T-062.2 shipped:** editor session / alt-tab — no automatic reload overlay after extended background (dev Vite guard + warm session fast path). **T-062.1 shipped:** chunked IDB slot restore — v2 `tbd-mission-persist`; determinate restoring @ ~360k (no 0→300k jump on 2nd+ load). **T-062.1.1 shipped:** Save orbat dedup — editor-only POST; Go derives ORBAT for events. **Active: T-063..T-067.** Remaining bottlenecks: full `docToSnapshot` on paste/hydrate/undo-multi-add, linear picking, sidebar virtualization. Phased track:
 
 | Tag | Phase | Entity target | FPS / UX target |
 |-----|-------|---------------|-----------------|
@@ -69,8 +69,8 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 | **T-062.0.1** | (sub) Bulk delete | ≤10k/batch | **Shipped** — batched `removeEntities`, `slotCount`/`slotsRevision`, `REMOVE_PATCH_CAP` 10k |
 | **T-062.2** | (sub) Session | Alt-tab / reload | **Shipped** — Vite reload guard + warm session + background yields. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md) |
 | **T-062.1** ✅ | Scale-B load | 360k+ | Chunked IDB slot restore (v2 `tbd-mission-persist`) — **shipped**; spec: [`t062_1`](t062_1_idb_streaming_load.md) |
-| **T-062.1.1** | Scale-B save | 360k+ | Backend batch save / orbat payload dedup — **active** |
-| **T-063** | Scale-C | 50k+ pick | Spatial index (rbush) for pick/marquee — after T-062.1.1 |
+| **T-062.1.1** ✅ | Scale-B save | 360k+ | Save orbat dedup (editor-only POST; Go derives ORBAT) — **shipped**; spec: [`t062_1_1`](t062_1_1_batch_save.md) |
+| **T-063** | Scale-C | 50k+ pick | Spatial index (rbush) for pick/marquee — **active** |
 | **T-064** | Scale-D | 50k+ UI | Virtualized outliner |
 | **T-065** | Scale-E | 100k–1M | Cluster/LOD zoomed out |
 | **T-066** | Scale-F | 1M+ export | Worker offload |
@@ -88,7 +88,7 @@ Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.
 
 | 1M–10M props | T-061–T-067 + **T-070+** | ✅ T-059 | Terrain base + deltas; mission patch save |
 
-**T-057–T-062.1 shipped.** **Active: T-062.1.1 → T-063..T-067** → Eden **T-068+** → **T-070+** terrain base (optional).
+**T-057–T-062.1.1 shipped.** **Active: T-063..T-067** → Eden **T-068+** → **T-070+** terrain base (optional).
 
 Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shipped T-057).
 
@@ -121,6 +121,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **[`t062_incremental_bindings.md`](t062_incremental_bindings.md)** | **T-062** — Incremental bindings @ 360k (**shipped**) |
 | **[`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md)** | **T-062.2** — Editor session / alt-tab resilience (**shipped**) |
 | **[`t062_1_idb_streaming_load.md`](t062_1_idb_streaming_load.md)** | **T-062.1** — Chunked IDB slot restore @ 360k (**shipped**) |
+| **[`t062_1_1_batch_save.md`](t062_1_1_batch_save.md)** | **T-062.1.1** — Save orbat dedup (**shipped**) |
 | **[`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md)** | **T-057** — Map perf hotfix: ≥55 fps pan/zoom @ 200+ slots (shipped) |
 | **[`t056_eden_p1_copy_paste.md`](t056_eden_p1_copy_paste.md)** | **T-056** — Eden P1-02: Ctrl+C/V copy-paste at cursor (slots) (shipped) |
 | **[`t055_asset_browser_search.md`](t055_asset_browser_search.md)** | **T-055** — Eden P1-04: Asset browser search (filters Factions tree) (shipped) |
@@ -134,7 +135,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
 | **[`t070_terrain_base_mission_layers.md`](t070_terrain_base_mission_layers.md)** | **T-070+** — Terrain base + mission layers (future; Base + Delta for props only) |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-062.1 shipped; active T-062.1.1 → T-063..T-067 |
+| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-062.1.1 shipped; active T-063..T-067 |
 
 ---
 
@@ -251,7 +252,7 @@ Tracks A and B can progress in parallel **during the Eden push** (registry serve
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_eden_p1_undo_shortcuts.md`](t052_eden_p1_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **P1-03** / KEY-UNDO-001. |
 
-**Next (see §Current strategy):** ~~T-057~~ ✅ … ~~T-062.1~~ ✅ chunked IDB load. **Active: T-062.1.1 batch save → T-063..T-067**. **Eden P1-07+** at **T-068+**.
+**Next (see §Current strategy):** ~~T-057~~ ✅ … ~~T-062.1.1~~ ✅ Save orbat dedup. **Active: T-063..T-067**. **Eden P1-07+** at **T-068+**.
 
 ---
 
@@ -451,8 +452,8 @@ Phases **1b** = **Eden parity on flat grid.** Phases 2–4 = **map + accurate po
 | Collapse drag-release to one cache bump | T-061 follow-up | Merge restore + `_patchSlots` into single `iconCacheVersion` tick | Optional polish; known residual |
 | Editor session / alt-tab resilience | **T-062.2** ✅ | Warm session + dev Vite guard; spec [`t062_2`](../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) |
 | Full incremental bindings (interactive edits) | **T-062** ✅ | Classifier + O(k) patches for drop/delete/meta/layers; bulk delete ≤10k | **Shipped** — spec [`t062_incremental_bindings.md`](t062_incremental_bindings.md) |
-| IDB streaming + batch save API | **T-062.1** ✅ load / **T-062.1.1** save | Chunked v2 restore; backend patch upload | Load **shipped** — save **active** |
-| Spatial index for pick/marquee | **T-063** | rbush instead of linear `pickObjects` | After T-062.1.1 |
+| IDB streaming + Save dedup | **T-062.1** ✅ load / **T-062.1.1** ✅ save | Chunked v2 restore; editor-only Save + Go ORBAT derive | **Both shipped** |
+| Spatial index for pick/marquee | **T-063** | rbush instead of linear `pickObjects` | **Active** |
 | Virtualized outliner | **T-064** | Sidebar @ 100k+ leaves | T-063..T-067 |
 | Cluster / LOD zoomed out | **T-065** | Icon clustering when zoomed out | T-063..T-067 |
 | Worker offload compile/export | **T-066** | `compileMission` off main thread @ 1M+ | T-063..T-067 |

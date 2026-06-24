@@ -271,4 +271,4 @@ Layers and ORBAT trees. Spec: [`t059_bulk_paste_operations.md`](t059_bulk_paste_
 ## Related
 
 - Prior: [t055_asset_browser_search.md](t055_asset_browser_search.md), [t053_eden_p1_additive_select.md](t053_eden_p1_additive_select.md)
-- Next: … → ~~**T-062.2**~~ ✅ → ~~**T-062.1**~~ ✅ → **T-062.1.1 batch save → T-063..T-067** scale program; Eden **T-068+**
+- Next: … → ~~**T-062.2**~~ ✅ → ~~**T-062.1**~~ ✅ → ~~**T-062.1.1**~~ ✅ → **T-063..T-067** scale program; Eden **T-068+**

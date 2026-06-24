@@ -76,7 +76,7 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 ## Out of scope
 
 - Ref-counted module-level `MissionDocSession` (Fix D)
-- T-062.1.1 batch save API
+- ~~T-062.1.1 Save orbat dedup~~ ✅ — spec [`t062_1_1_batch_save.md`](t062_1_1_batch_save.md)
 - Backend lightweight metadata endpoint
 - Prod tab-discard prevention (memory / DeckGL)
 
@@ -85,4 +85,5 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 ## After T-062.2
 
 - ~~**T-062.1** chunked IDB load~~ ✅ — spec [`t062_1_idb_streaming_load.md`](t062_1_idb_streaming_load.md)
-- **Active:** **T-062.1.1** batch save → **T-063** spatial index → T-064..T-067
+- ~~**T-062.1.1** Save orbat dedup~~ ✅
+- **Active:** **T-063** spatial index → T-064..T-067

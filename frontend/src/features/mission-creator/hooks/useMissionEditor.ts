@@ -332,14 +332,19 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
       }
       try {
         // Compile off the render path, chunked + yielding so a 50k+ mission doesn't hang.
-        const payload = await compileMissionWithProgress(snapshot, (done, total) =>
-          onProgress?.({
-            phase: 'compiling',
-            value: total ? done / total : undefined,
-            slotCount,
-            estimatedBytes: report.estimatedBytes,
-            localDocBytes: report.localDocBytes,
-          }),
+        // omitOrbat (T-062.1.1): drop the redundant top-level orbat[] — slots already ship in
+        // editor.slots and the server derives ORBAT from the editor graph on event attach.
+        const payload = await compileMissionWithProgress(
+          snapshot,
+          (done, total) =>
+            onProgress?.({
+              phase: 'compiling',
+              value: total ? done / total : undefined,
+              slotCount,
+              estimatedBytes: report.estimatedBytes,
+              localDocBytes: report.localDocBytes,
+            }),
+          { omitOrbat: true },
         )
         logPhase('compiling')
         // Build the request body as a Blob, streaming editor.slots (T-060.1.2): posting a pre-built
@@ -382,8 +387,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
             ok: false,
             error:
               `Compiled payload is ${formatBytes(body.size)} — server limit is ${SERVER_VERSION_BODY_LIMIT >> 20} MB. ` +
-              `This mission duplicates slot data (orbat + editor); needs T-062.1+ incremental save, or raise ` +
-              `MISSION_VERSION_MAX_BODY_BYTES on the dev API.`,
+              `Raise MISSION_VERSION_MAX_BODY_BYTES on the API for a mission this large.`,
             debug: { ...report },
           }
         }

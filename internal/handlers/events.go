@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/tbd-milsim/reforger-backend/internal/middleware"
 	"github.com/tbd-milsim/reforger-backend/internal/models"
+	"github.com/tbd-milsim/reforger-backend/internal/services"
 )
 
 // Sentinel errors used to map registration transaction failures to HTTP codes.
@@ -40,33 +40,17 @@ func canRegisterStatus(s models.EventStatus) bool {
 	return s == models.EventScheduled || s == models.EventOpen
 }
 
-// orbatSlotTemplate is one ordered, distinct slot in a squad: a role with its
-// loadout and an optional specialization tag (e.g. "MED" / "ENG").
-type orbatSlotTemplate struct {
-	Role    string `json:"role"`
-	Loadout string `json:"loadout"`
-	Tag     string `json:"tag"`
-}
+// The ORBAT template types live in the services package (shared with the payload
+// parser/deriver); aliased here so the rest of this file is unchanged.
+type orbatSlotTemplate = services.OrbatSlotTemplate
+type orbatSquadTemplate = services.OrbatSquadTemplate
 
-// orbatSquadTemplate is a squad and its ordered slot list. The slot's position in
-// the list is its 1-based number on the ORBAT.
-type orbatSquadTemplate struct {
-	Faction  string              `json:"faction"`
-	Callsign string              `json:"callsign"`
-	Squad    string              `json:"squad"`
-	Slots    []orbatSlotTemplate `json:"slots"`
-}
-
-// parseOrbatTemplate extracts the "orbat" squad list from a mission version
-// payload. This is the automated ORBAT source: factions/squads/roles/loadouts are
-// derived from the uploaded mission.json (authored in the mission editor) rather
-// than created by hand.
+// parseOrbatTemplate resolves the ORBAT squad list from a mission version payload —
+// an explicit top-level "orbat" wins, otherwise it's derived from the editor graph
+// (Save Version omits the redundant orbat as of T-062.1.1). Thin wrapper over the
+// shared services parser.
 func parseOrbatTemplate(payload []byte) []orbatSquadTemplate {
-	var p struct {
-		Orbat []orbatSquadTemplate `json:"orbat"`
-	}
-	_ = json.Unmarshal(payload, &p)
-	return p.Orbat
+	return services.ParseOrbatTemplate(payload)
 }
 
 // materializeSlots expands the parsed squads into OrbatSlot records for one

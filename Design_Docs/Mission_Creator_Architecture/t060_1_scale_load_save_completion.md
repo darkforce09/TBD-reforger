@@ -20,7 +20,7 @@ Manual verify @ **~300k objects** (2026-06):
 | **Save** | ~~Upload ~4% → ERR_NETWORK~~ | 360k → 201 | **FIXED T-060.1.4** (stale API + 1 MB global wrap; curl 140 MB → 201; browser verify pending) |
 | **Hydrate bulk window** | — | “hydrate in bulk coalesce” | `endBulkSync()` runs **before** server hydrate completes |
 
-T-060 was the **foundation** (gate, coalesce, API cap, compile progress). **T-060.1 completes acceptance.** **T-061** drag-move shipped (good enough). **T-062** incremental bindings @ 360k. **T-062.2** editor session / alt-tab. **T-062.1** chunked IDB load. **Active: T-062.1.1 → T-063..T-067.** Optional **T-061.1** typed-array → deferred mega optimizations backlog.
+T-060 was the **foundation** (gate, coalesce, API cap, compile progress). **T-060.1 completes acceptance.** **T-061** drag-move shipped (good enough). **T-062** incremental bindings @ 360k. **T-062.2** editor session / alt-tab. **T-062.1** chunked IDB load. **T-062.1.1** Save orbat dedup. **Active: T-063..T-067.**
 
 **North-star reminder:** Linear load time @ 300k → ~10 min @ 10M without incremental IDB + bindings at scale. T-060.1 targets **360k acceptance** (determinate UX + save works); **≤10 s @ 1M** remains **T-066** stretch. **T-062.1** shipped v2 chunked IDB restore.
 
@@ -396,7 +396,7 @@ Requires root `.env` `ALLOWED_ORIGINS=http://localhost:5173` (already set). **Ve
 ### Do not block on
 
 - ≤10 s save @ 1M → T-066 worker compile
-- Payload dedup (orbat vs editor.slots) → future optimization
+- Payload dedup (orbat vs editor.slots) → **shipped T-062.1.1**
 
 ---
 
@@ -426,7 +426,7 @@ Requires root `.env` `ALLOWED_ORIGINS=http://localhost:5173` (already set). **Ve
 
 **Leading hypotheses (T-060.1.4 — RESOLVED 2026-06-23):** see §T-060.1.4 proven table — **stale `go run` binary** + 1 MB global wrap; not 256 MB cap, not OOM, not 5 MB CMS limit.
 
-**Not batch upload (this slice):** current API is one `POST /missions/:id/versions` with full `json_payload`. Chunked/batch upload needs a **new backend contract** → **T-062.1.1** batch save, not a frontend hack.
+**Not batch upload (T-060 era):** current API is one `POST /missions/:id/versions` with full `json_payload`. Multipart/chunk upload remains **deferred**. **T-062.1.1 shipped Option A** — orbat dedup only (editor-only Save; Go derives ORBAT); not a frontend hack.
 
 ### Goal
 
@@ -439,7 +439,7 @@ Know **exactly** how big the mission is (local + compiled upload bytes) before a
 `frontend/src/features/mission-creator/lib/missionSize.ts`:
 
 - `formatBytes(n: number): string` — macOS Finder style (`187.4 MB`, `1.2 GB`).
-- `estimateCompiledBytes(state: MapSnapshot): number` — sample 20 slots, extrapolate `editor.slots` + `orbat` duplication factor (~1.35×); fast, no full compile.
+- `estimateCompiledBytes(state: MapSnapshot): number` — sample 20 slots, extrapolate `editor.slots` only (~1.0× since **T-062.1.1**; was ~1.35× with duplicate `orbat[]`); fast, no full compile.
 - `getLocalDocBytes(md: MissionDoc): number` — `Y.encodeStateAsUpdate(md.doc).byteLength` (IndexedDB / CRDT footprint).
 - `SERVER_VERSION_BODY_LIMIT = 256 << 20` — shared constant with pre-gate message.
 
@@ -644,7 +644,7 @@ curl dies mid-upload → server/middleware. curl **201** → browser/axios/memor
 ### DO NOT (this slice)
 
 - Re-implement E1/E2/E3b or T-060.1.3 observability
-- Add batch/chunk upload (needs new API → **T-062.1.1**)
+- Add batch/chunk upload (multipart **deferred** — T-062.1.1 shipped **orbat dedup only**)
 - Raise 256 MB cap (payload is 135 MB — already under)
 - **Edit documentation** — **Cursor (Composer 2.5)** owns all doc sync; Claude Code reads specs only
 - Commit until user says. Tag **T-060** = single commit T-060..**T-060.1.4** after Save → **201**
@@ -666,7 +666,7 @@ curl dies mid-upload → server/middleware. curl **201** → browser/axios/memor
 | **Production-like IT** | CI catches middleware regression |
 | **Server log correlation** | `CreateVersion` entry line splits handler vs network |
 | **curl repro** | Isolates browser from Go |
-| **Batch upload / dedup** | **T-062.1.1** — not this slice |
+| **Save orbat dedup** | **T-062.1.1** ✅ — editor-only Save + Go ORBAT derive (multipart upload deferred) |
 
 ---
 
@@ -696,7 +696,7 @@ Partner theory review: backend mid-stream reset is PLAUSIBLE. "5 MB MaxBytesRead
 
 ## DO NOT
 - Re-implement E1/E2/E3b or T-060.1.3 observability
-- Add batch/chunk upload (T-062.1.1 only)
+- Add batch/chunk upload (multipart **deferred** — T-062.1.1 shipped orbat dedup only)
 - **Edit any documentation files** — Cursor (Composer 2.5) owns all doc sync; read docs only
 - Commit until I say. Tag T-060 = single commit T-060..T-060.1.4 after Save → 201
 
@@ -762,7 +762,7 @@ We do NOT know exact payload bytes yet. Implement measurement + debug BEFORE mor
 
 ## DO NOT
 - Re-implement E1/E2/E3b
-- Add batch/chunk upload (needs new API → T-062.1.1)
+- Add batch/chunk upload (multipart **deferred** — T-062.1.1 shipped orbat dedup only)
 - Commit until I say. Tag T-060 = T-060..T-060.1.3 single commit after Save → 201 OR fully diagnosed.
 
 ## PART 1 — missionSize.ts

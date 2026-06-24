@@ -519,16 +519,15 @@ camelCase mod export; save versions; scrub history.
 The compiler's output **must remain compatible** with the existing backend, which already
 parses ORBAT out of `MissionVersion.JSONPayload`:
 
-- `internal/handlers/events.go:64` `parseOrbatTemplate` reads:
+- `internal/services/mission_payload.go` `ParseOrbatTemplate` (T-062.1.1): if legacy `orbat[]` present, use it; else derive from `editor` (factions → squads → slots, index order). `events.go` `parseOrbatTemplate` is a thin wrapper.
   ```jsonc
   { "orbat": [ { "faction": "...", "callsign": "...", "squad": "...",
                  "slots": [ { "role": "...", "loadout": "...", "tag": "..." } ] } ] }
   ```
-- `internal/handlers/events.go:75` `materializeSlots` expands each squad's slots into ORBAT
+- `internal/handlers/events.go` `materializeSlots` expands each squad's slots into ORBAT
   records (`Faction, Callsign, Squad, Role, Loadout, Tag, SlotIndex`).
 
-Therefore the editor's `json_payload` is a **superset**: it MUST contain the `orbat[]` block in
-exactly that shape (so Events can still auto-build ORBAT), **plus** extended keys the mod needs —
+**Save Version (T-062.1.1):** POST body is **editor-only** — `orbat[]` omitted; Go derives on event attach. **Export** and legacy versions still include explicit `orbat[]`. Extended keys the mod needs —
 `map`, `environment`, `objectives`, `vehicles`, `markers`, `loadouts`. Example skeleton:
 
 ```jsonc

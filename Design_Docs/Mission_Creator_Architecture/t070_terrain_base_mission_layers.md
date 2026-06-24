@@ -73,7 +73,7 @@ flowchart TB
 
 - Keep **Y.Doc** normalized model ([`schema.ts`](../../frontend/src/features/tactical-map/state/schema.ts)).
 - **T-061.0.1 ✅ shipped:** Slot-position fast path in `bindings.ts` + `slotIconCache` (drag @ 360k — good enough).
-- **T-062:** Interactive incremental `bindings.ts` — patch Zustand O(k) on classified everyday edits @ 360k (**shipped**). **T-062.2:** editor session / alt-tab resilience (**shipped**). **T-062.1:** chunked IDB load (**shipped**). Batch save → **T-062.1.1**.
+- **T-062:** Interactive incremental `bindings.ts` — patch Zustand O(k) on classified everyday edits @ 360k (**shipped**). **T-062.2:** editor session / alt-tab resilience (**shipped**). **T-062.1:** chunked IDB load (**shipped**). **T-062.1.1** ✅ Save orbat dedup. **Active: T-063..T-067**.
 - **T-066:** Worker `compileMission` for export/save assembly.
 - **Save payload:** `orbat[]` (backend contract) + compact `editor` patch or full block for missions under ~50k; avoid duplicating orbat in editor block long-term.
 

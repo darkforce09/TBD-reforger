@@ -102,7 +102,7 @@ Evidence:
 | **Global JSON cap** | **Keep 1 MB** for all other routes |
 | **Load phases (execution order)** | restoring 0–15% → download 15–35% → apply 35–55% → local 55–100% |
 | **Save phases** | compiling → preparing → uploading |
-| **Batch upload** | **Not T-060** — needs **T-062.1.1** batch save API |
+| **Save payload dedup** | **T-062.1.1** ✅ — omit duplicate `orbat[]` on Save (not multipart upload) |
 | **≤10 s @ 1M** | Out of scope — **T-062** / **T-066** |
 
 ---

@@ -46,9 +46,9 @@ Supporting docs use **descriptive snake_case** filenames (no numeric prefixes): 
 | **T-062.0.1** | (sub) Batched delete + `slotCount`/`slotsRevision` (**shipped**) | [`t062_incremental_bindings.md`](../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md) §T-062.0.1 |
 | **T-062.2** | Editor session / alt-tab resilience — Vite reload guard + warm session (**shipped**) | [`t062_2_editor_session_persistence.md`](../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) |
 | **T-062.1** | Chunked IDB slot restore (**shipped**) | [`t062_1_idb_streaming_load.md`](../Design_Docs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md) |
-| **T-062.1.1** | Backend batch save / orbat dedup (**active**) | MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance |
+| **T-062.1.1** | Save orbat dedup (**shipped**) | [`t062_1_1_batch_save.md`](../Design_Docs/Mission_Creator_Architecture/t062_1_1_batch_save.md) |
 | **T-062.2** | Editor session / alt-tab (**shipped**) | [`t062_2_editor_session_persistence.md`](../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) |
-| **T-063..T-067** | Scale program → 1M–10M (**after T-062.1.1**) | MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance |
+| **T-063..T-067** | Scale program → 1M–10M (**active**) | MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance |
 | **T-070+** | Terrain base + sparse deltas (future — millions of map props) | [`t070_terrain_base_mission_layers.md`](../Design_Docs/Mission_Creator_Architecture/t070_terrain_base_mission_layers.md) |
 | **T-051** | Title PATCH sync (**deferred**, not started) | [`t049_track_a_quick_p0.md`](../Design_Docs/Mission_Creator_Architecture/t049_track_a_quick_p0.md) amendment |
 | **FD-0xx** | Frontend deferred work | [`frontend/docs/TRACKING.md`](../frontend/docs/TRACKING.md) |

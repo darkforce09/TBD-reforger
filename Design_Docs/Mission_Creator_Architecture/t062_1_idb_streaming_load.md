@@ -1,7 +1,7 @@
 # T-062.1 — Chunked IDB slot restore (fix 0→300k load jump)
 
 **Status:** **shipped** — build + lint + tsc clean; manual verify @ ~360k: migration once, then determinate restoring progress with smooth done/total (no 0→300k jump on 2nd+ load)  
-**Git tag on ship:** **T-062.1** (pending commit — code landed, doc sync in same commit)  
+**Git tag on ship:** **T-062.1** (`4ad27fe`)  
 **Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) §Load interpretation · [t062_2_editor_session_persistence.md](t062_2_editor_session_persistence.md)
 
 **Prerequisites:** T-062.2 shipped (`693e227`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~360k slots).
@@ -114,7 +114,7 @@ Single DB **`tbd-mission-persist`**, two object stores:
 
 ## Out of scope (T-062.1)
 
-- T-062.1.1 backend batch save / orbat payload dedup
+- ~~T-062.1.1 Save orbat dedup~~ → **shipped** ([`t062_1_1_batch_save.md`](t062_1_1_batch_save.md))
 - T-063 spatial index
 - ≤10s @ 1M (T-066 worker stretch)
 - Post-hydrate v2 write without user edit
@@ -123,8 +123,8 @@ Single DB **`tbd-mission-persist`**, two object stores:
 
 ## After T-062.1
 
-- **Active:** **T-062.1.1** batch save → **T-063** spatial index → T-064..T-067
-- Spec: (T-062.1.1 spec TBD on ship)
+- ~~**T-062.1.1** Save orbat dedup~~ ✅ — spec [`t062_1_1_batch_save.md`](t062_1_1_batch_save.md)
+- **Active:** **T-063** spatial index → T-064..T-067
 
 ---
 

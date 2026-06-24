@@ -39,7 +39,7 @@
 ### States
 - **Chromeless:** No platform Sidebar/TopNav (`fullBleed` + `chromeless` route handles).
 - **Loading:** Four-phase overlay on **cold** load: **restoring** (T-062.1 ✅ v2 chunked / legacy migrate once) → download → apply → local flush. **Warm return** (T-062.2): restoring → local flush only. **v2 @ ~360k:** determinate restoring `done/total` ticks smoothly (no 0→300k jump on 2nd+ load). **Dev alt-tab:** overlay should not reappear after extended background (T-062.2). **Save:** T-060.1.4 FIXED.
-- **Dirty:** Local autosave to v2 `idb` (`tbd-mission-persist`) on `LOCAL_ORIGIN` edits (debounced); server save is manual semver POST. Server-adopted content not cached to v2 until first user edit.
+- **Dirty:** Local autosave to v2 `idb` on `LOCAL_ORIGIN` edits; Save Version posts **editor-only** payload (T-062.1.1 — no duplicate `orbat[]`); server derives ORBAT for events. Export keeps full superset.
 - **Blocked phases:** DEM/Z-axis (Phase 2), asset registry (Phase 5/6), ruler/LoS viewshed (Phase 8).
 
 ### Keyboard (host — `/missions/:id/edit`)
@@ -87,7 +87,8 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M3.17 — [x] T-062 incremental bindings @ 360k (classifier + bulk delete ≤10k — spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md))
 ### M3.18 — [x] T-062.2 editor session / alt-tab resilience (Vite reload guard + warm session — spec: [t062_2_editor_session_persistence.md](../../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md))
 ### M3.19 — [x] T-062.1 chunked IDB slot restore (v2 `tbd-mission-persist`; determinate restoring @ ~360k — spec: [t062_1_idb_streaming_load.md](../../../Design_Docs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md))
-### M4 — [ ] T-062.1.1 batch save + T-063+ scale program (see MC ROADMAP §Map performance)
+### M3.20 — [x] T-062.1.1 Save orbat dedup (editor-only POST; Go derives ORBAT — spec: [t062_1_1_batch_save.md](../../../Design_Docs/Mission_Creator_Architecture/t062_1_1_batch_save.md))
+### M4 — [ ] T-063 spatial index + T-064..T-067 scale program (see MC ROADMAP §Map performance)
 
 ## Test Plan
 
