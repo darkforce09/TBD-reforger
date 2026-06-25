@@ -1157,6 +1157,26 @@
 
 ---
 
+#### PERF-CLUSTER-001 — Cluster / LOD @ extreme zoom (T-065)
+
+| Field | Value |
+|-------|-------|
+| **Domain** | PERF |
+| **Goal** | At extreme zoom-out on mega missions (>500 slots), show pan-stable cluster discs; at normal edit zoom keep full detail IconLayer @ ~160 fps |
+| **Trigger** | Zoom to ≤ `ZOOM_CLUSTER_MAX` (-4) on mission with > `CLUSTER_SLOT_THRESHOLD` (500) slots |
+| **Preconditions** | T-061 pan-stable icon cache; T-063 spatial pick; slotClusterIndex kept in sync via `slotIconCache` mutators |
+| **Procedure** | `supercluster` in `slotClusterIndex.ts`; `getClusterMarkers` full-terrain pan-stable cache (T-065.2); `useClusterIconLayer` memoized on `markersVersion` + `iconCacheVersion`; `clusterMode` gates detail vs selected-only in `useIconLayer` |
+| **Postconditions** | Default open zoom -2 = all rings; cluster drill-in via `pickClusterAt` → `flyTo` +1; selected slots visible in cluster band |
+| **Inputs** | `slotIconCache` dense positions; Deck zoom; terrain bounds |
+| **Outputs** | Cluster disc `IconLayer` (count-sized discs, no TextLayer) |
+| **Edge cases** | ≤500 slots → never cluster; T-065.1 viewport-bbox pan stutter — fixed T-065.2; further cluster perf tuning deferred unless regression |
+| **Acceptance** | `- [x] Detail @ -2 ~160 fps @ 367k` `- [x] Pan-stable cluster path (T-065.2)` `- [x] Git tag T-065` |
+| **Eden parity** | Group icons when zoomed out (geo clusters v1 only) |
+| **Status** | working |
+| **Evidence** | `slotClusterIndex.ts`, `useClusterIconLayer.ts`, `constants.ts`, `TacticalMap.tsx`, `useSelectTool.ts`, `slotIconCache.ts` |
+
+---
+
 #### PERF-LOAD-001 — Fast initial load / hydrate gate (T-060 + T-060.1 + T-060.1.1)
 
 | Field | Value |

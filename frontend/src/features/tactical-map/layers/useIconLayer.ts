@@ -8,8 +8,9 @@ import { useMemo } from 'react'
 import { IconLayer } from '@deck.gl/layers'
 import { COORDINATE_SYSTEM } from '@deck.gl/core'
 import { useMapStore } from '../state/useMapStore'
-import { getBaseIcons } from '../state/slotIconCache'
+import { getBaseIcons, getSelectedIcons } from '../state/slotIconCache'
 import { selectDragOverlayIcons, type SlotIcon } from '../state/selectors'
+import type { Selection } from '../state/schema'
 
 const ICON_SIZE = 64
 const PRIMARY: [number, number, number, number] = [173, 198, 255, 255] // Aegis primary
@@ -57,9 +58,30 @@ const ICON_MAPPING = {
 // pickup/release, selection change and snapshot replace — NOT per drag frame (motion) and NOT
 // on pan, so neither regresses. `getBaseIcons()` hands a fresh array identity per version so
 // Deck re-packs, while reusing the SlotIcon objects.
-export function useIconLayer(): IconLayer<SlotIcon> {
+//
+// T-065: in cluster mode (`detail === false`) the cluster layers cover the bulk of the slots, so
+// the base IconLayer renders ONLY the current selection (highlighted, over the bubbles). `detail`
+// is a derived boolean — the layer rebuilds only when the mode flips, never per zoom tick.
+export function useIconLayer({
+  detail,
+  selection,
+}: {
+  detail: boolean
+  selection: Selection
+}): IconLayer<SlotIcon> {
   const iconCacheVersion = useMapStore((s) => s.iconCacheVersion)
-  const icons = getBaseIcons()
+  // Stable array identity across pan frames: getBaseIcons() returns a cached view per version,
+  // and the selected-only branch only re-derives when the mode/selection/version changes.
+  const icons = useMemo(
+    () =>
+      detail
+        ? getBaseIcons()
+        : getSelectedIcons(selection.kind !== 'none' ? new Set(selection.ids) : new Set()),
+    // iconCacheVersion is the cache-mutation signal getBaseIcons/getSelectedIcons read from —
+    // eslint can't see the dependency through the module-level cache.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [detail, selection, iconCacheVersion],
+  )
 
   return useMemo(
     () =>

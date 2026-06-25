@@ -12,6 +12,7 @@ import type { OrthographicView } from '@deck.gl/core'
 import { useMapStore } from '../state/useMapStore'
 import * as slotIconCache from '../state/slotIconCache'
 import * as slotSpatialIndex from '../state/slotSpatialIndex'
+import * as slotClusterIndex from '../state/slotClusterIndex'
 import type { ID } from '../state/schema'
 import type { MapViewState } from '../types'
 
@@ -38,6 +39,11 @@ interface UseSelectToolArgs {
   onViewStateChange: (params: { viewState: MapViewState }) => void
   /** Commit a group move (delta in world meters) — host wraps it in one transaction. */
   onEntitiesMove: (ids: ID[], delta: { x: number; y: number }) => void
+  /** T-065: when zoomed out on a large mission, a left click drills into the cluster under the
+   *  cursor instead of picking an individual (hidden) slot. */
+  clusterMode: boolean
+  /** Drill-in handler — recenter on the cluster centroid and zoom in (host owns the camera). */
+  onClusterDrill: (centroid: { x: number; y: number }) => void
 }
 
 export interface SelectToolHandlers {
@@ -53,6 +59,8 @@ export function useSelectTool({
   viewState,
   onViewStateChange,
   onEntitiesMove,
+  clusterMode,
+  onClusterDrill,
 }: UseSelectToolArgs): SelectToolHandlers {
   const gesture = useRef<Gesture>(null)
   // Pan is rAF-coalesced (T-057): a high-rate mouse can fire several pointermove events per
@@ -136,11 +144,14 @@ export function useSelectTool({
       // Left button: defer the decision (click vs move vs marquee) to the threshold. Do NOT
       // capture yet — a sub-threshold release is a click, handled in onPointerUp. Pick via the
       // spatial index (T-063) instead of Deck — the layer is no longer pickable.
+      // Cluster mode (T-065.1): never pickNearest the full rbush here — a press near a bubble
+      // would grab a slot hidden under it and start a move. Leave iconId null so only marquee /
+      // drill-in act until the user zooms into detail.
       const vp = makeViewport()
-      const iconId = vp ? slotSpatialIndex.pickNearest(px, vp) : null
+      const iconId = !clusterMode && vp ? slotSpatialIndex.pickNearest(px, vp) : null
       gesture.current = { type: 'pending-left', startPx: px, iconId }
     },
-    [localPt, makeViewport, containerRef, viewState],
+    [localPt, makeViewport, containerRef, viewState, clusterMode],
   )
 
   const onPointerMove = useCallback(
@@ -274,8 +285,20 @@ export function useSelectTool({
       if (g.type === 'pending-left') {
         const px = localPt(e)
         const vp = px ? makeViewport() : null
-        const id = px && vp ? slotSpatialIndex.pickNearest(px, vp) : null
         const additive = e.ctrlKey || e.metaKey
+        // Cluster mode (T-065): NEVER pickNearest the full rbush — that would select an
+        // individual slot hidden under a cluster bubble. A cluster hit drills in (no selection
+        // change); otherwise treat it as an empty click (plain = deselect, additive = preserve).
+        if (clusterMode) {
+          const marker = px && vp ? slotClusterIndex.pickClusterAt(px, vp, viewState.zoom) : null
+          if (marker) {
+            onClusterDrill({ x: marker.x, y: marker.y })
+          } else if (!additive) {
+            store.setSelection({ kind: 'none', ids: [] })
+          }
+          return
+        }
+        const id = px && vp ? slotSpatialIndex.pickNearest(px, vp) : null
         if (id) {
           if (additive) {
             // Ctrl/Cmd-click toggles this slot in/out of the current selection.
@@ -291,7 +314,16 @@ export function useSelectTool({
         }
       }
     },
-    [containerRef, localPt, makeViewport, onEntitiesMove, flushPan],
+    [
+      containerRef,
+      localPt,
+      makeViewport,
+      onEntitiesMove,
+      flushPan,
+      clusterMode,
+      onClusterDrill,
+      viewState,
+    ],
   )
 
   // Drop any in-flight pan/drag frame if the tool unmounts mid-gesture.

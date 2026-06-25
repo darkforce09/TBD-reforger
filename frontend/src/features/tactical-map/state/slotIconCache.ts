@@ -20,6 +20,8 @@
 import type { ID, Selection, Slot } from './schema'
 import type { SlotIcon } from './selectors'
 import * as spatialIndex from './slotSpatialIndex'
+import * as clusterIndex from './slotClusterIndex'
+import { CLUSTER_SLOT_THRESHOLD } from './constants'
 
 let dense: SlotIcon[] = []
 const index = new Map<ID, number>() // id -> position in `dense`
@@ -54,6 +56,10 @@ export function rebuildFromSlots(slotsById: Record<ID, Slot>, selection: Selecti
     })
   }
   spatialIndex.rebuild(dense)
+  // Only maintain the cluster index for missions large enough to ever cluster (T-065.1); clear it
+  // otherwise so switching from a large to a small mission leaves no stale points.
+  if (dense.length > CLUSTER_SLOT_THRESHOLD) clusterIndex.rebuild(dense)
+  else clusterIndex.clear()
   bump()
 }
 
@@ -76,6 +82,12 @@ export function append(slots: Slot[], selection: Selection): void {
     added.push(icon)
   }
   spatialIndex.insert(added)
+  // Cluster index (T-065.1): only when large. If this append crossed the threshold, the earlier
+  // points were never inserted — rebuild from the full dense set instead of insert(added).
+  if (dense.length > CLUSTER_SLOT_THRESHOLD) {
+    if (dense.length - added.length > CLUSTER_SLOT_THRESHOLD) clusterIndex.insert(added)
+    else clusterIndex.rebuild(dense)
+  }
   bump()
 }
 
@@ -96,6 +108,7 @@ export function remove(ids: ID[]): void {
     index.delete(id)
   }
   spatialIndex.remove(ids)
+  if (dense.length > CLUSTER_SLOT_THRESHOLD) clusterIndex.remove(ids)
   bump()
 }
 
@@ -142,6 +155,7 @@ export function patchPositions(ids: ID[], delta: { dx: number; dy: number }): vo
     patches[id] = { x: icon.x, y: icon.y }
   }
   spatialIndex.updatePositions(patches)
+  if (dense.length > CLUSTER_SLOT_THRESHOLD) clusterIndex.updatePositions(patches)
   bump()
 }
 
@@ -154,6 +168,7 @@ export function setPositions(patches: Record<ID, { x: number; y: number }>): voi
     icon.y = patches[id].y
   }
   spatialIndex.updatePositions(patches)
+  if (dense.length > CLUSTER_SLOT_THRESHOLD) clusterIndex.updatePositions(patches)
   bump()
 }
 
@@ -192,5 +207,18 @@ export function clearSlotIconCache(): void {
   view = []
   viewVersion = -1
   spatialIndex.clear()
+  clusterIndex.clear()
   bump()
+}
+
+/** Selected icons only (T-065) — the cluster-mode detail layer renders these over the cluster
+ *  bubbles so a selection stays visible + highlighted at any zoom. O(n) scan, but only on a
+ *  selection / snapshot change (iconCacheVersion), never per pan frame. Includes any excluded
+ *  (mid-drag) icons so a dragged selection doesn't blink out. */
+export function getSelectedIcons(selectedIds: Set<ID>): SlotIcon[] {
+  if (!selectedIds.size) return []
+  const out: SlotIcon[] = []
+  for (const icon of dense) if (selectedIds.has(icon.id)) out.push(icon)
+  for (const icon of excluded.values()) if (selectedIds.has(icon.id)) out.push(icon)
+  return out
 }

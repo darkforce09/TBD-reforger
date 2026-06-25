@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator. T-057–T-064 shipped. Active: T-065..T-067. Eden T-068+."
+overview: "Self-contained agent handoff for Mission Creator. T-057–T-065 shipped. Active: T-066..T-067. Eden T-068+."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to Design_Docs/Mission_Creator_Architecture/agent_execution.md"
@@ -358,13 +358,15 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ---
 
-## ACTIVE SLICE — T-065 cluster/LOD (then T-066..T-067)
+## ACTIVE SLICE — T-066 worker offload (then T-067 spatial chunks)
 
-**T-064 shipped** — virtualized outliner @ ~367k; spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). Includes T-064.1 scroll-ref hotfix (callback-ref `scrollEl`). Manual verify: outliner on first paint; scrollable 367k virtual rows; no tab freeze.
+**T-065 shipped** — cluster/LOD @ extreme zoom; spec: [`t065_cluster_lod.md`](t065_cluster_lod.md). `ZOOM_CLUSTER_MAX = -4`; default `-2` detail @ ~160 fps @ 367k.
+
+**T-064 shipped** (`8838e58`) — virtualized outliner; spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md).
 
 **T-063 shipped** — rbush spatial index; spec: [`t063_spatial_index.md`](t063_spatial_index.md).
 
-**Next:** **T-065** cluster/LOD → T-066 worker → T-067 spatial chunks. **Eden T-068+** after scale milestones.
+**Next:** T-066 worker → T-067 spatial chunks. **Eden T-068+** after scale milestones.
 
 ---
 

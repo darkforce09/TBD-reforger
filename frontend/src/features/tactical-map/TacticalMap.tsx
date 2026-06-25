@@ -11,10 +11,14 @@ import { getTerrain } from './coords/terrains'
 import { useOrthographicView } from './view/useOrthographicView'
 import { useBaseMapLayer } from './layers/useBaseMapLayer'
 import { useIconLayer, useDragIconLayer } from './layers/useIconLayer'
+import { useClusterIconLayer } from './layers/useClusterIconLayer'
 import { useSelectionLayer } from './layers/useSelectionLayer'
 import { useSelectTool } from './tools/useSelectTool'
 import { MapContextProvider, createMapContextValue } from './context/MapContext'
 import * as slotSpatialIndex from './state/slotSpatialIndex'
+import * as slotClusterIndex from './state/slotClusterIndex'
+import { useMapStore } from './state/useMapStore'
+import { ZOOM_CLUSTER_MAX, CLUSTER_SLOT_THRESHOLD } from './state/constants'
 import { ASSET_DND_MIME, type AssetDropPayload, type MapViewState, type TacticalMapProps } from './types'
 
 function TacticalMapInner({
@@ -30,14 +34,38 @@ function TacticalMapInner({
   const terrain = useMemo(() => getTerrain(terrainId), [terrainId])
   const { view, viewState, onViewStateChange, flyTo: viewFlyTo } =
     useOrthographicView(terrain)
-  const baseMap = useBaseMapLayer(terrain)
-  const iconLayer = useIconLayer()
-  const dragIconLayer = useDragIconLayer()
-  const selectionLayer = useSelectionLayer()
+
   // Drop zone + pointer-gesture host: Deck's controller ignores HTML5 drag/drop and
   // (with dragPan off) our custom drags, so both bubble to this container.
   const containerRef = useRef<HTMLDivElement>(null)
   const deckRef = useRef<DeckGLRef | null>(null)
+
+  // Cluster / LOD gating (T-065.2): only at/below ZOOM_CLUSTER_MAX (-4) on a large mission do we draw
+  // cluster discs (useClusterIconLayer) instead of every icon, with the base IconLayer rendering the
+  // selection only. @ ~367k, detail mode (all rings) already pans at ~160 fps, so clustering is
+  // reserved for extreme zoom-out. Derived from store slices that change on edit/zoom/selection.
+  const slotCount = useMapStore((s) => s.slotCount)
+  const selection = useMapStore((s) => s.selection)
+  const clusterMode = slotCount > CLUSTER_SLOT_THRESHOLD && viewState.zoom <= ZOOM_CLUSTER_MAX
+
+  const baseMap = useBaseMapLayer(terrain)
+  const iconLayer = useIconLayer({ detail: !clusterMode, selection })
+  const dragIconLayer = useDragIconLayer()
+  const selectionLayer = useSelectionLayer()
+  // Pan-stable cluster layer (T-065.2): reads the full-terrain module cache, so a pan returns the
+  // same data reference and the layer is not rebuilt per frame.
+  const clusterLayers = useClusterIconLayer({ clusterMode, deckZoom: viewState.zoom })
+
+  // Keep the cluster index's normalization window aligned with the active terrain.
+  useEffect(() => {
+    slotClusterIndex.setTerrain(terrain)
+  }, [terrain])
+
+  // Cluster drill-in (T-065): recenter on a cluster centroid and zoom one step closer.
+  const drillIntoCluster = useCallback(
+    (world: { x: number; y: number }) => viewFlyTo([world.x, world.y], 1),
+    [viewFlyTo],
+  )
   // Latest camera for the rAF cursor closure (so it reads fresh viewState without
   // re-scheduling on every render).
   const viewStateRef = useRef(viewState)
@@ -52,6 +80,8 @@ function TacticalMapInner({
     viewState,
     onViewStateChange,
     onEntitiesMove: onEntitiesMove ?? noopMove,
+    clusterMode,
+    onClusterDrill: drillIntoCluster,
   })
 
   // Click-select (select / Ctrl-toggle / deselect) lives in useSelectTool's pending-left
@@ -69,13 +99,18 @@ function TacticalMapInner({
       const r = el.getBoundingClientRect()
       const viewport = view.makeViewport({ width: r.width, height: r.height, viewState })
       if (!viewport) return
-      const id = slotSpatialIndex.pickNearest(
-        [e.clientX - r.left, e.clientY - r.top],
-        viewport,
-      )
+      const px: [number, number] = [e.clientX - r.left, e.clientY - r.top]
+      // Cluster mode (T-065): a dbl-click drills into the cluster under the cursor (zoom in)
+      // rather than opening Attributes on a hidden individual slot.
+      if (clusterMode) {
+        const marker = slotClusterIndex.pickClusterAt(px, viewport, viewState.zoom)
+        if (marker) drillIntoCluster({ x: marker.x, y: marker.y })
+        return
+      }
+      const id = slotSpatialIndex.pickNearest(px, viewport)
       if (id) onEntityActivate?.(id)
     },
-    [view, viewState, onEntityActivate],
+    [view, viewState, onEntityActivate, clusterMode, drillIntoCluster],
   )
 
   // Cursor read-out (toolbelt X/Y/Z) — computed by unprojecting the mouse ourselves and
@@ -204,7 +239,13 @@ function TacticalMapInner({
           }
           // dragPan off: left-drag is select/move, middle/right-drag pans (useSelectTool).
           controller={{ dragPan: false, doubleClickZoom: false }}
-          layers={[...(showGrid ? [baseMap] : []), iconLayer, dragIconLayer, selectionLayer]}
+          layers={[
+            ...(showGrid ? [baseMap] : []),
+            ...clusterLayers,
+            iconLayer,
+            dragIconLayer,
+            selectionLayer,
+          ]}
           // No onClick / onHover: click-select and picking moved to the slotSpatialIndex R-tree
           // (T-063), cursor coords come from our own rAF unproject (emitCursor). getCursor is
           // constant so Deck never computes isHovering (which would force GPU hover picking).

@@ -79,10 +79,11 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
-## Status (latest: **T-064 shipped** — 2026-06; virtualized outliner @ ~367k)
+## Status (latest: **T-065 shipped** — 2026-06; cluster/LOD @ extreme zoom)
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **Done:**
+- T-065 **Mission Creator — cluster/LOD @ extreme zoom**. `supercluster` index (`slotClusterIndex.ts`); pan-stable `getClusterMarkers` full-terrain cache (T-065.2); `ZOOM_CLUSTER_MAX = -4` — default zoom `-2` stays detail @ ~160 fps @ 367k; cluster discs + drill-in only when zoomed out past -4 on missions >500 slots. Spec: [`t065_cluster_lod.md`](Design_Docs/Mission_Creator_Architecture/t065_cluster_lod.md).
 - T-064 **Mission Creator — virtualized outliner @ ~367k**. `@tanstack/react-virtual` + segment-index flatten (`flattenOutliner.ts`, `VirtualOutliner.tsx`, `TreeRow.tsx`); `virtualSlotIds` + `VIRTUAL_SLOT_THRESHOLD=50`; replaces T-059 `OUTLINER_LEAF_CAP`. **T-064.1:** callback-ref `scrollEl` fixes blank outliner until first map selection. Manual @ ~367k: outliner on first paint; scrollable 367k virtual rows; no tab freeze. Spec: [`t064_virtualized_outliner.md`](Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md).
 - T-063 **Mission Creator — spatial index for click/marquee pick @ ~367k**. rbush R-tree (`slotSpatialIndex.ts`) kept in sync via `slotIconCache` mutators; `pickNearest` / `pickRect` replace Deck GPU pick; `slot-icons` `pickable: false`; click-select moved to `useSelectTool` pending-left pointerUp. FE build/lint clean; manual @ ~367k: significantly faster click/marquee. Spec: [`t063_spatial_index.md`](Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md).
 - T-062.1.1 **Mission Creator — Save orbat payload dedup**. Save Version omits duplicate `orbat[]`
@@ -475,7 +476,7 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Not yet built / next (Mission Creator):** **T-064 shipped.** **Active: T-065..T-067** scale program (cluster/LOD → worker → spatial chunks).
+**Not yet built / next (Mission Creator):** **T-065 shipped.** **Active: T-066..T-067** scale program (worker → spatial chunks).
 Mega render/bindings optimizations **deferred**
 — MC [`ROADMAP.md`](Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Deferred mega optimizations.
 **T-070+** (after Eden T-068+): optional **terrain base + sparse deltas** for millions of map props — dual-layer model; do **not** replace Y.Doc/ORBAT. See [t070_terrain_base_mission_layers.md](Design_Docs/Mission_Creator_Architecture/t070_terrain_base_mission_layers.md). **Eden P1-07+** resumes at **T-068+**.

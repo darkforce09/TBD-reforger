@@ -94,7 +94,7 @@ Full table: [`frontend/docs/TRACKING.md`](../../frontend/docs/TRACKING.md).
 
 ## Recommended next work
 
-1. **Mission Creator — T-065 cluster/LOD** (MC [ROADMAP](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance; ~~T-064~~ ✅ [`t064_virtualized_outliner.md`](../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md)) → **T-066..T-067** → Eden **T-068+** → **T-070+** terrain base. Mega optimizations deferred (MC ROADMAP §Deferred mega optimizations).
+1. **Mission Creator — T-065 cluster/LOD** (MC [ROADMAP](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Map performance; WIP uncommitted [`t065_cluster_lod.md`](../../Design_Docs/Mission_Creator_Architecture/t065_cluster_lod.md); ~~T-064~~ ✅ [`t064_virtualized_outliner.md`](../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md)) → **T-066..T-067** → Eden **T-068+** → **T-070+** terrain base.
 2. **Mission editor Track A Phase 2+** — map tiles (A-01), DEM (A-03) — **deferred until Eden P0–P2**
 3. **FD-008** — wiki markdown (low risk, high UX)
 4. **FD-001** — when backend exposes server/RCON endpoints

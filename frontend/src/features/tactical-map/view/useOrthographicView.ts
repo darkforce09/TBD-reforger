@@ -20,8 +20,9 @@ interface UseOrthographicView {
   view: OrthographicView
   viewState: MapViewState
   onViewStateChange: (params: { viewState: MapViewState }) => void
-  /** Recenter the camera on a common-space target [x, y] (stable identity). */
-  flyTo: (target: [number, number]) => void
+  /** Recenter the camera on a common-space target [x, y], optionally bumping the zoom by
+   *  `zoomDelta` (cluster drill-in, T-065). Stable identity. */
+  flyTo: (target: [number, number], zoomDelta?: number) => void
 }
 
 export function useOrthographicView(terrain: TerrainDef): UseOrthographicView {
@@ -32,7 +33,7 @@ export function useOrthographicView(terrain: TerrainDef): UseOrthographicView {
 
   const [viewState, setViewState] = useState<MapViewState>(() => ({
     target: terrainCenterPixel(terrain),
-    zoom: -3,
+    zoom: -2, // opens in detail mode (≥ ZOOM_DETAIL_MIN); pan/zoom out to cluster (T-065)
     minZoom: MIN_ZOOM,
     maxZoom: MAX_ZOOM,
   }))
@@ -52,10 +53,11 @@ export function useOrthographicView(terrain: TerrainDef): UseOrthographicView {
   )
 
   const flyTo = useCallback(
-    (target: [number, number]) => {
+    (target: [number, number], zoomDelta?: number) => {
       setViewState((prev) => ({
         ...prev,
         target: [clamp(target[0], 0, terrain.width), clamp(target[1], 0, terrain.height)],
+        zoom: zoomDelta ? clamp(prev.zoom + zoomDelta, MIN_ZOOM, MAX_ZOOM) : prev.zoom,
       }))
     },
     [terrain.width, terrain.height],

@@ -90,7 +90,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M3.20 — [x] T-062.1.1 Save orbat dedup (editor-only POST; Go derives ORBAT — spec: [t062_1_1_batch_save.md](../../../Design_Docs/Mission_Creator_Architecture/t062_1_1_batch_save.md))
 ### M4.21 — [x] T-063 spatial index (rbush pick/marquee @ ~367k — spec: [t063_spatial_index.md](../../../Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md))
 ### M4.22 — [x] T-064 virtualized outliner @ ~367k (incl. T-064.1 scroll-ref hotfix — spec: [t064_virtualized_outliner.md](../../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md))
-### M5 — [ ] T-065..T-067 scale program (cluster/LOD, worker, chunks — see MC ROADMAP §Map performance)
+### M5 — [ ] T-065..T-067 scale program (T-065 WIP uncommitted → worker → chunks — [`t065_cluster_lod.md`](../../Design_Docs/Mission_Creator_Architecture/t065_cluster_lod.md) + MC ROADMAP §Map performance)
 
 ## Test Plan
 
