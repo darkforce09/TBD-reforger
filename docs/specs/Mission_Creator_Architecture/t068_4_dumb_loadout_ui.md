@@ -1,7 +1,7 @@
 # T-068.4 — Dumb loadout picker + JSON download
 
 **Ticket:** T-068 · **Slice:** T-068.4  
-**Status:** **active** — depends on T-068.3 `useRegistry()` (shipped @ `da78452`)  
+**Status:** **shipped** @ `a85f16b` (git tag **T-068.4**)  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -13,20 +13,16 @@
 
 ---
 
-## Today vs T-068.4 (read this first)
+## Shipped @ T-068.4
 
-**Today there is no Arsenal UI.** The tab exists in [`AttributesModal.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/AttributesModal.tsx) as a **placeholder only**:
+**Arsenal tab is live** in [`AttributesModal.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/AttributesModal.tsx) + [`loadoutExport.ts`](../../../apps/website/frontend/src/features/mission-creator/loadout/loadoutExport.ts):
 
-- Copy: “The visual Loadout Forge … arrives with Phase 6”
-- Disabled button: “Open Loadout Forge (soon)”
-- Tooltip: “The Arsenal lands in a later phase”
+- Character slots only — four registry gear dropdowns + **Download loadout JSON**
+- Non-character selection → empty state (“Loadout applies to placed characters.”)
+- Export validates against `loadout-export.schema.json` (jq + `npm run validate`)
 
-That is **ATTR-TAB-004 stub** — it does **nothing** and cannot be “tested” for loadout behavior.
-
-**T-068.4 ships real UI in that same tab:** functional dropdowns + working download. Basic is fine; **non-functional is not.**
-
-| | Before (now) | After T-068.4 |
-|---|--------------|----------------|
+| | Before T-068.4 | After (shipped) |
+|---|----------------|-----------------|
 | Arsenal tab | Stub text + disabled button | **4 live dropdowns** + **Download JSON** (enabled) |
 | Loadout export | Impossible | `loadout-export.json` per schema |
 | Paper-doll / attachments | N/A | Still **out of scope** until T-068.10 |

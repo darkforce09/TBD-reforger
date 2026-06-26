@@ -1452,15 +1452,15 @@
 | **Goal** | Loadout editor |
 | **Trigger** | Arsenal tab |
 | **Preconditions** | Exactly one slot selected |
-| **Procedure (today)** | Placeholder copy + disabled "Open Loadout Forge (soon)" — **no loadout UI** |
-| **Procedure (T-068.4 ship)** | **Replace stub:** 4 enabled gear dropdowns + enabled Download `loadout-export.json` |
+| **Procedure (today)** | **4 enabled gear dropdowns** + **Download loadout JSON** (character slots only) |
+| **Procedure (T-068.4 ship)** | Same — shipped @ `a85f16b` |
 | **Postconditions** | Downloaded JSON validates against `loadout-export.schema.json` |
 | **Inputs** | Registry gear rows (`gear_primary`, `gear_uniform`, `gear_vest`, `gear_helmet`) |
 | **Outputs** | Browser download of flat loadout JSON |
 | **Edge cases** | Paper-doll / attachments deferred to T-068.10 |
-| **Acceptance** | `- [x] Stub only (pre-T-068.4)` · `- [ ] T-068.4: stub removed; dropdowns + download work` |
+| **Acceptance** | `- [x] Stub only (pre-T-068.4)` · `- [x] T-068.4: stub removed; dropdowns + download work` |
 | **Eden parity** | Eden:ATTR-ARSENAL-001 (dumb export Phase 1; smart Forge Phase 2) |
-| **Status** | stub |
+| **Status** | working (dumb export) |
 | **Evidence** | `AttributesModal.tsx` (`ArsenalTab`) · ship spec [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) |
 
 ---
