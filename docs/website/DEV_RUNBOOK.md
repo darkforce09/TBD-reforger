@@ -9,16 +9,14 @@ Backend docs: [`docs/backend/README.md`](backend/README.md).
 # 1. Postgres (port 5434) — quick, run in foreground
 make db-up
 
-# 2. Go API on :8080 — IMPORTANT: go is NOT on PATH, prepend it.
-#    Run in background; it compiles + migrates on boot.
-PATH="/var/home/Samuel/.local/go/bin:$PATH" make api
+# 2. Go API on :8080 — run in background; compiles + migrates on boot.
+make api
 
 # 3. Vite dev server on :5173 (proxies /api -> :8080) — run in background
 make web
 ```
 
-> **Gotcha:** plain `make api` fails with `make: go: No such file or directory`.
-> Go lives at `/var/home/Samuel/.local/go/bin` and isn't on PATH — always prepend it.
+> **Note:** root `Makefile` prepends `~/.local/go/bin` to PATH for Go targets. If you run `go` directly outside `make`, use `export PATH="$HOME/.local/go/bin:$PATH"`.
 
 ## Confirm it's up
 

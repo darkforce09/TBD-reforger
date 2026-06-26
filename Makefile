@@ -1,6 +1,8 @@
 # TBD Reforger Platform — monorepo dev tasks (delegates to apps/website/).
 COMPOSE := $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
 WEB := apps/website
+# Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
+export PATH := $(HOME)/.local/go/bin:$(PATH)
 
 .PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-migration
 

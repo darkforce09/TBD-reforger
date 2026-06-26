@@ -30,7 +30,7 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `apps/website/frontend/src/` — `api/` (axios client + single-flight refresh), `hooks/` (queries.ts, mutations.ts, useAuthBootstrap), `pages/`, `components/`, `store/useAuthStore.ts`, `types/` (hand-written API types).
 
 ## Run it locally
-Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434, `FRONTEND_URL=http://localhost:5173`). Go lives at `/var/home/Samuel/.local/go/bin` (not on PATH).
+Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434, `FRONTEND_URL=http://localhost:5173`). Go lives at `~/.local/go/bin`; root `Makefile` prepends it for `make api` / `make build`.
 
 ```bash
 make db-up        # start local Postgres (podman/docker compose), port 5434
