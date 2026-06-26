@@ -5,6 +5,7 @@
 
 Tickets for Workbench or human execution (`apps/mod/` targets).
 
+- **T-068** (ready) — Virtual Arsenal (registry + loadout export) [human] — milestone —
 - **T-114** (queued) — Slot roster enforcement [workbench] — milestone M1
 - **T-115** (queued) — Capture win condition [workbench] — milestone M1
 - **T-116** (queued) — Results POST to backend [human] — milestone M1

@@ -112,7 +112,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-113**
 
-**ACTIVE NOW:** **T-068** — T-068.5 (Virtual Arsenal (registry + loadout export)). Spec: `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`.
+**ACTIVE NOW:** **T-068** — T-068.6 (Virtual Arsenal (registry + loadout export)). Spec: `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -140,7 +140,7 @@ frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
 ### ACTIVE SLICE — T-068 (Virtual Arsenal)
 
-See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · active slice **`T-068.5`** (claude-code — mod equip from loadout-export JSON) · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
+See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · active slice **`T-068.6`** (human — Phase 1 E2E gate) · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
 
 **T-068 program (Phase 1 — shipped slices):**
 - **T-068.0.1** JSON schemas + golden fixtures @ `2487d59` — `registry-items` + `loadout-export` in `packages/tbd-schema/`. Spec: [`t068_0_1_registry_schemas.md`](docs/specs/Mission_Creator_Architecture/t068_0_1_registry_schemas.md).
@@ -148,6 +148,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 - **T-068.2** Registry API @ `4c609fe` (tag **T-068.2**) — `GET /api/v1/registry` (weak ETag/304), `registry_items` model + migration `05_registry_items.sql`, `registry_dev.sql` seed (21 rows, all 5 kinds), `cmd/import-registry-items`, FE types only. Spec: [`t068_2_registry_api.md`](docs/specs/Mission_Creator_Architecture/t068_2_registry_api.md). Ops: [`DEV_RUNBOOK.md`](docs/website/DEV_RUNBOOK.md) §Registry catalog.
 - **T-068.3** Factions palette wire @ `da78452` (tag **T-068.3**) — `useRegistry()` + `buildCatalogTree`; `assetCatalogMock.ts` deleted; DnD `assetId` = full `resource_name`; spinner-first loading. Closes **RIGHT-CAT-001**. Spec: [`t068_3_palette_wire.md`](docs/specs/Mission_Creator_Architecture/t068_3_palette_wire.md).
 - **T-068.4** Arsenal dumb loadout UI @ `a85f16b` (tag **T-068.4**) — replace Attributes Arsenal stub; 4 gear dropdowns + `loadout-export.json` download; character slots only. Closes **ATTR-TAB-004**. Spec: [`t068_4_dumb_loadout_ui.md`](docs/specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md).
+- **T-068.5** Mod equip loadout JSON @ `21ec91e` (tag **T-068.5**) — `TBD_LoadoutEquipComponent` on `TBD_GameMode.et`; reads `$profile:TBD_LoadoutTest.json`; spawns `Character_US_Base` @ 6400; equips 4 ResourceNames. Spec: [`t068_5_mod_equip_loadout.md`](docs/specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md).
 
 **Done (shipped):**
 - T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md) @ `d2128cf`.

@@ -77,12 +77,24 @@ go run ./cmd/import-registry-items \
 
 ---
 
-## T-068.5 verify flow
+## T-068.5 verify flow (shipped @ `21ec91e`)
 
 ```
 tbd-dev-bootstrap.sh
-→ copy web loadout-export.json → $profile:TBD_LoadoutTest.json
-→ wb_reload → wb_play → mcp-wb-logs.sh (equip lines) → wb_stop
+→ cp /tmp/loadout-export.json → $PROFILE/TBD_LoadoutTest.json   # T-068.4 canonical JSON
+→ wb_reload → wb_play → mcp-wb-logs.sh | grep Loadout → wb_stop
+→ sha256sum "$PROFILE/TBD_LoadoutTest.json"
 ```
 
-Profile layout: [`scripts/mod/setup-server-profile.sh`](../../scripts/mod/setup-server-profile.sh).
+**Component:** `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` on `TBD_GameMode.et`.
+
+**Winning equip API (verified):**
+- clothing → `TryInsertItem(item, EStoragePurpose.PURPOSE_LOADOUT_PROXY)`
+- primary → `EquipWeapon(item)`
+
+**Base body:** `{520EC961A090BBD5}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et` @ 6400/6400.
+
+**New `.c` file:** Workbench **cold restart** required (not just `wb_reload`) before class registers.
+
+Profile layout: [`scripts/mod/setup-server-profile.sh`](../../scripts/mod/setup-server-profile.sh).  
+Workbench `$profile:` → Proton pfx `…/ArmaReforgerWorkbench/profile/` (paste exact path in verify).

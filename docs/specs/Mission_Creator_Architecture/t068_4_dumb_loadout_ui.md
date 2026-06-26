@@ -150,14 +150,6 @@ Build/lint log + jq outputs + pasted `/tmp/loadout-export.json` contents (redact
 
 ---
 
-## Claude Code prompt — T-068.5 (next)
+## Claude Code prompt — T-068.6 (next — human only)
 
-```
-Read CLAUDE.md §Status. Active slice: T-068.5.
-Implement ONLY docs/specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md
-Do not edit documentation. Branch: ticket/T-068
-LOCKED: Mod reads $profile:TBD_LoadoutTest.json (copy of T-068.4 download).
-enfusion-mcp REQUIRED: tbd-dev-bootstrap.sh → wb_connect → wb_reload → wb_play → log grep.
-Verify: §Verification gate A1–A7 + sha256sum + 20+ console log lines.
-Return: Verify paste only. Do NOT commit unless user asks.
-```
+Human runs [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) E1–E12. No code. Sign-off paste → Cursor.

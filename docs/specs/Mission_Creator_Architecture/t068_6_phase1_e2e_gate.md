@@ -61,7 +61,7 @@ Dev-login: `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 | E8 | Arsenal tab | **Stub gone** — 4 **enabled** dropdowns + **enabled** download (not “Loadout Forge soon”) | Screenshot showing dropdowns + no stub copy |
 | E9 | Download | `/tmp/loadout-export.json` passes jq gate from T-068.4 spec | jq command outputs |
 | E10 | Profile copy | `TBD_LoadoutTest.json` at documented profile path | `ls -la` + `sha256sum` |
-| E11 | Mod spawn | Dev server console shows 4 equip OK lines (T-068.5 A2–A5) | Log excerpt |
+| E11 | Mod spawn | Workbench `wb_play`: `[TBD][Loadout]` four `equip OK` lines (T-068.5 A2–A5) on **test spawn @ 6400** — see [`TBD_LoadoutEquipComponent.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) | Log excerpt + entity id |
 | E12 | Perf smoke | Pan/zoom 10s on mission with ≥200 slots (or largest available) — no freeze | FPS counter ≥55 or subjective "no stall" with slot count noted |
 
 ---
@@ -115,3 +115,5 @@ Dev-login: `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 ## Documentation sync (Cursor)
 
 After sign-off paste: program hub Phase 1 acceptance note; optional CLAUDE §Status Phase 1 milestone line.
+
+**T-068.5 mod script (E11):** [`apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) · wired on [`TBD_GameMode.et`](../../../apps/mod/tbd-framework/Prefabs/Systems/TBD_GameMode.et) · shipped @ `21ec91e`.

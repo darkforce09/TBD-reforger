@@ -5,6 +5,5 @@
 This file remains for old links only. Do not implement from this document.
 
 **Registry spec path:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`  
-**Active slice:** **T-068.5** — mod equip ([`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md))  
-**Frontend shipped @ T-068.4:** Arsenal dumb loadout UI — [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) @ `a85f16b`  
-**Backend shipped @ T-068.2:** `GET /api/v1/registry` — see [`t068_2_registry_api.md`](t068_2_registry_api.md)
+**Active slice:** **T-068.6** — human Phase 1 E2E ([`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md))  
+**Mod shipped @ T-068.5:** [`TBD_LoadoutEquipComponent.c`](../../../apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c) @ `21ec91e`

@@ -23,10 +23,11 @@ See [`Tbd_framework/REFERENCE-ONLY.md`](../Tbd_framework/REFERENCE-ONLY.md).
 - Mission loader: REST `GET /api/missions/{id}/compiled` → `$profile:missions/{id}.json` fallback
 - Registry alias resolution (`TBD_Registry.c`)
 - **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1)
+- **Loadout equip test (T-068.5):** `TBD_LoadoutEquipComponent` on `TBD_GameMode.et` — reads `$profile:TBD_LoadoutTest.json`, spawns empty `Character_US_Base` @ 6400, equips 4 gear ResourceNames
 - Roster loader (`TBD_RosterLoader.c`) — polls `GET /api/game/events/{id}/roster`
 - Game stage enum + manager (`LOADING → … → DEBRIEF`)
 - Radio bridge hook stubs (partner VOIP wires later)
-- **`TBD_GameMode.et`** prefab — manager + `RplComponent` (no Registry POC on game mode)
+- **`TBD_GameMode.et`** prefab — managers + `TBD_LoadoutEquipComponent` (dev loadout test)
 
 ---
 
@@ -53,6 +54,8 @@ bash scripts/setup-workbench-linux.sh
 2. **+ Add Project → Add Existing** → `tbd-framework/addon.gproj`
 3. Open **TBD_Framework** in the launcher
 4. Use **enfusion-mcp** before editing any `.c` file
+
+**New script file:** Workbench builds its script-file list at project load — a freshly added `.c` stays "Unknown class" until **Workbench cold restart** (not just `wb_reload`). Kill Workbench + re-run `tbd-dev-bootstrap.sh`.
 
 **MCP verify spawn:**
 
@@ -83,9 +86,14 @@ Enfusion `$profile:` = `<profileDir>/profile/`:
 profile/
   TBD_BackendConfig.json    # copy from Data/backend.example.json
   TBD_Registry.json         # optional override
+  TBD_LoadoutTest.json      # copy from web loadout-export.json (T-068.4 download) for loadout equip test
   missions/
     msn_8f3a2c.json         # cached after successful REST fetch
 ```
+
+**Workbench `$profile:`** resolves under the Proton prefix, e.g.  
+`…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/`  
+(paste exact path in verify — differs from dedicated-server `.local-test-profile/`).
 
 Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `website/.env`.
 
@@ -99,6 +107,13 @@ Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `
 [TBD] Roster loaded
 [TBD] SpawnManager: assigned slot blufor:Alpha:SL:0
 [TBD] SpawnManager: spawn requested
+[TBD][Loadout] Loaded TBD_LoadoutTest.json (version 1, modpack …)
+[TBD][Loadout] test spawn 0x… @ <6400, …, 6400>
+[TBD][Loadout] primary equip OK {GUID}…Rifle_M16A2.et
+[TBD][Loadout] uniform equip OK {GUID}…Jacket_US_BDU.et
+[TBD][Loadout] vest    equip OK {GUID}…Vest_PASGT.et
+[TBD][Loadout] helmet  equip OK {GUID}…Helmet_PASGT_01_cover.et
+[TBD][Loadout] equip pass complete
 NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
 ```
 
@@ -119,7 +134,7 @@ Replace with TBD-Content export in Phase 1+.
 Scripts/Game/TBD/
   Backend/     TBD_BackendConfig.c, TBD_MissionLoader.c
   Gamemode/    TBD_FrameworkManager.c, TBD_GameStage.c, TBD_SpawnManager.c,
-               TBD_SCR_MenuSpawnLogic.c, TBD_RosterLoader.c
+               TBD_SCR_MenuSpawnLogic.c, TBD_RosterLoader.c, TBD_LoadoutEquipComponent.c
   Registry/    TBD_Registry.c, TBD_RegistryPocComponent.c (optional POC)
   Radio/       TBD_RadioBridgeStub.c
 ```

@@ -1,7 +1,7 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **in progress** — **T-068.0.1–T-068.4** shipped on `main`. **Active slice: T-068.5** (mod equip from loadout-export JSON).  
-**Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` · **T-068.3** @ `da78452` · **T-068.4** @ `a85f16b`. Full ticket ships @ **T-068.11**; Phase 1 gate @ **T-068.6**.  
+**Status:** **in progress** — **T-068.0.1–T-068.5** shipped on `main`. **Active slice: T-068.6** (human Phase 1 E2E gate).  
+**Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` · **T-068.3** @ `da78452` · **T-068.4** @ `a85f16b` · **T-068.5** @ `21ec91e`. Full ticket ships @ **T-068.11**; Phase 1 gate @ **T-068.6**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
@@ -72,7 +72,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.10 | claude-code | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | §Verification gate A1–A5 |
 | T-068.11 | claude-code | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | §Verification gate A1–A4 + R1–R4 |
 
-**Active slice:** **T-068.5** — mod reads `$profile:TBD_LoadoutTest.json` and equips gear on spawn ([`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md)).
+**Active slice:** **T-068.6** — human Phase 1 E2E sign-off ([`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md)).
 
 **Shipped slices (Phase 1):**
 
@@ -84,6 +84,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.2 | `4c609fe` / tag **T-068.2** | `GET /api/v1/registry`, `registry_dev.sql`, `import-registry-items` CLI, FE types |
 | T-068.3 | `da78452` / tag **T-068.3** | Live Factions palette — `useRegistry()` + `buildCatalogTree`; `assetCatalogMock.ts` deleted; `resource_name` on DnD |
 | T-068.4 | `a85f16b` / tag **T-068.4** | Arsenal dumb loadout UI — 4 gear dropdowns + `loadout-export.json` download; stub removed |
+| T-068.5 | `21ec91e` / tag **T-068.5** | `TBD_LoadoutEquipComponent` — reads `$profile:TBD_LoadoutTest.json`, spawns `Character_US_Base` @ 6400, equips 4 ResourceNames |
 
 ---
 

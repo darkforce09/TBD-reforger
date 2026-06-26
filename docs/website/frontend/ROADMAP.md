@@ -37,7 +37,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/leaderboards` | [leaderboards.md](../../../apps/website/frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../../apps/website/frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../../apps/website/frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-068 active (**T-068.5** mod equip; loadout UI **@ T-068.4** `a85f16b`) |
+| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-068 active (**T-068.6** human E2E; mod equip **@ T-068.5** `21ec91e`) |
 | `/events` | [event-schedule.md](../../../apps/website/frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../../apps/website/frontend/docs/pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../../apps/website/frontend/docs/pages/event-hub.md) | |
@@ -65,7 +65,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | **T-086** | Server Control `/admin/server` | [server-control.md](../../../apps/website/frontend/docs/pages/server-control.md) | **T-086** backend RCON API |
 | **T-087** | CMS rich text | [content-manager.md](../../../apps/website/frontend/docs/pages/content-manager.md) | WYSIWYG choice |
 | **T-088** | Multi-server picker | [server-intel.md](../../../apps/website/frontend/docs/pages/server-intel.md) | UI for `GET /servers` |
-| **T-068+** | Mission editor Eden parity | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **T-068 in progress** — **T-068.5** mod equip active; dumb loadout **shipped @ T-068.4** |
+| **T-068+** | Mission editor Eden parity | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **T-068 in progress** — **T-068.6** human E2E active; Phase 1 code **shipped through T-068.5** |
 
 Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
@@ -75,7 +75,8 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
 | Item | Spec | Notes |
 |------|------|-------|
-| **T-068.4 dumb loadout UI (shipped `a85f16b`)** | [t068_4_dumb_loadout_ui.md](../../specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md) | Arsenal tab — 4 gear dropdowns + `loadout-export.json` download; closes **ATTR-TAB-004** |
+| **T-068.5 mod equip (shipped `21ec91e`)** | [t068_5_mod_equip_loadout.md](../../specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md) | `TBD_LoadoutEquipComponent` — profile JSON → equip @ 6400 |
+| **T-068.4 dumb loadout UI (shipped `a85f16b`)** | [t068_4_dumb_loadout_ui.md](../../specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md) | Arsenal tab — 4 gear dropdowns + `loadout-export.json` download |
 | **T-068.3 palette wire (shipped `da78452`)** | [t068_3_palette_wire.md](../../specs/Mission_Creator_Architecture/t068_3_palette_wire.md) | `useRegistry` + `buildCatalogTree`; mock deleted; `resource_name` on DnD |
 | **T-068.2 registry API (shipped `4c609fe`)** | [t068_2_registry_api.md](../../specs/Mission_Creator_Architecture/t068_2_registry_api.md) | `GET /api/v1/registry`, dev seed, import CLI |
 | **T-061 drag-move @ 360k (shipped — good enough)** | [t061_drag_move_hotfix.md](../../specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md) | T-061.0 motion ~60 fps + T-061.0.1 `slotIconCache` + slot fast path; **T-094** deferred |
@@ -98,7 +99,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
 ## Recommended next work
 
-1. **Mission Creator — T-068.5** mod equip from loadout-export JSON ([`t068_5_mod_equip_loadout.md`](../../specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md)) — enfusion-mcp required; T-068.4 download path shipped
+1. **T-068.6** — human Phase 1 E2E sign-off ([`t068_6_phase1_e2e_gate.md`](../../specs/Mission_Creator_Architecture/t068_6_phase1_e2e_gate.md)) — all automated slices shipped through T-068.5
 2. **T-085** — wiki markdown (low risk, high UX)
 3. **T-086** — when backend exposes server/RCON endpoints
 

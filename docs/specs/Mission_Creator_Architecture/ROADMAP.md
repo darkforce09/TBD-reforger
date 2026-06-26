@@ -42,7 +42,7 @@
 Work [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) queue in dependency order; interleave small **T-068+** slices between heavier blocks:
 
 1. **Scale program (complete through T-067)** — ~~**T-064**~~ ✅ virtualized outliner → ~~**T-065**~~ ✅ cluster/LOD → ~~**T-066**~~ ✅ worker compile → ~~**T-067**~~ ✅ bulk paste + chunk scaffolding ([`t067_spatial_chunks.md`](t067_spatial_chunks.md)) → …
-2. **T-068+ ship-blocking** — **T-068** registry API ✅ → palette ✅ → loadout UI ✅ → **T-068.5** mod equip (active) → **T-069** markers → **T-070** vehicles → **T-071** ORBAT Manager modal
+2. **T-068+ ship-blocking** — **T-068** registry API ✅ → palette ✅ → loadout UI ✅ → mod equip ✅ → **T-068.6** human E2E (active) → **T-069** markers → **T-070** vehicles → **T-071** ORBAT Manager modal
 3. **T-068+ remainder** — **T-072**..**T-077** (multi-place, rotate, Space conflict, vehicle crew, …) and later queued tickets
 4. **Then** map imagery + DEM — new tickets after Eden backlog closes (see [`engineering_plan.md`](engineering_plan.md))
 
@@ -152,14 +152,15 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../../apps/website/frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
-| **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub + slices T-068.0–T-068.11 (**in progress** — active **T-068.5**) |
+| **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub + slices T-068.0–T-068.11 (**in progress** — active **T-068.6** human E2E) |
 | [`t068_2_registry_api.md`](t068_2_registry_api.md) | **T-068.2 shipped** — `GET /api/v1/registry`, seed, import CLI |
 | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | **T-068.3 shipped** — Factions palette → live registry |
 | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | **T-068.4 shipped** — Arsenal dumb loadout download @ `a85f16b` |
-| [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | **T-068.5 active** — mod equip from `$profile:TBD_LoadoutTest.json` |
+| [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | **T-068.5 shipped** — mod equip @ `21ec91e` (`TBD_LoadoutEquipComponent`) |
+| [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **T-068.6 active** — human Phase 1 E2E sign-off |
 | [`t068_asset_registry.md`](t068_asset_registry.md) | Legacy stub → redirects to program hub |
 | **[`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md)** | **T-110** — Terrain base + mission layers (future; Base + Delta for props only) |
-| [`CLAUDE.md`](../../../CLAUDE.md) §Status | **ACTIVE: T-068.5**; T-068.0.1–T-068.4 shipped |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | **ACTIVE: T-068.6** (human E2E); T-068.0.1–T-068.5 shipped |
 
 ---
 
@@ -170,7 +171,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **Mission Armory** | Aggregate briefing list (“M16A2 Rifle ×45”) per faction | Backend `MissionArmory` + `GET/PUT /missions/:id/armory` — **already exists**, separate from the editor |
 | **ORBAT slot `loadout`** | Short string on each slot in export (`"L85A3 + GL"`) | `json_payload.orbat[].slots[].loadout` — compiler writes `''` today |
 | **Loadout (editor model)** | Full per-slot gear graph: uniform, vest, weapons, mags, attachments | Y.Doc `loadouts` + `items` maps in schema — **UI not built** |
-| **Master Item Registry** | Every valid `resource_name` + slot rules + icons | **Partial** — API + Factions palette **@ T-068.2–T-068.3**; dumb loadout export **@ T-068.4**; mod equip **T-068.5 active** |
+| **Master Item Registry** | Every valid `resource_name` + slot rules + icons | **Partial** — API + palette **@ T-068.2–T-068.3**; loadout export **@ T-068.4**; mod equip **@ T-068.5**; Phase 1 E2E **T-068.6** |
 | **Loadout Forge** | Web UI to edit a slot’s loadout | **Dumb export shipped @ T-068.4** (`AttributesModal` Arsenal tab); smart Forge **T-068.10** |
 
 **Arma Reforger** (game + modpack entity/workshop data) = **data source** for the loadout program, not something the map editor implements. The website needs an **ingest pipeline + Postgres registry**, then the editor **reads** it.
@@ -264,7 +265,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
 
-**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 in progress** — **T-068.5 active** (mod equip); dumb loadout UI **shipped @ T-068.4** (`a85f16b`); palette **@ T-068.3** (`da78452`).
+**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 in progress** — **T-068.6 active** (human Phase 1 E2E); mod equip **shipped @ T-068.5** (`21ec91e`); loadout UI **@ T-068.4** (`a85f16b`).
 
 ---
 
@@ -333,6 +334,14 @@ Required for positioning you can trust in-game. Most items deferred until **T-06
 
 ---
 
+## DONE — T-068.5 (mod equip loadout-export JSON)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Mod loadout equip** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | ✅ `TBD_LoadoutEquipComponent.c` on `TBD_GameMode.et` — reads `$profile:TBD_LoadoutTest.json`, spawns `Character_US_Base` @ 6400, equips 4 ResourceNames via `EquipWeapon` + `TryInsertItem(PURPOSE_LOADOUT_PROXY)`. Tag **T-068.5** @ `21ec91e`. |
+
+---
+
 ## IN PROGRESS — T-068 Virtual Arsenal (Phase 1)
 
 | Slice | Spec | Status |
@@ -342,7 +351,8 @@ Required for positioning you can trust in-game. Most items deferred until **T-06
 | **T-068.2** | [`t068_2_registry_api.md`](t068_2_registry_api.md) | ✅ shipped `4c609fe` — `GET /api/v1/registry`, seed, import CLI |
 | **T-068.3** | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | ✅ shipped `da78452` — `useRegistry` + `buildCatalogTree`; mock deleted |
 | **T-068.4** | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | ✅ shipped `a85f16b` — Arsenal dumb loadout download; stub removed |
-| **T-068.5** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | **active** — mod equip from `$profile:TBD_LoadoutTest.json` |
+| **T-068.5** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | ✅ shipped `21ec91e` — mod equip from profile JSON |
+| **T-068.6** | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **active** — human Phase 1 E2E gate (E1–E12) |
 
 Hub: [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -354,7 +364,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
-| **T-068** | Virtual Arsenal — registry + dumb loadout + mod equip (Phase 1); smart Forge (Phase 2) | **In progress** — T-068.0.1–T-068.4 shipped; **active T-068.5** mod equip — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
+| **T-068** | Virtual Arsenal — registry + dumb loadout + mod equip (Phase 1); smart Forge (Phase 2) | **In progress** — T-068.0.1–T-068.5 shipped; **active T-068.6** human E2E — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
 | **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
 | **T-071** | ORBAT Manager modal — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal | **Queued** |
@@ -365,7 +375,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 | **T-076** | Vehicle crew UI | **Queued** |
 | **T-077+** | Compositions, triggers, waypoints, … | **Queued** — see TICKET_LEAD |
 
-**T-068 Factions palette @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** dumb loadout export shipped (`a85f16b`). **T-068.5** mod equip active. Full attachment compatibility rules remain Phase 2.
+**T-068 Factions palette @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** dumb loadout export shipped (`a85f16b`). **T-068.5** mod equip shipped (`21ec91e`). **T-068.6** human E2E active. Full attachment compatibility rules remain Phase 2.
 
 ---
 

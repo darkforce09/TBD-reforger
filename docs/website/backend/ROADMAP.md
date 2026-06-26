@@ -48,11 +48,17 @@
 | **T-068.3** | **Factions palette → registry** | [`t068_3_palette_wire.md`](../../specs/Mission_Creator_Architecture/t068_3_palette_wire.md) | `useRegistry()` + `buildCatalogTree`; mock deleted @ `da78452` |
 | **T-068.4** | **Arsenal dumb loadout UI** | [`t068_4_dumb_loadout_ui.md`](../../specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md) | Frontend-only; reuses `GET /registry` gear rows + `modpack_id` on export @ `a85f16b` |
 
-## IN PROGRESS — mod equip (T-068.5)
+## SHIPPED — mod (T-068.5, no backend change)
 
 | T-ID | Item | Spec | Notes |
 |------|------|------|-------|
-| **T-068.5** | **Mod equip from loadout-export JSON** | [`t068_5_mod_equip_loadout.md`](../../specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md) | Reads `$profile:TBD_LoadoutTest.json`; no backend change |
+| **T-068.5** | **Mod equip from loadout-export JSON** | [`t068_5_mod_equip_loadout.md`](../../specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md) | `TBD_LoadoutEquipComponent.c` @ `21ec91e`; reads `$profile:TBD_LoadoutTest.json` |
+
+## IN PROGRESS — Phase 1 E2E (T-068.6)
+
+| T-ID | Item | Spec | Notes |
+|------|------|------|-------|
+| **T-068.6** | **Human Phase 1 E2E gate** | [`t068_6_phase1_e2e_gate.md`](../../specs/Mission_Creator_Architecture/t068_6_phase1_e2e_gate.md) | E1–E12 checklist; executor **human** |
 
 ---
 
@@ -70,7 +76,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md) (`pro
 
 ## Recommended next work
 
-1. **T-068.5** — mod equip from web download JSON (mod + MCP; backend unchanged)
+1. **T-068.6** — human Phase 1 E2E sign-off (mod equip shipped @ T-068.5; backend unchanged)
 2. **T-086** — when RCON/game-server integration is scoped
 3. Keep **`internal/models/`** as source of truth — update TS types in [`frontend/src/types/`](../../../apps/website/frontend/src/types) when models change
 
