@@ -45,6 +45,23 @@ make db-down      # stops Postgres, keeps volume
 # API + Vite: kill the background processes
 ```
 
+## Registry catalog (T-068)
+
+`make seed` applies `internal/db/seeds/registry_dev.sql` (21 vanilla rows, modpack
+`00000000-0000-4000-a000-000000000001`). After a Workbench export, upsert the flat JSON:
+
+```bash
+cd apps/website
+export PATH="$HOME/.local/go/bin:$PATH"
+go run ./cmd/import-registry-items \
+  --file ../../packages/tbd-schema/registry/registry-items.workbench.json
+```
+
+Run from `apps/website` (module root). Paths to `packages/` are relative to that cwd.
+Restart `make api` after handler changes — `go run` does not hot-reload.
+
+`GET /api/v1/registry` requires mission_maker+ JWT; supports weak ETag + `If-None-Match` → 304.
+
 ## Notes
 
 - A fresh DB only has the Discord role→permission mappings (`make seed`).
