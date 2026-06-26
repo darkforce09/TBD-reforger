@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "enfusion-mcp": {
+      "command": "npx",
+      "args": ["-y", "enfusion-mcp"],
+      "env": {
+        "ENFUSION_GAME_PATH": "/home/Samuel/.cache/enfusion-mcp-root",
+        "ENFUSION_WORKBENCH_PATH": "/home/Samuel/.local/share/Steam/steamapps/common/Arma Reforger Tools",
+        "ENFUSION_PROJECT_PATH": "/home/Samuel/Documents/Games/ArmaReforgerWorkbench/addons"
+      }
+    }
+  }
+}

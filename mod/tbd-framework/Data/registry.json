@@ -1,0 +1,66 @@
+{
+  "registryVersion": "1.0",
+  "generatedAt": "2026-06-13T00:00:00Z",
+  "modset": [
+    { "name": "Arma Reforger (vanilla)", "workshopId": "58D0FB3206B6F859" }
+  ],
+  "entries": [
+    {
+      "alias": "preset:us_army_82nd",
+      "guid": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+      "displayName": "US Army 82nd (POC — faction preset resolves to rifleman until TBD-Content)"
+    },
+    {
+      "alias": "kit:us_rifleman",
+      "guid": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+      "displayName": "US Rifleman"
+    },
+    {
+      "alias": "kit:us_sl",
+      "guid": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
+      "displayName": "US Squad Leader (POC — GL stand-in; replace with Character_US_SL in Workbench)"
+    },
+    {
+      "alias": "kit:us_tl",
+      "guid": "{0B3167BB0FB68110}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL.et",
+      "displayName": "US Team Leader"
+    },
+    {
+      "alias": "kit:us_ar",
+      "guid": "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et",
+      "displayName": "US Automatic Rifleman"
+    },
+    {
+      "alias": "preset:sov_vdv",
+      "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "displayName": "Soviet VDV (POC — preset resolves to rifleman until TBD-Content)"
+    },
+    {
+      "alias": "kit:sov_rifleman",
+      "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
+      "displayName": "USSR Rifleman"
+    },
+    {
+      "alias": "kit:sov_sl",
+      "guid": "{5436629450D8387A}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_SL.et",
+      "displayName": "USSR Squad Leader"
+    },
+    {
+      "alias": "kit:sov_ar",
+      "guid": "{23ADBBC31B6A3DC6}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_AR.et",
+      "displayName": "USSR Automatic Rifleman"
+    },
+    {
+      "alias": "veh:m151_mg",
+      "guid": "{F6B23D17D5067C11}Prefabs/Vehicles/Wheeled/M151A2/M151A2_M2HB.et",
+      "displayName": "M151A2 (M2HB)",
+      "footprint": { "radius": 3.5 }
+    },
+    {
+      "alias": "comp:checkpoint_small",
+      "guid": "{E1D01D77D7F47EF3}PrefabsEditable/Auto/Compositions/Misc/SubCompositions/E_Sandbag_Barricade_US_04.et",
+      "displayName": "Small Checkpoint (sandbag barricade POC)",
+      "footprint": { "box": [12, 12] }
+    }
+  ]
+}

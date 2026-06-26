@@ -1,0 +1,21 @@
+{
+  "v": 1,
+  "type": "spawn",
+  "ts": 1781744400000,
+  "session": "evt_levie_0822",
+  "player": {
+    "identityId": "rfl-7f1c2a",
+    "platform": "pc",
+    "name": "Cpl. Hayes"
+  },
+  "payload": {
+    "faction": "blufor",
+    "groupCallsign": "Alpha",
+    "slot": "SL",
+    "radioClass": "manpack",
+    "nets": [
+      { "id": "net:cmd", "label": "BLUFOR Command", "freqMHz": 41.0, "transmit": true, "receive": true },
+      { "id": "net:alpha", "label": "Alpha Squad", "freqMHz": 42.5, "transmit": true, "receive": true }
+    ]
+  }
+}

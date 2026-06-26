@@ -1,0 +1,33 @@
+{
+  "bindAddress": "0.0.0.0",
+  "bindPort": 2001,
+  "publicAddress": "127.0.0.1",
+  "publicPort": 2001,
+  "a2s": {
+    "address": "0.0.0.0",
+    "port": 17777
+  },
+  "game": {
+    "name": "TBD Dev POC",
+    "password": "",
+    "passwordAdmin": "tbd-admin",
+    "scenarioId": "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf",
+    "maxPlayers": 8,
+    "visible": false,
+    "crossPlatform": false,
+    "gameProperties": {
+      "serverMaxViewDistance": 2500,
+      "networkViewDistance": 1000,
+      "battlEye": false,
+      "disableThirdPerson": false,
+      "fastValidation": true,
+      "VONDisableUI": false,
+      "VONDisableDirectSpeechUI": false
+    },
+    "mods": []
+  },
+  "operating": {
+    "lobbyPlayerSynchronise": true,
+    "disableNavmeshStreaming": []
+  }
+}

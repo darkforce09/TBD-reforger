@@ -1,0 +1,11 @@
+SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" {
+ ID "2D0FF9E203CA93B6"
+ components {
+  TBD_FrameworkManager "{CF7EB40B6E5F2618}" {
+  }
+  TBD_SpawnManager "{AC1D5E7F9B3D2610}" {
+  }
+  SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
+  }
+ }
+}

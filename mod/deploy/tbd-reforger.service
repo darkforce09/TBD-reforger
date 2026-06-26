@@ -1,0 +1,14 @@
+[Unit]
+Description=TBD Arma Reforger dedicated server (TBD_Dev_POC)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=TBD_SERVER_DIR_PLACEHOLDER
+ExecStart=TBD_SERVER_DIR_PLACEHOLDER/ArmaReforgerServer -profile TBD_PROFILE_DIR_PLACEHOLDER -addonsDir TBD_ADDONS_STAGING_PLACEHOLDER -addons TBD_ADDON_GUID_PLACEHOLDER -server "TBD_SCENARIO_PLACEHOLDER" -bindIP 0.0.0.0 -bindPort 2001 -a2sPort 17777 -maxFPS 60 -logStats 30000 -nothrow
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

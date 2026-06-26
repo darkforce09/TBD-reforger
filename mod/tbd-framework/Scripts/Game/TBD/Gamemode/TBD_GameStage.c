@@ -1,0 +1,10 @@
+enum TBD_EGameStage
+{
+	LOADING,
+	LOBBY,
+	BRIEFING,
+	SAFE_START,
+	LIVE,
+	END,
+	DEBRIEF
+}

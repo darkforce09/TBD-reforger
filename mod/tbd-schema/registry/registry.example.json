@@ -1,0 +1,38 @@
+{
+  "registryVersion": "1.0",
+  "generatedAt": "2026-06-13T00:00:00Z",
+  "modset": [
+    { "name": "Arma Reforger (vanilla)", "workshopId": "" },
+    { "name": "TBD-Content", "workshopId": "TBD" }
+  ],
+  "entries": [
+    {
+      "alias": "preset:us_army_82nd",
+      "guid": "{0A1B2C3D4E5F6071}Prefabs/Placeholder/TBD_Preset_US_82nd.et",
+      "displayName": "US Army 82nd Airborne (1989)"
+    },
+    {
+      "alias": "kit:us_rifleman",
+      "guid": "{1A1B2C3D4E5F6072}Prefabs/Placeholder/TBD_Kit_US_Rifleman.et",
+      "displayName": "US Rifleman"
+    },
+    {
+      "alias": "kit:us_sl",
+      "guid": "{2A1B2C3D4E5F6073}Prefabs/Placeholder/TBD_Kit_US_SL.et",
+      "displayName": "US Squad Leader"
+    },
+    {
+      "alias": "veh:m151_mg",
+      "guid": "{3A1B2C3D4E5F6074}Prefabs/Placeholder/TBD_Veh_M151_MG.et",
+      "displayName": "M151 (M2 MG)",
+      "footprint": { "radius": 3.5 }
+    },
+    {
+      "alias": "comp:checkpoint_small",
+      "guid": "{4A1B2C3D4E5F6075}Prefabs/Placeholder/TBD_Comp_Checkpoint_Small.et",
+      "displayName": "Small Checkpoint",
+      "thumbnail": "comp/checkpoint_small.png",
+      "footprint": { "box": [12, 12] }
+    }
+  ]
+}

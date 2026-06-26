@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "type": "death",
+  "ts": 1781746200000,
+  "session": "evt_levie_0822",
+  "player": {
+    "identityId": "rfl-7f1c2a",
+    "platform": "pc"
+  },
+  "payload": {
+    "channel": "dead"
+  }
+}

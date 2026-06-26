@@ -1,0 +1,11 @@
+---
+description: Use only main — never create feature branches
+alwaysApply: true
+---
+
+# Single branch: main only
+
+- Work exclusively on **`main`**. Never create, checkout, or push feature branches (e.g. `phase1-slot-spawn`, `fix/…`, `feat/…`).
+- Commit directly to `main` with focused commit messages.
+- Do not run `git checkout -b`, `git switch -c`, or suggest PR workflows that require a separate branch unless the user explicitly overrides this rule.
+- If remote has stale feature branches from past work, prefer merging into `main` and deleting them when the user asks to consolidate.

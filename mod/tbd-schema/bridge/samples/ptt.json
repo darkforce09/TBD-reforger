@@ -1,0 +1,15 @@
+{
+  "v": 1,
+  "type": "ptt",
+  "ts": 1781744700000,
+  "session": "evt_levie_0822",
+  "player": {
+    "identityId": "rfl-7f1c2a",
+    "platform": "pc"
+  },
+  "payload": {
+    "state": "start",
+    "mode": "radio",
+    "netId": "net:alpha"
+  }
+}
