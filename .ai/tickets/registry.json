@@ -1189,6 +1189,7 @@
         "T-068.3",
         "T-068.4",
         "T-068.5",
+        "T-068.5.1",
         "T-068.6",
         "T-068.7",
         "T-068.8",
@@ -1196,7 +1197,7 @@
         "T-068.10",
         "T-068.11"
       ],
-      "active_slice": "T-068.6",
+      "active_slice": "T-068.5.1",
       "stream": "mission-creator",
       "targets": [
         "website",
@@ -1247,6 +1248,12 @@
           "executor": "claude-code"
         },
         "T-068.5": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.5.1": {
           "targets": [
             "mod"
           ],
