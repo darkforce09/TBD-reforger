@@ -14,6 +14,7 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 | [`docs/mod/`](docs/mod/) · [`docs/website/`](docs/website/) | App-specific docs |
 | [`scripts/`](scripts/) | `./scripts/ticket` pipeline + `mod/`, `website/`, `deploy/` ops scripts |
 | [`.ai/`](.ai/) | Ticket registry (`tickets/registry.json`) + pipeline artifacts |
+| [`.cursor/`](.cursor/) | Cursor IDE rules + MCP (see [`docs/website/CURSOR_SETUP.md`](docs/website/CURSOR_SETUP.md)) |
 
 ## Quick start
 
