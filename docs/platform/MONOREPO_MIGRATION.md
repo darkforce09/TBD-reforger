@@ -47,15 +47,15 @@ TBD-Reforger/
 
 Scripts: `scripts/rewrite-ticket-paths.py`, `scripts/rewrite-doc-links.py`, `scripts/backfill-registry-monorepo.py`.
 
-## Post-G5
+## Local-only paths (not in git)
+
+- **`mod/crf_framework/`** — CRF reference mod, copied from the original mod repo during M1. Present on disk, listed in `mod/.gitignore` and root `.gitignore`. Used for Workbench pattern reference only (`Tbd_framework/` rule in mod docs). Verified identical to `/home/Samuel/Projects/Arma reforger/crf_framework/`.
+
+## Post-G5 (operator)
 
 1. Create GitHub repo `darkforce09/TBD-Reforger`
 2. Push monorepo `main`
 3. Archive old remotes (read-only)
 4. Point Cursor workspace at `/home/Samuel/Projects/TBD-Reforger/`
 5. Resume normal split: Cursor docs, Claude Code `executor: claude-code` slices
-
-## Manual steps
-
-- Copy `crf_framework/` into `mod/crf_framework/` (gitignored, local Workbench reference)
-- Update staging server clone path after cutover
+6. Update staging server clone path on `192.168.0.140` after cutover (`deploy-staging.sh` rsyncs from monorepo root)

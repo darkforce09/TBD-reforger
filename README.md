@@ -7,7 +7,7 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 | Path | Contents |
 |------|----------|
 | [`website/`](website/) | Go API (`cmd/`, `internal/`), React frontend, Docker Compose, `.env` |
-| [`mod/`](mod/) | `tbd-framework` Enfusion scripts, deploy/staging scripts |
+| [`mod/`](mod/) | `tbd-framework` Enfusion scripts, deploy/staging scripts; `crf_framework/` (gitignored local reference) |
 | [`shared/tbd-schema/`](shared/tbd-schema/) | Mission JSON schema, golden missions, spikes |
 | [`docs/specs/`](docs/specs/) | Design specs (Mission Creator, blueprints, UX) |
 | [`docs/platform/`](docs/platform/) | Platform runbooks and architecture |

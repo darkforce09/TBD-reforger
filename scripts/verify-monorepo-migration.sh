@@ -125,6 +125,10 @@ grep -q 'shared/tbd-schema' .github/workflows/schema.yml && pass "V25 schema CI"
 hits=$(git ls-files | xargs rg -l 'Design_Docs/' 2>/dev/null | rg -v 'rewrite-|MONOREPO_MIGRATION|verify-monorepo|migration-baseline' || true)
 [[ -z "$hits" ]] && pass "V27 no Design_Docs/ links" || fail "V27 Design_Docs/ in: $hits"
 
+# crf_framework local reference (gitignored, must exist on disk for Workbench dev)
+[[ -f mod/crf_framework/addon.gproj ]] && pass "crf_framework on disk (gitignored)" || fail "mod/crf_framework/ missing"
+[[ -f mod/crf_framework/REFERENCE-ONLY.md ]] && pass "crf_framework REFERENCE-ONLY marker" || fail "crf_framework incomplete"
+
 if [[ "$FAIL" -ne 0 ]]; then
   echo ""
   echo "Verification FAILED"
