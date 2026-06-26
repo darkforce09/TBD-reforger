@@ -1223,9 +1223,10 @@
         },
         "T-068.1": {
           "targets": [
-            "mod"
+            "mod",
+            "shared"
           ],
-          "executor": "workbench"
+          "executor": "claude-code"
         },
         "T-068.2": {
           "targets": [
@@ -1249,7 +1250,7 @@
           "targets": [
             "mod"
           ],
-          "executor": "workbench"
+          "executor": "claude-code"
         },
         "T-068.6": {
           "targets": [
@@ -1267,9 +1268,10 @@
         },
         "T-068.8": {
           "targets": [
-            "mod"
+            "mod",
+            "shared"
           ],
-          "executor": "workbench"
+          "executor": "claude-code"
         },
         "T-068.9": {
           "targets": [

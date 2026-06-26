@@ -2,7 +2,7 @@
 
 **Ticket:** T-068 · **Slice:** T-068.8  
 **Status:** Spec ready — Phase 2  
-**Executor:** workbench  
+**Executor:** claude-code (**enfusion-mcp required**)  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
 ---
@@ -38,7 +38,7 @@ Smart Forge needs attachment/mag/ammo compatibility data from game assets.
 
 | Decision | Choice |
 |----------|--------|
-| Executor | Workbench / human |
+| Executor | **claude-code** + enfusion-mcp (same contract as T-068.1) |
 | Node IDs | Full ResourceName |
 
 ---

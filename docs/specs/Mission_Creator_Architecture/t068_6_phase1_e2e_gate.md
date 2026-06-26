@@ -31,8 +31,8 @@ Optional: git tag commit note "T-068 Phase 1" — full **T-068** tag @ T-068.11 
 
 Before starting T-068.6, confirm **verify paste blocks exist** in Docs & Tickets chat for:
 
-- T-068.0.1, T-068.2, T-068.3, T-068.4, T-068.5 (required)
-- T-068.1 (required if Workbench export used in E2E; optional if dev seed only — state which in sign-off)
+- T-068.0.1, T-068.1, T-068.2, T-068.3, T-068.4, T-068.5 (required)
+- **T-068.1 MCP verify paste required** for Phase 1 sign-off (dev-seed-only E2E is smoke, not ship proof — waive only with explicit note)
 
 If any required slice lacks a PASS verify paste → **do not start T-068.6**.
 
@@ -52,7 +52,7 @@ Dev-login: `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
 | ID | Step | Pass condition | Evidence required |
 |----|------|----------------|-----------------|
 | E1 | Editor boot | `/missions/:id/edit` loads; no error overlay | Screenshot or URL + load time |
-| E2 | Registry network | DevTools Network: `GET /api/v1/registry` **200** | Status + response byte size |
+| E2 | Registry network | DevTools: `GET /api/v1/registry` **200**; if Workbench data: paste **`import-registry-items`** command run | Status + row count + import command (if applicable) |
 | E3 | Factions tree | NATO + CSAT from API; not static mock | Tree root labels pasted |
 | E4 | Search `medic` | Exactly one visible Medic row path | Pasted filter string + visible label |
 | E5 | Search `nato` | NATO subtree visible | Pasted observation |

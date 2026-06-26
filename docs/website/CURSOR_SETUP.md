@@ -77,7 +77,7 @@ cd apps/website/frontend && npm ci
 - **Mission Creator:** `http://localhost:5173/missions/:id/edit` (after creating/opening a mission)
 - **Full details:** [DEV_RUNBOOK.md](DEV_RUNBOOK.md)
 
-**Mod Workbench** (T-068.1 / T-068.5 / T-068.8 — `workbench` slices): copy MCP config when needed — see Step 4.
+**Mod Workbench (T-068.1 / T-068.5 / T-068.8 — `claude-code` + enfusion-mcp):** copy MCP config when Claude Code touches mod data — see Step 4. **Human** only launches Workbench + runs bootstrap; Claude Code drives MCP.
 
 ---
 
@@ -195,5 +195,6 @@ Idea (Brainstorm) → registry row (Docs & Tickets) → ./scripts/ticket sync
 ## What this setup does NOT do
 
 - No Go/React implementation until Claude Code slice **T-068.0.1+** on `ticket/T-068`
-- Workbench export (**T-068.1**) and mod equip (**T-068.5**) are workbench/human executors
+- Workbench export (**T-068.1**), mod equip (**T-068.5**), compat export (**T-068.8**) are **claude-code + enfusion-mcp** — not skipped by `./scripts/ticket run`; human only runs Workbench preflight
+- Phase 1 E2E sign-off (**T-068.6**) remains **human** executor
 - No changes to ticket registry unless you start spec work in **Docs & Tickets**

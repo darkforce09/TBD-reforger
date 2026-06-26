@@ -2,7 +2,7 @@
 
 **Ticket:** T-068 · **Slice:** T-068.5  
 **Status:** Spec ready — code pending  
-**Executor:** workbench  
+**Executor:** claude-code (**enfusion-mcp required** for compile/reload/play verify)  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
 ---
@@ -55,11 +55,19 @@ Downloaded loadout JSON has no in-game consumer.
 ## Verify
 
 ```bash
+# Preflight
+bash scripts/mod/tbd-dev-bootstrap.sh
+bash scripts/mod/mcp-call.sh wb_connect '{}'
+
 # Copy T-068.4 download first:
 cp /path/to/loadout-export.json "$HOME/.local-test-profile/TBD_LoadoutTest.json"
 # or $profile path documented in scripts/mod/
-bash scripts/run-dev-server.sh
-grep -E '\[TBD\].*Loadout|Loadout equip' .local-test-profile/logs/**/console.log | tail -20
+
+bash scripts/mod/mcp-call.sh wb_reload '{"scope":"scripts"}'
+bash scripts/mod/mcp-call.sh wb_play '{}'
+sleep 5
+bash scripts/mod/mcp-wb-logs.sh | grep -E '\[TBD\].*Loadout|Loadout equip' | tail -20
+bash scripts/mod/mcp-call.sh wb_stop '{}'
 ```
 
 ---

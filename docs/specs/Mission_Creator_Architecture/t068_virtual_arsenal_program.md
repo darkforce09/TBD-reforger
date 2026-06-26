@@ -13,8 +13,10 @@
 | Agent | Owns |
 |-------|------|
 | **Cursor** | This hub, all `t068_*` slice specs, registry, `./scripts/ticket sync`, narrative doc sync |
-| **Claude Code** | All code — schemas, API, UI, worker, compiler (`executor: claude-code` slices) |
-| **Workbench / human** | Mod export scripts, in-game E2E (`workbench` / `human` slices) |
+| **Claude Code** | All code — schemas, API, UI, worker, compiler, **mod + Workbench data via enfusion-mcp** (`executor: claude-code` slices) |
+| **Human** | Workbench **preflight** (launch Tools, Net API, bootstrap), Phase 1 E2E sign-off (`executor: human` only @ **T-068.6**) |
+
+**enfusion-mcp is mandatory for real registry data.** Flat `resource_name` rows cannot be invented — Claude Code must discover prefab paths via MCP (`asset_search` / `game_read` / `game_browse`) or Workbench-validated export, then commit JSON. Shell fallback: [`scripts/mod/mcp-call.sh`](../../../scripts/mod/mcp-call.sh) + [`scripts/mod/tbd-dev-bootstrap.sh`](../../../scripts/mod/tbd-dev-bootstrap.sh). See [`docs/mod/CLAUDE-CODE-START.md`](../../mod/CLAUDE-CODE-START.md).
 
 ---
 
@@ -43,6 +45,10 @@ Phases are labels; **`slices[]` + `active_slice`** in registry are the execution
 | 8 | **T-068.4 UI:** **Build** functional dumb loadout UI — **replace** Attributes → Arsenal **stub** (disabled “Loadout Forge soon”) with 4 gear dropdowns + download JSON. Not a new route; not paper-doll (T-068.10). |
 | 9 | **API caching:** `GET /registry` supports weak **ETag** / **304** (see T-068.2). |
 | 10 | **Map/topo:** **T-090 / T-091 / T-110** — out of T-068. |
+| 11 | **Workbench MCP:** **T-068.1 / T-068.5 / T-068.8** are `claude-code` slices that **require enfusion-mcp** (Workbench running + bootstrap). Human only launches Tools / enables Net API — not manual JSON authoring. |
+| 12 | **DB ingest handoff:** After **T-068.1** export lands, run **`go run ./cmd/import-registry-items --file …/registry-items.workbench.json`** (T-068.2 CLI) before **T-068.6** if E2E uses Workbench data — dev seed alone is smoke-only. |
+| 13 | **Modpack UUID:** `loadout-export.modpackId` and `registry-items.modpackId` = **`modpacks.is_current`** row (mock seed: `00000000-0000-4000-a000-000000000001` until real modpack admin exists). |
+| 14 | **Arsenal tab scope:** Loadout UI (**T-068.4**) applies to **character** slots only — non-character selection shows explanatory empty state, not broken dropdowns. |
 
 ---
 
@@ -54,14 +60,14 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 |-------|----------|-----------|-------------------|
 | T-068.0 | cursor-docs | [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) | `make ticket-check-strict` + 13 specs on disk |
 | T-068.0.1 | claude-code | [`t068_0_1_registry_schemas.md`](t068_0_1_registry_schemas.md) | §Verification gate A1–A7 |
-| T-068.1 | workbench | [`t068_1_workbench_flat_export.md`](t068_1_workbench_flat_export.md) | §Verification gate A1–A7 |
+| T-068.1 | claude-code | [`t068_1_workbench_flat_export.md`](t068_1_workbench_flat_export.md) | §Verification gate A1–A7 + **MCP preflight** |
 | T-068.2 | claude-code | [`t068_2_registry_api.md`](t068_2_registry_api.md) | §Verification gate A1–A9 + curl |
 | T-068.3 | claude-code | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | §Verification gate A1–A3 + M1–M7 |
 | T-068.4 | claude-code | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | §Verification gate **A0** (stub removed) + A1–A7 + jq |
-| T-068.5 | workbench | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | §Verification gate A1–A7 + logs |
+| T-068.5 | claude-code | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | §Verification gate A1–A7 + MCP `wb_play` / logs |
 | T-068.6 | human | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | E1–E12 + sign-off |
 | T-068.7 | cursor-docs | [`t068_7_compat_matrix_spec.md`](t068_7_compat_matrix_spec.md) | §Verification gate A1–A6 |
-| T-068.8 | workbench | [`t068_8_workbench_compat_export.md`](t068_8_workbench_compat_export.md) | §Verification gate A1–A5 |
+| T-068.8 | claude-code | [`t068_8_workbench_compat_export.md`](t068_8_workbench_compat_export.md) | §Verification gate A1–A5 + MCP |
 | T-068.9 | claude-code | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) | §Verification gate A1–A5 + W1–W3 |
 | T-068.10 | claude-code | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | §Verification gate A1–A5 |
 | T-068.11 | claude-code | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | §Verification gate A1–A4 + R1–R4 |
@@ -150,7 +156,7 @@ flowchart TD
 |-------|------------------|-------------------------|
 | T-068.0 | `make ticket-check-strict` | All 13 spec paths exist on disk |
 | T-068.0.1 | `cd packages/tbd-schema && npm run validate` | `jq` resource_name GUID regex on samples |
-| T-068.1 | `npm run validate` includes workbench export | ≥20 items; 5 kinds; 3 Workbench copy checks |
+| T-068.1 | `tbd-dev-bootstrap` + MCP export + `npm run validate` | MCP discovery log + A7/A8 spot-check |
 | T-068.2 | `make test-it` (registry tests) | curl 200 + 304 + jq field checks |
 | T-068.3 | FE build/lint + `rg assetCatalogMock` | DevTools: API tree, drag, store `assetId` |
 | T-068.4 | FE build/lint + **stub grep gate** + schema validate download | Arsenal tab: **no stub**; 4 enabled dropdowns + download works |
@@ -189,3 +195,25 @@ Detail: each [`t068_*`](.) child spec **§Verification gate** section.
 Supersedes thin-registry draft [`t068_asset_registry.md`](t068_asset_registry.md) (stub only).
 
 **Replaces old slice IDs:** `T-068.0a` → **T-068.1** · old API **T-068.1** → **T-068.2** · old worker **T-068.2** → **T-068.9** · old compiler **T-068.6** → **T-068.11**.
+
+---
+
+## Program audit — gaps to not repeat
+
+Audit after MCP executor fix (2026-06). Treat as **checklist** when advancing slices.
+
+| # | Risk | Mitigation (locked in specs) |
+|---|------|------------------------------|
+| 1 | **Fake ResourceNames** — mock catalog ids (`a-nato-rifleman`) ≠ Enfusion GUIDs | **T-068.1 MCP** for real paths; `registry_dev.sql` must use GUIDs from [`registry.json`](../../../apps/mod/tbd-framework/Data/registry.json) POC + gear rows from MCP — never mock tree ids |
+| 2 | **Executor = workbench skipped `ticket run`** | T-068.1 / .5 / .8 → **`claude-code`** + MCP (fixed) |
+| 3 | **Arsenal stub looked “done”** | T-068.4 **A0** stub grep + E2E **E8** screenshot gate |
+| 4 | **Export JSON never reaches Postgres** | Rule **#12** — document `import-registry-items` in T-068.6 **E2** sign-off when using Workbench data |
+| 5 | **Gear kinds missing from API seed** | T-068.2 seed must include **`gear_*`** rows (Arsenal dropdowns empty otherwise) |
+| 6 | **`modpackId` undefined in download** | Rule **#13** — UI reads `modpack_id` from `GET /registry` response |
+| 7 | **Arsenal on ammo box / props** | Rule **#14** — character-only loadout tab |
+| 8 | **MCP not wired in Claude Code terminal** | Use [`scripts/mod/mcp-call.sh`](../../../scripts/mod/mcp-call.sh) or copy [`apps/mod/.mcp.json`](../../../apps/mod/.mcp.json); bootstrap **every clone** (EnfusionMCP gitignored) |
+| 9 | **T-068.2 ∥ T-068.1 parallel confusion** | T-068.2 can ship first with **dev seed smoke**; **T-068.6 PASS** requires **T-068.1 verify paste** (real MCP export) unless explicitly waived in sign-off |
+| 10 | **Profile path ambiguity** | T-068.5 / E10 — paste exact `$profile` path + `sha256sum`; use [`scripts/mod/setup-server-profile.sh`](../../../scripts/mod/setup-server-profile.sh) |
+| 11 | **Icon URLs** | Phase 1: `icon_url` optional / omit; no blocker |
+| 12 | **Phase 2 compat before schema** | T-068.8 export waits on T-068.7 spec + T-068.9 `registry-compat.schema.json` |
+| 13 | **No registry in mission compiler until T-068.11** | Phase 1 loadout = file handoff only; mission `json_payload` loadouts deferred |

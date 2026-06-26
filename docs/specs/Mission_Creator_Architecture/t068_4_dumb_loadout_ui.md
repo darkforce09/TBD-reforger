@@ -44,10 +44,11 @@ That is **ATTR-TAB-004 stub** — it does **nothing** and cannot be “tested”
 
 1. **Replace `ArsenalTab()` stub** in `AttributesModal.tsx` — remove disabled Forge button and “later phase” copy entirely.
 2. **Attributes modal → Arsenal tab** when exactly one slot selected (tab shell already exists; **implement content**).
-3. Four **working** `<select>` (or equivalent) dropdowns from `useRegistry()` filtered by `gear_primary`, `gear_uniform`, `gear_vest`, `gear_helmet`.
-4. **Download loadout JSON** button — enabled, triggers browser download of `loadout-export.json` per schema (`loadoutVersion`, `modpackId`, `gear`).
-5. Optional: sessionStorage for last picks (UX only) — not Y.Doc Phase 1.
-6. No attachment/mag/ammo UI; no `canEquip`; no paper-doll (smart Forge = **T-068.10**).
+3. **Character slots only:** if selected slot’s `assetId` is not a registry **`character`** row (lookup via `useRegistry`), show empty state (“Loadout applies to placed characters”) — do not render gear dropdowns for props/vehicles.
+4. Four **working** `<select>` dropdowns from `useRegistry()` filtered by `gear_primary`, `gear_uniform`, `gear_vest`, `gear_helmet`.
+5. **Download loadout JSON** — `modpackId` from `RegistryResponse.modpack_id` (same as `GET /registry`); schema fields `loadoutVersion`, `modpackId`, `gear`.
+6. Optional: sessionStorage for last picks (UX only) — not Y.Doc Phase 1.
+7. No attachment/mag/ammo UI; no `canEquip`; no paper-doll (smart Forge = **T-068.10**).
 
 ---
 
