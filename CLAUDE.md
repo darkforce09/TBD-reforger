@@ -129,6 +129,15 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
+**Workspace restructure (2026-06-26, `2a51d66`):** monorepo reorganized into the
+`apps/` + `packages/` + unified `docs/` + `scripts/` + hidden `.ai/` layout (see
+**§Monorepo layout**). Pure relocation + path-fix, no behavior change: `website`→`apps/website`,
+`mod`→`apps/mod`, `shared/tbd-schema`→`packages/tbd-schema`, `tickets`→`.ai/tickets`,
+`artifacts`→`.ai/artifacts`; ops scripts lifted to `scripts/{mod,website,deploy}`; app docs to
+`docs/{mod,website}`. `paths.sh`, Makefile, CI, ticket libs, and `verify-monorepo-migration.sh`
+updated; doc links repaired (incl. pre-existing `docs/specs/**` rot). Verified: go build,
+frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
+
 ### ACTIVE SLICE — T-068 (Registry + Forge)
 
 See [`t068_asset_registry.md`](docs/specs/Mission_Creator_Architecture/t068_asset_registry.md) · active slice **`T-068.0`** (cursor-docs) · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
