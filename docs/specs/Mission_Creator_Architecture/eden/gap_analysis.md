@@ -25,7 +25,7 @@
 
 | eden_id | tbd_id | parity | ticket | gap_notes |
 |---------|--------|--------|----------|-----------|
-| RIGHT-MODE-001 | RIGHT-CAT-001 | partial | T-068.3 active | API + seed shipped (T-068.2); palette still mock until T-068.3 — then closes Factions feed |
+| RIGHT-MODE-001 | RIGHT-CAT-001 | match | T-068.3 shipped | Live registry palette — `useRegistry` + `buildCatalogTree`; 8 NATO characters @ current seed |
 | RIGHT-MODE-002 | — | missing | — | Compositions / custom save |
 | RIGHT-MODE-003 | RIGHT-STUB-003 | missing | — | Triggers |
 | RIGHT-MODE-004 | — | missing | — | Waypoints |

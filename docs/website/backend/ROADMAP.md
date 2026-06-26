@@ -40,17 +40,18 @@
 
 ---
 
-## SHIPPED (T-068.2 @ main)
+## SHIPPED (T-068.2–T-068.3 @ main)
 
 | T-ID | Item | Spec | Notes |
 |------|------|------|-------|
 | **T-068.2** | **`GET /api/v1/registry`** | [`t068_2_registry_api.md`](../../specs/Mission_Creator_Architecture/t068_2_registry_api.md) | `resource_name` rows, weak ETag/304, `registry_dev.sql` + `import-registry-items` CLI |
+| **T-068.3** | **Factions palette → registry** | [`t068_3_palette_wire.md`](../../specs/Mission_Creator_Architecture/t068_3_palette_wire.md) | `useRegistry()` + `buildCatalogTree`; mock deleted @ `da78452` |
 
-## READY — MC palette wire (T-068.3)
+## READY — MC Arsenal dumb loadout (T-068.4)
 
 | T-ID | Item | Spec | Notes |
 |------|------|------|-------|
-| **T-068.3** | **Factions palette → registry API** | [`t068_3_palette_wire.md`](../../specs/Mission_Creator_Architecture/t068_3_palette_wire.md) | Replace `assetCatalogMock.ts`; `useRegistry()` hook |
+| **T-068.4** | **Attributes Arsenal tab — dumb loadout UI** | [`t068_4_dumb_loadout_ui.md`](../../specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md) | Replace stub; 4 gear `<select>` + `loadout-export.json` download |
 
 ---
 
@@ -68,7 +69,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md) (`pro
 
 ## Recommended next work
 
-1. **T-068.3** — wire MC Factions palette to `GET /api/v1/registry` (backend route shipped @ T-068.2)
+1. **T-068.4** — MC Arsenal dumb loadout UI (backend registry route unchanged; reuses `GET /registry`)
 2. **T-086** — when RCON/game-server integration is scoped
 3. Keep **`internal/models/`** as source of truth — update TS types in [`frontend/src/types/`](../../../apps/website/frontend/src/types) when models change
 

@@ -1,7 +1,7 @@
 # T-068.3 — Wire Factions palette to live registry
 
 **Ticket:** T-068 · **Slice:** T-068.3  
-**Status:** **active** — backend ready @ T-068.2; palette still uses mock until this slice ships  
+**Status:** **shipped** @ `da78452` (git tag **T-068.3**)  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -13,9 +13,9 @@ Replace mock Factions catalog with `GET /registry` → tree builder → existing
 
 ---
 
-## Problem
+## Problem (historical)
 
-[`AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx) imports [`assetCatalogMock.ts`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts).
+Previously [`AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx) imported static [`assetCatalogMock.ts`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts) (fake ids). **Fixed @ T-068.3** — live `GET /registry` feed.
 
 ---
 
@@ -126,7 +126,7 @@ Automated output + M1–M7 table with PASS + pasted `assetId` value.
 
 ## Documentation sync (Cursor)
 
-After merge: `feature_inventory.md` RIGHT-CAT-001 → working; `eden/gap_analysis` Factions feed → match.
+**Done @ T-068.3 merge:** `feature_inventory` **RIGHT-CAT-001** → working; `eden/gap_analysis` Factions feed → match; `mission-editor.md` + MC ROADMAP palette row.
 
 ---
 

@@ -15,7 +15,7 @@ Ship `registry_items` Postgres table, dev seed, `GET /api/v1/registry`, admin im
 
 ## Problem
 
-No backend registry route; Factions palette uses [`assetCatalogMock.ts`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts).
+No backend registry route; Factions palette was mock-only until **T-068.3** (`useRegistry` + `buildCatalogTree`).
 
 ---
 

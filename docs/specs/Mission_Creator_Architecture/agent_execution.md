@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 in progress — active slice T-068.3 (palette wire)."
+overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 in progress — active slice T-068.4 (Arsenal dumb loadout UI)."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to docs/specs/Mission_Creator_Architecture/agent_execution.md"
@@ -44,9 +44,9 @@ isProject: false
 ```
 Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 in progress**
 (spec: docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
-**Active slice: T-068.3** — wire Factions palette to `GET /api/v1/registry` (Claude Code).
-T-068.0.1 / .1 / .2 shipped on main; backend API @ 4c609fe.
-Read child spec t068_3_palette_wire.md; do NOT edit docs. Branch: ticket/T-068.
+**Active slice: T-068.4** — replace Arsenal tab stub with dumb loadout UI (Claude Code).
+T-068.3 palette wire shipped @ da78452; useRegistry() live.
+Read child spec t068_4_dumb_loadout_ui.md; do NOT edit docs. Branch: ticket/T-068.
 Authority: ROADMAP.md → program hub slice table.
 **T-057–T-067 shipped.** After slice: `cd apps/website/frontend && npm run build && npm run lint`.
 Do not edit docs; do not commit unless I ask.
@@ -55,8 +55,8 @@ Do not edit docs; do not commit unless I ask.
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-068.3 active** (palette wire).
-T-068.2 registry API shipped. Per docs/TICKET_LEAD.md.
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-068.4 active** (Arsenal dumb loadout UI).
+T-068.3 palette shipped. Per docs/TICKET_LEAD.md.
 ```
 
 ## Agent roles — Cursor vs Claude Code (locked 2026-06)
@@ -344,7 +344,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-068 active** (slice **T-068.3**); **T-068.0.1 / .1 / .2 shipped**. Then this file, then `engineering_plan.md` §0–§2.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-068 active** (slice **T-068.4**); **T-068.0.1–T-068.3 shipped**. Then this file, then `engineering_plan.md` §0–§2.
 2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
 3. **Verify gate** after every phase:
    ```bash
@@ -364,15 +364,15 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ## ACTIVE SLICE — T-068 Virtual Arsenal (Eden)
 
-**Status:** **in progress** — program hub [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md). **Active slice: T-068.3** (live Factions palette — Claude Code). Cursor owns docs; Claude Code owns code.
+**Status:** **in progress** — program hub [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md). **Active slice: T-068.4** (Arsenal dumb loadout UI — Claude Code). Cursor owns docs; Claude Code owns code.
 
 | Slice | Status | Executor | Delivers |
 |-------|--------|----------|----------|
 | **T-068.0.1** | ✅ shipped `2487d59` | claude-code | `registry-items` + `loadout-export` schemas + golden fixtures |
 | **T-068.1** | ✅ shipped `ca4f2cd` | claude-code + MCP | Workbench flat export — 21 vanilla rows |
 | **T-068.2** | ✅ shipped `4c609fe` | claude-code | `GET /api/v1/registry` + dev seed + `import-registry-items` CLI |
-| **T-068.3** | **active** | claude-code | Live Factions palette — delete `assetCatalogMock.ts`, `useRegistry()` + `buildCatalogTree` |
-| **T-068.4** | queued | claude-code | **Replace Arsenal tab stub** — dumb dropdowns + loadout JSON download |
+| **T-068.3** | ✅ shipped `da78452` | claude-code | Live Factions palette — `useRegistry()` + `buildCatalogTree`; mock deleted |
+| **T-068.4** | **active** | claude-code | **Replace Arsenal tab stub** — dumb dropdowns + loadout JSON download |
 | **T-068.5 / .8** | queued | claude-code + **enfusion-mcp** | **`tbd-dev-bootstrap.sh`** + MCP equip / compat export |
 | **T-068.6** | queued | human | Phase 1 E2E gate |
 
@@ -441,7 +441,7 @@ Full ladder **T-068.0 → T-068.11** in program hub. Phase 2 gated @ T-068.6.
 4. **Right asset palette (always visible):**
    - Tabs: Factions | Vehicles | Markers | Objectives
    - Pattern: 2-col **grid cards** at tab top level → drill-down **tree** (Men → Rifleman)
-   - Keep `ASSET_DND_MIME` drag onto map; **`assetCatalogMock.ts` until T-068.3** — then live `GET /registry` feed
+   - Keep `ASSET_DND_MIME` drag onto map; palette feeds live **`GET /registry`** via `useRegistry()` + `buildCatalogTree` (T-068.3)
    - Remove `InspectorPanel` → `SlotInspector` swap entirely
 5. **AttributesModal** (double-click only) — migrate `SlotInspector` fields:
    - **Transform:** X/Y/Z, rotation (Z read-only until DEM)
@@ -523,7 +523,7 @@ Full ladder **T-068.0 → T-068.11** in program hub. Phase 2 gated @ T-068.6.
 | Phase | Blocker / notes |
 |-------|-----------------|
 | **T-091** DEM / Z-axis | Hosted 16-bit heightmaps + topo tiles; `dem/*`, `useDemLayer.ts` |
-| **T-068** Registry + Arsenal | `GET /api/v1/registry` **shipped @ T-068.2**; palette wire **T-068.3 active**; worker/smart Forge Phase 2 |
+| **T-068** Registry + Arsenal | `GET /api/v1/registry` + Factions palette **shipped @ T-068.3**; **T-068.4 active** — Arsenal dumb loadout UI; worker/smart Forge Phase 2 |
 | Ruler / LoS / viewshed | After **T-091**; `useLineLayer`, `usePolygonLayer` |
 | Product (future) | Visual-Git diff ghosts, Mission Planner, in-game Briefing UI, multiplayer y-websocket — see `mission_creator_design.md` |
 

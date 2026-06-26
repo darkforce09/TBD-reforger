@@ -1,6 +1,6 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **in progress** — BUILD + **T-068.0.1**, **T-068.1**, **T-068.2** shipped on `main`. **Active slice: T-068.3** (palette wire).  
+**Status:** **in progress** — **T-068.0.1–T-068.3** shipped on `main`. **Active slice: T-068.4** (dumb loadout UI — replace Arsenal stub).  
 **Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` (registry API). Full ticket ships @ **T-068.11**; Phase 1 gate @ **T-068.6**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
@@ -72,7 +72,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.10 | claude-code | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | §Verification gate A1–A5 |
 | T-068.11 | claude-code | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | §Verification gate A1–A4 + R1–R4 |
 
-**Active slice:** **T-068.3** — wire Factions palette to `GET /api/v1/registry` ([`t068_3_palette_wire.md`](t068_3_palette_wire.md)).
+**Active slice:** **T-068.4** — replace Attributes Arsenal stub with dumb loadout dropdowns + JSON download ([`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md)).
 
 **Shipped slices (Phase 1):**
 
@@ -82,6 +82,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.0.1 | `2487d59` | `registry-items` + `loadout-export` schemas + golden fixtures |
 | T-068.1 | `ca4f2cd` | Workbench/MCP flat export — 21 vanilla rows @ `packages/tbd-schema/registry/registry-items.workbench.json` |
 | T-068.2 | `4c609fe` / tag **T-068.2** | `GET /api/v1/registry`, `registry_dev.sql`, `import-registry-items` CLI, FE types |
+| T-068.3 | `da78452` / tag **T-068.3** | Live Factions palette — `useRegistry()` + `buildCatalogTree`; `assetCatalogMock.ts` deleted; `resource_name` on DnD |
 
 ---
 

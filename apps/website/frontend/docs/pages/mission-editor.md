@@ -21,7 +21,7 @@
 | 1 | Map viewport | canvas | Tactical grid + entities | Primary editor surface | Y.Doc + Deck.gl |
 | 2 | Top strip | bar | Title, undo/redo, time/weather scrubber, settings, Export | Command chrome; Undo/Redo buttons + **keyboard shortcuts** (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Ctrl+Y) (T-052) | Mission metadata |
 | 3 | Left dock | panel | Editor Layers (+ ORBAT tree until **T-071** removes duplicate) | Outliner / drop target | `editorLayers` map |
-| 4 | Right dock | panel | Asset Palette tabs + **Asset Browser search** | Drag assets to map; **search filters the Factions tree by name** (T-055) | **T-068.3 active:** wire `GET /api/v1/registry` → tree (today: `assetCatalogMock.ts`; API shipped @ T-068.2) |
+| 4 | Right dock | panel | Asset Palette tabs + **Asset Browser search** | Drag assets to map; **search filters the Factions tree by name** (T-055) | **`GET /api/v1/registry`** → `useRegistry` + `buildCatalogTree` (T-068.3); 8 NATO characters @ current seed |
 | 5 | Toolbelt | bar | Select, Ruler, LoS + X/Y/Z readout + **OBJ/SEL counts** (T-058) | Map tools; CUR/SEL coords; **OBJ** = total slots, **SEL** = selected count | Tool state + `slotsById` + selection |
 | 6 | Inspector | panel | Slot fields on double-click | `AttributesModal` opens from **map dbl-click**, **ORBAT** slot row, or **Editor Layers** slot row (T-054); **Transform X/Y/Z/rotation editable** (T-049) | Selected slot |
 | 7 | Save Version | button | POST new semver | Immutable versions API | `useMissionEditor` |
@@ -40,7 +40,7 @@
 - **Chromeless:** No platform Sidebar/TopNav (`fullBleed` + `chromeless` route handles).
 - **Loading:** Four-phase overlay on **cold** load: **restoring** (T-062.1 ✅ v2 chunked / legacy migrate once) → download → apply → local flush. **Warm return** (T-062.2): restoring → local flush only. **v2 @ ~360k:** determinate restoring `done/total` ticks smoothly (no 0→300k jump on 2nd+ load). **Dev alt-tab:** overlay should not reappear after extended background (T-062.2). **Save:** T-060.1.4 FIXED.
 - **Dirty:** Local autosave to v2 `idb` on `LOCAL_ORIGIN` edits; Save Version posts **editor-only** payload (T-062.1.1 — no duplicate `orbat[]`); server derives ORBAT for events. Export keeps full superset.
-- **Blocked:** T-091 DEM/Z-axis, ruler/LoS viewshed (after T-091). **T-068** Virtual Arsenal in progress — registry API **shipped @ T-068.2**; Factions palette wire **T-068.3 active** ([`t068_virtual_arsenal_program.md`](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)).
+- **Blocked:** T-091 DEM/Z-axis, ruler/LoS viewshed (after T-091). **T-068** Virtual Arsenal in progress — palette **shipped @ T-068.3**; **T-068.4 active** (Arsenal dumb loadout UI). Hub: [`t068_virtual_arsenal_program.md`](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
 
 ### Keyboard (host — `/missions/:id/edit`)
 | Shortcut | Action |
@@ -66,7 +66,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 | `GET /missions/:id/versions/current` | GET | Hydrate | `MissionVersion` |
 | `POST /missions/:id/versions` | POST | Save Version | `MissionVersion` (409 dup semver; **256 MB** route cap → **413** over it, T-060; other JSON routes stay 1 MB) |
 | `GET /missions/:id/export` | GET | Export preview | camelCase envelope |
-| `GET /registry` | GET | Factions palette (T-068.3 wires UI) | `{ data, etag, modpack_id, modpack_version }` — route **shipped @ T-068.2**; `mission_maker+` JWT |
+| `GET /registry` | GET | Factions palette on load | `{ data, etag, modpack_id, modpack_version }` — wired @ **T-068.3**; `mission_maker+` JWT |
 
 ## Milestones
 
@@ -93,7 +93,8 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M4.22 — [x] T-064 virtualized outliner @ ~367k (incl. T-064.1 scroll-ref hotfix — spec: [t064_virtualized_outliner.md](../../../docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md))
 ### M5.23 — [x] T-066 worker compile offload + `pickMapSnapshot` (Save 201 @ ~367k — spec: [t066_worker_compile.md](../../../docs/specs/Mission_Creator_Architecture/t066_worker_compile.md))
 ### M5.24 — [x] T-067 spatial chunks — bulk-paste `slot-add-bulk` + chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()` @ ~160 fps pan @ 367k) — spec: [t067_spatial_chunks.md](../../../docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md)
-### M5.26 — [ ] T-068 Virtual Arsenal — **T-068.0.1 / .1 / .2 shipped**; **T-068.3 active** (palette wire) — hub: [t068_virtual_arsenal_program.md](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
+### M5.26 — [ ] T-068 Virtual Arsenal — **T-068.0.1–T-068.3 shipped**; **T-068.4 active** (Arsenal loadout UI) — hub: [t068_virtual_arsenal_program.md](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
+### M5.26a — [x] T-068.3 Factions palette → live registry (`useRegistry`, `buildCatalogTree`, `resource_name` on drop) @ `da78452`
 ### M5.25 — [ ] **T-111** lazy chunk residency @ 1M+ / **T-112** GPU viewport cull (`idea` — [`TICKET_BRAINSTORM.md`](../../../docs/TICKET_BRAINSTORM.md#scale))
 
 ## Test Plan
@@ -115,5 +116,5 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 - **[PERF-007] Alt-tab / session reload @ 360k** — **Resolved T-062.2.** Extended alt-tab (Firefox dev) no longer re-triggers full load overlay; warm session skips server GET on same-tab return. Spec: [t062_2_editor_session_persistence.md](../../../docs/specs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md).
 - **[PERF-008] Outliner @ 360k** — **Resolved T-064.** Virtualized ORBAT + Editor Layers; outliner visible on first paint @ ~367k; scrollable 367k rows; T-064.1 scroll-ref hotfix. Spec: [t064_virtualized_outliner.md](../../../docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md).
 - **[PERF-009] Spatial chunks / bulk paste @ 367k+** — **Partially resolved T-067.** Bulk paste `slot-add-bulk` shipped; pan ~160 fps @ 367k (CPU cull deferred). Lazy RAM + GPU cull @ 1M+ deferred. Spec: [t067_spatial_chunks.md](../../../docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md).
-- **Active slice:** **T-068.3** — wire Factions palette to `GET /api/v1/registry` ([`t068_3_palette_wire.md`](../../../docs/specs/Mission_Creator_Architecture/t068_3_palette_wire.md)). Backend registry API shipped @ T-068.2 (`4c609fe`). See [TICKET_LEAD.md](../../../docs/TICKET_LEAD.md).
+- **Active slice:** **T-068.4** — replace Attributes Arsenal stub with dumb loadout dropdowns + JSON download ([`t068_4_dumb_loadout_ui.md`](../../../docs/specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md)). Palette shipped @ T-068.3 (`da78452`). See [TICKET_LEAD.md](../../../docs/TICKET_LEAD.md).
 - **Next queued (after T-068 ship):** T-069 markers, T-070 vehicles, T-071 ORBAT Manager modal — see [Mission Creator ROADMAP](../../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) and [TICKET_REGISTRY.md](../../../docs/TICKET_REGISTRY.md).

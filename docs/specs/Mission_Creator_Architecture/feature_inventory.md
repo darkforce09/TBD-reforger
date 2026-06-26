@@ -747,28 +747,29 @@
 | **Inputs** | LMB tab |
 | **Outputs** | UI |
 | **Edge cases** | Only Factions functional |
-| **Acceptance** | `- [ ] Factions shows tree` `- [ ] Other tabs show placeholder` |
+| **Acceptance** | `- [x] Factions shows tree` `- [ ] Other tabs show placeholder` |
 | **Eden parity** | Eden:RIGHT-TABS-001 |
 | **Status** | partial |
 | **Evidence** | `AssetPalette.tsx` |
 
-#### RIGHT-CAT-001 — Factions mock catalog tree
+#### RIGHT-CAT-001 — Factions registry catalog tree
 
 | Field | Value |
 |-------|-------|
 | **Domain** | RIGHT |
 | **Goal** | Browse placeable units |
 | **Trigger** | Factions tab active |
-| **Preconditions** | — |
-| **Procedure** | **Ready (T-068.3):** `GET /api/v1/registry` → `buildCatalogTree` → `TreeView`; leaf drag `ASSET_DND_MIME` with **`resource_name`**. **Today:** `ASSET_CATALOG` mock — API backend shipped @ T-068.2 |
-| **Postconditions** | Draggable leaves with **`resource_name`** in DnD payload (`assetId`) |
-| **Inputs** | Expand/select/drag |
-| **Outputs** | DnD payload (`assetId` = full Enfusion ResourceName) |
-| **Edge cases** | Loading/error/empty modpack states (wire in T-068.3) |
-| **Acceptance** | `- [ ] NATO tree from API` `- [ ] Leaf drags to map with resource_name GUID` |
+| **Preconditions** | `mission_maker+`; `GET /api/v1/registry` returns rows |
+| **Procedure** | `useRegistry()` → `buildCatalogTree` (character rows only) → `TreeView`; T-055 `filterCatalog`; leaf drag `ASSET_DND_MIME` with **`resource_name`** as `assetId` |
+| **Postconditions** | Draggable leaves with full Enfusion **`resource_name`** in DnD payload |
+| **Inputs** | Expand/select/drag; search filters tree |
+| **Outputs** | DnD payload → `addSlot(..., { assetId: resource_name, role: display_name })` |
+| **Edge cases** | Loading spinner-only (no tree flash); error + Retry; empty modpack message |
+| **Acceptance** | `- [x] NATO tree from API` `- [x] Leaf drags to map with resource_name GUID` |
 | **Eden parity** | Eden:RIGHT-CAT-001 |
-| **Status** | partial — **T-068.2 API shipped**; palette wire **T-068.3 active** |
-| **Evidence** | [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md); today: `AssetBrowser.tsx`, `assetCatalogMock.ts` |
+| **Status** | **working** |
+| **Ticket** | T-068.3 |
+| **Evidence** | `registry/buildCatalogTree.ts`, `AssetBrowser.tsx`, `hooks/queries.ts` `useRegistry()` |
 
 #### RIGHT-SEARCH-001 — Asset browser search
 
@@ -778,7 +779,7 @@
 | **Goal** | Eden asset search field |
 | **Trigger** | Type in the Asset Browser search box (Factions tab) |
 | **Preconditions** | Palette open, Factions tab |
-| **Procedure** | T-055: `AssetBrowser` `filterCatalog(ASSET_CATALOG, q)` (case-insensitive label substring; folder kept on self-match → full subtree, else on descendant match → filtered children; retained folders `defaultExpanded`); `TreeView` keyed on query so mount-time expand re-runs |
+| **Procedure** | T-055: `AssetBrowser` `filterCatalog(catalog, q)` on registry-built tree (case-insensitive label substring; folder kept on self-match → full subtree, else on descendant match → filtered children; retained folders `defaultExpanded`); `TreeView` keyed on query so mount-time expand re-runs |
 | **Postconditions** | Tree narrows to matches (ancestors expanded); empty → "No assets match"; clear (X/Esc) restores |
 | **Inputs** | Text query; Esc / X to clear |
 | **Outputs** | Filtered `TreeView`; filtered leaves still draggable (`ASSET_DND_MIME`) |
@@ -1678,9 +1679,9 @@ Items verified in code + scrape cross-check; added after initial `06` draft.
 |-------|-------|
 | **Domain** | PLACE |
 | **Goal** | Place vehicles/objects as correct entity kinds |
-| **Procedure** | `assetCatalogMock.ts` MRAP/sandbags → `kind:'slot'` in `AssetBrowser` |
-| **Status** | partial |
-| **Evidence** | `assetCatalogMock.ts`, `AssetBrowser.tsx` |
+| **Procedure** | **T-068.3:** mock MRAP/sandbag leaves removed — palette is character-only from registry. Vehicles/objects → **T-070** |
+| **Status** | deferred (T-070) |
+| **Evidence** | `buildCatalogTree.ts` filters `kind === 'character'`; `assetCatalogMock.ts` deleted |
 
 #### ENV-SETTINGS-002 — Thermals + view distance
 

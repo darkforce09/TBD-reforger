@@ -1,7 +1,7 @@
 # T-068.4 — Dumb loadout picker + JSON download
 
 **Ticket:** T-068 · **Slice:** T-068.4  
-**Status:** Spec ready — code pending  
+**Status:** **active** — depends on T-068.3 `useRegistry()` (shipped @ `da78452`)  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
