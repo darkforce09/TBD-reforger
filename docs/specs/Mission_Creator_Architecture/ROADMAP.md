@@ -9,7 +9,7 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-068** — Asset registry + Loadout Forge (ready)
+- **T-068** — Virtual Arsenal (registry + loadout export) (ready)
 - **T-069** — Markers on map (queued)
 - **T-070** — Vehicles placeable (queued)
 - **T-071** — ORBAT Manager modal (queued)
@@ -152,7 +152,8 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../../apps/website/frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
-| **[`t068_asset_registry.md`](t068_asset_registry.md)** | **T-068** — Asset registry + palette (thin API + Factions tree) (**ready**) |
+| **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub + slices T-068.0–T-068.11 (**ready**) |
+| [`t068_asset_registry.md`](t068_asset_registry.md) | Legacy stub → redirects to program hub |
 | **[`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md)** | **T-110** — Terrain base + mission layers (future; Base + Delta for props only) |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | **ACTIVE: T-068** (spec ready); latest shipped **T-067** |
 
@@ -259,7 +260,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
 
-**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 ready** — [`t068_asset_registry.md`](t068_asset_registry.md). Latest shipped **T-067**.
+**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 ready** — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) (active **T-068.0.1**). Latest shipped **T-067**.
 
 ---
 
@@ -326,7 +327,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
-| **T-068** | Registry API + catalog UI backed by registry (not `assetCatalogMock.ts`) | **Ready** — [`t068_asset_registry.md`](t068_asset_registry.md) |
+| **T-068** | Virtual Arsenal — registry + dumb loadout + mod equip (Phase 1); smart Forge (Phase 2) | **Ready** — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
 | **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
 | **T-071** | ORBAT Manager modal — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal | **Queued** |

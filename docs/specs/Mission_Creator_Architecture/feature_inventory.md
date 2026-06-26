@@ -768,7 +768,7 @@
 | **Acceptance** | `- [ ] NATO tree from API` `- [ ] Leaf drags to map with classname` |
 | **Eden parity** | Eden:RIGHT-CAT-001 |
 | **Status** | partial (spec ready) |
-| **Evidence** | [`t068_asset_registry.md`](t068_asset_registry.md); today: `AssetBrowser.tsx`, `assetCatalogMock.ts` |
+| **Evidence** | [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md); today: `AssetBrowser.tsx`, `assetCatalogMock.ts` |
 
 #### RIGHT-SEARCH-001 — Asset browser search
 
@@ -1443,23 +1443,24 @@
 | **Status** | stub |
 | **Evidence** | `AttributesModal.tsx` |
 
-#### ATTR-TAB-004 — Arsenal tab (stub)
+#### ATTR-TAB-004 — Arsenal tab (stub → T-068.4)
 
 | Field | Value |
 |-------|-------|
 | **Domain** | ATTR |
 | **Goal** | Loadout editor |
 | **Trigger** | Arsenal tab |
-| **Preconditions** | — |
-| **Procedure** | Disabled "Open Loadout Forge (soon)" |
-| **Postconditions** | — |
-| **Inputs** | — |
-| **Outputs** | — |
-| **Edge cases** | Phase 6 |
-| **Acceptance** | `- [ ] Button disabled` |
-| **Eden parity** | Eden:ATTR-ARSENAL-001 |
+| **Preconditions** | Exactly one slot selected |
+| **Procedure (today)** | Placeholder copy + disabled "Open Loadout Forge (soon)" — **no loadout UI** |
+| **Procedure (T-068.4 ship)** | **Replace stub:** 4 enabled gear dropdowns + enabled Download `loadout-export.json` |
+| **Postconditions** | Downloaded JSON validates against `loadout-export.schema.json` |
+| **Inputs** | Registry gear rows (`gear_primary`, `gear_uniform`, `gear_vest`, `gear_helmet`) |
+| **Outputs** | Browser download of flat loadout JSON |
+| **Edge cases** | Paper-doll / attachments deferred to T-068.10 |
+| **Acceptance** | `- [x] Stub only (pre-T-068.4)` · `- [ ] T-068.4: stub removed; dropdowns + download work` |
+| **Eden parity** | Eden:ATTR-ARSENAL-001 (dumb export Phase 1; smart Forge Phase 2) |
 | **Status** | stub |
-| **Evidence** | `AttributesModal.tsx` |
+| **Evidence** | `AttributesModal.tsx` (`ArsenalTab`) · ship spec [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) |
 
 ---
 

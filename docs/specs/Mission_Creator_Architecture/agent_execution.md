@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 ready — implement per t068_asset_registry.md."
+overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 ready — implement per t068_virtual_arsenal_program.md (active slice T-068.0.1)."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to docs/specs/Mission_Creator_Architecture/agent_execution.md"
@@ -43,8 +43,10 @@ isProject: false
 
 ```
 Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 is READY**
-(spec: docs/specs/Mission_Creator_Architecture/t068_asset_registry.md). Implement
-T-068.0 backend then T-068.1 frontend. Authority: ROADMAP.md → this file §ACTIVE SLICE.
+(spec: docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
+**Active slice: T-068.0.1** — schemas in packages/tbd-schema (Claude Code).
+Read child spec t068_0_1_registry_schemas.md; do NOT edit docs.
+Authority: ROADMAP.md → program hub slice table.
 **T-057–T-067 shipped.** Thin registry only — no worker/Arsenal. Full tiles/DEM (**T-090**,
 **T-091**) and ruler/LoS deferred. After each slice: `make test-it` (backend) and
 `cd frontend && npm run build && npm run lint`. Do not edit docs; do not commit unless I ask.
@@ -360,16 +362,21 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ---
 
-## ACTIVE SLICE — T-068 ready (Eden)
+## ACTIVE SLICE — T-068 Virtual Arsenal (Eden)
 
-**Status:** **ready** — spec [`t068_asset_registry.md`](t068_asset_registry.md). **Claude Code implements; Cursor syncs docs on ship.**
+**Status:** **ready** — program hub [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md). **Active slice: T-068.0.1** (JSON schemas — Claude Code). Cursor owns docs; Claude Code owns code.
 
-| Slice | Scope |
-|-------|--------|
-| **T-068.0** | Backend — `registry_items` table, dev seed, `GET /api/v1/registry` + ETag |
-| **T-068.1** | Frontend — `useRegistry`, `buildCatalogTree`, wire `AssetBrowser`, delete mock |
+| Slice | Executor | Delivers |
+|-------|----------|----------|
+| **T-068.0.1** | claude-code | `registry-items` + `loadout-export` schemas + golden fixtures |
+| **T-068.2** | claude-code | `GET /api/v1/registry` + dev seed + import CLI |
+| **T-068.3** | claude-code | Live Factions palette (delete mock) |
+| **T-068.4** | claude-code | **Replace Arsenal tab stub** — dumb dropdowns + loadout JSON download (functional UI, not wire-up) |
+| **T-068.1 / .5 / .6** | workbench / human | Workbench export, mod equip, Phase 1 E2E gate |
 
-**Locked out of scope:** `registry.worker.ts`, ArsenalInspector, ingest pipeline, Vehicles/Markers tabs (**T-069**/**T-070**), compiler classname export.
+Full ladder **T-068.0 → T-068.11** in program hub. Phase 2 gated @ T-068.6.
+
+**Locked out of scope (Phase 1):** `registry.worker.ts`, smart Forge, compat matrix, compiler loadout export — see Phase 2 slices. Vehicles/Markers tabs (**T-069**/**T-070**).
 
 **T-067 shipped** — [`t067_spatial_chunks.md`](t067_spatial_chunks.md): `slot-add-bulk` paste patch; dormant chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()`).
 

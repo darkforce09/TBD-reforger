@@ -7,9 +7,9 @@
   "tickets": [
     {
       "id": "T-068",
-      "title": "Asset registry + Loadout Forge",
+      "title": "Virtual Arsenal (registry + loadout export)",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t068_asset_registry.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md",
       "branch": "ticket/T-068"
     }
   ]

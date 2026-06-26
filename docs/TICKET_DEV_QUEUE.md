@@ -4,3 +4,11 @@
 # Developer Queue
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
+
+## T-068 — Virtual Arsenal (registry + loadout export)
+
+- **Active slice:** `T-068.0.1`
+- **Spec:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
+- **Branch:** `ticket/T-068`
+- **Targets:** website, shared, root, mod
+- **Summary:** Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export.

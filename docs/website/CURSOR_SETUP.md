@@ -77,7 +77,7 @@ cd apps/website/frontend && npm ci
 - **Mission Creator:** `http://localhost:5173/missions/:id/edit` (after creating/opening a mission)
 - **Full details:** [DEV_RUNBOOK.md](DEV_RUNBOOK.md)
 
-**Mod Workbench** (T-068.0a / Enfusion only): copy MCP config when needed — see Step 4.
+**Mod Workbench** (T-068.1 / T-068.5 / T-068.8 — `workbench` slices): copy MCP config when needed — see Step 4.
 
 ---
 
@@ -122,7 +122,7 @@ You are in the Brainstorm chat for TBD Reforger — ideas and design for anythin
 
 Read CLAUDE.md §Status when you need current ticket context. No code unless I ask.
 Do not edit .ai/tickets/registry.json or spec files here — landed decisions go to the Docs & Tickets chat.
-For MC work, useful refs: TICKET_LEAD, MC ROADMAP, active spec (e.g. t068_asset_registry.md).
+For MC work, useful refs: TICKET_LEAD, MC ROADMAP, program hub (`t068_virtual_arsenal_program.md`).
 ```
 
 Optional @ pins: `CLAUDE.md`, `docs/TICKET_LEAD.md`.
@@ -136,7 +136,7 @@ You own cursor-docs work: .ai/tickets/registry.json, specs under docs/specs/, an
 Never hand-edit generated docs/TICKET_*.md. After registry edits: ./scripts/ticket sync && make ticket-check-strict.
 Stop on workbench/human/ci executor slices.
 
-Claude Code runs outside Cursor (./scripts/ticket run). I paste verify output here for the doc sync pass after claude-code slices ship.
+Claude Code runs outside Cursor (./scripts/ticket run). I paste **Verify paste blocks** (program hub §Verification contract) here; Cursor checks **§Verification gate** tables before `./scripts/ticket advance-slice T-068`.
 For status: read CLAUDE.md §Status + docs/TICKET_LEAD.md and answer in one screen.
 ```
 
@@ -186,7 +186,7 @@ Idea (Brainstorm) → registry row (Docs & Tickets) → ./scripts/ticket sync
 1. [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md)
 2. [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md)
 3. [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md)
-4. [`t068_asset_registry.md`](../specs/Mission_Creator_Architecture/t068_asset_registry.md)
+4. [`t068_virtual_arsenal_program.md`](../specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
 5. [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md)
 6. [`feature_inventory.md`](../specs/Mission_Creator_Architecture/feature_inventory.md)
 
@@ -194,6 +194,6 @@ Idea (Brainstorm) → registry row (Docs & Tickets) → ./scripts/ticket sync
 
 ## What this setup does NOT do
 
-- No Go/React implementation (T-068.1+ is Claude Code after slice advance)
-- No Workbench export (T-068.0a — human/workbench executor)
+- No Go/React implementation until Claude Code slice **T-068.0.1+** on `ticket/T-068`
+- Workbench export (**T-068.1**) and mod equip (**T-068.5**) are workbench/human executors
 - No changes to ticket registry unless you start spec work in **Docs & Tickets**

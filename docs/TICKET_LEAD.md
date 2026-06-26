@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-068** (680) — Asset registry + Loadout Forge [ready] — Cross-cutting registry ingest, API, worker, palette, forge, compiler.
+- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export.
 
 ## Next queued (top 10)
 

@@ -1155,15 +1155,18 @@
       "status": "ready",
       "surfaces": [
         "RIGHT",
+        "ATTR",
         "DATA"
       ],
       "impact": [
         "api",
         "ui",
-        "state"
+        "state",
+        "schema",
+        "compiler"
       ],
-      "title": "Asset registry + Loadout Forge",
-      "summary": "Cross-cutting registry ingest, API, worker, palette, forge, compiler.",
+      "title": "Virtual Arsenal (registry + loadout export)",
+      "summary": "Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export.",
       "depends_on": [
         "T-067"
       ],
@@ -1172,20 +1175,28 @@
         "T-070",
         "T-071"
       ],
+      "implements": [
+        "RIGHT-CAT-001"
+      ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-068",
-      "spec": "docs/specs/Mission_Creator_Architecture/t068_asset_registry.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md",
       "slices": [
         "T-068.0",
-        "T-068.0a",
+        "T-068.0.1",
         "T-068.1",
         "T-068.2",
         "T-068.3",
         "T-068.4",
         "T-068.5",
-        "T-068.6"
+        "T-068.6",
+        "T-068.7",
+        "T-068.8",
+        "T-068.9",
+        "T-068.10",
+        "T-068.11"
       ],
-      "active_slice": "T-068.0",
+      "active_slice": "T-068.0.1",
       "stream": "mission-creator",
       "targets": [
         "website",
@@ -1194,6 +1205,7 @@
         "mod"
       ],
       "executor": "claude-code",
+      "parallel_ok": true,
       "slice_plan": {
         "T-068.0": {
           "targets": [
@@ -1202,17 +1214,18 @@
           ],
           "executor": "cursor-docs"
         },
-        "T-068.0a": {
+        "T-068.0.1": {
+          "targets": [
+            "shared",
+            "root"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.1": {
           "targets": [
             "mod"
           ],
           "executor": "workbench"
-        },
-        "T-068.1": {
-          "targets": [
-            "website"
-          ],
-          "executor": "claude-code"
         },
         "T-068.2": {
           "targets": [
@@ -1234,11 +1247,43 @@
         },
         "T-068.5": {
           "targets": [
+            "mod"
+          ],
+          "executor": "workbench"
+        },
+        "T-068.6": {
+          "targets": [
+            "mod",
+            "website"
+          ],
+          "executor": "human"
+        },
+        "T-068.7": {
+          "targets": [
+            "shared",
+            "root"
+          ],
+          "executor": "cursor-docs"
+        },
+        "T-068.8": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "workbench"
+        },
+        "T-068.9": {
+          "targets": [
             "website"
           ],
           "executor": "claude-code"
         },
-        "T-068.6": {
+        "T-068.10": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.11": {
           "targets": [
             "website"
           ],
