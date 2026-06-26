@@ -9,7 +9,7 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-068** — Asset registry + palette (ready)
+- **T-068** — Asset registry + Loadout Forge (ready)
 - **T-069** — Markers on map (queued)
 - **T-070** — Vehicles placeable (queued)
 - **T-071** — ORBAT Manager modal (queued)

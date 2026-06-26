@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WEB="$ROOT/Tbdevent_Website"
+WEB="$ROOT/website"
 set -a && source "$WEB/.env" && set +a
 
 if command -v psql >/dev/null 2>&1; then

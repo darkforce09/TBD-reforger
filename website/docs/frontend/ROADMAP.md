@@ -15,7 +15,7 @@
 | **[`frontend/docs/INDEX.md`](../../frontend/docs/INDEX.md)** | Per-route surface specs (28 pages) |
 | **[`frontend/docs/THEME.md`](../../frontend/docs/THEME.md)** | Aegis tokens in use |
 | **[`frontend/docs/_template.md`](../../frontend/docs/_template.md)** | Template for new page docs |
-| **[Mission Creator ROADMAP](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md)** | 2D editor ticket queue |
+| **[Mission Creator ROADMAP](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md)** | 2D editor ticket queue |
 | **[`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)** | Split-pane / frictionlessness methodology |
 | **[`CLAUDE.md`](../../CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
 | **[`docs/AGENT_COMMIT_CHECKLIST.md`](../AGENT_COMMIT_CHECKLIST.md)** | Same-commit doc sync — read before every T-0xx |
@@ -37,7 +37,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/leaderboards` | [leaderboards.md](../../frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | **in-progress** — T-067 shipped ([`t067_spatial_chunks.md`](../../Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md)); next T-068+ |
+| `/missions/:id/edit` | [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | **in-progress** — T-067 shipped ([`t067_spatial_chunks.md`](../../docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md)); next T-068+ |
 | `/events` | [event-schedule.md](../../frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../frontend/docs/pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../frontend/docs/pages/event-hub.md) | |
@@ -75,23 +75,23 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY.md).
 
 | Item | Spec | Notes |
 |------|------|-------|
-| **T-061 drag-move @ 360k (shipped — good enough)** | [t061_drag_move_hotfix.md](../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md) | T-061.0 motion ~60 fps + T-061.0.1 `slotIconCache` + slot fast path; **T-094** deferred |
-| **T-062 incremental bindings (shipped)** | [t062_incremental_bindings.md](../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md) | Classifier + bulk delete @ 360k |
-| **T-062.2 editor session (shipped)** | [t062_2_editor_session_persistence.md](../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) | Alt-tab / warm session fast path |
-| **T-060 scale load/save (shipped `b1fd25a`)** | [t060_1](../../Design_Docs/Mission_Creator_Architecture/t060_1_scale_load_save_completion.md) · [t060](../../Design_Docs/Mission_Creator_Architecture/t060_fast_initial_load.md) | Four-phase load; Save @ ~367k/~142 MB → 201 |
-| **T-064 Virtualized outliner (shipped)** | [t064_virtualized_outliner.md](../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md) | `@tanstack/react-virtual` + segment flatten; scrollable @ ~367k; T-064.1 scroll-ref hotfix |
-| **T-063 Spatial index (shipped)** | [t063_spatial_index.md](../../Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md) | rbush pick/marquee @ ~367k |
-| **T-059 Bulk paste at scale** | [t059_bulk_paste_operations.md](../../Design_Docs/Mission_Creator_Architecture/t059_bulk_paste_operations.md) | Batch O(n) `pasteSlots`; selection cap 500; outliner virtualization (T-064). **Validated: 360k @ 100+ fps** pan; 6k paste loops smooth |
-| **T-058 Toolbelt OBJ/SEL counts** | [t058_entity_count_readout.md](../../Design_Docs/Mission_Creator_Architecture/t058_entity_count_readout.md) | OBJ + SEL in toolbelt; scale telemetry |
-| **T-057 Map perf hotfix** | [t057_map_performance_hotfix.md](../../Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md) | ≥55 fps pan/zoom @ 200+ slots |
-| **T-056 Ctrl+C/V copy-paste** | [t056_copy_paste.md](../../Design_Docs/Mission_Creator_Architecture/t056_copy_paste.md) | Copy/paste at cursor; one undo step |
-| **T-055 Asset browser search** | [t055_asset_browser_search.md](../../Design_Docs/Mission_Creator_Architecture/t055_asset_browser_search.md) | Factions tree filter; X/Esc clears |
-| **T-054 Attributes entry points** | [t054_attributes_entry_points.md](../../Design_Docs/Mission_Creator_Architecture/t054_attributes_entry_points.md) | Map + ORBAT dbl-click → Attributes |
-| **T-053 Ctrl/Cmd additive select** | [t053_additive_select.md](../../Design_Docs/Mission_Creator_Architecture/t053_additive_select.md) | Modifier-click toggle select |
-| **T-052 Undo/redo keyboard** | [t052_undo_shortcuts.md](../../Design_Docs/Mission_Creator_Architecture/t052_undo_shortcuts.md) | Keyboard undo/redo + StrictMode fix |
-| **T-050 Cursor Z readout** | [t050_cursor_z_readout.md](../../Design_Docs/Mission_Creator_Architecture/t050_cursor_z_readout.md) | Toolbelt CUR X/Y/Z until **T-091** DEM |
-| **T-049 Terrain, title, position** | [t049_terrain_title_position.md](../../Design_Docs/Mission_Creator_Architecture/t049_terrain_title_position.md) | Terrain viewport; row meta hydrate; editable transform |
-| **T-048 Library create dialog** | [t048_library_create_dialog.md](../../Design_Docs/Mission_Creator_Architecture/t048_library_create_dialog.md) | `CreateMissionDialog` on `/missions` |
+| **T-061 drag-move @ 360k (shipped — good enough)** | [t061_drag_move_hotfix.md](../../docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md) | T-061.0 motion ~60 fps + T-061.0.1 `slotIconCache` + slot fast path; **T-094** deferred |
+| **T-062 incremental bindings (shipped)** | [t062_incremental_bindings.md](../../docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md) | Classifier + bulk delete @ 360k |
+| **T-062.2 editor session (shipped)** | [t062_2_editor_session_persistence.md](../../docs/specs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md) | Alt-tab / warm session fast path |
+| **T-060 scale load/save (shipped `b1fd25a`)** | [t060_1](../../docs/specs/Mission_Creator_Architecture/t060_1_scale_load_save_completion.md) · [t060](../../docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md) | Four-phase load; Save @ ~367k/~142 MB → 201 |
+| **T-064 Virtualized outliner (shipped)** | [t064_virtualized_outliner.md](../../docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md) | `@tanstack/react-virtual` + segment flatten; scrollable @ ~367k; T-064.1 scroll-ref hotfix |
+| **T-063 Spatial index (shipped)** | [t063_spatial_index.md](../../docs/specs/Mission_Creator_Architecture/t063_spatial_index.md) | rbush pick/marquee @ ~367k |
+| **T-059 Bulk paste at scale** | [t059_bulk_paste_operations.md](../../docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md) | Batch O(n) `pasteSlots`; selection cap 500; outliner virtualization (T-064). **Validated: 360k @ 100+ fps** pan; 6k paste loops smooth |
+| **T-058 Toolbelt OBJ/SEL counts** | [t058_entity_count_readout.md](../../docs/specs/Mission_Creator_Architecture/t058_entity_count_readout.md) | OBJ + SEL in toolbelt; scale telemetry |
+| **T-057 Map perf hotfix** | [t057_map_performance_hotfix.md](../../docs/specs/Mission_Creator_Architecture/t057_map_performance_hotfix.md) | ≥55 fps pan/zoom @ 200+ slots |
+| **T-056 Ctrl+C/V copy-paste** | [t056_copy_paste.md](../../docs/specs/Mission_Creator_Architecture/t056_copy_paste.md) | Copy/paste at cursor; one undo step |
+| **T-055 Asset browser search** | [t055_asset_browser_search.md](../../docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md) | Factions tree filter; X/Esc clears |
+| **T-054 Attributes entry points** | [t054_attributes_entry_points.md](../../docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md) | Map + ORBAT dbl-click → Attributes |
+| **T-053 Ctrl/Cmd additive select** | [t053_additive_select.md](../../docs/specs/Mission_Creator_Architecture/t053_additive_select.md) | Modifier-click toggle select |
+| **T-052 Undo/redo keyboard** | [t052_undo_shortcuts.md](../../docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md) | Keyboard undo/redo + StrictMode fix |
+| **T-050 Cursor Z readout** | [t050_cursor_z_readout.md](../../docs/specs/Mission_Creator_Architecture/t050_cursor_z_readout.md) | Toolbelt CUR X/Y/Z until **T-091** DEM |
+| **T-049 Terrain, title, position** | [t049_terrain_title_position.md](../../docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md) | Terrain viewport; row meta hydrate; editable transform |
+| **T-048 Library create dialog** | [t048_library_create_dialog.md](../../docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md) | `CreateMissionDialog` on `/missions` |
 
 ## Recommended next work
 
@@ -104,7 +104,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY.md).
 ## Design system
 
 - **Live tokens:** [`frontend/src/index.css`](../../frontend/src/index.css)
-- **Reference YAML:** [`Design_Docs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md`](../../Design_Docs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md)
+- **Reference YAML:** [`docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md`](../../docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md)
 - **Methodology:** [`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)
 
 Do not implement from archived stitch `code.html`.

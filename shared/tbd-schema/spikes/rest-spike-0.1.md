@@ -11,22 +11,22 @@ unreliable.
 
 ## What was built
 
-In [`Tbdevent_Website`](../../Tbdevent_Website):
+In [`website`](../../website):
 
-- Server-token middleware — [`internal/middleware/servertoken.go`](../../Tbdevent_Website/internal/middleware/servertoken.go)
-- Game-server handler — [`internal/handlers/gameserver.go`](../../Tbdevent_Website/internal/handlers/gameserver.go)
+- Server-token middleware — [`internal/middleware/servertoken.go`](../../website/internal/middleware/servertoken.go)
+- Game-server handler — [`internal/handlers/gameserver.go`](../../website/internal/handlers/gameserver.go)
   - `GET /api/missions/{id}/compiled` (serves compiled mission JSON from `MISSIONS_DIR`)
   - `POST /api/results` (log-only)
   - `POST /api/telemetry` (log-only)
-- Wired into the production router — [`internal/server/server.go`](../../Tbdevent_Website/internal/server/server.go)
-- Spike harness (no DB) — [`cmd/restspike`](../../Tbdevent_Website/cmd/restspike)
-- Spike client emulating the dedicated server — [`scripts/rest-spike.sh`](../../Tbdevent_Website/scripts/rest-spike.sh)
-- Handler tests — [`internal/handlers/gameserver_test.go`](../../Tbdevent_Website/internal/handlers/gameserver_test.go)
+- Wired into the production router — [`internal/server/server.go`](../../website/internal/server/server.go)
+- Spike harness (no DB) — [`cmd/restspike`](../../website/cmd/restspike)
+- Spike client emulating the dedicated server — [`scripts/rest-spike.sh`](../../website/scripts/rest-spike.sh)
+- Handler tests — [`internal/handlers/gameserver_test.go`](../../website/internal/handlers/gameserver_test.go)
 
 ## How to run
 
 ```bash
-cd Tbdevent_Website
+cd website
 export GOROOT="$PWD/.tools/go" PATH="$PWD/.tools/go/bin:$PATH"
 
 # automated tests (no network, no DB)

@@ -1,5 +1,5 @@
 {
-  "next_id": 113,
+  "next_id": 121,
   "tickets": [
     {
       "id": "T-001",
@@ -14,7 +14,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 10
+      "order": 10,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-002",
@@ -29,7 +34,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 20
+      "order": 20,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-003",
@@ -43,7 +53,12 @@
         "api"
       ],
       "status": "shipped",
-      "order": 30
+      "order": 30,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-004",
@@ -58,7 +73,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 40
+      "order": 40,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-005",
@@ -72,7 +92,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 50
+      "order": 50,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-006",
@@ -86,7 +111,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 60
+      "order": 60,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-008",
@@ -103,7 +133,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 80
+      "order": 80,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-009",
@@ -118,7 +153,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 90
+      "order": 90,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-010",
@@ -134,7 +174,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 100
+      "order": 100,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-011",
@@ -148,7 +193,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 110
+      "order": 110,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-012",
@@ -162,7 +212,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 120
+      "order": 120,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-013",
@@ -176,7 +231,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 130
+      "order": 130,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-018",
@@ -190,7 +250,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 180
+      "order": 180,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-019",
@@ -204,7 +269,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 190
+      "order": 190,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-020",
@@ -218,7 +288,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 200
+      "order": 200,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-021",
@@ -232,7 +307,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 210
+      "order": 210,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-022",
@@ -246,7 +326,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 220
+      "order": 220,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-023",
@@ -260,7 +345,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 230
+      "order": 230,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-024",
@@ -274,7 +364,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 240
+      "order": 240,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-025",
@@ -288,7 +383,12 @@
         "ui"
       ],
       "status": "shipped",
-      "order": 250
+      "order": 250,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-029",
@@ -304,7 +404,12 @@
       ],
       "status": "shipped",
       "order": 290,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-030",
@@ -321,7 +426,12 @@
       ],
       "status": "shipped",
       "order": 300,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-031",
@@ -337,7 +447,12 @@
       ],
       "status": "shipped",
       "order": 310,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-032",
@@ -354,7 +469,12 @@
       ],
       "status": "shipped",
       "order": 320,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-033",
@@ -372,7 +492,12 @@
       ],
       "status": "shipped",
       "order": 330,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-034",
@@ -387,7 +512,12 @@
       ],
       "status": "shipped",
       "order": 340,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-035",
@@ -404,7 +534,12 @@
       ],
       "status": "shipped",
       "order": 350,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-036",
@@ -420,7 +555,12 @@
       ],
       "status": "shipped",
       "order": 360,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-037",
@@ -436,7 +576,12 @@
       ],
       "status": "shipped",
       "order": 370,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-038",
@@ -453,7 +598,12 @@
       ],
       "status": "shipped",
       "order": 380,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-039",
@@ -469,7 +619,12 @@
       ],
       "status": "shipped",
       "order": 390,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-040",
@@ -485,7 +640,12 @@
       ],
       "status": "shipped",
       "order": 400,
-      "route": "/missions/:id/edit"
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-043",
@@ -499,7 +659,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 430
+      "order": 430,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-045",
@@ -513,7 +678,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 450
+      "order": 450,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-046",
@@ -527,7 +697,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 460
+      "order": 460,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-047",
@@ -541,7 +716,12 @@
         "schema"
       ],
       "status": "shipped",
-      "order": 470
+      "order": 470,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-048",
@@ -556,8 +736,13 @@
       ],
       "status": "shipped",
       "order": 480,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t048_library_create_dialog.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-049",
@@ -576,8 +761,13 @@
       ],
       "status": "shipped",
       "order": 490,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t049_terrain_title_position.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-050",
@@ -592,8 +782,13 @@
       ],
       "status": "shipped",
       "order": 500,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t050_cursor_z_readout.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t050_cursor_z_readout.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-052",
@@ -609,8 +804,13 @@
       ],
       "status": "shipped",
       "order": 520,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t052_undo_shortcuts.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-053",
@@ -626,8 +826,13 @@
       ],
       "status": "shipped",
       "order": 530,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t053_additive_select.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t053_additive_select.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-054",
@@ -644,8 +849,13 @@
       ],
       "status": "shipped",
       "order": 540,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t054_attributes_entry_points.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-055",
@@ -660,8 +870,13 @@
       ],
       "status": "shipped",
       "order": 550,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t055_asset_browser_search.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-056",
@@ -677,8 +892,13 @@
       ],
       "status": "shipped",
       "order": 560,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t056_copy_paste.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t056_copy_paste.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-057",
@@ -695,8 +915,13 @@
       ],
       "status": "shipped",
       "order": 570,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t057_map_performance_hotfix.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-058",
@@ -711,8 +936,13 @@
       ],
       "status": "shipped",
       "order": 580,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t058_entity_count_readout.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t058_entity_count_readout.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-059",
@@ -729,8 +959,13 @@
       ],
       "status": "shipped",
       "order": 590,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t059_bulk_paste_operations.md",
-      "route": "/missions/:id/edit"
+      "spec": "docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-060",
@@ -748,7 +983,12 @@
       ],
       "status": "shipped",
       "order": 600,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t060_fast_initial_load.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-061",
@@ -764,7 +1004,12 @@
       ],
       "status": "shipped",
       "order": 610,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-062",
@@ -780,7 +1025,12 @@
       ],
       "status": "shipped",
       "order": 620,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-063",
@@ -796,7 +1046,12 @@
       ],
       "status": "shipped",
       "order": 630,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t063_spatial_index.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-064",
@@ -812,7 +1067,12 @@
       ],
       "status": "shipped",
       "order": 640,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-065",
@@ -828,7 +1088,12 @@
       ],
       "status": "shipped",
       "order": 650,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t065_cluster_lod.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-066",
@@ -844,7 +1109,12 @@
       ],
       "status": "shipped",
       "order": 660,
-      "spec": "Design_Docs/Mission_Creator_Architecture/t066_worker_compile.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t066_worker_compile.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-067",
@@ -861,7 +1131,7 @@
       ],
       "title": "Spatial chunks",
       "summary": "Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on.",
-      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md",
       "slices": [
         "T-067.0",
         "T-067.0.1",
@@ -871,7 +1141,12 @@
         "T-068"
       ],
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-067"
+      "branch": "ticket/T-067",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-068",
@@ -887,8 +1162,8 @@
         "ui",
         "state"
       ],
-      "title": "Asset registry + palette",
-      "summary": "Replace mock catalog with registry-backed Factions tree.",
+      "title": "Asset registry + Loadout Forge",
+      "summary": "Cross-cutting registry ingest, API, worker, palette, forge, compiler.",
       "depends_on": [
         "T-067"
       ],
@@ -899,12 +1174,77 @@
       ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-068",
-      "spec": "Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t068_asset_registry.md",
       "slices": [
         "T-068.0",
-        "T-068.1"
+        "T-068.0a",
+        "T-068.1",
+        "T-068.2",
+        "T-068.3",
+        "T-068.4",
+        "T-068.5",
+        "T-068.6"
       ],
-      "active_slice": "T-068.0"
+      "active_slice": "T-068.0",
+      "stream": "mission-creator",
+      "targets": [
+        "website",
+        "shared",
+        "root",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "slice_plan": {
+        "T-068.0": {
+          "targets": [
+            "shared",
+            "root"
+          ],
+          "executor": "cursor-docs"
+        },
+        "T-068.0a": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "workbench"
+        },
+        "T-068.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.3": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.4": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.5": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.6": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code"
+        }
+      }
     },
     {
       "id": "T-069",
@@ -926,7 +1266,12 @@
         "T-068"
       ],
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-069"
+      "branch": "ticket/T-069",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-070",
@@ -949,7 +1294,12 @@
         "T-068"
       ],
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-070"
+      "branch": "ticket/T-070",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-071",
@@ -987,7 +1337,12 @@
       ],
       "user_story": "As a mission maker I open ORBAT Manager once to configure all factions, squads, kits, and slotting order without hunting the same slots in two left trees.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-071"
+      "branch": "ticket/T-071",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-072",
@@ -1004,7 +1359,12 @@
       "title": "Ctrl multi-place",
       "summary": "Hold Ctrl to place multiple copies without re-selecting asset.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-072"
+      "branch": "ticket/T-072",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-073",
@@ -1021,7 +1381,12 @@
       "title": "Shift + map rotation",
       "summary": "Shift-drag and map rotation widget for placed entities.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-073"
+      "branch": "ticket/T-073",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-074",
@@ -1037,7 +1402,12 @@
       "title": "Faction submode / catalog filter",
       "summary": "Faction submode tabs and catalog filtering in asset browser.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-074"
+      "branch": "ticket/T-074",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-075",
@@ -1053,7 +1423,12 @@
       "title": "Spacebar flyTo vs widget",
       "summary": "Spacebar centers selection; resolve flyTo vs transform widget conflict.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-075"
+      "branch": "ticket/T-075",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-076",
@@ -1070,7 +1445,12 @@
       "title": "Vehicle crew UI",
       "summary": "Crew panel and boarding UI for placed vehicles.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-076"
+      "branch": "ticket/T-076",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-077",
@@ -1087,7 +1467,12 @@
       "title": "Alt + empty vehicle",
       "summary": "Alt-click to enter empty vehicle placement mode.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-077"
+      "branch": "ticket/T-077",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-078",
@@ -1104,7 +1489,12 @@
       "title": "Custom compositions",
       "summary": "Save and place custom entity compositions.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-078"
+      "branch": "ticket/T-078",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-079",
@@ -1123,7 +1513,12 @@
       "title": "Triggers + waypoints + systems",
       "summary": "Trigger volumes, waypoints, and game logic systems.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-079"
+      "branch": "ticket/T-079",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-080",
@@ -1140,7 +1535,12 @@
       "title": "Connection / sync UI",
       "summary": "Entity connection lines and sync group authoring.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-080"
+      "branch": "ticket/T-080",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-081",
@@ -1157,7 +1557,12 @@
       "title": "Transform widget + snap grid",
       "summary": "On-map transform gizmo and snap grid.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-081"
+      "branch": "ticket/T-081",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-082",
@@ -1174,7 +1579,12 @@
       "title": "Full attribute fields",
       "summary": "Complete Attributes modal field parity with Eden.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-082"
+      "branch": "ticket/T-082",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-083",
@@ -1190,7 +1600,12 @@
       "title": "Top menu bar",
       "summary": "Eden-style top menu bar with file/edit/view stubs.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-083"
+      "branch": "ticket/T-083",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-084",
@@ -1206,7 +1621,12 @@
       "title": "Classname / mod prefix search",
       "summary": "Classname-prefix search in asset browser.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-084"
+      "branch": "ticket/T-084",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-085",
@@ -1222,7 +1642,12 @@
       "title": "Wiki markdown renderer",
       "summary": "Render doctrine wiki pages from markdown at /wiki.",
       "route": "/wiki",
-      "branch": "ticket/T-085"
+      "branch": "ticket/T-085",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-086",
@@ -1239,7 +1664,12 @@
       "title": "Server Control + RCON API",
       "summary": "Live server control panel wired to RCON backend.",
       "route": "/server-control",
-      "branch": "ticket/T-086"
+      "branch": "ticket/T-086",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-087",
@@ -1255,7 +1685,12 @@
       "title": "CMS rich text editor",
       "summary": "Rich text editor for announcements and CMS content.",
       "route": "/admin/content",
-      "branch": "ticket/T-087"
+      "branch": "ticket/T-087",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-088",
@@ -1272,7 +1707,12 @@
       "title": "Multi-server picker",
       "summary": "Select among multiple game servers in intel views.",
       "route": "/server-intel",
-      "branch": "ticket/T-088"
+      "branch": "ticket/T-088",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-089",
@@ -1290,7 +1730,12 @@
       "title": "Mission title PATCH sync",
       "summary": "PATCH mission title to server on edit (absorbs former T-051 scope).",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-089"
+      "branch": "ticket/T-089",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-090",
@@ -1306,7 +1751,12 @@
       "title": "Aligned map tiles",
       "summary": "Hosted aligned map tiles for mission editor basemap.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-090"
+      "branch": "ticket/T-090",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-091",
@@ -1324,7 +1774,12 @@
       "title": "DEM + auto Z",
       "summary": "Digital elevation model feeding real Z coordinates.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-091"
+      "branch": "ticket/T-091",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-092",
@@ -1340,7 +1795,12 @@
       "title": "Mod golden coordinate test",
       "summary": "Golden-file coordinate tests for mod envelope export.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-092"
+      "branch": "ticket/T-092",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-093",
@@ -1357,7 +1817,12 @@
       "title": "Continuous autosave polish",
       "summary": "Background autosave UX and conflict handling polish.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-093"
+      "branch": "ticket/T-093",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-094",
@@ -1374,7 +1839,12 @@
       "title": "Typed-array IconLayer",
       "summary": "Typed-array slot icon buffer for mega-mission render path.",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-094"
+      "branch": "ticket/T-094",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-095",
@@ -1391,7 +1861,12 @@
       "title": "Per-handler API reference doc",
       "summary": "Complete docs/backend/api.md per-handler reference.",
       "route": "/api/v1",
-      "branch": "ticket/T-095"
+      "branch": "ticket/T-095",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-096",
@@ -1407,7 +1882,12 @@
       "title": "Live game-server telemetry bridge",
       "summary": "Bridge live game-server events into telemetry ingest.",
       "route": "/api/v1/telemetry",
-      "branch": "ticket/T-096"
+      "branch": "ticket/T-096",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-110",
@@ -1424,14 +1904,19 @@
       ],
       "title": "Terrain base + sparse deltas",
       "summary": "Binary terrain base layer plus sparse delta props for 1M+ map objects.",
-      "spec": "Design_Docs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md",
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-110"
+      "branch": "ticket/T-110",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs"
     },
     {
       "id": "T-111",
       "title": "Lazy chunk residency @ 1M",
-      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
       "program": "scale",
       "surfaces": [
         "MAP",
@@ -1448,10 +1933,15 @@
       ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-111",
-      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md",
       "slices": [
         "T-067.1"
-      ]
+      ],
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-112",
@@ -1470,7 +1960,188 @@
       ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-112",
-      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md"
+      "spec": "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-113",
+      "order": 1130,
+      "program": "infra",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs",
+      "status": "shipped",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "title": "Monorepo migration (M0\u2013M3)",
+      "summary": "Merge website + mod into TBD-Reforger; unified ticketing; path rewrites.",
+      "milestone": "M1"
+    },
+    {
+      "id": "T-114",
+      "order": 1140,
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "workbench",
+      "status": "queued",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "schema"
+      ],
+      "title": "Slot roster enforcement",
+      "summary": "Roster identity maps to assigned slot; no round-robin fallback.",
+      "milestone": "M1",
+      "depends_on": []
+    },
+    {
+      "id": "T-115",
+      "order": 1150,
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "workbench",
+      "status": "queued",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "title": "Capture win condition",
+      "summary": "Real side victory via capture / hold / elimination objective.",
+      "milestone": "M1",
+      "depends_on": []
+    },
+    {
+      "id": "T-116",
+      "order": 1160,
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "human",
+      "status": "queued",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "api"
+      ],
+      "title": "Results POST to backend",
+      "summary": "Game server posts match results; visible on event page.",
+      "milestone": "M1",
+      "depends_on": [
+        "T-115"
+      ]
+    },
+    {
+      "id": "T-117",
+      "order": 1170,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "queued",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "title": "Mission upload + validation UI",
+      "summary": "Web UI for mission upload and schema validation (API exists).",
+      "milestone": "M1"
+    },
+    {
+      "id": "T-118",
+      "order": 1180,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "queued",
+      "surfaces": [
+        "ORBAT",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "title": "Event ORBAT + identity linking UI",
+      "summary": "Manual ORBAT assignment and Discord identity linking in web admin.",
+      "milestone": "M1"
+    },
+    {
+      "id": "T-119",
+      "order": 1190,
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "workbench",
+      "status": "queued",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "title": "Framework MVP remainder",
+      "summary": "Loadouts, safe start, boundary, admin commands for M1 gate.",
+      "milestone": "M1"
+    },
+    {
+      "id": "T-120",
+      "order": 1200,
+      "program": "infra",
+      "stream": "infra",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "human",
+      "status": "queued",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "api"
+      ],
+      "title": "Staging soak + golden mission smoke",
+      "summary": "Pinned game/mod version soak; golden-mission smoke on staging server.",
+      "milestone": "M1",
+      "depends_on": [
+        "T-114",
+        "T-115",
+        "T-117"
+      ]
     }
   ]
 }

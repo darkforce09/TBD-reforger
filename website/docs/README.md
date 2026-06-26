@@ -8,7 +8,7 @@
 |--------|---------|
 | Frontend | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
 | Backend | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
-| Mission Creator | [`Design_Docs/Mission_Creator_Architecture/ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) |
+| Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../docs/specs/Mission_Creator_Architecture/ROADMAP.md) |
 
 **Status:** living · **Updated:** 2026-06-25
 
@@ -22,7 +22,7 @@ Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP*
 | [**TICKET_REGISTRY**](TICKET_REGISTRY.md) | Full ticket table (generated from registry) |
 | [Frontend ROADMAP](frontend/ROADMAP.md) | Routes shipped/deferred + surface spec links |
 | [Backend ROADMAP](backend/ROADMAP.md) | API areas + deferred T-IDs |
-| [Mission Creator ROADMAP](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) | Eden editor ticket queue |
+| [Mission Creator ROADMAP](../docs/specs/Mission_Creator_Architecture/ROADMAP.md) | Eden editor ticket queue |
 | [Archive master](archive/README.md) | Historical HTML mockups |
 | [TAGS.md](TAGS.md) | T-0xx naming contract |
 | [AGENT_COMMIT_CHECKLIST.md](AGENT_COMMIT_CHECKLIST.md) | Same-commit doc sync for AI agents |
@@ -35,7 +35,7 @@ Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP*
 - **What's next** → [TICKET_LEAD](TICKET_LEAD.md)
 - **Frontend work** → [frontend ROADMAP](frontend/ROADMAP.md)
 - **Backend / API** → [backend ROADMAP](backend/ROADMAP.md)
-- **Mission Creator** → [MC ROADMAP](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) for UX Decisions log
+- **Mission Creator** → [MC ROADMAP](../docs/specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../docs/specs/Mission_Creator_Architecture/agent_execution.md) for UX Decisions log
 - **Historical reference** → [archive master](archive/README.md)
 
 ## Authority ladder

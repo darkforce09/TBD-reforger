@@ -187,7 +187,7 @@ T-050 must already be on `main` before T-052 (it is).
 ```
 Read CLAUDE.md and docs/AGENT_COMMIT_CHECKLIST.md first.
 
-Implement T-052 per Design_Docs/Mission_Creator_Architecture/t052_undo_shortcuts.md.
+Implement T-052 per docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md.
 Docs are PRE-STAGED in the spec §Documentation sync — FINALIZE on ship (status → shipped).
 
 LOCKED: see spec Locked decisions — reuse UndoController, macOS Cmd+Z/Shift+Z, Windows Ctrl+Z/Y/Shift+Z, focus guard, minimal diff.

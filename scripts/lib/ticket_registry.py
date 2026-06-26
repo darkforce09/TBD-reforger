@@ -37,8 +37,8 @@ STRICT_LEGACY = re.compile(
 EXEMPT_SCAN_PREFIXES = (
     "artifacts/eden-wiki/",
     "frontend/src/stitch-exports/",
-    "Design_Docs/macOS_Blueprints/",
-    "Mission_Creator_Mock_Up/",
+    "docs/specs/macOS_Blueprints/",
+    "docs/specs/Mission_Creator_Mock_Up/",
     ".stitch-backup-exports/",
 )
 
@@ -63,7 +63,7 @@ def schema_path() -> Path:
 def gap_analysis_path() -> Path:
     return (
         repo_root()
-        / "Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md"
+        / "docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md"
     )
 
 
@@ -341,7 +341,7 @@ def inject_next_block(registry: dict[str, Any] | None = None) -> None:
     for t in open_t[:10]:
         lines.append(f"- **{t['id']}** — {t.get('title', '')} ({t.get('status')})")
     inject_marker_block(
-        repo_root() / "Design_Docs/Mission_Creator_Architecture/ROADMAP.md",
+        repo_root() / "docs/specs/Mission_Creator_Architecture/ROADMAP.md",
         NEXT_MARKER_START,
         NEXT_MARKER_END,
         "\n".join(lines),
@@ -427,19 +427,98 @@ def generate_ticket_lead_md(registry: dict[str, Any] | None = None) -> str:
 
 def generate_ticket_dev_queue_md(registry: dict[str, Any] | None = None) -> str:
     registry = registry or load_registry()
-    ready = [t for t in registry.get("tickets", []) if t.get("status") == "ready"]
+    ready = [
+        t
+        for t in registry.get("tickets", [])
+        if t.get("status") == "ready" and slice_executor(t) == "claude-code"
+    ]
     ready.sort(key=_ticket_sort_key)
-    lines = [AUTO_HEADER, "# Developer Queue", "", "Only `ready` tickets with specs.", ""]
+    lines = [
+        AUTO_HEADER,
+        "# Developer Queue",
+        "",
+        "Only `ready` tickets with `executor: claude-code` (or active slice).",
+        "",
+    ]
     for t in ready:
         tid = t["id"]
         branch = t.get("branch", f"ticket/{tid}")
+        active = t.get("active_slice", "")
         lines.append(f"## {tid} — {t.get('title', '')}")
         lines.append("")
+        if active:
+            lines.append(f"- **Active slice:** `{active}`")
         lines.append(f"- **Spec:** `{t.get('spec', '')}`")
         lines.append(f"- **Branch:** `{branch}`")
+        lines.append(f"- **Targets:** {', '.join(t.get('targets') or [])}")
         lines.append(f"- **Summary:** {t.get('summary', '')}")
         lines.append("")
     return "\n".join(lines)
+
+
+def generate_ticket_mod_queue_md(registry: dict[str, Any] | None = None) -> str:
+    registry = registry or load_registry()
+    rows = [
+        t
+        for t in registry.get("tickets", [])
+        if t.get("status") in ("ready", "queued", "running", "review")
+        and slice_executor(t) in ("workbench", "human")
+        and "mod" in (t.get("targets") or [])
+    ]
+    rows.sort(key=_ticket_sort_key)
+    lines = [
+        AUTO_HEADER,
+        "# Mod / Workbench Queue",
+        "",
+        "Tickets for Workbench or human execution (`mod/` targets).",
+        "",
+    ]
+    for t in rows:
+        lines.append(
+            f"- **{t['id']}** ({t.get('status')}) — {t.get('title', '')} "
+            f"[{slice_executor(t)}] — milestone {t.get('milestone', '—')}"
+        )
+    lines.append("")
+    return "\n".join(lines)
+
+
+def generate_milestones_md(registry: dict[str, Any] | None = None) -> str:
+    registry = registry or load_registry()
+    lines = [
+        AUTO_HEADER,
+        "# Milestones (generated from tickets)",
+        "",
+        "Scheduling detail: [`mod/MILESTONES.md`](../mod/MILESTONES.md).",
+        "",
+    ]
+    for milestone in ("M1", "M2"):
+        subset = [t for t in registry.get("tickets", []) if t.get("milestone") == milestone]
+        subset.sort(key=_ticket_sort_key)
+        lines.append(f"## {milestone}")
+        lines.append("")
+        for t in subset:
+            mark = "x" if t.get("status") == "shipped" else " "
+            lines.append(
+                f"- [{mark}] **{t['id']}** — {t.get('title', '')} (`{t.get('status')}`)"
+            )
+        lines.append("")
+    return "\n".join(lines)
+
+
+def slice_executor(t: dict[str, Any]) -> str:
+    active = t.get("active_slice")
+    plan = t.get("slice_plan") or {}
+    if active and active in plan:
+        return plan[active].get("executor", t.get("executor", "claude-code"))
+    return t.get("executor", "claude-code")
+
+
+def slice_targets(t: dict[str, Any]) -> list[str]:
+    active = t.get("active_slice")
+    plan = t.get("slice_plan") or {}
+    if active and active in plan:
+        return list(plan[active].get("targets") or t.get("targets") or ["website"])
+    return list(t.get("targets") or ["website"])
 
 
 def generate_ticket_brainstorm_md(registry: dict[str, Any] | None = None) -> str:
@@ -487,7 +566,7 @@ def generate_queue_json(registry: dict[str, Any] | None = None) -> dict[str, Any
         "_comment": AUTO_HEADER.strip(),
         "batch_size": 10,
         "concurrency": 3,
-        "worktree_base": "../worktrees",
+        "worktree_base": "artifacts/worktrees",
         "git_base": "main",
         "tickets": tickets,
     }
@@ -498,9 +577,9 @@ def scan_legacy_ids() -> dict[str, list[str]]:
     hits: dict[str, list[str]] = {}
     scan_roots = [
         root / "docs",
-        root / "Design_Docs",
-        root / "frontend" / "docs",
-        root / "frontend" / "src",
+        root / "docs/specs",
+        root / "website" / "frontend" / "docs",
+        root / "website" / "frontend" / "src",
         root / "tickets" / "queue.json",
         root / "CLAUDE.md",
         root / "README.md",
@@ -531,12 +610,35 @@ def check(strict: bool = False, seed_count: int | None = None) -> list[str]:
     if seed_count is not None and len(registry.get("tickets", [])) != seed_count:
         errors.append(f"Expected {seed_count} registry rows, got {len(registry.get('tickets', []))}")
 
-    expected_rows = 87  # 55 shipped + 32 open (10 queued + 20 deferred + 2 idea)
-    if len(registry.get("tickets", [])) != expected_rows:
-        errors.append(
-            f"Registry row count must be {expected_rows} (55 shipped + 32 open), "
-            f"got {len(registry.get('tickets', []))}"
-        )
+    VALID_TARGETS = {"website", "mod", "shared", "root"}
+    VALID_EXECUTORS = {"claude-code", "cursor-docs", "workbench", "human", "ci"}
+    VALID_STREAMS = {
+        "mission-creator",
+        "web-platform",
+        "mod-framework",
+        "shared-schema",
+        "content",
+        "infra",
+        "voip-partner",
+    }
+
+    for row in registry.get("tickets", []):
+        for tgt in row.get("targets") or []:
+            if tgt not in VALID_TARGETS:
+                errors.append(f"{row['id']}: invalid target {tgt!r}")
+        ex = row.get("executor")
+        if ex and ex not in VALID_EXECUTORS:
+            errors.append(f"{row['id']}: invalid executor {ex!r}")
+        stream = row.get("stream")
+        if stream and stream not in VALID_STREAMS:
+            errors.append(f"{row['id']}: invalid stream {stream!r}")
+        plan = row.get("slice_plan") or {}
+        for sid, meta in plan.items():
+            for tgt in meta.get("targets") or []:
+                if tgt not in VALID_TARGETS:
+                    errors.append(f"{row['id']} slice {sid}: invalid target {tgt!r}")
+            if meta.get("executor") not in VALID_EXECUTORS:
+                errors.append(f"{row['id']} slice {sid}: invalid executor")
 
     for tid in FORBIDDEN_PHANTOM_IDS:
         if ticket_by_id(registry, tid):
@@ -549,7 +651,7 @@ def check(strict: bool = False, seed_count: int | None = None) -> list[str]:
                 errors.append(f"{row['id']}: spec missing on disk: {spec}")
 
     claude = root / "CLAUDE.md"
-    roadmap = root / "Design_Docs/Mission_Creator_Architecture/ROADMAP.md"
+    roadmap = root / "docs/specs/Mission_Creator_Architecture/ROADMAP.md"
     for p, start, end in (
         (claude, STATUS_MARKER_START, STATUS_MARKER_END),
         (roadmap, NEXT_MARKER_START, NEXT_MARKER_END),
@@ -595,6 +697,12 @@ def cmd_sync(_: argparse.Namespace) -> None:
     (root / "docs/TICKET_BRAINSTORM.md").write_text(
         generate_ticket_brainstorm_md(registry), encoding="utf-8"
     )
+    (root / "docs/TICKET_MOD_QUEUE.md").write_text(
+        generate_ticket_mod_queue_md(registry), encoding="utf-8"
+    )
+    (root / "docs/MILESTONES.md").write_text(
+        generate_milestones_md(registry), encoding="utf-8"
+    )
 
     queue = generate_queue_json(registry)
     with (root / "tickets/queue.json").open("w", encoding="utf-8") as f:
@@ -602,7 +710,7 @@ def cmd_sync(_: argparse.Namespace) -> None:
         f.write("\n")
 
     claude = root / "CLAUDE.md"
-    roadmap = root / "Design_Docs/Mission_Creator_Architecture/ROADMAP.md"
+    roadmap = root / "docs/specs/Mission_Creator_Architecture/ROADMAP.md"
     if claude.is_file() and STATUS_MARKER_START in claude.read_text(encoding="utf-8"):
         inject_status_block(registry)
     if roadmap.is_file() and NEXT_MARKER_START in roadmap.read_text(encoding="utf-8"):
@@ -636,7 +744,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print(f"READ: {spec} (only source of truth)")
     print(f"BRANCH: {branch}")
     print("DO NOT: edit documentation")
-    print("VERIFY: cd frontend && npm run build && npm run lint")
+    print("VERIFY: cd website/frontend && npm run build && npm run lint")
     if t.get("acceptance"):
         print("ACCEPTANCE:")
         for a in t["acceptance"]:
@@ -770,6 +878,72 @@ def cmd_reorder(args: argparse.Namespace) -> None:
     print(f"{args.id} order -> {t['order']} (after {args.after})")
 
 
+def sparse_checkout_paths(t: dict[str, Any]) -> list[str]:
+    paths = {".github"}
+    for tgt in slice_targets(t):
+        if tgt == "website":
+            paths.add("website")
+        elif tgt == "mod":
+            paths.add("mod")
+        elif tgt == "shared":
+            paths.add("shared")
+        elif tgt == "root":
+            paths.update({"scripts", "tickets", "docs", "artifacts", "Makefile", "README.md", "CLAUDE.md"})
+    return sorted(paths)
+
+
+def cmd_sparse_paths(args: argparse.Namespace) -> None:
+    registry = load_registry()
+    t = ticket_by_id(registry, args.id)
+    if not t:
+        sys.stderr.write(f"Unknown ticket: {args.id}\n")
+        sys.exit(1)
+    for p in sparse_checkout_paths(t):
+        print(p)
+
+
+def cmd_advance_slice(args: argparse.Namespace) -> None:
+    registry = load_registry()
+    t = ticket_by_id(registry, args.id)
+    if not t:
+        sys.stderr.write(f"Unknown ticket: {args.id}\n")
+        sys.exit(1)
+    slices = t.get("slices") or []
+    active = t.get("active_slice")
+    if not slices:
+        sys.stderr.write(f"{args.id} has no slices[]\n")
+        sys.exit(1)
+    if not active:
+        t["active_slice"] = slices[0]
+    else:
+        try:
+            idx = slices.index(active)
+        except ValueError:
+            sys.stderr.write(f"active_slice {active} not in slices[]\n")
+            sys.exit(1)
+        if idx + 1 >= len(slices):
+            sys.stderr.write(f"{args.id}: no slice after {active}\n")
+            sys.exit(1)
+        t["active_slice"] = slices[idx + 1]
+    save_registry(registry)
+    cmd_sync(argparse.Namespace())
+    print(f"{args.id} active_slice -> {t['active_slice']}")
+
+
+def cmd_milestone(args: argparse.Namespace) -> None:
+    registry = load_registry()
+    milestone = args.milestone.upper()
+    rows = [t for t in registry.get("tickets", []) if t.get("milestone") == milestone]
+    rows.sort(key=_ticket_sort_key)
+    if not rows:
+        print(f"No tickets tagged milestone={milestone}")
+        return
+    shipped = sum(1 for t in rows if t.get("status") == "shipped")
+    print(f"## Milestone {milestone}: {shipped}/{len(rows)} shipped")
+    for t in rows:
+        print(f"  [{t.get('status'):8}] {t['id']} — {t.get('title', '')}")
+
+
 def cmd_plan_batch(_: argparse.Namespace) -> None:
     registry = load_registry()
     queued = [
@@ -830,6 +1004,18 @@ def main() -> None:
     p_re.set_defaults(func=cmd_reorder)
 
     sub.add_parser("plan-batch").set_defaults(func=cmd_plan_batch)
+
+    p_adv = sub.add_parser("advance-slice")
+    p_adv.add_argument("id")
+    p_adv.set_defaults(func=cmd_advance_slice)
+
+    p_ms = sub.add_parser("milestone")
+    p_ms.add_argument("milestone")
+    p_ms.set_defaults(func=cmd_milestone)
+
+    p_sp = sub.add_parser("sparse-paths")
+    p_sp.add_argument("id")
+    p_sp.set_defaults(func=cmd_sparse_paths)
 
     sub.add_parser("gap-round-trip").set_defaults(
         func=lambda _: (test_gap_analysis_round_trip(), print("round-trip OK"))[-1]

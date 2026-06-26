@@ -26,7 +26,7 @@ Playbook: [`tickets/AI_PLAYBOOK.md`](../tickets/AI_PLAYBOOK.md). Lead view: [`do
 |--------|------------|
 | **Any work** | [`docs/TICKET_LEAD.md`](TICKET_LEAD.md) → registry row → spec path |
 | **Frontend surfaces** | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) → [`frontend/docs/INDEX.md`](../frontend/docs/INDEX.md) |
-| **Mission Creator** | MC [`ROADMAP.md`](../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
+| **Mission Creator** | MC [`ROADMAP.md`](../docs/specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../docs/specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
 | **Backend / API** | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | **Tag contract** | [`docs/TAGS.md`](TAGS.md) |
 
@@ -39,14 +39,14 @@ If the registry row has a `spec`, read it before editing code.
 | What changed | Update these |
 |--------------|--------------|
 | **Shipped milestone** | Registry row → `shipped`; `./scripts/ticket sync`; [`CLAUDE.md`](../CLAUDE.md) §Status **Done** bullet (sync may auto-update markers — verify narrative) |
-| **Active slice** (in progress) | Registry `active_slice`; [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
+| **Active slice** (in progress) | Registry `active_slice`; [`agent_execution.md`](../docs/specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
 | **New or removed route** | [`frontend/src/router.tsx`](../frontend/src/router.tsx) + matching [`frontend/docs/pages/*.md`](../frontend/docs/pages/) + [`frontend/docs/INDEX.md`](../frontend/docs/INDEX.md) + [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
 | **UI surface (no route change)** | Relevant page spec **Element Inventory** + **`Live source:`** path |
 | **Nav / sidebar change** | [`frontend/src/config/navigation.ts`](../frontend/src/config/navigation.ts) + [`frontend/docs/shell/sidebar.md`](../frontend/docs/shell/sidebar.md) |
 | **API / model change** | `internal/models/` JSON tags + matching `frontend/src/types/`; note handler if behavior changed |
-| **Mission Creator UX lock** | [`agent_execution.md`](../Design_Docs/Mission_Creator_Architecture/agent_execution.md) **Decisions log** row |
-| **Mission Creator new capability** | [`feature_inventory.md`](../Design_Docs/Mission_Creator_Architecture/feature_inventory.md) FEDS row |
-| **Eden parity gap closed** | [`eden/gap_analysis.md`](../Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md) ticket column + table row |
+| **Mission Creator UX lock** | [`agent_execution.md`](../docs/specs/Mission_Creator_Architecture/agent_execution.md) **Decisions log** row |
+| **Mission Creator new capability** | [`feature_inventory.md`](../docs/specs/Mission_Creator_Architecture/feature_inventory.md) FEDS row |
+| **Eden parity gap closed** | [`eden/gap_analysis.md`](../docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md) ticket column + table row |
 | **Frontend surface (MC route)** | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) recently shipped + [`frontend/docs/pages/mission-editor.md`](../frontend/docs/pages/mission-editor.md) |
 | **New T-0xx in registry** | Row in [`tickets/registry.json`](../tickets/registry.json) + `./scripts/ticket sync`; update [`docs/TAGS.md`](TAGS.md) only if contract text changed |
 | **Deferred / blocked (not shipped)** | Registry `status: deferred` — **never** mark `shipped` until verified |
@@ -76,7 +76,7 @@ Shell **T-033–T-040** shipped. Scale program **T-057–T-067** shipped. Next: 
 
 ## Never update
 
-- `Design_Docs/**/code.html`, `screen.png` mockups (archive)
+- `docs/specs/**/code.html`, `screen.png` mockups (archive)
 - `frontend/src/stitch-exports/**` (archive)
 - `artifacts/eden-wiki/*.md` (generated — re-run scraper instead)
 - Generated `docs/TICKET_*.md` (edit registry + sync instead)

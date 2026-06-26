@@ -32,7 +32,7 @@ Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADM
 ### Mark ready for Claude Code
 
 ```bash
-./scripts/ticket mark-ready T-068 Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md
+./scripts/ticket mark-ready T-068 docs/specs/Mission_Creator_Architecture/t068_asset_registry.md
 ./scripts/ticket run
 ```
 
@@ -48,13 +48,27 @@ Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADM
 ./scripts/ticket brief T-067
 ```
 
+## Executor gate
+
+**CRITICAL:** `./scripts/ticket run` only executes slices with `executor: claude-code`. Rows with `workbench`, `human`, `cursor-docs`, or `ci` are skipped or handled by the matching agent.
+
+| Executor | Agent | Scope |
+|----------|-------|-------|
+| `claude-code` | Claude Code | `website/` code on `ticket/T-0xx` branches |
+| `cursor-docs` | Cursor | specs, registry, `./scripts/ticket sync` |
+| `workbench` / `human` | Human | `mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../docs/TICKET_MOD_QUEUE.md) |
+
+Handoff: mark slice ready → correct executor implements → `./scripts/ticket advance-slice` or `./scripts/ticket done`.
+
 ## Generated views
 
 | File | Shows |
 |------|-------|
 | [`docs/TICKET_REGISTRY.md`](../docs/TICKET_REGISTRY.md) | All tickets |
 | [`docs/TICKET_LEAD.md`](../docs/TICKET_LEAD.md) | Lead dashboard |
-| [`docs/TICKET_DEV_QUEUE.md`](../docs/TICKET_DEV_QUEUE.md) | Ready queue |
+| [`docs/TICKET_DEV_QUEUE.md`](../docs/TICKET_DEV_QUEUE.md) | Claude Code ready queue |
+| [`docs/TICKET_MOD_QUEUE.md`](../docs/TICKET_MOD_QUEUE.md) | Mod / Workbench queue |
+| [`docs/MILESTONES.md`](../docs/MILESTONES.md) | M1/M2 gate from registry |
 | [`docs/TICKET_BRAINSTORM.md`](../docs/TICKET_BRAINSTORM.md) | Ideas + deferred |
 
 ## Validation

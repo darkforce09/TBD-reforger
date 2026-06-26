@@ -73,7 +73,7 @@ On ship: run `./scripts/ticket ship T-0xx`; update narrative docs per [`docs/AGE
 ```
 Read CLAUDE.md first.
 
-Implement T-0xx per Design_Docs/Mission_Creator_Architecture/t0xx_{slug}.md.
+Implement T-0xx per docs/specs/Mission_Creator_Architecture/t0xx_{slug}.md.
 
 LOCKED: see spec Locked decisions.
 

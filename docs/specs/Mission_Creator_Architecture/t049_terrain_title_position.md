@@ -322,7 +322,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
 | Doc | Change |
 |-----|--------|
 | [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
-| [`Design_Docs/.../feature_inventory.md`](feature_inventory.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
+| [`docs/specs/.../feature_inventory.md`](feature_inventory.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
 | [`ROADMAP.md`](ROADMAP.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |
 | [`docs/frontend/ROADMAP.md`](../../docs/frontend/ROADMAP.md) | mission-editor notes |
@@ -348,7 +348,7 @@ If T-048 is still uncommitted, **commit T-048 first**, then T-049 — do not mix
 ```
 Read CLAUDE.md and docs/AGENT_COMMIT_CHECKLIST.md first.
 
-Implement T-049 per Design_Docs/Mission_Creator_Architecture/t049_terrain_title_position.md.
+Implement T-049 per docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md.
 
 LOCKED:
 - MAP-TERRAIN-001: meta.terrain → TacticalMap (key={terrainId}); fix onSynced for empty json_payload

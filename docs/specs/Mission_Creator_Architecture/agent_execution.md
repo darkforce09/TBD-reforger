@@ -3,7 +3,7 @@ name: Mission Creator — Agent Execution Plan
 overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 ready — implement per t068_asset_registry.md."
 todos:
   - id: step-0-publish
-    content: "STEP 0: Plan published to Design_Docs/Mission_Creator_Architecture/agent_execution.md"
+    content: "STEP 0: Plan published to docs/specs/Mission_Creator_Architecture/agent_execution.md"
     status: completed
   - id: phase-pre-35
     content: "PHASE PRE-3.5: Wire Outliner + asset drag-to-map (T-033) — done"
@@ -43,7 +43,7 @@ isProject: false
 
 ```
 Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 is READY**
-(spec: Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md). Implement
+(spec: docs/specs/Mission_Creator_Architecture/t068_asset_registry.md). Implement
 T-068.0 backend then T-068.1 frontend. Authority: ROADMAP.md → this file §ACTIVE SLICE.
 **T-057–T-067 shipped.** Thin registry only — no worker/Arsenal. Full tiles/DEM (**T-090**,
 **T-091**) and ruler/LoS deferred. After each slice: `make test-it` (backend) and
@@ -97,8 +97,8 @@ Claude Code prompts in `t0xx_*.md` files should end with **DO NOT edit documenta
 
 **Do not use for layout or interaction decisions** (historical HTML explorations — they **contradict each other** and the Decisions log):
 
-- `Design_Docs/Mission_Creator_Mock_Up/**/code.html`, `screen.png`
-- `Design_Docs/macOS_Blueprints/**/code.html`, `screen.png` (editor-related — see map below)
+- `docs/specs/Mission_Creator_Mock_Up/**/code.html`, `screen.png`
+- `docs/specs/macOS_Blueprints/**/code.html`, `screen.png` (editor-related — see map below)
 
 **Supplementary only** (style tokens / product vision — read when noted, never override this plan):
 
@@ -126,7 +126,7 @@ Visual target: **Arma 3 Eden Editor** layout + interactions, **modernized with A
 
 Every Mission Creator-related folder and its role. **Execution authority remains this file**; other docs provide engineering depth or historical context.
 
-### `Design_Docs/Mission_Creator_Architecture/` — engineering
+### `docs/specs/Mission_Creator_Architecture/` — engineering
 
 | File | Role |
 |------|------|
@@ -139,7 +139,7 @@ Every Mission Creator-related folder and its role. **Execution authority remains
 | `eden/` | Eden parity research (interactions, UI, attributes, gaps) |
 | `reference/feds_schema.md` | FEDS v2 schema |
 
-### `Design_Docs/Mission_Creator_Mock_Up/` — product + early UI explorations
+### `docs/specs/Mission_Creator_Mock_Up/` — product + early UI explorations
 
 | Path | Role |
 |------|------|
@@ -148,7 +148,7 @@ Every Mission Creator-related folder and its role. **Execution authority remains
 | `aegis_tokens/code.html` + `screen.png` | Historical layout exploration — **do not execute against** |
 | `Arsenal/DESIGN.md` | Arsenal / Loadout Forge visual tokens (**T-068+** registry work) |
 
-### `Design_Docs/macOS_Blueprints/` — editor-adjacent references
+### `docs/specs/macOS_Blueprints/` — editor-adjacent references
 
 | Path | Role |
 |------|------|
@@ -380,7 +380,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 ## Execution checklist (historical — shell phases complete)
 
 ### STEP 0 — Publish plan ✓
-- [x] `Design_Docs/Mission_Creator_Architecture/agent_execution.md` is in the repo
+- [x] `docs/specs/Mission_Creator_Architecture/agent_execution.md` is in the repo
 
 ### PHASE PRE-3.5 — Land tree wiring (**historical — done T-033**)
 

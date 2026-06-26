@@ -2,7 +2,7 @@
 
 Master index for all TBD Reforger frontend surfaces.
 
-**Doc hub:** [docs/frontend/ROADMAP.md](../../docs/frontend/ROADMAP.md) · **Mission Creator:** [ROADMAP.md](../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) · **Tickets:** [TICKET_LEAD.md](../../docs/TICKET_LEAD.md)
+**Doc hub:** [docs/frontend/ROADMAP.md](../../docs/frontend/ROADMAP.md) · **Mission Creator:** [ROADMAP.md](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) · **Tickets:** [TICKET_LEAD.md](../../docs/TICKET_LEAD.md)
 
 | Doc | Route | Status | Handoff § | Ticket |
 |-----|-------|--------|-----------|--------|

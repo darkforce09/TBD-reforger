@@ -44,7 +44,7 @@
 
 | T-ID | Item | Spec | Notes |
 |------|------|------|-------|
-| **T-068** | **`GET /api/v1/registry`** | [`t068_asset_registry.md`](../Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md) | Thin classname JSON + ETag; dev seed; unblocks MC Factions palette (**T-068.0**) |
+| **T-068** | **`GET /api/v1/registry`** | [`t068_asset_registry.md`](../docs/specs/Mission_Creator_Architecture/t068_asset_registry.md) | Thin classname JSON + ETag; dev seed; unblocks MC Factions palette (**T-068.0**) |
 
 ---
 
@@ -62,7 +62,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../TICKET_REGISTRY.md) (`progra
 
 ## Recommended next work
 
-1. **T-068** — implement `GET /api/v1/registry` per [`t068_asset_registry.md`](../Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md) (pairs with MC **T-068.1** palette)
+1. **T-068** — implement `GET /api/v1/registry` per [`t068_asset_registry.md`](../docs/specs/Mission_Creator_Architecture/t068_asset_registry.md) (pairs with MC **T-068.1** palette)
 2. **T-086** — when RCON/game-server integration is scoped
 3. Keep **`internal/models/`** as source of truth — update TS types in [`frontend/src/types/`](../../frontend/src/types/) when models change
 

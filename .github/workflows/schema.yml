@@ -3,11 +3,11 @@ name: tbd-schema compatibility test
 on:
   push:
     paths:
-      - "tbd-schema/**"
+      - "shared/tbd-schema/**"
       - ".github/workflows/schema.yml"
   pull_request:
     paths:
-      - "tbd-schema/**"
+      - "shared/tbd-schema/**"
       - ".github/workflows/schema.yml"
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: tbd-schema
+        working-directory: shared/tbd-schema
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

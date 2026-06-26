@@ -11,9 +11,9 @@ Preserved material from the design phase. **Do not implement from these files.**
 
 | Location | Contents | Live alternative |
 |----------|----------|------------------|
-| [`Design_Docs/macOS_Blueprints/`](../../Design_Docs/macOS_Blueprints/) | 24 page blueprint folders (`code.html`, `screen.png`) | [`frontend/src/pages/`](../../frontend/src/pages/) |
+| [`docs/specs/macOS_Blueprints/`](../../docs/specs/macOS_Blueprints/) | 24 page blueprint folders (`code.html`, `screen.png`) | [`frontend/src/pages/`](../../frontend/src/pages/) |
 | [`frontend/src/stitch-exports/`](../../frontend/src/stitch-exports/) | 21 Stitch export folders | [`frontend/src/pages/`](../../frontend/src/pages/) + [`features/`](../../frontend/src/features/) |
-| [`Design_Docs/Mission_Creator_Mock_Up/`](../../Design_Docs/Mission_Creator_Mock_Up/) | Mission creator product mockups | [`features/mission-creator/`](../../frontend/src/features/mission-creator/) |
+| [`docs/specs/Mission_Creator_Mock_Up/`](../../docs/specs/Mission_Creator_Mock_Up/) | Mission creator product mockups | [`features/mission-creator/`](../../frontend/src/features/mission-creator/) |
 
 ## Design prose (partially stale)
 
@@ -21,7 +21,7 @@ Preserved material from the design phase. **Do not implement from these files.**
 |-----|--------|------------------|
 | [`docs/platform/context_handoff.md`](../platform/context_handoff.md) | §3 data models pre-T-008; §4 UI blueprints useful | `internal/models/` + live pages |
 | [`docs/backend/architecture.md`](../backend/architecture.md) | Target schema — verify vs models | [`internal/models/`](../../internal/models/) |
-| [`Design_Docs/Mission_Creator_Mock_Up/mission_creator_design.md`](../../Design_Docs/Mission_Creator_Mock_Up/mission_creator_design.md) | Product vision / JSON contract philosophy | MC `05` Decisions log + `04` Eden UX spec |
+| [`docs/specs/Mission_Creator_Mock_Up/mission_creator_design.md`](../../docs/specs/Mission_Creator_Mock_Up/mission_creator_design.md) | Product vision / JSON contract philosophy | MC `05` Decisions log + `04` Eden UX spec |
 | [`docs/platform/registration_flow.md`](../platform/registration_flow.md) | Design doc — **implemented** | Live handlers + Event Hub UI |
 
 ## Entry format

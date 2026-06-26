@@ -1,0 +1,2 @@
+# Monorepo gitignore (root-level paths not covered by subtree .gitignore files)
+mod/crf_framework/

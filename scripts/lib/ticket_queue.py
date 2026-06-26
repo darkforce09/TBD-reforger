@@ -58,14 +58,24 @@ def cmd_list(_: argparse.Namespace) -> None:
 
 
 def cmd_ready_ids(args: argparse.Namespace) -> None:
+    from ticket_registry import load_registry, slice_executor  # noqa: E402
+
     data = load_queue()
     limit = args.limit or int(data.get("batch_size", 10))
+    registry = load_registry()
     ids: list[str] = []
     for t in data.get("tickets", []):
         if t.get("status") != "ready":
             continue
         spec = (t.get("spec") or "").strip()
         if not spec:
+            continue
+        row = ticket_by_id(registry, t["id"])
+        if not row:
+            continue
+        if slice_executor(row) != "claude-code":
+            continue
+        if args.stream and row.get("stream") != args.stream:
             continue
         ids.append(t["id"])
         if len(ids) >= limit:
@@ -111,7 +121,7 @@ def cmd_config(args: argparse.Namespace) -> None:
     defaults = {
         "batch_size": "10",
         "concurrency": "3",
-        "worktree_base": "../worktrees",
+        "worktree_base": "artifacts/worktrees",
         "git_base": "main",
     }
     print(str(data.get(key, defaults.get(key, ""))))
@@ -125,6 +135,7 @@ def main() -> None:
 
     p_ready = sub.add_parser("ready-ids")
     p_ready.add_argument("--limit", type=int, default=None)
+    p_ready.add_argument("--stream", default="")
     p_ready.set_defaults(func=cmd_ready_ids)
 
     p_status = sub.add_parser("set-status")

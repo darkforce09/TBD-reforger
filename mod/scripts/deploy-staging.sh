@@ -129,7 +129,7 @@ echo "==> V1 validate mission JSON"
 if [ "$DRY_RUN" -eq 0 ]; then
   (cd "$ROOT/tbd-schema" && [ -d node_modules ] || npm ci --silent)
   node "$ROOT/tbd-schema/scripts/validate-file.mjs" \
-    "$ROOT/Tbdevent_Website/missions/${TBD_MISSION_ID}.json"
+    "$ROOT/shared/tbd-schema/golden-missions/${TBD_MISSION_ID}.json"
 fi
 
 echo "==> rsync to $TBD_REMOTE_DIR"
@@ -142,9 +142,9 @@ else
     --exclude=Tbd_framework/ \
     --exclude=.local-test-profile/ \
     --exclude='**/node_modules/' \
-    --exclude=Tbdevent_Website/.tools/ \
-    --exclude=Tbdevent_Website/.env \
-    --exclude=Tbdevent_Website/web/dist/ \
+    --exclude=website/.tools/ \
+    --exclude=website/.env \
+    --exclude=website/frontend/dist/ \
     --exclude=tbd-framework/Scripts/WorkbenchGame/
     --exclude=scripts/deploy.env \
     "$ROOT/" "$TBD_SSH_HOST:$TBD_REMOTE_DIR/"
@@ -172,7 +172,7 @@ echo "==> docker compose (API + Postgres)"
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] docker compose -f docker-compose.staging.yml up -d --build"
 else
-  ssh_cmd "cd '$TBD_REMOTE_DIR/Tbdevent_Website' && docker compose -f docker-compose.staging.yml up -d --build"
+  ssh_cmd "cd '$TBD_REMOTE_DIR/website' && docker compose -f docker-compose.staging.yml up -d --build"
 fi
 
 echo "==> API smoke (V2–V4)"

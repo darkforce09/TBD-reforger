@@ -87,7 +87,7 @@ profile/
     msn_8f3a2c.json         # cached after successful REST fetch
 ```
 
-Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `Tbdevent_Website/.env`.
+Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `website/.env`.
 
 ### Expected log lines
 

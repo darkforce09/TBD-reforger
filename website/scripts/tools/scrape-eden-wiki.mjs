@@ -16,7 +16,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../..');
 const MANIFEST = path.join(
   ROOT,
-  'Design_Docs/Mission_Creator_Architecture/eden/wiki_manifest.yaml',
+  'docs/specs/Mission_Creator_Architecture/eden/wiki_manifest.yaml',
 );
 const OUT_DIR = path.join(ROOT, 'artifacts/eden-wiki');
 const JSONL = path.join(ROOT, 'artifacts/eden-feds-draft.jsonl');

@@ -814,7 +814,7 @@ Use a **fresh** Claude Code chat (see §Chat guidance below). Read this file §T
 ```
 T-060.1.1 — Fix stuck-at-0% load bar @ ~300k (IDB restoring phase + paint-friendly progress)
 
-Read Design_Docs/Mission_Creator_Architecture/t060_1_scale_load_save_completion.md (§T-060.1.1 + §Implemented).
+Read docs/specs/Mission_Creator_Architecture/t060_1_scale_load_save_completion.md (§T-060.1.1 + §Implemented).
 
 Context: T-060 + T-060.1 code is landed (uncommitted). T-060.1 fixed bulk-timing, chunked download/apply/local progress, and save-upload timeouts. Manual verify @ ~300k PARTIAL FAIL: overlay stuck at 0% for minutes while tab focused (Firefox "slowing down"); load eventually completes — alt-tab coincidence, not a focus bug. Root cause: y-indexeddb replay into Y.Doc runs BEFORE persistence.once('synced') with zero reportLoad calls; main thread blocked so React never paints.
 

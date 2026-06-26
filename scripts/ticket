@@ -24,10 +24,12 @@ Registry (edit tickets/registry.json, then sync):
   mark-ready ID [SPEC]    Mark ready in registry + sync
   ship ID                 Mark shipped in registry + sync
   plan-batch              List next batch candidates
+  advance-slice ID        Bump active_slice to next in slices[]
+  milestone M1            Show milestone gate progress
 
 Pipeline (Claude Code branches):
   list                    Show dev queue
-  run [--dry-run]         Implement up to batch_size ready tickets
+  run [--dry-run] [--stream NAME]  Implement up to batch_size ready tickets
   done ID                 After merge: cleanup + mark shipped
   clean ID                Remove worktree + local branch only
 
@@ -48,11 +50,24 @@ worktree_path() {
 run_one() {
   local id="$1"
   local dry_run="${2:-0}"
-  local spec branch wt prompt logdir logfile git_base
+  local spec branch wt prompt logdir logfile git_base executor
   spec="$("$QUEUE_PY" get "$id" spec)"
   branch="$("$QUEUE_PY" get "$id" branch)"
   git_base="$("$QUEUE_PY" config git_base)"
   wt="$(worktree_path "$id")"
+
+  executor="$(python3 -c "
+import sys
+sys.path.insert(0, '$ROOT/scripts/lib')
+from ticket_registry import load_registry, ticket_by_id, slice_executor
+t = ticket_by_id(load_registry(), '$id')
+print(slice_executor(t) if t else '')
+")"
+
+  if [[ "$executor" != "claude-code" ]]; then
+    echo "[$id] SKIP — executor is ${executor:-unknown} (not claude-code)" >&2
+    return 0
+  fi
 
   if [[ -z "$spec" || ! -f "$ROOT/$spec" ]]; then
     echo "[$id] SKIP — spec missing: $spec" >&2
@@ -80,6 +95,14 @@ run_one() {
   else
     mkdir -p "$(dirname "$wt")"
     git -C "$ROOT" worktree add -b "$branch" "$wt" "origin/$git_base" 2>&1 | tee -a "$logfile"
+    mapfile -t sparse_paths < <(python3 "$REGISTRY_PY" sparse-paths "$id")
+    if [[ ${#sparse_paths[@]} -gt 0 ]]; then
+      (
+        cd "$wt"
+        git sparse-checkout init --cone 2>&1 | tee -a "$logfile"
+        git sparse-checkout set "${sparse_paths[@]}" 2>&1 | tee -a "$logfile"
+      )
+    fi
   fi
 
   if ! prompt="$("$PROMPT_PY" "$ROOT/$spec" 2>>"$logfile")"; then
@@ -134,7 +157,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>" 2>&1 | tee -a "$logfile" ||
   echo "  worktree:  $wt"
   echo "  branch:    $branch"
   echo "  spec:      $spec"
-  echo "  verify:    cd $wt/frontend && npm run build && npm run lint"
+  echo "  verify:    cd $wt/website/frontend && npm run build && npm run lint"
   echo "  merge:     git checkout main && git merge $branch"
   echo "  cleanup:   ./scripts/ticket done $id"
   echo ""
@@ -142,16 +165,20 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>" 2>&1 | tee -a "$logfile" ||
 
 cmd_run() {
   local dry_run=0
-  if [[ "${1:-}" == "--dry-run" ]]; then
-    dry_run=1
-    shift
-  fi
+  local stream_filter=""
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --dry-run) dry_run=1; shift ;;
+      --stream) stream_filter="$2"; shift 2 ;;
+      *) shift ;;
+    esac
+  done
 
   local concurrency batch_size
   concurrency="$("$QUEUE_PY" config concurrency)"
   batch_size="$("$QUEUE_PY" config batch_size)"
 
-  mapfile -t ids < <("$QUEUE_PY" ready-ids --limit "$batch_size")
+  mapfile -t ids < <("$QUEUE_PY" ready-ids --limit "$batch_size" ${stream_filter:+--stream "$stream_filter"})
   if [[ ${#ids[@]} -eq 0 || -z "${ids[0]:-}" ]]; then
     echo "No ready tickets. Steps:" >&2
     echo "  1. Composer 2.5: write specs for next batch, commit to main" >&2
@@ -215,6 +242,8 @@ main() {
     plan-batch) python3 "$REGISTRY_PY" plan-batch ;;
     mark-ready) python3 "$REGISTRY_PY" mark-ready "$@" ;;
     ship)       python3 "$REGISTRY_PY" ship "$@" ;;
+    advance-slice) python3 "$REGISTRY_PY" advance-slice "$@" ;;
+    milestone)  python3 "$REGISTRY_PY" milestone "$@" ;;
     gap-round-trip) python3 "$REGISTRY_PY" gap-round-trip ;;
     list)       "$QUEUE_PY" list ;;
     run)        cmd_run "$@" ;;

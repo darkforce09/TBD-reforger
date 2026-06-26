@@ -7,4 +7,4 @@ Generated outputs — **do not edit by hand**. Regenerate via scripts.
 | [`eden-wiki/`](eden-wiki/) | [`scripts/tools/scrape-eden-wiki.mjs`](../scripts/tools/scrape-eden-wiki.mjs) | Cached Eden Editor wiki pages (markdown) |
 | [`eden-feds-draft.jsonl`](eden-feds-draft.jsonl) | Manual / tooling export | Draft FEDS feature entries |
 
-Wiki manifest: [`Design_Docs/Mission_Creator_Architecture/eden/wiki_manifest.yaml`](../Design_Docs/Mission_Creator_Architecture/eden/wiki_manifest.yaml)
+Wiki manifest: [`docs/specs/Mission_Creator_Architecture/eden/wiki_manifest.yaml`](../docs/specs/Mission_Creator_Architecture/eden/wiki_manifest.yaml)

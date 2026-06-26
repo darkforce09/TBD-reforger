@@ -48,6 +48,6 @@ EOF
 echo ""
 echo "Next steps (manual — see docs/STAGING-SERVER.md):"
 echo "  1. steamcmd +app_update 1890870 on server"
-echo "  2. Create Tbdevent_Website/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)"
+echo "  2. Create website/.env on server (SESSION_SECRET + GAME_SERVER_TOKENS)"
 echo "  3. sudo loginctl enable-linger sam"
 echo "  4. bash scripts/deploy-staging.sh"

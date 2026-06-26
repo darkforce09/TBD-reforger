@@ -141,7 +141,7 @@ bash scripts/manual-test.sh
 |---|---|
 | [`tbd-framework/`](tbd-framework/) | Enfusion mod — all new script work |
 | [`tbd-schema/`](tbd-schema/) | Mission JSON 1.1, registry, bridge contract |
-| [`Tbdevent_Website/`](Tbdevent_Website/) | Go API + React UI |
+| [`website/`](website/) | Go API + React UI |
 | [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md) | Staging deploy guide |
 | [`scripts/`](scripts/) | setup, deploy-staging, MCP helpers, tests |
 | [`CLAUDE-CONTINUATION.md`](CLAUDE-CONTINUATION.md) | Full context, API table, team split |

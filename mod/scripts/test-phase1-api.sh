@@ -4,7 +4,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WEB="$ROOT/Tbdevent_Website"
+WEB="$ROOT/website"
 API="${API_BASE:-http://127.0.0.1:8080}"
 TOKEN="${GAME_SERVER_TOKEN:-dev-server-token-change-in-prod}"
 EVENT_ID="${EVENT_ID:-b0000000-0000-4000-8000-000000000001}"

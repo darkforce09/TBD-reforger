@@ -58,7 +58,7 @@ for arg in "$@"; do
   case "$arg" in
     --api)
       podman start tbdevent-postgres 2>/dev/null || true
-      (cd "$ROOT/Tbdevent_Website" && npm run dev) &
+      (cd "$ROOT/website" && npm run dev) &
       echo "API dev server starting on :8080"
       ;;
     --server)

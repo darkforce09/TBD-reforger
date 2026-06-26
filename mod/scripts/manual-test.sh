@@ -32,7 +32,7 @@ fi
 
 # --- 2. Go unit tests ---
 section "Go build + handler tests"
-WEB="$ROOT/Tbdevent_Website"
+WEB="$ROOT/website"
 export GOROOT="$WEB/.tools/go"
 export PATH="$GOROOT/bin:$PATH"
 export GOCACHE="$WEB/.tools/gocache"

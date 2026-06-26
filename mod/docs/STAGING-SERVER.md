@@ -87,7 +87,7 @@ bash scripts/bootstrap-staging-server.sh
 ssh sam@192.168.0.140 'df -h ~; ss -tlnp | grep -E "5432|8080|2001" || true; docker compose version'
 ```
 
-If `:5432` is taken, set `TBD_POSTGRES_HOST_PORT=5433` in `deploy.env` and edit `Tbdevent_Website/docker-compose.staging.yml` to map `127.0.0.1:5433:5432`.
+If `:5432` is taken, set `TBD_POSTGRES_HOST_PORT=5433` in `deploy.env` and edit `website/docker-compose.yml` to map `127.0.0.1:5433:5432`.
 
 ### 2. Layout
 
@@ -110,10 +110,10 @@ Note the game **build number** in server logs after first start — client must 
 
 ### 4. API secrets (server only)
 
-On the server, create `Tbdevent_Website/.env` (**never rsync'd from dev**):
+On the server, create `website/.env` (**never rsync'd from dev**):
 
 ```bash
-cd /home/sam/tbd/repo/Tbdevent_Website   # after first rsync or clone
+cd /home/sam/tbd/repo/website   # after first rsync or clone
 cp .env.example .env
 # Edit:
 #   SESSION_SECRET=<long-random>
@@ -123,7 +123,7 @@ cp .env.example .env
 ### 5. Docker stack
 
 ```bash
-cd /home/sam/tbd/repo/Tbdevent_Website
+cd /home/sam/tbd/repo/website
 docker compose -f docker-compose.staging.yml up -d --build
 ```
 
@@ -176,7 +176,7 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 
 | Step | Command | Pass |
 |------|---------|------|
-| V1 Mission JSON | `node tbd-schema/scripts/validate-file.mjs Tbdevent_Website/missions/msn_8f3a2c.json` | exit 0 |
+| V1 Mission JSON | `node shared/tbd-schema/scripts/validate-file.mjs shared/tbd-schema/golden-missions/msn_8f3a2c.json` | exit 0 |
 | V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | HTTP 200 |
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | HTTP 200 |
 | V4 Auth gate | SSH: unauthenticated compiled URL | HTTP 401 |
@@ -306,7 +306,7 @@ Or: `bash scripts/tbd-spawn-verify.sh`
 | Version mismatch (after discovery) | Match Steam `buildid` client ↔ server; `steamcmd +app_update 1874900 validate` |
 | No console.log | Server: `$TBD_PROFILE_DIR/logs/logs_*/console.log`. Client (Proton): `compatdata/1874880/.../ArmaReforger/logs/` |
 | Game stops after SSH logout | `sudo loginctl enable-linger sam` |
-| Overwrote server secrets | Never rsync `Tbdevent_Website/.env` from dev — recreate on server |
+| Overwrote server secrets | Never rsync `website/.env` from dev — recreate on server |
 | **Workbench shows `tbd-framework` read-only (padlock)** | Publishing packs `data.pak`+`meta` into the source dir → WB treats it as a packed addon. Delete `tbd-framework/{data.pak,meta,ServerData.json,*_manifest.json}` (gitignored) and restart the Launcher. |
 | New `.c` file "compiles" locally but Workbench errors | The local dedicated-server check reuses a cached `resourceDatabase.rdb` and skips new files. **Verify in Workbench** (`wb_reload` → grep WB log). |
 | Admin mission browser does nothing in-game | `#tbd` chat is dead (no chat entity); the working path is the **keybind→RPC** (`TBD_MissionBrowser.c`) — but the 2 input actions still need defining. See `CLAUDE-CONTINUATION.md` §16. |

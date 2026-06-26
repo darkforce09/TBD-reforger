@@ -21,24 +21,24 @@ SHIPPED_IDS = [
 ]
 
 SPEC_MAP: dict[str, str] = {
-    "T-048": "Design_Docs/Mission_Creator_Architecture/t048_library_create_dialog.md",
-    "T-049": "Design_Docs/Mission_Creator_Architecture/t049_terrain_title_position.md",
-    "T-050": "Design_Docs/Mission_Creator_Architecture/t050_cursor_z_readout.md",
-    "T-052": "Design_Docs/Mission_Creator_Architecture/t052_undo_shortcuts.md",
-    "T-053": "Design_Docs/Mission_Creator_Architecture/t053_additive_select.md",
-    "T-054": "Design_Docs/Mission_Creator_Architecture/t054_attributes_entry_points.md",
-    "T-055": "Design_Docs/Mission_Creator_Architecture/t055_asset_browser_search.md",
-    "T-056": "Design_Docs/Mission_Creator_Architecture/t056_copy_paste.md",
-    "T-057": "Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md",
-    "T-058": "Design_Docs/Mission_Creator_Architecture/t058_entity_count_readout.md",
-    "T-059": "Design_Docs/Mission_Creator_Architecture/t059_bulk_paste_operations.md",
-    "T-060": "Design_Docs/Mission_Creator_Architecture/t060_fast_initial_load.md",
-    "T-061": "Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md",
-    "T-062": "Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md",
-    "T-063": "Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md",
-    "T-064": "Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md",
-    "T-065": "Design_Docs/Mission_Creator_Architecture/t065_cluster_lod.md",
-    "T-066": "Design_Docs/Mission_Creator_Architecture/t066_worker_compile.md",
+    "T-048": "docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md",
+    "T-049": "docs/specs/Mission_Creator_Architecture/t049_terrain_title_position.md",
+    "T-050": "docs/specs/Mission_Creator_Architecture/t050_cursor_z_readout.md",
+    "T-052": "docs/specs/Mission_Creator_Architecture/t052_undo_shortcuts.md",
+    "T-053": "docs/specs/Mission_Creator_Architecture/t053_additive_select.md",
+    "T-054": "docs/specs/Mission_Creator_Architecture/t054_attributes_entry_points.md",
+    "T-055": "docs/specs/Mission_Creator_Architecture/t055_asset_browser_search.md",
+    "T-056": "docs/specs/Mission_Creator_Architecture/t056_copy_paste.md",
+    "T-057": "docs/specs/Mission_Creator_Architecture/t057_map_performance_hotfix.md",
+    "T-058": "docs/specs/Mission_Creator_Architecture/t058_entity_count_readout.md",
+    "T-059": "docs/specs/Mission_Creator_Architecture/t059_bulk_paste_operations.md",
+    "T-060": "docs/specs/Mission_Creator_Architecture/t060_fast_initial_load.md",
+    "T-061": "docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md",
+    "T-062": "docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md",
+    "T-063": "docs/specs/Mission_Creator_Architecture/t063_spatial_index.md",
+    "T-064": "docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md",
+    "T-065": "docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md",
+    "T-066": "docs/specs/Mission_Creator_Architecture/t066_worker_compile.md",
 }
 
 SHIPPED_META: dict[str, dict[str, Any]] = {
@@ -99,7 +99,7 @@ SHIPPED_META: dict[str, dict[str, Any]] = {
 }
 
 OPEN_ROWS: list[dict[str, Any]] = [
-    {"id": "T-067", "order": 670, "program": "scale", "status": "ready", "surfaces": ["MAP", "DATA"], "impact": ["perf", "state"], "title": "Spatial chunks", "summary": "Viewport IconLayer cull and bulk-paste patch; lazy RAM @ 1M slice.", "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md", "slices": ["T-067.0", "T-067.1"], "active_slice": "T-067.0", "unblocks": ["T-068"], "route": "/missions/:id/edit"},
+    {"id": "T-067", "order": 670, "program": "scale", "status": "ready", "surfaces": ["MAP", "DATA"], "impact": ["perf", "state"], "title": "Spatial chunks", "summary": "Viewport IconLayer cull and bulk-paste patch; lazy RAM @ 1M slice.", "spec": "docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md", "slices": ["T-067.0", "T-067.1"], "active_slice": "T-067.0", "unblocks": ["T-068"], "route": "/missions/:id/edit"},
     {"id": "T-068", "order": 680, "program": "eden", "status": "queued", "surfaces": ["RIGHT", "DATA"], "impact": ["api", "ui", "state"], "title": "Asset registry + palette", "summary": "Replace mock catalog with registry-backed Factions tree.", "depends_on": ["T-067"], "unblocks": ["T-069", "T-070", "T-071"], "route": "/missions/:id/edit"},
     {"id": "T-069", "order": 690, "program": "eden", "status": "queued", "surfaces": ["MAP", "MRK"], "impact": ["ui", "state", "schema"], "title": "Markers on map", "summary": "Place and edit map markers with registry-backed types.", "depends_on": ["T-068"], "route": "/missions/:id/edit"},
     {"id": "T-070", "order": 700, "program": "eden", "status": "queued", "surfaces": ["MAP", "VEH", "RIGHT"], "impact": ["ui", "state", "schema"], "title": "Vehicles placeable", "summary": "Drag vehicles from palette onto map with crew hooks.", "depends_on": ["T-068"], "route": "/missions/:id/edit"},
@@ -129,7 +129,7 @@ OPEN_ROWS: list[dict[str, Any]] = [
     {"id": "T-094", "order": 940, "program": "scale", "status": "deferred", "surfaces": ["MAP", "DATA"], "impact": ["perf"], "title": "Typed-array IconLayer", "summary": "Typed-array slot icon buffer for mega-mission render path.", "route": "/missions/:id/edit"},
     {"id": "T-095", "order": 950, "program": "backend", "status": "deferred", "surfaces": ["DATA"], "impact": ["api", "schema"], "title": "Per-handler API reference doc", "summary": "Complete docs/backend/api.md per-handler reference.", "route": "/api/v1"},
     {"id": "T-096", "order": 960, "program": "backend", "status": "deferred", "surfaces": ["DATA"], "impact": ["api"], "title": "Live game-server telemetry bridge", "summary": "Bridge live game-server events into telemetry ingest.", "route": "/api/v1/telemetry"},
-    {"id": "T-110", "order": 1100, "program": "infra", "status": "deferred", "surfaces": ["MAP", "DATA"], "impact": ["schema", "persistence"], "title": "Terrain base + sparse deltas", "summary": "Binary terrain base layer plus sparse delta props for 1M+ map objects.", "spec": "Design_Docs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md", "route": "/missions/:id/edit"},
+    {"id": "T-110", "order": 1100, "program": "infra", "status": "deferred", "surfaces": ["MAP", "DATA"], "impact": ["schema", "persistence"], "title": "Terrain base + sparse deltas", "summary": "Binary terrain base layer plus sparse delta props for 1M+ map objects.", "spec": "docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md", "route": "/missions/:id/edit"},
 ]
 
 

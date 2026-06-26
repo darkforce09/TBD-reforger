@@ -53,8 +53,8 @@ See [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md). **Staging is Direct-Join
 
 ```bash
 podman start tbdevent-postgres                # or docker compose up -d
-cd Tbdevent_Website && make dev-api           # :8080
-cd Tbdevent_Website/web && npm run dev        # :5173
+cd website && make dev-api           # :8080
+cd website/frontend && npm run dev        # :5173
 bash scripts/test-phase1-api.sh
 ```
 
@@ -66,7 +66,7 @@ bash scripts/test-phase1-api.sh
 |---|---|
 | [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) |
 | [`tbd-schema/`](tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
-| [`Tbdevent_Website/`](Tbdevent_Website/) | Go API + React UI |
+| [`website/`](website/) | Go API + React UI |
 | [`Tbd_framework/`](Tbd_framework/) | CRF reference only — **do not open in Workbench** |
 | [`scripts/`](scripts/) | Workbench setup, server profile, dev server, staging deploy, MCP helpers, API tests |
 | [`docs/`](docs/) | Ops copy, [`STAGING-SERVER.md`](docs/STAGING-SERVER.md) |

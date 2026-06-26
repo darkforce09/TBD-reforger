@@ -8,7 +8,7 @@ Old → new paths. Stubs remain at old locations where noted.
 |-----|-----|
 | `Claude_Context_Handoff.md` | `docs/platform/context_handoff.md` (stub at root) |
 | `REGISTRATION_FLOW_DESIGN.md` | `docs/platform/registration_flow.md` (stub at root) |
-| `Design_Docs/macOS_UX_Architecture.md` | `docs/platform/macos_ux_architecture.md` (stub) |
+| `docs/specs/macOS_UX_Architecture.md` | `docs/platform/macos_ux_architecture.md` (stub) |
 | `BACKEND_ARCHITECTURE.md` | `docs/backend/architecture.md` (stub at root) |
 
 ## New hubs

@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/features/mission-creator/` (wrapper) + `frontend/src/features/tactical-map/` (engine); lazy route in `frontend/src/router.tsx`
 - **Stitch reference:** none
 - **Min role:** `mission_maker` (owner or admin)
-- **Blueprint ref:** [Mission Creator ROADMAP](../../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md), [feature inventory](../../../Design_Docs/Mission_Creator_Architecture/feature_inventory.md)
+- **Blueprint ref:** [Mission Creator ROADMAP](../../../docs/specs/Mission_Creator_Architecture/ROADMAP.md), [feature inventory](../../../docs/specs/Mission_Creator_Architecture/feature_inventory.md)
 
 ## Element Inventory
 
@@ -83,16 +83,16 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M3.13 — [x] T-058 Toolbelt OBJ/SEL entity counts (total placed slots + selected count; scale telemetry)
 ### M3.14 — [x] T-059 Bulk paste/delete at scale (batch O(n) append; selection cap 500; outliner virtualization via T-064; validated **360k @ 100+ fps** pan)
 ### M3.15 — [x] T-060 scale load/save (shipped `b1fd25a` — load partial pass @ ~360k; Save ~142 MB → 201)
-### M3.16 — [x] T-061 drag-move @ 360k (good enough — motion ~60 fps; boundaries via `slotIconCache` — spec: [t061_drag_move_hotfix.md](../../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md))
-### M3.17 — [x] T-062 incremental bindings @ 360k (classifier + bulk delete ≤10k — spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md))
-### M3.18 — [x] T-062.2 editor session / alt-tab resilience (Vite reload guard + warm session — spec: [t062_2_editor_session_persistence.md](../../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md))
-### M3.19 — [x] T-062.1 chunked IDB slot restore (v2 `tbd-mission-persist`; determinate restoring @ ~360k — spec: [t062_1_idb_streaming_load.md](../../../Design_Docs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md))
-### M3.20 — [x] T-062.1.1 Save orbat dedup (editor-only POST; Go derives ORBAT — spec: [t062_1_1_batch_save.md](../../../Design_Docs/Mission_Creator_Architecture/t062_1_1_batch_save.md))
-### M4.21 — [x] T-063 spatial index (rbush pick/marquee @ ~367k — spec: [t063_spatial_index.md](../../../Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md))
-### M4.22 — [x] T-064 virtualized outliner @ ~367k (incl. T-064.1 scroll-ref hotfix — spec: [t064_virtualized_outliner.md](../../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md))
-### M5.23 — [x] T-066 worker compile offload + `pickMapSnapshot` (Save 201 @ ~367k — spec: [t066_worker_compile.md](../../../Design_Docs/Mission_Creator_Architecture/t066_worker_compile.md))
-### M5.24 — [x] T-067 spatial chunks — bulk-paste `slot-add-bulk` + chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()` @ ~160 fps pan @ 367k) — spec: [t067_spatial_chunks.md](../../../Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md)
-### M5.26 — [ ] T-068 asset registry + palette (spec ready — [t068_asset_registry.md](../../../Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md))
+### M3.16 — [x] T-061 drag-move @ 360k (good enough — motion ~60 fps; boundaries via `slotIconCache` — spec: [t061_drag_move_hotfix.md](../../../docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md))
+### M3.17 — [x] T-062 incremental bindings @ 360k (classifier + bulk delete ≤10k — spec: [t062_incremental_bindings.md](../../../docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md))
+### M3.18 — [x] T-062.2 editor session / alt-tab resilience (Vite reload guard + warm session — spec: [t062_2_editor_session_persistence.md](../../../docs/specs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md))
+### M3.19 — [x] T-062.1 chunked IDB slot restore (v2 `tbd-mission-persist`; determinate restoring @ ~360k — spec: [t062_1_idb_streaming_load.md](../../../docs/specs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md))
+### M3.20 — [x] T-062.1.1 Save orbat dedup (editor-only POST; Go derives ORBAT — spec: [t062_1_1_batch_save.md](../../../docs/specs/Mission_Creator_Architecture/t062_1_1_batch_save.md))
+### M4.21 — [x] T-063 spatial index (rbush pick/marquee @ ~367k — spec: [t063_spatial_index.md](../../../docs/specs/Mission_Creator_Architecture/t063_spatial_index.md))
+### M4.22 — [x] T-064 virtualized outliner @ ~367k (incl. T-064.1 scroll-ref hotfix — spec: [t064_virtualized_outliner.md](../../../docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md))
+### M5.23 — [x] T-066 worker compile offload + `pickMapSnapshot` (Save 201 @ ~367k — spec: [t066_worker_compile.md](../../../docs/specs/Mission_Creator_Architecture/t066_worker_compile.md))
+### M5.24 — [x] T-067 spatial chunks — bulk-paste `slot-add-bulk` + chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()` @ ~160 fps pan @ 367k) — spec: [t067_spatial_chunks.md](../../../docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md)
+### M5.26 — [ ] T-068 asset registry + palette (spec ready — [t068_asset_registry.md](../../../docs/specs/Mission_Creator_Architecture/t068_asset_registry.md))
 ### M5.25 — [ ] **T-111** lazy chunk residency @ 1M+ / **T-112** GPU viewport cull (`idea` — [`TICKET_BRAINSTORM.md`](../../../docs/TICKET_BRAINSTORM.md#scale))
 
 ## Test Plan
@@ -107,12 +107,12 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 
 - **[PERF-001] ~~Map pan/zoom FPS collapse~~** — **Resolved T-057** (100+ fps @ 10k validated); **T-058** OBJ/SEL entity-count telemetry shipped.
 - **[PERF-002] ~~Bulk paste 10k freeze~~** — **Resolved T-059** (validated **360k @ 100+ fps** pan; 6k paste loops smooth).
-- **[PERF-003] Initial load** — **Resolved T-062.1** (v2 chunked restore; legacy migrate once). Spec: [t062_1_idb_streaming_load.md](../../../Design_Docs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md). Pan **100+ fps** @ 360k when idle.
+- **[PERF-003] Initial load** — **Resolved T-062.1** (v2 chunked restore; legacy migrate once). Spec: [t062_1_idb_streaming_load.md](../../../docs/specs/Mission_Creator_Architecture/t062_1_idb_streaming_load.md). Pan **100+ fps** @ 360k when idle.
 - **[PERF-004] Save Version** — **Resolved T-060.1.4 / shipped T-060.** Verified: curl 140 MB → 201; browser Save @ ~367k/~142 MB → 201 (2026-06-23).
-- **[PERF-005] Drag-move @ 360k** — **Resolved T-061 (good enough).** Motion ~60 fps sustained; pickup/release materially improved via `slotIconCache` + bindings slot fast path. Mega optimizations deferred ([MC ROADMAP §Deferred mega optimizations](../../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md)). Spec: [t061_drag_move_hotfix.md](../../../Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md).
-- **[PERF-006] Incremental bindings @ 360k** — **Resolved T-062.** Spec: [t062_incremental_bindings.md](../../../Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md).
-- **[PERF-007] Alt-tab / session reload @ 360k** — **Resolved T-062.2.** Extended alt-tab (Firefox dev) no longer re-triggers full load overlay; warm session skips server GET on same-tab return. Spec: [t062_2_editor_session_persistence.md](../../../Design_Docs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md).
-- **[PERF-008] Outliner @ 360k** — **Resolved T-064.** Virtualized ORBAT + Editor Layers; outliner visible on first paint @ ~367k; scrollable 367k rows; T-064.1 scroll-ref hotfix. Spec: [t064_virtualized_outliner.md](../../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md).
-- **[PERF-009] Spatial chunks / bulk paste @ 367k+** — **Partially resolved T-067.** Bulk paste `slot-add-bulk` shipped; pan ~160 fps @ 367k (CPU cull deferred). Lazy RAM + GPU cull @ 1M+ deferred. Spec: [t067_spatial_chunks.md](../../../Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md).
-- **Active slice:** **T-068 ready** — [`t068_asset_registry.md`](../../../Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md). See [TICKET_LEAD.md](../../../docs/TICKET_LEAD.md).
-- **Next queued (after T-068 ship):** T-069 markers, T-070 vehicles, T-071 ORBAT Manager modal — see [Mission Creator ROADMAP](../../../Design_Docs/Mission_Creator_Architecture/ROADMAP.md) and [TICKET_REGISTRY.md](../../../docs/TICKET_REGISTRY.md).
+- **[PERF-005] Drag-move @ 360k** — **Resolved T-061 (good enough).** Motion ~60 fps sustained; pickup/release materially improved via `slotIconCache` + bindings slot fast path. Mega optimizations deferred ([MC ROADMAP §Deferred mega optimizations](../../../docs/specs/Mission_Creator_Architecture/ROADMAP.md)). Spec: [t061_drag_move_hotfix.md](../../../docs/specs/Mission_Creator_Architecture/t061_drag_move_hotfix.md).
+- **[PERF-006] Incremental bindings @ 360k** — **Resolved T-062.** Spec: [t062_incremental_bindings.md](../../../docs/specs/Mission_Creator_Architecture/t062_incremental_bindings.md).
+- **[PERF-007] Alt-tab / session reload @ 360k** — **Resolved T-062.2.** Extended alt-tab (Firefox dev) no longer re-triggers full load overlay; warm session skips server GET on same-tab return. Spec: [t062_2_editor_session_persistence.md](../../../docs/specs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md).
+- **[PERF-008] Outliner @ 360k** — **Resolved T-064.** Virtualized ORBAT + Editor Layers; outliner visible on first paint @ ~367k; scrollable 367k rows; T-064.1 scroll-ref hotfix. Spec: [t064_virtualized_outliner.md](../../../docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md).
+- **[PERF-009] Spatial chunks / bulk paste @ 367k+** — **Partially resolved T-067.** Bulk paste `slot-add-bulk` shipped; pan ~160 fps @ 367k (CPU cull deferred). Lazy RAM + GPU cull @ 1M+ deferred. Spec: [t067_spatial_chunks.md](../../../docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md).
+- **Active slice:** **T-068 ready** — [`t068_asset_registry.md`](../../../docs/specs/Mission_Creator_Architecture/t068_asset_registry.md). See [TICKET_LEAD.md](../../../docs/TICKET_LEAD.md).
+- **Next queued (after T-068 ship):** T-069 markers, T-070 vehicles, T-071 ORBAT Manager modal — see [Mission Creator ROADMAP](../../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) and [TICKET_REGISTRY.md](../../../docs/TICKET_REGISTRY.md).

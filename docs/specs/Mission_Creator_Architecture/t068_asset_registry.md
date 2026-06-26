@@ -8,11 +8,22 @@
 
 **Agent roles (locked):** **Cursor** authors and syncs all documentation. **Claude Code** reads this spec and implements code only — return verify output to Cursor for the ship doc pass.
 
-**Slices:** **T-068.0** backend feed · **T-068.1** frontend palette wiring
+**Slices (Registry + Forge program):**
 
----
+| Slice | targets | executor | Work |
+|-------|---------|----------|------|
+| **T-068.0** | `shared`, `root` | `cursor-docs` | Kit JSON schemas + ingest spec in `docs/specs/` |
+| **T-068.0a** | `mod` | `workbench` | Workbench export → items/compat JSON |
+| **T-068.1** | `website` | `claude-code` | `POST/GET /api/v1/registry` + kits tables |
+| **T-068.2** | `website` | `claude-code` | Comlink `registry.worker.ts` + IndexedDB cache |
+| **T-068.3** | `website` | `claude-code` | Wire Asset Browser to live registry tree |
+| **T-068.4** | `website` | `claude-code` | Loadout Forge UI (`canEquip` / attachments) |
+| **T-068.5** | `website` | `claude-code` | Arsenal inspector + compat matrix read path |
+| **T-068.6** | `website` | `claude-code` | Compiler export: classname + loadout superset |
 
-## In one sentence
+**Active slice:** **T-068.0** (Cursor docs). `./scripts/ticket run` starts at **T-068.1** after docs + Workbench export land.
+
+**Prerequisites:** **T-067** shipped (`d2128cf`). Dev-login `mission_maker+`; `/missions/:id/edit`.
 
 Replace the mock Factions catalog with a **thin, modpack-scoped registry feed** (`classname`, `display_name`, `category`, `icon_url`, `kind`) served by the API and rendered in the existing Eden-style tree + T-055 search + DnD placement flow.
 
@@ -458,7 +469,7 @@ Per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md):
 **Do not edit documentation.** Implement code only.
 
 ```
-Read CLAUDE.md §Status and Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md.
+Read CLAUDE.md §Status and docs/specs/Mission_Creator_Architecture/t068_asset_registry.md.
 
 Implement T-068 in order:
 1. T-068.0 — backend: model, migration, seed, GET /api/v1/registry, integration test

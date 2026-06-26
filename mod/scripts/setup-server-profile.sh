@@ -18,11 +18,11 @@ PROFILE_ROOT="$PROFILE/profile"
 
 mkdir -p "$PROFILE_ROOT/missions"
 
-# Backend config — edit serverToken to match GAME_SERVER_TOKENS in Tbdevent_Website/.env
+# Backend config — edit serverToken to match GAME_SERVER_TOKENS in website/.env
 cp "$ROOT/tbd-framework/Data/backend.example.json" "$PROFILE_ROOT/TBD_BackendConfig.json"
 
 # Point at local API + dev token from .env if present
-ENV_FILE="$ROOT/Tbdevent_Website/.env"
+ENV_FILE="$ROOT/website/.env"
 if [ -n "${GAME_SERVER_TOKEN:-}" ]; then
   TOKEN="$GAME_SERVER_TOKEN"
 elif [ -f "$ENV_FILE" ]; then
@@ -33,7 +33,7 @@ if [ -n "${TOKEN:-}" ]; then
 fi
 
 # Seed mission fallback on disk (matches golden mission served by API)
-cp "$ROOT/Tbdevent_Website/missions/msn_8f3a2c.json" "$PROFILE_ROOT/missions/msn_8f3a2c.json"
+cp "$ROOT/shared/tbd-schema/golden-missions/msn_8f3a2c.json" "$PROFILE_ROOT/missions/msn_8f3a2c.json"
 
 # Optional registry override for dedicated (mod ships Data/registry.json; this is backup)
 cp "$ROOT/tbd-framework/Data/registry.json" "$PROFILE_ROOT/TBD_Registry.json" 2>/dev/null || true

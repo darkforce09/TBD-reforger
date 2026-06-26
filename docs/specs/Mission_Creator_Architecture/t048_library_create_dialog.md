@@ -290,7 +290,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
 | [`frontend/docs/pages/mission-library.md`](../../frontend/docs/pages/mission-library.md) | Status → `doc-complete`; M3/M4 milestones checked |
 | [`frontend/docs/shell/sidebar.md`](../../frontend/docs/shell/sidebar.md) | Check off T-048 milestone |
 | [`docs/frontend/ROADMAP.md`](../../docs/frontend/ROADMAP.md) | Move T-048 from IN PROGRESS → DONE shipped table |
-| [`Design_Docs/.../ROADMAP.md`](ROADMAP.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
+| [`docs/specs/.../ROADMAP.md`](ROADMAP.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
 | [`t048_library_create_dialog.md`](t048_library_create_dialog.md) | Status → **shipped** |
 | [`CLAUDE.md`](../../CLAUDE.md) §Status | T-048 Done bullet; bump latest-feature line |
 | [`agent_execution.md`](agent_execution.md) | **Update stale `/missions/create` refs** in repository map (lines ~92, ~151), phase table (~207), DEFERRED table (~448) — Decisions log already correct |
@@ -307,7 +307,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
 ```
 Read CLAUDE.md and docs/AGENT_COMMIT_CHECKLIST.md first.
 
-Implement T-048 per Design_Docs/Mission_Creator_Architecture/t048_library_create_dialog.md.
+Implement T-048 per docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md.
 Docs are PRE-STAGED — do not revert target-state docs; FINALIZE per spec §Documentation sync on ship.
 
 - Create CreateMissionDialog.tsx (extract wizard from pages/missions.tsx)

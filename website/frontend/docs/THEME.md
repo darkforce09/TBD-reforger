@@ -2,7 +2,7 @@
 
 Authoritative theme for all docs, Tailwind v4 `@theme`, and shadcn CSS variables.
 
-**Aegis reference:** full token spec in [Design_Docs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md](../../Design_Docs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md). Runtime tokens live in `frontend/src/index.css` (`@theme` block).
+**Aegis reference:** full token spec in [docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md](../../docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md). Runtime tokens live in `frontend/src/index.css` (`@theme` block).
 
 ## Principles
 
