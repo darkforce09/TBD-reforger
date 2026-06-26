@@ -33,6 +33,11 @@ modded class SCR_PlayerController
 		if (!im)
 			return;
 
+		// Our keybinds live in a dedicated context (Configs/System/ActionContext/
+		// TBD_BrowserContext.conf) so they never collide with gameplay binds and
+		// can be toggled. Must be active before its actions will fire.
+		im.ActivateContext("TBD_BrowserContext");
+
 		im.AddActionListener("TBD_MissionCycle", EActionTrigger.DOWN, TBD_OnCycleAction);
 		im.AddActionListener("TBD_MissionLoad", EActionTrigger.DOWN, TBD_OnLoadAction);
 		m_TBD_ListenersRegistered = true;

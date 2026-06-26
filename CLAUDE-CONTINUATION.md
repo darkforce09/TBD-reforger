@@ -467,12 +467,20 @@ When starting a new session:
 ### Dead end (do not retry): chat commands
 `TBD_AdminCommands.c` (modded `SCR_ChatComponent.OnNewMessage`, `#tbd` commands) is **inactive** — the `GameMode_Plain`-based TBD scenario has **no `ScriptedChatEntity`**, so chat is never processed (`Chat not available - missing ChatEntity`). Kept for reference only. Use the RPC path.
 
-### THE LAST 5% — define 2 input actions
-The keybind needs input actions **`TBD_MissionCycle`** + **`TBD_MissionLoad`** to exist. Verified-clean plan (avoids the giant-config override that crashed Workbench):
-1. Write a **tiny** `ActionManager` config with the 2 actions + a custom **`TBD_BrowserContext`** (`ActionRefs`) — format:
-   `Action TBD_MissionCycle { InputSource InputSourceValue { Input "keyboard:KC_F6" Filter InputFilterDown {} } }` (button = no `Type`). Contexts use `ActionRefs { "TBD_MissionCycle" }`.
-2. Activate it from script: `GetGame().GetInputManager().ActivateContext("TBD_BrowserContext")` in the local `SCR_PlayerController` (API verified to exist). Then `AddActionListener` fires.
-3. **Open question to resolve first:** does a *separate* mod input config get loaded/merged, or must it sit at the base path `Configs/System/chimeraInputCommon.conf` (which *replaces* and crashed on full-copy save)? Base config GUID needed for an override. Iterate via the WB MCP (`project_write` → `wb_reload` → check WB log). Write files directly (bypasses WB read-only + the crashy WB "save").
+### THE LAST 5% — define 2 input actions (FILES WRITTEN 2026-06-15, verification pending)
+The keybind needs input actions **`TBD_MissionCycle`** + **`TBD_MissionLoad`** to exist.
+
+**Open question RESOLVED (by structure, 2026-06-15):** the base game stores input Actions and Contexts as **modular per-item `.conf` files** under `Configs/System/Actions/*.conf` and `Configs/System/ActionContext/*.conf` (e.g. `ManualCameraTeleport.conf`, `EditorBrowserContext.conf`; also per-input files in `Inputs/`). Strong evidence input configs are **additive** → a mod **ships its own files at those paths**; do **not** override the 235 KB `chimeraInputCommon.conf` (full-copy override crashed precisely because replacing a giant config is fragile). Additive files can't break base keybinds even if malformed.
+
+**Written (additive, `tbd-framework/` only):**
+- `Configs/System/Actions/TBD_MissionCycle.conf` — `keyboard:KC_F6`, `InputFilterDown`
+- `Configs/System/Actions/TBD_MissionLoad.conf` — `keyboard:KC_F7`, `InputFilterDown`
+- `Configs/System/ActionContext/TBD_BrowserContext.conf` — `ActionRefs` → both actions
+- `TBD_MissionBrowser.c` → `TBD_TryRegisterListeners()` now calls `im.ActivateContext("TBD_BrowserContext")` before the `AddActionListener` calls (`ActivateContext` verified on `InputManager`/`ActionManager`).
+
+**STILL UNVERIFIED (couldn't test on this Linux/Proton box):** (a) the exact config text syntax — base `.conf` are **binary**, `game_read` returns "incorrect header check", no readable example to copy; (b) whether the engine auto-loads those dirs additively. Why no live test: `wb_reload` reloads **scripts only** (not configs), and this session the WB bridge was in mode **"game"/play** so reload was a **no-op** (`console.log` mtime frozen, `ExecuteAction=false` = nothing happened). Last clean full compile (warnings only, no errors) predates the `.c` edit, so even that one-liner isn't recompiled yet.
+
+**Next session — verify:** restart Workbench (loads new configs **and** recompiles) → check log for parse/compile errors → **Play**, press **F6/F7**, watch for `[TBD][browser]` Prints. OR republish → `deploy-staging.sh` → join → F6/F7. **If actions don't register:** fallback = a *minimal* same-path `Configs/System/chimeraInputCommon.conf` with ONLY the new entries (tests whether input configs merge vs. replace).
 
 ### Cross-terrain (after the keybind)
 Build a generic TBD scenario on **Arland** in Workbench (`worlds/TBD_Arland.ent` SubScene of `worlds/Arland/Arland.ent`, same `TBD_GameMode`, `Missions/TBD_Arland.conf`), register its `.conf` GUID in `TBD_ScenarioRouter`, verify `RequestScenarioChangeTransition(scenario, worldSystemsConfig, addonList)` args at runtime. An Arland mission with `slots[]` is also needed (sample `msn_2d91be` has 0).

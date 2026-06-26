@@ -25,7 +25,7 @@
 - Web Phase 1 **backend**: link codes, roster, mission publish, ORBAT slot assignment (migration 00004), **`GET /api/missions` list**
 - Dev scenario: `Missions/TBD_Dev_POC.conf` on Eden subscene with `TBD_GameMode.et` prefab
 - **Staging LAN join WORKS** — mod published to Workshop, `-config` mode, client Direct-Joined + spawned (see [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md))
-- **Mission browser** — backend + game logic + admin-gated client↔server RPC + keybind trigger all built & compile; only the 2 input actions remain (CLAUDE-CONTINUATION.md §16)
+- **Mission browser** — backend + game logic + admin-gated client↔server RPC + keybind trigger all built & compile. Input actions + context now **written** (`tbd-framework/Configs/System/Actions/TBD_Mission{Cycle,Load}.conf` + `ActionContext/TBD_BrowserContext.conf`, F6/F7) and `ActivateContext` wired in `TBD_MissionBrowser.c` — **NOT yet verified** (couldn't test configs on this box; needs a WB restart or a staging republish). See CLAUDE-CONTINUATION.md §16.
 - Repo on GitHub: `darkforce09/tbd-reforger-platform`
 
 ---
@@ -33,7 +33,7 @@
 ## Phase 1 — what to build next
 
 1. ~~**Staging LAN pass**~~ ✓ DONE 2026-06-14 — `tbd-framework` published to Workshop, staging runs `-config` mode, client Direct-Joined and spawned at a slot (see [`docs/STAGING-SERVER.md`](docs/STAGING-SERVER.md) → "Client join")
-2. **Finish the mission browser** — define the 2 input actions (`TBD_MissionCycle`/`TBD_MissionLoad`) so the admin keybind fires the RPC. Everything else is done + compiles. Full handoff in [`CLAUDE-CONTINUATION.md`](CLAUDE-CONTINUATION.md) **§16**; read **§17 gotchas first**.
+2. **Finish the mission browser** — the 2 input actions (`TBD_MissionCycle`/`TBD_MissionLoad`), `TBD_BrowserContext`, and `ActivateContext` wiring are now **written** but **unverified**. Next step is to **verify** (WB restart → Play → F6/F7, or republish → staging → join) and fall back to a same-path `chimeraInputCommon.conf` merge if the actions don't register. Full handoff in [`CLAUDE-CONTINUATION.md`](CLAUDE-CONTINUATION.md) **§16**; read **§17 gotchas first**.
 3. **Capture / win condition** — at least one objective
 4. **Full ORBAT enforcement** — roster identity → assigned slot (round-robin works without linking)
 5. **Stage machine** — `LOADING → LOBBY → BRIEFING → SAFE_START → LIVE → END → DEBRIEF`
@@ -162,12 +162,17 @@ mission browser is built and compiles in Workbench — backend GET /api/missions
 TBD_MissionListLoader, select+reload, and the admin-gated client↔server RPC + keybind
 trigger (TBD_MissionBrowser.c). Chat commands are a DEAD END (no chat entity on dedicated).
 
-Last 5%: define input actions TBD_MissionCycle / TBD_MissionLoad so the keybind fires
-the RPC. Plan in §16: a tiny ActionManager config (2 actions + a TBD_BrowserContext)
-+ GetInputManager().ActivateContext("TBD_BrowserContext") from the local SCR_PlayerController.
-Open question: does a separate mod input config merge, or must it override the base
-Configs/System/chimeraInputCommon.conf? Iterate via the WB MCP (project_write → wb_reload →
-grep the WB log). Write config files directly (bypasses WB read-only + the crashy WB save).
+Last 5% — input actions are now WRITTEN but UNVERIFIED (2026-06-15): tbd-framework/
+Configs/System/Actions/TBD_MissionCycle.conf (F6) + TBD_MissionLoad.conf (F7) +
+ActionContext/TBD_BrowserContext.conf, and TBD_MissionBrowser.c calls
+ActivateContext("TBD_BrowserContext"). Open question RESOLVED: input configs are additive
+modular files (base game splits them into Configs/System/Actions|ActionContext/*.conf) —
+do NOT override chimeraInputCommon.conf. Couldn't live-test on this box (configs are binary;
+wb_reload = scripts only; bridge was in play mode = no-op).
+YOUR JOB: VERIFY. Restart Workbench (loads configs + recompiles) → Play → press F6/F7 →
+watch the WB log for [TBD][browser] Prints; OR republish → deploy-staging.sh → join → F6/F7.
+If the actions don't register, fall back to a minimal same-path chimeraInputCommon.conf with
+ONLY the new entries (tests merge vs replace). Then commit (when asked).
 
 Then: cross-terrain (build an Arland TBD scenario in Workbench).
 
