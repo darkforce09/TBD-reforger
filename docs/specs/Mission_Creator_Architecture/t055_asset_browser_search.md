@@ -50,7 +50,7 @@ yet); registry feed; backend changes.
 
 ## Implementation specification
 
-**File:** [`frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx`](../../frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx)
 
 1. `const [query, setQuery] = useState('')`.
 2. Module-scope recursive filter:
@@ -112,12 +112,12 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-055)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-055 bullet + bump `latest feature work` line + Next-slices line |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-055 bullet + bump `latest feature work` line + Next-slices line |
 | [`feature_inventory.md`](feature_inventory.md) | **New `RIGHT-SEARCH-001` FEDS entry** (Status working; Evidence `AssetBrowser.tsx`) |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row **Asset browser search (T-055)**; refresh one-line prompt Next-slices |
 | [`ROADMAP.md`](ROADMAP.md) | DONE T-055 section + spec index row; Eden execution-order line; refresh Next |
@@ -137,4 +137,4 @@ using AI. **Do not commit until the user asks.**
 ## Related
 
 - Prior: [t054_attributes_entry_points.md](t054_attributes_entry_points.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).

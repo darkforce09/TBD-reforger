@@ -2,9 +2,9 @@
 
 **Start here.** Single planning view for the 2D mission editor — what is **done**, what **must work**, and links to all supporting documentation.
 
-**Route:** `/missions/:id/edit` · **Code:** [`frontend/src/features/mission-creator/`](../../frontend/src/features/mission-creator/) + [`tactical-map/`](../../frontend/src/features/tactical-map/)
+**Route:** `/missions/:id/edit` · **Code:** [`frontend/src/features/mission-creator/`](../../../apps/website/frontend/src/features/mission-creator) + [`tactical-map/`](../../../apps/website/frontend/src/features/tactical-map)
 
-**Open work:** [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) (auto-generated queue, dependencies, ready/queued tickets). Eden parity item detail: [`eden/gap_analysis.md`](eden/gap_analysis.md) (`eden_id` columns).
+**Open work:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (auto-generated queue, dependencies, ready/queued tickets). Eden parity item detail: [`eden/gap_analysis.md`](eden/gap_analysis.md) (`eden_id` columns).
 
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
@@ -39,7 +39,7 @@
 
 ### Execution order (recommended)
 
-Work [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) queue in dependency order; interleave small **T-068+** slices between heavier blocks:
+Work [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) queue in dependency order; interleave small **T-068+** slices between heavier blocks:
 
 1. **Scale program (complete through T-067)** — ~~**T-064**~~ ✅ virtualized outliner → ~~**T-065**~~ ✅ cluster/LOD → ~~**T-066**~~ ✅ worker compile → ~~**T-067**~~ ✅ bulk paste + chunk scaffolding ([`t067_spatial_chunks.md`](t067_spatial_chunks.md)) → …
 2. **T-068+ ship-blocking** — **T-068** registry + palette → **T-069** markers → **T-070** vehicles → **T-071** ORBAT Manager modal
@@ -110,7 +110,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 
 | Doc | When to open it |
 |-----|-----------------|
-| **[`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md)** | **Open work** — ready/queued tickets, dependency graph |
+| **[`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)** | **Open work** — ready/queued tickets, dependency graph |
 | **[`agent_execution.md`](agent_execution.md)** | Locked UX decisions, agent phase history, copy-paste agent prompt |
 | **[`feature_inventory.md`](feature_inventory.md)** | Per-feature code-evidenced status (FEDS) |
 | **[`engineering_plan.md`](engineering_plan.md)** | Y.Doc schema, compiler, workers, engineering phases 0–9 |
@@ -122,10 +122,10 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **[`eden/attributes.md`](eden/attributes.md)** | Attribute catalog |
 | **[`eden/gap_analysis.md`](eden/gap_analysis.md)** | Eden parity backlog (`eden_id` ↔ ticket mapping) |
 | **[`eden/wiki_manifest.yaml`](eden/wiki_manifest.yaml)** | Scrape manifest — 28 Bohemia Eden Editor wiki pages |
-| **[`artifacts/eden-wiki/`](../../artifacts/eden-wiki/)** | **Cached wiki markdown** (generated; do not hand-edit) |
-| **[`scripts/tools/scrape-eden-wiki.mjs`](../../scripts/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
-| **[`artifacts/eden-feds-draft.jsonl`](../../artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
-| **[`artifacts/README.md`](../../artifacts/README.md)** | Generated artifacts policy |
+| **[`artifacts/eden-wiki/`](../../../.ai/artifacts/eden-wiki)** | **Cached wiki markdown** (generated; do not hand-edit) |
+| **[`scripts/tools/scrape-eden-wiki.mjs`](../../../scripts/website/tools/scrape-eden-wiki.mjs)** | Regenerate wiki cache from manifest |
+| **[`artifacts/eden-feds-draft.jsonl`](../../../.ai/artifacts/eden-feds-draft.jsonl)** | Draft FEDS entries derived from wiki research |
+| **[`artifacts/README.md`](../../../.ai/artifacts/README.md)** | Generated artifacts policy |
 | **[`t058_entity_count_readout.md`](t058_entity_count_readout.md)** | **T-058** — Toolbelt OBJ/SEL entity counts (shipped) |
 | **[`t059_bulk_paste_operations.md`](t059_bulk_paste_operations.md)** | **T-059** — Bulk paste/delete at scale (shipped) |
 | **[`t060_fast_initial_load.md`](t060_fast_initial_load.md)** | **T-060** — Fast load + save (**shipped** `b1fd25a`) |
@@ -149,12 +149,12 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **[`t050_cursor_z_readout.md`](t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
 | **[`t049_terrain_title_position.md`](t049_terrain_title_position.md)** | **T-049** — Terrain + title hydrate + numeric position (shipped) |
 | **[`t048_library_create_dialog.md`](t048_library_create_dialog.md)** | T-048 — Library create dialog (shipped) |
-| [`frontend/docs/pages/mission-library.md`](../../frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
-| [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
-| [`frontend/docs/pages/mission-creator.md`](../../frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
+| [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
+| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
+| [`frontend/docs/pages/mission-creator.md`](../../../apps/website/frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
 | **[`t068_asset_registry.md`](t068_asset_registry.md)** | **T-068** — Asset registry + palette (thin API + Factions tree) (**ready**) |
 | **[`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md)** | **T-110** — Terrain base + mission layers (future; Base + Delta for props only) |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | **ACTIVE: T-068** (spec ready); latest shipped **T-067** |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | **ACTIVE: T-068** (spec ready); latest shipped **T-067** |
 
 ---
 
@@ -201,7 +201,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 
 ### Documentation & Eden wiki research (T-042)
 - FEDS inventory ([`feature_inventory.md`](feature_inventory.md)), Eden reference ([`eden/`](eden/))
-- **Arma 3 Eden Editor wiki scrape:** 28 pages in [`artifacts/eden-wiki/`](../../artifacts/eden-wiki/) via [`eden/wiki_manifest.yaml`](eden/wiki_manifest.yaml) + [`scrape-eden-wiki.mjs`](../../scripts/tools/scrape-eden-wiki.mjs); feeds [`eden/interactions.md`](eden/interactions.md), [`eden/ui_anatomy.md`](eden/ui_anatomy.md), [`eden/attributes.md`](eden/attributes.md), [`eden/gap_analysis.md`](eden/gap_analysis.md)
+- **Arma 3 Eden Editor wiki scrape:** 28 pages in [`artifacts/eden-wiki/`](../../../.ai/artifacts/eden-wiki) via [`eden/wiki_manifest.yaml`](eden/wiki_manifest.yaml) + [`scrape-eden-wiki.mjs`](../../../scripts/website/tools/scrape-eden-wiki.mjs); feeds [`eden/interactions.md`](eden/interactions.md), [`eden/ui_anatomy.md`](eden/ui_anatomy.md), [`eden/attributes.md`](eden/attributes.md), [`eden/gap_analysis.md`](eden/gap_analysis.md)
 
 ---
 
@@ -259,7 +259,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
 
-**Next:** see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md). **T-068 ready** — [`t068_asset_registry.md`](t068_asset_registry.md). Latest shipped **T-067**.
+**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 ready** — [`t068_asset_registry.md`](t068_asset_registry.md). Latest shipped **T-067**.
 
 ---
 
@@ -322,7 +322,7 @@ Required for positioning you can trust in-game. Most items deferred until **T-06
 
 ## NOT DONE — T-068+ Eden backlog
 
-Required to place **real objects**, not just generic slots. **Queue and dependencies:** [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md). **Per-feature status:** [`eden/gap_analysis.md`](eden/gap_analysis.md).
+Required to place **real objects**, not just generic slots. **Queue and dependencies:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **Per-feature status:** [`eden/gap_analysis.md`](eden/gap_analysis.md).
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
@@ -438,7 +438,7 @@ All linked in **Documentation** section above. Quick pointers:
 
 | Need | Doc |
 |------|-----|
-| **Open work queue** | [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) |
+| **Open work queue** | [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) |
 | Code-evidenced feature list | [`feature_inventory.md`](feature_inventory.md) |
 | Eden UI parity backlog | [`eden/gap_analysis.md`](eden/gap_analysis.md) |
 | Engineering ADRs + compiler | [`engineering_plan.md`](engineering_plan.md) |

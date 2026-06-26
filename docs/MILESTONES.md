@@ -3,7 +3,7 @@
 
 # Milestones (generated from tickets)
 
-Scheduling detail: [`mod/MILESTONES.md`](../mod/MILESTONES.md).
+Scheduling detail: [`docs/mod/MILESTONES.md`](mod/MILESTONES.md).
 
 ## M1
 

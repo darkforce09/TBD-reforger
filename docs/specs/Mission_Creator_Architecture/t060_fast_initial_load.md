@@ -88,9 +88,9 @@ flowchart TD
 ```
 
 Evidence:
-- [`useMissionEditor.ts`](../../frontend/src/features/mission-creator/hooks/useMissionEditor.ts): E3b `versionUploadBaseURL`, Blob POST
-- [`compiler/compile.ts`](../../frontend/src/features/mission-creator/compiler/compile.ts): `buildVersionBlob`
-- [`internal/middleware/bodylimit.go`](../../../internal/middleware/bodylimit.go): 256 MB route cap
+- [`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts): E3b `versionUploadBaseURL`, Blob POST
+- [`compiler/compile.ts`](../../../apps/website/frontend/src/features/mission-creator/compiler/compile.ts): `buildVersionBlob`
+- [`internal/middleware/bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go): 256 MB route cap
 
 ---
 

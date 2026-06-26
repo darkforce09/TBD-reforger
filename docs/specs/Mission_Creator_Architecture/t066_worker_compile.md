@@ -16,7 +16,7 @@
 
 ## Problem (pre-T-066)
 
-T-060/T-060.1 ran compile + blob assembly on the **main thread** with chunked yields ([`compile.ts`](../../frontend/src/features/mission-creator/compiler/compile.ts)). Save @ ~367k worked (~142 MB → 201) but compile/prepare competed with Deck/React. Stretch: ≤10 s @ **1M** needs worker offload ([`engineering_plan.md`](engineering_plan.md) Phase 9).
+T-060/T-060.1 ran compile + blob assembly on the **main thread** with chunked yields ([`compile.ts`](../../../apps/website/frontend/src/features/mission-creator/compiler/compile.ts)). Save @ ~367k worked (~142 MB → 201) but compile/prepare competed with Deck/React. Stretch: ≤10 s @ **1M** needs worker offload ([`engineering_plan.md`](engineering_plan.md) Phase 9).
 
 ---
 

@@ -1,2 +1,9 @@
 # Monorepo gitignore (root-level paths not covered by subtree .gitignore files)
-mod/crf_framework/
+apps/mod/crf_framework/
+
+# Staging deploy secrets (copy from scripts/deploy/deploy.env.example)
+scripts/deploy/deploy.env
+
+# Python bytecode caches (ticket/migration scripts)
+__pycache__/
+*.pyc

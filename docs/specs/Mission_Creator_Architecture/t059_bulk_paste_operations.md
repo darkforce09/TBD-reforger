@@ -27,14 +27,14 @@ Make **bulk copy/paste and delete** usable at **10k+** objects without freezing 
 
 ## Root cause (confirmed in code)
 
-[`ydoc.ts`](../../frontend/src/features/tactical-map/state/ydoc.ts) `pasteSlots` — per slot in one `transact`:
+[`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) `pasteSlots` — per slot in one `transact`:
 
 ```ts
 squad.set('slotIds', [...(squad.get('slotIds') as ID[]), id])   // O(n²) over 10k
 layer.set('entityIds', [...(layer.get('entityIds') as ID[]), id]) // O(n²) over 10k
 ```
 
-Then [`bindings.ts`](../../frontend/src/features/tactical-map/state/bindings.ts): `observeDeep` → `docToSnapshot()` → full `slots.toJSON()` of **all** slots → `_applySnapshot` → [`selectSlotIcons`](../../frontend/src/features/tactical-map/state/selectors.ts) maps every slot → [`EditorLayersSection`](../../frontend/src/features/mission-creator/layout/LeftOutliner/EditorLayersSection.tsx) `buildTree` renders **every** `entityId` as a tree leaf → `MissionCreatorPage` sets `selection.ids` to **all 10k new ids**.
+Then [`bindings.ts`](../../../apps/website/frontend/src/features/tactical-map/state/bindings.ts): `observeDeep` → `docToSnapshot()` → full `slots.toJSON()` of **all** slots → `_applySnapshot` → [`selectSlotIcons`](../../../apps/website/frontend/src/features/tactical-map/state/selectors.ts) maps every slot → [`EditorLayersSection`](../../../apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/EditorLayersSection.tsx) `buildTree` renders **every** `entityId` as a tree leaf → `MissionCreatorPage` sets `selection.ids` to **all 10k new ids**.
 
 ---
 
@@ -120,13 +120,13 @@ export function runBulk(md, fn) { bulkDepth++; try { fn() } finally { bulkDepth-
 
 | Doc | Update |
 |-----|--------|
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-059 bullet; validation notes; Next → **T-060.1.1** |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-059 bullet; validation notes; Next → **T-060.1.1** |
 | [`ROADMAP.md`](ROADMAP.md) | Scale table T-059 ✅; Next → **T-060.1.1** |
 | [`t056_copy_paste.md`](t056_copy_paste.md) | Note: bulk scale limits addressed T-059 |
 | [`feature_inventory.md`](feature_inventory.md) | ACTION-PASTE bulk row or amend KEY-COPY-001 |
 | [`agent_execution.md`](agent_execution.md) | Decisions log; ACTIVE SLICE → **T-060.1.1** |
-| [`docs/TAGS.md`](../../docs/TAGS.md) | T-059 shipped row |
-| [`mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | M3.14 milestone; PERF-002 bulk paste |
+| [`docs/TAGS.md`](../../website/TAGS.md) | T-059 shipped row |
+| [`mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | M3.14 milestone; PERF-002 bulk paste |
 
 ---
 

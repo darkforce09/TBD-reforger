@@ -6,7 +6,7 @@ Migration program **M0–M3** merges `TBD_Website` + `Arma reforger` into this r
 
 | Gate | When | Checks |
 |------|------|--------|
-| **G0.5** | Before M1 | Both originals committed; SHAs in [`artifacts/migration-baseline/G0-SHAs.md`](../artifacts/migration-baseline/G0-SHAs.md); push to GitHub |
+| **G0.5** | Before M1 | Both originals committed; SHAs in [`artifacts/migration-baseline/G0-SHAs.md`](../../.ai/artifacts/migration-baseline/G0-SHAs.md); push to GitHub |
 | **G1** | After read-tree merge | V1–V3 content parity |
 | **G2** | After M1b lift | V4–V5, V17, V25 |
 | **G3** | After M1c path fixes | V11–V22; executor gate in CLAUDE + AI_PLAYBOOK |

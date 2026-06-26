@@ -233,12 +233,12 @@ proxy: {
 | [t060_fast_initial_load.md](t060_fast_initial_load.md) | Status + §Shipped timings; blockers table |
 | [t060_1_scale_load_save_completion.md](t060_1_scale_load_save_completion.md) | §Manual verify; §T-060.1.3 + §T-060.1.4 |
 | [agent_execution.md](agent_execution.md) | ACTIVE SLICE → **T-066** worker compile |
-| [CLAUDE.md](../../CLAUDE.md) §Status | T-060 bullet + 360k acceptance |
-| [docs/TAGS.md](../../docs/TAGS.md) | T-060.1 note |
+| [CLAUDE.md](../../../CLAUDE.md) §Status | T-060 bullet + 360k acceptance |
+| [docs/TAGS.md](../../website/TAGS.md) | T-060.1 note |
 | [feature_inventory.md](feature_inventory.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
-| [mission-editor.md](../../frontend/docs/pages/mission-editor.md) | PERF-003/004 determinate + 360k gate |
-| [docs/frontend/ROADMAP.md](../../docs/frontend/ROADMAP.md) | T-060 acceptance |
-| [docs/AGENT_COMMIT_CHECKLIST.md](../../docs/AGENT_COMMIT_CHECKLIST.md) | T-060.1.4 gate before tag |
+| [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | PERF-003/004 determinate + 360k gate |
+| [docs/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md) | T-060 acceptance |
+| [docs/AGENT_COMMIT_CHECKLIST.md](../../website/AGENT_COMMIT_CHECKLIST.md) | T-060.1.4 gate before tag |
 
 ---
 
@@ -387,7 +387,7 @@ Requires root `.env` `ALLOWED_ORIGINS=http://localhost:5173` (already set). **Ve
 |-------|------|
 | **E3b code (required)** | `versionUploadBaseURL()` in `useMissionEditor.ts`: when `import.meta.env.DEV` and body >1 MB and `VITE_API_URL` is still `/api/v1`, POST directly to `:8080` — **never rely on Vite proxy for large uploads**. |
 | **Dev startup hint** | One-time `console.info` in dev when axios base is proxy-relative: "Large Mission Creator saves bypass the Vite proxy automatically." |
-| **Docs in one place** | [`t060_1_scale_load_save_completion.md`](t060_1_scale_load_save_completion.md) §Root cause + this §Prevention; [`docs/backend/architecture.md`](../../docs/backend/architecture.md) §Dev note; [`frontend/.env.example`](../../frontend/.env.example). |
+| **Docs in one place** | [`t060_1_scale_load_save_completion.md`](t060_1_scale_load_save_completion.md) §Root cause + this §Prevention; [`docs/backend/architecture.md`](../../website/backend/architecture.md) §Dev note; [`frontend/.env.example`](../../../apps/website/frontend/.env.example). |
 | **Symptom cheat sheet** | `ERR_NETWORK` @ **0%** in dev → proxy (E3b fixes). `ERR_NETWORK` @ **1%+** → mid-upload (size/logs — T-060.1.3). `413` → body limit. `409` → semver clash. |
 | **Optional `.env.local`** | `VITE_API_URL=http://localhost:8080/api/v1` sends **all** API traffic direct (fine for mission makers; not required after E3b). |
 | **Do NOT** | Raise proxy timeouts further and call it fixed — probe proved ECONNRESET @ ~2 MB regardless of 600s timeout. |
@@ -492,7 +492,7 @@ macOS-style, frictionless:
 
 #### O5 — Bottom toolbelt size readout (macOS frictionless)
 
-Next to existing `OBJ` / `SEL` in [`BottomToolbelt.tsx`](../../frontend/src/features/mission-creator/layout/BottomToolbelt.tsx):
+Next to existing `OBJ` / `SEL` in [`BottomToolbelt.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx):
 
 ```
 SZ 187 MB ~   // estimated compiled size; memoized; refresh when slot count changes (debounced 500ms)
@@ -549,19 +549,19 @@ again and catch it in CI.
 
 ### Implemented
 
-- **`isMissionVersionPOST(c)`** in [`bodylimit.go`](../../internal/middleware/bodylimit.go): keeps the
+- **`isMissionVersionPOST(c)`** in [`bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go): keeps the
   `FullPath()` suffix match **and** adds a concrete-URL-path fallback (`/…/missions/<id>/versions`),
   so the 1 MB global wrap can never silently apply even if `FullPath()` is empty/unexpected.
-- **Production-like integration test** [`missions_bodylimit_integration_test.go`](../../internal/handlers/missions_bodylimit_integration_test.go):
+- **Production-like integration test** [`missions_bodylimit_integration_test.go`](../../../apps/website/internal/handlers/missions_bodylimit_integration_test.go):
   `setupITProd` mounts `GlobalBodyLimit(MaxJSONBody)` like `cmd/api/main.go` (the blind spot —
   `setupIT` used a bare router). Asserts 2 MB & 3.5 MB version POST → **201** (global cap skipped) and
   a 5 MB body over a pinned 4 MB route cap → **413 JSON** (`status=413 over_limit`). Plus a
-  [`bodylimit_test.go`](../../internal/middleware/bodylimit_test.go) unit test for the route-pattern
+  [`bodylimit_test.go`](../../../apps/website/internal/middleware/bodylimit_test.go) unit test for the route-pattern
   match and the URL-path fallback.
-- **`phaseAtFailure` fix** ([`useMissionEditor.ts`](../../frontend/src/features/mission-creator/hooks/useMissionEditor.ts)):
+- **`phaseAtFailure` fix** ([`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts)):
   `report.phaseAtFailure = 'uploading'` on the first `onUploadProgress` tick, so a mid-upload failure
   no longer mislabels as `'preparing'`.
-- **Repro script** [`scripts/mission-version-upload-repro.sh`](../../scripts/mission-version-upload-repro.sh):
+- **Repro script** [`scripts/mission-version-upload-repro.sh`](../../../scripts/website/mission-version-upload-repro.sh):
   dev-login → create mission → curl `--data-binary` at 2/10/140 MB; splits server-side vs browser-side.
 - **B-4 not needed:** the route-level `BodyLimit` cap already maps `*http.MaxBytesError` → **413 JSON**
   (verified in IT); the 135 MB body binds via `ShouldBindJSON` in ~1.2 s with no OOM. No streaming rewrite.
@@ -610,11 +610,11 @@ CreateVersion: mission=70a36667-... content_length=141574630
 
 #### F2 — Harden `GlobalBodyLimit` skip
 
-[`internal/middleware/bodylimit.go`](../../internal/middleware/bodylimit.go): keep `FullPath()` suffix match; add **URL path fallback** — e.g. `POST` and path matches `/missions/*/versions` — so the 1 MB global wrap cannot accidentally apply when `FullPath()` is empty.
+[`internal/middleware/bodylimit.go`](../../../apps/website/internal/middleware/bodylimit.go): keep `FullPath()` suffix match; add **URL path fallback** — e.g. `POST` and path matches `/missions/*/versions` — so the 1 MB global wrap cannot accidentally apply when `FullPath()` is empty.
 
 #### F3 — Production-like integration test
 
-Extend test router (new helper or `setupITWithMiddleware`) to mount `GlobalBodyLimit(MaxJSONBody)` like [`cmd/api/main.go`](../../cmd/api/main.go). POST a **2–10 MB** version body → assert **201**, not connection reset. Optionally assert **413** on a body > 256 MB.
+Extend test router (new helper or `setupITWithMiddleware`) to mount `GlobalBodyLimit(MaxJSONBody)` like [`cmd/api/main.go`](../../../apps/website/cmd/api/main.go). POST a **2–10 MB** version body → assert **201**, not connection reset. Optionally assert **413** on a body > 256 MB.
 
 #### F4 — Backend body handling for 100MB+ payloads
 
@@ -626,7 +626,7 @@ If logs show mid-read RST or OOM after full read:
 
 #### F5 — Frontend observability fix (minor)
 
-[`useMissionEditor.ts`](../../frontend/src/features/mission-creator/hooks/useMissionEditor.ts): call `logPhase('uploading')` on first `onUploadProgress` so `phaseAtFailure` is accurate.
+[`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts): call `logPhase('uploading')` on first `onUploadProgress` so `phaseAtFailure` is accurate.
 
 #### F6 — curl isolation test
 

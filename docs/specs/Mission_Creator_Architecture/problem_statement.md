@@ -60,4 +60,4 @@ Before a single line of React or WebGL is written, the following assets must be 
 2. **The Map Assets:** High-resolution top-down imagery of Everon/Arland to serve as the map tiles.
 3. **The DEM Data:** The raw 16-bit heightmap data extracted from the Enfusion engine for elevation tracking.
 
-Open work: [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · full table [`docs/TICKET_REGISTRY.md`](../../docs/TICKET_REGISTRY.md)
+Open work: [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · full table [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)

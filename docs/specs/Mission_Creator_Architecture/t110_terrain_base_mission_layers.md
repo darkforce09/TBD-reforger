@@ -72,7 +72,7 @@ flowchart TB
 
 ### Mission layer (T-061..T-062 — current program)
 
-- Keep **Y.Doc** normalized model ([`schema.ts`](../../frontend/src/features/tactical-map/state/schema.ts)).
+- Keep **Y.Doc** normalized model ([`schema.ts`](../../../apps/website/frontend/src/features/tactical-map/state/schema.ts)).
 - **T-061.0.1 ✅ shipped:** Slot-position fast path in `bindings.ts` + `slotIconCache` (drag @ 360k — good enough).
 - **T-066** ✅ worker compile. **T-067** ✅ — [`t067_spatial_chunks.md`](t067_spatial_chunks.md). **Eden T-068+**
 - **T-066:** Worker `compileMission` for export/save assembly.
@@ -130,4 +130,4 @@ If the 360k test mission is **authored units**, stay on mission-layer fixes. If 
 
 ## Documentation sync
 
-When T-070 work starts, update: [ROADMAP.md](ROADMAP.md), [CLAUDE.md](../../CLAUDE.md) §Status, [TAGS.md](../../docs/TAGS.md), [engineering_plan.md](engineering_plan.md).
+When T-070 work starts, update: [ROADMAP.md](ROADMAP.md), [CLAUDE.md](../../../CLAUDE.md) §Status, [TAGS.md](../../website/TAGS.md), [engineering_plan.md](engineering_plan.md).

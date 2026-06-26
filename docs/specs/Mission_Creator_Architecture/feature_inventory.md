@@ -1231,7 +1231,7 @@
 | **Eden parity** | n/a (infra) |
 | **Status** | **shipped** (bulk paste + scaffolding; CPU cull deferred) |
 | **Ticket** | T-067 |
-| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](t067_spatial_chunks.md); follow-ons [`T-111`/`T-112`](../../docs/TICKET_BRAINSTORM.md#scale) |
+| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](t067_spatial_chunks.md); follow-ons [`T-111`/`T-112`](../../TICKET_BRAINSTORM.md#scale) |
 
 ---
 

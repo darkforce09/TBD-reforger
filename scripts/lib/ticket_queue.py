@@ -21,7 +21,7 @@ from ticket_registry import (  # noqa: E402
 
 
 def queue_path() -> Path:
-    return repo_root() / "tickets" / "queue.json"
+    return repo_root() / ".ai" / "tickets" / "queue.json"
 
 
 def load_queue() -> dict[str, Any]:
@@ -121,7 +121,7 @@ def cmd_config(args: argparse.Namespace) -> None:
     defaults = {
         "batch_size": "10",
         "concurrency": "3",
-        "worktree_base": "artifacts/worktrees",
+        "worktree_base": ".ai/artifacts/worktrees",
         "git_base": "main",
     }
     print(str(data.get(key, defaults.get(key, ""))))

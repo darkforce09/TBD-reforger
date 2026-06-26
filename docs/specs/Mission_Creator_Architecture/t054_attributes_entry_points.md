@@ -120,12 +120,12 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-054)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-054 bullet + bump `latest feature work` line |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-054 bullet + bump `latest feature work` line |
 | [`feature_inventory.md`](feature_inventory.md) | SEL-ORBAT-DBL-001 → **working**; SEL-MAP-004 Procedure/Evidence → native `dblclick` + `pickObject` |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row **Attributes entry points (T-054)** |
 | [`ROADMAP.md`](ROADMAP.md) | T-054 → shipped; refresh "Next" |
@@ -145,4 +145,4 @@ using AI. **Do not commit until the user asks.**
 ## Related
 
 - Prior: [t053_additive_select.md](t053_additive_select.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).

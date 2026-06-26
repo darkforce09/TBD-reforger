@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REGISTRY = ROOT / "tickets" / "registry.json"
+REGISTRY = ROOT / ".ai" / "tickets" / "registry.json"
 
 PROGRAM_STREAM = {
     "eden": "mission-creator",

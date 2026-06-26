@@ -47,7 +47,7 @@ fresh marquee each time. Eden lets you **Ctrl-click** units to add/remove them o
 
 ## Implementation specification
 
-**File:** [`frontend/src/features/tactical-map/TacticalMap.tsx`](../../frontend/src/features/tactical-map/TacticalMap.tsx)
+**File:** [`frontend/src/features/tactical-map/TacticalMap.tsx`](../../../apps/website/frontend/src/features/tactical-map/TacticalMap.tsx)
 
 Augment the existing `onClick` (`useCallback`, ~line 56):
 
@@ -121,12 +121,12 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-053)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-053 bullet + bump `latest feature work` line |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-053 bullet + bump `latest feature work` line |
 | [`feature_inventory.md`](feature_inventory.md) | SEL-MOD-001 → **working** (Trigger, Procedure, Evidence, acceptance); SEL-SYNC-001 stays partial |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row **Additive select (T-053)** |
 | [`ROADMAP.md`](ROADMAP.md) | Move T-053 → shipped; §Status "Next" leads with T-055 asset search |
@@ -146,4 +146,4 @@ using AI. **Do not commit until the user asks.**
 ## Related
 
 - Prior: [t052_undo_shortcuts.md](t052_undo_shortcuts.md)
-- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) (T-068+).
+- Next Eden backlog: see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (T-068+).

@@ -114,14 +114,14 @@ Re-export: `selectSlotCount` alongside `selectSlotIcons`.
 
 | Doc | Update |
 |-----|--------|
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-058 bullet; bump `latest feature work`; Next → T-059 bulk paste |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-058 bullet; bump `latest feature work`; Next → T-059 bulk paste |
 | [`ROADMAP.md`](ROADMAP.md) | DONE — T-058 section; scale table T-058 row → ✅; Next → T-059 |
 | [`feature_inventory.md`](feature_inventory.md) | New **BOTTOM-OBJCOUNT-001** row → working |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row; ACTIVE SLICE → T-059 bulk paste |
 | [`ux_spec.md`](ux_spec.md) | Interaction table row for OBJ/SEL readout |
-| [`docs/TAGS.md`](../../docs/TAGS.md) | T-058 row → shipped |
-| [`docs/frontend/ROADMAP.md`](../../docs/frontend/ROADMAP.md) | Recently shipped row + recommended next → **T-060.1** acceptance |
-| [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Element inventory row 5 + M3.13 milestone |
+| [`docs/TAGS.md`](../../website/TAGS.md) | T-058 row → shipped |
+| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Recently shipped row + recommended next → **T-060.1** acceptance |
+| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Element inventory row 5 + M3.13 milestone |
 
 **One T-058 commit** on `main`: code + doc finalize + CLAUDE §Status. Co-Authored-By when applicable.
 

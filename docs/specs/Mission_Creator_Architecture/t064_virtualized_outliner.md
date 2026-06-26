@@ -18,11 +18,11 @@
 
 Pan/zoom (T-057), drag-move (T-061), pick/marquee (T-063), and bulk paste (T-059 batch append) are fast @ 367k. **The outliner sidebar was not.**
 
-[`TreeView.tsx`](../../frontend/src/features/mission-creator/layout/tree/TreeView.tsx) recursively mounted **every** visible tree node as real DOM `<li>` elements. At 360k slot leaves that hard-froze the tab.
+[`TreeView.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/tree/TreeView.tsx) recursively mounted **every** visible tree node as real DOM `<li>` elements. At 360k slot leaves that hard-froze the tab.
 
 T-059 added a band-aid — `OUTLINER_LEAF_CAP = 500`: folders/squads over the cap showed a count label with **no scrollable rows**. T-064 removes that cap via virtualization.
 
-**Scroll container:** [`LeftSidebar.tsx`](../../frontend/src/features/mission-creator/layout/LeftOutliner/LeftSidebar.tsx) uses **one** `overflow-y-auto` div for ORBAT + Editor Layers.
+**Scroll container:** [`LeftSidebar.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/LeftSidebar.tsx) uses **one** `overflow-y-auto` div for ORBAT + Editor Layers.
 
 ---
 

@@ -1,7 +1,7 @@
 # CLAUDE.md — TBD Reforger Platform
 
 Working context for AI sessions. Read this first; it is the source of truth for
-**current state and how to run things**. Design specs live under [`docs/`](docs/README.md)
+**current state and how to run things**. Design specs live under [`docs/`](docs/website/README.md)
 (`docs/platform/context_handoff.md`, `docs/backend/architecture.md`) — verify against
 live code for post-T-008 behavior.
 
@@ -11,25 +11,26 @@ ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
 leaderboards, doctrine wiki, CMS, and admin tooling.
 
 - **Backend:** Go (Gin + GORM), PostgreSQL. Module `github.com/tbd-milsim/reforger-backend`, Go 1.25.
-- **Frontend:** React 19 + TypeScript + Vite, TanStack Query, Zustand, Tailwind. Node 20. In `website/frontend/`.
-- **Mod:** Enfusion framework in `mod/tbd-framework/`; shared mission schema in `shared/tbd-schema/`.
+- **Frontend:** React 19 + TypeScript + Vite, TanStack Query, Zustand, Tailwind. Node 20. In `apps/website/frontend/`.
+- **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
 ## Monorepo layout
-- `website/` — Go API + React SPA (run via root `Makefile`)
-- `mod/` — Enfusion mod + staging deploy scripts
-- `shared/tbd-schema/` — mission JSON schema + golden missions
-- `docs/specs/` — design specs (Mission Creator, blueprints)
-- `tickets/` + `scripts/ticket` — unified ticket registry at repo root
-- `website/cmd/api/` — API entrypoint (loads `.env`, runs migrations on boot, serves `/api/v1`).
-- `website/internal/handlers/` — HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
-- `website/internal/models/` — GORM models; **JSON field names (snake_case) here are the API contract**.
-- `website/internal/db/migrations/` — SQL run before AutoMigrate (extensions, enums, indexes, leaderboard MV).
-- `website/internal/services/`, `website/internal/middleware/`, `website/internal/realtime/` (SSE hub).
-- `website/frontend/src/` — `api/` (axios client + single-flight refresh), `hooks/` (queries.ts, mutations.ts, useAuthBootstrap), `pages/`, `components/`, `store/useAuthStore.ts`, `types/` (hand-written API types).
+- `apps/website/` — Go API + React SPA (run via root `Makefile`)
+- `apps/mod/` — Enfusion mod framework (`tbd-framework`, gitignored `crf_framework`/EnfusionMCP)
+- `packages/tbd-schema/` — mission JSON schema + golden missions
+- `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs
+- `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy)
+- `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline output
+- `apps/website/cmd/api/` — API entrypoint (loads `.env`, runs migrations on boot, serves `/api/v1`).
+- `apps/website/internal/handlers/` — HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
+- `apps/website/internal/models/` — GORM models; **JSON field names (snake_case) here are the API contract**.
+- `apps/website/internal/db/migrations/` — SQL run before AutoMigrate (extensions, enums, indexes, leaderboard MV).
+- `apps/website/internal/services/`, `apps/website/internal/middleware/`, `apps/website/internal/realtime/` (SSE hub).
+- `apps/website/frontend/src/` — `api/` (axios client + single-flight refresh), `hooks/` (queries.ts, mutations.ts, useAuthBootstrap), `pages/`, `components/`, `store/useAuthStore.ts`, `types/` (hand-written API types).
 
 ## Run it locally
-Everything is configured in `website/.env` (`APP_ENV=development`, DB on port 5434, `FRONTEND_URL=http://localhost:5173`). Go lives at `/var/home/Samuel/.local/go/bin` (not on PATH).
+Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434, `FRONTEND_URL=http://localhost:5173`). Go lives at `/var/home/Samuel/.local/go/bin` (not on PATH).
 
 ```bash
 make db-up        # start local Postgres (podman/docker compose), port 5434
@@ -39,7 +40,7 @@ make test-it      # Go integration tests (needs db-up; sets TEST_DATABASE_URL)
 make db-down      # stop Postgres (keeps volume)
 ```
 
-Frontend checks: `cd website/frontend && npm run build` (tsc + vite), `npm run lint`.
+Frontend checks: `cd apps/website/frontend && npm run build` (tsc + vite), `npm run lint`.
 
 ### Dev login (no Discord needed)
 `APP_ENV=development` exposes `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted`.
@@ -55,20 +56,20 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Auth tiers: public, `RequireAuth` (JWT), `RequireMinRole(admin|mission_maker)`,
   `RequireServiceToken` (`X-Service-Token`, for game-server ingest).
 - Refresh tokens are **single-use** (rotated + revoked each call). All refreshes go
-  through one single-flight helper (`website/frontend/src/api/refresh.ts`) so the token is
+  through one single-flight helper (`apps/website/frontend/src/api/refresh.ts`) so the token is
   never double-spent.
 - Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
-- **Batch ticket pipeline** ([`tickets/README.md`](tickets/README.md)): Composer 2.5 writes all docs on `main` first; Claude Code implements on `ticket/T-0xx` branches via `./scripts/ticket run`; you merge and run `./scripts/ticket done`. Docs sync on `main` after each merge (Composer 2.5 only).
+- **Batch ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): Composer 2.5 writes all docs on `main` first; Claude Code implements on `ticket/T-0xx` branches via `./scripts/ticket run`; you merge and run `./scripts/ticket done`. Docs sync on `main` after each merge (Composer 2.5 only).
 - Docs: see **§Documentation** — sync before commit. Ticket queue: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
 
 ## Documentation
 
 Keep docs in sync **in the same commit** as the code change (or immediately before — never merge stale docs).
 
-**Agent split (2026-06):** **Cursor (Composer 2.5)** owns all documentation writes and sync. **Claude Code** reads specs and ships code only — return verify output to Cursor for doc updates. See [`agent_execution.md`](docs/specs/Mission_Creator_Architecture/agent_execution.md) §Agent roles and [`docs/AGENT_COMMIT_CHECKLIST.md`](docs/AGENT_COMMIT_CHECKLIST.md).
+**Agent split (2026-06):** **Cursor (Composer 2.5)** owns all documentation writes and sync. **Claude Code** reads specs and ships code only — return verify output to Cursor for doc updates. See [`agent_execution.md`](docs/specs/Mission_Creator_Architecture/agent_execution.md) §Agent roles and [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
 
-**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `mod/tbd-framework` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `./scripts/ticket run` skips non-`claude-code` rows automatically.
+**CRITICAL — Executor gate:** Agents may **ONLY** execute ticket slices where `executor` is `claude-code` (Claude Code) or `cursor-docs` (Cursor documentation pass). If the active slice has `executor: workbench`, `human`, or `ci`, the agent **must stop** and wait for human completion. Do not edit `apps/mod/tbd-framework` Enfusion scripts unless the slice explicitly assigns `claude-code` to a mod script path. `./scripts/ticket run` skips non-`claude-code` rows automatically.
 
 **Before every T-0xx commit, check what changed:**
 
@@ -76,29 +77,29 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 |-------------|--------|
 | Shipped feature / milestone | **§Status** — new T-0xx bullet under **Done**; bump `latest shipped` line |
 | **Active slice** (code in progress, not shipped) | **§Status — ACTIVE SLICE** block at top; keep `latest shipped` on last **git tag** only |
-| New/changed route | Matching `website/frontend/docs/pages/*.md` + row in `website/frontend/docs/INDEX.md`; verify against `website/frontend/src/router.tsx` |
-| UI surface (no new route) | Relevant page doc + `Live source:` path to `website/frontend/src/pages/` or `features/` |
-| API / model change | `internal/models/` tags + matching `website/frontend/src/types/`; note handler if behavior changed |
+| New/changed route | Matching `apps/website/frontend/docs/pages/*.md` + row in `apps/website/frontend/docs/INDEX.md`; verify against `apps/website/frontend/src/router.tsx` |
+| UI surface (no new route) | Relevant page doc + `Live source:` path to `apps/website/frontend/src/pages/` or `features/` |
+| API / model change | `internal/models/` tags + matching `apps/website/frontend/src/types/`; note handler if behavior changed |
 | Mission Creator | MC README, `agent_execution.md` Decisions log, and/or `feature_inventory.md` — only if editor contract or Eden parity changed |
-| Deferred / queued work | [`tickets/registry.json`](tickets/registry.json) row `status: deferred` or `queued` — sync via `./scripts/ticket sync`; never mark shipped until verified |
+| Deferred / queued work | [`.ai/tickets/registry.json`](.ai/tickets/registry.json) row `status: deferred` or `queued` — sync via `./scripts/ticket sync`; never mark shipped until verified |
 
-**Doc hub:** [`docs/README.md`](docs/README.md) → [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) → domain **`ROADMAP.md`** files. Tag contract: [`docs/TAGS.md`](docs/TAGS.md). **Commit checklist:** [`docs/AGENT_COMMIT_CHECKLIST.md`](docs/AGENT_COMMIT_CHECKLIST.md).
+**Doc hub:** [`docs/website/README.md`](docs/website/README.md) → [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) → domain **`ROADMAP.md`** files. Tag contract: [`docs/website/TAGS.md`](docs/website/TAGS.md). **Commit checklist:** [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
 
-**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `website/frontend/src/pages` + `features/`.
+**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `apps/website/frontend/src/pages` + `features/`.
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
 ## Ticket operations
 
-**Source of truth:** [`tickets/registry.json`](tickets/registry.json). **Lead view:** [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md). **Full table:** [`docs/TICKET_REGISTRY.md`](docs/TICKET_REGISTRY.md).
+**Source of truth:** [`.ai/tickets/registry.json`](.ai/tickets/registry.json). **Lead view:** [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md). **Full table:** [`docs/TICKET_REGISTRY.md`](docs/TICKET_REGISTRY.md).
 
 | Step | Command / doc |
 |------|----------------|
-| Edit queue / status / spec | Edit `tickets/registry.json` |
+| Edit queue / status / spec | Edit `.ai/tickets/registry.json` |
 | Regenerate views + CLAUDE status block | `./scripts/ticket sync` (or `make ticket-sync`) |
 | Validate structure | `./scripts/ticket check` |
 | Strict legacy-ID scan | `make ticket-check-strict` |
-| Operator playbook | [`tickets/AI_PLAYBOOK.md`](tickets/AI_PLAYBOOK.md) |
+| Operator playbook | [`.ai/tickets/AI_PLAYBOOK.md`](.ai/tickets/AI_PLAYBOOK.md) |
 | Claude Code brief | `./scripts/ticket brief T-0xx` |
 | Batch implement | `./scripts/ticket run` on `ticket/T-0xx` branch (claude-code slices only) |
 | Mod / Workbench queue | [`docs/TICKET_MOD_QUEUE.md`](docs/TICKET_MOD_QUEUE.md) |
@@ -350,7 +351,7 @@ See [`t068_asset_registry.md`](docs/specs/Mission_Creator_Architecture/t068_asse
   changes. Verified: frontend build + lint clean.
 - T-048 **Mission create from Library (macOS Dialog)** — the standalone `/missions/create`
   full-page wizard is replaced by a transient `CreateMissionDialog`
-  (`website/frontend/src/features/mission-creator/CreateMissionDialog.tsx`) launched from the Mission
+  (`apps/website/frontend/src/features/mission-creator/CreateMissionDialog.tsx`) launched from the Mission
   Library: a **New Mission** header button + a **My Missions** true-empty-state CTA + **Cmd/Ctrl+N**,
   all `mission_maker+` only (enlisted see nothing). Opening create closes the dossier Sheet first
   (one overlay at a time); the form resets on every close. The `/missions/create` route, the
@@ -360,10 +361,10 @@ See [`t068_asset_registry.md`](docs/specs/Mission_Creator_Architecture/t068_asse
   away. `POST /missions` unchanged. Verified: frontend build + lint clean.
 - T-047 **Doc authority alignment** — `agent_execution.md` Decisions log + agent rules now point agents at **`ROADMAP.md`** for open work and state the shell phases (PRE-3.5–9) are complete (T-033–T-040), replacing the old strict-phase-order / `00`–`09` numbered shorthand; `eden/wiki_manifest.yaml` deduped (`Eden_Editor:_Scenario_Attributes` was listed twice → 28 unique pages). (T-046 was the link-integrity pass: stale numbered cross-refs + relative link depths.)
 - T-045 **Roadmap-centric naming** — each domain gets **`ROADMAP.md`** (FE, BE, Mission Creator); MC docs renamed to descriptive names (`engineering_plan.md`, `agent_execution.md`, …); stubs at old numbered paths.
-- T-043 **Platform documentation reorg** — [`docs/README.md`](docs/README.md) hub with
+- T-043 **Platform documentation reorg** — [`docs/website/README.md`](docs/website/README.md) hub with
   frontend/backend/archive master indexes; platform docs moved to `docs/platform/` and
   `docs/backend/architecture.md`; Mission Creator corpus reorg (`eden/`, `reference/`);
-  FD vs T split retired in **T-043**; T-0xx-only contract in [`docs/TAGS.md`](docs/TAGS.md); frontend
+  FD vs T split retired in **T-043**; T-0xx-only contract in [`docs/website/TAGS.md`](docs/website/TAGS.md); frontend
   surface specs refreshed (SplitPane events, mission editor route, §Documentation rule here).
 - T-001 initial backend (full schema + all handlers) + frontend scaffold.
 - T-002 Discord OAuth2 callback end-to-end.
@@ -412,7 +413,7 @@ See [`t068_asset_registry.md`](docs/specs/Mission_Creator_Architecture/t068_asse
   `on-surface`, `tertiary`/`tactical-yellow`/`error-alert`/`surface-glass`) plus the
   many Aegis tokens pages already referenced but were undefined, the semantic type
   scale (`text-headline-lg`..`text-code-md`), and `.glass`/`.bg-topo-map`/
-  `.bg-grid-overlay` utilities. New reusable primitives in `website/frontend/src/components/ui/`
+  `.bg-grid-overlay` utilities. New reusable primitives in `apps/website/frontend/src/components/ui/`
   built on `@base-ui/react` (no new deps): `SplitPane`, `Dialog`, `Sheet`, `Switch`,
   `Badge`, `GlassPanel`/`HudBar`, `ListDetailItem`; `OpsCard` gained a `glass` variant.
   Shell: `AppLayout` honors a `fullBleed` route handle (split-pane pages run full-height);
@@ -459,8 +460,8 @@ See [`t068_asset_registry.md`](docs/specs/Mission_Creator_Architecture/t068_asse
     the migrated split-pane/full-bleed pages is worth an in-browser pass (`make web`).
 
 - T-029..T-040 **2D Mission Creator — Deck.gl editor (Eden editor shipped; phases 2/5/6/8 blocked)**. New self-contained
-  feature modules `website/frontend/src/features/tactical-map/` (terrain-agnostic engine) +
-  `website/frontend/src/features/mission-creator/` (editor wrapper), code-split lazy route
+  feature modules `apps/website/frontend/src/features/tactical-map/` (terrain-agnostic engine) +
+  `apps/website/frontend/src/features/mission-creator/` (editor wrapper), code-split lazy route
   `/missions/:id/edit` (mission_maker+, `fullBleed`). Execution authority is
   `docs/specs/Mission_Creator_Architecture/ROADMAP.md` (T-0xx backlog) +
   `agent_execution.md` (Eden UX Decisions log); `engineering_plan.md` remains

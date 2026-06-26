@@ -90,4 +90,4 @@ escape — e.g. an `editorFullscreen` (or reused `fullBleed`-strict) route handl
 `<Sidebar/>` + `<TopNav/>`, **or** the editor route mounts outside the `AppLayout` `<Outlet/>`
 entirely. Either way, `/missions/:id/edit` owns the full viewport.
 
-Open work: [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · full table [`docs/TICKET_REGISTRY.md`](../../docs/TICKET_REGISTRY.md)
+Open work: [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · full table [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)

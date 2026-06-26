@@ -116,7 +116,7 @@ flowchart TD
 
 ### 1. Y.Doc — `applyMissionRowMeta` (new)
 
-**File:** [`frontend/src/features/tactical-map/state/ydoc.ts`](../../frontend/src/features/tactical-map/state/ydoc.ts)
+**File:** [`frontend/src/features/tactical-map/state/ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts)
 
 ```typescript
 /** Apply mission row fields from GET /missions/:id (INIT_ORIGIN — not undo, not dirty). */
@@ -137,7 +137,7 @@ export function applyMissionRowMeta(
 - Set `meta.title` from `row.title` when non-empty.
 - Set `meta.terrain` when `row.terrain` is valid `TerrainId` (`everon` | `arland` | `custom`); ignore invalid.
 - Merge `meta.environment.time` ← `row.time_of_day`, `meta.environment.weather` ← `row.weather` when present; preserve `viewDistance` / `thermals` defaults.
-- Export from [`frontend/src/features/tactical-map/index.ts`](../../frontend/src/features/tactical-map/index.ts).
+- Export from [`frontend/src/features/tactical-map/index.ts`](../../../apps/website/frontend/src/features/tactical-map/index.ts).
 
 ### 2. Y.Doc — `updateSlotPosition` (new)
 
@@ -161,7 +161,7 @@ export function updateSlotPosition(
 
 ### 3. `useMissionEditor.ts` — fix load path
 
-**File:** [`frontend/src/features/mission-creator/hooks/useMissionEditor.ts`](../../frontend/src/features/mission-creator/hooks/useMissionEditor.ts)
+**File:** [`frontend/src/features/mission-creator/hooks/useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts)
 
 Replace `onSynced` body:
 
@@ -179,7 +179,7 @@ Replace `onSynced` body:
 
 ### 4. TypeScript API contract
 
-**File:** [`frontend/src/types/api/index.ts`](../../frontend/src/types/api/index.ts)
+**File:** [`frontend/src/types/api/index.ts`](../../../apps/website/frontend/src/types/api/index.ts)
 
 ```typescript
 export interface MissionDetail extends MissionCard {
@@ -196,7 +196,7 @@ Matches backend `GET /missions/:id` (GORM preloads version + payload).
 
 ### 5. MAP-TERRAIN-001 — Wire terrain to map
 
-**File:** [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](../../frontend/src/features/mission-creator/MissionCreatorPage.tsx)
+**File:** [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](../../../apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx)
 
 ```tsx
 const terrainId = useMapStore((s) => s.meta?.terrain ?? 'everon')
@@ -211,20 +211,20 @@ const terrainId = useMapStore((s) => s.meta?.terrain ?? 'everon')
 - `key={terrainId}` forces viewport remount when terrain changes (Arland 10240 vs Everon 12800).
 - Validate `terrainId` is `TerrainId`; fallback `everon`.
 
-**File:** [`layout/MissionSettingsDialog.tsx`](../../frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx) — read-only terrain display already uses meta; verify it reads store after hydrate.
+**File:** [`layout/MissionSettingsDialog.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx) — read-only terrain display already uses meta; verify it reads store after hydrate.
 
 ### 6. TOP-TITLE-001 — Title (no new UI)
 
 **Files:** Top strip already works via `setTitle`.
 
-- [`TopCommandStrip.tsx`](../../frontend/src/features/mission-creator/layout/TopCommandStrip.tsx) — no change if hydrate works.
-- [`LeftSidebar.tsx`](../../frontend/src/features/mission-creator/layout/LeftOutliner/LeftSidebar.tsx) — verify title display reads `meta.title`.
+- [`TopCommandStrip.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/TopCommandStrip.tsx) — no change if hydrate works.
+- [`LeftSidebar.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/LeftOutliner/LeftSidebar.tsx) — verify title display reads `meta.title`.
 
 **Acceptance:** Create mission "Op Iron Curtain" → editor top strip shows that title, not Untitled.
 
 ### 7. ATTR-FIELD-OBJ-POSITION — Attributes Transform tab
 
-**File:** [`frontend/src/features/mission-creator/layout/AttributesModal.tsx`](../../frontend/src/features/mission-creator/layout/AttributesModal.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/AttributesModal.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/AttributesModal.tsx)
 
 Replace `TransformTab` read-only fields with:
 
@@ -242,9 +242,9 @@ Replace `TransformTab` read-only fields with:
 
 ### 8. Toolbelt — selection-aware readout
 
-**File:** [`frontend/src/features/mission-creator/layout/BottomToolbelt.tsx`](../../frontend/src/features/mission-creator/layout/BottomToolbelt.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/BottomToolbelt.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx)
 
-**File:** [`MissionCreatorPage.tsx`](../../frontend/src/features/mission-creator/MissionCreatorPage.tsx) — pass selection or compute inside toolbelt from store.
+**File:** [`MissionCreatorPage.tsx`](../../../apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx) — pass selection or compute inside toolbelt from store.
 
 Logic:
 
@@ -317,16 +317,16 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-049)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
-| [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
+| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
 | [`docs/specs/.../feature_inventory.md`](feature_inventory.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
 | [`ROADMAP.md`](ROADMAP.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |
-| [`docs/frontend/ROADMAP.md`](../../docs/frontend/ROADMAP.md) | mission-editor notes |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-049 bullet |
+| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | mission-editor notes |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-049 bullet |
 | **This file** | Status → **shipped** |
 
 **Decisions log:** only if UX lock needed — optional one row: *"Numeric transform = Attributes modal; toolbelt = readout only."*

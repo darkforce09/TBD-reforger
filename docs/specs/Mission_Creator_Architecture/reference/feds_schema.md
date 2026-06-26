@@ -190,7 +190,7 @@ The markdown FEDS block remains authoritative.
 
 **Parity:** `match` | `partial` | `missing` | `deferred` | `na` | `tbd_only`
 
-**Ticket:** Registry `T-0xx` when queued or shipped; `—` when not ticketed. Open Eden backlog: [`docs/TICKET_LEAD.md`](../../../docs/TICKET_LEAD.md). Deferred map/DEM infra: **T-090** (aligned tiles), **T-091** (DEM + Z-axis). Terrain base at scale: **T-110** ([`t110_terrain_base_mission_layers.md`](../t110_terrain_base_mission_layers.md)).
+**Ticket:** Registry `T-0xx` when queued or shipped; `—` when not ticketed. Open Eden backlog: [`docs/TICKET_LEAD.md`](../../../TICKET_LEAD.md). Deferred map/DEM infra: **T-090** (aligned tiles), **T-091** (DEM + Z-axis). Terrain base at scale: **T-110** ([`t110_terrain_base_mission_layers.md`](../t110_terrain_base_mission_layers.md)).
 
 ---
 

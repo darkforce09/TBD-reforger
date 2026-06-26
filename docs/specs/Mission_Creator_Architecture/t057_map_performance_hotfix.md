@@ -143,9 +143,9 @@ hovering an icon (no per-move hover pick). Click/dbl-click/marquee/drag picking 
 ## Docs synced (same commit)
 
 `CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](ROADMAP.md)
-§Map performance (T-057 row → done), [docs/TAGS.md](../../docs/TAGS.md),
-[docs/frontend/ROADMAP.md](../../docs/frontend/ROADMAP.md),
-[frontend/docs/pages/mission-editor.md](../../frontend/docs/pages/mission-editor.md),
+§Map performance (T-057 row → done), [docs/TAGS.md](../../website/TAGS.md),
+[docs/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md),
+[frontend/docs/pages/mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md),
 [agent_execution.md](agent_execution.md) Decisions log + todo status.
 
 ## After T-057

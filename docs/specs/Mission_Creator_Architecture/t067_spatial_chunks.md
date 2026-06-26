@@ -2,7 +2,7 @@
 
 **Status:** **Shipped** @ `d2128cf` — T-067.0 bulk paste + scaffolding; **T-067.0.1** CPU viewport cull reverted; follow-ons **T-111** / **T-112** (`idea`).  
 **Git tag:** **T-067** (`d2128cf`)  
-**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) · [t066_worker_compile.md](t066_worker_compile.md) · [t063_spatial_index.md](t063_spatial_index.md) · [t110_terrain_base_mission_layers.md](t110_terrain_base_mission_layers.md) · [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md)
+**Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) · [t066_worker_compile.md](t066_worker_compile.md) · [t063_spatial_index.md](t063_spatial_index.md) · [t110_terrain_base_mission_layers.md](t110_terrain_base_mission_layers.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)
 
 **Prerequisites:** T-066 shipped (`53bc2a8`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
 
@@ -122,14 +122,14 @@ flowchart TB
 
 | File | Role |
 |------|------|
-| [`state/spatialChunks.ts`](../../frontend/src/features/tactical-map/state/spatialChunks.ts) | 512m grid math (scaffolding) |
-| [`state/viewportBbox.ts`](../../frontend/src/features/tactical-map/state/viewportBbox.ts) | Viewport bbox helpers (future) |
-| [`state/constants.ts`](../../frontend/src/features/tactical-map/state/constants.ts) | `CHUNK_CULL_THRESHOLD` |
-| [`state/slotIconCache.ts`](../../frontend/src/features/tactical-map/state/slotIconCache.ts) | Chunk buckets + `getBaseIconsForChunkRect` (dormant at render) |
-| [`state/incPatchPlan.ts`](../../frontend/src/features/tactical-map/state/incPatchPlan.ts) | `slot-add-bulk` plan |
-| [`state/bindings.ts`](../../frontend/src/features/tactical-map/state/bindings.ts) | `applyPlan` case `slot-add-bulk` |
-| [`state/useMapStore.ts`](../../frontend/src/features/tactical-map/state/useMapStore.ts) | `_patchAddSlotsBulk` |
-| [`layers/useIconLayer.ts`](../../frontend/src/features/tactical-map/layers/useIconLayer.ts) | Detail → `getBaseIcons()` (T-067.0.1 revert) |
+| [`state/spatialChunks.ts`](../../../apps/website/frontend/src/features/tactical-map/state/spatialChunks.ts) | 512m grid math (scaffolding) |
+| [`state/viewportBbox.ts`](../../../apps/website/frontend/src/features/tactical-map/state/viewportBbox.ts) | Viewport bbox helpers (future) |
+| [`state/constants.ts`](../../../apps/website/frontend/src/features/tactical-map/state/constants.ts) | `CHUNK_CULL_THRESHOLD` |
+| [`state/slotIconCache.ts`](../../../apps/website/frontend/src/features/tactical-map/state/slotIconCache.ts) | Chunk buckets + `getBaseIconsForChunkRect` (dormant at render) |
+| [`state/incPatchPlan.ts`](../../../apps/website/frontend/src/features/tactical-map/state/incPatchPlan.ts) | `slot-add-bulk` plan |
+| [`state/bindings.ts`](../../../apps/website/frontend/src/features/tactical-map/state/bindings.ts) | `applyPlan` case `slot-add-bulk` |
+| [`state/useMapStore.ts`](../../../apps/website/frontend/src/features/tactical-map/state/useMapStore.ts) | `_patchAddSlotsBulk` |
+| [`layers/useIconLayer.ts`](../../../apps/website/frontend/src/features/tactical-map/layers/useIconLayer.ts) | Detail → `getBaseIcons()` (T-067.0.1 revert) |
 
 ---
 
@@ -169,9 +169,9 @@ Repro: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k).
 
 ## After T-067
 
-- **T-068+** — asset registry, markers, vehicles, ORBAT Manager modal ([`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md))
-- **T-111** — lazy chunk RAM @ 1M ([`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md))
-- **T-112** — GPU viewport cull ([`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md))
+- **T-068+** — asset registry, markers, vehicles, ORBAT Manager modal ([`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md))
+- **T-111** — lazy chunk RAM @ 1M ([`docs/TICKET_BRAINSTORM.md`](../../TICKET_BRAINSTORM.md))
+- **T-112** — GPU viewport cull ([`docs/TICKET_BRAINSTORM.md`](../../TICKET_BRAINSTORM.md))
 - **T-110** — terrain base (extends chunk binning for map props)
 
 ---

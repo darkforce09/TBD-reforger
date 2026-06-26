@@ -1,6 +1,6 @@
-# TBD Reforger Platform — monorepo dev tasks (delegates to website/).
+# TBD Reforger Platform — monorepo dev tasks (delegates to apps/website/).
 COMPOSE := $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
-WEB := website
+WEB := apps/website
 
 .PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-migration
 
@@ -20,7 +20,7 @@ db-logs: ## Tail the Postgres logs
 seed: ## Apply data seeds (Discord role mappings) to the running DB
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
 
-api: ## Run the Go API (loads website/.env; runs migrations on boot)
+api: ## Run the Go API (loads apps/website/.env; runs migrations on boot)
 	cd $(WEB) && go run ./cmd/api
 
 web: ## Run the Vite dev server
@@ -40,7 +40,7 @@ tidy: ## Tidy Go modules
 	cd $(WEB) && go mod tidy
 
 schema-validate: ## Validate golden missions against shared schema
-	cd shared/tbd-schema && npm ci --silent && node scripts/validate.mjs
+	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs
 
 tickets: ## Run Claude Code on ready tickets in parallel
 	./scripts/ticket run

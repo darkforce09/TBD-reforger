@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ticket registry — load/save/validate/sync for tickets/registry.json."""
+"""Ticket registry — load/save/validate/sync for .ai/tickets/registry.json."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ STRICT_LEGACY = re.compile(
 )
 
 EXEMPT_SCAN_PREFIXES = (
-    "artifacts/eden-wiki/",
+    ".ai/artifacts/eden-wiki/",
     "frontend/src/stitch-exports/",
     "docs/specs/macOS_Blueprints/",
     "docs/specs/Mission_Creator_Mock_Up/",
@@ -53,11 +53,11 @@ def repo_root() -> Path:
 
 
 def registry_path() -> Path:
-    return repo_root() / "tickets" / "registry.json"
+    return repo_root() / ".ai" / "tickets" / "registry.json"
 
 
 def schema_path() -> Path:
-    return repo_root() / "tickets" / "schema.json"
+    return repo_root() / ".ai" / "tickets" / "schema.json"
 
 
 def gap_analysis_path() -> Path:
@@ -470,7 +470,7 @@ def generate_ticket_mod_queue_md(registry: dict[str, Any] | None = None) -> str:
         AUTO_HEADER,
         "# Mod / Workbench Queue",
         "",
-        "Tickets for Workbench or human execution (`mod/` targets).",
+        "Tickets for Workbench or human execution (`apps/mod/` targets).",
         "",
     ]
     for t in rows:
@@ -488,7 +488,7 @@ def generate_milestones_md(registry: dict[str, Any] | None = None) -> str:
         AUTO_HEADER,
         "# Milestones (generated from tickets)",
         "",
-        "Scheduling detail: [`mod/MILESTONES.md`](../mod/MILESTONES.md).",
+        "Scheduling detail: [`docs/mod/MILESTONES.md`](mod/MILESTONES.md).",
         "",
     ]
     for milestone in ("M1", "M2"):
@@ -566,7 +566,7 @@ def generate_queue_json(registry: dict[str, Any] | None = None) -> dict[str, Any
         "_comment": AUTO_HEADER.strip(),
         "batch_size": 10,
         "concurrency": 3,
-        "worktree_base": "artifacts/worktrees",
+        "worktree_base": ".ai/artifacts/worktrees",
         "git_base": "main",
         "tickets": tickets,
     }
@@ -578,9 +578,9 @@ def scan_legacy_ids() -> dict[str, list[str]]:
     scan_roots = [
         root / "docs",
         root / "docs/specs",
-        root / "website" / "frontend" / "docs",
-        root / "website" / "frontend" / "src",
-        root / "tickets" / "queue.json",
+        root / "apps" / "website" / "frontend" / "docs",
+        root / "apps" / "website" / "frontend" / "src",
+        root / ".ai" / "tickets" / "queue.json",
         root / "CLAUDE.md",
         root / "README.md",
     ]
@@ -590,7 +590,7 @@ def scan_legacy_ids() -> dict[str, list[str]]:
             rel = str(f.relative_to(root)).replace("\\", "/")
             if any(rel.startswith(p) or p in rel for p in EXEMPT_SCAN_PREFIXES):
                 continue
-            if rel == "docs/REORG_CHANGELOG.md":
+            if rel.endswith("REORG_CHANGELOG.md"):
                 continue
             try:
                 text = f.read_text(encoding="utf-8", errors="replace")
@@ -705,7 +705,7 @@ def cmd_sync(_: argparse.Namespace) -> None:
     )
 
     queue = generate_queue_json(registry)
-    with (root / "tickets/queue.json").open("w", encoding="utf-8") as f:
+    with (root / ".ai/tickets/queue.json").open("w", encoding="utf-8") as f:
         json.dump(queue, f, indent=2)
         f.write("\n")
 
@@ -744,7 +744,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print(f"READ: {spec} (only source of truth)")
     print(f"BRANCH: {branch}")
     print("DO NOT: edit documentation")
-    print("VERIFY: cd website/frontend && npm run build && npm run lint")
+    print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")
     if t.get("acceptance"):
         print("ACCEPTANCE:")
         for a in t["acceptance"]:
@@ -882,13 +882,13 @@ def sparse_checkout_paths(t: dict[str, Any]) -> list[str]:
     paths = {".github"}
     for tgt in slice_targets(t):
         if tgt == "website":
-            paths.add("website")
+            paths.add("apps/website")
         elif tgt == "mod":
-            paths.add("mod")
+            paths.add("apps/mod")
         elif tgt == "shared":
-            paths.add("shared")
+            paths.add("packages/tbd-schema")
         elif tgt == "root":
-            paths.update({"scripts", "tickets", "docs", "artifacts", "Makefile", "README.md", "CLAUDE.md"})
+            paths.update({"scripts", ".ai/tickets", "docs", ".ai/artifacts", "Makefile", "README.md", "CLAUDE.md"})
     return sorted(paths)
 
 

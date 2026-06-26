@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time seed for tickets/registry.json — exactly 87 rows."""
+"""One-time seed for .ai/tickets/registry.json — exactly 87 rows."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "tickets" / "registry.json"
+OUT = ROOT / ".ai" / "tickets" / "registry.json"
 
 SHIPPED_IDS = [
     "T-001", "T-002", "T-003", "T-004", "T-005", "T-006",

@@ -26,8 +26,8 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 
 | File | Change |
 |------|--------|
-| **NEW** [`frontend/src/dev/viteReloadGuard.ts`](../../frontend/src/dev/viteReloadGuard.ts) | `vite:beforeFullReload` → reassign `payload.path` to block reload on `/missions/:id/edit` (Vite #5763 — throw does not work). Dev `pageshow` + navigation-type diagnostics. |
-| [`frontend/src/main.tsx`](../../frontend/src/main.tsx) | `if (import.meta.env.DEV) import('@/dev/viteReloadGuard')` |
+| **NEW** [`frontend/src/dev/viteReloadGuard.ts`](../../../apps/website/frontend/src/dev/viteReloadGuard.ts) | `vite:beforeFullReload` → reassign `payload.path` to block reload on `/missions/:id/edit` (Vite #5763 — throw does not work). Dev `pageshow` + navigation-type diagnostics. |
+| [`frontend/src/main.tsx`](../../../apps/website/frontend/src/main.tsx) | `if (import.meta.env.DEV) import('@/dev/viteReloadGuard')` |
 
 **Note:** WS reconnect may call `location.reload()` directly (bypassing `beforeFullReload`). No vite.config plugin was needed after manual verify on Firefox dev — primary mechanism sufficient.
 
@@ -35,9 +35,9 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 
 | File | Change |
 |------|--------|
-| **NEW** [`frontend/src/features/mission-creator/hooks/editorSession.ts`](../../frontend/src/features/mission-creator/hooks/editorSession.ts) | `sessionStorage` key `tbd-editor-session` → `{ missionId, readyAt, slotCount, currentSemver }`; 24h TTL; per-tab scope |
-| [`useMissionEditor.ts`](../../frontend/src/features/mission-creator/hooks/useMissionEditor.ts) | On `docStatus === 'ready'` → `markEditorSessionReady`. In `onSynced`: if warm + `hasLocalContent(md)` → skip GET, restore semver. Clear on cold load (`!hasLocalContent`), `resolveConflict('server')`. Refresh marker on `saveVersion` success. |
-| [`useMissionDoc.ts`](../../frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Dev mount/unmount debug logs |
+| **NEW** [`frontend/src/features/mission-creator/hooks/editorSession.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/editorSession.ts) | `sessionStorage` key `tbd-editor-session` → `{ missionId, readyAt, slotCount, currentSemver }`; 24h TTL; per-tab scope |
+| [`useMissionEditor.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionEditor.ts) | On `docStatus === 'ready'` → `markEditorSessionReady`. In `onSynced`: if warm + `hasLocalContent(md)` → skip GET, restore semver. Clear on cold load (`!hasLocalContent`), `resolveConflict('server')`. Refresh marker on `saveVersion` success. |
+| [`useMissionDoc.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Dev mount/unmount debug logs |
 
 **Tradeoff:** Warm path trusts local IndexedDB. Remote server changes since last ready are **not** detected until a cold load (new tab, expired TTL, cleared session, or `resolveConflict('server')`).
 
@@ -45,8 +45,8 @@ After alt-tabbing away from `/missions/:id/edit` for an extended period (Firefox
 
 | File | Change |
 |------|--------|
-| [`yieldToUi.ts`](../../frontend/src/features/tactical-map/state/yieldToUi.ts) | When `document.hidden`: `setTimeout(0)` only (skip rAF) |
-| [`useMissionDoc.ts`](../../frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Restore poll: rAF when visible, `setInterval(500ms)` when hidden; switch on `visibilitychange` |
+| [`yieldToUi.ts`](../../../apps/website/frontend/src/features/tactical-map/state/yieldToUi.ts) | When `document.hidden`: `setTimeout(0)` only (skip rAF) |
+| [`useMissionDoc.ts`](../../../apps/website/frontend/src/features/mission-creator/hooks/useMissionDoc.ts) | Restore poll: rAF when visible, `setInterval(500ms)` when hidden; switch on `visibilitychange` |
 
 ---
 

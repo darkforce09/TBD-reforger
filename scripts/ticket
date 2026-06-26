@@ -6,13 +6,13 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 REGISTRY_PY="$ROOT/scripts/lib/ticket_registry.py"
 QUEUE_PY="$ROOT/scripts/lib/ticket_queue.py"
 PROMPT_PY="$ROOT/scripts/lib/extract_claude_prompt.py"
-ARTIFACTS="$ROOT/artifacts/ticket-pipeline"
+ARTIFACTS="$ROOT/.ai/artifacts/ticket-pipeline"
 
 usage() {
   cat <<EOF
 Usage: ./scripts/ticket <command> [args]
 
-Registry (edit tickets/registry.json, then sync):
+Registry (edit .ai/tickets/registry.json, then sync):
   sync                    Regenerate all 8 derived outputs
   check [--strict]        Validate registry + outputs (strict = zero legacy IDs)
   next                    Show active slice + next queued tickets
@@ -33,7 +33,7 @@ Pipeline (Claude Code branches):
   done ID                 After merge: cleanup + mark shipped
   clean ID                Remove worktree + local branch only
 
-Config: tickets/registry.json (source of truth); tickets/queue.json is generated.
+Config: .ai/tickets/registry.json (source of truth); .ai/tickets/queue.json is generated.
 EOF
 }
 
@@ -157,7 +157,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>" 2>&1 | tee -a "$logfile" ||
   echo "  worktree:  $wt"
   echo "  branch:    $branch"
   echo "  spec:      $spec"
-  echo "  verify:    cd $wt/website/frontend && npm run build && npm run lint"
+  echo "  verify:    cd $wt/apps/website/frontend && npm run build && npm run lint"
   echo "  merge:     git checkout main && git merge $branch"
   echo "  cleanup:   ./scripts/ticket done $id"
   echo ""

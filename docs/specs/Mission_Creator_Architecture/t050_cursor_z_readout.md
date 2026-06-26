@@ -52,26 +52,26 @@ never plumbed through even though `info.coordinate[2]` is available.
 
 ### 1. Engine payload — `onCursorMove` carries z
 
-**File:** [`frontend/src/features/tactical-map/types.ts`](../../frontend/src/features/tactical-map/types.ts)
+**File:** [`frontend/src/features/tactical-map/types.ts`](../../../apps/website/frontend/src/features/tactical-map/types.ts)
 
 `onCursorMove?: (world: { x: number; y: number; z: number } | null) => void` — JSDoc: z is 0 on the
 flat map until Phase 2 DEM.
 
 ### 2. Emit z on hover
 
-**File:** [`frontend/src/features/tactical-map/TacticalMap.tsx`](../../frontend/src/features/tactical-map/TacticalMap.tsx)
+**File:** [`frontend/src/features/tactical-map/TacticalMap.tsx`](../../../apps/website/frontend/src/features/tactical-map/TacticalMap.tsx)
 
 `onHover` → `{ x: info.coordinate[0], y: info.coordinate[1], z: info.coordinate[2] ?? 0 }` (null branch unchanged).
 
 ### 3. Cursor state type
 
-**File:** [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](../../frontend/src/features/mission-creator/MissionCreatorPage.tsx)
+**File:** [`frontend/src/features/mission-creator/MissionCreatorPage.tsx`](../../../apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx)
 
 `useState<{ x: number; y: number; z: number } | null>(null)`.
 
 ### 4. Toolbelt readout
 
-**File:** [`frontend/src/features/mission-creator/layout/BottomToolbelt.tsx`](../../frontend/src/features/mission-creator/layout/BottomToolbelt.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/BottomToolbelt.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/BottomToolbelt.tsx)
 
 - prop `cursorWorld: { x: number; y: number; z: number } | null`
 - `z = showSel ? selectedSlot.position.z : cursorWorld?.z`
@@ -109,18 +109,18 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-050)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-050 bullet + bump latest-feature line |
-| [`docs/TAGS.md`](../../docs/TAGS.md) | T-050 row |
-| [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Element #5 (toolbelt X/Y/Z incl. cursor) + M3.6 milestone |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-050 bullet + bump latest-feature line |
+| [`docs/TAGS.md`](../../website/TAGS.md) | T-050 row |
+| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Element #5 (toolbelt X/Y/Z incl. cursor) + M3.6 milestone |
 | [`feature_inventory.md`](feature_inventory.md) | `MAP-CURSOR-001` — X/Y/Z, Outputs fix, acceptance |
 | [`agent_execution.md`](agent_execution.md) | Decisions log — CUR readout X/Y/Z |
 | [`ROADMAP.md`](ROADMAP.md) | DONE T-050; T-050 shipped note; shipped-list cursor X/Y/Z |
-| [`docs/frontend/ROADMAP.md`](../../docs/frontend/ROADMAP.md) | Recently shipped T-050 |
+| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Recently shipped T-050 |
 | [`eden/ui_anatomy.md`](eden/ui_anatomy.md) | Status Bar X/Y/Z mapping row |
 | [`t049_terrain_title_position.md`](t049_terrain_title_position.md) | Amendment: renumber Future T-050 title PATCH → **T-051**; mark "cursor Z stays `—`" superseded |
 

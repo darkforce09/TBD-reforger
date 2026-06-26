@@ -35,7 +35,7 @@ isProject: false
 # AGENT EXECUTION CONTRACT
 
 > **Phase completion log (T-033–T-040):** PRE-3.5 ✅ DOC-0 ✅ 3.5 ✅ 7b ✅ 7a ✅ 9 ✅.
-> **North star:** **1M–10M editable entities** via **T-059..T-067**. **T-067 shipped.** Next: **T-068+** — [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md).
+> **North star:** **1M–10M editable entities** via **T-059..T-067**. **T-067 shipped.** Next: **T-068+** — [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md).
 
 > **For the human:** Open a new Cursor Agent / CLI session and paste the prompt below. The agent reads this file; execute **open** phases only.
 
@@ -79,7 +79,7 @@ Claude Code prompts in `t0xx_*.md` files should end with **DO NOT edit documenta
 | Priority | Document | Agent uses it for |
 |----------|----------|-------------------|
 | **0** | **`ROADMAP.md`** | **Planning authority** — shipped vs queued tickets, doc index. Start here. |
-| **0b** | **[`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md)** | Ready / active / next queued — generated from [`tickets/registry.json`](../../tickets/registry.json) |
+| **0b** | **[`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)** | Ready / active / next queued — generated from [`tickets/registry.json`](../../../.ai/tickets/registry.json) |
 | **1** | **This file** (`agent_execution.md`) | **Execution authority** for UX phases. Decisions log. If UX conflicts, this file wins over ROADMAP priorities. |
 | **2** | **Decisions log** (below) | Locked human choices. Do not re-litigate. |
 | **3** | `ux_spec.md` | UX contract — copies Decisions log + interaction table. |
@@ -211,7 +211,7 @@ flowchart LR
 
 **Known regression (T-057 — resolved):** ~~~100–200 slots + pan → ~9 fps~~ Fixed T-057: cursor off render path, no hover pick, pan rAF-coalesce. Manual acceptance: ≥55 fps @ 200+ via `FpsCounter`.
 
-**Open Eden gaps (active after T-060..T-067 scale milestones — see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) and `eden/gap_analysis.md`):**
+**Open Eden gaps (active after T-060..T-067 scale milestones — see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`):**
 - **Queued Eden (T-068–T-071):** asset registry + palette (**T-068**), markers (**T-069**), vehicles (**T-070**), **ORBAT Manager modal** (**T-071** — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal).
 - **Queued Eden feel (T-072–T-077):** Ctrl multi-place, Shift/map rotate, faction submode, Space conflict, vehicle crew, empty-vehicle Alt place. *(**T-052** undo keyboard; **T-056** copy/paste; **T-055** asset search; **T-054** Attributes entry; **T-053** additive select — shipped.)*
 - **Deferred Eden (T-078+):** compositions, triggers/waypoints/systems, connection/sync, transform widget + snap grids, full attribute fields, menu bar, classname search (**T-084**).
@@ -332,18 +332,18 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). |
 | **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
 | **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
-| **Eden-first program order** (2026-06) | … **T-057..T-067** perf/scale program **shipped**. **T-068+** per [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md); **T-110** terrain base after that. … |
+| **Eden-first program order** (2026-06) | … **T-057..T-067** perf/scale program **shipped**. **T-068+** per [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md); **T-110** terrain base after that. … |
 | **Phase order** | … **T-057–T-067 shipped.** **T-068+** → **T-110** terrain base (optional). … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049 (**T-089** deferred); Save Version still compiles payload only. |
-| **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement queued tickets from [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) and `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
+| **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement queued tickets from [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
 
 ---
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../CLAUDE.md) §Status — **latest shipped T-067**; next **T-068+** per [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md). Then this file, then `engineering_plan.md` §0–§2.
-2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md). **T-068+** Eden backlog is active.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **latest shipped T-067**; next **T-068+** per [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). Then this file, then `engineering_plan.md` §0–§2.
+2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
 3. **Verify gate** after every phase:
    ```bash
    cd frontend && npm run build && npm run lint
@@ -373,7 +373,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 **T-067 shipped** — [`t067_spatial_chunks.md`](t067_spatial_chunks.md): `slot-add-bulk` paste patch; dormant chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()`).
 
-**Deferred (idea):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension` viewport cull — [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md#scale).
+**Deferred (idea):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension` viewport cull — [`docs/TICKET_BRAINSTORM.md`](../../TICKET_BRAINSTORM.md#scale).
 
 ---
 

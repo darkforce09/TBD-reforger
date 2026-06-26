@@ -6,18 +6,19 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 
 | Path | Contents |
 |------|----------|
-| [`website/`](website/) | Go API (`cmd/`, `internal/`), React frontend, Docker Compose, `.env` |
-| [`mod/`](mod/) | `tbd-framework` Enfusion scripts, deploy/staging scripts; `crf_framework/` (gitignored local reference) |
-| [`shared/tbd-schema/`](shared/tbd-schema/) | Mission JSON schema, golden missions, spikes |
+| [`apps/website/`](apps/website/) | Go API (`cmd/`, `internal/`), React frontend, Docker Compose, `.env` |
+| [`apps/mod/`](apps/mod/) | `tbd-framework` Enfusion scripts; `crf_framework/` (gitignored local reference) |
+| [`packages/tbd-schema/`](packages/tbd-schema/) | Mission JSON schema, golden missions, spikes |
 | [`docs/specs/`](docs/specs/) | Design specs (Mission Creator, blueprints, UX) |
 | [`docs/platform/`](docs/platform/) | Platform runbooks and architecture |
-| [`tickets/`](tickets/) | Unified ticket registry (`registry.json`) |
-| [`scripts/`](scripts/) | `./scripts/ticket` pipeline, migration helpers |
+| [`docs/mod/`](docs/mod/) · [`docs/website/`](docs/website/) | App-specific docs |
+| [`scripts/`](scripts/) | `./scripts/ticket` pipeline + `mod/`, `website/`, `deploy/` ops scripts |
+| [`.ai/`](.ai/) | Ticket registry (`tickets/registry.json`) + pipeline artifacts |
 
 ## Quick start
 
 ```bash
-cp website/.env.example website/.env   # if needed
+cp apps/website/.env.example apps/website/.env   # if needed
 make db-up
 make api      # :8080
 make web      # :5173 (proxies /api)

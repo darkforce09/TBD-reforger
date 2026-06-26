@@ -2,7 +2,7 @@
 
 **Status:** **ready** — spec published; implementation not started.  
 **Git tag on ship:** T-068  
-**Authority:** [MC ROADMAP](ROADMAP.md) §T-068+ · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [engineering_plan.md](engineering_plan.md) §Backend prerequisites · [eden/gap_analysis.md](eden/gap_analysis.md) `RIGHT-CAT-001` · [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md)
+**Authority:** [MC ROADMAP](ROADMAP.md) §T-068+ · [agent_execution.md](agent_execution.md) §ACTIVE SLICE · [engineering_plan.md](engineering_plan.md) §Backend prerequisites · [eden/gap_analysis.md](eden/gap_analysis.md) `RIGHT-CAT-001` · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)
 
 **Prerequisites:** **T-067** shipped (`d2128cf`). Dev-login `mission_maker+`; `/missions/:id/edit`.
 
@@ -33,9 +33,9 @@ Replace the mock Factions catalog with a **thin, modpack-scoped registry feed** 
 
 | Layer | Current | Gap |
 |-------|---------|-----|
-| Right palette Factions tab | [`assetCatalogMock.ts`](../../frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts) hard-coded NATO/CSAT tree | Not from `GET /api/v1/registry`; mock ids (`a-nato-rifleman`) not Arma classnames |
-| Backend | No registry route or table | [`docs/backend/ROADMAP.md`](../../docs/backend/ROADMAP.md) lists T-068 partial |
-| DnD payload | `assetId: node.id` (mock id) | Should be **Arma classname** per [`schema.ts`](../../frontend/src/features/tactical-map/state/schema.ts) `Slot.assetId` comment |
+| Right palette Factions tab | [`assetCatalogMock.ts`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts) hard-coded NATO/CSAT tree | Not from `GET /api/v1/registry`; mock ids (`a-nato-rifleman`) not Arma classnames |
+| Backend | No registry route or table | [`docs/backend/ROADMAP.md`](../../website/backend/ROADMAP.md) lists T-068 partial |
+| DnD payload | `assetId: node.id` (mock id) | Should be **Arma classname** per [`schema.ts`](../../../apps/website/frontend/src/features/tactical-map/state/schema.ts) `Slot.assetId` comment |
 | Eden parity | `RIGHT-CAT-001` **partial** | Blocks **T-069** markers and **T-070** vehicles (need registry `kind` extensibility) |
 
 T-055 asset search, drag-place, and `addSlot` flow **must not regress**.
@@ -46,10 +46,10 @@ T-055 asset search, drag-place, and `addSlot` flow **must not regress**.
 
 | Decision | Choice |
 |----------|--------|
-| Scope | **Factions tab only** — Vehicles/Markers/Objectives tabs stay stubs ([`AssetPalette.tsx`](../../frontend/src/features/mission-creator/layout/RightInspector/AssetPalette.tsx)) |
+| Scope | **Factions tab only** — Vehicles/Markers/Objectives tabs stay stubs ([`AssetPalette.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetPalette.tsx)) |
 | Feed shape | **Flat list** of placeable entries; frontend builds Faction → Category → Class tree |
 | Minimum fields | `classname`, `display_name`, `category` (slash path, e.g. `NATO/Men/Rifleman`), `icon_url`, `kind` (`slot` only in T-068) |
-| Modpack key | Query `?modpack=<uuid>`; **default** = current modpack ([`GET /modpacks/current`](../../internal/handlers/modpacks.go)) |
+| Modpack key | Query `?modpack=<uuid>`; **default** = current modpack ([`GET /modpacks/current`](../../../apps/website/internal/handlers/modpacks.go)) |
 | Auth | `RequireAuth` + `RequireMinRole("mission_maker")` — same tier as editor route |
 | Caching | TanStack Query + HTTP `ETag` / `If-None-Match` → 304; **no** Comlink worker, **no** IndexedDB blob cache (Phase 6 loadout program) |
 | DnD contract | `AssetDropPayload.assetId` = **Arma classname**; `role` = `display_name`; `kind: 'slot'` unchanged |
@@ -72,7 +72,7 @@ If-None-Match: "<etag>"   (optional)
 ```
 
 - **`modpack` query param:** optional UUID. When omitted, resolve **current modpack** (`is_current = true`). Return **404** if param invalid or no current modpack in dev DB.
-- **Auth tier:** mission_maker+ (register on the `mm` route group in [`handlers.go`](../../internal/handlers/handlers.go)).
+- **Auth tier:** mission_maker+ (register on the `mm` route group in [`handlers.go`](../../../apps/website/internal/handlers/handlers.go)).
 
 ### Response — 200
 
@@ -163,7 +163,7 @@ flowchart TD
 
 ### Database model
 
-**File:** [`internal/models/registry.go`](../../internal/models/registry.go) (new)
+**File:** [`internal/models/registry.go`](../../../apps/website/internal/models/registry.go) (new)
 
 ```go
 type RegistryItem struct {
@@ -183,7 +183,7 @@ type RegistryItem struct {
 
 ### Migration
 
-**File:** [`internal/db/migrations/03_registry_items.sql`](../../internal/db/migrations/03_registry_items.sql) (new)
+**File:** [`internal/db/migrations/03_registry_items.sql`](../../../apps/website/internal/db/migrations/03_registry_items.sql) (new)
 
 - Idempotent `CREATE TABLE IF NOT EXISTS registry_items …`
 - Unique constraint on `(modpack_id, classname)`
@@ -191,7 +191,7 @@ type RegistryItem struct {
 
 ### Dev seed
 
-**File:** [`internal/db/seeds/registry_dev.sql`](../../internal/db/seeds/registry_dev.sql) (new)
+**File:** [`internal/db/seeds/registry_dev.sql`](../../../apps/website/internal/db/seeds/registry_dev.sql) (new)
 
 Mirror mock catalog parity (~20–30 rows). Example classnames (Reforger-style placeholders — adjust to match your modpack):
 
@@ -212,12 +212,12 @@ Mirror mock catalog parity (~20–30 rows). Example classnames (Reforger-style p
 | Empty / Props/Ammo Box | Ammo Box | `Prop_AmmoBox_Empty` |
 
 - Seed against the **current modpack** row (lookup by `is_current = true`).
-- Wire into `make seed` or document `psql` apply in [`DEV_RUNBOOK.md`](../../DEV_RUNBOOK.md) if seed script is manual-only.
+- Wire into `make seed` or document `psql` apply in [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) if seed script is manual-only.
 - `icon_url` may be empty string → frontend Lucide fallback.
 
 ### Handler
 
-**File:** [`internal/handlers/registry.go`](../../internal/handlers/registry.go) (new)
+**File:** [`internal/handlers/registry.go`](../../../apps/website/internal/handlers/registry.go) (new)
 
 ```go
 func (h *Handler) GetRegistry(c *gin.Context) {
@@ -228,7 +228,7 @@ func (h *Handler) GetRegistry(c *gin.Context) {
 }
 ```
 
-**Route registration:** [`internal/handlers/handlers.go`](../../internal/handlers/handlers.go)
+**Route registration:** [`internal/handlers/handlers.go`](../../../apps/website/internal/handlers/handlers.go)
 
 ```go
 mm.GET("/registry", h.GetRegistry)
@@ -236,7 +236,7 @@ mm.GET("/registry", h.GetRegistry)
 
 ### Integration test
 
-**File:** [`internal/handlers/registry_integration_test.go`](../../internal/handlers/registry_integration_test.go) (new)
+**File:** [`internal/handlers/registry_integration_test.go`](../../../apps/website/internal/handlers/registry_integration_test.go) (new)
 
 - Seed current modpack + registry rows in test DB
 - `GET /api/v1/registry` with mission_maker JWT → 200, non-empty `data`, `etag` present
@@ -249,7 +249,7 @@ mm.GET("/registry", h.GetRegistry)
 
 ### Tree builder
 
-**File:** [`frontend/src/features/mission-creator/registry/buildCatalogTree.ts`](../../frontend/src/features/mission-creator/registry/buildCatalogTree.ts) (new)
+**File:** [`frontend/src/features/mission-creator/registry/buildCatalogTree.ts`](../../../apps/website/frontend/src/features/mission-creator/registry/buildCatalogTree.ts) (new)
 
 ```ts
 import { Folder, User } from 'lucide-react'
@@ -303,7 +303,7 @@ Refine icon handling: optional `iconUrl` on leaf nodes if `TreeView` supports it
 
 ### Query hook
 
-**File:** [`frontend/src/hooks/queries.ts`](../../frontend/src/hooks/queries.ts)
+**File:** [`frontend/src/hooks/queries.ts`](../../../apps/website/frontend/src/hooks/queries.ts)
 
 ```ts
 export function useRegistry(modpackId?: string) {
@@ -323,7 +323,7 @@ Optional: persist `etag` in query meta and send `If-None-Match` on refetch (304 
 
 ### AssetBrowser wiring
 
-**File:** [`frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx`](../../frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx)
+**File:** [`frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx)
 
 1. Replace `import { ASSET_CATALOG } from './assetCatalogMock'` with `useRegistry()` + `buildCatalogTree`.
 2. `const catalog = useMemo(() => buildCatalogTree(data?.data ?? []), [data])`.
@@ -342,13 +342,13 @@ Optional: persist `etag` in query meta and send `If-None-Match` on refetch (304 
 
 ### Mock removal
 
-**File:** [`assetCatalogMock.ts`](../../frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts)
+**File:** [`assetCatalogMock.ts`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts)
 
 **Delete on ship** — no runtime import. If unit tests need fixture data, move minimal array to `registry/__fixtures__.ts` (optional; not required for T-068 ship).
 
 ### JSDoc update
 
-**File:** [`frontend/src/features/tactical-map/types.ts`](../../frontend/src/features/tactical-map/types.ts)
+**File:** [`frontend/src/features/tactical-map/types.ts`](../../../apps/website/frontend/src/features/tactical-map/types.ts)
 
 Update `AssetDropPayload.assetId` comment: "Arma classname from registry feed (T-068)."
 
@@ -425,20 +425,20 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 ## Documentation sync on ship
 
-Per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md):
+Per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md):
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped**; fill acceptance ✅ |
-| [`tickets/registry.json`](../../tickets/registry.json) | T-068 → `shipped`; `./scripts/ticket sync` |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-068 Done bullet |
+| [`tickets/registry.json`](../../../.ai/tickets/registry.json) | T-068 → `shipped`; `./scripts/ticket sync` |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-068 Done bullet |
 | [`feature_inventory.md`](feature_inventory.md) | RIGHT-CAT-001 → **working**; Evidence → registry files |
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | RIGHT-CAT-001 parity → **match** (Factions feed) |
 | [`agent_execution.md`](agent_execution.md) | §ACTIVE SLICE → T-069; Decisions log row |
 | [`ROADMAP.md`](ROADMAP.md) | DONE T-068 section + spec index |
-| [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | M5.26 → [x] |
-| [`docs/backend/ROADMAP.md`](../../docs/backend/ROADMAP.md) | Registry row → shipped |
-| [`docs/TAGS.md`](../../docs/TAGS.md) | T-068 spec row (if not already) |
+| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | M5.26 → [x] |
+| [`docs/backend/ROADMAP.md`](../../website/backend/ROADMAP.md) | Registry row → shipped |
+| [`docs/TAGS.md`](../../website/TAGS.md) | T-068 spec row (if not already) |
 
 **Cursor only** for doc sync. Claude Code returns verify output.
 
@@ -458,7 +458,7 @@ Per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md):
 
 ## After T-068
 
-- **T-069** — markers on map ([`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md))
+- **T-069** — markers on map ([`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md))
 - **T-070** — vehicles placeable
 - **T-071** — ORBAT Manager modal
 

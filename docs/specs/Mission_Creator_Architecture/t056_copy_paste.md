@@ -234,18 +234,18 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (same commit — T-056)
 
-Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/AGENT_COMMIT_CHECKLIST.md).
+Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
 | **This file** | Status → **shipped** |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | T-056 bullet + bump `latest feature work` line |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-056 bullet + bump `latest feature work` line |
 | [`ROADMAP.md`](ROADMAP.md) | Move T-056 → shipped (table + execution order line); add this doc to the hub; §Status "Next" leads with T-074 |
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | T-056 → ✅ shipped T-056 |
 | [`feature_inventory.md`](feature_inventory.md) | copy/paste (CopyUnit/PasteUnit) row → working (Trigger, Procedure, Evidence, acceptance) |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row **Copy/paste at cursor (T-056)** |
-| [`docs/frontend/ROADMAP.md`](../../docs/frontend/ROADMAP.md) + [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Shipped/milestone row for copy-paste |
-| [`docs/TAGS.md`](../../docs/TAGS.md) | T-056 row |
+| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) + [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Shipped/milestone row for copy-paste |
+| [`docs/TAGS.md`](../../website/TAGS.md) | T-056 row |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.
 
