@@ -1,0 +1,133 @@
+{
+  "registryItemsVersion": "1",
+  "modpackId": "00000000-0000-4000-a000-000000000001",
+  "generatedAt": "2026-06-26T00:00:00Z",
+  "items": [
+    {
+      "resource_name": "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et",
+      "display_name": "US Rifleman",
+      "category": "NATO/US_Army/Rifleman",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",
+      "display_name": "US Grenadier",
+      "category": "NATO/US_Army/Grenadier",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{C9E4FEAF5AAC8D8C}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et",
+      "display_name": "US Medic",
+      "category": "NATO/US_Army/Medic",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et",
+      "display_name": "US Automatic Rifleman",
+      "category": "NATO/US_Army/AutomaticRifleman",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{1623EA3AEFACA0E4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_MG.et",
+      "display_name": "US Machine Gunner",
+      "category": "NATO/US_Army/MachineGunner",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{0B3167BB0FB68110}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL.et",
+      "display_name": "US Platoon Leader",
+      "category": "NATO/US_Army/Leadership",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{27BF1FF235DD6036}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT.et",
+      "display_name": "US Light Anti-Tank",
+      "category": "NATO/US_Army/AntiTank",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{36CCDB4556ECDA06}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Engineer.et",
+      "display_name": "US Engineer",
+      "category": "NATO/US_Army/Engineer",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+      "display_name": "M16A2",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary"
+    },
+    {
+      "resource_name": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et",
+      "display_name": "M16A2 + M203",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary"
+    },
+    {
+      "resource_name": "{D2B48DEBEF38D7D7}Prefabs/Weapons/MachineGuns/M249/MG_M249.et",
+      "display_name": "M249 SAW",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary"
+    },
+    {
+      "resource_name": "{D182DCDD72BF7E34}Prefabs/Weapons/MachineGuns/M60/MG_M60.et",
+      "display_name": "M60",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary"
+    },
+    {
+      "resource_name": "{C7861F11D5334C0E}Prefabs/Characters/Uniforms/Jacket_US_BDU.et",
+      "display_name": "BDU Jacket (Woodland)",
+      "category": "NATO/Uniform",
+      "kind": "gear_uniform"
+    },
+    {
+      "resource_name": "{3CCA7A9BB4FD3197}Prefabs/Characters/Uniforms/Jacket_US_BDU_rolledup.et",
+      "display_name": "BDU Jacket (Rolled)",
+      "category": "NATO/Uniform",
+      "kind": "gear_uniform"
+    },
+    {
+      "resource_name": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
+      "display_name": "BDU Pants (Woodland)",
+      "category": "NATO/Uniform",
+      "kind": "gear_uniform"
+    },
+    {
+      "resource_name": "{4B57C11AA5161760}Prefabs/Characters/Vests/Vest_PASGT/Vest_PASGT.et",
+      "display_name": "PASGT Vest",
+      "category": "NATO/Vest",
+      "kind": "gear_vest"
+    },
+    {
+      "resource_name": "{2835A0EA3B79E63E}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_rifleman.et",
+      "display_name": "ALICE Vest (Rifleman)",
+      "category": "NATO/Vest",
+      "kind": "gear_vest"
+    },
+    {
+      "resource_name": "{156DC7109CEE6F69}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_AR.et",
+      "display_name": "ALICE Vest (Automatic Rifleman)",
+      "category": "NATO/Vest",
+      "kind": "gear_vest"
+    },
+    {
+      "resource_name": "{725C5E1C75CADAF4}Prefabs/Characters/Vests/Vest_M69/Vest_M69_M81woodland.et",
+      "display_name": "M69 Vest (M81 Woodland)",
+      "category": "NATO/Vest",
+      "kind": "gear_vest"
+    },
+    {
+      "resource_name": "{FE5C49069C2499D9}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover.et",
+      "display_name": "PASGT Helmet (Cover)",
+      "category": "NATO/Helmet",
+      "kind": "gear_helmet"
+    },
+    {
+      "resource_name": "{E685A8D337D36204}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover_w_goggles.et",
+      "display_name": "PASGT Helmet (Cover + Goggles)",
+      "category": "NATO/Helmet",
+      "kind": "gear_helmet"
+    }
+  ]
+}

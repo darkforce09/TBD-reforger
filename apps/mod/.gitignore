@@ -12,7 +12,7 @@ Tbdevent_Website/web/dist/
 /.local-test-profile/
 
 # --- Enfusion MCP bridge handlers (dev-only, re-injected by the MCP) ---
-tbd-framework/Scripts/WorkbenchGame/
+tbd-framework/Scripts/WorkbenchGame/EnfusionMCP/
 tbd-framework/UserMaps.desc
 
 # --- Logs / OS / editor cruft ---

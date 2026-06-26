@@ -52,6 +52,7 @@ check("registry.vanilla-poc.json", validateRegistry, readJSON(join(root, "regist
 
 console.log("Registry items:");
 check("registry-items.sample.json", validateRegistryItems, readJSON(join(root, "registry", "registry-items.sample.json")));
+check("registry-items.workbench.json", validateRegistryItems, readJSON(join(root, "registry", "registry-items.workbench.json")));
 
 console.log("Loadout export:");
 check("loadout-export.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.sample.json")));
