@@ -1,0 +1,234 @@
+#!/usr/bin/env bash
+# Ticket registry + batch pipeline
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+REGISTRY_PY="$ROOT/scripts/lib/ticket_registry.py"
+QUEUE_PY="$ROOT/scripts/lib/ticket_queue.py"
+PROMPT_PY="$ROOT/scripts/lib/extract_claude_prompt.py"
+ARTIFACTS="$ROOT/artifacts/ticket-pipeline"
+
+usage() {
+  cat <<EOF
+Usage: ./scripts/ticket <command> [args]
+
+Registry (edit tickets/registry.json, then sync):
+  sync                    Regenerate all 8 derived outputs
+  check [--strict]        Validate registry + outputs (strict = zero legacy IDs)
+  next                    Show active slice + next queued tickets
+  brief ID                Developer handoff for one ticket
+  show ID                 One ticket card
+  add TITLE [opts]        Add idea ticket (T-111+)
+  remove ID               Remove ticket row
+  reorder ID AFTER        Set order after another ticket
+  mark-ready ID [SPEC]    Mark ready in registry + sync
+  ship ID                 Mark shipped in registry + sync
+  plan-batch              List next batch candidates
+
+Pipeline (Claude Code branches):
+  list                    Show dev queue
+  run [--dry-run]         Implement up to batch_size ready tickets
+  done ID                 After merge: cleanup + mark shipped
+  clean ID                Remove worktree + local branch only
+
+Config: tickets/registry.json (source of truth); tickets/queue.json is generated.
+EOF
+}
+
+worktree_path() {
+  local id="$1"
+  local base
+  base="$("$QUEUE_PY" config worktree_base)"
+  if [[ "$base" != /* ]]; then
+    base="$ROOT/$base"
+  fi
+  echo "${base}/TBD-${id}"
+}
+
+run_one() {
+  local id="$1"
+  local dry_run="${2:-0}"
+  local spec branch wt prompt logdir logfile git_base
+  spec="$("$QUEUE_PY" get "$id" spec)"
+  branch="$("$QUEUE_PY" get "$id" branch)"
+  git_base="$("$QUEUE_PY" config git_base)"
+  wt="$(worktree_path "$id")"
+
+  if [[ -z "$spec" || ! -f "$ROOT/$spec" ]]; then
+    echo "[$id] SKIP — spec missing: $spec" >&2
+    "$QUEUE_PY" set-status "$id" failed
+    return 1
+  fi
+
+  logdir="$ARTIFACTS/$id"
+  mkdir -p "$logdir"
+  logfile="$logdir/run.log"
+
+  echo "[$id] starting -> $branch (worktree: $wt)" | tee "$logfile"
+  "$QUEUE_PY" set-status "$id" running
+
+  if [[ "$dry_run" == "1" ]]; then
+    echo "[$id] dry-run: would create worktree and run claude" | tee -a "$logfile"
+    "$QUEUE_PY" set-status "$id" ready
+    return 0
+  fi
+
+  git -C "$ROOT" fetch origin "$git_base" 2>&1 | tee -a "$logfile" || true
+
+  if [[ -d "$wt" ]]; then
+    echo "[$id] worktree exists: $wt" | tee -a "$logfile"
+  else
+    mkdir -p "$(dirname "$wt")"
+    git -C "$ROOT" worktree add -b "$branch" "$wt" "origin/$git_base" 2>&1 | tee -a "$logfile"
+  fi
+
+  if ! prompt="$("$PROMPT_PY" "$ROOT/$spec" 2>>"$logfile")"; then
+    echo "[$id] FAIL — could not extract Claude Code prompt from $spec" | tee -a "$logfile"
+    "$QUEUE_PY" set-status "$id" failed
+    return 1
+  fi
+
+  if ! command -v claude >/dev/null 2>&1; then
+    echo "[$id] FAIL — claude CLI not found on PATH" | tee -a "$logfile"
+    "$QUEUE_PY" set-status "$id" failed
+    return 1
+  fi
+
+  set +e
+  (
+    cd "$wt"
+    claude -p "$prompt" \
+      --bare \
+      --output-format json \
+      --max-turns 40 \
+      --max-budget-usd 10 \
+      --allowedTools "Read,Edit,Bash" \
+      --permission-mode dontAsk \
+      2>&1 | tee -a "$logfile"
+  )
+  local cc_exit=$?
+  set -e
+
+  echo "[$id] claude exit=$cc_exit" | tee -a "$logfile"
+
+  (
+    cd "$wt"
+    if ! git diff --quiet || ! git diff --cached --quiet || [[ -n "$(git status --porcelain)" ]]; then
+      git add -A
+      git commit -m "T-${id#T-}: implement ${id}
+
+Co-Authored-By: Claude Code <noreply@anthropic.com>" 2>&1 | tee -a "$logfile" || true
+    fi
+    git push -u origin "$branch" 2>&1 | tee -a "$logfile" || true
+  )
+
+  if [[ $cc_exit -ne 0 ]]; then
+    "$QUEUE_PY" set-status "$id" failed
+    echo "[$id] FAILED (see $logfile)" >&2
+    return 1
+  fi
+
+  "$QUEUE_PY" set-status "$id" review
+  echo ""
+  echo "=== $id ready for review ==="
+  echo "  worktree:  $wt"
+  echo "  branch:    $branch"
+  echo "  spec:      $spec"
+  echo "  verify:    cd $wt/frontend && npm run build && npm run lint"
+  echo "  merge:     git checkout main && git merge $branch"
+  echo "  cleanup:   ./scripts/ticket done $id"
+  echo ""
+}
+
+cmd_run() {
+  local dry_run=0
+  if [[ "${1:-}" == "--dry-run" ]]; then
+    dry_run=1
+    shift
+  fi
+
+  local concurrency batch_size
+  concurrency="$("$QUEUE_PY" config concurrency)"
+  batch_size="$("$QUEUE_PY" config batch_size)"
+
+  mapfile -t ids < <("$QUEUE_PY" ready-ids --limit "$batch_size")
+  if [[ ${#ids[@]} -eq 0 || -z "${ids[0]:-}" ]]; then
+    echo "No ready tickets. Steps:" >&2
+    echo "  1. Composer 2.5: write specs for next batch, commit to main" >&2
+    echo "  2. ./scripts/ticket mark-ready T-0xx path/to/spec.md" >&2
+    exit 1
+  fi
+
+  echo "Running ${#ids[@]} ticket(s), concurrency=$concurrency (dry_run=$dry_run)"
+  local running=0
+  local id
+  for id in "${ids[@]}"; do
+    while [[ $(jobs -rp | wc -l) -ge $concurrency ]]; do
+      wait -n 2>/dev/null || sleep 2
+    done
+    run_one "$id" "$dry_run" &
+  done
+  wait
+  echo "Batch run finished. ./scripts/ticket list"
+}
+
+cmd_clean() {
+  local id="$1"
+  local branch wt
+  branch="$("$QUEUE_PY" get "$id" branch)"
+  wt="$(worktree_path "$id")"
+
+  if [[ -d "$wt" ]]; then
+    git -C "$ROOT" worktree remove --force "$wt" 2>/dev/null || rm -rf "$wt"
+    echo "Removed worktree $wt"
+  fi
+  if git -C "$ROOT" show-ref --verify --quiet "refs/heads/$branch"; then
+    git -C "$ROOT" branch -D "$branch"
+    echo "Deleted local branch $branch"
+  fi
+}
+
+cmd_done() {
+  local id="$1"
+  cmd_clean "$id"
+  python3 "$REGISTRY_PY" ship "$id"
+}
+
+main() {
+  local cmd="${1:-}"
+  shift || true
+  case "$cmd" in
+    sync)       python3 "$REGISTRY_PY" sync ;;
+    check)
+      if [[ "${1:-}" == "--strict" ]]; then
+        python3 "$REGISTRY_PY" check --strict
+      else
+        python3 "$REGISTRY_PY" check
+      fi
+      ;;
+    next)       python3 "$REGISTRY_PY" next ;;
+    brief)      python3 "$REGISTRY_PY" brief "$@" ;;
+    show)       python3 "$REGISTRY_PY" show "$@" ;;
+    add)        python3 "$REGISTRY_PY" add "$@" ;;
+    remove)     python3 "$REGISTRY_PY" remove "$@" ;;
+    reorder)    python3 "$REGISTRY_PY" reorder "$@" ;;
+    plan-batch) python3 "$REGISTRY_PY" plan-batch ;;
+    mark-ready) python3 "$REGISTRY_PY" mark-ready "$@" ;;
+    ship)       python3 "$REGISTRY_PY" ship "$@" ;;
+    gap-round-trip) python3 "$REGISTRY_PY" gap-round-trip ;;
+    list)       "$QUEUE_PY" list ;;
+    run)        cmd_run "$@" ;;
+    done)       cmd_done "$@" ;;
+    clean)      cmd_clean "$@" ;;
+    help|-h|"")
+      usage
+      ;;
+    *)
+      echo "Unknown command: $cmd" >&2
+      usage
+      exit 1
+      ;;
+  esac
+}
+
+main "$@"

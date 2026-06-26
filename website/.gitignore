@@ -1,0 +1,26 @@
+# Env
+.env
+
+# Go build output
+/bin/
+/tmp/
+*.test
+*.out
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# Runtime storage (local-disk; S3/MinIO in production)
+uploads/
+missions/
+
+# Editor
+.vscode/
+.idea/
+
+# Redundant local backup of the Stitch design exports (canonical copy lives in
+# frontend/src/stitch-exports/).
+.stitch-backup-exports/
+__pycache__/

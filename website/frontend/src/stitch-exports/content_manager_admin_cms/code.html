@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TBD Reforger - Admin Content Manager</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-error": "#690005",
+                      "border-subtle": "#374151",
+                      "surface-container": "#191f2f",
+                      "outline-variant": "#424754",
+                      "inverse-on-surface": "#2a3040",
+                      "surface-container-lowest": "#080e1d",
+                      "tertiary-fixed-dim": "#7bd0ff",
+                      "background": "#0d1322",
+                      "secondary-container": "#404a59",
+                      "secondary-fixed": "#d9e3f6",
+                      "surface-container-highest": "#2f3445",
+                      "on-secondary-container": "#afb9cb",
+                      "on-secondary": "#27313f",
+                      "tertiary-fixed": "#c4e7ff",
+                      "on-tertiary": "#00354a",
+                      "tertiary": "#7bd0ff",
+                      "primary-fixed-dim": "#adc6ff",
+                      "on-background": "#dde2f8",
+                      "on-surface": "#ffffff",
+                      "on-primary-container": "#00285d",
+                      "on-secondary-fixed-variant": "#3d4756",
+                      "on-secondary-fixed": "#121c2a",
+                      "outline": "#8c909f",
+                      "surface-tint": "#adc6ff",
+                      "on-error-container": "#ffdad6",
+                      "primary": "#adc6ff",
+                      "inverse-primary": "#005ac2",
+                      "surface-bright": "#33394a",
+                      "secondary": "#bdc7d9",
+                      "inverse-surface": "#dde2f8",
+                      "secondary-fixed-dim": "#bdc7d9",
+                      "on-primary": "#002e6a",
+                      "surface-dim": "#0d1322",
+                      "on-tertiary-fixed": "#001e2c",
+                      "error": "#f87171",
+                      "on-primary-fixed-variant": "#004395",
+                      "surface-variant": "#2f3445",
+                      "success-muted": "#064e3b",
+                      "primary-fixed": "#d8e2ff",
+                      "on-tertiary-fixed-variant": "#004c69",
+                      "primary-container": "#4d8eff",
+                      "error-container": "#93000a",
+                      "surface": "#0d1322",
+                      "surface-container-high": "#242a3a",
+                      "tertiary-container": "#009bd1",
+                      "on-primary-fixed": "#001a42",
+                      "on-tertiary-container": "#002d40",
+                      "surface-container-low": "#151b2b",
+                      "on-surface-variant": "#c2c6d6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-sm": "0.5rem",
+                      "margin-mobile": "1rem",
+                      "stack-md": "1rem",
+                      "stack-lg": "2rem",
+                      "gutter": "1.5rem",
+                      "container-max": "1440px"
+              },
+              "fontFamily": {
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "38px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<main class="w-full max-w-container-max mx-auto p-gutter">
+<!-- Header & Mode Toggle -->
+<header class="mb-stack-lg border-b border-border-subtle pb-stack-md flex flex-col md:flex-row md:items-end justify-between gap-stack-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">Content Manager</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-stack-sm">Create and distribute operational updates across the network.</p>
+</div>
+<div class="flex items-center gap-2 p-1 bg-surface-container rounded-lg border border-border-subtle shrink-0">
+<button class="px-4 py-2 rounded font-label-md text-label-md bg-primary-container text-on-primary-container transition-colors">
+                    Publish News Announcement
+                </button>
+<button class="px-4 py-2 rounded font-label-md text-label-md text-on-surface-variant hover:bg-surface-container-high transition-colors">
+                    Edit SOP Wiki Page
+                </button>
+</div>
+</header>
+<!-- Main Editor Card -->
+<section class="bg-surface-container-high rounded-lg border border-[#38bdf8]/30 overflow-hidden relative">
+<!-- Decorative tech line -->
+<div class="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-primary to-transparent opacity-50"></div>
+<div class="p-gutter">
+<!-- Meta Settings Section -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter mb-stack-lg">
+<div class="flex flex-col gap-stack-md">
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase" for="post-title">Post Title</label>
+<input class="w-full bg-surface border border-border-subtle rounded text-on-surface font-body-md p-3 focus:ring-2 focus:ring-primary focus:border-primary transition-all outline-none" id="post-title" placeholder="Operation Thunderstrike Briefing" type="text"/>
+</div>
+<div class="flex flex-col gap-stack-sm">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase" for="category-tag">Category Tag</label>
+<div class="relative">
+<select class="w-full bg-surface border border-border-subtle rounded text-on-surface font-body-md p-3 appearance-none focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all cursor-pointer" id="category-tag">
+<option value="event">Event</option>
+<option value="modpack">Modpack Update</option>
+<option value="important">Important</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col gap-stack-sm h-full">
+<label class="font-label-sm text-label-sm text-on-surface-variant uppercase">Cover Image (Optional)</label>
+<div class="flex-1 bg-surface border-2 border-dashed border-border-subtle rounded-lg flex flex-col items-center justify-center p-6 cursor-pointer hover:border-primary/50 transition-colors group">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant group-hover:text-primary transition-colors mb-2">cloud_upload</span>
+<span class="font-label-md text-label-md text-on-surface">Drag &amp; Drop Thumbnail</span>
+<span class="font-body-sm text-sm text-on-surface-variant mt-1 text-center">Supported formats: JPG, PNG, WEBP. Max 5MB.</span>
+</div>
+</div>
+</div>
+<!-- Rich Text Editor Section -->
+<div class="flex flex-col gap-stack-sm mb-stack-lg border border-border-subtle rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary/50 transition-all">
+<!-- Toolbar -->
+<div class="bg-surface-container border-b border-border-subtle p-2 flex items-center gap-1 flex-wrap">
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Bold">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">format_bold</span>
+</button>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Italic">
+<span class="material-symbols-outlined">format_italic</span>
+</button>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Underline">
+<span class="material-symbols-outlined">format_underlined</span>
+</button>
+<div class="w-px h-6 bg-border-subtle mx-2"></div>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Link">
+<span class="material-symbols-outlined">link</span>
+</button>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Image">
+<span class="material-symbols-outlined">image</span>
+</button>
+<div class="w-px h-6 bg-border-subtle mx-2"></div>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Bullet List">
+<span class="material-symbols-outlined">format_list_bulleted</span>
+</button>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Numbered List">
+<span class="material-symbols-outlined">format_list_numbered</span>
+</button>
+<div class="w-px h-6 bg-border-subtle mx-2"></div>
+<button class="p-2 rounded hover:bg-surface-variant text-on-surface-variant hover:text-on-surface transition-colors" title="Code Block">
+<span class="material-symbols-outlined">code</span>
+</button>
+</div>
+<!-- Editor Area -->
+<textarea class="w-full h-96 bg-background border-none text-on-surface font-body-md p-4 resize-y outline-none focus:ring-0" placeholder="Draft your briefing here..."></textarea>
+</div>
+<!-- Publishing Options & Actions -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-stack-md pt-stack-md border-t border-border-subtle">
+<!-- Webhook Toggle -->
+<div class="flex items-center gap-4 cursor-pointer" onclick="document.getElementById('discord-webhook').click()">
+<div class="relative inline-block w-12 h-6 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-on-surface border-4 border-surface-container-high appearance-none cursor-pointer transition-transform duration-200 ease-in-out peer right-0 translate-x-0" id="discord-webhook" name="toggle" style="right: 0;" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-6 rounded-full bg-primary-container cursor-pointer transition-colors duration-200 ease-in peer-checked:bg-primary-container peer-focus:ring-2 peer-focus:ring-primary-container" for="discord-webhook"></label>
+</div>
+<div>
+<span class="block font-label-md text-label-md text-on-surface mb-0.5">Push to Discord Webhook</span>
+<span class="block font-body-sm text-sm text-on-surface-variant">Automatically sends an embed to the #announcements channel.</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex items-center gap-stack-sm w-full md:w-auto">
+<button class="px-6 py-3 rounded text-primary border border-primary hover:bg-primary/10 transition-colors font-label-md text-label-md w-full md:w-auto text-center">
+                            Save Draft
+                        </button>
+<button class="px-8 py-3 rounded bg-[#3b82f6] text-white hover:bg-[#2563eb] transition-colors font-label-md text-label-md flex items-center justify-center gap-2 w-full md:w-auto shadow-[0_0_15px_rgba(59,130,246,0.3)] hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">send</span>
+                            Publish Content
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<style>
+        /* Custom Checkbox Toggle Styles to simulate native toggle */
+        input:checked[type=checkbox].toggle-checkbox {
+            right: 0;
+            border-color: #4d8eff; /* primary-container */
+        }
+        input:not(:checked)[type=checkbox].toggle-checkbox {
+            right: 100%;
+            transform: translateX(100%);
+            border-color: #2f3445; /* surface-variant */
+            background-color: #c2c6d6; /* on-surface-variant */
+        }
+        input:not(:checked)[type=checkbox].toggle-checkbox + .toggle-label {
+            background-color: #191f2f; /* surface-container */
+            border: 1px solid #374151;
+        }
+    </style>
+</body></html>

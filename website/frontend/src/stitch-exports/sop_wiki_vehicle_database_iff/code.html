@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SOP &amp; Manuals - Vehicle Database &amp; IFF</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#7bd0ff",
+                      "surface-container-lowest": "#080e1d",
+                      "on-primary": "#002e6a",
+                      "tertiary-fixed": "#c4e7ff",
+                      "on-tertiary-container": "#002d40",
+                      "on-secondary-fixed-variant": "#3d4756",
+                      "on-primary-container": "#00285d",
+                      "error-container": "#93000a",
+                      "secondary": "#bdc7d9",
+                      "surface-bright": "#33394a",
+                      "success-muted": "#064e3b",
+                      "on-error": "#690005",
+                      "surface-variant": "#2f3445",
+                      "surface-container-high": "#242a3a",
+                      "error": "#f87171",
+                      "on-primary-fixed": "#001a42",
+                      "surface-container-low": "#151b2b",
+                      "surface-container": "#191f2f",
+                      "tertiary-container": "#009bd1",
+                      "surface-container-highest": "#2f3445",
+                      "on-tertiary": "#00354a",
+                      "surface": "#0d1322",
+                      "inverse-primary": "#005ac2",
+                      "outline": "#8c909f",
+                      "primary-fixed-dim": "#adc6ff",
+                      "primary": "#adc6ff",
+                      "on-primary-fixed-variant": "#004395",
+                      "secondary-fixed-dim": "#bdc7d9",
+                      "secondary-fixed": "#d9e3f6",
+                      "secondary-container": "#404a59",
+                      "surface-dim": "#0d1322",
+                      "border-subtle": "#374151",
+                      "primary-fixed": "#d8e2ff",
+                      "on-secondary-fixed": "#121c2a",
+                      "outline-variant": "#424754",
+                      "primary-container": "#4d8eff",
+                      "on-secondary-container": "#afb9cb",
+                      "on-surface": "#dde2f8",
+                      "inverse-surface": "#dde2f8",
+                      "inverse-on-surface": "#2a3040",
+                      "on-error-container": "#ffdad6",
+                      "on-secondary": "#27313f",
+                      "background": "#0d1322",
+                      "surface-tint": "#adc6ff",
+                      "on-background": "#dde2f8",
+                      "on-tertiary-fixed-variant": "#004c69",
+                      "on-tertiary-fixed": "#001e2c",
+                      "tertiary-fixed-dim": "#7bd0ff",
+                      "on-surface-variant": "#c2c6d6"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-lg": "2rem",
+                      "margin-mobile": "1rem",
+                      "gutter": "1.5rem",
+                      "stack-md": "1rem",
+                      "stack-sm": "0.5rem",
+                      "container-max": "1440px"
+              },
+              "fontFamily": {
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "38px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings:
+          'FILL' 0,
+          'wght' 400,
+          'GRAD' 0,
+          'opsz' 24;
+        }
+      </style>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen">
+<div class="max-w-[container-max] mx-auto w-full px-margin-mobile md:px-gutter py-stack-lg">
+<div class="flex flex-col md:flex-row gap-gutter">
+<!-- Left Column: Wiki Navigation -->
+<aside class="w-full md:w-1/4 shrink-0 flex flex-col gap-stack-md">
+<div class="bg-surface-container-low border border-border-subtle rounded-xl p-stack-md">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-stack-md flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">book</span>
+                        SOP Categories
+                    </h2>
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">gavel</span>
+<span class="font-label-md text-label-md">Rules of Engagement (ROE)</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">settings_input_antenna</span>
+<span class="font-label-md text-label-md">Radio Protocol &amp; Comms</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+<span class="font-label-md text-label-md">Medical Flowchart (ACE)</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg bg-primary-container/10 border border-primary/20 text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+<span class="font-label-md text-label-md font-bold">Vehicle Database &amp; IFF</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]">groups</span>
+<span class="font-label-md text-label-md">Infantry Spacing &amp; Formations</span>
+</a>
+</nav>
+</div>
+</aside>
+<!-- Right Column: Main Content -->
+<main class="w-full md:w-3/4 flex flex-col gap-stack-lg">
+<!-- Page Header -->
+<header class="flex flex-col gap-stack-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-background flex items-center gap-3">
+                        Vehicle Database &amp; IFF
+                    </h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">
+                        Learn the strengths, weaknesses, and identification markers of armored assets to prevent friendly fire.
+                    </p>
+</header>
+<!-- Content Block 1: CRITICAL Warning -->
+<div class="border border-yellow-500/50 bg-yellow-500/10 rounded-xl p-stack-md flex items-start gap-3">
+<span class="material-symbols-outlined text-yellow-500 mt-1" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div>
+<h3 class="font-label-sm text-label-sm uppercase text-yellow-500 tracking-wider mb-1">Critical Directive</h3>
+<p class="font-body-md text-body-md text-yellow-100/90">
+                            CRITICAL: Do NOT engage armored contacts unless you have positively identified them. Firing a LAT at a friendly APC will result in immediate disciplinary action.
+                        </p>
+</div>
+</div>
+<!-- Content Block 2: Data Table -->
+<div class="bg-surface-container-high border border-border-subtle rounded-xl overflow-hidden shadow-sm">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-subtle bg-surface-container-low/50">
+<th class="py-3 px-4 font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">Vehicle Name</th>
+<th class="py-3 px-4 font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">Faction</th>
+<th class="py-3 px-4 font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">Armor Type</th>
+<th class="py-3 px-4 font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">Amphibious</th>
+<th class="py-3 px-4 font-label-sm text-label-sm uppercase text-on-surface-variant tracking-wider">Primary Threat</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle/50">
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-error"></span>
+                                        BTR-70
+                                    </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">USSR</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">Light Armored</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">Yes <span class="text-on-surface-variant/70 text-sm">(5km/h)</span></td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">Heavy MG / Infantry</td>
+</tr>
+<tr class="hover:bg-surface-variant/30 transition-colors">
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface font-medium flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+                                        LAV-25
+                                    </td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">USMC</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">Medium Armored</td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">Yes <span class="text-on-surface-variant/70 text-sm">(10km/h)</span></td>
+<td class="py-3 px-4 font-body-md text-body-md text-on-surface-variant">25mm Autocannon</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Content Block 3: Image Placeholder -->
+<div class="rounded-xl border border-border-subtle overflow-hidden relative group h-64 md:h-96">
+<div class="absolute inset-0 bg-surface-container-high/50 z-10"></div>
+<img alt="Visual ID Guide Preview" class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-luminosity group-hover:opacity-80 transition-opacity duration-500" data-alt="A highly detailed technical schematic overlay of military armored vehicles set against a dark, moody tactical interface background. The image features glowing blueprint lines, subtle grid patterns, and technical data points in muted cyan and deep blues. The lighting is dim but high-contrast, evoking a serious, command-center aesthetic suitable for a modern military combat simulator. Professional, dense, and cinematic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBIxQXIVcK-OyCZAJ18kNIfl2_fdM1T5jLJ37jLasbW2TmCEsi7ePcyhpIOq_2PG7vlscrIZAoHYG-jRR6x1ZDlnjvPvR3RHSufsF4cxeMI2mWcqycH3067tP9PZMadthQYmn7RXEhUChaVq3z0kTNFqcZnyJFmPcej0sMNDMhM2Nn86txbBToT1FVdWiuD-WX5jydO3cZQ8j5bNTD8xbk3DPf9rvukKwKo-yQDFo-sMQpTaZyUVM03pjmsqK_av1W3TyFZb9XwLjc"/>
+<div class="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 text-center">
+<span class="material-symbols-outlined text-4xl text-primary mb-3" style="font-variation-settings: 'FILL' 1;">image</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface mb-2">Visual ID Guide Gallery</h4>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-md">
+                            Comprehensive gallery of thermal and standard visual profiles for all recognized assets.
+                        </p>
+<button class="mt-4 px-4 py-2 bg-primary/10 border border-primary text-primary rounded-lg font-label-md text-label-md hover:bg-primary/20 transition-colors flex items-center gap-2">
+<span>View Full Gallery</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+</div>
+</body></html>

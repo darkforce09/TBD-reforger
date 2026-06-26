@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TBD Reforger Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline-variant": "#424754",
+                        "border-subtle": "#1e3a5f",
+                        "success": "#22c55e",
+                        "on-background": "#e1e2ec",
+                        "on-primary-fixed-variant": "#004395",
+                        "secondary": "#bdc7d9",
+                        "primary-container": "#4d8eff",
+                        "on-tertiary": "#502400",
+                        "surface-dim": "#10131a",
+                        "on-primary-container": "#00285d",
+                        "on-tertiary-fixed": "#311400",
+                        "outline": "#8c909f",
+                        "surface-container-lowest": "#0b0e15",
+                        "surface": "#0b1120",
+                        "surface-bright": "#363941",
+                        "on-secondary-fixed": "#121c2a",
+                        "success-muted": "rgba(34, 197, 94, 0.2)",
+                        "on-surface": "#ffffff",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "tertiary": "#ffb786",
+                        "on-tertiary-container": "#461f00",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-low": "#191b23",
+                        "inverse-primary": "#005ac2",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "background": "#10131a",
+                        "secondary-fixed": "#d9e3f6",
+                        "surface-container": "#1d2027",
+                        "on-surface-variant": "#c2c6d6",
+                        "inverse-on-surface": "#2e3038",
+                        "error": "#f87171",
+                        "surface-tint": "#adc6ff",
+                        "tertiary-fixed": "#ffdcc6",
+                        "primary-fixed-dim": "#adc6ff",
+                        "primary": "#adc6ff",
+                        "surface-container-highest": "#32353c",
+                        "on-primary-fixed": "#001a42",
+                        "on-error": "#690005",
+                        "surface-container-high": "#272a31",
+                        "on-primary": "#002e6a",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#e1e2ec",
+                        "on-secondary": "#27313f",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-variant": "#32353c",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "on-secondary-container": "#afb9cb",
+                        "tertiary-container": "#df7412",
+                        "secondary-container": "#404a59"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "pill-padding-y": "0.25rem",
+                        "navbar-height": "64px",
+                        "element-gap": "1rem",
+                        "container-padding": "1.5rem",
+                        "pill-padding-x": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "label-sm": ["Inter"],
+                        "nav-breadcrumb-parent": ["Inter"],
+                        "nav-breadcrumb-current": ["Inter"],
+                        "menu-item": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "nav-breadcrumb-parent": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "nav-breadcrumb-current": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "menu-item": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md text-body-md min-h-screen p-container-padding flex justify-center">
+<main class="w-full max-w-5xl flex flex-col gap-element-gap">
+<!-- Section 1: Hero Banner -->
+<section class="relative bg-surface-container border border-border-subtle rounded-xl p-8 flex flex-col items-center justify-center text-center gap-6 overflow-hidden">
+<!-- Atmospheric Gradient -->
+<div class="absolute inset-0 bg-gradient-to-b from-primary-container/10 to-transparent pointer-events-none"></div>
+<div class="flex flex-col items-center gap-2 z-10">
+<span class="font-label-sm text-label-sm text-secondary tracking-widest uppercase px-pill-padding-x py-pill-padding-y bg-surface-container-high rounded-full border border-border-subtle">
+                    Everon
+                </span>
+<!-- Using closest available typography tokens, utilizing inline scale to meet the "huge typography" requirement while strictly obeying the token class pairs rule -->
+<div class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-primary tracking-widest" style="transform: scale(2.5); margin: 1.5rem 0;">
+                    T-MINUS 04:12:00
+                </div>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Operation Enduring Freedom - Tuesday 20:00 EST
+                </p>
+</div>
+<button class="z-10 font-menu-item text-menu-item bg-primary text-on-primary px-6 py-3 rounded-xl hover:bg-primary-container hover:text-on-primary-container transition-colors duration-200">
+                [Register for Deployment]
+            </button>
+</section>
+<!-- Section 2: Quick Intel Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-element-gap">
+<!-- Card 1: Server Status -->
+<div class="bg-surface-container border border-border-subtle rounded-xl p-6 flex flex-col gap-3 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-success-muted rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-success">dns</span>
+<h3 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">Online</h3>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-success">STATUS: ACTIVE</span>
+<p class="font-body-md text-body-md text-on-surface-variant">45/64 Players (Arland)</p>
+</div>
+</div>
+<!-- Card 2: Active Mods -->
+<div class="bg-surface-container border border-border-subtle rounded-xl p-6 flex flex-col gap-3 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-primary-container/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">package_2</span>
+<h3 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">Core Modpack v2.1</h3>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-primary">SYNCED</span>
+<p class="font-body-md text-body-md text-on-surface-variant">45.2 GB Total</p>
+</div>
+</div>
+<!-- Card 3: My Status -->
+<div class="bg-surface-container border border-border-subtle rounded-xl p-6 flex flex-col gap-3 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-24 h-24 bg-secondary-container/20 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">shield</span>
+<h3 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">Deployed</h3>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-secondary">ASSIGNMENT</span>
+<p class="font-body-md text-body-md text-on-surface-variant">US Army - Alpha 1-1 - Medic</p>
+</div>
+</div>
+</section>
+<!-- Section 3: Recent Intel -->
+<section class="flex flex-col gap-element-gap mt-4">
+<h2 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface border-b border-border-subtle pb-2">Recent Announcements</h2>
+<div class="flex flex-col gap-4">
+<!-- Announcement 1 -->
+<div class="bg-surface-container border border-border-subtle rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-surface-container-high transition-colors duration-200 cursor-pointer">
+<div class="bg-surface-container-highest border border-border-subtle px-pill-padding-x py-pill-padding-y rounded-full shrink-0">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Oct 24</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">Server Hardware Upgrade</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Migration to a high-tickrate dedicated environment completed successfully. Performance improvements expected across all combat theaters.</p>
+</div>
+</div>
+<!-- Announcement 2 -->
+<div class="bg-surface-container border border-border-subtle rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-surface-container-high transition-colors duration-200 cursor-pointer">
+<div class="bg-surface-container-highest border border-border-subtle px-pill-padding-x py-pill-padding-y rounded-full shrink-0">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Oct 22</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">Modpack Update - v2.1.0</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Integrated new RHS weapon systems and updated ACE medical parameters. All personnel must sync via the launcher prior to deployment.</p>
+</div>
+</div>
+<!-- Announcement 3 -->
+<div class="bg-surface-container border border-border-subtle rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4 hover:bg-surface-container-high transition-colors duration-200 cursor-pointer">
+<div class="bg-surface-container-highest border border-border-subtle px-pill-padding-x py-pill-padding-y rounded-full shrink-0">
+<span class="font-label-sm text-label-sm text-secondary uppercase">Oct 20</span>
+</div>
+<div class="flex flex-col gap-1">
+<h4 class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">Tactical SOP Revision</h4>
+<p class="font-body-md text-body-md text-on-surface-variant">Updated communication protocols for platoon-level operations. Please review the updated documentation in the intelligence hub.</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+</body></html>

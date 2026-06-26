@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TBD Reforger - Event Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary": "#ffb786",
+                      "surface-container-high": "#272a31",
+                      "success": "#22c55e",
+                      "on-primary-fixed-variant": "#004395",
+                      "on-tertiary-fixed": "#311400",
+                      "on-secondary-fixed-variant": "#3d4756",
+                      "secondary": "#bdc7d9",
+                      "surface-container-lowest": "#0b0e15",
+                      "on-error-container": "#ffdad6",
+                      "success-muted": "rgba(34, 197, 94, 0.2)",
+                      "outline": "#8c909f",
+                      "inverse-primary": "#005ac2",
+                      "on-tertiary": "#502400",
+                      "on-error": "#690005",
+                      "surface-dim": "#10131a",
+                      "on-secondary": "#27313f",
+                      "on-background": "#e1e2ec",
+                      "surface-variant": "#32353c",
+                      "surface-bright": "#363941",
+                      "secondary-container": "#404a59",
+                      "primary-fixed-dim": "#adc6ff",
+                      "surface": "#0b1120",
+                      "secondary-fixed-dim": "#bdc7d9",
+                      "on-surface-variant": "#c2c6d6",
+                      "background": "#10131a",
+                      "tertiary-fixed": "#ffdcc6",
+                      "on-primary-container": "#00285d",
+                      "surface-container-highest": "#32353c",
+                      "secondary-fixed": "#d9e3f6",
+                      "on-surface": "#ffffff",
+                      "primary": "#adc6ff",
+                      "on-tertiary-container": "#461f00",
+                      "surface-container-low": "#191b23",
+                      "on-primary-fixed": "#001a42",
+                      "inverse-surface": "#e1e2ec",
+                      "tertiary-container": "#df7412",
+                      "error-container": "#93000a",
+                      "primary-fixed": "#d8e2ff",
+                      "on-tertiary-fixed-variant": "#723600",
+                      "on-primary": "#002e6a",
+                      "error": "#f87171",
+                      "primary-container": "#4d8eff",
+                      "tertiary-fixed-dim": "#ffb786",
+                      "surface-tint": "#adc6ff",
+                      "surface-container": "#1d2027",
+                      "inverse-on-surface": "#2e3038",
+                      "outline-variant": "#424754",
+                      "on-secondary-container": "#afb9cb",
+                      "on-secondary-fixed": "#121c2a",
+                      "border-subtle": "#1e3a5f",
+                      "warning": "#eab308"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "navbar-height": "64px",
+                      "pill-padding-x": "0.75rem",
+                      "container-padding": "1.5rem",
+                      "element-gap": "1rem",
+                      "pill-padding-y": "0.25rem"
+              },
+              "fontFamily": {
+                      "body-md": ["Inter"],
+                      "label-sm": ["Inter"],
+                      "nav-breadcrumb-current": ["Inter"],
+                      "nav-breadcrumb-parent": ["Inter"],
+                      "menu-item": ["Inter"]
+              },
+              "fontSize": {
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "nav-breadcrumb-current": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                      "nav-breadcrumb-parent": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400"}],
+                      "menu-item": ["14px", {"lineHeight": "20px", "fontWeight": "500"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen font-body-md antialiased">
+<main class="max-w-[1400px] mx-auto p-container-padding">
+<!-- Header Section -->
+<header class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4 border-b border-border-subtle pb-4">
+<div>
+<h1 class="text-2xl font-bold tracking-tight text-on-surface">Upcoming Operations</h1>
+<p class="text-on-surface-variant font-body-md mt-1">Review and register for scheduled tactical deployments.</p>
+</div>
+<div class="flex bg-surface-container-low rounded-lg p-1 border border-border-subtle">
+<button class="px-4 py-2 text-sm font-medium rounded-md bg-primary-container text-on-primary-container shadow-sm flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">format_list_bulleted</span>
+                    List View
+                </button>
+<button class="px-4 py-2 text-sm font-medium rounded-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant flex items-center gap-2 transition-colors">
+<span class="material-symbols-outlined text-[18px]">calendar_month</span>
+                    Calendar View
+                </button>
+</div>
+</header>
+<!-- Event Table (List View) -->
+<div class="bg-surface-container-high rounded-xl border border-border-subtle overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-lowest border-b border-border-subtle text-on-surface-variant font-label-sm uppercase tracking-wider">
+<th class="py-4 px-6 font-semibold">Date / Time</th>
+<th class="py-4 px-6 font-semibold">Operation</th>
+<th class="py-4 px-6 font-semibold">Terrain</th>
+<th class="py-4 px-6 font-semibold">Registration</th>
+<th class="py-4 px-6 font-semibold">Status</th>
+<th class="py-4 px-6 font-semibold text-right">Action</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-md">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-variant transition-colors group">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">event</span>
+<span>Oct 28, 20:00 EST</span>
+</div>
+</td>
+<td class="py-4 px-6 font-semibold text-primary-fixed-dim">
+                                Operation Enduring Freedom
+                            </td>
+<td class="py-4 px-6 text-on-surface-variant">
+                                Everon
+                            </td>
+<td class="py-4 px-6">
+<div class="flex flex-col gap-1 w-full max-w-[150px]">
+<div class="flex justify-between text-xs text-on-surface-variant">
+<span>40/60</span>
+<span>66%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full" style="width: 66%"></div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-pill-padding-x py-pill-padding-y rounded-full bg-success-muted text-success font-label-sm border border-success/30">
+                                    OPEN
+                                </span>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="inline-flex items-center justify-center px-4 py-2 bg-primary-container text-on-primary-container hover:bg-primary-container/80 rounded-md font-menu-item transition-colors">
+                                    [View &amp; Register]
+                                </button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-variant transition-colors group">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-error text-[20px]">event</span>
+<span>Oct 29, 18:00 EST</span>
+</div>
+</td>
+<td class="py-4 px-6 font-semibold text-on-surface">
+                                Operation Red Storm
+                            </td>
+<td class="py-4 px-6 text-on-surface-variant">
+                                Arland
+                            </td>
+<td class="py-4 px-6">
+<div class="flex flex-col gap-1 w-full max-w-[150px]">
+<div class="flex justify-between text-xs text-on-surface-variant">
+<span>60/60</span>
+<span class="text-error">100%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-error rounded-full" style="width: 100%"></div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-pill-padding-x py-pill-padding-y rounded-full bg-error-container text-on-error-container font-label-sm border border-error/30">
+                                    FULL
+                                </span>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="inline-flex items-center justify-center px-4 py-2 bg-transparent border border-outline-variant text-on-surface-variant hover:bg-surface-container-lowest hover:text-on-surface rounded-md font-menu-item transition-colors">
+                                    [Waitlist]
+                                </button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-variant transition-colors group bg-surface-container-highest/30">
+<td class="py-4 px-6 whitespace-nowrap">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-warning text-[20px] animate-pulse">sensors</span>
+<span class="font-medium">Oct 24, 20:00 EST</span>
+</div>
+</td>
+<td class="py-4 px-6 font-semibold text-on-surface">
+                                Operation Overcast
+                            </td>
+<td class="py-4 px-6 text-on-surface-variant">
+                                Everon
+                            </td>
+<td class="py-4 px-6">
+<div class="flex flex-col gap-1 w-full max-w-[150px]">
+<div class="flex justify-between text-xs text-on-surface-variant">
+<span>55/60</span>
+<span>91%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-warning rounded-full" style="width: 91%"></div>
+</div>
+</div>
+</td>
+<td class="py-4 px-6">
+<span class="inline-flex items-center px-pill-padding-x py-pill-padding-y rounded-full bg-warning/20 text-warning font-label-sm border border-warning/30 gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-warning animate-pulse"></span>
+                                    LIVE NOW
+                                </span>
+</td>
+<td class="py-4 px-6 text-right">
+<button class="inline-flex items-center justify-center px-4 py-2 bg-success text-on-primary hover:bg-success/80 rounded-md font-menu-item transition-colors font-semibold">
+                                    [Join Spectator]
+                                </button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="bg-surface-container-lowest border-t border-border-subtle p-4 flex justify-between items-center text-sm text-on-surface-variant">
+<span>Showing 3 of 12 upcoming operations</span>
+<div class="flex gap-2">
+<button class="p-1 hover:text-on-surface transition-colors disabled:opacity-50" disabled=""><span class="material-symbols-outlined">chevron_left</span></button>
+<button class="p-1 hover:text-on-surface transition-colors"><span class="material-symbols-outlined">chevron_right</span></button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

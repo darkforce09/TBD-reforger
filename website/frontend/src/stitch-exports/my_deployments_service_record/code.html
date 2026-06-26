@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Deployments - A3 TACTICAL OPS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-error": "#690005",
+                        "on-tertiary": "#00354a",
+                        "surface-container-high": "#242a3a",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "on-tertiary-container": "#002d40",
+                        "on-primary-fixed": "#001a42",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#2a3040",
+                        "primary": "#adc6ff",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#009bd1",
+                        "primary-container": "#4d8eff",
+                        "secondary": "#bdc7d9",
+                        "on-surface": "#dde2f8",
+                        "on-primary-container": "#00285d",
+                        "surface-variant": "#2f3445",
+                        "on-background": "#dde2f8",
+                        "primary-fixed": "#d8e2ff",
+                        "inverse-primary": "#005ac2",
+                        "surface-container-lowest": "#080e1d",
+                        "inverse-surface": "#dde2f8",
+                        "surface-container-highest": "#2f3445",
+                        "secondary-container": "#404a59",
+                        "outline": "#8c909f",
+                        "secondary-fixed": "#d9e3f6",
+                        "tertiary": "#7bd0ff",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "on-secondary": "#27313f",
+                        "on-secondary-fixed": "#121c2a",
+                        "primary-fixed-dim": "#adc6ff",
+                        "border-subtle": "#374151",
+                        "success-muted": "#064e3b",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-primary-fixed-variant": "#004395",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "on-primary": "#002e6a",
+                        "surface-tint": "#adc6ff",
+                        "on-surface-variant": "#c2c6d6",
+                        "on-secondary-container": "#afb9cb",
+                        "error": "#f87171",
+                        "surface": "#0d1322",
+                        "surface-container-low": "#151b2b",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-bright": "#33394a",
+                        "surface-dim": "#0d1322",
+                        "outline-variant": "#424754",
+                        "background": "#0d1322",
+                        "surface-container": "#191f2f"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "stack-sm": "0.5rem",
+                        "margin-mobile": "1rem",
+                        "stack-md": "1rem",
+                        "gutter": "1.5rem",
+                        "stack-lg": "2rem",
+                        "container-max": "1440px"
+                    },
+                    fontFamily: {
+                        "label-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    fontSize: {
+                        "label-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "code-md": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "label-md": ["14px", { lineHeight: "20px", letterSpacing: "0.01em", fontWeight: "500" }],
+                        "headline-lg": ["30px", { lineHeight: "38px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "headline-md": ["24px", { lineHeight: "32px", letterSpacing: "-0.01em", fontWeight: "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0b1120; color: #dde2f8; }
+        .card { background-color: #1f2937; border: 1px solid #374151; }
+        .glass-panel { background: rgba(31, 41, 55, 0.7); backdrop-filter: blur(8px); border: 1px solid rgba(56, 189, 248, 0.3); }
+        .slot-assigned { background-color: #0f172a; border-left: 4px solid #10b981; }
+        .table-row { border-bottom: 1px solid #374151; }
+        .table-row:last-child { border-bottom: none; }
+    </style>
+</head>
+<body class="antialiased min-h-screen font-body-md bg-background text-on-surface">
+<main class="max-w-[container-max] mx-auto px-gutter py-stack-lg">
+<!-- Header & Career Stats -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-stack-lg gap-stack-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface">My Deployments</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-stack-sm">Service Record &amp; Upcoming Operations</p>
+</div>
+<div class="flex flex-col items-end gap-stack-sm">
+<div class="glass-panel px-gutter py-stack-md rounded-lg flex items-center gap-gutter">
+<div class="text-right">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase">Total Operations</span>
+<span class="block font-headline-md text-headline-md text-primary">42</span>
+</div>
+<div class="w-px h-10 bg-border-subtle"></div>
+<div class="text-right">
+<span class="block font-label-sm text-label-sm text-on-surface-variant uppercase">Attendance Rate</span>
+<span class="block font-headline-md text-headline-md text-primary">94%</span>
+</div>
+</div>
+<button class="px-4 py-2 border border-primary text-primary rounded font-label-md text-label-md hover:bg-primary/10 transition-colors">
+                    Submit Leave of Absence (LOA)
+                </button>
+</div>
+</header>
+<!-- Upcoming Deployments Section -->
+<section class="mb-stack-lg">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-md flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary">rocket_launch</span>
+                Awaiting Deployment
+            </h2>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Upcoming Card -->
+<div class="card rounded-lg relative overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="p-gutter flex-grow">
+<div class="flex justify-between items-start mb-stack-sm">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Operation Enduring Freedom</h3>
+<span class="bg-primary/20 text-primary px-2 py-1 rounded font-label-sm text-label-sm">UPCOMING</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant flex items-center gap-stack-sm mb-stack-md">
+<span class="material-symbols-outlined text-outline text-sm">calendar_today</span>
+                            Tuesday, Oct 28 • 20:00 EST
+                        </p>
+<div class="slot-assigned p-stack-md rounded font-code-md text-code-md text-emerald-400 flex items-center gap-stack-sm">
+<span class="material-symbols-outlined">check_circle</span>
+                            ASSIGNED SLOT: US Army - Alpha 1-1 (Combat Medic)
+                        </div>
+</div>
+<div class="bg-surface p-stack-md border-t border-border-subtle flex justify-end">
+<button class="text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-colors">
+                            Modify Registration
+                        </button>
+</div>
+</div>
+<!-- Upcoming Card 2 (Placeholder to show grid) -->
+<div class="card rounded-lg relative overflow-hidden flex flex-col">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-outline-variant"></div>
+<div class="p-gutter flex-grow flex flex-col items-center justify-center text-center">
+<span class="material-symbols-outlined text-outline-variant text-4xl mb-stack-sm">event_busy</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface-variant">No Further Operations Scheduled</h3>
+<p class="font-body-md text-body-md text-outline mt-stack-sm">Check the ORBAT for upcoming postings.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Service Record Section -->
+<section>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-stack-md flex items-center gap-stack-sm">
+<span class="material-symbols-outlined text-primary">history</span>
+                Service Record
+            </h2>
+<div class="card rounded-lg overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[800px]">
+<thead>
+<tr class="border-b border-border-subtle bg-surface-container-high">
+<th class="p-stack-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Date</th>
+<th class="p-stack-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Operation</th>
+<th class="p-stack-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Role Played</th>
+<th class="p-stack-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Outcome</th>
+<th class="p-stack-md font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">AAR</th>
+</tr>
+</thead>
+<tbody class="font-body-md text-body-md text-on-surface">
+<!-- Row 1 -->
+<tr class="table-row hover:bg-surface-container-low transition-colors">
+<td class="p-stack-md font-code-md text-code-md text-on-surface-variant">Oct 21</td>
+<td class="p-stack-md font-medium">Operation Red Storm</td>
+<td class="p-stack-md text-secondary">Alpha 1-2 (Rifleman)</td>
+<td class="p-stack-md">
+<span class="bg-success-muted text-white px-2 py-1 rounded-full font-label-sm text-label-sm border border-emerald-700">MISSION SUCCESS</span>
+</td>
+<td class="p-stack-md text-right">
+<a class="text-primary hover:text-tertiary transition-colors flex items-center justify-end gap-1 font-label-md text-label-md" href="#">
+                                    View Replay <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="table-row hover:bg-surface-container-low transition-colors">
+<td class="p-stack-md font-code-md text-code-md text-on-surface-variant">Oct 14</td>
+<td class="p-stack-md font-medium">Operation Iron Shield</td>
+<td class="p-stack-md text-secondary">Alpha 2-1 (Autorifleman)</td>
+<td class="p-stack-md">
+<span class="bg-error/20 text-error px-2 py-1 rounded-full font-label-sm text-label-sm border border-error/50">MISSION FAILED</span>
+</td>
+<td class="p-stack-md text-right">
+<a class="text-primary hover:text-tertiary transition-colors flex items-center justify-end gap-1 font-label-md text-label-md" href="#">
+                                    View Replay <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</td>
+</tr>
+<!-- Row 3 (Filler for density) -->
+<tr class="table-row hover:bg-surface-container-low transition-colors">
+<td class="p-stack-md font-code-md text-code-md text-on-surface-variant">Oct 07</td>
+<td class="p-stack-md font-medium">Operation Desert Viper</td>
+<td class="p-stack-md text-secondary">Bravo 1-1 (Squad Leader)</td>
+<td class="p-stack-md">
+<span class="bg-success-muted text-white px-2 py-1 rounded-full font-label-sm text-label-sm border border-emerald-700">MISSION SUCCESS</span>
+</td>
+<td class="p-stack-md text-right">
+<a class="text-primary hover:text-tertiary transition-colors flex items-center justify-end gap-1 font-label-md text-label-md" href="#">
+                                    View Replay <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</a>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</body></html>

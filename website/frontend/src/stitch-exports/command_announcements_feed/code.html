@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Command Announcements</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#004395",
+                        "on-tertiary-fixed": "#001e2c",
+                        "error": "#f87171",
+                        "surface-dim": "#0d1322",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "on-primary": "#002e6a",
+                        "secondary": "#bdc7d9",
+                        "inverse-surface": "#dde2f8",
+                        "success-muted": "#064e3b",
+                        "surface-variant": "#2f3445",
+                        "outline": "#8c909f",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "on-secondary-fixed": "#121c2a",
+                        "on-surface": "#ffffff",
+                        "on-primary-container": "#00285d",
+                        "surface-bright": "#33394a",
+                        "primary": "#adc6ff",
+                        "inverse-primary": "#005ac2",
+                        "surface-tint": "#adc6ff",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#009bd1",
+                        "on-surface-variant": "#c2c6d6",
+                        "surface-container-low": "#151b2b",
+                        "on-tertiary-container": "#002d40",
+                        "on-primary-fixed": "#001a42",
+                        "surface": "#0d1322",
+                        "error-container": "#93000a",
+                        "primary-container": "#4d8eff",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-container-high": "#242a3a",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "secondary-fixed": "#d9e3f6",
+                        "secondary-container": "#404a59",
+                        "background": "#0d1322",
+                        "surface-container": "#191f2f",
+                        "border-subtle": "#374151",
+                        "on-error": "#690005",
+                        "surface-container-lowest": "#080e1d",
+                        "inverse-on-surface": "#2a3040",
+                        "outline-variant": "#424754",
+                        "on-secondary": "#27313f",
+                        "tertiary": "#7bd0ff",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-background": "#dde2f8",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-tertiary": "#00354a",
+                        "surface-container-highest": "#2f3445",
+                        "on-secondary-container": "#afb9cb"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-mobile": "1rem",
+                        "stack-md": "1rem",
+                        "stack-lg": "2rem",
+                        "gutter": "1.5rem",
+                        "container-max": "1440px",
+                        "stack-sm": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "code-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "code-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background min-h-screen text-on-surface antialiased flex flex-col items-center p-margin-mobile md:p-stack-lg">
+<main class="w-full max-w-[800px] flex flex-col gap-stack-lg">
+<header class="border-b border-border-subtle pb-stack-sm">
+<h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Command Announcements</h1>
+</header>
+<div class="flex flex-col gap-stack-md">
+<!-- News Card 1 (Pinned) -->
+<article class="bg-surface-container-high rounded-xl overflow-hidden border border-tertiary shadow-[0_0_15px_rgba(123,208,255,0.1)] flex flex-col transition-transform hover:scale-[1.01] duration-300">
+<div class="w-full h-48 sm:h-64 relative bg-surface-container-lowest">
+<img class="w-full h-full object-cover opacity-80 mix-blend-luminosity" data-alt="A gritty, atmospheric military tactical command map spread out on a dark table, illuminated by harsh, angular blue and stark white overhead lights. The scene evokes a high-stakes operational planning session in a cold, minimalist command center environment. Shadows are deep and pronounced, contrasting with glowing digital screens in the blurred background. The overall aesthetic is highly technical, serious, and distinctly modern military." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGkIbvZb_w4-x09dI-h5HAwNDUeEk3HjHHWtk9NCXKcd5-Gv6Vayf-GA_umeekZANHf4FMOUHFK0US-lWO-70SkwrDAyDr6ZmmvoXxT61F3HfSHMG6UxZ3AVV960dFHy-XLL4yPCKmRBN27ieDQbFAKvwK79zYToTF7M5bSN8cNDoMGu8ahgAVM85qWtyoeZhdCynoiStSjPXqatFGdvlgltiKY2s4R4joMyeNDOfIkgfWTk_sjTpkGMdBwebEbwehQ_2P-2pQLBE"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-high to-transparent"></div>
+</div>
+<div class="p-6 pt-4 flex flex-col flex-grow">
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="bg-tertiary text-on-tertiary px-2 py-0.5 rounded font-label-sm text-label-sm uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">push_pin</span>
+                            PINNED
+                        </span>
+<span class="bg-primary-container text-on-primary-container px-2 py-0.5 rounded font-label-sm text-label-sm uppercase">
+                            MODPACK UPDATE
+                        </span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface mb-1">Mandatory Core Modpack Sync (v2.1)</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_circle</span>
+                        Posted by Admin Dave • Oct 24
+                    </p>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 leading-relaxed flex-grow">
+                        All personnel must synchronize their launcher with the v2.1 modpack before the Tuesday deployment. Failure to do so will result in a server connection rejection. Please ensure sufficient disk space before initiating the delta patch.
+                    </p>
+<div class="flex justify-end mt-auto pt-4 border-t border-border-subtle/50">
+<button class="border border-primary text-primary hover:bg-primary/10 px-6 py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-2 group">
+                            Read Full Briefing
+                            <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+</article>
+<!-- News Card 2 (Standard) -->
+<article class="bg-surface-container-high rounded-xl p-6 border border-border-subtle flex flex-col transition-colors hover:border-outline-variant duration-300">
+<div class="flex flex-wrap gap-2 mb-3">
+<span class="bg-success-muted text-on-surface px-2 py-0.5 rounded font-label-sm text-label-sm uppercase flex items-center gap-1 border border-success-muted/50">
+<span class="material-symbols-outlined text-[14px]">event</span>
+                        COMMUNITY EVENT
+                    </span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-1">Weekend PvP: Cold War Escalation</h2>
+<p class="font-label-sm text-label-sm text-on-surface-variant mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_circle</span>
+                    Posted by Admin Sarah • Oct 20
+                </p>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 leading-relaxed flex-grow">
+                    We are running a casual, unscripted 32v32 PvP event this Saturday on Arland. Jump into the TeamSpeak, pick a faction, and shoot your friends. Loadouts will be restricted to period-accurate infantry gear to maintain thematic consistency.
+                </p>
+<div class="flex justify-end mt-auto pt-4 border-t border-border-subtle/50">
+<button class="border border-outline text-on-surface hover:border-primary hover:text-primary px-6 py-2 rounded-lg font-label-md text-label-md transition-colors flex items-center gap-2 group">
+                        Read Full Briefing
+                        <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</article>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>OPS CENTER Sidebar Navigation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            "inverse-on-surface": "#2a3040",
+            "outline-variant": "#424754",
+            "on-error-container": "#ffdad6",
+            "on-tertiary-container": "#002d40",
+            "primary-container": "#4d8eff",
+            "surface-bright": "#33394a",
+            "on-error": "#690005",
+            "primary-fixed": "#d8e2ff",
+            "inverse-primary": "#005ac2",
+            "on-secondary": "#27313f",
+            "on-primary-fixed": "#001a42",
+            "on-tertiary-fixed": "#001e2c",
+            "surface-tint": "#adc6ff",
+            "surface-container-highest": "#2f3445",
+            "secondary-fixed": "#d9e3f6",
+            "secondary-fixed-dim": "#bdc7d9",
+            "border-subtle": "#374151",
+            "surface-dim": "#0d1322",
+            "surface-container": "#191f2f",
+            "tertiary-fixed-dim": "#7bd0ff",
+            "success-muted": "#064e3b",
+            "tertiary-container": "#009bd1",
+            "surface-container-lowest": "#080e1d",
+            "on-tertiary": "#00354a",
+            "on-background": "#dde2f8",
+            "tertiary-fixed": "#c4e7ff",
+            "on-tertiary-fixed-variant": "#004c69",
+            "inverse-surface": "#dde2f8",
+            "outline": "#8c909f",
+            "surface-container-high": "#242a3a",
+            "error-container": "#93000a",
+            "on-secondary-container": "#afb9cb",
+            "on-primary-container": "#00285d",
+            "surface-container-low": "#151b2b",
+            "tertiary": "#7bd0ff",
+            "error": "#f87171",
+            "primary-fixed-dim": "#adc6ff",
+            "on-surface": "#ffffff",
+            "secondary-container": "#404a59",
+            "background": "#0d1322",
+            "surface-variant": "#2f3445",
+            "secondary": "#bdc7d9",
+            "primary": "#adc6ff",
+            "surface": "#0d1322",
+            "on-surface-variant": "#c2c6d6",
+            "on-secondary-fixed-variant": "#3d4756",
+            "on-secondary-fixed": "#121c2a",
+            "on-primary-fixed-variant": "#004395",
+            "on-primary": "#002e6a"
+          },
+          boxShadow: {
+            'glow-primary': '0 0 15px rgba(173, 198, 255, 0.5)',
+            'glow-active': 'inset 0 0 10px rgba(173, 198, 255, 0.3), 0 0 15px rgba(173, 198, 255, 0.2)',
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-utilities">
+    body {
+      background-color: #080e1d; /* Fallback background to show isolated sidebar */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+    
+    .sidebar-container {
+      background-image: 
+        linear-gradient(to bottom, rgba(13, 19, 34, 0.98), rgba(13, 19, 34, 0.98)),
+        url('data:image/svg+xml;utf8,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><path d="M0 50 L50 0 L100 50 L50 100 Z" stroke="rgba(255,255,255,0.03)" fill="none"/></svg>');
+      background-size: cover, 150px;
+    }
+
+    .nav-item-active {
+      background: linear-gradient(90deg, rgba(173, 198, 255, 0.1) 0%, rgba(173, 198, 255, 0.05) 100%);
+      border-top: 1px solid rgba(173, 198, 255, 0.3);
+      border-bottom: 1px solid rgba(173, 198, 255, 0.3);
+    }
+    
+    /* Custom scrollbar for sidebar */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body class="text-white antialiased bg-background">
+<!-- BEGIN: Sidebar Section -->
+<aside class="sidebar-container w-[320px] h-[90vh] rounded-2xl border border-white/10 shadow-2xl flex flex-col relative overflow-hidden bg-surface" data-purpose="main-sidebar">
+<!-- Top glowing accent line -->
+<div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-50 z-10"></div>
+<div class="p-6 pb-2 flex-shrink-0">
+<!-- BEGIN: Header Branding -->
+<header class="mb-6" data-purpose="branding">
+<div class="flex items-center gap-2 mb-1">
+<span class="text-primary font-bold text-2xl tracking-wide">OPS</span>
+<span class="text-white font-bold text-2xl tracking-wide">CENTER</span>
+</div>
+<div class="text-gray-400 text-sm font-medium tracking-wide">
+          v2.4.0-stable
+        </div>
+</header>
+<!-- END: Header Branding -->
+<!-- BEGIN: Primary CTA -->
+<div class="mb-6" data-purpose="action-button">
+
+</div>
+<!-- END: Primary CTA -->
+</div>
+<!-- BEGIN: Navigation Menu -->
+<nav class="flex-1 overflow-y-auto custom-scrollbar px-4 pb-6" data-purpose="main-navigation">
+<!-- Section: Command Center -->
+<div class="mb-6">
+<div class="flex items-center gap-2 px-2 mb-2">
+<span class="text-sm">🏠</span>
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Command Center</h3>
+</div>
+<ul class="space-y-1">
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-primary nav-item-active shadow-glow-active group relative overflow-hidden" href="#">
+<div class="absolute top-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70"></div>
+<div class="absolute bottom-0 left-4 right-4 h-[1px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70"></div>
+<span class="material-symbols-outlined text-[22px]">grid_view</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">dns</span>
+<span class="text-sm font-medium">Server Intel</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">campaign</span>
+<span class="text-sm font-medium">Announcements</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Section: Operations -->
+<div class="mb-6">
+<div class="flex items-center gap-2 px-2 mb-2">
+<span class="text-sm">⚔️</span>
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Operations</h3>
+</div>
+<ul class="space-y-1">
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">calendar_month</span>
+<span class="text-sm font-medium">Event Schedule</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">military_tech</span>
+<span class="text-sm font-medium">My Deployments</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">leaderboard</span>
+<span class="text-sm font-medium flex-1">Global Leaderboards</span>
+
+</a>
+</li>
+</ul>
+</div>
+<!-- Section: Mission Hub -->
+<div class="mb-6">
+<div class="flex items-center gap-2 px-2 mb-2">
+<span class="text-sm">🗺️</span>
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Mission Hub</h3>
+</div>
+<ul class="space-y-1">
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">library_books</span>
+<span class="text-sm font-medium">Mission Library</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">map</span>
+<span class="text-sm font-medium">Mission Creator</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Section: Field Tools -->
+<div class="mb-6">
+<div class="flex items-center gap-2 px-2 mb-2">
+<span class="text-sm">🛠️</span>
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Field Tools</h3>
+</div>
+<ul class="space-y-1">
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">calculate</span>
+<span class="text-sm font-medium">Mortar Calculator</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Section: Doctrine & Info -->
+<div class="mb-6">
+<div class="flex items-center gap-2 px-2 mb-2">
+<span class="text-sm">📚</span>
+<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest">Doctrine &amp; Info</h3>
+</div>
+<ul class="space-y-1">
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">menu_book</span>
+<span class="text-sm font-medium">SOPs &amp; Manuals</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">extension</span>
+<span class="text-sm font-medium">Modpacks</span>
+</a>
+</li>
+</ul>
+</div>
+<!-- Section: Administration -->
+<div class="mt-8 p-4 rounded-xl bg-red-900/10 border border-red-500/20 relative">
+<div class="absolute -top-3 left-4 bg-surface px-2 flex items-center gap-2">
+<span class="text-sm">🛡️</span>
+<h3 class="text-xs font-bold text-red-400 uppercase tracking-widest">Administration</h3>
+</div>
+<ul class="space-y-1 mt-2">
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-red-400 transition-colors">event_available</span>
+<span class="text-sm font-medium">Event Manager</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-red-400 transition-colors">fact_check</span>
+<span class="text-sm font-medium">Mission Approvals</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-red-400 transition-colors">settings_system_daydream</span>
+<span class="text-sm font-medium">Server Control</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-red-400 transition-colors">groups</span>
+<span class="text-sm font-medium">Personnel Roster</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-red-400 transition-colors">folder_managed</span>
+<span class="text-sm font-medium">Content Manager</span>
+</a>
+</li>
+<li class="">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-red-400 transition-colors">receipt_long</span>
+<span class="text-sm font-medium">Audit Logs</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- END: Navigation Menu -->
+</aside>
+<!-- END: Sidebar Section -->
+
+
+</body></html>

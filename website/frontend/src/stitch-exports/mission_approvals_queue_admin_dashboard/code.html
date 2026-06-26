@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mission Approvals</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed-dim": "#bdc7d9",
+                      "surface-container-highest": "#2f3445",
+                      "tertiary-container": "#009bd1",
+                      "on-error": "#690005",
+                      "surface-tint": "#adc6ff",
+                      "secondary-container": "#404a59",
+                      "on-secondary-fixed": "#121c2a",
+                      "on-secondary-fixed-variant": "#3d4756",
+                      "tertiary": "#7bd0ff",
+                      "on-background": "#dde2f8",
+                      "tertiary-fixed": "#c4e7ff",
+                      "on-surface-variant": "#c2c6d6",
+                      "surface-dim": "#0d1322",
+                      "primary-fixed-dim": "#adc6ff",
+                      "on-secondary": "#27313f",
+                      "primary": "#adc6ff",
+                      "on-tertiary-fixed-variant": "#004c69",
+                      "error": "#f87171",
+                      "on-surface": "#ffffff",
+                      "surface-container-low": "#151b2b",
+                      "inverse-on-surface": "#2a3040",
+                      "surface-bright": "#33394a",
+                      "surface-container-high": "#242a3a",
+                      "success-muted": "#064e3b",
+                      "inverse-primary": "#005ac2",
+                      "on-tertiary-container": "#002d40",
+                      "on-tertiary": "#00354a",
+                      "background": "#0d1322",
+                      "primary-fixed": "#d8e2ff",
+                      "border-subtle": "#374151",
+                      "primary-container": "#4d8eff",
+                      "on-primary-fixed-variant": "#004395",
+                      "on-primary-container": "#00285d",
+                      "inverse-surface": "#dde2f8",
+                      "on-error-container": "#ffdad6",
+                      "on-primary": "#002e6a",
+                      "surface-variant": "#2f3445",
+                      "surface": "#0d1322",
+                      "on-tertiary-fixed": "#001e2c",
+                      "surface-container-lowest": "#080e1d",
+                      "error-container": "#93000a",
+                      "tertiary-fixed-dim": "#7bd0ff",
+                      "on-primary-fixed": "#001a42",
+                      "outline-variant": "#424754",
+                      "secondary": "#bdc7d9",
+                      "outline": "#8c909f",
+                      "on-secondary-container": "#afb9cb",
+                      "secondary-fixed": "#d9e3f6",
+                      "surface-container": "#191f2f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "stack-lg": "2rem",
+                      "stack-sm": "0.5rem",
+                      "container-max": "1440px",
+                      "margin-mobile": "1rem",
+                      "gutter": "1.5rem",
+                      "stack-md": "1rem"
+              },
+              "fontFamily": {
+                      "code-md": [
+                              "JetBrains Mono"
+                      ],
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "headline-sm": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "code-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "30px",
+                              {
+                                      "lineHeight": "38px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<main class="p-gutter max-w-container-max mx-auto">
+<!-- Header Section -->
+<div class="mb-stack-lg">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-stack-sm">Mission Approvals</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Review and authorize community-submitted missions for the live database.</p>
+</div>
+<!-- Approvals Queue Card -->
+<div class="bg-[#1f2937] border border-[#38bdf8]/30 rounded-lg overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-border-subtle bg-surface-container-high/50">
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">DATE SUBMITTED</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">AUTHOR</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">MISSION NAME</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">TERRAIN</th>
+<th class="px-6 py-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">ACTIONS</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-bright/20 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="font-code-md text-code-md text-on-surface-variant">Oct 24, 14:00</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-border-subtle shrink-0">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="A close-up portrait of a generic gamer avatar with a tactical headset, illuminated by cool blue screen glow against a very dark, high-contrast background. The aesthetic is modern, serious, and fits a military simulation command center vibe." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAap62oUmoabT5oA2I-c9v4YLR4HyDN8hdYF5h_X0yMiiZqiHTxpu1rS8VGOfCk37R11YH5oe-mOWSzzznJQx7y4-L1TgedNFJueRC1b4Sd7SBWCBtkL11igFkLjW4VNFxzeunyiquN87Vfg1MbPK2sF9cV-PnG8wNXZVA0jUrWF1mFh6iKT58HKvvm-MGVVK5GOk9OQUO8LFsOpuzoZgfvCQ-leObBgPgHt_RN_8wZsaPTgSXLpinh36nhUkOkSqPhezJsQFLQvhs"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">PlayerOne</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="font-label-md text-label-md text-on-surface font-bold">Operation Sandstorm</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="font-body-md text-body-md text-on-surface-variant">Arland</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-3 py-1.5 border border-primary text-primary rounded hover:bg-primary/10 transition-colors font-label-sm text-label-sm">
+                                        Review File
+                                    </button>
+<button class="px-3 py-1.5 bg-[#22c55e] text-white rounded hover:bg-[#16a34a] transition-colors font-label-sm text-label-sm shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+                                        Approve
+                                    </button>
+<button class="px-3 py-1.5 bg-error text-white rounded hover:bg-error/80 transition-colors font-label-sm text-label-sm shadow-[0_0_10px_rgba(248,113,113,0.2)]">
+                                        Reject
+                                    </button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-bright/20 transition-colors">
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="font-code-md text-code-md text-on-surface-variant">Oct 23, 09:15</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden border border-border-subtle shrink-0">
+<img alt="Avatar" class="w-full h-full object-cover" data-alt="A portrait of a male avatar wearing dark tactical gear, lit with moody, low-key lighting. The background is almost pitch black, emphasizing a technical, intense military-simulation aesthetic suitable for a dark-mode command dashboard." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZrBhYpU2P-NKVThNtiHwEcCyI1TIbuzhDSbyYpqxaAfL0bxhXMbcXP-1-UYonb6GamIHNrhOKPvBGY4sqQkFzEx9nrUD-x-WCeYEr7VnNjt6gJmrYYQ-VBgpDxmLpL4mHDFX1fBzs6U2i7LA6DBKhVr-Bo-u2fbf4RErSdriUOmXqGrsq3mqLj8wSrZQB2KL93NrQus_wrlxf_ic59qSUB1N7fL-e3enARteozZ_9uPWERfFtEYT6kKrWxS522i3_6MleGm6QF-c"/>
+</div>
+<span class="font-label-md text-label-md text-on-surface">DeltaActual</span>
+</div>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="font-label-md text-label-md text-on-surface font-bold">Defend Morton</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap">
+<span class="font-body-md text-body-md text-on-surface-variant">Everon</span>
+</td>
+<td class="px-6 py-4 whitespace-nowrap text-right">
+<div class="flex items-center justify-end gap-2">
+<button class="px-3 py-1.5 border border-primary text-primary rounded hover:bg-primary/10 transition-colors font-label-sm text-label-sm">
+                                        Review File
+                                    </button>
+<button class="px-3 py-1.5 bg-[#22c55e] text-white rounded hover:bg-[#16a34a] transition-colors font-label-sm text-label-sm shadow-[0_0_10px_rgba(34,197,94,0.2)]">
+                                        Approve
+                                    </button>
+<button class="px-3 py-1.5 bg-error text-white rounded hover:bg-error/80 transition-colors font-label-sm text-label-sm shadow-[0_0_10px_rgba(248,113,113,0.2)]">
+                                        Reject
+                                    </button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination / Footer area (optional, added for visual balance) -->
+<div class="px-6 py-4 border-t border-border-subtle flex justify-between items-center bg-surface-container-high/30">
+<span class="font-label-sm text-label-sm text-on-surface-variant">Showing 2 of 24 pending</span>
+<div class="flex gap-2">
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface disabled:opacity-50" disabled="">
+<span class="material-symbols-outlined text-[20px]">chevron_left</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[20px]">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

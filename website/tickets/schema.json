@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TBD Ticket Registry",
+  "type": "object",
+  "required": ["next_id", "tickets"],
+  "properties": {
+    "next_id": { "type": "integer", "minimum": 1 },
+    "tickets": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ticket" }
+    }
+  },
+  "$defs": {
+    "program": {
+      "type": "string",
+      "enum": ["eden", "scale", "platform", "backend", "infra"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["idea", "queued", "ready", "running", "review", "shipped", "deferred", "cancelled"]
+    },
+    "surface": {
+      "type": "string",
+      "enum": [
+        "LEFT", "RIGHT", "MAP", "TOP", "BOTTOM", "ATTR", "DATA", "SHELL",
+        "ORBAT", "MRK", "VEH", "PLACE", "XFORM", "CONN", "COMP"
+      ]
+    },
+    "impact": {
+      "type": "string",
+      "enum": ["ui", "state", "api", "schema", "compiler", "persistence", "perf"]
+    },
+    "ticket": {
+      "type": "object",
+      "required": ["id", "title", "summary", "program", "surfaces", "impact", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^T-[0-9]{3}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "summary": { "type": "string", "minLength": 1 },
+        "program": { "$ref": "#/$defs/program" },
+        "surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/surface" },
+          "minItems": 1
+        },
+        "surface_detail": { "type": "string" },
+        "route": { "type": "string" },
+        "impact": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/impact" },
+          "minItems": 1
+        },
+        "status": { "$ref": "#/$defs/status" },
+        "order": { "type": "integer" },
+        "spec": { "type": "string" },
+        "branch": { "type": "string" },
+        "slices": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "active_slice": { "type": "string" },
+        "depends_on": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "unblocks": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "implements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "user_story": { "type": "string" },
+        "acceptance": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "assignee": { "type": "string" },
+        "milestone": { "type": "string" },
+        "parallel_ok": { "type": "boolean" },
+        "conflict_surfaces": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/surface" }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

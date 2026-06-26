@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TBD Reforger - Top Navigation Bar</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container": "#1d2027",
+                      "on-surface": "#ffffff",
+                      "primary-container": "#4d8eff",
+                      "inverse-surface": "#e1e2ec",
+                      "surface-container-high": "#272a31",
+                      "border-subtle": "#1e3a5f",
+                      "secondary-fixed-dim": "#bdc7d9",
+                      "primary-fixed": "#d8e2ff",
+                      "primary": "#adc6ff",
+                      "on-surface-variant": "#c2c6d6",
+                      "on-tertiary-fixed-variant": "#723600",
+                      "on-primary-container": "#00285d",
+                      "on-secondary": "#27313f",
+                      "on-primary-fixed": "#001a42",
+                      "on-tertiary": "#502400",
+                      "success-muted": "rgba(34, 197, 94, 0.2)",
+                      "surface": "#0b1120",
+                      "surface-container-low": "#191b23",
+                      "inverse-on-surface": "#2e3038",
+                      "on-error-container": "#ffdad6",
+                      "tertiary-fixed": "#ffdcc6",
+                      "tertiary": "#ffb786",
+                      "surface-bright": "#363941",
+                      "on-primary": "#002e6a",
+                      "tertiary-container": "#df7412",
+                      "surface-tint": "#adc6ff",
+                      "on-secondary-fixed-variant": "#3d4756",
+                      "surface-dim": "#10131a",
+                      "on-secondary-container": "#afb9cb",
+                      "surface-container-lowest": "#0b0e15",
+                      "surface-variant": "#32353c",
+                      "error-container": "#93000a",
+                      "tertiary-fixed-dim": "#ffb786",
+                      "error": "#f87171",
+                      "outline": "#8c909f",
+                      "on-primary-fixed-variant": "#004395",
+                      "on-tertiary-fixed": "#311400",
+                      "surface-container-highest": "#32353c",
+                      "primary-fixed-dim": "#adc6ff",
+                      "on-secondary-fixed": "#121c2a",
+                      "secondary-fixed": "#d9e3f6",
+                      "secondary-container": "#404a59",
+                      "on-error": "#690005",
+                      "inverse-primary": "#005ac2",
+                      "outline-variant": "#424754",
+                      "on-tertiary-container": "#461f00",
+                      "background": "#10131a",
+                      "secondary": "#bdc7d9",
+                      "on-background": "#e1e2ec",
+                      "success": "#22c55e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "navbar-height": "64px",
+                      "pill-padding-y": "0.25rem",
+                      "pill-padding-x": "0.75rem",
+                      "container-padding": "1.5rem",
+                      "element-gap": "1rem"
+              },
+              "fontFamily": {
+                      "menu-item": [
+                              "Inter"
+                      ],
+                      "nav-breadcrumb-parent": [
+                              "Inter"
+                      ],
+                      "nav-breadcrumb-current": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-sm": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "menu-item": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "nav-breadcrumb-parent": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.01em",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "nav-breadcrumb-current": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+            },
+          },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<!-- TopNavBar Component -->
+<header class="fixed top-0 left-0 w-full h-[64px] z-50 bg-surface border-b border-border-subtle flex justify-between items-center px-container-padding">
+<!-- Left: Brand / Breadcrumb -->
+<div class="flex items-center gap-2">
+<span class="font-nav-breadcrumb-parent text-nav-breadcrumb-parent text-on-surface-variant cursor-pointer hover:text-on-surface transition-colors duration-200">
+                Mission Hub
+            </span>
+<span class="text-on-surface-variant font-nav-breadcrumb-parent">/</span>
+<span class="font-nav-breadcrumb-current text-nav-breadcrumb-current text-on-surface">
+                Operation Enduring Freedom
+            </span>
+</div>
+<!-- Right: Actions & Profile -->
+<div class="flex items-center gap-element-gap relative">
+<!-- Status Pill -->
+<div class="bg-success-muted rounded-full px-pill-padding-x py-pill-padding-y flex items-center">
+<span class="text-success font-label-sm text-label-sm font-mono tracking-wider">Linked: 765611...</span>
+</div>
+<!-- Profile Toggle -->
+<button class="flex items-center gap-2 hover:bg-surface-container-high transition-colors duration-200 rounded-lg p-1 pr-3 cursor-pointer active:opacity-80">
+<img alt="Admin Dave Discord Avatar" class="w-8 h-8 rounded-full object-cover border border-border-subtle" data-alt="A small, circular avatar image showing a young male character with dark hair in a casual setting. The lighting is soft and natural, typical of a profile picture. The overall tone is relaxed and approachable, fitting for a gaming or community platform profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1vH95-cXd4lnf8jmVvECNcErI8nyks4QUhsi_G9p1f10looa1Q9EUWwQRI7j4Qe9I-nIX-iXbFwsW3fNHxmHCGLVWjMBa4jMXWut59CczCiTPlrg8KoV7fULj2KMNFBlk6OINmn619IyoN3yzBZB0w7hGM2f4hvgE641g2vPteUSRvKbJupHYcIv3q77aEOz0pKAmdeXWdH9py9CjmQbB_8RseoeGRD-JrcYus4D2ibLuXQ_BbxxsOxpwGid824krFxHKER-WL-U"/>
+<span class="font-menu-item text-menu-item text-on-surface">Admin Dave</span>
+<span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">expand_more</span>
+</button>
+<!-- Dropdown Menu (Open State) -->
+<div class="absolute top-full right-0 mt-2 w-56 bg-surface-container rounded-lg border border-border-subtle shadow-xl overflow-hidden z-50">
+<div class="py-1">
+<a class="block px-4 py-2 font-menu-item text-menu-item text-on-surface hover:bg-surface-container-high hover:border-l-2 hover:border-primary transition-all duration-200" href="#">
+                        Settings
+                    </a>
+<a class="block px-4 py-2 font-menu-item text-menu-item text-on-surface hover:bg-surface-container-high hover:border-l-2 hover:border-primary transition-all duration-200" href="#">
+                        Link Arma Identity
+                    </a>
+<div class="border-t border-border-subtle my-1"></div>
+<a class="block px-4 py-2 font-menu-item text-menu-item text-error hover:bg-surface-container-high transition-colors duration-200" href="#">
+                        Sign Out
+                    </a>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Placeholder to test fixed nav -->
+<main class="pt-navbar-height p-container-padding">
+<!-- Canvas Content would go here -->
+</main>
+</body></html>

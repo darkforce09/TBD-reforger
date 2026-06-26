@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Mission Library</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#d9e3f6",
+                        "background": "#10131a",
+                        "surface-container-highest": "#32353c",
+                        "surface-container-low": "#191b23",
+                        "tertiary-fixed": "#ffdcc6",
+                        "surface-tint": "#adc6ff",
+                        "surface": "#0b1120",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "error": "#f87171",
+                        "on-error-container": "#ffdad6",
+                        "outline-variant": "#424754",
+                        "inverse-on-surface": "#2e3038",
+                        "on-tertiary": "#502400",
+                        "surface-container": "#1d2027",
+                        "on-error": "#690005",
+                        "surface-bright": "#363941",
+                        "surface-variant": "#32353c",
+                        "on-tertiary-container": "#461f00",
+                        "on-surface": "#e1e2ec",
+                        "surface-container-lowest": "#0b0e15",
+                        "on-primary-fixed": "#001a42",
+                        "on-secondary-fixed": "#121c2a",
+                        "secondary-container": "#404a59",
+                        "primary-fixed-dim": "#adc6ff",
+                        "on-primary": "#002e6a",
+                        "primary-container": "#4d8eff",
+                        "success-muted": "rgba(34, 197, 94, 0.2)",
+                        "success": "#22c55e",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "on-tertiary-fixed": "#311400",
+                        "on-secondary-container": "#afb9cb",
+                        "primary": "#adc6ff",
+                        "error-container": "#93000a",
+                        "surface-dim": "#10131a",
+                        "tertiary": "#ffb786",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "secondary": "#bdc7d9",
+                        "primary-fixed": "#d8e2ff",
+                        "border-subtle": "#1e3a5f",
+                        "outline": "#8c909f",
+                        "on-secondary": "#27313f",
+                        "on-background": "#e1e2ec",
+                        "surface-container-high": "#272a31",
+                        "on-surface-variant": "#c2c6d6",
+                        "tertiary-container": "#df7412",
+                        "inverse-primary": "#005ac2",
+                        "on-primary-fixed-variant": "#004395",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "on-primary-container": "#00285d",
+                        "inverse-surface": "#e1e2ec"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "pill-padding-x": "0.75rem",
+                        "element-gap": "1rem",
+                        "container-padding": "1.5rem",
+                        "navbar-height": "64px",
+                        "pill-padding-y": "0.25rem"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "menu-item": ["Inter"],
+                        "nav-breadcrumb-current": ["Inter"],
+                        "nav-breadcrumb-parent": ["Inter"],
+                        "label-sm": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "menu-item": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "nav-breadcrumb-current": ["14px", { "lineHeight": "20px", "fontWeight": "600" }],
+                        "nav-breadcrumb-parent": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body-md min-h-screen">
+<main class="p-container-padding max-w-7xl mx-auto space-y-8">
+<!-- Header & Tabs -->
+<header class="space-y-6">
+<div>
+<h1 class="text-3xl font-bold tracking-tight text-on-surface">Mission Library</h1>
+<p class="text-on-surface-variant mt-2">Browse, filter, and deploy active operations.</p>
+</div>
+<!-- Custom Tab Navigation -->
+<nav class="flex border-b border-border-subtle overflow-x-auto hide-scrollbar">
+<button class="px-6 py-3 border-b-2 border-primary text-primary font-nav-breadcrumb-current whitespace-nowrap">Global Missions</button>
+<button class="px-6 py-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-menu-item whitespace-nowrap">My Missions</button>
+<button class="px-6 py-3 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-colors font-menu-item whitespace-nowrap">Bookmarked</button>
+</nav>
+</header>
+<!-- Filter Console (Glassmorphism inspired card) -->
+<section class="bg-[#1f2937] border border-border-subtle rounded-xl p-6 shadow-sm backdrop-blur-sm">
+<div class="flex flex-col md:flex-row gap-4 items-end">
+<!-- Search Input -->
+<div class="flex-1 w-full relative">
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-2" for="mission-search">Search Operations</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded text-body-md font-body-md text-on-surface pl-10 py-2 focus:ring-1 focus:ring-primary focus:border-primary transition-colors" id="mission-search" placeholder="Enter mission name or author..." type="text"/>
+</div>
+</div>
+<!-- Dropdowns -->
+<div class="flex flex-wrap md:flex-nowrap gap-4 w-full md:w-auto">
+<div class="flex-1 md:flex-none md:w-40">
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-2" for="filter-terrain">Terrain</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded text-body-md font-body-md text-on-surface py-2 pl-3 pr-8 focus:ring-1 focus:ring-primary focus:border-primary transition-colors appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23c2c6d6%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1em_1em] bg-[right_0.5rem_center] bg-no-repeat" id="filter-terrain">
+<option>All</option>
+<option>Everon</option>
+<option>Arland</option>
+<option>Custom Map</option>
+</select>
+</div>
+<div class="flex-1 md:flex-none md:w-40">
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-2" for="filter-mode">Mode</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded text-body-md font-body-md text-on-surface py-2 pl-3 pr-8 focus:ring-1 focus:ring-primary focus:border-primary transition-colors appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23c2c6d6%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1em_1em] bg-[right_0.5rem_center] bg-no-repeat" id="filter-mode">
+<option>All</option>
+<option>PvE / COOP</option>
+<option>PvP</option>
+<option>Zeus</option>
+</select>
+</div>
+<div class="flex-1 md:flex-none md:w-40">
+<label class="block text-label-sm font-label-sm text-on-surface-variant mb-2" for="filter-players">Player Count</label>
+<select class="w-full bg-surface-container-low border border-outline-variant rounded text-body-md font-body-md text-on-surface py-2 pl-3 pr-8 focus:ring-1 focus:ring-primary focus:border-primary transition-colors appearance-none cursor-pointer bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23c2c6d6%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1em_1em] bg-[right_0.5rem_center] bg-no-repeat" id="filter-players">
+<option>All</option>
+<option>1-16</option>
+<option>17-32</option>
+<option>33-64</option>
+</select>
+</div>
+</div>
+</div>
+</section>
+<!-- Mission Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Mission Card 1 -->
+<article class="bg-[#1f2937] border border-border-subtle rounded-xl overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<!-- Header Image & Badge -->
+<div class="relative h-48 w-full bg-surface-container-highest">
+<img alt="Topographic map terrain" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A highly detailed satellite or high-altitude aerial view of a dense, rugged terrain, resembling a military topographic map screenshot. Deep, tactical dark mode colors dominate, with sharp contrasts between deep forest greens, oceanic dark blues, and striking contour lines. The aesthetic is purely functional, modern, and serious, aligning perfectly with a premium command interface or tactical mission planning software." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvG10GfNk0ES8NSg2sito7ahwUlpLyP9mwJvUU82LZFIT5-Oz5pLeuQODO3MFKmHsXRcb7MNCqw3U3nSXizIYtgeHCXykEPiP-mRoA-4Azmu7Z_SnwBYepsZoXF2itKYPaVxKruqu3lEZbkUmKXEd3A26cECFt4l6fCM8lPdilet8mCzJubwMac-WBpMOctORYtrjiSIwyPc3ivj3Lnzkk6urKR_jjKGNV2dgfX24Ul7rFwEKlB8GqIDQIXioKo0WlsfeEnOGFeQk"/>
+<!-- Floating Badge -->
+<span class="absolute top-4 right-4 bg-primary-container text-on-primary-container text-xs font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm bg-opacity-90">
+                        [PvE / COOP]
+                    </span>
+</div>
+<!-- Body -->
+<div class="p-5 flex-1 flex flex-col">
+<h3 class="text-lg font-bold text-on-surface mb-2 truncate">Operation Enduring Freedom</h3>
+<!-- Author Info -->
+<div class="flex items-center gap-3 mb-4">
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<img alt="Admin Dave Avatar" class="w-full h-full object-cover" data-alt="A small, circular avatar portrait of a stern, professional male operator or administrator in tactical gear or sleek corporate attire against a dark, moody background. The lighting is low-key with a subtle rim light, fitting a high-performance, serious event management system." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXmmsInQWaHBT-5PNZU48Mak9Jc7s9hhXiF6N6xTOydOBDh_7mjjB4-dxdH-3R8k9-7w9mNgj5ULsbJOsrEiwmmyrwku3npPlJ62sJDzrXb1GaYu6Ylgipd6_ZqX3Y2AcwGxNWXkY-GLogN51h8JQ-9mY4f1b_0A-TQ4B0H-SWFKhpJRGx5fchFSdeqlMk0TPlYM69hPfmmbwCOxGxDWXL-B2lQ030QC96eN3sGCf89WAJy6q-dCBEfLoYNIRGQOMrGbcRHiwdd-o"/>
+</div>
+<span class="text-sm text-on-surface-variant font-medium">Admin Dave</span>
+</div>
+<!-- Meta Row -->
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mt-auto">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">map</span>
+<span>Everon</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">group</span>
+<span>64 Players max</span>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-5 pt-0 mt-2">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-4 border border-outline-variant text-on-surface hover:bg-surface-container-high rounded transition-colors text-sm font-semibold">
+                        View Operation Intel
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Mission Card 2 -->
+<article class="bg-[#1f2937] border border-border-subtle rounded-xl overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="relative h-48 w-full bg-surface-container-highest">
+<img alt="Urban tactical map" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A stylized, top-down tactical map view of an urban or industrial complex at night. Rendered in deep obsidian blacks and dark steel greys, with sharp, electric blue grid lines and glowing structural outlines. The image exudes a modern, high-tech command center aesthetic, suited for a serious tactical interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBRGUZ7WmMQ4IeG3T-zCZSf5U2uu7-VABNfnZVeS-5EbFyMi0qhw6PhD9phbSx7DtRHU0M0U4MrtRrDHtLY9Y8Nu3VOIH3tVU7ALVvWflJqkFr-ertxhPvnOPU49DyNlCrW3heec6zFhGw7y7spB2tUUhJPKCzYt6eiOhPf5Id4u2rzkEku1iuDAKfznkgVIAGJWRIWMgMKM7nrEfOmp1l9TKiauZURU4VKK8a5z7M95wjD5IAFM8nSAZ_19UAIFinORXxrgTn9e04"/>
+<span class="absolute top-4 right-4 bg-error text-on-error text-xs font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm bg-opacity-90">
+                        [PvP]
+                    </span>
+</div>
+<div class="p-5 flex-1 flex flex-col">
+<h3 class="text-lg font-bold text-on-surface mb-2 truncate">Urban Vanguard</h3>
+<div class="flex items-center gap-3 mb-4">
+<div class="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A sharp, low-key profile photo of a professional woman in a dark, minimalist setting. Lighting is dramatic and focused, highlighting her face against a pure black background. Fits seamlessly into a sleek, premium dark-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz4G8A9-FhhBxbKuLYLc00LUVZgzcRiOFFI5IL63LBPuYQUSkx6lPWYkpqP1_Y5Rfm19JBAQi-mNGPb6yMTohVwKFllqOi8oUM21AENJEE2H07D06oNuCFHJtWneGztK7dlKeUIAKWl4UF245x1xYfC3eb7y5cIatkCIN2HIJszAnj3tsONA3Cy8VfHTpY9_h8cvnuvsZxZQuBz-tMjR7RlsPgrn-DDQGUXP43XxgPl4VvLWriUIGopGNmLd3SP4gY9npUuRuBKok"/>
+</div>
+<span class="text-sm text-on-surface-variant font-medium">Sgt. Miller</span>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mt-auto">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">map</span>
+<span>Arland</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">group</span>
+<span>32 Players max</span>
+</div>
+</div>
+</div>
+<div class="p-5 pt-0 mt-2">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-4 border border-outline-variant text-on-surface hover:bg-surface-container-high rounded transition-colors text-sm font-semibold">
+                        View Operation Intel
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Mission Card 3 -->
+<article class="bg-[#1f2937] border border-border-subtle rounded-xl overflow-hidden flex flex-col group hover:border-outline-variant transition-colors">
+<div class="relative h-48 w-full bg-surface-container-highest">
+<img alt="Forest map" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A dark, moody drone shot looking straight down over a dense, foggy pine forest at dusk. The colors are muted, relying on deep, near-black greens and shadows, creating an atmosphere of stealth and tension. Perfectly aligned with a premium, minimalist military application design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsVnG_HEuPS591GyBnnCdsg5n1a4fX_W7N6NlBMbCvZBel36Ucy09tvESsAU1CjKioN3iThddmuThJPzYSl1UYW-Zj9_OMr2FT9sXOheTroUAzDiJo2EZyCwa9RbC275_EOe6yHvvjcjNq-tLfwIYnM5YH37Sqx0NSm06Iv81AuYbaLPSmNJkFoUCNdK6Vh74wKccSMAem4YD2pdqOxbKFsiElXqPHn8mxLIBu-EaTSC2upQZgwRMCeLNTDFaM1G7bJ_2_zsXGUGw"/>
+<span class="absolute top-4 right-4 bg-tertiary-container text-on-tertiary-container text-xs font-bold px-3 py-1 rounded-full shadow-md backdrop-blur-sm bg-opacity-90">
+                        [Zeus]
+                    </span>
+</div>
+<div class="p-5 flex-1 flex flex-col">
+<h3 class="text-lg font-bold text-on-surface mb-2 truncate">Silent Watch</h3>
+<div class="flex items-center gap-3 mb-4">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center border border-outline-variant text-on-surface-variant font-bold text-xs">
+                             CM
+                        </div>
+<span class="text-sm text-on-surface-variant font-medium">Cmdr. Mitchell</span>
+</div>
+<div class="flex items-center gap-4 text-sm text-on-surface-variant mt-auto">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">map</span>
+<span>Custom Map</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">group</span>
+<span>16 Players max</span>
+</div>
+</div>
+</div>
+<div class="p-5 pt-0 mt-2">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-4 border border-outline-variant text-on-surface hover:bg-surface-container-high rounded transition-colors text-sm font-semibold">
+                        View Operation Intel
+                        <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 0;">arrow_forward</span>
+</button>
+</div>
+</article>
+</section>
+</main>
+</body></html>

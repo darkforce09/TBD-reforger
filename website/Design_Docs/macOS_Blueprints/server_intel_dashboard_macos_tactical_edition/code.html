@@ -1,0 +1,242 @@
+<!DOCTYPE html><html class="dark" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Aegis Tactical Command - Server Detail</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface": "#0d1322",
+                      "surface-container": "#191f2f",
+                      "secondary-fixed": "#d8e2ff",
+                      "outline": "#8e909a",
+                      "secondary-container": "#0566d9",
+                      "surface-bright": "#333949",
+                      "primary-fixed-dim": "#adc6ff",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "tertiary-container": "#7bd0ff",
+                      "surface-container-high": "#242a3a",
+                      "tertiary-fixed": "#c4e7ff",
+                      "on-tertiary": "#00344a",
+                      "primary-fixed": "#d8e2ff",
+                      "on-secondary-fixed": "#001a42",
+                      "tertiary-fixed-dim": "#7cd0ff",
+                      "on-primary-fixed": "#001a42",
+                      "on-error-container": "#ffdad6",
+                      "inverse-on-surface": "#2a3040",
+                      "on-secondary-fixed-variant": "#004395",
+                      "surface-container-low": "#151b2b",
+                      "primary-container": "#adc6ff",
+                      "inverse-primary": "#455e90",
+                      "on-primary": "#122f5f",
+                      "on-secondary": "#002e6a",
+                      "surface-variant": "#2f3445",
+                      "surface-glass": "rgba(31, 41, 55, 0.7)",
+                      "surface-dim": "#0d1322",
+                      "on-tertiary-fixed-variant": "#004c69",
+                      "error": "#ffb4ab",
+                      "success-muted": "#064e3b",
+                      "tactical-yellow": "#facc15",
+                      "on-tertiary-fixed": "#001e2c",
+                      "on-surface": "#dde2f7",
+                      "inverse-surface": "#dde2f7",
+                      "surface-container-highest": "#2f3445",
+                      "on-background": "#dde2f7",
+                      "secondary": "#adc6ff",
+                      "on-surface-variant": "#c4c6d0",
+                      "tertiary": "#c3e7ff",
+                      "error-container": "#93000a",
+                      "on-error": "#690005",
+                      "background": "#0d1322",
+                      "surface-container-lowest": "#080e1d",
+                      "on-secondary-container": "#e6ecff",
+                      "primary": "#d8e2ff",
+                      "on-primary-container": "#385283",
+                      "surface-tint": "#adc6ff",
+                      "outline-variant": "#44474f",
+                      "error-alert": "#f87171",
+                      "on-tertiary-container": "#005979",
+                      "border-subtle": "#374151",
+                      "on-primary-fixed-variant": "#2c4677"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-mobile": "1rem",
+                      "stack-md": "1rem",
+                      "stack-lg": "2rem",
+                      "container-max": "1440px",
+                      "gutter": "1.5rem",
+                      "stack-sm": "0.5rem"
+              },
+              "fontFamily": {
+                      "label-sm": ["Inter"],
+                      "body-md": ["Inter"],
+                      "label-md": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "code-md": ["JetBrains Mono"],
+                      "headline-lg": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "headline-sm": ["Inter"]
+              },
+              "fontSize": {
+                      "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "code-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "headline-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        .pulse-dot {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .5; transform: scale(1.1); box-shadow: 0 0 10px #facc15; }
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 20px rgba(5, 102, 217, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden font-body-md flex selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Global Background Map -->
+<div class="fixed inset-0 z-0 bg-cover bg-center" data-alt="A highly detailed, top-down satellite view of a fictional tactical island terrain for a military simulation. Deep ocean blues surrounding rugged green mountainous terrain. The map is overlaid with a subtle, glowing high-tech grid, coordinate numbers in a monospaced font, and orange crosshair markers indicating points of interest. The overall aesthetic is dark, moody, and authoritative, matching a modern tactical command center interface." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBqY9NRsaLKSRk7V0g9XrVkysuxuTRsc8FcMfq76JZujkDPkAAihMyRIw6mOuvFI4tTOwRDvDEhOe-p2Coym8zpmONJeueKLL379Yzecw64o3wzqJMRZdGCA7iBbwrno1hge-AU7AZNCE4XVo9q6IXTH5A2NRf3IToSchzAuj5JUT-Y81VVXfb-Ic4CrnLbV_So9xy2vBIxVHrwDztZ-YuY78DL-Jb5qsgNACRmxHXgRYRrsCxsCJnHBrgj-DD3LUVa31rIo4Arzrc')">
+<div class="absolute inset-0 bg-background/80 backdrop-blur-sm"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+</div>
+<!-- SideNavBar -->
+
+<!-- Main Content Area -->
+<div class="flex-grow flex flex-col relative z-10">
+<!-- TopNavBar -->
+
+<!-- Workspace canvas -->
+<main class="flex-grow flex items-center justify-center p-8">
+<!-- Server Detail Panel (User Prompt Target) -->
+<div class="w-full max-w-6xl bg-surface-glass backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl overflow-hidden flex flex-col">
+<!-- Panel Header -->
+<div class="px-8 py-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-6 bg-surface/40">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<div class="w-2.5 h-2.5 rounded-full bg-tactical-yellow pulse-dot" title="Server Online"></div>
+<h2 class="font-headline-md text-headline-md text-on-surface uppercase tracking-wider">TBD REFORGER MAIN SERVER</h2>
+</div>
+<div class="flex items-center gap-2 font-code-md text-code-md text-on-surface-variant bg-surface-container px-3 py-1.5 rounded-md inline-flex border border-white/5">
+<span class="material-symbols-outlined text-[16px]">dns</span>
+<span class="">192.168.1.100 : 2001</span>
+<button aria-label="Copy IP" class="ml-2 hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+</div>
+</div>
+<button class="bg-secondary-container text-on-secondary-container px-6 py-3 rounded-full font-label-md text-label-md flex items-center gap-2 glow-button transition-all duration-300 border border-secondary-container/50 shrink-0">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                        LAUNCH &amp; CONNECT
+                    </button>
+</div>
+<!-- Telemetry Grid -->
+<div class="p-8 grid grid-cols-1 md:grid-cols-[1fr_2fr_1fr] gap-8 md:divide-x md:divide-white/10 border-b border-white/5">
+<!-- Column 1: Performance -->
+<div class="flex flex-col justify-center space-y-4">
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-1">Active Personnel</span>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-lg text-headline-lg text-tertiary-container">55</span>
+<span class="font-headline-sm text-headline-sm text-on-surface-variant">/ 64</span>
+</div>
+</div>
+<div class="space-y-2 pt-2">
+<div class="flex items-center justify-between font-code-md text-code-md text-on-surface-variant">
+<span class="">Uptime:</span>
+<span class="">02:14:33</span>
+</div>
+<div class="flex items-center justify-between font-code-md text-code-md text-on-surface-variant">
+<span class="">Server FPS:</span>
+<span class="text-tactical-yellow">44 (Optimal)</span>
+</div>
+</div>
+</div>
+<!-- Column 2: Terrain (Expanded) -->
+<div class="md:px-8 flex flex-col justify-center">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-3">Theater of Operations</span>
+<div class="relative w-full aspect-[21/9] rounded-lg overflow-hidden border border-white/10 group">
+<img alt="Everon Terrain" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJhklFaKKJXQ3-uOGwrugGr_URw1Dq_3Jslvkc3lEtT4ObLWKv52ipE-EQWEm3QF4HeoY5vA8NcYt_e87d76A14Z48tuHODNidNphecUVm_Zy7NLBRexvt9uUcFOBLTk3RbiSAetUEMYX2BmQMPU-BU-HvmweLf1P4-jc1CjC0jDdMMR-fzb5BVtNID-Ak1iW3MuGzWiO4LfZ4WIPy8Ijk3kcsqRFXVroQ_rZSJ8yw4se-gszeDoVOc8Vp9HL5qLcEAtnI4pFEC4I">
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-highest/90 via-surface-container-highest/20 to-transparent"></div>
+<div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+<div>
+<span class="font-label-md text-label-md text-on-surface block">Everon</span>
+<span class="font-label-sm text-label-sm text-primary block mt-0.5">Operation Enduring Freedom</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant">map</span>
+</div>
+</div>
+</div>
+<!-- Column 3: Environment & Mods -->
+<div class="md:pl-8 flex flex-col justify-center space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-white/5 shrink-0">
+<span class="material-symbols-outlined text-primary">schedule</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Simulated Time</span>
+<span class="font-body-md text-body-md text-on-surface">14:30 Local</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-white/5 shrink-0">
+<span class="material-symbols-outlined text-tertiary-container">rainy</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Conditions</span>
+<span class="font-body-md text-body-md text-on-surface">Overcast / Light Rain</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center border border-white/5 shrink-0">
+<span class="material-symbols-outlined text-tactical-yellow">verified</span>
+</div>
+<div>
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase block">Mod Configuration</span>
+<span class="font-body-md text-body-md text-on-surface">Aegis Core v2.1 <span class="text-on-surface-variant font-code-md text-[12px]">(Synced)</span></span>
+</div>
+</div>
+</div>
+</div>
+<!-- Recent Intelligence Section -->
+<div class="p-8 bg-surface/20">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest block mb-4">Recent Intelligence</span>
+<div class="space-y-3">
+<div class="flex items-center gap-4 font-code-md text-code-md py-2 border-b border-white/5">
+<span class="text-primary shrink-0">[14:02:00Z]</span>
+<span class="text-on-surface">New hostile movement detected in Sector 4</span>
+</div>
+<div class="flex items-center gap-4 font-code-md text-code-md py-2 border-b border-white/5">
+<span class="text-primary shrink-0">[13:45:12Z]</span>
+<span class="text-on-surface">Server Uplink maintenance completed</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

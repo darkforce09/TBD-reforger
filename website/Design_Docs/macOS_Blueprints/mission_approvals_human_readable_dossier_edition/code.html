@@ -1,0 +1,321 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Mission Approvals</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-background": "#dde2f7",
+                "surface-container": "#191f2f",
+                "on-error-container": "#ffdad6",
+                "tertiary-fixed-dim": "#7cd0ff",
+                "surface-tint": "#adc6ff",
+                "secondary-fixed-dim": "#adc6ff",
+                "surface-bright": "#333949",
+                "primary-fixed": "#d8e2ff",
+                "error": "#ffb4ab",
+                "surface-container-high": "#242a3a",
+                "inverse-primary": "#455e90",
+                "secondary-fixed": "#d8e2ff",
+                "tertiary-fixed": "#c4e7ff",
+                "primary-container": "#adc6ff",
+                "outline": "#8e909a",
+                "tactical-yellow": "#facc15",
+                "surface-variant": "#2f3445",
+                "error-container": "#93000a",
+                "primary": "#d8e2ff",
+                "on-primary-container": "#385283",
+                "tertiary-container": "#7bd0ff",
+                "error-alert": "#f87171",
+                "secondary": "#adc6ff",
+                "on-surface-variant": "#c4c6d0",
+                "on-tertiary": "#00344a",
+                "on-secondary-fixed-variant": "#004395",
+                "on-primary": "#122f5f",
+                "on-secondary-container": "#e6ecff",
+                "inverse-on-surface": "#2a3040",
+                "surface-dim": "#0d1322",
+                "primary-fixed-dim": "#adc6ff",
+                "surface-container-highest": "#2f3445",
+                "on-tertiary-container": "#005979",
+                "surface": "#0d1322",
+                "outline-variant": "#44474f",
+                "surface-glass": "rgba(31, 41, 55, 0.7)",
+                "success-muted": "#064e3b",
+                "on-primary-fixed-variant": "#2c4677",
+                "surface-container-low": "#151b2b",
+                "on-tertiary-fixed": "#001e2c",
+                "surface-container-lowest": "#080e1d",
+                "on-error": "#690005",
+                "on-tertiary-fixed-variant": "#004c69",
+                "border-subtle": "#374151",
+                "inverse-surface": "#dde2f7",
+                "tertiary": "#c3e7ff",
+                "on-secondary-fixed": "#001a42",
+                "secondary-container": "#0566d9",
+                "on-secondary": "#002e6a",
+                "background": "#0d1322",
+                "on-surface": "#dde2f7",
+                "on-primary-fixed": "#001a42"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "stack-sm": "0.5rem",
+                "gutter": "1.5rem",
+                "container-max": "1440px",
+                "stack-lg": "2rem",
+                "margin-mobile": "1rem",
+                "stack-md": "1rem"
+        },
+        "fontFamily": {
+                "headline-lg": [
+                        "Inter"
+                ],
+                "label-sm": [
+                        "Inter"
+                ],
+                "headline-md": [
+                        "Inter"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "Inter"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "headline-sm": [
+                        "Inter"
+                ]
+        },
+        "fontSize": {
+                "headline-lg": [
+                        "30px",
+                        {
+                                "lineHeight": "38px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.01em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "code-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-sm": [
+                        "20px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+</head>
+<body class="bg-background text-on-surface min-h-screen">
+<main class="p-gutter max-w-7xl mx-auto h-screen flex flex-col pt-8">
+<!-- Header Section -->
+<div class="mb-stack-lg shrink-0">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-stack-sm">Mission Approvals</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Review and authorize community-submitted missions for the live database.</p>
+</div>
+<!-- Split Pane Container -->
+<div class="flex-1 bg-slate-900/60 backdrop-blur-xl border border-white/5 rounded-xl overflow-hidden flex shadow-2xl mb-8 min-h-[600px]">
+<!-- Left Pane: Pending Queue (35%) -->
+<div class="w-[35%] flex flex-col border-r border-white/5 bg-surface-container-low/30">
+<div class="px-6 py-4 border-b border-white/5 shrink-0 bg-surface-container/50">
+<h2 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Pending Queue (2)</h2>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2">
+<!-- Active Card -->
+<div class="p-4 rounded-lg bg-primary/10 border border-primary/30 shadow-[inset_0_0_20px_rgba(216,226,255,0.05)] cursor-pointer">
+<div class="flex justify-between items-start mb-3">
+<span class="font-label-md text-label-md text-primary font-bold">Operation Sandstorm</span>
+<span class="font-code-md text-xs text-primary/70">Oct 24, 14:00</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest overflow-hidden border border-primary/20 shrink-0">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAap62oUmoabT5oA2I-c9v4YLR4HyDN8hdYF5h_X0yMiiZqiHTxpu1rS8VGOfCk37R11YH5oe-mOWSzzznJQx7y4-L1TgedNFJueRC1b4Sd7SBWCBtkL11igFkLjW4VNFxzeunyiquN87Vfg1MbPK2sF9cV-PnG8wNXZVA0jUrWF1mFh6iKT58HKvvm-MGVVK5GOk9OQUO8LFsOpuzoZgfvCQ-leObBgPgHt_RN_8wZsaPTgSXLpinh36nhUkOkSqPhezJsQFLQvhs">
+</div>
+<span class="font-label-sm text-label-sm text-on-surface">PlayerOne</span>
+</div>
+</div>
+<!-- Inactive Card -->
+<div class="p-4 rounded-lg hover:bg-white/5 border border-transparent cursor-pointer transition-colors">
+<div class="flex justify-between items-start mb-3">
+<span class="font-label-md text-label-md text-on-surface font-bold">Defend Morton</span>
+<span class="font-code-md text-xs text-on-surface-variant">Oct 23, 09:15</span>
+</div>
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest overflow-hidden border border-border-subtle shrink-0">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAZrBhYpU2P-NKVThNtiHwEcCyI1TIbuzhDSbyYpqxaAfL0bxhXMbcXP-1-UYonb6GamIHNrhOKPvBGY4sqQkFzEx9nrUD-x-WCeYEr7VnNjt6gJmrYYQ-VBgpDxmLpL4mHDFX1fBzs6U2i7LA6DBKhVr-Bo-u2fbf4RErSdriUOmXqGrsq3mqLj8wSrZQB2KL93NrQus_wrlxf_ic59qSUB1N7fL-e3enARteozZ_9uPWERfFtEYT6kKrWxS522i3_6MleGm6QF-c">
+</div>
+<span class="font-label-sm text-label-sm text-on-surface-variant">DeltaActual</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Pane: Review Inspector (65%) -->
+<div class="w-[65%] flex flex-col bg-surface-container/10"><!-- Map Header -->
+<div class="relative h-64 shrink-0 overflow-hidden">
+<img alt="Mission Map" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AP1WRLtxuwSoyDyCrRuQu8gTHWuSmoOWZq8e7gw0bSjjZCmteU96TomvCGHto-cuqHYV_0gxNUjw_Lx2SWgiEl2W3vEi6aVH84DpTky5lG8-FKDJOzH96TrwAJwGJwE3DSwSN1gRC7miWds0X7kNvMAZRBgQPu_5g2iX9RtJ3WYUlgHbfVLYcmV7TaHPUvhZHvvvKenG2B3S2CRER15d2kdG5YNFbtFwtwgzEIeYG2jP4GubWd7SMO0bADPFFA">
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 right-0 p-8 flex justify-between items-end">
+<div>
+<h2 class="font-headline-md text-headline-md text-white drop-shadow-md mb-2">Operation Sandstorm</h2>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden border border-white/20">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAap62oUmoabT5oA2I-c9v4YLR4HyDN8hdYF5h_X0yMiiZqiHTxpu1rS8VGOfCk37R11YH5oe-mOWSzzznJQx7y4-L1TgedNFJueRC1b4Sd7SBWCBtkL11igFkLjW4VNFxzeunyiquN87Vfg1MbPK2sF9cV-PnG8wNXZVA0jUrWF1mFh6iKT58HKvvm-MGVVK5GOk9OQUO8LFsOpuzoZgfvCQ-leObBgPgHt_RN_8wZsaPTgSXLpinh36nhUkOkSqPhezJsQFLQvhs">
+</div>
+<span class="font-label-md text-label-md text-white/80">PlayerOne</span>
+</div>
+<span class="text-white/40">•</span>
+<span class="font-code-md text-sm text-white/80">Oct 24, 2023</span>
+</div>
+</div>
+<div class="px-3 py-1 rounded bg-white/10 backdrop-blur-md border border-white/20">
+<span class="font-label-sm text-label-sm text-white">Terrain: <span class="text-primary">Arland</span></span>
+</div>
+</div>
+</div>
+<!-- Content Area -->
+<div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+<!-- Tactical Briefing -->
+<section class="mb-8">
+<h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Tactical Briefing</h3>
+<p class="font-body-md text-body-md text-on-surface leading-relaxed max-w-3xl">
+            Operation Sandstorm requires a coordinated assault on the Arland military complex. Intelligence suggests heavy armor presence near the primary airfield. BLUFOR units must secure the perimeter before advancing to the central command hub. Expect low visibility conditions due to incoming weather fronts.
+        </p>
+</section>
+<!-- Stats Grid -->
+<div class="grid grid-cols-3 gap-8 py-6 border-y border-white/5 mb-8">
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">BLUFOR</span>
+<span class="font-medium text-on-surface">42 <span class="font-code-md text-sm">Slots</span></span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">OPFOR</span>
+<span class="font-medium text-on-surface">AI Controlled</span>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Expected Duration</span>
+<span class="font-medium text-on-surface">90 <span class="font-code-md text-sm">Min</span></span>
+</div>
+</div>
+<!-- Secondary Action -->
+<button class="w-full py-4 bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-xl transition-colors flex items-center justify-center gap-3 text-primary font-label-md">
+<span class="material-symbols-outlined">analytics</span>
+        Launch Tactical Planner for Deep Review
+    </button><section class="mt-8 pt-8 border-t border-white/5">
+  <h3 class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider mb-4">Review Activity</h3>
+  <div class="space-y-4">
+    <div class="flex flex-col items-start gap-2">
+      <div class="bg-white/5 backdrop-blur-md border border-white/5 p-4 rounded-xl rounded-tl-none max-w-[85%]">
+        <p class="text-body-md text-on-surface">
+          <span class="font-bold text-primary">Author (PlayerOne):</span> Hey, I updated the OPFOR vehicle spawns like you asked.
+        </p>
+        <div class="mt-2 flex items-center gap-2">
+          <span class="font-code-md text-xs text-white/40">Today, 14:45</span>
+        </div>
+      </div>
+    </div>
+    <div class="relative mt-6">
+      <input type="text" placeholder="Leave a review comment or request changes..." class="w-full bg-white/5 border border-white/10 rounded-full px-6 py-3 text-on-surface placeholder:text-white/20 focus:outline-none focus:border-primary/30 transition-colors font-label-md">
+      <button class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-primary/70 hover:text-primary">
+        <span class="material-symbols-outlined">send</span>
+      </button>
+    </div>
+  </div>
+</section>
+</div>
+<!-- Action Bar (Preserved) -->
+<div class="p-6 border-t border-white/5 bg-surface-container/40 shrink-0 flex items-center justify-end gap-4">
+<button class="px-6 py-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 rounded-lg transition-colors font-label-md text-label-md border border-amber-500/30 flex items-center gap-2">
+  <span class="material-symbols-outlined text-[20px]">edit_note</span>
+  Request Changes
+</button>
+<button class="px-8 py-3 bg-[#10b981] hover:bg-[#059669] text-white rounded-lg transition-colors font-label-md text-label-md shadow-[0_0_20px_rgba(16,185,129,0.3)] flex items-center gap-2 font-bold">
+<span class="material-symbols-outlined text-[20px]">check_circle</span>
+        Approve &amp; Publish
+    </button>
+</div></div>
+</div>
+</main>
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+</style>
+
+
+</body></html>

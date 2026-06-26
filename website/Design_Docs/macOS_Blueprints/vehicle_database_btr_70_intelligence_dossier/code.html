@@ -1,0 +1,357 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Aegis Tactical Command - Vehicle Database</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#2f3445",
+                    "error-alert": "#f87171",
+                    "error": "#ffb4ab",
+                    "primary-fixed-dim": "#adc6ff",
+                    "on-surface-variant": "#c4c6d0",
+                    "on-background": "#dde2f7",
+                    "surface-variant": "#2f3445",
+                    "on-secondary-fixed": "#001a42",
+                    "secondary-fixed": "#d8e2ff",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-container": "#e6ecff",
+                    "tactical-yellow": "#facc15",
+                    "on-tertiary-container": "#005979",
+                    "primary-fixed": "#d8e2ff",
+                    "on-secondary-fixed-variant": "#004395",
+                    "inverse-surface": "#dde2f7",
+                    "background": "#0d1322",
+                    "on-surface": "#dde2f7",
+                    "inverse-primary": "#455e90",
+                    "on-tertiary-fixed-variant": "#004c69",
+                    "on-tertiary": "#00344a",
+                    "surface-container-lowest": "#080e1d",
+                    "surface-glass": "rgba(31, 41, 55, 0.7)",
+                    "outline": "#8e909a",
+                    "on-primary-fixed": "#001a42",
+                    "border-subtle": "#374151",
+                    "secondary": "#adc6ff",
+                    "on-error": "#690005",
+                    "surface-bright": "#333949",
+                    "surface-dim": "#0d1322",
+                    "on-primary-fixed-variant": "#2c4677",
+                    "inverse-on-surface": "#2a3040",
+                    "tertiary": "#c3e7ff",
+                    "tertiary-fixed-dim": "#7cd0ff",
+                    "primary": "#d8e2ff",
+                    "primary-container": "#adc6ff",
+                    "on-secondary": "#002e6a",
+                    "tertiary-fixed": "#c4e7ff",
+                    "tertiary-container": "#7bd0ff",
+                    "surface-container-low": "#151b2b",
+                    "surface-container": "#191f2f",
+                    "error-container": "#93000a",
+                    "on-primary-container": "#385283",
+                    "on-primary": "#122f5f",
+                    "surface-tint": "#adc6ff",
+                    "outline-variant": "#44474f",
+                    "on-tertiary-fixed": "#001e2c",
+                    "surface-container-high": "#242a3a",
+                    "secondary-container": "#0566d9",
+                    "success-muted": "#064e3b",
+                    "surface": "#0d1322",
+                    "secondary-fixed-dim": "#adc6ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "stack-sm": "0.5rem",
+                    "stack-lg": "2rem",
+                    "gutter": "1.5rem",
+                    "container-max": "1440px",
+                    "margin-mobile": "1rem",
+                    "stack-md": "1rem"
+            },
+            "fontFamily": {
+                    "body-lg": ["Inter"],
+                    "label-md": ["Inter"],
+                    "headline-sm": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "code-md": ["JetBrains Mono"]
+            },
+            "fontSize": {
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "label-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "label-sm": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg": ["30px", {"lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "code-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-lg overflow-hidden flex flex-col">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 border-b border-border-subtle bg-surface-dim flat no shadows flex justify-between items-center px-gutter h-16">
+<div class="flex items-center gap-6">
+<div class="font-headline-sm text-headline-sm font-bold text-primary tracking-tighter">TACTICAL SOP WIKI</div>
+<div class="hidden md:flex gap-6">
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Dashboard</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Missions</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Personnel</a>
+<a class="text-on-surface-variant font-medium hover:text-primary transition-colors cursor-pointer active:opacity-80" href="#">Support</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="settings">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container border border-border-subtle overflow-hidden">
+<img alt="Administrator Avatar" class="w-full h-full object-cover" data-alt="A detailed headshot of a military administrator avatar in low light, tactical aesthetic, wearing a headset and dark uniform." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGDgLwP5zisaP39FUwYjSrLb-NNp5K-bhGOBd0kEthViBkIhPrDGXZZolmk02Y1UogTTIF9LJwhz9HejtrssJ7V4VNynfT1-YK7MNgWgOzfJvIE6GTvR3l-IeYzt145DRF-k3eIHQH4B-JP4me5349L-fgEMM8_HoTMsq8fAh6fIQRC6FfIU_h-_M0jmXr0DytBbsfv5imWS2X_xZjGuc5cDU6eTnzYijHdlPxWE90hc7j5adKJDst1scMsAQ5OM6O4vYxsnDwkR4">
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex flex-1 pt-16">
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 border-r border-border-subtle bg-surface-container-low flat no shadows flex flex-col p-stack-md gap-stack-sm z-40">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 bg-surface-variant rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="shield">shield</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">Manuals</div>
+<div class="text-xs text-on-surface-variant">Operational Standards</div>
+</div>
+</div>
+<div class="flex flex-col gap-1 flex-1">
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-all scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="security">security</span>
+<span>Core Procedures</span>
+</a>
+<a class="flex items-center gap-3 p-2 bg-secondary-container text-on-secondary-container rounded-lg font-bold font-label-md text-label-md hover:bg-surface-variant transition-all scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+<span>Vehicle Ops</span>
+</a>
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-all scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_antenna">settings_input_antenna</span>
+<span>Communications</span>
+</a>
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-all scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="medical_services">medical_services</span>
+<span>Medical SOP</span>
+</a>
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-all scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span>ORBAT Structure</span>
+</a>
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md hover:bg-surface-variant transition-all scale-95 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+<span>Technical Data</span>
+</a>
+</div>
+<div class="mt-auto flex flex-col gap-2">
+<button class="w-full py-2 bg-primary text-on-primary font-label-md text-label-md rounded hover:opacity-90 transition-opacity">Publish Revision</button>
+<div class="border-t border-border-subtle pt-2 mt-2 flex flex-col gap-1">
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="archive">archive</span>
+<span>Archived</span>
+</a>
+<a class="flex items-center gap-3 p-2 text-on-surface-variant hover:bg-surface-variant rounded-lg font-label-md text-label-md transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="picture_as_pdf">picture_as_pdf</span>
+<span>Export PDF</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- MacOS Split Pane Container -->
+<main class="ml-64 flex-1 p-gutter relative h-[calc(100vh-64px)] overflow-hidden">
+<!-- Ambient Background Blur -->
+<div class="absolute inset-0 z-0 opacity-30">
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-container rounded-full mix-blend-screen filter blur-[100px]"></div>
+<div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-tertiary-container rounded-full mix-blend-screen filter blur-[100px]"></div>
+</div>
+<div class="relative z-10 w-full max-w-[1440px] mx-auto h-full flex rounded-xl border border-white/10 bg-slate-900/60 backdrop-blur-xl overflow-hidden shadow-2xl">
+<!-- Left Pane: List -->
+<div class="w-1/4 border-r border-white/10 flex flex-col bg-surface-container-lowest/50">
+<div class="p-4 border-b border-white/10">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2 text-on-surface-variant text-sm" data-icon="search">search</span>
+<input class="w-full bg-surface-container border border-border-subtle rounded py-1.5 pl-9 pr-3 text-sm text-on-surface placeholder:text-on-surface-variant focus:ring-1 focus:ring-primary focus:border-primary transition-all" placeholder="Search Database..." type="text">
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-2 space-y-6">
+<!-- US Forces -->
+<div>
+<div class="px-3 py-1 mb-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-xs" data-icon="flag">flag</span>
+                                US FORCES
+                            </div>
+<ul class="space-y-1">
+<li>
+<button class="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-variant/50 transition-colors flex justify-between items-center group">
+<span class="font-body-md text-body-md text-on-surface">LAV-25</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</li>
+<li>
+<button class="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-variant/50 transition-colors flex justify-between items-center group">
+<span class="font-body-md text-body-md text-on-surface">M1A1 Abrams</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</li>
+</ul>
+</div>
+<!-- USSR Forces -->
+<div>
+<div class="px-3 py-1 mb-2 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-xs" data-icon="flag">flag</span>
+                                USSR FORCES
+                            </div>
+<ul class="space-y-1">
+<li>
+<button class="w-full text-left px-3 py-2 rounded-lg bg-surface-variant/80 border border-primary/30 relative flex justify-between items-center shadow-[inset_0_0_15px_rgba(173,198,255,0.1)]">
+<div class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/4 bg-primary rounded-r"></div>
+<span class="font-body-md text-body-md text-primary font-medium ml-2">BTR-70</span>
+<span class="material-symbols-outlined text-primary text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</li>
+<li>
+<button class="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-variant/50 transition-colors flex justify-between items-center group">
+<span class="font-body-md text-body-md text-on-surface">BMP-2</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</li>
+<li>
+<button class="w-full text-left px-3 py-2 rounded-lg hover:bg-surface-variant/50 transition-colors flex justify-between items-center group">
+<span class="font-body-md text-body-md text-on-surface">T-72A</span>
+<span class="material-symbols-outlined text-on-surface-variant opacity-0 group-hover:opacity-100 transition-opacity text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<!-- Right Pane: Dossier -->
+<div class="w-3/4 flex flex-col bg-surface-dim/80 overflow-y-auto relative">
+<!-- Hero Image Area -->
+<div class="relative h-72 w-full border-b border-border-subtle bg-surface-container">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 mix-blend-luminosity" data-alt="A highly detailed, cinematic render of a Russian BTR-70 armored personnel carrier in a dense, fog-filled forest at twilight. The vehicle is lit by moody, high-contrast cool blue moonlight and subtle warm orange flares in the background. The aesthetic is tactical military intelligence, dark mode, high-fidelity." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAa6uQ_tsnbNhDf8cIp17ebpWDCdpJntK9g1ME75jrq_heGg9E-S3PYbbWNY2nunPGsJZDn-Zd7FEt3Jff2dDz_ZIqRZzxXlXp3OKqkQIoTmXkozbiwqK3iC_VLuc3hKtPKcznvLKREbs_XU_mNuUq7r7Wx9aX6GYMjJrlVza8sEz5zAAcKFdjbj5giyYLbY8jd3ZoBYl-IEL8aAWt9a9P6R7bs7wJyjK1DEuGhhu-z1dypXTXCul5dANMGZJAcAwNp4Hk4C_5-60c')"></div>
+<!-- Glowing Target Bracket Overlay -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="relative w-48 h-48 border-2 border-error/50 animate-pulse">
+<div class="absolute -top-2 -left-2 w-4 h-4 border-t-4 border-l-4 border-error"></div>
+<div class="absolute -top-2 -right-2 w-4 h-4 border-t-4 border-r-4 border-error"></div>
+<div class="absolute -bottom-2 -left-2 w-4 h-4 border-b-4 border-l-4 border-error"></div>
+<div class="absolute -bottom-2 -right-2 w-4 h-4 border-b-4 border-r-4 border-error"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-error opacity-70" data-icon="my_location">my_location</span>
+</div>
+</div>
+</div>
+<!-- Gradient Fade -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-dim/90 via-surface-dim/20 to-transparent"></div>
+<!-- Header Content over Image -->
+<div class="absolute bottom-6 left-8 flex items-end justify-between w-[calc(100%-4rem)]">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="px-2 py-0.5 bg-surface-glass border border-white/20 rounded font-code-md text-code-md text-primary text-xs">CLASS: APC</span>
+<span class="px-2 py-0.5 bg-error/20 border border-error/30 rounded font-code-md text-code-md text-error text-xs">THREAT: MED</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-white drop-shadow-md">BTR-70</h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xl">Eight-wheeled armored personnel carrier. Highly mobile, amphibious, vulnerable to heavy munitions.</p>
+</div>
+<button class="w-10 h-10 rounded-full border border-white/20 bg-surface-glass flex items-center justify-center hover:bg-surface-variant transition-colors group">
+<span class="material-symbols-outlined text-on-surface group-hover:text-primary transition-colors" data-icon="share">share</span>
+</button>
+</div>
+</div>
+<!-- Dossier Content -->
+<div class="p-8 space-y-8 flex-1">
+<!-- Critical Directive -->
+<div class="bg-tactical-yellow/10 border-l-4 border-tactical-yellow p-4 rounded-r flex gap-3 items-start">
+<span class="material-symbols-outlined text-tactical-yellow mt-0.5" data-icon="warning">warning</span>
+<div class="font-body-md text-body-md text-tactical-yellow">
+<strong>CRITICAL:</strong> Do NOT engage armored contacts unless you have positively identified them. Friendly LAV-25 profiles are similar at range.
+                            </div>
+</div>
+<!-- Telemetry Grid -->
+<div>
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4 border-b border-border-subtle pb-2">Technical Telemetry</h2>
+<div class="grid grid-cols-3 gap-4">
+<div class="bg-surface-container-high border border-border-subtle rounded p-3 flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant mb-1">MOBILITY</span>
+<span class="font-code-md text-code-md text-primary">AMPHIBIOUS: 5KM/H</span>
+<span class="font-code-md text-code-md text-on-surface">ROAD: 80KM/H</span>
+</div>
+<div class="bg-surface-container-high border border-border-subtle rounded p-3 flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant mb-1">DEFENSE</span>
+<span class="font-code-md text-code-md text-primary">ARMOR: LIGHT</span>
+<span class="font-code-md text-code-md text-on-surface">FRONT: 10MM</span>
+</div>
+<div class="bg-surface-container-high border border-border-subtle rounded p-3 flex flex-col">
+<span class="font-label-sm text-label-sm text-on-surface-variant mb-1">CAPACITY</span>
+<span class="font-code-md text-code-md text-primary">CREW: 2 + 8</span>
+<span class="font-code-md text-code-md text-on-surface">RANGE: 400KM</span>
+</div>
+</div>
+</div>
+<!-- Weapons & Threats -->
+<div class="grid grid-cols-2 gap-8">
+<div>
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4 border-b border-border-subtle pb-2">Armament</h2>
+<ul class="space-y-3">
+<li class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-border-subtle">
+<span class="material-symbols-outlined text-sm text-on-surface" data-icon="ads_click">ads_click</span>
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">14.5 mm KPVT</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Heavy Machine Gun (Primary)</div>
+</div>
+</li>
+<li class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-surface-container-highest flex items-center justify-center border border-border-subtle">
+<span class="material-symbols-outlined text-sm text-on-surface" data-icon="track_changes">track_changes</span>
+</div>
+<div>
+<div class="font-label-md text-label-md text-on-surface">7.62 mm PKT</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Coaxial Machine Gun</div>
+</div>
+</li>
+</ul>
+</div>
+<div>
+<h2 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-widest mb-4 border-b border-border-subtle pb-2">Primary Threats To Target</h2>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 rounded-full bg-secondary-container/20 border border-secondary-container text-secondary text-xs font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="bolt">bolt</span> Heavy MG
+                                    </span>
+<span class="px-3 py-1 rounded-full bg-secondary-container/20 border border-secondary-container text-secondary text-xs font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="person">person</span> Infantry AT
+                                    </span>
+<span class="px-3 py-1 rounded-full bg-secondary-container/20 border border-secondary-container text-secondary text-xs font-label-sm flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="flight">flight</span> CAS
+                                    </span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

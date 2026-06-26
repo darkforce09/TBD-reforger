@@ -1,0 +1,1476 @@
+{
+  "next_id": 113,
+  "tickets": [
+    {
+      "id": "T-001",
+      "title": "Initial backend",
+      "summary": "Full schema, handlers, and API scaffold.",
+      "program": "backend",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 10
+    },
+    {
+      "id": "T-002",
+      "title": "Discord OAuth2",
+      "summary": "Discord OAuth2 callback end-to-end.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "api",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 20
+    },
+    {
+      "id": "T-003",
+      "title": "Dev login shortcut",
+      "summary": "Development dev-login endpoint for local testing.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "api"
+      ],
+      "status": "shipped",
+      "order": 30
+    },
+    {
+      "id": "T-004",
+      "title": "Frontend wired to backend",
+      "summary": "Typed hooks, auth bootstrap, all pages on live data.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "api",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 40
+    },
+    {
+      "id": "T-005",
+      "title": "Platform documentation seed (pass 1)",
+      "summary": "Documentation and seed work between T-004 scaffold and T-008 campaign refactor.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 50
+    },
+    {
+      "id": "T-006",
+      "title": "Platform documentation seed (pass 2)",
+      "summary": "Documentation and seed work between T-004 scaffold and T-008 campaign refactor.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 60
+    },
+    {
+      "id": "T-008",
+      "title": "Event to Campaign refactor",
+      "summary": "Multi-mission events, event_missions, automated ORBAT.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "ORBAT"
+      ],
+      "impact": [
+        "api",
+        "schema",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 80
+    },
+    {
+      "id": "T-009",
+      "title": "Inline ORBAT on Event Hub",
+      "summary": "Faction/squad/slot selector inline on Event Hub.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "ORBAT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 90
+    },
+    {
+      "id": "T-010",
+      "title": "Rich ORBAT slots + squad reservation",
+      "summary": "Per-slot loadout/tag schema and leader squad holds.",
+      "program": "platform",
+      "surfaces": [
+        "ORBAT"
+      ],
+      "impact": [
+        "api",
+        "schema",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 100
+    },
+    {
+      "id": "T-011",
+      "title": "Aegis design system foundation",
+      "summary": "macOS Aegis palette, glass primitives, shared UI components.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 110
+    },
+    {
+      "id": "T-012",
+      "title": "macOS page split-pane redesigns",
+      "summary": "Split-pane master/detail across platform pages.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 120
+    },
+    {
+      "id": "T-013",
+      "title": "macOS dashboards and grids restyle",
+      "summary": "Glass bento dashboards and mission library grid.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 130
+    },
+    {
+      "id": "T-018",
+      "title": "R3 mono telemetry",
+      "summary": "JetBrains Mono for player counts and ORBAT slot counts.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 180
+    },
+    {
+      "id": "T-019",
+      "title": "R5 shared Sheet primitive",
+      "summary": "Mission dossier moved to shared Sheet component.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 190
+    },
+    {
+      "id": "T-020",
+      "title": "R4 token sweep (phase 1)",
+      "summary": "Replace off-palette colors with Aegis tokens.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 200
+    },
+    {
+      "id": "T-021",
+      "title": "R1/R2 full-bleed + SplitPane",
+      "summary": "Full-bleed routes and SplitPane migration.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 210
+    },
+    {
+      "id": "T-022",
+      "title": "Global Aegis consistency (batch 2)",
+      "summary": "Mono telemetry and token fixes across pages.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 220
+    },
+    {
+      "id": "T-023",
+      "title": "Global Aegis consistency (batch 3)",
+      "summary": "Token sweep and SplitPane on remaining pages.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 230
+    },
+    {
+      "id": "T-024",
+      "title": "Event Manager calendar anti-pattern fix",
+      "summary": "Calendar + per-day op list replaces form-over-list.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 240
+    },
+    {
+      "id": "T-025",
+      "title": "Global Aegis consistency (final batch)",
+      "summary": "Final token and layout consistency pass.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 250
+    },
+    {
+      "id": "T-029",
+      "title": "Mission Creator core viewport",
+      "summary": "Deck.gl orthographic TacticalMap with terrain grid.",
+      "program": "eden",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 290,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-030",
+      "title": "Y.Doc state foundation",
+      "summary": "Normalized Y.Doc store mirrored to Zustand with persistence.",
+      "program": "eden",
+      "surfaces": [
+        "DATA",
+        "MAP"
+      ],
+      "impact": [
+        "state",
+        "persistence"
+      ],
+      "status": "shipped",
+      "order": 300,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-031",
+      "title": "Aegis-glass editor shell",
+      "summary": "Full-bleed map under frosted command strip and toolbelt.",
+      "program": "eden",
+      "surfaces": [
+        "TOP",
+        "BOTTOM"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 310,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-032",
+      "title": "Eden Editor tree paradigm",
+      "summary": "Outliner, asset browser, Attributes modal tree UI.",
+      "program": "eden",
+      "surfaces": [
+        "LEFT",
+        "RIGHT",
+        "ATTR"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 320,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-033",
+      "title": "Wire Outliner and asset drag-to-map",
+      "summary": "Editor layers entity map and palette drop creates slots.",
+      "program": "eden",
+      "surfaces": [
+        "LEFT",
+        "RIGHT",
+        "MAP"
+      ],
+      "impact": [
+        "state",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 330,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-034",
+      "title": "MC doc alignment",
+      "summary": "Eden UX spec and agent execution plan documentation.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 340,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-035",
+      "title": "Eden docked shell",
+      "summary": "Chromeless route, docked sidebars, always-on asset palette.",
+      "program": "eden",
+      "surfaces": [
+        "LEFT",
+        "RIGHT",
+        "TOP"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 350,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-036",
+      "title": "Map drag and multi-select",
+      "summary": "Drag-move, marquee select, group move/delete ops.",
+      "program": "eden",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 360,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-037",
+      "title": "Outliner tree ops",
+      "summary": "Layer rename, reparent, move slot, delete folder subtree.",
+      "program": "eden",
+      "surfaces": [
+        "LEFT"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 370,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-038",
+      "title": "Compiler and persistence",
+      "summary": "Mission compile/export, hydrate, Save Version POST flow.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "compiler",
+        "persistence",
+        "api"
+      ],
+      "status": "shipped",
+      "order": 380,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-039",
+      "title": "Save Version error surfacing",
+      "summary": "Backend error messages and invalid mission id banner.",
+      "program": "eden",
+      "surfaces": [
+        "TOP"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "status": "shipped",
+      "order": 390,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-040",
+      "title": "Create mission wizard wiring",
+      "summary": "Create wizard sends max_players and real weather enums.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "status": "shipped",
+      "order": 400,
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-043",
+      "title": "Platform documentation reorg",
+      "summary": "Docs hub, domain ROADMAPs, FD vs T split.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 430
+    },
+    {
+      "id": "T-045",
+      "title": "Roadmap-centric naming",
+      "summary": "Domain ROADMAP.md files replace numbered doc paths.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 450
+    },
+    {
+      "id": "T-046",
+      "title": "Doc link integrity pass",
+      "summary": "Stale numbered cross-refs and relative link depths fixed.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 460
+    },
+    {
+      "id": "T-047",
+      "title": "Doc authority alignment",
+      "summary": "agent_execution and wiki manifest deduped.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "order": 470
+    },
+    {
+      "id": "T-048",
+      "title": "Mission create from Library dialog",
+      "summary": "CreateMissionDialog replaces standalone create route.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 480,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t048_library_create_dialog.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-049",
+      "title": "Terrain, title, numeric position",
+      "summary": "Terrain viewport, row meta hydrate, editable transform fields.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "ATTR",
+        "TOP",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 490,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t049_terrain_title_position.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-050",
+      "title": "Cursor Z readout",
+      "summary": "Toolbelt shows X/Y/Z including cursor Z on flat map.",
+      "program": "eden",
+      "surfaces": [
+        "BOTTOM"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 500,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t050_cursor_z_readout.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-052",
+      "title": "Undo/redo keyboard shortcuts",
+      "summary": "Ctrl/Cmd+Z/Y undo-redo with StrictMode lifecycle fix.",
+      "program": "eden",
+      "surfaces": [
+        "TOP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 520,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t052_undo_shortcuts.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-053",
+      "title": "Ctrl/Cmd additive select",
+      "summary": "Modifier-click toggles slot in/out of selection.",
+      "program": "eden",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 530,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t053_additive_select.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-054",
+      "title": "Attributes modal entry points",
+      "summary": "Native dblclick on map and ORBAT opens Attributes.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "LEFT",
+        "ATTR"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 540,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t054_attributes_entry_points.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-055",
+      "title": "Asset browser search",
+      "summary": "Case-insensitive label search in Factions asset tree.",
+      "program": "eden",
+      "surfaces": [
+        "RIGHT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 550,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t055_asset_browser_search.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-056",
+      "title": "Ctrl+C/V copy-paste",
+      "summary": "Copy slot selection and paste at cursor preserving layout.",
+      "program": "eden",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 560,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t056_copy_paste.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-057",
+      "title": "Map performance hotfix",
+      "summary": "Cursor off render path, no hover pick, pan coalescing, memo.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "BOTTOM"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 570,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-058",
+      "title": "Entity count readout",
+      "summary": "OBJ total and SEL selected counts in toolbelt.",
+      "program": "eden",
+      "surfaces": [
+        "BOTTOM"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 580,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t058_entity_count_readout.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-059",
+      "title": "Bulk paste/delete at scale",
+      "summary": "O(n) pasteSlots batch writes and selection cap at 10k paste.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "LEFT"
+      ],
+      "impact": [
+        "perf",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 590,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t059_bulk_paste_operations.md",
+      "route": "/missions/:id/edit"
+    },
+    {
+      "id": "T-060",
+      "title": "Fast load and save at scale",
+      "summary": "256MB body limit, bulk sync load overlay, save progress UX.",
+      "program": "scale",
+      "surfaces": [
+        "DATA",
+        "TOP"
+      ],
+      "impact": [
+        "api",
+        "perf",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 600,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t060_fast_initial_load.md"
+    },
+    {
+      "id": "T-061",
+      "title": "Drag-move performance at 360k",
+      "summary": "Dual IconLayer drag preview at ~60fps for 360k slots.",
+      "program": "scale",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 610,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t061_drag_move_hotfix.md"
+    },
+    {
+      "id": "T-062",
+      "title": "Incremental bindings at 360k",
+      "summary": "O(k) Zustand patches instead of full docToSnapshot on edits.",
+      "program": "scale",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "perf",
+        "state"
+      ],
+      "status": "shipped",
+      "order": 620,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t062_incremental_bindings.md"
+    },
+    {
+      "id": "T-063",
+      "title": "Spatial index for pick",
+      "summary": "rbush R-tree pickNearest/pickRect replaces Deck GPU pick.",
+      "program": "scale",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 630,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t063_spatial_index.md"
+    },
+    {
+      "id": "T-064",
+      "title": "Virtualized outliner at 367k",
+      "summary": "TanStack virtual outliner replaces leaf cap band-aid.",
+      "program": "scale",
+      "surfaces": [
+        "LEFT"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 640,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md"
+    },
+    {
+      "id": "T-065",
+      "title": "Cluster LOD at extreme zoom",
+      "summary": "Supercluster index with pan-stable cache for 367k missions.",
+      "program": "scale",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "status": "shipped",
+      "order": 650,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t065_cluster_lod.md"
+    },
+    {
+      "id": "T-066",
+      "title": "Worker compile offload",
+      "summary": "Save/Export compile in Comlink worker via pickMapSnapshot.",
+      "program": "scale",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "perf",
+        "compiler"
+      ],
+      "status": "shipped",
+      "order": 660,
+      "spec": "Design_Docs/Mission_Creator_Architecture/t066_worker_compile.md"
+    },
+    {
+      "id": "T-067",
+      "order": 670,
+      "program": "scale",
+      "status": "shipped",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "perf",
+        "state"
+      ],
+      "title": "Spatial chunks",
+      "summary": "Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on.",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md",
+      "slices": [
+        "T-067.0",
+        "T-067.0.1",
+        "T-067.1"
+      ],
+      "unblocks": [
+        "T-068"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-067"
+    },
+    {
+      "id": "T-068",
+      "order": 680,
+      "program": "eden",
+      "status": "ready",
+      "surfaces": [
+        "RIGHT",
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "ui",
+        "state"
+      ],
+      "title": "Asset registry + palette",
+      "summary": "Replace mock catalog with registry-backed Factions tree.",
+      "depends_on": [
+        "T-067"
+      ],
+      "unblocks": [
+        "T-069",
+        "T-070",
+        "T-071"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-068",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md",
+      "slices": [
+        "T-068.0",
+        "T-068.1"
+      ],
+      "active_slice": "T-068.0"
+    },
+    {
+      "id": "T-069",
+      "order": 690,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "MAP",
+        "MRK"
+      ],
+      "impact": [
+        "ui",
+        "state",
+        "schema"
+      ],
+      "title": "Markers on map",
+      "summary": "Place and edit map markers with registry-backed types.",
+      "depends_on": [
+        "T-068"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-069"
+    },
+    {
+      "id": "T-070",
+      "order": 700,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "MAP",
+        "VEH",
+        "RIGHT"
+      ],
+      "impact": [
+        "ui",
+        "state",
+        "schema"
+      ],
+      "title": "Vehicles placeable",
+      "summary": "Drag vehicles from palette onto map with crew hooks.",
+      "depends_on": [
+        "T-068"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-070"
+    },
+    {
+      "id": "T-071",
+      "order": 710,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "TOP",
+        "ORBAT",
+        "ATTR"
+      ],
+      "impact": [
+        "ui",
+        "state",
+        "schema",
+        "compiler"
+      ],
+      "title": "ORBAT Manager modal",
+      "summary": "Remove duplicate ORBAT tree from left sidebar; open ORBAT Manager modal for all-side faction/squad/slot authoring, slotting-screen order, standardizations, logos, and arsenal.",
+      "slices": [
+        "T-071.0",
+        "T-071.1",
+        "T-071.2",
+        "T-071.3",
+        "T-071.4"
+      ],
+      "depends_on": [
+        "T-068"
+      ],
+      "implements": [
+        "LEFT-ORBAT-001",
+        "CONN-GROUP-001",
+        "API-ORBAT-001",
+        "ATTR-TAB-004"
+      ],
+      "user_story": "As a mission maker I open ORBAT Manager once to configure all factions, squads, kits, and slotting order without hunting the same slots in two left trees.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-071"
+    },
+    {
+      "id": "T-072",
+      "order": 720,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Ctrl multi-place",
+      "summary": "Hold Ctrl to place multiple copies without re-selecting asset.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-072"
+    },
+    {
+      "id": "T-073",
+      "order": 730,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "MAP",
+        "XFORM"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Shift + map rotation",
+      "summary": "Shift-drag and map rotation widget for placed entities.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-073"
+    },
+    {
+      "id": "T-074",
+      "order": 740,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "RIGHT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Faction submode / catalog filter",
+      "summary": "Faction submode tabs and catalog filtering in asset browser.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-074"
+    },
+    {
+      "id": "T-075",
+      "order": 750,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Spacebar flyTo vs widget",
+      "summary": "Spacebar centers selection; resolve flyTo vs transform widget conflict.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-075"
+    },
+    {
+      "id": "T-076",
+      "order": 760,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "VEH",
+        "ATTR"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Vehicle crew UI",
+      "summary": "Crew panel and boarding UI for placed vehicles.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-076"
+    },
+    {
+      "id": "T-077",
+      "order": 770,
+      "program": "eden",
+      "status": "queued",
+      "surfaces": [
+        "MAP",
+        "VEH"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Alt + empty vehicle",
+      "summary": "Alt-click to enter empty vehicle placement mode.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-077"
+    },
+    {
+      "id": "T-078",
+      "order": 780,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "COMP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Custom compositions",
+      "summary": "Save and place custom entity compositions.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-078"
+    },
+    {
+      "id": "T-079",
+      "order": 790,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "state",
+        "schema"
+      ],
+      "title": "Triggers + waypoints + systems",
+      "summary": "Trigger volumes, waypoints, and game logic systems.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-079"
+    },
+    {
+      "id": "T-080",
+      "order": 800,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Connection / sync UI",
+      "summary": "Entity connection lines and sync group authoring.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-080"
+    },
+    {
+      "id": "T-081",
+      "order": 810,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "MAP",
+        "XFORM"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Transform widget + snap grid",
+      "summary": "On-map transform gizmo and snap grid.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-081"
+    },
+    {
+      "id": "T-082",
+      "order": 820,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "ATTR"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Full attribute fields",
+      "summary": "Complete Attributes modal field parity with Eden.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-082"
+    },
+    {
+      "id": "T-083",
+      "order": 830,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "TOP"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Top menu bar",
+      "summary": "Eden-style top menu bar with file/edit/view stubs.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-083"
+    },
+    {
+      "id": "T-084",
+      "order": 840,
+      "program": "eden",
+      "status": "deferred",
+      "surfaces": [
+        "RIGHT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Classname / mod prefix search",
+      "summary": "Classname-prefix search in asset browser.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-084"
+    },
+    {
+      "id": "T-085",
+      "order": 850,
+      "program": "platform",
+      "status": "deferred",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Wiki markdown renderer",
+      "summary": "Render doctrine wiki pages from markdown at /wiki.",
+      "route": "/wiki",
+      "branch": "ticket/T-085"
+    },
+    {
+      "id": "T-086",
+      "order": 860,
+      "program": "platform",
+      "status": "deferred",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "title": "Server Control + RCON API",
+      "summary": "Live server control panel wired to RCON backend.",
+      "route": "/server-control",
+      "branch": "ticket/T-086"
+    },
+    {
+      "id": "T-087",
+      "order": 870,
+      "program": "platform",
+      "status": "deferred",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "CMS rich text editor",
+      "summary": "Rich text editor for announcements and CMS content.",
+      "route": "/admin/content",
+      "branch": "ticket/T-087"
+    },
+    {
+      "id": "T-088",
+      "order": 880,
+      "program": "platform",
+      "status": "deferred",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "title": "Multi-server picker",
+      "summary": "Select among multiple game servers in intel views.",
+      "route": "/server-intel",
+      "branch": "ticket/T-088"
+    },
+    {
+      "id": "T-089",
+      "order": 890,
+      "program": "platform",
+      "status": "deferred",
+      "surfaces": [
+        "TOP",
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "ui"
+      ],
+      "title": "Mission title PATCH sync",
+      "summary": "PATCH mission title to server on edit (absorbs former T-051 scope).",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-089"
+    },
+    {
+      "id": "T-090",
+      "order": 900,
+      "program": "infra",
+      "status": "deferred",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Aligned map tiles",
+      "summary": "Hosted aligned map tiles for mission editor basemap.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-091",
+      "order": 910,
+      "program": "infra",
+      "status": "deferred",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "schema"
+      ],
+      "title": "DEM + auto Z",
+      "summary": "Digital elevation model feeding real Z coordinates.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-091"
+    },
+    {
+      "id": "T-092",
+      "order": 920,
+      "program": "infra",
+      "status": "deferred",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "title": "Mod golden coordinate test",
+      "summary": "Golden-file coordinate tests for mod envelope export.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-092"
+    },
+    {
+      "id": "T-093",
+      "order": 930,
+      "program": "scale",
+      "status": "deferred",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "persistence",
+        "ui"
+      ],
+      "title": "Continuous autosave polish",
+      "summary": "Background autosave UX and conflict handling polish.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-093"
+    },
+    {
+      "id": "T-094",
+      "order": 940,
+      "program": "scale",
+      "status": "deferred",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "perf"
+      ],
+      "title": "Typed-array IconLayer",
+      "summary": "Typed-array slot icon buffer for mega-mission render path.",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-094"
+    },
+    {
+      "id": "T-095",
+      "order": 950,
+      "program": "backend",
+      "status": "deferred",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "schema"
+      ],
+      "title": "Per-handler API reference doc",
+      "summary": "Complete docs/backend/api.md per-handler reference.",
+      "route": "/api/v1",
+      "branch": "ticket/T-095"
+    },
+    {
+      "id": "T-096",
+      "order": 960,
+      "program": "backend",
+      "status": "deferred",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "api"
+      ],
+      "title": "Live game-server telemetry bridge",
+      "summary": "Bridge live game-server events into telemetry ingest.",
+      "route": "/api/v1/telemetry",
+      "branch": "ticket/T-096"
+    },
+    {
+      "id": "T-110",
+      "order": 1100,
+      "program": "infra",
+      "status": "deferred",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "schema",
+        "persistence"
+      ],
+      "title": "Terrain base + sparse deltas",
+      "summary": "Binary terrain base layer plus sparse delta props for 1M+ map objects.",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-110"
+    },
+    {
+      "id": "T-111",
+      "title": "Lazy chunk residency @ 1M",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
+      "program": "scale",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "perf",
+        "state",
+        "persistence"
+      ],
+      "status": "idea",
+      "depends_on": [
+        "T-067"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-111",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md",
+      "slices": [
+        "T-067.1"
+      ]
+    },
+    {
+      "id": "T-112",
+      "title": "GPU viewport cull (DataFilterExtension)",
+      "summary": "Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile.",
+      "program": "scale",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "perf"
+      ],
+      "status": "idea",
+      "depends_on": [
+        "T-067"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-112",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md"
+    }
+  ]
+}

@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reforger HQ - Global Leaderboards</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed-variant": "#004395",
+                        "tertiary": "#7bd0ff",
+                        "surface-container-high": "#242a3a",
+                        "outline": "#8c909f",
+                        "success-muted": "#064e3b",
+                        "on-error-container": "#ffdad6",
+                        "surface-container-lowest": "#080e1d",
+                        "secondary": "#bdc7d9",
+                        "on-tertiary-fixed": "#001e2c",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "on-secondary": "#27313f",
+                        "surface-dim": "#0d1322",
+                        "on-error": "#690005",
+                        "on-tertiary": "#00354a",
+                        "inverse-primary": "#005ac2",
+                        "primary-fixed-dim": "#adc6ff",
+                        "secondary-container": "#404a59",
+                        "surface-bright": "#33394a",
+                        "surface-variant": "#2f3445",
+                        "on-background": "#dde2f8",
+                        "primary": "#adc6ff",
+                        "on-tertiary-container": "#002d40",
+                        "on-surface": "#ffffff",
+                        "secondary-fixed": "#d9e3f6",
+                        "surface-container-highest": "#2f3445",
+                        "on-primary-container": "#00285d",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-surface-variant": "#c2c6d6",
+                        "background": "#0d1322",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "surface": "#0d1322",
+                        "on-primary": "#002e6a",
+                        "error": "#f87171",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary-container": "#009bd1",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#dde2f8",
+                        "on-primary-fixed": "#001a42",
+                        "surface-container-low": "#151b2b",
+                        "inverse-on-surface": "#2a3040",
+                        "surface-tint": "#adc6ff",
+                        "surface-container": "#191f2f",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "primary-container": "#4d8eff",
+                        "border-subtle": "#374151",
+                        "on-secondary-fixed": "#121c2a",
+                        "on-secondary-container": "#afb9cb",
+                        "outline-variant": "#424754"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "margin-mobile": "1rem",
+                        "gutter": "1.5rem",
+                        "stack-md": "1rem",
+                        "container-max": "1440px",
+                        "stack-lg": "2rem"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "headline-sm": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "code-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen">
+<main class="max-w-container-max mx-auto p-gutter space-y-stack-lg">
+<!-- Header & Search -->
+<header class="flex flex-col md:flex-row md:items-center justify-between gap-stack-md">
+<div>
+<h1 class="font-headline-lg text-headline-lg">Global Leaderboards</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Real-time tactical performance metrics across all active theaters.</p>
+</div>
+<div class="relative w-full md:w-96">
+<input class="w-full bg-surface-container-low border border-border-subtle rounded-DEFAULT text-on-surface font-body-md py-2 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent placeholder-on-surface-variant" placeholder="Search operatives..." type="text"/>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+</div>
+</header>
+<!-- Navigation Tabs -->
+<nav class="flex overflow-x-auto pb-2 border-b border-border-subtle gap-stack-md no-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 font-label-md text-label-md text-primary border-b-2 border-primary">K/D Ratio</button>
+<button class="whitespace-nowrap px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors">Command Win Rate</button>
+<button class="whitespace-nowrap px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors">Missions Played</button>
+<button class="whitespace-nowrap px-4 py-2 font-label-md text-label-md text-on-surface-variant hover:text-on-surface transition-colors">Longest Kill</button>
+<button class="whitespace-nowrap px-4 py-2 font-label-md text-label-md text-error hover:text-error-container transition-colors">Wall of Shame (Team Kills)</button>
+</nav>
+<!-- Podium Section -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-stack-md items-end pt-8 pb-4">
+<!-- 2nd Place -->
+<div class="bg-surface-container rounded-lg border border-border-subtle p-6 flex flex-col items-center relative order-2 md:order-1 h-[250px] justify-end">
+<div class="absolute -top-8 bg-surface-container p-2 rounded-full border-2 border-[#9ca3af]">
+<img alt="Avatar" class="w-16 h-16 rounded-full object-cover" data-alt="A close-up portrait of a serious military operative in tactical gear, looking intensely at the camera. The lighting is moody and cinematic, with strong contrasts and a high-tech, futuristic vibe. The background is a blurred command center setting with glowing monitors. The color palette features cool blues and stark shadows." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0VGZsGGbjEKxAmZisE9pRcSe_hdsaVj7Pyib6q4x7C0sGV3I_UcuAnBwTk2yCYYm0mW7oEliZpGvZEwZ7woQlcaq9vgP_VAB2CMzwWlYJ1GiGMOtzXHLmTvhX5GRPlAx9lOOSbDnTdCtHbzf5qaoaDGlhsw4OiEjvzGIVXV30MfaFDUw_wMjRlDpR7qZCg9TBzCNthimSMQE86tpTHNpKUsgHr1yKikmgL3gWA67c7S9NDqIFrGlKbB80UbkfmJJ2hfDJnylmHVk"/>
+</div>
+<span class="font-headline-md text-headline-md text-[#9ca3af] mb-2">#2</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Viper_Actual</h3>
+<p class="font-code-md text-code-md text-tertiary mt-2">3.8 K/D</p>
+</div>
+<!-- 1st Place -->
+<div class="bg-surface-container-high rounded-lg border border-[#f59e0b] shadow-[0_0_15px_rgba(245,158,11,0.2)] p-6 flex flex-col items-center relative order-1 md:order-2 h-[280px] justify-end transform md:-translate-y-4">
+<div class="absolute -top-10 bg-surface-container-high p-2 rounded-full border-4 border-[#f59e0b]">
+<img alt="Avatar" class="w-20 h-20 rounded-full object-cover" data-alt="A portrait of an elite commander in a dark, high-tech uniform. The subject exudes confidence and authority. Cinematic lighting highlights sharp facial features against a very dark, minimalist background. The color palette is dominated by deep blacks and crisp whites, with subtle hints of gold reflecting off the uniform details." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnnhejbvd95RZWS_8jZ3nAX6ShO5MKW2jhzQdxC2du1gRqpgwNnGhMUdkE3igAHjEcMZSjlXHjnKryDaRsJ45Cg_J0laUJpwZrcVCG4EDBBynsHs2eyN8ZD3MsWpeCnNV0ywM62xcKBEq2DJSNi3_2sITCXBQgr_VYmTsQ_n9kxivkRgBQKK4PodVciKctGuYbquBlvamN6TD20Ob4KH5igjZHZE05kxZof1VXxUG6dfiaBCT2bIXy6u_G-kKd3HRs2bMQJuXPvVI"/>
+</div>
+<span class="material-symbols-outlined text-[#f59e0b] text-4xl mb-1" style="font-variation-settings: 'FILL' 1;">workspace_premium</span>
+<span class="font-headline-lg text-headline-lg text-[#f59e0b] mb-2">#1</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">Ghost_Reaper</h3>
+<p class="font-code-md text-code-md text-tertiary mt-2 font-bold text-lg">4.2 K/D</p>
+</div>
+<!-- 3rd Place -->
+<div class="bg-surface-container rounded-lg border border-border-subtle p-6 flex flex-col items-center relative order-3 md:order-3 h-[230px] justify-end">
+<div class="absolute -top-8 bg-surface-container p-2 rounded-full border-2 border-[#b45309]">
+<img alt="Avatar" class="w-16 h-16 rounded-full object-cover" data-alt="A portrait of a focused tactical analyst wearing a headset. The expression is intense and concentrated. The setting is dimly lit, suggesting a late-night operation in a command bunker. The image utilizes a cool color grading with stark, dramatic lighting emphasizing the tech aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDOZVhnCjWWeA1ADqmvn52hCin4UZEelQsxfgJma-G1hPNFLaTGmkBRNunb-3CiYpKwr9pCCQ1IHXHfuNzHtmoLtPqQ05Dn_5MYV49AM3cdJ22aZcwvaX4A-AQ8Hjn3v4aypzJfiRRc9Fy23blT75DGJeH06Bc9Z0KKWDgqoj-X0dm54gdLEFoJcuPdzr7io1QsT5EkIVUZCQgFk8ZGe4sCFdd1aNvoCeW-ETjGPCcY4mBi-7T9U3qzCFMNcNytn9lQbdkA7MvvDYs"/>
+</div>
+<span class="font-headline-md text-headline-md text-[#b45309] mb-2">#3</span>
+<h3 class="font-headline-sm text-headline-sm text-on-surface">Shadow_04</h3>
+<p class="font-code-md text-code-md text-tertiary mt-2">3.5 K/D</p>
+</div>
+</section>
+<!-- Ranks Table -->
+<section class="bg-surface-container rounded-lg border border-border-subtle overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-high border-b border-border-subtle">
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider w-20">Rank</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">Player</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Kills</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">Deaths</th>
+<th class="py-3 px-4 font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider text-right">K/D Ratio</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-border-subtle font-body-md text-body-md">
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-4 px-4 font-code-md text-code-md text-on-surface-variant text-center">04</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-8 h-8 rounded-full object-cover" data-alt="A small, circular profile picture showing a person in dark tactical clothing against a neutral dark gray background. High contrast, sharp focus, professional gaming aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD1cAmt6Dxo31yi46A6cJgN813UtuDjiJnMlkaK66E5UItNf4XbFyBqpE3ahN8i2XRyTfElVtNo5tIZ8uDhQjbrvBPTeHdUxuzCHuJ5Qr0druoDL-JvMQhI518pfbJZVCBgxSiNylp3h6hstjoJh-W7IRLI4R7q_Oe8Ht77Un9wnTBNfSkjK4y0T15Bc0scLmZn6K32RasLN_A7DWUZT-Yg5XsbbPOnKYGYCFaxVwsTSBa3CtRoSJDwrtP6FqVgw3iN1pHoqiwHu68"/>
+<span class="font-label-md text-label-md text-on-surface">Bravo_Six</span>
+</div>
+</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface">1,245</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface-variant">389</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-[#4ade80]">3.20</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-4 px-4 font-code-md text-code-md text-on-surface-variant text-center">05</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-8 h-8 rounded-full object-cover" data-alt="A small profile picture of a gamer in a dimly lit room with blue ambient light illuminating their face from a monitor screen. Dark, technical mood." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAS0kMbe9ge1B1uSKcaM3XB2p3gqkf-7eBptkNoPjR5ej7lh_YTZ29soyD0L6XNb0tRl_myzlbDhc__TfV_9zAzRD68gYeQexiWQGtwxx_S9xN-uMYE8XCOAv7oCrCqeLZY45CYz4X-KXXe7IB5uHhFGQlkgV1ZYjGaguc3jQnAD1V2esQCANA6qo4iNg2dX-GCL-6uJijLrh533XZ4aWHMq3DzGwmRVOqzmGtef4uwgm8RPNLG5ABYyOtIp25Wx77lGRYgk7OIGzk"/>
+<span class="font-label-md text-label-md text-on-surface">Delta_Force_1</span>
+</div>
+</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface">1,102</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface-variant">350</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-[#4ade80]">3.14</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-4 px-4 font-code-md text-code-md text-on-surface-variant text-center">06</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container font-label-sm">E</div>
+<span class="font-label-md text-label-md text-on-surface">Echo_Base</span>
+</div>
+</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface">980</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface-variant">325</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-[#4ade80]">3.01</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-4 px-4 font-code-md text-code-md text-on-surface-variant text-center">07</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-label-sm">F</div>
+<span class="font-label-md text-label-md text-on-surface">Foxtrot_Sniper</span>
+</div>
+</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface">850</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface-variant">290</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-[#4ade80]">2.93</td>
+</tr>
+<tr class="hover:bg-surface-container-high transition-colors">
+<td class="py-4 px-4 font-code-md text-code-md text-on-surface-variant text-center">08</td>
+<td class="py-4 px-4">
+<div class="flex items-center gap-3">
+<img alt="Avatar" class="w-8 h-8 rounded-full object-cover" data-alt="A small circular avatar showing a stern face against a pitch-black background, lit by a single harsh, cold white light. Tactical and gritty visual style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbBrlvId8kpL4p9J0VZVt-tpMLYmsOpIJmiyQhAa6vnS5d2-xb-_gYeBHs19Q8LEgMSj-0rDLc4vzyHvivZmi_choWVvvXweWDwdpusRxBGVKgGOU0djnF61DxmiliZ3_EJL__iDOqH6RUzw1mlDY4f6aiVytY49VkTsgY3x_D8_bUfn9m1I1NABsaFgEN9pDsLJGBLtwuC0oiL65fEVnhW348DTCjSe9ZBZ-P-OAGHuchSz4aYvUBwK-BHQ6DU2BUhViaJhGjrSY"/>
+<span class="font-label-md text-label-md text-on-surface">Grizzly_Bear</span>
+</div>
+</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface">812</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-on-surface-variant">285</td>
+<td class="py-4 px-4 font-code-md text-code-md text-right text-[#4ade80]">2.84</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-4 border-t border-border-subtle flex justify-center">
+<button class="font-label-md text-label-md text-primary hover:text-primary-fixed-dim transition-colors flex items-center gap-1">
+                    Load More Intel <span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+</section>
+</main>
+</body></html>

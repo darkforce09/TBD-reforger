@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Initialize New Mission - REFORGER COMMAND</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-subtle": "#374151",
+                        "surface-dim": "#0d1322",
+                        "primary-fixed": "#d8e2ff",
+                        "primary-container": "#4d8eff",
+                        "on-secondary-container": "#afb9cb",
+                        "on-surface": "#dde2f8",
+                        "on-secondary-fixed": "#121c2a",
+                        "outline-variant": "#424754",
+                        "inverse-surface": "#dde2f8",
+                        "inverse-on-surface": "#2a3040",
+                        "on-secondary": "#27313f",
+                        "on-error-container": "#ffdad6",
+                        "surface-tint": "#adc6ff",
+                        "on-background": "#dde2f8",
+                        "tertiary-fixed-dim": "#7bd0ff",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "on-tertiary-fixed": "#001e2c",
+                        "background": "#0d1322",
+                        "on-surface-variant": "#c2c6d6",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-tertiary-container": "#002d40",
+                        "tertiary": "#7bd0ff",
+                        "surface-container-lowest": "#080e1d",
+                        "on-primary": "#002e6a",
+                        "error-container": "#93000a",
+                        "on-primary-container": "#00285d",
+                        "on-secondary-fixed-variant": "#3d4756",
+                        "surface-bright": "#33394a",
+                        "secondary": "#bdc7d9",
+                        "surface-variant": "#2f3445",
+                        "success-muted": "#064e3b",
+                        "on-error": "#690005",
+                        "surface-container-low": "#151b2b",
+                        "surface-container": "#191f2f",
+                        "surface-container-highest": "#2f3445",
+                        "tertiary-container": "#009bd1",
+                        "surface-container-high": "#242a3a",
+                        "on-primary-fixed": "#001a42",
+                        "error": "#f87171",
+                        "on-tertiary": "#00354a",
+                        "surface": "#0d1322",
+                        "inverse-primary": "#005ac2",
+                        "primary-fixed-dim": "#adc6ff",
+                        "primary": "#adc6ff",
+                        "on-primary-fixed-variant": "#004395",
+                        "secondary-container": "#404a59",
+                        "secondary-fixed-dim": "#bdc7d9",
+                        "secondary-fixed": "#d9e3f6",
+                        "outline": "#8c909f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-lg": "2rem",
+                        "margin-mobile": "1rem",
+                        "gutter": "1.5rem",
+                        "stack-sm": "0.5rem",
+                        "container-max": "1440px",
+                        "stack-md": "1rem"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "code-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom Utilities */
+        .card-border {
+            border: 1px solid rgba(56, 189, 248, 0.3); /* #38bdf8 primary-light at 30% opacity */
+        }
+        .input-focus:focus-within {
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+        .terrain-card.selected {
+            border: 2px solid #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex items-center justify-center p-gutter antialiased">
+<!-- Main Central Card -->
+<main class="w-full max-w-3xl bg-[#1f2937] rounded-xl card-border p-6 shadow-2xl overflow-hidden relative">
+<!-- Header -->
+<header class="mb-stack-lg border-b border-border-subtle pb-stack-md">
+<h1 class="font-headline-lg text-headline-lg text-on-surface mb-2">Initialize New Mission</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Define the environment parameters before launching the 2D Editor Canvas.</p>
+</header>
+<form class="space-y-stack-lg">
+<!-- Operation Name -->
+<div class="space-y-stack-sm">
+<label class="block font-label-md text-label-md text-on-surface uppercase tracking-wider" for="operation-name">Operation Name</label>
+<div class="input-focus rounded-lg overflow-hidden border border-border-subtle bg-surface-dim transition-shadow">
+<input class="w-full bg-transparent border-none text-on-surface font-body-md text-body-md px-4 py-3 focus:ring-0 placeholder-outline-variant" id="operation-name" name="operation-name" placeholder="Enter operation designation..." type="text"/>
+</div>
+</div>
+<!-- Select Terrain -->
+<div class="space-y-stack-sm">
+<label class="block font-label-md text-label-md text-on-surface uppercase tracking-wider">Select Terrain</label>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<!-- Everon (Selected) -->
+<label class="terrain-card selected relative block cursor-pointer rounded-lg overflow-hidden bg-surface-dim transition-all group">
+<input checked="" class="sr-only" name="terrain" type="radio" value="everon"/>
+<div class="h-32 w-full bg-surface-variant relative">
+<img alt="Everon Terrain" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" data-alt="A highly detailed top-down satellite view of a rugged, mountainous island terrain named Everon. The landscape features dense dark green pine forests, rocky gray cliffs, and deep blue coastal waters. The lighting suggests early morning with long shadows, fitting a serious, realistic military simulation aesthetic in a dark mode command center UI. The image is high contrast and sharp." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBxvxymoEUif8o8Z0AreojaID28w5k_dGSncWMV2kHmnF-rs0ACDlrY5ylu2-KAV6uYT21I1cSZfZhXKARe1wdZ754AGCB10z_WjKZT23inGIJbkyN372aNVmX_aGo8Q6teVGi8Nlx_dz_RW8PxP6O8meyJ1k_xzBhO-xuCHnucKoQTPWAMLD4kbckQbonNOy-TfNJUsIXWjYoflH8ZkD95srrKGOzOGNKPyzyLJGPnSiZZw6O7B6sE0cWRHIy0zEJlCapojA-pFcs"/>
+<!-- Checkmark overlay -->
+<div class="absolute top-2 right-2 bg-[#3b82f6] text-white rounded-full p-1 flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+</div>
+<div class="p-3 border-t border-border-subtle">
+<div class="font-headline-sm text-headline-sm text-on-surface">Everon</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-1">51 km² • Atlantic</div>
+</div>
+</label>
+<!-- Arland (Unselected) -->
+<label class="terrain-card relative block cursor-pointer rounded-lg overflow-hidden bg-surface-dim border border-border-subtle hover:border-[#38bdf8]/50 transition-all group">
+<input class="sr-only" name="terrain" type="radio" value="arland"/>
+<div class="h-32 w-full bg-surface-variant relative">
+<img alt="Arland Terrain" class="w-full h-full object-cover opacity-60 group-hover:opacity-80 transition-opacity grayscale hover:grayscale-0" data-alt="A highly detailed top-down satellite view of a smaller, flatter island terrain named Arland. The landscape features patchy green fields, dirt roads, and a prominent airstrip near the sandy coast. The lighting is harsh midday sun, fitting a serious, realistic military simulation aesthetic in a dark mode command center UI. The image is high contrast and slightly desaturated." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD05s9-Ok7i_3UlBHIB_NeL6GhVHvo4mUVrLfDiWtrjv0wNJQKwJGPF5PAziFJdjly2TEOQ6HCTh7Jq1WStc8RICfnsRekUB0lfvn_dOUmPGmX4Zux5M-0Np-trHCb_ey3KHcFC4izEiFgvggxt4YgN2z5K4a5irWb6_sZhoY1amTEPYlYwTh9FGVjOimKXCQQ9-RBk_xNKfXctnXINPjPUJNoErtlWUbro3pLHOyp3uet9KzpSEzH1YTt1rmYSlZVOpemBP6V4yKA"/>
+</div>
+<div class="p-3 border-t border-border-subtle">
+<div class="font-headline-sm text-headline-sm text-on-surface">Arland</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant mt-1">16 km² • Atlantic</div>
+</div>
+</label>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Time of Day -->
+<div class="space-y-stack-sm">
+<div class="flex justify-between items-center">
+<label class="block font-label-md text-label-md text-on-surface uppercase tracking-wider" for="time-slider">Insertion Time</label>
+<span class="font-code-md text-code-md text-primary" id="time-display">14:00</span>
+</div>
+<div class="relative pt-2">
+<input class="w-full h-2 bg-surface-dim rounded-lg appearance-none cursor-pointer border border-border-subtle accent-[#3b82f6]" id="time-slider" max="24" min="0" name="time" step="1" type="range" value="14"/>
+<div class="flex justify-between text-on-surface-variant font-label-sm text-label-sm mt-2">
+<span>00:00</span>
+<span>12:00</span>
+<span>24:00</span>
+</div>
+</div>
+</div>
+<!-- Weather Conditions -->
+<div class="space-y-stack-sm">
+<label class="block font-label-md text-label-md text-on-surface uppercase tracking-wider" for="weather-select">Weather Conditions</label>
+<div class="relative">
+<select class="w-full appearance-none bg-surface-dim border border-border-subtle text-on-surface font-body-md text-body-md rounded-lg px-4 py-3 focus:ring-2 focus:ring-[#3b82f6] focus:border-transparent outline-none" id="weather-select" name="weather">
+<option selected="" value="clear">Clear (Default)</option>
+<option value="overcast">Overcast</option>
+<option value="rain">Heavy Rain</option>
+<option value="fog">Dense Fog</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-on-surface-variant">
+<span class="material-symbols-outlined">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Action -->
+<div class="pt-stack-md mt-stack-md border-t border-border-subtle">
+<button class="w-full bg-[#3b82f6] hover:bg-blue-600 text-white font-headline-sm text-headline-sm py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-colors duration-200 shadow-lg shadow-blue-900/20 active:scale-[0.98]" type="button">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">map</span>
+<span>Initialize 2D Canvas</span>
+</button>
+</div>
+</form>
+</main>
+<script>
+        // Simple interactivity for the slider
+        const timeSlider = document.getElementById('time-slider');
+        const timeDisplay = document.getElementById('time-display');
+
+        timeSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            // Format to HH:00
+            const formatted = val.padStart(2, '0') + ':00';
+            timeDisplay.textContent = formatted;
+        });
+
+        // Simple interactivity for terrain selection styling
+        const terrainCards = document.querySelectorAll('.terrain-card');
+        const terrainRadios = document.querySelectorAll('input[name="terrain"]');
+
+        terrainCards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove selected class from all
+                terrainCards.forEach(c => {
+                    c.classList.remove('selected', 'border-[#3b82f6]', 'border-2');
+                    c.classList.add('border-border-subtle', 'border');
+                    const img = c.querySelector('img');
+                    if(img) img.classList.add('grayscale');
+                    const check = c.querySelector('.absolute');
+                    if(check) check.remove();
+                });
+
+                // Add selected class to clicked
+                card.classList.add('selected', 'border-[#3b82f6]', 'border-2');
+                card.classList.remove('border-border-subtle', 'border');
+                const img = card.querySelector('img');
+                if(img) img.classList.remove('grayscale');
+                
+                // Add checkmark
+                const imgContainer = card.querySelector('.relative');
+                if(imgContainer && !card.querySelector('.absolute')) {
+                    const checkDiv = document.createElement('div');
+                    checkDiv.className = 'absolute top-2 right-2 bg-[#3b82f6] text-white rounded-full p-1 flex items-center justify-center shadow-lg';
+                    checkDiv.innerHTML = '<span class="material-symbols-outlined text-sm" style="font-variation-settings: \'FILL\' 1;">check</span>';
+                    imgContainer.appendChild(checkDiv);
+                }
+            });
+        });
+    </script>
+</body></html>
