@@ -1444,7 +1444,7 @@
 | **Status** | stub |
 | **Evidence** | `AttributesModal.tsx` |
 
-#### ATTR-TAB-004 — Arsenal tab (stub → T-068.4)
+#### ATTR-TAB-004 — Arsenal tab (dumb loadout export @ T-068.4)
 
 | Field | Value |
 |-------|-------|
@@ -1461,7 +1461,7 @@
 | **Acceptance** | `- [x] Stub only (pre-T-068.4)` · `- [x] T-068.4: stub removed; dropdowns + download work` |
 | **Eden parity** | Eden:ATTR-ARSENAL-001 (dumb export Phase 1; smart Forge Phase 2) |
 | **Status** | working (dumb export) |
-| **Evidence** | `AttributesModal.tsx` (`ArsenalTab`) · ship spec [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) |
+| **Evidence** | `AttributesModal.tsx` (`ArsenalTab`) · `loadout/loadoutExport.ts` · ship spec [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) @ `a85f16b` |
 
 ---
 

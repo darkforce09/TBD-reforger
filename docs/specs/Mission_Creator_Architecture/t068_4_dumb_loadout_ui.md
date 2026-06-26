@@ -146,17 +146,18 @@ Build/lint log + jq outputs + pasted `/tmp/loadout-export.json` contents (redact
 
 ## Documentation sync (Cursor)
 
-After merge: `mission-editor.md` Element Inventory — Arsenal tab; new FEDS row if missing.
+**Done @ T-068.4 ship (`a85f16b`):** `mission-editor.md` Element Inventory — Arsenal tab; `feature_inventory` **ATTR-TAB-004** → working; MC/FE/BE ROADMAPs; `eden/attributes.md` + `gap_analysis.md`; program hub shipped table.
 
 ---
 
-## Claude Code prompt — T-068.4
+## Claude Code prompt — T-068.5 (next)
 
 ```
-Read CLAUDE.md §Status. Active slice: T-068.4.
-Implement ONLY docs/specs/Mission_Creator_Architecture/t068_4_dumb_loadout_ui.md
+Read CLAUDE.md §Status. Active slice: T-068.5.
+Implement ONLY docs/specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md
 Do not edit documentation. Branch: ticket/T-068
-LOCKED: REPLACE ArsenalTab stub with functional dumb UI (4 dropdowns + download). There is NO existing Forge to wire up.
-Verify: FE build/lint; stub grep gate; jq on /tmp/loadout-export.json; A0–A7 paste
-Return: Verify paste + screenshot of working Arsenal tab (dropdowns + download, no stub text)
+LOCKED: Mod reads $profile:TBD_LoadoutTest.json (copy of T-068.4 download).
+enfusion-mcp REQUIRED: tbd-dev-bootstrap.sh → wb_connect → wb_reload → wb_play → log grep.
+Verify: §Verification gate A1–A7 + sha256sum + 20+ console log lines.
+Return: Verify paste only. Do NOT commit unless user asks.
 ```

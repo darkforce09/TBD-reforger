@@ -105,6 +105,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 3. Save Version with new semver → 201; duplicate semver → 409 with error surfaced.
 4. Export downloads JSON without POST.
 5. Drop or drag a unit → Undo enables → Cmd/Ctrl+Z reverts; redo restores.
+6. Double-click a **character** slot → Attributes → **Arsenal** → four gear dropdowns populate from `GET /registry`; **Download loadout JSON** saves file passing `loadout-export.schema.json` jq gates (T-068.4 @ `a85f16b`).
 
 ## Open Questions / Blockers
 

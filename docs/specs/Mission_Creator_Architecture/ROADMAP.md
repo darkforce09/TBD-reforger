@@ -264,7 +264,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
 
-**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 in progress** — active **T-068.4** Arsenal dumb loadout UI; palette **shipped @ T-068.3** (`da78452`).
+**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 in progress** — **T-068.5 active** (mod equip); dumb loadout UI **shipped @ T-068.4** (`a85f16b`); palette **@ T-068.3** (`da78452`).
 
 ---
 
@@ -325,6 +325,14 @@ Required for positioning you can trust in-game. Most items deferred until **T-06
 
 ---
 
+## DONE — T-068.4 (Arsenal dumb loadout UI)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Arsenal tab dumb export** | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | ✅ `loadoutExport.ts` + `AttributesModal` `ArsenalTab` — 4 registry gear dropdowns + **Download loadout JSON**; character-only guard; stub removed. Tag **T-068.4** @ `a85f16b`. Closes **ATTR-TAB-004** (dumb export). |
+
+---
+
 ## IN PROGRESS — T-068 Virtual Arsenal (Phase 1)
 
 | Slice | Spec | Status |
@@ -333,7 +341,8 @@ Required for positioning you can trust in-game. Most items deferred until **T-06
 | **T-068.1** | [`t068_1_workbench_flat_export.md`](t068_1_workbench_flat_export.md) | ✅ shipped `ca4f2cd` — 21-row Workbench export |
 | **T-068.2** | [`t068_2_registry_api.md`](t068_2_registry_api.md) | ✅ shipped `4c609fe` — `GET /api/v1/registry`, seed, import CLI |
 | **T-068.3** | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | ✅ shipped `da78452` — `useRegistry` + `buildCatalogTree`; mock deleted |
-| **T-068.4** | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | **active** — replace Arsenal stub; 4 gear dropdowns + download JSON |
+| **T-068.4** | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | ✅ shipped `a85f16b` — Arsenal dumb loadout download; stub removed |
+| **T-068.5** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | **active** — mod equip from `$profile:TBD_LoadoutTest.json` |
 
 Hub: [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -345,7 +354,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
-| **T-068** | Virtual Arsenal — registry + dumb loadout + mod equip (Phase 1); smart Forge (Phase 2) | **In progress** — T-068.0.1–T-068.3 shipped; **active T-068.4** Arsenal UI — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
+| **T-068** | Virtual Arsenal — registry + dumb loadout + mod equip (Phase 1); smart Forge (Phase 2) | **In progress** — T-068.0.1–T-068.4 shipped; **active T-068.5** mod equip — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
 | **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
 | **T-071** | ORBAT Manager modal — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal | **Queued** |
@@ -356,7 +365,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 | **T-076** | Vehicle crew UI | **Queued** |
 | **T-077+** | Compositions, triggers, waypoints, … | **Queued** — see TICKET_LEAD |
 
-**T-068 Factions palette shipped @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** Arsenal loadout UI active. Full attachment compatibility rules remain Phase 2.
+**T-068 Factions palette @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** dumb loadout export shipped (`a85f16b`). **T-068.5** mod equip active. Full attachment compatibility rules remain Phase 2.
 
 ---
 

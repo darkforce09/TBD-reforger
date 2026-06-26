@@ -245,6 +245,6 @@ Saved payload includes: attribute values, layer structure, visibility, connectio
 | Eden object attrs | TBD `AttributesModal` tab | Gap |
 |-------------------|----------------------------|-----|
 | Identity (name, callsign, …) | Identity (role, tag) | Partial |
-| Transformation (position, rotation) | Transform (read-only X/Y/Z) | **Missing** numeric edit |
+| Transformation (position, rotation) | Transform (editable X/Y/Z/rotation) | ✅ T-049 |
 | States (skill, fuel, damage, …) | States stub | **Missing** |
-| Arsenal / loadout | Arsenal stub | Phase 6 |
+| Arsenal / loadout | Arsenal (dumb export @ **T-068.4**) | ✅ **Partial** — 4 gear dropdowns + JSON download; paper-doll/smart Forge **T-068.10** |

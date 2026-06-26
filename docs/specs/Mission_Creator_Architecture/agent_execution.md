@@ -447,7 +447,7 @@ Full ladder **T-068.0 → T-068.11** in program hub. Phase 2 gated @ T-068.6.
    - **Transform:** X/Y/Z, rotation (Z read-only until DEM)
    - **Identity:** role, tag, callsign, squad
    - **States:** medic/engineer flags (stub)
-   - **Arsenal:** Open Loadout Forge button (stub until Phase 6)
+   - **Arsenal:** dumb loadout export @ **T-068.4** — 4 gear dropdowns + Download JSON (`loadoutExport.ts`); smart Forge deferred **T-068.10**
 6. **Map skin:** Topo placeholder under Deck.gl + procedural grid at low opacity
 7. **Spacebar** → `flyTo` selection centroid; remove auto `flyTo` on outliner click
 8. **TreeView polish:** `border-l-2 border-primary` on selected row; folder open/closed icons

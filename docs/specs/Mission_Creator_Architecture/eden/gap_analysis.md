@@ -98,6 +98,7 @@
 | SEL-MOD-001 | SEL-MOD-001 | match | T-053 | ✅ T-053 — Ctrl/Cmd+LMB toggle additive select (Shift unbound) |
 | SEL-ALL-001 | KEY-SELALL-001 | missing | — | Select all |
 | ATTR-FIELD-OBJ-SKILL | ATTR-TAB-003 | missing | — | States stub |
+| Eden:ATTR-ARSENAL-001 | ATTR-TAB-004 | partial | T-068.4 | ✅ T-068.4 — dumb loadout export (4 dropdowns + JSON download); smart Forge T-068.10 |
 | ATTR-FIELD-OBJ-FUEL | — | missing | — | Vehicles |
 | ATTR-FIELD-OBJ-POSITION | ATTR-TAB-001 | match | T-049 | ✅ T-049 — editable X/Y/Z/rotation (NumberField → updateSlotPosition) |
 | ATTR-MULTI-CHK-001 | — | missing | — | Multi-edit per-field checkbox |

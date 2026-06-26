@@ -10,7 +10,7 @@
 | Backend | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) |
 
-**Status:** living · **Updated:** 2026-06-25
+**Status:** living · **Updated:** 2026-06-26
 
 Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP** for your domain.
 

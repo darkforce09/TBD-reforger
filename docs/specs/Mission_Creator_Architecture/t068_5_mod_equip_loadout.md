@@ -1,7 +1,7 @@
 # T-068.5 — Mod equip from loadout-export JSON
 
 **Ticket:** T-068 · **Slice:** T-068.5  
-**Status:** Spec ready — code pending  
+**Status:** **active** — depends on T-068.4 download path (shipped @ `a85f16b`)  
 **Executor:** claude-code (**enfusion-mcp required** for compile/reload/play verify)  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -121,3 +121,20 @@ After verify paste: link mod script path in T-068.6 checklist.
 Map 1:1 to **§Verification gate** A1–A7 — all PASS before paste.
 
 ---
+
+## Claude Code prompt — T-068.5
+
+```
+Read CLAUDE.md §Status. Active slice: T-068.5.
+Implement ONLY docs/specs/Mission_Creator_Architecture/t068_5_mod_equip_loadout.md
+Do not edit documentation. Branch: ticket/T-068 (from main @ latest)
+
+Preflight:
+  bash scripts/mod/tbd-dev-bootstrap.sh
+  bash scripts/mod/mcp-call.sh wb_connect '{}'
+  cp /tmp/loadout-export.json "$PROFILE/TBD_LoadoutTest.json"  # paste exact $PROFILE path
+
+LOCKED: Equip exact ResourceName strings from JSON — no alias layer.
+Verify: wb_reload → wb_play → grep Loadout equip logs; sha256sum profile file.
+Return: Verify paste (A1–A7 + logs + sha256). Do NOT commit unless user asks.
+```
