@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""One-time seed for tickets/registry.json — exactly 85 rows."""
+"""One-time seed for tickets/registry.json — exactly 87 rows."""
 
 from __future__ import annotations
 
@@ -159,7 +159,7 @@ def build() -> dict[str, Any]:
         r.setdefault("branch", f"ticket/{r['id']}")
         tickets.append(r)
 
-    assert len(tickets) == 85, f"Expected 85 rows (54 shipped + 31 open), got {len(tickets)}"
+    assert len(tickets) == 85, f"Expected 87 rows (55 shipped + 32 open), got {len(tickets)}"
     return {"next_id": 111, "tickets": tickets}
 
 

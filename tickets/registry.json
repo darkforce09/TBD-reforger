@@ -1,5 +1,5 @@
 {
-  "next_id": 111,
+  "next_id": 113,
   "tickets": [
     {
       "id": "T-001",
@@ -1421,6 +1421,50 @@
       "spec": "Design_Docs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md",
       "route": "/missions/:id/edit",
       "branch": "ticket/T-110"
+    },
+    {
+      "id": "T-111",
+      "title": "Lazy chunk residency @ 1M",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
+      "program": "scale",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "perf",
+        "state",
+        "persistence"
+      ],
+      "status": "idea",
+      "depends_on": [
+        "T-067"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-111",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md",
+      "slices": [
+        "T-067.1"
+      ]
+    },
+    {
+      "id": "T-112",
+      "title": "GPU viewport cull (DataFilterExtension)",
+      "summary": "Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile.",
+      "program": "scale",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "perf"
+      ],
+      "status": "idea",
+      "depends_on": [
+        "T-067"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-112",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md"
     }
   ]
 }

@@ -531,10 +531,10 @@ def check(strict: bool = False, seed_count: int | None = None) -> list[str]:
     if seed_count is not None and len(registry.get("tickets", [])) != seed_count:
         errors.append(f"Expected {seed_count} registry rows, got {len(registry.get('tickets', []))}")
 
-    expected_rows = 85  # 54 shipped + 31 open
+    expected_rows = 87  # 55 shipped + 32 open (10 queued + 20 deferred + 2 idea)
     if len(registry.get("tickets", [])) != expected_rows:
         errors.append(
-            f"Registry row count must be {expected_rows} (54 shipped + 31 open), "
+            f"Registry row count must be {expected_rows} (55 shipped + 32 open), "
             f"got {len(registry.get('tickets', []))}"
         )
 

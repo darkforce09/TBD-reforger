@@ -39,3 +39,5 @@
 
 - **T-093** (deferred) — Continuous autosave polish [DATA] — Background autosave UX and conflict handling polish.
 - **T-094** (deferred) — Typed-array IconLayer [MAP, DATA] — Typed-array slot icon buffer for mega-mission render path.
+- **T-111** (idea) — Lazy chunk residency @ 1M [MAP, DATA] — T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.
+- **T-112** (idea) — GPU viewport cull (DataFilterExtension) [MAP] — Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile.

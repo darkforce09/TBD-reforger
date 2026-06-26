@@ -423,7 +423,7 @@ Phases **1b** = **Eden parity on flat grid.** Phases 2–4 = **map + accurate po
 | Virtualized outliner | **T-064** ✅ | Sidebar @ 100k+ leaves | **Shipped** — spec [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md) |
 | Cluster / LOD extreme zoom | **T-065** ✅ | Pan-stable clusters @ zoom ≤ -4; detail @ -2 | [`t065_cluster_lod.md`](t065_cluster_lod.md) |
 | Worker offload compile/export | **T-066** ✅ | `compiler.worker.ts` + `pickMapSnapshot`; Save 201 @ ~367k | [`t066_worker_compile.md`](t066_worker_compile.md) |
-| Spatial chunks / lazy regions | **T-067** shipped | Bulk paste + scaffolding; CPU cull deferred; T-067.1 lazy RAM @ 1M | [`t067_spatial_chunks.md`](t067_spatial_chunks.md) |
+| Spatial chunks / lazy regions | **T-067** shipped | Bulk paste + scaffolding; CPU cull deferred; follow-ons **T-111** / **T-112** (`idea`) | [`t067_spatial_chunks.md`](t067_spatial_chunks.md) |
 | Terrain base + sparse deltas | **T-110** | Millions of map props (separate from mission layer) | After T-068+ |
 | ≤10 s load @ 1M | T-062.1 ✅ + T-066 | Chunked IDB + worker — not drag perf | Stretch north star |
 

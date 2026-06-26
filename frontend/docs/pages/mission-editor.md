@@ -92,7 +92,7 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M4.22 — [x] T-064 virtualized outliner @ ~367k (incl. T-064.1 scroll-ref hotfix — spec: [t064_virtualized_outliner.md](../../../Design_Docs/Mission_Creator_Architecture/t064_virtualized_outliner.md))
 ### M5.23 — [x] T-066 worker compile offload + `pickMapSnapshot` (Save 201 @ ~367k — spec: [t066_worker_compile.md](../../../Design_Docs/Mission_Creator_Architecture/t066_worker_compile.md))
 ### M5.24 — [x] T-067 spatial chunks — bulk-paste `slot-add-bulk` + chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()` @ ~160 fps pan @ 367k) — spec: [t067_spatial_chunks.md](../../../Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md)
-### M5.25 — [ ] T-067.1 lazy chunk residency @ 1M+ / GPU viewport cull (deferred — spec: [t067_spatial_chunks.md](../../../Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md) §Deferred)
+### M5.25 — [ ] **T-111** lazy chunk residency @ 1M+ / **T-112** GPU viewport cull (`idea` — [`TICKET_BRAINSTORM.md`](../../../docs/TICKET_BRAINSTORM.md#scale))
 
 ## Test Plan
 

@@ -1222,16 +1222,16 @@
 | **Goal** | Bulk paste O(k) not O(n) snapshot; chunk scaffolding for 1M+ lazy RAM / GPU cull |
 | **Trigger** | Ctrl+V bulk paste; (future) viewport crosses chunk @ 1M |
 | **Preconditions** | T-062 incremental bindings; T-066 worker save unchanged |
-| **Procedure** | **Shipped:** `slot-add-bulk` in `incPatchPlan` → `_patchAddSlotsBulk`; dormant `chunkBuckets` in `slotIconCache`. **Render:** `getBaseIcons()` (CPU cull reverted T-067.0.1). **Deferred:** T-067.1 lazy RAM; GPU `DataFilterExtension` |
+| **Procedure** | **Shipped:** `slot-add-bulk` in `incPatchPlan` → `_patchAddSlotsBulk`; dormant `chunkBuckets` in `slotIconCache`. **Render:** `getBaseIcons()` (CPU cull reverted T-067.0.1). **Follow-on (`idea`):** **T-111** lazy RAM; **T-112** GPU `DataFilterExtension` |
 | **Postconditions** | Paste ≤10k avoids full snapshot; pan ~160 fps @ 367k zoom -2 |
 | **Inputs** | Added slot ids from Y.Doc txn; (future) viewport bounds |
 | **Outputs** | O(k) store + cache updates on bulk paste |
 | **Edge cases** | Structural squad/layer paste → full snapshot fallback (unchanged) |
-| **Acceptance** | `- [x]` pan ~160 fps @ 367k `- [x]` build/lint `- [x]` 6k paste path `- [ ]` Save 201 formal `- [x]` pick/drag/cluster unchanged |
+| **Acceptance** | `- [x]` pan ~160 fps @ 367k `- [x]` build/lint `- [x]` 6k paste `- [x]` pick/drag/cluster `- [~]` Save 201 (no T-067 save-path change; repro mission needs local DB seed) |
 | **Eden parity** | n/a (infra) |
 | **Status** | **shipped** (bulk paste + scaffolding; CPU cull deferred) |
 | **Ticket** | T-067 |
-| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](t067_spatial_chunks.md) |
+| **Evidence** | `incPatchPlan.ts`, `useMapStore._patchAddSlotsBulk`, `spatialChunks.ts`, `slotIconCache.ts` chunk buckets, `useIconLayer.ts` → `getBaseIcons()`; spec [`t067_spatial_chunks.md`](t067_spatial_chunks.md); follow-ons [`T-111`/`T-112`](../../docs/TICKET_BRAINSTORM.md#scale) |
 
 ---
 

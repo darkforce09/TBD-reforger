@@ -331,7 +331,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Spatial index** (T-063 — **shipped**) | rbush R-tree for click/marquee pick @ ~367k; `slot-icons` `pickable: false`. Spec: [`t063_spatial_index.md`](t063_spatial_index.md). |
 | **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). |
 | **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
-| **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** (165→21 fps pan @ dense 367k blob) — render = pan-stable `getBaseIcons()`. **Deferred:** T-067.1 lazy RAM + GPU `DataFilterExtension` @ 1M+. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
+| **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
 | **Eden-first program order** (2026-06) | … **T-057..T-067** perf/scale program **shipped**. **T-068+** per [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md); **T-110** terrain base after that. … |
 | **Phase order** | … **T-057–T-067 shipped.** **T-068+** → **T-110** terrain base (optional). … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
@@ -366,7 +366,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 **T-067 shipped** — [`t067_spatial_chunks.md`](t067_spatial_chunks.md): `slot-add-bulk` paste patch; dormant chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()`).
 
-**Deferred:** T-067.1 lazy RAM @ 1M; GPU `DataFilterExtension` viewport cull.
+**Deferred:** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension` viewport cull (`idea` — [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md#scale)).
 
 ---
 

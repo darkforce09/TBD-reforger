@@ -1,7 +1,7 @@
 # T-067 — Spatial chunks / bulk-paste scale (mission layer)
 
-**Status:** **Shipped** — T-067.0 bulk paste + chunk scaffolding; **T-067.0.1** CPU viewport cull reverted; **T-067.1** lazy RAM + GPU cull deferred.  
-**Git tag:** **T-067**  
+**Status:** **Shipped** @ `d2128cf` — T-067.0 bulk paste + scaffolding; **T-067.0.1** CPU viewport cull reverted; follow-ons **T-111** / **T-112** (`idea`).  
+**Git tag:** **T-067** (`d2128cf`)  
 **Authority:** [MC ROADMAP](ROADMAP.md) §Map performance · [agent_execution.md](agent_execution.md) · [t066_worker_compile.md](t066_worker_compile.md) · [t063_spatial_index.md](t063_spatial_index.md) · [t110_terrain_base_mission_layers.md](t110_terrain_base_mission_layers.md) · [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md)
 
 **Prerequisites:** T-066 shipped (`53bc2a8`). Repro mission: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k slots).
@@ -144,9 +144,16 @@ Repro: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k).
 | Ctrl+C/V 6k paste loop | No multi-second freeze; undo works | ✅ (bulk path) |
 | Click / marquee / dbl-click / drag | Unchanged (T-063/T-061) | ✅ |
 | Cluster drill-in @ zoom ≤ -4 | Unchanged (T-065) | ✅ |
-| Save Version **201** | @ ~367k | Pending formal sign-off |
-| CPU viewport cull active | N/A — **deferred** | N/A |
-| Git tag **T-067** | Committed | Pending user commit |
+| Save Version **201** | @ ~367k repro mission | No save-path change in T-067 (T-066 worker + `pickMapSnapshot` unchanged). Formal repro Save requires local DB seed of `70a36667-…`; user/browser verify recommended |
+| CPU viewport cull active | N/A — **deferred** → **T-112** (`idea`) | N/A |
+| Git tag **T-067** | Committed + pushed | ✅ `d2128cf` |
+
+### Follow-on tickets (registry `idea`)
+
+| Ticket | Title | When |
+|--------|-------|------|
+| **T-111** | Lazy chunk residency @ 1M (T-067.1) | Profile shows RAM pressure @ 1M+ |
+| **T-112** | GPU viewport cull (`DataFilterExtension`) | Spread missions / 1M+ where CPU cull failed |
 
 ---
 
@@ -163,8 +170,24 @@ Repro: `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k).
 ## After T-067
 
 - **T-068+** — asset registry, markers, vehicles, ORBAT Manager modal ([`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md))
-- **T-067.1 / GPU cull** — when 1M+ profiling demands it
+- **T-111** — lazy chunk RAM @ 1M ([`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md))
+- **T-112** — GPU viewport cull ([`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md))
 - **T-110** — terrain base (extends chunk binning for map props)
+
+---
+
+## Manual verify — repro mission (human)
+
+Mission `70a36667-612f-40c5-ad56-3fb8e0613a17` (~367k). Stack: `make db-up && make api && make web`, dev-login `mission_maker`.
+
+| Check | How | T-067 result |
+|-------|-----|--------------|
+| Pan @ zoom -2 | FpsCounter while dragging | ✅ ~160 fps (user) |
+| 6k paste + undo | Ctrl+C/V loop | ✅ bulk path (no full snapshot) |
+| Save **201** | Save Version in UI | No save/compiler changes in T-067 — T-066 path unchanged. Re-verify on repro mission if local DB has the 367k payload |
+| Pick / drag / cluster | Smoke | ✅ unchanged paths |
+
+**Local API note:** empty dev DB returns `404` for the repro mission UUID until seeded. Use your existing IndexedDB session in the browser (warm load) or import the mission payload before curl Save smoke.
 
 ---
 

@@ -90,3 +90,5 @@
 | T-095 | 950 | deferred | backend | Per-handler API reference doc | Complete docs/backend/api.md per-handler reference. |
 | T-096 | 960 | deferred | backend | Live game-server telemetry bridge | Bridge live game-server events into telemetry ingest. |
 | T-110 | 1100 | deferred | infra | Terrain base + sparse deltas | Binary terrain base layer plus sparse delta props for 1M+ map objects. |
+| T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
+| T-112 | — | idea | scale | GPU viewport cull (DataFilterExtension) | Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile. |
