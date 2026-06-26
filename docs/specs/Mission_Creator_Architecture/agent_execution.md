@@ -372,7 +372,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **T-068.2** | claude-code | `GET /api/v1/registry` + dev seed + import CLI |
 | **T-068.3** | claude-code | Live Factions palette (delete mock) |
 | **T-068.4** | claude-code | **Replace Arsenal tab stub** — dumb dropdowns + loadout JSON download (functional UI, not wire-up) |
-| **T-068.1 / .5 / .8** | claude-code + **enfusion-mcp** | Workbench flat export, mod equip, compat export — Workbench must be running; human preflight only |
+| **T-068.1 / .5 / .8** | claude-code + **enfusion-mcp** | **`tbd-dev-bootstrap.sh`** (auto-launch Workbench) + MCP export / equip / compat |
 | **T-068.6** | human | Phase 1 E2E gate |
 
 Full ladder **T-068.0 → T-068.11** in program hub. Phase 2 gated @ T-068.6.

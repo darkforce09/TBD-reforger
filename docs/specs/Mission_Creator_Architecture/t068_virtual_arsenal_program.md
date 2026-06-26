@@ -13,8 +13,8 @@
 | Agent | Owns |
 |-------|------|
 | **Cursor** | This hub, all `t068_*` slice specs, registry, `./scripts/ticket sync`, narrative doc sync |
-| **Claude Code** | All code — schemas, API, UI, worker, compiler, **mod + Workbench data via enfusion-mcp** (`executor: claude-code` slices) |
-| **Human** | Workbench **preflight** (launch Tools, Net API, bootstrap), Phase 1 E2E sign-off (`executor: human` only @ **T-068.6**) |
+| **Claude Code** | All code — schemas, API, UI, worker, compiler, **mod + Workbench via enfusion-mcp** — including **`tbd-dev-bootstrap.sh`** (launch Tools, MCP root, `wb_connect`) |
+| **Human** | Phase 1 E2E sign-off only (`executor: human` @ **T-068.6**); escalate if bootstrap exits 1 after automated launch (Net API off, addon not loaded) |
 
 **enfusion-mcp is mandatory for real registry data.** Flat `resource_name` rows cannot be invented — Claude Code must discover prefab paths via MCP (`asset_search` / `game_read` / `game_browse`) or Workbench-validated export, then commit JSON. Shell fallback: [`scripts/mod/mcp-call.sh`](../../../scripts/mod/mcp-call.sh) + [`scripts/mod/tbd-dev-bootstrap.sh`](../../../scripts/mod/tbd-dev-bootstrap.sh). See [`docs/mod/CLAUDE-CODE-START.md`](../../mod/CLAUDE-CODE-START.md).
 
@@ -45,7 +45,7 @@ Phases are labels; **`slices[]` + `active_slice`** in registry are the execution
 | 8 | **T-068.4 UI:** **Build** functional dumb loadout UI — **replace** Attributes → Arsenal **stub** (disabled “Loadout Forge soon”) with 4 gear dropdowns + download JSON. Not a new route; not paper-doll (T-068.10). |
 | 9 | **API caching:** `GET /registry` supports weak **ETag** / **304** (see T-068.2). |
 | 10 | **Map/topo:** **T-090 / T-091 / T-110** — out of T-068. |
-| 11 | **Workbench MCP:** **T-068.1 / T-068.5 / T-068.8** are `claude-code` slices that **require enfusion-mcp** (Workbench running + bootstrap). Human only launches Tools / enables Net API — not manual JSON authoring. |
+| 11 | **Workbench MCP:** **T-068.1 / T-068.5 / T-068.8** — Claude Code runs **`bash scripts/mod/tbd-dev-bootstrap.sh`** (auto `steam -applaunch` Workbench, MCP root, EnfusionMCP handlers, `wb_connect`) then MCP tools / `mcp-call.sh`. Human only if bootstrap **exit 1** after wait. |
 | 12 | **DB ingest handoff:** After **T-068.1** export lands, run **`go run ./cmd/import-registry-items --file …/registry-items.workbench.json`** (T-068.2 CLI) before **T-068.6** if E2E uses Workbench data — dev seed alone is smoke-only. |
 | 13 | **Modpack UUID:** `loadout-export.modpackId` and `registry-items.modpackId` = **`modpacks.is_current`** row (mock seed: `00000000-0000-4000-a000-000000000001` until real modpack admin exists). |
 | 14 | **Arsenal tab scope:** Loadout UI (**T-068.4**) applies to **character** slots only — non-character selection shows explanatory empty state, not broken dropdowns. |
@@ -211,7 +211,7 @@ Audit after MCP executor fix (2026-06). Treat as **checklist** when advancing sl
 | 5 | **Gear kinds missing from API seed** | T-068.2 seed must include **`gear_*`** rows (Arsenal dropdowns empty otherwise) |
 | 6 | **`modpackId` undefined in download** | Rule **#13** — UI reads `modpack_id` from `GET /registry` response |
 | 7 | **Arsenal on ammo box / props** | Rule **#14** — character-only loadout tab |
-| 8 | **MCP not wired in Claude Code terminal** | Use [`scripts/mod/mcp-call.sh`](../../../scripts/mod/mcp-call.sh) or copy [`apps/mod/.mcp.json`](../../../apps/mod/.mcp.json); bootstrap **every clone** (EnfusionMCP gitignored) |
+| 8 | **MCP bootstrap** | Claude Code runs **`tbd-dev-bootstrap.sh`** every mod slice (launches Workbench if port closed); **`mcp-call.sh`** or `.mcp.json`; EnfusionMCP gitignored — bootstrap copies handlers |
 | 9 | **T-068.2 ∥ T-068.1 parallel confusion** | T-068.2 can ship first with **dev seed smoke**; **T-068.6 PASS** requires **T-068.1 verify paste** (real MCP export) unless explicitly waived in sign-off |
 | 10 | **Profile path ambiguity** | T-068.5 / E10 — paste exact `$profile` path + `sha256sum`; use [`scripts/mod/setup-server-profile.sh`](../../../scripts/mod/setup-server-profile.sh) |
 | 11 | **Icon URLs** | Phase 1: `icon_url` optional / omit; no blocker |

@@ -5,7 +5,7 @@
 **Executor:** claude-code (**enfusion-mcp required**)  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
-**Agent roles (locked):** **Claude Code** implements export + commits JSON using **enfusion-mcp** for real prefab data. **Human** only runs Workbench preflight (launch Tools, Net API, bootstrap) — not hand-authoring 20+ ResourceNames.
+**Agent roles (locked):** **Claude Code** owns the full MCP pipeline — **`tbd-dev-bootstrap.sh`**, export script, committed JSON. **Human** only on bootstrap **exit 1** (one-time Net API / open `addon.gproj`) or **T-068.6** E2E sign-off.
 
 ---
 
@@ -26,17 +26,23 @@ Manual “Copy Resource Name” for every row is a **spot-check only** (acceptan
 
 ---
 
-## Human preflight (before Claude Code)
+## Automated preflight (Claude Code — first step every mod slice)
+
+Claude Code **runs** bootstrap; do not assume Workbench is already up.
 
 ```bash
-# 1. Launch Arma Reforger Tools from Steam; open tbd-framework addon.gproj
-# 2. File > Options > General — enable Net API (default port 5775)
-bash scripts/mod/tbd-dev-bootstrap.sh   # MCP root + EnfusionMCP handlers + wb_connect smoke
+bash scripts/mod/tbd-dev-bootstrap.sh
+# Script: setup-mcp-game-root → copy EnfusionMCP handlers → if :5775 closed:
+#   steam -applaunch 1874910 → wait up to TBD_WB_WAIT_SEC (default 180s)
+# → wb_connect → mod_validate
+bash scripts/mod/mcp-call.sh wb_connect '{}'
 ```
 
-Copy [`apps/mod/.cursor/mcp.json`](../../../apps/mod/.cursor/mcp.json) → repo-root `.cursor/mcp.json` **or** Claude Code `.mcp.json` if the session supports MCP tools. Paths in that file must match this machine (`ENFUSION_*`).
+Optional: copy [`apps/mod/.mcp.json`](../../../apps/mod/.mcp.json) for native MCP tools; **`mcp-call.sh` is sufficient** in terminal sessions. Verify `ENFUSION_*` paths match this machine.
 
-If Workbench is not running, Claude Code **stops** and reports “preflight FAIL” — do not fabricate export JSON.
+**If bootstrap exit 1** (port still closed or `wb_connect` fails): report blocker in verify paste — human may need to open `addon.gproj` once and enable Net API (File → Options → General), then **Claude Code re-runs bootstrap**. Do not fabricate export JSON.
+
+**If bootstrap exit 0:** proceed with MCP discovery / export — no human step required.
 
 ---
 
@@ -60,7 +66,8 @@ API and palette need real Enfusion ResourceNames; mock catalog uses fake ids.
 
 | Step | Tool / script | Purpose |
 |------|---------------|---------|
-| Connect | `bash scripts/mod/mcp-call.sh wb_connect '{}'` | Net API session |
+| Bootstrap | `bash scripts/mod/tbd-dev-bootstrap.sh` | MCP root, handlers, **auto-launch Workbench**, `wb_connect` |
+| Connect | `bash scripts/mod/mcp-call.sh wb_connect '{}'` | Confirm Net API session (if not already from bootstrap) |
 | Discover | MCP `asset_search` / `game_read` / `game_browse` (or `mcp-call.sh` equivalent) | Find character + gear prefab ResourceNames |
 | Implement | Edit `apps/mod/tbd-framework/` export script | Emit `registry-items` JSON |
 | Validate mod | `mcp-call.sh mod_validate '{"modPath":"…/tbd-framework"}'` | Scripts compile in Workbench context |
@@ -129,7 +136,7 @@ jq -e '[.items[].resource_name | test("^\\{[0-9A-F]{16}\\}")] | all' "$EXPORT"
 
 | ID | Check | Pass condition |
 |----|-------|----------------|
-| A0 | MCP preflight | `tbd-dev-bootstrap.sh` + `wb_connect` exit 0 (paste output) |
+| A0 | MCP preflight | `tbd-dev-bootstrap.sh` exit 0 + `wb_connect` exit 0 (paste full bootstrap output) |
 | A1 | Export file exists | Committed path documented in paste |
 | A2 | Schema valid | `npm run validate` exit 0 including workbench export |
 | A3 | Row count | `items.length >= 20` |
@@ -164,10 +171,12 @@ After verify paste: note export path in T-068.6 checklist if changed.
 Read CLAUDE.md §Status. Active slice: T-068.1.
 Implement ONLY docs/specs/Mission_Creator_Architecture/t068_1_workbench_flat_export.md
 
-PREFLIGHT (human must have Workbench running — you verify):
+PREFLIGHT — Claude Code runs (do not skip):
   bash scripts/mod/tbd-dev-bootstrap.sh
   bash scripts/mod/mcp-call.sh wb_connect '{}'
-If preflight FAILs, stop and report — do NOT invent ResourceNames.
+Bootstrap auto-launches Workbench via steam -applaunch if :5775 is closed.
+If exit 1 after wait: report blocker; human may need Net API / open addon.gproj once — then YOU re-run bootstrap.
+If exit 0: proceed — no human handoff.
 
 Use enfusion-mcp (mcp-call.sh or session MCP) to discover vanilla character + gear prefabs.
 Implement export in apps/mod/tbd-framework/; commit packages/tbd-schema/registry/registry-items.workbench.json.

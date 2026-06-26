@@ -17,29 +17,32 @@ bash scripts/mod/deploy-staging.sh --dry-run
 
 ---
 
-## Workbench MCP setup (every clone)
+## Workbench MCP setup (Claude Code runs this)
 
-1. **`EnfusionMCP/` handlers** — gitignored; copied by bootstrap:
+`tbd-dev-bootstrap.sh` is the **single entrypoint** — Claude Code runs it at the start of every T-068.1 / .5 / .8 slice. It:
+
+1. Builds MCP pak symlink farm (`setup-mcp-game-root.sh`)
+2. Copies gitignored `EnfusionMCP/` handlers from the `enfusion-mcp` npm package
+3. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910`, wait up to **180s**)
+4. Runs `wb_connect` + `mod_validate`
 
 ```bash
 bash scripts/mod/tbd-dev-bootstrap.sh
 ```
 
-Expect ~19 `.c` files under `apps/mod/tbd-framework/Scripts/WorkbenchGame/EnfusionMCP/`. Staging deploy excludes this tree.
+**Human only if** bootstrap prints `ACTION REQUIRED` (exit 1): open `apps/mod/tbd-framework/addon.gproj` in Workbench, enable **Net API**, then Claude Code re-runs bootstrap.
 
-2. **Launch Workbench** — Arma Reforger Tools from Steam; open `apps/mod/tbd-framework/addon.gproj`; enable **Net API** (File → Options → General, port **5775** default).
-
-3. **MCP invocation** (pick one):
+Expect ~19 `.c` files under `EnfusionMCP/` after first run. Staging deploy excludes this tree.
 
 | Method | When |
 |--------|------|
 | **`bash scripts/mod/mcp-call.sh <tool> '<json>'`** | Claude Code **terminal** (always works) |
-| Copy [`apps/mod/.mcp.json`](../../apps/mod/.mcp.json) → project `.mcp.json` | Claude Code / Cursor session with native MCP tools |
-| Copy → [`.cursor/mcp.json`](../../.cursor/mcp.json) | Cursor IDE Workbench chats |
+| Copy [`apps/mod/.mcp.json`](../../apps/mod/.mcp.json) → project `.mcp.json` | Optional native MCP tools in IDE session |
+| Copy → [`.cursor/mcp.json`](../../.cursor/mcp.json) | Cursor IDE Workbench chats only |
 
-Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSION_PROJECT_PATH`. Pak symlink farm: [`scripts/mod/setup-mcp-game-root.sh`](../../scripts/mod/setup-mcp-game-root.sh).
+Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSION_PROJECT_PATH`.
 
-4. **Smoke connect:**
+**Smoke** (after bootstrap exit 0):
 
 ```bash
 bash scripts/mod/mcp-call.sh wb_connect '{}'
@@ -53,23 +56,23 @@ If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and 
 ## T-068.1 typical MCP flow
 
 ```
-wb_connect → asset_search / game_read / game_browse  (discover prefabs)
+tbd-dev-bootstrap.sh  (auto-launch Workbench if needed)
+→ wb_connect → asset_search / game_read / game_browse
 → implement export script in tbd-framework
 → wb_reload → mod_validate → run export
 → commit packages/tbd-schema/registry/registry-items.workbench.json
 → npm run validate in packages/tbd-schema
 ```
 
-Human runs Workbench + bootstrap; **Claude Code drives MCP** — do not hand-author 20+ GUIDs.
-
-After export: **`go run ./cmd/import-registry-items`** (T-068.2) loads rows into Postgres before Phase 1 E2E.
+Do not hand-author 20+ GUIDs. After export: **`go run ./cmd/import-registry-items`** (T-068.2) before Phase 1 E2E.
 
 ---
 
 ## T-068.5 verify flow
 
 ```
-Copy web loadout-export.json → $profile:TBD_LoadoutTest.json
+tbd-dev-bootstrap.sh
+→ copy web loadout-export.json → $profile:TBD_LoadoutTest.json
 → wb_reload → wb_play → mcp-wb-logs.sh (equip lines) → wb_stop
 ```
 

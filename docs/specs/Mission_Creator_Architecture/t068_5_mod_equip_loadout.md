@@ -55,7 +55,7 @@ Downloaded loadout JSON has no in-game consumer.
 ## Verify
 
 ```bash
-# Preflight
+# Preflight — Claude Code runs bootstrap (auto-launches Workbench if :5775 closed)
 bash scripts/mod/tbd-dev-bootstrap.sh
 bash scripts/mod/mcp-call.sh wb_connect '{}'
 
