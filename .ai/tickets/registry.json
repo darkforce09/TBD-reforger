@@ -1196,7 +1196,7 @@
         "T-068.10",
         "T-068.11"
       ],
-      "active_slice": "T-068.0.1",
+      "active_slice": "T-068.1",
       "stream": "mission-creator",
       "targets": [
         "website",
@@ -1963,7 +1963,7 @@
     {
       "id": "T-111",
       "title": "Lazy chunk residency @ 1M",
-      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
       "program": "scale",
       "surfaces": [
         "MAP",
@@ -2030,7 +2030,7 @@
       "impact": [
         "schema"
       ],
-      "title": "Monorepo migration (M0\u2013M3)",
+      "title": "Monorepo migration (M0–M3)",
       "summary": "Merge website + mod into TBD-Reforger; unified ticketing; path rewrites.",
       "milestone": "M1"
     },
