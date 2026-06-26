@@ -27,8 +27,9 @@ one greenfield Enfusion mod runs them all, and the web stack handles auth, event
 ### Claude Code (Enfusion work)
 
 1. Read [`CLAUDE-CODE-START.md`](CLAUDE-CODE-START.md)
-2. Enable **enfusion-mcp** before editing any `.c` file
-3. Open **only** `tbd-framework/addon.gproj` in Workbench — never `Tbd_framework/`
+2. Run **`bash scripts/tbd-dev-bootstrap.sh`** — installs gitignored `EnfusionMCP` handlers from the `enfusion-mcp` npm package (not in git)
+3. Enable **enfusion-mcp** before editing any `.c` file
+4. Open **only** `tbd-framework/addon.gproj` in Workbench — never `Tbd_framework/` or `crf_framework/`
 
 ### Dedicated server (local POC)
 

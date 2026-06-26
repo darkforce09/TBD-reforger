@@ -129,6 +129,14 @@ hits=$(git ls-files | xargs rg -l 'Design_Docs/' 2>/dev/null | rg -v 'rewrite-|M
 [[ -f mod/crf_framework/addon.gproj ]] && pass "crf_framework on disk (gitignored)" || fail "mod/crf_framework/ missing"
 [[ -f mod/crf_framework/REFERENCE-ONLY.md ]] && pass "crf_framework REFERENCE-ONLY marker" || fail "crf_framework incomplete"
 
+# EnfusionMCP — gitignored dev-only; soft warn if missing (run tbd-dev-bootstrap.sh)
+EMCP="mod/tbd-framework/Scripts/WorkbenchGame/EnfusionMCP"
+if [ -d "$EMCP" ] && [ "$(find "$EMCP" -name '*.c' 2>/dev/null | wc -l)" -ge 1 ]; then
+  pass "EnfusionMCP on disk (gitignored, $(find "$EMCP" -name '*.c' | wc -l) handlers)"
+else
+  echo "WARN: EnfusionMCP missing — run: cd mod && bash scripts/tbd-dev-bootstrap.sh"
+fi
+
 if [[ "$FAIL" -ne 0 ]]; then
   echo ""
   echo "Verification FAILED"
