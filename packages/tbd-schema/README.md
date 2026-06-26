@@ -10,14 +10,34 @@ partner VOIP bridge. Version it carefully.
 | Path | Purpose |
 |---|---|
 | [`schema/mission.schema.json`](schema/mission.schema.json) | Mission JSON contract **v1.1** (`slots[]` required) |
-| [`schema/registry.schema.json`](schema/registry.schema.json) | Registry format: alias to prefab GUID + web metadata |
+| [`schema/registry.schema.json`](schema/registry.schema.json) | **Alias registry** (POC): mission `alias → prefab GUID` spawn layer + web metadata |
+| [`schema/registry-items.schema.json`](schema/registry-items.schema.json) | **Item catalog** (T-068): flat Workbench export keyed by `resource_name` — drives the Virtual Arsenal |
+| [`schema/loadout-export.schema.json`](schema/loadout-export.schema.json) | **Loadout export** (T-068): dumb gear-slot download (`primary`/`uniform`/`vest`/`helmet`) |
 | [`golden-missions/`](golden-missions/) | Hand-maintained missions that must always validate and load |
-| [`registry/registry.example.json`](registry/registry.example.json) | Example registry used by the compatibility test |
+| [`registry/registry.example.json`](registry/registry.example.json) | Example alias registry used by the compatibility test |
+| [`registry/registry-items.sample.json`](registry/registry-items.sample.json) | Golden item catalog used by the compatibility test |
+| [`registry/loadout-export.sample.json`](registry/loadout-export.sample.json) | Golden loadout export used by the compatibility test |
 | [`bridge/bridge-contract.md`](bridge/bridge-contract.md) | Game to voice-client bridge contract (VOIP integration boundary) |
 | [`bridge/bridge-messages.schema.json`](bridge/bridge-messages.schema.json) | JSON Schema for bridge messages |
 | [`bridge/samples/`](bridge/samples/) | Canonical bridge message examples |
 | [`spikes/voip-spike-brief.md`](spikes/voip-spike-brief.md) | Phase 0.2 brief handed to the partner VOIP track |
 | [`spikes/registry-poc-0.4.md`](spikes/registry-poc-0.4.md) | Registry alias → GUID POC (GREEN; superseded for spawn) |
+
+## Two registry layers
+
+These are **separate** contracts — do not merge them:
+
+- **Alias registry** (`registry.schema.json`) — the mod-spawn layer. Missions and the
+  wizard speak **aliases** (`kit:us_rifleman`); the framework resolves each alias to a
+  prefab GUID at load. Unchanged by T-068.
+- **Item catalog** (`registry-items.schema.json`) — the web Virtual Arsenal layer. A flat
+  list of engine items identified by full Enfusion `resource_name`
+  (`{GUID}Prefabs/.../File.et`), exported from the Workbench, seeded/imported by the API,
+  and browsed in the editor. **No aliases** here.
+- **Loadout export** (`loadout-export.schema.json`) — a dumb download of four gear slots,
+  each a `resource_name` from the catalog or `null`. Consumed by the mod equip test.
+
+The mod's `Data/registry.json` (alias layer) is likewise unchanged.
 
 ## Schema versions
 

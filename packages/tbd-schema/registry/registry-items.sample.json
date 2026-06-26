@@ -1,0 +1,45 @@
+{
+  "registryItemsVersion": "1",
+  "modpackId": "TBD-Content",
+  "generatedAt": "2026-06-26T00:00:00Z",
+  "items": [
+    {
+      "resource_name": "{0A1B2C3D4E5F6071}Prefabs/Characters/TBD_US_Rifleman.et",
+      "display_name": "US Rifleman",
+      "category": "NATO/Rifleman",
+      "icon_url": "items/us_rifleman.png",
+      "kind": "character"
+    },
+    {
+      "resource_name": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+      "display_name": "M16A2",
+      "category": "NATO/Weapons/Primary",
+      "icon_url": "items/m16a2.png",
+      "kind": "gear_primary"
+    },
+    {
+      "resource_name": "{2A1B2C3D4E5F6073}Prefabs/Clothing/TBD_BDU_Woodland.et",
+      "display_name": "BDU (Woodland)",
+      "category": "NATO/Uniform",
+      "kind": "gear_uniform"
+    },
+    {
+      "resource_name": "{3A1B2C3D4E5F6074}Prefabs/Clothing/TBD_ALICE_Vest.et",
+      "display_name": "ALICE Load-Bearing Vest",
+      "category": "NATO/Vest",
+      "kind": "gear_vest"
+    },
+    {
+      "resource_name": "{4A1B2C3D4E5F6075}Prefabs/Clothing/TBD_PASGT_Helmet.et",
+      "display_name": "PASGT Helmet",
+      "category": "NATO/Helmet",
+      "kind": "gear_helmet"
+    },
+    {
+      "resource_name": "{5A1B2C3D4E5F6076}Prefabs/Weapons/TBD_M249.et",
+      "display_name": "M249 SAW",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary"
+    }
+  ]
+}

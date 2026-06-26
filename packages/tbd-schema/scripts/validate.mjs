@@ -16,10 +16,14 @@ addFormats(ajv);
 
 const missionSchema = readJSON(join(root, "schema", "mission.schema.json"));
 const registrySchema = readJSON(join(root, "schema", "registry.schema.json"));
+const registryItemsSchema = readJSON(join(root, "schema", "registry-items.schema.json"));
+const loadoutExportSchema = readJSON(join(root, "schema", "loadout-export.schema.json"));
 const bridgeSchema = readJSON(join(root, "bridge", "bridge-messages.schema.json"));
 
 const validateMission = ajv.compile(missionSchema);
 const validateRegistry = ajv.compile(registrySchema);
+const validateRegistryItems = ajv.compile(registryItemsSchema);
+const validateLoadoutExport = ajv.compile(loadoutExportSchema);
 const validateBridge = ajv.compile(bridgeSchema);
 
 let failures = 0;
@@ -45,6 +49,12 @@ for (const file of readdirSync(missionsDir).filter((f) => f.endsWith(".json"))) 
 console.log("Registry:");
 check("registry.example.json", validateRegistry, readJSON(join(root, "registry", "registry.example.json")));
 check("registry.vanilla-poc.json", validateRegistry, readJSON(join(root, "registry", "registry.vanilla-poc.json")));
+
+console.log("Registry items:");
+check("registry-items.sample.json", validateRegistryItems, readJSON(join(root, "registry", "registry-items.sample.json")));
+
+console.log("Loadout export:");
+check("loadout-export.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.sample.json")));
 
 console.log("Bridge message samples:");
 const samplesDir = join(root, "bridge", "samples");

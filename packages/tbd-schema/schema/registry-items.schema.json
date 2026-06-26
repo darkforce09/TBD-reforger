@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/registry-items/v1.json",
+  "title": "TBD Registry Items",
+  "description": "Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build).",
+  "type": "object",
+  "required": ["registryItemsVersion", "modpackId", "items"],
+  "additionalProperties": false,
+  "properties": {
+    "registryItemsVersion": { "type": "string" },
+    "modpackId": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/item" }
+    }
+  },
+  "$defs": {
+    "item": {
+      "type": "object",
+      "required": ["resource_name", "display_name", "category", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "resource_name": {
+          "type": "string",
+          "description": "Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.",
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\-]+$"
+        },
+        "display_name": { "type": "string", "minLength": 1 },
+        "category": {
+          "type": "string",
+          "description": "Slash-delimited browse path, e.g. NATO/Rifleman.",
+          "minLength": 1
+        },
+        "icon_url": { "type": "string" },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "character",
+            "gear_primary",
+            "gear_uniform",
+            "gear_vest",
+            "gear_helmet"
+          ]
+        }
+      }
+    }
+  }
+}

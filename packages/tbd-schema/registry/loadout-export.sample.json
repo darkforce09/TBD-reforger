@@ -1,0 +1,10 @@
+{
+  "loadoutVersion": "1",
+  "modpackId": "TBD-Content",
+  "gear": {
+    "primary": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+    "uniform": "{2A1B2C3D4E5F6073}Prefabs/Clothing/TBD_BDU_Woodland.et",
+    "vest": "{3A1B2C3D4E5F6074}Prefabs/Clothing/TBD_ALICE_Vest.et",
+    "helmet": null
+  }
+}

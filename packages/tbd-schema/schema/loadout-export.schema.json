@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/loadout-export/v1.json",
+  "title": "TBD Loadout Export",
+  "description": "Dumb loadout download: a fixed set of gear slots, each holding a resource_name (from registry-items) or null when empty. Consumed by the mod equip test and the web download.",
+  "type": "object",
+  "required": ["loadoutVersion", "modpackId", "gear"],
+  "additionalProperties": false,
+  "properties": {
+    "loadoutVersion": { "const": "1" },
+    "modpackId": { "type": "string" },
+    "gear": {
+      "type": "object",
+      "required": ["primary", "uniform", "vest", "helmet"],
+      "additionalProperties": false,
+      "properties": {
+        "primary": { "$ref": "#/$defs/slot" },
+        "uniform": { "$ref": "#/$defs/slot" },
+        "vest": { "$ref": "#/$defs/slot" },
+        "helmet": { "$ref": "#/$defs/slot" }
+      }
+    }
+  },
+  "$defs": {
+    "slot": {
+      "description": "Enfusion ResourceName for the equipped item, or null when the slot is empty.",
+      "type": ["string", "null"]
+    }
+  }
+}
