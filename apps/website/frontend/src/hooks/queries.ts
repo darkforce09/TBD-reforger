@@ -23,6 +23,7 @@ import type {
   VehicleRow,
   WikiPage,
 } from '@/types/api'
+import type { RegistryResponse } from '@/types/models/registry'
 
 function useAuthed() {
   return useAuthStore((s) => s.isAuthenticated())
@@ -39,6 +40,17 @@ export function useMe() {
     queryFn: async () => (await api.get<MeResponse>('/me')).data,
     enabled: authed,
     staleTime: 60_000,
+  })
+}
+
+// Virtual Arsenal catalog (T-068.3) — feeds the Mission Creator Asset Browser palette.
+export function useRegistry() {
+  const authed = useAuthed()
+  return useQuery({
+    queryKey: ['registry'],
+    queryFn: async () => (await api.get<RegistryResponse>('/registry')).data,
+    enabled: authed,
+    staleTime: 5 * 60_000,
   })
 }
 

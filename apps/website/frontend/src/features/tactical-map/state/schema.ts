@@ -52,7 +52,9 @@ export interface Slot {
   index: number // 0-based authored order -> json_payload slot_index
   role: string // "Squad Leader"
   tag?: string // "MED" | "ENG"
-  assetId?: string // catalog asset id from the palette drop (registry classname later)
+  // Registry resource_name from the palette drop — the full Enfusion ResourceName,
+  // e.g. {GUID}Prefabs/.../File.et (not a mock id, not a "classname").
+  assetId?: string
   position: { x: number; y: number; z: number; rotation: number } // x/y meters, z from DEM
   stance: 'stand' | 'crouch' | 'prone'
   loadoutId: ID | null
@@ -64,6 +66,8 @@ export interface Slot {
 export interface ClipboardSlot {
   role: string
   tag?: string
+  // Same registry resource_name as Slot.assetId — copy/paste (T-056) preserves the full
+  // Enfusion ResourceName ({GUID}Prefabs/.../File.et) carried from the palette drop.
   assetId?: string
   stance: Slot['stance']
   position: { x: number; y: number; z: number; rotation: number }

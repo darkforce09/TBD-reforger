@@ -1,15 +1,16 @@
 // Right-panel default (Ultra Plan §5.2): the Asset Browser as a nested, collapsible
 // Eden-style tree (Faction → Category → Class), NOT flat pills. Leaves are draggable:
-// dragging one onto the <TacticalMap> places a slot at the drop point. The catalog is
-// still mock; the registry-backed feed (GET /api/v1/registry) lands in T-068.
+// dragging one onto the <TacticalMap> places a slot at the drop point. The catalog is the
+// registry-backed feed (GET /api/v1/registry via useRegistry → buildCatalogTree, T-068.3).
 // T-055: a search field filters the tree live by asset/folder name.
 
 import { useMemo, useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { Loader2, Search, X } from 'lucide-react'
 import { ASSET_DND_MIME } from '@/features/tactical-map'
 import type { AssetDropPayload } from '@/features/tactical-map'
+import { useRegistry } from '@/hooks/queries'
 import { TreeView, type TreeNodeData } from '../tree/TreeView'
-import { ASSET_CATALOG } from './assetCatalogMock'
+import { buildCatalogTree } from '../../registry/buildCatalogTree'
 
 // Recursively filter the catalog by a lowercased query. A leaf is kept on a label match;
 // a folder is kept if its own name matches (→ keep its full subtree, so "nato" shows all of
@@ -38,10 +39,13 @@ export function AssetBrowser() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
+  const { data, isLoading, isError, refetch } = useRegistry()
+  const catalog = useMemo(() => buildCatalogTree(data?.data ?? []), [data])
+
   const nodes = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return q ? filterCatalog(ASSET_CATALOG, q) : ASSET_CATALOG
-  }, [query])
+    return q ? filterCatalog(catalog, q) : catalog
+  }, [query, catalog])
 
   const onNodeDragStart = (node: TreeNodeData, e: React.DragEvent) => {
     const payload: AssetDropPayload = { assetId: node.id, role: node.label, kind: 'slot' }
@@ -49,14 +53,60 @@ export function AssetBrowser() {
     e.dataTransfer.effectAllowed = 'copy'
   }
 
+  const header = (
+    <header>
+      <h2 className="text-headline-sm text-on-surface">Asset Browser</h2>
+      <p className="text-label-sm normal-case text-outline">
+        Drag an asset onto the map to place it.
+      </p>
+    </header>
+  )
+
+  // Loading: spinner only — no search box, no TreeView, no filterCatalog (no empty-tree flash).
+  if (isLoading && !data) {
+    return (
+      <div className="flex flex-col gap-2">
+        {header}
+        <div className="flex items-center justify-center gap-2 px-2 py-6 text-label-sm normal-case text-outline">
+          <Loader2 className="size-3.5 animate-spin" />
+          Loading assets…
+        </div>
+      </div>
+    )
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col gap-2">
+        {header}
+        <div className="flex flex-col items-center gap-2 px-2 py-6 text-center text-label-sm normal-case text-outline">
+          Could not load assets.
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="rounded-md border border-outline-variant/40 px-2 py-1 text-label-md text-on-surface transition-colors hover:bg-white/10"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (catalog.length === 0) {
+    return (
+      <div className="flex flex-col gap-2">
+        {header}
+        <p className="px-2 py-6 text-center text-label-sm normal-case text-outline">
+          No assets in this modpack.
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col gap-2">
-      <header>
-        <h2 className="text-headline-sm text-on-surface">Asset Browser</h2>
-        <p className="text-label-sm normal-case text-outline">
-          Drag an asset onto the map to place it.
-        </p>
-      </header>
+      {header}
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-outline" />

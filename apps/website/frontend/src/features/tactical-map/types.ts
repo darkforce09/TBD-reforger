@@ -20,9 +20,10 @@ export const ASSET_DND_MIME = 'application/x-tbd-asset'
 
 /** Payload carried in dataTransfer when dragging a catalog asset onto the map. */
 export interface AssetDropPayload {
-  /** Catalog asset id (registry classname once the worker lands). */
+  /** Registry `resource_name` — the full Enfusion ResourceName, e.g.
+   *  `{GUID}Prefabs/.../File.et` (not a mock id, not a "classname"). */
   assetId: string
-  /** Human role/label → the new slot's `role` until the registry feed exists. */
+  /** Human role/label (registry `display_name`) → the new slot's `role`. */
   role: string
   /** What entity to materialize. Only 'slot' is wired today. */
   kind: 'slot'
