@@ -54,6 +54,7 @@ Use these paths in links — old `eden_p1_*` / `track_a_*` slugs are obsolete.
 | T-055 | [`t055_asset_browser_search.md`](../Design_Docs/Mission_Creator_Architecture/t055_asset_browser_search.md) |
 | T-056 | [`t056_copy_paste.md`](../Design_Docs/Mission_Creator_Architecture/t056_copy_paste.md) |
 | T-057 … T-067 | [`t057_map_performance_hotfix.md`](../Design_Docs/Mission_Creator_Architecture/t057_map_performance_hotfix.md) … [`t067_spatial_chunks.md`](../Design_Docs/Mission_Creator_Architecture/t067_spatial_chunks.md) |
+| **T-068** | [`t068_asset_registry.md`](../Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md) (**ready**) |
 
 Full shipped scale-program table: [`docs/TICKET_REGISTRY.md`](TICKET_REGISTRY.md).
 

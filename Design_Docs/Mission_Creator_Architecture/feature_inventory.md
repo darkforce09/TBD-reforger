@@ -760,15 +760,15 @@
 | **Goal** | Browse placeable units |
 | **Trigger** | Factions tab active |
 | **Preconditions** | — |
-| **Procedure** | `ASSET_CATALOG` mock → `TreeView`; leaf drag `ASSET_DND_MIME` |
-| **Postconditions** | Draggable leaves |
+| **Procedure** | **Ready (T-068):** `GET /api/v1/registry` → `buildCatalogTree` → `TreeView`; leaf drag `ASSET_DND_MIME` with classname. **Today:** `ASSET_CATALOG` mock |
+| **Postconditions** | Draggable leaves with classname in DnD payload |
 | **Inputs** | Expand/select/drag |
-| **Outputs** | DnD payload |
-| **Edge cases** | Not from `GET /api/v1/registry` |
-| **Acceptance** | `- [ ] NATO tree visible` `- [ ] Leaf drags to map` |
+| **Outputs** | DnD payload (`assetId` = classname) |
+| **Edge cases** | Loading/error/empty modpack states (T-068.1) |
+| **Acceptance** | `- [ ] NATO tree from API` `- [ ] Leaf drags to map with classname` |
 | **Eden parity** | Eden:RIGHT-CAT-001 |
-| **Status** | partial |
-| **Evidence** | `AssetBrowser.tsx`, `assetCatalogMock.ts` |
+| **Status** | partial (spec ready) |
+| **Evidence** | [`t068_asset_registry.md`](t068_asset_registry.md); today: `AssetBrowser.tsx`, `assetCatalogMock.ts` |
 
 #### RIGHT-SEARCH-001 — Asset browser search
 

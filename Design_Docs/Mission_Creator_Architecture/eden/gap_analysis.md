@@ -25,7 +25,7 @@
 
 | eden_id | tbd_id | parity | ticket | gap_notes |
 |---------|--------|--------|----------|-----------|
-| RIGHT-MODE-001 | RIGHT-CAT-001 | partial | T-068 | Factions mock only; not F1 Object taxonomy |
+| RIGHT-MODE-001 | RIGHT-CAT-001 | partial | T-068 (spec ready) | Factions mock only; registry spec ready — ship closes Factions feed |
 | RIGHT-MODE-002 | — | missing | — | Compositions / custom save |
 | RIGHT-MODE-003 | RIGHT-STUB-003 | missing | — | Triggers |
 | RIGHT-MODE-004 | — | missing | — | Waypoints |

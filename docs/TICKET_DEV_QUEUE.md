@@ -4,3 +4,9 @@
 # Developer Queue
 
 Only `ready` tickets with specs.
+
+## T-068 — Asset registry + palette
+
+- **Spec:** `Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md`
+- **Branch:** `ticket/T-068`
+- **Summary:** Replace mock catalog with registry-backed Factions tree.

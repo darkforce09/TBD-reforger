@@ -101,9 +101,10 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-067**
 
+**ACTIVE NOW:** **T-068** — T-068.0 (Asset registry + palette). Spec: `Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md`.
 
 **Next (by order):**
-- **T-068** — Asset registry + palette (`queued`)
+- **T-068** — Asset registry + palette (`ready`)
 - **T-069** — Markers on map (`queued`)
 - **T-070** — Vehicles placeable (`queued`)
 - **T-071** — ORBAT Manager modal (`queued`)
@@ -117,13 +118,14 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
-### ACTIVE SLICE — Eden T-068+ (queue)
+### ACTIVE SLICE — T-068 ready (Eden)
 
 | | |
 |---|---|
-| **Next** | **T-068** — asset registry + palette per [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) |
-| **Handoff** | [`agent_execution.md`](Design_Docs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
-| **Claude Code** | Read registry spec → implement on `ticket/T-0xx` branch → verify → return notes. **Do not edit docs.** |
+| **Ready** | **T-068** — asset registry + palette per [`t068_asset_registry.md`](Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md) |
+| **Slices** | **T-068.0** backend `GET /api/v1/registry` · **T-068.1** frontend palette |
+| **Handoff** | [`agent_execution.md`](Design_Docs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE · [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md) |
+| **Claude Code** | Read registry spec → implement T-068.0 then T-068.1 → verify → return notes. **Do not edit docs.** |
 | **Cursor** | Registry + narrative doc sync on ship |
 
 **Done (shipped):**
@@ -522,16 +524,16 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Next (Eden — T-068+):**
-- **T-068** — asset registry + palette ([`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md); [`eden/gap_analysis.md`](Design_Docs/Mission_Creator_Architecture/eden/gap_analysis.md))
-- **T-069+** — markers, vehicles, ORBAT Manager modal, …
+**Next (Eden — after T-068 ship):**
+- **T-069** — markers on map
+- **T-070** — vehicles placeable
+- **T-071** — ORBAT Manager modal
 - **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](Design_Docs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
 Mega render/bindings optimizations **deferred** — MC [`ROADMAP.md`](Design_Docs/Mission_Creator_Architecture/ROADMAP.md) §Deferred mega optimizations (**T-094** typed-array, etc.).
 
 **Platform / deferred (unchanged):**
 - **T-090** / **T-091** — aligned map tiles + DEM / Z-axis (blocked on hosted assets).
-- **T-068** — thin registry API as needed for real palette + markers/vehicles.
 - Ruler/LoS/viewshed — after **T-091** heightmap phase.
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.

@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. Next: T-068+ per TICKET_LEAD."
+overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 ready — implement per t068_asset_registry.md."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to Design_Docs/Mission_Creator_Architecture/agent_execution.md"
@@ -42,12 +42,12 @@ isProject: false
 ## One-line prompt (copy this)
 
 ```
-Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. Open work = next
-queued tickets in docs/TICKET_LEAD.md (T-068+). Authority:
-ROADMAP.md → this file §ACTIVE SLICE + Decisions log. **T-057–T-067 shipped.** Next **T-068+**.
-Thin registry API (T-068 dependency) is in scope; full tiles/DEM (**T-090**, **T-091**)
-and ruler/LoS are deferred. After each slice: `cd frontend && npm run build && npm run lint`.
-Do not commit unless I ask.
+Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 is READY**
+(spec: Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md). Implement
+T-068.0 backend then T-068.1 frontend. Authority: ROADMAP.md → this file §ACTIVE SLICE.
+**T-057–T-067 shipped.** Thin registry only — no worker/Arsenal. Full tiles/DEM (**T-090**,
+**T-091**) and ruler/LoS deferred. After each slice: `make test-it` (backend) and
+`cd frontend && npm run build && npm run lint`. Do not edit docs; do not commit unless I ask.
 ```
 
 Shorter variant:
@@ -360,13 +360,20 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ---
 
-## ACTIVE SLICE — Eden T-068+ (queue)
+## ACTIVE SLICE — T-068 ready (Eden)
 
-**Next:** **T-068** — asset registry + palette per [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md).
+**Status:** **ready** — spec [`t068_asset_registry.md`](t068_asset_registry.md). **Claude Code implements; Cursor syncs docs on ship.**
+
+| Slice | Scope |
+|-------|--------|
+| **T-068.0** | Backend — `registry_items` table, dev seed, `GET /api/v1/registry` + ETag |
+| **T-068.1** | Frontend — `useRegistry`, `buildCatalogTree`, wire `AssetBrowser`, delete mock |
+
+**Locked out of scope:** `registry.worker.ts`, ArsenalInspector, ingest pipeline, Vehicles/Markers tabs (**T-069**/**T-070**), compiler classname export.
 
 **T-067 shipped** — [`t067_spatial_chunks.md`](t067_spatial_chunks.md): `slot-add-bulk` paste patch; dormant chunk scaffolding; CPU viewport cull deferred (T-067.0.1 revert to `getBaseIcons()`).
 
-**Deferred:** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension` viewport cull (`idea` — [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md#scale)).
+**Deferred (idea):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension` viewport cull — [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md#scale).
 
 ---
 

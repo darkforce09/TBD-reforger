@@ -8,10 +8,10 @@
 
 ## Ready
 
+- **T-068** (680) — Asset registry + palette [ready] — Replace mock catalog with registry-backed Factions tree.
 
 ## Next queued (top 10)
 
-- **T-068** (680) — Asset registry + palette [queued] — Replace mock catalog with registry-backed Factions tree.
 - **T-069** (690) — Markers on map [queued] — Place and edit map markers with registry-backed types.
 - **T-070** (700) — Vehicles placeable [queued] — Drag vehicles from palette onto map with crew hooks.
 - **T-071** (710) — ORBAT Manager modal [queued] — Remove duplicate ORBAT tree from left sidebar; open ORBAT Manager modal for all-side faction/squad/slot authoring, slotting-screen order, standardizations, logos, and arsenal.

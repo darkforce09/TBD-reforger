@@ -877,7 +877,7 @@
       "id": "T-068",
       "order": 680,
       "program": "eden",
-      "status": "queued",
+      "status": "ready",
       "surfaces": [
         "RIGHT",
         "DATA"
@@ -898,7 +898,13 @@
         "T-071"
       ],
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-068"
+      "branch": "ticket/T-068",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md",
+      "slices": [
+        "T-068.0",
+        "T-068.1"
+      ],
+      "active_slice": "T-068.0"
     },
     {
       "id": "T-069",
@@ -1425,7 +1431,7 @@
     {
       "id": "T-111",
       "title": "Lazy chunk residency @ 1M",
-      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
       "program": "scale",
       "surfaces": [
         "MAP",

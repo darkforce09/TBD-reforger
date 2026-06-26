@@ -60,7 +60,7 @@
 | T-065 | 650 | shipped | scale | Cluster LOD at extreme zoom | Supercluster index with pan-stable cache for 367k missions. |
 | T-066 | 660 | shipped | scale | Worker compile offload | Save/Export compile in Comlink worker via pickMapSnapshot. |
 | T-067 | 670 | shipped | scale | Spatial chunks | Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on. |
-| T-068 | 680 | queued | eden | Asset registry + palette | Replace mock catalog with registry-backed Factions tree. |
+| T-068 | 680 | ready | eden | Asset registry + palette | Replace mock catalog with registry-backed Factions tree. |
 | T-069 | 690 | queued | eden | Markers on map | Place and edit map markers with registry-backed types. |
 | T-070 | 700 | queued | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
 | T-071 | 710 | queued | eden | ORBAT Manager modal | Remove duplicate ORBAT tree from left sidebar; open ORBAT Manager modal for all-side faction/squad/slot authoring, slotting-screen order, standardizations, logos, and arsenal. |

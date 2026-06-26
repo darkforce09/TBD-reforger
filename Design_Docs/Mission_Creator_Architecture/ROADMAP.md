@@ -9,7 +9,7 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-068** — Asset registry + palette (queued)
+- **T-068** — Asset registry + palette (ready)
 - **T-069** — Markers on map (queued)
 - **T-070** — Vehicles placeable (queued)
 - **T-071** — ORBAT Manager modal (queued)
@@ -152,8 +152,9 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | [`frontend/docs/pages/mission-library.md`](../../frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
+| **[`t068_asset_registry.md`](t068_asset_registry.md)** | **T-068** — Asset registry + palette (thin API + Factions tree) (**ready**) |
 | **[`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md)** | **T-110** — Terrain base + mission layers (future; Base + Delta for props only) |
-| [`CLAUDE.md`](../../CLAUDE.md) §Status | **ACTIVE: T-067.0** (spec ready); latest shipped **T-066** |
+| [`CLAUDE.md`](../../CLAUDE.md) §Status | **ACTIVE: T-068** (spec ready); latest shipped **T-067** |
 
 ---
 
@@ -164,10 +165,10 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **Mission Armory** | Aggregate briefing list (“M16A2 Rifle ×45”) per faction | Backend `MissionArmory` + `GET/PUT /missions/:id/armory` — **already exists**, separate from the editor |
 | **ORBAT slot `loadout`** | Short string on each slot in export (`"L85A3 + GL"`) | `json_payload.orbat[].slots[].loadout` — compiler writes `''` today |
 | **Loadout (editor model)** | Full per-slot gear graph: uniform, vest, weapons, mags, attachments | Y.Doc `loadouts` + `items` maps in schema — **UI not built** |
-| **Master Item Registry** | Every valid classname + slot rules + icons | **Not built** — planned `GET /api/v1/registry`; source = game/modpack ingest (incl. Armory Forger data) |
+| **Master Item Registry** | Every valid classname + slot rules + icons | **Not built** — planned `GET /api/v1/registry`; source = **Arma Reforger** / modpack ingest |
 | **Loadout Forge** | Web UI to edit a slot’s loadout | Stub in `AttributesModal` — see [`engineering_plan.md`](engineering_plan.md) |
 
-**Armory Forger** (external / mod) = **data source** for the loadout program, not something the map editor implements. The website needs an **ingest pipeline + Postgres registry**, then the editor **reads** it.
+**Arma Reforger** (game + modpack entity/workshop data) = **data source** for the loadout program, not something the map editor implements. The website needs an **ingest pipeline + Postgres registry**, then the editor **reads** it.
 
 ---
 
@@ -258,7 +259,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
 
-**Next:** see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md). **T-067 shipped** — [`t067_spatial_chunks.md`](t067_spatial_chunks.md). Eden remainder at **T-068+**.
+**Next:** see [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md). **T-068 ready** — [`t068_asset_registry.md`](t068_asset_registry.md). Latest shipped **T-067**.
 
 ---
 
@@ -325,7 +326,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
-| **T-068** | Registry API + catalog UI backed by registry (not `assetCatalogMock.ts`) | **Queued** |
+| **T-068** | Registry API + catalog UI backed by registry (not `assetCatalogMock.ts`) | **Ready** — [`t068_asset_registry.md`](t068_asset_registry.md) |
 | **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
 | **T-071** | ORBAT Manager modal — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal | **Queued** |
@@ -352,7 +353,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 - Optional: sync with **Mission Armory** totals (aggregate counts for briefing page)
 
 ### Prerequisites (all missing)
-- **Ingest format** from Armory Forger / game — define JSON schema for one export run
+- **Ingest format** from **Arma Reforger** / modpack export — define JSON schema for one export run
 - **Postgres schema** — items, attachments, slot types, compat matrix, modpack version
 - **Ingest job** — idempotent upsert per modpack version
 - **Registry worker** (frontend) — IndexedDB cache, `canEquip` / `canAttach`
@@ -400,7 +401,7 @@ Local IndexedDB + manual save  Autosave + semver versions
 | **5** | Registry v1 API + ingest + palette (expand beyond Eden-minimal) | In-game classname list |
 | **6** | Vehicles + markers on map (if not closed in **T-068+**) | Phase 5 |
 | **7** | ORBAT Manager modal (if not closed in **T-068+**) | Phase 5 |
-| **8** | Loadout Forge MVP | Phase 5 + Armory Forger export |
+| **8** | Loadout Forge MVP | Phase 5 + Arma Reforger / modpack export |
 | **9** | Full item matrix + compiler loadouts | Phase 8 |
 | **10** | **T-110** terrain base + sparse deltas | T-067 + T-068+ |
 
@@ -449,5 +450,5 @@ All linked in **Documentation** section above. Quick pointers:
 
 1. **Map assets** — Do we have Everon top-down tiles + heightmap exports, or must we generate them from Reforger/workshop tools? *(Gather in parallel; **implementation deferred** until T-068+ per §Current strategy.)*
 2. **Mod JSON contract** — Who provides the golden `json_payload` / spawn format for position + loadout verification?
-3. **Armory Forger export** — Exact file/API format for ingest (this unlocks loadout program scope: “50 vests” = count rows in export).
-4. **Mission Armory vs slot loadouts** — Should Forge changes update `MissionArmory` quantities automatically, or stay separate?
+3. **Arma Reforger / modpack export** — Exact file/API format for ingest (this unlocks loadout program scope: “50 vests” = count rows in export).
+4. **Mission Armory vs slot loadouts** — Should Loadout Forge changes update `MissionArmory` quantities automatically, or stay separate?

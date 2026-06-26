@@ -4,5 +4,13 @@
   "concurrency": 3,
   "worktree_base": "../worktrees",
   "git_base": "main",
-  "tickets": []
+  "tickets": [
+    {
+      "id": "T-068",
+      "title": "Asset registry + palette",
+      "status": "ready",
+      "spec": "Design_Docs/Mission_Creator_Architecture/t068_asset_registry.md",
+      "branch": "ticket/T-068"
+    }
+  ]
 }
