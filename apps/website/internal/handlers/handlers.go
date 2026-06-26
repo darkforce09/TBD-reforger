@@ -143,6 +143,8 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	mm.POST("/missions", h.CreateMission)
 	mm.GET("/missions/:id/export", h.ExportMission)
 	mm.POST("/missions/:id/inject", h.InjectMission)
+	// Virtual Arsenal registry catalog (T-068).
+	mm.GET("/registry", h.ListRegistry)
 
 	// Admin CMS + wiki authoring (M4) + mission approvals (M5).
 	admin := rg.Group("", middleware.RequireAuth(h.jwt), middleware.RequireMinRole("admin"))

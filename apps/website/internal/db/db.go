@@ -31,6 +31,7 @@ var preMigrationFiles = []string{
 var postMigrationFiles = []string{
 	"migrations/03_indexes.sql",
 	"migrations/04_leaderboard_mv.sql",
+	"migrations/05_registry_items.sql",
 }
 
 // allModels is the full set of tables managed by AutoMigrate. Order matters only
@@ -63,6 +64,7 @@ func allModels() []any {
 		&models.VehicleDatabase{},
 		&models.Modpack{},
 		&models.ModpackMod{},
+		&models.RegistryItem{},
 		&models.Warning{},
 		&models.AuditLog{},
 		&models.FireMission{},

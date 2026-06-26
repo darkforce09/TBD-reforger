@@ -19,8 +19,9 @@ db-down: ## Stop local Postgres (keeps the data volume)
 db-logs: ## Tail the Postgres logs
 	cd $(WEB) && $(COMPOSE) logs -f db
 
-seed: ## Apply data seeds (Discord role mappings) to the running DB
+seed: ## Apply data seeds (Discord role mappings + registry catalog) to the running DB
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
+	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/registry_dev.sql
 
 api: ## Run the Go API (loads apps/website/.env; runs migrations on boot)
 	cd $(WEB) && go run ./cmd/api

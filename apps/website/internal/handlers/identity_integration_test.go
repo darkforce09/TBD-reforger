@@ -43,9 +43,10 @@ func setupIT(t *testing.T) (*gin.Engine, *Handler, *gorm.DB) {
 }
 
 type reqOpt struct {
-	bearer  string
-	service string
-	body    string
+	bearer      string
+	service     string
+	body        string
+	ifNoneMatch string
 }
 
 func do(r http.Handler, method, path string, opt reqOpt) *httptest.ResponseRecorder {
@@ -64,6 +65,9 @@ func do(r http.Handler, method, path string, opt reqOpt) *httptest.ResponseRecor
 	}
 	if opt.service != "" {
 		req.Header.Set("X-Service-Token", opt.service)
+	}
+	if opt.ifNoneMatch != "" {
+		req.Header.Set("If-None-Match", opt.ifNoneMatch)
 	}
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
