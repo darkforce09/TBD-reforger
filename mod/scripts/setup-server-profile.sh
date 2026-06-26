@@ -12,17 +12,19 @@
 #   bash scripts/setup-server-profile.sh ~/.local/share/ArmaReforger/profile
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PROFILE="${1:-${TBD_PROFILE:-$ROOT/.local-test-profile}}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+PROFILE="${1:-${TBD_PROFILE:-$MOD_ROOT/.local-test-profile}}"
 PROFILE_ROOT="$PROFILE/profile"
 
 mkdir -p "$PROFILE_ROOT/missions"
 
 # Backend config — edit serverToken to match GAME_SERVER_TOKENS in website/.env
-cp "$ROOT/tbd-framework/Data/backend.example.json" "$PROFILE_ROOT/TBD_BackendConfig.json"
+cp "$MOD_ROOT/tbd-framework/Data/backend.example.json" "$PROFILE_ROOT/TBD_BackendConfig.json"
 
 # Point at local API + dev token from .env if present
-ENV_FILE="$ROOT/website/.env"
+ENV_FILE="$WEB/.env"
 if [ -n "${GAME_SERVER_TOKEN:-}" ]; then
   TOKEN="$GAME_SERVER_TOKEN"
 elif [ -f "$ENV_FILE" ]; then
@@ -33,10 +35,10 @@ if [ -n "${TOKEN:-}" ]; then
 fi
 
 # Seed mission fallback on disk (matches golden mission served by API)
-cp "$ROOT/shared/tbd-schema/golden-missions/msn_8f3a2c.json" "$PROFILE_ROOT/missions/msn_8f3a2c.json"
+cp "$SCHEMA/golden-missions/msn_8f3a2c.json" "$PROFILE_ROOT/missions/msn_8f3a2c.json"
 
 # Optional registry override for dedicated (mod ships Data/registry.json; this is backup)
-cp "$ROOT/tbd-framework/Data/registry.json" "$PROFILE_ROOT/TBD_Registry.json" 2>/dev/null || true
+cp "$MOD_ROOT/tbd-framework/Data/registry.json" "$PROFILE_ROOT/TBD_Registry.json" 2>/dev/null || true
 
 echo "Profile ready at: $PROFILE (game data under $PROFILE_ROOT)"
 echo "  profile/TBD_BackendConfig.json"

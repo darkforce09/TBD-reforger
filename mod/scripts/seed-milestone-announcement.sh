@@ -2,8 +2,10 @@
 # Insert pinned Milestone #1 announcement on the event website (not Discord).
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WEB="$ROOT/website"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+WEB="$WEB"
 set -a && source "$WEB/.env" && set +a
 
 if command -v psql >/dev/null 2>&1; then

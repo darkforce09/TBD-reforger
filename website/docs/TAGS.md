@@ -6,13 +6,13 @@ Every shipped feature, active slice, and queued/deferred item uses a **`T-0xx`**
 
 | Resource | Purpose |
 |----------|---------|
-| [`tickets/registry.json`](../tickets/registry.json) | Canonical ticket rows (status, order, spec path, program) |
+| [`tickets/registry.json`](../../tickets/registry.json) | Canonical ticket rows (status, order, spec path, program) |
 | [`docs/TICKET_REGISTRY.md`](TICKET_REGISTRY.md) | Full generated table — all tickets |
 | [`docs/TICKET_LEAD.md`](TICKET_LEAD.md) | Lead dashboard — **ready**, **active**, next queued |
 | [`docs/TICKET_DEV_QUEUE.md`](TICKET_DEV_QUEUE.md) | Claude Code implementation queue |
-| [`tickets/AI_PLAYBOOK.md`](../tickets/AI_PLAYBOOK.md) | Edit registry → `./scripts/ticket sync` workflow |
+| [`tickets/AI_PLAYBOOK.md`](../../tickets/AI_PLAYBOOK.md) | Edit registry → `./scripts/ticket sync` workflow |
 
-After changing `registry.json`, run **`./scripts/ticket sync`** and commit registry + generated views together. Never hand-edit `TICKET_*.md` or the `<!-- ticket-sync:status -->` block in `CLAUDE.md`.
+After changing `registry.json`, run **`./scripts/ticket sync`** from monorepo root and commit registry + generated views together. Never hand-edit root `docs/TICKET_*.md` or the `<!-- ticket-sync:status -->` block in root `CLAUDE.md`.
 
 ## What T-0xx means
 
@@ -67,12 +67,12 @@ Full shipped scale-program table: [`docs/TICKET_REGISTRY.md`](TICKET_REGISTRY.md
 
 ## T-0xx vs engineering phases
 
-[`CLAUDE.md`](../CLAUDE.md) **T-029–T-040** = git milestones for the MC shell.  
+[`CLAUDE.md`](../../CLAUDE.md) **T-029–T-040** = git milestones for the MC shell.  
 [`engineering_plan.md`](../docs/specs/Mission_Creator_Architecture/engineering_plan.md) phases 0–9 = engineering design — not 1:1 with ticket order.
 
 ## Adding or changing tickets
 
-1. Edit [`tickets/registry.json`](../tickets/registry.json).
+1. Edit [`tickets/registry.json`](../../tickets/registry.json).
 2. `./scripts/ticket sync` (regenerates `TICKET_*.md`, `CLAUDE.md` status block, queue).
 3. `./scripts/ticket check` (or `make ticket-check-strict` before doc-only merges).
 4. Sync narrative docs per [`AGENT_COMMIT_CHECKLIST.md`](AGENT_COMMIT_CHECKLIST.md).

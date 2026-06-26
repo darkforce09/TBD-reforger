@@ -3,8 +3,10 @@
 # Usage: bash scripts/remote-log-grep.sh
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="$ROOT/scripts/deploy.env"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+ENV_FILE="$DEPLOY_ENV"
 # shellcheck source=/dev/null
 [ -f "$ENV_FILE" ] && source "$ENV_FILE"
 

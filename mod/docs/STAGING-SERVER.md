@@ -43,8 +43,8 @@ flowchart TB
 ```bash
 which sshpass rsync ssh curl git node
 node -v   # 18+
-cd tbd-schema && npm ci
-cp scripts/deploy.env.example scripts/deploy.env   # fill SSH + token + paths
+cd ../shared/tbd-schema && npm ci
+cp mod/scripts/deploy.env.example mod/scripts/deploy.env   # fill SSH + token + paths
 ```
 
 Workbench spawn should already pass (`assigned slot` + `spawn requested` in Proton WB log).
@@ -176,7 +176,7 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 
 | Step | Command | Pass |
 |------|---------|------|
-| V1 Mission JSON | `node shared/tbd-schema/scripts/validate-file.mjs shared/tbd-schema/golden-missions/msn_8f3a2c.json` | exit 0 |
+| V1 Mission JSON | `node shared/tbd-schema/scripts/validate-file.mjs shared/tbd-schema/golden-missions/msn_8f3a2c.json` (from monorepo root) | exit 0 |
 | V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | HTTP 200 |
 | V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | HTTP 200 |
 | V4 Auth gate | SSH: unauthenticated compiled URL | HTTP 401 |

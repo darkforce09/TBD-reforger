@@ -3,9 +3,11 @@
 # Run before AND after attempting Direct Join in Arma.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DEBUG_LOG="$ROOT/.cursor/debug-8fc1e0.log"
-ENV_FILE="$ROOT/scripts/deploy.env"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+DEBUG_LOG="$MONO_ROOT/.cursor/debug-8fc1e0.log"
+ENV_FILE="$DEPLOY_ENV"
 RUN_ID="${1:-user-repro}"
 
 # shellcheck source=/dev/null

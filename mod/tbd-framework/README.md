@@ -107,7 +107,7 @@ NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
 ## Registry
 
 Shipped at `Data/registry.json` (vanilla POC aliases).  
-Spec: [`tbd-schema/spikes/registry-poc-0.4.md`](../tbd-schema/spikes/registry-poc-0.4.md) (historical spike).
+Spec: [`shared/tbd-schema/spikes/registry-poc-0.4.md`](../../shared/tbd-schema/spikes/registry-poc-0.4.md) (historical spike).
 
 Replace with TBD-Content export in Phase 1+.
 

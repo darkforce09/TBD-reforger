@@ -3,8 +3,10 @@
 # Usage: bash scripts/tbd-dev-bootstrap.sh [--api] [--server]
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-MOD="$ROOT/tbd-framework"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+MOD="$MOD_ROOT/tbd-framework"
 GPROJ="$MOD/addon.gproj"
 MCP_MOD="/home/Samuel/.npm/_npx/be402e1c82700767/node_modules/enfusion-mcp/mod"
 HANDLERS_SRC="$MCP_MOD/Scripts/WorkbenchGame/EnfusionMCP"
@@ -17,7 +19,7 @@ export ENFUSION_WORKBENCH_PATH="${ENFUSION_WORKBENCH_PATH:-$HOME/.local/share/St
 export ENFUSION_PROJECT_PATH="${ENFUSION_PROJECT_PATH:-$HOME/Documents/Games/ArmaReforgerWorkbench/addons}"
 
 echo "== TBD dev bootstrap =="
-bash "$ROOT/scripts/setup-mcp-game-root.sh"
+bash "$MOD_SCRIPTS/setup-mcp-game-root.sh"
 
 if [ -d "$HANDLERS_SRC" ] && [ ! -d "$HANDLERS_DST" ]; then
   mkdir -p "$(dirname "$HANDLERS_DST")"
@@ -47,23 +49,23 @@ if ! port_open; then
 fi
 
 echo "Port $WB_PORT is listening."
-bash "$ROOT/scripts/mcp-call.sh" wb_connect '{}' || {
+bash "$MOD_SCRIPTS/mcp-call.sh" wb_connect '{}' || {
   echo "wb_connect failed — reload tbd-framework addon in Workbench Resource Browser and retry."
   exit 1
 }
 
-bash "$ROOT/scripts/mcp-call.sh" mod_validate "{\"modPath\":\"$MOD\"}" || true
+bash "$MOD_SCRIPTS/mcp-call.sh" mod_validate "{\"modPath\":\"$MOD\"}" || true
 
 for arg in "$@"; do
   case "$arg" in
     --api)
       podman start tbdevent-postgres 2>/dev/null || true
-      (cd "$ROOT/website" && npm run dev) &
+      (cd "$WEB" && npm run dev) &
       echo "API dev server starting on :8080"
       ;;
     --server)
-      bash "$ROOT/scripts/setup-server-profile.sh" 2>/dev/null || true
-      bash "$ROOT/scripts/run-dev-server.sh" &
+      bash "$MOD_SCRIPTS/setup-server-profile.sh" 2>/dev/null || true
+      bash "$MOD_SCRIPTS/run-dev-server.sh" &
       echo "Dedicated server starting..."
       ;;
   esac

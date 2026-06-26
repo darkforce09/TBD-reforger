@@ -65,7 +65,7 @@ bash scripts/test-phase1-api.sh
 | Path | Purpose |
 |---|---|
 | [`tbd-framework/`](tbd-framework/) | **Production Enfusion mod** (TBD-owned) |
-| [`tbd-schema/`](tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
+| [`shared/tbd-schema/`](../shared/tbd-schema/) | Mission JSON schema, registry, golden missions, VOIP bridge contract |
 | [`website/`](website/) | Go API + React UI |
 | [`Tbd_framework/`](Tbd_framework/) | CRF reference only — **do not open in Workbench** |
 | [`scripts/`](scripts/) | Workbench setup, server profile, dev server, staging deploy, MCP helpers, API tests |

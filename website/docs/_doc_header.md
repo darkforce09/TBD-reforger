@@ -12,5 +12,5 @@ Copy into new hub or platform docs; fill in bracketed fields.
 
 **Status:** [living | in-progress | archived]  
 **Audience:** [who should read this]  
-**Authority:** Running code → [`CLAUDE.md`](../CLAUDE.md) → [`docs/README.md`](README.md)  
+**Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/README.md`](README.md)  
 **Updated:** [date]

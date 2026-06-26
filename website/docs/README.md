@@ -26,8 +26,8 @@ Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP*
 | [Archive master](archive/README.md) | Historical HTML mockups |
 | [TAGS.md](TAGS.md) | T-0xx naming contract |
 | [AGENT_COMMIT_CHECKLIST.md](AGENT_COMMIT_CHECKLIST.md) | Same-commit doc sync for AI agents |
-| [tickets/AI_PLAYBOOK.md](../tickets/AI_PLAYBOOK.md) | Registry edit + `./scripts/ticket sync` |
-| [CLAUDE.md](../CLAUDE.md) | Agent runtime, doc-on-commit rule |
+| [tickets/AI_PLAYBOOK.md](../../tickets/AI_PLAYBOOK.md) | Registry edit + `./scripts/ticket sync` |
+| [CLAUDE.md](../../CLAUDE.md) | Agent runtime, doc-on-commit rule |
 | [DEV_RUNBOOK.md](../DEV_RUNBOOK.md) | Local stack commands |
 
 ## Role-based entry paths
@@ -41,7 +41,7 @@ Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP*
 ## Authority ladder
 
 1. **Running code**
-2. **[CLAUDE.md](../CLAUDE.md)** — T-0xx milestones (status block synced from registry)
+2. **[CLAUDE.md](../../CLAUDE.md)** — T-0xx milestones (status block synced from registry)
 3. **[TICKET_LEAD.md](TICKET_LEAD.md)** — ready / queued work
 4. **Domain `ROADMAP.md`** — planning + doc index
 5. **Supporting docs** — linked from ROADMAP

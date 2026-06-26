@@ -17,7 +17,7 @@ from [`docs/discord-milestone-1-post.md`](docs/discord-milestone-1-post.md) when
 - **Date:** Saturday 2026-08-22 — announced on the event website.
 - **Scale:** 20-40 players, internal test.
 - **Mission:** hand-written Mission JSON (e.g.
-  [`tbd-schema/golden-missions/bridgehead-at-levie.json`](tbd-schema/golden-missions/bridgehead-at-levie.json)),
+  [`shared/tbd-schema/golden-missions/bridgehead-at-levie.json`](../shared/tbd-schema/golden-missions/bridgehead-at-levie.json)),
   served via `GET /api/missions/{id}/compiled`.
 - **VOIP:** optional — in-game VON is an acceptable fallback. Not a gate.
 
@@ -50,9 +50,9 @@ from [`docs/discord-milestone-1-post.md`](docs/discord-milestone-1-post.md) when
 - **Proposed date:** Saturday 2026-11-21 (after partner Phase 0.2 + Phase 3 integration).
 - **Scale:** 20+ players.
 - **Depends on:** partner VOIP capability matrix
-  ([`tbd-schema/spikes/voip-capability-matrix.md`](tbd-schema/spikes/voip-capability-matrix.md))
+  ([`shared/tbd-schema/spikes/voip-capability-matrix.md`](../shared/tbd-schema/spikes/voip-capability-matrix.md))
   and the locked bridge contract
-  ([`tbd-schema/bridge/bridge-contract.md`](tbd-schema/bridge/bridge-contract.md)).
+  ([`shared/tbd-schema/bridge/bridge-contract.md`](../shared/tbd-schema/bridge/bridge-contract.md)).
 
 ### Success criteria
 

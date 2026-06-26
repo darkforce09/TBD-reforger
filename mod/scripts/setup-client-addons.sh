@@ -7,11 +7,13 @@
 #   -addonsDir "/home/Samuel/.local/share/tbd-server-addons" -addons B2C3D4E5F6A78901
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
 STAGING="$HOME/.local/share/tbd-server-addons"
 
 mkdir -p "$STAGING"
-ln -sfn "$ROOT/tbd-framework" "$STAGING/tbd-framework"
+ln -sfn "$MOD_ROOT/tbd-framework" "$STAGING/tbd-framework"
 
 echo "Client addon staging: $STAGING/tbd-framework"
 echo ""

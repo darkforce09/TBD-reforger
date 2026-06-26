@@ -3,7 +3,9 @@
 # Run from repo root: bash scripts/manual-test.sh
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
 PASS=0
 FAIL=0
 SKIP=0
@@ -15,24 +17,24 @@ skip() { echo "  SKIP  $1"; SKIP=$((SKIP + 1)); }
 section() { echo; echo "== $1 =="; }
 
 # --- 1. tbd-schema ---
-section "tbd-schema validation"
-if (cd "$ROOT/tbd-schema" && npm run validate >/dev/null 2>&1); then
+section "shared/tbd-schema validation"
+if (cd "$SCHEMA" && npm run validate >/dev/null 2>&1); then
   pass "npm run validate (9 artifacts)"
 else
   fail "npm run validate"
 fi
 
-if [ -f "$ROOT/tbd-schema/schema/mission.schema.json" ] && \
-   [ -f "$ROOT/tbd-schema/bridge/bridge-contract.md" ] && \
-   [ -f "$ROOT/tbd-schema/golden-missions/bridgehead-at-levie.json" ]; then
+if [ -f "$SCHEMA/schema/mission.schema.json" ] && \
+   [ -f "$SCHEMA/bridge/bridge-contract.md" ] && \
+   [ -f "$SCHEMA/golden-missions/bridgehead-at-levie.json" ]; then
   pass "schema + bridge + golden mission files exist"
 else
-  fail "missing tbd-schema artifacts"
+  fail "missing shared/tbd-schema artifacts"
 fi
 
 # --- 2. Go unit tests ---
 section "Go build + handler tests"
-WEB="$ROOT/website"
+WEB="$WEB"
 export GOROOT="$WEB/.tools/go"
 export PATH="$GOROOT/bin:$PATH"
 export GOCACHE="$WEB/.tools/gocache"
@@ -64,7 +66,7 @@ else
   fail ".env.example missing GAME_SERVER_TOKENS"
 fi
 
-if [ -f "$ROOT/.cursor/mcp.json" ] && node -e "JSON.parse(require('fs').readFileSync('$ROOT/.cursor/mcp.json'))" 2>/dev/null; then
+if [ -f "$MONO_ROOT/.cursor/mcp.json" ] && node -e "JSON.parse(require('fs').readFileSync('$MONO_ROOT/.cursor/mcp.json'))" 2>/dev/null; then
   pass ".cursor/mcp.json is valid JSON"
 else
   fail ".cursor/mcp.json invalid or missing"
@@ -238,9 +240,10 @@ fi
 
 # --- 7. Docs / milestones ---
 section "Documentation"
-for f in CLAUDE-CONTINUATION.md MILESTONES.md tbd-schema/spikes/rest-spike-0.1.md; do
-  [ -f "$ROOT/$f" ] && pass "$f exists" || fail "$f missing"
+for f in CLAUDE-CONTINUATION.md MILESTONES.md; do
+  [ -f "$MOD_ROOT/$f" ] && pass "$f exists" || fail "$f missing"
 done
+[ -f "$SCHEMA/spikes/rest-spike-0.1.md" ] && pass "rest-spike doc exists" || fail "rest-spike doc missing"
 
 # --- Summary ---
 section "Summary"

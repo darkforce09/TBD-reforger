@@ -3,7 +3,7 @@
 #
 # Prereqs (dev PC):
 #   cp scripts/deploy.env.example scripts/deploy.env   # fill SSH + token
-#   cd tbd-schema && npm ci
+#   cd shared/tbd-schema && npm ci
 #
 # Usage:
 #   bash scripts/deploy-staging.sh                       # mode from deploy.env (default: addons)
@@ -15,8 +15,10 @@
 # Never rsyncs to /home/sam/prairielearn/
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-ENV_FILE="$ROOT/scripts/deploy.env"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+ENV_FILE="$DEPLOY_ENV"
 DRY_RUN=0
 
 for arg in "$@"; do
@@ -127,9 +129,9 @@ rsync_to_remote() {
 
 echo "==> V1 validate mission JSON"
 if [ "$DRY_RUN" -eq 0 ]; then
-  (cd "$ROOT/tbd-schema" && [ -d node_modules ] || npm ci --silent)
-  node "$ROOT/tbd-schema/scripts/validate-file.mjs" \
-    "$ROOT/shared/tbd-schema/golden-missions/${TBD_MISSION_ID}.json"
+  (cd "$SCHEMA" && [ -d node_modules ] || npm ci --silent)
+  node "$SCHEMA/scripts/validate-file.mjs" \
+    "$SCHEMA/golden-missions/${TBD_MISSION_ID}.json"
 fi
 
 echo "==> rsync to $TBD_REMOTE_DIR"
@@ -138,16 +140,16 @@ if [ "$DRY_RUN" -eq 1 ]; then
 else
   rsync_to_remote -avz --delete \
     --exclude=.git/ \
-    --exclude=crf_framework/ \
-    --exclude=Tbd_framework/ \
-    --exclude=.local-test-profile/ \
+    --exclude=mod/crf_framework/ \
+    --exclude=mod/Tbd_framework/ \
+    --exclude=mod/.local-test-profile/ \
     --exclude='**/node_modules/' \
     --exclude=website/.tools/ \
     --exclude=website/.env \
     --exclude=website/frontend/dist/ \
-    --exclude=tbd-framework/Scripts/WorkbenchGame/
-    --exclude=scripts/deploy.env \
-    "$ROOT/" "$TBD_SSH_HOST:$TBD_REMOTE_DIR/"
+    --exclude=mod/tbd-framework/Scripts/WorkbenchGame/ \
+    --exclude=mod/scripts/deploy.env \
+    "$MONO_ROOT/" "$TBD_SSH_HOST:$TBD_REMOTE_DIR/"
 fi
 
 echo "==> remote profile + addon symlink"
@@ -157,9 +159,9 @@ else
   ssh_cmd bash -s <<EOF
 set -euo pipefail
 mkdir -p "$TBD_ADDONS_STAGING" "$TBD_PROFILE_DIR"
-ln -sfn "$TBD_REMOTE_DIR/tbd-framework" "$TBD_ADDONS_STAGING/tbd-framework"
+ln -sfn "$TBD_REMOTE_DIR/mod/tbd-framework" "$TBD_ADDONS_STAGING/tbd-framework"
 export GAME_SERVER_TOKEN='$TBD_GAME_SERVER_TOKEN'
-bash "$TBD_REMOTE_DIR/scripts/setup-server-profile.sh" "$TBD_PROFILE_DIR"
+bash "$TBD_REMOTE_DIR/mod/scripts/setup-server-profile.sh" "$TBD_PROFILE_DIR"
 CFG="$TBD_PROFILE_DIR/profile/TBD_BackendConfig.json"
 sed -i "s|replace-with-GAME_SERVER_TOKENS-value|$TBD_GAME_SERVER_TOKEN|g" "\$CFG"
 sed -i 's|"backendUrl": "[^"]*"|"backendUrl": "$TBD_BACKEND_URL"|' "\$CFG"
@@ -289,4 +291,4 @@ if [ "$DRY_RUN" -eq 1 ]; then
   exit 0
 fi
 
-bash "$ROOT/scripts/remote-log-grep.sh"
+bash "$MOD_SCRIPTS/remote-log-grep.sh"

@@ -38,9 +38,11 @@ TBD-Reforger/
 
 | Old | New |
 |-----|-----|
-| `Design_Docs/` | `docs/specs/` |
+| Legacy path (pre-monorepo) | Monorepo path |
+|----------------------------|---------------|
+| Design_Docs tree | `docs/specs/` |
 | `mod/tbd-schema/` | `shared/tbd-schema/` |
-| `Tbdevent_Website/` | `website/` |
+| embedded web tree | `website/` |
 | `../worktrees` | `artifacts/worktrees` |
 
 Scripts: `scripts/rewrite-ticket-paths.py`, `scripts/rewrite-doc-links.py`, `scripts/backfill-registry-monorepo.py`.

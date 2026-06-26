@@ -2,7 +2,7 @@
 
 **Use on every feature commit.** Sync docs **in the same commit** as code — never merge stale docs.
 
-**Authority ladder:** running code → [`CLAUDE.md`](../CLAUDE.md) §Status → [`docs/TICKET_LEAD.md`](TICKET_LEAD.md) → domain **ROADMAP.md** → supporting docs → archive.
+**Authority ladder:** running code → [`CLAUDE.md`](../../CLAUDE.md) §Status → [`docs/TICKET_LEAD.md`](TICKET_LEAD.md) → domain **ROADMAP.md** → supporting docs → archive.
 
 **Doc ownership (locked 2026-06):** **Cursor (Composer 2.5)** writes and syncs all documentation. **Claude Code** reads docs and implements code only — return verify output to Cursor for the §Same-commit sync pass before the human commits.
 
@@ -10,13 +10,13 @@
 
 ## Ticket registry workflow
 
-1. **Plan / queue change** — edit [`tickets/registry.json`](../tickets/registry.json) (status, order, spec path, `active_slice`).
+1. **Plan / queue change** — edit [`tickets/registry.json`](../../tickets/registry.json) (status, order, spec path, `active_slice`).
 2. **Regenerate views** — `./scripts/ticket sync` (updates `docs/TICKET_*.md`, `CLAUDE.md` status markers, `tickets/queue.json`).
 3. **Validate** — `./scripts/ticket check` or `make ticket-check-strict` (zero legacy IDs in authority docs).
 4. **Implement** — Claude Code reads spec from registry row; **does not edit docs**.
 5. **Ship** — human verifies → set row `status: shipped` → `./scripts/ticket sync` → Cursor syncs narrative docs below.
 
-Playbook: [`tickets/AI_PLAYBOOK.md`](../tickets/AI_PLAYBOOK.md). Lead view: [`docs/TICKET_LEAD.md`](TICKET_LEAD.md).
+Playbook: [`tickets/AI_PLAYBOOK.md`](../../tickets/AI_PLAYBOOK.md). Lead view: [`docs/TICKET_LEAD.md`](TICKET_LEAD.md).
 
 ---
 
@@ -38,7 +38,7 @@ If the registry row has a `spec`, read it before editing code.
 
 | What changed | Update these |
 |--------------|--------------|
-| **Shipped milestone** | Registry row → `shipped`; `./scripts/ticket sync`; [`CLAUDE.md`](../CLAUDE.md) §Status **Done** bullet (sync may auto-update markers — verify narrative) |
+| **Shipped milestone** | Registry row → `shipped`; `./scripts/ticket sync`; [`CLAUDE.md`](../../CLAUDE.md) §Status **Done** bullet (sync may auto-update markers — verify narrative) |
 | **Active slice** (in progress) | Registry `active_slice`; [`agent_execution.md`](../docs/specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
 | **New or removed route** | [`frontend/src/router.tsx`](../frontend/src/router.tsx) + matching [`frontend/docs/pages/*.md`](../frontend/docs/pages/) + [`frontend/docs/INDEX.md`](../frontend/docs/INDEX.md) + [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
 | **UI surface (no route change)** | Relevant page spec **Element Inventory** + **`Live source:`** path |
@@ -48,7 +48,7 @@ If the registry row has a `spec`, read it before editing code.
 | **Mission Creator new capability** | [`feature_inventory.md`](../docs/specs/Mission_Creator_Architecture/feature_inventory.md) FEDS row |
 | **Eden parity gap closed** | [`eden/gap_analysis.md`](../docs/specs/Mission_Creator_Architecture/eden/gap_analysis.md) ticket column + table row |
 | **Frontend surface (MC route)** | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) recently shipped + [`frontend/docs/pages/mission-editor.md`](../frontend/docs/pages/mission-editor.md) |
-| **New T-0xx in registry** | Row in [`tickets/registry.json`](../tickets/registry.json) + `./scripts/ticket sync`; update [`docs/TAGS.md`](TAGS.md) only if contract text changed |
+| **New T-0xx in registry** | Row in [`tickets/registry.json`](../../tickets/registry.json) + `./scripts/ticket sync`; update [`docs/TAGS.md`](TAGS.md) only if contract text changed |
 | **Deferred / blocked (not shipped)** | Registry `status: deferred` — **never** mark `shipped` until verified |
 | **Doc-only reorg** | Own T-0xx commit; §Status note if authority changed |
 
@@ -100,7 +100,7 @@ make test-it   # when API/DB touched
 ## Commit conventions
 
 - **Single-ticket mode:** commit directly to **`main`** (no feature branches).
-- **Batch pipeline mode** ([`tickets/README.md`](../tickets/README.md)): docs on **`main`** (Composer 2.5 only); code on **`ticket/T-0xx`** until human merge; post-merge `./scripts/ticket done` + doc sync on `main`.
+- **Batch pipeline mode** ([`tickets/README.md`](../../tickets/README.md)): docs on **`main`** (Composer 2.5 only); code on **`ticket/T-0xx`** until human merge; post-merge `./scripts/ticket done` + doc sync on `main`.
 - Tag messages **T-0xx** at start.
 - End with `Co-Authored-By:` trailer when using AI.
 - **Do not commit** unless the user explicitly asks.

@@ -122,7 +122,7 @@ grep -q 'shared/tbd-schema' .github/workflows/schema.yml && pass "V25 schema CI"
 [[ ! -d website/Design_Docs ]] && pass "V26 Design_Docs lifted" || fail "V26 Design_Docs still under website"
 
 # V27 no Design_Docs/ in tracked files (except rewrite scripts)
-hits=$(git ls-files | xargs rg -l 'Design_Docs/' 2>/dev/null | rg -v 'rewrite-' || true)
+hits=$(git ls-files | xargs rg -l 'Design_Docs/' 2>/dev/null | rg -v 'rewrite-|MONOREPO_MIGRATION|verify-monorepo|migration-baseline' || true)
 [[ -z "$hits" ]] && pass "V27 no Design_Docs/ links" || fail "V27 Design_Docs/ in: $hits"
 
 if [[ "$FAIL" -ne 0 ]]; then

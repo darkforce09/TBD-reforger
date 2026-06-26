@@ -3,11 +3,13 @@
 # Usage: bash scripts/tbd-spawn-verify.sh [slot_id_substring]
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
 PATTERN="${1:-built slot spawn|spawn requested|assigned slot}"
 
-bash "$ROOT/scripts/mcp-call.sh" wb_play '{}' || true
+bash "$MOD_SCRIPTS/mcp-call.sh" wb_play '{}' || true
 sleep 25
-bash "$ROOT/scripts/mcp-call.sh" wb_stop '{}' || true
+bash "$MOD_SCRIPTS/mcp-call.sh" wb_stop '{}' || true
 
-bash "$ROOT/scripts/mcp-wb-logs.sh" "$PATTERN"
+bash "$MOD_SCRIPTS/mcp-wb-logs.sh" "$PATTERN"

@@ -3,8 +3,10 @@
 # Usage: bash scripts/test-phase1-api.sh
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-WEB="$ROOT/website"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=lib/paths.sh
+source "$SCRIPT_DIR/lib/paths.sh"
+WEB="$WEB"
 API="${API_BASE:-http://127.0.0.1:8080}"
 TOKEN="${GAME_SERVER_TOKEN:-dev-server-token-change-in-prod}"
 EVENT_ID="${EVENT_ID:-b0000000-0000-4000-8000-000000000001}"
