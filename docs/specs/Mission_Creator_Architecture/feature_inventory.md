@@ -760,14 +760,14 @@
 | **Goal** | Browse placeable units |
 | **Trigger** | Factions tab active |
 | **Preconditions** | — |
-| **Procedure** | **Ready (T-068):** `GET /api/v1/registry` → `buildCatalogTree` → `TreeView`; leaf drag `ASSET_DND_MIME` with classname. **Today:** `ASSET_CATALOG` mock |
-| **Postconditions** | Draggable leaves with classname in DnD payload |
+| **Procedure** | **Ready (T-068.3):** `GET /api/v1/registry` → `buildCatalogTree` → `TreeView`; leaf drag `ASSET_DND_MIME` with **`resource_name`**. **Today:** `ASSET_CATALOG` mock — API backend shipped @ T-068.2 |
+| **Postconditions** | Draggable leaves with **`resource_name`** in DnD payload (`assetId`) |
 | **Inputs** | Expand/select/drag |
-| **Outputs** | DnD payload (`assetId` = classname) |
-| **Edge cases** | Loading/error/empty modpack states (T-068.1) |
-| **Acceptance** | `- [ ] NATO tree from API` `- [ ] Leaf drags to map with classname` |
+| **Outputs** | DnD payload (`assetId` = full Enfusion ResourceName) |
+| **Edge cases** | Loading/error/empty modpack states (wire in T-068.3) |
+| **Acceptance** | `- [ ] NATO tree from API` `- [ ] Leaf drags to map with resource_name GUID` |
 | **Eden parity** | Eden:RIGHT-CAT-001 |
-| **Status** | partial (spec ready) |
+| **Status** | partial — **T-068.2 API shipped**; palette wire **T-068.3 active** |
 | **Evidence** | [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md); today: `AssetBrowser.tsx`, `assetCatalogMock.ts` |
 
 #### RIGHT-SEARCH-001 — Asset browser search

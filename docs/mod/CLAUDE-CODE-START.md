@@ -64,7 +64,16 @@ tbd-dev-bootstrap.sh  (auto-launch Workbench if needed)
 → npm run validate in packages/tbd-schema
 ```
 
-Do not hand-author 20+ GUIDs. After export: **`go run ./cmd/import-registry-items`** (T-068.2) before Phase 1 E2E.
+Do not hand-author 20+ GUIDs. After export, upsert into Postgres from **`apps/website`** module root:
+
+```bash
+cd apps/website
+export PATH="$HOME/.local/go/bin:$PATH"
+go run ./cmd/import-registry-items \
+  --file ../../packages/tbd-schema/registry/registry-items.workbench.json
+```
+
+(`make seed` applies `registry_dev.sql` for local API smoke without Workbench.) See [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) §Registry catalog.
 
 ---
 

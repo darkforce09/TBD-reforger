@@ -1,7 +1,7 @@
 # T-068.1 — Workbench flat ResourceName export (MCP-driven)
 
 **Ticket:** T-068 · **Slice:** T-068.1  
-**Status:** Spec ready — code pending  
+**Status:** **shipped** @ `ca4f2cd` (T-068.1) — 21 rows committed @ `packages/tbd-schema/registry/registry-items.workbench.json`  
 **Executor:** claude-code (**enfusion-mcp required**)  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 

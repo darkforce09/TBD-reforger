@@ -1,7 +1,7 @@
 # T-068.3 — Wire Factions palette to live registry
 
 **Ticket:** T-068 · **Slice:** T-068.3  
-**Status:** Spec ready — code pending  
+**Status:** **active** — backend ready @ T-068.2; palette still uses mock until this slice ships  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -104,8 +104,23 @@ Automated output + M1–M7 table with PASS + pasted `assetId` value.
 
 ## Depends on / Unblocks
 
-- **Depends on:** T-068.2
+- **Depends on:** T-068.2 (**shipped** — `GET /api/v1/registry` @ `4c609fe`, types @ `frontend/src/types/models/registry.ts`, 21-row dev seed)
 - **Unblocks:** T-068.6; closes **RIGHT-CAT-001**
+
+---
+
+## Backend contract (already shipped — do not reimplement)
+
+| Item | Value |
+|------|-------|
+| Route | `GET /api/v1/registry` on **`mm`** group (`RequireMinRole("mission_maker")`) |
+| Response | `{ data: RegistryItem[], etag, modpack_id, modpack_version }` |
+| Row fields | `resource_name`, `display_name`, `category` (slash path e.g. `NATO/US_Army/Rifleman`), `kind`, optional `icon_url` |
+| Caching | Weak `etag`; send `If-None-Match` → **304** (optional in `useRegistry`; not required for PASS) |
+| Dev data | `make seed` → 21 rows (8 `character`, 4 gear kinds for later T-068.4) |
+| Types | [`frontend/src/types/models/registry.ts`](../../../apps/website/frontend/src/types/models/registry.ts) |
+
+**Tree builder input:** filter `data` where `kind === 'character'` only. Split each row's `category` on `/` to nest folders; leaf `id` = **`resource_name`** (full `{GUID}Prefabs/.../File.et`), leaf `label` = **`display_name`**.
 
 ---
 
@@ -120,7 +135,59 @@ After merge: `feature_inventory.md` RIGHT-CAT-001 → working; `eden/gap_analysi
 ```
 Read CLAUDE.md §Status. Active slice: T-068.3.
 Implement ONLY docs/specs/Mission_Creator_Architecture/t068_3_palette_wire.md
-Do not edit documentation. Branch: ticket/T-068
-Verify: FE build/lint; mock-import grep gate; complete M1–M7 manual table with assetId proof
-Return: Verify paste block per program hub template.
+Do not edit documentation. Branch: ticket/T-068 (checkout from main if needed)
+
+CONTEXT — T-068.2 already on main (@ 4c609fe):
+  GET /api/v1/registry — mission_maker+ JWT; response { data, etag, modpack_id, modpack_version }
+  Types: apps/website/frontend/src/types/models/registry.ts (RegistryItem, RegistryResponse)
+  Dev seed: make db-up && make seed → 21 rows; 8 characters with real resource_name GUIDs
+  AssetBrowser.tsx still imports assetCatalogMock.ts — YOUR job is to replace that feed
+
+PREFLIGHT — verify stack before coding:
+  make db-up && make seed
+  make api   # restart if stale — go run does not hot-reload handlers
+  make web
+  Dev-login mission_maker → confirm GET /api/v1/registry returns 200 + data.length >= 10
+
+LOCKED (do not deviate):
+  - Leaf tree id = resource_name (full Enfusion ResourceName string, NOT mock ids like a-nato-rifleman)
+  - Palette shows kind === 'character' only (gear_* rows exist for T-068.4 Arsenal dropdowns)
+  - DnD payload: AssetDropPayload { assetId: resource_name, role: display_name, kind: 'slot' }
+  - Preserve T-055 filterCatalog + TreeView key={query} search behavior unchanged
+  - Delete assetCatalogMock.ts; zero runtime imports of assetCatalogMock in mission-creator/
+  - icon_url empty → Lucide User/Folder fallback (match mock visual weight)
+  - Do NOT touch Arsenal tab stub (T-068.4), compiler, backend, or mod
+
+IMPLEMENT (exact files from spec):
+  1. features/mission-creator/registry/buildCatalogTree.ts
+     — flat RegistryItem[] → TreeNodeData[]; split category on '/'; stable folder ids from path prefix
+  2. hooks/queries.ts — useRegistry()
+     — useQuery(['registry'], () => api.get<RegistryResponse>('/registry'))
+     — enabled when useAuthed(); surface isLoading/isError to AssetBrowser
+  3. layout/RightInspector/AssetBrowser.tsx
+     — replace ASSET_CATALOG with buildCatalogTree(useRegistry().data ?? [])
+     — loading spinner / error retry / empty modpack message
+     — keep filterCatalog, onNodeDragStart, ASSET_DND_MIME unchanged except assetId source
+  4. DELETE layout/RightInspector/assetCatalogMock.ts
+  5. features/tactical-map/types.ts — JSDoc: assetId stores resource_name (Enfusion ResourceName)
+
+OUT OF SCOPE: Vehicles/Markers tabs, Loadout UI, useRegistry ETag/304 (optional nice-to-have), perf work
+
+VERIFY — all must exit 0 / PASS before returning:
+  cd apps/website/frontend && npm run build && npm run lint
+  rg -q 'assetCatalogMock' src/features/mission-creator --glob '!**/*.test.*' && exit 1 || true
+  test ! -f src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts
+  rg -q 'buildCatalogTree' src/features/mission-creator
+  rg -q 'useRegistry' src/hooks/queries.ts
+
+MANUAL (browser — paste evidence in verify block):
+  M1: Network GET /api/v1/registry → 200
+  M2: Factions tree shows NATO/CSAT from API categories (not mock vehicle/object subtrees from old mock)
+  M3: Search "medic" → medic row visible (T-055)
+  M4: Search "nato" → full NATO subtree
+  M5: Drag US Rifleman (or equivalent) → slot on map
+  M6: Paste dropped slot's assetId — must match /^\\{[0-9A-F]{16}\\}/ (full resource_name from tree)
+  M7: Network tab — no static mock fetch; only /registry
+
+Return: Verify paste per program hub template — automated output + A1–A3 table + M1–M7 with PASS + pasted assetId GUID string.
 ```

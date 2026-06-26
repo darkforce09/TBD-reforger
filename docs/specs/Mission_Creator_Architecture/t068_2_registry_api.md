@@ -1,7 +1,7 @@
 # T-068.2 — Registry API + dev seed + import
 
 **Ticket:** T-068 · **Slice:** T-068.2  
-**Status:** Spec ready — code pending  
+**Status:** **shipped** @ `4c609fe` (git tag **T-068.2**)  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -142,7 +142,7 @@ Full `make test-it` tail + curl/jq outputs for A2–A7.
 
 ## Documentation sync (Cursor)
 
-After merge: `docs/backend/ROADMAP.md` registry row → in progress (ship @ T-068.3+).
+**Done @ T-068.2 merge:** `docs/website/backend/ROADMAP.md` T-068.2 shipped row; `docs/website/DEV_RUNBOOK.md` §Registry catalog (`import-registry-items` cwd note); migration numbered **`05_registry_items.sql`** (03/04 taken).
 
 ---
 

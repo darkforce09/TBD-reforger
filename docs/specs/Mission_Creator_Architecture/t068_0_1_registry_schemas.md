@@ -1,7 +1,7 @@
 # T-068.0.1 — Registry JSON schemas + golden fixtures
 
 **Ticket:** T-068 · **Slice:** T-068.0.1  
-**Status:** Spec ready — code pending  
+**Status:** **shipped** @ `2487d59` (T-068.0.1)  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 

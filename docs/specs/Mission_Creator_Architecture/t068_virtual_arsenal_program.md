@@ -1,7 +1,7 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **ready** — program hub + slice specs published (BUILD). Code pending **T-068.0.1**.  
-**Git tag on ship:** **T-068** (full ticket @ **T-068.11**; optional Phase 1 milestone @ **T-068.6**)  
+**Status:** **in progress** — BUILD + **T-068.0.1**, **T-068.1**, **T-068.2** shipped on `main`. **Active slice: T-068.3** (palette wire).  
+**Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` (registry API). Full ticket ships @ **T-068.11**; Phase 1 gate @ **T-068.6**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
@@ -72,7 +72,16 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.10 | claude-code | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | §Verification gate A1–A5 |
 | T-068.11 | claude-code | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | §Verification gate A1–A4 + R1–R4 |
 
-**Active slice after BUILD:** **T-068.0.1** (T-068.0 absorbed by BUILD).
+**Active slice:** **T-068.3** — wire Factions palette to `GET /api/v1/registry` ([`t068_3_palette_wire.md`](t068_3_palette_wire.md)).
+
+**Shipped slices (Phase 1):**
+
+| Slice | Commit / tag | Delivers |
+|-------|--------------|----------|
+| T-068.0 | `77fdc9e` | Program hub + 13 child specs + registry reslice |
+| T-068.0.1 | `2487d59` | `registry-items` + `loadout-export` schemas + golden fixtures |
+| T-068.1 | `ca4f2cd` | Workbench/MCP flat export — 21 vanilla rows @ `packages/tbd-schema/registry/registry-items.workbench.json` |
+| T-068.2 | `4c609fe` / tag **T-068.2** | `GET /api/v1/registry`, `registry_dev.sql`, `import-registry-items` CLI, FE types |
 
 ---
 
