@@ -22,8 +22,9 @@ See [`Tbd_framework/REFERENCE-ONLY.md`](../Tbd_framework/REFERENCE-ONLY.md).
 - Backend config from `$profile:TBD_BackendConfig.json`
 - Mission loader: REST `GET /api/missions/{id}/compiled` → `$profile:missions/{id}.json` fallback
 - Registry alias resolution (`TBD_Registry.c`)
-- **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1)
-- **Loadout equip test (T-068.5):** `TBD_LoadoutEquipComponent` on `TBD_GameMode.et` — reads `$profile:TBD_LoadoutTest.json`, spawns empty `Character_US_Base` @ 6400, equips 4 gear ResourceNames
+- **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1) — **kit aliases** + round-robin/roster assign; **no in-game slot picker yet** (**T-068.13** production LOBBY UI, after **T-092.2**)
+- **Player loadout on spawn:** **T-068.12** — per-slot compiled loadout → `EquipCloth`/`EquipWeapon` on **human player** (not test NPC)
+- **Loadout equip test (T-068.5 / T-068.5.1):** `TBD_LoadoutEquipComponent` — `$profile:TBD_LoadoutTest.json`, **test NPC** @ 6400 only
 - Roster loader (`TBD_RosterLoader.c`) — polls `GET /api/game/events/{id}/roster`
 - Game stage enum + manager (`LOADING → … → DEBRIEF`)
 - Radio bridge hook stubs (partner VOIP wires later)
@@ -109,13 +110,15 @@ Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `
 [TBD] SpawnManager: spawn requested
 [TBD][Loadout] Loaded TBD_LoadoutTest.json (version 1, modpack …)
 [TBD][Loadout] test spawn 0x… @ <6400, …, 6400>
-[TBD][Loadout] primary equip OK {GUID}…Rifle_M16A2.et
-[TBD][Loadout] uniform equip OK {GUID}…Jacket_US_BDU.et
+[TBD][Loadout] primary equip OK {GUID}…MG_M60.et
+[TBD][Loadout] uniform equip OK {GUID}…Jacket_US_BDU_rolledup.et
 [TBD][Loadout] vest    equip OK {GUID}…Vest_PASGT.et
-[TBD][Loadout] helmet  equip OK {GUID}…Helmet_PASGT_01_cover.et
+[TBD][Loadout] helmet  equip OK {GUID}…Helmet_PASGT_01_cover_w_goggles.et
 [TBD][Loadout] equip pass complete
 NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
 ```
+
+**Important:** `[TBD][Loadout]` on test NPC = Phase 1 dev harness. **Human player** loadout = **T-068.12**; pick slot in LOBBY = **T-068.13**; production roster sync = **T-114**.
 
 ---
 

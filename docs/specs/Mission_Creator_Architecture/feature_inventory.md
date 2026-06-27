@@ -492,7 +492,7 @@
 | **Edge cases** | Empty state message; authoring UI in ORBAT Manager (**T-071**) |
 | **Acceptance** | `- [ ] Placed units appear under default faction/squad` `- [ ] T-071: no duplicate ORBAT tree on left; Editor Layers only` |
 | **Eden parity** | Eden:ORBAT-001 |
-| **Status** | partial — read-only left tree today; **T-071** ORBAT Manager modal queued |
+| **Status** | partial — read-only left tree today; **T-071** ORBAT Manager **queued** (blocked on **T-092**) |
 | **Evidence** | `OrbatSection.tsx`, `ydoc.ts` `ensureDefaultSquad` |
 
 #### LEFT-ORBAT-002 — ORBAT slot select

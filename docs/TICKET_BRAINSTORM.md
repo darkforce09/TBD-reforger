@@ -22,9 +22,6 @@
 
 ## infra
 
-- **T-090** (deferred) — Aligned map tiles [MAP] — Hosted aligned map tiles for mission editor basemap.
-- **T-091** (deferred) — DEM + auto Z [MAP, DATA] — Digital elevation model feeding real Z coordinates.
-- **T-092** (deferred) — Mod golden coordinate test [DATA] — Golden-file coordinate tests for mod envelope export.
 - **T-110** (deferred) — Terrain base + sparse deltas [MAP, DATA] — Binary terrain base layer plus sparse delta props for 1M+ map objects.
 
 ## platform

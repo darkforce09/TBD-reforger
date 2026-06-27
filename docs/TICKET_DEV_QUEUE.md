@@ -7,8 +7,21 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-068 — Virtual Arsenal (registry + loadout export)
 
-- **Active slice:** `T-068.5.1`
 - **Spec:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
 - **Branch:** `ticket/T-068`
 - **Targets:** website, shared, root, mod
-- **Summary:** Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export.
+- **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
+
+## T-091 — DEM + auto Z
+
+- **Spec:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
+- **Branch:** `ticket/T-091`
+- **Targets:** root, website
+- **Summary:** 16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md.
+
+## T-092 — Spawn transform parity + mod mission compile
+
+- **Spec:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
+- **Branch:** `ticket/T-092`
+- **Targets:** root, website, mod
+- **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.

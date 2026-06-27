@@ -60,10 +60,10 @@
 | T-065 | 650 | shipped | scale | Cluster LOD at extreme zoom | Supercluster index with pan-stable cache for 367k missions. |
 | T-066 | 660 | shipped | scale | Worker compile offload | Save/Export compile in Comlink worker via pickMapSnapshot. |
 | T-067 | 670 | shipped | scale | Spatial chunks | Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on. |
-| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export. |
+| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md. |
 | T-069 | 690 | queued | eden | Markers on map | Place and edit map markers with registry-backed types. |
 | T-070 | 700 | queued | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
-| T-071 | 710 | queued | eden | ORBAT Manager modal | Remove duplicate ORBAT tree from left sidebar; open ORBAT Manager modal for all-side faction/squad/slot authoring, slotting-screen order, standardizations, logos, and arsenal. |
+| T-071 | 710 | queued | eden | ORBAT Manager modal | ORBAT Manager modal — squad names, numbering, membership, slotting order. **Blocked on map/spawn verify (T-090–T-092).** Most web ORBAT UX not built. Hub: t071_orbat_manager_program.md. |
 | T-072 | 720 | queued | eden | Ctrl multi-place | Hold Ctrl to place multiple copies without re-selecting asset. |
 | T-073 | 730 | queued | eden | Shift + map rotation | Shift-drag and map rotation widget for placed entities. |
 | T-074 | 740 | queued | eden | Faction submode / catalog filter | Faction submode tabs and catalog filtering in asset browser. |
@@ -82,20 +82,20 @@
 | T-087 | 870 | deferred | platform | CMS rich text editor | Rich text editor for announcements and CMS content. |
 | T-088 | 880 | deferred | platform | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | deferred | platform | Mission title PATCH sync | PATCH mission title to server on edit (absorbs former T-051 scope). |
-| T-090 | 900 | deferred | infra | Aligned map tiles | Hosted aligned map tiles for mission editor basemap. |
-| T-091 | 910 | deferred | infra | DEM + auto Z | Digital elevation model feeding real Z coordinates. |
-| T-092 | 920 | deferred | infra | Mod golden coordinate test | Golden-file coordinate tests for mod envelope export. |
+| T-090 | 900 | ready | infra | Aligned map tiles | Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md. |
+| T-091 | 910 | ready | infra | DEM + auto Z | 16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md. |
+| T-092 | 920 | ready | infra | Spawn transform parity + mod mission compile | Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | scale | Continuous autosave polish | Background autosave UX and conflict handling polish. |
 | T-094 | 940 | deferred | scale | Typed-array IconLayer | Typed-array slot icon buffer for mega-mission render path. |
 | T-095 | 950 | deferred | backend | Per-handler API reference doc | Complete docs/backend/api.md per-handler reference. |
 | T-096 | 960 | deferred | backend | Live game-server telemetry bridge | Bridge live game-server events into telemetry ingest. |
 | T-110 | 1100 | deferred | infra | Terrain base + sparse deltas | Binary terrain base layer plus sparse delta props for 1M+ map objects. |
 | T-113 | 1130 | shipped | infra | Monorepo migration (M0–M3) | Merge website + mod into TBD-Reforger; unified ticketing; path rewrites. |
-| T-114 | 1140 | queued | platform | Slot roster enforcement | Roster identity maps to assigned slot; no round-robin fallback. |
+| T-114 | 1140 | queued | platform | Slot roster enforcement + production slot picker | Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-071). After T-068.13 production LOBBY picker + T-118. |
 | T-115 | 1150 | queued | platform | Capture win condition | Real side victory via capture / hold / elimination objective. |
 | T-116 | 1160 | queued | platform | Results POST to backend | Game server posts match results; visible on event page. |
 | T-117 | 1170 | queued | platform | Mission upload + validation UI | Web UI for mission upload and schema validation (API exists). |
-| T-118 | 1180 | queued | platform | Event ORBAT + identity linking UI | Manual ORBAT assignment and Discord identity linking in web admin. |
+| T-118 | 1180 | queued | platform | Event ORBAT + identity linking UI | Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today. |
 | T-119 | 1190 | queued | platform | Framework MVP remainder | Loadouts, safe start, boundary, admin commands for M1 gate. |
 | T-120 | 1200 | queued | infra | Staging soak + golden mission smoke | Pinned game/mod version soak; golden-mission smoke on staging server. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |

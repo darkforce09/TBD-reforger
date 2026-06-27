@@ -19,12 +19,18 @@ const registrySchema = readJSON(join(root, "schema", "registry.schema.json"));
 const registryItemsSchema = readJSON(join(root, "schema", "registry-items.schema.json"));
 const loadoutExportSchema = readJSON(join(root, "schema", "loadout-export.schema.json"));
 const bridgeSchema = readJSON(join(root, "bridge", "bridge-messages.schema.json"));
+const terrainManifestSchema = readJSON(join(root, "schema", "terrain-manifest.schema.json"));
+const terrainAnchorsSchema = readJSON(join(root, "schema", "terrain-anchors.schema.json"));
+
+const repoRoot = resolve(root, "..", "..");
 
 const validateMission = ajv.compile(missionSchema);
 const validateRegistry = ajv.compile(registrySchema);
 const validateRegistryItems = ajv.compile(registryItemsSchema);
 const validateLoadoutExport = ajv.compile(loadoutExportSchema);
 const validateBridge = ajv.compile(bridgeSchema);
+const validateTerrainManifest = ajv.compile(terrainManifestSchema);
+const validateTerrainAnchors = ajv.compile(terrainAnchorsSchema);
 
 let failures = 0;
 
@@ -62,6 +68,20 @@ const samplesDir = join(root, "bridge", "samples");
 for (const file of readdirSync(samplesDir).filter((f) => f.endsWith(".json"))) {
   check(file, validateBridge, readJSON(join(samplesDir, file)));
 }
+
+console.log("Terrain manifest:");
+check(
+  "everon/manifest.json",
+  validateTerrainManifest,
+  readJSON(join(repoRoot, "packages", "map-assets", "everon", "manifest.json")),
+);
+
+console.log("Terrain anchors example:");
+check(
+  "everon/anchors/verification.example.json",
+  validateTerrainAnchors,
+  readJSON(join(repoRoot, "packages", "map-assets", "everon", "anchors", "verification.example.json")),
+);
 
 if (failures > 0) {
   console.error(`\n${failures} validation failure(s).`);

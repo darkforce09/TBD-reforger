@@ -23,30 +23,27 @@
 
 ---
 
-## Current strategy (locked — 2026-06)
+## Current strategy (locked — 2026-06-28)
 
-**Eden-first:** Finish the **T-068+ Eden backlog** on the flat grid **before** hosted map tiles, DEM/heightmap, and tools that depend on elevation (LoS/viewshed). See [`eden/gap_analysis.md`](eden/gap_analysis.md) for per-feature `eden_id` status.
+**Map-verify gate:** Ship **T-090 / T-091 / T-092** (aligned tiles, DEM, mod-native compile + spawn Y/yaw) **before** T-071 ORBAT baseline and T-068 Phase 2 loadout. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
-| Do now | Defer until after T-068+ Eden backlog |
-|--------|----------------------------------------|
-| ~~**T-057** map perf hotfix~~ ✅ **shipped** | Aligned map imagery (top-down tiles) |
-| **T-059..T-067 scale program** — path to **1M–10M** (~~T-059~~ ✅; ~~T-060..T-060.1.4~~ ✅ shipped `b1fd25a`) | DEM + Z sampling from heightmap |
-| **T-068+** — registry, markers, vehicles, ORBAT Manager modal, multi-place, rotate, … | Mod golden coord test (needs mod team + accurate map) |
-| Thin registry as needed to unblock **T-068** (not “full registry completeness”) | **T-051** title PATCH sync (optional; not Eden-blocking) |
-| Continue Eden slices as **T-068+** (spec → code → docs, same as T-048..T-056) | Full loadout matrix / Loadout Forge (separate program) |
+| Active now | Blocked until map gate |
+|------------|-------------------------|
+| **T-090.0** spec + manifest | **T-071** ORBAT Manager |
+| **T-091.0** human DEM/tile export | **T-068.7+** loadout Phase 2 |
+| **T-092** mod mission compile | T-069+ markers/vehicles (still need T-068 ship for queue) |
 
-**Rationale:** Eden interaction + entity UX should feel complete on the **flat grid** before investing in hosted heightmaps and satellite tiles. X/Y/Z remain manual/zero until DEM lands; that is acceptable during the Eden push.
+**T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.
 
 ### Execution order (recommended)
 
-Work [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) queue in dependency order; interleave small **T-068+** slices between heavier blocks:
+1. **T-090 → T-091 → T-092** — map + spawn parity ([`t092_spawn_transform_program.md`](t092_spawn_transform_program.md))
+2. **T-071.0–.2** — web ORBAT ([`t071_orbat_manager_program.md`](t071_orbat_manager_program.md))
+3. **T-068.13** — production mod LOBBY slot picker
+4. **T-068.7–.14** — loadout Phase 2 on **human player**
+5. **T-069+** — markers, vehicles, … after full **T-068** ship
 
-1. **Scale program (complete through T-067)** — ~~**T-064**~~ ✅ virtualized outliner → ~~**T-065**~~ ✅ cluster/LOD → ~~**T-066**~~ ✅ worker compile → ~~**T-067**~~ ✅ bulk paste + chunk scaffolding ([`t067_spatial_chunks.md`](t067_spatial_chunks.md)) → …
-2. **T-068+ ship-blocking** — **T-068** registry API ✅ → palette ✅ → loadout UI ✅ → mod equip ✅ → **T-068.6** human E2E (active) → **T-069** markers → **T-070** vehicles → **T-071** ORBAT Manager modal
-3. **T-068+ remainder** — **T-072**..**T-077** (multi-place, rotate, Space conflict, vehicle crew, …) and later queued tickets
-4. **Then** map imagery + DEM — new tickets after Eden backlog closes (see [`engineering_plan.md`](engineering_plan.md))
-
-Authority for individual Eden items: [`feature_inventory.md`](feature_inventory.md) + [`eden/interactions.md`](eden/interactions.md) + [`eden/gap_analysis.md`](eden/gap_analysis.md).
+See [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) for registry queue.
 
 ### Map performance (contract + scale program)
 
@@ -152,15 +149,16 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
 | [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
 | [`frontend/docs/pages/mission-creator.md`](../../../apps/website/frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
-| **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub + slices T-068.0–T-068.11 (**in progress** — active **T-068.6** human E2E) |
+| **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub (**Phase 1 shipped**; active **T-068.7**) |
+| [`t068_5_1_visual_equip_fix.md`](t068_5_1_visual_equip_fix.md) | **T-068.5.1 shipped** — visual wear on test NPC @ `b233b11` |
+| [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **T-068.6 shipped** — Phase 1 E2E sign-off PASS @ 2026-06-27 |
 | [`t068_2_registry_api.md`](t068_2_registry_api.md) | **T-068.2 shipped** — `GET /api/v1/registry`, seed, import CLI |
 | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | **T-068.3 shipped** — Factions palette → live registry |
 | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | **T-068.4 shipped** — Arsenal dumb loadout download @ `a85f16b` |
-| [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | **T-068.5 shipped** — mod equip @ `21ec91e` (`TBD_LoadoutEquipComponent`) |
-| [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **T-068.6 active** — human Phase 1 E2E sign-off |
+| [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | **T-068.5 shipped** — mod equip scaffold @ `21ec91e` |
 | [`t068_asset_registry.md`](t068_asset_registry.md) | Legacy stub → redirects to program hub |
 | **[`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md)** | **T-110** — Terrain base + mission layers (future; Base + Delta for props only) |
-| [`CLAUDE.md`](../../../CLAUDE.md) §Status | **ACTIVE: T-068.6** (human E2E); T-068.0.1–T-068.5 shipped |
+| [`CLAUDE.md`](../../../CLAUDE.md) §Status | **ACTIVE: T-068.7**; Phase 1 T-068.0.1–T-068.6 shipped |
 
 ---
 
@@ -171,7 +169,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **Mission Armory** | Aggregate briefing list (“M16A2 Rifle ×45”) per faction | Backend `MissionArmory` + `GET/PUT /missions/:id/armory` — **already exists**, separate from the editor |
 | **ORBAT slot `loadout`** | Short string on each slot in export (`"L85A3 + GL"`) | `json_payload.orbat[].slots[].loadout` — compiler writes `''` today |
 | **Loadout (editor model)** | Full per-slot gear graph: uniform, vest, weapons, mags, attachments | Y.Doc `loadouts` + `items` maps in schema — **UI not built** |
-| **Master Item Registry** | Every valid `resource_name` + slot rules + icons | **Partial** — API + palette **@ T-068.2–T-068.3**; loadout export **@ T-068.4**; mod equip **@ T-068.5**; Phase 1 E2E **T-068.6** |
+| **Master Item Registry** | Every valid `resource_name` + slot rules + icons | **Phase 1 shipped** — API + palette + dumb export + **test NPC mod equip**; **human player loadout** = T-068.11–T-068.12; **mod slot picker** = T-068.13; ship gate **T-068.14** |
 | **Loadout Forge** | Web UI to edit a slot’s loadout | **Dumb export shipped @ T-068.4** (`AttributesModal` Arsenal tab); smart Forge **T-068.10** |
 
 **Arma Reforger** (game + modpack entity/workshop data) = **data source** for the loadout program, not something the map editor implements. The website needs an **ingest pipeline + Postgres registry**, then the editor **reads** it.
@@ -265,7 +263,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Ctrl/Cmd+Z/Y undo-redo** | [`t052_undo_shortcuts.md`](t052_undo_shortcuts.md) | ✅ Host keydown in `MissionCreatorPage` + **`useMissionDoc` StrictMode `instanceKey` lifecycle** (dev undo was dead without it). Cmd/Ctrl+Z undo; Cmd/Ctrl+Shift+Z or Ctrl+Y redo; focus guard (INPUT/SELECT/TEXTAREA/contentEditable). Closes gap_analysis **TOOLBAR-UNDO-001** / **KEY-UNDO-001**. |
 
-**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 in progress** — **T-068.6 active** (human Phase 1 E2E); mod equip **shipped @ T-068.5** (`21ec91e`); loadout UI **@ T-068.4** (`a85f16b`).
+**Next:** see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068 Phase 1 shipped** @ 2026-06-27; **active T-068.7**. **Human player loadout:** T-068.11 (compiler) → T-068.12 (mod equip). **Mod slot picker POC:** T-068.13. **`ticket done T-068` @ T-068.14.** Production roster picker: **T-114**.
 
 ---
 
@@ -291,7 +289,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Terrain + title + numeric position** | [`t049_terrain_title_position.md`](t049_terrain_title_position.md) | ✅ `meta.terrain` → `<TacticalMap>` viewport (key-remount on change; **MAP-TERRAIN-001**); `applyMissionRowMeta` hydrates row title/terrain/env on load (**DATA-HYD-TITLE-001**); `updateSlotPosition` → editable X/Y/Z/rotation in Attributes Transform (**ATTR-FIELD-OBJ-POSITION**), selection-aware toolbelt readout |
 
-Still blocked on assets for map tiles + DEM (future tickets). Does not include registry/markers/vehicles (**T-068+**).
+Still blocked on **T-090**/**T-091** for map tiles + DEM. Does not include registry/markers/vehicles (**T-068+**).
 
 ---
 
@@ -305,20 +303,21 @@ Still blocked on assets for map tiles + DEM (future tickets). Does not include r
 
 ---
 
-## NOT DONE — Map & positioning (future tickets)
+## NOT DONE — Map & positioning (**T-090 / T-091 / T-092** active program)
 
-Required for positioning you can trust in-game. Most items deferred until **T-068+** Eden backlog closes.
+Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **Deferred** | After T-068+. Today: grid only. [`engineering_plan.md`](engineering_plan.md) §0.3 asset hosting. |
-| **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change (Everon 12800 / Arland 10240). |
-| **DEM / heightmap** (16-bit, per terrain) | **Deferred** | After T-068+. No `dem/` module yet. |
-| **Z on place & move** (sample DEM at x,y) | **Deferred** | After DEM ticket. `addSlot` / `moveEntity` set `z: 0` until DEM. |
-| **Z in UI** (toolbelt + Attributes, editable) | **Done (T-049/T-050, manual)** | Transform Z editable (T-049); toolbelt shows selected-slot Z (SEL) **and cursor Z (CUR, =0 flat)** (T-050). Auto-sample from DEM still pending. |
+| **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **T-090** — active | Today: grid only. [`engineering_plan.md`](engineering_plan.md) §0.3 asset hosting. |
+| **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
+| **DEM / heightmap** (16-bit, per terrain) | **T-091** — queued | After T-090 manifest. Native ~2 m/px — record actual `widthPx`/`heightPx` at export. |
+| **Z on place & move** (sample DEM at x,y) | **T-091.2** — queued | `addSlot` / `moveEntity` set `z: 0` until DEM. |
+| **Z in UI** (toolbelt + Attributes, editable) | **Done (T-049/T-050, manual)** | Transform Z editable (T-049); toolbelt shows selected-slot Z (SEL) **and cursor Z (CUR, =0 flat)** (T-050). Auto-sample from DEM → **T-091**. |
 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
-| **Export contract verified** | **Unknown** | Compiler emits positions in `editor` block; **mod must confirm** same coord system as in-game. Need golden JSON from Reforger mod team. |
+| **Mod spawn parity** (x/z/y/headingDeg) | **T-092** — queued | Compiler emits `editor.slots` only today — no mod `slots[]`. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |
+| **Export contract verified** | **Blocked** | Need T-092 compiled route + golden round-trip. |
 | **Title hydrate from API** | **Done (T-049)** | `applyMissionRowMeta` applies the mission row `title` (+ terrain/env) to `meta` on load, including empty-`json_payload` missions. No PATCH-back (deferred **T-051**). |
 | **Autosave to mission version** | **Partial** | Save Version works; continuous autosave debounce not fully wired per [`engineering_plan.md`](engineering_plan.md). |
 
@@ -334,27 +333,74 @@ Required for positioning you can trust in-game. Most items deferred until **T-06
 
 ---
 
-## DONE — T-068.5 (mod equip loadout-export JSON)
+## DONE — T-068.5 (mod equip scaffold)
 
 | Item | Spec | Deliverable |
 |------|------|-------------|
-| **Mod loadout equip** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | ✅ `TBD_LoadoutEquipComponent.c` on `TBD_GameMode.et` — reads `$profile:TBD_LoadoutTest.json`, spawns `Character_US_Base` @ 6400, equips 4 ResourceNames via `EquipWeapon` + `TryInsertItem(PURPOSE_LOADOUT_PROXY)`. Tag **T-068.5** @ `21ec91e`. |
+| **Mod loadout equip scaffold** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | ✅ `TBD_LoadoutEquipComponent.c` — profile JSON → **test NPC** @ 6400. Tag **T-068.5** @ `21ec91e`. Visual wear fixed in **T-068.5.1**. |
 
 ---
 
-## IN PROGRESS — T-068 Virtual Arsenal (Phase 1)
+## DONE — T-068.5.1 (visual wear on test NPC)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Visual wear fix** | [`t068_5_1_visual_equip_fix.md`](t068_5_1_visual_equip_fix.md) | ✅ `EquipCloth`/`EquipWeapon` + worn-verify. Test **NPC** dressed @ spawn. Tag **T-068.5.1** @ `b233b11`. **Not** human player. |
+
+---
+
+## DONE — T-068.6 (Phase 1 E2E gate)
+
+| Item | Spec | Deliverable |
+|------|------|-------------|
+| **Phase 1 sign-off** | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | ✅ E1–E12 PASS @ 2026-06-27. Phase 2 approved. |
+
+---
+
+## IN PROGRESS — T-068 Virtual Arsenal (Phase 2)
+
+| Slice | Spec | Status |
+|-------|------|--------|
+| **T-068.7** | [`t068_7_compat_matrix_spec.md`](t068_7_compat_matrix_spec.md) | **active** — compat matrix spec (cursor-docs) |
+| **T-068.8** | [`t068_8_workbench_compat_export.md`](t068_8_workbench_compat_export.md) | queued |
+| **T-068.9** | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) | queued |
+| **T-068.10** | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | queued |
+| **T-068.11** | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | queued — per-slot loadout in compiled JSON |
+| **T-068.12** | [`t068_12_mod_player_loadout_equip.md`](t068_12_mod_player_loadout_equip.md) | queued — **mod:** dress **human player** on deploy |
+| **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) | queued — **mod:** LOBBY slot picker (production UI) |
+| **T-068.14** | [`t068_14_phase2_e2e_gate.md`](t068_14_phase2_e2e_gate.md) | queued — human E2E → `ticket done T-068` |
+| **T-114** | platform mod queue | queued after **T-068.13** + **T-118** — roster-synced picker (**not** full web ORBAT) |
+
+### Phase 1 (shipped @ 2026-06-27)
 
 | Slice | Spec | Status |
 |-------|------|--------|
 | **T-068.0.1** | [`t068_0_1_registry_schemas.md`](t068_0_1_registry_schemas.md) | ✅ shipped `2487d59` |
-| **T-068.1** | [`t068_1_workbench_flat_export.md`](t068_1_workbench_flat_export.md) | ✅ shipped `ca4f2cd` — 21-row Workbench export |
-| **T-068.2** | [`t068_2_registry_api.md`](t068_2_registry_api.md) | ✅ shipped `4c609fe` — `GET /api/v1/registry`, seed, import CLI |
-| **T-068.3** | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | ✅ shipped `da78452` — `useRegistry` + `buildCatalogTree`; mock deleted |
-| **T-068.4** | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | ✅ shipped `a85f16b` — Arsenal dumb loadout download; stub removed |
-| **T-068.5** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | ✅ shipped `21ec91e` — mod equip from profile JSON |
-| **T-068.6** | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **active** — human Phase 1 E2E gate (E1–E12) |
+| **T-068.1** | [`t068_1_workbench_flat_export.md`](t068_1_workbench_flat_export.md) | ✅ shipped `ca4f2cd` |
+| **T-068.2** | [`t068_2_registry_api.md`](t068_2_registry_api.md) | ✅ shipped `4c609fe` |
+| **T-068.3** | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | ✅ shipped `da78452` |
+| **T-068.4** | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | ✅ shipped `a85f16b` |
+| **T-068.5** | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | ✅ shipped `21ec91e` |
+| **T-068.5.1** | [`t068_5_1_visual_equip_fix.md`](t068_5_1_visual_equip_fix.md) | ✅ shipped `b233b11` |
+| **T-068.6** | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | ✅ E2E PASS |
 
 Hub: [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
+
+---
+
+## ORBAT — web status (honest)
+
+**Most ORBAT work is still ahead.** T-008–T-010 shipped **Event attach + inline slot claim + squad hold** — not Eden-grade mission ORBAT authoring.
+
+| Area | Status | Ticket |
+|------|--------|--------|
+| MC left ORBAT tree | **Partial** — read-only mirror; default squads on drop | **T-071** |
+| Squad names / numbering / order / membership | **Not built** | **T-071.1–T-071.2** |
+| ORBAT Manager modal | **Not built** | **T-071** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| Event slotting UX + admin | **Partial** | **T-118** |
+| Mod slot picker (verify kits) | **Not built** | **T-068.13** (production LOBBY UI; requires **T-092.2**) |
+
+**T-068.13** requires compiled mod `slots[]` (**T-092.2**). **T-071.2** improves squad labels in export but is not required for picker v1.
 
 ---
 
@@ -364,10 +410,10 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
-| **T-068** | Virtual Arsenal — registry + dumb loadout + mod equip (Phase 1); smart Forge (Phase 2) | **In progress** — T-068.0.1–T-068.5 shipped; **active T-068.6** human E2E — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
-| **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** |
+| **T-068** | Virtual Arsenal — Phase 1 shipped; Phase 2 paused | **Phase 2 paused** — resume after **T-090–T-092 + T-071.2 + T-068.13** — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
+| **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** (benefits from T-091 Z; not a separate gate) |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
-| **T-071** | ORBAT Manager modal — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal | **Queued** |
+| **T-071** | ORBAT Manager modal — squad names, numbering, membership, slotting order, logos, arsenal | **Queued — blocked on T-092** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | **T-072** | Ctrl multi-place | **Queued** |
 | **T-073** | Shift + map rotation | **Queued** |
 | **T-074** | Faction submode / catalog filter | **Queued** |
@@ -375,7 +421,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 | **T-076** | Vehicle crew UI | **Queued** |
 | **T-077+** | Compositions, triggers, waypoints, … | **Queued** — see TICKET_LEAD |
 
-**T-068 Factions palette @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** dumb loadout export shipped (`a85f16b`). **T-068.5** mod equip shipped (`21ec91e`). **T-068.6** human E2E active. Full attachment compatibility rules remain Phase 2.
+**T-068 Factions palette @ T-068.3** (`useRegistry` + `buildCatalogTree`, `resource_name` on drop). **T-068.4** dumb loadout export shipped (`a85f16b`). **T-068.5.1** mod equip on **test NPC** shipped (`b233b11`) — **not** human player. **T-068.6** Phase 1 E2E PASS. **Phase 2 paused @ T-068.7**. Full attachment compatibility rules remain Phase 2.
 
 ---
 
@@ -399,13 +445,13 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 - **Compiler** — resolve `loadoutId` → classnames for mod export
 - **Golden loadout** — one kit exported → correct in Reforger spawn
 
-**Do not start the loadout program until DEM and T-068 registry are underway** — otherwise loadouts attach to slots that cannot be placed accurately.
+**Do not start Phase 2 loadout until map verify (T-090–T-092) completes** — otherwise loadouts attach to slots that cannot spawn accurately in-game.
 
 ---
 
 ## NOT DONE — T-110 terrain base (future)
 
-Millions of read-mostly map props via binary world base + sparse terrain deltas — separate from authored mission entities. Spec: [`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md). Runs **after T-067 + T-068+**.
+Millions of read-mostly map props via binary world base + sparse terrain deltas — separate from authored mission entities. Spec: [`t110_terrain_base_mission_layers.md`](t110_terrain_base_mission_layers.md). Runs **after T-090/T-091** hosted world assets + Eden **T-068+** ship.
 
 ---
 
@@ -427,23 +473,22 @@ Local IndexedDB + manual save  Autosave + semver versions
 
 ## Recommended program order
 
-**Active strategy: Eden-first** (see §Current strategy). Map/DEM/loadout phases run **after T-068+**.
+**Active strategy: map-verify gate** (see §Current strategy). **T-090 → T-091 → T-092** before T-071 and T-068 Phase 2.
 
 | Phase | Deliverable | Depends on |
 |-------|-------------|------------|
 | **1** | Terrain wired, title hydrate, numeric X/Y | — ✅ **T-049** |
-| **1b** | **T-068+** Eden backlog ([`eden/gap_analysis.md`](eden/gap_analysis.md)) | T-052+ slices; **T-068** needs thin registry |
-| **2** | Map tiles hosted + aligned; visual parity with island | **T-068+ done** + art/export |
-| **3** | DEM + Z on place/move + editable Z | Phase 2 heightmap asset |
-| **4** | Mod golden test (one coordinate round-trip) | Mod team JSON spec |
-| **5** | Registry v1 API + ingest + palette (expand beyond Eden-minimal) | In-game classname list |
-| **6** | Vehicles + markers on map (if not closed in **T-068+**) | Phase 5 |
-| **7** | ORBAT Manager modal (if not closed in **T-068+**) | Phase 5 |
-| **8** | Loadout Forge MVP | Phase 5 + Arma Reforger / modpack export |
-| **9** | Full item matrix + compiler loadouts | Phase 8 |
-| **10** | **T-110** terrain base + sparse deltas | T-067 + T-068+ |
+| **1b** | Scale program T-057–T-067 | — ✅ shipped |
+| **2** | **T-090** aligned tiles + manifest | Workbench export |
+| **3** | **T-091** DEM + Z on place/move | T-090 manifest |
+| **4** | **T-092** mod compile + spawn Y/yaw | T-091 |
+| **5** | **T-071** ORBAT Manager | T-092 |
+| **6** | **T-068.13–.14** player loadout + LOBBY picker | T-071.2 + T-092.2 |
+| **7** | **T-069+** markers, vehicles, … | Full **T-068** ship |
+| **8** | **T-110** terrain base @ scale | T-090/T-091 |
+| **9** | Full item matrix + compiler loadouts (T-068.7–.14) | T-092 + T-071.2 |
 
-Phases **1b** = **Eden parity on flat grid.** Phases 2–4 = **map + accurate positions (heightmap).** Phases 5–7 = **real objects at scale.** Phases 8–9 = **loadouts.** Phase 10 = **terrain props at millions scale.**
+Phases **2–4** = **map + accurate positions (tiles, DEM, mod spawn).** Phases **5–6** = **ORBAT + player loadout path.** Phase **7+** = **Eden entity backlog.** Phase **8** = **terrain props at millions scale.**
 
 ---
 

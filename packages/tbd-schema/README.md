@@ -13,6 +13,8 @@ partner VOIP bridge. Version it carefully.
 | [`schema/registry.schema.json`](schema/registry.schema.json) | **Alias registry** (POC): mission `alias → prefab GUID` spawn layer + web metadata |
 | [`schema/registry-items.schema.json`](schema/registry-items.schema.json) | **Item catalog** (T-068): flat Workbench export keyed by `resource_name` — drives the Virtual Arsenal |
 | [`schema/loadout-export.schema.json`](schema/loadout-export.schema.json) | **Loadout export** (T-068): dumb gear-slot download (`primary`/`uniform`/`vest`/`helmet`) |
+| [`schema/terrain-manifest.schema.json`](schema/terrain-manifest.schema.json) | **Terrain manifest** (T-090): per-island bounds, DEM/tile paths, anchor metadata |
+| [`schema/terrain-anchors.schema.json`](schema/terrain-anchors.schema.json) | **Anchor verify** (T-091.0): GetSurfaceY probe log for alignment gate |
 | [`golden-missions/`](golden-missions/) | Hand-maintained missions that must always validate and load |
 | [`registry/registry.example.json`](registry/registry.example.json) | Example alias registry used by the compatibility test |
 | [`registry/registry-items.sample.json`](registry/registry-items.sample.json) | Golden item catalog used by the compatibility test |
@@ -67,6 +69,8 @@ the bridge schema.
 ```bash
 npm install
 npm run validate
+npm run verify-terrain           # stub OK until T-091.0
+npm run verify-terrain-alignment -- --strict   # T-091.0 human gate
 ```
 
 Run this in CI for the web validator and manually before each release for the

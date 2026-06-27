@@ -6,6 +6,8 @@
 
 **T-068 MCP slices:** T-068.1 (registry export), T-068.5 (mod equip), T-068.8 (compat export) — spec hub [`t068_virtual_arsenal_program.md`](../specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
 
+**Next mod work order (2026-06-28):** wait for **T-091.0** DEM/tile assets → **T-092** (mod compile + spawn Y/yaw + `/compiled` route) → **T-068.13** production LOBBY slot picker → **T-068.12** player loadout equip. Hub: [`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md).
+
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
 ```bash
@@ -77,22 +79,29 @@ go run ./cmd/import-registry-items \
 
 ---
 
-## T-068.5 verify flow (shipped @ `21ec91e`)
+## T-068.5 / T-068.5.1 verify flow (Phase 1 shipped)
 
 ```
 tbd-dev-bootstrap.sh
-→ cp /tmp/loadout-export.json → $PROFILE/TBD_LoadoutTest.json   # T-068.4 canonical JSON
+→ cp /tmp/loadout-export.json → $PROFILE/TBD_LoadoutTest.json   # T-068.4 download
 → wb_reload → wb_play → mcp-wb-logs.sh | grep Loadout → wb_stop
 → sha256sum "$PROFILE/TBD_LoadoutTest.json"
+→ screenshot: test NPC @ spawn shows kit (not human player)
 ```
 
 **Component:** `apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipComponent.c` on `TBD_GameMode.et`.
 
-**Winning equip API (verified):**
-- clothing → `TryInsertItem(item, EStoragePurpose.PURPOSE_LOADOUT_PROXY)`
-- primary → `EquipWeapon(item)`
+**Phase 1 subject:** **Non-player test NPC** @ game-mode coords (~6400). **Not** `DeployPlayer` / human player.
+
+**Winning equip API (@ T-068.5.1 `b233b11`):**
+- clothing → `EquipCloth(item)` + worn-verify via `GetClothFromArea(LoadoutJacketArea|LoadoutVestArea|LoadoutHeadCoverArea)`
+- primary → `EquipWeapon(item)` + verify via `GetCurrentWeapon()`
+
+**Scaffold (superseded @ T-068.5.1):** `TryInsertItem(PURPOSE_LOADOUT_PROXY)` logged OK but left NPC naked.
 
 **Base body:** `{520EC961A090BBD5}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et` @ 6400/6400.
+
+**Player loadout from editor:** **T-068.11** — not Phase 1.
 
 **New `.c` file:** Workbench **cold restart** required (not just `wb_reload`) before class registers.
 

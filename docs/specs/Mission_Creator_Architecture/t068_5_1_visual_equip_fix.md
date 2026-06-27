@@ -1,7 +1,8 @@
 # T-068.5.1 — Visual loadout equip fix (make-or-break)
 
-**Ticket:** T-068 · **Slice:** T-068.5.1
-**Status:** code (executor `claude-code`, targets `mod`)
+**Ticket:** T-068 · **Slice:** T-068.5.1  
+**Status:** **shipped** @ `b233b11` (git tag **T-068.5.1**)  
+**Executor:** claude-code (targets `mod`)
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) ·
 [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) ·
 [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) (E11)
@@ -84,7 +85,24 @@ E11 / T-068.6 Phase 1 sign-off is blocked.
 
 ---
 
+## Phase 1 boundary
+
+Equips kit on the **non-player test NPC** spawned by `TBD_LoadoutEquipComponent` @ game-mode coords. Does **not** equip the **joining human player** or mission `DeployPlayer` bodies — that is **T-068.11**.
+
+---
+
+## Shipped @ T-068.5.1 (`b233b11`)
+
+| Change | Detail |
+|--------|--------|
+| Wear API | `EquipCloth` / `EquipWeapon` replace `TryInsertItem`-first path |
+| Verify | Deferred worn-check via `GetClothFromArea` (jacket/vest/head) + `GetCurrentWeapon` |
+| Character GUID | Unchanged `{520EC961A090BBD5}…Character_US_Base.et` (canonical) |
+| A7 | Samuel screenshots — M60, BDU jacket, PASGT vest, helmet+goggles on test NPC |
+
+---
+
 ## Depends on / Unblocks
 
 - **Depends on:** T-068.5 (component scaffold)
-- **Unblocks:** T-068.6 E11 → Phase 1 sign-off
+- **Unblocks:** T-068.6 E11 → Phase 1 sign-off (**PASS** @ 2026-06-27)

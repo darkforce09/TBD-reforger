@@ -62,6 +62,28 @@ Restart `make api` after handler changes — `go run` does not hot-reload.
 
 `GET /api/v1/registry` requires mission_maker+ JWT; supports weak ETag + `If-None-Match` → 304.
 
+## Map assets (T-090 / T-091)
+
+Static terrain binaries live under `packages/map-assets/{everon,arland}/`. Large PNG/WebP files are tracked via **Git LFS** (see root `.gitattributes`).
+
+```bash
+git lfs install   # once per clone
+git lfs pull      # after checkout if tiles/DEM missing
+```
+
+Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schema/terrain-manifest.schema.json`](../tbd-schema/schema/terrain-manifest.schema.json). Stubs use `widthPx/heightPx: 0` until Workbench export (**T-091.0**).
+
+**Export runbook:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) §Workbench export.
+
+**Verify alignment** (after DEM lands):
+
+```bash
+make verify-terrain           # stub OK until T-091.0
+make verify-terrain-strict    # T-091.0 human gate
+```
+
+**Local dev serving:** T-090.1 will wire `packages/map-assets` into Vite (`public/map-assets` symlink or copy in `make web`). Until then the editor shows the Cartesian grid only.
+
 ## Notes
 
 - A fresh DB only has the Discord role→permission mappings (`make seed`).

@@ -1,10 +1,33 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **in progress** — **T-068.0.1–T-068.5** shipped on `main`. **Active slice: T-068.6** (human Phase 1 E2E gate).  
-**Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` · **T-068.3** @ `da78452` · **T-068.4** @ `a85f16b` · **T-068.5** @ `21ec91e`. Full ticket ships @ **T-068.11**; Phase 1 gate @ **T-068.6**.  
+**Status:** **Phase 1 shipped** @ 2026-06-27. **Phase 2 paused @ T-068.7** — resume after **map verify (T-090–T-092) + T-071.2 + T-068.13**.  
+**Map gate:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) · [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md)  
+**Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` · **T-068.3** @ `da78452` · **T-068.4** @ `a85f16b` · **T-068.5** @ `21ec91e` · **T-068.5.1** @ `b233b11`. Full ticket ships @ **T-068.14** (Phase 2 E2E); Phase 1 gate was **T-068.6**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
+
+---
+
+## Resume here (2026-06-28)
+
+**Phase 1 is done.** **Phase 2 paused** — no active T-068 slice until gates clear.
+
+```text
+T-090 / T-091 / T-092 (map + mod compile)
+  → T-071.0–.2 (web ORBAT)
+  → T-068.13 (production LOBBY slot picker)
+  → T-068.7–.14 (loadout Phase 2)
+```
+
+| Gate | Ticket | Spec |
+|------|--------|------|
+| Map + spawn verify | **T-090–T-092** | [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) |
+| Web ORBAT baseline | **T-071.0–.2** | [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| Mod slot picker | **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
+| Loadout Phase 2 | **T-068.7–.14** | slice table below |
+
+**Do not** `./scripts/ticket done T-068` until **T-068.14** (Phase 2 E2E — **human player** loadout + slot picker). **Player spawn loadout** = **T-068.11** + **T-068.12**. **Production LOBBY slot picker** = **T-068.13**; roster sync = **T-114** (after **T-068.13** + **T-118**).
 
 ---
 
@@ -24,8 +47,8 @@
 
 | Phase | Narrative | Ship gate |
 |-------|-----------|-----------|
-| **Phase 1 — Dumb Virtual Arsenal** | Flat ResourceName lists; dumb loadout dropdowns → `loadout-export.json`; mod equips exact names | **T-068.6** human E2E |
-| **Phase 2 — Smart Arsenal** | Compat matrix export → worker `canEquip` → smart Forge UI → compiler loadout superset | **T-068.11** + `./scripts/ticket done T-068` |
+| **Phase 1 — Dumb Virtual Arsenal** | Flat ResourceName lists; dumb loadout dropdowns → `loadout-export.json`; mod equips exact names on **test NPC** | **T-068.6** ✅ PASS @ 2026-06-27 |
+| **Phase 2 — Smart Arsenal** | Compat matrix export → worker `canEquip` → smart Forge UI → compiler loadout superset → **mod player equip** → **mod slot picker** → Phase 2 E2E | **T-068.14** + `./scripts/ticket done T-068` |
 
 Phases are labels; **`slices[]` + `active_slice`** in registry are the execution source of truth.
 
@@ -41,14 +64,15 @@ Phases are labels; **`slices[]` + `active_slice`** in registry are the execution
 | 4 | **Phase 1 loadout-export:** `{ loadoutVersion, modpackId, gear: { primary, uniform, vest, helmet } }` — each value is a `resource_name` string or `null`. |
 | 5 | **Palette `kind`:** `character` for Eden Factions drag-place; gear rows use `gear_primary`, `gear_uniform`, `gear_vest`, `gear_helmet` for loadout UI filters. |
 | 6 | **Ingest path:** T-068.2 ships **`registry_dev.sql`** dev seed + `GET /api/v1/registry`. Workbench export (T-068.1) validates against `registry-items` schema; land in DB via **`go run ./cmd/import-registry-items`** (admin) reading export JSON — not required for first API smoke. |
-| 7 | **Loadout E2E handoff:** UI downloads `loadout-export.json`; human copies to **`$profile:TBD_LoadoutTest.json`** for mod equip test (T-068.5 / T-068.6). Mission compiler export deferred to **T-068.11**. |
+| 7 | **Loadout E2E handoff:** UI downloads `loadout-export.json`; human copies to **`$profile:TBD_LoadoutTest.json`** for mod equip test on **non-player test NPC** (T-068.5 / T-068.5.1 / T-068.6). **Not** the joining player. Mission compiler + player spawn deferred to **T-068.11**. |
 | 8 | **T-068.4 UI:** **Build** functional dumb loadout UI — **replace** Attributes → Arsenal **stub** (disabled “Loadout Forge soon”) with 4 gear dropdowns + download JSON. Not a new route; not paper-doll (T-068.10). |
 | 9 | **API caching:** `GET /registry` supports weak **ETag** / **304** (see T-068.2). |
-| 10 | **Map/topo:** **T-090 / T-091 / T-110** — out of T-068. |
+| 10 | **Map/topo:** **T-090 / T-091 / T-110** — see [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). **Hard gate before Phase 2 loadout.** |
 | 11 | **Workbench MCP:** **T-068.1 / T-068.5 / T-068.8** — Claude Code runs **`bash scripts/mod/tbd-dev-bootstrap.sh`** (auto `steam -applaunch` Workbench, MCP root, EnfusionMCP handlers, `wb_connect`) then MCP tools / `mcp-call.sh`. Human only if bootstrap **exit 1** after wait. |
 | 12 | **DB ingest handoff:** After **T-068.1** export lands, run **`go run ./cmd/import-registry-items --file …/registry-items.workbench.json`** (T-068.2 CLI) before **T-068.6** if E2E uses Workbench data — dev seed alone is smoke-only. |
 | 13 | **Modpack UUID:** `loadout-export.modpackId` and `registry-items.modpackId` = **`modpacks.is_current`** row (mock seed: `00000000-0000-4000-a000-000000000001` until real modpack admin exists). |
 | 14 | **Arsenal tab scope:** Loadout UI (**T-068.4**) applies to **character** slots only — non-character selection shows explanatory empty state, not broken dropdowns. |
+| 15 | **Phase 1 mod equip subject:** **`TBD_LoadoutEquipComponent`** dresses a **server-spawned test NPC** @ game-mode coords from `$profile:TBD_LoadoutTest.json`. The **human player character does not** receive that loadout. **`TBD_SpawnManager` / `DeployPlayer`** use mission slot **kit aliases** until **T-068.12**. Editor loadout → **human player** = **T-068.11 + T-068.12 + T-068.13 + T-068.14**. **Web ORBAT authoring (T-071) is not built** — squad names, numbering, membership, slotting order are **T-071** backlog; **T-068.13** reads compiled `slots[]` directly. Production roster picker = **T-114** (after **T-068.13** + **T-118**). |
 
 ---
 
@@ -65,14 +89,18 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.3 | claude-code | [`t068_3_palette_wire.md`](t068_3_palette_wire.md) | §Verification gate A1–A3 + M1–M7 |
 | T-068.4 | claude-code | [`t068_4_dumb_loadout_ui.md`](t068_4_dumb_loadout_ui.md) | §Verification gate **A0** (stub removed) + A1–A7 + jq |
 | T-068.5 | claude-code | [`t068_5_mod_equip_loadout.md`](t068_5_mod_equip_loadout.md) | §Verification gate A1–A7 + MCP `wb_play` / logs |
-| T-068.6 | human | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | E1–E12 + sign-off |
+| T-068.5.1 | claude-code | [`t068_5_1_visual_equip_fix.md`](t068_5_1_visual_equip_fix.md) | §A0–A9 + visual screenshot (NPC) |
+| T-068.6 | human | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | E1–E12 + sign-off ✅ |
 | T-068.7 | cursor-docs | [`t068_7_compat_matrix_spec.md`](t068_7_compat_matrix_spec.md) | §Verification gate A1–A6 |
 | T-068.8 | claude-code | [`t068_8_workbench_compat_export.md`](t068_8_workbench_compat_export.md) | §Verification gate A1–A5 + MCP |
 | T-068.9 | claude-code | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) | §Verification gate A1–A5 + W1–W3 |
 | T-068.10 | claude-code | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | §Verification gate A1–A5 |
 | T-068.11 | claude-code | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | §Verification gate A1–A4 + R1–R4 |
+| T-068.12 | claude-code | [`t068_12_mod_player_loadout_equip.md`](t068_12_mod_player_loadout_equip.md) | §M1–M4 + player screenshot |
+| T-068.13 | claude-code | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) | §S1–S5 + slot picker screenshot |
+| T-068.14 | human | [`t068_14_phase2_e2e_gate.md`](t068_14_phase2_e2e_gate.md) | P1–P8 sign-off → `ticket done T-068` |
 
-**Active slice:** **T-068.6** — human Phase 1 E2E sign-off ([`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md)).
+**Active slice:** **None** — Phase 2 paused until **T-090–T-092** + **T-071.2** + **T-068.13** gates clear. Next doc slice when activated: **T-068.7** compat matrix.
 
 **Shipped slices (Phase 1):**
 
@@ -84,7 +112,9 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.2 | `4c609fe` / tag **T-068.2** | `GET /api/v1/registry`, `registry_dev.sql`, `import-registry-items` CLI, FE types |
 | T-068.3 | `da78452` / tag **T-068.3** | Live Factions palette — `useRegistry()` + `buildCatalogTree`; `assetCatalogMock.ts` deleted; `resource_name` on DnD |
 | T-068.4 | `a85f16b` / tag **T-068.4** | Arsenal dumb loadout UI — 4 gear dropdowns + `loadout-export.json` download; stub removed |
-| T-068.5 | `21ec91e` / tag **T-068.5** | `TBD_LoadoutEquipComponent` — reads `$profile:TBD_LoadoutTest.json`, spawns `Character_US_Base` @ 6400, equips 4 ResourceNames |
+| T-068.5 | `21ec91e` / tag **T-068.5** | `TBD_LoadoutEquipComponent` scaffold — profile JSON → test NPC @ 6400 (log-only equip; superseded by .5.1) |
+| T-068.5.1 | `b233b11` / tag **T-068.5.1** | Visual wear fix — `EquipCloth`/`EquipWeapon` + worn-verify; test NPC shows kit (not player) |
+| T-068.6 | 2026-06-27 sign-off | Phase 1 E2E gate E1–E12 **PASS** — web → file → mod NPC equip |
 
 ---
 
@@ -99,6 +129,7 @@ flowchart TD
     S3[T-068.3 palette]
     S4[T-068.4 dumb loadout UI]
     S5[T-068.5 mod equip]
+    S51[T-068.5.1 visual wear]
     S6[T-068.6 E2E gate]
     S01 --> S1
     S01 --> S2
@@ -106,7 +137,8 @@ flowchart TD
     S2 --> S3
     S2 --> S4
     S4 --> S5
-    S5 --> S6
+    S5 --> S51
+    S51 --> S6
     S3 --> S6
   end
   subgraph p2 [Phase 2 — after T-068.6 approval]
@@ -115,11 +147,24 @@ flowchart TD
     S9[T-068.9 worker]
     S10[T-068.10 smart UI]
     S11[T-068.11 compiler]
+    S12[T-068.12 mod player loadout]
+    S13[T-068.13 mod LOBBY slot picker]
+    S14[T-068.14 Phase 2 E2E]
     S6 --> S7
     S7 --> S8
     S8 --> S9
     S9 --> S10
     S10 --> S11
+    S11 --> S12
+    S12 --> S13
+    S13 --> S14
+  end
+  subgraph platform [Platform — after T-068.13]
+    T118[T-118 event roster UI]
+    T114[T-114 roster slot picker]
+    T71[T-071 ORBAT Manager web]
+    S13 --> T114
+    T118 --> T114
   end
 ```
 
@@ -172,8 +217,9 @@ flowchart TD
 | T-068.2 | `make test-it` (registry tests) | curl 200 + 304 + jq field checks |
 | T-068.3 | FE build/lint + `rg assetCatalogMock` | DevTools: API tree, drag, store `assetId` |
 | T-068.4 | FE build/lint + **stub grep gate** + schema validate download | Arsenal tab: **no stub**; 4 enabled dropdowns + download works |
-| T-068.5 | Mod console log grep | Spawn shows 4 equip lines |
-| T-068.6 | All prior slices PASS | Full E2E table + sign-off |
+| T-068.5 | Mod console log grep + NPC visual | Test NPC spawn shows worn kit (T-068.5.1); not player |
+| T-068.5.1 | MCP `wb_play` + worn-verify logs | Screenshot: test NPC dressed @ spawn |
+| T-068.6 | All prior slices PASS | Full E2E table + sign-off ✅ |
 | T-068.7 | `make ticket-check-strict` | Phase 2 approval statement |
 | T-068.8+ | Per child spec gate | Per child spec gate |
 
@@ -197,7 +243,7 @@ Detail: each [`t068_*`](.) child spec **§Verification gate** section.
 |------|----------------|
 | T-068.3 shipped | `feature_inventory` **RIGHT-CAT-001** → working; `eden/gap_analysis` Factions feed |
 | T-068.4 shipped | Loadout Forge FEDS row (dumb export) |
-| T-068.6 passed | Phase 1 acceptance in this hub + optional git tag note |
+| T-068.6 passed | Phase 1 acceptance in this hub + CLAUDE §Status + NPC vs player boundary (**rule #15**) |
 | T-068.11 shipped | Full [`AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md); registry `shipped`; MC ROADMAP Done bullet |
 
 ---
@@ -228,4 +274,4 @@ Audit after MCP executor fix (2026-06). Treat as **checklist** when advancing sl
 | 10 | **Profile path ambiguity** | T-068.5 / E10 — paste exact `$profile` path + `sha256sum`; use [`scripts/mod/setup-server-profile.sh`](../../../scripts/mod/setup-server-profile.sh) |
 | 11 | **Icon URLs** | Phase 1: `icon_url` optional / omit; no blocker |
 | 12 | **Phase 2 compat before schema** | T-068.8 export waits on T-068.7 spec + T-068.9 `registry-compat.schema.json` |
-| 13 | **No registry in mission compiler until T-068.11** | Phase 1 loadout = file handoff only; mission `json_payload` loadouts deferred |
+| 13 | **No player loadout in mission compiler until T-068.11** | Phase 1 loadout = profile file handoff + test NPC only; per-slot loadout in compiled JSON @ **T-068.11**; **human player wear @ T-068.12**; verify via **T-068.13** slot picker + **T-068.14** E2E |

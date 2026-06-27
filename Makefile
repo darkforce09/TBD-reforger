@@ -4,7 +4,7 @@ WEB := apps/website
 # Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
 export PATH := $(HOME)/.local/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-migration
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-terrain verify-migration
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -44,6 +44,12 @@ tidy: ## Tidy Go modules
 
 schema-validate: ## Validate golden missions against shared schema
 	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs
+
+verify-terrain: ## Manifest + anchor verify (stub mode OK until T-091.0 export)
+	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain
+
+verify-terrain-strict: ## Full anchor alignment gate (requires T-091.0 DEM + ≥10 anchors)
+	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs --strict
 
 tickets: ## Run Claude Code on ready tickets in parallel
 	./scripts/ticket run

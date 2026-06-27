@@ -1166,14 +1166,13 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export.",
+      "summary": "Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
       "unblocks": [
         "T-069",
-        "T-070",
-        "T-071"
+        "T-070"
       ],
       "implements": [
         "RIGHT-CAT-001"
@@ -1195,9 +1194,11 @@
         "T-068.8",
         "T-068.9",
         "T-068.10",
-        "T-068.11"
+        "T-068.11",
+        "T-068.12",
+        "T-068.13",
+        "T-068.14"
       ],
-      "active_slice": "T-068.5.1",
       "stream": "mission-creator",
       "targets": [
         "website",
@@ -1297,6 +1298,26 @@
             "website"
           ],
           "executor": "claude-code"
+        },
+        "T-068.12": {
+          "targets": [
+            "mod",
+            "shared"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.13": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code"
+        },
+        "T-068.14": {
+          "targets": [
+            "mod",
+            "website"
+          ],
+          "executor": "human"
         }
       }
     },
@@ -1359,7 +1380,6 @@
       "id": "T-071",
       "order": 710,
       "program": "eden",
-      "status": "queued",
       "surfaces": [
         "TOP",
         "ORBAT",
@@ -1372,7 +1392,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "Remove duplicate ORBAT tree from left sidebar; open ORBAT Manager modal for all-side faction/squad/slot authoring, slotting-screen order, standardizations, logos, and arsenal.",
+      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Blocked on map/spawn verify (T-090–T-092).** Most web ORBAT UX not built. Hub: t071_orbat_manager_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -1381,8 +1401,14 @@
         "T-071.4"
       ],
       "depends_on": [
-        "T-068"
+        "T-092"
       ],
+      "unblocks": [
+        "T-068",
+        "T-069"
+      ],
+      "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md",
+      "status": "queued",
       "implements": [
         "LEFT-ORBAT-001",
         "CONN-GROUP-001",
@@ -1795,7 +1821,8 @@
       "id": "T-090",
       "order": 900,
       "program": "infra",
-      "status": "deferred",
+      "status": "ready",
+      "active_slice": "T-090.0",
       "surfaces": [
         "MAP"
       ],
@@ -1803,20 +1830,46 @@
         "ui"
       ],
       "title": "Aligned map tiles",
-      "summary": "Hosted aligned map tiles for mission editor basemap.",
+      "summary": "Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "slices": [
+        "T-090.0",
+        "T-090.1"
+      ],
+      "depends_on": [],
+      "unblocks": [
+        "T-091"
+      ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-090",
       "stream": "infra",
       "targets": [
-        "root"
+        "root",
+        "website"
       ],
-      "executor": "cursor-docs"
+      "executor": "cursor-docs",
+      "slice_plan": {
+        "T-090.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md"
+        },
+        "T-090.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md"
+        }
+      }
     },
     {
       "id": "T-091",
       "order": 910,
       "program": "infra",
-      "status": "deferred",
+      "status": "ready",
       "surfaces": [
         "MAP",
         "DATA"
@@ -1826,35 +1879,113 @@
         "schema"
       ],
       "title": "DEM + auto Z",
-      "summary": "Digital elevation model feeding real Z coordinates.",
+      "summary": "16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "slices": [
+        "T-091.0",
+        "T-091.1",
+        "T-091.2"
+      ],
+      "depends_on": [
+        "T-090"
+      ],
+      "unblocks": [
+        "T-092"
+      ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-091",
       "stream": "infra",
       "targets": [
-        "root"
+        "root",
+        "website"
       ],
-      "executor": "cursor-docs"
+      "executor": "claude-code",
+      "slice_plan": {
+        "T-091.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "human",
+          "spec": "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
+        },
+        "T-091.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md"
+        },
+        "T-091.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md"
+        }
+      }
     },
     {
       "id": "T-092",
       "order": 920,
       "program": "infra",
-      "status": "deferred",
+      "status": "ready",
       "surfaces": [
         "DATA"
       ],
       "impact": [
-        "schema"
+        "schema",
+        "api",
+        "compiler"
       ],
-      "title": "Mod golden coordinate test",
-      "summary": "Golden-file coordinate tests for mod envelope export.",
+      "title": "Spawn transform parity + mod mission compile",
+      "summary": "Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
+      "slices": [
+        "T-092.0",
+        "T-092.1",
+        "T-092.2"
+      ],
+      "depends_on": [
+        "T-091"
+      ],
+      "unblocks": [
+        "T-071",
+        "T-068"
+      ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-092",
       "stream": "infra",
       "targets": [
-        "root"
+        "root",
+        "website",
+        "mod"
       ],
-      "executor": "cursor-docs"
+      "executor": "claude-code",
+      "slice_plan": {
+        "T-092.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+        },
+        "T-092.1": {
+          "targets": [
+            "mod",
+            "shared"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
+        },
+        "T-092.2": {
+          "targets": [
+            "website",
+            "shared"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md"
+        }
+      }
     },
     {
       "id": "T-093",
@@ -2052,16 +2183,21 @@
       "executor": "workbench",
       "status": "queued",
       "surfaces": [
-        "DATA"
+        "DATA",
+        "UI"
       ],
       "impact": [
         "api",
-        "schema"
+        "schema",
+        "ui"
       ],
-      "title": "Slot roster enforcement",
-      "summary": "Roster identity maps to assigned slot; no round-robin fallback.",
+      "title": "Slot roster enforcement + production slot picker",
+      "summary": "Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-071). After T-068.13 production LOBBY picker + T-118.",
       "milestone": "M1",
-      "depends_on": []
+      "depends_on": [
+        "T-068.13",
+        "T-118"
+      ]
     },
     {
       "id": "T-115",
@@ -2148,7 +2284,7 @@
         "api"
       ],
       "title": "Event ORBAT + identity linking UI",
-      "summary": "Manual ORBAT assignment and Discord identity linking in web admin.",
+      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today.",
       "milestone": "M1"
     },
     {

@@ -1,0 +1,14 @@
+{
+  "terrainId": "everon",
+  "schemaVersion": 1,
+  "thresholdM": 1.0,
+  "anchors": [
+    {
+      "id": "example-coast-sw",
+      "x": 1200,
+      "z": 800,
+      "surfaceYM": 0,
+      "note": "Replace with real GetSurfaceY log @ T-091.0 — stub for schema/CI only"
+    }
+  ]
+}

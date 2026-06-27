@@ -11,6 +11,27 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md",
       "branch": "ticket/T-068"
+    },
+    {
+      "id": "T-090",
+      "title": "Aligned map tiles",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-091",
+      "title": "DEM + auto Z",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "branch": "ticket/T-091"
+    },
+    {
+      "id": "T-092",
+      "title": "Spawn transform parity + mod mission compile",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
+      "branch": "ticket/T-092"
     }
   ]
 }

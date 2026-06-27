@@ -9,7 +9,17 @@
 
 ## In one sentence
 
-Mod reads `$profile:TBD_LoadoutTest.json` and equips exact ResourceNames on a spawned empty US test character @ 6400/6400.
+Mod reads `$profile:TBD_LoadoutTest.json` and equips exact ResourceNames on a **non-player test NPC** @ 6400/6400 — **not** the joining human player.
+
+---
+
+## Phase 1 boundary (critical)
+
+| Receives web-export kit | Does **not** |
+|-------------------------|--------------|
+| **`TBD_LoadoutEquipComponent`** — spawns `Character_US_Base` test **NPC/AI entity** @ game-mode coords and dresses it from profile JSON | **Human player** — `TBD_SpawnManager.DeployPlayer` uses mission slot **kit aliases** (`TBD_Registry.Resolve`), not `TBD_LoadoutTest.json` |
+
+Visual wear on the test NPC is proven @ **T-068.5.1** (`b233b11`). Player/slot loadout from the editor = **T-068.11**.
 
 ---
 
@@ -20,10 +30,12 @@ Mod reads `$profile:TBD_LoadoutTest.json` and equips exact ResourceNames on a sp
 | Piece | Detail |
 |-------|--------|
 | Input | `$profile:TBD_LoadoutTest.json` (manual copy of web `loadout-export.json`) |
+| Subject | **Non-player test NPC** (not DeployPlayer / not human player) |
 | Base body | `{520EC961A090BBD5}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et` (empty US — no baked kit) |
 | Spawn | `@ 6400/6400` (TBD_Dev_POC game mode coords; Y from `GetSurfaceY`) |
-| Clothing equip | `SCR_InventoryStorageManagerComponent.TryInsertItem(item, EStoragePurpose.PURPOSE_LOADOUT_PROXY)` |
-| Primary equip | `SCR_InventoryStorageManagerComponent.EquipWeapon(item)` |
+| Clothing equip (scaffold) | `TryInsertItem(PURPOSE_LOADOUT_PROXY)` — **false OK / naked mesh**; fixed in **T-068.5.1** |
+| Primary equip (scaffold) | `EquipWeapon(item)` — fixed in **T-068.5.1** with worn-verify |
+| Wear fix | **T-068.5.1** @ `b233b11` — `EquipCloth` + deferred `GetClothFromArea` / `GetCurrentWeapon` |
 | Logs | `[TBD][Loadout] …` — full `{GUID}…et` strings, no `kit:` aliases |
 
 **Workbench ops note:** a brand-new `.c` file requires **Workbench cold restart** (not just `wb_reload`) before the class registers.
@@ -49,7 +61,7 @@ Downloaded loadout JSON had no in-game consumer.
 
 - Mission `json_payload` compiler path (T-068.11)
 - Compat validation
-- Equipping onto mission-slot `DeployPlayer` bodies (test spawn is separate @ 6400)
+- Equipping onto **human player** or mission-slot **`DeployPlayer`** bodies (test NPC @ 6400 only in Phase 1)
 
 ---
 
@@ -97,25 +109,27 @@ sha256sum "$PROFILE/TBD_LoadoutTest.json"
 | A4 | Vest | Log line for **vest** — **OK** |
 | A5 | Helmet | Log line for **helmet** — **OK** (canonical JSON has all four) |
 | A6 | No alias | Logged strings contain `{GUID}` form — **not** `kit:` aliases |
-| A7 | Visual | Loadout **test spawn** @ ~6400/6400 shows kit — not `DeployPlayer` mission body |
+| A7 | Visual | **Test NPC** @ ~6400/6400 shows worn kit — **screenshot required** (T-068.5.1). **Not** the human player. |
 
-**Verified @ `21ec91e`:** A1–A6 PASS via MCP `wb_play`; A7 entity id `0x4000000000000255` @ `<6400, 157.875, 6400>` logged (screenshot optional).
+**Verified @ `21ec91e`:** A1–A6 PASS via MCP `wb_play` (log-only — **A7 false pass**, naked mesh).
+
+**Verified @ `b233b11` (T-068.5.1):** A0–A9 PASS including visual screenshot on test NPC.
 
 ---
 
 ## Depends on / Unblocks
 
 - **Depends on:** T-068.0.1, T-068.4
-- **Unblocks:** T-068.6 (human Phase 1 E2E gate)
+- **Unblocks:** T-068.6 (shipped @ 2026-06-27)
 
 ---
 
 ## Documentation sync (Cursor)
 
-**Done @ T-068.5 ship (`21ec91e`):** `apps/mod/tbd-framework/README.md`, `docs/mod/CLAUDE-CODE-START.md`, program hub shipped table, MC/FE BE ROADMAPs, `t068_6` E11 script link, advance `active_slice` → **T-068.6**.
+**Done @ T-068.5 ship (`21ec91e`)** and **T-068.5.1 / T-068.6 doc pass** @ 2026-06-27: mod README, `CLAUDE-CODE-START.md`, program hub, MC ROADMAP, E11 screenshot gate, `active_slice` → **T-068.7**.
 
 ---
 
-## Claude Code prompt — T-068.6 (next — human only)
+## Next slice
 
-Human runs [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) E1–E12 checklist. **No code.** Sign-off paste → Cursor for doc sync + advance to T-068.7.
+**T-068.7** — compat matrix spec ([`t068_7_compat_matrix_spec.md`](t068_7_compat_matrix_spec.md), cursor-docs). Phase 1 E2E gate **T-068.6 PASS** @ 2026-06-27.

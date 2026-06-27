@@ -8,7 +8,7 @@ Scheduling detail: [`docs/mod/MILESTONES.md`](mod/MILESTONES.md).
 ## M1
 
 - [x] **T-113** — Monorepo migration (M0–M3) (`shipped`)
-- [ ] **T-114** — Slot roster enforcement (`queued`)
+- [ ] **T-114** — Slot roster enforcement + production slot picker (`queued`)
 - [ ] **T-115** — Capture win condition (`queued`)
 - [ ] **T-116** — Results POST to backend (`queued`)
 - [ ] **T-117** — Mission upload + validation UI (`queued`)

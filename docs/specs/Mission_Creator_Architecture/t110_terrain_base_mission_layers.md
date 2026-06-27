@@ -1,6 +1,6 @@
 # T-110 — Terrain base + mission layers (future architecture)
 
-**Status:** **future / not started** — do **not** implement before Eden **T-068+** unless product explicitly reprioritizes.
+**Status:** **future / not started** — do **not** implement before **T-090/T-091** hosted assets unless product explicitly reprioritizes.
 **Git tag on ship:** *(none — not started)*
 **Authority:** [ROADMAP.md](ROADMAP.md) §Map performance · [engineering_plan.md](engineering_plan.md)
 **Relates to:** External “Base + Delta / event sourcing” proposal (2026-06) — **adopt the good parts here**, not as a rewrite of the current Y.Doc mission model.

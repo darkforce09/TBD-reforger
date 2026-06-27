@@ -4,7 +4,7 @@
 **Inputs:** [feature_inventory.md](../feature_inventory.md) + [interactions](./interactions.md) + [ui_anatomy](./ui_anatomy.md) + [attributes](./attributes.md)  
 **Schema:** [reference/feds_schema.md](../reference/feds_schema.md)
 
-**Execution order (locked):** … → **T-061..T-067** → Eden **T-068+** → **T-110** terrain base ([`t110_terrain_base_mission_layers.md`](../t110_terrain_base_mission_layers.md)) → **T-090** / **T-091** map tiles + DEM (blocked on hosted assets).
+**Execution order (locked):** … → **T-061..T-067** → **T-090 → T-091 → T-092** (map hard gate) → **T-071** → **T-068 Phase 2** → Eden **T-069+** → **T-110** terrain base ([`t110_terrain_base_mission_layers.md`](../t110_terrain_base_mission_layers.md)).
 
 ---
 

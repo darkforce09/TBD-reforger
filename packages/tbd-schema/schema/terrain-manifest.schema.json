@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/terrain-manifest/v1.json",
+  "title": "TBD Terrain Manifest",
+  "description": "Per-terrain map asset manifest (DEM + optional tile pyramid). Values for pixel dimensions and height range must come from World Editor Info & Diags at export — do not guess.",
+  "type": "object",
+  "required": [
+    "terrainId",
+    "schemaVersion",
+    "worldBounds",
+    "metersPerPixel",
+    "dem",
+    "precision"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "terrainId": {
+      "type": "string",
+      "enum": ["everon", "arland", "custom"]
+    },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "worldBounds": {
+      "type": "array",
+      "description": "[minX, minY, maxX, maxY] meters — must match coords/terrains.ts",
+      "items": { "type": "number" },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "metersPerPixel": {
+      "type": "number",
+      "description": "Planar resolution from Info & Diags (Everon Biki: 2 m)."
+    },
+    "dem": {
+      "type": "object",
+      "required": [
+        "path",
+        "widthPx",
+        "heightPx",
+        "encoding",
+        "heightRangeMinM",
+        "heightRangeMaxM",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "widthPx": { "type": "integer", "minimum": 0, "description": "0 = stub awaiting T-091.0 export" },
+        "heightPx": { "type": "integer", "minimum": 0, "description": "0 = stub awaiting T-091.0 export" },
+        "encoding": { "const": "uint16-linear" },
+        "heightRangeMinM": { "type": "number" },
+        "heightRangeMaxM": { "type": "number" },
+        "blackMapsToM": { "type": "number" },
+        "whiteMapsToM": { "type": "number" },
+        "source": {
+          "type": "string",
+          "enum": [
+            "reforger-world-editor-base-png",
+            "reforger-world-editor-modified-png",
+            "asc-converted"
+          ]
+        },
+        "exportedAt": { "type": "string", "format": "date-time" },
+        "workbenchVersion": { "type": "string" },
+        "axisFlip": {
+          "type": "object",
+          "properties": {
+            "x": { "type": "boolean" },
+            "z": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "tiles": {
+      "type": "object",
+      "properties": {
+        "type": { "const": "xyz" },
+        "urlTemplate": { "type": "string" },
+        "tileSizePx": { "type": "integer" },
+        "minZoom": { "type": "integer" },
+        "maxZoom": { "type": "integer" },
+        "bounds": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "alignmentOrigin": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "anchors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "x", "z"],
+        "properties": {
+          "id": { "type": "string" },
+          "x": { "type": "number" },
+          "z": { "type": "number" },
+          "surfaceYM": { "type": "number" },
+          "demYM": { "type": "number" },
+          "note": { "type": "string" }
+        }
+      }
+    },
+    "precision": {
+      "type": "object",
+      "required": ["storageDecimals", "demNativeMetersPerPixel", "spawnAuthority"],
+      "properties": {
+        "storageDecimals": { "type": "integer", "minimum": 0, "maximum": 6 },
+        "demNativeMetersPerPixel": { "type": "number" },
+        "spawnAuthority": { "const": "mod-get-surface-y" }
+      }
+    }
+  }
+}

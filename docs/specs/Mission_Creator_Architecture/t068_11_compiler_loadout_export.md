@@ -1,7 +1,7 @@
 # T-068.11 — Compiler loadout export + ticket ship
 
 **Ticket:** T-068 · **Slice:** T-068.11  
-**Status:** Spec ready — Phase 2  
+**Status:** Spec ready — **paused** (after **T-068.10**; map gate **T-090–T-092** + **T-071.2** first)  
 **Executor:** claude-code  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -9,13 +9,13 @@
 
 ## In one sentence
 
-Embed resolved loadouts in mission `json_payload` export superset; complete T-068 code path.
+Embed resolved loadouts in mission `json_payload` / compiled export superset so the **mod** can dress **human players** on spawn (**T-068.12**).
 
 ---
 
 ## Problem
 
-Mission save/export does not carry loadout gear for game/mod consumption beyond manual profile file.
+Mission save/export does not carry loadout gear for game/mod consumption beyond manual profile file. **Phase 1** only proved equip on a **dev test NPC**. **Player spawn + slot picker verification** requires structured loadout data in compiled mission JSON (**this slice**) then mod equip (**T-068.12**) and slotting UI (**T-068.13**).
 
 ---
 
@@ -41,8 +41,9 @@ After human merge: **`./scripts/ticket done T-068`** + git tag **T-068**.
 
 | Decision | Choice |
 |----------|--------|
-| Ship gate | Last code slice before `ticket done` |
-| Identity | ResourceName strings in compiled payload |
+| Identity | ResourceName strings in compiled per-slot loadout block |
+| Mod equip | **T-068.12** — player wear; this slice is **website/compiler data only** |
+| Ship gate | **T-068.14** human Phase 2 E2E before `./scripts/ticket done T-068` |
 
 ---
 
@@ -65,7 +66,7 @@ PATH="$HOME/.local/go/bin:$PATH" make test-it
 
 ## Verification gate (mandatory)
 
-**Last code slice — after PASS, human merges and runs `./scripts/ticket done T-068`.**
+**Website slice — after PASS, advance to T-068.12 (mod player equip). Ticket ships @ T-068.14.**
 
 ### Automated (exit 0)
 
@@ -90,14 +91,14 @@ PATH="$HOME/.local/go/bin:$PATH" make test-it
 | A1 | Tests | `make test-it` green |
 | A2 | Build | FE build/lint clean |
 | A3 | Round-trip | R1–R4 all PASS |
-| A4 | Ticket done | Only after A1–A3: `./scripts/ticket done T-068` + git tag **T-068** |
+| A4 | Advance | A1–A3 PASS → advance-slice to **T-068.12** (not `ticket done` yet) |
 
 ---
 
 ## Depends on / Unblocks
 
 - **Depends on:** T-068.10
-- **Unblocks:** `./scripts/ticket done T-068`; T-069+
+- **Unblocks:** T-068.12, T-068.13, T-068.14; T-069+ after full T-068 ship
 
 ---
 

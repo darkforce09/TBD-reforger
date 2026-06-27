@@ -8,20 +8,23 @@
 
 ## Ready
 
-- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1: flat registry + dumb loadout JSON + mod equip. Phase 2: compat matrix + smart Forge + compiler export.
+- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
+- **T-090** (900) — Aligned map tiles [ready] — Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md.
+- **T-091** (910) — DEM + auto Z [ready] — 16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md.
+- **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
 
 ## Next queued (top 10)
 
 - **T-069** (690) — Markers on map [queued] — Place and edit map markers with registry-backed types.
 - **T-070** (700) — Vehicles placeable [queued] — Drag vehicles from palette onto map with crew hooks.
-- **T-071** (710) — ORBAT Manager modal [queued] — Remove duplicate ORBAT tree from left sidebar; open ORBAT Manager modal for all-side faction/squad/slot authoring, slotting-screen order, standardizations, logos, and arsenal.
+- **T-071** (710) — ORBAT Manager modal [queued] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Blocked on map/spawn verify (T-090–T-092).** Most web ORBAT UX not built. Hub: t071_orbat_manager_program.md.
 - **T-072** (720) — Ctrl multi-place [queued] — Hold Ctrl to place multiple copies without re-selecting asset.
 - **T-073** (730) — Shift + map rotation [queued] — Shift-drag and map rotation widget for placed entities.
 - **T-074** (740) — Faction submode / catalog filter [queued] — Faction submode tabs and catalog filtering in asset browser.
 - **T-075** (750) — Spacebar flyTo vs widget [queued] — Spacebar centers selection; resolve flyTo vs transform widget conflict.
 - **T-076** (760) — Vehicle crew UI [queued] — Crew panel and boarding UI for placed vehicles.
 - **T-077** (770) — Alt + empty vehicle [queued] — Alt-click to enter empty vehicle placement mode.
-- **T-114** (1140) — Slot roster enforcement [queued] — Roster identity maps to assigned slot; no round-robin fallback.
+- **T-114** (1140) — Slot roster enforcement + production slot picker [queued] — Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-071). After T-068.13 production LOBBY picker + T-118.
 
 ## Dependency graph (scoped)
 
@@ -30,5 +33,7 @@ flowchart LR
   T067[T-067] --> T068[T-068]
   T068[T-068] --> T069[T-069]
   T068[T-068] --> T070[T-070]
-  T068[T-068] --> T071[T-071]
+  T092[T-092] --> T071[T-071]
+  T090[T-090] --> T091[T-091]
+  T091[T-091] --> T092[T-092]
 ```

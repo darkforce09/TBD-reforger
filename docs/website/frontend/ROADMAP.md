@@ -37,7 +37,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/leaderboards` | [leaderboards.md](../../../apps/website/frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../../apps/website/frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../../apps/website/frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-068 active (**T-068.6** human E2E; mod equip **@ T-068.5** `21ec91e`) |
+| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-068 Phase 1 shipped; **T-090.0** map program active |
 | `/events` | [event-schedule.md](../../../apps/website/frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../../apps/website/frontend/docs/pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../../apps/website/frontend/docs/pages/event-hub.md) | |
@@ -65,7 +65,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | **T-086** | Server Control `/admin/server` | [server-control.md](../../../apps/website/frontend/docs/pages/server-control.md) | **T-086** backend RCON API |
 | **T-087** | CMS rich text | [content-manager.md](../../../apps/website/frontend/docs/pages/content-manager.md) | WYSIWYG choice |
 | **T-088** | Multi-server picker | [server-intel.md](../../../apps/website/frontend/docs/pages/server-intel.md) | UI for `GET /servers` |
-| **T-068+** | Mission editor Eden parity | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **T-068 in progress** — **T-068.6** human E2E active; Phase 1 code **shipped through T-068.5** |
+| **T-068+** | Mission editor Eden parity | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **T-068 Phase 1 shipped**; Phase 2 paused; **T-090–T-092** map gate active |
 
 Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 

@@ -1,7 +1,7 @@
 # T-068.7 — Compat matrix spec (Phase 2 docs)
 
 **Ticket:** T-068 · **Slice:** T-068.7  
-**Status:** Spec ready — execution gated @ T-068.6  
+**Status:** Spec ready — **paused** until **T-090–T-092** + **T-071.2** gates clear  
 **Executor:** cursor-docs  
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
@@ -31,7 +31,7 @@ Phase 2 needs a written contract before Workbench compat export and worker inges
 ## Out of scope
 
 - Implementing schemas or worker (T-068.8–T-068.9)
-- Starting before T-068.6 approval
+- Starting before map gate (**T-090–T-092**) + **T-071.2**
 
 ---
 
