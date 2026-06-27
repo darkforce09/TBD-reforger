@@ -1903,9 +1903,10 @@
       "slice_plan": {
         "T-091.0": {
           "targets": [
-            "root"
+            "root",
+            "mod"
           ],
-          "executor": "human",
+          "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
         },
         "T-091.1": {

@@ -30,7 +30,7 @@
 | Active now | Blocked until map gate |
 |------------|-------------------------|
 | **T-090.0** spec + manifest | **T-071** ORBAT Manager |
-| **T-091.0** human DEM/tile export | **T-068.7+** loadout Phase 2 |
+| **T-091.0** Claude Code + MCP DEM/tile export | **T-068.7+** loadout Phase 2 |
 | **T-092** mod mission compile | T-069+ markers/vehicles (still need T-068 ship for queue) |
 
 **T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.

@@ -334,7 +334,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). |
 | **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
 | **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
-| **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-057..T-067** perf/scale **shipped**. **T-068 Phase 1** shipped @ 2026-06-27. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
+| **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-091.0 = claude-code + MCP** (not human-only). **T-057..T-067** perf/scale **shipped**. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
 | **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until map gate + T-071.2 + T-068.13. |
 | **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 queued** (blocked on **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |
 | **Phase order** | … **T-057–T-067 shipped.** **T-068 Phase 1 shipped; Phase 2 paused.** **Active: T-090.0.** **T-110** terrain base (optional, after T-090/T-091). … |
@@ -375,7 +375,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | Slice | Status | Executor | Delivers |
 |-------|--------|----------|----------|
 | **T-090.0** | **active** | cursor-docs | Map program hub + terrain-manifest schema |
-| **T-091.0** | queued | human | DEM + tiles + anchor verify |
+| **T-091.0** | queued | claude-code + MCP | DEM + tiles + anchor verify (automated) |
 | **T-092.0–.2** | queued | mixed | Mod compile + spawn — [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) |
 | **T-071.0–.2** | queued | claude-code | ORBAT Manager — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | **T-068.7** | paused | cursor-docs | Compat matrix spec (Phase 2) |

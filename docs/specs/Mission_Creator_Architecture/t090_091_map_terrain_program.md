@@ -13,7 +13,7 @@
 
 ```text
 T-090.0  hub + schema + verify scripts (cursor-docs)     ← ACTIVE NOW
-  → T-091.0  human: DEM + tiles + anchors + strict verify
+  → T-091.0  Claude Code + MCP: DEM + tiles + anchors + strict verify
   → T-090.1  Cartesian basemap (claude-code)
   → T-091.1  DEM loader (claude-code)
   → T-091.2  Z UX + hillshade (claude-code)
@@ -30,7 +30,7 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | Slice | Spec | Executor | Exit gate |
 |-------|------|----------|-----------|
 | **T-090.0** | [`t090_0_map_program_hub.md`](t090_0_map_program_hub.md) | cursor-docs | `make ticket-check-strict` + `make verify-terrain` + `make schema-validate` |
-| **T-091.0** | [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) | human | `make verify-terrain-strict` + A1–A10 checklist |
+| **T-091.0** | [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) | claude-code + MCP | `make verify-terrain-strict` + A1–A11 |
 | **T-090.1** | [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | claude-code | Build/lint + horizontal H1/H2 manual log |
 | **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | Unit tests 3 pixels ±0.01 m |
 | **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | Manual M1–M7 + version payload Z |
@@ -43,7 +43,7 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 make ticket-sync ticket-check-strict
 make schema-validate          # golden missions + terrain manifest + anchors example
 make verify-terrain           # stub OK — manifest ↔ terrains.ts + anchor schema
-make verify-terrain-strict    # T-091.0 human gate — DEM + ≥10 anchors ±1 m
+make verify-terrain-strict    # T-091.0 gate — Claude Code + MCP export + ≥10 anchors ±1 m
 cd apps/website/frontend && npm run build && npm run lint
 ```
 
@@ -119,7 +119,7 @@ Full runbook: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md).
 
 ## Acceptance checklist (program-level)
 
-Human sign-off @ T-091.0 completes items **A1–A10** in [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md). Code slices add **S/M** gates in their own specs.
+Automated sign-off @ T-091.0: Claude Code completes **A1–A11** in [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) (`make verify-terrain-strict` exit 0). Code slices add **S/M** gates in their own specs.
 
 ---
 

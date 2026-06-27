@@ -35,7 +35,7 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 ## Out of scope
 
 - Tile rendering code (**T-090.1**)
-- DEM PNG in repo (**T-091.0** human)
+- DEM PNG in repo (**T-091.0** claude-code + MCP)
 - Compiler/mod spawn (**T-092**)
 
 ---
@@ -120,10 +120,10 @@ cd apps/website/frontend && npm run build && npm run lint
 When all **S1–S9** pass:
 
 ```bash
-./scripts/ticket advance-slice T-090   # → T-091.0 (human export) or T-090.1 after tiles exist
+./scripts/ticket advance-slice T-090   # → T-091.0 (Claude Code + MCP export)
 ```
 
-Per program order, **T-091.0** (human DEM + tiles + anchors) runs before **T-090.1** code needs tile files.
+Per program order, **T-091.0** (Claude Code + MCP: DEM + tiles + anchors) runs before **T-090.1** code needs tile files.
 
 ---
 

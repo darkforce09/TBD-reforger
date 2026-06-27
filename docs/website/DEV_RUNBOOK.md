@@ -79,7 +79,7 @@ Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schem
 
 ```bash
 make verify-terrain           # stub OK until T-091.0
-make verify-terrain-strict    # T-091.0 human gate
+make verify-terrain-strict    # T-091.0 gate (Claude Code + MCP)
 ```
 
 **Local dev serving:** T-090.1 will wire `packages/map-assets` into Vite (`public/map-assets` symlink or copy in `make web`). Until then the editor shows the Cartesian grid only.
