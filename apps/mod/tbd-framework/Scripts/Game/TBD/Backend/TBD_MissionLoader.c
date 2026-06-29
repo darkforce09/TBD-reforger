@@ -1,4 +1,5 @@
 //! Minimal parsed mission header — expanded in Phase 1 as loader hardens.
+//! @contract mission.schema.json#/$defs/meta (subset: id/name/terrain).
 class TBD_MissionMetaStruct
 {
 	string id;
@@ -7,6 +8,7 @@ class TBD_MissionMetaStruct
 }
 
 //! One playable faction from the mission `factions[]` array.
+//! @contract mission.schema.json#/$defs/faction
 class TBD_MissionFactionStruct
 {
 	string key;
@@ -15,6 +17,7 @@ class TBD_MissionFactionStruct
 }
 
 //! Circle shape (metres, world XZ + radius) used by spawn/objective zones.
+//! @contract mission.schema.json#/$defs/circle
 class TBD_MissionCircleStruct
 {
 	float x;
@@ -23,12 +26,14 @@ class TBD_MissionCircleStruct
 }
 
 //! Zone shape wrapper. Only `circle` is modelled in Phase 1 (polygon zones parse to null).
+//! @contract mission.schema.json#/$defs/shape
 class TBD_MissionShapeStruct
 {
 	ref TBD_MissionCircleStruct circle;
 }
 
 //! One entry from the mission `zones[]` array (spawn, objective, boundary, …).
+//! @contract mission.schema.json#/$defs/zone
 class TBD_MissionZoneStruct
 {
 	string id;
@@ -37,32 +42,43 @@ class TBD_MissionZoneStruct
 	ref TBD_MissionShapeStruct shape;
 }
 
+//! One ORBAT role line (its fill count).
+//! @contract mission.schema.json#/$defs/role
 class TBD_MissionOrbatRoleStruct
 {
-	int count;
+	int count; //!< Number of slots to materialize for this role.
 }
 
+//! One ORBAT group (squad) and its roles.
+//! @contract mission.schema.json#/$defs/group
 class TBD_MissionOrbatGroupStruct
 {
 	ref array<ref TBD_MissionOrbatRoleStruct> roles;
 }
 
+//! One faction's ORBAT (its groups), keyed by faction in the orbat map.
+//! @contract mission.schema.json#/$defs/orbatFaction
 class TBD_MissionOrbatFactionStruct
 {
 	ref array<ref TBD_MissionOrbatGroupStruct> groups;
 }
 
+//! Full mission document parsed from the backend — the canonical contract the loader
+//! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"), distinct from the
+//! website's integer editor/export version. Field names must equal the JSON keys.
+//! @contract mission.schema.json#/
 class TBD_MissionDocumentStruct
 {
-	string schemaVersion;
-	ref TBD_MissionMetaStruct meta;
-	ref array<ref TBD_MissionFactionStruct> factions;
-	ref array<ref TBD_MissionZoneStruct> zones;
-	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat;
-	ref array<ref TBD_MissionSlotStruct> slots;
+	string schemaVersion;                                      //!< Canonical contract version ("1.0"/"1.1").
+	ref TBD_MissionMetaStruct meta;                            //!< Mission header.
+	ref array<ref TBD_MissionFactionStruct> factions;         //!< Playable factions.
+	ref array<ref TBD_MissionZoneStruct> zones;               //!< Spawn/objective/boundary zones.
+	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat; //!< ORBAT keyed by faction.
+	ref array<ref TBD_MissionSlotStruct> slots;               //!< Flattened spawn slots (schema 1.1).
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
+//! @route GET /api/missions/{id}/compiled (mod-expected backend route; see DOCUMENTATION_STANDARDS §3).
 class TBD_MissionLoader
 {
 	protected static ref TBD_MissionDocumentStruct s_Mission;

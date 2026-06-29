@@ -3,6 +3,7 @@ class TBD_SpawnManagerClass : SCR_BaseGameModeComponentClass {}
 
 //! Builds one SCR_SpawnPoint per mission slots[] entry at exact JSON coordinates.
 //! Assigns each player a slot (roster identity → slotId, else round-robin).
+//! @authority server — the whole manager runs server-side (slot build + assignment + deploy).
 class TBD_SpawnManager : SCR_BaseGameModeComponent
 {
 	protected const ResourceName SPAWN_POINT_PREFAB = "{E7F4D5562F48DDE4}Prefabs/MP/Spawning/SpawnPoint_Base.et";
@@ -187,8 +188,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — deploys every connected player from the server.
 	protected void DeployAllConnectedPlayers()
 	{
+		// Authority only — spawning happens on the server.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
@@ -200,8 +203,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! Authority: assign slot + request spawn at mission JSON position with kit prefab.
+	//! @authority server
 	bool DeployPlayer(int playerId)
 	{
+		// Authority only — slot assignment + spawn run on the server.
 		if (RplSession.Mode() == RplMode.Client)
 			return false;
 

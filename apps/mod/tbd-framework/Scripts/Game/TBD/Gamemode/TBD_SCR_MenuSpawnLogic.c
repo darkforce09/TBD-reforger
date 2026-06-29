@@ -12,6 +12,7 @@ modded class SCR_MenuSpawnLogic
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — the _S suffix is vanilla's server-side audit hook.
 	override void OnPlayerAuditSuccess_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
@@ -22,6 +23,7 @@ modded class SCR_MenuSpawnLogic
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — _S = server-side spawn; routes through TBD_SpawnManager.DeployPlayer.
 	override void DoSpawn_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();

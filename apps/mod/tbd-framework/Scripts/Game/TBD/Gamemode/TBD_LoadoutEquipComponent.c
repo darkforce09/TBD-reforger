@@ -25,20 +25,22 @@ class TBD_LoadoutEquipComponentClass : SCR_BaseGameModeComponentClass {}
 
 //------------------------------------------------------------------------------------------------
 //! DTO mirrors loadout-export.schema.json "gear" object (each value a ResourceName or null/"").
+//! @contract loadout-export.schema.json#/properties/gear
 class TBD_LoadoutGearStruct
 {
-	string primary;
-	string uniform;
-	string vest;
-	string helmet;
+	string primary; //!< Primary weapon ResourceName (empty = none).
+	string uniform; //!< Uniform ResourceName (empty = none).
+	string vest;    //!< Vest ResourceName (empty = none).
+	string helmet;  //!< Helmet ResourceName (empty = none).
 }
 
 //! DTO mirrors loadout-export.schema.json root.
+//! @contract loadout-export.schema.json#/
 class TBD_LoadoutExportStruct
 {
-	string loadoutVersion;
-	string modpackId;
-	ref TBD_LoadoutGearStruct gear;
+	string loadoutVersion;          //!< Export format version (const "1").
+	string modpackId;               //!< Source modpack id.
+	ref TBD_LoadoutGearStruct gear; //!< The four gear slots.
 }
 
 //------------------------------------------------------------------------------------------------
@@ -72,10 +74,12 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 	protected ref array<ref TBD_PendingEquip> m_aPending = {};
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — the dev equip test spawns and dresses the test NPC server-side only.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
 
+		// Authority only — entity spawn + equip must run on the server.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 

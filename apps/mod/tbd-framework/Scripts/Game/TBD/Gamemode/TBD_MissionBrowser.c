@@ -82,6 +82,8 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcAsk_MissionList);
 	}
 
+	//! @authority server — executes on the server (RplRcver.Server): builds and returns the list.
+	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_MissionList()
 	{
@@ -89,6 +91,9 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcDo_ReceiveMissionList, payload);
 	}
 
+	//! @authority owner — executes on the requesting admin's client only (RplRcver.Owner).
+	//! @rpc Reliable Owner
+	// SERVER -> CLIENT (owner): deliver the mission list to the requester only.
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_ReceiveMissionList(string payload)
 	{
@@ -104,6 +109,8 @@ modded class SCR_PlayerController
 		Rpc(TBD_RpcAsk_SelectMission, number);
 	}
 
+	//! @authority server — executes on the server; validates the caller is a listed admin before acting.
+	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_SelectMission(int number)
 	{

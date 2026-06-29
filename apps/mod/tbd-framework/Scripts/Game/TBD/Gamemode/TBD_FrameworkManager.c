@@ -5,6 +5,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 {
 	protected static TBD_FrameworkManager s_Instance;
 
+	//! @replicated m_Stage — server-owned; clients react in OnStageReplicated (onRplName hook).
 	[RplProp(onRplName: "OnStageReplicated")]
 	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING;
 
@@ -27,10 +28,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — mission load and the stage machine run on the server only.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
 
+		// Authority only — clients never drive mission load or the stage machine.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
@@ -71,6 +74,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — mutates the replicated m_Stage and calls Replication.BumpMe() to push it.
 	void SetStage(TBD_EGameStage stage)
 	{
 		if (m_Stage == stage)
@@ -181,6 +185,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority client — onRpl hook for m_Stage (RplProp onRplName); runs on clients on replication.
 	void OnStageReplicated()
 	{
 		// Client-side UI reacts to stage changes here.

@@ -15,8 +15,12 @@
  *   (or NetAPI: wb_execute_action menuPath "Plugins,Export TBD Registry Items").
  * Then copy $profile:TBD_RegistryItems.json to
  *   packages/tbd-schema/registry/registry-items.workbench.json
+ *
+ * @contract registry-items.schema.json#/
  */
 
+//! Internal export row (camelCase); the writer emits snake_case keys per the schema item.
+//! @contract registry-items.schema.json#/$defs/item
 class TBD_RegistryItemRow
 {
 	string path;          // pak-relative prefab path (no GUID) OR full ResourceName

@@ -1,4 +1,5 @@
 //! One mission entry from the backend mission list (GET /api/missions).
+//! @route GET /api/missions
 class TBD_MissionListEntry
 {
 	string id;

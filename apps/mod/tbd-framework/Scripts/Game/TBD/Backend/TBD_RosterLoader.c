@@ -7,6 +7,7 @@ class TBD_RosterResponseStruct
 }
 
 //! Fetches and caches GET /api/game/events/{eventId}/roster for slot enforcement.
+//! @route GET /api/game/events/{eventId}/roster
 class TBD_RosterLoader
 {
 	protected static ref map<string, string> s_IdentityToSlot;

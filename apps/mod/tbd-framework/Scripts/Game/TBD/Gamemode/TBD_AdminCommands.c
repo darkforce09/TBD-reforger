@@ -9,6 +9,7 @@
 modded class SCR_ChatComponent
 {
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — admin chat commands are intercepted and executed on the server.
 	override void OnNewMessage(string msg, int channelId, int senderId)
 	{
 		super.OnNewMessage(msg, channelId, senderId);
