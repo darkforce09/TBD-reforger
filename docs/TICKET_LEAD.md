@@ -11,6 +11,7 @@
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
+- **T-125** (1250) — Coding standards + 11/10 enforcement [ready] — Author CODING_STANDARDS.md (style/structure/errors/tests, distinct from DOCUMENTATION_STANDARDS). Full CI gate (test-it, FE build/lint/test), golangci errcheck/govet/staticcheck without only-new-issues, TS strict:true, complete @route on handlers, error-handling policy, Enfusion DTO fixture gate. Depends on T-124. Hub: t125_coding_standards_enforcement.md.
 
 ## Next queued (top 10)
 
@@ -34,4 +35,5 @@ flowchart LR
   T068[T-068] --> T070[T-070]
   T092[T-092] --> T071[T-071]
   T091[T-091] --> T092[T-092]
+  T124[T-124] --> T125[T-125]
 ```

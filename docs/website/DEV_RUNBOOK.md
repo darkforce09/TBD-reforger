@@ -5,6 +5,8 @@ Backend docs: [`docs/backend/README.md`](backend/README.md).
 
 ## Start everything
 
+**Toolchain (T-124):** Go **1.26**, Node **26** (repo root [`.nvmrc`](../../.nvmrc) — `nvm use` before frontend work), Postgres **18** (`postgres:18-alpine` in compose). CI matches via [`contracts.yml`](../../.github/workflows/contracts.yml) + [`schema.yml`](../../.github/workflows/schema.yml).
+
 ```bash
 # 1. Postgres (port 5434) — quick, run in foreground
 make db-up
@@ -60,6 +62,18 @@ make db-down      # stops Postgres, keeps volume
 # API + Vite: kill the background processes
 ```
 
+## Postgres 18 upgrade (T-124)
+
+If `make api` fails migrations after pulling T-124, the local volume may still be Postgres **16** data. Re-init:
+
+```bash
+make db-down
+# podman volume rm tbd-reforger_db_data   # or docker — inspect compose project name
+make db-up && make seed
+```
+
+Dev data is reseedable; mock missions are optional (see below).
+
 ## Registry catalog (T-068)
 
 `make seed` applies `internal/db/seeds/registry_dev.sql` (21 vanilla rows, modpack
@@ -105,7 +119,8 @@ make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m 
 
 - A fresh DB only has the Discord role→permission mappings (`make seed`).
   Events/missions must be seeded via the API or `psql`.
-- Frontend checks: `cd frontend && npm run build` (tsc+vite), `npm run lint`.
+- **Node 26** required for frontend (`nvm use` at repo root). **Go 1.26** for API (`make build` / `make api`).
+- Frontend checks: `cd apps/website/frontend && npm run build` (tsc+vite), `npm run lint`, `npm test` (vitest **21/21**).
 - Integration tests: `make test-it` (needs `make db-up`).
 
 ## Mock data (optional, not run by `make seed`)

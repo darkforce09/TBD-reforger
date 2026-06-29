@@ -29,6 +29,8 @@ Playbook: [`tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead vie
 | **Mission Creator** | MC [`ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
 | **Backend / API** | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | **Cross-boundary code comments** | [`docs/platform/DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) — §11 cheat sheet; in-code = same commit as code (§1) |
+| **Platform deps / toolchain** | [`docs/platform/t124_dependency_upgrade.md`](../platform/t124_dependency_upgrade.md) — Go 1.26, Node 26, Postgres 18 (T-124 shipped) |
+| **Coding standards (T-125)** | [`docs/platform/t125_coding_standards_enforcement.md`](../platform/t125_coding_standards_enforcement.md) — pending `CODING_STANDARDS.md` |
 | **Tag contract** | [`docs/TAGS.md`](TAGS.md) |
 
 If the registry row has a `spec`, read it before editing code.

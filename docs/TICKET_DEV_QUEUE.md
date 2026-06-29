@@ -29,3 +29,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-092`
 - **Targets:** root, website, mod
 - **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
+
+## T-125 — Coding standards + 11/10 enforcement
+
+- **Active slice:** `T-125.0`
+- **Slice spec:** `docs/platform/t125_coding_standards_enforcement.md`
+- **Program hub:** `docs/platform/t125_coding_standards_enforcement.md`
+- **Branch:** `ticket/T-125`
+- **Targets:** root, website, mod
+- **Summary:** Author CODING_STANDARDS.md (style/structure/errors/tests, distinct from DOCUMENTATION_STANDARDS). Full CI gate (test-it, FE build/lint/test), golangci errcheck/govet/staticcheck without only-new-issues, TS strict:true, complete @route on handlers, error-handling policy, Enfusion DTO fixture gate. Depends on T-124. Hub: t125_coding_standards_enforcement.md.

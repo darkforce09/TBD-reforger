@@ -784,24 +784,19 @@ def cmd_brief(args: argparse.Namespace) -> None:
         print("SLICES: .0 doc hub → .1 Go → .2 TS → .3 Enfusion → .4 codegen → .5 Go JSON validation → .6 CI")
         print("SPEC: docs/platform/t123_documentation_standards_rollout.md")
     elif tid == "T-124":
-        print("SCOPE: upgrade all deps + toolchain to latest (FE npm, Go modules, Go 1.26, Node 24, PG18)")
-        print("EXECUTION: 3 commits on main (single-ticket mode) — no feature branch")
-        print("PREREQ: Node 24 locally before T-124.1")
+        print("STATUS: shipped @ cd11db0 — historical replay only")
         print("SPEC: docs/platform/t124_dependency_upgrade.md")
-        print("DO NOT: edit registry or narrative docs (version lines in CLAUDE.md OK in .3)")
+        print("DO NOT REOPEN unless dependency regression")
     elif active == "T-124.1":
-        print("SCOPE: apps/website/frontend — npm update + vitest 3→4; keep @types/node ^24")
-        print("VERIFY: cd apps/website/frontend && npm run build && npm run lint && npm run test (21/21)")
+        print("SHIPPED @ 1d85f46 — do not reopen")
     elif active == "T-124.2":
-        print("SCOPE: apps/website — go get -u ./... && go mod tidy; watch gorm 1.31")
-        print("VERIFY: make build && make db-up && make test-it")
+        print("SHIPPED @ d81ed9c — do not reopen")
     elif active == "T-124.3":
-        print("SCOPE: go 1.26, .nvmrc=24, postgres:18-alpine, contracts.yml go-version 1.26, CLAUDE version lines")
-        print("VERIFY: make schema-codegen (clean) + PG18 volume re-init + make seed + smoke")
+        print("SHIPPED @ cd11db0 — do not reopen")
     elif tid == "T-125":
-        print("BLOCKED: depends on T-124 shipped")
         print("AUTHORITY: new CODING_STANDARDS.md (T-125.0) + DOCUMENTATION_STANDARDS.md")
         print("SCOPE: full CI gate, golangci full set, TS strict, @route completion, error policy")
+        print("PREREQ: T-124 shipped (met @ cd11db0)")
         print("SPEC: docs/platform/t125_coding_standards_enforcement.md")
     elif active == "T-125.0":
         print("SCOPE: write docs/platform/CODING_STANDARDS.md — style/structure/errors/tests")

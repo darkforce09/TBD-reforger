@@ -1,7 +1,7 @@
 # T-125 — Coding standards + 11/10 enforcement
 
-**Ticket:** T-125 · **Program:** platform · **Status:** queued (→ ready after T-124 ships)  
-**Depends on:** T-124 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
+**Ticket:** T-125 · **Program:** platform · **Status:** **ready** (T-124 shipped @ `cd11db0`)  
+**Depends on:** T-124 (met) · **Active slice:** T-125.0 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
 
 ## In one sentence
 
@@ -57,8 +57,8 @@ New [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — **required 
 
 | Job | Steps |
 |-----|-------|
-| **backend** | Postgres 18 service (match compose: tbd/tbd, port 5434); `go build`, `make test-it` |
-| **frontend** | `npm ci`, `npm run lint`, `npm run build`, `npm test` |
+| **backend** | Postgres 18 service (match compose: tbd/tbd, port 5434); Go **1.26**; `go build`, `make test-it` |
+| **frontend** | Node **26**; `npm ci`, `npm run lint`, `npm run build`, `npm test` |
 | **schema** | `npm run validate`, `make verify-citations` |
 
 Add **`make ci-local`** (or `make check`) mirroring CI.
