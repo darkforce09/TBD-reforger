@@ -69,8 +69,8 @@ the bridge schema.
 ```bash
 npm install
 npm run validate
-npm run verify-terrain           # stub OK until T-091.0
-npm run verify-terrain-alignment -- --strict   # T-091.0 MCP export gate
+npm run verify-terrain           # manifest ↔ terrains.ts + anchor schema
+npm run verify-terrain-alignment -- --strict   # T-091.0 gate — real DEM + anchors (PASS @ 6d96339)
 ```
 
 Run this in CI for the web validator and manually before each release for the

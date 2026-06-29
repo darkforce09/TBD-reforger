@@ -211,7 +211,7 @@
 | **Trigger** | Mouse move over map |
 | **Preconditions** | Map mounted |
 | **Procedure** | Container `onPointerMove` → rAF-throttled self-unproject (`view.makeViewport(...).unproject`) → `useMapStore.setCursor` → `BottomToolbelt` mono display (CUR mode). **No Deck `onHover` pick** (T-057). |
-| **Postconditions** | X/Y/Z shown; **Z = 0** on the flat map (real ground-plane value until Phase 2 DEM) |
+| **Postconditions** | X/Y/Z shown; **Z = 0** on the flat map until **T-091.2** live sampling (Everon DEM shipped T-091.0) |
 | **Inputs** | Pointer move over map container |
 | **Outputs** | Transient `useMapStore.cursor` (not page React state) |
 | **Edge cases** | Off-map / pointer leave → `cursor: null` → all axes show `—`; pointer is constant `crosshair` (no icon hover glyph — T-057 trade) |

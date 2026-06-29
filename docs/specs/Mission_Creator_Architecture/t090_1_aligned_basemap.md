@@ -1,7 +1,7 @@
 # T-090.1 — Aligned Cartesian basemap
 
 **Ticket:** T-090 · **Slice:** T-090.1  
-**Status:** Spec ready — **blocked on T-091.0** (tile pyramid in repo)  
+**Status:** Spec ready — **blocked on tile pyramid** (T-090.1 / T-121 — DEM shipped @ T-091.0)  
 **Executor:** claude-code  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -17,7 +17,7 @@ Render aligned Everon top-down tiles under the procedural grid in `<TacticalMap>
 
 | Gate | Evidence |
 |------|----------|
-| **T-091.0** | `packages/map-assets/everon/tiles/{z}/{x}/{y}.webp` exists (≥ z0) |
+| **T-090.1 / T-121** | `packages/map-assets/everon/tiles/{z}/{x}/{y}.webp` exists (≥ z0) — **not** gated by T-091.0 (tiles deferred) |
 | **T-090.0** | Manifest `tiles.urlTemplate`, `alignmentOrigin`, `bounds` validate |
 | **Dev serve** | Tiles reachable at `/map-assets/everon/tiles/...` (symlink or Vite static — see DEV_RUNBOOK) |
 
@@ -91,7 +91,7 @@ Document measured H1/H2 results in PR / manual verify log.
 ```bash
 cd apps/website/frontend && npm run build && npm run lint
 make verify-terrain
-# Requires tiles on disk post T-091.0:
+# Requires tiles on disk (T-090.1 / T-121 — not T-091.0):
 test -d packages/map-assets/everon/tiles/0
 ```
 

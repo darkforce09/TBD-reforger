@@ -6,9 +6,11 @@
 
 **T-068 MCP slices:** T-068.1 (registry export), T-068.5 (mod equip), T-068.8 (compat export) — spec hub [`t068_virtual_arsenal_program.md`](../specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
 
-**T-091.0 MCP slice:** Everon DEM + tile export + GetSurfaceY anchor probes — spec [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Same bootstrap contract as T-068.1.
+**T-091.0 (shipped @ `6d96339`):** Everon 6400² DEM via `TBD_TerrainExportPlugin.c` + strict verify — spec [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
 
-**Next Claude Code work order:** **T-091.0** (MCP terrain export) → **T-090.1** / **T-091.1–.2** (website) → **T-092** (mod compile + `/compiled`) → **T-068.13** LOBBY picker. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**T-121 (deferred):** tiles / Arland re-export / MCP polish — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
+
+**Next Claude Code work order:** **T-091.1** (DEM loader) → **T-091.2** (Z UX) → **T-090.1** (tiles) → **T-092** → **T-068.13**. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
@@ -107,28 +109,11 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-091.0 typical MCP flow (map / terrain export)
+## T-091.0 — shipped @ 6d96339
 
-```
-tbd-dev-bootstrap.sh
-→ wb_connect → mod_validate
-→ discover Everon world path (game_browse / asset_search — record exact path)
-→ export heightmap Base + Modified (Workbench UI or TBD_TerrainExportPlugin when added)
-→ export / slice tile pyramid → packages/map-assets/everon/tiles/
-→ update packages/map-assets/everon/manifest.json (measured widthPx/heightPx)
-→ wb_play @ ≥10 anchor x/z (bridgehead golden slots + hills/valley/coast)
-→ mcp-wb-logs.sh → surface Y → anchors/verification.json
-→ make verify-terrain-strict && make schema-validate
-→ git commit on main (tag T-091.0); git lfs push if remote
-```
+Everon DEM: `TBD_TerrainExportPlugin.c` → `GetTerrainSurfaceY` 6400² grid → `raw-u16-to-dem-png.mjs` → `everon-dem-16bit.png`.  
+Re-export: **Plugins → TBD → Export TBD Terrain DEM**. Spec: [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
 
-**Human only if** bootstrap exit 1 (enable Net API, load addon, re-run).
+## T-091.1 — next (DEM loader)
 
-**Do not** invent anchor elevations — every `surfaceYM` must come from engine probe logs.
-
-Spec: [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
-
-**New `.c` file:** Workbench **cold restart** required (not just `wb_reload`) before class registers.
-
-Profile layout: [`scripts/mod/setup-server-profile.sh`](../../scripts/mod/setup-server-profile.sh).  
-Workbench `$profile:` → Proton pfx `…/ArmaReforgerWorkbench/profile/` (paste exact path in verify).
+Wire `dem-sample.mjs` / `sampleElevation` in the frontend. Spec: [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md).

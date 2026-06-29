@@ -44,7 +44,7 @@ isProject: false
 ```
 Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 Phase 1 shipped**
 (spec: docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
-**Active slice: T-090.0** — map program hub (cursor-docs). **T-068 Phase 2 paused.**
+**Active slice: T-091.1** — DEM loader (claude-code). **T-091.0 shipped** @ `6d96339`. **T-068 Phase 2 paused.**
 Phase 1 proved web → loadout-export.json → mod **test NPC** wear (NOT human player).
 Program order: T-090 → T-091 → T-092 → T-071 → T-068.13 → T-068.7+.
 Read t090_091_map_terrain_program.md.
@@ -55,7 +55,7 @@ Authority: ROADMAP.md → program hub slice table.
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-090.0 active** (map program hub).
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-091.1 active** (DEM loader). **T-091.0 shipped** @ `6d96339`.
 Phase 2 T-068 paused. Per docs/TICKET_LEAD.md.
 ```
 
@@ -334,10 +334,11 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). |
 | **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
 | **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
-| **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-091.0 = claude-code + MCP** (not human-only). **T-057..T-067** perf/scale **shipped**. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
+| **T-091.0 Everon DEM** (2026-06-29, **shipped** @ `6d96339`) | **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → 16-bit PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** **dead** on packed Eden (terrain entity unselectable). Tiles **deferred** (T-090.1 / T-121). Verify: `make verify-terrain-strict` PASS — 11 anchors, maxDeltaM 0.204 m. Spec: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md). |
+| **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-091.0 shipped** @ `6d96339` — GetSurfaceY plugin resample (`mod-getsurfacey-resample`); manual WE export **dead** on packed Eden. **T-091.1 active** (DEM loader). **T-057..T-067** perf/scale **shipped**. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
 | **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until map gate + T-071.2 + T-068.13. |
 | **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 queued** (blocked on **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |
-| **Phase order** | … **T-057–T-067 shipped.** **T-068 Phase 1 shipped; Phase 2 paused.** **Active: T-090.0.** **T-110** terrain base (optional, after T-090/T-091). … |
+| **Phase order** | … **T-057–T-067 shipped.** **T-068 Phase 1 shipped; Phase 2 paused.** **T-090.0 + T-091.0 shipped.** **Active: T-091.1.** **T-110** terrain base (optional, after T-090/T-091). … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049 (**T-089** deferred); Save Version still compiles payload only. |
 | **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement queued tickets from [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
@@ -346,7 +347,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-068 Phase 1 shipped** @ 2026-06-27; **active slice T-090.0** (map program). **T-068 Phase 2 paused**. Then this file, then `engineering_plan.md` §0–§2.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-068 Phase 1 shipped** @ 2026-06-27; **T-091.0 shipped** @ `6d96339`; **active slice T-091.1** (DEM loader). **T-068 Phase 2 paused**. Then this file, then `engineering_plan.md` §0–§2.
 2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
 3. **Verify gate** after every phase:
    ```bash
@@ -364,18 +365,19 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ---
 
-### ACTIVE SLICE — T-090 Map & terrain program (2026-06-28)
+### ACTIVE SLICE — T-091 Map & terrain program (2026-06-29)
 
-**ACTIVE NOW:** **T-090.0** — manifest schema + export runbook. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
+**ACTIVE NOW:** **T-091.1** — DEM loader + `sampleElevation`. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
-**Program order:** **T-090 → T-091 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
+**Program order:** **T-091.1 → T-091.2 → T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
 
 **T-068 Phase 2 paused** — no active T-068 slice until gates clear. **T-071 queued** (blocked on T-092).
 
 | Slice | Status | Executor | Delivers |
 |-------|--------|----------|----------|
-| **T-090.0** | **active** | cursor-docs | Map program hub + terrain-manifest schema |
-| **T-091.0** | queued | claude-code + MCP | DEM + tiles + anchor verify (automated) |
+| **T-090.0** | **shipped** | cursor-docs | Map program hub + terrain-manifest schema |
+| **T-091.0** | **shipped** @ `6d96339` | claude-code | Everon DEM + anchor verify (GetSurfaceY plugin) |
+| **T-091.1** | **active** | claude-code | DEM loader + `sampleElevation` |
 | **T-092.0–.2** | queued | mixed | Mod compile + spawn — [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) |
 | **T-071.0–.2** | queued | claude-code | ORBAT Manager — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | **T-068.7** | paused | cursor-docs | Compat matrix spec (Phase 2) |

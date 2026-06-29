@@ -45,10 +45,10 @@ tidy: ## Tidy Go modules
 schema-validate: ## Validate golden missions against shared schema
 	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs
 
-verify-terrain: ## Manifest + anchor verify (stub mode OK until T-091.0 export)
+verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain
 
-verify-terrain-strict: ## Full anchor alignment gate (T-091.0 Claude Code + MCP export)
+verify-terrain-strict: ## Full anchor alignment gate (T-091.0 GetSurfaceY DEM + anchors)
 	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs --strict
 
 tickets: ## Run Claude Code on ready tickets in parallel

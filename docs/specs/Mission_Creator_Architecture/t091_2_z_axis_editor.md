@@ -1,7 +1,7 @@
 # T-091.2 — Z-axis editor UX
 
 **Ticket:** T-091 · **Slice:** T-091.2  
-**Status:** Spec ready — blocked on **T-091.1**  
+**Status:** Spec ready — **active** (unblocked @ T-091.0 `6d96339`)  
 **Executor:** claude-code  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 

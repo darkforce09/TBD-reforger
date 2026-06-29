@@ -377,7 +377,7 @@ def generate_ticket_lead_md(registry: dict[str, Any] | None = None) -> str:
     tickets = registry.get("tickets", [])
     lines = [AUTO_HEADER, "# Ticket Lead Dashboard", ""]
     for label, statuses in (
-        ("Running / Review", ("running", "review")),
+        ("Running / Review", ("running", "review", "active")),
         ("Ready", ("ready",)),
         ("Next queued (top 10)", ("queued",)),
     ):
@@ -430,7 +430,8 @@ def generate_ticket_dev_queue_md(registry: dict[str, Any] | None = None) -> str:
     ready = [
         t
         for t in registry.get("tickets", [])
-        if t.get("status") == "ready" and slice_executor(t) == "claude-code"
+        if t.get("status") in ("ready", "active")
+        and slice_executor(t) == "claude-code"
     ]
     ready.sort(key=_ticket_sort_key)
     lines = [

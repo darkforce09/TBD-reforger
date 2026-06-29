@@ -14,10 +14,11 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-091 — DEM + auto Z
 
+- **Active slice:** `T-091.1`
 - **Spec:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-091`
 - **Targets:** root, website
-- **Summary:** 16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md.
+- **Summary:** 16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

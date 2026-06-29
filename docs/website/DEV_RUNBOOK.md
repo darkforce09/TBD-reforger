@@ -71,18 +71,18 @@ git lfs install   # once per clone
 git lfs pull      # after checkout if tiles/DEM missing
 ```
 
-Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schema/terrain-manifest.schema.json`](../tbd-schema/schema/terrain-manifest.schema.json). Stubs use `widthPx/heightPx: 0` until Workbench export (**T-091.0**).
+Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schema/terrain-manifest.schema.json`](../tbd-schema/schema/terrain-manifest.schema.json). **Everon** has real DEM dims (6400×6400) @ T-091.0; **Arland** still stub (`widthPx/heightPx: 0`).
 
-**Export runbook:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) §Workbench export.
+**DEM re-export runbook:** [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md) §Re-export runbook (GetSurfaceY plugin — manual WE export dead on packed Eden).
 
-**Verify alignment** (after DEM lands):
+**Verify alignment:**
 
 ```bash
-make verify-terrain           # stub OK until T-091.0
-make verify-terrain-strict    # T-091.0 gate (Claude Code + MCP)
+make verify-terrain           # manifest ↔ terrains.ts + anchor schema
+make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m (PASS @ 6d96339)
 ```
 
-**Local dev serving:** T-090.1 will wire `packages/map-assets` into Vite (`public/map-assets` symlink or copy in `make web`). Until then the editor shows the Cartesian grid only.
+**Local dev serving:** T-091.1 wires `packages/map-assets` into Vite (`public/map-assets` symlink — see [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md) §Dev serve). Basemap tiles still T-090.1.
 
 ## Notes
 

@@ -1,5 +1,5 @@
 {
-  "next_id": 121,
+  "next_id": 122,
   "tickets": [
     {
       "id": "T-001",
@@ -1822,7 +1822,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.0",
+      "active_slice": null,
       "surfaces": [
         "MAP"
       ],
@@ -1854,7 +1854,8 @@
             "root"
           ],
           "executor": "cursor-docs",
-          "spec": "docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md"
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md",
+          "status": "shipped"
         },
         "T-090.1": {
           "targets": [
@@ -1869,7 +1870,8 @@
       "id": "T-091",
       "order": 910,
       "program": "infra",
-      "status": "ready",
+      "status": "active",
+      "active_slice": "T-091.1",
       "surfaces": [
         "MAP",
         "DATA"
@@ -1879,7 +1881,7 @@
         "schema"
       ],
       "title": "DEM + auto Z",
-      "summary": "16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md.",
+      "summary": "16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-091.0",
@@ -1907,14 +1909,17 @@
             "mod"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md"
+          "spec": "docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md",
+          "status": "shipped",
+          "shipped_at": "6d96339"
         },
         "T-091.1": {
           "targets": [
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md"
+          "spec": "docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md",
+          "status": "active"
         },
         "T-091.2": {
           "targets": [
@@ -2333,6 +2338,32 @@
         "T-115",
         "T-117"
       ]
+    },
+    {
+      "id": "T-121",
+      "order": 1210,
+      "program": "infra",
+      "stream": "infra",
+      "targets": [
+        "mod",
+        "root"
+      ],
+      "executor": "claude-code",
+      "status": "deferred",
+      "surfaces": [
+        "DATA",
+        "MAP"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "title": "Terrain DEM export automation",
+      "summary": "Follow-ons: EMT tiles, Arland re-export, mcp-call.sh polish. Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md",
+      "depends_on": [
+        "T-091.0"
+      ],
+      "unblocks": []
     }
   ]
 }

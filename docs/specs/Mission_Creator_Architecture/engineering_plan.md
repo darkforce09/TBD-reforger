@@ -43,9 +43,8 @@ All already-present deps are reused: `zustand`, `@tanstack/react-query`, `@base-
    `json_payload` (the editor's autosave + "Save" target). Confirm exact route/verb against
    `internal/handlers/missions.go`.
 3. **Asset hosting** — top-down map tiles (Everon/Arland) and the 16-bit DEM heightmap for each
-   terrain, served as static assets the engine can `fetch`. **Tickets:** **T-090** (aligned map tiles),
-   **T-091** (DEM + Z-axis on place/move). Blocked on hosted binaries — do not start without approval
-   ([`agent_execution.md`](agent_execution.md) §Deferrals).
+   terrain, served as static assets the engine can `fetch`. **Tickets:** **T-090.1** (aligned map tiles — tile pyramid not yet in repo),
+   **T-091** (DEM + Z-axis on place/move). **Everon DEM shipped** @ T-091.0 (`packages/map-assets/everon/dem/everon-dem-16bit.png`); tiles still pending.
 
 ---
 
@@ -484,7 +483,7 @@ Create both feature trees (§1) as stubs. Register the `React.lazy` route `/miss
 `view/useOrthographicView.ts`, `TacticalMap.tsx`, `layers/useBaseMapLayer.ts`, `context/MapContext.tsx`.
 **Deliverable:** a blank base map with 60 fps pan/zoom.
 
-**Phase 2 — DEM / Z-axis** (**T-091**, blocked on heightmap assets) → `dem/DemTexture.ts`, `dem/sampleElevation.ts`, `dem/DemController.ts`,
+**Phase 2 — DEM / Z-axis** (**T-091.1–.2** — Everon DEM assets exist @ T-091.0) → `dem/DemTexture.ts`, `dem/sampleElevation.ts`, `dem/DemController.ts`,
 `layers/useDemLayer.ts`, `layout/BottomToolbelt.tsx` (X/Y/Z readout). **Deliverable:** hover the
 map and read true elevation; hillshade overlay toggles. Map tile imagery is **T-090** (Phase 2
 prerequisite for visual parity — see [`ROADMAP.md`](ROADMAP.md) §Recommended program order).

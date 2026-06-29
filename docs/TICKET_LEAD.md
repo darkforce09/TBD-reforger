@@ -5,12 +5,12 @@
 
 ## Running / Review
 
+- **T-091** (910) — DEM + auto Z [active] — 16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
 
 ## Ready
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 - **T-090** (900) — Aligned map tiles [ready] — Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md.
-- **T-091** (910) — DEM + auto Z [ready] — 16-bit DEM, sampleElevation, Z on place/move/toolbelt; hillshade toggle. Blocked on T-091.0 asset export + anchor verify. Hub: t090_091_map_terrain_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
 
 ## Next queued (top 10)
@@ -34,6 +34,4 @@ flowchart LR
   T068[T-068] --> T069[T-069]
   T068[T-068] --> T070[T-070]
   T092[T-092] --> T071[T-071]
-  T090[T-090] --> T091[T-091]
-  T091[T-091] --> T092[T-092]
 ```

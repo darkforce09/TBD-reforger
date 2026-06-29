@@ -32,7 +32,7 @@ Phase 1 Virtual Arsenal (test NPC only) stays shipped. **Do not** resume T-068 P
 
 ## Minimum bar before T-068 Phase 2 loadout
 
-1. **T-091.0 + T-092.2** — anchor verify + mod compiled `slots[]` + spawn Y/yaw
+1. **T-091.0 verify PASS + T-092.2** — anchor verify done @ `6d96339`; mod compiled `slots[]` + spawn Y/yaw still pending
 2. **T-071.2** — squad order in export
 3. **T-068.13** — production LOBBY slot picker (Aegis UX; no CLI)
 4. **T-068.11–.14** — loadout on **human player**

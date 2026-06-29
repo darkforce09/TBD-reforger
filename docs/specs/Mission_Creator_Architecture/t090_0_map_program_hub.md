@@ -1,7 +1,8 @@
 # T-090.0 — Map program hub + manifest schema
 
 **Ticket:** T-090 · **Slice:** T-090.0  
-**Status:** **active** (cursor-docs)  
+**Status:** **shipped** (cursor-docs)  
+**Shipped:** hub + schemas + verify scripts; Everon manifest populated @ T-091.0.
 **Executor:** cursor-docs  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) (program hub)
 
@@ -35,7 +36,7 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 ## Out of scope
 
 - Tile rendering code (**T-090.1**)
-- DEM PNG in repo (**T-091.0** claude-code + MCP)
+- DEM PNG in repo (**T-091.0** — **shipped** @ `6d96339`)
 - Compiler/mod spawn (**T-092**)
 
 ---
@@ -71,7 +72,7 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 
 ## Verification gate (mandatory)
 
-**Advance T-090.0 → T-091.0 only when ALL PASS.**
+**T-090.0 shipped.** Next: **T-091.1** (DEM loader) — see [`t091_1_dem_loader.md`](t091_1_dem_loader.md).
 
 ### Automated (exit 0)
 
@@ -103,7 +104,7 @@ cd apps/website/frontend && npm run build && npm run lint
 | S4 | terrains.ts | Everon 12800², Arland **4096²**; height ranges match Biki |
 | S5 | terrains ↔ manifest | `verify-terrain-manifest.ts` exit 0 |
 | S6 | Alignment stub | `verify-terrain-alignment.ts` exit 0 with stub warning |
-| S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-090 — T-090.0** |
+| S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-091 — T-091.1** |
 | S8 | No legacy IDs | `make ticket-check-strict` exit 0 |
 | S9 | LFS | `.gitattributes` covers map-assets PNG/WebP |
 
@@ -117,13 +118,7 @@ cd apps/website/frontend && npm run build && npm run lint
 
 ## Advance slice
 
-When all **S1–S9** pass:
-
-```bash
-./scripts/ticket advance-slice T-090   # → T-091.0 (Claude Code + MCP export)
-```
-
-Per program order, **T-091.0** (Claude Code + MCP: DEM + tiles + anchors) runs before **T-090.1** code needs tile files.
+**T-090.0 + T-091.0 shipped.** Active: **T-091.1** (claude-code). Tiles (**T-090.1**) deferred until tile pyramid exists (T-121 / EMT).
 
 ---
 

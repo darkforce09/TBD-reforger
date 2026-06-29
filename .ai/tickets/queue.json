@@ -20,13 +20,6 @@
       "branch": "ticket/T-090"
     },
     {
-      "id": "T-091",
-      "title": "DEM + auto Z",
-      "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
-      "branch": "ticket/T-091"
-    },
-    {
       "id": "T-092",
       "title": "Spawn transform parity + mod mission compile",
       "status": "ready",

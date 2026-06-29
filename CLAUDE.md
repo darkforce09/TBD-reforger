@@ -112,7 +112,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-113**
 
-**ACTIVE NOW:** **T-090** — T-090.0 (Aligned map tiles). Spec: `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`.
+**ACTIVE NOW:** **T-091** — T-091.1 (DEM + auto Z). Spec: `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -138,11 +138,13 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 updated; doc links repaired (incl. pre-existing `docs/specs/**` rot). Verified: go build,
 frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
-### ACTIVE SLICE — T-090 Map & terrain program
+### ACTIVE SLICE — T-091 Map & terrain program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · active slice **`T-090.0`** (cursor-docs).
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-091.0 shipped** @ `6d96339` · active slice **`T-091.1`** (claude-code — DEM loader).
 
-**Program order:** **T-090 → T-091 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Spawn transform = **T-092** (not T-096 telemetry).
+**Program order:** **T-091.1 → T-091.2 → T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Spawn transform = **T-092** (not T-096 telemetry).
+
+**T-091.0 shipped @ `6d96339` (tag T-091.0):** Everon 6400² DEM via `TBD_TerrainExportPlugin.c` (`GetTerrainSurfaceY` resample) → 16-bit PNG; `make verify-terrain-strict` PASS (11 anchors, maxDeltaM 0.204 m). Manual WE export dead on packed Eden. Tiles deferred (T-090.1 / T-121). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
 
 ### ACTIVE SLICE — T-068 (Virtual Arsenal — Phase 2 paused)
 
@@ -163,6 +165,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](.ai/artifacts/t091_0_ops_log.txt).
 - T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md) @ `d2128cf`.
 - T-066 **Mission Creator — worker compile offload (T-066.1 `pickMapSnapshot`)**. Save Version + Export compile in `compiler.worker.ts` via Comlink; `pickMapSnapshot(useMapStore.getState())` strips Zustand actions before postMessage (fixes DataCloneError 25 on raw `getState()`). `terminateCompiler()` on mission unmount. Manual @ ~367k: Save **201**. Spec: [`t066_worker_compile.md`](docs/specs/Mission_Creator_Architecture/t066_worker_compile.md).
 - T-065 **Mission Creator — cluster/LOD @ extreme zoom**. `supercluster` index (`slotClusterIndex.ts`); pan-stable `getClusterMarkers` full-terrain cache (T-065.2); `ZOOM_CLUSTER_MAX = -4` — default zoom `-2` stays detail @ ~160 fps @ 367k; cluster discs + drill-in only when zoomed out past -4 on missions >500 slots. Spec: [`t065_cluster_lod.md`](docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md).
@@ -564,7 +567,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 - **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
 **Active map program (blocks T-071 + T-068 Phase 2):**
-- **T-090** / **T-091** — aligned map tiles + DEM / Z-axis — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)
+- **T-090** / **T-091** — aligned map tiles + DEM / Z-axis — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091.0 DEM shipped** @ `6d96339`; **T-091.1** loader next.
 - **T-092** — mod compile + spawn Y/yaw — [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)
 - **T-071** — ORBAT Manager modal (queued, after T-092)
 - Ruler/LoS/viewshed — after **T-091** heightmap phase.
