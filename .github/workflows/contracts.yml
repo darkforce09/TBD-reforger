@@ -22,21 +22,21 @@ jobs:
     name: "@contract citation integrity"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
       - run: node packages/tbd-schema/scripts/verify-contract-citations.mjs
 
   codegen-drift:
     name: schema codegen up to date
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
-      - uses: actions/setup-go@v5
+          node-version: "24"
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
       - run: make schema-codegen
@@ -47,11 +47,11 @@ jobs:
     name: golangci-lint (revive exported-doc)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
-      - uses: golangci/golangci-lint-action@v6
+      - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           working-directory: apps/website
@@ -65,9 +65,9 @@ jobs:
       run:
         working-directory: apps/website/frontend
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
-          node-version: "20"
+          node-version: "24"
       - run: npm ci
       - run: npm run lint
