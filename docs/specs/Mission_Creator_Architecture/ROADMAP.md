@@ -314,8 +314,8 @@ Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_prog
 | **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
 | **DEM loader / `sampleElevation`** | **Done (T-091.1)** @ `2c56c2e` | `tactical-map/dem/*`; Everon 6400² PNG loads in editor; API not wired to slots/toolbelt yet. |
 | **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `make verify-terrain-strict` PASS. |
-| **Z on place & move** (sample DEM at x,y) | **T-091.2** — **active** | `addSlot` / `moveEntity` set `z: 0` until T-091.2. |
-| **Z in UI** (toolbelt + Attributes, editable) | **Partial (T-049/T-050 + T-091.2)** | Transform Z editable (T-049); toolbelt CUR/SEL Z = **0 flat** until T-091.2 auto-sample. |
+| **Z on place & move** (sample DEM at x,y) | **T-091.2** — **active** | `addSlot` / `pasteSlots` / `moveEntities` set `z: 0` until T-091.2; Attributes **X/Y** commit re-samples per spec. |
+| **Z in UI** (toolbelt + Attributes, editable) | **Partial (T-049/T-050 + T-091.2)** | Transform Z editable (T-049); toolbelt CUR/SEL Z = **0 flat** until T-091.2 (`toFixed(3)` + `sampleElevation`). |
 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
 | **Mod spawn parity** (x/z/y/headingDeg) | **T-092** — queued | Compiler emits `editor.slots` only today — no mod `slots[]`. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |

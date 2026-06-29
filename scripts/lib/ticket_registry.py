@@ -776,9 +776,9 @@ def cmd_brief(args: argparse.Namespace) -> None:
             "unless regression fix"
         )
         print(
-            "SCOPE: ydoc z sample (addSlot/pasteSlots/moveEntities), TacticalMap CUR z, "
-            "BottomToolbelt 3dp Z, useDemLayer hillshade, MissionSettings toggles, "
-            "meta.environment showGrid/showHillshade"
+            "SCOPE: ydoc z sample (addSlot/pasteSlots/moveEntities/updateSlotPosition X/Y), "
+            "TacticalMap CUR z, BottomToolbelt 3dp Z, useDemLayer hillshade (BitmapLayer ≤1024px), "
+            "MissionSettings toggles, meta.environment showGrid/showHillshade"
         )
         print(
             "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
@@ -792,7 +792,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
             "! rg 'map-assets|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/"
         )
         print(
-            "MANUAL: M1 hill-north vs valley-inland CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded"
+            "MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample"
         )
     elif active == "T-091.1":
         print(

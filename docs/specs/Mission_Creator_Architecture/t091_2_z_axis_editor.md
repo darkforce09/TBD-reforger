@@ -59,7 +59,7 @@ Wire T-091.1 `sampleElevation` into slot placement/move/paste, live CUR/SEL Z re
 | `ydoc.ts` `addSlot` | `z: sampleElevation(x, y)` when `isDemReady()`, else `0` |
 | `ydoc.ts` `pasteSlots` | After clamped x/y, `z: sampleElevation(x, y)` (not clipboard z) |
 | `ydoc.ts` `moveEntities` | After x/y delta, `z: sampleElevation(newX, newY)` per moved slot |
-| `ydoc.ts` `updateSlotPosition` | **Unchanged** — manual Z via Attributes preserved until next move/paste/add |
+| `ydoc.ts` `updateSlotPosition` | **Z-only commit** → manual value sticks; **X or Y commit** → re-sample `z` at new `(x,y)` when `isDemReady()` |
 | `TacticalMap.tsx` `emitCursor` | `z: sampleElevation(x, y)` when `isDemReady()`, else `0` |
 | `BottomToolbelt.tsx` | CUR/SEL Z: **3 decimal places** (`toFixed(3)`, tabular-nums); X/Y stay integer meters |
 | `MissionSettingsDialog.tsx` | Toggles: **Show hillshade**, **Show grid** (procedural grid — not T-090.1 tiles) |
@@ -86,13 +86,19 @@ Wire T-091.1 `sampleElevation` into slot placement/move/paste, live CUR/SEL Z re
 |----------|--------|----------|
 | **Elevation API** | Import **`sampleElevation`** from `tactical-map/dem` (barrel) — do not duplicate math | T-091.1 public contract |
 | **When to sample** | `addSlot`, `pasteSlots`, `moveEntities` commit; **not** on drag preview (preview stays xy-only) | Existing drag uses `dragPreviewDelta` + commit on release |
-| **Manual Z wins** | `updateSlotPosition` `{ z }` sticks until next move/paste/add re-sample | Spec + existing Attributes `NumberField` |
+| **Attributes Z vs X/Y** | **`patch.z` only** → manual Z sticks. **`patch.x` or `patch.y`** → re-sample `z` at resulting `(x,y)` when `isDemReady()` (terrain-follow) | UX: horizontal move without Z update leaves units floating/underground |
+| **ydoc import path** | Import from leaf **`../dem/DemController`** (or `../dem`) — **not** `@/features/tactical-map` barrel | Barrel re-exports `<TacticalMap>` / Deck.gl — unsafe if import graph changes |
 | **Display precision** | **3** decimal places (0.001 m) — match `manifest.precision.storageDecimals` | Program + T-091.1 rounding |
 | **Degraded DEM** | `sampleElevation` → **0**; existing T-091.1 **sonner toast + Retry** — no new banner | T-091.1 DemController; M7 = break URL → toast + z=0 |
 | **Grid toggle (M6)** | Toggle **`showGrid`** procedural grid ([`useBaseMapLayer`](../../../apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts)) — **not** T-090.1 tiles | `TacticalMap` already has `showGrid` prop; today hard-coded `showGrid` in `MissionCreatorPage` |
 | **Hillshade default** | **Off** until user enables (avoid 6400² overlay cost on first paint) — persist in `meta.environment.showHillshade` | Performance @ scale missions |
 | **Grid default** | **On** (`showGrid: true`) — matches current `MissionCreatorPage` | Verified line 175 |
-| **Hillshade source** | Build from T-091.1 **Float32 meters cache** in DemController; expose read-only accessor for `useDemLayer` — GPU `Texture` optional if BitmapLayer hillshade is too heavy | T-091.1 ships CPU cache only; engineering_plan GPU path is aspirational |
+| **Hillshade render** | Deck **`BitmapLayer`** from CPU meters cache — **not** luma.gl GLSL this slice | engineering_plan §4.2 GPU path is aspirational; T-091.1 ships CPU cache only |
+| **Hillshade resolution** | Downsample to **1024 px** max edge before hillshade RGBA build (6400² full RGBA ≈ 163 MB — too heavy) | Locked for implementer — no full-res overlay |
+| **Hillshade algorithm** | Horn/slope shade; light from **NW**; overlay opacity ~**40%** | Eden pixel parity not required — M5 = visible relief on/off |
+| **Hillshade cache** | Build hillshade RGBA **once** per terrain when DEM ready; invalidate on `terrainId` change | Module ref in `useDemLayer` or helper |
+| **Hillshade accessor** | `getDemRasterForOverlay()` on DemController — **internal**, not public barrel | Spec §Hillshade |
+| **Async CUR caveat** | If DEM finishes loading while pointer is stationary, CUR Z stays **0** until next `pointermove` | Acceptable v1 — optional follow-up: re-emit on DEM ready |
 | **incPatchPlan** | Position z changes via existing **`slot-fields`** path — no new patch kind unless profiling proves otherwise | [`incPatchPlan.ts`](../../../apps/website/frontend/src/features/tactical-map/state/incPatchPlan.ts) line ~182 |
 
 ---
@@ -117,12 +123,13 @@ function terrainZ(x: number, y: number): number {
 
 ---
 
-## Hillshade (minimum bar)
+## Hillshade (minimum bar — locked)
 
 - New [`useDemLayer.ts`](../../../apps/website/frontend/src/features/tactical-map/layers/useDemLayer.ts).
 - Visible when: `meta.environment.showHillshade === true` **and** `isDemReady()`.
-- Data: read meters cache from DemController (add e.g. `getDemRasterForOverlay(): { cache, width, height, terrain } | null` — **internal**, not barrel).
-- Render: Deck **`BitmapLayer`** or custom layer with precomputed hillshade RGBA from slope of meters cache (6400² — build **once** on DEM ready, cache in module ref).
+- Data: `getDemRasterForOverlay()` on DemController → `{ metersCache, width, height, terrainId, manifest } | null` (**internal**, not barrel).
+- Pipeline: downsample meters cache to **≤1024 px** edge → Horn/slope hillshade RGBA (NW light, ~40% opacity) → Deck **`BitmapLayer`** bounds `[0,0]`–`[terrain.width, terrain.height]` (CARTESIAN, same as grid).
+- Build **once** per terrain on DEM ready; cache in module ref; invalidate on terrain switch.
 - Layer order in `TacticalMap`: `[grid?, hillshade?, …icons]` per engineering_plan §4.3.
 - Toggle off → layer omitted (M5 pass).
 
@@ -147,14 +154,15 @@ Wire [`MissionSettingsDialog.tsx`](../../../apps/website/frontend/src/features/m
 
 | File | Action |
 |------|--------|
-| `state/ydoc.ts` | Sample z in `addSlot`, `pasteSlots`, `moveEntities` |
+| `state/ydoc.ts` | Sample z in `addSlot`, `pasteSlots`, `moveEntities`; X/Y re-sample in `updateSlotPosition` |
 | `TacticalMap.tsx` | CUR z via `sampleElevation`; hillshade layer; `showGrid` from props |
 | `dem/DemController.ts` | Optional internal overlay accessor (meters cache + dims) |
 | `layers/useDemLayer.ts` | **New** — hillshade Deck layer |
 | `layout/BottomToolbelt.tsx` | Z format 3 dp |
 | `layout/MissionSettingsDialog.tsx` | Hillshade + grid toggles |
 | `state/schema.ts` | `environment.showGrid`, `environment.showHillshade` |
-| `MissionCreatorPage.tsx` | `showGrid` from meta (not literal prop) |
+| `MissionCreatorPage.tsx` | `showGrid` + `showHillshade` from meta (not hard-coded) |
+| `types.ts` | Add `showHillshade?: boolean` to `TacticalMapProps`; fix stale CUR z comment |
 | `compiler/compile.ts` | Verify only — expect `position.z` in payload |
 
 **Tests (recommended, not blocking if manual M1–M7 pass):**
@@ -199,6 +207,7 @@ Use known anchor coordinates from T-091.1 verify table for M1:
 | **M5** | Mission Settings → toggle **Show hillshade** | Overlay visible / hidden |
 | **M6** | Mission Settings → toggle **Show grid** | Procedural grid visible / hidden (**not** T-090.1 tiles) |
 | **M7** | Break DEM URL (rename `dem` → `dem_off`, reload) | Toast + Retry; CUR/slot Z → **0** |
+| **M8** | Attributes → change **X only** on a slope (e.g. valley-inland) | **Z re-samples** to terrain at new `(x,y)` |
 
 ### Acceptance criteria
 
@@ -207,6 +216,7 @@ Use known anchor coordinates from T-091.1 verify table for M1:
 | **A4** | Cursor Z | M1 | Manual |
 | **A5** | New slot Z | M2 | Manual |
 | **A6** | Manual Z | M3 | Manual + DevTools POST |
+| **A7** | Attributes X/Y terrain-follow | M8 | Manual |
 | **A9** | Degraded | M7 | Manual |
 | **S1** | Build/lint/test | exit 0 | CI commands |
 | **S2** | Version payload | `editor.slots[].position.z` populated | M3 or test mission Save |

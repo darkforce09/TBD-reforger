@@ -1,6 +1,6 @@
 # T-091.2 — Claude Code handoff (copy-paste prompt)
 
-**Date:** 2026-06-29 · **Spec:** [`t091_2_z_axis_editor.md`](../../docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md) (read **entire** file — A4–A9, S1–S5, M1–M7)
+**Date:** 2026-06-29 (UX + hillshade locked) · **Spec:** [`t091_2_z_axis_editor.md`](../../docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md) (read **entire** file — A4–A9, S1–S5, M1–M8)
 
 ---
 
@@ -18,32 +18,34 @@ Slice T-091.2 — Z-axis editor UX. Website only.
   ./scripts/ticket brief T-091              # confirm active slice T-091.2
 
 ═══ T-091.1 DONE @ 2c56c2e — CONSUME, DO NOT REDO ═══
-  Import sampleElevation, isDemReady, isDemDegraded from tactical-map/dem
-  Do NOT reimplement dem/*, pngjs, vitest anchor tests, or Everon map-assets
+  Import sampleElevation, isDemReady, isDemDegraded from tactical-map/dem (or ../dem leaf in ydoc)
+  Do NOT reimplement dem/* decode/pngjs, vitest anchor tests, or Everon map-assets
 
-═══ LOCKED DECISIONS ═══
+═══ LOCKED DECISIONS (spec §Locked decisions) ═══
   Sample z: addSlot, pasteSlots (re-sample NOT clipboard z), moveEntities on commit
-  Manual Z: updateSlotPosition preserved until next move/paste/add
+  Attributes: patch.z only → manual Z sticks; patch.x OR patch.y → re-sample z (terrain-follow)
   CUR z: TacticalMap emitCursor → sampleElevation(x,y) when isDemReady()
+  Async CUR: z stays 0 until next pointermove if DEM loads while cursor stationary — OK v1
   Toolbelt Z: 3 decimal places (toFixed(3)); X/Y stay integer fmt
   Degraded: z=0; keep T-091.1 sonner toast+Retry (M7)
-  Hillshade: new useDemLayer.ts from DemController meters cache; default OFF
-  Grid toggle: meta.environment.showGrid → TacticalMap showGrid (procedural grid)
-  NOT T-090.1 tiles — M6 is grid only
+  Hillshade: useDemLayer.ts BitmapLayer; downsample ≤1024px edge; Horn/NW light ~40% opacity; default OFF
+  Grid toggle: meta.environment.showGrid → TacticalMap showGrid (procedural grid, NOT T-090.1 tiles)
+  ydoc import: ../dem or ../dem/DemController — NOT @/features/tactical-map barrel
 
-═══ BUILD ═══
-  ydoc.ts — terrainZ via sampleElevation in addSlot/pasteSlots/moveEntities
-  TacticalMap.tsx — CUR z sampling; hillshade layer; showGrid from props
-  dem/DemController.ts — optional getDemRasterForOverlay() for hillshade (internal)
-  layers/useDemLayer.ts — NEW hillshade BitmapLayer (build once on DEM ready)
-  BottomToolbelt.tsx — Z display 3 dp
-  MissionSettingsDialog.tsx — Show hillshade + Show grid toggles
-  schema.ts — environment.showHillshade, environment.showGrid
-  MissionCreatorPage.tsx — showGrid from meta (remove hard-coded showGrid)
-  compile.ts — verify only (editor.slots already carries position.z)
+═══ BUILD (files — spec §Files) ═══
+  state/ydoc.ts — terrainZ in addSlot/pasteSlots/moveEntities; updateSlotPosition X/Y re-sample
+  TacticalMap.tsx — CUR z; showHillshade layer; showGrid from props
+  types.ts — showHillshade prop; fix stale CUR z comment
+  dem/DemController.ts — getDemRasterForOverlay() internal only (not barrel)
+  layers/useDemLayer.ts — NEW hillshade BitmapLayer (build once per terrain)
+  layout/BottomToolbelt.tsx — Z display 3 dp
+  layout/MissionSettingsDialog.tsx — Show hillshade + Show grid toggles
+  state/schema.ts — environment.showHillshade, environment.showGrid
+  MissionCreatorPage.tsx — showGrid + showHillshade from meta (remove hard-coded showGrid)
+  compiler/compile.ts — verify only (editor.slots already carries position.z)
 
 ═══ NOT IN SCOPE ═══
-  T-092.2 mod slots[].y, compiler worker DEM fetch, T-090.1 TileLayer, bulk re-sample
+  T-092.2 mod slots[].y, compiler worker DEM fetch, T-090.1 TileLayer, bulk re-sample, docs/**
 
 DO NOT edit docs/**.
 
@@ -53,14 +55,15 @@ Verify (all exit 0):
   make verify-terrain-strict
   ! rg 'map-assets|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/
 
-Manual (Everon, dev-login):
+Manual (Everon, dev-login, DEM loaded):
   M1 CUR Z: hill-north 9600,3200 ~221.652 vs valley-inland 5000,5000 ~80.871 (>5m delta)
-  M2 drop slot → SEL Z ≠ 0
+  M2 drop slot at valley-inland → SEL Z ≈ 80.871
   M3 Attributes Z 123.456 → Save Version → editor.slots[].position.z in POST
-  M4 drag → Z re-samples
-  M5 hillshade toggle
-  M6 grid toggle (not tiles)
-  M7 break DEM path → toast + z=0
+  M4 drag → Z re-samples on release
+  M5 hillshade toggle on/off
+  M6 grid toggle on/off (procedural grid, not tiles)
+  M7 break DEM path → toast + Retry + z=0
+  M8 Attributes X-only edit on slope → Z re-samples
 ```
 
 ---

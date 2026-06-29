@@ -123,15 +123,16 @@ Shipped @ `2c56c2e` / tag **T-091.1**. Use `sampleElevation`, `isDemReady`, `isD
 
 | Deliverable | Path |
 |-------------|------|
-| Z on place/move/paste | `state/ydoc.ts` — `addSlot`, `pasteSlots`, `moveEntities` |
+| Z on place/move/paste + Attributes X/Y re-sample | `state/ydoc.ts` — `addSlot`, `pasteSlots`, `moveEntities`, `updateSlotPosition` |
 | CUR Z sampling | `TacticalMap.tsx` `emitCursor` |
 | Toolbelt CUR/SEL Z (3 dp) | `layout/BottomToolbelt.tsx` |
 | Hillshade + grid toggles | `MissionSettingsDialog.tsx`, `meta.environment` in `schema.ts` |
-| Hillshade layer | `layers/useDemLayer.ts` (new) |
-| Grid from meta | `MissionCreatorPage.tsx` → `TacticalMap` `showGrid` |
+| Hillshade layer | `layers/useDemLayer.ts` (new; BitmapLayer ≤1024 px) |
+| Map toggles from meta | `MissionCreatorPage.tsx` → `TacticalMap` `showGrid` + `showHillshade` |
+| Props | `types.ts` — `showHillshade` |
 | Version payload Z | Verify `compiler/compile.ts` — `editor.slots` carries `position.z` |
 
-Manual gates **M1–M7** in spec. Copy-paste prompt: handoff artifact above.
+Manual gates **M1–M8** in spec. Copy-paste prompt: handoff artifact above.
 
 ```bash
 make map-assets-link
