@@ -95,7 +95,7 @@ func TestFieldToolsIntegration(t *testing.T) {
 	if err := json.Unmarshal(data, &doc); err != nil {
 		t.Fatalf("staged file not valid json: %v", err)
 	}
-	if doc["title"] != "Op Fire Test" || doc["schemaVersion"] == nil {
+	if doc["title"] != "Op Fire Test" || doc["exportFormatVersion"] == nil {
 		t.Fatalf("staged mission.json wrong: %v", doc)
 	}
 	var injAudit int64

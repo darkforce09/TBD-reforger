@@ -27,6 +27,8 @@ import (
 )
 
 // registryItemsEnvelope mirrors packages/tbd-schema/schema/registry-items.schema.json.
+//
+// @contract registry-items.schema.json#/
 type registryItemsEnvelope struct {
 	RegistryItemsVersion string `json:"registryItemsVersion"`
 	ModpackID            string `json:"modpackId"`

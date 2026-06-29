@@ -13,6 +13,9 @@ import (
 
 // ListRegistry returns a modpack's flat Virtual Arsenal catalog (T-068).
 //
+// @route GET /api/v1/registry
+// @contract registry-items.schema.json#/$defs/item (each row in "data")
+//
 // GET /api/v1/registry?modpack=<uuid> — mission_maker+ (wired on the mm group).
 // The modpack query param is optional; when omitted the current (is_current)
 // modpack is used. Unknown/unparseable modpack -> 404.

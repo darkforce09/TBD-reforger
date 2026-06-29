@@ -381,6 +381,11 @@ type createVersionInput struct {
 }
 
 // CreateVersion stores a new mission version and makes it current (author/admin).
+//
+// @route POST /api/v1/missions/:id/versions
+// The "payload" field is the editor superset, stored verbatim as the version's
+// json_payload; its contract is @contract mission-editor-payload.schema.json#/
+// (validated here before persist as of T-123.5).
 func (h *Handler) CreateVersion(c *gin.Context) {
 	// Observability for large-payload saves (T-060.1.3): log the declared body size on entry and
 	// the outcome + duration on exit, so a mid-upload failure is diagnosable from the server side.
@@ -439,6 +444,8 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 }
 
 // GetVersion returns a specific mission version payload.
+//
+// @route GET /api/v1/missions/:id/versions/:vid
 func (h *Handler) GetVersion(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
@@ -594,21 +601,26 @@ func (h *Handler) RemoveBookmark(c *gin.Context) {
 
 // --- Export ---
 
-// missionJSON is the strict export consumed by the game server's mission loader.
+// missionJSON is the strict export envelope consumed by the game server's mission
+// loader (served by ExportMission, staged on disk by InjectMission). It wraps the
+// stored editor payload under "payload" and is NOT itself a mission.schema.json
+// document, so its format tag is named exportFormatVersion to avoid colliding with
+// the canonical (string) mission schemaVersion — they are distinct version
+// namespaces (T-123 §2.2).
 type missionJSON struct {
-	SchemaVersion int             `json:"schemaVersion"`
-	MissionID     string          `json:"missionId"`
-	Title         string          `json:"title"`
-	Terrain       string          `json:"terrain"`
-	GameMode      string          `json:"gameMode"`
-	Weather       string          `json:"weather"`
-	TimeOfDay     string          `json:"timeOfDay"`
-	MaxPlayers    int             `json:"maxPlayers"`
-	Version       string          `json:"version"`
-	Briefing      string          `json:"briefing,omitempty"`
-	Armory        []armoryExport  `json:"armory"`
-	Payload       json.RawMessage `json:"payload"`
-	ExportedAt    time.Time       `json:"exportedAt"`
+	ExportFormatVersion int             `json:"exportFormatVersion"`
+	MissionID           string          `json:"missionId"`
+	Title               string          `json:"title"`
+	Terrain             string          `json:"terrain"`
+	GameMode            string          `json:"gameMode"`
+	Weather             string          `json:"weather"`
+	TimeOfDay           string          `json:"timeOfDay"`
+	MaxPlayers          int             `json:"maxPlayers"`
+	Version             string          `json:"version"`
+	Briefing            string          `json:"briefing,omitempty"`
+	Armory              []armoryExport  `json:"armory"`
+	Payload             json.RawMessage `json:"payload"`
+	ExportedAt          time.Time       `json:"exportedAt"`
 }
 
 type armoryExport struct {
@@ -646,23 +658,26 @@ func (h *Handler) buildMissionDoc(m *models.Mission) missionJSON {
 	}
 
 	return missionJSON{
-		SchemaVersion: 1,
-		MissionID:     m.ID.String(),
-		Title:         m.Title,
-		Terrain:       terrainName,
-		GameMode:      string(m.GameMode),
-		Weather:       string(m.Weather),
-		TimeOfDay:     m.TimeOfDay,
-		MaxPlayers:    m.MaxPlayers,
-		Version:       version,
-		Briefing:      m.Briefing,
-		Armory:        exportArmory,
-		Payload:       payload,
-		ExportedAt:    time.Now().UTC(),
+		ExportFormatVersion: 1,
+		MissionID:           m.ID.String(),
+		Title:               m.Title,
+		Terrain:             terrainName,
+		GameMode:            string(m.GameMode),
+		Weather:             string(m.Weather),
+		TimeOfDay:           m.TimeOfDay,
+		MaxPlayers:          m.MaxPlayers,
+		Version:             version,
+		Briefing:            m.Briefing,
+		Armory:              exportArmory,
+		Payload:             payload,
+		ExportedAt:          time.Now().UTC(),
 	}
 }
 
-// ExportMission returns the strict mission.json as a file download.
+// ExportMission returns the strict mission.json envelope (missionJSON) as a file
+// download.
+//
+// @route GET /api/v1/missions/:id/export
 func (h *Handler) ExportMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {

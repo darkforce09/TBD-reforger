@@ -158,7 +158,7 @@ func TestMissionLifecycleIntegration(t *testing.T) {
 	}
 	var doc missionJSON
 	mustJSON(t, w, &doc)
-	if doc.SchemaVersion != 1 || doc.Version != "1.0.0" || doc.MaxPlayers != 64 || len(doc.Armory) != 2 {
+	if doc.ExportFormatVersion != 1 || doc.Version != "1.0.0" || doc.MaxPlayers != 64 || len(doc.Armory) != 2 {
 		t.Fatalf("unexpected mission.json: %+v", doc)
 	}
 

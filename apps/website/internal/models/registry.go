@@ -14,6 +14,8 @@ import (
 //
 // Unique per (modpack_id, resource_name); kind is one of character,
 // gear_primary, gear_uniform, gear_vest, gear_helmet.
+//
+// @contract registry-items.schema.json#/$defs/item
 type RegistryItem struct {
 	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	ModpackID    uuid.UUID `gorm:"type:uuid;column:modpack_id;not null;uniqueIndex:idx_registry_items_modpack_resource,priority:1" json:"modpack_id"`

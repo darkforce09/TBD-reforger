@@ -103,6 +103,8 @@ func (h *Handler) ListEventFireMissions(c *gin.Context) {
 // server's bridge to deploy, and records the action (admin only). Returns the
 // staged file path; the actual transport to the live server is handled by the
 // deployment's file/RCON bridge.
+//
+// @route POST /api/v1/missions/:id/inject
 func (h *Handler) InjectMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
