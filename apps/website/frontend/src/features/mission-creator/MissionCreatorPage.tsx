@@ -36,6 +36,8 @@ export default function MissionCreatorPage() {
   // Terrain comes from the hydrated mission meta (Everon 12.8km vs Arland 10.24km); the
   // `key` remounts the viewport so the camera/base-map resize to the new bounds.
   const terrainId = useMapStore((s) => s.meta?.terrain ?? 'everon')
+  // Grid + hillshade overlay toggles persist on mission meta (T-091.2).
+  const env = useMapStore((s) => s.meta?.environment)
 
   // The map's imperative API (flyTo) — captured once for Spacebar centering.
   const mapApi = useRef<TacticalMapApi | null>(null)
@@ -172,7 +174,8 @@ export default function MissionCreatorPage() {
       <TacticalMap
         key={terrainId}
         terrain={terrainId}
-        showGrid
+        showGrid={env?.showGrid !== false}
+        showHillshade={env?.showHillshade === true}
         className="absolute inset-0 z-0 bg-background"
         onReady={onReady}
         onCursorMove={onCursorMove}

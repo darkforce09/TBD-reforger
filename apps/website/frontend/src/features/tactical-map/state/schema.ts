@@ -15,6 +15,8 @@ export interface MissionMeta {
     weather: 'clear' | 'overcast' | 'heavy_rain' | 'dense_fog'
     viewDistance?: number // meters; auto-derived but overridable
     thermals?: boolean
+    showGrid?: boolean // procedural grid overlay — default true when undefined (T-091.2)
+    showHillshade?: boolean // DEM hillshade overlay — default false when undefined (T-091.2)
   }
 }
 

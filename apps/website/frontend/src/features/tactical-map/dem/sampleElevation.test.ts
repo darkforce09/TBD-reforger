@@ -10,6 +10,8 @@ import {
   isDemReady,
   isDemDegraded,
   sampleElevation,
+  subscribeDem,
+  getDemVersion,
   _resetForTest,
 } from './DemController'
 
@@ -159,5 +161,28 @@ describe('DemController', () => {
     // In-bounds anchor still resolves through the runtime cache (rounded to 3 dp).
     const peak = sampleElevation(6400, 6400)
     expect(Math.abs(peak - 157.882)).toBeLessThanOrEqual(0.01)
+  })
+
+  it('subscribeDem notifies + getDemVersion bumps across a load', async () => {
+    _resetForTest()
+    const cb = vi.fn()
+    const unsub = subscribeDem(cb)
+    const v0 = getDemVersion()
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+      const url = String(input)
+      if (url.endsWith('everon/manifest.json')) return jsonResponse(EVERON_MANIFEST)
+      if (url.endsWith('everon-dem-16bit.png')) return bufferResponse(EVERON_PNG)
+      throw new Error(`unexpected fetch ${url}`)
+    })
+    await loadDemForTerrain('everon') // loading + ready → ≥2 notifies
+    expect(cb).toHaveBeenCalled()
+    expect(getDemVersion()).toBeGreaterThan(v0)
+    expect(isDemReady()).toBe(true)
+
+    // Unsubscribe stops further calls.
+    unsub()
+    const calls = cb.mock.calls.length
+    _resetForTest() // would notify if still subscribed
+    expect(cb.mock.calls.length).toBe(calls)
   })
 })

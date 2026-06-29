@@ -11,7 +11,13 @@ import { ENTITY_MAPS } from './schema'
 import type { ClipboardSlot, EditorLayer, ID, MissionMeta, Slot } from './schema'
 import { getTerrain } from '../coords/terrains'
 import type { TerrainId } from '../coords/terrains'
+import { sampleElevation, isDemReady } from '../dem'
 import { yieldToUi } from './yieldToUi'
+
+/** Terrain elevation at (x,y) — 0 when the DEM is not ready or degraded (T-091.2). */
+function terrainZ(x: number, y: number): number {
+  return isDemReady() ? sampleElevation(x, y) : 0
+}
 
 const VALID_TERRAINS: ReadonlySet<MissionMeta['terrain']> = new Set([
   'everon',
@@ -142,7 +148,7 @@ export function addSlot(
       role: opts?.role ?? 'Rifleman',
       ...(opts?.tag ? { tag: opts.tag } : {}),
       ...(opts?.assetId ? { assetId: opts.assetId } : {}),
-      position: { x: position.x, y: position.y, z: 0, rotation: 0 },
+      position: { x: position.x, y: position.y, z: terrainZ(position.x, position.y), rotation: 0 },
       stance: 'stand',
       loadoutId: null,
     }
@@ -205,6 +211,9 @@ export function pasteSlots(
         opts?.layerId && editorLayers.get(opts.layerId) ? opts.layerId : ensureDefaultLayer(md)
       const ids = slotIdsFor(targetSquad)
       const id = newId()
+      // Re-sample z at the clamped paste x/y (terrain-follow) — not the clipboard z (T-091.2).
+      const px = clamp(c.position.x + dx, 0, terrain.width)
+      const py = clamp(c.position.y + dy, 0, terrain.height)
       const slot: Slot = {
         id,
         squadId: targetSquad,
@@ -213,9 +222,9 @@ export function pasteSlots(
         ...(c.tag ? { tag: c.tag } : {}),
         ...(c.assetId ? { assetId: c.assetId } : {}),
         position: {
-          x: clamp(c.position.x + dx, 0, terrain.width),
-          y: clamp(c.position.y + dy, 0, terrain.height),
-          z: c.position.z,
+          x: px,
+          y: py,
+          z: terrainZ(px, py),
           rotation: c.position.rotation,
         },
         stance: c.stance,
@@ -261,7 +270,10 @@ export function moveEntities(
       const entity = map.get(id)
       if (!entity) continue
       const prev = (entity.get('position') as Record<string, number>) ?? {}
-      entity.set('position', { ...prev, x: (prev.x ?? 0) + delta.x, y: (prev.y ?? 0) + delta.y })
+      const newX = (prev.x ?? 0) + delta.x
+      const newY = (prev.y ?? 0) + delta.y
+      // Re-sample terrain z at the moved x/y on commit (drag preview stays xy-only) — T-091.2.
+      entity.set('position', { ...prev, x: newX, y: newY, z: terrainZ(newX, newY) })
     }
   })
 }
@@ -688,9 +700,14 @@ export function updateSlotPosition(
     const next = { ...prev }
     if (patch.x != null && Number.isFinite(patch.x)) next.x = clamp(patch.x, 0, terrain.width)
     if (patch.y != null && Number.isFinite(patch.y)) next.y = clamp(patch.y, 0, terrain.height)
-    if (patch.z != null && Number.isFinite(patch.z)) next.z = patch.z
     if (patch.rotation != null && Number.isFinite(patch.rotation)) {
       next.rotation = ((patch.rotation % 360) + 360) % 360
+    }
+    // Z policy (T-091.2): manual Z sticks; an X/Y edit terrain-follows; rotation-only leaves z.
+    if (patch.z != null && Number.isFinite(patch.z)) {
+      next.z = patch.z
+    } else if (patch.x != null || patch.y != null) {
+      next.z = terrainZ(next.x, next.y)
     }
     slot.set('position', next)
   })

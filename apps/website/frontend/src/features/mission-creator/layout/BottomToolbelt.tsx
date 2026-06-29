@@ -60,7 +60,9 @@ function BottomToolbeltInner() {
     return () => clearTimeout(id)
   }, [totalSlots])
 
-  const fmt = (n: number) => Math.round(n).toString().padStart(5, ' ')
+  // X/Y/Z all read at 3 dp so manual anchor verification (e.g. coast-w 1000.000, 6400.000)
+  // can confirm exact position; tabular-nums + padStart keep the columns aligned (T-091.2).
+  const fmtCoord = (n: number) => n.toFixed(3).padStart(9, ' ')
 
   const showSel = selectedSlot != null
   const x = showSel ? selectedSlot.position.x : cursorWorld?.x
@@ -101,13 +103,13 @@ function BottomToolbeltInner() {
           {showSel ? 'SEL' : 'CUR'}
         </span>
         <span>
-          X<span className="ml-1 text-on-surface">{x != null ? fmt(x) : '   —'}</span>
+          X<span className="ml-1 text-on-surface tabular-nums">{x != null ? fmtCoord(x) : '       —'}</span>
         </span>
         <span>
-          Y<span className="ml-1 text-on-surface">{y != null ? fmt(y) : '   —'}</span>
+          Y<span className="ml-1 text-on-surface tabular-nums">{y != null ? fmtCoord(y) : '       —'}</span>
         </span>
         <span>
-          Z<span className="ml-1 text-on-surface">{z != null ? fmt(z) : '   —'}</span>
+          Z<span className="ml-1 text-on-surface tabular-nums">{z != null ? fmtCoord(z) : '       —'}</span>
         </span>
       </div>
 

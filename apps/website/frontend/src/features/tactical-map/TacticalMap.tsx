@@ -19,13 +19,16 @@ import * as slotSpatialIndex from './state/slotSpatialIndex'
 import * as slotClusterIndex from './state/slotClusterIndex'
 import * as slotIconCache from './state/slotIconCache'
 import { useMapStore } from './state/useMapStore'
-import { loadDemForTerrain } from './dem'
+import { loadDemForTerrain, sampleElevation, isDemReady } from './dem'
+import { useDemVersion } from './dem/useDemVersion'
+import { useDemLayer } from './layers/useDemLayer'
 import { ZOOM_CLUSTER_MAX, CLUSTER_SLOT_THRESHOLD } from './state/constants'
 import { ASSET_DND_MIME, type AssetDropPayload, type MapViewState, type TacticalMapProps } from './types'
 
 function TacticalMapInner({
   terrain: terrainId,
   showGrid = false,
+  showHillshade = false,
   className,
   onCursorMove,
   onReady,
@@ -50,7 +53,11 @@ function TacticalMapInner({
   const selection = useMapStore((s) => s.selection)
   const clusterMode = slotCount > CLUSTER_SLOT_THRESHOLD && viewState.zoom <= ZOOM_CLUSTER_MAX
 
-  const baseMap = useBaseMapLayer(terrain)
+  const baseMap = useBaseMapLayer(terrain, showGrid, showHillshade)
+  // Re-render on DEM state changes (ready/degraded/reload) so the hillshade + cursor Z refresh
+  // without an extra interaction (T-091.2 follow-up).
+  const demVersion = useDemVersion()
+  const hillshade = useDemLayer({ terrain, show: showHillshade, version: demVersion })
   const iconLayer = useIconLayer({ detail: !clusterMode, selection })
   const dragIconLayer = useDragIconLayer()
   const selectionLayer = useSelectionLayer()
@@ -129,6 +136,24 @@ function TacticalMapInner({
   // T-057); the same flipY:false math as onDrop gives us the world position with no pick.
   const cursorRaf = useRef(0)
   const lastClientPt = useRef<{ x: number; y: number } | null>(null)
+  // Unproject the last client point and emit world x/y + terrain z. Pulled out of emitCursor so
+  // the DEM-ready effect can re-emit with the same cursor (no PointerEvent needed).
+  const recomputeCursor = useCallback(() => {
+    if (!onCursorMove) return
+    const el = containerRef.current
+    const pt = lastClientPt.current
+    if (!el || !pt) return
+    const rect = el.getBoundingClientRect()
+    const viewport = view.makeViewport({
+      width: rect.width,
+      height: rect.height,
+      viewState: viewStateRef.current,
+    })
+    if (!viewport) return
+    const [x, y] = viewport.unproject([pt.x - rect.left, pt.y - rect.top])
+    onCursorMove({ x, y, z: isDemReady() ? sampleElevation(x, y) : 0 })
+  }, [onCursorMove, view])
+
   const emitCursor = useCallback(
     (e: React.PointerEvent) => {
       if (!onCursorMove) return
@@ -136,22 +161,17 @@ function TacticalMapInner({
       if (cursorRaf.current) return
       cursorRaf.current = requestAnimationFrame(() => {
         cursorRaf.current = 0
-        const el = containerRef.current
-        const pt = lastClientPt.current
-        if (!el || !pt) return
-        const rect = el.getBoundingClientRect()
-        const viewport = view.makeViewport({
-          width: rect.width,
-          height: rect.height,
-          viewState: viewStateRef.current,
-        })
-        if (!viewport) return
-        const [x, y] = viewport.unproject([pt.x - rect.left, pt.y - rect.top])
-        onCursorMove({ x, y, z: 0 }) // z stays 0 on the flat map until Phase 2 DEM (T-050)
+        recomputeCursor()
       })
     },
-    [onCursorMove, view],
+    [onCursorMove, recomputeCursor],
   )
+
+  // When the DEM finishes loading while the pointer is stationary, refresh CUR Z from 0 to the
+  // sampled value without requiring a pointer move (T-091.2 follow-up).
+  useEffect(() => {
+    recomputeCursor()
+  }, [demVersion, recomputeCursor])
 
   // Drive both the gesture machine and the cursor read-out from one container pointermove.
   const onPointerMove = useCallback(
@@ -249,8 +269,13 @@ function TacticalMapInner({
           }
           // dragPan off: left-drag is select/move, middle/right-drag pans (useSelectTool).
           controller={{ dragPan: false, doubleClickZoom: false }}
+          // Deck paints later entries on top. Bottom→top: hillshade relief → grid lines →
+          // icons, so the ~40% BitmapLayer can't bury the LineLayer grid (T-091.2 M5/M6). The
+          // grid stays in the array always (its `visible` prop handles the toggle) — removing
+          // then re-adding the memoized layer leaves it finalized/blank.
           layers={[
-            ...(showGrid ? [baseMap] : []),
+            ...(hillshade ? [hillshade] : []),
+            baseMap,
             ...clusterLayers,
             iconLayer,
             dragIconLayer,

@@ -34,10 +34,12 @@ export interface TacticalMapProps {
   terrain?: TerrainId
   /** Draw the procedural 1 km grid (off by default while the shell is in test mode). */
   showGrid?: boolean
+  /** Draw the DEM hillshade overlay when the terrain DEM is ready (T-091.2). */
+  showHillshade?: boolean
   /** Extra classes for the absolutely-positioned canvas container. */
   className?: string
   /** Fired on hover with the world (meters) cursor position, or null when off-map.
-   *  `z` is 0 on the flat map and stays 0 until Phase 2 DEM sampling lands. */
+   *  `z` is the sampled terrain elevation when the DEM is ready, else 0 (T-091.2). */
   onCursorMove?: (world: { x: number; y: number; z: number } | null) => void
   /** Receives the imperative map API (e.g. flyTo) for use by sibling panels. */
   onReady?: (api: TacticalMapApi) => void

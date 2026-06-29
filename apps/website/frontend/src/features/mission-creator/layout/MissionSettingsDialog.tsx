@@ -73,6 +73,18 @@ export function MissionSettingsDialog({
             checked={env?.thermals ?? false}
             onChange={(thermals) => updateEnvironment(md, { thermals })}
           />
+
+          <ToggleField
+            label="Show grid"
+            checked={env?.showGrid !== false}
+            onChange={(showGrid) => updateEnvironment(md, { showGrid })}
+          />
+
+          <ToggleField
+            label="Show hillshade"
+            checked={env?.showHillshade === true}
+            onChange={(showHillshade) => updateEnvironment(md, { showHillshade })}
+          />
         </div>
       </DialogContent>
     </Dialog>

@@ -27,6 +27,34 @@ let loadedTerrainId: TerrainId | null = null
 let data: DemData | null = null
 let inflight: Promise<void> | null = null
 
+// Tiny external store (T-091.2 follow-up): the DEM loads async (72 MB decode), so consumers
+// need to re-render when it becomes ready/degraded — otherwise a hillshade toggled on while the
+// DEM is still loading never paints. `version` bumps on every state change; React reads it via
+// useSyncExternalStore (see useDemVersion.ts).
+const listeners = new Set<() => void>()
+let version = 0
+
+function notify(): void {
+  version++
+  for (const l of listeners) l()
+}
+
+function setDemState(next: DemState): void {
+  state = next
+  notify()
+}
+
+/** Subscribe to DEM state changes; returns an unsubscribe. */
+export function subscribeDem(cb: () => void): () => void {
+  listeners.add(cb)
+  return () => listeners.delete(cb)
+}
+
+/** Monotonic counter bumped on every DEM state change (useSyncExternalStore snapshot). */
+export function getDemVersion(): number {
+  return version
+}
+
 export function isDemReady(): boolean {
   return state === 'ready'
 }
@@ -36,8 +64,8 @@ export function isDemDegraded(): boolean {
 }
 
 function degrade(terrainId: TerrainId, message: string): void {
-  state = 'degraded'
   data = null
+  setDemState('degraded')
   toast.error(message, {
     action: { label: 'Retry', onClick: () => void loadDemForTerrain(terrainId) },
   })
@@ -53,8 +81,8 @@ export function loadDemForTerrain(terrainId: TerrainId): Promise<void> {
     return inflight ?? Promise.resolve()
   }
   loadedTerrainId = terrainId
-  state = 'loading'
   data = null
+  setDemState('loading')
   inflight = doLoad(terrainId).finally(() => {
     inflight = null
   })
@@ -93,7 +121,7 @@ async function doLoad(terrainId: TerrainId): Promise<void> {
     // Guard a terrain switch that landed mid-load — the newer load owns the cache.
     if (loadedTerrainId !== terrainId) return
     data = { manifest, metersCache, width, height }
-    state = 'ready'
+    setDemState('ready')
   } catch {
     degrade(terrainId, `Could not load ${terrain.name} elevation`)
   }
@@ -117,10 +145,33 @@ export function sampleElevation(x: number, y: number): number {
   return Math.round(meters * f) / f
 }
 
+/**
+ * Internal overlay accessor (T-091.2 hillshade) — NOT re-exported from the public barrel.
+ * Returns the ready meters cache + dims + terrain id/manifest, else null.
+ */
+export function getDemRasterForOverlay():
+  | {
+      metersCache: Float32Array
+      width: number
+      height: number
+      terrainId: TerrainId
+      manifest: TerrainManifest
+    }
+  | null {
+  if (state !== 'ready' || !data || !loadedTerrainId) return null
+  return {
+    metersCache: data.metersCache,
+    width: data.width,
+    height: data.height,
+    terrainId: loadedTerrainId,
+    manifest: data.manifest,
+  }
+}
+
 /** Test-only reset of the singleton. Not re-exported from the public barrel. */
 export function _resetForTest(): void {
-  state = 'idle'
   loadedTerrainId = null
   data = null
   inflight = null
+  setDemState('idle')
 }
