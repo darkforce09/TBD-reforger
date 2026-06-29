@@ -2516,8 +2516,7 @@
         "website"
       ],
       "executor": "claude-code",
-      "status": "ready",
-      "active_slice": "T-124.1",
+      "status": "shipped",
       "surfaces": [
         "DATA"
       ],

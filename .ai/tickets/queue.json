@@ -18,13 +18,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "branch": "ticket/T-092"
-    },
-    {
-      "id": "T-124",
-      "title": "Dependency & toolchain upgrade (latest everything)",
-      "status": "ready",
-      "spec": "docs/platform/t124_dependency_upgrade.md",
-      "branch": "ticket/T-124"
     }
   ]
 }

@@ -114,7 +114,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-123**
+**Latest shipped:** **T-124**
 
 **ACTIVE NOW:** **T-090** — T-090.1 (Aligned map tiles). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`.
 
