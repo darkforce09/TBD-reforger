@@ -70,6 +70,18 @@ func TestMissionLifecycleIntegration(t *testing.T) {
 		t.Fatalf("create version = %d, body=%s", w.Code, w.Body.String())
 	}
 
+	// --- T-123.5: editor-payload schema validation rejects malformed payloads (400) ---
+	// schemaVersion must be an integer here (distinct from the canonical string namespace).
+	badVer := `{"semver":"1.0.1","payload":{"schemaVersion":"1"},"editor_notes":"bad namespace"}`
+	if w := do(r, "POST", "/api/v1/missions/"+mid+"/versions", reqOpt{bearer: makerTok, body: badVer}); w.Code != http.StatusBadRequest {
+		t.Fatalf("string-schemaVersion version = %d, want 400, body=%s", w.Code, w.Body.String())
+	}
+	// a non-object payload is rejected outright.
+	nonObjVer := `{"semver":"1.0.2","payload":5,"editor_notes":"not an object"}`
+	if w := do(r, "POST", "/api/v1/missions/"+mid+"/versions", reqOpt{bearer: makerTok, body: nonObjVer}); w.Code != http.StatusBadRequest {
+		t.Fatalf("non-object payload version = %d, want 400, body=%s", w.Code, w.Body.String())
+	}
+
 	// --- author sets the armory ---
 	armoryBody := `{"items":[{"faction":"US Forces","category":"weapon","item_name":"M16A2 Rifle","quantity":45,"sort_order":0},{"faction":"US Forces","category":"vehicle","item_name":"M113 APC","quantity":2,"sort_order":1}]}`
 	if w := do(r, "PUT", "/api/v1/missions/"+mid+"/armory", reqOpt{bearer: makerTok, body: armoryBody}); w.Code != http.StatusOK {

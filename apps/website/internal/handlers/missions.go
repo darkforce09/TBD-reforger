@@ -16,6 +16,7 @@ import (
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
+	"github.com/tbd-milsim/reforger-backend/internal/contract"
 	"github.com/tbd-milsim/reforger-backend/internal/middleware"
 	"github.com/tbd-milsim/reforger-backend/internal/models"
 )
@@ -247,6 +248,14 @@ func (h *Handler) CreateMission(c *gin.Context) {
 	if len(in.Payload) > 0 {
 		payload = datatypes.JSON(in.Payload)
 	}
+	// Validate the initial editor payload against its schema before persist (T-123.5).
+	if details, verr := contract.ValidateMissionEditorPayload(payload); verr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "payload validation unavailable"})
+		return
+	} else if len(details) > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission payload", "details": details})
+		return
+	}
 
 	author := middleware.DiscordID(c)
 	mission := models.Mission{
@@ -416,6 +425,18 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 		}
 		log.Printf("CreateVersion: mission=%s status=400 bind_error=%v dur=%s", c.Param("id"), err, time.Since(start))
 		c.JSON(http.StatusBadRequest, gin.H{"error": "semver and payload are required"})
+		return
+	}
+
+	// Validate the editor payload against its schema before persist (T-123.5). The schema is
+	// lenient on presence (partial/empty saves are valid) but rejects malformed payloads.
+	if details, verr := contract.ValidateMissionEditorPayload(in.Payload); verr != nil {
+		log.Printf("CreateVersion: mission=%s schema_unavailable err=%v dur=%s", c.Param("id"), verr, time.Since(start))
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "payload validation unavailable"})
+		return
+	} else if len(details) > 0 {
+		log.Printf("CreateVersion: mission=%s status=400 invalid_payload details=%d dur=%s", c.Param("id"), len(details), time.Since(start))
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission payload", "details": details})
 		return
 	}
 
