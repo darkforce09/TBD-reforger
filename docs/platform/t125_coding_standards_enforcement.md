@@ -57,13 +57,20 @@ New [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — **required 
 
 | Job | Steps |
 |-----|-------|
-| **backend** | Postgres 18 service (match compose: tbd/tbd, port 5434); Go **1.26**; `go build`, `make test-it` |
+| **backend** | Postgres 18 service (`postgres:18-alpine`, creds `tbd/tbd`; CI reaches it at `localhost:5432` — local dev uses host `5434` via compose); Go **1.26**; gofmt (FMT-1), `go build`, `make test-it` |
 | **frontend** | Node **26**; `npm ci`, `npm run lint`, `npm run build`, `npm test` |
 | **schema** | `npm run validate`, `make verify-citations` |
 
 Add **`make ci-local`** (or `make check`) mirroring CI.
 
-**Verify:** workflow green locally where possible; push to main.
+**Shipped (T-125.1):** [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — three jobs
+(**backend** `postgres:18-alpine` + Go **1.26** → gofmt (FMT-1) + `go build` + `make test-it`;
+**frontend** Node **26** → `npm ci` + lint + build + test; **schema** → `npm run validate` +
+verify-citations), required on every push/PR to `main` (no path filter). Local mirror:
+**`make ci-local`** (sub-targets `ci-local-{backend,frontend,schema}`). `contracts.yml` /
+`schema.yml` stay as path-scoped supplements; golangci hardening + `only-new-issues` removal is **T-125.2**.
+
+**Verify:** ✅ `make ci-local` green locally (backend needs `make db-up`); `ci.yml` required on `main`.
 
 ---
 

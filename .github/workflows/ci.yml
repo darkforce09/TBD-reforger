@@ -1,0 +1,104 @@
+name: ci
+
+# Primary full-repo gate (CODING_STANDARDS.md §0.3 CI-2 + TEST-1/2/3 + FMT-1).
+# Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
+# it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
+# them here in this slice). golangci-lint is intentionally NOT in this workflow yet: the
+# repo config is revive-only and contracts.yml runs it with `only-new-issues: true`;
+# promoting it to a hard full-repo gate (and removing that flag) is T-125.2.
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # --- backend: Go 1.26 + Postgres 18 — gofmt (FMT-1) + go build + integration tests (TEST-1) ---
+  # Step order mirrors `make ci-local-backend` exactly: gofmt -> build -> test.
+  backend:
+    name: backend (Go 1.26 + Postgres 18)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      # Matches apps/website/docker-compose.yml (image + creds). CI reaches the DB at
+      # localhost:5432 (the service); local dev uses host 5434 via compose (unchanged).
+      # The integration tests self-migrate; no seed step. GitHub waits on the health-check
+      # below before any step runs, so no manual sleep/wait loop is needed.
+      db:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: tbd
+          POSTGRES_PASSWORD: tbd
+          POSTGRES_DB: tbd_reforger
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tbd -d tbd_reforger"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.26"
+          cache-dependency-path: apps/website/go.sum
+      - name: gofmt (FMT-1)
+        # Run from repo root so the paths match CODING_STANDARDS.md §10 FMT-1 verbatim.
+        run: test -z "$(gofmt -l apps/website/internal apps/website/cmd)"
+      - name: go build
+        working-directory: apps/website
+        run: go build ./...
+      - name: integration tests (TEST-1)
+        working-directory: apps/website
+        env:
+          TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
+        run: go test ./internal/handlers/... -count=1
+
+  # --- frontend: Node 26 — npm ci + lint + build + unit tests (TEST-2) ---
+  # No map-assets symlink step: vitest resolves `map-assets` via vitest.config.ts, and
+  # `vite build` has no map-assets module import (vite.config.ts has no such alias).
+  frontend:
+    name: frontend (Node 26)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: apps/website/frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
+      - run: npm test
+
+  # --- schema: golden-mission validate (TEST-3) + @contract citation integrity ---
+  schema:
+    name: schema + citations
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+      - name: install schema deps
+        working-directory: packages/tbd-schema
+        run: npm ci
+      - name: validate golden missions (TEST-3)
+        working-directory: packages/tbd-schema
+        run: npm run validate
+      - name: verify @contract citations
+        # Run from repo root (matches `make verify-citations`); the script resolves repoRoot
+        # from import.meta.url and imports only node: builtins, so cwd is irrelevant.
+        run: node packages/tbd-schema/scripts/verify-contract-citations.mjs

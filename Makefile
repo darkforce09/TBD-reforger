@@ -4,7 +4,7 @@ WEB := apps/website
 # Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
 export PATH := $(HOME)/.local/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-terrain verify-migration map-assets-link
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -79,3 +79,24 @@ ticket-check-strict: ## Full validation including zero legacy planning IDs
 
 verify-migration: ## Run monorepo migration gate checks (V1–V27)
 	./scripts/verify-monorepo-migration.sh
+
+# ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
+# backend -> frontend -> schema; each sub-target is a separate $(MAKE) so a non-zero recipe
+# halts the run (fail-fast). `go` resolves via the ~/.local/go/bin PATH export above; the
+# frontend job uses whatever `nvm use` (.nvmrc -> Node 26) selected.
+ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
+	$(MAKE) ci-local-backend
+	$(MAKE) ci-local-frontend
+	$(MAKE) ci-local-schema
+
+ci-local-backend: ## CI gate: gofmt (FMT-1) + go build + integration tests (needs `make db-up` @ host :5434)
+	test -z "$$(gofmt -l $(WEB)/internal $(WEB)/cmd)"
+	cd $(WEB) && go build ./...
+	$(MAKE) test-it
+
+ci-local-frontend: ## CI gate: npm ci + lint + build + unit tests (run `nvm use` -> Node 26 first)
+	cd $(WEB)/frontend && npm ci && npm run lint && npm run build && npm test
+
+ci-local-schema: ## CI gate: schema validate (TEST-3) + @contract citation verify
+	$(MAKE) schema-validate
+	$(MAKE) verify-citations
