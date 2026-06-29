@@ -1,6 +1,11 @@
 import axios from 'axios'
 import { useAuthStore } from '@/store/useAuthStore'
 
+/**
+ * Response from the refresh endpoint: a freshly rotated access + refresh token pair.
+ *
+ * @route POST /api/v1/auth/refresh
+ */
 export type RefreshResponse = {
   access_token: string
   refresh_token: string
@@ -16,6 +21,14 @@ export type RefreshResponse = {
 // spent at most once at a time; concurrent callers share one in-flight request.
 let inflight: Promise<RefreshResponse> | null = null
 
+/**
+ * Single-flight wrapper around the refresh endpoint. Concurrent callers (bootstrap, the 401
+ * interceptor, StrictMode double-invokes) share one in-flight request so the single-use refresh
+ * token is spent at most once.
+ *
+ * @returns the rotated token pair.
+ * @route POST /api/v1/auth/refresh
+ */
 export function refreshSession(): Promise<RefreshResponse> {
   if (!inflight) {
     const base = import.meta.env.VITE_API_URL ?? '/api/v1'

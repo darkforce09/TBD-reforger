@@ -1,7 +1,6 @@
-// Virtual Arsenal registry catalog (T-068). Mirrors internal/models/registry.go
-// (RegistryItem) and the GET /api/v1/registry response. Types only — the palette
-// wiring lands in T-068.3.
+// Virtual Arsenal registry catalog (T-068). Types only — the palette wiring lands in T-068.3.
 
+/** The kind of a registry item (character or one of the four gear slots). */
 export type RegistryItemKind =
   | 'character'
   | 'gear_primary'
@@ -9,6 +8,12 @@ export type RegistryItemKind =
   | 'gear_vest'
   | 'gear_helmet'
 
+/**
+ * One Virtual Arsenal catalog item, identified by its full Enfusion resource_name.
+ *
+ * @model models.RegistryItem
+ * @contract registry-items.schema.json#/$defs/item
+ */
 export interface RegistryItem {
   id: string
   modpack_id: string
@@ -22,6 +27,11 @@ export interface RegistryItem {
   updated_at: string
 }
 
+/**
+ * The registry list response: catalog rows plus the modpack id/version and a weak ETag.
+ *
+ * @route GET /api/v1/registry
+ */
 export interface RegistryResponse {
   data: RegistryItem[]
   etag: string

@@ -1,6 +1,14 @@
+// Hand-written API response types — the snake_case fields mirror the Go handler DTOs and
+// GORM models (the API contract). Cross-boundary types carry an @model (GORM model) or a
+// "mirrors Go <dto>" note so the source of truth is one grep away (DOCUMENTATION_STANDARDS §3).
 import type { User } from '@/types/models/user'
 import type { Server, ServerStatus } from '@/types/models/telemetry'
 
+/**
+ * A CMS announcement / news item.
+ *
+ * @model models.Announcement
+ */
 export interface Announcement {
   id: string
   title: string
@@ -15,6 +23,12 @@ export interface Announcement {
   created_at: string
 }
 
+/**
+ * The standard list-endpoint envelope: a page of `data` plus paging counters
+ * (the platform-wide list contract; audit logs use a cursor instead).
+ *
+ * @typeParam T - the row type carried in `data`.
+ */
 export interface Paginated<T> {
   data: T[]
   total: number
@@ -22,6 +36,10 @@ export interface Paginated<T> {
   offset: number
 }
 
+/**
+ * Aggregated landing-page payload: the caller's next event, current assignment, live
+ * server status, current modpack, and recent announcements.
+ */
 export interface DashboardResponse {
   next_event?: {
     event_id: string
@@ -44,6 +62,10 @@ export interface DashboardResponse {
   recent_announcements: Announcement[]
 }
 
+/**
+ * The auth session returned on login / refresh: token pair, expiry, the user, and whether
+ * an Arma identity is linked.
+ */
 export interface AuthSession {
   access_token: string
   refresh_token: string
@@ -52,6 +74,7 @@ export interface AuthSession {
   arma_linked: boolean
 }
 
+/** One ranked row on a leaderboard; the stat fields populated depend on the category. */
 export interface LeaderboardRow {
   rank: number
   discord_id: string
@@ -66,11 +89,17 @@ export interface LeaderboardRow {
   longest_kill_m?: number
 }
 
+/** A leaderboard response: the requested category plus its ranked rows. */
 export interface LeaderboardResponse {
   category: string
   data: LeaderboardRow[]
 }
 
+/**
+ * One mod entry within a modpack.
+ *
+ * @model models.ModpackMod
+ */
 export interface ModpackMod {
   id: string
   modpack_id: string
@@ -79,6 +108,11 @@ export interface ModpackMod {
   sort_order: number
 }
 
+/**
+ * A modpack the community runs (workshop bundle metadata).
+ *
+ * @model models.Modpack
+ */
 export interface Modpack {
   id: string
   name: string
@@ -89,15 +123,18 @@ export interface Modpack {
   created_at: string
 }
 
+/** A modpack with its expanded mod list. */
 export interface ModpackDTO extends Modpack {
   mods: ModpackMod[]
 }
 
+/** A server with its live status and required modpack expanded (Server Intel page). */
 export interface ServerIntel extends Server {
   status?: ServerStatus | null
   required_modpack?: ModpackDTO | null
 }
 
+/** The My Deployments service record: totals, upcoming registrations, and past operations. */
 export interface DeploymentsResponse {
   total_operations: number
   attendance_rate: number
@@ -121,6 +158,12 @@ export interface DeploymentsResponse {
   }[]
 }
 
+/**
+ * A mission library list item (mirrors the Go `missionCard` DTO: the model plus
+ * denormalized author + bookmark state).
+ *
+ * @model models.Mission
+ */
 export interface MissionCard {
   id: string
   title: string
@@ -139,6 +182,11 @@ export interface MissionCard {
   bookmarked: boolean
 }
 
+/**
+ * One armory entry attached to a mission (faction-scoped item with an optional cap).
+ *
+ * @model models.MissionArmory
+ */
 export interface MissionArmory {
   id: string
   mission_id: string
@@ -150,6 +198,12 @@ export interface MissionArmory {
   sort_order: number
 }
 
+/**
+ * The full Mission Overview (mirrors the Go `missionDetail` DTO): a card plus armory and the
+ * current version, whose `json_payload` is the editor superset.
+ *
+ * @model models.Mission
+ */
 export interface MissionDetail extends MissionCard {
   armory: MissionArmory[]
   current_version?: {
@@ -159,6 +213,7 @@ export interface MissionDetail extends MissionCard {
   } | null
 }
 
+/** An event row in the schedule list (rollup counts for the card). */
 export interface EventListItem {
   id: string
   name_override?: string
@@ -175,7 +230,7 @@ export interface EventListItem {
   percent: number
 }
 
-// One mission "dossier" inside an Event Hub.
+/** One mission "dossier" inside an Event Hub (factions, armory-by-faction, fill, caller state). */
 export interface EventMissionDossier {
   event_mission_id: string
   mission_id: string
@@ -193,7 +248,7 @@ export interface EventMissionDossier {
   my_slot_id?: string | null
 }
 
-// The Event Hub: an event container plus its nested mission dossiers.
+/** The Event Hub: an event container plus its nested mission dossiers. */
 export interface EventHub {
   id: string
   name_override?: string
@@ -206,7 +261,9 @@ export interface EventHub {
   missions: EventMissionDossier[]
 }
 
-// A single ORBAT slot row inside a squad (mirrors the Go orbatSlotDTO).
+/**
+ * A single ORBAT slot row inside a squad (mirrors the Go `orbatSlotDTO`).
+ */
 export interface OrbatSlot {
   id: string
   number: number // 1-based position within the squad
@@ -218,7 +275,9 @@ export interface OrbatSlot {
   assigned_name?: string
 }
 
-// A squad grouping of ORBAT slots (mirrors the Go orbatSquadDTO).
+/**
+ * A squad grouping of ORBAT slots (mirrors the Go `orbatSquadDTO`).
+ */
 export interface OrbatSquad {
   faction: string
   callsign?: string
@@ -230,13 +289,20 @@ export interface OrbatSquad {
   slots: OrbatSlot[]
 }
 
-// A slim member row for the leader's assignee picker (Go memberDTO).
+/**
+ * A slim member row for the leader's assignee picker (mirrors the Go `memberDTO`).
+ */
 export interface Member {
   discord_id: string
   username: string
   avatar_url?: string
 }
 
+/**
+ * A doctrine wiki page.
+ *
+ * @model models.WikiPage
+ */
 export interface WikiPage {
   id: string
   slug: string
@@ -248,6 +314,11 @@ export interface WikiPage {
   updated_at: string
 }
 
+/**
+ * A vehicle database row.
+ *
+ * @model models.VehicleDatabase
+ */
 export interface VehicleRow {
   id: string
   name: string
@@ -258,6 +329,7 @@ export interface VehicleRow {
   profile_image_url?: string
 }
 
+/** A mission pending approval in the admin review queue. */
 export interface ApprovalRow {
   mission_id: string
   title: string
@@ -267,6 +339,7 @@ export interface ApprovalRow {
   submitted_at: string
 }
 
+/** A personnel roster row (admin directory). */
 export interface RosterRow {
   discord_id: string
   username: string
@@ -278,6 +351,11 @@ export interface RosterRow {
   warnings: number
 }
 
+/**
+ * One audit-log entry.
+ *
+ * @model models.AuditLog
+ */
 export interface AuditLog {
   id: number
   severity: string
@@ -288,11 +366,13 @@ export interface AuditLog {
   created_at: string
 }
 
+/** A page of audit logs, paged by an opaque cursor instead of offset. */
 export interface AuditLogResponse {
   data: AuditLog[]
   next_cursor?: number | null
 }
 
+/** A computed mortar fire solution (mortar calculator output). */
 export interface FireSolution {
   weapon_system: string
   distance_m: number
@@ -303,6 +383,7 @@ export interface FireSolution {
   time_of_flight_s: number
 }
 
+/** Arma identity link status for the current user. */
 export interface LinkStatus {
   linked: boolean
   arma_id?: string | null
@@ -310,6 +391,7 @@ export interface LinkStatus {
   pending_code?: boolean // true = an unconsumed link code is outstanding
 }
 
+/** The current user plus whether an Arma identity is linked (GET /api/v1/me). */
 export interface MeResponse {
   user: User
   arma_linked: boolean

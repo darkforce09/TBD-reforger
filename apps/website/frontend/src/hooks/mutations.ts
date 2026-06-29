@@ -1,8 +1,15 @@
+// React Query write hooks. Each hook documents the endpoint it calls with an @route tag
+// (DOCUMENTATION_STANDARDS §5) so a route string maps to its hook + Go handler in one grep.
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { FireSolution } from '@/types/api'
 
+/**
+ * Log out: revoke the refresh token server-side (best-effort) and clear the local session.
+ *
+ * @route POST /api/v1/auth/logout
+ */
 export function useLogout() {
   const clearSession = useAuthStore((s) => s.clearSession)
   const refreshToken = useAuthStore((s) => s.refreshToken)
@@ -16,7 +23,11 @@ export function useLogout() {
   })
 }
 
-// Register for a specific mission within an event, optionally claiming a slot.
+/**
+ * Register for a specific mission within an event, optionally claiming a slot.
+ *
+ * @route POST /api/v1/event-missions/:emid/register
+ */
 export function useRegisterMission(emid: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -35,6 +46,11 @@ export function useRegisterMission(emid: string) {
   })
 }
 
+/**
+ * Withdraw the caller's registration from an event-mission.
+ *
+ * @route DELETE /api/v1/event-missions/:emid/register
+ */
 export function useWithdrawMission(emid: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -51,7 +67,11 @@ export function useWithdrawMission(emid: string) {
   })
 }
 
-// Leader: reserve / release a whole squad in one click.
+/**
+ * Leader: reserve a whole squad in one click.
+ *
+ * @route POST /api/v1/event-missions/:emid/squads/reserve
+ */
 export function useReserveSquad(emid: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -63,6 +83,11 @@ export function useReserveSquad(emid: string) {
   })
 }
 
+/**
+ * Leader: release a previously reserved squad.
+ *
+ * @route POST /api/v1/event-missions/:emid/squads/release
+ */
 export function useReleaseSquad(emid: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -74,7 +99,11 @@ export function useReleaseSquad(emid: string) {
   })
 }
 
-// Leader/admin: assign a member to a slot in a reserved squad.
+/**
+ * Leader/admin: assign a member to a slot in a reserved squad.
+ *
+ * @route PUT /api/v1/event-missions/:emid/slots/:slotId/assign
+ */
 export function useAssignSlot(emid: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -91,8 +120,12 @@ export function useAssignSlot(emid: string) {
   })
 }
 
-// Attach a mission to an event; the backend auto-materializes the ORBAT from
-// the mission.json payload.
+/**
+ * Attach a mission to an event; the backend auto-materializes the ORBAT from the
+ * mission payload.
+ *
+ * @route POST /api/v1/events/:id/missions
+ */
 export function useAddEventMission(eventId: string) {
   const qc = useQueryClient()
   return useMutation({
@@ -107,6 +140,11 @@ export function useAddEventMission(eventId: string) {
   })
 }
 
+/**
+ * Admin: approve a pending mission.
+ *
+ * @route POST /api/v1/approvals/:id/approve
+ */
 export function useApproveMission() {
   const qc = useQueryClient()
   return useMutation({
@@ -118,6 +156,11 @@ export function useApproveMission() {
   })
 }
 
+/**
+ * Admin: reject a pending mission with an optional reason.
+ *
+ * @route POST /api/v1/approvals/:id/reject
+ */
 export function useRejectMission() {
   const qc = useQueryClient()
   return useMutation({
@@ -129,6 +172,11 @@ export function useRejectMission() {
   })
 }
 
+/**
+ * Create a draft mission (plus its initial version).
+ *
+ * @route POST /api/v1/missions
+ */
 export function useCreateMission() {
   const qc = useQueryClient()
   return useMutation({
@@ -147,6 +195,11 @@ export function useCreateMission() {
   })
 }
 
+/**
+ * Admin: create an event container.
+ *
+ * @route POST /api/v1/events
+ */
 export function useCreateEvent() {
   const qc = useQueryClient()
   return useMutation({
@@ -168,6 +221,11 @@ export function useCreateEvent() {
   })
 }
 
+/**
+ * Admin: delete an event.
+ *
+ * @route DELETE /api/v1/events/:id
+ */
 export function useDeleteEvent() {
   const qc = useQueryClient()
   return useMutation({
@@ -178,6 +236,11 @@ export function useDeleteEvent() {
   })
 }
 
+/**
+ * Admin: publish a CMS announcement (optionally pushed to Discord).
+ *
+ * @route POST /api/v1/cms/announcements
+ */
 export function usePublishAnnouncement() {
   const qc = useQueryClient()
   return useMutation({
@@ -199,6 +262,11 @@ export function usePublishAnnouncement() {
   })
 }
 
+/**
+ * Generate a one-time Arma identity link code for the current user.
+ *
+ * @route POST /api/v1/me/link
+ */
 export function useGenerateLinkCode() {
   const qc = useQueryClient()
   return useMutation({
@@ -207,6 +275,11 @@ export function useGenerateLinkCode() {
   })
 }
 
+/**
+ * Unlink the caller's Arma identity.
+ *
+ * @route DELETE /api/v1/me/link
+ */
 export function useUnlinkArma() {
   const qc = useQueryClient()
   return useMutation({
@@ -218,6 +291,11 @@ export function useUnlinkArma() {
   })
 }
 
+/**
+ * Admin: issue an RCON action to a server (restart / change map / kick / custom).
+ *
+ * @route POST /api/v1/admin/servers/:serverId/rcon
+ */
 export function useServerRcon() {
   return useMutation({
     mutationFn: async ({
@@ -241,6 +319,11 @@ export function useServerRcon() {
   })
 }
 
+/**
+ * Solve a mortar fire mission for the given firing point and target.
+ *
+ * @route POST /api/v1/fire-missions/solve
+ */
 export function useSolveFireMission() {
   return useMutation({
     mutationFn: async (body: {
@@ -256,6 +339,11 @@ export function useSolveFireMission() {
   })
 }
 
+/**
+ * Admin: change a member's role.
+ *
+ * @route PATCH /api/v1/admin/users/:discordId
+ */
 export function useUpdateUserRole() {
   const qc = useQueryClient()
   return useMutation({
@@ -267,6 +355,11 @@ export function useUpdateUserRole() {
   })
 }
 
+/**
+ * Admin: ban a member with an optional reason.
+ *
+ * @route POST /api/v1/admin/users/:discordId/ban
+ */
 export function useBanUser() {
   const qc = useQueryClient()
   return useMutation({

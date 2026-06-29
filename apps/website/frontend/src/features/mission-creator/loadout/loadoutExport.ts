@@ -4,6 +4,11 @@
 
 export type GearSlot = string | null
 
+/**
+ * The four dumb gear slots (each a registry resource_name or null).
+ *
+ * @contract loadout-export.schema.json#/properties/gear
+ */
 export interface LoadoutGear {
   primary: GearSlot
   uniform: GearSlot
@@ -11,6 +16,12 @@ export interface LoadoutGear {
   helmet: GearSlot
 }
 
+/**
+ * The flat loadout handoff written as loadout-export.json (Phase 1 file handoff to the mod,
+ * read by TBD_LoadoutEquipComponent).
+ *
+ * @contract loadout-export.schema.json#/
+ */
 export interface LoadoutExport {
   loadoutVersion: '1'
   modpackId: string

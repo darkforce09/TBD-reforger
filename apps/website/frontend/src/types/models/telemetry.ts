@@ -1,3 +1,8 @@
+/**
+ * Live server telemetry snapshot (player count, FPS, current match, in-game time/weather).
+ *
+ * @model models.ServerStatus
+ */
 export interface ServerStatus {
   server_id: string
   is_online: boolean
@@ -11,6 +16,11 @@ export interface ServerStatus {
   updated_at: string
 }
 
+/**
+ * A registered game server (connection info + active flag).
+ *
+ * @model models.Server
+ */
 export interface Server {
   id: string
   name: string

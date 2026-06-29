@@ -24,6 +24,15 @@ export interface OrbatSquad {
   slots: OrbatSlot[]
 }
 
+/**
+ * The editor "superset" stored verbatim as a MissionVersion.json_payload (the write side of
+ * POST /missions/:id/versions). Its integer schemaVersion is the editor-payload format version
+ * — a distinct namespace from the canonical (string) mission contract — and is validated
+ * server-side against its own schema before persist (T-123.5).
+ *
+ * @contract mission-editor-payload.schema.json#/
+ * @route POST /api/v1/missions/:id/versions
+ */
 export interface MissionPayload {
   schemaVersion: 1
   map: { terrain: string; bounds: [number, number, number, number] }

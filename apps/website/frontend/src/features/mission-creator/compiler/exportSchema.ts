@@ -7,8 +7,17 @@
 import type { MissionMeta } from '@/features/tactical-map'
 import type { MissionPayload } from './compile'
 
+/**
+ * camelCase mod-export envelope — the FE mirror of the Go `missionJSON` export envelope
+ * (internal/handlers/missions.go buildMissionDoc). Wraps the compiled payload so a local
+ * "Export" download is shape-compatible with the server's authoritative export.
+ *
+ * @model missionJSON (Go export envelope; not a GORM model)
+ * @route GET /api/v1/missions/:id/export
+ */
 export interface MissionExport {
-  schemaVersion: 1
+  /** Envelope format tag — a distinct namespace from the canonical mission schemaVersion (T-123 §2.2). */
+  exportFormatVersion: 1
   missionId: string
   title: string
   terrain: string
@@ -29,7 +38,7 @@ export function toMissionExport(
   version: string,
 ): MissionExport {
   return {
-    schemaVersion: 1,
+    exportFormatVersion: 1,
     missionId: meta?.id ?? '',
     title: meta?.title ?? 'Untitled Mission',
     terrain: meta?.terrain ?? 'everon',

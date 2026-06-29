@@ -1,3 +1,5 @@
+// React Query read hooks. Each hook documents the endpoint it calls with an @route tag
+// (DOCUMENTATION_STANDARDS §5) so a route string maps to its hook + Go handler in one grep.
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -33,6 +35,11 @@ function useIsAdmin() {
   return useAuthStore((s) => s.hasMinRole('admin'))
 }
 
+/**
+ * The current authenticated user.
+ *
+ * @route GET /api/v1/me
+ */
 export function useMe() {
   const authed = useAuthed()
   return useQuery({
@@ -43,7 +50,11 @@ export function useMe() {
   })
 }
 
-// Virtual Arsenal catalog (T-068.3) — feeds the Mission Creator Asset Browser palette.
+/**
+ * Virtual Arsenal catalog (T-068.3) — feeds the Mission Creator Asset Browser palette.
+ *
+ * @route GET /api/v1/registry
+ */
 export function useRegistry() {
   const authed = useAuthed()
   return useQuery({
@@ -54,6 +65,11 @@ export function useRegistry() {
   })
 }
 
+/**
+ * The caller's Arma identity link status.
+ *
+ * @route GET /api/v1/me/link/status
+ */
 export function useLinkStatus() {
   const authed = useAuthed()
   return useQuery({
@@ -63,6 +79,11 @@ export function useLinkStatus() {
   })
 }
 
+/**
+ * Aggregated landing-page payload (next event, assignment, server, modpack, news).
+ *
+ * @route GET /api/v1/dashboard
+ */
 export function useDashboard() {
   const authed = useAuthed()
   return useQuery({
@@ -73,6 +94,11 @@ export function useDashboard() {
   })
 }
 
+/**
+ * A leaderboard for the given category (optional name filter).
+ *
+ * @route GET /api/v1/leaderboards
+ */
 export function useLeaderboards(category: string, q?: string) {
   const authed = useAuthed()
   return useQuery({
@@ -84,6 +110,11 @@ export function useLeaderboards(category: string, q?: string) {
   })
 }
 
+/**
+ * The list of registered game servers with live status.
+ *
+ * @route GET /api/v1/servers
+ */
 export function useServers() {
   const authed = useAuthed()
   return useQuery({
@@ -94,6 +125,11 @@ export function useServers() {
   })
 }
 
+/**
+ * Live status for a single server.
+ *
+ * @route GET /api/v1/servers/:id/status
+ */
 export function useServer(id: string | undefined) {
   const authed = useAuthed()
   return useQuery({
@@ -104,6 +140,11 @@ export function useServer(id: string | undefined) {
   })
 }
 
+/**
+ * A page of CMS announcements.
+ *
+ * @route GET /api/v1/announcements
+ */
 export function useAnnouncements(limit = 20, offset = 0) {
   const authed = useAuthed()
   return useQuery({
@@ -114,6 +155,11 @@ export function useAnnouncements(limit = 20, offset = 0) {
   })
 }
 
+/**
+ * The caller's My Deployments service record.
+ *
+ * @route GET /api/v1/me/deployments
+ */
 export function useDeployments() {
   const authed = useAuthed()
   return useQuery({
@@ -123,6 +169,11 @@ export function useDeployments() {
   })
 }
 
+/**
+ * A page of events for the given scope (upcoming/past).
+ *
+ * @route GET /api/v1/events
+ */
 export function useEvents(scope = 'upcoming') {
   const authed = useAuthed()
   return useQuery({
@@ -133,6 +184,11 @@ export function useEvents(scope = 'upcoming') {
   })
 }
 
+/**
+ * One Event Hub with its nested mission dossiers.
+ *
+ * @route GET /api/v1/events/:id
+ */
 export function useEvent(id: string | undefined) {
   const authed = useAuthed()
   return useQuery({
@@ -142,6 +198,11 @@ export function useEvent(id: string | undefined) {
   })
 }
 
+/**
+ * The ORBAT (squads + slots) for one event-mission.
+ *
+ * @route GET /api/v1/event-missions/:emid/orbat
+ */
 export function useOrbat(emid: string | undefined) {
   const authed = useAuthed()
   return useQuery({
@@ -152,7 +213,11 @@ export function useOrbat(emid: string | undefined) {
   })
 }
 
-// Leader-only member directory for picking assignees for a reserved squad.
+/**
+ * Leader-only member directory for picking assignees for a reserved squad.
+ *
+ * @route GET /api/v1/members
+ */
 export function useMemberSearch(q: string, enabled = true) {
   const authed = useAuthed()
   return useQuery({
@@ -164,6 +229,11 @@ export function useMemberSearch(q: string, enabled = true) {
   })
 }
 
+/**
+ * A page of mission library cards for the given scope + filters.
+ *
+ * @route GET /api/v1/missions
+ */
 export function useMissions(scope = 'global', filters?: Record<string, string>) {
   const authed = useAuthed()
   return useQuery({
@@ -178,6 +248,11 @@ export function useMissions(scope = 'global', filters?: Record<string, string>) 
   })
 }
 
+/**
+ * The full Mission Overview for one mission.
+ *
+ * @route GET /api/v1/missions/:id
+ */
 export function useMission(id: string | undefined) {
   const authed = useAuthed()
   return useQuery({
@@ -187,6 +262,11 @@ export function useMission(id: string | undefined) {
   })
 }
 
+/**
+ * All modpacks with their mod lists.
+ *
+ * @route GET /api/v1/modpacks
+ */
 export function useModpacks() {
   const authed = useAuthed()
   return useQuery({
@@ -196,6 +276,11 @@ export function useModpacks() {
   })
 }
 
+/**
+ * The current (is_current) modpack.
+ *
+ * @route GET /api/v1/modpacks/current
+ */
 export function useCurrentModpack() {
   const authed = useAuthed()
   return useQuery({
@@ -205,6 +290,11 @@ export function useCurrentModpack() {
   })
 }
 
+/**
+ * The doctrine wiki page index.
+ *
+ * @route GET /api/v1/wiki
+ */
 export function useWikiPages() {
   const authed = useAuthed()
   return useQuery({
@@ -214,6 +304,11 @@ export function useWikiPages() {
   })
 }
 
+/**
+ * One doctrine wiki page by slug.
+ *
+ * @route GET /api/v1/wiki/:slug
+ */
 export function useWikiPage(slug: string | undefined) {
   const authed = useAuthed()
   return useQuery({
@@ -223,6 +318,11 @@ export function useWikiPage(slug: string | undefined) {
   })
 }
 
+/**
+ * The vehicle database.
+ *
+ * @route GET /api/v1/vehicle-database
+ */
 export function useVehicles() {
   const authed = useAuthed()
   return useQuery({
@@ -232,6 +332,11 @@ export function useVehicles() {
   })
 }
 
+/**
+ * Admin: missions pending approval.
+ *
+ * @route GET /api/v1/approvals
+ */
 export function useApprovals() {
   const authed = useAuthed()
   const isAdmin = useIsAdmin()
@@ -242,6 +347,11 @@ export function useApprovals() {
   })
 }
 
+/**
+ * Admin: personnel roster (optional name filter).
+ *
+ * @route GET /api/v1/admin/users
+ */
 export function usePersonnel(q?: string) {
   const authed = useAuthed()
   const isAdmin = useIsAdmin()
@@ -253,6 +363,11 @@ export function usePersonnel(q?: string) {
   })
 }
 
+/**
+ * Admin: a cursor page of audit logs (optional severity / search filter).
+ *
+ * @route GET /api/v1/admin/audit-logs
+ */
 export function useAuditLogs(params?: { severity?: string; q?: string }) {
   const authed = useAuthed()
   const isAdmin = useIsAdmin()

@@ -2,6 +2,11 @@ import axios from 'axios'
 import { useAuthStore } from '@/store/useAuthStore'
 import { refreshSession } from '@/api/refresh'
 
+/**
+ * Shared axios client for the TBD API (base `/api/v1`, overridable via VITE_API_URL). Injects the
+ * bearer token on every request and, on a 401, runs a single-flight token refresh
+ * ({@link refreshSession}) and retries the original request once.
+ */
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api/v1',
   headers: { 'Content-Type': 'application/json' },
