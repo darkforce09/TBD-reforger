@@ -13,6 +13,9 @@ export type {
   AssetDropPayload,
 } from './types'
 
+// DEM elevation (T-091.1)
+export { sampleElevation, isDemReady, isDemDegraded, loadDemForTerrain } from './dem'
+
 // State foundation (Ultra Plan §2)
 export { useMapStore, pickMapSnapshot } from './state/useMapStore'
 export type { MapStoreState, MapSnapshot } from './state/useMapStore'

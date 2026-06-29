@@ -19,6 +19,7 @@ import * as slotSpatialIndex from './state/slotSpatialIndex'
 import * as slotClusterIndex from './state/slotClusterIndex'
 import * as slotIconCache from './state/slotIconCache'
 import { useMapStore } from './state/useMapStore'
+import { loadDemForTerrain } from './dem'
 import { ZOOM_CLUSTER_MAX, CLUSTER_SLOT_THRESHOLD } from './state/constants'
 import { ASSET_DND_MIME, type AssetDropPayload, type MapViewState, type TacticalMapProps } from './types'
 
@@ -62,6 +63,13 @@ function TacticalMapInner({
     slotClusterIndex.setTerrain(terrain)
     slotIconCache.setChunkTerrain(terrain)
   }, [terrain])
+
+  // Load the DEM elevation cache for this terrain (T-091.1). Fire-and-forget; the
+  // controller is idempotent and reloads on terrain change. sampleElevation stays 0
+  // until the cache is ready (consumed in T-091.2).
+  useEffect(() => {
+    void loadDemForTerrain(terrain.id)
+  }, [terrain.id])
 
   // Cluster drill-in (T-065): recenter on a cluster centroid and zoom one step closer.
   const drillIntoCluster = useCallback(
