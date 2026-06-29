@@ -22,7 +22,7 @@ Load the committed Everon 16-bit DEM PNG into a CPU elevation cache and expose `
 | `packages/map-assets/everon/anchors/verification.json` | 11 probes committed |
 | `packages/map-assets/everon/manifest.json` dims/range | Matches verify gate |
 | `packages/tbd-schema/scripts/lib/dem-sample.mjs` logic drift | Port faithfully; change both if math changes |
-| Z on place/move, toolbelt Z, hillshade, `ydoc` z writes | **T-091.2** |
+| Z on place/move, toolbelt Z, hillshade, `ydoc` z writes | **Done (T-091.2)** @ `dde589e` |
 | `docs/**` | Cursor doc sync |
 
 ---
@@ -331,7 +331,7 @@ for (const row of a.anchors) console.log(row.id, sampleElevationMeters(row.x, ro
 2. Dev-login → open mission editor on Everon
 3. DevTools Network: `everon-dem-16bit.png` → **200**, **71,911,548 bytes** (~68.6 MiB on disk)
 4. Console: no uncaught decode errors
-5. *(Z still 0 in toolbelt — expected until T-091.2)*
+5. *(Shipped T-091.2 @ `dde589e` — CUR/SEL Z live when DEM ready.)*
 
 ---
 
