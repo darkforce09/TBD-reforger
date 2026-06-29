@@ -83,7 +83,7 @@
 | T-088 | 880 | deferred | platform | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | deferred | platform | Mission title PATCH sync | PATCH mission title to server on edit (absorbs former T-051 scope). |
 | T-090 | 900 | ready | infra | Aligned map tiles | Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md. |
-| T-091 | 910 | active | infra | DEM + auto Z | 16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md. |
+| T-091 | 910 | active | infra | DEM + auto Z | T-091.1 loader shipped @ 2c56c2e. Next: T-091.2 Z UX. Hub: t090_091_map_terrain_program.md. |
 | T-092 | 920 | ready | infra | Spawn transform parity + mod mission compile | Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | scale | Continuous autosave polish | Background autosave UX and conflict handling polish. |
 | T-094 | 940 | deferred | scale | Typed-array IconLayer | Typed-array slot icon buffer for mega-mission render path. |

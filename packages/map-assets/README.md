@@ -11,7 +11,9 @@ Per-terrain static assets for the Mission Creator basemap and DEM (T-090 / T-091
 
 | Terrain | Status |
 |---------|--------|
-| **Everon** | manifest + DEM (6400², 71,911,548 bytes) + 11 anchors @ `6d96339` |
+| **Everon** | manifest + DEM (6400², 71,911,548 bytes) + 11 anchors @ `6d96339`; **runtime loader** @ T-091.1 `2c56c2e` (`loadDemForTerrain` / `sampleElevation`) |
 | **Arland** | stub `manifest.json` only (`widthPx/heightPx: 0`) — DEM deferred |
+
+**Dev serve:** `make map-assets-link` → `apps/website/frontend/public/map-assets` symlink.
 
 See [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).

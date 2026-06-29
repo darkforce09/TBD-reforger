@@ -69,9 +69,10 @@ features/tactical-map/
 │   ├── projection.ts              # worldToPixel / pixelToWorld (Arma meters <-> canvas)
 │   └── terrains.ts                # per-terrain world bounds, scale, DEM max-elevation
 ├── dem/
-│   ├── DemTexture.ts              # load 16-bit heightmap -> luma Texture + CPU Float32Array
-│   ├── sampleElevation.ts         # (x,y) -> meters, CPU O(1) read of the Float32Array
-│   └── DemController.ts           # async load, optional tiling, fallback state
+│   ├── terrainManifest.ts         # fetch/validate manifest JSON (T-091.1 shipped)
+│   ├── DemTexture.ts              # pngjs decode → Float32 meters cache (T-091.1)
+│   ├── sampleElevation.ts         # worldToPixel + bilinear + uint16ToMeters (T-091.1)
+│   └── DemController.ts           # load lifecycle + public sampleElevation API (T-091.1)
 ├── layers/
 │   ├── useBaseMapLayer.ts         # TileLayer (tiled) or BitmapLayer (single image)
 │   ├── useDemLayer.ts             # hillshade/contour overlay from the DEM DataTexture
@@ -483,10 +484,7 @@ Create both feature trees (§1) as stubs. Register the `React.lazy` route `/miss
 `view/useOrthographicView.ts`, `TacticalMap.tsx`, `layers/useBaseMapLayer.ts`, `context/MapContext.tsx`.
 **Deliverable:** a blank base map with 60 fps pan/zoom.
 
-**Phase 2 — DEM / Z-axis** (**T-091.1–.2** — Everon DEM assets exist @ T-091.0) → `dem/DemTexture.ts`, `dem/sampleElevation.ts`, `dem/DemController.ts`,
-`layers/useDemLayer.ts`, `layout/BottomToolbelt.tsx` (X/Y/Z readout). **Deliverable:** hover the
-map and read true elevation; hillshade overlay toggles. Map tile imagery is **T-090** (Phase 2
-prerequisite for visual parity — see [`ROADMAP.md`](ROADMAP.md) §Recommended program order).
+**Phase 2 — DEM / Z-axis** — **T-091.1 shipped** @ `2c56c2e` (`dem/*`, `sampleElevation` API, vitest anchors); **T-091.2 active** → `ydoc` Z on place/move, `layout/BottomToolbelt.tsx` CUR/SEL Z, `layers/useDemLayer.ts` hillshade. **Deliverable (T-091.2):** hover the map and read true elevation in toolbelt; auto Z on place/move. Hillshade overlay toggles. Map tile imagery is **T-090.1** (see [`ROADMAP.md`](ROADMAP.md)).
 
 **Phase 3 — Shell / layout** → `MissionCreatorPage.tsx`, `layout/TopCommandStrip.tsx`,
 `LeftOutliner/*`, `RightInspector/InspectorPanel.tsx` + `GlobalSettingsInspector.tsx`.

@@ -117,7 +117,7 @@ make schema-validate
 
 | Item | Ticket |
 |------|--------|
-| Frontend DEM loader | **T-091.1** |
+| Frontend DEM loader | **T-091.1** — **shipped** @ `2c56c2e` |
 | Z on place/move | **T-091.2** |
 | Tile pyramid | **T-090.1** |
 | Arland re-export / EMT / automation polish | **T-121** |

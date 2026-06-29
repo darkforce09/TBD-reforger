@@ -1,7 +1,7 @@
 # T-091.2 — Z-axis editor UX
 
 **Ticket:** T-091 · **Slice:** T-091.2  
-**Status:** Spec ready — **blocked on T-091.1** (T-091.0 anchor verify **PASS** @ `6d96339`)  
+**Status:** **active** — unblocked @ T-091.1 `2c56c2e`  
 **Executor:** claude-code  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -17,8 +17,8 @@ Auto-sample DEM Z on place/move/paste, preserve manual Attributes Z, show real C
 
 | Gate | Evidence |
 |------|----------|
-| **T-091.1** | `sampleElevation()` returns non-zero over varied terrain |
-| **T-091.0** | Anchor verify PASS |
+| **T-091.1** | ✅ `sampleElevation()` @ `2c56c2e` — 11 vitest anchors ±0.01 m; Everon DEM loads in editor |
+| **T-091.0** | Anchor verify PASS @ `6d96339` |
 
 ---
 

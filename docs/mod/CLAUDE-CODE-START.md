@@ -10,7 +10,7 @@
 
 **T-121 (deferred):** tiles / Arland re-export / MCP polish — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
 
-**Next Claude Code work order:** **T-091.1** (DEM loader) → **T-091.2** (Z UX) → **T-090.1** (tiles) → **T-092** → **T-068.13**. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**Next Claude Code work order:** **T-091.2** (Z UX) → **T-090.1** (tiles) → **T-092** → **T-068.13** → **T-068.7+**. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
@@ -109,34 +109,40 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-091.1 — active (DEM loader) — **start here**
+## T-091.2 — active (Z-axis editor UX) — **start here**
 
-**Handoff prompt:** [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../.ai/artifacts/t091_1_claude_code_handoff.md) (copy into a **new** Claude Code chat).
+**Spec:** [`t091_2_z_axis_editor.md`](../specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md)
 
-**Spec:** [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md)
+### T-091.1 is done — do not redo
 
-### T-091.0 is done — do not redo
+Shipped @ `2c56c2e` / tag **T-091.1**. Use `sampleElevation`, `isDemReady`, `isDemDegraded` from `tactical-map/dem` — do not re-implement loader unless fixing a regression.
 
-Shipped @ `6d96339` / tag **T-091.0**. Claude Code must **not**:
-
-- Run Workbench, MCP, or `TBD_TerrainExportPlugin.c`
-- Re-export or replace `packages/map-assets/everon/dem/everon-dem-16bit.png`
-- Edit anchors, manifest dims, or verify scripts for export
-- Implement Z on place/move (that is **T-091.2**)
-
-### T-091.1 scope (frontend only)
+### T-091.2 scope (frontend only)
 
 | Deliverable | Path |
 |-------------|------|
-| Symlink static assets | `apps/website/frontend/public/map-assets` → `packages/map-assets` |
-| DEM modules | `src/features/tactical-map/dem/{terrainManifest,DemTexture,sampleElevation,DemController}.ts` |
-| Tests | `dem/sampleElevation.test.ts` (vitest; 3 anchors ±0.01 m) |
-| Wire | `TacticalMap.tsx` — init `DemController` on terrain mount |
-| Port from | `packages/tbd-schema/scripts/lib/dem-sample.mjs` |
+| Z on place/move/paste | `state/ydoc.ts` |
+| Toolbelt CUR/SEL Z | `layout/BottomToolbelt.tsx` |
+| Hillshade | `layers/useDemLayer.ts` |
+| Version payload Z | `compiler/compile.ts` (`editor.slots` only) |
 
 ```bash
 make map-assets-link
-cd apps/website/frontend && npm run build && npm run lint
-npm test
-make verify-terrain-strict
+./scripts/ticket brief T-091
+cd apps/website/frontend && npm run build && npm run lint && npm test
 ```
+
+---
+
+## T-091.1 — shipped (DEM loader) @ `2c56c2e`
+
+**Spec:** [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md) · handoff (historical): [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../.ai/artifacts/t091_1_claude_code_handoff.md)
+
+| Module | Path |
+|--------|------|
+| DEM modules | `src/features/tactical-map/dem/*` |
+| Tests | `dem/sampleElevation.test.ts` (15 tests; 11 anchors ±0.01 m) |
+| Wire | `TacticalMap.tsx` → `loadDemForTerrain` |
+| Browser | `vite.config.ts` `pngjs→browser`; `buffer` in `DemTexture.ts` |
+
+Verify: `npm test` + `make verify-terrain-strict`

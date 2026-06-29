@@ -1,6 +1,8 @@
 # T-091.1 — Claude Code handoff (copy-paste prompt)
 
-**Date:** 2026-06-29 · **Spec:** [`t091_1_dem_loader.md`](../../docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md) (read **entire** file — acceptance S1–S10)
+**Status:** **SHIPPED** @ `2c56c2e` (2026-06-29) — historical reference only. Active slice: **T-091.2**.
+
+**Date:** 2026-06-29 · **Spec:** [`t091_1_dem_loader.md`](../../docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md) (acceptance S1–S10 — all PASS)
 
 ---
 
@@ -11,6 +13,11 @@ Read CLAUDE.md §Status, then implement ONLY from:
   docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md
 
 Slice T-091.1 — frontend DEM loader + sampleElevation. Website only.
+
+═══ PREFLIGHT (repo root — run first) ═══
+  git lfs pull                              # if everon-dem-16bit.png missing locally
+  make map-assets-link                      # symlink public/map-assets
+  ./scripts/ticket brief T-091              # confirm active slice + spec path
 
 ═══ T-091.0 DONE @ 6d96339 — DO NOT REDO ═══
   No Workbench, MCP, TBD_TerrainExportPlugin.c, re-export PNG, anchor edits,

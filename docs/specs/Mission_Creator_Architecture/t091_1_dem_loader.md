@@ -1,7 +1,7 @@
 # T-091.1 — DEM loader + sampleElevation
 
 **Ticket:** T-091 · **Slice:** T-091.1  
-**Status:** **active** — unblocked @ T-091.0 `6d96339`  
+**Status:** **shipped** @ `2c56c2e` (tag **T-091.1**)  
 **Executor:** claude-code  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -212,7 +212,7 @@ Requires `git lfs pull` if PNG missing locally.
 **`vitest.config.ts`** (new):
 
 - `test.environment: 'node'` for PNG file tests
-- Resolve path to repo `packages/map-assets/everon/dem/everon-dem-16bit.png` (relative from frontend root: `../../../../packages/map-assets/...`)
+- Resolve path to repo `packages/map-assets/everon/dem/everon-dem-16bit.png` (from frontend root: `../../../packages/map-assets/...`; vitest alias `map-assets` in `vitest.config.ts`)
 - Optional: `test.environmentMatchGlobs` if mixing DOM tests later
 
 **Dependencies:**
@@ -242,6 +242,14 @@ Requires `git lfs pull` if PNG missing locally.
 ---
 
 ## Verification gate (mandatory)
+
+### Pre-flight (repo root — run before implement or verify)
+
+```bash
+git lfs pull                              # if everon-dem-16bit.png missing locally
+make map-assets-link                      # symlink public/map-assets → packages/map-assets
+./scripts/ticket brief T-091              # confirm active slice + spec path
+```
 
 ### Automated (exit 0)
 
@@ -363,6 +371,22 @@ Reject load if PNG IHDR `width×height` ≠ `manifest.dem.widthPx × manifest.de
 | Manifest | `packages/map-assets/everon/manifest.json` |
 | Anchors | `packages/map-assets/everon/anchors/verification.json` |
 | DEM sha256 | `585e1432ddf24dfb963f81510b4b570a41c68ec8ea85f56e755c3c5f95f4517b` |
+
+---
+
+## Shipped @ `2c56c2e` (tag **T-091.1**)
+
+| Deliverable | Location |
+|-------------|----------|
+| DEM modules | `apps/website/frontend/src/features/tactical-map/dem/*` |
+| TacticalMap wire | `useEffect` → `loadDemForTerrain(terrainId)` |
+| Barrel exports | `sampleElevation`, `isDemReady`, `isDemDegraded` from `tactical-map/index.ts` |
+| Vitest | 15 tests (11 anchors ±0.01 m, S8/S9/S10, synthetic 2×2) |
+| Browser decode | Vite alias `pngjs` → `pngjs/browser`; `buffer` polyfill in `DemTexture.ts` (node pngjs entry crashes on `util.inherits`) |
+
+**Intentionally not wired (T-091.2):** toolbelt CUR/SEL Z, `ydoc` z on place/move, hillshade, compiler worker DEM fetch.
+
+**Verify replay:** `make map-assets-link && cd apps/website/frontend && npm test && make verify-terrain-strict`
 
 ---
 

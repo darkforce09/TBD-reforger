@@ -770,7 +770,23 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print("DO NOT: edit documentation")
     if shipped:
         print(f"DO NOT REOPEN (shipped): {', '.join(shipped)}")
-    if active == "T-091.1":
+    if active == "T-091.2":
+        print(
+            "DO NOT REOPEN: T-091.0 plugin/export, T-091.1 dem/* loader (shipped @ 2c56c2e) "
+            "unless regression fix"
+        )
+        print(
+            "SCOPE: apps/website/frontend — ydoc Z on place/move, BottomToolbelt CUR/SEL Z, "
+            "useDemLayer hillshade, compile.ts editor.slots z"
+        )
+        print(
+            "CONSUME: tactical-map/dem — loadDemForTerrain, sampleElevation, isDemReady, isDemDegraded"
+        )
+        print(
+            "VERIFY: make map-assets-link && cd apps/website/frontend && npm run build "
+            "&& npm run lint && npm test && make verify-terrain-strict"
+        )
+    elif active == "T-091.1":
         print(
             "DO NOT: TBD_TerrainExportPlugin.c, Workbench, MCP terrain export, "
             "re-export everon-dem-16bit.png, anchor probes, or packages/map-assets/ edits"
@@ -782,6 +798,9 @@ def cmd_brief(args: argparse.Namespace) -> None:
         print(
             "REFERENCE (port, do not re-run): "
             "packages/tbd-schema/scripts/lib/dem-sample.mjs"
+        )
+        print(
+            "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091"
         )
         print(
             "VERIFY: make map-assets-link && cd apps/website/frontend && npm run build "

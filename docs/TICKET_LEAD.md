@@ -5,7 +5,7 @@
 
 ## Running / Review
 
-- **T-091** (910) — DEM + auto Z [active] — 16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
+- **T-091** (910) — DEM + auto Z [active] — T-091.1 loader shipped @ 2c56c2e. Next: T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
 
 ## Ready
 

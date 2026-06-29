@@ -82,7 +82,9 @@ make verify-terrain           # manifest ↔ terrains.ts + anchor schema
 make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m (PASS @ 6d96339)
 ```
 
-**Local dev serving:** run `make map-assets-link` once per clone (symlinks `packages/map-assets` → `frontend/public/map-assets`). `make web` runs this automatically. T-091.1 DEM fetch requires it; basemap tiles still T-090.1.
+**Local dev serving:** run `make map-assets-link` once per clone (symlinks `packages/map-assets` → `frontend/public/map-assets`). `make web` runs this automatically. Required for Everon DEM fetch in the Mission Creator (T-091.1+). Basemap tiles still T-090.1.
+
+**Frontend tests:** `cd apps/website/frontend && npm test` — vitest `sampleElevation.test.ts` (11 anchor cases vs committed PNG; requires LFS pull).
 
 ## Notes
 

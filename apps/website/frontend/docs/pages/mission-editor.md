@@ -40,7 +40,7 @@
 - **Chromeless:** No platform Sidebar/TopNav (`fullBleed` + `chromeless` route handles).
 - **Loading:** Four-phase overlay on **cold** load: **restoring** (T-062.1 ✅ v2 chunked / legacy migrate once) → download → apply → local flush. **Warm return** (T-062.2): restoring → local flush only. **v2 @ ~360k:** determinate restoring `done/total` ticks smoothly (no 0→300k jump on 2nd+ load). **Dev alt-tab:** overlay should not reappear after extended background (T-062.2). **Save:** T-060.1.4 FIXED.
 - **Dirty:** Local autosave to v2 `idb` on `LOCAL_ORIGIN` edits; Save Version posts **editor-only** payload (T-062.1.1 — no duplicate `orbat[]`); server derives ORBAT for events. Export keeps full superset.
-- **Blocked:** T-090.1 aligned tiles (no pyramid yet). **T-091.0 DEM shipped** @ `6d96339`; **T-091.1** loader → **T-091.2** Z UX next. Ruler/LoS viewshed after T-091. **Basemap today:** Cartesian grid only; cursor/SEL Z = 0 until T-091.2. **Spawn accuracy gate:** T-092 (mod `slots[]` + Y/yaw). **T-068** Virtual Arsenal — **Phase 1 shipped** @ 2026-06-27 (web → JSON → mod **test NPC** wear; **not** human player until T-068.11). **Phase 2 paused.** Hub: [`t068_virtual_arsenal_program.md`](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
+- **Blocked:** T-090.1 aligned tiles (no pyramid yet). **T-091.0 DEM shipped** @ `6d96339`; **T-091.1 DEM loader shipped** @ `2c56c2e` (`sampleElevation` API live; **T-091.2 active** — Z on place/move + toolbelt CUR/SEL Z). Ruler/LoS viewshed after T-091. **Basemap today:** Cartesian grid only; cursor/SEL Z = 0 until T-091.2. **Spawn accuracy gate:** T-092 (mod `slots[]` + Y/yaw). **T-068** Virtual Arsenal — **Phase 1 shipped** @ 2026-06-27 (web → JSON → mod **test NPC** wear; **not** human player until T-068.11). **Phase 2 paused.** Hub: [`t068_virtual_arsenal_program.md`](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
 
 ### Keyboard (host — `/missions/:id/edit`)
 | Shortcut | Action |
@@ -74,7 +74,8 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 ### M2 — [x] Y.Doc state, map viewport, Eden docked panels
 ### M3 — [x] Map drag, multi-select, outliner ops, compiler + Save/Export
 ### M3.5 — [x] T-049 terrain wired to viewport; row title/terrain/env hydrate; editable Transform X/Y/Z/rotation; selection-aware toolbelt
-### M3.6 — [x] T-050 cursor readout shows X/Y/Z (Z=0 on the flat map until DEM)
+### M3.6 — [x] T-050 cursor readout shows X/Y/Z (Z=0 flat until T-091.2 auto-sample)
+### M3.6a — [x] T-091.1 DEM loader @ `2c56c2e` — Everon PNG fetch/decode, `sampleElevation` API, vitest 11 anchors; toolbelt Z still flat (T-091.2)
 ### M3.7 — [x] T-052 undo/redo keyboard shortcuts (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Ctrl+Y)
 ### M3.8 — [x] T-053 Ctrl/Cmd+LMB additive toggle select on map
 ### M3.9 — [x] T-054 Attributes entry — map dbl-click + ORBAT tree dbl-click
@@ -121,5 +122,5 @@ Undo/redo applies to **session edits only** (drop, drag, delete, title/env chang
 - **[PERF-007] Alt-tab / session reload @ 360k** — **Resolved T-062.2.** Extended alt-tab (Firefox dev) no longer re-triggers full load overlay; warm session skips server GET on same-tab return. Spec: [t062_2_editor_session_persistence.md](../../../docs/specs/Mission_Creator_Architecture/t062_2_editor_session_persistence.md).
 - **[PERF-008] Outliner @ 360k** — **Resolved T-064.** Virtualized ORBAT + Editor Layers; outliner visible on first paint @ ~367k; scrollable 367k rows; T-064.1 scroll-ref hotfix. Spec: [t064_virtualized_outliner.md](../../../docs/specs/Mission_Creator_Architecture/t064_virtualized_outliner.md).
 - **[PERF-009] Spatial chunks / bulk paste @ 367k+** — **Partially resolved T-067.** Bulk paste `slot-add-bulk` shipped; pan ~160 fps @ 367k (CPU cull deferred). Lazy RAM + GPU cull @ 1M+ deferred. Spec: [t067_spatial_chunks.md](../../../docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md).
-- **Active slice:** **T-068.7** — compat matrix spec. Phase 2 adds **T-068.12** (mod player loadout), **T-068.13** (mod slot picker), **T-068.14** (E2E). See [TICKET_LEAD.md](../../../docs/TICKET_LEAD.md).
-- **Next queued:** **T-090–T-092** map program → **T-071** ORBAT → **T-068 Phase 2** → T-069 markers, T-070 vehicles — see [Mission Creator ROADMAP](../../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) and [TICKET_REGISTRY.md](../../../docs/TICKET_REGISTRY.md).
+- **Active slice:** **T-091.2** — Z-axis editor UX ([`t091_2_z_axis_editor.md`](../../../docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md)). **T-091.1 shipped** @ `2c56c2e`.
+- **Next queued:** **T-090.1** tiles → **T-092** map program → **T-071** ORBAT → **T-068 Phase 2** → T-069 markers, T-070 vehicles — see [Mission Creator ROADMAP](../../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) and [TICKET_REGISTRY.md](../../../docs/TICKET_REGISTRY.md).

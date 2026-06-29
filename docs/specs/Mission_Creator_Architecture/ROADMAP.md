@@ -29,11 +29,10 @@
 
 | Active now | Blocked until map gate |
 |------------|-------------------------|
-| **T-091.1** DEM loader + `sampleElevation` | **T-071** ORBAT Manager |
-| **T-091.2** Z on place/move + toolbelt | **T-068.7+** loadout Phase 2 |
-| **T-090.1** basemap tiles (deferred — no pyramid yet) | T-069+ markers/vehicles (still need T-068 ship for queue) |
+| **T-091.2** Z on place/move + toolbelt + hillshade | **T-071** ORBAT Manager |
+| **T-090.1** basemap tiles (deferred — no pyramid yet) | **T-068.7+** loadout Phase 2 |
 | **T-092** mod mission compile | — |
-| **Shipped** | **T-090.0** hub/schema · **T-091.0** Everon DEM @ `6d96339` |
+| **Shipped** | **T-090.0** hub/schema · **T-091.0** Everon DEM @ `6d96339` · **T-091.1** DEM loader @ `2c56c2e` |
 
 **T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.
 
@@ -311,11 +310,12 @@ Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_prog
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **T-090** — active | Today: grid only. [`engineering_plan.md`](engineering_plan.md) §0.3 asset hosting. |
+| **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **T-090.1** — queued | Today: grid only. [`engineering_plan.md`](engineering_plan.md) §0.3 asset hosting. |
 | **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
-| **DEM / heightmap** (16-bit, per terrain) | **T-091** — queued | After T-090 manifest. Native ~2 m/px — record actual `widthPx`/`heightPx` at export. |
-| **Z on place & move** (sample DEM at x,y) | **T-091.2** — queued | `addSlot` / `moveEntity` set `z: 0` until DEM. |
-| **Z in UI** (toolbelt + Attributes, editable) | **Done (T-049/T-050, manual)** | Transform Z editable (T-049); toolbelt shows selected-slot Z (SEL) **and cursor Z (CUR, =0 flat)** (T-050). Auto-sample from DEM → **T-091**. |
+| **DEM loader / `sampleElevation`** | **Done (T-091.1)** @ `2c56c2e` | `tactical-map/dem/*`; Everon 6400² PNG loads in editor; API not wired to slots/toolbelt yet. |
+| **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `make verify-terrain-strict` PASS. |
+| **Z on place & move** (sample DEM at x,y) | **T-091.2** — **active** | `addSlot` / `moveEntity` set `z: 0` until T-091.2. |
+| **Z in UI** (toolbelt + Attributes, editable) | **Partial (T-049/T-050 + T-091.2)** | Transform Z editable (T-049); toolbelt CUR/SEL Z = **0 flat** until T-091.2 auto-sample. |
 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
 | **Mod spawn parity** (x/z/y/headingDeg) | **T-092** — queued | Compiler emits `editor.slots` only today — no mod `slots[]`. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |

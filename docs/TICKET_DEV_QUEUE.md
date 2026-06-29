@@ -15,12 +15,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-091 — DEM + auto Z
 
-- **Active slice:** `T-091.1`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md`
+- **Active slice:** `T-091.2`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-091`
 - **Targets:** root, website
-- **Summary:** 16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
+- **Summary:** T-091.1 loader shipped @ 2c56c2e. Next: T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

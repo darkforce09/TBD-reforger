@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ACTIVE** — **T-091.1** (DEM loader). **T-091.0** shipped @ `6d96339` (Everon DEM + strict verify PASS).  
+**Status:** **active** — **T-091.2** (Z-axis editor UX). **T-091.1** shipped @ `2c56c2e`. **T-091.0** shipped @ `6d96339` (Everon DEM + strict verify PASS).  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
@@ -14,8 +14,8 @@
 ```text
 T-090.0  hub + schema + verify scripts (shipped)
   → T-091.0  Everon DEM + anchors (shipped @ 6d96339)  ✓
-  → T-091.1  DEM loader (claude-code)  ← ACTIVE NOW
-  → T-091.2  Z UX + hillshade (claude-code)
+  → T-091.1  DEM loader (shipped @ 2c56c2e)  ✓
+  → T-091.2  Z UX + hillshade (claude-code)  ← ACTIVE NOW
   → T-090.1  Cartesian basemap / tiles (claude-code)
   → T-092    mod compile + spawn
   → T-071 → T-068.13 → T-068.7+
@@ -33,8 +33,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.0** | [`t090_0_map_program_hub.md`](t090_0_map_program_hub.md) | cursor-docs | `make ticket-check-strict` + `make verify-terrain` + `make schema-validate` |
 | **T-091.0** | [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) | claude-code | **shipped** @ `6d96339` — `make verify-terrain-strict` PASS |
 | **T-090.1** | [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | claude-code | Build/lint + horizontal H1/H2 manual log |
-| **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | S1–S10 in spec: build/lint, vitest ±0.01 m, `make verify-terrain-strict`, worker grep |
-| **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | Manual M1–M7 + version payload Z |
+| **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | **shipped** @ `2c56c2e` — S1–S10 PASS (15 vitest, verify-terrain-strict) |
+| **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | Manual M1–M7 + version payload Z — **active** |
 
 ---
 
@@ -57,7 +57,9 @@ Scripts live in `packages/tbd-schema/scripts/verify-terrain-*.mjs`.
 | Item | Today | Target |
 |------|-------|--------|
 | Basemap | Procedural grid [`useBaseMapLayer.ts`](../../../apps/website/frontend/src/features/tactical-map/layers/useBaseMapLayer.ts) | T-090.1 aligned tiles |
-| Slot Z | `z: 0` in [`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) | T-091.2 `sampleElevation` |
+| DEM loader | **`dem/*` + `sampleElevation()`** @ `2c56c2e` — Everon loads in editor; API not wired to toolbelt/slots yet | T-091.1 **shipped** |
+| Slot Z | `z: 0` in [`ydoc.ts`](../../../apps/website/frontend/src/features/tactical-map/state/ydoc.ts) | T-091.2 `sampleElevation` on place/move |
+| Toolbelt CUR/SEL Z | Shows **0** (flat until T-091.2) | T-091.2 sampled Z |
 | DEM assets | **6400² PNG** @ `packages/map-assets/everon/dem/` | T-091.0 **shipped** |
 | Everon bounds | 12800×12800 m | Biki confirmed |
 | Everon altitude | [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts): −204.78…375.53 m | Manifest must match |

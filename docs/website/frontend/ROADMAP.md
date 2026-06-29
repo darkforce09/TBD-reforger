@@ -37,7 +37,7 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/leaderboards` | [leaderboards.md](../../../apps/website/frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../../apps/website/frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../../apps/website/frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-091.0 DEM shipped; **T-091.1** DEM loader active |
+| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-091.1 DEM loader shipped @ `2c56c2e`; **T-091.2** Z UX active |
 | `/events` | [event-schedule.md](../../../apps/website/frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../../apps/website/frontend/docs/pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../../apps/website/frontend/docs/pages/event-hub.md) | |
