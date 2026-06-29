@@ -163,3 +163,4 @@ Tolerance: ±0.01 m.
 - [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) — shipped DEM source
 - [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md)
 - [`t092_2_mod_compile_route.md`](t092_2_mod_compile_route.md)
+- **Claude Code handoff:** [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../../.ai/artifacts/t091_1_claude_code_handoff.md)

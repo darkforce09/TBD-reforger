@@ -109,11 +109,33 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-091.0 — shipped @ 6d96339
+## T-091.1 — active (DEM loader) — **start here**
 
-Everon DEM: `TBD_TerrainExportPlugin.c` → `GetTerrainSurfaceY` 6400² grid → `raw-u16-to-dem-png.mjs` → `everon-dem-16bit.png`.  
-Re-export: **Plugins → TBD → Export TBD Terrain DEM**. Spec: [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
+**Handoff prompt:** [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../.ai/artifacts/t091_1_claude_code_handoff.md) (copy into a **new** Claude Code chat).
 
-## T-091.1 — next (DEM loader)
+**Spec:** [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md)
 
-Wire `dem-sample.mjs` / `sampleElevation` in the frontend. Spec: [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
+### T-091.0 is done — do not redo
+
+Shipped @ `6d96339` / tag **T-091.0**. Claude Code must **not**:
+
+- Run Workbench, MCP, or `TBD_TerrainExportPlugin.c`
+- Re-export or replace `packages/map-assets/everon/dem/everon-dem-16bit.png`
+- Edit anchors, manifest dims, or verify scripts for export
+- Implement Z on place/move (that is **T-091.2**)
+
+### T-091.1 scope (frontend only)
+
+| Deliverable | Path |
+|-------------|------|
+| Symlink static assets | `apps/website/frontend/public/map-assets` → `packages/map-assets` |
+| DEM modules | `src/features/tactical-map/dem/{terrainManifest,DemTexture,sampleElevation,DemController}.ts` |
+| Tests | `dem/sampleElevation.test.ts` (vitest; 3 anchors ±0.01 m) |
+| Wire | `TacticalMap.tsx` — init `DemController` on terrain mount |
+| Port from | `packages/tbd-schema/scripts/lib/dem-sample.mjs` |
+
+```bash
+cd apps/website/frontend && npm run build && npm run lint
+npm test -- sampleElevation
+make verify-terrain-strict
+```

@@ -42,21 +42,18 @@ isProject: false
 ## One-line prompt (copy this)
 
 ```
-Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 Phase 1 shipped**
-(spec: docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
-**Active slice: T-091.1** — DEM loader (claude-code). **T-091.0 shipped** @ `6d96339`. **T-068 Phase 2 paused.**
-Phase 1 proved web → loadout-export.json → mod **test NPC** wear (NOT human player).
-Program order: T-090 → T-091 → T-092 → T-071 → T-068.13 → T-068.7+.
-Read t090_091_map_terrain_program.md.
-Authority: ROADMAP.md → program hub slice table.
+Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 Phase 1 shipped**.
+**Active slice: T-091.1** — frontend DEM loader (claude-code). **T-091.0 shipped** @ `6d96339` — do NOT redo plugin/export.
+**T-068 Phase 2 paused.** Program order: T-091.1 → T-091.2 → T-090.1 → T-092 → T-071 → T-068.13.
+Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_program.md for context.
 **T-057–T-067 shipped.** Do not `./scripts/ticket done T-068` until T-068.14.
 ```
 
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-091.1 active** (DEM loader). **T-091.0 shipped** @ `6d96339`.
-Phase 2 T-068 paused. Per docs/TICKET_LEAD.md.
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-091.1 active** (DEM loader). **T-091.0 shipped — no Workbench/MCP redo.**
+Read t091_1_dem_loader.md. Per docs/TICKET_DEV_QUEUE.md.
 ```
 
 ## Agent roles — Cursor vs Claude Code (locked 2026-06)
@@ -334,7 +331,8 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Virtualized outliner** (T-064 — **shipped**) | `@tanstack/react-virtual` + segment flatten; `virtualSlotIds`; T-064.1 callback-ref `scrollEl`. **Verified @ ~367k.** Spec: [`t064_virtualized_outliner.md`](t064_virtualized_outliner.md). |
 | **Editor session / alt-tab** (T-062.2 — **shipped**) | Dev: `viteReloadGuard` blocks Vite HMR full reload on editor route. Warm session: `editorSession.ts` → skip multi-MB GET on same-tab return when IDB has content. Background-safe yields. **Tradeoff:** warm path trusts local IDB. Spec: [`t062_2_editor_session_persistence.md`](t062_2_editor_session_persistence.md). |
 | **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
-| **T-091.0 Everon DEM** (2026-06-29, **shipped** @ `6d96339`) | **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → 16-bit PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** **dead** on packed Eden (terrain entity unselectable). Tiles **deferred** (T-090.1 / T-121). Verify: `make verify-terrain-strict` PASS — 11 anchors, maxDeltaM 0.204 m. Spec: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md). |
+| **T-091.0 Everon DEM** (2026-06-29, **shipped** @ `6d96339`) | **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → 16-bit PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** **dead** on packed Eden. Tiles **deferred** (T-090.1 / T-121). Verify: `make verify-terrain-strict` PASS — 11 anchors, maxDeltaM 0.204 m. Spec: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md). |
+| **T-091.1 handoff** (2026-06-29) | Claude Code **frontend-only** slice. Copy prompt: [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../../.ai/artifacts/t091_1_claude_code_handoff.md). **Do not** reopen T-091.0 (plugin, DEM re-export, anchors). Port [`dem-sample.mjs`](../../../packages/tbd-schema/scripts/lib/dem-sample.mjs). |
 | **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-091.0 shipped** @ `6d96339` — GetSurfaceY plugin resample (`mod-getsurfacey-resample`); manual WE export **dead** on packed Eden. **T-091.1 active** (DEM loader). **T-057..T-067** perf/scale **shipped**. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
 | **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until map gate + T-071.2 + T-068.13. |
 | **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 queued** (blocked on **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |

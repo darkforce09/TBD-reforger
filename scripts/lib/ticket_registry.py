@@ -303,9 +303,11 @@ def inject_status_block(registry: dict[str, Any] | None = None) -> None:
     slice_row = next((t for t in tickets if t.get("active_slice")), None)
     lines = [f"**Latest shipped:** **{latest}**", ""]
     if slice_row:
+        slice_id = slice_row.get("active_slice", "")
+        slice_read = slice_spec(slice_row)
         lines.append(
-            f"**ACTIVE NOW:** **{slice_row['id']}** — {slice_row.get('active_slice', '')} "
-            f"({slice_row.get('title', '')}). Spec: `{slice_row.get('spec', '')}`."
+            f"**ACTIVE NOW:** **{slice_row['id']}** — {slice_id} "
+            f"({slice_row.get('title', '')}). Slice spec: `{slice_read}`."
         )
     else:
         ready = sorted(
@@ -449,7 +451,8 @@ def generate_ticket_dev_queue_md(registry: dict[str, Any] | None = None) -> str:
         lines.append("")
         if active:
             lines.append(f"- **Active slice:** `{active}`")
-        lines.append(f"- **Spec:** `{t.get('spec', '')}`")
+        lines.append(f"- **Slice spec:** `{slice_spec(t)}`")
+        lines.append(f"- **Program hub:** `{t.get('spec', '')}`")
         lines.append(f"- **Branch:** `{branch}`")
         lines.append(f"- **Targets:** {', '.join(t.get('targets') or [])}")
         lines.append(f"- **Summary:** {t.get('summary', '')}")
@@ -504,6 +507,19 @@ def generate_milestones_md(registry: dict[str, Any] | None = None) -> str:
             )
         lines.append("")
     return "\n".join(lines)
+
+
+def slice_spec(t: dict[str, Any]) -> str:
+    active = t.get("active_slice")
+    plan = t.get("slice_plan") or {}
+    if active and active in plan and plan[active].get("spec"):
+        return str(plan[active]["spec"])
+    return str(t.get("spec", ""))
+
+
+def shipped_slices(t: dict[str, Any]) -> list[str]:
+    plan = t.get("slice_plan") or {}
+    return [sid for sid, row in plan.items() if row.get("status") == "shipped"]
 
 
 def slice_executor(t: dict[str, Any]) -> str:
@@ -738,14 +754,41 @@ def cmd_brief(args: argparse.Namespace) -> None:
     if not t:
         sys.stderr.write(f"Unknown ticket: {args.id}\n")
         sys.exit(1)
-    spec = t.get("spec", "")
     tid = t["id"]
     branch = t.get("branch", f"ticket/{tid}")
+    active = t.get("active_slice", "")
+    spec = slice_spec(t)
+    shipped = shipped_slices(t)
     print(f"{tid} · {t.get('title', '')}")
-    print(f"READ: {spec} (only source of truth)")
+    if active:
+        print(f"SLICE: {active}")
+    print(f"READ: {spec} (slice spec — only source of truth for this slice)")
+    if t.get("spec") and t.get("spec") != spec:
+        print(f"HUB: {t.get('spec')} (program context only)")
     print(f"BRANCH: {branch}")
+    print(f"TARGETS: {', '.join(slice_targets(t))}")
     print("DO NOT: edit documentation")
-    print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")
+    if shipped:
+        print(f"DO NOT REOPEN (shipped): {', '.join(shipped)}")
+    if active == "T-091.1":
+        print(
+            "DO NOT: TBD_TerrainExportPlugin.c, Workbench, MCP terrain export, "
+            "re-export everon-dem-16bit.png, anchor probes, or packages/map-assets/ edits"
+        )
+        print(
+            "SCOPE: apps/website/frontend — tactical-map/dem/*, "
+            "public/map-assets symlink, vitest; wire DemController in TacticalMap.tsx"
+        )
+        print(
+            "REFERENCE (port, do not re-run): "
+            "packages/tbd-schema/scripts/lib/dem-sample.mjs"
+        )
+        print(
+            "VERIFY: cd apps/website/frontend && npm run build && npm run lint "
+            "&& npm test -- sampleElevation && make verify-terrain-strict"
+        )
+    else:
+        print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")
     if t.get("acceptance"):
         print("ACCEPTANCE:")
         for a in t["acceptance"]:

@@ -7,7 +7,8 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-068 — Virtual Arsenal (registry + loadout export)
 
-- **Spec:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
 - **Branch:** `ticket/T-068`
 - **Targets:** website, shared, root, mod
 - **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
@@ -15,14 +16,16 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 ## T-091 — DEM + auto Z
 
 - **Active slice:** `T-091.1`
-- **Spec:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-091`
 - **Targets:** root, website
 - **Summary:** 16-bit DEM shipped @ T-091.0 (GetSurfaceY plugin). Next: T-091.1 loader, T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 
-- **Spec:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
 - **Branch:** `ticket/T-092`
 - **Targets:** root, website, mod
 - **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.

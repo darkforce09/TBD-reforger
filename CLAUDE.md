@@ -112,7 +112,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-113**
 
-**ACTIVE NOW:** **T-091** — T-091.1 (DEM + auto Z). Spec: `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`.
+**ACTIVE NOW:** **T-091** — T-091.1 (DEM + auto Z). Slice spec: `docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
