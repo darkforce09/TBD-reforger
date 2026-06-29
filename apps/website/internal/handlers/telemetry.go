@@ -200,12 +200,16 @@ func (h *Handler) IngestMatchResults(c *gin.Context) {
 			}
 		}
 
-		// Mark attendance for scheduled operations.
+		// Mark attendance for scheduled operations. event_registrations keys on
+		// event_mission_id (event_id was dropped in 02_campaign_refactor.sql), so
+		// resolve via the event's missions; return the error so the tx rolls back.
 		if match.EventID != nil && len(resolvedPlayers) > 0 {
 			ids := keys(resolvedPlayers)
-			tx.Model(&models.EventRegistration{}).
-				Where("event_id = ? AND discord_id IN ?", *match.EventID, ids).
-				Update("state", models.RegAttended)
+			if err := tx.Model(&models.EventRegistration{}).
+				Where("event_mission_id IN (SELECT id FROM event_missions WHERE event_id = ?) AND discord_id IN ?", *match.EventID, ids).
+				Update("state", models.RegAttended).Error; err != nil {
+				return err
+			}
 		}
 		return nil
 	})

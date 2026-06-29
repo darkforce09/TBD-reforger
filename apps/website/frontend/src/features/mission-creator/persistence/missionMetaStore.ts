@@ -12,6 +12,7 @@ import {
   openPersistDb,
 } from './missionPersistSchema'
 import type { MissionMetaRecord } from './missionPersistSchema'
+import { clearAutosaveFailure, notifyAutosaveFailure } from './slotChunkStore'
 
 /** The non-slot entity maps, in the order hydrateMissionDocWithProgress applies them. */
 const SMALL_MAPS = [
@@ -86,6 +87,7 @@ function enqueueMetaSave(p: PendingMeta, missionId: string): Promise<void> {
   const next = prev
     .catch(() => {})
     .then(() => saveMissionMetaFromDoc(p.md, missionId, p.isCancelled))
+    .then(clearAutosaveFailure, notifyAutosaveFailure)
   chains.set(missionId, next)
   void next.finally(() => {
     if (chains.get(missionId) === next) chains.delete(missionId)

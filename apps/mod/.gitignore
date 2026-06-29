@@ -1,8 +1,5 @@
 # --- Heavy / generated: never commit ---
-Tbdevent_Website/.tools/
 **/node_modules/
-Tbdevent_Website/bin/
-Tbdevent_Website/web/dist/
 
 # --- CRF reference: do-not-ship copy (see CLAUDE-CODE-START.md) ---
 /Tbd_framework/

@@ -3,7 +3,6 @@ package handlers
 import (
 	"errors"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -75,7 +74,7 @@ func (h *Handler) CreateLinkCode(c *gin.Context) {
 			code = generated
 			break
 		}
-		if !strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+		if !isUniqueViolation(err) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not store code"})
 			return
 		}

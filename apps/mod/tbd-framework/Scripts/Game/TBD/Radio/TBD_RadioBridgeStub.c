@@ -1,4 +1,7 @@
-//! Partner VOIP bridge hooks — stub implementations until Phase 3.
+//! Partner VOIP bridge hooks — INTENTIONAL no-op stubs until Phase 3 (T-122 T17).
+//! Every method below is a deliberate no-op: radio/spawn/kill/PTT/stage events are
+//! silently dropped until the partner VOIP bridge lands. Do not treat the empty bodies
+//! as bugs — they are placeholders for the Phase 3 integration.
 class TBD_RadioBridgeStub
 {
 	//------------------------------------------------------------------------------------------------

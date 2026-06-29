@@ -25,8 +25,10 @@ func (h *Handler) DiscordLogin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start login"})
 		return
 	}
-	// 10-minute, httpOnly state cookie to defend against CSRF on the callback.
-	c.SetCookie("oauth_state", state, 600, "/", "", false, true)
+	// 10-minute, httpOnly, SameSite=Lax state cookie to defend against CSRF on the callback
+	// (Lax still rides the top-level OAuth redirect back from Discord). Secure outside dev.
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("oauth_state", state, 600, "/", "", h.cfg.Env != "development", true)
 	c.Redirect(http.StatusTemporaryRedirect, h.discord.AuthorizeURL(state))
 }
 

@@ -103,6 +103,7 @@ export interface DeploymentsResponse {
   attendance_rate: number
   upcoming: {
     event_id: string
+    event_mission_id: string
     name: string
     terrain: string
     start_time: string

@@ -127,6 +127,13 @@ class TBD_RosterLoader
 			return;
 		}
 
+		// Defensive (T-122 M12): a roster fetched for a different event must not be trusted
+		// silently. Warn loudly on an eventId mismatch (don't drop — the fetch URL already keys
+		// on the configured event, so this guards a backend/proxy mix-up, not normal flow).
+		string expectedEventId = TBD_BackendConfig.GetEventId();
+		if (!roster.eventId.IsEmpty() && !expectedEventId.IsEmpty() && roster.eventId != expectedEventId)
+			Print(string.Format("[TBD] RosterLoader: WARNING roster eventId '%1' != configured '%2'", roster.eventId, expectedEventId), LogLevel.WARNING);
+
 		if (roster.assignments)
 		{
 			foreach (string identityId, string slotId : roster.assignments)

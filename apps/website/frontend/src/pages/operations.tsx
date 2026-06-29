@@ -293,7 +293,7 @@ export function DeploymentsPage() {
                         {countdownLabel(activeOrder.start_time)}
                       </p>
                       <Link
-                        to={`/events/${activeOrder.event_id}`}
+                        to={`/events/${activeOrder.event_id}/missions/${activeOrder.event_mission_id}/orbat`}
                         className="mt-2 inline-flex w-fit items-center gap-2 rounded-lg border border-white/10 bg-surface-glass px-4 py-2 text-sm font-medium text-on-surface backdrop-blur-md transition-colors hover:border-primary/40 hover:text-primary"
                       >
                         <MaterialIcon name="edit" className="text-base" />

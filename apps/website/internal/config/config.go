@@ -14,6 +14,9 @@ type Config struct {
 	// Server
 	Port string
 	Env  string // "development" | "production"
+	// Reverse-proxy CIDRs whose X-Forwarded-For is trusted for the client IP (rate-limit
+	// key). Empty = trust none (use the direct connection IP) so the header can't be spoofed.
+	TrustedProxies []string
 
 	// Frontend integration
 	FrontendURL    string   // SPA base URL for the OAuth redirect, e.g. http://localhost:5173
@@ -52,7 +55,8 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		Port:                       getEnv("PORT", "8080"),
-		Env:                        getEnv("APP_ENV", "development"),
+		Env:                        getEnv("APP_ENV", "production"),
+		TrustedProxies:             splitCSV(os.Getenv("TRUSTED_PROXIES")),
 		FrontendURL:                frontendURL,
 		AllowedOrigins:             splitCSV(getEnv("ALLOWED_ORIGINS", frontendURL)),
 		DatabaseURL:                os.Getenv("DATABASE_URL"),

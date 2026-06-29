@@ -45,6 +45,11 @@ func main() {
 	}
 	r := gin.New()
 	r.MaxMultipartMemory = maxMultipart
+	// Trust only explicitly configured reverse-proxy CIDRs for the client IP (the rate-limit
+	// key); empty trusts none, so a client cannot spoof X-Forwarded-For to rotate the key.
+	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
+		log.Fatalf("set trusted proxies: %v", err)
+	}
 
 	// Cross-cutting middleware chain (outermost first).
 	globalLimiter := middleware.NewIPLimiter(rate.Limit(20), 40) // ~20 req/s/IP

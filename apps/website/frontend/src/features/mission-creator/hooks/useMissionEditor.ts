@@ -14,6 +14,7 @@ import {
   type MissionDoc,
 } from '@/features/tactical-map'
 import { LOCAL_ORIGIN } from '@/features/tactical-map'
+import { toast } from 'sonner'
 import { api } from '@/api/client'
 import type { MissionDetail } from '@/types/api'
 import {
@@ -220,8 +221,14 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
             applyMissionRowMeta(md, row) // row title wins (compile omits title from payload)
           }
         })
-        .catch(() => {
-          /* mission not on the API (e.g. ad-hoc id) → stay local-only */
+        .catch((e) => {
+          // 404 = mission not on the API (e.g. an ad-hoc/local-only id) → stay local-only,
+          // silently. Any other status (5xx / network) means the saved version may exist but
+          // failed to load — warn so the user knows they're on a local copy (T-122 T10).
+          const status = (e as { response?: { status?: number } }).response?.status
+          if (status !== 404) {
+            toast.error('Could not load the saved version — editing your local copy.')
+          }
         })
     },
     [missionId],

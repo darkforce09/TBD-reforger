@@ -7,12 +7,15 @@ interface OpsCardProps {
   glow?: boolean
   /** Frosted Aegis glass surface (for panels over the topo/grid background). */
   glass?: boolean
+  /** Optional element id (e.g. an in-page anchor target for hash deep-links). */
+  id?: string
 }
 
 /** Tactical panel card — matches Aegis surface-container / glass styling. */
-export function OpsCard({ children, className, glow, glass }: OpsCardProps) {
+export function OpsCard({ children, className, glow, glass, id }: OpsCardProps) {
   return (
     <div
+      id={id}
       className={cn(
         'relative flex flex-col gap-3 overflow-hidden rounded-xl p-6',
         glass ? 'glass' : 'border border-border-subtle bg-surface-container',

@@ -37,18 +37,6 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	override void OnPlayerConnected(int playerId)
-	{
-		super.OnPlayerConnected(playerId);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	override void OnPlayerAuditSuccess(int playerId)
-	{
-		super.OnPlayerAuditSuccess(playerId);
-	}
-
-	//------------------------------------------------------------------------------------------------
 	//! Assign mission slot to player (roster or round-robin). Idempotent per player.
 	void AssignSlotForPlayer(int playerId)
 	{

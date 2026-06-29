@@ -69,7 +69,7 @@ export function TopNav() {
                     Settings
                   </Link>
                   <Link
-                    to="/settings"
+                    to="/settings#arma-link"
                     className="block px-4 py-2 text-label-md transition-colors hover:bg-surface-variant/60"
                     onClick={() => setOpen(false)}
                   >

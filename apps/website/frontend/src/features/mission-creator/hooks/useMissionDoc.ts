@@ -28,8 +28,10 @@ import { loadSlotsWithProgress } from '../persistence/slotChunkStore'
 import { loadMissionMetaIntoDoc } from '../persistence/missionMetaStore'
 import { migrateLegacyToV2 } from '../persistence/migrateLegacyToV2'
 
-/** loading → IndexedDB snapshot + (when applicable) server hydrate still in flight. */
-export type DocStatus = 'loading' | 'ready'
+/** loading → IndexedDB snapshot + (when applicable) server hydrate still in flight.
+ *  error → the local restore threw (corrupt/blocked IndexedDB, failed migration); the
+ *  editor must NOT present as an empty `ready` doc — the consumer shows an error overlay. */
+export type DocStatus = 'loading' | 'ready' | 'error'
 
 /** Load phases, in execution order: restore from IndexedDB → download server payload →
  *  apply (hydrate) → reflect into the store (the final coalesced snapshot). `value` is the
@@ -224,6 +226,7 @@ export function useMissionDoc(
     }
 
     void (async () => {
+      let bootError: unknown = null
       try {
         if (await hasV2Persist(missionKey)) {
           // v2 — chunked restore, NO IndexeddbPersistence.
@@ -265,9 +268,20 @@ export function useMissionDoc(
           seedDefaults()
         }
       } catch (e) {
+        bootError = e
         if (import.meta.env.DEV) console.error('[mission-doc] boot failed', e)
       }
       if (cancelled) return
+      if (bootError) {
+        // Local restore failed — surface it instead of dropping the user into a blank
+        // editor that looks `ready` (perceived data loss). Balance the bulk window first.
+        if (bulkOpen) {
+          await endBulkSync()
+          bulkOpen = false
+        }
+        if (!cancelled && mountedHere) setDocStatus('error')
+        return
+      }
       await finishReconcile()
     })()
 

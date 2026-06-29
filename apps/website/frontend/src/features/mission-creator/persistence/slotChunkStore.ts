@@ -4,6 +4,7 @@
 // replay. Writes are debounced + serialized per mission so a burst of edits coalesces into
 // one rewrite and overlapping saves never interleave.
 
+import { toast } from 'sonner'
 import type { MissionDoc } from '../../tactical-map/state/ydoc'
 import { INIT_ORIGIN, entityToYMap } from '../../tactical-map/state/ydoc'
 import { yieldToUi } from '../../tactical-map/state/yieldToUi'
@@ -95,6 +96,21 @@ export async function saveSlotsFromDoc(
   onProgress?.(count, total)
 }
 
+// One toast per autosave-failure streak (slot OR meta writes share this flag), re-armed by
+// the next clean write — a persistent IndexedDB failure (e.g. quota exceeded) would otherwise
+// silently stop persistence with no signal (T-122 T11).
+let autosaveErrorNotified = false
+export function notifyAutosaveFailure(e: unknown): void {
+  if (import.meta.env.DEV) console.error('[autosave] local write failed', e)
+  if (!autosaveErrorNotified) {
+    autosaveErrorNotified = true
+    toast.error('Local autosave failed — your recent changes may not be saved.')
+  }
+}
+export function clearAutosaveFailure(): void {
+  autosaveErrorNotified = false
+}
+
 // ── Debounced + serialized writer ───────────────────────────────────────────
 // `isCancelled` (= the doc was destroyed, T-062.1) is threaded into every queued save so a
 // save that's mid-flight when the editor tears down aborts WITHOUT rewriting a truncated /
@@ -112,6 +128,7 @@ function enqueueSlotSave(p: PendingSlots, missionId: string): Promise<void> {
   const next = prev
     .catch(() => {})
     .then(() => saveSlotsFromDoc(p.md, missionId, undefined, p.isCancelled))
+    .then(clearAutosaveFailure, notifyAutosaveFailure)
   chains.set(missionId, next)
   void next.finally(() => {
     if (chains.get(missionId) === next) chains.delete(missionId)

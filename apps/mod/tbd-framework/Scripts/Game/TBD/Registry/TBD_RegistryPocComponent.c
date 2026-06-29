@@ -3,6 +3,9 @@ class TBD_RegistryPocComponentClass : SCR_BaseGameModeComponentClass {}
 
 class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 {
+	[Attribute("0", desc: "Run the registry POC spawn dump on play (dev only — default OFF; do not ship enabled).")]
+	bool m_bRunPoc;
+
 	[Attribute("0 1 0", desc: "World-space origin for POC spawns")]
 	vector m_vSpawnOrigin;
 
@@ -15,6 +18,9 @@ class TBD_RegistryPocComponent : SCR_BaseGameModeComponent
 		super.OnPostInit(owner);
 
 		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (!m_bRunPoc)
 			return;
 
 		GetGame().GetCallqueue().CallLater(RunPoc, 2000, false);

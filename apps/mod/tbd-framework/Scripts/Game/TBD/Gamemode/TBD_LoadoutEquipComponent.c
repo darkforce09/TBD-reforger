@@ -56,8 +56,10 @@ class TBD_PendingEquip
 class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 {
 	protected static const string LOADOUT_PATH = "$profile:TBD_LoadoutTest.json";
+	//! Canonical modpack id the web exporter / registry emit (T-122 T14/M10).
+	protected static const string EXPECTED_MODPACK_ID = "00000000-0000-4000-a000-000000000001";
 
-	[Attribute("1", desc: "Run the loadout equip test on play (dev only).")]
+	[Attribute("0", desc: "Run the loadout equip test on play (dev only — default OFF; do not ship enabled on TBD_GameMode).")]
 	bool m_bRunLoadoutTest;
 
 	[Attribute("{520EC961A090BBD5}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Base.et", desc: "Empty/minimal US body to equip onto (no baked kit).")]
@@ -109,6 +111,19 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 		}
 
 		Print(string.Format("[TBD][Loadout] Loaded TBD_LoadoutTest.json (version %1, modpack %2)", doc.loadoutVersion, doc.modpackId));
+
+		// --- A1.1: contract guards (T-122 M9/M10) ---------------------------------------------
+		// loadoutVersion is pinned to "1" by loadout-export.schema.json; reject a future shape
+		// rather than equipping it as if it were v1.
+		if (doc.loadoutVersion != "1")
+		{
+			Print("[TBD][Loadout] FAILED: unsupported loadoutVersion '" + doc.loadoutVersion + "' (expected '1')", LogLevel.ERROR);
+			return;
+		}
+		// A loadout built for a different modpack likely references prefab GUIDs this mod can't
+		// resolve — warn (don't hard-fail, so a known-good cross-pack test can still proceed).
+		if (doc.modpackId != EXPECTED_MODPACK_ID)
+			Print("[TBD][Loadout] WARNING: modpackId '" + doc.modpackId + "' != expected '" + EXPECTED_MODPACK_ID + "' — prefabs may not resolve", LogLevel.WARNING);
 
 		// --- spawn the empty test character ---------------------------------------------------
 		m_Character = SpawnTestCharacter();

@@ -13,14 +13,15 @@ import (
 
 // deploymentUpcoming is an "Awaiting Deployment" card with the assigned slot.
 type deploymentUpcoming struct {
-	EventID   string    `json:"event_id"`
-	Name      string    `json:"name"`
-	Terrain   string    `json:"terrain"`
-	StartTime time.Time `json:"start_time"`
-	State     string    `json:"state"`
-	Faction   string    `json:"faction,omitempty"`
-	Squad     string    `json:"squad,omitempty"`
-	Role      string    `json:"role,omitempty"`
+	EventID        string    `json:"event_id"`
+	EventMissionID string    `json:"event_mission_id"`
+	Name           string    `json:"name"`
+	Terrain        string    `json:"terrain"`
+	StartTime      time.Time `json:"start_time"`
+	State          string    `json:"state"`
+	Faction        string    `json:"faction,omitempty"`
+	Squad          string    `json:"squad,omitempty"`
+	Role           string    `json:"role,omitempty"`
 }
 
 // serviceRecord is a past-operation row in the Service Record table.
@@ -68,11 +69,12 @@ func (h *Handler) GetMyDeployments(c *gin.Context) {
 			name = m.Title
 		}
 		d := deploymentUpcoming{
-			EventID:   ev.ID.String(),
-			Name:      name,
-			Terrain:   string(m.Terrain),
-			StartTime: em.StartTime,
-			State:     string(reg.State),
+			EventID:        ev.ID.String(),
+			EventMissionID: em.ID.String(),
+			Name:           name,
+			Terrain:        string(m.Terrain),
+			StartTime:      em.StartTime,
+			State:          string(reg.State),
 		}
 		// Resolve assigned slot for this mission.
 		var slot models.OrbatSlot
@@ -161,9 +163,11 @@ func (h *Handler) ListMyLeave(c *gin.Context) {
 func (h *Handler) ListAllLeave(c *gin.Context) {
 	limit, offset := parsePage(c)
 	var loas []models.LeaveRequest
+	var total int64
+	h.db.Model(&models.LeaveRequest{}).Count(&total)
 	h.db.Order("status::text = 'pending' DESC").Order("created_at DESC").
 		Limit(limit).Offset(offset).Find(&loas)
-	c.JSON(http.StatusOK, gin.H{"data": loas})
+	c.JSON(http.StatusOK, gin.H{"data": loas, "total": total, "limit": limit, "offset": offset})
 }
 
 type reviewLeaveInput struct {

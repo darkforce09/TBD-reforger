@@ -15,6 +15,7 @@ func TestFieldToolsIntegration(t *testing.T) {
 	r, h, gdb := setupIT(t)
 
 	mmID := fmt.Sprintf("itest-ft-%d", time.Now().UnixNano())
+	adminID := fmt.Sprintf("itest-ft-adm-%d", time.Now().UnixNano())
 	mission := models.Mission{
 		Title: "Op Fire Test", AuthorID: mmID, Terrain: models.TerrainEveron,
 		GameMode: models.GameModePvECoop, Weather: models.WeatherClear, TimeOfDay: "14:00",
@@ -25,16 +26,18 @@ func TestFieldToolsIntegration(t *testing.T) {
 	t.Cleanup(func() {
 		gdb.Where("created_by = ?", mmID).Delete(&models.FireMission{})
 		gdb.Unscoped().Where("created_by = ?", mmID).Delete(&models.Event{})
-		gdb.Where("actor_id = ?", mmID).Delete(&models.AuditLog{})
+		gdb.Where("actor_id IN ?", []string{mmID, adminID}).Delete(&models.AuditLog{})
 		gdb.Unscoped().Where("id = ?", mission.ID).Delete(&models.Mission{})
-		gdb.Unscoped().Where("discord_id = ?", mmID).Delete(&models.User{})
+		gdb.Unscoped().Where("discord_id IN ?", []string{mmID, adminID}).Delete(&models.User{})
 		_ = os.Remove("missions/" + mission.ID.String() + ".mission.json")
 	})
 
 	gdb.Create(&models.User{DiscordID: mmID, Username: "Mortar Mike", Role: models.RoleMissionMaker})
+	gdb.Create(&models.User{DiscordID: adminID, Username: "Admin Ann", Role: models.RoleAdmin})
 	gdb.Create(&mission)
 	gdb.Create(&event)
 	mmTok, _, _ := h.JWT().IssueAccess(mmID, "mission_maker", false)
+	adminTok, _, _ := h.JWT().IssueAccess(adminID, "admin", false)
 
 	// --- live solve (no save) ---
 	w := do(r, "POST", "/api/v1/fire-missions/solve", reqOpt{bearer: mmTok, body: `{"weapon_system":"M252 81mm","fp_x":0,"fp_y":0,"tgt_x":0,"tgt_y":1240}`})
@@ -70,8 +73,12 @@ func TestFieldToolsIntegration(t *testing.T) {
 		t.Fatalf("fire mission list wrong: %+v", list.Data)
 	}
 
-	// --- inject mission.json: stages a file + audit row ---
-	w = do(r, "POST", "/api/v1/missions/"+mission.ID.String()+"/inject", reqOpt{bearer: mmTok})
+	// --- inject is admin-only (T-122 T4): a mission_maker is forbidden ---
+	if w := do(r, "POST", "/api/v1/missions/"+mission.ID.String()+"/inject", reqOpt{bearer: mmTok}); w.Code != http.StatusForbidden {
+		t.Fatalf("mission_maker inject = %d, want 403", w.Code)
+	}
+	// --- admin injects mission.json: stages a file + audit row ---
+	w = do(r, "POST", "/api/v1/missions/"+mission.ID.String()+"/inject", reqOpt{bearer: adminTok})
 	if w.Code != http.StatusAccepted {
 		t.Fatalf("inject = %d, body=%s", w.Code, w.Body.String())
 	}

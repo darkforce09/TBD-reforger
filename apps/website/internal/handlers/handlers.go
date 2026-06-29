@@ -142,7 +142,6 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	mm := rg.Group("", middleware.RequireAuth(h.jwt), middleware.RequireMinRole("mission_maker"))
 	mm.POST("/missions", h.CreateMission)
 	mm.GET("/missions/:id/export", h.ExportMission)
-	mm.POST("/missions/:id/inject", h.InjectMission)
 	// Virtual Arsenal registry catalog (T-068).
 	mm.GET("/registry", h.ListRegistry)
 
@@ -157,6 +156,9 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	admin.GET("/approvals", h.ListApprovals)
 	admin.POST("/approvals/:id/approve", h.ApproveMission)
 	admin.POST("/approvals/:id/reject", h.RejectMission)
+	// Staging a mission.json to the live-server directory is a production-deploy
+	// action (T-122 T4): admin only, not every mission_maker.
+	admin.POST("/missions/:id/inject", h.InjectMission)
 
 	// Event management + ORBAT slot assignment + LOA review (M6, admin).
 	admin.POST("/events", h.CreateEvent)

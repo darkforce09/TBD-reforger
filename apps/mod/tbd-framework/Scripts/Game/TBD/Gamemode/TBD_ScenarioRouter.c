@@ -8,6 +8,8 @@
 class TBD_ScenarioRouter
 {
 	//! TBD addon (this mod) GUID — the addon list passed to a scenario change.
+	//! TODO(T-122 T15): this is a placeholder; replace with the real published addon GUID
+	//! from the mod .meta before relying on RequestScenarioChangeTransition in production.
 	protected const string TBD_ADDON_GUID = "B2C3D4E5F6A78901";
 
 	//------------------------------------------------------------------------------------------------
@@ -17,9 +19,8 @@ class TBD_ScenarioRouter
 		if (terrain == "everon")
 			return "{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf";
 
-		// if (terrain == "arland")
-		//     return "{<ARLAND_CONF_GUID>}Missions/TBD_Arland.conf";
-
+		// Other terrains (Arland, …) need their own TBD scenario .conf + GUID built in
+		// Workbench and registered here — see the class note above (T-122 M14/T15).
 		return string.Empty;
 	}
 

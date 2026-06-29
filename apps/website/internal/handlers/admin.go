@@ -14,7 +14,7 @@ import (
 
 func validRole(s string) (models.UserRole, bool) {
 	switch models.UserRole(s) {
-	case models.RoleEnlisted, models.RoleMissionMaker, models.RoleAdmin:
+	case models.RoleEnlisted, models.RoleLeader, models.RoleMissionMaker, models.RoleAdmin:
 		return models.UserRole(s), true
 	default:
 		return "", false

@@ -58,14 +58,7 @@ export {
 export { createUndoManager } from './state/undo'
 export type { UndoController } from './state/undo'
 export { yieldToUi } from './state/yieldToUi'
-export {
-  selectSlotIconsBase,
-  selectDragOverlayIcons,
-  selectSlotCount,
-  selectFactionList,
-  selectSquadsOf,
-  selectSlotsOf,
-} from './state/selectors'
+export { selectDragOverlayIcons } from './state/selectors'
 export type { SlotIcon } from './state/selectors'
 export type {
   ID,

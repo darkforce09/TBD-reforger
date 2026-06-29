@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { MaterialIcon } from '@/components/MaterialIcon'
 import { OpsCard } from '@/components/OpsCard'
@@ -18,6 +18,14 @@ export function SettingsPage() {
   const [pendingCode, setPendingCode] = useState<string | null>(null)
 
   const user = me?.user
+
+  // Deep-link from the user menu's "Link Arma Identity" (/settings#arma-link): scroll the
+  // Arma Identity card into view once the user (and thus the card) has rendered.
+  useEffect(() => {
+    if (user && window.location.hash === '#arma-link') {
+      document.getElementById('arma-link')?.scrollIntoView({ block: 'start' })
+    }
+  }, [user])
 
   const handleGenerate = () => {
     generateCode.mutate(undefined, {
@@ -66,7 +74,7 @@ export function SettingsPage() {
               </div>
             </OpsCard>
 
-            <OpsCard glass className="mb-6">
+            <OpsCard glass id="arma-link" className="mb-6 scroll-mt-24">
               <h2 className="mb-4 text-lg font-semibold">Arma Identity</h2>
               <p className="mb-4 text-sm text-on-surface-variant">
                 Status:{' '}

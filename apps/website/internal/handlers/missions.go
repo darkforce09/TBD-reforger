@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 
@@ -53,6 +54,24 @@ func validWeather(s string) (models.WeatherType, bool) {
 // canEditMission returns true if the caller authored the mission or is an admin.
 func (h *Handler) canEditMission(c *gin.Context, m *models.Mission) bool {
 	return m.AuthorID == middleware.DiscordID(c) || middleware.Role(c) == "admin"
+}
+
+// canViewMission reports whether the caller may read this mission. Live missions are
+// readable by any authenticated user; drafts / pending / rejected missions are visible
+// only to the author or an admin (T-122 T2 — prevents reading another author's unpublished
+// mission, version payload, or armory by id).
+func (h *Handler) canViewMission(c *gin.Context, m *models.Mission) bool {
+	if m.Status == models.MissionLive {
+		return true
+	}
+	return m.AuthorID == middleware.DiscordID(c) || middleware.Role(c) == "admin"
+}
+
+// isUniqueViolation reports whether err is a Postgres unique-constraint violation
+// (SQLSTATE 23505), inspected via the typed driver error rather than fragile message text.
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
 
 // missionCard is a library list item with denormalized author + bookmark state.
@@ -166,6 +185,10 @@ func (h *Handler) GetMission(c *gin.Context) {
 	if !ok {
 		return
 	}
+	if !h.canViewMission(c, m) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
+		return
+	}
 	me := middleware.DiscordID(c)
 	detail := missionDetail{missionCard: h.decorateMissions(me, []models.Mission{*m})[0]}
 
@@ -188,7 +211,7 @@ type createMissionInput struct {
 	GameMode          string          `json:"game_mode" binding:"required"`
 	Weather           string          `json:"weather"`
 	TimeOfDay         string          `json:"time_of_day"`
-	MaxPlayers        int             `json:"max_players" binding:"required"`
+	MaxPlayers        int             `json:"max_players" binding:"required,min=1,max=256"`
 	Briefing          string          `json:"briefing"`
 	Payload           json.RawMessage `json:"payload"` // optional initial canvas
 }
@@ -327,6 +350,10 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 		updates["time_of_day"] = *in.TimeOfDay
 	}
 	if in.MaxPlayers != nil {
+		if *in.MaxPlayers < 1 || *in.MaxPlayers > 256 {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "max_players must be between 1 and 256"})
+			return
+		}
 		updates["max_players"] = *in.MaxPlayers
 	}
 	if in.Briefing != nil {
@@ -395,7 +422,7 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 		CreatedBy:   middleware.DiscordID(c),
 	}
 	if err := h.db.Create(&version).Error; err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "duplicate") {
+		if isUniqueViolation(err) {
 			c.JSON(http.StatusConflict, gin.H{"error": "version already exists"})
 			return
 		}
@@ -413,9 +440,12 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 
 // GetVersion returns a specific mission version payload.
 func (h *Handler) GetVersion(c *gin.Context) {
-	mID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission id"})
+	m, ok := h.loadMission(c)
+	if !ok {
+		return
+	}
+	if !h.canViewMission(c, m) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
 		return
 	}
 	vID, err := uuid.Parse(c.Param("vid"))
@@ -424,7 +454,7 @@ func (h *Handler) GetVersion(c *gin.Context) {
 		return
 	}
 	var v models.MissionVersion
-	if err := h.db.First(&v, "id = ? AND mission_id = ?", vID, mID).Error; err != nil {
+	if err := h.db.First(&v, "id = ? AND mission_id = ?", vID, m.ID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "version not found"})
 		return
 	}
@@ -460,13 +490,16 @@ func (h *Handler) SubmitMission(c *gin.Context) {
 
 // GetArmory lists a mission's armory.
 func (h *Handler) GetArmory(c *gin.Context) {
-	mID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+	m, ok := h.loadMission(c)
+	if !ok {
+		return
+	}
+	if !h.canViewMission(c, m) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
 		return
 	}
 	var items []models.MissionArmory
-	h.db.Where("mission_id = ?", mID).Order("sort_order ASC").Find(&items)
+	h.db.Where("mission_id = ?", m.ID).Order("sort_order ASC").Find(&items)
 	c.JSON(http.StatusOK, gin.H{"data": items})
 }
 

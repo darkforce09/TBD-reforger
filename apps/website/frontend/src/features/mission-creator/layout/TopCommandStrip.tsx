@@ -4,7 +4,7 @@
 // history stub, Undo/Redo, Mission Settings gear, Save Version (semver snapshot → server),
 // and Export (download the camelCase mod JSON). Persistence wired in Phase 9.
 
-import { memo, useEffect, useMemo, useReducer, useState } from 'react'
+import { memo, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Download, History, Redo2, Save, Settings2, Undo2 } from 'lucide-react'
 import {
   setTitle,
@@ -119,12 +119,22 @@ function TopCommandStripInner({
       setDebug(res.debug ?? null)
     }
   }
+  // Hold the "Copied!" reset timer in a ref so it's cleared on unmount (no setState after
+  // unmount) and a rapid second copy doesn't leave a stale timer running (T-122 M7).
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(
+    () => () => {
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+    },
+    [],
+  )
   const copyDebug = async () => {
     if (!debug) return
     try {
       await navigator.clipboard.writeText(JSON.stringify(debug, null, 2))
       setCopied(true)
-      setTimeout(() => setCopied(false), 1500)
+      if (copyTimer.current) clearTimeout(copyTimer.current)
+      copyTimer.current = setTimeout(() => setCopied(false), 1500)
     } catch {
       /* clipboard blocked — user can still read the panel */
     }

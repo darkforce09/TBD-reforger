@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 import { TacticalMap, addSlot, moveEntities, pasteSlots, removeEntities, useMapStore } from '@/features/tactical-map'
 import type { AssetDropPayload, ClipboardSlot, TacticalMapApi } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -168,6 +169,14 @@ export default function MissionCreatorPage() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [md, undo])
 
+  // C3: a hard local-restore failure leaves docStatus 'error' (never a blank 'ready' doc).
+  // Surface it with a toast in addition to the blocking error overlay below.
+  useEffect(() => {
+    if (editor.docStatus === 'error') {
+      toast.error('Could not load this mission from local storage — your saved changes were not restored.')
+    }
+  }, [editor.docStatus])
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">
       {/* Full-bleed map behind everything. */}
@@ -222,7 +231,7 @@ export default function MissionCreatorPage() {
           </div>
         )}
 
-        <FpsCounter />
+        {import.meta.env.DEV && <FpsCounter />}
       </div>
 
       {/* Load gate: covers the shell until the local snapshot (and any server hydrate) is in
@@ -258,6 +267,25 @@ export default function MissionCreatorPage() {
               </>
             )
           })()}
+        </div>
+      )}
+
+      {/* Restore-failure gate (C3): the local Y.Doc could not be rehydrated. Block the shell
+          with an actionable overlay instead of presenting an empty editor as `ready`. */}
+      {editor.docStatus === 'error' && (
+        <div className="pointer-events-auto absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-background/85 px-6 backdrop-blur-sm">
+          <p className="text-headline-sm text-on-surface">Couldn’t load this mission</p>
+          <p className="max-w-sm text-center text-label-md text-on-surface-variant">
+            Your local save couldn’t be restored — it may be corrupt or blocked by your browser.
+            Reload to try again; your last server-saved version is unaffected.
+          </p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-md bg-primary/20 px-3 py-1.5 text-label-md text-primary transition-colors hover:bg-primary/30"
+          >
+            Reload editor
+          </button>
         </div>
       )}
 

@@ -316,6 +316,10 @@ class TBD_MissionLoader
 			return false;
 		}
 
+		// The mod only ever loads PUBLISHED missions, which always carry the content-hash
+		// meta.id assigned at publish time. meta.id is optional in the schema only for
+		// pre-publish hand-written drafts, which never reach this loader — so requiring it
+		// here is intentional, not a contract mismatch with mission.schema.json (T-122 M11).
 		if (!s_Mission.meta || s_Mission.meta.id.IsEmpty())
 		{
 			Print("[TBD] Mission JSON missing meta.id.", LogLevel.ERROR);

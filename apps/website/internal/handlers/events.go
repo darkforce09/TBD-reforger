@@ -100,7 +100,7 @@ type createEventInput struct {
 	NameOverride       string    `json:"name_override"`
 	Briefing           string    `json:"briefing"`
 	BannerImageURL     string    `json:"banner_image_url"`
-	MaxSlots           int       `json:"max_slots"`
+	MaxSlots           int       `json:"max_slots" binding:"min=0,max=256"`
 	RegistrationLocked bool      `json:"registration_locked"`
 	Status             string    `json:"status"`
 }
@@ -163,7 +163,7 @@ func (h *Handler) AddEventMission(c *gin.Context) {
 	}
 	var mission models.Mission
 	if err := h.db.First(&mission, "id = ?", missionID).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "mission not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
 		return
 	}
 
@@ -762,8 +762,10 @@ func (h *Handler) WithdrawFromEventMission(c *gin.Context) {
 		}
 		// Free any claimed slot.
 		if reg.SlotID != nil {
-			tx.Model(&models.OrbatSlot{}).Where("id = ?", *reg.SlotID).
-				Updates(map[string]any{"assigned_to": nil, "assigned_at": nil})
+			if err := tx.Model(&models.OrbatSlot{}).Where("id = ?", *reg.SlotID).
+				Updates(map[string]any{"assigned_to": nil, "assigned_at": nil}).Error; err != nil {
+				return err
+			}
 		}
 		wasRegistered := reg.State == models.RegRegistered
 		if err := tx.Delete(&reg).Error; err != nil {
@@ -774,8 +776,10 @@ func (h *Handler) WithdrawFromEventMission(c *gin.Context) {
 			var next models.EventRegistration
 			if err := tx.Where("event_mission_id = ? AND state::text = ?", em.ID, "waitlisted").
 				Order("registered_at ASC").First(&next).Error; err == nil {
-				tx.Model(&models.EventRegistration{}).Where("id = ?", next.ID).
-					Update("state", models.RegRegistered)
+				if err := tx.Model(&models.EventRegistration{}).Where("id = ?", next.ID).
+					Update("state", models.RegRegistered).Error; err != nil {
+					return err
+				}
 			}
 		}
 		return nil
@@ -888,13 +892,18 @@ func (h *Handler) ClearSlot(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "reserve this squad to manage its slots"})
 		return
 	}
-	h.db.Transaction(func(tx *gorm.DB) error {
-		tx.Model(&models.OrbatSlot{}).Where("id = ? AND event_mission_id = ?", slotID, em.ID).
-			Updates(map[string]any{"assigned_to": nil, "assigned_at": nil})
-		tx.Model(&models.EventRegistration{}).Where("event_mission_id = ? AND slot_id = ?", em.ID, slotID).
-			Update("slot_id", nil)
-		return nil
+	txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.OrbatSlot{}).Where("id = ? AND event_mission_id = ?", slotID, em.ID).
+			Updates(map[string]any{"assigned_to": nil, "assigned_at": nil}).Error; err != nil {
+			return err
+		}
+		return tx.Model(&models.EventRegistration{}).Where("event_mission_id = ? AND slot_id = ?", em.ID, slotID).
+			Update("slot_id", nil).Error
 	})
+	if txErr != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not clear slot"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"cleared": true})
 }
 
