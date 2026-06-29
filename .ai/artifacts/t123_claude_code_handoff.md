@@ -17,7 +17,7 @@
 | 3 | **T-123.3** | Enfusion Backend/Gamemode (enfusion-mcp first) |
 | 4 | **T-123.4** | Schema codegen → `internal/contract/` + `frontend/src/types/contract/` + regen script |
 | 5 | **T-123.5** | Go `CreateVersion` JSON Schema validation (`mission-editor-payload.schema.json`) |
-| 6 | **T-123.6** | CI: revive, eslint jsdoc, `verify-contract-citations.mjs`, schema workflow |
+| 6 | **T-123.6** | CI: revive, eslint jsdoc, `verify-contract-citations.mjs`, [`contracts.yml`](../../.github/workflows/contracts.yml) |
 
 ## Verify (replay after each slice)
 

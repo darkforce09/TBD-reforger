@@ -44,14 +44,14 @@ Read-only audit (frontend / backend / mod). **One ticket (T-122)** ships all cod
 
 | ID | Area | Fix summary |
 |----|------|-------------|
-| T1 | missions persist | Validate payload vs `mission.schema.json` |
+| T1 | missions persist | Validate payload vs editor contract — **RESOLVED (T-123.5):** `mission-editor-payload.schema.json` in `CreateVersion` |
 | T2 | missions read | Draft visibility — author/admin only when not live |
 | T3 | CreateVersion | Guard live mission version swap |
 | T4 | InjectMission | Move to admin tier |
 | T5 | ClearSlot | Return tx errors |
 | T6 | duplicate key | Use Postgres 23505 not string match |
 | T7 | Withdraw | Propagate slot-free / waitlist errors |
-| T8 | Export | `schemaVersion` int vs string enum collision |
+| T8 | Export | `schemaVersion` int vs string enum collision — **RESOLVED (T-123.1):** renamed to `exportFormatVersion` on export envelope |
 | T9 | ListAllLeave | Return total/limit/offset |
 
 ## Tech debt (frontend MC)

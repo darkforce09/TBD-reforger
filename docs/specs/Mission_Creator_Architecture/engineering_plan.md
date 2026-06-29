@@ -530,7 +530,7 @@ parses ORBAT out of `MissionVersion.JSONPayload`:
 - `internal/handlers/events.go` `materializeSlots` expands each squad's slots into ORBAT
   records (`Faction, Callsign, Squad, Role, Loadout, Tag, SlotIndex`).
 
-**Save Version (T-062.1.1):** POST body is **editor-only** — `orbat[]` omitted; Go derives on event attach. **Export** and legacy versions still include explicit `orbat[]`. Extended keys the mod needs —
+**Save Version (T-062.1.1):** POST body is **editor-only** — `orbat[]` omitted; Go derives on event attach. Validated against [`mission-editor-payload.schema.json`](../../../packages/tbd-schema/schema/mission-editor-payload.schema.json) (int `schemaVersion`; T-123.5). **Export** and legacy versions still include explicit `orbat[]`. Extended keys the mod needs —
 `map`, `environment`, `objectives`, `vehicles`, `markers`, `loadouts`. Example skeleton:
 
 ```jsonc
@@ -548,7 +548,7 @@ parses ORBAT out of `MissionVersion.JSONPayload`:
 ```
 
 The separate **camelCase** `/missions/:id/export` payload (for the Arma mod) is produced by
-`compiler/exportSchema.ts`, matching the `missionJSON` export struct in
+`compiler/exportSchema.ts` (version field **`exportFormatVersion`**, not `schemaVersion` — T-123.1), matching the `missionJSON` export struct in
 `internal/handlers/missions.go` (the documented camelCase exception in `CLAUDE.md`).
 
 ---

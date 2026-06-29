@@ -16,7 +16,8 @@
 | **[`frontend/docs/THEME.md`](../../../apps/website/frontend/docs/THEME.md)** | Aegis tokens in use |
 | **[`frontend/docs/_template.md`](../../../apps/website/frontend/docs/_template.md)** | Template for new page docs |
 | **[Mission Creator ROADMAP](../../specs/Mission_Creator_Architecture/ROADMAP.md)** | 2D editor ticket queue |
-| **[`docs/platform/CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md)** | T-122 audit findings + shipped/deferred log |
+| **[`docs/platform/CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md)** | T-122 audit + T-123 resolutions (T1/T8) |
+| **[`docs/platform/DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md)** | Cross-boundary `@contract` / codegen / validation (T-123 shipped) |
 | **[`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)** | Split-pane / frictionlessness methodology |
 | **[`CLAUDE.md`](../../../apps/website/CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
 | **[`docs/AGENT_COMMIT_CHECKLIST.md`](../AGENT_COMMIT_CHECKLIST.md)** | Same-commit doc sync — read before every T-0xx |

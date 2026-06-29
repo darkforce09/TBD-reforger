@@ -365,7 +365,7 @@ Ruthless means enforced. These gates are **specified here**; **T-123.6** wires t
 |------|------|-------|
 | Go exported-doc | `golangci-lint` + `revive` exported rules | every exported identifier documented (locks the ~100% baseline) |
 | TS contract docs | `eslint-plugin-jsdoc` (+ `@microsoft/tsdoc`) | TSDoc required on exported symbols in `src/types/`, `src/api/`, `src/hooks/`; `@contract`/`@model` required on cross-boundary types |
-| Citation integrity | a Node verifier extending [`packages/tbd-schema/scripts/`](../../packages/tbd-schema/scripts) | every `@contract` tag in the repo resolves to a real schema file **and** a valid JSON pointer; wired into [`.github/workflows/schema.yml`](../../.github/workflows/schema.yml) |
+| Citation integrity | a Node verifier extending [`packages/tbd-schema/scripts/`](../../packages/tbd-schema/scripts) | every `@contract` tag in the repo resolves to a real schema file **and** a valid JSON pointer; wired into [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) (`schema.yml` validates golden fixtures only) |
 | Enfusion DTO conformance | golden fixture + `validate.mjs` | each DTO has a `@contract` header and a fixture that validates |
 
 The citation verifier is the keystone: it turns `@contract` from a comment into a **checked link**,
