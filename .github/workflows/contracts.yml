@@ -39,6 +39,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
+          cache-dependency-path: apps/website/go.sum
       - run: make schema-codegen
       - name: Fail if generated contract output is stale
         run: git diff --exit-code -- apps/website/internal/contract apps/website/frontend/src/types/contract
@@ -51,6 +52,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: "1.25"
+          cache-dependency-path: apps/website/go.sum
       - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
