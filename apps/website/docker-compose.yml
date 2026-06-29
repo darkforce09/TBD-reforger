@@ -2,7 +2,7 @@
 # Brings up Postgres for the Go API; the API runs the migrations on boot.
 services:
   db:
-    image: docker.io/library/postgres:16-alpine
+    image: docker.io/library/postgres:18-alpine
     container_name: tbd_reforger_db
     environment:
       POSTGRES_USER: tbd
@@ -12,7 +12,9 @@ services:
       # Host 5434 to avoid colliding with other local Postgres instances on 5432/5433.
       - "5434:5432"
     volumes:
-      - tbd_pgdata:/var/lib/postgresql/data
+      # Postgres 18+ images store data in a major-version subdir; the mount must be
+      # at /var/lib/postgresql (not .../data). See docker-library/postgres#1259.
+      - tbd_pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U tbd -d tbd_reforger"]
       interval: 5s

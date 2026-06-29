@@ -10,8 +10,8 @@ A web suite for the "TBD" Arma Reforger milsim community: Discord auth, event /
 ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
 leaderboards, doctrine wiki, CMS, and admin tooling.
 
-- **Backend:** Go (Gin + GORM), PostgreSQL. Module `github.com/tbd-milsim/reforger-backend`, Go 1.25.
-- **Frontend:** React 19 + TypeScript + Vite, TanStack Query, Zustand, Tailwind. Node 20. In `apps/website/frontend/`.
+- **Backend:** Go (Gin + GORM), PostgreSQL. Module `github.com/tbd-milsim/reforger-backend`, Go 1.26.
+- **Frontend:** React 19 + TypeScript + Vite, TanStack Query, Zustand, Tailwind. Node 24. In `apps/website/frontend/`.
 - **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
