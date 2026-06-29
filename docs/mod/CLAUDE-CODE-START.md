@@ -111,6 +111,8 @@ tbd-dev-bootstrap.sh
 
 ## T-091.2 — active (Z-axis editor UX) — **start here**
 
+**Handoff prompt:** [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../.ai/artifacts/t091_2_claude_code_handoff.md) (copy into a **new** Claude Code chat).
+
 **Spec:** [`t091_2_z_axis_editor.md`](../specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md)
 
 ### T-091.1 is done — do not redo
@@ -121,10 +123,15 @@ Shipped @ `2c56c2e` / tag **T-091.1**. Use `sampleElevation`, `isDemReady`, `isD
 
 | Deliverable | Path |
 |-------------|------|
-| Z on place/move/paste | `state/ydoc.ts` |
-| Toolbelt CUR/SEL Z | `layout/BottomToolbelt.tsx` |
-| Hillshade | `layers/useDemLayer.ts` |
-| Version payload Z | `compiler/compile.ts` (`editor.slots` only) |
+| Z on place/move/paste | `state/ydoc.ts` — `addSlot`, `pasteSlots`, `moveEntities` |
+| CUR Z sampling | `TacticalMap.tsx` `emitCursor` |
+| Toolbelt CUR/SEL Z (3 dp) | `layout/BottomToolbelt.tsx` |
+| Hillshade + grid toggles | `MissionSettingsDialog.tsx`, `meta.environment` in `schema.ts` |
+| Hillshade layer | `layers/useDemLayer.ts` (new) |
+| Grid from meta | `MissionCreatorPage.tsx` → `TacticalMap` `showGrid` |
+| Version payload Z | Verify `compiler/compile.ts` — `editor.slots` carries `position.z` |
+
+Manual gates **M1–M7** in spec. Copy-paste prompt: handoff artifact above.
 
 ```bash
 make map-assets-link

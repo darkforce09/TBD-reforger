@@ -776,15 +776,23 @@ def cmd_brief(args: argparse.Namespace) -> None:
             "unless regression fix"
         )
         print(
-            "SCOPE: apps/website/frontend — ydoc Z on place/move, BottomToolbelt CUR/SEL Z, "
-            "useDemLayer hillshade, compile.ts editor.slots z"
+            "SCOPE: ydoc z sample (addSlot/pasteSlots/moveEntities), TacticalMap CUR z, "
+            "BottomToolbelt 3dp Z, useDemLayer hillshade, MissionSettings toggles, "
+            "meta.environment showGrid/showHillshade"
         )
         print(
-            "CONSUME: tactical-map/dem — loadDemForTerrain, sampleElevation, isDemReady, isDemDegraded"
+            "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
+        )
+        print(
+            "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091"
         )
         print(
             "VERIFY: make map-assets-link && cd apps/website/frontend && npm run build "
-            "&& npm run lint && npm test && make verify-terrain-strict"
+            "&& npm run lint && npm test && make verify-terrain-strict && "
+            "! rg 'map-assets|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/"
+        )
+        print(
+            "MANUAL: M1 hill-north vs valley-inland CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded"
         )
     elif active == "T-091.1":
         print(
