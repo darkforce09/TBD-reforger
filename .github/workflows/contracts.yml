@@ -1,0 +1,73 @@
+name: contracts
+
+# Cross-boundary contract gates (DOCUMENTATION_STANDARDS.md §10). Complements schema.yml
+# (which validates the golden fixtures). Triggers on the code boundaries that carry @contract
+# tags + generated projections.
+on:
+  push:
+    paths:
+      - "apps/website/**"
+      - "packages/tbd-schema/**"
+      - "apps/mod/**"
+      - ".github/workflows/contracts.yml"
+  pull_request:
+    paths:
+      - "apps/website/**"
+      - "packages/tbd-schema/**"
+      - "apps/mod/**"
+      - ".github/workflows/contracts.yml"
+
+jobs:
+  citations:
+    name: "@contract citation integrity"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: node packages/tbd-schema/scripts/verify-contract-citations.mjs
+
+  codegen-drift:
+    name: schema codegen up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - run: make schema-codegen
+      - name: Fail if generated contract output is stale
+        run: git diff --exit-code -- apps/website/internal/contract apps/website/frontend/src/types/contract
+
+  go-doc-lint:
+    name: golangci-lint (revive exported-doc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+      - uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+          working-directory: apps/website
+          # Introduce the gate without failing on pre-existing nits: enforce on new/changed code.
+          only-new-issues: true
+
+  frontend-doc-lint:
+    name: eslint (TSDoc contract gate)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/website/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npm run lint

@@ -2,6 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { ServerStatus } from '@/types/models/telemetry'
 
+/**
+ * Subscribe to a server's live status over Server-Sent Events. Returns the latest
+ * {@link ServerStatus}, the connection flag, and the last error; reconnects when serverId or the
+ * access token changes and aborts on unmount.
+ *
+ * @route GET /api/v1/servers/:id/status/stream
+ */
 export function useServerTelemetry(serverId: string | undefined) {
   const accessToken = useAuthStore((s) => s.accessToken)
   const [status, setStatus] = useState<ServerStatus | null>(null)

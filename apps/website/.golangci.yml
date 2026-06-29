@@ -1,0 +1,20 @@
+# golangci-lint config (DOCUMENTATION_STANDARDS.md §10). Focused on the exported-doc gate:
+# revive's `exported` rule locks the Go Godoc baseline (every exported identifier documented,
+# comment starts with the name). Generated files (// Code generated ... DO NOT EDIT.) are
+# skipped automatically. The CI job runs with only-new-issues, so this enforces the rule on new
+# and changed code without retroactively failing on any pre-existing nit.
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  default: none
+  enable:
+    - revive
+  settings:
+    revive:
+      rules:
+        - name: exported
+          arguments:
+            - disableStutteringCheck
