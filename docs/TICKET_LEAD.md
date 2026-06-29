@@ -11,6 +11,7 @@
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
+- **T-124** (1240) — Dependency & toolchain upgrade (latest everything) [ready] — Upgrade monorepo to latest deps + toolchain: FE npm (incl. vitest 4), Go modules (gin/gorm/pgx), Go 1.26, Node 24 (.nvmrc), Postgres 18 dev image. Three verified commits on main (single-ticket mode). Hub: t124_dependency_upgrade.md.
 
 ## Next queued (top 10)
 

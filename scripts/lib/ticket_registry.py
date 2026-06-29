@@ -783,6 +783,41 @@ def cmd_brief(args: argparse.Namespace) -> None:
         print("OUT OF SCOPE: markdownlint only")
         print("SLICES: .0 doc hub → .1 Go → .2 TS → .3 Enfusion → .4 codegen → .5 Go JSON validation → .6 CI")
         print("SPEC: docs/platform/t123_documentation_standards_rollout.md")
+    elif tid == "T-124":
+        print("SCOPE: upgrade all deps + toolchain to latest (FE npm, Go modules, Go 1.26, Node 24, PG18)")
+        print("EXECUTION: 3 commits on main (single-ticket mode) — no feature branch")
+        print("PREREQ: Node 24 locally before T-124.1")
+        print("SPEC: docs/platform/t124_dependency_upgrade.md")
+        print("DO NOT: edit registry or narrative docs (version lines in CLAUDE.md OK in .3)")
+    elif active == "T-124.1":
+        print("SCOPE: apps/website/frontend — npm update + vitest 3→4; keep @types/node ^24")
+        print("VERIFY: cd apps/website/frontend && npm run build && npm run lint && npm run test (21/21)")
+    elif active == "T-124.2":
+        print("SCOPE: apps/website — go get -u ./... && go mod tidy; watch gorm 1.31")
+        print("VERIFY: make build && make db-up && make test-it")
+    elif active == "T-124.3":
+        print("SCOPE: go 1.26, .nvmrc=24, postgres:18-alpine, contracts.yml go-version 1.26, CLAUDE version lines")
+        print("VERIFY: make schema-codegen (clean) + PG18 volume re-init + make seed + smoke")
+    elif tid == "T-125":
+        print("BLOCKED: depends on T-124 shipped")
+        print("AUTHORITY: new CODING_STANDARDS.md (T-125.0) + DOCUMENTATION_STANDARDS.md")
+        print("SCOPE: full CI gate, golangci full set, TS strict, @route completion, error policy")
+        print("SPEC: docs/platform/t125_coding_standards_enforcement.md")
+    elif active == "T-125.0":
+        print("SCOPE: write docs/platform/CODING_STANDARDS.md — style/structure/errors/tests")
+    elif active == "T-125.1":
+        print("SCOPE: .github/workflows/ci.yml + make ci-local; Postgres 18 service")
+    elif active == "T-125.2":
+        print("SCOPE: golangci errcheck/govet/staticcheck; remove only-new-issues; fix all Go lint")
+    elif active == "T-125.3":
+        print("SCOPE: tsconfig strict:true + eslint @contract/@model enforcement + fixes")
+    elif active == "T-125.4":
+        print("SCOPE: @route on all handlers; error-handling; Enfusion DTO fixture gate in validate.mjs")
+    elif active == "T-125.5":
+        print("SCOPE: .editorconfig + optional Prettier")
+    elif active == "T-125.6":
+        print("EXECUTOR: cursor-docs — registry shipped, hub links, CLAUDE §Done, ticket sync")
+        print("DO NOT: Claude executes this slice")
     elif active == "T-123.0":
         print("SCOPE: AGENT_COMMIT_CHECKLIST link, platform README, handoff artifact — docs only")
         print("DO NOT: edit apps/website/, apps/mod/, packages/tbd-schema/ source")
