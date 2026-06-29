@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "map": { "terrain": "everon", "bounds": [0, 0, 12800, 12800] },
+  "environment": { "weather": "clear", "time": "06:00" },
+  "orbat": [],
+  "loadouts": {},
+  "objectives": [],
+  "vehicles": [],
+  "markers": [],
+  "editor": { "factions": [], "squads": [], "slots": [], "editorLayers": [] }
+}

@@ -4,7 +4,7 @@ WEB := apps/website
 # Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
 export PATH := $(HOME)/.local/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-terrain verify-migration map-assets-link
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-terrain verify-migration map-assets-link
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -48,6 +48,10 @@ tidy: ## Tidy Go modules
 
 schema-validate: ## Validate golden missions against shared schema
 	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs
+
+schema-codegen: ## Regenerate Go + TS contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
+	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
+	gofmt -w $(WEB)/internal/contract
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain

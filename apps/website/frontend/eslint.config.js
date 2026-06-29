@@ -6,7 +6,8 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // Generated contract projections (make schema-codegen) are not hand-linted.
+  globalIgnores(['dist', 'src/types/contract/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

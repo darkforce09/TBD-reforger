@@ -21,6 +21,7 @@ const loadoutExportSchema = readJSON(join(root, "schema", "loadout-export.schema
 const bridgeSchema = readJSON(join(root, "bridge", "bridge-messages.schema.json"));
 const terrainManifestSchema = readJSON(join(root, "schema", "terrain-manifest.schema.json"));
 const terrainAnchorsSchema = readJSON(join(root, "schema", "terrain-anchors.schema.json"));
+const missionEditorPayloadSchema = readJSON(join(root, "schema", "mission-editor-payload.schema.json"));
 
 const repoRoot = resolve(root, "..", "..");
 
@@ -31,6 +32,7 @@ const validateLoadoutExport = ajv.compile(loadoutExportSchema);
 const validateBridge = ajv.compile(bridgeSchema);
 const validateTerrainManifest = ajv.compile(terrainManifestSchema);
 const validateTerrainAnchors = ajv.compile(terrainAnchorsSchema);
+const validateMissionEditorPayload = ajv.compile(missionEditorPayloadSchema);
 
 let failures = 0;
 
@@ -62,6 +64,13 @@ check("registry-items.workbench.json", validateRegistryItems, readJSON(join(root
 
 console.log("Loadout export:");
 check("loadout-export.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.sample.json")));
+
+console.log("Mission editor payload:");
+check(
+  "mission-editor-payload.sample.json",
+  validateMissionEditorPayload,
+  readJSON(join(root, "registry", "mission-editor-payload.sample.json")),
+);
 
 console.log("Bridge message samples:");
 const samplesDir = join(root, "bridge", "samples");
