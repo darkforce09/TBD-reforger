@@ -40,9 +40,9 @@ flowchart LR
 
 | Artifact | Consumer | Shape |
 |----------|----------|-------|
-| **Version POST `json_payload`** | Website save/load, event ORBAT derive | `{ schemaVersion: 1, map, orbat[], editor: { slots, … } }` |
+| **Version POST `json_payload`** | Website save/load, event ORBAT derive | `{ schemaVersion: 1, map, orbat[], editor: { slots, … } }` — [`mission-editor-payload.schema.json`](../../../packages/tbd-schema/schema/mission-editor-payload.schema.json) (int `schemaVersion`; validated in `CreateVersion`, T-123.5) |
 | **Mod compiled document** | `TBD_MissionLoader`, profile `$profile:missions/{id}.json` | Golden [`mission.schema.json`](../../../packages/tbd-schema/schema/mission.schema.json) **1.1** |
-| **Export / inject wrapper** | Download, admin inject | [`buildMissionDoc`](../../../apps/website/internal/handlers/missions.go) camelCase envelope |
+| **Export / inject wrapper** | Download, admin inject | [`buildMissionDoc`](../../../apps/website/internal/handlers/missions.go) camelCase envelope (version field `exportFormatVersion`, **not** `schemaVersion` — T-123.1) |
 
 T-092.2 builds **mod compiled document**; T-092 adds **`GET /api/v1/missions/:id/compiled`** (service token) returning that document.
 

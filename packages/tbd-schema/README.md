@@ -13,17 +13,20 @@ partner VOIP bridge. Version it carefully.
 | [`schema/registry.schema.json`](schema/registry.schema.json) | **Alias registry** (POC): mission `alias → prefab GUID` spawn layer + web metadata |
 | [`schema/registry-items.schema.json`](schema/registry-items.schema.json) | **Item catalog** (T-068): flat Workbench export keyed by `resource_name` — drives the Virtual Arsenal |
 | [`schema/loadout-export.schema.json`](schema/loadout-export.schema.json) | **Loadout export** (T-068): dumb gear-slot download (`primary`/`uniform`/`vest`/`helmet`) |
+| [`schema/mission-editor-payload.schema.json`](schema/mission-editor-payload.schema.json) | **Editor payload** (T-123.4): the `POST /missions/:id/versions` superset (int `schemaVersion`); validated server-side in `CreateVersion` |
 | [`schema/terrain-manifest.schema.json`](schema/terrain-manifest.schema.json) | **Terrain manifest** (T-090): per-island bounds, DEM/tile paths, anchor metadata |
 | [`schema/terrain-anchors.schema.json`](schema/terrain-anchors.schema.json) | **Anchor verify** (T-091.0): GetSurfaceY probe log for alignment gate |
 | [`golden-missions/`](golden-missions/) | Hand-maintained missions that must always validate and load |
 | [`registry/registry.example.json`](registry/registry.example.json) | Example alias registry used by the compatibility test |
 | [`registry/registry-items.sample.json`](registry/registry-items.sample.json) | Golden item catalog used by the compatibility test |
 | [`registry/loadout-export.sample.json`](registry/loadout-export.sample.json) | Golden loadout export used by the compatibility test |
+| [`registry/mission-editor-payload.sample.json`](registry/mission-editor-payload.sample.json) | Golden editor-payload sample used by the compatibility test (T-123.4) |
 | [`bridge/bridge-contract.md`](bridge/bridge-contract.md) | Game to voice-client bridge contract (VOIP integration boundary) |
 | [`bridge/bridge-messages.schema.json`](bridge/bridge-messages.schema.json) | JSON Schema for bridge messages |
 | [`bridge/samples/`](bridge/samples/) | Canonical bridge message examples |
 | [`spikes/voip-spike-brief.md`](spikes/voip-spike-brief.md) | Phase 0.2 brief handed to the partner VOIP track |
 | [`spikes/registry-poc-0.4.md`](spikes/registry-poc-0.4.md) | Registry alias → GUID POC (GREEN; superseded for spawn) |
+| [`spikes/rest-spike-0.1.md`](spikes/rest-spike-0.1.md) | REST loop spike (GREEN) |
 
 ## Two registry layers
 
@@ -48,7 +51,6 @@ The mod's `Data/registry.json` (alias layer) is likewise unchanged.
 
 Use `scripts/flatten-orbat-slots.mjs` to generate `slots[]` from ORBAT definitions.
 Validate a single file: `node scripts/validate-file.mjs path/to/mission.json`.
-| [`spikes/rest-spike-0.1.md`](spikes/rest-spike-0.1.md) | REST loop spike (GREEN) |
 
 ## Rules
 
@@ -75,3 +77,18 @@ npm run verify-terrain-alignment -- --strict   # T-091.0 gate — real DEM + anc
 
 Run this in CI for the web validator and manually before each release for the
 Enfusion loader.
+
+## Codegen & contract CI (T-123)
+
+Cross-boundary contract types are **generated** from `schema/*.json` — never hand-edit the outputs.
+
+```bash
+make schema-codegen     # → apps/website/internal/contract/ + apps/website/frontend/src/types/contract/
+make verify-citations   # every @contract tag in the repo resolves to a schema file + JSON pointer
+```
+
+`scripts/codegen.mjs` (TS via `json-schema-to-typescript`, Go via `quicktype`) and
+`scripts/verify-contract-citations.mjs` run in
+[`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) alongside golangci-lint
+(`revive` exported-doc) and the ESLint TSDoc gate. The backend `CreateVersion` handler validates the
+incoming version payload against `schema/mission-editor-payload.schema.json` before persist.

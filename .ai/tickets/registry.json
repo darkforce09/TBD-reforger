@@ -2412,8 +2412,8 @@
         "mod"
       ],
       "executor": "cursor-docs",
-      "status": "active",
-      "active_slice": "T-123.1",
+      "status": "shipped",
+      "active_slice": null,
       "surfaces": [
         "DATA"
       ],
@@ -2424,7 +2424,7 @@
         "ci"
       ],
       "title": "Documentation standards rollout (full program)",
-      "summary": "Full DOCUMENTATION_STANDARDS.md implementation: in-code tags, codegen, Go JSON validation, CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.",
+      "summary": "Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.",
       "spec": "docs/platform/t123_documentation_standards_rollout.md",
       "slices": [
         "T-123.0",
@@ -2442,7 +2442,8 @@
           ],
           "executor": "cursor-docs",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "active"
+          "status": "shipped",
+          "shipped_at": "f0af31a"
         },
         "T-123.1": {
           "targets": [
@@ -2450,7 +2451,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "04a73a1"
         },
         "T-123.2": {
           "targets": [
@@ -2458,7 +2460,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "030cece"
         },
         "T-123.3": {
           "targets": [
@@ -2466,7 +2469,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "169e47d"
         },
         "T-123.4": {
           "targets": [
@@ -2475,7 +2479,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "dd4e4d0"
         },
         "T-123.5": {
           "targets": [
@@ -2483,7 +2488,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "b5211f2"
         },
         "T-123.6": {
           "targets": [
@@ -2492,7 +2498,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t123_documentation_standards_rollout.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "102a835"
         }
       },
       "depends_on": [],

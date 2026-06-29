@@ -1,7 +1,8 @@
 # T-123 — Documentation standards rollout (full program)
 
 **Ticket:** T-123 · **Authority:** [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) (normative — verified 2026-06-29)  
-**Program:** platform · **One ticket** — seven slices, ship in order
+**Program:** platform · **One ticket** — seven slices, ship in order  
+**Status:** **shipped @ `169e47d`** — .0 `f0af31a` · .1 `04a73a1` · .2 `030cece` · .3 `169e47d` · .4 `dd4e4d0` · .5 `b5211f2` · .6 `102a835` (CI green @ `7a08a8f`)
 
 ## In one sentence
 
@@ -53,10 +54,11 @@ Per §4 + §3. Priority cross-boundary surfaces:
 | Area | Tags |
 |------|------|
 | `internal/models/registry.go`, `handlers/registry.go` | `@contract registry-items.schema.json#/$defs/item`, `@route GET /api/v1/registry` |
-| Mission export / version paths | `@contract mission.schema.json#…`, `@route` on handlers |
+| Version POST payload | `@contract mission-editor-payload.schema.json#/` on `createVersionInput`; `@route` on `CreateVersion` |
+| Mission export / inject | `exportFormatVersion` (not `schemaVersion`); `@route` on `ExportMission`/`InjectMission` |
 | Loadout-export touchpoints | `@contract loadout-export.schema.json#` |
 
-- Godoc starts with identifier name; fix **`schemaVersion` int → string** drift (§2.2)
+- Godoc starts with identifier name; **rename the export envelope's `schemaVersion` → `exportFormatVersion`** (int) so it never collides with the canonical string `schemaVersion` (§2.2)
 - Package docs on touched packages
 
 **Verify:** `make test-it && go build ./...`
@@ -114,8 +116,8 @@ Per §9.1. **Generate** projections from `packages/tbd-schema/schema/*.json`; st
 
 Per §9.2.
 
-- Validate incoming mission version payload against `mission.schema.json` **before persist** in `CreateVersion` ([`handlers/missions.go`](../../apps/website/internal/handlers/missions.go))
-- Library: `santhosh-tekuri/jsonschema` or equivalent (compile schema once at boot)
+- Validate incoming mission version payload against `mission-editor-payload.schema.json` (the editor superset, **not** canonical `mission.schema.json`) **before persist** in `CreateVersion`, via [`internal/contract/validate.go`](../../apps/website/internal/contract/validate.go)
+- Library: `santhosh-tekuri/jsonschema/v6`; schema `go:embed`-ed + compiled once (`sync.Once`)
 - **400** with structured `{ error, details[] }` on validation failure; golden missions + invalid fixtures in integration tests
 - Align with existing `packages/tbd-schema/scripts/validate-file.mjs` semantics
 
@@ -131,7 +133,7 @@ Per §10. Wire all four gates:
 |------|---------|
 | Go exported-doc | `golangci-lint` + `revive` exported rules in CI (website job or new job) |
 | TS contract docs | `eslint-plugin-jsdoc` + `@microsoft/tsdoc`; rules on `src/types/`, `src/api/`, `src/hooks/` — require TSDoc + `@contract`/`@model` on cross-boundary exports |
-| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; add step to [`.github/workflows/schema.yml`](../../.github/workflows/schema.yml) (path-filter broadened to include cited source globs) |
+| Citation integrity | Node script `packages/tbd-schema/scripts/verify-contract-citations.mjs` — every `@contract` in repo resolves to schema file + valid JSON pointer; shipped as a dedicated [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) workflow (citation + codegen-drift + golangci + eslint jobs) |
 | Enfusion DTO conformance | Extend `validate.mjs` or sibling check: DTO scripts with `@contract` header have matching golden fixture |
 
 **Verify:** CI green locally where possible (`npm run validate`, `golangci-lint run`, FE lint); citation script exits 0 on main after .1–.3 tags land
@@ -140,13 +142,13 @@ Per §10. Wire all four gates:
 
 ## Acceptance (whole ticket)
 
-- [ ] Slices **T-123.0–T-123.6** shipped; registry `status: shipped`
-- [ ] `@contract` / `@route` grep spot-check on priority surfaces
-- [ ] Codegen regen documented; `make schema-codegen` (or equivalent) works
-- [ ] `CreateVersion` rejects invalid JSON against `mission.schema.json`
-- [ ] CI runs citation verifier + lint gates
-- [ ] `make test-it` + frontend build/lint clean
-- [ ] Cursor doc pass: `CLAUDE.md` §Done, backend ROADMAP, `./scripts/ticket sync`
+- [x] Slices **T-123.0–T-123.6** shipped; registry `status: shipped`
+- [x] `@contract` / `@route` grep spot-check on priority surfaces (23 `@contract` citations resolve)
+- [x] Codegen regen documented; `make schema-codegen` works (deterministic; codegen-drift CI job)
+- [x] `CreateVersion` rejects invalid JSON against `mission-editor-payload.schema.json`
+- [x] CI runs citation verifier + lint gates (`contracts.yml`)
+- [x] `make test-it` + frontend build/lint clean
+- [x] Cursor doc pass: `CLAUDE.md` §Done, backend ROADMAP, `./scripts/ticket sync`
 
 ## Decisions log
 

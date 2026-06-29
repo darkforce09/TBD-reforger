@@ -46,6 +46,12 @@
 |------|------|-------|
 | **T-122** | **Codebase audit hotfix** | [`CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md) — C1 leader PATCH; C2 attendance ingest; T2 mission visibility; T4 inject admin-only; T5 body limit on `/missions/:id/versions`; 37/41 shipped |
 
+## SHIPPED — documentation standards (T-123 @ `169e47d`)
+
+| T-ID | Item | Notes |
+|------|------|-------|
+| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); `internal/contract/` codegen via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json`; `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift) |
+
 ## SHIPPED (T-068.2–T-068.4 @ main)
 
 | T-ID | Item | Spec | Notes |

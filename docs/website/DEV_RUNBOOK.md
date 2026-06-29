@@ -28,6 +28,21 @@ curl -sf http://localhost:8080/api/v1/health
 - API: http://localhost:8080
 - Web: http://localhost:5173
 
+## Contract codegen, validation & CI (T-123)
+
+```bash
+# Regenerate Go + TS contract types from packages/tbd-schema/schema/*.json (DO NOT hand-edit outputs)
+make schema-codegen
+
+# Validate the shared schemas + golden fixtures (Ajv)
+cd packages/tbd-schema && npm run validate
+
+# Verify every @contract tag in the repo resolves to a schema file + JSON pointer
+make verify-citations
+```
+
+These run in CI via [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml): `@contract` citation integrity, schema codegen-drift (`make schema-codegen` must be a no-op), golangci-lint (`revive` exported-doc), and the ESLint TSDoc gate; schema validation runs in [`schema.yml`](../../.github/workflows/schema.yml). `CreateVersion` validates the mission version payload against `mission-editor-payload.schema.json` before persist.
+
 ## Log in (no Discord needed)
 
 Open in browser (mints a real session, redirects to the SPA):

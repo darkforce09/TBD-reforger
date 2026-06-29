@@ -49,9 +49,12 @@ open it in the browser to log in, or curl it and read `access_token` from the
 `Location` fragment for API testing.
 
 ## Conventions
-- API JSON is **snake_case** (from GORM struct tags). Frontend `types/` are hand-written
-  to match — when changing a model, update the matching TS type. The mission **export**
-  JSON (`/missions/:id/export`) is the one camelCase exception.
+- API JSON is **snake_case** (from GORM struct tags). Hand-written GORM models remain the
+  snake_case DB/API source of truth, and hand-written frontend `types/` mirror them — when changing
+  a model, update the matching TS type. Cross-boundary **contract** types are **generated** from
+  `packages/tbd-schema/schema/*.json` via `make schema-codegen` into `apps/website/internal/contract/`
+  + `apps/website/frontend/src/types/contract/` (DO NOT EDIT; T-123.4). The mission **export** JSON
+  (`/missions/:id/export`) is the one camelCase exception.
 - List endpoints return `{data, total, limit, offset}` (audit logs use a `next_cursor`).
 - Auth tiers: public, `RequireAuth` (JWT), `RequireMinRole(admin|mission_maker)`,
   `RequireServiceToken` (`X-Service-Token`, for game-server ingest).
@@ -60,7 +63,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
   never double-spent.
 - Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
-- **Batch ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): Composer 2.5 writes all docs on `main` first; Claude Code implements on `ticket/T-0xx` branches via `./scripts/ticket run`; you merge and run `./scripts/ticket done`. Docs sync on `main` after each merge (Composer 2.5 only).
+- **Ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): all work happens **directly on `main` — no branches** (supersedes the old `ticket/T-0xx` flow). Composer 2.5 owns doc writes/sync; Claude Code ships code + in-code comments; the registry is source of truth (`./scripts/ticket sync`).
 - **Documentation standards:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](docs/platform/DOCUMENTATION_STANDARDS.md) — cross-boundary `@contract` / `@route` / `@model`, Godoc/TSDoc/Enforce rules, codegen + validation + CI (**T-123**).
 - Docs: see **§Documentation** — sync before commit. Ticket queue: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
 
@@ -111,7 +114,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-122**
+**Latest shipped:** **T-123**
 
 **ACTIVE NOW:** **T-090** — T-090.1 (Aligned map tiles). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`.
 
@@ -172,7 +175,8 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
-- T-122 **Codebase audit hotfix (single bundle)** @ `f131770` (tag **T-122**). 37/41 findings (C/R/T/M/D); deferred T1/T3/T8/T15 with rationale. `make test-it` + FE build/lint clean. Spec: [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md).
+- T-123 **Documentation standards rollout** @ `169e47d` (tag **T-123**). In-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); schema codegen → `apps/website/internal/contract/` + `apps/website/frontend/src/types/contract/` via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json` (400 on invalid; `internal/contract/validate.go`); `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift). Resolves audit T1/T8. Spec: [`t123_documentation_standards_rollout.md`](docs/platform/t123_documentation_standards_rollout.md).
+- T-122 **Codebase audit hotfix (single bundle)** @ `f131770` (tag **T-122**). 37/41 findings (C/R/T/M/D); deferred T1/T3/T8/T15 with rationale (T1/T8 since resolved by T-123). `make test-it` + FE build/lint clean. Spec: [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md).
 - T-091.2 **Mission Creator — Z-axis editor UX** @ `dde589e` (tag **T-091.2**).
 - T-091.1 **Mission Creator — DEM loader + sampleElevation** @ `2c56c2e` (tag **T-091.1**). Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
 - T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](.ai/artifacts/t091_0_ops_log.txt).

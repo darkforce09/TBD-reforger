@@ -61,10 +61,17 @@ interfaces, and Enforce DTOs are **projections** of a schema definition — neve
 A new cross-boundary field is added to the schema **first**.
 
 **Rule 2.2 — A field's type is fixed by its schema definition.** Every projection MUST match the
-schema's declared type exactly. Concretely: [`mission.schema.json`](../../packages/tbd-schema/schema/mission.schema.json)
-declares `schemaVersion` as a **string enum** (`"1.0"`, `"1.1"`); therefore every Go, TS, and
-Enforce projection of a mission document MUST type `schemaVersion` as a **string**, never an
-integer. Type drift across a boundary is a defect.
+schema's declared type exactly. The rule is **scoped per artifact** — there are three version
+namespaces and they do not collide:
+- **Canonical mission document** ([`mission.schema.json`](../../packages/tbd-schema/schema/mission.schema.json),
+  consumed by the Enfusion mod loader): `schemaVersion` is a **string enum** (`"1.0"`, `"1.1"`).
+  Every Go/TS/Enforce projection of a *canonical mission* MUST type it as a **string**.
+- **Editor payload** ([`mission-editor-payload.schema.json`](../../packages/tbd-schema/schema/mission-editor-payload.schema.json),
+  the `POST /missions/:id/versions` `json_payload` superset): `schemaVersion` is an **integer**
+  (editor format version) — a distinct namespace from the canonical string.
+- **Export envelope** (`GET /missions/:id/export` / inject — `missionJSON`/`MissionExport`): carries
+  **`exportFormatVersion`** (integer), **not** `schemaVersion`, keeping it off the canonical key
+  (renamed in T-123.1). Type drift *within* a namespace is a defect.
 
 **Rule 2.3 — Wire casing is per-artifact and fixed.** Casing is not a matter of taste; it is
 nailed down per artifact and enforced by codegen (§9). This table is normative:
@@ -72,7 +79,8 @@ nailed down per artifact and enforced by codegen (§9). This table is normative:
 | Artifact | Casing | Authority |
 |----------|--------|-----------|
 | REST API request/response bodies (`/api/v1/**`) | **snake_case** | GORM struct tags = the API contract ([`CLAUDE.md`](../../CLAUDE.md) §Conventions) |
-| Mission **export** envelope (`GET /missions/:id/export`) | **camelCase** | the one documented exception |
+| Mission **export** envelope (`GET /missions/:id/export`; version field **`exportFormatVersion`**, int — T-123.1) | **camelCase** | the one documented exception |
+| `mission-editor-payload.schema.json` (`POST /missions/:id/versions` payload; int `schemaVersion`) | **camelCase** | schema source |
 | `mission.schema.json`, `loadout-export.schema.json` | **camelCase** | schema source |
 | `registry-items.schema.json` — envelope vs. items | envelope **camelCase**, item fields **snake_case** | schema source |
 | List endpoints | `{ data, total, limit, offset }` (audit logs: `next_cursor`) | [`CLAUDE.md`](../../CLAUDE.md) §Conventions |
@@ -323,25 +331,27 @@ definition, and (c) regenerate the affected DTOs (§9).
 
 ## 9. Codegen & validation — the target state
 
-Hand-mirroring is the root cause of boundary drift. The **required target state** is generation +
-validation; the `@contract` tag (§3) is the **interim bridge** until generation lands.
+Hand-mirroring is the root cause of boundary drift. Generation + validation is **shipped**
+(T-123.4/.5/.6): Go and TS contract types are generated from the schemas, and the mission version
+payload is validated server-side before persist. `@contract` (§3) is **not** a temporary measure —
+it remains **permanently required on hand-written Enforce DTOs** (Enforce has no codegen).
 
 **Mandate**
 
-1. **Generated projections.** Go and TS contract types are **generated from**
-   `packages/tbd-schema/schema/*.json`, not hand-written:
-   - TS → `apps/website/frontend/src/types/contract/` (candidate: `json-schema-to-typescript`).
-   - Go → `apps/website/internal/contract/` (candidate: a JSON-Schema-to-Go generator).
+1. **Generated projections (shipped).** Go and TS contract types are **generated from**
+   `packages/tbd-schema/schema/*.json` via `make schema-codegen` (`scripts/codegen.mjs`):
+   - TS → `apps/website/frontend/src/types/contract/` (`json-schema-to-typescript`).
+   - Go → `apps/website/internal/contract/<pkg>/` (`quicktype`).
    - Enforce Script has no codegen tooling: Enforce DTOs stay hand-written but MUST carry
      `@contract` (§3/§6.4) **and** a golden fixture that round-trips through
      [`scripts/validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs).
-2. **Go-side runtime validation.** The mission version-create handler MUST validate the incoming
-   payload against `mission.schema.json` **before persist** (candidate:
-   `santhosh-tekuri/jsonschema`). This realizes the validation that
-   [`scripts/validate-file.mjs`](../../packages/tbd-schema/scripts/validate-file.mjs) only *claims*
-   the website performs.
-3. **Migration.** Until generation lands, every hand-mirrored cross-boundary type is **debt** and
-   MUST carry `@contract`. New cross-boundary types SHOULD be generated rather than hand-written.
+2. **Go-side runtime validation (shipped).** `CreateVersion` validates the incoming version payload
+   against [`mission-editor-payload.schema.json`](../../packages/tbd-schema/schema/mission-editor-payload.schema.json)
+   **before persist** (`internal/contract/validate.go` — `go:embed` + `santhosh-tekuri/jsonschema/v6`),
+   returning **400** on a malformed payload. It validates the **editor superset**, not the canonical
+   `mission.schema.json` — those are different artifacts (see §2.2).
+3. **Hand-written types remain debt.** Each carries `@contract`; new cross-boundary types SHOULD be
+   generated. Hand-written GORM models stay as the snake_case DB/API source of truth.
 
 > **Implementation:** [**T-123**](t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
 

@@ -111,11 +111,13 @@ Manual: C1 leader PATCH; C2 match ingest; C3 corrupt IDB; C4 gamemode boot; R1 d
 **Shipped:** T-122 fixes @ `f131770` (branch `ticket/T-122`). `make test-it` ok; frontend `npm run build` + `npm run lint` clean. Go `go build ./...` clean.
 
 **Deferred (with reasons — not "skipped"):**
-- **T1** — the version `payload` is the editor superset, not the strict `mission.schema.json` (which is the mod/export doc shape); validating against it would reject valid editor payloads, and real JSON-schema validation needs a new Go dependency. Out of scope for a "simple fix".
+- **T1 — RESOLVED (T-123.5 @ `b5211f2`):** `CreateVersion` validates the version payload against a dedicated `mission-editor-payload.schema.json` (the editor superset) via `internal/contract/validate.go` (`go:embed` + `santhosh-tekuri/jsonschema/v6`) → 400 on malformed. A separate schema was authored precisely because validating against the canonical `mission.schema.json` would reject valid editor payloads.
 - **T3** — `missions_integration_test.go` asserts a new version *can* be added to a `live` mission (intended re-versioning); blocking it is a mission-lifecycle change, not a one-liner.
-- **T8** — the export envelope's `schemaVersion` key is emitted by the backend **and** the frontend compiler (`exportSchema.ts`/`compile.ts`) and asserted by two tests; renaming is a cross-boundary contract change, not isolated.
+- **T8 — RESOLVED (T-123.1 @ `04a73a1`):** the export envelope's version field was renamed `schemaVersion` → `exportFormatVersion` (int) across Go `missionJSON`, TS `MissionExport`/`compile.ts`, and the export/inject tests — freeing the `schemaVersion` key for the canonical string contract.
 - **T15** — the real published addon GUID (and a non-dev Everon scenario `.conf`) are unknown here; a placeholder TODO + tracked note were added instead of guessing a wrong GUID.
 
 **Mod note:** Enfusion `.c` changes (C4, T14/T16/T17, M8–M15) are not covered by `make test-it`/frontend build and need a Workbench pass to validate at runtime.
 
 **Doc pass @ merge:** Frontend surface docs + `CLAUDE.md` context_handoff path; registry `shipped`; see commit after `efe14b2`.
+
+**Shipped (T-123 @ `169e47d`):** documentation-standards program (range `f0af31a..169e47d`; CI green @ `7a08a8f`) — resolves audit **T1** (editor-payload validation) and **T8** (`exportFormatVersion` rename) above; adds in-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion), schema codegen (`make schema-codegen` → `internal/contract/`), and the `contracts.yml` CI gates. See [`t123_documentation_standards_rollout.md`](t123_documentation_standards_rollout.md).
