@@ -2400,6 +2400,104 @@
       "depends_on": [],
       "unblocks": [],
       "branch": "ticket/T-122"
+    },
+    {
+      "id": "T-123",
+      "order": 1230,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "root",
+        "website",
+        "mod"
+      ],
+      "executor": "cursor-docs",
+      "status": "active",
+      "active_slice": "T-123.1",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "docs",
+        "schema",
+        "api",
+        "ci"
+      ],
+      "title": "Documentation standards rollout (full program)",
+      "summary": "Full DOCUMENTATION_STANDARDS.md implementation: in-code tags, codegen, Go JSON validation, CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.",
+      "spec": "docs/platform/t123_documentation_standards_rollout.md",
+      "slices": [
+        "T-123.0",
+        "T-123.1",
+        "T-123.2",
+        "T-123.3",
+        "T-123.4",
+        "T-123.5",
+        "T-123.6"
+      ],
+      "slice_plan": {
+        "T-123.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "active"
+        },
+        "T-123.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "queued"
+        },
+        "T-123.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "queued"
+        },
+        "T-123.3": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "queued"
+        },
+        "T-123.4": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "queued"
+        },
+        "T-123.5": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "queued"
+        },
+        "T-123.6": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t123_documentation_standards_rollout.md",
+          "status": "queued"
+        }
+      },
+      "depends_on": [],
+      "unblocks": [],
+      "branch": "ticket/T-123"
     }
   ]
 }

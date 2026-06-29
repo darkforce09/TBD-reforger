@@ -777,6 +777,40 @@ def cmd_brief(args: argparse.Namespace) -> None:
         print("MAY EDIT: docs/platform/CODEBASE_AUDIT_2026.md (append shipped SHA under §Verification)")
         print("DO NOT: edit registry or other docs")
         print("VERIFY: make test-it && cd apps/website/frontend && npm run build && npm run lint")
+    elif tid == "T-123":
+        print("AUTHORITY: docs/platform/DOCUMENTATION_STANDARDS.md (normative — already written)")
+        print("SCOPE: roll out in-code @contract/@route/@model + Godoc/TSDoc/Enfusion tags")
+        print("OUT OF SCOPE: markdownlint only")
+        print("SLICES: .0 doc hub → .1 Go → .2 TS → .3 Enfusion → .4 codegen → .5 Go JSON validation → .6 CI")
+        print("SPEC: docs/platform/t123_documentation_standards_rollout.md")
+    elif active == "T-123.0":
+        print("SCOPE: AGENT_COMMIT_CHECKLIST link, platform README, handoff artifact — docs only")
+        print("DO NOT: edit apps/website/, apps/mod/, packages/tbd-schema/ source")
+        print("VERIFY: ./scripts/ticket sync && ./scripts/ticket check --strict")
+    elif active == "T-123.1":
+        print("SCOPE: Go internal/models + handlers — Godoc + @contract/@route on cross-boundary symbols")
+        print("FIX: schemaVersion int drift → string per DOCUMENTATION_STANDARDS §2.2")
+        print("DO NOT: edit docs/ or registry")
+        print("VERIFY: make test-it && go build ./...")
+    elif active == "T-123.2":
+        print("SCOPE: frontend tsdoc.json + TSDoc on types/api/hooks + @model/@contract/@route")
+        print("NOTE: eslint jsdoc CI lands in T-123.6 — add tags here first")
+        print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")
+    elif active == "T-123.4":
+        print("SCOPE: schema codegen — internal/contract/ + frontend/src/types/contract/ + regen script")
+        print("SCHEMAS: registry-items, loadout-export, mission export defs first")
+        print("VERIFY: cd packages/tbd-schema && npm run validate && make test-it")
+    elif active == "T-123.5":
+        print("SCOPE: CreateVersion validates against mission.schema.json before persist")
+        print("LIB: santhosh-tekuri/jsonschema or equivalent; 400 on invalid payload")
+        print("VERIFY: make test-it (golden pass + invalid fixture fail cases)")
+    elif active == "T-123.6":
+        print("SCOPE: CI — revive exported, eslint jsdoc, verify-contract-citations.mjs, schema.yml")
+        print("VERIFY: local golangci-lint + FE lint + citation script exit 0")
+    elif active == "T-123.3":
+        print("SCOPE: Enfusion Backend/Gamemode — //! headers, DTO field docs, @authority/@rpc/@replicated")
+        print("PREFLIGHT: enfusion-mcp before any .c edit")
+        print("VERIFY: Workbench compile on touched scripts (human note)")
     elif active == "T-090.1":
         print(
             "SCOPE: aligned WebP tile basemap — TileLayer / manifest tiles[]; "

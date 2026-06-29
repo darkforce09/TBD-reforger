@@ -6,6 +6,7 @@
 ## Running / Review
 
 - **T-090** (900) — Aligned map tiles [active] — Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md.
+- **T-123** (1230) — Documentation standards rollout (full program) [active] — Full DOCUMENTATION_STANDARDS.md implementation: in-code tags, codegen, Go JSON validation, CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.
 
 ## Ready
 

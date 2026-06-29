@@ -343,15 +343,13 @@ validation; the `@contract` tag (§3) is the **interim bridge** until generation
 3. **Migration.** Until generation lands, every hand-mirrored cross-boundary type is **debt** and
    MUST carry `@contract`. New cross-boundary types SHOULD be generated rather than hand-written.
 
-> Scope: this document **specifies** the target. Implementing the generators, the validation hook,
-> and the CI wiring is **follow-up ticket work** — no application code, schema, or config is
-> changed by adopting this standard.
+> **Implementation:** [**T-123**](t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
 
 ---
 
 ## 10. CI enforcement gates
 
-Ruthless means enforced. These gates are **specified here**; wiring them into CI is follow-up work.
+Ruthless means enforced. These gates are **specified here**; **T-123.6** wires them into CI.
 
 | Gate | Tool | Scope |
 |------|------|-------|

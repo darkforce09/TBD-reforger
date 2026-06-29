@@ -28,6 +28,7 @@ Playbook: [`tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead vie
 | **Frontend surfaces** | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) → [`frontend/docs/INDEX.md`](../../apps/website/frontend/docs/INDEX.md) |
 | **Mission Creator** | MC [`ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
 | **Backend / API** | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
+| **Cross-boundary code comments** | [`docs/platform/DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) — §11 cheat sheet; in-code = same commit as code (§1) |
 | **Tag contract** | [`docs/TAGS.md`](TAGS.md) |
 
 If the registry row has a `spec`, read it before editing code.
@@ -44,6 +45,7 @@ If the registry row has a `spec`, read it before editing code.
 | **UI surface (no route change)** | Relevant page spec **Element Inventory** + **`Live source:`** path |
 | **Nav / sidebar change** | [`frontend/src/config/navigation.ts`](../../apps/website/frontend/src/config/navigation.ts) + [`frontend/docs/shell/sidebar.md`](../../apps/website/frontend/docs/shell/sidebar.md) |
 | **API / model change** | `internal/models/` JSON tags + matching `frontend/src/types/`; note handler if behavior changed |
+| **Cross-boundary type or handler** | In-code Godoc/TSDoc/Enforce comments + `@contract` / `@route` / `@model` per [`DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) §3 — **same commit as code** (Claude Code); Cursor syncs narrative docs after ship |
 | **Mission Creator UX lock** | [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) **Decisions log** row |
 | **Mission Creator new capability** | [`feature_inventory.md`](../specs/Mission_Creator_Architecture/feature_inventory.md) FEDS row |
 | **Eden parity gap closed** | [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) ticket column + table row |

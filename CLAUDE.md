@@ -61,6 +61,7 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 - **Batch ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): Composer 2.5 writes all docs on `main` first; Claude Code implements on `ticket/T-0xx` branches via `./scripts/ticket run`; you merge and run `./scripts/ticket done`. Docs sync on `main` after each merge (Composer 2.5 only).
+- **Documentation standards:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](docs/platform/DOCUMENTATION_STANDARDS.md) — cross-boundary `@contract` / `@route` / `@model`, Godoc/TSDoc/Enforce rules, codegen + validation + CI (**T-123**).
 - Docs: see **§Documentation** — sync before commit. Ticket queue: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
 
 ## Documentation
