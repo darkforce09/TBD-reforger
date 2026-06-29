@@ -50,10 +50,9 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/forms": "^0.5.11",
     "@tailwindcss/vite": "^4.3.1",
-    "@types/node": "^24.12.3",
+    "@types/node": "^26.0.1",
     "@types/pngjs": "^6.0.5",
     "@types/rbush": "^4.0.0",
     "@types/react": "^19.2.14",
