@@ -104,7 +104,7 @@ cd apps/website/frontend && npm run build && npm run lint
 | S4 | terrains.ts | Everon 12800², Arland **4096²**; height ranges match Biki |
 | S5 | terrains ↔ manifest | `verify-terrain-manifest.ts` exit 0 |
 | S6 | Alignment stub | `verify-terrain-alignment.ts` exit 0 with stub warning |
-| S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-091 — T-091.2** |
+| S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-090 — T-090.1** |
 | S8 | No legacy IDs | `make ticket-check-strict` exit 0 |
 | S9 | LFS | `.gitattributes` covers map-assets PNG/WebP |
 
@@ -118,7 +118,7 @@ cd apps/website/frontend && npm run build && npm run lint
 
 ## Advance slice
 
-**T-090.0 + T-091.0 + T-091.1 shipped.** Active: **T-091.2** (claude-code). Tiles (**T-090.1**) deferred until tile pyramid exists (T-121 / EMT).
+**T-090.0 + T-091 shipped @ `dde589e`.** Active: **T-090.1** (aligned tiles). See [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md).
 
 ---
 

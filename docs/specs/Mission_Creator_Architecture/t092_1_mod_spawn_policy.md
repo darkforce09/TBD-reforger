@@ -1,7 +1,7 @@
 # T-092.1 — Mod spawn height + yaw policy
 
 **Ticket:** T-092 · **Slice:** T-092.1  
-**Status:** Spec ready — blocked on **T-091.2**  
+**Status:** Spec ready — **T-091.2 shipped** @ `dde589e` (unblocked)  
 **Executor:** claude-code (+ MCP / Workbench verify)  
 **Authority:** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
 
@@ -17,7 +17,7 @@ Add optional slot `y` to schema + mod struct, implement spawn height policy (`js
 
 | Gate | Evidence |
 |------|----------|
-| **T-091.2** | Editor stores meaningful `position.z` |
+| **T-091.2** | **Done** @ `dde589e` — editor stores meaningful `position.z` |
 | **T-091.0** | Anchor verify PASS |
 | **Workbench** | `tbd-dev-bootstrap.sh` + wb_play |
 

@@ -1,4 +1,4 @@
-# T-091.2 — Claude Code handoff (copy-paste prompt)
+# T-091.2 — Claude Code handoff (historical — shipped @ `dde589e`)
 
 **Status:** **SHIPPED** @ `dde589e` (2026-06-29) — historical reference only. **T-091 program complete.** Next: **T-090.1** aligned basemap.
 

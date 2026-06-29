@@ -17,7 +17,6 @@ T-090.0  hub + schema + verify scripts (shipped)
   → T-091.1  DEM loader (shipped @ 2c56c2e)  ✓
   → T-091.2  Z UX + hillshade (claude-code)  ✅ shipped @ dde589e
   → T-090.1  aligned basemap tiles (claude-code)  ← ACTIVE NOW
-  → T-090.1  Cartesian basemap / tiles (claude-code)
   → T-092    mod compile + spawn
   → T-071 → T-068.13 → T-068.7+
   → T-121    tiles / Arland re-export / MCP polish (deferred)

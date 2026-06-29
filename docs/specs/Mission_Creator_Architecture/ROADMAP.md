@@ -289,7 +289,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 |------|------|-------------|
 | **Terrain + title + numeric position** | [`t049_terrain_title_position.md`](t049_terrain_title_position.md) | ✅ `meta.terrain` → `<TacticalMap>` viewport (key-remount on change; **MAP-TERRAIN-001**); `applyMissionRowMeta` hydrates row title/terrain/env on load (**DATA-HYD-TITLE-001**); `updateSlotPosition` → editable X/Y/Z/rotation in Attributes Transform (**ATTR-FIELD-OBJ-POSITION**), selection-aware toolbelt readout |
 
-Still blocked on **T-090**/**T-091** for map tiles + DEM. Does not include registry/markers/vehicles (**T-068+**).
+**T-091 shipped** @ `dde589e` (DEM + Z). **T-090.1** aligned tiles still pending. Does not include registry/markers/vehicles (**T-068+**).
 
 ---
 

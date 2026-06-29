@@ -384,7 +384,7 @@ Reject load if PNG IHDR `width×height` ≠ `manifest.dem.widthPx × manifest.de
 | Vitest | 15 tests (11 anchors ±0.01 m, S8/S9/S10, synthetic 2×2) |
 | Browser decode | Vite alias `pngjs` → `pngjs/browser`; `buffer` polyfill in `DemTexture.ts` (node pngjs entry crashes on `util.inherits`) |
 
-**Intentionally not wired (T-091.2):** toolbelt CUR/SEL Z, `ydoc` z on place/move, hillshade, compiler worker DEM fetch.
+**Wired in T-091.2 @ `dde589e`:** toolbelt CUR/SEL Z, `ydoc` z on place/move, hillshade. **Still deferred:** compiler worker DEM fetch.
 
 **Verify replay:** `make map-assets-link && cd apps/website/frontend && npm test && make verify-terrain-strict`
 
