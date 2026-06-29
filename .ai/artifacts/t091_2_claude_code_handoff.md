@@ -1,6 +1,6 @@
 # T-091.2 — Claude Code handoff (copy-paste prompt)
 
-**Date:** 2026-06-29 (UX + hillshade locked) · **Spec:** [`t091_2_z_axis_editor.md`](../../docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md) (read **entire** file — A4–A9, S1–S5, M1–M8)
+**Status:** **SHIPPED** @ `dde589e` (2026-06-29) — historical reference only. **T-091 program complete.** Next: **T-090.1** aligned basemap.
 
 ---
 

@@ -1,6 +1,6 @@
 # T-092 — Spawn transform parity + mod mission compile
 
-**Status:** **ready** — blocked on **T-091.2** only (T-091.0 anchor verify **PASS** @ `6d96339`).  
+**Status:** **ready** — **T-091.2 shipped** @ `dde589e` (T-091 program complete).  
 **Ticket:** T-092 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Map program:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 

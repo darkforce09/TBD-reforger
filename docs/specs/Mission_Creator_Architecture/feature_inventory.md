@@ -211,7 +211,7 @@
 | **Trigger** | Mouse move over map |
 | **Preconditions** | Map mounted |
 | **Procedure** | Container `onPointerMove` → rAF-throttled self-unproject (`view.makeViewport(...).unproject`) → `useMapStore.setCursor` → `BottomToolbelt` mono display (CUR mode). **No Deck `onHover` pick** (T-057). |
-| **Postconditions** | X/Y/Z shown; **Z = 0 flat** until **T-091.2** wires `sampleElevation` (3 dp display); after T-091.2: CUR/SEL Z = sampled elevation when DEM ready |
+| **Postconditions** | X/Y/Z @ **3 dp**; CUR/SEL Z from `sampleElevation` when DEM ready (**T-091.2** @ `dde589e`) |
 | **Inputs** | Pointer move over map container |
 | **Outputs** | Transient `useMapStore.cursor` (not page React state) |
 | **Edge cases** | Off-map / pointer leave → `cursor: null` → all axes show `—`; pointer is constant `crosshair` (no icon hover glyph — T-057 trade) |
@@ -1401,7 +1401,7 @@
 | **Postconditions** | Slot position / stance update (one undo step per commit); map icon re-renders |
 | **Inputs** | X/Y/Z/rotation numbers, stance select |
 | **Outputs** | Y.Doc slot `position` / `stance` |
-| **Edge cases** | T-049: stale "coming later" copy replaced; non-finite input ignored (no NaN write); **T-091.2:** Z manual via Attributes Z field; X/Y commit re-samples Z when DEM ready |
+| **Edge cases** | Manual Z via Attributes Z field; X/Y commit re-samples Z (**T-091.2**); degraded DEM → z=0 + toast |
 | **Acceptance** | `- [x] Position editable (T-049)` `- [x] Stance editable` |
 | **Eden parity** | Eden:ATTR-XFORM-001 |
 | **Status** | partial |

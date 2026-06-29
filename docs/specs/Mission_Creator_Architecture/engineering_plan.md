@@ -484,7 +484,7 @@ Create both feature trees (§1) as stubs. Register the `React.lazy` route `/miss
 `view/useOrthographicView.ts`, `TacticalMap.tsx`, `layers/useBaseMapLayer.ts`, `context/MapContext.tsx`.
 **Deliverable:** a blank base map with 60 fps pan/zoom.
 
-**Phase 2 — DEM / Z-axis** — **T-091.1 shipped** @ `2c56c2e` (`dem/*`, `sampleElevation` API, vitest anchors); **T-091.2 active** → `ydoc` Z on place/move, `layout/BottomToolbelt.tsx` CUR/SEL Z, `layers/useDemLayer.ts` hillshade. **Deliverable (T-091.2):** hover the map and read true elevation in toolbelt; auto Z on place/move. Hillshade overlay toggles. Map tile imagery is **T-090.1** (see [`ROADMAP.md`](ROADMAP.md)).
+**Phase 2 — DEM / Z-axis** — **T-091 shipped** @ `dde589e` (`.0`/`.1`/`.2`). **T-090.1 active** → aligned tile basemap. Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md).
 
 **Phase 3 — Shell / layout** → `MissionCreatorPage.tsx`, `layout/TopCommandStrip.tsx`,
 `LeftOutliner/*`, `RightInspector/InspectorPanel.tsx` + `GlobalSettingsInspector.tsx`.

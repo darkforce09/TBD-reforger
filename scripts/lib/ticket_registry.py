@@ -770,7 +770,16 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print("DO NOT: edit documentation")
     if shipped:
         print(f"DO NOT REOPEN (shipped): {', '.join(shipped)}")
-    if active == "T-091.2":
+    elif active == "T-090.1":
+        print(
+            "SCOPE: aligned WebP tile basemap — TileLayer / manifest tiles[]; "
+            "see t090_1_aligned_basemap.md"
+        )
+        print(
+            "DO NOT REOPEN: T-091 dem/* + ydoc Z wiring (shipped @ dde589e) unless regression"
+        )
+        print("PREFLIGHT: make map-assets-link && ./scripts/ticket brief T-090")
+    elif active == "T-091.2":
         print(
             "DO NOT REOPEN: T-091.0 plugin/export, T-091.1 dem/* loader (shipped @ 2c56c2e) "
             "unless regression fix"

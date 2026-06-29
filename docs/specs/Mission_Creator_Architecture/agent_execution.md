@@ -43,8 +43,8 @@ isProject: false
 
 ```
 Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 Phase 1 shipped**.
-**Active slice: T-091.2** — Z-axis editor UX (claude-code). **T-091.1 shipped** @ `2c56c2e` — `sampleElevation` API live; toolbelt/slot Z still flat until this slice. **T-091.0 shipped** @ `6d96339` — do NOT redo plugin/export.
-**T-068 Phase 2 paused.** Program order: T-091.2 → T-090.1 → T-092 → T-071 → T-068.13.
+**Active slice: T-090.1** — aligned basemap tiles (claude-code). **T-091 shipped** @ `dde589e` (`.0`/`6d96339`, `.1`/`2c56c2e`, `.2`/`dde589e`). **T-091.0 shipped** @ `6d96339` — do NOT redo plugin/export.
+**T-068 Phase 2 paused.** Program order: **T-090.1 → T-092** → T-071 → T-068.13.
 Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_program.md for context.
 **T-057–T-067 shipped.** Do not `./scripts/ticket done T-068` until T-068.14.
 ```
@@ -52,7 +52,7 @@ Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_prog
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-091.2 active** (Z UX). **T-091.1 shipped @ 2c56c2e.** **T-091.0 shipped — no Workbench/MCP redo.**
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-090.1 active** (aligned tiles). **T-091 shipped @ dde589e.** **T-091.0 shipped — no Workbench/MCP redo.**
 Read t091_1_dem_loader.md. Per docs/TICKET_DEV_QUEUE.md.
 ```
 
@@ -333,7 +333,8 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **Spatial chunks** (T-067 — **shipped**) | **`slot-add-bulk`** O(k) paste ≤10k; dormant 512m chunk buckets in `slotIconCache`. **T-067.0.1:** CPU viewport cull **reverted** — render = pan-stable `getBaseIcons()`. **Follow-on (`idea`):** **T-111** lazy RAM @ 1M; **T-112** GPU `DataFilterExtension`. Spec: [`t067_spatial_chunks.md`](t067_spatial_chunks.md). |
 | **T-091.0 Everon DEM** (2026-06-29, **shipped** @ `6d96339`) | **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → 16-bit PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** **dead** on packed Eden. Tiles **deferred** (T-090.1 / T-121). Verify: `make verify-terrain-strict` PASS — 11 anchors, maxDeltaM 0.204 m. Spec: [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md). |
 | **T-091.1 handoff** (2026-06-29) | Claude Code **frontend-only** slice. Copy prompt: [`.ai/artifacts/t091_1_claude_code_handoff.md`](../../../.ai/artifacts/t091_1_claude_code_handoff.md). **Do not** reopen T-091.0 (plugin, DEM re-export, anchors). Port [`dem-sample.mjs`](../../../packages/tbd-schema/scripts/lib/dem-sample.mjs). |
-| **T-091.2 handoff** (2026-06-29) | Claude Code **frontend-only** slice. Copy prompt: [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../../.ai/artifacts/t091_2_claude_code_handoff.md). **Consume** T-091.1 `sampleElevation` — do not redo `dem/*`. **Z UX locked:** add/paste/move re-sample; Attributes **X/Y commit** re-samples (terrain-follow); **Z-only** commit manual. Hillshade: BitmapLayer, ≤1024 px downsample, default OFF. Grid = procedural `showGrid` (not T-090.1 tiles). Manual **M1–M8**. Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md). |
+| **T-091.2 shipped** (2026-06-29) | **`dde589e`** (tag **T-091.2**). `terrainZ` in `ydoc` (add/paste/move + Attributes X/Y re-sample); `useDemLayer` hillshade (BitmapLayer ≤1024 px); `useDemVersion` async CUR refresh; Mission Settings `showGrid`/`showHillshade`; toolbelt X/Y/Z @ 3 dp; grid over hillshade with boosted line alpha. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md). |
+| **T-091.2 handoff** (2026-06-29) | Historical — [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../../.ai/artifacts/t091_2_claude_code_handoff.md). |
 | **T-091.1 shipped** (2026-06-29) | **`2c56c2e`** (tag **T-091.1**). `tactical-map/dem/*` — manifest fetch, pngjs decode → Float32 meters cache, `loadDemForTerrain` / `sampleElevation` / `isDemReady` / `isDemDegraded`; vitest 15/15 (11 anchors ±0.01 m). Vite: `pngjs→browser` alias + `buffer` polyfill. Wired from `TacticalMap`; **no consumer yet** (toolbelt Z = T-091.2). Spec: [`t091_1_dem_loader.md`](t091_1_dem_loader.md). |
 | **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-091.0 shipped** @ `6d96339` — GetSurfaceY plugin resample (`mod-getsurfacey-resample`); manual WE export **dead** on packed Eden. **T-091.1 shipped** @ `2c56c2e`. **T-091.2 active** (Z UX). **T-057..T-067** perf/scale **shipped**. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
 | **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until map gate + T-071.2 + T-068.13. |
@@ -347,7 +348,7 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-068 Phase 1 shipped** @ 2026-06-27; **T-091.0 shipped** @ `6d96339`; **T-091.1 shipped** @ `2c56c2e`; **active slice T-091.2** (Z UX). **T-068 Phase 2 paused**. Then this file, then `engineering_plan.md` §0–§2.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-091 shipped** @ `dde589e`; **active slice T-090.1** (aligned tiles). **T-068 Phase 2 paused**. Then this file, then `engineering_plan.md` §0–§2.
 2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
 3. **Verify gate** after every phase:
    ```bash
@@ -367,9 +368,9 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 
 ### ACTIVE SLICE — T-091 Map & terrain program (2026-06-29)
 
-**ACTIVE NOW:** **T-091.2** — Z on place/move + toolbelt CUR/SEL Z + hillshade. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
+**ACTIVE NOW:** **T-090.1** — aligned WebP tile basemap. **T-091 shipped** @ `dde589e`. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
-**Program order:** **T-091.2 → T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
+**Program order:** **T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
 
 **T-091.1 shipped @ `2c56c2e` (tag T-091.1):** `tactical-map/dem/*` — CPU Float32 meters cache, public `sampleElevation(x,y)` (clamp-then-sample, degraded→0), `loadDemForTerrain` wired from `TacticalMap`; vitest 15/15; `make verify-terrain-strict` unchanged. Vite: `pngjs→browser` + `buffer` polyfill. **Toolbelt/slot Z still 0** until this slice consumes the API. Spec: [`t091_1_dem_loader.md`](t091_1_dem_loader.md).
 
@@ -378,7 +379,8 @@ These resolve ambiguities from earlier drafts. **Do not re-litigate without user
 | **T-090.0** | **shipped** | cursor-docs | Map program hub + terrain-manifest schema |
 | **T-091.0** | **shipped** @ `6d96339` | claude-code | Everon DEM + anchor verify (GetSurfaceY plugin) |
 | **T-091.1** | **shipped** @ `2c56c2e` | claude-code | DEM loader + `sampleElevation` API |
-| **T-091.2** | **active** | claude-code | Z UX + hillshade — [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) |
+| **T-091.2** | **shipped** @ `dde589e` | claude-code | Z UX + hillshade — [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) |
+| **T-090.1** | **active** | claude-code | Aligned basemap — [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) |
 | **T-092.0–.2** | queued | mixed | Mod compile + spawn — [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) |
 | **T-071.0–.2** | queued | claude-code | ORBAT Manager — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | **T-068.7** | paused | cursor-docs | Compat matrix spec (Phase 2) |

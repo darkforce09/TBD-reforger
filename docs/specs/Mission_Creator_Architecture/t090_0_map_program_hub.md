@@ -72,7 +72,7 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 
 ## Verification gate (mandatory)
 
-**T-090.0 shipped.** **T-091.1 shipped** @ `2c56c2e`. Next: **T-091.2** (Z UX) — see [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md).
+**T-090.0 shipped.** **T-091 shipped** @ `dde589e`. Next: **T-090.1** (aligned tiles) — see [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md).
 
 ### Automated (exit 0)
 

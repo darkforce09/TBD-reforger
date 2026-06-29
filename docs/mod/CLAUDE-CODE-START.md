@@ -10,7 +10,7 @@
 
 **T-121 (deferred):** tiles / Arland re-export / MCP polish — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
 
-**Next Claude Code work order:** **T-091.2** (Z UX) → **T-090.1** (tiles) → **T-092** → **T-068.13** → **T-068.7+**. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**Next Claude Code work order:** **T-090.1** (aligned tiles) → **T-092** → **T-068.13** → **T-068.7+**. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
@@ -109,38 +109,17 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-091.2 — active (Z-axis editor UX) — **start here**
+## T-090.1 — active (aligned basemap) — **start here**
 
-**Handoff prompt:** [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../.ai/artifacts/t091_2_claude_code_handoff.md) (copy into a **new** Claude Code chat).
+**Spec:** [`t090_1_aligned_basemap.md`](../specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md)
 
-**Spec:** [`t091_2_z_axis_editor.md`](../specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md)
-
-### T-091.1 is done — do not redo
-
-Shipped @ `2c56c2e` / tag **T-091.1**. Use `sampleElevation`, `isDemReady`, `isDemDegraded` from `tactical-map/dem` — do not re-implement loader unless fixing a regression.
-
-### T-091.2 scope (frontend only)
-
-| Deliverable | Path |
-|-------------|------|
-| Z on place/move/paste + Attributes X/Y re-sample | `state/ydoc.ts` — `addSlot`, `pasteSlots`, `moveEntities`, `updateSlotPosition` |
-| CUR Z sampling | `TacticalMap.tsx` `emitCursor` |
-| Toolbelt CUR/SEL Z (3 dp) | `layout/BottomToolbelt.tsx` |
-| Hillshade + grid toggles | `MissionSettingsDialog.tsx`, `meta.environment` in `schema.ts` |
-| Hillshade layer | `layers/useDemLayer.ts` (new; BitmapLayer ≤1024 px) |
-| Map toggles from meta | `MissionCreatorPage.tsx` → `TacticalMap` `showGrid` + `showHillshade` |
-| Props | `types.ts` — `showHillshade` |
-| Version payload Z | Verify `compiler/compile.ts` — `editor.slots` carries `position.z` |
-
-Manual gates **M1–M8** in spec. Copy-paste prompt: handoff artifact above.
-
-```bash
-make map-assets-link
-./scripts/ticket brief T-091
-cd apps/website/frontend && npm run build && npm run lint && npm test
-```
+**T-091 complete** @ `dde589e` — DEM export, loader, Z UX + hillshade shipped. Do not redo `dem/*` or `ydoc` Z wiring unless regression fix.
 
 ---
+
+## T-091.2 — shipped (Z-axis editor UX) @ `dde589e`
+
+**Spec:** [`t091_2_z_axis_editor.md`](../specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md) · handoff (historical): [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../.ai/artifacts/t091_2_claude_code_handoff.md)
 
 ## T-091.1 — shipped (DEM loader) @ `2c56c2e`
 

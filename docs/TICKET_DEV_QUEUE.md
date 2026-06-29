@@ -13,14 +13,14 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** website, shared, root, mod
 - **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 
-## T-091 — DEM + auto Z
+## T-090 — Aligned map tiles
 
-- **Active slice:** `T-091.2`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md`
+- **Active slice:** `T-090.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
-- **Branch:** `ticket/T-091`
+- **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** T-091.1 loader shipped @ 2c56c2e. Next: T-091.2 Z UX. Hub: t090_091_map_terrain_program.md.
+- **Summary:** Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 
