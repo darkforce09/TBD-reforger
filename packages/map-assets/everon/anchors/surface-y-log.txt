@@ -1,0 +1,48 @@
+# T-091.0 Everon anchor GetTerrainSurfaceY probes via enfusion-mcp wb_terrain getHeight
+# Workbench ArmaReforger 1.7.0.54 (engine 190965), world {853E92315D1D9EFE}worlds/Eden/Eden.ent, edit mode
+# Probed 2026-06-29. Same WorldEditorAPI.GetTerrainSurfaceY the plugin used to build the DEM.
+#
+### wb_terrain {"action":"getHeight","x":4839.2,"z":6620.8}
+**Terrain Height**
+- **Position:** (4839.2, 6620.8)
+- **Height (Y):** 121.78744506835938
+### wb_terrain {"action":"getHeight","x":4836.9,"z":6626.5}
+**Terrain Height**
+- **Position:** (4836.9, 6626.5)
+- **Height (Y):** 123.32342529296876
+### wb_terrain {"action":"getHeight","x":4831.2,"z":6628.8}
+**Terrain Height**
+- **Position:** (4831.2, 6628.8)
+- **Height (Y):** 123.5999755859375
+### wb_terrain {"action":"getHeight","x":1000,"z":6400}
+**Terrain Height**
+- **Position:** (1000, 6400)
+- **Height (Y):** 0.0625
+### wb_terrain {"action":"getHeight","x":5000,"z":5000}
+**Terrain Height**
+- **Position:** (5000, 5000)
+- **Height (Y):** 80.875
+### wb_terrain {"action":"getHeight","x":9600,"z":3200}
+**Terrain Height**
+- **Position:** (9600, 3200)
+- **Height (Y):** 221.65625
+### wb_terrain {"action":"getHeight","x":6400,"z":6400}
+**Terrain Height**
+- **Position:** (6400, 6400)
+- **Height (Y):** 157.875
+### wb_terrain {"action":"getHeight","x":2000,"z":2000}
+**Terrain Height**
+- **Position:** (2000, 2000)
+- **Height (Y):** -7.40625
+### wb_terrain {"action":"getHeight","x":11000,"z":6400}
+**Terrain Height**
+- **Position:** (11000, 6400)
+- **Height (Y):** -84.65625
+### wb_terrain {"action":"getHeight","x":8000,"z":8000}
+**Terrain Height**
+- **Position:** (8000, 8000)
+- **Height (Y):** -18.3125
+### wb_terrain {"action":"getHeight","x":3200,"z":9600}
+**Terrain Height**
+- **Position:** (3200, 9600)
+- **Height (Y):** -47.75

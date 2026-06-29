@@ -1,0 +1,110 @@
+T-091.0 — Everon DEM export ops log
+====================================
+
+Date: 2026-06-29
+Workbench version: ArmaReforger 1.7.0.54 (engine 190965, built 2026-06-14 12:57:43 UTC)
+Everon world path (exact): {853E92315D1D9EFE}worlds/Eden/Eden.ent  (edit mode, packed vanilla)
+DEM sha256: 585e1432ddf24dfb963f81510b4b570a41c68ec8ea85f56e755c3c5f95f4517b
+PNG dimensions: 6400 x 6400, 16-bit grayscale (IHDR bitDepth=16 colorType=0), 71,911,548 bytes
+
+WHICH PATH SUCCEEDED
+--------------------
+PATH 3 — Workbench plugin GetSurfaceY resample (PRIMARY code deliverable).
+Manual WE Export Height Map confirmed DEAD on vanilla Everon (packed-world lock: terrain entity
+grey/unselectable, Terrain Tool disabled). Paths 1/2 (DuplicateWorld UI export, on-disk binary
+tile parse) not pursued per human decision — GetSurfaceY resample is also the correct source for
+spawn-Z alignment (T-092 authority = BaseWorld.GetSurfaceY, same heightfield).
+
+MCP / API discovery (enfusion-mcp 0.4.7, driven via a persistent stdio client)
+------------------------------------------------------------------------------
+- api_search "GetSurfaceY" -> BaseWorld.GetSurfaceY(float x, float z) + World.GetSurfaceY.
+- api_search "GetTerrainSurfaceY" -> WorldEditorAPI.GetTerrainSurfaceY(float x, float z) "Very fast method".
+- api_search "heightmap export" / "terrain height read raster" -> No results. Confirms: NO bulk
+  heightmap raster read in Workbench script API. (matches prior T-091.0 discovery.)
+- World access pattern (from EMCP_WB_Terrain.c, proven by live wb_terrain getHeight):
+      WorldEditor we = Workbench.GetModule(WorldEditor);
+      WorldEditorAPI api = we.GetApi();
+      float y = api.GetTerrainSurfaceY(x, z);
+      we.GetTerrainBounds(min, max);
+
+SPIKE (mandatory gate) — GetSurfaceY in WorkbenchPlugin.Run()
+------------------------------------------------------------
+Plugin built with SPIKE=true: probed 11 anchors + 200x200 (40000) benchmark, wrote _spike.json.
+Result PASS: GetTerrainSurfaceY returned plausible Everon elevations in-plugin, identical to the
+MCP wb_terrain getHeight probes (peak(6400,6400)=157.875, bridgehead-sl=121.787). 40k-sample
+benchmark completed without freezing Workbench. Plausibility self-guard (peak in 50..400, spread>0)
+green. Only then flipped SPIKE=false and ran the full grid.
+
+Info & Diags equivalent (from wb_terrain getBounds / wb_state)
+--------------------------------------------------------------
+Planar resolution (m): 2   (12800 / 6400)
+World bounds: min "0 -204.781 0"  max "12800 375.531 12800"  -> worldBounds [0,0,12800,12800]
+Height min/max (m ASL): terrain bounds Y = -204.781 .. 375.531
+  -> manifest encoding range FIXED at -204.78 / 375.53 (V4 gate); sampled extents within range.
+Heightmap widthPx x heightPx: 6400 x 6400 (chosen at 2 m planar; matches PNG IHDR + manifest)
+
+Export method: Workbench plugin TBD_TerrainExportPlugin.c
+  Menu: Plugins > TBD > Export TBD Terrain DEM
+  Invoke: wb_execute_action menuPath "Plugins,TBD,Export TBD Terrain DEM"  (category-nested path)
+  Grid: for pixel (px,py): worldX = px*(12800/6399), worldZ = py*(12800/6399)  (exact inverse of
+        verify worldToPixel, so the strict bilinear lands on grid nodes -> ~0 interpolation error)
+  Encode: u16 = round((y - (-204.78)) / (375.53 - (-204.78)) * 65535), clamped [0,65535]
+  Output: $profile:TBD_TerrainExport_heightmap.txt (ASCII uint16 rows, 6400x6400, 243,591,039 B)
+          $profile:TBD_TerrainExport_meta.json
+  $profile: -> <pfx>/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/
+  Runtime: ~2.5 min for 40,960,000 GetTerrainSurfaceY samples (single synchronous Run()).
+  Sampled min/max (meta): -204.781 .. 375.327 m (within fixed range, no clamp artifacts).
+
+Post-process: node packages/tbd-schema/scripts/raw-u16-to-dem-png.mjs
+  ASCII raster -> 16-bit grayscale PNG (hand-rolled IHDR/IDAT via node:zlib; big-endian samples).
+  Self-check round-trips via pngjs {skipRescale:true} (pngjs exposes bit depth as .depth and
+  lossily rescales 16->8 by default — skipRescale keeps true 16-bit; dem-sample.rasterFromPngjs
+  was fixed to read .depth + the Uint16 RGBA channel-0).
+
+Base vs Modified A/B: N/A — single GetSurfaceY-resampled source (no UI A/B available; the resample
+  is the live/modified surface and the spawn-authority surface in one).
+
+Tile export tool: DEFERRED (Path 5 / Enhanced Map Tool) — verify-terrain-strict does not gate tiles.
+
+Anchor probe method: enfusion-mcp wb_terrain getHeight (= WorldEditorAPI.GetTerrainSurfaceY),
+  raw log -> packages/map-assets/everon/anchors/surface-y-log.txt
+  surfaceYM cross-checked identical to plugin's in-engine probes (meta.json anchors).
+  Bridgehead note: DEM and anchors share the same GetTerrainSurfaceY source, so demYM≈surfaceYM by
+  construction (interpolation error only).
+
+ANCHOR TABLE (make verify-terrain-strict)
+-----------------------------------------
+id              x        z        surfaceYM   demYM      deltaM   PASS
+bridgehead-sl   4839.2   6620.8   121.787     121.784    0.003    PASS
+bridgehead-tl0  4836.9   6626.5   123.323     123.328    0.005    PASS
+bridgehead-tl1  4831.2   6628.8   123.600     123.602    0.002    PASS
+coast-w         1000     6400     0.063       0.054      0.008    PASS
+valley-inland   5000     5000     80.875      80.871     0.004    PASS
+hill-north      9600     3200     221.656     221.652    0.004    PASS
+peak-central    6400     6400     157.875     157.882    0.007    PASS
+coast-sw        2000     2000     -7.406      -7.408     0.002    PASS
+seabed-e        11000    6400     -84.656     -84.860    0.204    PASS
+shelf-ne        8000     8000     -18.313     -18.314    0.002    PASS
+mid-s           3200     9600     -47.750     -47.743    0.007    PASS
+maxDeltaM = 0.204   thresholdM = 1.0   (11 anchors, all PASS)
+
+VERIFY (all exit 0)
+-------------------
+make verify-terrain          : OK  (rc=0)
+make verify-terrain-strict   : OK  (rc=0, maxDeltaM=0.204)
+make schema-validate         : OK  (rc=0)
+PNG IHDR                      : bitDepth=16 colorType=0 6400x6400
+Git LFS                      : packages/map-assets/**/*.png tracked (.gitattributes)
+
+SCHEMA NOTE (for Cursor docs sync)
+----------------------------------
+Added enum value "mod-getsurfacey-resample" to terrain-manifest.schema.json dem.source (the only
+non-doc schema change). Spec prose (t091_0_dem_tile_export.md "Locked decisions" / dem.source list)
+should be synced by Cursor to reflect this source + that T-091.0 shipped via plugin resample, not
+manual WE export. Per instructions, docs/** not edited here.
+
+TOOLING NOTE
+------------
+scripts/mod/mcp-call.sh races the Workbench round-trip vs server EOF-shutdown (~1/3 of calls return
+only the init reply). Used a persistent stdio client (scratchpad/mcpd.py) holding one server process
++ stdin open for this session. Worth folding back into mcp-call.sh later (out of T-091.0 scope).

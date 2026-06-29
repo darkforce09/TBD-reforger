@@ -1,0 +1,21 @@
+{
+  "terrainId": "everon",
+  "schemaVersion": 1,
+  "thresholdM": 1.0,
+  "probedAt": "2026-06-29T16:12:00Z",
+  "workbenchVersion": "ArmaReforger 1.7.0.54 (engine 190965, built 2026-06-14)",
+  "demSource": "mod-getsurfacey-resample",
+  "anchors": [
+    { "id": "bridgehead-sl",  "x": 4839.2, "z": 6620.8, "surfaceYM": 121.787 },
+    { "id": "bridgehead-tl0", "x": 4836.9, "z": 6626.5, "surfaceYM": 123.323 },
+    { "id": "bridgehead-tl1", "x": 4831.2, "z": 6628.8, "surfaceYM": 123.6 },
+    { "id": "coast-w",        "x": 1000.0, "z": 6400.0, "surfaceYM": 0.0625 },
+    { "id": "valley-inland",  "x": 5000.0, "z": 5000.0, "surfaceYM": 80.875 },
+    { "id": "hill-north",     "x": 9600.0, "z": 3200.0, "surfaceYM": 221.656 },
+    { "id": "peak-central",   "x": 6400.0, "z": 6400.0, "surfaceYM": 157.875 },
+    { "id": "coast-sw",       "x": 2000.0, "z": 2000.0, "surfaceYM": -7.40625 },
+    { "id": "seabed-e",       "x": 11000.0, "z": 6400.0, "surfaceYM": -84.6562 },
+    { "id": "shelf-ne",       "x": 8000.0, "z": 8000.0, "surfaceYM": -18.3125 },
+    { "id": "mid-s",          "x": 3200.0, "z": 9600.0, "surfaceYM": -47.75 }
+  ]
+}
