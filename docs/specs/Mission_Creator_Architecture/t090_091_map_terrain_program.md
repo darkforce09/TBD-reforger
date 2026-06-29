@@ -33,7 +33,7 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.0** | [`t090_0_map_program_hub.md`](t090_0_map_program_hub.md) | cursor-docs | `make ticket-check-strict` + `make verify-terrain` + `make schema-validate` |
 | **T-091.0** | [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) | claude-code | **shipped** @ `6d96339` — `make verify-terrain-strict` PASS |
 | **T-090.1** | [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | claude-code | Build/lint + horizontal H1/H2 manual log |
-| **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | Unit tests 3 pixels ±0.01 m |
+| **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | S1–S10 in spec: build/lint, vitest ±0.01 m, `make verify-terrain-strict`, worker grep |
 | **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | Manual M1–M7 + version payload Z |
 
 ---

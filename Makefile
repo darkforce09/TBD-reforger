@@ -4,7 +4,7 @@ WEB := apps/website
 # Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
 export PATH := $(HOME)/.local/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-terrain verify-migration
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate verify-terrain verify-migration map-assets-link
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,8 +26,12 @@ seed: ## Apply data seeds (Discord role mappings + registry catalog) to the runn
 api: ## Run the Go API (loads apps/website/.env; runs migrations on boot)
 	cd $(WEB) && go run ./cmd/api
 
-web: ## Run the Vite dev server
+web: map-assets-link ## Run the Vite dev server
 	cd $(WEB)/frontend && npm run dev
+
+map-assets-link: ## Symlink packages/map-assets → frontend public/ (T-091.1 DEM fetch)
+	@mkdir -p $(WEB)/frontend/public
+	ln -sfn ../../../../packages/map-assets $(WEB)/frontend/public/map-assets
 
 test: ## Run Go unit tests
 	cd $(WEB) && go test ./...

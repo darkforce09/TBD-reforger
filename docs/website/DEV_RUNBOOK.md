@@ -82,7 +82,7 @@ make verify-terrain           # manifest ↔ terrains.ts + anchor schema
 make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m (PASS @ 6d96339)
 ```
 
-**Local dev serving:** T-091.1 wires `packages/map-assets` into Vite (`public/map-assets` symlink — see [`t091_1_dem_loader.md`](../specs/Mission_Creator_Architecture/t091_1_dem_loader.md) §Dev serve). Basemap tiles still T-090.1.
+**Local dev serving:** run `make map-assets-link` once per clone (symlinks `packages/map-assets` → `frontend/public/map-assets`). `make web` runs this automatically. T-091.1 DEM fetch requires it; basemap tiles still T-090.1.
 
 ## Notes
 

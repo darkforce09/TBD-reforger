@@ -784,8 +784,9 @@ def cmd_brief(args: argparse.Namespace) -> None:
             "packages/tbd-schema/scripts/lib/dem-sample.mjs"
         )
         print(
-            "VERIFY: cd apps/website/frontend && npm run build && npm run lint "
-            "&& npm test -- sampleElevation && make verify-terrain-strict"
+            "VERIFY: make map-assets-link && cd apps/website/frontend && npm run build "
+            "&& npm run lint && npm test && make verify-terrain-strict && "
+            "! rg 'map-assets|dem/|sampleElevation' apps/website/frontend/src/features/mission-creator/compiler/"
         )
     else:
         print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")

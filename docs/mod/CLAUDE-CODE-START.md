@@ -135,7 +135,8 @@ Shipped @ `6d96339` / tag **T-091.0**. Claude Code must **not**:
 | Port from | `packages/tbd-schema/scripts/lib/dem-sample.mjs` |
 
 ```bash
+make map-assets-link
 cd apps/website/frontend && npm run build && npm run lint
-npm test -- sampleElevation
+npm test
 make verify-terrain-strict
 ```
