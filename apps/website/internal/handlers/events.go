@@ -212,7 +212,7 @@ func (h *Handler) RemoveEventMission(c *gin.Context) {
 		tx.Where("event_mission_id = ?", emID).Delete(&models.OrbatSlot{})
 		return tx.Delete(&em).Error
 	})
-	if txErr == gorm.ErrRecordNotFound {
+	if errors.Is(txErr, gorm.ErrRecordNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found in event"})
 		return
 	}
@@ -649,6 +649,8 @@ type registerBody struct {
 // RegisterForEventMission signs the caller up for a specific mission within an
 // event, claiming a slot if provided, otherwise granting a confirmed spot or a
 // waitlist place based on the mission's slot capacity.
+//
+//nolint:cyclop // slot-claim path branches across capacity/reservation/slot-taken/conflict states; splitting events.go is tracked SIZE-3 debt (T-125.4).
 func (h *Handler) RegisterForEventMission(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -670,6 +672,7 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 	}
 
 	var body registerBody
+	//nolint:errcheck // best-effort: body is optional; absent/partial JSON leaves zero-value fields (slot claim is optional).
 	_ = c.ShouldBindJSON(&body)
 
 	var result models.EventRegistration
@@ -732,14 +735,14 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 		return nil
 	})
 
-	switch txErr {
-	case nil:
+	switch {
+	case txErr == nil:
 		c.JSON(http.StatusOK, gin.H{"state": result.State, "slot_id": result.SlotID})
-	case errBadSlot, errSlotNotFound:
+	case errors.Is(txErr, errBadSlot), errors.Is(txErr, errSlotNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "slot not found"})
-	case errSlotTaken:
+	case errors.Is(txErr, errSlotTaken):
 		c.JSON(http.StatusConflict, gin.H{"error": "slot already taken"})
-	case errSquadReserved:
+	case errors.Is(txErr, errSquadReserved):
 		c.JSON(http.StatusConflict, gin.H{"error": "squad is reserved by a leader"})
 	default:
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not register"})
@@ -784,7 +787,7 @@ func (h *Handler) WithdrawFromEventMission(c *gin.Context) {
 		}
 		return nil
 	})
-	if txErr == gorm.ErrRecordNotFound {
+	if errors.Is(txErr, gorm.ErrRecordNotFound) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not registered"})
 		return
 	}

@@ -40,6 +40,7 @@ func Logger() gin.HandlerFunc {
 			path += "?" + raw
 		}
 		c.Next()
+		//nolint:errcheck // best-effort: access-log line; a logger write failure is non-actionable.
 		gin.DefaultWriter.Write([]byte(
 			start.Format("2006/01/02 15:04:05") + " [" + GetRequestID(c) + "] " +
 				c.Request.Method + " " + path + " " +

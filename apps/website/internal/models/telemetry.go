@@ -9,6 +9,7 @@ import (
 // MissionOutcome backs the Postgres ENUM `mission_outcome`.
 type MissionOutcome string
 
+// Mission outcomes (mission_outcome enum).
 const (
 	OutcomeSuccess MissionOutcome = "success"
 	OutcomeFailure MissionOutcome = "failure"

@@ -100,6 +100,7 @@ func (h *Handler) ApproveMission(c *gin.Context) {
 	}
 
 	reviewerName := h.username(reviewer)
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &reviewer, reviewerName,
 		"mission.approve", reviewerName+" approved mission '"+m.Title+"'", "mission", m.ID.String())
 
@@ -119,6 +120,7 @@ func (h *Handler) RejectMission(c *gin.Context) {
 		return
 	}
 	var in rejectInput
+	//nolint:errcheck // best-effort: body is optional; an absent reason is acceptable (zero value).
 	_ = c.ShouldBindJSON(&in)
 
 	reviewer := middleware.DiscordID(c)
@@ -134,6 +136,7 @@ func (h *Handler) RejectMission(c *gin.Context) {
 	}
 
 	reviewerName := h.username(reviewer)
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityWarn, &reviewer, reviewerName,
 		"mission.reject", reviewerName+" rejected mission '"+m.Title+"'", "mission", m.ID.String())
 

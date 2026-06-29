@@ -10,6 +10,7 @@ import (
 // AuditSeverity backs the Postgres ENUM `audit_severity` (INFO / WARN / CRIT).
 type AuditSeverity string
 
+// Audit severities (audit_severity enum).
 const (
 	SeverityInfo AuditSeverity = "info"
 	SeverityWarn AuditSeverity = "warn"

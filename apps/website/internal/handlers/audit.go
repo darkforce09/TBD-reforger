@@ -75,8 +75,10 @@ func (h *Handler) ExportAuditLogsCSV(c *gin.Context) {
 	c.Header("Content-Disposition", `attachment; filename="audit-logs.csv"`)
 
 	w := csv.NewWriter(c.Writer)
+	//nolint:errcheck // best-effort: CSV export stream; a mid-write client disconnect is non-actionable.
 	_ = w.Write([]string{"timestamp", "severity", "actor", "action", "message", "target_type", "target_id"})
 	for _, l := range logs {
+		//nolint:errcheck // best-effort: CSV export stream; a mid-write client disconnect is non-actionable.
 		_ = w.Write([]string{
 			l.CreatedAt.UTC().Format(time.RFC3339),
 			string(l.Severity),

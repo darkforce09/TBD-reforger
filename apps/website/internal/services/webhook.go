@@ -108,12 +108,15 @@ func (w *WebhookService) PushAnnouncement(ctx context.Context, a *models.Announc
 	if err != nil {
 		return "", err
 	}
+	//nolint:errcheck // best-effort: response body close on a drained HTTP body.
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		//nolint:errcheck // best-effort: diagnostic body read on a non-2xx path; a partial read still yields a useful error.
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<12))
 		return "", fmt.Errorf("webhook push: status %d: %s", resp.StatusCode, string(body))
 	}
 	var out webhookResponse
+	//nolint:errcheck // best-effort: the webhook response id is optional; a decode failure yields an empty id.
 	_ = json.NewDecoder(resp.Body).Decode(&out)
 	return out.ID, nil
 }

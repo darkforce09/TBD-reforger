@@ -115,6 +115,7 @@ func (h *Handler) UpdateUser(c *gin.Context) {
 		return
 	}
 	actor := middleware.DiscordID(c)
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &actor, h.username(actor),
 		"user.role_change", h.username(actor)+" set "+h.username(discordID)+" role to "+string(role), "user", discordID)
 	c.JSON(http.StatusOK, gin.H{"discord_id": discordID, "role": role})
@@ -128,6 +129,7 @@ type banInput struct {
 func (h *Handler) BanUser(c *gin.Context) {
 	discordID := c.Param("discordId")
 	var in banInput
+	//nolint:errcheck // best-effort: body is optional; an absent reason is acceptable (zero value).
 	_ = c.ShouldBindJSON(&in)
 
 	actor := middleware.DiscordID(c)
@@ -148,6 +150,7 @@ func (h *Handler) BanUser(c *gin.Context) {
 		Where("discord_id = ? AND revoked_at IS NULL", discordID).
 		Update("revoked_at", now)
 
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityWarn, &actor, h.username(actor),
 		"user.ban", h.username(actor)+" permanently banned user '"+h.username(discordID)+"'. Reason: '"+in.Reason+"'",
 		"user", discordID)
@@ -169,6 +172,7 @@ func (h *Handler) UnbanUser(c *gin.Context) {
 		return
 	}
 	actor := middleware.DiscordID(c)
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &actor, h.username(actor),
 		"user.unban", h.username(actor)+" unbanned user '"+h.username(discordID)+"'", "user", discordID)
 	c.JSON(http.StatusOK, gin.H{"banned": false})
@@ -197,6 +201,7 @@ func (h *Handler) IssueWarning(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not issue warning"})
 		return
 	}
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityWarn, &actor, h.username(actor),
 		"user.warn", h.username(actor)+" warned '"+target.Username+"': "+in.Reason, "user", discordID)
 	c.JSON(http.StatusCreated, warning)
@@ -210,6 +215,7 @@ func (h *Handler) ResyncRoles(c *gin.Context) {
 		return
 	}
 	actor := middleware.DiscordID(c)
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &actor, h.username(actor),
 		"roles.resync", h.username(actor)+" triggered a role resync", "system", "")
 	c.JSON(http.StatusOK, gin.H{"updated": updated})
@@ -247,6 +253,7 @@ func (h *Handler) SendRCON(c *gin.Context) {
 	if in.Action == "change_map" && in.Map != "" {
 		detail += " -> " + in.Map
 	}
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &actor, h.username(actor),
 		"server.rcon", h.username(actor)+" issued RCON '"+detail+"' on "+srv.Name, "server", serverID)
 

@@ -178,6 +178,7 @@ func (h *Handler) IngestLinkConfirm(c *gin.Context) {
 
 	var user models.User
 	_ = h.db.First(&user, "discord_id = ?", code.DiscordID).Error
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &code.DiscordID, user.Username,
 		"identity.link", user.Username+" successfully linked their Arma Steam ID", "user", code.DiscordID)
 

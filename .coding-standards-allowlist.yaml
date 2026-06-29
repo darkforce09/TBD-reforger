@@ -1,0 +1,9 @@
+# Coding-standards opt-out allowlist (CODING_STANDARDS.md §8.1). File-level only.
+# Created T-125.2; consumed by scripts/website/verify-file-length.mjs (T-125.4).
+#
+# Function-level opt-outs (COMP-1 cyclop, GO-3 errcheck) live INLINE (//nolint with a reason),
+# never here. Only file-level SIZE-2 (MC-perf) and SIZE-3 (named debt) entries belong in this file.
+- rule: SIZE-2
+  path: apps/website/frontend/src/features/tactical-map/**
+  reason: MC-perf — dense T-057..T-067 fps hot paths; measured perf outweighs file length
+  expires: MC-perf

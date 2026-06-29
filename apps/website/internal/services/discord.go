@@ -159,11 +159,13 @@ func (d *DiscordService) FetchGuildMember(ctx context.Context, accessToken strin
 	if err != nil {
 		return nil, err
 	}
+	//nolint:errcheck // best-effort: response body close on a drained HTTP body.
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
 		return nil, nil // not a guild member
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		//nolint:errcheck // best-effort: diagnostic body read on a non-2xx path; a partial read still yields a useful error.
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<12))
 		return nil, fmt.Errorf("discord member fetch: status %d: %s", resp.StatusCode, string(body))
 	}
@@ -180,8 +182,10 @@ func (d *DiscordService) do(req *http.Request, v any) error {
 	if err != nil {
 		return err
 	}
+	//nolint:errcheck // best-effort: response body close on a drained HTTP body.
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		//nolint:errcheck // best-effort: diagnostic body read on a non-2xx path; a partial read still yields a useful error.
 		body, _ := io.ReadAll(io.LimitReader(resp.Body, 1<<12))
 		return fmt.Errorf("discord: status %d: %s", resp.StatusCode, string(body))
 	}

@@ -3,9 +3,9 @@ name: ci
 # Primary full-repo gate (CODING_STANDARDS.md §0.3 CI-2 + TEST-1/2/3 + FMT-1).
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
-# them here in this slice). golangci-lint is intentionally NOT in this workflow yet: the
-# repo config is revive-only and contracts.yml runs it with `only-new-issues: true`;
-# promoting it to a hard full-repo gate (and removing that flag) is T-125.2.
+# them here in this slice).
+# golangci full-repo gate (GO-2..GO-8, COMP-1) wired T-125.2 — backend step after gofmt.
+# contracts.yml go-doc-lint: path-filtered supplement only (no only-new-issues).
 on:
   push:
     branches: [main]
@@ -53,6 +53,12 @@ jobs:
       - name: gofmt (FMT-1)
         # Run from repo root so the paths match CODING_STANDARDS.md §10 FMT-1 verbatim.
         run: test -z "$(gofmt -l apps/website/internal apps/website/cmd)"
+      - name: golangci-lint (GO-2..GO-8, COMP-1)
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          working-directory: apps/website
+          # NO only-new-issues — full-repo gate (CI-1)
       - name: go build
         working-directory: apps/website
         run: go build ./...

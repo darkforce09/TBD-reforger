@@ -148,7 +148,7 @@ func (h *Handler) StreamServerStatus(c *gin.Context) {
 
 // writeSSE writes a single Server-Sent Event data frame.
 func writeSSE(w interface{ Write([]byte) (int, error) }, data []byte) {
-	_, _ = w.Write([]byte("data: "))
-	_, _ = w.Write(data)
-	_, _ = w.Write([]byte("\n\n"))
+	_, _ = w.Write([]byte("data: ")) //nolint:errcheck // best-effort: SSE frame; a disconnected client is reaped by the stream loop.
+	_, _ = w.Write(data)             //nolint:errcheck // best-effort: SSE frame; a disconnected client is reaped by the stream loop.
+	_, _ = w.Write([]byte("\n\n"))   //nolint:errcheck // best-effort: SSE frame; a disconnected client is reaped by the stream loop.
 }

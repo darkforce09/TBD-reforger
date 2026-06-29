@@ -5,7 +5,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 
 	"github.com/tbd-milsim/reforger-backend/internal/models"
 )
@@ -58,10 +57,9 @@ func (h *Handler) serverIntel(s models.Server) serverIntelDTO {
 
 	if s.RequiredModpackID != nil {
 		var mp models.Modpack
+		// Non-fatal: a missing or unreadable required modpack just leaves the field nil.
 		if err := h.db.First(&mp, "id = ?", *s.RequiredModpackID).Error; err == nil {
 			dto.RequiredModpack = h.withMods(mp)
-		} else if err != gorm.ErrRecordNotFound {
-			// non-fatal; leave modpack nil
 		}
 	}
 	return dto

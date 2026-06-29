@@ -84,13 +84,19 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 # backend -> frontend -> schema; each sub-target is a separate $(MAKE) so a non-zero recipe
 # halts the run (fail-fast). `go` resolves via the ~/.local/go/bin PATH export above; the
 # frontend job uses whatever `nvm use` (.nvmrc -> Node 26) selected.
+# Backend sub-steps run in this exact order: gofmt (FMT-1) -> CI-1 grep -> golangci-lint run ./...
+# -> go build -> test-it. golangci-lint resolves via the same ~/.local/go/bin PATH export as go.
+# golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
 	$(MAKE) ci-local-backend
 	$(MAKE) ci-local-frontend
 	$(MAKE) ci-local-schema
 
-ci-local-backend: ## CI gate: gofmt (FMT-1) + go build + integration tests (needs `make db-up` @ host :5434)
+ci-local-backend: ## CI gate: gofmt (FMT-1) + CI-1 + golangci-lint + go build + test-it (needs `make db-up` @ :5434)
 	test -z "$$(gofmt -l $(WEB)/internal $(WEB)/cmd)"
+	@! grep -q 'only-new-issues: true' .github/workflows/contracts.yml || \
+		(echo "CI-1: remove only-new-issues from contracts.yml" && exit 1)
+	cd $(WEB) && golangci-lint run ./...
 	cd $(WEB) && go build ./...
 	$(MAKE) test-it
 

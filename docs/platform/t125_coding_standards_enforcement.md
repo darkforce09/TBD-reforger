@@ -84,6 +84,21 @@ Harden [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml):
 
 **Verify:** `golangci-lint run ./...` clean; `make test-it`.
 
+**Shipped (T-125.2):** [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) enables
+**revive** (`exported`), **errcheck** (`check-blank: true`), **errorlint**, **staticcheck**, **govet**,
+and **cyclop** (`max-complexity: 15`). Exclusions: `node_modules` (vendored Go) + generated
+`internal/contract/`, and `_test.go` exempt from errcheck/cyclop (fixtures discard known-good errors;
+integration tests are linear — §2 GO-2/3 + COMP-1 target production logic). **`only-new-issues`
+removed** from [`contracts.yml`](../../.github/workflows/contracts.yml) (now a path-filtered
+supplement); golangci wired into [`ci.yml`](../../.github/workflows/ci.yml) backend (after gofmt,
+before build) and `make ci-local-backend`, with the **CI-1** grep guard. **57 findings fixed**
+repo-wide: errcheck 34 → best-effort `//nolint:errcheck`; revive 12 → const-block Godoc; errorlint 7
+→ `errors.Is`; cyclop 3 → `//nolint:cyclop` (events/cms/missions handlers — splits are SIZE-3/T-125.4);
+staticcheck 1 → `fmt.Fprintf`. Result: `golangci-lint run ./...` **0 issues**, `make test-it` green,
+`make build` clean. New [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml)
+(SIZE-2 MC-perf stub). Note: the M6 `_ = db.First(...).Error` reads are a struct **field** access (not
+a func call) so errcheck does not flag them — they stay **T-125.4** (which owns `_ = db.First` fixes).
+
 ---
 
 ## T-125.3 — TypeScript strict + eslint tags

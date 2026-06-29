@@ -35,6 +35,7 @@ func ParseOrbatTemplate(payload []byte) []OrbatSquadTemplate {
 	var p struct {
 		Orbat []OrbatSquadTemplate `json:"orbat"`
 	}
+	//nolint:errcheck // best-effort: an absent/invalid top-level "orbat" intentionally falls back to the editor-derived ORBAT.
 	_ = json.Unmarshal(payload, &p)
 	if len(p.Orbat) > 0 {
 		return p.Orbat

@@ -132,6 +132,7 @@ func (h *Handler) InjectMission(c *gin.Context) {
 	}
 
 	actor := middleware.DiscordID(c)
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &actor, h.username(actor),
 		"mission.inject", h.username(actor)+" injected mission '"+m.Title+"' to the server staging directory",
 		"mission", m.ID.String())

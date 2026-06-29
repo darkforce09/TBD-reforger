@@ -49,6 +49,7 @@ type Config struct {
 // Load reads configuration from the environment, applying defaults for local
 // development. A .env file is loaded if present but is optional.
 func Load() (*Config, error) {
+	//nolint:errcheck // best-effort: .env is optional; real config comes from the environment.
 	_ = godotenv.Load() // optional; ignore if absent
 
 	frontendURL := getEnv("FRONTEND_URL", "http://localhost:5173")

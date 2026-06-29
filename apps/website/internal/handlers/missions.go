@@ -309,6 +309,8 @@ type patchMissionInput struct {
 }
 
 // UpdateMission edits mission metadata (author or admin only).
+//
+//nolint:cyclop // metadata-update handler branches per optional field + status/authz checks; splitting tracked SIZE-3 debt (T-125.4).
 func (h *Handler) UpdateMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {

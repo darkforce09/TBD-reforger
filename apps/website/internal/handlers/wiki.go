@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -89,7 +90,7 @@ func (h *Handler) loadCurrentModpack() (*modpackDTO, error) {
 	var mp models.Modpack
 	err := h.db.First(&mp, "is_current = ?", true).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
 		}
 		return nil, err

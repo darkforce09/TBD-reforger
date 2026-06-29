@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -32,7 +33,7 @@ func (h *Handler) ListRegistry(c *gin.Context) {
 			return
 		}
 		if err := h.db.First(&mp, "id = ?", id).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "modpack not found"})
 				return
 			}
@@ -41,7 +42,7 @@ func (h *Handler) ListRegistry(c *gin.Context) {
 		}
 	} else {
 		if err := h.db.First(&mp, "is_current = ?", true).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "no current modpack configured"})
 				return
 			}

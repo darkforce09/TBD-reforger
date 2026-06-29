@@ -48,7 +48,7 @@ func TestOAuthCallbackRedirectsToSPA(t *testing.T) {
 	})
 	mux.HandleFunc("/users/@me", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(fmt.Sprintf(`{"id":%q,"username":"OAuthUser","global_name":"OAuth User","discriminator":"0"}`, discordID)))
+		_, _ = fmt.Fprintf(w, `{"id":%q,"username":"OAuthUser","global_name":"OAuth User","discriminator":"0"}`, discordID)
 	})
 	// Guild member fetch is allowed to 404 (tolerated -> enlisted).
 	srv := httptest.NewServer(mux)

@@ -11,6 +11,7 @@ import (
 // Backed by the Postgres ENUM type `user_role` (see migrations/01_enums.sql).
 type UserRole string
 
+// User roles, low to high privilege (user_role enum).
 const (
 	RoleEnlisted     UserRole = "enlisted"
 	RoleLeader       UserRole = "leader" // community/squad leader: can reserve squads

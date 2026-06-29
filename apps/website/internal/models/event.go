@@ -10,6 +10,7 @@ import (
 // EventStatus backs the Postgres ENUM `event_status`.
 type EventStatus string
 
+// Event lifecycle states (event_status enum).
 const (
 	EventScheduled EventStatus = "scheduled"
 	EventOpen      EventStatus = "open"
@@ -22,6 +23,7 @@ const (
 // RegistrationState backs the Postgres ENUM `registration_state`.
 type RegistrationState string
 
+// Registration states (registration_state enum).
 const (
 	RegRegistered RegistrationState = "registered"
 	RegWaitlisted RegistrationState = "waitlisted"
@@ -33,6 +35,7 @@ const (
 // LeaveStatus backs the Postgres ENUM `leave_status`.
 type LeaveStatus string
 
+// Leave-request states (leave_status enum).
 const (
 	LeavePending  LeaveStatus = "pending"
 	LeaveApproved LeaveStatus = "approved"

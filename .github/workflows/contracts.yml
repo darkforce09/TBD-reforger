@@ -53,12 +53,11 @@ jobs:
         with:
           go-version: "1.26"
           cache-dependency-path: apps/website/go.sum
+      # supplemental path-filter; primary golangci gate is ci.yml backend (full repo, T-125.2)
       - uses: golangci/golangci-lint-action@v9
         with:
           version: latest
           working-directory: apps/website
-          # Introduce the gate without failing on pre-existing nits: enforce on new/changed code.
-          only-new-issues: true
 
   frontend-doc-lint:
     name: eslint (TSDoc contract gate)

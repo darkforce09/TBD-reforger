@@ -91,6 +91,7 @@ func (h *Handler) IngestServerStatus(c *gin.Context) {
 	})
 
 	if prevHealthy && in.ServerFPS < lowFPSThreshold && in.IsOnline {
+		//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 		_ = services.WriteAudit(h.db, models.SeverityWarn, nil, "system",
 			"server.low_fps",
 			"Active server FPS dropped below 20 (now "+formatFPS(in.ServerFPS)+")",
@@ -223,6 +224,7 @@ func (h *Handler) IngestMatchResults(c *gin.Context) {
 		h.recomputeUserStats(discordID)
 	}
 	if err := db.RefreshLeaderboard(h.db); err != nil {
+		//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 		_ = services.WriteAudit(h.db, models.SeverityWarn, nil, "system",
 			"leaderboard.refresh_failed", "Leaderboard refresh failed after match ingest", "match", matchID.String())
 	}

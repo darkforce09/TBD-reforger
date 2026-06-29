@@ -43,6 +43,7 @@ func (h *Handler) DiscordCallback(c *gin.Context) {
 		h.redirectAuthError(c, "missing_code")
 		return
 	}
+	//nolint:errcheck // best-effort: a missing oauth_state cookie is handled by the empty-string check below.
 	cookieState, _ := c.Cookie("oauth_state")
 	if cookieState == "" || !auth.ConstantTimeEqual(state, cookieState) {
 		h.redirectAuthError(c, "invalid_state")
@@ -116,6 +117,7 @@ func (h *Handler) DiscordCallback(c *gin.Context) {
 		return
 	}
 
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &du.ID, fresh.Username,
 		"auth.login", fresh.Username+" signed in via Discord", "user", du.ID)
 

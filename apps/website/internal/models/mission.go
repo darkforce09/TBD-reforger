@@ -11,6 +11,7 @@ import (
 // MissionStatus backs the Postgres ENUM `mission_status`.
 type MissionStatus string
 
+// Mission lifecycle states (mission_status enum).
 const (
 	MissionDraft           MissionStatus = "draft"
 	MissionPendingApproval MissionStatus = "pending_approval"
@@ -22,6 +23,7 @@ const (
 // TerrainType backs the Postgres ENUM `terrain_type`.
 type TerrainType string
 
+// Terrain identifiers (terrain_type enum).
 const (
 	TerrainEveron TerrainType = "everon"
 	TerrainArland TerrainType = "arland"
@@ -31,6 +33,7 @@ const (
 // GameMode backs the Postgres ENUM `game_mode`.
 type GameMode string
 
+// Game modes (game_mode enum).
 const (
 	GameModePvECoop GameMode = "pve_coop"
 	GameModePvP     GameMode = "pvp"
@@ -40,6 +43,7 @@ const (
 // WeatherType backs the Postgres ENUM `weather_type`.
 type WeatherType string
 
+// Weather presets (weather_type enum).
 const (
 	WeatherClear     WeatherType = "clear"
 	WeatherOvercast  WeatherType = "overcast"

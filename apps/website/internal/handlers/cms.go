@@ -96,6 +96,7 @@ func (h *Handler) CreateAnnouncement(c *gin.Context) {
 	}
 
 	name := author
+	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &author, name,
 		"announcement.create", name+" created announcement '"+a.Title+"'", "announcement", a.ID.String())
 
@@ -116,6 +117,8 @@ type announcementUpdate struct {
 
 // UpdateAnnouncement edits an announcement, supporting draft->published
 // transitions (which set published_at and may push to Discord).
+//
+//nolint:cyclop // partial-update handler branches per optional field + draft->published transition; splitting tracked SIZE-3 debt (T-125.4).
 func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -242,6 +245,7 @@ func (h *Handler) PushAnnouncementDiscord(c *gin.Context) {
 func (h *Handler) pushToDiscord(c *gin.Context, a *models.Announcement) bool {
 	msgID, err := h.webhook.PushAnnouncement(c.Request.Context(), a)
 	if err != nil {
+		//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 		_ = services.WriteAudit(h.db, models.SeverityCrit, nil, "system",
 			"webhook.push_failed",
 			"Webhook failed to push payload to Discord channel #announcements ('"+a.Title+"')",

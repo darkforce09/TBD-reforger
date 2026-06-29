@@ -1,8 +1,5 @@
-# golangci-lint config (DOCUMENTATION_STANDARDS.md §10). Focused on the exported-doc gate:
-# revive's `exported` rule locks the Go Godoc baseline (every exported identifier documented,
-# comment starts with the name). Generated files (// Code generated ... DO NOT EDIT.) are
-# skipped automatically. The CI job runs with only-new-issues, so this enforces the rule on new
-# and changed code without retroactively failing on any pre-existing nit.
+# CODING_STANDARDS.md §10 — full golangci gate (T-125.2): revive, errcheck, errorlint,
+# staticcheck, govet, cyclop. CI: ci.yml backend (full repo) + contracts.yml (path-filter).
 version: "2"
 
 run:
@@ -11,10 +8,37 @@ run:
 linters:
   default: none
   enable:
-    - revive
+    - revive        # GO-6 exported godoc (comment starts with the name)
+    - errcheck      # GO-2/GO-3 unchecked errors (check-blank flags `_ =` discards)
+    - errorlint     # GO-4 wrap propagated errors with %w
+    - staticcheck   # GO-8 default SA checks
+    - govet         # spec §T-125.2 explicit enable
+    - cyclop        # COMP-1 cyclomatic complexity <= 15
   settings:
     revive:
       rules:
         - name: exported
           arguments:
             - disableStutteringCheck
+    errcheck:
+      check-blank: true
+    cyclop:
+      max-complexity: 15
+  exclusions:
+    warn-unused: true
+    paths:
+      # Vendored JS dependency that ships a Go reference impl — not our code, not in go.mod intent.
+      - node_modules
+    rules:
+      # GO-8: generated cross-boundary projections (// Code generated ... DO NOT EDIT.)
+      - path: internal/contract/
+        linters:
+          - staticcheck
+          - revive
+      # Tests: fixtures intentionally discard known-good errors (IssueAccess/RandomToken/httptest
+      # writes); integration-test funcs are long linear assertion sequences. CODING_STANDARDS §2
+      # (GO-2/3) + COMP-1 target production logic; the test bar is §6 (TEST-1/2/3, live PG).
+      - path: _test\.go
+        linters:
+          - errcheck
+          - cyclop

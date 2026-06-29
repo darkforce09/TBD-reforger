@@ -10,6 +10,7 @@ import (
 // AnnouncementStatus backs the Postgres ENUM `announcement_status`.
 type AnnouncementStatus string
 
+// Announcement statuses (announcement_status enum).
 const (
 	AnnouncementDraft     AnnouncementStatus = "draft"
 	AnnouncementPublished AnnouncementStatus = "published"
@@ -19,6 +20,7 @@ const (
 // AnnouncementTag backs the Postgres ENUM `announcement_tag` (Category Tag in CMS).
 type AnnouncementTag string
 
+// Announcement tags (announcement_tag enum).
 const (
 	TagUpdate        AnnouncementTag = "update"
 	TagEvent         AnnouncementTag = "event"
