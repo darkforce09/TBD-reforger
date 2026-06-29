@@ -2,7 +2,7 @@
 
 Working context for AI sessions. Read this first; it is the source of truth for
 **current state and how to run things**. Design specs live under [`docs/`](docs/website/README.md)
-(`docs/platform/context_handoff.md`, `docs/backend/architecture.md`) — verify against
+(`docs/website/platform/context_handoff.md`, `docs/backend/architecture.md`) — verify against
 live code for post-T-008 behavior.
 
 ## What this is
@@ -110,7 +110,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-113**
+**Latest shipped:** **T-122**
 
 **ACTIVE NOW:** **T-090** — T-090.1 (Aligned map tiles). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`.
 
@@ -144,6 +144,8 @@ See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/
 
 **Program order:** **T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Spawn transform = **T-092** (not T-096 telemetry).
 
+**Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
+
 **T-091.2 shipped @ `dde589e` (tag T-091.2):** `terrainZ` in `ydoc`; CUR/SEL X/Y/Z @ 3 dp; Mission Settings hillshade + grid; `useDemLayer` + grid-over-hillshade; `useDemVersion` async CUR refresh. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md).
 
 **T-091.1 shipped @ `2c56c2e` (tag T-091.1):** `tactical-map/dem/*` — loader + `sampleElevation` API. Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
@@ -169,7 +171,8 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
-- T-091.2 **Mission Creator — Z-axis editor UX** @ `dde589e` (tag **T-091.2**). `terrainZ` in `ydoc` (add/paste/move + Attributes X/Y re-sample); live CUR/SEL coords @ 3 dp; Mission Settings `showGrid`/`showHillshade`; `useDemLayer` hillshade + grid-over-hillshade layer order; `useDemVersion` for async CUR refresh. Vitest **21/21**. Unblocks **T-092**. Spec: [`t091_2_z_axis_editor.md`](docs/specs/Mission_Creator_Architecture/t091_2_z_axis_editor.md).
+- T-122 **Codebase audit hotfix (single bundle)** @ `f131770` (tag **T-122**). 37/41 findings (C/R/T/M/D); deferred T1/T3/T8/T15 with rationale. `make test-it` + FE build/lint clean. Spec: [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md).
+- T-091.2 **Mission Creator — Z-axis editor UX** @ `dde589e` (tag **T-091.2**).
 - T-091.1 **Mission Creator — DEM loader + sampleElevation** @ `2c56c2e` (tag **T-091.1**). Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
 - T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](.ai/artifacts/t091_0_ops_log.txt).
 - T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md) @ `d2128cf`.

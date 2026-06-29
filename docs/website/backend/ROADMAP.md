@@ -40,6 +40,12 @@
 
 ---
 
+## SHIPPED — platform audit (T-122 @ `f131770`)
+
+| T-ID | Item | Notes |
+|------|------|-------|
+| **T-122** | **Codebase audit hotfix** | [`CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md) — C1 leader PATCH; C2 attendance ingest; T2 mission visibility; T4 inject admin-only; T5 body limit on `/missions/:id/versions`; 37/41 shipped |
+
 ## SHIPPED (T-068.2–T-068.4 @ main)
 
 | T-ID | Item | Spec | Notes |

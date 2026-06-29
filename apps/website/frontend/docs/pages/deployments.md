@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/operations.tsx` (`DeploymentsPage`)
 - **Stitch reference:** `frontend/src/stitch-exports/my_deployments_service_record/code.html` (archived)
 - **Min role:** `public-nav` (personal data requires auth)
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.3 Deployments
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.3 Deployments
 
 ## Element Inventory
 
@@ -26,7 +26,7 @@
 | 6 | Countdown | span | Time to event | Urgency | UTC `start_time` |
 | 7 | ORBAT badge | span | ASSIGNED SLOT: {slot} | Assignment | `assignment` |
 | 8 | LOA button | button | Submit Leave of Absence | LOA request | `POST /me/leave-requests` |
-| 9 | Modify button | button | Modify Registration | Change registration | Event register API |
+| 9 | Modify button | link | Modify Assignment | Open assigned mission ORBAT | `GET /me/deployments` → `/events/:id/missions/:event_mission_id/orbat` (T-122 R1/R2) |
 | 10 | Empty state | p | No Further Operations Scheduled | No upcoming | Static |
 | 11 | Section H2 | h2 | Service Record | History | Static |
 | 12 | Table col | th | Date | History | Static |

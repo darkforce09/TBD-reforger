@@ -11,7 +11,7 @@
 - **Route:** `/server-intel`
 - **Stitch reference:** `frontend/src/stitch-exports/server_intel_dashboard/code.html`
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.1 Server Intel
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.1 Server Intel
 
 ## Element Inventory
 

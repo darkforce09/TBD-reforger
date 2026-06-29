@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/...` or `frontend/src/features/...`
 - **Stitch reference:** `frontend/src/stitch-exports/<folder>/code.html` or none (archived — see [stitch-exports README](../src/stitch-exports/README.md))
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../docs/platform/context_handoff.md) §4.x (if applicable)
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.x (if applicable)
 
 **Doc hub:** [docs/frontend/README.md](../../docs/frontend/README.md)
 

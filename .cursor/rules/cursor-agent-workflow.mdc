@@ -1,0 +1,107 @@
+---
+description: HARD GATE — Cursor vs Claude Code workflow, step phrases, forbidden edits. Read before any plan/ticket/audit work.
+alwaysApply: true
+---
+
+# Cursor agent workflow (HARD RULES)
+
+These rules override helpfulness. When in doubt, **stop and ask** — do not guess.
+
+## Agent split (non-negotiable)
+
+| Agent | Owns | Must NOT |
+|-------|------|----------|
+| **Cursor (you)** | Plan review, critique, docs, `.ai/tickets/registry.json`, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `./scripts/ticket sync` | Application code in `apps/website/`, `apps/mod/`, `packages/tbd-schema/` (except schema doc-only) |
+| **Claude Code** | Application code on `executor: claude-code` slices via `./scripts/ticket run` | Documentation, registry, ticket sync |
+
+**Executor gate:** Only act on slices where `executor` is `cursor-docs` or `claude-code`. If `workbench`, `human`, or `ci` — **stop and wait**.
+
+## Three modes — infer from intent (not magic phrases)
+
+You babble; that's fine. **Classify intent** from the message — never require exact wording.
+
+### Mode A — Plan review (read-only)
+
+**User intent sounds like:**
+- Paste of a Claude Code plan + "what do you think", "is this right", "does this make sense"
+- "Look at this plan", "review claude's thing", "anything wrong here"
+- "Give me something to send back to claude", "fix the plan first"
+- First message in a thread that is *only* a plan with no "go write" / "ship" / "register"
+
+**Allowed:** Read-only exploration, critique, out-of-scope list, **one copy-paste prompt for Claude to revise the plan**.
+
+**FORBIDDEN:** Any file writes, registry, tickets, app code, "completing" plan todos.
+
+**End with:** Claude prompt code block (revise plan only — no code, no files).
+
+### Mode B — Write ticket / docs (Cursor docs pass)
+
+**User intent sounds like:**
+- "Write the ticket", "set it up", "queue it", "make the handoff", "do the docs"
+- "Ok looks good", "approved", "yeah do that", "set up claude", "prep for claude code"
+- After Mode A back-and-forth, user agrees and wants registry + spec + handoff
+- "Document this for claude", "same as we always do", "like T-091"
+
+**Allowed:** ONE ticket (default), spec, `.ai/artifacts/*_handoff.md`, audit report if approved, registry, ticket sync, CLAUDE.md pointer.
+
+**FORBIDDEN:** App source edits. Batch many tickets unless user explicitly asks.
+
+**If ambiguous between A and B:** ask one line — *"Review only, or write the ticket + handoff?"*
+
+### Mode C — Code (NOT Cursor)
+
+**User intent sounds like:**
+- "Fix C1", "implement", "ship the hotfix", "run the ticket"
+- "Implement the plan" without prior Mode B ticket
+
+**Default response:** Code is **Claude Code** — output handoff or say `./scripts/ticket run`. Do not patch `.go`/`.ts`/`.c` unless user **clearly** overrides: *"Cursor, you write the code"*.
+
+## Danger patterns — still over-interpret carefully
+
+| Vague user vibe | Safe default |
+|-----------------|--------------|
+| "Implement / execute / build / go ahead" | If no ticket+handoff exists yet → **Mode A or B**, not code. Ask if one sentence unclear. |
+| "Don't stop until done" | Finish **Cursor** work only; code todos = handoff for Claude. |
+| Long ramble ending in "…so yeah" | Re-read whole message for: plan paste (A), approval (B), or fix request (C→Claude). |
+
+## Pre-flight (before ANY edit)
+
+State **Mode A/B/C** and list **every path** you will touch. App paths under `apps/` → default **stop** unless Mode C with explicit Cursor override.
+
+```text
+1. User → Cursor: paste Claude plan (often rambling — still Mode A)
+2. Cursor: critique + prompt for Claude to revise (no files)
+3. User → Claude Code: send prompt
+4. User → Cursor: paste revised plan back
+5. Cursor: confirm or nitpick (still Mode A until user wants setup)
+6. User: approval vibe ("ok", "set it up", "write the ticket", etc.) → Mode B
+7. Cursor: ONE ticket + spec + handoff
+8. User → Claude Code: handoff / ticket run
+9. After merge: Cursor doc sync if needed
+```
+
+## Pre-flight (before ANY edit)
+
+If about to write files, state **Mode (A/B/C)** and list **every path** you will touch.
+
+If the list includes any of:
+- `apps/website/internal/**`
+- `apps/website/frontend/src/**`
+- `apps/mod/**`
+
+and Mode is not explicit user-authorized code → **STOP**.
+
+## Codebase audit / tech-debt
+
+- **Default: ONE ticket, ALL fixes in one Claude pass** — do not split into T-122/T-123/… unless user asks.
+- Cursor: `CODEBASE_AUDIT_2026.md` + registry + handoff. Claude: all code fixes (+ may append verify/shipped notes to audit doc).
+- Parallel with T-090.1 OK when files don't overlap.
+
+## Commits
+
+- Do not commit unless user asks.
+- Doc-only commits: Cursor. Code commits: Claude Code on ticket branch with `T-0xx` tag.
+
+## When you mess up
+
+If user says stop / undo: `git checkout` tracked files, delete only **your** new untracked files, confirm clean state. Do not argue.

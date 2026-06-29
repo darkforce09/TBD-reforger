@@ -16,6 +16,7 @@
 | **[`frontend/docs/THEME.md`](../../../apps/website/frontend/docs/THEME.md)** | Aegis tokens in use |
 | **[`frontend/docs/_template.md`](../../../apps/website/frontend/docs/_template.md)** | Template for new page docs |
 | **[Mission Creator ROADMAP](../../specs/Mission_Creator_Architecture/ROADMAP.md)** | 2D editor ticket queue |
+| **[`docs/platform/CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md)** | T-122 audit findings + shipped/deferred log |
 | **[`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)** | Split-pane / frictionlessness methodology |
 | **[`CLAUDE.md`](../../../apps/website/CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
 | **[`docs/AGENT_COMMIT_CHECKLIST.md`](../AGENT_COMMIT_CHECKLIST.md)** | Same-commit doc sync — read before every T-0xx |
@@ -33,14 +34,14 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 | `/login`, `/auth/callback` | [login.md](../../../apps/website/frontend/docs/auth/login.md), [auth-callback.md](../../../apps/website/frontend/docs/auth/auth-callback.md) | Discord OAuth + dev-login |
 | `/server-intel` | [server-intel.md](../../../apps/website/frontend/docs/pages/server-intel.md) | |
 | `/announcements` | [announcements.md](../../../apps/website/frontend/docs/pages/announcements.md) | Live: `operations.tsx` |
-| `/deployments` | [deployments.md](../../../apps/website/frontend/docs/pages/deployments.md) | Live: `operations.tsx` |
+| `/deployments` | [deployments.md](../../../apps/website/frontend/docs/pages/deployments.md) | Live: `operations.tsx`; **T-122** ORBAT deep-link from Modify Assignment |
 | `/leaderboards` | [leaderboards.md](../../../apps/website/frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](../../../apps/website/frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](../../../apps/website/frontend/docs/pages/mission-overview.md) | Sheet dossier |
 | `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.1** aligned tiles active |
 | `/events` | [event-schedule.md](../../../apps/website/frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](../../../apps/website/frontend/docs/pages/event-hub.md) | Inline ORBAT |
-| `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../../apps/website/frontend/docs/pages/event-hub.md) | |
+| `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../../apps/website/frontend/docs/pages/event-hub.md) | Wired from Deployments (T-122 R2) |
 | `/wiki`, `/wiki/:slug` | [wiki.md](../../../apps/website/frontend/docs/pages/wiki.md) | Doctrine SOPs |
 | `/vehicles` | [vehicle-database.md](../../../apps/website/frontend/docs/pages/vehicle-database.md) | Split from wiki |
 | `/modpacks` | [modpacks.md](../../../apps/website/frontend/docs/pages/modpacks.md) | |

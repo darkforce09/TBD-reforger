@@ -1,5 +1,5 @@
 {
-  "next_id": 122,
+  "next_id": 123,
   "tickets": [
     {
       "id": "T-001",
@@ -2368,6 +2368,38 @@
         "T-091.0"
       ],
       "unblocks": []
+    },
+    {
+      "id": "T-122",
+      "order": 1220,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "root",
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "status": "shipped",
+      "active_slice": null,
+      "surfaces": [
+        "DATA",
+        "SHELL",
+        "ORBAT",
+        "MAP"
+      ],
+      "impact": [
+        "api",
+        "ui",
+        "schema",
+        "docs"
+      ],
+      "title": "Codebase audit hotfix (single bundle)",
+      "summary": "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
+      "spec": "docs/platform/audit/t122_codebase_audit_hotfix.md",
+      "depends_on": [],
+      "unblocks": [],
+      "branch": "ticket/T-122"
     }
   ]
 }

@@ -29,7 +29,8 @@ Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP*
 | [tickets/AI_PLAYBOOK.md](../../.ai/tickets/AI_PLAYBOOK.md) | Registry edit + `./scripts/ticket sync` |
 | [CLAUDE.md](../../CLAUDE.md) | Agent runtime, doc-on-commit rule |
 | [DEV_RUNBOOK.md](DEV_RUNBOOK.md) | Local stack commands |
-| [CURSOR_SETUP.md](CURSOR_SETUP.md) | Cursor workspace setup, scoped chats, health checks |
+| [Platform docs](../platform/README.md) | Audit, doc standards, monorepo migration |
+| [CODEBASE_AUDIT_2026.md](../platform/CODEBASE_AUDIT_2026.md) | T-122 audit findings + shipped/deferred log |
 
 ## Role-based entry paths
 

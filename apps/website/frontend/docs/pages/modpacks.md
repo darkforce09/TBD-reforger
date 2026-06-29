@@ -11,7 +11,7 @@
 - **Route:** `/modpacks`
 - **Stitch reference:** `frontend/src/stitch-exports/server_modpacks_deployment_dependencies/code.html`
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.7 Modpacks
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.7 Modpacks
 
 ## Element Inventory
 

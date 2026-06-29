@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/admin.tsx` (`PersonnelPage`); data via `usePersonnel`
 - **Stitch reference:** `frontend/src/stitch-exports/personnel_roster_admin_management/code.html` (archived)
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.10
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.10
 
 ## Element Inventory
 

@@ -14,12 +14,12 @@ Master index for all TBD Reforger frontend surfaces.
 | [pages/dashboard.md](pages/dashboard.md) | `/` | doc-complete | — | — |
 | [pages/server-intel.md](pages/server-intel.md) | `/server-intel` | doc-complete | §4.1 | T-088 |
 | [pages/announcements.md](pages/announcements.md) | `/announcements` | doc-complete | §4.2 | — |
-| [pages/deployments.md](pages/deployments.md) | `/deployments` | doc-complete | §4.3 | — |
+| [pages/deployments.md](pages/deployments.md) | `/deployments` | doc-complete | §4.3 | T-122 ORBAT deep-link |
 | [pages/leaderboards.md](pages/leaderboards.md) | `/leaderboards` | doc-complete | §4.4 | — |
 | [pages/mission-library.md](pages/mission-library.md) | `/missions` (+ create dialog T-048) | in-progress | §4.5 | — |
 | [pages/mission-overview.md](pages/mission-overview.md) | `/missions/:id` | doc-complete | — | — |
 | [pages/mission-creator.md](pages/mission-creator.md) | *(embedded in `/missions` — T-048)* | archived-route | — | — |
-| [pages/mission-editor.md](pages/mission-editor.md) | `/missions/:id/edit` | in-progress | — | T-068 Phase 1 shipped; active T-068.7 compat spec |
+| [pages/mission-editor.md](pages/mission-editor.md) | `/missions/:id/edit` | in-progress | — | T-091 + T-122 C3 error overlay; active T-090.1 |
 | [pages/event-schedule.md](pages/event-schedule.md) | `/events` | doc-complete | — | — |
 | [pages/event-hub.md](pages/event-hub.md) | `/events/:id` | doc-complete | — | — |
 | [pages/modpacks.md](pages/modpacks.md) | `/modpacks` | doc-complete | §4.7 | — |

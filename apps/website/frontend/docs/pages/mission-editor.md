@@ -22,7 +22,7 @@
 | 2 | Top strip | bar | Title, undo/redo, time/weather scrubber, settings, Export | Command chrome; Undo/Redo buttons + **keyboard shortcuts** (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Ctrl+Y) (T-052) | Mission metadata |
 | 3 | Left dock | panel | Editor Layers (+ ORBAT tree until **T-071** removes duplicate) | Outliner / drop target | `editorLayers` map |
 | 4 | Right dock | panel | Asset Palette tabs + **Asset Browser search** | Drag assets to map; **search filters the Factions tree by name** (T-055) | **`GET /api/v1/registry`** → `useRegistry` + `buildCatalogTree` (T-068.3); 8 NATO characters @ current seed |
-| 5 | Toolbelt | bar | Select, Ruler, LoS + X/Y/Z readout + **OBJ/SEL counts** (T-058) | Map tools; CUR/SEL coords; **OBJ** = total slots, **SEL** = selected count | Tool state + `slotsById` + selection |
+| 5 | Toolbelt | bar | Select, Ruler, LoS + X/Y/Z readout + **OBJ/SEL counts** (T-058) | Map tools; CUR/SEL coords; **OBJ** = total slots, **SEL** = selected count; **FpsCounter dev-only** (T-122 T12) | Tool state + `slotsById` + selection |
 | 6 | Inspector | panel | Slot fields on double-click | `AttributesModal` opens from **map dbl-click**, **ORBAT** slot row, or **Editor Layers** slot row (T-054); **Transform X/Y/Z/rotation editable** (T-049); **Arsenal tab** — 4 gear dropdowns + Download loadout JSON for character slots (T-068.4) | Selected slot + `GET /registry` |
 | 7 | Save Version | button | POST new semver | Immutable versions API | `useMissionEditor` |
 | 8 | Export | button | Download mod envelope | Compiler | `compiler/exportSchema.ts` |
@@ -39,7 +39,8 @@
 ### States
 - **Chromeless:** No platform Sidebar/TopNav (`fullBleed` + `chromeless` route handles).
 - **Loading:** Four-phase overlay on **cold** load: **restoring** (T-062.1 ✅ v2 chunked / legacy migrate once) → download → apply → local flush. **Warm return** (T-062.2): restoring → local flush only. **v2 @ ~360k:** determinate restoring `done/total` ticks smoothly (no 0→300k jump on 2nd+ load). **Dev alt-tab:** overlay should not reappear after extended background (T-062.2). **Save:** T-060.1.4 FIXED.
-- **Dirty:** Local autosave to v2 `idb` on `LOCAL_ORIGIN` edits; Save Version posts **editor-only** payload (T-062.1.1 — no duplicate `orbat[]`); server derives ORBAT for events. Export keeps full superset.
+- **Error (T-122 C3):** If local restore throws (corrupt/blocked IndexedDB), `docStatus: 'error'` — blocking overlay + toast; user Reloads; server version unaffected.
+- **Dirty:** Local autosave to v2 `idb` on `LOCAL_ORIGIN` edits; Save Version posts **editor-only** payload (T-062.1.1 — no duplicate `orbat[]`); server derives ORBAT for events. Export keeps full superset. **T-122 T11:** autosave write failures toast.
 - **Blocked:** T-090.1 aligned WebP tiles (no pyramid yet — **active**). **T-091 shipped** @ `dde589e` — DEM + loader + Z UX (hillshade, grid toggles, 3 dp coords). **Basemap today:** procedural grid + optional hillshade over DEM. Ruler/LoS viewshed after terrain program. **Spawn accuracy gate:** **T-092** (ready). **T-068** Phase 2 paused. Hub: [`t068_virtual_arsenal_program.md`](../../../docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md).
 
 ### Keyboard (host — `/missions/:id/edit`)

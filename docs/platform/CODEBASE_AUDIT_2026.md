@@ -89,7 +89,7 @@ Mod: M8 dead .gitignore lines; M9–M10 loadout validate version/modpackId; M11 
 | ID | Fix |
 |----|-----|
 | D1 | `MONOREPO_MIGRATION.md` — update layout to `apps/` + `packages/` + `.ai/` |
-| D2 | Fix links to `docs/website/platform/context_handoff.md` (not `docs/platform/…`) |
+| D2 | Fix links to `docs/website/platform/context_handoff.md` | **Done** — stub @ `docs/platform/context_handoff.md` + frontend page-doc link depth fixed (Cursor doc pass) |
 
 ---
 
@@ -117,3 +117,5 @@ Manual: C1 leader PATCH; C2 match ingest; C3 corrupt IDB; C4 gamemode boot; R1 d
 - **T15** — the real published addon GUID (and a non-dev Everon scenario `.conf`) are unknown here; a placeholder TODO + tracked note were added instead of guessing a wrong GUID.
 
 **Mod note:** Enfusion `.c` changes (C4, T14/T16/T17, M8–M15) are not covered by `make test-it`/frontend build and need a Workbench pass to validate at runtime.
+
+**Doc pass @ merge:** Frontend surface docs + `CLAUDE.md` context_handoff path; registry `shipped`; see commit after `efe14b2`.

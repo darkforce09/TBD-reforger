@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/admin.tsx` (`AuditLogsPage`); data via `useAuditLogs`
 - **Stitch reference:** `frontend/src/stitch-exports/system_audit_logs_admin_console/code.html` (archived)
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.12
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.12
 
 ## Element Inventory
 

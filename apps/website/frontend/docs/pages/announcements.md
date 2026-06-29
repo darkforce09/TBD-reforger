@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/operations.tsx` (`AnnouncementsPage`)
 - **Stitch reference:** `frontend/src/stitch-exports/command_announcements_feed/code.html` (archived)
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.2 Announcements
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.2 Announcements
 
 ## Element Inventory
 

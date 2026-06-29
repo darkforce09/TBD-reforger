@@ -60,6 +60,22 @@ Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADM
 
 Handoff: mark slice ready → correct executor implements → `./scripts/ticket advance-slice` or `./scripts/ticket done`.
 
+## Claude Code plan → Cursor review → ticket (HARD)
+
+**Authority:** [`.cursor/rules/cursor-agent-workflow.mdc`](../../.cursor/rules/cursor-agent-workflow.mdc)
+
+Infer **intent**, not exact phrases. Rough map:
+
+| Intent | Mode | Cursor does |
+|--------|------|-------------|
+| "What do you think of this plan?" + paste | A | Critique + Claude revise prompt. No files. |
+| "Ok / set it up / write the ticket / like T-091" | B | One ticket + spec + handoff + sync. No code. |
+| "Fix it / implement / ship" | C | Handoff → Claude Code. Cursor does not patch app source. |
+
+If unclear: one question — *review only, or write ticket + handoff?*
+
+**Cursor must NOT:** edit app source when exploring plans or writing audit/ticket docs. **One ticket at a time** unless user asks for more.
+
 ## Generated views
 
 | File | Shows |

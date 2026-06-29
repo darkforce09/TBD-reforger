@@ -11,7 +11,7 @@
 - **Route:** `/login`
 - **Stitch reference:** none
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §2.A
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §2.A
 
 ## Element Inventory
 

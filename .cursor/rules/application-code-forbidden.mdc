@@ -1,0 +1,31 @@
+---
+description: HARD GATE — no Cursor edits to application source without explicit user code authorization
+globs: apps/website/**/*.go,apps/website/frontend/src/**/*.{ts,tsx},apps/mod/**/*.{c,et,conf,lua}
+alwaysApply: false
+---
+
+# Application code — Claude Code only
+
+**Default: DO NOT EDIT these files in Cursor.**
+
+Application code is shipped by **Claude Code** on `executor: claude-code` ticket branches (`./scripts/ticket run`).
+
+## Allowed in Cursor (without extra permission)
+
+- Read / search / explain / review
+- Point to lines in critique or handoff specs
+
+## Forbidden unless user explicitly says "Cursor implement this code"
+
+- Any patch under `apps/website/internal/`, `apps/website/frontend/src/`, `apps/mod/`
+- "Fixing" audit findings (C1, C2, etc.) yourself
+- Completing plan todos that say `claude-code`
+
+## If the user wants a fix
+
+1. Write or update ticket + `.ai/artifacts/tXXX_claude_code_handoff.md`
+2. Tell user to paste handoff into Claude Code
+
+## Exception
+
+`executor: cursor-docs` slices that only touch docs under `docs/` or registry — still **no** app source edits.

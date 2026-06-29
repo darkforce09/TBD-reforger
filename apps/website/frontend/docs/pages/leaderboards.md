@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/operations.tsx` (`LeaderboardsPage`)
 - **Stitch reference:** `frontend/src/stitch-exports/global_leaderboards_player_rankings/code.html` (archived)
 - **Min role:** `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.4 Leaderboards
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.4 Leaderboards
 
 ## Element Inventory
 

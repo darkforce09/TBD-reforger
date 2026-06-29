@@ -7,11 +7,11 @@
 ## Summary
 
 - **What:** Planned admin panel for game server RCON: restart, change map, status.
-- **Why:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §2.B requires basic server controls in admin panel.
+- **Why:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §2.B requires basic server controls in admin panel.
 - **Route:** `/admin/server`
-- **Stitch reference:** none (spec from [context handoff](../../../docs/platform/context_handoff.md) §2)
+- **Stitch reference:** none (spec from [context handoff](../../../../../docs/platform/context_handoff.md) §2)
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §2.B RCON
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §2.B RCON
 
 ## Element Inventory
 

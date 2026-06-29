@@ -12,7 +12,7 @@
 - **Live source:** `frontend/src/pages/missions.tsx` (`MissionLibraryPage`); create dialog: `frontend/src/features/mission-creator/CreateMissionDialog.tsx` (T-048)
 - **Stitch reference:** `frontend/src/stitch-exports/mission_library_tactical_browser/code.html` (archived)
 - **Min role:** `enlisted` (browse); `mission_maker` (+ New Mission button)
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.5 Mission Library
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.5 Mission Library
 - **Implementation spec:** [t048_library_create_dialog.md](../../../docs/specs/Mission_Creator_Architecture/t048_library_create_dialog.md)
 
 ## Element Inventory

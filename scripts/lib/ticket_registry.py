@@ -770,6 +770,13 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print("DO NOT: edit documentation")
     if shipped:
         print(f"DO NOT REOPEN (shipped): {', '.join(shipped)}")
+    elif tid == "T-122":
+        print(
+            "SCOPE: ALL findings in docs/platform/CODEBASE_AUDIT_2026.md (C/R/T/M/D) — one branch"
+        )
+        print("MAY EDIT: docs/platform/CODEBASE_AUDIT_2026.md (append shipped SHA under §Verification)")
+        print("DO NOT: edit registry or other docs")
+        print("VERIFY: make test-it && cd apps/website/frontend && npm run build && npm run lint")
     elif active == "T-090.1":
         print(
             "SCOPE: aligned WebP tile basemap — TileLayer / manifest tiles[]; "

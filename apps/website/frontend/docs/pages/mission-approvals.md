@@ -11,7 +11,7 @@
 - **Route:** `/admin/approvals`
 - **Stitch reference:** `frontend/src/stitch-exports/mission_approvals_queue_admin_dashboard/code.html`
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.9 Mission Approvals
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.9 Mission Approvals
 
 ## Element Inventory
 

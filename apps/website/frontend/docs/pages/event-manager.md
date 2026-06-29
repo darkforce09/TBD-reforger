@@ -11,7 +11,7 @@
 - **Route:** `/admin/events`
 - **Stitch reference:** `frontend/src/stitch-exports/event_manager_admin_scheduling/code.html`
 - **Min role:** `admin`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../docs/platform/context_handoff.md) §4.8 Event Manager
+- **Blueprint ref:** [docs/platform/context_handoff.md](../../../../../docs/platform/context_handoff.md) §4.8 Event Manager
 
 ## Element Inventory
 

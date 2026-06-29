@@ -32,6 +32,11 @@
 | 13 | Deployments stat | p | Total Operations {n} | Stat | `user.total_deployments` |
 | 14 | Attendance stat | p | Attendance {pct}% | Stat | `user.attendance_rate` |
 
+### Deep links (T-122)
+
+- **TopNav → Link Arma Identity** → `/settings#arma-link` scrolls the Arma Identity card into view.
+- **Deployments → Modify Assignment** → ORBAT deep-link for the assigned `event_mission_id`.
+
 ## API Dependencies
 
 | Endpoint | Method | When | Response |
