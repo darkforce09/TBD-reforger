@@ -75,27 +75,36 @@ Wire **`DemController`** from [`TacticalMap.tsx`](../../../apps/website/frontend
 
 World bounds from manifest `worldBounds` `[0, 0, 12800, 12800]`. Pixel `(0,0)` = world `(0, 0)`; sample at pixel edge `(widthPx−1, heightPx−1)` = `(12800, 12800)`.
 
-**Out of bounds:** clamp world `(x,y)` to `[0, width] × [0, height]` **before** `worldToPixel` (matches slot clamp in `ydoc.ts`).
+**Out of bounds:** clamp world `(x,y)` to `[0, terrain.width] × [0, terrain.height]` **before** `worldToPixel` (matches slot clamp in `ydoc.ts`; confirmed product decision). Verified: `dem-sample.mjs` throws on OOB — the **public** API clamps first so editor never throws.
 
 ---
 
-## Locked decisions
+## Locked decisions (confirmed — not guessed)
+
+| Decision | Choice | Evidence |
+|----------|--------|----------|
+| **Out of bounds** | **Clamp** `(x,y)` to `[0, terrain.width] × [0, terrain.height]` before `worldToPixel`, then sample | Product decision 2026-06-29. Slots already clamp in `ydoc.ts`. *Note:* internal `dem-sample.mjs` **throws** on OOB for anchor verify; public `sampleElevation` must clamp first, then use same bilinear math. |
+| **Browser PNG decode** | **`pngjs` production `dependency`** in `DemTexture` with `{ skipRescale: true }` | Same decoder as `verify-terrain-strict` / `dem-sample.mjs` — no decode drift. One-time ~72 MB fetch at load. |
+| **DEM load failure toast** | **`sonner` toast with Retry** (re-runs `loadDemForTerrain`) | Matches `engineering_plan.md` §6. `Toaster` already mounted in `main.tsx`. |
+| **Arland stub** | **`packages/map-assets/arland/manifest.json`** with `widthPx/heightPx: 0` | `terrains.ts` already references `/map-assets/arland/manifest.json`; file was missing (404). Stub added; loader skips PNG when dims are 0. **Toast with Retry** (same UX as Everon load failure — Retry re-runs `loadDemForTerrain`; remains degraded until real DEM lands). |
+
+---
+
+## Locked decisions (implementation)
 
 | Decision | Choice |
 |----------|--------|
 | Decode | 16-bit grayscale PNG only — **no 8-bit fallback** |
 | PNG (Node/tests) | pngjs `{ skipRescale: true }`; read `.depth` not `.bitDepth`; reject if `data.BYTES_PER_ELEMENT !== 2` |
-| PNG (browser) | `fetch` → `arrayBuffer` → pngjs **or** manual IHDR/IDAT uint16 path — must produce identical meters to Node reference |
-| Encoding formula | `elevM = heightRangeMinM + (uint16/65535) × (heightRangeMaxM − heightRangeMinM)` — **not** black=0 (Everon min = **−204.78 m**) |
+| PNG (browser) | Same **pngjs** path as Node — **not** `createImageBitmap` (8-bit lossy for 16-bit PNG) |
+| Encoding formula | `elevM = heightRangeMinM + (uint16/65535) × (heightRangeMaxM − heightRangeMinM)` — Everon min **−204.78 m** (manifest) |
 | Interpolation | Bilinear on uint16 grid, **then** convert to meters (same order as `dem-sample.mjs`) |
-| CPU cache | **`Float32Array(width × height)`** of meters after decode — O(1) `sampleElevation` reads cache, no per-sample PNG decode |
-| GPU texture | **Optional in T-091.1** — hillshade is T-091.2; do not block ship on luma upload |
-| Rounding | Round result to `manifest.precision.storageDecimals` (**3**) |
-| Stub terrain | `manifest.dem.widthPx === 0` → skip PNG fetch; `isDemDegraded() === true`; `sampleElevation` → **0** |
-| Degraded load fail | HTTP non-OK, decode error, IHDR ≠ manifest dims → toast + flat mode; **`sampleElevation` → 0**; map still renders |
-| Toast | `sonner` non-blocking (see engineering_plan §6); optional **Retry** button re-runs load |
-| Dev static assets | Symlink `apps/website/frontend/public/map-assets` → `../../../../packages/map-assets` |
-| Makefile | Add `map-assets-link` target; document in DEV_RUNBOOK (optional: `web` depends on link) |
+| CPU cache | **`Float32Array(width × height)`** meters after decode |
+| GPU texture | **Optional in T-091.1** — hillshade is T-091.2 |
+| Rounding | Round to `manifest.precision.storageDecimals` (**3**) |
+| Stub terrain | `manifest.dem.widthPx === 0` → skip PNG fetch; degraded; `sampleElevation` → **0**; **toast with Retry** (same as load failure — confirmed product decision) |
+| Degraded load fail | HTTP non-OK, decode error, IHDR ≠ manifest → toast + Retry + flat mode |
+| Dev static assets | `make map-assets-link` → symlink `public/map-assets` |
 
 ---
 
@@ -115,7 +124,7 @@ Resolve: `dirname(manifestUrl) + '/' + dem.path` (or `new URL(dem.path, manifest
 
 ## Public API (T-091.2 will consume)
 
-Implement in `dem/index.ts` (exact names may vary; behavior must match):
+Implement in `dem/index.ts` — **use these names** (T-091.2 depends on them):
 
 ```typescript
 /** Start async load for terrain id (Everon first). Idempotent per terrain. */
@@ -153,18 +162,16 @@ Canonical logic: [`packages/tbd-schema/scripts/lib/dem-sample.mjs`](../../../pac
 
 ## Dev serve (mandatory)
 
-**No** `public/map-assets/` exists today. This slice **must** add:
+**Git does not track** `public/map-assets/` — create the symlink locally:
 
 ```bash
-# Repo root
-ln -sfn ../../../../packages/map-assets apps/website/frontend/public/map-assets
+make map-assets-link   # already in root Makefile; `make web` runs it automatically
 ```
 
-**Makefile target (add):**
+Equivalent manual command:
 
-```makefile
-map-assets-link: ## Symlink packages/map-assets → frontend public/
-	ln -sfn ../../../../packages/map-assets apps/website/frontend/public/map-assets
+```bash
+ln -sfn ../../../../packages/map-assets apps/website/frontend/public/map-assets
 ```
 
 **Pre-flight check (manual S6):** with `make web` running,
@@ -208,24 +215,27 @@ Requires `git lfs pull` if PNG missing locally.
 - Resolve path to repo `packages/map-assets/everon/dem/everon-dem-16bit.png` (relative from frontend root: `../../../../packages/map-assets/...`)
 - Optional: `test.environmentMatchGlobs` if mixing DOM tests later
 
-**Dependencies:** `vitest`, `pngjs` (devDependency — same decoder as verify scripts)
+**Dependencies:**
+
+- `pngjs` — **`dependencies`** (browser decode in `DemTexture.ts` **and** vitest)
+- `vitest` — **`devDependencies`**
 
 ### Files
 
 | File | Action |
 |------|--------|
 | `dem/terrainManifest.ts` | New — types + fetch/validate |
-| `dem/sampleElevation.ts` | New — pure math (port dem-sample.mjs) |
-| `dem/DemTexture.ts` | New — decode + Float32Array cache |
-| `dem/DemController.ts` | New — load lifecycle + module API |
+| `dem/sampleElevation.ts` | New — pure math (port dem-sample.mjs) + **clamp before sample** |
+| `dem/DemTexture.ts` | New — pngjs decode + Float32Array cache |
+| `dem/DemController.ts` | New — load lifecycle + toast **with Retry** |
 | `dem/index.ts` | New — public exports |
-| `dem/sampleElevation.test.ts` | New — vitest: real PNG anchors + optional 2×2 synthetic |
+| `dem/sampleElevation.test.ts` | New — vitest: 4+ anchors + synthetic 2×2 + S9 clamp + S8 arland stub |
 | `TacticalMap.tsx` | `useEffect` → `loadDemForTerrain(terrainId)` |
 | `index.ts` (tactical-map barrel) | Re-export `sampleElevation`, `isDemReady`, `isDemDegraded` |
-| `public/map-assets` | Symlink |
+| `packages/map-assets/arland/manifest.json` | Stub `widthPx/heightPx: 0` (committed; S8) |
+| `public/map-assets` | Symlink via `make map-assets-link` |
 | `vitest.config.ts` | New |
-| `Makefile` | `map-assets-link` target |
-| `package.json` | vitest + pngjs + test script |
+| `package.json` | `pngjs` + `vitest` + test script |
 
 **Do not modify:** `compiler.worker.ts`, `compile.ts` (S5 grep gate).
 
@@ -246,46 +256,72 @@ make verify-terrain-strict              # unchanged T-091.0 gate — must still 
 ! rg -l 'map-assets|dem/|sampleElevation|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/
 ```
 
-### Unit test cases (minimum — real PNG)
+### Unit test cases — Everon PNG (measured @ `6d96339`)
 
-Load committed PNG via Node path; call ported `sampleElevationMeters(x, z, manifest, raster, w, h)`; compare to **computed** reference values (from `dem-sample.mjs` @ `6d96339`):
+Run `sampleElevationMeters(x, z, …)` on the committed PNG via Node (same path as `verify-terrain-strict`). Values below are **measured**, not rounded from `surfaceYM`:
 
-| Anchor ID | World x | World z (= editor y) | Expected elev (m) | Tolerance |
-|-----------|---------|----------------------|-------------------|-----------|
-| `coast-sw` | 2000 | 2000 | **−7.408** | ±0.01 |
-| `valley-inland` | 5000 | 5000 | **80.871** | ±0.01 |
-| `hill-north` | 9600 | 3200 | **221.652** | ±0.01 |
+| Anchor ID | x | z (= editor y) | Expected demYM (m) | ±0.01 |
+|-----------|---|----------------|---------------------|-------|
+| `bridgehead-sl` | 4839.2 | 6620.8 | **121.784** | required |
+| `bridgehead-tl0` | 4836.9 | 6626.5 | **123.328** | required |
+| `bridgehead-tl1` | 4831.2 | 6628.8 | **123.602** | required |
+| `coast-w` | 1000 | 6400 | **0.054** | required |
+| `valley-inland` | 5000 | 5000 | **80.871** | required |
+| `hill-north` | 9600 | 3200 | **221.652** | required |
+| `peak-central` | 6400 | 6400 | **157.882** | required |
+| `coast-sw` | 2000 | 2000 | **−7.408** | required |
+| `seabed-e` | 11000 | 6400 | **−84.860** | required |
+| `shelf-ne` | 8000 | 8000 | **−18.314** | required |
+| `mid-s` | 3200 | 9600 | **−47.743** | required |
 
-**Recommended fourth case** (negative / offshore):
+**Minimum ship bar:** **all 11** measured anchors (±0.01 m) plus S8 + S9 + synthetic 2×2 + S10.
 
-| `seabed-e` | 11000 | 6400 | **−84.860** | ±0.01 |
+**Regenerate after DEM re-export:**
 
-**Optional:** round-trip all 11 anchors from [`verification.json`](../../../packages/map-assets/everon/anchors/verification.json) against `demYM` (verify script computes `demYM`; unit test uses same math — expect \|demYM − sample\| ≤ 0.01, not \|surfaceYM − sample\|).
+```bash
+cd packages/tbd-schema && node --input-type=module -e "
+import { readFileSync } from 'fs'; import { PNG } from 'pngjs';
+import { rasterFromPngjs, sampleElevationMeters } from './scripts/lib/dem-sample.mjs';
+const m = JSON.parse(readFileSync('../map-assets/everon/manifest.json','utf8'));
+const a = JSON.parse(readFileSync('../map-assets/everon/anchors/verification.json','utf8'));
+const png = PNG.sync.read(readFileSync('../map-assets/everon/dem/everon-dem-16bit.png'), { skipRescale: true });
+const { raster, width, height } = rasterFromPngjs(png);
+for (const row of a.anchors) console.log(row.id, sampleElevationMeters(row.x, row.z, m, raster, width, height).toFixed(3));
+"
+```
 
-### Synthetic unit test (recommended)
+### Synthetic unit test (required for CI without LFS)
 
-2×2 uint16 raster with known corners → bilinear center matches hand-calculated meters (no LFS dependency — runs in CI even if LFS smudge fails).
+2×2 uint16 raster with known corners → bilinear center matches hand-calculated meters.
+
+### S9 clamp unit test (required)
+
+`sampleElevation(-100, 5000)` **must equal** `sampleElevation(0, 5000)` (and similarly for x>12800, y<0, y>12800). Verified reference throws without clamp; public API must not throw.
+
+### S8 Arland stub unit test (required)
+
+`loadDemForTerrain('arland')` with committed [`arland/manifest.json`](../../../packages/map-assets/arland/manifest.json) → `isDemDegraded() === true`, `isDemReady() === false`, no PNG fetch, no throw, **toast with Retry** shown.
 
 ### Acceptance criteria
 
 | ID | Check | Pass condition | How to verify |
 |----|-------|----------------|---------------|
 | **S1** | Build/lint | exit 0 | `npm run build && npm run lint` |
-| **S2** | Unit tests | ≥3 anchor cases ±0.01 m | `npm test` |
+| **S2** | Unit tests | **All 11** measured anchors + S8 + S9 + synthetic + S10 | `npm test` |
 | **S3** | Strict alignment | T-091.0 gate unchanged | `make verify-terrain-strict` |
-| **S4** | Degraded mode | Broken URL → toast + `sampleElevation` returns 0; map loads | Manual: rename symlink subfolder `dem` → `dem_off`, reload editor, place still works |
-| **S5** | No worker fetch | Compiler worker does not fetch DEM | `rg` gate above — zero matches |
-| **S6** | Dev serve | PNG + manifest HTTP 200 | `curl -sfI` commands §Dev serve |
-| **S7** | API wired | `loadDemForTerrain` called from TacticalMap | `rg loadDemForTerrain TacticalMap.tsx` |
-| **S8** | Stub terrain | Arland manifest `widthPx: 0` → degraded, no throw | Unit test or manual switch terrain to arland if stub exists |
-| **S9** | Bounds clamp | Sample at (−100, 12900) equals clamped edge sample | Unit test |
+| **S4** | Degraded Everon | Break DEM path → **toast with Retry** + `sampleElevation` → 0 | Manual: rename `dem` → `dem_off` under symlink |
+| **S5** | No worker fetch | Compiler worker does not fetch DEM | `rg` gate — zero matches |
+| **S6** | Dev serve | PNG + manifest HTTP 200 | `curl -sfI` §Dev serve |
+| **S7** | API wired | `loadDemForTerrain` in TacticalMap | `rg loadDemForTerrain TacticalMap.tsx` |
+| **S8** | Arland stub | `loadDemForTerrain('arland')` → degraded + **toast with Retry**, no PNG fetch | Unit test + manifest HTTP 200 |
+| **S9** | Bounds clamp | `sampleElevation(-100,5000) === sampleElevation(0,5000)` | Unit test |
 | **S10** | Ready gate | `sampleElevation` returns **0** before load completes (not NaN) | Unit test with unloaded controller |
 
 ### Manual smoke (after S1–S6)
 
 1. `make map-assets-link && make web` + `make api`
 2. Dev-login → open mission editor on Everon
-3. DevTools Network: `everon-dem-16bit.png` → **200**, ~140 MB (LFS)
+3. DevTools Network: `everon-dem-16bit.png` → **200**, **71,911,548 bytes** (~68.6 MiB on disk)
 4. Console: no uncaught decode errors
 5. *(Z still 0 in toolbelt — expected until T-091.2)*
 
@@ -315,7 +351,7 @@ export interface TerrainManifest {
 }
 ```
 
-Reject fetch if `widthPx !== heightPx` mismatch vs PNG IHDR after decode.
+Reject load if PNG IHDR `width×height` ≠ `manifest.dem.widthPx × manifest.dem.heightPx`.
 
 ---
 

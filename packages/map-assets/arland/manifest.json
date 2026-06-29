@@ -1,0 +1,32 @@
+{
+  "terrainId": "arland",
+  "schemaVersion": 1,
+  "worldBounds": [0, 0, 4096, 4096],
+  "metersPerPixel": 2,
+  "dem": {
+    "path": "dem/arland-dem-16bit.png",
+    "widthPx": 0,
+    "heightPx": 0,
+    "encoding": "uint16-linear",
+    "heightRangeMinM": -163,
+    "heightRangeMaxM": 148.38,
+    "blackMapsToM": -163,
+    "whiteMapsToM": 148.38,
+    "source": "mod-getsurfacey-resample"
+  },
+  "tiles": {
+    "type": "xyz",
+    "urlTemplate": "/map-assets/arland/tiles/{z}/{x}/{y}.webp",
+    "tileSizePx": 256,
+    "minZoom": 0,
+    "maxZoom": 5,
+    "bounds": [0, 0, 4096, 4096],
+    "alignmentOrigin": [0, 0]
+  },
+  "anchors": [],
+  "precision": {
+    "storageDecimals": 3,
+    "demNativeMetersPerPixel": 2,
+    "spawnAuthority": "mod-get-surface-y"
+  }
+}
