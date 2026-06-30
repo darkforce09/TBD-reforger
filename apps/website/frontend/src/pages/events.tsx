@@ -348,6 +348,7 @@ function MissionDossier({ index, m }: { index: number; m: EventMissionDossier })
 
 // --- Reusable ORBAT split-pane selector ------------------------------------
 
+// eslint-disable-next-line complexity -- ORBAT split-pane render: faction/squad/slot selection + register/reserve/release state branches
 function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
   const { data: squads, isLoading } = useOrbat(emid)
   const register = useRegisterMission(emid)
@@ -518,6 +519,7 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
               </div>
 
               <ul className="overflow-hidden rounded-lg border border-border-subtle divide-y divide-border-subtle">
+                {/* eslint-disable-next-line complexity -- per-slot row: taken/selected/clickable/role/tag display branches */}
                 {activeSquad.slots.map((slot) => {
                   const taken = Boolean(slot.assigned_to)
                   const selected = selectedSlot === slot.id

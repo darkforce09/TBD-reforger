@@ -156,8 +156,20 @@ function StatesTab() {
       <p className="text-label-sm normal-case text-outline">
         Unit traits — wired to the compiler in a later phase.
       </p>
-      <ToggleField label="Medic (soon)" checked={false} onChange={() => {}} />
-      <ToggleField label="Engineer (soon)" checked={false} onChange={() => {}} />
+      <ToggleField
+        label="Medic (soon)"
+        checked={false}
+        onChange={() => {
+          /* noop: trait is wired to the compiler in a later phase */
+        }}
+      />
+      <ToggleField
+        label="Engineer (soon)"
+        checked={false}
+        onChange={() => {
+          /* noop: trait is wired to the compiler in a later phase */
+        }}
+      />
     </div>
   )
 }

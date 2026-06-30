@@ -86,6 +86,7 @@ export default function MissionCreatorPage() {
   // on the selection centroid (no auto-fly on click — Decisions log); Delete/Backspace removes
   // the selection in one undoable step. All skipped while a form field is focused.
   useEffect(() => {
+    // eslint-disable-next-line complexity -- keyboard router: independent shortcut branches (undo/redo, space, delete, copy/paste), each field-focus guarded; one handler reads clearer than N split listeners
     const onKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
       if (
@@ -296,7 +297,13 @@ export default function MissionCreatorPage() {
       />
 
       {/* Load conflict: the server has a saved version and the local draft has edits. */}
-      <Dialog open={editor.conflict != null} onOpenChange={() => {}}>
+      <Dialog
+        open={editor.conflict != null}
+        onOpenChange={() => {
+          // Intentional noop: the conflict dialog is forced-choice — the user must pick
+          // load-server / keep-local, not dismiss it by outside-click or Esc.
+        }}
+      >
         <DialogContent
           title="Unsaved local changes"
           description="This mission has a saved version on the server, and your local draft has changes. Which do you want to keep?"

@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 /**
  * Response from the refresh endpoint: a freshly rotated access + refresh token pair.
  *
+ * @model models.RefreshToken
  * @route POST /api/v1/auth/refresh
  */
 export type RefreshResponse = {

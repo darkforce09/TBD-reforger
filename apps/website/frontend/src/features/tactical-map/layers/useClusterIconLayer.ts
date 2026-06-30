@@ -32,7 +32,8 @@ function getDiscIcon(): string {
   const canvas = document.createElement('canvas')
   canvas.width = DISC_SIZE
   canvas.height = DISC_SIZE
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2d canvas context unavailable')
   const c = DISC_SIZE / 2
   ctx.fillStyle = '#ffffff'
   ctx.beginPath()

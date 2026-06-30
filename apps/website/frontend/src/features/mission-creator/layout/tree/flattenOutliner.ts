@@ -78,9 +78,9 @@ function walk(
       },
     })
     if (isExpanded) {
-      if (hasInlineChildren) walk(n.children!, section, depth + 1, expanded, out)
+      if (hasInlineChildren) walk(n.children ?? [], section, depth + 1, expanded, out)
       if (hasVirtual) {
-        out.push({ kind: 'slots', ids: n.virtualSlotIds!, depth: depth + 1, parentId: n.id, section })
+        out.push({ kind: 'slots', ids: n.virtualSlotIds ?? [], depth: depth + 1, parentId: n.id, section })
       }
     }
   }

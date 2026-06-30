@@ -90,7 +90,10 @@ function TacticalMapInner({
     viewStateRef.current = viewState
   }, [viewState])
 
-  const noopMove = useCallback(() => {}, [])
+  const noopMove = useCallback(() => {
+    // Intentional noop: Deck requires a handler slot here we deliberately leave empty
+    // (hover/move handling was removed for perf in T-057).
+  }, [])
   const selectTool = useSelectTool({
     containerRef,
     view,

@@ -1,6 +1,7 @@
 // Hand-written API response types — the snake_case fields mirror the Go handler DTOs and
-// GORM models (the API contract). Cross-boundary types carry an @model (GORM model) or a
-// "mirrors Go <dto>" note so the source of truth is one grep away (DOCUMENTATION_STANDARDS §3).
+// GORM models (the API contract). Every exported type carries an @model (the GORM model it
+// projects) or @contract (the schema it projects) so its source of truth is one grep away;
+// this is enforced by verify-contract-citations.mjs (TS-6, DOCUMENTATION_STANDARDS §3).
 import type { User } from '@/types/models/user'
 import type { Server, ServerStatus } from '@/types/models/telemetry'
 
@@ -39,6 +40,8 @@ export interface Paginated<T> {
 /**
  * Aggregated landing-page payload: the caller's next event, current assignment, live
  * server status, current modpack, and recent announcements.
+ *
+ * @model models.Event
  */
 export interface DashboardResponse {
   next_event?: {
@@ -65,6 +68,8 @@ export interface DashboardResponse {
 /**
  * The auth session returned on login / refresh: token pair, expiry, the user, and whether
  * an Arma identity is linked.
+ *
+ * @model models.RefreshToken
  */
 export interface AuthSession {
   access_token: string
@@ -74,7 +79,11 @@ export interface AuthSession {
   arma_linked: boolean
 }
 
-/** One ranked row on a leaderboard; the stat fields populated depend on the category. */
+/**
+ * One ranked row on a leaderboard; the stat fields populated depend on the category.
+ *
+ * @model models.MatchPlayerStat
+ */
 export interface LeaderboardRow {
   rank: number
   discord_id: string
@@ -89,7 +98,11 @@ export interface LeaderboardRow {
   longest_kill_m?: number
 }
 
-/** A leaderboard response: the requested category plus its ranked rows. */
+/**
+ * A leaderboard response: the requested category plus its ranked rows.
+ *
+ * @model models.MatchPlayerStat
+ */
 export interface LeaderboardResponse {
   category: string
   data: LeaderboardRow[]
@@ -123,18 +136,30 @@ export interface Modpack {
   created_at: string
 }
 
-/** A modpack with its expanded mod list. */
+/**
+ * A modpack with its expanded mod list.
+ *
+ * @model models.Modpack
+ */
 export interface ModpackDTO extends Modpack {
   mods: ModpackMod[]
 }
 
-/** A server with its live status and required modpack expanded (Server Intel page). */
+/**
+ * A server with its live status and required modpack expanded (Server Intel page).
+ *
+ * @model models.Server
+ */
 export interface ServerIntel extends Server {
   status?: ServerStatus | null
   required_modpack?: ModpackDTO | null
 }
 
-/** The My Deployments service record: totals, upcoming registrations, and past operations. */
+/**
+ * The My Deployments service record: totals, upcoming registrations, and past operations.
+ *
+ * @model models.EventRegistration
+ */
 export interface DeploymentsResponse {
   total_operations: number
   attendance_rate: number
@@ -213,7 +238,11 @@ export interface MissionDetail extends MissionCard {
   } | null
 }
 
-/** An event row in the schedule list (rollup counts for the card). */
+/**
+ * An event row in the schedule list (rollup counts for the card).
+ *
+ * @model models.Event
+ */
 export interface EventListItem {
   id: string
   name_override?: string
@@ -230,7 +259,11 @@ export interface EventListItem {
   percent: number
 }
 
-/** One mission "dossier" inside an Event Hub (factions, armory-by-faction, fill, caller state). */
+/**
+ * One mission "dossier" inside an Event Hub (factions, armory-by-faction, fill, caller state).
+ *
+ * @model models.EventMission
+ */
 export interface EventMissionDossier {
   event_mission_id: string
   mission_id: string
@@ -248,7 +281,11 @@ export interface EventMissionDossier {
   my_slot_id?: string | null
 }
 
-/** The Event Hub: an event container plus its nested mission dossiers. */
+/**
+ * The Event Hub: an event container plus its nested mission dossiers.
+ *
+ * @model models.Event
+ */
 export interface EventHub {
   id: string
   name_override?: string
@@ -263,6 +300,8 @@ export interface EventHub {
 
 /**
  * A single ORBAT slot row inside a squad (mirrors the Go `orbatSlotDTO`).
+ *
+ * @model models.OrbatSlot
  */
 export interface OrbatSlot {
   id: string
@@ -277,6 +316,8 @@ export interface OrbatSlot {
 
 /**
  * A squad grouping of ORBAT slots (mirrors the Go `orbatSquadDTO`).
+ *
+ * @model models.OrbatSlot
  */
 export interface OrbatSquad {
   faction: string
@@ -291,6 +332,8 @@ export interface OrbatSquad {
 
 /**
  * A slim member row for the leader's assignee picker (mirrors the Go `memberDTO`).
+ *
+ * @model models.User
  */
 export interface Member {
   discord_id: string
@@ -329,7 +372,11 @@ export interface VehicleRow {
   profile_image_url?: string
 }
 
-/** A mission pending approval in the admin review queue. */
+/**
+ * A mission pending approval in the admin review queue.
+ *
+ * @model models.Mission
+ */
 export interface ApprovalRow {
   mission_id: string
   title: string
@@ -339,7 +386,11 @@ export interface ApprovalRow {
   submitted_at: string
 }
 
-/** A personnel roster row (admin directory). */
+/**
+ * A personnel roster row (admin directory).
+ *
+ * @model models.User
+ */
 export interface RosterRow {
   discord_id: string
   username: string
@@ -366,13 +417,21 @@ export interface AuditLog {
   created_at: string
 }
 
-/** A page of audit logs, paged by an opaque cursor instead of offset. */
+/**
+ * A page of audit logs, paged by an opaque cursor instead of offset.
+ *
+ * @model models.AuditLog
+ */
 export interface AuditLogResponse {
   data: AuditLog[]
   next_cursor?: number | null
 }
 
-/** A computed mortar fire solution (mortar calculator output). */
+/**
+ * A computed mortar fire solution (mortar calculator output).
+ *
+ * @model models.FireMission
+ */
 export interface FireSolution {
   weapon_system: string
   distance_m: number
@@ -383,7 +442,11 @@ export interface FireSolution {
   time_of_flight_s: number
 }
 
-/** Arma identity link status for the current user. */
+/**
+ * Arma identity link status for the current user.
+ *
+ * @model models.IdentityLinkCode
+ */
 export interface LinkStatus {
   linked: boolean
   arma_id?: string | null
@@ -391,7 +454,11 @@ export interface LinkStatus {
   pending_code?: boolean // true = an unconsumed link code is outstanding
 }
 
-/** The current user plus whether an Arma identity is linked (GET /api/v1/me). */
+/**
+ * The current user plus whether an Arma identity is linked (GET /api/v1/me).
+ *
+ * @model models.User
+ */
 export interface MeResponse {
   user: User
   arma_linked: boolean

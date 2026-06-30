@@ -17,6 +17,7 @@ const THEATER_IMAGE =
 const COMMAND_MAP_IMAGE =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuBqY9NRsaLKSRk7V0g9XrVkysuxuTRsc8FcMfq76JZujkDPkAAihMyRIw6mOuvFI4tTOwRDvDEhOe-p2Coym8zpmONJeueKLL379Yzecw64o3wzqJMRZdGCA7iBbwrno1hge-AU7AZNCE4XVo9q6IXTH5A2NRf3IToSchzAuj5JUT-Y81VVXfb-Ic4CrnLbV_So9xy2vBIxVHrwDztZ-YuY78DL-Jb5qsgNACRmxHXgRYRrsCxsCJnHBrgj-DD3LUVa31rIo4Arzrc'
 
+// eslint-disable-next-line complexity -- intel page render: loading/error/empty + per-card status/setting branches
 export function ServerIntelPage() {
   const { data: servers, isLoading, isError, error } = useServers()
   const server = servers ? pickDefaultServer(servers) : undefined

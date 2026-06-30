@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils'
 const HERO_IMAGE =
   'https://lh3.googleusercontent.com/aida-public/AB6AXuB_SlrhFHaG9jlm7NfoEUTrANNfG_-m0cqYcJVwKZ1pAUA_LTEnwP1zyNasVKfTgKdnX14ssTtYpEc3I1qn0UaEjwwEQyuAGxherp9Eu5rIpF4afr0sjFAUSjc9Z5NpB2xub7NkJCKNYCkkFsIa25L2e5QrbN4lEOZHeGZeLxpbVtQC8WATlT2skffHxtraZAi95LpXOqnuyLkxHIoJOHtxsFj2rJ4xCywZTnNZy_bJSzmLgPaun0eZsYw-Prx2nJ2GeJMP72x2l-4'
 
+// eslint-disable-next-line complexity -- landing page render: loading/error/empty + bento hero/status/intel sections
 export function DashboardPage() {
   const { data, isLoading, isError, error } = useDashboard()
 

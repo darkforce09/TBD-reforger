@@ -110,6 +110,32 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
 
 **Verify:** `npm run build && npm run lint && npm test`.
 
+**Shipped (T-125.3):**
+- **TS-1** — `strict: true` in both [`tsconfig.app.json`](../../apps/website/frontend/tsconfig.app.json)
+  and [`tsconfig.node.json`](../../apps/website/frontend/tsconfig.node.json) (`npm run build` = `tsc -b`
+  builds both). **0 tsc errors** — the codebase was already strict-clean.
+- **eslint** ([`eslint.config.js`](../../apps/website/frontend/eslint.config.js)) — added
+  `@typescript-eslint/no-explicit-any` + `no-non-null-assertion` (**TS-3**), `no-empty
+  {allowEmptyCatch:false}` + `no-empty-function` (**TS-4/TS-7**), `no-console {allow:[warn,error]}`
+  (**LOG-2**), `complexity {max:15}` (**COMP-1** TS half), and **TS-2** layer boundaries via
+  **`eslint-plugin-import-x`** `import-x/no-restricted-paths` (`features/` + `components/` ✗ `pages/`)
+  plus built-in `no-restricted-imports` for the `@/pages` alias form.
+- **Fallout fixed (50):** 18 non-null assertions (real fixes — a `mustGet` Y.Map helper that throws
+  on a broken invariant, null guards, `?? []`), 6 empty functions (documented noop / promise-chain
+  continuation), 5 dev `console` (one → `console.warn`; four dev diagnostics keep their
+  `import.meta.env.DEV` guard + an inline `no-console` opt-out), 21 `complexity` opt-outs (inline
+  `// eslint-disable-next-line complexity` with a per-function reason on MC hot paths + page render
+  functions — no refactor, mirroring the Go `//nolint:cyclop` approach).
+- **TS-6** — [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs)
+  extended: every exported `interface`/`type` in `types/`, `api/`, `hooks/` (excl. generated
+  `types/contract/**`) MUST carry `@model` or `@contract`; generic envelopes (`Paginated<T>`) are
+  exempt. **23 tags added** (36 exports checked); the existing 24 `@contract` citations still resolve.
+- **Verify:** `npm run build` / `npm run lint` / `npm test` (**21/21**) clean; `make verify-citations`
+  exit 0; `make ci-local` green (golangci **0 issues**, `go build`, `make test-it` ok, schema validate).
+  New devDep **`eslint-plugin-import-x`** — `eslint-plugin-import@2.32` peers eslint ≤9 and is
+  incompatible with eslint 10.6; the §10 matrix's `import/no-restricted-paths` should read
+  `import-x/no-restricted-paths` (Cursor reconciles in T-125.6).
+
 ---
 
 ## T-125.4 — Routes, errors, DTO gate

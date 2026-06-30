@@ -10,6 +10,7 @@ import { useLinkStatus, useMe } from '@/hooks/queries'
 import { useGenerateLinkCode, useUnlinkArma } from '@/hooks/mutations'
 import { DEFAULT_AVATAR } from '@/lib/avatar'
 
+// eslint-disable-next-line complexity -- settings page render: loading/error + linked/unlinked Arma identity branches
 export function SettingsPage() {
   const { data: me, isLoading, isError, error } = useMe()
   const { data: linkStatus } = useLinkStatus()

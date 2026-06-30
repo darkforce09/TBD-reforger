@@ -48,6 +48,7 @@ function childPatches<T>(children: Y.Map<unknown>[]): Record<ID, T> {
   return out
 }
 
+// eslint-disable-next-line complexity -- incremental patch classifier: slot-fields/add/remove/meta/editor-layers transaction shapes; perf hot path (T-062)
 export function classifyTransaction(
   md: MissionDoc,
   events: Y.YEvent<AnyType>[],

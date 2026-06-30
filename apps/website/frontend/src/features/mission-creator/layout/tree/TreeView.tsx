@@ -130,6 +130,7 @@ interface TreeNodeProps {
   setDragOverId: (id: string | null) => void
 }
 
+// eslint-disable-next-line complexity -- recursive node render: folder/leaf + drag/drop/rename/expand state branches
 function TreeNode({
   node,
   expanded,
@@ -177,7 +178,7 @@ function TreeNode({
           if (hasChildren) toggle(node.id)
         }}
         onRowDoubleClick={() => !isFolder && onActivate?.(node.id)}
-        onDragStart={draggable ? (e) => onNodeDragStart!(node, e) : undefined}
+        onDragStart={draggable ? (e) => onNodeDragStart?.(node, e) : undefined}
         onDragOver={
           isDropTarget
             ? (e) => {
@@ -195,7 +196,7 @@ function TreeNode({
             ? (e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                onNodeDrop!(node, e)
+                onNodeDrop?.(node, e)
                 setDragOverId(null)
               }
             : undefined
@@ -208,7 +209,7 @@ function TreeNode({
 
       {hasChildren && isOpen && (
         <ul className="ml-[1.1rem] flex flex-col border-l border-white/5 pl-0">
-          {node.children!.map((c) => (
+          {(node.children ?? []).map((c) => (
             <TreeNode
               key={c.id}
               node={c}

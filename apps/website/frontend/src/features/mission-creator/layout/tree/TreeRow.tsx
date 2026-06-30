@@ -37,6 +37,7 @@ export interface TreeRowProps {
   onRenameCancel?: () => void
 }
 
+// eslint-disable-next-line complexity -- tree row render: selection/drag/drop/rename/hover-action states in one row
 export function TreeRow({
   label,
   icon,

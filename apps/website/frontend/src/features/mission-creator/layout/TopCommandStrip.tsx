@@ -62,6 +62,7 @@ const toMinutes = (hhmm: string) => {
 const toHHMM = (mins: number) =>
   `${String(Math.floor(mins / 60)).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`
 
+// eslint-disable-next-line complexity -- top toolbar render: menu/time-scrubber/weather/undo/redo/settings/export branches in one component
 function TopCommandStripInner({
   md,
   undo,

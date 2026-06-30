@@ -28,6 +28,7 @@ window.addEventListener('pageshow', (e) => {
   const nav = performance.getEntriesByType('navigation')[0] as
     | PerformanceNavigationTiming
     | undefined
+  // eslint-disable-next-line no-console -- dev-only module (imported only when import.meta.env.DEV); reload diagnostic (LOG-2)
   console.debug('[reload-guard] pageshow', {
     persisted: e.persisted, // true → restored from the bfcache (no cold boot)
     navType: nav?.type, // 'reload' | 'navigate' | 'back_forward' | 'prerender'

@@ -155,6 +155,7 @@ export function useMissionDoc(
     // Set the instant the effect tears down so the async boot IIFE below stops applying
     // chunks / seeding into a doc that's about to be destroyed (StrictMode setup→cleanup→setup).
     let cancelled = false
+    // eslint-disable-next-line no-console -- dev diagnostic behind import.meta.env.DEV (LOG-2)
     if (import.meta.env.DEV) console.debug('[mission-doc] mount', { missionKey, instanceKey })
     // Open a bulk-sync window BEFORE binding + before any replay, so the local restore and the
     // prime coalesce into one store flush at endBulkSync instead of flushing per-transaction
@@ -225,6 +226,7 @@ export function useMissionDoc(
       if (!cancelled && mountedHere) setDocStatus('ready')
     }
 
+    // eslint-disable-next-line complexity -- boot restore: v2/v1 persistence paths + cancellation/StrictMode guards in one coherent async sequence
     void (async () => {
       let bootError: unknown = null
       try {
@@ -288,6 +290,7 @@ export function useMissionDoc(
     return () => {
       mountedHere = false
       cancelled = true
+      // eslint-disable-next-line no-console -- dev diagnostic behind import.meta.env.DEV (LOG-2)
       if (import.meta.env.DEV) console.debug('[mission-doc] unmount', { missionKey, instanceKey })
       stopRestorePoll()
       unbind()

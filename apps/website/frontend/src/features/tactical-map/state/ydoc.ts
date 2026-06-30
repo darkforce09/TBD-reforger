@@ -27,6 +27,15 @@ const VALID_TERRAINS: ReadonlySet<MissionMeta['terrain']> = new Set([
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(Math.max(n, lo), hi)
 
+/** Y.Map lookup that throws when the key is absent. Replaces an unchecked `!` non-null assertion
+ *  on a lookup whose presence is a structural invariant (a squad/layer/faction we just created or
+ *  already verified) so a broken invariant surfaces as an error instead of silent UB (TS-3). */
+function mustGet<V>(map: Y.Map<V>, key: ID): V {
+  const value = map.get(key)
+  if (value === undefined) throw new Error(`ydoc: entity not found: ${key}`)
+  return value
+}
+
 /** Origin tag stamped on every local mutation; tracked by the UndoManager. */
 export const LOCAL_ORIGIN = 'local-user'
 
@@ -103,7 +112,7 @@ export function ensureDefaultSquad(md: MissionDoc): ID {
         slotIds: [],
       }),
     )
-    const faction = factions.get(factionId)!
+    const faction = mustGet(factions, factionId)
     faction.set('squadIds', [...(faction.get('squadIds') as ID[]), squadId])
   }
   return squadId
@@ -138,7 +147,7 @@ export function addSlot(
     const targetSquad = opts?.squadId ?? ensureDefaultSquad(md)
     const targetLayer = opts?.layerId ?? ensureDefaultLayer(md)
     const { slots, squads, editorLayers } = md.entities
-    const squad = squads.get(targetSquad)!
+    const squad = mustGet(squads, targetSquad)
     const slotIds = squad.get('slotIds') as ID[]
     id = newId()
     const slot: Slot = {
@@ -192,7 +201,7 @@ export function pasteSlots(
     const slotIdsFor = (sid: ID): ID[] => {
       let arr = squadSlotIds.get(sid)
       if (!arr) {
-        arr = [...(squads.get(sid)!.get('slotIds') as ID[])]
+        arr = [...(mustGet(squads, sid).get('slotIds') as ID[])]
         squadSlotIds.set(sid, arr)
       }
       return arr
@@ -200,7 +209,7 @@ export function pasteSlots(
     const entityIdsFor = (lid: ID): ID[] => {
       let arr = layerEntityIds.get(lid)
       if (!arr) {
-        arr = [...(editorLayers.get(lid)!.get('entityIds') as ID[])]
+        arr = [...(mustGet(editorLayers, lid).get('entityIds') as ID[])]
         layerEntityIds.set(lid, arr)
       }
       return arr
@@ -235,8 +244,8 @@ export function pasteSlots(
       if (editorLayers.get(targetLayer)) entityIdsFor(targetLayer).push(id)
       newIds.push(id)
     }
-    for (const [sid, ids] of squadSlotIds) squads.get(sid)!.set('slotIds', ids)
-    for (const [lid, ids] of layerEntityIds) editorLayers.get(lid)!.set('entityIds', ids)
+    for (const [sid, ids] of squadSlotIds) mustGet(squads, sid).set('slotIds', ids)
+    for (const [lid, ids] of layerEntityIds) mustGet(editorLayers, lid).set('entityIds', ids)
   })
   return newIds
 }
@@ -280,6 +289,7 @@ export function moveEntities(
 
 /** Inner remove (no transaction) — cascades children and detaches refs. Call inside
  *  an existing transaction (removeEntity / removeEntities). */
+// eslint-disable-next-line complexity -- cascade delete: per-entity-type child cascade + reference-detach branches
 function removeEntityInner(md: MissionDoc, mapName: EntityMapName, id: ID): void {
   const { factions, squads, slots, editorLayers } = md.entities
   if (mapName === 'slots') {
@@ -525,6 +535,7 @@ export function hydrateMissionDoc(md: MissionDoc, payload: Record<string, unknow
     }
   }
 
+  // eslint-disable-next-line complexity -- hydrate: lossless editor path vs lossy orbat rebuild + per-entity setEach branches
   md.doc.transact(() => {
     for (const name of ENTITY_MAPS) md.entities[name].clear()
     if (p.environment) md.meta.set('environment', p.environment)
@@ -549,7 +560,7 @@ export function hydrateMissionDoc(md: MissionDoc, payload: Record<string, unknow
 
     // Lossy path — rebuild factions/squads/slots from the ORBAT contract block.
     const layerId = ensureDefaultLayer(md)
-    const layer = md.entities.editorLayers.get(layerId)!
+    const layer = mustGet(md.entities.editorLayers, layerId)
     const filed: ID[] = []
     const byKey = new Map<string, ID>()
     const squads = (p.orbat as Record<string, unknown>[] | undefined) ?? []
@@ -564,7 +575,7 @@ export function hydrateMissionDoc(md: MissionDoc, payload: Record<string, unknow
           entityToYMap({ id: factionId, key, name: key, squadIds: [] }),
         )
       }
-      const faction = md.entities.factions.get(factionId)!
+      const faction = mustGet(md.entities.factions, factionId)
       const squadId = newId()
       const slotIds: ID[] = []
       const slots = (sq.slots as Record<string, unknown>[] | undefined) ?? []
@@ -608,6 +619,7 @@ export function hydrateMissionDoc(md: MissionDoc, payload: Record<string, unknow
  *  INIT_ORIGIN transaction), yielding + reporting progress between chunks so the load overlay
  *  advances. Only the lossless `editor` path is chunked; the small/lossy `orbat`-only path (and
  *  an empty editor block) delegate to the sync hydrateMissionDoc. */
+// eslint-disable-next-line complexity -- chunked hydrate: lossless/lossy/empty-editor branches + per-chunk yield/progress; perf hot path (T-060.1)
 export async function hydrateMissionDocWithProgress(
   md: MissionDoc,
   payload: Record<string, unknown>,

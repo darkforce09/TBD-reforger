@@ -556,6 +556,7 @@ function renderInline(text: string): ReactNode {
  * Swap for `react-markdown` + `remark-gfm` if richer Markdown is ever needed —
  * the stored `body` string stays the same source of truth.
  */
+// eslint-disable-next-line complexity -- minimal markdown renderer: heading/list/code/quote/paragraph block-type branches
 function Markdown({ source }: { source: string }) {
   const lines = source.replace(/\r\n/g, '\n').split('\n')
   const blocks: ReactNode[] = []

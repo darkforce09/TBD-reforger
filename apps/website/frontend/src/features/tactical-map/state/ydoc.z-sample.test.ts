@@ -18,7 +18,9 @@ import {
 import type { Slot } from './schema'
 
 function posOf(md: ReturnType<typeof createMissionDoc>, id: string): Slot['position'] {
-  return md.entities.slots.get(id)!.get('position') as Slot['position']
+  const slot = md.entities.slots.get(id)
+  if (!slot) throw new Error(`slot ${id} not found`)
+  return slot.get('position') as Slot['position']
 }
 
 beforeEach(() => {

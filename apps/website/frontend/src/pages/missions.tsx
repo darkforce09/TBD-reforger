@@ -63,6 +63,7 @@ const SELECT_CLASS =
 const PLACEHOLDER_ART =
   'https://lh3.googleusercontent.com/aida/AP1WRLtxuwSoyDyCrRuQu8gTHWuSmoOWZq8e7gw0bSjjZCmteU96TomvCGHto-cuqHYV_0gxNUjw_Lx2SWgiEl2W3vEi6aVH84DpTky5lG8-FKDJOzH96TrwAJwGJwE3DSwSN1gRC7miWds0X7kNvMAZRBgQPu_5g2iX9RtJ3WYUlgHbfVLYcmV7TaHPUvhZHvvvKenG2B3S2CRER15d2kdG5YNFbtFwtwgzEIeYG2jP4GubWd7SMO0bADPFFA'
 
+// eslint-disable-next-line complexity -- library page render: scope/search/filter + featured/grid/empty + dossier-sheet branches
 export function MissionLibraryPage() {
   const [scopeIdx, setScopeIdx] = useState(0)
   const [q, setQ] = useState('')

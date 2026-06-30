@@ -85,7 +85,10 @@ const chains = new Map<string, Promise<void>>()
 function enqueueMetaSave(p: PendingMeta, missionId: string): Promise<void> {
   const prev = chains.get(missionId) ?? Promise.resolve()
   const next = prev
-    .catch(() => {})
+    .catch(() => {
+      // Continue the chain regardless of the previous link's outcome — that link already
+      // surfaced its own failure via notifyAutosaveFailure (TS-7: intentional, not swallowed).
+    })
     .then(() => saveMissionMetaFromDoc(p.md, missionId, p.isCancelled))
     .then(clearAutosaveFailure, notifyAutosaveFailure)
   chains.set(missionId, next)

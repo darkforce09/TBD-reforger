@@ -97,6 +97,7 @@ export function compileMission(s: MapSnapshot): MissionPayload {
  *  (`done`/`total` slots) for the Save Version bar. With `omitOrbat` (T-062.1.1) the
  *  redundant top-level `orbat[]` is dropped — the squad/slot pass still runs to drive the
  *  progress bar, it just doesn't materialize the array. Same payload shape otherwise. */
+// eslint-disable-next-line complexity -- chunked compile: faction/squad/slot passes + omitOrbat + progress/yield branches; perf hot path (T-060)
 export async function compileMissionWithProgress(
   s: MapSnapshot,
   onProgress?: (done: number, total: number) => void,

@@ -38,7 +38,7 @@ export function buildCatalogTree(items: RegistryItem[]): TreeNodeData[] {
         folders.set(prefix, folder)
         parentChildren.push(folder)
       }
-      parentChildren = folder.children!
+      parentChildren = folder.children ??= []
     }
 
     parentChildren.push({

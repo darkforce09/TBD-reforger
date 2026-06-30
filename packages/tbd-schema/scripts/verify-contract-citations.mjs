@@ -56,6 +56,67 @@ function pointerResolves(doc, pointer) {
   return true;
 }
 
+// --- TS-6 (CODING_STANDARDS §10) ------------------------------------------------------------
+// Every exported interface / type alias in the front-end contract layer (types/, api/, hooks/)
+// MUST carry an @model or @contract tag in its immediately-preceding TSDoc block — not just a
+// block (that presence is TS-5/eslint), but the cross-boundary content (DOCUMENTATION_STANDARDS
+// §3). Generic envelope types (e.g. `Paginated<T>`) are exempt: their contract is carried by the
+// type argument, not a single model. Generated `types/contract/**` is skipped (schema codegen).
+const TS_CONTRACT_DIRS = [
+  "apps/website/frontend/src/types",
+  "apps/website/frontend/src/api",
+  "apps/website/frontend/src/hooks",
+];
+const TS_EXTS = new Set([".ts", ".tsx"]);
+const EXPORT_DECL = /^export\s+(interface|type)\s+([A-Za-z0-9_]+)(<)?/;
+
+function* walkTs(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const full = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      if (!IGNORE_DIRS.has(entry.name) && entry.name !== "contract") yield* walkTs(full);
+    } else if (TS_EXTS.has(extname(entry.name))) {
+      yield full;
+    }
+  }
+}
+
+// The TSDoc block immediately above line `idx` (blank lines skipped), or null if there is none.
+function precedingDocBlock(lines, idx) {
+  let i = idx - 1;
+  while (i >= 0 && lines[i].trim() === "") i--;
+  if (i < 0 || !lines[i].trim().endsWith("*/")) return null;
+  const end = i;
+  while (i >= 0 && !lines[i].includes("/**")) i--;
+  if (i < 0) return null;
+  return lines.slice(i, end + 1).join("\n");
+}
+
+function checkTsContractTags() {
+  const tagProblems = [];
+  let checked = 0;
+  for (const d of TS_CONTRACT_DIRS) {
+    const abs = join(repoRoot, d);
+    if (!existsSync(abs)) continue;
+    for (const file of walkTs(abs)) {
+      const lines = readFileSync(file, "utf8").split("\n");
+      const rel = file.slice(repoRoot.length + 1);
+      for (let i = 0; i < lines.length; i++) {
+        const m = EXPORT_DECL.exec(lines[i]);
+        if (!m) continue;
+        const [, , name, generic] = m;
+        if (generic) continue; // generic envelope (e.g. Paginated<T>) — contract is in its type arg
+        checked += 1;
+        const block = precedingDocBlock(lines, i);
+        if (!block || !/@model|@contract/.test(block)) {
+          tagProblems.push(`${rel}:${i + 1}: exported ${name} missing @model or @contract (TS-6)`);
+        }
+      }
+    }
+  }
+  return { tagProblems, checked };
+}
+
 let citations = 0;
 const problems = [];
 for (const d of SCAN_DIRS) {
@@ -81,6 +142,18 @@ console.log(`Checked ${citations} @contract citation(s) across ${SCAN_DIRS.join(
 if (problems.length > 0) {
   console.error(`\n${problems.length} dangling citation(s):`);
   for (const p of problems) console.error(`  ${p}`);
-  process.exit(1);
+} else {
+  console.log("All @contract citations resolve.");
 }
-console.log("All @contract citations resolve.");
+
+// TS-6: @model / @contract presence on front-end contract-layer exports.
+const { tagProblems, checked } = checkTsContractTags();
+console.log(`Checked ${checked} front-end contract export(s) for @model/@contract (TS-6).`);
+if (tagProblems.length > 0) {
+  console.error(`\n${tagProblems.length} export(s) missing @model/@contract:`);
+  for (const p of tagProblems) console.error(`  ${p}`);
+} else {
+  console.log("All front-end contract exports carry @model/@contract.");
+}
+
+if (problems.length > 0 || tagProblems.length > 0) process.exit(1);

@@ -1,4 +1,8 @@
-/** Platform role, lowest → highest privilege (enlisted < leader < mission_maker < admin). */
+/**
+ * Platform role, lowest → highest privilege (enlisted < leader < mission_maker < admin).
+ *
+ * @model models.User
+ */
 export type UserRole = 'enlisted' | 'leader' | 'mission_maker' | 'admin'
 
 /**

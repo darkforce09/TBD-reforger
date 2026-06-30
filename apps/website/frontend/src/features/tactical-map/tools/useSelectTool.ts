@@ -155,6 +155,7 @@ export function useSelectTool({
   )
 
   const onPointerMove = useCallback(
+    // eslint-disable-next-line complexity -- pointer-move gesture machine: pan/marquee/drag-preview branches, rAF-coalesced; perf hot path
     (e: React.PointerEvent) => {
       const g = gesture.current
       if (!g) return
@@ -219,6 +220,7 @@ export function useSelectTool({
   )
 
   const onPointerUp = useCallback(
+    // eslint-disable-next-line complexity -- pointer-up: commit drag-move/marquee/pan + selection-update branches
     (e: React.PointerEvent) => {
       const g = gesture.current
       gesture.current = null

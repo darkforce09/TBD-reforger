@@ -1,6 +1,10 @@
 // Virtual Arsenal registry catalog (T-068). Types only — the palette wiring lands in T-068.3.
 
-/** The kind of a registry item (character or one of the four gear slots). */
+/**
+ * The kind of a registry item (character or one of the four gear slots).
+ *
+ * @model models.RegistryItem
+ */
 export type RegistryItemKind =
   | 'character'
   | 'gear_primary'
@@ -30,6 +34,7 @@ export interface RegistryItem {
 /**
  * The registry list response: catalog rows plus the modpack id/version and a weak ETag.
  *
+ * @contract registry-items.schema.json#/
  * @route GET /api/v1/registry
  */
 export interface RegistryResponse {

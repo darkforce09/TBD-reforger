@@ -330,6 +330,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
       semver: string,
       notes?: string,
       onProgress?: (p: SaveProgress) => void,
+      // eslint-disable-next-line complexity -- save pipeline: compile/prepare/upload phases + 413/409/network error mapping surfaced to the user (TS-4)
     ): Promise<SaveResult> => {
       if (!missionId || invalidMissionId) return { ok: false, error: NEEDS_REAL_ID }
       // Measure up-front (T-060.1.3) so every progress tick + the debug report carry real bytes.
@@ -349,6 +350,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
       const logPhase = (phase: SaveProgress['phase']) => {
         report.phaseAtFailure = phase
         report.elapsedMs = Math.round(performance.now() - t0)
+        // eslint-disable-next-line no-console -- dev diagnostic behind import.meta.env.DEV (LOG-2)
         if (import.meta.env.DEV) console.debug('[mission-save]', phase, { ...report })
       }
       try {
@@ -393,7 +395,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
         report.uploadUrl = `${base}/missions/${missionId}/versions`
         if (route === 'direct' && !warnedDirectUpload) {
           warnedDirectUpload = true
-          console.info(
+          console.warn(
             `[mission-creator] Large save (${formatBytes(body.size)}) bypassing the Vite dev proxy → ${baseURL}`,
           )
         }

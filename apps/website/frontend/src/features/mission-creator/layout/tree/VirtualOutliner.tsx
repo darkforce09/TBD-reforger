@@ -82,6 +82,7 @@ export function VirtualOutliner({
 
   return (
     <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+      {/* eslint-disable-next-line complexity -- per-row render: folder/slot/section variants + drag/selection state */}
       {virtualizer.getVirtualItems().map((vItem) => {
         const row = rowAt(segments, vItem.index, slotsById)
         if (!row) return null
