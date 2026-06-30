@@ -1,7 +1,7 @@
 # T-090.1 — Aligned Cartesian basemap
 
 **Ticket:** T-090 · **Slice:** T-090.1 **(Satellite basemap + tile pyramid export)**  
-**Status:** **ACTIVE** — spike @ `b342c35` proved source paths; **this slice closes K3** (`.edds`/SAP → pyramid) and wires Deck loader.  
+**Status:** **shipped** @ `564419e` — interim `MapDataExporter.ExportRasterization` + pyramid LOD (aligned). **High-detail SAP ortho:** **T-090.1.2** [`t090_1_2_sap_supertexture_satellite.md`](t090_1_2_sap_supertexture_satellite.md).  
 **Executor:** claude-code  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · spike ops log [`.ai/artifacts/map_export_everon.json`](../../../.ai/artifacts/map_export_everon.json)  
 **Follow-ons:** Map view **T-090.1.1** · world objects **T-090.2–.5** · UX ref [`t090_eden_map_reference.md`](t090_eden_map_reference.md)

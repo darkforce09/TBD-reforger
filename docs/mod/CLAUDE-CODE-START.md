@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code work order:** **T-090.1** (Satellite `.edds`/SAP → pyramid + Deck loader) → **T-090.1.1** Map → **T-090.2** → **T-092** → **T-068.13+**. Handoff: [`.ai/artifacts/t090_1_claude_code_handoff.md`](../../.ai/artifacts/t090_1_claude_code_handoff.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**Next Claude Code work order:** **T-090.1.2** (SAP supertexture decode/stitch → high-detail satellite tiles) → **T-090.1.1** Map → **T-090.2** → **T-092** → **T-068.13+**. Handoff: [`.ai/artifacts/t090_1_2_claude_code_handoff.md`](../../.ai/artifacts/t090_1_2_claude_code_handoff.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
@@ -127,14 +127,16 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-090.1 — active (Satellite basemap)
+## T-090.1.2 — active (SAP supertexture satellite detail)
 
-**Spec:** [`t090_1_aligned_basemap.md`](../specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md)  
-**Handoff:** [`.ai/artifacts/t090_1_claude_code_handoff.md`](../../.ai/artifacts/t090_1_claude_code_handoff.md)
+**Spec:** [`t090_1_2_sap_supertexture_satellite.md`](../specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md)  
+**Handoff:** [`.ai/artifacts/t090_1_2_claude_code_handoff.md`](../../.ai/artifacts/t090_1_2_claude_code_handoff.md)
 
-**T-091 complete** @ `dde589e` — DEM export, loader, Z UX + hillshade shipped. Do not redo `dem/*` or `ydoc` Z wiring unless regression fix.
+**T-090.1 shipped** @ `564419e` — basemap + alignment + LOD proven. This slice replaces tile pixels with decoded `Eden_*_supertexture.edds` stitch.
 
-**MCP infra** @ `e7e7232` — use `mcp-call.sh` for Workbench probes; no raw JSON-RPC workaround needed.
+## T-090.1 — shipped (interim satellite basemap) @ `564419e`
+
+**Spec:** [`t090_1_aligned_basemap.md`](../specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md) · verify: [`.ai/artifacts/t090_1_verify_log.md`](../../.ai/artifacts/t090_1_verify_log.md)
 
 ---
 

@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-125**
 
-**ACTIVE NOW:** **T-090** — T-090.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`.
+**ACTIVE NOW:** **T-090** — T-090.1.2 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
