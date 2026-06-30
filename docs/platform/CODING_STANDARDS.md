@@ -144,12 +144,14 @@ Vite + React 19 + TanStack Query + Zustand. `src/types/` is the hand-written API
 
 **REQUIRED**
 
-- **TS-1 (Debuggability) — `tsconfig.app.json` `compilerOptions.strict` MUST be `true`.** It is **off**
-  today; **T-125.3** enables it and fixes the fallout. Gate: **CI-BLOCK** (`tsc -b` via `npm run build`).
+- **TS-1 (Debuggability) — `tsconfig.app.json` + `tsconfig.node.json` `compilerOptions.strict` MUST be
+  `true`.** Live @ **T-125.3** (`npm run build` = `tsc -b` builds both). Gate: **CI-BLOCK**
+  (`tsc -b` via `npm run build`).
 - **TS-2 (Scalability) — Layer boundaries SHALL hold.** `pages/` compose a route from hooks +
   feature/`ui` components and own *data wiring* only; reusable logic and heavy surfaces live in
   `features/`; cross-page primitives in `components/ui/`. A `page` MUST NOT be imported by a `feature`
-  or `component`. Gate: **CI-BLOCK** (eslint `import/no-restricted-paths` zones).
+  or `component`. Gate: **CI-BLOCK** (eslint `import-x/no-restricted-paths` zones + built-in
+  `no-restricted-imports` for the `@/pages` alias — `eslint-plugin-import` peers eslint ≤9).
 - **TS-3 (Debuggability) — No `any`; no unsafe non-null `!` on contract data.** Gate: **CI-BLOCK**
   (eslint `@typescript-eslint/no-explicit-any` + `no-non-null-assertion`).
 - **TS-4 (Usability) — A failed query/mutation MUST surface a user-visible error state.** Mirror
@@ -159,8 +161,9 @@ Vite + React 19 + TanStack Query + Zustand. `src/types/` is the hand-written API
   (presence).** Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §5. Gate:
   **CI-BLOCK** (eslint-plugin-jsdoc `require-jsdoc`, live in [`eslint.config.js`](../../apps/website/frontend/eslint.config.js)).
 - **TS-6 (Readability) — Cross-boundary exports MUST include `@contract` or `@model` content (not just
-  a block).** Gate: **CI-SCRIPT** — `verify-contract-citations.mjs` extended to require the tag on
-  exported `interface`/`type` in `types/`, `api/`, `hooks/`.
+  a block).** Gate: **CI-SCRIPT** — `verify-contract-citations.mjs` requires the tag on exported
+  `interface`/`type` in `types/`, `api/`, `hooks/` (live @ **T-125.3**; generic envelopes like
+  `Paginated<T>` exempt).
 - **TS-7 (Usability) — Empty or log-only `catch` blocks are FORBIDDEN.** A catch must surface,
   re-throw, or recover. Gate: **CI-BLOCK** (eslint `no-empty {allowEmptyCatch:false}` + `no-empty-function`).
 
@@ -340,13 +343,13 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **GO-7** | Re | Handler func has `@route` | CI-SCRIPT | `verify-contract-citations.mjs` (+`@route` on `^func [A-Z]` in handlers/) | `make verify-citations` | T-125.4 | planned |
 | **GO-8** | De | `staticcheck` on; `internal/contract/**` excluded | CI-BLOCK | `.golangci.yml`: `staticcheck` + `linters.exclusions.rules` path | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-9** | Sc | `handlers` imports ⊆ {services,models,middleware,contract,config} | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` (import allowlist) | `bash …/verify-handler-imports.sh` | T-125.4 | planned |
-| **TS-1** | De | `tsconfig.app.json` `strict:true` | CI-BLOCK | `tsc -b` | `npm run build` | T-125.3 | planned |
-| **TS-2** | Sc | `pages/` wiring-only; no page imported by feature | CI-BLOCK | eslint `import/no-restricted-paths` (zones) | `npm run lint` | T-125.3 | planned |
-| **TS-3** | De | No `any` / unsafe `!` on contract data | CI-BLOCK | eslint `no-explicit-any` + `no-non-null-assertion` | `npm run lint` | T-125.3 | planned |
-| **TS-4** | Us | API errors surfaced to user | CI-BLOCK | eslint `no-empty {allowEmptyCatch:false}` (mech = TS-7) | `npm run lint` | T-125.3 | planned |
+| **TS-1** | De | `tsconfig.*.json` `strict:true` (`tsc -b`) | CI-BLOCK | `tsc -b` | `npm run build` | T-125.3 | live |
+| **TS-2** | Sc | `pages/` wiring-only; no page imported by feature | CI-BLOCK | eslint `import-x/no-restricted-paths` + `no-restricted-imports` (`@/pages`) | `npm run lint` | T-125.3 | live |
+| **TS-3** | De | No `any` / unsafe `!` on contract data | CI-BLOCK | eslint `no-explicit-any` + `no-non-null-assertion` | `npm run lint` | T-125.3 | live |
+| **TS-4** | Us | API errors surfaced to user | CI-BLOCK | eslint `no-empty {allowEmptyCatch:false}` (mech = TS-7) | `npm run lint` | T-125.3 | live |
 | **TS-5** | Re | Contract-layer export has TSDoc block | CI-BLOCK | `eslint-plugin-jsdoc` `require-jsdoc` | `npm run lint` | — | live |
-| **TS-6** | Re | Cross-boundary export has `@contract`/`@model` | CI-SCRIPT | `verify-contract-citations.mjs` (tag-content) | `make verify-citations` | T-125.3 | planned |
-| **TS-7** | Us | Empty/log-only `catch` FORBIDDEN | CI-BLOCK | eslint `no-empty` + `no-empty-function` | `npm run lint` | T-125.3 | planned |
+| **TS-6** | Re | Cross-boundary export has `@contract`/`@model` | CI-SCRIPT | `verify-contract-citations.mjs` (tag-content) | `make verify-citations` | T-125.3 | live |
+| **TS-7** | Us | Empty/log-only `catch` FORBIDDEN | CI-BLOCK | eslint `no-empty` + `no-empty-function` | `npm run lint` | T-125.3 | live |
 | **ERR-1** | Us | Body = `{error}` (+`details[]`) | CI-BLOCK | IT body-shape asserts on 400/404/409/413 | `make test-it` | T-125.4 | planned |
 | **ERR-2** | Us | Status codes per §4 table | CI-BLOCK | IT status-matrix subtests | `make test-it` | T-125.4 | planned |
 | **ERR-4** | Us | No error key outside `{error,details}` | CI-SCRIPT | `scripts/website/verify-error-envelope.sh` (grep `gin.H` keys ⊆ set) | `bash …/verify-error-envelope.sh` | T-125.4 | planned |
@@ -364,8 +367,8 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `verify-file-length.mjs` (warn band) | `node scripts/website/verify-file-length.mjs` | T-125.4 | planned |
 | **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `node scripts/website/verify-file-length.mjs` | T-125.2 | live |
 | **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `scripts/website/verify-file-length.mjs` | `node scripts/website/verify-file-length.mjs` | T-125.4 | planned |
-| **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live/partial |
-| **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | planned |
+| **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
+| **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
 | **LOG-3** | De | 4xx/5xx log id+status+dur (≠ expected miss) | CI-SCRIPT | `scripts/website/verify-handler-logging.sh` | `bash …/verify-handler-logging.sh` | T-125.4 | planned |
 | **CI-1** | De | No `only-new-issues:true` post-T-125.2 | CI-SCRIPT | `scripts/website/verify-ci1.sh` (via `make ci-local-backend`) | `bash scripts/website/verify-ci1.sh` | T-125.2 | live |
 | **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `make ci-local` (mirror) | T-125.1 | live |
@@ -382,7 +385,9 @@ Enforcement artefacts **not yet in the repo** (or not yet extended). Shipped in 
 
 | Script / artefact | Rules it satisfies | Slice |
 |-------------------|--------------------|:--:|
-| `verify-contract-citations.mjs` (extend: `@route`, `@model`/`@contract` content) | GO-7, TS-6, ENF-3 | T-125.3/.4 |
+| `verify-contract-citations.mjs` (`@model`/`@contract` on FE exports — **live**) | TS-6 | T-125.3 |
+| `verify-contract-citations.mjs` (extend: `@route` on Go handlers) | GO-7 | T-125.4 |
+| `verify-contract-citations.mjs` (Enfusion `@contract`/`@authority` — existing pass) | ENF-3 | T-125.4 |
 | `scripts/website/verify-handler-imports.sh` | GO-1, GO-9 | T-125.4 |
 | `scripts/website/verify-error-envelope.sh` | ERR-4 | T-125.4 |
 | `scripts/website/verify-handler-logging.sh` | LOG-3 | T-125.4 |
@@ -409,19 +414,19 @@ cd apps/website && go build ./...
 make test-it                                                   # TEST-1, GO-5, ERR-1, ERR-2, ERR-5
 # 2. Frontend (ci-local-frontend)
 cd apps/website/frontend
-  npm ci && npm run lint && npm run build && npm test          # TEST-2, TS-5, …
+  npm ci && npm run lint && npm run build && npm test          # TEST-2, TS-1..7, LOG-2, COMP-1(TS), TS-5
   npm run format:check                 # FMT-3                          [after T-125.5]
   editorconfig-checker                 # FMT-2                          [after T-125.5]
 # 3. Schema + citations (ci-local-schema)
 make schema-validate                   # TEST-3, ENF-4
-make verify-citations                  # ENF-3 (GO-7/TS-6 extensions: T-125.3/.4)
+make verify-citations                  # TS-6 (live); GO-7 @route extension [after T-125.4]; ENF-3
 # 4. Coding-standards scripts
 make verify-coding-standards           # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3  [after T-125.4]
 ```
 
-> **Slice availability (2026-06):** **T-125.1–.2.1 shipped** — `make ci-local`, full golangci, and
-> CI-1 via `verify-ci1.sh` are live. Still **planned:** TS strict/eslint hardening (T-125.3), verify-*
-> scripts (T-125.4), Prettier/editorconfig (T-125.5).
+> **Slice availability (2026-06):** **T-125.1–.3 shipped** — `make ci-local`, full golangci, CI-1,
+> TS strict + eslint gates, and TS-6 `@model`/`@contract` on FE exports are live. Still **planned:**
+> verify-* handler scripts + `@route` (T-125.4), Prettier/editorconfig (T-125.5).
 
 ---
 

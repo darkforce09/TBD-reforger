@@ -133,17 +133,18 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
 - **Verify:** `npm run build` / `npm run lint` / `npm test` (**21/21**) clean; `make verify-citations`
   exit 0; `make ci-local` green (golangci **0 issues**, `go build`, `make test-it` ok, schema validate).
   New devDep **`eslint-plugin-import-x`** — `eslint-plugin-import@2.32` peers eslint ≤9 and is
-  incompatible with eslint 10.6; the §10 matrix's `import/no-restricted-paths` should read
-  `import-x/no-restricted-paths` (Cursor reconciles in T-125.6).
+  incompatible with eslint 10.6.
 
 ---
 
 ## T-125.4 — Routes, errors, DTO gate
 
 - Complete **`@route`** on all exported handlers in [`internal/handlers/`](../../apps/website/internal/handlers/)
-- Expand **`@model` / `@contract`** on [`types/api/index.ts`](../../apps/website/frontend/src/types/api/index.ts) where types mirror GORM models
 - Fix high-impact **`_ = db.First` / `_ = WriteAudit`** per CODING_STANDARDS error policy ([`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md) M6)
 - Wire **§10 Enfusion DTO fixture gate** in [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs) (promised in DOCUMENTATION_STANDARDS, not yet implemented)
+- Add **`verify-handler-*.sh`**, **`verify-error-envelope.sh`**, **`verify-file-length.mjs`**, and **`make verify-coding-standards`** meta target
+
+Note: **`@model` on `types/api/index.ts`** was completed in **T-125.3** (TS-6 gate required it).
 
 **Verify:** `make test-it`; citation + validate scripts exit 0.
 

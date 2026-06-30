@@ -11,7 +11,7 @@
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
-- **T-125** (1250) — Coding standards + 11/10 enforcement [ready] — CODING_STANDARDS.md + enforcement. Shipped through T-125.2.1 @ 80c7f07 (ci.yml, make ci-local, golangci full gate, verify-ci1.sh). Active T-125.3: TS strict + eslint tags. Remaining: T-125.4–.6 (@route, M6, Prettier, doc sync). Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.
+- **T-125** (1250) — Coding standards + 11/10 enforcement [ready] — CODING_STANDARDS.md + enforcement. Shipped through T-125.3 @ e5fbf4b (strict TS, eslint TS-2..7/LOG-2/COMP-1, TS-6 @model gate). Active T-125.4: @route, M6, verify-* scripts, Enfusion DTO. Remaining: T-125.5–.6 (Prettier, final doc sync). Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.
 
 ## Next queued (top 10)
 
