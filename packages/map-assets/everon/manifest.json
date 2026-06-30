@@ -23,13 +23,14 @@
     "urlTemplate": "/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp",
     "tileSizePx": 256,
     "minZoom": 0,
-    "maxZoom": 5,
+    "maxZoom": 6,
     "bounds": [0, 0, 12800, 12800],
     "alignmentOrigin": [0, 0],
     "satellite": {
       "path": "tiles/satellite",
       "urlTemplate": "/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp",
-      "source": "sap-supertexture-stitch"
+      "source": "sap-supertexture-stitch",
+      "encoding": "webp-lossless"
     },
     "map": {
       "path": "tiles/map",

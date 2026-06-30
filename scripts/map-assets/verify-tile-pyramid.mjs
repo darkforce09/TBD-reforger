@@ -2,12 +2,16 @@
 //
 // Gates:
 //   1. tiles/satellite/0/0/0.webp exists (K3 file gate)
-//   2. every present level z has exactly (2**z)x(2**z) tiles named {x}/{y}.webp
-//   3. every tile is a valid RIFF/WEBP; lossy VP8 tiles assert 256x256 (tileSizePx)
+//   2. the pyramid is COMPLETE: every level z in [minZoom, maxZoom] exists with exactly
+//      (2**z)x(2**z) tiles named {x}/{y}.webp (no sparse levels — T-090.1.2.1)
+//   3. every tile is a valid RIFF/WEBP @ tileSizePx; when lossless is expected
+//      (manifest tiles.satellite.encoding === "webp-lossless" or EXPECT_LOSSLESS=1) every
+//      tile must be a VP8L chunk — a VP8 lossy tile fails
 //   4. manifest tiles.satellite.urlTemplate + min/maxZoom + tileSizePx agree with disk
 //
-// No image deps: WebP magic + VP8 lossy frame-header dims are parsed by hand.
+// No image deps: WebP magic + VP8/VP8L frame-header dims + codec fourcc are parsed by hand.
 // Usage: node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+//        EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 
 const TERRAIN =
@@ -20,7 +24,8 @@ const MANIFEST = `${ROOT}${TERRAIN}/manifest.json`;
 const errors = [];
 const fail = (m) => errors.push(m);
 
-// --- WebP dims: RIFF....WEBP, then a chunk. Parse VP8 (lossy) keyframe dims. ---
+// --- WebP dims + codec: RIFF....WEBP, then a chunk. fourcc distinguishes lossy (VP8 ) from
+// lossless (VP8L); the EXPECT_LOSSLESS gate below fails on VP8 . Parse keyframe dims too. ---
 function webpDims(buf) {
   if (buf.length < 30) return { ok: false };
   if (buf.toString("ascii", 0, 4) !== "RIFF" || buf.toString("ascii", 8, 12) !== "WEBP")
@@ -28,21 +33,21 @@ function webpDims(buf) {
   const fourcc = buf.toString("ascii", 12, 16);
   if (fourcc === "VP8 ") {
     // lossy: start code 9d 01 2a at 23..25, then 14-bit width/height LE.
-    if (buf[23] !== 0x9d || buf[24] !== 0x01 || buf[25] !== 0x2a) return { ok: true, w: 0, h: 0 };
+    if (buf[23] !== 0x9d || buf[24] !== 0x01 || buf[25] !== 0x2a) return { ok: true, fourcc, w: 0, h: 0 };
     const w = (buf[26] | (buf[27] << 8)) & 0x3fff;
     const h = (buf[28] | (buf[29] << 8)) & 0x3fff;
-    return { ok: true, w, h };
+    return { ok: true, fourcc, w, h };
   }
   if (fourcc === "VP8L") {
     // lossless: 0x2f sig then 14-bit (w-1),(h-1) packed LE across bytes 21..24.
-    if (buf[20] !== 0x2f) return { ok: true, w: 0, h: 0 };
+    if (buf[20] !== 0x2f) return { ok: true, fourcc, w: 0, h: 0 };
     const b = buf.readUInt32LE(21);
     const w = (b & 0x3fff) + 1;
     const h = ((b >> 14) & 0x3fff) + 1;
-    return { ok: true, w, h };
+    return { ok: true, fourcc, w, h };
   }
   // VP8X / animation: accept magic only (canvas dims not asserted here).
-  return { ok: true, w: 0, h: 0 };
+  return { ok: true, fourcc, w: 0, h: 0 };
 }
 
 function listInts(dir) {
@@ -63,6 +68,9 @@ const sat = tiles.satellite ?? {};
 const tileSize = tiles.tileSizePx ?? 256;
 const minZoom = tiles.minZoom ?? 0;
 const maxZoom = tiles.maxZoom ?? 5;
+// T-090.1.2.1 — when the satellite pyramid is advertised lossless (manifest encoding or the
+// EXPECT_LOSSLESS env), every tile must be VP8L; a VP8 (lossy) tile fails the gate.
+const expectLossless = process.env.EXPECT_LOSSLESS === "1" || sat.encoding === "webp-lossless";
 
 // Gate 1 — K3 file gate.
 if (!existsSync(`${TILES_DIR}/0/0/0.webp`)) fail(`missing ${TILES_DIR}/0/0/0.webp (K3 file gate)`);
@@ -73,14 +81,20 @@ if (sat.path && sat.path !== expectPath) fail(`manifest tiles.satellite.path=${s
 if (sat.urlTemplate && !sat.urlTemplate.includes(`/${TERRAIN}/tiles/satellite/`))
   fail(`manifest tiles.satellite.urlTemplate does not point at ${TERRAIN}/tiles/satellite: ${sat.urlTemplate}`);
 
-// Gates 2 + 3 — per level structure + tile validity. Allow a sparse pyramid where only
-// some levels are committed, but every PRESENT level must be complete + square.
+// Gates 2 + 3 — COMPLETE pyramid + tile validity (T-090.1.2.1). Every level in
+// [minZoom, maxZoom] must exist and be exactly (2**z)x(2**z) — no sparse levels — so the
+// manifest can never advertise a maxZoom whose tiles aren't all on disk. When lossless is
+// expected, every tile must be a VP8L chunk (a VP8 lossy tile fails).
 let checkedTiles = 0;
-const presentZ = listInts(TILES_DIR).filter((z) => z >= minZoom && z <= maxZoom);
-if (presentZ.length === 0) fail(`no zoom levels present under ${TILES_DIR}`);
-
-for (const z of presentZ.sort((a, b) => a - b)) {
+let losslessChecked = 0;
+const levels = [];
+for (let z = minZoom; z <= maxZoom; z++) {
   const n = 1 << z;
+  if (!existsSync(`${TILES_DIR}/${z}`)) {
+    fail(`z=${z}: level missing (pyramid must be complete [${minZoom}..${maxZoom}])`);
+    continue;
+  }
+  levels.push(z);
   const xs = listInts(`${TILES_DIR}/${z}`);
   if (xs.length !== n) fail(`z=${z}: ${xs.length} x-columns, expected ${n}`);
   for (let x = 0; x < n; x++) {
@@ -91,9 +105,16 @@ for (const z of presentZ.sort((a, b) => a - b)) {
         continue;
       }
       const d = webpDims(readFileSync(p));
-      if (!d.ok) fail(`z=${z} ${x}/${y}: not a valid RIFF/WEBP`);
-      else if (d.w && (d.w !== tileSize || d.h !== tileSize))
-        fail(`z=${z} ${x}/${y}: ${d.w}x${d.h}, expected ${tileSize}x${tileSize}`);
+      if (!d.ok) {
+        fail(`z=${z} ${x}/${y}: not a valid RIFF/WEBP`);
+      } else {
+        if (d.w && (d.w !== tileSize || d.h !== tileSize))
+          fail(`z=${z} ${x}/${y}: ${d.w}x${d.h}, expected ${tileSize}x${tileSize}`);
+        if (expectLossless) {
+          if (d.fourcc === "VP8 ") fail(`z=${z} ${x}/${y}: VP8 lossy chunk, expected VP8L (lossless)`);
+          else if (d.fourcc === "VP8L") losslessChecked++;
+        }
+      }
       checkedTiles++;
     }
   }
@@ -104,6 +125,7 @@ if (errors.length) {
   for (const e of errors) console.error(`  - ${e}`);
   process.exit(1);
 }
+const losslessNote = expectLossless ? `, ${losslessChecked} VP8L lossless` : "";
 console.log(
-  `verify-tile-pyramid: OK ${TERRAIN} — levels [${presentZ.join(",")}], ${checkedTiles} tiles, ${tileSize}px`,
+  `verify-tile-pyramid: OK ${TERRAIN} — levels [${levels.join(",")}], ${checkedTiles} tiles, ${tileSize}px${losslessNote}`,
 );

@@ -102,6 +102,11 @@
             "source": {
               "type": "string",
               "enum": ["workbench-ortho", "sap", "sap-supertexture-stitch", "color-ortho"]
+            },
+            "encoding": {
+              "type": "string",
+              "description": "Tile codec — webp-lossless (VP8L) for the picture-perfect satellite pyramid (T-090.1.2.1); webp-lossy (VP8 q=N) for interim/dev builds.",
+              "enum": ["webp-lossy", "webp-lossless", "png"]
             }
           }
         },
