@@ -2668,7 +2668,7 @@
           "executor": "cursor-docs",
           "spec": "docs/platform/t125_coding_standards_enforcement.md",
           "status": "shipped",
-          "shipped_at": "37d3eae"
+          "shipped_at": "23135cf"
         }
       },
       "depends_on": [
