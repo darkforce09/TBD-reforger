@@ -2581,7 +2581,7 @@
       ],
       "executor": "claude-code",
       "status": "ready",
-      "active_slice": "T-125.4",
+      "active_slice": "T-125.5",
       "surfaces": [
         "DATA"
       ],
@@ -2591,7 +2591,7 @@
         "api"
       ],
       "title": "Coding standards + 11/10 enforcement",
-      "summary": "CODING_STANDARDS.md + enforcement. Shipped through T-125.3 @ e5fbf4b (strict TS, eslint TS-2..7/LOG-2/COMP-1, TS-6 @model gate). Active T-125.4: @route, M6, verify-* scripts, Enfusion DTO. Remaining: T-125.5–.6 (Prettier, final doc sync). Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.",
+      "summary": "CODING_STANDARDS.md + enforcement. Shipped through T-125.4 @ cb508cf (GO-7 route-match, M6 15/15, verify-* scripts, ENF-4 ×10, ci.yml verify-coding-standards). Active T-125.5: Prettier/editorconfig. Remaining T-125.6 final hub sync. Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.",
       "spec": "docs/platform/t125_coding_standards_enforcement.md",
       "slices": [
         "T-125.0",
@@ -2647,7 +2647,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t125_coding_standards_enforcement.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "cb508cf"
         },
         "T-125.5": {
           "targets": [

@@ -1,7 +1,7 @@
 # T-125 — Coding standards + 11/10 enforcement
 
 **Ticket:** T-125 · **Program:** platform · **Status:** **ready** (T-124 shipped @ `cd11db0`)  
-**Depends on:** T-124 (met) · **Active slice:** T-125.4 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
+**Depends on:** T-124 (met) · **Active slice:** T-125.5 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
 
 ## In one sentence
 
@@ -387,9 +387,9 @@ ENF-4 10/10 fixtures; `ci.yml` backend step; `make ci-local` wall-clock.
 - [ ] **`ci.yml` green on `main`** — includes `make test-it`, FE build/lint/test, schema validate
 - [ ] **golangci** runs full linter set **without** `only-new-issues`
 - [x] **TypeScript `strict: true`** — build clean (T-125.3 @ `e5fbf4b`)
-- [ ] **Every handler** has `@route` in Godoc; cross-boundary TS types have `@model`/`@contract` where applicable (TS-6 live; GO-7 → T-125.4)
-- [ ] Citation verifier + any new tag verifiers exit 0
-- [ ] Replay commands documented in spec and DEV_RUNBOOK
+- [x] **Every handler** has `@route` matching `Register()`; GO-7 route-match live (T-125.4 @ `cb508cf`)
+- [x] Citation verifier + coding-standards scripts exit 0 (T-125.4)
+- [x] Replay commands documented in spec and DEV_RUNBOOK (T-125.4)
 
 ---
 

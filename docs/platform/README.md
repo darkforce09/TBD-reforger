@@ -12,6 +12,6 @@ Cross-cutting docs for the TBD Reforger monorepo (not tied to a single app).
 | [`audit/t122_codebase_audit_hotfix.md`](audit/t122_codebase_audit_hotfix.md) | T-122 slice spec (shipped) |
 | [`t123_documentation_standards_rollout.md`](t123_documentation_standards_rollout.md) | **T-123 (shipped @ `169e47d`)** — full program: tags + codegen + Go JSON validation + CI (slices .0–.6) |
 | [`t124_dependency_upgrade.md`](t124_dependency_upgrade.md) | **T-124 (shipped @ `cd11db0`)** — deps + toolchain: vitest 4, gin/gorm/pgx latest, Go 1.26, Node 26, Postgres 18 |
-| [`t125_coding_standards_enforcement.md`](t125_coding_standards_enforcement.md) | **T-125 (in progress — active T-125.4)** — [`CODING_STANDARDS.md`](CODING_STANDARDS.md) + CI/lint; **T-125.1–.3 shipped** @ `e5fbf4b` (golangci, strict TS, eslint gates, TS-6 `@model`) |
+| [`t125_coding_standards_enforcement.md`](t125_coding_standards_enforcement.md) | **T-125 (in progress — active T-125.5)** — [`CODING_STANDARDS.md`](CODING_STANDARDS.md) + CI/lint; **T-125.1–.4 shipped** @ `cb508cf` (tag **T-125.4**: GO-7 route-match, verify-* scripts, ENF-4 ×10) |
 
 **Hub:** [`docs/website/README.md`](../website/README.md) · **Tickets:** [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md)

@@ -3,8 +3,8 @@
 **Status:** living
 **Audience:** every engineer and AI agent that writes Go, TypeScript/React, or Enfusion code in this monorepo
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/platform/README.md`](README.md) → **this doc** (supporting tier)
-**Updated:** 2026-06-26
-**Ticket:** [T-125](t125_coding_standards_enforcement.md) — authored **T-125.0/.0.1**; **T-125.1–.2.1 shipped** @ `80c7f07`; **T-125.3–.5** remaining.
+**Updated:** 2026-06-30
+**Ticket:** [T-125](t125_coding_standards_enforcement.md) — authored **T-125.0/.0.1**; **T-125.1–.4 shipped** @ `cb508cf` (tag **T-125.4**); **T-125.5–.6** remaining.
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
@@ -23,7 +23,7 @@ gates). What it lacked was a written, **enforced** standard for the **code itsel
 is too fat, whether a swallowed `_ = db.First(...)` is acceptable, what HTTP status a duplicate key
 returns, how big a file may grow, and — critically — **which tool checks each rule**. The 2026 audit
 ([`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md)) surfaced the symptoms: **M6** (31 swallowed
-DB/audit errors), god-files (`admin.tsx` 1628 L, `doctrine.tsx` 1288 L, `events.go` 1038 L), and
+DB/audit errors), god-files (`admin.tsx` 1628 L, `doctrine.tsx` 1289 L, `events.go` 1041 L), and
 inconsistent error envelopes. This document fixes that. Go lint is **gated by the full
 [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) set** (revive, errcheck, errorlint,
 staticcheck, govet, cyclop) on every **`ci.yml`** push/PR to `main` and via **`make ci-local`**.
@@ -101,12 +101,12 @@ The backend is Gin + GORM. Handlers are the HTTP edge; `internal/services/` is t
   in [`internal/handlers/`](../../apps/website/internal/handlers) binds/validates input, checks authz,
   calls a service, and maps the result to a status + body. Multi-step DB work, ORBAT materialisation,
   and telemetry math live in [`internal/services/`](../../apps/website/internal/services). Gate:
-  **CI-SCRIPT** (`verify-handler-imports.sh`, §10). `events.go` (1038 L) is the standing
+  **CI-SCRIPT** (`verify-handler-imports.sh`, §10). `events.go` (1041 L) is the standing
   counter-example (§8).
 - **GO-2 (Debuggability) — DB-read errors MUST be handled; no silent `_ =` on a query whose result is
   used.** A `_ = h.db.First(&x, …)` that then reads `x` hides "row not found"/connection errors. Check
-  `.Error` and branch (404 / 500). Gate: **CI-BLOCK** (errcheck `check-blank`). Audit M6 lists the
-  offenders (e.g. `deployments.go:66`).
+  `.Error` and branch (404 / 500). Gate: **CI-BLOCK** (errcheck `check-blank`) **plus** the M6 handler
+  fixes shipped in **T-125.4** (15 sites; enrichment paths log non-`NotFound` even at 200).
 - **GO-3 (Debuggability) — A best-effort write MUST carry a rationale.** Discarding an error is allowed
   **only** with `//nolint:errcheck // best-effort: <why dropping is safe>` on the line (most
   `services.WriteAudit(...)`). A bare `_ = WriteAudit(...)` is a defect. Gate: **CI-BLOCK** (errcheck
@@ -119,14 +119,17 @@ The backend is Gin + GORM. Handlers are the HTTP edge; `internal/services/` is t
 - **GO-6 (Readability) — Every exported identifier MUST carry a Godoc comment starting with its name.**
   Owned by [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §4. Gate: **CI-BLOCK** (golangci
   `revive` `exported`); **T-125.2** removes `only-new-issues`, making it a full-repo gate.
-- **GO-7 (Readability) — Every exported handler func SHALL carry `@route` in its Godoc.** The
-  three-way triangulation of DOCUMENTATION_STANDARDS.md §3. Gate: **CI-SCRIPT** — `verify-contract-citations.mjs`
-  is extended to require `@route` on every `^func [A-Z]` in `internal/handlers/`.
+- **GO-7 (Readability) — Every exported handler func SHALL carry `@route` in its Godoc, and the tag
+  MUST match the wired route in `handlers.go` `Register()` (method + path).** The three-way
+  triangulation of DOCUMENTATION_STANDARDS.md §3. Gate: **CI-SCRIPT** —
+  `verify-contract-citations.mjs` GO-7 pass (presence **and** Register route-match on all 82 handlers).
 - **GO-8 (Debuggability) — `staticcheck` (all checks) SHALL be enabled.** Generated
   `internal/contract/**` is excluded via `issues.exclude-rules`. Gate: **CI-BLOCK** (`.golangci.yml`).
 - **GO-9 (Scalability) — The `handlers` package SHALL import only `services`, `models`, `middleware`,
   `contract`, `config` (+ std/gin).** It MUST NOT reach into other application packages for logic
-  reuse — that belongs in a service. Gate: **CI-SCRIPT** (`verify-handler-imports.sh` import allowlist).
+  reuse — that belongs in a service. Structural imports of `internal/auth` and `internal/realtime` on
+  `handlers.go`, `auth.go`, and `me.go` are allowlisted in `.coding-standards-allowlist.yaml`
+  (`expires: structural`). Gate: **CI-SCRIPT** (`verify-handler-imports.sh` import allowlist).
 
 **FORBIDDEN**
 
@@ -200,8 +203,9 @@ The API speaks **one** error shape. This section is normative for every JSON han
 
   Gate: **CI-BLOCK** (integration status-matrix subtests).
 - **ERR-4 (Usability) — No error body MAY carry a top-level key outside `{error, details}`.** Gate:
-  **CI-SCRIPT** — `verify-error-envelope.sh` greps every `c.JSON(http.Status*, gin.H{…})` and asserts
-  its key set ⊆ `{error, details}` (keys `message`/`err`/`errors` fail the build).
+  **CI-SCRIPT** — `verify-error-envelope.sh` (awk brace-balanced scan of every
+  `c.JSON(http.Status*, gin.H{…})`; keys `message`/`err`/`errors`/`status` fail the build). Live @
+  **T-125.4** — caught + fixed `field_tools.go` 422 `solution`→`details`.
 - **ERR-5 (Usability) — Each status class SHALL have one named integration subtest per resource.**
   e.g. `TestCreateVersion_InvalidPayload_400`, `TestDuplicateSemver_409`, `TestMission_NotFound_404`,
   `TestVersion_TooLarge_413`. Gate: **CI-BLOCK** (`make test-it`).
@@ -228,7 +232,7 @@ This section covers Enfusion **code** behaviour. The networked-code **tags**
   DOCUMENTATION_STANDARDS.md §6–§7) on `.c` files. Gate: **CI-SCRIPT** (`verify-contract-citations.mjs`).
 - **ENF-4 (Usability) — Every JSON-parsed DTO MUST have a golden fixture that validates.** Gate:
   **CI-SCRIPT** — the Enfusion DTO branch of [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs)
-  (the gate promised in DOCUMENTATION_STANDARDS.md §10, wired in **T-125.4**).
+  (10 Backend `@contract` DTOs → `packages/tbd-schema/enfusion/*.sample.json`; live @ **T-125.4**).
 
 **Process (from [`CLAUDE.md`](../../CLAUDE.md)):** do **not** edit `apps/mod` `.c` files unless a ticket
 slice explicitly assigns `claude-code` to that path, and **use `enfusion-mcp` before editing any `.c`
@@ -279,8 +283,8 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
   | File | Lines | Split plan |
   |------|------:|------------|
   | `pages/admin.tsx` | 1628 | split by admin sub-surface (Personnel / Approvals / Audit) |
-  | `pages/doctrine.tsx` | 1288 | extract the wiki split-pane helpers |
-  | `handlers/events.go` | 1038 | extract ORBAT + registration into `services/` (GO-1) |
+  | `pages/doctrine.tsx` | 1289 | extract the wiki split-pane helpers |
+  | `handlers/events.go` | 1041 | extract ORBAT + registration into `services/` (GO-1) |
 
 - **COMP-1 (Readability) — Cyclomatic complexity ≤ 15 per function (hard gate).** A function over 15
   independent paths is split into named helpers. Gate: **CI-BLOCK** — Go via golangci **`cyclop`**
@@ -318,9 +322,12 @@ Created in **T-125.2** at the repo root. Each entry is normative:
 - **LOG-2 (Debuggability) — No committed FE `console.log`.** Dev HUDs/counters (`FpsCounter`, audit
   T12) sit behind a dev/env guard; `console.error`/`console.warn` for real errors is allowed. Gate:
   **CI-BLOCK** (eslint `no-console {allow:["warn","error"]}`).
-- **LOG-3 (Debuggability) — A handler 4xx/5xx of consequence MUST log identifier + status + duration**
-  (the `CreateVersion` `log.Printf("…mission=%s status=400 … dur=%s", …)` pattern). Expected misses
-  (a bare 401 / 404 lookup) are exempt. Gate: **CI-SCRIPT** (`verify-handler-logging.sh`).
+- **LOG-3 (Debuggability) — A handler 4xx/5xx of consequence MUST log path + status + duration**
+  (the `logHandlerErr` helper + `middleware.Timing()` pattern; `c.FullPath()` not `c.Param("id")`).
+  **Band 1:** every **5xx** (75 sites). **Band 2:** mutator **400/409/413** on POST/PUT/PATCH/DELETE
+  (65 sites in T-125.4 ship). Operational side-effects that still return 200 (e.g. failed
+  `RefreshLeaderboard` after ingest) MUST log anyway. Expected misses (bare GET **404**, auth **401**)
+  are exempt. Gate: **CI-SCRIPT** (`verify-handler-logging.sh` — POSIX awk + Register-derived mutator set).
 
 *This consolidates the former LOG-1 (structured logs) and the §4 ERR-3 draft into one enforced rule.*
 
@@ -334,15 +341,15 @@ Re=Readability, Us=Usability, De=Debuggability.
 
 | Rule | Pillar | Statement | Gate | Enforcement (tool + config) | Verify (exit 0) | Slice | Status |
 |------|:--:|-----------|------|-----------------------------|-----------------|:--:|:--:|
-| **GO-1** | Sc | Logic in `services/`; handlers HTTP-only | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` | `bash scripts/website/verify-handler-imports.sh` | T-125.4 | planned |
-| **GO-2** | De | Handle DB-read errors (no silent `_=`) | CI-BLOCK | golangci `errcheck` (`check-blank: true`) | `cd apps/website && golangci-lint run ./...` | T-125.2 | live |
+| **GO-1** | Sc | Logic in `services/`; handlers HTTP-only | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` | `bash scripts/website/verify-handler-imports.sh` | T-125.4 | live |
+| **GO-2** | De | Handle DB-read errors (no silent `_=`) | CI-BLOCK | golangci `errcheck` (`check-blank: true`) + M6 fixes | `cd apps/website && golangci-lint run ./...` | T-125.2/.4 | live |
 | **GO-3** | De | Best-effort write needs `//nolint:errcheck // best-effort:` | CI-BLOCK | golangci `errcheck` `check-blank: true` | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-4** | De | Wrap propagated errors with `%w` | CI-BLOCK | golangci `errorlint` | `golangci-lint run ./...` | T-125.2 | live |
-| **GO-5** | Us | Dup key → 409 via SQLSTATE `23505` | CI-BLOCK | IT `TestDuplicateSemver_409` + `staticcheck` | `make test-it` | T-125.4 | planned |
+| **GO-5** | Us | Dup key → 409 via SQLSTATE `23505` | CI-BLOCK | IT `TestDuplicateSemver_409` + `staticcheck` | `make test-it` | T-125.4 | live |
 | **GO-6** | Re | Exported Godoc starts with name | CI-BLOCK | golangci `revive` `exported` (no `only-new-issues`) | `golangci-lint run ./...` | T-125.2 | live |
-| **GO-7** | Re | Handler func has `@route` | CI-SCRIPT | `verify-contract-citations.mjs` (+`@route` on `^func [A-Z]` in handlers/) | `make verify-citations` | T-125.4 | planned |
+| **GO-7** | Re | Handler `@route` matches `Register()` route | CI-SCRIPT | `verify-contract-citations.mjs` GO-7 pass (82 handlers) | `make verify-citations` | T-125.4 | live |
 | **GO-8** | De | `staticcheck` on; `internal/contract/**` excluded | CI-BLOCK | `.golangci.yml`: `staticcheck` + `linters.exclusions.rules` path | `golangci-lint run ./...` | T-125.2 | live |
-| **GO-9** | Sc | `handlers` imports ⊆ {services,models,middleware,contract,config} | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` (import allowlist) | `bash …/verify-handler-imports.sh` | T-125.4 | planned |
+| **GO-9** | Sc | `handlers` imports ⊆ allowed + structural allowlist | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` (import allowlist) | `bash …/verify-handler-imports.sh` | T-125.4 | live |
 | **TS-1** | De | `tsconfig.*.json` `strict:true` (`tsc -b`) | CI-BLOCK | `tsc -b` | `npm run build` | T-125.3 | live |
 | **TS-2** | Sc | `pages/` wiring-only; no page imported by feature | CI-BLOCK | eslint `import-x/no-restricted-paths` + `no-restricted-imports` (`@/pages`) | `npm run lint` | T-125.3 | live |
 | **TS-3** | De | No `any` / unsafe `!` on contract data | CI-BLOCK | eslint `no-explicit-any` + `no-non-null-assertion` | `npm run lint` | T-125.3 | live |
@@ -352,48 +359,48 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **TS-7** | Us | Empty/log-only `catch` FORBIDDEN | CI-BLOCK | eslint `no-empty` + `no-empty-function` | `npm run lint` | T-125.3 | live |
 | **ERR-1** | Us | Body = `{error}` (+`details[]`) | CI-BLOCK | IT body-shape asserts on 400/404/409/413 | `make test-it` | T-125.4 | planned |
 | **ERR-2** | Us | Status codes per §4 table | CI-BLOCK | IT status-matrix subtests | `make test-it` | T-125.4 | planned |
-| **ERR-4** | Us | No error key outside `{error,details}` | CI-SCRIPT | `scripts/website/verify-error-envelope.sh` (grep `gin.H` keys ⊆ set) | `bash …/verify-error-envelope.sh` | T-125.4 | planned |
+| **ERR-4** | Us | No error key outside `{error,details}` | CI-SCRIPT | `scripts/website/verify-error-envelope.sh` (awk brace-balanced) | `bash …/verify-error-envelope.sh` | T-125.4 | live |
 | **ERR-5** | Us | One named IT per status class per resource | CI-BLOCK | `make test-it` (`Test*_400/404/409/413`) | `make test-it` | T-125.4 | planned |
 | **ENF-1** | De | Log policy; dev toggles default off | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | T-125.4 | manual |
 | **ENF-2** | De | `// Authority only — <reason>` on gates | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | — | manual |
-| **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `verify-contract-citations.mjs` | `make verify-citations` | T-125.4 | planned |
-| **ENF-4** | Us | DTO has validating golden fixture | CI-SCRIPT | `validate.mjs` Enfusion DTO branch | `make schema-validate` | T-125.4 | planned |
+| **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `verify-contract-citations.mjs` | `make verify-citations` | T-125.4 | live |
+| **ENF-4** | Us | DTO has validating golden fixture | CI-SCRIPT | `validate.mjs` Enfusion DTO branch (10 fixtures) | `make schema-validate` | T-125.4 | live |
 | **TEST-1** | De | Handler change ⇒ `make test-it` green | CI-BLOCK | `ci.yml` backend (PG18) | `make test-it` | T-125.1 | live |
 | **TEST-2** | De | features hooks/utils ⇒ vitest | CI-BLOCK | `ci.yml` frontend | `npm test` | T-125.1 | live |
 | **TEST-3** | Us | Schema change ⇒ validate + fixture | CI-BLOCK | `ci.yml` schema | `make schema-validate` | T-125.1 | live |
 | **FMT-1** | Re | gofmt clean | CI-BLOCK | `gofmt -l` empty | `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"` | T-125.1 | live |
 | **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `editorconfig-checker` | T-125.5 | planned |
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | planned |
-| **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `verify-file-length.mjs` (warn band) | `node scripts/website/verify-file-length.mjs` | T-125.4 | planned |
+| **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `verify-file-length.mjs` (warn band) | `node scripts/website/verify-file-length.mjs` | T-125.4 | live |
 | **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `node scripts/website/verify-file-length.mjs` | T-125.2 | live |
-| **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `scripts/website/verify-file-length.mjs` | `node scripts/website/verify-file-length.mjs` | T-125.4 | planned |
+| **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `scripts/website/verify-file-length.mjs` | `node scripts/website/verify-file-length.mjs` | T-125.4 | live |
 | **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | live |
-| **LOG-3** | De | 4xx/5xx log id+status+dur (≠ expected miss) | CI-SCRIPT | `scripts/website/verify-handler-logging.sh` | `bash …/verify-handler-logging.sh` | T-125.4 | planned |
+| **LOG-3** | De | 5xx + mutator 4xx log path+status+dur | CI-SCRIPT | `scripts/website/verify-handler-logging.sh` | `bash …/verify-handler-logging.sh` | T-125.4 | live |
 | **CI-1** | De | No `only-new-issues:true` post-T-125.2 | CI-SCRIPT | `scripts/website/verify-ci1.sh` (via `make ci-local-backend`) | `bash scripts/website/verify-ci1.sh` | T-125.2 | live |
 | **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `make ci-local` (mirror) | T-125.1 | live |
 
 **Count by pillar:** Scalability 6 · Readability 9 · Usability 9 · Debuggability 14 · **38 total.**
 **Count by gate:** CI-BLOCK 24 · CI-SCRIPT 11 · ALLOWLIST 1 · MANUAL 2 (ENF-1, ENF-2 — Enfusion only).
 
-### 10.1 Planned CI scripts inventory
+### 10.1 CI scripts inventory
 
-Enforcement artefacts **not yet in the repo** (or not yet extended). Shipped in T-125.1–.2.1:
-[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), `make ci-local`,
-[`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml),
-[`scripts/website/verify-ci1.sh`](../../scripts/website/verify-ci1.sh) (CI-1).
+Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml); local mirror **`make ci-local`**
+(CODING_STANDARDS §11).
 
-| Script / artefact | Rules it satisfies | Slice |
-|-------------------|--------------------|:--:|
-| `verify-contract-citations.mjs` (`@model`/`@contract` on FE exports — **live**) | TS-6 | T-125.3 |
-| `verify-contract-citations.mjs` (extend: `@route` on Go handlers) | GO-7 | T-125.4 |
-| `verify-contract-citations.mjs` (Enfusion `@contract`/`@authority` — existing pass) | ENF-3 | T-125.4 |
-| `scripts/website/verify-handler-imports.sh` | GO-1, GO-9 | T-125.4 |
-| `scripts/website/verify-error-envelope.sh` | ERR-4 | T-125.4 |
-| `scripts/website/verify-handler-logging.sh` | LOG-3 | T-125.4 |
-| `scripts/website/verify-file-length.mjs` | SIZE-1, SIZE-3 | T-125.4 |
-| `validate.mjs` Enfusion DTO branch | ENF-4 | T-125.4 |
-| `make verify-coding-standards` (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 |
+| Script / artefact | Rules it satisfies | Slice | Status |
+|-------------------|--------------------|:-----:|:------:|
+| [`verify-ci1.sh`](../../scripts/website/verify-ci1.sh) | CI-1 | T-125.2 | live |
+| [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs) — TS-6 FE `@model`/`@contract` | TS-6 | T-125.3 | live |
+| [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs) — GO-7 `@route` route-match (82 handlers) | GO-7, ENF-3 | T-125.4 | live |
+| [`verify-handler-imports.sh`](../../scripts/website/verify-handler-imports.sh) | GO-1, GO-9 | T-125.4 | live |
+| [`verify-error-envelope.sh`](../../scripts/website/verify-error-envelope.sh) | ERR-4 | T-125.4 | live |
+| [`verify-handler-logging.sh`](../../scripts/website/verify-handler-logging.sh) | LOG-3 | T-125.4 | live |
+| [`verify-file-length.mjs`](../../scripts/website/verify-file-length.mjs) | SIZE-1, SIZE-3 | T-125.4 | live |
+| [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs) Enfusion DTO branch | ENF-4 | T-125.4 | live |
+| **`make verify-coding-standards`** (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 | live |
+| [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml) | SIZE-2, SIZE-3, GO-9 structural | T-125.2/.4 | live |
 
 ---
 
@@ -412,6 +419,7 @@ bash scripts/website/verify-ci1.sh                               # CI-1
 cd apps/website && golangci-lint run ./...                     # GO-2,3,4,6,8 + COMP-1(Go)
 cd apps/website && go build ./...
 make test-it                                                   # TEST-1, GO-5, ERR-1, ERR-2, ERR-5
+make verify-coding-standards                                   # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3
 # 2. Frontend (ci-local-frontend)
 cd apps/website/frontend
   npm ci && npm run lint && npm run build && npm test          # TEST-2, TS-1..7, LOG-2, COMP-1(TS), TS-5
@@ -419,14 +427,13 @@ cd apps/website/frontend
   editorconfig-checker                 # FMT-2                          [after T-125.5]
 # 3. Schema + citations (ci-local-schema)
 make schema-validate                   # TEST-3, ENF-4
-make verify-citations                  # TS-6 (live); GO-7 @route extension [after T-125.4]; ENF-3
-# 4. Coding-standards scripts
-make verify-coding-standards           # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3  [after T-125.4]
+make verify-citations                  # TS-6, GO-7 @route route-match, ENF-3
 ```
 
-> **Slice availability (2026-06):** **T-125.1–.3 shipped** — `make ci-local`, full golangci, CI-1,
-> TS strict + eslint gates, and TS-6 `@model`/`@contract` on FE exports are live. Still **planned:**
-> verify-* handler scripts + `@route` (T-125.4), Prettier/editorconfig (T-125.5).
+> **Slice availability (2026-06-30):** **T-125.1–.4 shipped** — `make ci-local`, full golangci, CI-1,
+> TS strict + eslint gates, TS-6 `@model`/`@contract`, GO-7 route-match, verify-* handler scripts,
+> ENF-4 DTO fixtures, and `ci.yml` backend `verify-coding-standards` step are live. Still **planned:**
+> Prettier/editorconfig (**T-125.5**); final registry/hub prose (**T-125.6**).
 
 ---
 
