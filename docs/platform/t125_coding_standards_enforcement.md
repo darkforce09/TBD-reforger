@@ -1,7 +1,7 @@
 # T-125 — Coding standards + 11/10 enforcement
 
 **Ticket:** T-125 · **Program:** platform · **Status:** **ready** (T-124 shipped @ `cd11db0`)  
-**Depends on:** T-124 (met) · **Active slice:** T-125.0 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
+**Depends on:** T-124 (met) · **Active slice:** T-125.4 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
 
 ## In one sentence
 
@@ -139,14 +139,126 @@ a func call) so errcheck does not flag them — they stay **T-125.4** (which own
 
 ## T-125.4 — Routes, errors, DTO gate
 
-- Complete **`@route`** on all exported handlers in [`internal/handlers/`](../../apps/website/internal/handlers/)
-- Fix high-impact **`_ = db.First` / `_ = WriteAudit`** per CODING_STANDARDS error policy ([`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md) M6)
-- Wire **§10 Enfusion DTO fixture gate** in [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs) (promised in DOCUMENTATION_STANDARDS, not yet implemented)
-- Add **`verify-handler-*.sh`**, **`verify-error-envelope.sh`**, **`verify-file-length.mjs`**, and **`make verify-coding-standards`** meta target
+**Goal:** Close the remaining **Go-side CI-SCRIPT** gaps in CODING_STANDARDS §10 — handler `@route`
+tags (GO-7), silent DB reads (M6 / GO-2), best-effort audit rationale (GO-3 where still bare),
+and five new `scripts/website/verify-*` artefacts wired through **`make verify-coding-standards`**
+and **`make ci-local`**. Optional: ENF-4 Enfusion DTO fixture branch in `validate.mjs`.
+
+**Authority:** route wiring lives in [`handlers.go` `Register()`](../../apps/website/internal/handlers/handlers.go)
+(all paths are under `/api/v1/…`). `@route` grammar: [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §3.1
+(`@route GET /api/v1/missions`, include the `/api/v1` prefix).
+
+### Task 1 — GO-7: `@route` on every HTTP handler
+
+- **Scope:** every `func (h *Handler) <Name>(c *gin.Context)` in
+  [`internal/handlers/*.go`](../../apps/website/internal/handlers/) **excluding** `*_test.go`.
+  **Exclude** test helpers `JWT()`, `Discord()`, `Webhook()` (no `*gin.Context`).
+- **Today:** **5 / ~90** tagged (`registry.go`, `missions.go` ×3, `field_tools.go` ×1).
+- **Extend** [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs):
+  second Go pass — preceding Godoc block on each `(h *Handler) … (c *gin.Context)` MUST contain
+  `@route <METHOD> /api/v1/…` matching [`Register()`](../../apps/website/internal/handlers/handlers.go).
+  Exit 1 with `file:line: HandlerName missing @route (GO-7)`.
+
+### Task 2 — M6 / GO-2: fix silent `_ = h.db.First(…).Error`
+
+**15 sites** (errcheck does not flag `.Error` field reads — deferred from T-125.2):
+
+| File | Lines (approx.) | Fix pattern |
+|------|-----------------|-------------|
+| `dashboard.go` | 60, 94, 96, 98 | Check `.Error`; `errors.Is(…, gorm.ErrRecordNotFound)` → skip row or 404/500 |
+| `deployments.go` | 66 | Same |
+| `events.go` | 525 | Same |
+| `cms.go` | 187, 192 | Same |
+| `me.go` | 180 | Same |
+| `wiki.go` | 84 | Same |
+| `missions.go` | 294, 383, 515 | Same |
+| `approvals.go` | 107, 143 | Same |
+
+Use [`registry.go` `ListRegistry`](../../apps/website/internal/handlers/registry.go) as the reference
+(correct `First` + 404/500 branching). **No blanket `//nolint`** on reads whose result is used.
+
+### Task 3 — GO-3: bare `_ = services.WriteAudit(…)` 
+
+Audit M6 also covers audit drops. Every discarded `WriteAudit` MUST carry
+`//nolint:errcheck // best-effort: <why safe>` (GO-3). Grep `handlers/` for `_ = services.WriteAudit`
+and annotate or handle (~15 sites across `admin.go`, `auth.go`, `cms.go`, `approvals.go`, `telemetry.go`,
+`me.go`, `field_tools.go`).
+
+### Task 4 — GO-1 / GO-9: `verify-handler-imports.sh`
+
+New [`scripts/website/verify-handler-imports.sh`](../../scripts/website/verify-handler-imports.sh):
+
+- Scan `apps/website/internal/handlers/*.go` excluding `*_test.go`.
+- Each `"github.com/tbd-milsim/reforger-backend/internal/<pkg>"` import MUST be in allowlist:
+  **`services`, `models`, `middleware`, `contract`, `config`** (+ stdlib / gin / gorm / uuid etc.).
+- **Known violations today:** `handlers.go` imports **`auth`** + **`realtime`**; `telemetry.go` imports **`db`**.
+  Prefer minimal relocation into `services/` without behaviour change; if too large for this slice, add
+  **GO-9** rows to [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml) with
+  `expires` + split ticket ref and document in the Shipped note — do **not** delete the rule.
+
+### Task 5 — ERR-4: `verify-error-envelope.sh`
+
+New script: grep `c.JSON(http.Status4xx|5xx, gin.H{…})` (and `StatusBadRequest` etc.) in `handlers/`.
+Assert top-level keys ⊆ **`{error, details}`** only (`message`, `err`, `status` as body keys fail).
+Document false-positive carve-outs inline in the script if needed (should be rare).
+
+### Task 6 — LOG-3: `verify-handler-logging.sh`
+
+New script: heuristic gate — handlers that return **4xx/5xx of consequence** (not bare expected 401/404
+lookups) should log identifier + status + duration (mirror `CreateVersion` `log.Printf` pattern).
+Start conservative (warn-only band acceptable in v1 if zero false positives is hard); prefer
+**error exit** once the heuristic is stable. Document exemptions in script comments.
+
+### Task 7 — SIZE-1 / SIZE-3: `verify-file-length.mjs`
+
+New [`scripts/website/verify-file-length.mjs`](../../scripts/website/verify-file-length.mjs):
+
+- **>600 lines** → WARN to stderr (SIZE-1, exit 0).
+- **>1000 lines** → exit 1 (SIZE-3) unless path matches [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml).
+- **Standing debt** (add SIZE-3 allowlist rows if not present):
+
+  | File | Lines | Split plan |
+  |------|------:|------------|
+  | `apps/website/frontend/src/pages/admin.tsx` | ~1628 | admin sub-surfaces |
+  | `apps/website/frontend/src/pages/doctrine.tsx` | ~1288 | wiki split-pane helpers |
+  | `apps/website/internal/handlers/events.go` | ~1038 | ORBAT → `services/` (GO-1) |
+
+- SIZE-2 MC allowlist (`tactical-map/**`) already in YAML — honour it.
+
+### Task 8 — ENF-4: Enfusion DTO fixture gate
+
+Extend [`packages/tbd-schema/scripts/validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs):
+
+- For each Enfusion `.c` DTO under `apps/mod/tbd-framework/Scripts/Game/TBD/Backend/` (start with
+  [`TBD_MissionSlotStruct.c`](../../apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c)
+  — already `@contract mission.schema.json#/$defs/slot`).
+- Require a golden JSON fixture (e.g. `packages/tbd-schema/enfusion/mission-slot.sample.json`) that
+  validates against the cited schema pointer.
+- **Do not edit** other mod `.c` files unless required for ENF-4; consult `enfusion-mcp` if touching Enfusion.
+
+### Task 9 — Wire `make verify-coding-standards` + `ci-local`
+
+In root [`Makefile`](../../Makefile):
+
+```makefile
+verify-coding-standards: ## GO-1/9, ERR-4, LOG-3, SIZE-1/3 script bundle
+	bash scripts/website/verify-handler-imports.sh
+	bash scripts/website/verify-error-envelope.sh
+	bash scripts/website/verify-handler-logging.sh
+	node scripts/website/verify-file-length.mjs
+```
+
+Add **`$(MAKE) verify-coding-standards`** to **`ci-local`** (after backend tests or before schema job —
+document choice in Shipped note). Optionally add GO-7 `@route` pass to `ci-local-schema` via existing
+`verify-citations` (preferred — one script).
 
 Note: **`@model` on `types/api/index.ts`** was completed in **T-125.3** (TS-6 gate required it).
 
-**Verify:** `make test-it`; citation + validate scripts exit 0.
+**Verify:** `make verify-citations` (incl. new `@route` pass) · `make verify-coding-standards` ·
+`make test-it` · `make ci-local` all exit 0.
+
+**Out of scope:** Prettier/editorconfig (T-125.5); registry/CLAUDE/CODING_STANDARDS matrix status sync
+(T-125.6); refactoring `events.go` / page god-components beyond M6 fixes; TS/eslint (T-125.3 live).
 
 ---
 
@@ -173,8 +285,8 @@ Note: **`@model` on `types/api/index.ts`** was completed in **T-125.3** (TS-6 ga
 - [ ] `CODING_STANDARDS.md` exists and cross-linked; distinct from DOCUMENTATION_STANDARDS
 - [ ] **`ci.yml` green on `main`** — includes `make test-it`, FE build/lint/test, schema validate
 - [ ] **golangci** runs full linter set **without** `only-new-issues`
-- [ ] **TypeScript `strict: true`** — build clean
-- [ ] **Every handler** has `@route` in Godoc; cross-boundary TS types have `@model`/`@contract` where applicable
+- [x] **TypeScript `strict: true`** — build clean (T-125.3 @ `e5fbf4b`)
+- [ ] **Every handler** has `@route` in Godoc; cross-boundary TS types have `@model`/`@contract` where applicable (TS-6 live; GO-7 → T-125.4)
 - [ ] Citation verifier + any new tag verifiers exit 0
 - [ ] Replay commands documented in spec and DEV_RUNBOOK
 
