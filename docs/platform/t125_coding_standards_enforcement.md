@@ -27,7 +27,7 @@ Cross-link both from [`docs/platform/README.md`](README.md) and [`AGENT_COMMIT_C
 | **T-125.2** | claude-code | golangci full set + fix all Go lint |
 | **T-125.3** | claude-code | TS `strict: true` + eslint tag enforcement + fixes |
 | **T-125.4** | claude-code | `@route` completion, error-handling, Enfusion DTO fixture gate |
-| **T-125.5** | claude-code | `.editorconfig` / Prettier (if in standard) |
+| **T-125.5** | claude-code | `.editorconfig` + Prettier + FMT-2/FMT-3 CI gates |
 | **T-125.6** | cursor-docs | Registry shipped, hub links, CLAUDE §Done, `./scripts/ticket sync` |
 
 Advance after each slice verifies: `./scripts/ticket advance-slice T-125`
@@ -363,12 +363,124 @@ ENF-4 10/10 fixtures; `ci.yml` backend step; `make ci-local` wall-clock.
 
 ---
 
-## T-125.5 — Repo hygiene
+## T-125.5 — Repo hygiene (FMT-2 + FMT-3)
 
-- Root **`.editorconfig`**
-- Optional **Prettier** + `format` script (if approved in CODING_STANDARDS)
+**Goal:** Ship the two remaining **Readability** formatting gates from CODING_STANDARDS §7 — root
+**`.editorconfig`** (FMT-2) and **Prettier** for TS/TSX/CSS (FMT-3) — wired into **`make ci-local`**
+and **`ci.yml`**. This closes the last CI-BLOCK rules that were **planned** after T-125.4.
 
-**Verify:** formatting consistent; no CI regression.
+**Authority:** [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §7 FMT-2/FMT-3, §10 matrix, §11 verify replay.
+
+**Baseline today:** No root `.editorconfig`, no Prettier config/scripts in
+[`apps/website/frontend/package.json`](../../apps/website/frontend/package.json). Existing FE style
+is **2-space**, **single quotes**, **no semicolons** (match Prettier to current code, not a style
+revolution). Go stays **gofmt/tabs** (FMT-1 already live — do not add Prettier for `.go`).
+
+### Task list
+
+| # | Task | Deliverable |
+|---|------|-------------|
+| T1 | FMT-2 `.editorconfig` | Root [`.editorconfig`](../../.editorconfig): UTF-8, LF, final newline, trim trailing WS; **tabs** for Go; **2-space** for TS/JS/JSON/YAML/MD/CSS |
+| T2 | FMT-2 checker | `editorconfig-checker` from repo root in **`ci-local`** + **`ci.yml`** (exclude `node_modules`, `dist`, generated contract, mod binaries/LFS) |
+| T3 | FMT-3 Prettier | `prettier` + `eslint-config-prettier` devDeps; [`.prettierrc`](../../apps/website/frontend/.prettierrc) + [`.prettierignore`](../../apps/website/frontend/.prettierignore) |
+| T4 | FMT-3 scripts | `npm run format` + `npm run format:check` in frontend `package.json` |
+| T5 | ESLint compat | Extend [`eslint.config.js`](../../apps/website/frontend/eslint.config.js): **`eslint-config-prettier`** last (disable formatting rules; **no** `eslint-plugin-prettier`) |
+| T6 | One-time format | Run `npm run format` on `src/**/*.{ts,tsx,css}` (+ `*.css` at frontend root); commit as formatting-only diff |
+| T7 | CI wiring | [`Makefile`](../../Makefile) `ci-local-frontend`: add `format:check` after `npm ci`, before `lint`; add editorconfig step (repo root). [`ci.yml`](../../.github/workflows/ci.yml) frontend job: mirror |
+| T8 | Shipped note | Append **Shipped (T-125.5):** under this section (only doc edit Claude may append) |
+
+### Task 1 — `.editorconfig` (normative)
+
+Minimum sections (extend as needed for monorepo paths):
+
+```ini
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.go]
+indent_style = tab
+
+[*.{ts,tsx,js,mjs,cjs}]
+indent_style = space
+indent_size = 2
+
+[*.{json,yml,yaml,md,css}]
+indent_style = space
+indent_size = 2
+```
+
+**Do not** override Go tab policy — FMT-1 `gofmt` is authoritative for Go formatting; editorconfig
+only aligns editor defaults + checker.
+
+### Task 2 — `editorconfig-checker` (FMT-2)
+
+- Install/run: **`editorconfig-checker`** CLI (Go: `go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest`, or pinned npm wrapper — pick one, document in Makefile comment).
+- Run from **repo root** so `.editorconfig` applies to `apps/`, `packages/`, `docs/`, `scripts/`.
+- **Exclude** (checker flags or `.editorconfig-checker.json` if needed): `node_modules/`, `dist/`,
+  `apps/website/frontend/src/types/contract/**`, `apps/mod/**` binary/LFS paths, `.git/`.
+- Fix any violations in the same commit (usually trailing whitespace / missing final newline).
+
+### Task 3–5 — Prettier + eslint (FMT-3)
+
+**Scope:** `apps/website/frontend/**/*.{ts,tsx,css}` only (not Go, not Enfusion `.c`, not generated
+`src/types/contract/**`).
+
+**Suggested `.prettierrc`** (align to existing code — verify against `src/lib/utils.ts`):
+
+```json
+{
+  "semi": false,
+  "singleQuote": true,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "printWidth": 100
+}
+```
+
+**`.prettierignore`:** `dist`, `node_modules`, `src/types/contract`, `package-lock.json`.
+
+**eslint:** add `eslint-config-prettier` and extend it **after** all other configs so TS-2..7/LOG-2/COMP-1
+lint rules stay; only stylistic conflicts are turned off.
+
+### Task 6 — One-time reformat
+
+- Run `npm run format` once; expect a **large but formatting-only** diff across FE `src/`.
+- **Do not** reformat `packages/tbd-schema` JSON fixtures or Go sources in this slice.
+- If Prettier touches a line with an inline `eslint-disable` comment, verify `npm run lint` still passes.
+
+### Task 7 — CI / local mirror
+
+Update **`ci-local-frontend`** (after `npm ci`):
+
+```makefile
+npm run format:check    # FMT-3
+npm run lint            # existing
+npm run build && npm test
+```
+
+Add **editorconfig-checker** — either first step inside `ci-local-frontend` (shell `cd` to repo root)
+or a dedicated `verify-editorconfig` Make target invoked from `ci-local` before backend. Must match
+**`ci.yml` frontend job** (+ root-level editorconfig step if split).
+
+**Out of scope:** registry/CLAUDE hub matrix status flip (T-125.6); CODING_STANDARDS.md body edits
+(T-125.6); handler/route/error scripts (T-125.4 live); mod `.c` files.
+
+**Verify (all exit 0):**
+
+```bash
+editorconfig-checker                          # FMT-2 (repo root)
+cd apps/website/frontend && npm run format:check   # FMT-3
+cd apps/website/frontend && npm run lint && npm run build && npm test
+make ci-local                                 # full gate; report wall-clock
+```
+
+**Acceptance:** `make ci-local` green **and** `ci.yml` would pass on push. Formatting diff is
+**style-only** (no logic changes).
 
 ---
 

@@ -2652,7 +2652,8 @@
         },
         "T-125.5": {
           "targets": [
-            "root"
+            "root",
+            "website"
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t125_coding_standards_enforcement.md",
