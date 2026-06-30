@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"github.com/tbd-milsim/reforger-backend/internal/middleware"
 	"github.com/tbd-milsim/reforger-backend/internal/models"
@@ -35,6 +37,8 @@ type serviceRecord struct {
 
 // GetMyDeployments returns the player's service record: headline stats, upcoming
 // operations (with assigned ORBAT slot), and past-operation history.
+//
+// @route GET /api/v1/me/deployments
 func (h *Handler) GetMyDeployments(c *gin.Context) {
 	me := middleware.DiscordID(c)
 	now := time.Now()
@@ -63,7 +67,9 @@ func (h *Handler) GetMyDeployments(c *gin.Context) {
 			continue
 		}
 		var m models.Mission
-		_ = h.db.First(&m, "id = ?", em.MissionID).Error
+		if err := h.db.First(&m, "id = ?", em.MissionID).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logHandlerErr(c, "GetMyDeployments", http.StatusOK, "mission enrich lookup failed")
+		}
 		name := ev.NameOverride
 		if name == "" {
 			name = m.Title
@@ -122,19 +128,24 @@ type createLeaveInput struct {
 }
 
 // SubmitLeave files a Leave of Absence request for the caller.
+//
+// @route POST /api/v1/me/leave-requests
 func (h *Handler) SubmitLeave(c *gin.Context) {
 	var in createLeaveInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "SubmitLeave", http.StatusBadRequest, "starts_on and ends_on are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "starts_on and ends_on are required"})
 		return
 	}
 	start, err1 := time.Parse("2006-01-02", in.StartsOn)
 	end, err2 := time.Parse("2006-01-02", in.EndsOn)
 	if err1 != nil || err2 != nil {
+		logHandlerErr(c, "SubmitLeave", http.StatusBadRequest, "dates must be YYYY-MM-DD")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "dates must be YYYY-MM-DD"})
 		return
 	}
 	if end.Before(start) {
+		logHandlerErr(c, "SubmitLeave", http.StatusBadRequest, "ends_on must be on or after starts_on")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "ends_on must be on or after starts_on"})
 		return
 	}
@@ -146,6 +157,7 @@ func (h *Handler) SubmitLeave(c *gin.Context) {
 		Status:    models.LeavePending,
 	}
 	if err := h.db.Create(&loa).Error; err != nil {
+		logHandlerErr(c, "SubmitLeave", http.StatusInternalServerError, "could not submit LOA")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not submit LOA"})
 		return
 	}
@@ -153,6 +165,8 @@ func (h *Handler) SubmitLeave(c *gin.Context) {
 }
 
 // ListMyLeave lists the caller's own LOA requests.
+//
+// @route GET /api/v1/me/leave-requests
 func (h *Handler) ListMyLeave(c *gin.Context) {
 	var loas []models.LeaveRequest
 	h.db.Where("discord_id = ?", middleware.DiscordID(c)).Order("created_at DESC").Find(&loas)
@@ -160,6 +174,8 @@ func (h *Handler) ListMyLeave(c *gin.Context) {
 }
 
 // ListAllLeave lists LOA requests for review (admin), pending first.
+//
+// @route GET /api/v1/admin/leave-requests
 func (h *Handler) ListAllLeave(c *gin.Context) {
 	limit, offset := parsePage(c)
 	var loas []models.LeaveRequest
@@ -175,14 +191,18 @@ type reviewLeaveInput struct {
 }
 
 // ReviewLeave approves or denies a LOA request (admin).
+//
+// @route PATCH /api/v1/admin/leave-requests/:id
 func (h *Handler) ReviewLeave(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		logHandlerErr(c, "ReviewLeave", http.StatusBadRequest, "invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 	var in reviewLeaveInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "ReviewLeave", http.StatusBadRequest, "status required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "status required"})
 		return
 	}
@@ -191,6 +211,7 @@ func (h *Handler) ReviewLeave(c *gin.Context) {
 	case models.LeaveApproved, models.LeaveDenied:
 		status = models.LeaveStatus(in.Status)
 	default:
+		logHandlerErr(c, "ReviewLeave", http.StatusBadRequest, "status must be approved or denied")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "status must be approved or denied"})
 		return
 	}
@@ -198,6 +219,7 @@ func (h *Handler) ReviewLeave(c *gin.Context) {
 	res := h.db.Model(&models.LeaveRequest{}).Where("id = ?", id).
 		Updates(map[string]any{"status": status, "reviewed_by": reviewer})
 	if res.Error != nil {
+		logHandlerErr(c, "ReviewLeave", http.StatusInternalServerError, "could not review LOA")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not review LOA"})
 		return
 	}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"github.com/tbd-milsim/reforger-backend/internal/middleware"
 	"github.com/tbd-milsim/reforger-backend/internal/models"
@@ -53,14 +55,18 @@ type announcementInput struct {
 
 // CreateAnnouncement creates a draft or published announcement and optionally
 // pushes it to the Discord #announcements webhook.
+//
+// @route POST /api/v1/cms/announcements
 func (h *Handler) CreateAnnouncement(c *gin.Context) {
 	var in announcementInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "CreateAnnouncement", http.StatusBadRequest, "title and body are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "title and body are required"})
 		return
 	}
 	tag, ok := validTag(in.Tag)
 	if !ok {
+		logHandlerErr(c, "CreateAnnouncement", http.StatusBadRequest, "invalid tag")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag"})
 		return
 	}
@@ -87,6 +93,7 @@ func (h *Handler) CreateAnnouncement(c *gin.Context) {
 	}
 
 	if err := h.db.Create(&a).Error; err != nil {
+		logHandlerErr(c, "CreateAnnouncement", http.StatusInternalServerError, "could not create announcement")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create announcement"})
 		return
 	}
@@ -118,10 +125,13 @@ type announcementUpdate struct {
 // UpdateAnnouncement edits an announcement, supporting draft->published
 // transitions (which set published_at and may push to Discord).
 //
+// @route PATCH /api/v1/cms/announcements/:id
+//
 //nolint:cyclop // partial-update handler branches per optional field + draft->published transition; splitting tracked SIZE-3 debt (T-125.4).
 func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		logHandlerErr(c, "UpdateAnnouncement", http.StatusBadRequest, "invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
@@ -133,6 +143,7 @@ func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 
 	var in announcementUpdate
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "UpdateAnnouncement", http.StatusBadRequest, "invalid body")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
@@ -150,6 +161,7 @@ func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 	if in.Tag != nil {
 		tag, ok := validTag(*in.Tag)
 		if !ok {
+			logHandlerErr(c, "UpdateAnnouncement", http.StatusBadRequest, "invalid tag")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid tag"})
 			return
 		}
@@ -173,6 +185,7 @@ func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 				nowPublishing = true
 			}
 		default:
+			logHandlerErr(c, "UpdateAnnouncement", http.StatusBadRequest, "invalid status")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
 			return
 		}
@@ -180,16 +193,23 @@ func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 
 	if len(updates) > 0 {
 		if err := h.db.Model(&a).Updates(updates).Error; err != nil {
+			logHandlerErr(c, "UpdateAnnouncement", http.StatusInternalServerError, "could not update announcement")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update announcement"})
 			return
 		}
 	}
-	_ = h.db.First(&a, "id = ?", id).Error
+	if err := h.db.First(&a, "id = ?", id).Error; err != nil {
+		logHandlerErr(c, "UpdateAnnouncement", http.StatusInternalServerError, "reload after update failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load announcement"})
+		return
+	}
 
 	if in.PushToDiscord != nil && *in.PushToDiscord &&
 		a.Status == models.AnnouncementPublished && (nowPublishing || !a.PushedToDiscord) {
 		h.pushToDiscord(c, &a)
-		_ = h.db.First(&a, "id = ?", id).Error
+		if err := h.db.First(&a, "id = ?", id).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logHandlerErr(c, "UpdateAnnouncement", http.StatusOK, "announcement re-reload failed")
+		}
 	}
 
 	c.JSON(http.StatusOK, a)
@@ -197,15 +217,19 @@ func (h *Handler) UpdateAnnouncement(c *gin.Context) {
 
 // DeleteAnnouncement archives an announcement (removes it from the feed but
 // keeps it recoverable).
+//
+// @route DELETE /api/v1/cms/announcements/:id
 func (h *Handler) DeleteAnnouncement(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		logHandlerErr(c, "DeleteAnnouncement", http.StatusBadRequest, "invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 	res := h.db.Model(&models.Announcement{}).Where("id = ?", id).
 		Update("status", models.AnnouncementArchived)
 	if res.Error != nil {
+		logHandlerErr(c, "DeleteAnnouncement", http.StatusInternalServerError, "could not delete announcement")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete announcement"})
 		return
 	}
@@ -217,13 +241,17 @@ func (h *Handler) DeleteAnnouncement(c *gin.Context) {
 }
 
 // PushAnnouncementDiscord manually (re)pushes an announcement to the webhook.
+//
+// @route POST /api/v1/cms/announcements/:id/push-discord
 func (h *Handler) PushAnnouncementDiscord(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		logHandlerErr(c, "PushAnnouncementDiscord", http.StatusBadRequest, "invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 	if !h.webhook.Enabled() {
+		logHandlerErr(c, "PushAnnouncementDiscord", http.StatusBadRequest, "discord webhook not configured")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "discord webhook not configured"})
 		return
 	}
@@ -233,6 +261,7 @@ func (h *Handler) PushAnnouncementDiscord(c *gin.Context) {
 		return
 	}
 	if ok := h.pushToDiscord(c, &a); !ok {
+		logHandlerErr(c, "PushAnnouncementDiscord", http.StatusBadGateway, "webhook push failed")
 		c.JSON(http.StatusBadGateway, gin.H{"error": "webhook push failed"})
 		return
 	}
@@ -261,13 +290,17 @@ func (h *Handler) pushToDiscord(c *gin.Context, a *models.Announcement) bool {
 
 // UploadImage accepts a thumbnail (multipart "file") and returns its URL.
 // Local-disk storage for now; swap for S3/MinIO in production.
+//
+// @route POST /api/v1/cms/uploads
 func (h *Handler) UploadImage(c *gin.Context) {
 	file, err := c.FormFile("file")
 	if err != nil {
+		logHandlerErr(c, "UploadImage", http.StatusBadRequest, "file field required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "file field required"})
 		return
 	}
 	if file.Size > maxUploadBytes {
+		logHandlerErr(c, "UploadImage", http.StatusRequestEntityTooLarge, "file exceeds 5MB")
 		c.JSON(http.StatusRequestEntityTooLarge, gin.H{"error": "file exceeds 5MB"})
 		return
 	}
@@ -277,11 +310,13 @@ func (h *Handler) UploadImage(c *gin.Context) {
 		return
 	}
 	if err := os.MkdirAll(uploadDir, 0o755); err != nil {
+		logHandlerErr(c, "UploadImage", http.StatusInternalServerError, "storage unavailable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "storage unavailable"})
 		return
 	}
 	name := uuid.NewString() + ext
 	if err := c.SaveUploadedFile(file, filepath.Join(uploadDir, name)); err != nil {
+		logHandlerErr(c, "UploadImage", http.StatusInternalServerError, "could not save file")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save file"})
 		return
 	}

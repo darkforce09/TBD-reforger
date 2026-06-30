@@ -34,6 +34,8 @@ type rosterRow struct {
 }
 
 // ListUsers returns the Personnel Roster with per-user warning counts (admin).
+//
+// @route GET /api/v1/admin/users
 func (h *Handler) ListUsers(c *gin.Context) {
 	limit, offset := parsePage(c)
 
@@ -49,6 +51,7 @@ func (h *Handler) ListUsers(c *gin.Context) {
 
 	var users []models.User
 	if err := q.Order("username ASC").Limit(limit).Offset(offset).Find(&users).Error; err != nil {
+		logHandlerErr(c, "ListUsers", http.StatusInternalServerError, "could not list users")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list users"})
 		return
 	}
@@ -93,20 +96,25 @@ type updateUserInput struct {
 }
 
 // UpdateUser sets a user's web role (admin override of the synced role).
+//
+// @route PATCH /api/v1/admin/users/:discordId
 func (h *Handler) UpdateUser(c *gin.Context) {
 	discordID := c.Param("discordId")
 	var in updateUserInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "UpdateUser", http.StatusBadRequest, "role required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "role required"})
 		return
 	}
 	role, ok := validRole(in.Role)
 	if !ok {
+		logHandlerErr(c, "UpdateUser", http.StatusBadRequest, "invalid role")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid role"})
 		return
 	}
 	res := h.db.Model(&models.User{}).Where("discord_id = ?", discordID).Update("role", role)
 	if res.Error != nil {
+		logHandlerErr(c, "UpdateUser", http.StatusInternalServerError, "could not update user")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update user"})
 		return
 	}
@@ -126,6 +134,8 @@ type banInput struct {
 }
 
 // BanUser bans a user, revokes their refresh tokens, and records the action.
+//
+// @route POST /api/v1/admin/users/:discordId/ban
 func (h *Handler) BanUser(c *gin.Context) {
 	discordID := c.Param("discordId")
 	var in banInput
@@ -138,6 +148,7 @@ func (h *Handler) BanUser(c *gin.Context) {
 		"is_banned": true, "ban_reason": in.Reason, "banned_by": actor, "banned_at": now,
 	})
 	if res.Error != nil {
+		logHandlerErr(c, "BanUser", http.StatusInternalServerError, "could not ban user")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not ban user"})
 		return
 	}
@@ -158,12 +169,15 @@ func (h *Handler) BanUser(c *gin.Context) {
 }
 
 // UnbanUser lifts a ban.
+//
+// @route DELETE /api/v1/admin/users/:discordId/ban
 func (h *Handler) UnbanUser(c *gin.Context) {
 	discordID := c.Param("discordId")
 	res := h.db.Model(&models.User{}).Where("discord_id = ?", discordID).Updates(map[string]any{
 		"is_banned": false, "ban_reason": "", "banned_by": nil, "banned_at": nil,
 	})
 	if res.Error != nil {
+		logHandlerErr(c, "UnbanUser", http.StatusInternalServerError, "could not unban user")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not unban user"})
 		return
 	}
@@ -183,10 +197,13 @@ type warnInput struct {
 }
 
 // IssueWarning records a disciplinary warning against a user.
+//
+// @route POST /api/v1/admin/users/:discordId/warnings
 func (h *Handler) IssueWarning(c *gin.Context) {
 	discordID := c.Param("discordId")
 	var in warnInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "IssueWarning", http.StatusBadRequest, "reason required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "reason required"})
 		return
 	}
@@ -198,6 +215,7 @@ func (h *Handler) IssueWarning(c *gin.Context) {
 	actor := middleware.DiscordID(c)
 	warning := models.Warning{DiscordID: discordID, IssuedBy: actor, Reason: in.Reason}
 	if err := h.db.Create(&warning).Error; err != nil {
+		logHandlerErr(c, "IssueWarning", http.StatusInternalServerError, "could not issue warning")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not issue warning"})
 		return
 	}
@@ -208,9 +226,12 @@ func (h *Handler) IssueWarning(c *gin.Context) {
 }
 
 // ResyncRoles re-applies discord_roles mappings to all users (admin).
+//
+// @route POST /api/v1/admin/roles/sync
 func (h *Handler) ResyncRoles(c *gin.Context) {
 	updated, err := services.ResyncAllRoles(h.db)
 	if err != nil {
+		logHandlerErr(c, "ResyncRoles", http.StatusInternalServerError, "resync failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "resync failed"})
 		return
 	}
@@ -232,14 +253,18 @@ var validRconActions = map[string]bool{"restart": true, "change_map": true, "kic
 // SendRCON records an admin server-control command. The actual BattlEye RCON
 // socket dispatch is an environment-specific integration handled by the
 // deployment's RCON bridge; this endpoint validates and audits the command.
+//
+// @route POST /api/v1/admin/servers/:id/rcon
 func (h *Handler) SendRCON(c *gin.Context) {
 	serverID := c.Param("id")
 	var in rconInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "SendRCON", http.StatusBadRequest, "action required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "action required"})
 		return
 	}
 	if !validRconActions[in.Action] {
+		logHandlerErr(c, "SendRCON", http.StatusBadRequest, "unknown action")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "unknown action"})
 		return
 	}

@@ -11,6 +11,8 @@ import (
 
 // ListAnnouncements returns the published news feed, pinned items first then
 // newest, with offset pagination for the "Load More" button.
+//
+// @route GET /api/v1/announcements
 func (h *Handler) ListAnnouncements(c *gin.Context) {
 	limit, offset := parsePage(c)
 
@@ -25,6 +27,7 @@ func (h *Handler) ListAnnouncements(c *gin.Context) {
 		Order("published_at DESC").
 		Limit(limit).Offset(offset).
 		Find(&items).Error; err != nil {
+		logHandlerErr(c, "ListAnnouncements", http.StatusInternalServerError, "could not list announcements")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list announcements"})
 		return
 	}
@@ -38,6 +41,8 @@ func (h *Handler) ListAnnouncements(c *gin.Context) {
 }
 
 // GetAnnouncement returns a single published announcement (full briefing).
+//
+// @route GET /api/v1/announcements/:id
 func (h *Handler) GetAnnouncement(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

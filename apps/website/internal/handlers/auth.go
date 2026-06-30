@@ -19,9 +19,12 @@ import (
 
 // DiscordLogin starts the OAuth2 flow: it sets a short-lived state cookie and
 // redirects the browser to Discord's consent screen.
+//
+// @route GET /api/v1/auth/discord/login
 func (h *Handler) DiscordLogin(c *gin.Context) {
 	state, err := auth.RandomToken(16)
 	if err != nil {
+		logHandlerErr(c, "DiscordLogin", http.StatusInternalServerError, "could not start login")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start login"})
 		return
 	}
@@ -36,6 +39,8 @@ func (h *Handler) DiscordLogin(c *gin.Context) {
 // the user, sync roles, then redirect the browser back to the SPA callback with
 // the tokens in the URL fragment. The SPA parses the fragment, stores the tokens,
 // and calls GET /me for the user object.
+//
+// @route GET /api/v1/auth/discord/callback
 func (h *Handler) DiscordCallback(c *gin.Context) {
 	code := c.Query("code")
 	state := c.Query("state")
@@ -160,9 +165,12 @@ type refreshRequest struct {
 
 // Refresh rotates a valid refresh token: the presented token is revoked and a
 // new access + refresh pair is issued.
+//
+// @route POST /api/v1/auth/refresh
 func (h *Handler) Refresh(c *gin.Context) {
 	var req refreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logHandlerErr(c, "Refresh", http.StatusBadRequest, "refresh_token required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token required"})
 		return
 	}
@@ -175,6 +183,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		logHandlerErr(c, "Refresh", http.StatusInternalServerError, "lookup failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "lookup failed"})
 		return
 	}
@@ -187,6 +196,7 @@ func (h *Handler) Refresh(c *gin.Context) {
 	revokedAt := time.Now()
 	if err := h.db.Model(&models.RefreshToken{}).Where("id = ?", rt.ID).
 		Update("revoked_at", revokedAt).Error; err != nil {
+		logHandlerErr(c, "Refresh", http.StatusInternalServerError, "rotation failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "rotation failed"})
 		return
 	}
@@ -199,11 +209,13 @@ func (h *Handler) Refresh(c *gin.Context) {
 	armaLinked := user.ArmaID != nil
 	access, accessExp, err := h.jwt.IssueAccess(user.DiscordID, string(user.Role), armaLinked)
 	if err != nil {
+		logHandlerErr(c, "Refresh", http.StatusInternalServerError, "could not issue token")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not issue token"})
 		return
 	}
 	newRefresh, err := h.issueRefresh(user.DiscordID)
 	if err != nil {
+		logHandlerErr(c, "Refresh", http.StatusInternalServerError, "could not issue refresh token")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not issue refresh token"})
 		return
 	}
@@ -218,9 +230,12 @@ func (h *Handler) Refresh(c *gin.Context) {
 
 // Logout revokes the presented refresh token. Always returns 204, even if the
 // token was unknown, to avoid leaking which tokens exist.
+//
+// @route POST /api/v1/auth/logout
 func (h *Handler) Logout(c *gin.Context) {
 	var req refreshRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logHandlerErr(c, "Logout", http.StatusBadRequest, "refresh_token required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "refresh_token required"})
 		return
 	}

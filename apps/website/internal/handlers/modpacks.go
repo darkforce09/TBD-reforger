@@ -24,9 +24,12 @@ func (h *Handler) withMods(mp models.Modpack) *modpackDTO {
 }
 
 // ListModpacks returns every modpack with its included mods (current first).
+//
+// @route GET /api/v1/modpacks
 func (h *Handler) ListModpacks(c *gin.Context) {
 	var packs []models.Modpack
 	if err := h.db.Order("is_current DESC").Order("created_at DESC").Find(&packs).Error; err != nil {
+		logHandlerErr(c, "ListModpacks", http.StatusInternalServerError, "could not list modpacks")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list modpacks"})
 		return
 	}
@@ -38,9 +41,12 @@ func (h *Handler) ListModpacks(c *gin.Context) {
 }
 
 // GetCurrentModpack returns the active modpack for the Server Intel verify pill.
+//
+// @route GET /api/v1/modpacks/current
 func (h *Handler) GetCurrentModpack(c *gin.Context) {
 	mp, err := h.loadCurrentModpack()
 	if err != nil {
+		logHandlerErr(c, "GetCurrentModpack", http.StatusInternalServerError, "could not load modpack")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load modpack"})
 		return
 	}

@@ -1,0 +1,11 @@
+{
+  "id": "obj_alpha",
+  "type": "objective_capture",
+  "shape": {
+    "circle": {
+      "x": 4096,
+      "z": 4096,
+      "r": 250
+    }
+  }
+}

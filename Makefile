@@ -4,7 +4,7 @@ WEB := apps/website
 # Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
 export PATH := $(HOME)/.local/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -53,8 +53,14 @@ schema-codegen: ## Regenerate Go + TS contract types from packages/tbd-schema/sc
 	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
 	gofmt -w $(WEB)/internal/contract
 
-verify-citations: ## Verify @contract citations resolve to a schema + JSON pointer (DOCUMENTATION_STANDARDS §10)
+verify-citations: ## Verify @contract citations + GO-7 @route route-match (DOCUMENTATION_STANDARDS §10, CODING_STANDARDS §2)
 	node packages/tbd-schema/scripts/verify-contract-citations.mjs
+
+verify-coding-standards: ## GO-9 imports + ERR-4 envelope + LOG-3 logging + SIZE file length (CODING_STANDARDS §11)
+	@bash scripts/website/verify-handler-imports.sh
+	@bash scripts/website/verify-error-envelope.sh
+	@bash scripts/website/verify-handler-logging.sh
+	@node scripts/website/verify-file-length.mjs
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain
@@ -91,6 +97,7 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 # golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
 	$(MAKE) ci-local-backend
+	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-frontend
 	$(MAKE) ci-local-schema
 

@@ -31,15 +31,18 @@ type solveInput struct {
 
 // SolveFire computes a firing solution without persisting it (live recompute
 // while dragging markers on the map).
+//
+// @route POST /api/v1/fire-missions/solve
 func (h *Handler) SolveFire(c *gin.Context) {
 	var in solveInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "SolveFire", http.StatusBadRequest, "invalid body")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
 	sol, ok := services.SolveFireMission(in.WeaponSystem, in.FPX, in.FPY, in.TgtX, in.TgtY)
 	if !ok {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "target out of range", "solution": sol})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "target out of range", "details": sol})
 		return
 	}
 	c.JSON(http.StatusOK, sol)
@@ -54,15 +57,18 @@ type saveFireInput struct {
 }
 
 // SaveFire computes and persists a fire mission, optionally shared on an event.
+//
+// @route POST /api/v1/fire-missions
 func (h *Handler) SaveFire(c *gin.Context) {
 	var in saveFireInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "SaveFire", http.StatusBadRequest, "fp_grid and target_grid are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "fp_grid and target_grid are required"})
 		return
 	}
 	sol, ok := services.SolveFireMission(in.WeaponSystem, in.FPX, in.FPY, in.TgtX, in.TgtY)
 	if !ok {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "target out of range", "solution": sol})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "target out of range", "details": sol})
 		return
 	}
 
@@ -79,6 +85,7 @@ func (h *Handler) SaveFire(c *gin.Context) {
 		fm.EventID = eid
 	}
 	if err := h.db.Create(&fm).Error; err != nil {
+		logHandlerErr(c, "SaveFire", http.StatusInternalServerError, "could not save fire mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save fire mission"})
 		return
 	}
@@ -86,6 +93,8 @@ func (h *Handler) SaveFire(c *gin.Context) {
 }
 
 // ListEventFireMissions returns saved fire missions shared on an event.
+//
+// @route GET /api/v1/events/:id/fire-missions
 func (h *Handler) ListEventFireMissions(c *gin.Context) {
 	eid, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -111,6 +120,7 @@ func (h *Handler) InjectMission(c *gin.Context) {
 		return
 	}
 	if m.Status != models.MissionLive {
+		logHandlerErr(c, "InjectMission", http.StatusConflict, "only live missions can be injected")
 		c.JSON(http.StatusConflict, gin.H{"error": "only live missions can be injected"})
 		return
 	}
@@ -118,15 +128,18 @@ func (h *Handler) InjectMission(c *gin.Context) {
 	doc := h.buildMissionDoc(m)
 	data, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
+		logHandlerErr(c, "InjectMission", http.StatusInternalServerError, "could not build mission.json")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not build mission.json"})
 		return
 	}
 	if err := os.MkdirAll(missionStageDir, 0o755); err != nil {
+		logHandlerErr(c, "InjectMission", http.StatusInternalServerError, "staging unavailable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "staging unavailable"})
 		return
 	}
 	path := filepath.Join(missionStageDir, m.ID.String()+".mission.json")
 	if err := os.WriteFile(path, data, 0o644); err != nil {
+		logHandlerErr(c, "InjectMission", http.StatusInternalServerError, "could not stage mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not stage mission"})
 		return
 	}

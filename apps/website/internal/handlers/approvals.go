@@ -23,6 +23,8 @@ type approvalRow struct {
 }
 
 // ListApprovals returns missions awaiting review (admin only).
+//
+// @route GET /api/v1/approvals
 func (h *Handler) ListApprovals(c *gin.Context) {
 	limit, offset := parsePage(c)
 
@@ -32,6 +34,7 @@ func (h *Handler) ListApprovals(c *gin.Context) {
 
 	var missions []models.Mission
 	if err := base.Order("updated_at ASC").Limit(limit).Offset(offset).Find(&missions).Error; err != nil {
+		logHandlerErr(c, "ListApprovals", http.StatusInternalServerError, "could not list approvals")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list approvals"})
 		return
 	}
@@ -83,6 +86,8 @@ func (h *Handler) loadPending(c *gin.Context) (*models.Mission, bool) {
 }
 
 // ApproveMission promotes a pending mission to the live library (admin only).
+//
+// @route POST /api/v1/approvals/:id/approve
 func (h *Handler) ApproveMission(c *gin.Context) {
 	m, ok := h.loadPending(c)
 	if !ok {
@@ -95,6 +100,7 @@ func (h *Handler) ApproveMission(c *gin.Context) {
 		"reviewed_by": reviewer,
 		"reviewed_at": now,
 	}).Error; err != nil {
+		logHandlerErr(c, "ApproveMission", http.StatusInternalServerError, "could not approve mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not approve mission"})
 		return
 	}
@@ -104,7 +110,11 @@ func (h *Handler) ApproveMission(c *gin.Context) {
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &reviewer, reviewerName,
 		"mission.approve", reviewerName+" approved mission '"+m.Title+"'", "mission", m.ID.String())
 
-	_ = h.db.First(m, "id = ?", m.ID).Error
+	if err := h.db.First(m, "id = ?", m.ID).Error; err != nil {
+		logHandlerErr(c, "ApproveMission", http.StatusInternalServerError, "reload after approve failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load mission"})
+		return
+	}
 	c.JSON(http.StatusOK, m)
 }
 
@@ -114,6 +124,8 @@ type rejectInput struct {
 }
 
 // RejectMission sends a pending mission back to the author (admin only).
+//
+// @route POST /api/v1/approvals/:id/reject
 func (h *Handler) RejectMission(c *gin.Context) {
 	m, ok := h.loadPending(c)
 	if !ok {
@@ -131,6 +143,7 @@ func (h *Handler) RejectMission(c *gin.Context) {
 		"reviewed_by":      reviewer,
 		"reviewed_at":      now,
 	}).Error; err != nil {
+		logHandlerErr(c, "RejectMission", http.StatusInternalServerError, "could not reject mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not reject mission"})
 		return
 	}
@@ -140,7 +153,11 @@ func (h *Handler) RejectMission(c *gin.Context) {
 	_ = services.WriteAudit(h.db, models.SeverityWarn, &reviewer, reviewerName,
 		"mission.reject", reviewerName+" rejected mission '"+m.Title+"'", "mission", m.ID.String())
 
-	_ = h.db.First(m, "id = ?", m.ID).Error
+	if err := h.db.First(m, "id = ?", m.ID).Error; err != nil {
+		logHandlerErr(c, "RejectMission", http.StatusInternalServerError, "reload after reject failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load mission"})
+		return
+	}
 	c.JSON(http.StatusOK, m)
 }
 

@@ -18,9 +18,12 @@ type serverIntelDTO struct {
 }
 
 // ListServers returns all servers with their current status summary.
+//
+// @route GET /api/v1/servers
 func (h *Handler) ListServers(c *gin.Context) {
 	var servers []models.Server
 	if err := h.db.Order("name ASC").Find(&servers).Error; err != nil {
+		logHandlerErr(c, "ListServers", http.StatusInternalServerError, "could not list servers")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list servers"})
 		return
 	}
@@ -32,6 +35,8 @@ func (h *Handler) ListServers(c *gin.Context) {
 }
 
 // GetServerStatus returns the Server Intel card for one server.
+//
+// @route GET /api/v1/servers/:id/status
 func (h *Handler) GetServerStatus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

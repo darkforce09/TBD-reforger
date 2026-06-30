@@ -1,0 +1,10 @@
+{
+  "id": "us:alpha:rifleman:0",
+  "faction": "us",
+  "groupCallsign": "Alpha",
+  "role": "Rifleman",
+  "kit": "kit:rifleman",
+  "x": 4096,
+  "z": 4096,
+  "headingDeg": 180
+}

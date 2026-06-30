@@ -117,6 +117,60 @@ function checkTsContractTags() {
   return { tagProblems, checked };
 }
 
+// --- GO-7 (CODING_STANDARDS §2): every exported HTTP handler carries an @route tag whose method +
+// path MATCH what apps/website/internal/handlers/handlers.go Register() actually wires — not mere
+// presence. A renamed route, a wrong verb, or a missing tag becomes a CI failure.
+const HANDLERS_DIR = join(repoRoot, "apps/website/internal/handlers");
+const HTTP_METHODS = "GET|POST|PUT|PATCH|DELETE";
+
+// Parse Register(): group-variable prefixes (rg.Group("/ingest") etc.) + each
+// `<grp>.<METHOD>("<path>", [mw,] h.<Handler>)` route line -> { method, route }.
+function parseWiredRoutes() {
+  const src = readFileSync(join(HANDLERS_DIR, "handlers.go"), "utf8").split("\n");
+  const group = { rg: "" };
+  const wired = {};
+  const routeRe = new RegExp(`^\\s*(\\w+)\\.(${HTTP_METHODS})\\("([^"]*)"`);
+  for (const line of src) {
+    const g = line.match(/(\w+)\s*:=\s*rg\.Group\("([^"]*)"/);
+    if (g) { group[g[1]] = g[2]; continue; }
+    const r = line.match(routeRe);
+    if (!r) continue;
+    const h = line.match(/h\.(\w+)\)\s*$/); // handler is the last arg
+    if (!h || !(r[1] in group)) continue;
+    wired[h[1]] = { method: r[2], route: "/api/v1" + group[r[1]] + r[3] };
+  }
+  return wired;
+}
+
+function checkGoRoutes() {
+  const routeProblems = [];
+  let checked = 0;
+  const wired = parseWiredRoutes();
+  const tagRe = new RegExp(`@route\\s+(${HTTP_METHODS})\\s+(\\S+)`);
+  for (const entry of readdirSync(HANDLERS_DIR)) {
+    if (!entry.endsWith(".go") || entry.endsWith("_test.go")) continue;
+    const lines = readFileSync(join(HANDLERS_DIR, entry), "utf8").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const fn = lines[i].match(/^func \(h \*Handler\) ([A-Z]\w*)\(c \*gin\.Context\) \{$/);
+      if (!fn) continue; // exported route handler (value-returning + lowercase helpers excluded)
+      const name = fn[1];
+      checked += 1;
+      const loc = `apps/website/internal/handlers/${entry}:${i + 1}`;
+      const w = wired[name];
+      if (!w) { routeProblems.push(`${loc}: ${name} not wired in Register() (GO-7)`); continue; }
+      let j = i - 1;
+      const blk = [];
+      while (j >= 0 && lines[j].trim().startsWith("//")) { blk.push(lines[j]); j--; }
+      const tag = blk.map((l) => l.match(tagRe)).find(Boolean);
+      if (!tag) { routeProblems.push(`${loc}: ${name} missing @route (GO-7)`); continue; }
+      if (tag[1] !== w.method || tag[2] !== w.route) {
+        routeProblems.push(`${loc}: ${name} @route ${tag[1]} ${tag[2]} != Register ${w.method} ${w.route} (GO-7)`);
+      }
+    }
+  }
+  return { routeProblems, checked };
+}
+
 let citations = 0;
 const problems = [];
 for (const d of SCAN_DIRS) {
@@ -156,4 +210,14 @@ if (tagProblems.length > 0) {
   console.log("All front-end contract exports carry @model/@contract.");
 }
 
-if (problems.length > 0 || tagProblems.length > 0) process.exit(1);
+// GO-7: @route presence + method/path match against Register().
+const { routeProblems, checked: routesChecked } = checkGoRoutes();
+console.log(`Checked ${routesChecked} handler(s) against Register() routes (GO-7).`);
+if (routeProblems.length > 0) {
+  console.error(`\n${routeProblems.length} @route problem(s):`);
+  for (const p of routeProblems) console.error(`  ${p}`);
+} else {
+  console.log("All handler @route tags match Register().");
+}
+
+if (problems.length > 0 || tagProblems.length > 0 || routeProblems.length > 0) process.exit(1);

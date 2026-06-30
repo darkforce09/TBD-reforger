@@ -1,0 +1,11 @@
+{
+  "callsign": "Alpha",
+  "type": "infantry",
+  "roles": [
+    {
+      "slot": "Squad Leader",
+      "kit": "kit:squad_leader",
+      "count": 1
+    }
+  ]
+}

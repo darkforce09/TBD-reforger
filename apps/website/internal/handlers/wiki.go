@@ -15,9 +15,12 @@ import (
 
 // ListWiki returns the SOP nav list ordered for the left sidebar. The frontend
 // groups by category.
+//
+// @route GET /api/v1/wiki
 func (h *Handler) ListWiki(c *gin.Context) {
 	var pages []models.WikiPage
 	if err := h.db.Order("nav_order ASC").Order("title ASC").Find(&pages).Error; err != nil {
+		logHandlerErr(c, "ListWiki", http.StatusInternalServerError, "could not list wiki")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list wiki"})
 		return
 	}
@@ -25,6 +28,8 @@ func (h *Handler) ListWiki(c *gin.Context) {
 }
 
 // GetWikiPage returns a single SOP/manual document by slug.
+//
+// @route GET /api/v1/wiki/:slug
 func (h *Handler) GetWikiPage(c *gin.Context) {
 	var page models.WikiPage
 	if err := h.db.First(&page, "slug = ?", c.Param("slug")).Error; err != nil {
@@ -35,9 +40,12 @@ func (h *Handler) GetWikiPage(c *gin.Context) {
 }
 
 // ListVehicles returns the structured Vehicle Database / IFF table.
+//
+// @route GET /api/v1/vehicle-database
 func (h *Handler) ListVehicles(c *gin.Context) {
 	var vehicles []models.VehicleDatabase
 	if err := h.db.Order("name ASC").Find(&vehicles).Error; err != nil {
+		logHandlerErr(c, "ListVehicles", http.StatusInternalServerError, "could not list vehicles")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list vehicles"})
 		return
 	}
@@ -54,9 +62,12 @@ type wikiInput struct {
 }
 
 // UpsertWikiPage creates or replaces a wiki page at the given slug (admin only).
+//
+// @route PUT /api/v1/wiki/:slug
 func (h *Handler) UpsertWikiPage(c *gin.Context) {
 	var in wikiInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "UpsertWikiPage", http.StatusBadRequest, "category, title and body_md are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "category, title and body_md are required"})
 		return
 	}
@@ -77,11 +88,16 @@ func (h *Handler) UpsertWikiPage(c *gin.Context) {
 			"category", "title", "icon", "body_md", "nav_order", "updated_by", "updated_at",
 		}),
 	}).Create(&page).Error; err != nil {
+		logHandlerErr(c, "UpsertWikiPage", http.StatusInternalServerError, "could not save wiki page")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save wiki page"})
 		return
 	}
 	// Reload to reflect generated/normalized fields.
-	_ = h.db.First(&page, "slug = ?", page.Slug).Error
+	if err := h.db.First(&page, "slug = ?", page.Slug).Error; err != nil {
+		logHandlerErr(c, "UpsertWikiPage", http.StatusInternalServerError, "reload after upsert failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load wiki page"})
+		return
+	}
 	c.JSON(http.StatusOK, page)
 }
 

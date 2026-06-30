@@ -85,6 +85,8 @@ type missionCard struct {
 
 // ListMissions powers the library browser with tabs (scope) and filters.
 // Query: ?scope=global|mine|bookmarked &terrain= &mode= &player_count=1-16 &q= &limit= &offset=
+//
+// @route GET /api/v1/missions
 func (h *Handler) ListMissions(c *gin.Context) {
 	me := middleware.DiscordID(c)
 	limit, offset := parsePage(c)
@@ -125,6 +127,7 @@ func (h *Handler) ListMissions(c *gin.Context) {
 
 	var missions []models.Mission
 	if err := q.Order("updated_at DESC").Limit(limit).Offset(offset).Find(&missions).Error; err != nil {
+		logHandlerErr(c, "ListMissions", http.StatusInternalServerError, "could not list missions")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list missions"})
 		return
 	}
@@ -181,6 +184,8 @@ type missionDetail struct {
 
 // GetMission returns the Mission Overview: metadata, armory, and current version
 // (whose json_payload carries the ORBAT template and map markers).
+//
+// @route GET /api/v1/missions/:id
 func (h *Handler) GetMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
@@ -219,24 +224,30 @@ type createMissionInput struct {
 
 // CreateMission creates a draft mission plus an initial v0.1.0 version and points
 // the mission at it. Requires mission_maker (or admin).
+//
+// @route POST /api/v1/missions
 func (h *Handler) CreateMission(c *gin.Context) {
 	var in createMissionInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "CreateMission", http.StatusBadRequest, "title, terrain, game_mode and max_players are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "title, terrain, game_mode and max_players are required"})
 		return
 	}
 	terrain, ok := validTerrain(in.Terrain)
 	if !ok {
+		logHandlerErr(c, "CreateMission", http.StatusBadRequest, "invalid terrain")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid terrain"})
 		return
 	}
 	mode, ok := validGameMode(in.GameMode)
 	if !ok {
+		logHandlerErr(c, "CreateMission", http.StatusBadRequest, "invalid game_mode")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid game_mode"})
 		return
 	}
 	weather, ok := validWeather(in.Weather)
 	if !ok {
+		logHandlerErr(c, "CreateMission", http.StatusBadRequest, "invalid weather")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid weather"})
 		return
 	}
@@ -250,9 +261,11 @@ func (h *Handler) CreateMission(c *gin.Context) {
 	}
 	// Validate the initial editor payload against its schema before persist (T-123.5).
 	if details, verr := contract.ValidateMissionEditorPayload(payload); verr != nil {
+		logHandlerErr(c, "CreateMission", http.StatusInternalServerError, "payload validation unavailable")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "payload validation unavailable"})
 		return
 	} else if len(details) > 0 {
+		logHandlerErr(c, "CreateMission", http.StatusBadRequest, "invalid mission payload")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission payload", "details": details})
 		return
 	}
@@ -287,11 +300,16 @@ func (h *Handler) CreateMission(c *gin.Context) {
 		return tx.Model(&mission).Update("current_version_id", version.ID).Error
 	})
 	if err != nil {
+		logHandlerErr(c, "CreateMission", http.StatusInternalServerError, "could not create mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create mission"})
 		return
 	}
 
-	_ = h.db.First(&mission, "id = ?", mission.ID).Error
+	if err := h.db.First(&mission, "id = ?", mission.ID).Error; err != nil {
+		logHandlerErr(c, "CreateMission", http.StatusInternalServerError, "reload after create failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load mission"})
+		return
+	}
 	c.JSON(http.StatusCreated, mission)
 }
 
@@ -310,6 +328,8 @@ type patchMissionInput struct {
 
 // UpdateMission edits mission metadata (author or admin only).
 //
+// @route PATCH /api/v1/missions/:id
+//
 //nolint:cyclop // metadata-update handler branches per optional field + status/authz checks; splitting tracked SIZE-3 debt (T-125.4).
 func (h *Handler) UpdateMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
@@ -322,6 +342,7 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 	}
 	var in patchMissionInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "UpdateMission", http.StatusBadRequest, "invalid body")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
@@ -333,6 +354,7 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 	if in.Terrain != nil {
 		t, ok := validTerrain(*in.Terrain)
 		if !ok {
+			logHandlerErr(c, "UpdateMission", http.StatusBadRequest, "invalid terrain")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid terrain"})
 			return
 		}
@@ -344,6 +366,7 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 	if in.GameMode != nil {
 		mode, ok := validGameMode(*in.GameMode)
 		if !ok {
+			logHandlerErr(c, "UpdateMission", http.StatusBadRequest, "invalid game_mode")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid game_mode"})
 			return
 		}
@@ -352,6 +375,7 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 	if in.Weather != nil {
 		w, ok := validWeather(*in.Weather)
 		if !ok {
+			logHandlerErr(c, "UpdateMission", http.StatusBadRequest, "invalid weather")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid weather"})
 			return
 		}
@@ -362,6 +386,7 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 	}
 	if in.MaxPlayers != nil {
 		if *in.MaxPlayers < 1 || *in.MaxPlayers > 256 {
+			logHandlerErr(c, "UpdateMission", http.StatusBadRequest, "max_players must be between 1 and 256")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "max_players must be between 1 and 256"})
 			return
 		}
@@ -376,11 +401,16 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 
 	if len(updates) > 0 {
 		if err := h.db.Model(m).Updates(updates).Error; err != nil {
+			logHandlerErr(c, "UpdateMission", http.StatusInternalServerError, "could not update mission")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update mission"})
 			return
 		}
 	}
-	_ = h.db.First(m, "id = ?", m.ID).Error
+	if err := h.db.First(m, "id = ?", m.ID).Error; err != nil {
+		logHandlerErr(c, "UpdateMission", http.StatusInternalServerError, "reload after update failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load mission"})
+		return
+	}
 	c.JSON(http.StatusOK, m)
 }
 
@@ -451,13 +481,16 @@ func (h *Handler) CreateVersion(c *gin.Context) {
 	}
 	if err := h.db.Create(&version).Error; err != nil {
 		if isUniqueViolation(err) {
+			logHandlerErr(c, "CreateVersion", http.StatusConflict, "version already exists")
 			c.JSON(http.StatusConflict, gin.H{"error": "version already exists"})
 			return
 		}
+		logHandlerErr(c, "CreateVersion", http.StatusInternalServerError, "could not save version")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not save version"})
 		return
 	}
 	if err := h.db.Model(m).Update("current_version_id", version.ID).Error; err != nil {
+		logHandlerErr(c, "CreateVersion", http.StatusInternalServerError, "could not set current version")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not set current version"})
 		return
 	}
@@ -492,6 +525,8 @@ func (h *Handler) GetVersion(c *gin.Context) {
 }
 
 // SubmitMission moves a draft into the approval queue (author/admin).
+//
+// @route POST /api/v1/missions/:id/submit
 func (h *Handler) SubmitMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
@@ -502,6 +537,7 @@ func (h *Handler) SubmitMission(c *gin.Context) {
 		return
 	}
 	if m.Status != models.MissionDraft && m.Status != models.MissionRejected {
+		logHandlerErr(c, "SubmitMission", http.StatusConflict, "only draft or rejected missions can be submitted")
 		c.JSON(http.StatusConflict, gin.H{"error": "only draft or rejected missions can be submitted"})
 		return
 	}
@@ -509,16 +545,23 @@ func (h *Handler) SubmitMission(c *gin.Context) {
 		"status":           models.MissionPendingApproval,
 		"rejection_reason": "",
 	}).Error; err != nil {
+		logHandlerErr(c, "SubmitMission", http.StatusInternalServerError, "could not submit mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not submit mission"})
 		return
 	}
-	_ = h.db.First(m, "id = ?", m.ID).Error
+	if err := h.db.First(m, "id = ?", m.ID).Error; err != nil {
+		logHandlerErr(c, "SubmitMission", http.StatusInternalServerError, "reload after submit failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load mission"})
+		return
+	}
 	c.JSON(http.StatusOK, m)
 }
 
 // --- Armory ---
 
 // GetArmory lists a mission's armory.
+//
+// @route GET /api/v1/missions/:id/armory
 func (h *Handler) GetArmory(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
@@ -547,6 +590,8 @@ type setArmoryInput struct {
 }
 
 // SetArmory replaces a mission's armory list wholesale (author/admin).
+//
+// @route PUT /api/v1/missions/:id/armory
 func (h *Handler) SetArmory(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
@@ -558,6 +603,7 @@ func (h *Handler) SetArmory(c *gin.Context) {
 	}
 	var in setArmoryInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "SetArmory", http.StatusBadRequest, "invalid body")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
@@ -584,6 +630,7 @@ func (h *Handler) SetArmory(c *gin.Context) {
 		return tx.Create(&rows).Error
 	})
 	if err != nil {
+		logHandlerErr(c, "SetArmory", http.StatusInternalServerError, "could not set armory")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not set armory"})
 		return
 	}
@@ -596,14 +643,18 @@ func (h *Handler) SetArmory(c *gin.Context) {
 // --- Bookmarks ---
 
 // BookmarkMission adds the mission to the caller's bookmarks (idempotent).
+//
+// @route POST /api/v1/missions/:id/bookmark
 func (h *Handler) BookmarkMission(c *gin.Context) {
 	mID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		logHandlerErr(c, "BookmarkMission", http.StatusBadRequest, "invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}
 	bm := models.MissionBookmark{DiscordID: middleware.DiscordID(c), MissionID: mID}
 	if err := h.db.FirstOrCreate(&bm, "discord_id = ? AND mission_id = ?", bm.DiscordID, mID).Error; err != nil {
+		logHandlerErr(c, "BookmarkMission", http.StatusInternalServerError, "could not bookmark")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not bookmark"})
 		return
 	}
@@ -611,9 +662,12 @@ func (h *Handler) BookmarkMission(c *gin.Context) {
 }
 
 // RemoveBookmark removes the mission from the caller's bookmarks.
+//
+// @route DELETE /api/v1/missions/:id/bookmark
 func (h *Handler) RemoveBookmark(c *gin.Context) {
 	mID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
+		logHandlerErr(c, "RemoveBookmark", http.StatusBadRequest, "invalid id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
 		return
 	}

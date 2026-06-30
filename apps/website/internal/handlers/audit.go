@@ -39,6 +39,8 @@ func (h *Handler) auditQuery(c *gin.Context) *gorm.DB {
 
 // ListAuditLogs returns audit entries newest-first with keyset pagination via
 // ?before=<id>. Returns next_cursor when a full page is returned.
+//
+// @route GET /api/v1/admin/audit-logs
 func (h *Handler) ListAuditLogs(c *gin.Context) {
 	limit, _ := parsePage(c)
 
@@ -51,6 +53,7 @@ func (h *Handler) ListAuditLogs(c *gin.Context) {
 
 	var logs []models.AuditLog
 	if err := q.Order("id DESC").Limit(limit).Find(&logs).Error; err != nil {
+		logHandlerErr(c, "ListAuditLogs", http.StatusInternalServerError, "could not list audit logs")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list audit logs"})
 		return
 	}
@@ -64,9 +67,12 @@ func (h *Handler) ListAuditLogs(c *gin.Context) {
 }
 
 // ExportAuditLogsCSV streams the filtered audit log as a CSV download.
+//
+// @route GET /api/v1/admin/audit-logs/export.csv
 func (h *Handler) ExportAuditLogsCSV(c *gin.Context) {
 	var logs []models.AuditLog
 	if err := h.auditQuery(c).Order("id DESC").Limit(10000).Find(&logs).Error; err != nil {
+		logHandlerErr(c, "ExportAuditLogsCSV", http.StatusInternalServerError, "could not export")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not export"})
 		return
 	}
@@ -94,6 +100,8 @@ func (h *Handler) ExportAuditLogsCSV(c *gin.Context) {
 
 // StreamAuditLogs is a terminal-style live feed (SSE). It polls for rows newer
 // than the latest at connect time and pushes them as they appear.
+//
+// @route GET /api/v1/admin/audit-logs/stream
 func (h *Handler) StreamAuditLogs(c *gin.Context) {
 	c.Writer.Header().Set("Content-Type", "text/event-stream")
 	c.Writer.Header().Set("Cache-Control", "no-cache")
@@ -102,6 +110,7 @@ func (h *Handler) StreamAuditLogs(c *gin.Context) {
 
 	flusher, ok := c.Writer.(interface{ Flush() })
 	if !ok {
+		logHandlerErr(c, "StreamAuditLogs", http.StatusInternalServerError, "streaming unsupported")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "streaming unsupported"})
 		return
 	}

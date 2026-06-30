@@ -35,6 +35,10 @@ type assignmentSummary struct {
 // GetDashboard aggregates the home view: next operation, the caller's assigned
 // ORBAT slot, live server status, current modpack, and recent announcements.
 // Event/ORBAT/server data is populated by later milestones; fields are null-safe.
+//
+// @route GET /api/v1/dashboard
+//
+//nolint:cyclop // aggregates many independent best-effort lookups; the M6 enrichment guards (T-125.4) push it past 15.
 func (h *Handler) GetDashboard(c *gin.Context) {
 	me := middleware.DiscordID(c)
 	now := time.Now()
@@ -57,7 +61,9 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 		var em models.EventMission
 		var m models.Mission
 		if e := h.db.Where("event_id = ?", ev.ID).Order("start_time ASC").First(&em).Error; e == nil {
-			_ = h.db.First(&m, "id = ?", em.MissionID).Error
+			if err := h.db.First(&m, "id = ?", em.MissionID).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+				logHandlerErr(c, "GetDashboard", http.StatusOK, "mission enrich lookup failed")
+			}
 		}
 		var registered int64
 		h.db.Model(&models.EventRegistration{}).
@@ -78,6 +84,7 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 			Status:     string(ev.Status),
 		}
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		logHandlerErr(c, "GetDashboard", http.StatusInternalServerError, "dashboard event lookup failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "dashboard event lookup failed"})
 		return
 	}
@@ -91,11 +98,17 @@ func (h *Handler) GetDashboard(c *gin.Context) {
 		Order("event_missions.start_time ASC").First(&slot).Error
 	if err == nil {
 		var aem models.EventMission
-		_ = h.db.First(&aem, "id = ?", slot.EventMissionID).Error
+		if err := h.db.First(&aem, "id = ?", slot.EventMissionID).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logHandlerErr(c, "GetDashboard", http.StatusOK, "event-mission enrich lookup failed")
+		}
 		var aev models.Event
-		_ = h.db.First(&aev, "id = ?", aem.EventID).Error
+		if err := h.db.First(&aev, "id = ?", aem.EventID).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logHandlerErr(c, "GetDashboard", http.StatusOK, "event enrich lookup failed")
+		}
 		var m models.Mission
-		_ = h.db.First(&m, "id = ?", aem.MissionID).Error
+		if err := h.db.First(&m, "id = ?", aem.MissionID).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			logHandlerErr(c, "GetDashboard", http.StatusOK, "mission enrich lookup failed")
+		}
 		name := aev.NameOverride
 		if name == "" {
 			name = m.Title

@@ -7,3 +7,30 @@
   path: apps/website/frontend/src/features/tactical-map/**
   reason: MC-perf — dense T-057..T-067 fps hot paths; measured perf outweighs file length
   expires: MC-perf
+# SIZE-3 (CODING_STANDARDS §8): standing >1000-line debt, split tracked post-T-125.
+- rule: SIZE-3
+  path: apps/website/frontend/src/pages/admin.tsx
+  reason: admin console aggregates personnel/approvals/audit/servers sections; split tracked
+  expires: T-125-debt
+- rule: SIZE-3
+  path: apps/website/frontend/src/pages/doctrine.tsx
+  reason: doctrine/wiki/vehicle split-pane surfaces in one module; split tracked
+  expires: T-125-debt
+- rule: SIZE-3
+  path: apps/website/internal/handlers/events.go
+  reason: campaign/ORBAT handlers; T-125.4 @route + LOG-3 additions keep it >1000; split tracked
+  expires: T-125-debt
+# GO-9 (CODING_STANDARDS §2): structural handler imports of internal/{auth,realtime}
+# that cannot be extracted without dismantling the Handler construction surface.
+- rule: GO-9
+  path: apps/website/internal/handlers/handlers.go
+  reason: structural — Handler ctor builds auth.Manager + realtime.Hub (struct fields wired in Register)
+  expires: structural
+- rule: GO-9
+  path: apps/website/internal/handlers/auth.go
+  reason: structural — Discord OAuth + JWT mint/verify needs internal/auth
+  expires: structural
+- rule: GO-9
+  path: apps/website/internal/handlers/me.go
+  reason: structural — Arma link-code token path needs internal/auth
+  expires: structural

@@ -39,6 +39,8 @@ type leaderboardRow struct {
 // GetLeaderboards returns a ranked board for the selected category, searchable
 // by player name. The frontend splits the first three into the podium.
 // Query: ?category=kd|command_win|missions|longest_kill|team_kills &q= &limit=
+//
+// @route GET /api/v1/leaderboards
 func (h *Handler) GetLeaderboards(c *gin.Context) {
 	category := c.DefaultQuery("category", "kd")
 	order, ok := leaderboardOrder[category]
@@ -60,6 +62,7 @@ func (h *Handler) GetLeaderboards(c *gin.Context) {
 
 	rows := []leaderboardRow{}
 	if err := q.Order(order).Limit(limit).Offset(offset).Scan(&rows).Error; err != nil {
+		logHandlerErr(c, "GetLeaderboards", http.StatusInternalServerError, "could not load leaderboard")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load leaderboard"})
 		return
 	}
@@ -71,6 +74,8 @@ func (h *Handler) GetLeaderboards(c *gin.Context) {
 }
 
 // GetUserStats returns one player's aggregate stat card.
+//
+// @route GET /api/v1/users/:discordId/stats
 func (h *Handler) GetUserStats(c *gin.Context) {
 	discordID := c.Param("discordId")
 
@@ -87,6 +92,7 @@ func (h *Handler) GetUserStats(c *gin.Context) {
 		Where("lt.discord_id = ?", discordID).
 		Scan(&row).Error
 	if err != nil {
+		logHandlerErr(c, "GetUserStats", http.StatusInternalServerError, "could not load stats")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load stats"})
 		return
 	}
@@ -105,6 +111,8 @@ func (h *Handler) GetUserStats(c *gin.Context) {
 }
 
 // StreamServerStatus is an SSE endpoint that pushes live server-status updates.
+//
+// @route GET /api/v1/servers/:id/status/stream
 func (h *Handler) StreamServerStatus(c *gin.Context) {
 	serverID := c.Param("id")
 
@@ -115,6 +123,7 @@ func (h *Handler) StreamServerStatus(c *gin.Context) {
 
 	flusher, ok := c.Writer.(interface{ Flush() })
 	if !ok {
+		logHandlerErr(c, "StreamServerStatus", http.StatusInternalServerError, "streaming unsupported")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "streaming unsupported"})
 		return
 	}

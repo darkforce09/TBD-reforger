@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "1.0",
+  "meta": {
+    "id": "msn_2d91be",
+    "name": "Last Stand at Montfort",
+    "author": "ops@tbdevent.eu",
+    "terrain": "arland",
+    "templateId": "defend_hold_v1",
+    "playerRange": [20, 40]
+  },
+  "environment": {
+    "dateTime": "1989-09-02T17:45:00Z",
+    "weatherPreset": "clear",
+    "windDirDeg": 120
+  },
+  "factions": [
+    {
+      "key": "defenders",
+      "displayName": "UK Forces",
+      "presetId": "preset:uk_army_80s",
+      "tickets": 0,
+      "color": "#2f855a"
+    },
+    {
+      "key": "attackers",
+      "displayName": "Soviet Motor Rifles",
+      "presetId": "preset:sov_msr",
+      "tickets": 40,
+      "color": "#9b2c2c"
+    }
+  ],
+  "orbat": {
+    "defenders": {
+      "groups": [
+        {
+          "callsign": "Sabre",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:uk_sl", "count": 1, "radio": ["net:def_cmd", "net:sabre"] },
+            { "slot": "MG", "kit": "kit:uk_gpmg", "count": 1, "radio": [] },
+            { "slot": "AT", "kit": "kit:uk_at", "count": 1, "radio": [] },
+            { "slot": "RFL", "kit": "kit:uk_rifleman", "count": 5, "radio": [] }
+          ]
+        }
+      ]
+    },
+    "attackers": {
+      "groups": [
+        {
+          "callsign": "Volk",
+          "type": "motor_rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:sov_sl", "count": 1, "radio": ["net:atk_cmd", "net:volk"] },
+            { "slot": "AR", "kit": "kit:sov_ar", "count": 2, "radio": [] },
+            { "slot": "RFL", "kit": "kit:sov_rifleman", "count": 7, "radio": [] }
+          ]
+        }
+      ]
+    }
+  },
+  "radioPlan": {
+    "nets": [
+      { "id": "net:def_cmd", "label": "Defender Command", "freqMHz": 38.0, "faction": "defenders", "range": "long" },
+      { "id": "net:sabre", "label": "Sabre Squad", "freqMHz": 39.5, "faction": "defenders", "range": "short" },
+      { "id": "net:atk_cmd", "label": "Attacker Command", "freqMHz": 48.0, "faction": "attackers", "range": "long" },
+      { "id": "net:volk", "label": "Volk Squad", "freqMHz": 49.5, "faction": "attackers", "range": "short" }
+    ]
+  },
+  "zones": [
+    {
+      "id": "s1",
+      "type": "spawn",
+      "faction": "defenders",
+      "shape": { "circle": { "x": 2210.0, "z": 3120.0, "r": 90 } }
+    },
+    {
+      "id": "s2",
+      "type": "spawn",
+      "faction": "attackers",
+      "shape": { "circle": { "x": 3050.0, "z": 3640.0, "r": 120 } }
+    },
+    {
+      "id": "obj1",
+      "type": "objective_hold_until",
+      "label": "Montfort Manor",
+      "faction": "defenders",
+      "shape": { "circle": { "x": 2480.0, "z": 3300.0, "r": 70 } },
+      "rules": { "holdSeconds": 2700, "points": 150 }
+    },
+    {
+      "id": "obj2",
+      "type": "objective_destroy",
+      "label": "Ammo Cache",
+      "faction": "attackers",
+      "shape": { "circle": { "x": 2475.0, "z": 3290.0, "r": 25 } },
+      "rules": { "targetAlias": "comp:ammo_cache", "points": 100 }
+    },
+    {
+      "id": "bnd",
+      "type": "boundary",
+      "shape": { "polygon": [[2000, 2900], [3300, 2900], [3300, 3900], [2000, 3900]] },
+      "rules": { "graceSeconds": 20, "penalty": "kill" }
+    }
+  ],
+  "entities": [
+    { "alias": "comp:ammo_cache", "x": 2475.0, "z": 3290.0, "headingDeg": 0, "faction": "defenders" },
+    { "alias": "comp:checkpoint_small", "x": 2520.0, "z": 3350.0, "headingDeg": 270 }
+  ],
+  "flow": {
+    "briefingSeconds": 480,
+    "safeStartSeconds": 180,
+    "timeLimitSeconds": 3000,
+    "jip": "disabled"
+  },
+  "winConditions": {
+    "mode": "defender_holds_or_attacker_destroys",
+    "endOn": ["time_limit", "objective_destroyed", "hold_expired", "faction_eliminated"]
+  },
+  "briefings": {
+    "defenders": {
+      "situation": "A Soviet motor rifle company is pushing toward Montfort.",
+      "mission": "Hold Montfort Manor and protect the ammo cache until relief arrives.",
+      "execution": "Sabre fortifies the manor; AT covers the eastern approach.",
+      "markers": [{ "x": 2480, "z": 3300, "icon": "defend", "label": "HOLD MANOR" }]
+    },
+    "attackers": {
+      "situation": "UK forces are dug in at Montfort Manor with a forward ammo cache.",
+      "mission": "Destroy the ammo cache or overrun the manor before the clock runs out.",
+      "execution": "Volk assaults from the south-east under suppressing fire.",
+      "markers": [{ "x": 2475, "z": 3290, "icon": "destroy", "label": "DESTROY CACHE" }]
+    }
+  },
+  "settings": {
+    "respawn": "tickets",
+    "spectatorPolicy": "own_side_delayed_60s",
+    "nightVision": false
+  }
+}

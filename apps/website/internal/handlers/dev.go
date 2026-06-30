@@ -22,6 +22,8 @@ const devUserID = "000000000000000001"
 // Discord callback — so the frontend handles both paths identically.
 //
 // Visit /api/v1/auth/dev-login?role=admin (or mission_maker / enlisted).
+//
+// @route GET /api/v1/auth/dev-login
 func (h *Handler) DevLogin(c *gin.Context) {
 	if h.cfg.Env != "development" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
@@ -53,12 +55,14 @@ func (h *Handler) DevLogin(c *gin.Context) {
 			"username", "discord_handle", "role", "last_login_at", "updated_at",
 		}),
 	}).Create(&user).Error; err != nil {
+		logHandlerErr(c, "DevLogin", http.StatusInternalServerError, "dev login failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "dev login failed"})
 		return
 	}
 
 	access, accessExp, refresh, err := h.issueSession(devUserID, string(role), true)
 	if err != nil {
+		logHandlerErr(c, "DevLogin", http.StatusInternalServerError, "dev login failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "dev login failed"})
 		return
 	}

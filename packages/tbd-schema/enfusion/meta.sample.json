@@ -1,0 +1,6 @@
+{
+  "name": "Operation Sample",
+  "terrain": "everon",
+  "templateId": "tvt_standard",
+  "playerRange": [8, 64]
+}

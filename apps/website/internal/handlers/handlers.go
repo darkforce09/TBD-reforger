@@ -3,6 +3,7 @@
 package handlers
 
 import (
+	"log"
 	"strconv"
 	"time"
 
@@ -61,6 +62,9 @@ func (h *Handler) Webhook() *services.WebhookService { return h.webhook }
 // Register wires all identity routes onto the /api/v1 group. Later milestones
 // add their own groups here.
 func (h *Handler) Register(rg *gin.RouterGroup) {
+	// Record request start for LOG-3 duration reporting (logHandlerErr).
+	rg.Use(middleware.Timing())
+
 	// Public auth flow.
 	rg.GET("/auth/discord/login", h.DiscordLogin)
 	rg.GET("/auth/discord/callback", h.DiscordCallback)
@@ -206,4 +210,18 @@ func parsePage(c *gin.Context) (limit, offset int) {
 		}
 	}
 	return limit, offset
+}
+
+// logHandlerErr emits a structured server-side log for a consequential handler
+// failure (LOG-3): handler name, the wired route template, HTTP status, a short
+// detail, and the request duration (from middleware.Timing). It is best-effort
+// observability and never alters the response.
+func logHandlerErr(c *gin.Context, name string, status int, detail string) {
+	dur := "n/a"
+	if v, ok := c.Get(middleware.RequestStartKey); ok {
+		if t, ok := v.(time.Time); ok {
+			dur = time.Since(t).String()
+		}
+	}
+	log.Printf("%s: path=%s status=%d %s dur=%s", name, c.FullPath(), status, detail, dur)
 }

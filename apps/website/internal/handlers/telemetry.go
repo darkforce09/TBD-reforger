@@ -11,7 +11,6 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/tbd-milsim/reforger-backend/internal/db"
 	"github.com/tbd-milsim/reforger-backend/internal/models"
 	"github.com/tbd-milsim/reforger-backend/internal/services"
 )
@@ -34,14 +33,18 @@ type serverStatusInput struct {
 // IngestServerStatus upserts the live status row, appends a history sample,
 // emits a WARN audit when FPS drops below the threshold, and fans the update
 // out to SSE subscribers. Service-token authenticated.
+//
+// @route POST /api/v1/ingest/server-status
 func (h *Handler) IngestServerStatus(c *gin.Context) {
 	var in serverStatusInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "IngestServerStatus", http.StatusBadRequest, "server_id required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "server_id required"})
 		return
 	}
 	serverID, err := uuid.Parse(in.ServerID)
 	if err != nil {
+		logHandlerErr(c, "IngestServerStatus", http.StatusBadRequest, "invalid server_id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid server_id"})
 		return
 	}
@@ -79,6 +82,7 @@ func (h *Handler) IngestServerStatus(c *gin.Context) {
 			"uptime_seconds", "current_match_id", "ingame_time", "ingame_weather", "updated_at",
 		}),
 	}).Create(&status).Error; err != nil {
+		logHandlerErr(c, "IngestServerStatus", http.StatusInternalServerError, "could not store status")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not store status"})
 		return
 	}
@@ -141,9 +145,12 @@ type matchResultsInput struct {
 // IngestMatchResults records a completed match and its per-player stats. The
 // batch is idempotent: re-posting with the same source_match_id reuses the match
 // and upserts stats on (match_id, arma_id, source_event_id). Service-token auth.
+//
+// @route POST /api/v1/ingest/match-results
 func (h *Handler) IngestMatchResults(c *gin.Context) {
 	var in matchResultsInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "IngestMatchResults", http.StatusBadRequest, "match and players are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "match and players are required"})
 		return
 	}
@@ -155,6 +162,7 @@ func (h *Handler) IngestMatchResults(c *gin.Context) {
 			outcome = models.MissionOutcome(in.Match.Outcome)
 		}
 	default:
+		logHandlerErr(c, "IngestMatchResults", http.StatusBadRequest, "invalid outcome")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid outcome"})
 		return
 	}
@@ -215,6 +223,7 @@ func (h *Handler) IngestMatchResults(c *gin.Context) {
 		return nil
 	})
 	if txErr != nil {
+		logHandlerErr(c, "IngestMatchResults", http.StatusInternalServerError, "could not ingest match")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not ingest match"})
 		return
 	}
@@ -223,7 +232,10 @@ func (h *Handler) IngestMatchResults(c *gin.Context) {
 	for discordID := range resolvedPlayers {
 		h.recomputeUserStats(discordID)
 	}
-	if err := db.RefreshLeaderboard(h.db); err != nil {
+	if err := services.RefreshLeaderboard(h.db); err != nil {
+		// Refresh is best-effort: the match ingest already committed, so the handler
+		// still returns 200 — but the failure must be surfaced server-side (LOG-3).
+		logHandlerErr(c, "IngestMatchResults", http.StatusOK, "leaderboard refresh failed")
 		//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 		_ = services.WriteAudit(h.db, models.SeverityWarn, nil, "system",
 			"leaderboard.refresh_failed", "Leaderboard refresh failed after match ingest", "match", matchID.String())

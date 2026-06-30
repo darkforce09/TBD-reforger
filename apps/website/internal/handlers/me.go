@@ -16,6 +16,8 @@ import (
 
 // GetMe returns the authenticated user's profile, including Arma-link status —
 // powering the TopBar avatar, the "Linked" pill, and the My Deployments header.
+//
+// @route GET /api/v1/me
 func (h *Handler) GetMe(c *gin.Context) {
 	var user models.User
 	if err := h.db.First(&user, "discord_id = ?", middleware.DiscordID(c)).Error; err != nil {
@@ -31,6 +33,8 @@ func (h *Handler) GetMe(c *gin.Context) {
 // UpdateMe is a placeholder for user-editable settings. The profile fields are
 // sourced from Discord and the Arma link flow, so there is nothing mutable yet;
 // it echoes the current user so the frontend Settings screen has a stable shape.
+//
+// @route PATCH /api/v1/me
 func (h *Handler) UpdateMe(c *gin.Context) {
 	var user models.User
 	if err := h.db.First(&user, "discord_id = ?", middleware.DiscordID(c)).Error; err != nil {
@@ -48,6 +52,8 @@ type linkCodeResponse struct {
 
 // CreateLinkCode issues a fresh 6-digit code for linking an Arma identity, after
 // invalidating any of the user's prior unconsumed codes.
+//
+// @route POST /api/v1/me/link
 func (h *Handler) CreateLinkCode(c *gin.Context) {
 	discordID := middleware.DiscordID(c)
 
@@ -61,6 +67,7 @@ func (h *Handler) CreateLinkCode(c *gin.Context) {
 	for attempt := 0; attempt < 5; attempt++ {
 		generated, err := auth.NumericCode(6)
 		if err != nil {
+			logHandlerErr(c, "CreateLinkCode", http.StatusInternalServerError, "could not generate code")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not generate code"})
 			return
 		}
@@ -75,11 +82,13 @@ func (h *Handler) CreateLinkCode(c *gin.Context) {
 			break
 		}
 		if !isUniqueViolation(err) {
+			logHandlerErr(c, "CreateLinkCode", http.StatusInternalServerError, "could not store code")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not store code"})
 			return
 		}
 	}
 	if code == "" {
+		logHandlerErr(c, "CreateLinkCode", http.StatusInternalServerError, "could not allocate code")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not allocate code"})
 		return
 	}
@@ -92,6 +101,8 @@ func (h *Handler) CreateLinkCode(c *gin.Context) {
 
 // LinkStatus reports whether the caller has a linked Arma ID and whether a code
 // is currently pending (so the UI can poll while the in-game mod confirms).
+//
+// @route GET /api/v1/me/link/status
 func (h *Handler) LinkStatus(c *gin.Context) {
 	discordID := middleware.DiscordID(c)
 
@@ -115,10 +126,13 @@ func (h *Handler) LinkStatus(c *gin.Context) {
 }
 
 // Unlink removes the Arma identity association from the caller's account.
+//
+// @route DELETE /api/v1/me/link
 func (h *Handler) Unlink(c *gin.Context) {
 	discordID := middleware.DiscordID(c)
 	if err := h.db.Model(&models.User{}).Where("discord_id = ?", discordID).
 		Updates(map[string]any{"arma_id": nil, "arma_character": nil}).Error; err != nil {
+		logHandlerErr(c, "Unlink", http.StatusInternalServerError, "could not unlink")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not unlink"})
 		return
 	}
@@ -134,9 +148,12 @@ type linkConfirmRequest struct {
 
 // IngestLinkConfirm consumes a pending link code and attaches the Arma identity
 // to the corresponding user. Called by the game server, not the browser.
+//
+// @route POST /api/v1/ingest/link-confirm
 func (h *Handler) IngestLinkConfirm(c *gin.Context) {
 	var req linkConfirmRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
+		logHandlerErr(c, "IngestLinkConfirm", http.StatusBadRequest, "code and arma_id required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "code and arma_id required"})
 		return
 	}
@@ -149,6 +166,7 @@ func (h *Handler) IngestLinkConfirm(c *gin.Context) {
 		return
 	}
 	if err != nil {
+		logHandlerErr(c, "IngestLinkConfirm", http.StatusInternalServerError, "lookup failed")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "lookup failed"})
 		return
 	}
@@ -159,6 +177,7 @@ func (h *Handler) IngestLinkConfirm(c *gin.Context) {
 		Where("arma_id = ? AND discord_id <> ?", req.ArmaID, code.DiscordID).
 		Count(&clash)
 	if clash > 0 {
+		logHandlerErr(c, "IngestLinkConfirm", http.StatusConflict, "arma id already linked to another account")
 		c.JSON(http.StatusConflict, gin.H{"error": "arma id already linked to another account"})
 		return
 	}
@@ -172,12 +191,15 @@ func (h *Handler) IngestLinkConfirm(c *gin.Context) {
 			Updates(map[string]any{"arma_id": req.ArmaID, "arma_character": req.ArmaCharacter}).Error
 	})
 	if txErr != nil {
+		logHandlerErr(c, "IngestLinkConfirm", http.StatusInternalServerError, "could not link identity")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not link identity"})
 		return
 	}
 
 	var user models.User
-	_ = h.db.First(&user, "discord_id = ?", code.DiscordID).Error
+	if err := h.db.First(&user, "discord_id = ?", code.DiscordID).Error; err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		logHandlerErr(c, "IngestLinkConfirm", http.StatusOK, "user reload failed")
+	}
 	//nolint:errcheck // best-effort: audit log is non-blocking; a failed write must not fail the request.
 	_ = services.WriteAudit(h.db, models.SeverityInfo, &code.DiscordID, user.Username,
 		"identity.link", user.Username+" successfully linked their Arma Steam ID", "user", code.DiscordID)

@@ -37,6 +37,7 @@ func (h *Handler) ListRegistry(c *gin.Context) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "modpack not found"})
 				return
 			}
+			logHandlerErr(c, "ListRegistry", http.StatusInternalServerError, "could not load modpack")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load modpack"})
 			return
 		}
@@ -46,6 +47,7 @@ func (h *Handler) ListRegistry(c *gin.Context) {
 				c.JSON(http.StatusNotFound, gin.H{"error": "no current modpack configured"})
 				return
 			}
+			logHandlerErr(c, "ListRegistry", http.StatusInternalServerError, "could not load modpack")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load modpack"})
 			return
 		}
@@ -55,6 +57,7 @@ func (h *Handler) ListRegistry(c *gin.Context) {
 	if err := h.db.Where("modpack_id = ?", mp.ID).
 		Order("sort_order ASC").Order("display_name ASC").
 		Find(&items).Error; err != nil {
+		logHandlerErr(c, "ListRegistry", http.StatusInternalServerError, "could not list registry items")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list registry items"})
 		return
 	}

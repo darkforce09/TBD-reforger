@@ -107,14 +107,18 @@ type createEventInput struct {
 
 // CreateEvent schedules an operation container (admin only). ORBAT slots are
 // materialized per mission when missions are attached.
+//
+// @route POST /api/v1/events
 func (h *Handler) CreateEvent(c *gin.Context) {
 	var in createEventInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "CreateEvent", http.StatusBadRequest, "start_time is required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "start_time is required"})
 		return
 	}
 	status, ok := validEventStatus(in.Status)
 	if !ok {
+		logHandlerErr(c, "CreateEvent", http.StatusBadRequest, "invalid status")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
 		return
 	}
@@ -130,6 +134,7 @@ func (h *Handler) CreateEvent(c *gin.Context) {
 		CreatedBy:          middleware.DiscordID(c),
 	}
 	if err := h.db.Create(&event).Error; err != nil {
+		logHandlerErr(c, "CreateEvent", http.StatusInternalServerError, "could not create event")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create event"})
 		return
 	}
@@ -146,6 +151,8 @@ type addMissionInput struct {
 
 // AddEventMission attaches a mission to an event and auto-materializes its ORBAT
 // from the mission.json payload (admin only).
+//
+// @route POST /api/v1/events/:id/missions
 func (h *Handler) AddEventMission(c *gin.Context) {
 	ev, ok := h.loadEvent(c)
 	if !ok {
@@ -153,11 +160,13 @@ func (h *Handler) AddEventMission(c *gin.Context) {
 	}
 	var in addMissionInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "AddEventMission", http.StatusBadRequest, "mission_id and start_time are required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "mission_id and start_time are required"})
 		return
 	}
 	missionID, err := uuid.Parse(in.MissionID)
 	if err != nil {
+		logHandlerErr(c, "AddEventMission", http.StatusBadRequest, "invalid mission_id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission_id"})
 		return
 	}
@@ -185,6 +194,7 @@ func (h *Handler) AddEventMission(c *gin.Context) {
 		return materializeSlots(tx, em.ID, template)
 	})
 	if err != nil {
+		logHandlerErr(c, "AddEventMission", http.StatusInternalServerError, "could not attach mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not attach mission"})
 		return
 	}
@@ -193,6 +203,8 @@ func (h *Handler) AddEventMission(c *gin.Context) {
 
 // RemoveEventMission detaches a mission from an event, removing its ORBAT slots
 // and registrations (admin only).
+//
+// @route DELETE /api/v1/events/:id/missions/:emid
 func (h *Handler) RemoveEventMission(c *gin.Context) {
 	ev, ok := h.loadEvent(c)
 	if !ok {
@@ -200,6 +212,7 @@ func (h *Handler) RemoveEventMission(c *gin.Context) {
 	}
 	emID, err := uuid.Parse(c.Param("emid"))
 	if err != nil {
+		logHandlerErr(c, "RemoveEventMission", http.StatusBadRequest, "invalid mission id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid mission id"})
 		return
 	}
@@ -217,6 +230,7 @@ func (h *Handler) RemoveEventMission(c *gin.Context) {
 		return
 	}
 	if txErr != nil {
+		logHandlerErr(c, "RemoveEventMission", http.StatusInternalServerError, "could not remove mission")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not remove mission"})
 		return
 	}
@@ -238,6 +252,8 @@ type eventListItem struct {
 
 // ListEvents returns operations for the Upcoming/Calendar views.
 // Query: ?scope=upcoming|past|all
+//
+// @route GET /api/v1/events
 func (h *Handler) ListEvents(c *gin.Context) {
 	limit, offset := parsePage(c)
 	now := time.Now()
@@ -257,6 +273,7 @@ func (h *Handler) ListEvents(c *gin.Context) {
 
 	var events []models.Event
 	if err := q.Limit(limit).Offset(offset).Find(&events).Error; err != nil {
+		logHandlerErr(c, "ListEvents", http.StatusInternalServerError, "could not list events")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list events"})
 		return
 	}
@@ -404,6 +421,8 @@ func (h *Handler) armoryByFaction(missionID uuid.UUID) []armoryFactionDTO {
 
 // GetEvent returns the Event Hub: event fields plus its nested mission dossiers
 // (briefing, assets per faction, fill counts, and the caller's registration).
+//
+// @route GET /api/v1/events/:id
 func (h *Handler) GetEvent(c *gin.Context) {
 	ev, ok := h.loadEvent(c)
 	if !ok {
@@ -479,6 +498,8 @@ type patchEventInput struct {
 }
 
 // UpdateEvent edits an event (admin only).
+//
+// @route PATCH /api/v1/events/:id
 func (h *Handler) UpdateEvent(c *gin.Context) {
 	ev, ok := h.loadEvent(c)
 	if !ok {
@@ -486,6 +507,7 @@ func (h *Handler) UpdateEvent(c *gin.Context) {
 	}
 	var in patchEventInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "UpdateEvent", http.StatusBadRequest, "invalid body")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid body"})
 		return
 	}
@@ -511,6 +533,7 @@ func (h *Handler) UpdateEvent(c *gin.Context) {
 	if in.Status != nil {
 		st, ok := validEventStatus(*in.Status)
 		if !ok {
+			logHandlerErr(c, "UpdateEvent", http.StatusBadRequest, "invalid status")
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid status"})
 			return
 		}
@@ -518,21 +541,29 @@ func (h *Handler) UpdateEvent(c *gin.Context) {
 	}
 	if len(updates) > 0 {
 		if err := h.db.Model(ev).Updates(updates).Error; err != nil {
+			logHandlerErr(c, "UpdateEvent", http.StatusInternalServerError, "could not update event")
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update event"})
 			return
 		}
 	}
-	_ = h.db.First(ev, "id = ?", ev.ID).Error
+	if err := h.db.First(ev, "id = ?", ev.ID).Error; err != nil {
+		logHandlerErr(c, "UpdateEvent", http.StatusInternalServerError, "reload after update failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not load event"})
+		return
+	}
 	c.JSON(http.StatusOK, ev)
 }
 
 // DeleteEvent cancels/removes an event (admin only, soft delete).
+//
+// @route DELETE /api/v1/events/:id
 func (h *Handler) DeleteEvent(c *gin.Context) {
 	ev, ok := h.loadEvent(c)
 	if !ok {
 		return
 	}
 	if err := h.db.Delete(ev).Error; err != nil {
+		logHandlerErr(c, "DeleteEvent", http.StatusInternalServerError, "could not delete event")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete event"})
 		return
 	}
@@ -565,6 +596,8 @@ type orbatSquadDTO struct {
 
 // GetOrbat returns a mission's ORBAT grouped by squad with filled/total counts,
 // per-slot loadout/tag, and any leader squad reservations.
+//
+// @route GET /api/v1/event-missions/:emid/orbat
 func (h *Handler) GetOrbat(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -650,6 +683,8 @@ type registerBody struct {
 // event, claiming a slot if provided, otherwise granting a confirmed spot or a
 // waitlist place based on the mission's slot capacity.
 //
+// @route POST /api/v1/event-missions/:emid/register
+//
 //nolint:cyclop // slot-claim path branches across capacity/reservation/slot-taken/conflict states; splitting events.go is tracked SIZE-3 debt (T-125.4).
 func (h *Handler) RegisterForEventMission(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
@@ -663,6 +698,7 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 	}
 	me := middleware.DiscordID(c)
 	if !canRegisterStatus(ev.Status) {
+		logHandlerErr(c, "RegisterForEventMission", http.StatusConflict, "registration is closed for this operation")
 		c.JSON(http.StatusConflict, gin.H{"error": "registration is closed for this operation"})
 		return
 	}
@@ -741,16 +777,21 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 	case errors.Is(txErr, errBadSlot), errors.Is(txErr, errSlotNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "slot not found"})
 	case errors.Is(txErr, errSlotTaken):
+		logHandlerErr(c, "RegisterForEventMission", http.StatusConflict, "slot already taken")
 		c.JSON(http.StatusConflict, gin.H{"error": "slot already taken"})
 	case errors.Is(txErr, errSquadReserved):
+		logHandlerErr(c, "RegisterForEventMission", http.StatusConflict, "squad is reserved by a leader")
 		c.JSON(http.StatusConflict, gin.H{"error": "squad is reserved by a leader"})
 	default:
+		logHandlerErr(c, "RegisterForEventMission", http.StatusInternalServerError, "could not register")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not register"})
 	}
 }
 
 // WithdrawFromEventMission removes the caller's registration for a mission and
 // promotes the oldest waitlisted member if a confirmed spot was freed.
+//
+// @route DELETE /api/v1/event-missions/:emid/register
 func (h *Handler) WithdrawFromEventMission(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -792,6 +833,7 @@ func (h *Handler) WithdrawFromEventMission(c *gin.Context) {
 		return
 	}
 	if txErr != nil {
+		logHandlerErr(c, "WithdrawFromEventMission", http.StatusInternalServerError, "could not withdraw")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not withdraw"})
 		return
 	}
@@ -820,6 +862,8 @@ func (h *Handler) canManageSquad(c *gin.Context, emID uuid.UUID, squad string) b
 // AssignSlot assigns or reassigns a user to an ORBAT slot and ensures they have a
 // confirmed registration for that mission. Allowed for an admin, or the leader who
 // reserved the slot's squad.
+//
+// @route PUT /api/v1/event-missions/:emid/slots/:slotId/assign
 func (h *Handler) AssignSlot(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -827,16 +871,19 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 	}
 	slotID, err := uuid.Parse(c.Param("slotId"))
 	if err != nil {
+		logHandlerErr(c, "AssignSlot", http.StatusBadRequest, "invalid slot id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid slot id"})
 		return
 	}
 	var in assignSlotInput
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "AssignSlot", http.StatusBadRequest, "discord_id required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "discord_id required"})
 		return
 	}
 	var target models.User
 	if err := h.db.First(&target, "discord_id = ?", in.DiscordID).Error; err != nil {
+		logHandlerErr(c, "AssignSlot", http.StatusBadRequest, "user not found")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "user not found"})
 		return
 	}
@@ -868,6 +915,7 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 		}).Create(&reg).Error
 	})
 	if txErr != nil {
+		logHandlerErr(c, "AssignSlot", http.StatusInternalServerError, "could not assign slot")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not assign slot"})
 		return
 	}
@@ -876,6 +924,8 @@ func (h *Handler) AssignSlot(c *gin.Context) {
 
 // ClearSlot unassigns an ORBAT slot. Allowed for an admin, or the leader who
 // reserved the slot's squad.
+//
+// @route DELETE /api/v1/event-missions/:emid/slots/:slotId/assign
 func (h *Handler) ClearSlot(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -883,6 +933,7 @@ func (h *Handler) ClearSlot(c *gin.Context) {
 	}
 	slotID, err := uuid.Parse(c.Param("slotId"))
 	if err != nil {
+		logHandlerErr(c, "ClearSlot", http.StatusBadRequest, "invalid slot id")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid slot id"})
 		return
 	}
@@ -904,6 +955,7 @@ func (h *Handler) ClearSlot(c *gin.Context) {
 			Update("slot_id", nil).Error
 	})
 	if txErr != nil {
+		logHandlerErr(c, "ClearSlot", http.StatusInternalServerError, "could not clear slot")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not clear slot"})
 		return
 	}
@@ -918,6 +970,8 @@ type squadBody struct {
 
 // ReserveSquad places a one-click hold on a whole squad for the calling leader.
 // While held, only the reserver (or an admin) may fill its slots.
+//
+// @route POST /api/v1/event-missions/:emid/squads/reserve
 func (h *Handler) ReserveSquad(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -925,6 +979,7 @@ func (h *Handler) ReserveSquad(c *gin.Context) {
 	}
 	var in squadBody
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "ReserveSquad", http.StatusBadRequest, "squad is required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "squad is required"})
 		return
 	}
@@ -942,6 +997,7 @@ func (h *Handler) ReserveSquad(c *gin.Context) {
 	var existing models.OrbatReservation
 	if err := h.db.First(&existing, "event_mission_id = ? AND squad = ?", em.ID, in.Squad).Error; err == nil {
 		if existing.ReservedBy != me {
+			logHandlerErr(c, "ReserveSquad", http.StatusConflict, "squad is already reserved")
 			c.JSON(http.StatusConflict, gin.H{"error": "squad is already reserved"})
 			return
 		}
@@ -951,6 +1007,7 @@ func (h *Handler) ReserveSquad(c *gin.Context) {
 
 	res := models.OrbatReservation{EventMissionID: em.ID, Squad: in.Squad, ReservedBy: me}
 	if err := h.db.Create(&res).Error; err != nil {
+		logHandlerErr(c, "ReserveSquad", http.StatusInternalServerError, "could not reserve squad")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not reserve squad"})
 		return
 	}
@@ -958,6 +1015,8 @@ func (h *Handler) ReserveSquad(c *gin.Context) {
 }
 
 // ReleaseSquad lifts a squad hold. Only the reserver or an admin may release.
+//
+// @route POST /api/v1/event-missions/:emid/squads/release
 func (h *Handler) ReleaseSquad(c *gin.Context) {
 	em, ok := h.loadEventMission(c)
 	if !ok {
@@ -965,6 +1024,7 @@ func (h *Handler) ReleaseSquad(c *gin.Context) {
 	}
 	var in squadBody
 	if err := c.ShouldBindJSON(&in); err != nil {
+		logHandlerErr(c, "ReleaseSquad", http.StatusBadRequest, "squad is required")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "squad is required"})
 		return
 	}
@@ -978,6 +1038,7 @@ func (h *Handler) ReleaseSquad(c *gin.Context) {
 		return
 	}
 	if err := h.db.Delete(&res).Error; err != nil {
+		logHandlerErr(c, "ReleaseSquad", http.StatusInternalServerError, "could not release squad")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not release squad"})
 		return
 	}
@@ -994,6 +1055,8 @@ type memberDTO struct {
 
 // SearchMembers returns a slim member list for leaders filling a reserved squad.
 // Query: ?q= matches username/handle (case-insensitive). Excludes banned users.
+//
+// @route GET /api/v1/members
 func (h *Handler) SearchMembers(c *gin.Context) {
 	q := c.Query("q")
 	db := h.db.Model(&models.User{}).Where("is_banned = ?", false)

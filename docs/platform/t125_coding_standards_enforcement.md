@@ -340,6 +340,27 @@ Append **`Shipped (T-125.4):`** under §T-125.4 with a no-deferral summary: `@ro
 cross-check; M6 15/15; WriteAudit annotations; LOG-3 two-band counts; script paths; allowlist rows;
 ENF-4 10/10 fixtures; `ci.yml` backend step; `make ci-local` wall-clock.
 
+**Shipped (T-125.4)** — no deferrals; `make ci-local` green @ **22s** (Node 26; golangci 0 issues, FE 21/21):
+- **GO-7 route-match:** **77** `@route` tags added (82 handlers total); `verify-contract-citations.mjs`
+  parses `Register()` and asserts every `@route` **method+path matches the wired route** — "Checked 82
+  handler(s) against Register() routes". Rides the schema CI job.
+- **M6 / GO-2:** **15/15** silent `_ = h.db.First(…).Error` fixed — **8 bucket-A** (must-exist reload →
+  500 + log) + **7 bucket-B** (enrichment → log non-`NotFound`, continue at 200). `GetDashboard` carries a
+  documented `//nolint:cyclop` (4 M6 guards push it past 15).
+- **GO-3:** WriteAudit discards were already `//nolint:errcheck` (T-125.2) — **0 new**, 15 sites verified.
+- **LOG-3 (two-band):** `middleware.Timing()` + `logHandlerErr` (path=`c.FullPath()`); **140** call sites
+  (**75** band-1 5xx + **65** band-2 mutator 400/409/413); `IngestMatchResults` logs a `RefreshLeaderboard`
+  failure on its 200 path. `verify-handler-logging.sh` (POSIX awk + Register-derived mutator set) enforces both.
+- **GO-9:** `services.RefreshLeaderboard` extracted (telemetry drops `internal/db`); `verify-handler-imports.sh`
+  + **3 structural** GO-9 allowlist rows (`handlers.go` auth+realtime, `auth.go`, `me.go`).
+- **ERR-4:** `verify-error-envelope.sh` ({error, details} only) — caught + fixed `field_tools.go` 422
+  `solution`→`details` (2 sites; FE unaffected).
+- **SIZE:** `verify-file-length.mjs` (dep-free); SIZE-3 rows `admin.tsx`/`doctrine.tsx`/`events.go`;
+  3 warns (events.tsx/operations.tsx/missions.go), 0 violations.
+- **ENF-4:** **10/10** `packages/tbd-schema/enfusion/*.sample.json` (slot, meta, faction, circle, shape,
+  zone, role, group, orbatFaction, root) + data-driven `validate.mjs` branch.
+- **Wiring:** `make verify-coding-standards` → `ci-local` **and** the `ci.yml` backend job (after TEST-1).
+
 ---
 
 ## T-125.5 — Repo hygiene

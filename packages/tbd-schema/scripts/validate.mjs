@@ -92,6 +92,22 @@ check(
   readJSON(join(repoRoot, "packages", "map-assets", "everon", "anchors", "verification.example.json")),
 );
 
+// ENF-4 (CODING_STANDARDS §5): every Enfusion Backend DTO that carries an @contract tag has a
+// golden fixture that validates against its mission-schema pointer. Data-driven: filename ->
+// pointer (root -> the whole mission, else #/$defs/<name>). Drop a new <def>.sample.json to enrol.
+console.log("Enfusion DTO fixtures (ENF-4):");
+const enfusionDir = join(root, "enfusion");
+for (const file of readdirSync(enfusionDir).filter((f) => f.endsWith(".sample.json"))) {
+  const base = file.replace(/\.sample\.json$/, "");
+  const validate = base === "root" ? validateMission : ajv.getSchema(missionSchema.$id + `#/$defs/${base}`);
+  if (!validate) {
+    failures += 1;
+    console.log(`  FAIL  ${file} (no schema for #/$defs/${base})`);
+    continue;
+  }
+  check(file, validate, readJSON(join(enfusionDir, file)));
+}
+
 if (failures > 0) {
   console.error(`\n${failures} validation failure(s).`);
   process.exit(1);
