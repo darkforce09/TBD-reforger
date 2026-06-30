@@ -1,10 +1,10 @@
 # T-090.1 — Aligned Cartesian basemap
 
-**Ticket:** T-090 · **Slice:** T-090.1 **(1 of 6 — raster basemap only)**  
-**Status:** Spec ready — **blocked on tile pyramid** (export: **T-090.3**; was T-121)  
+**Ticket:** T-090 · **Slice:** T-090.1 **(Satellite basemap + tile pyramid export)**  
+**Status:** **ACTIVE** — spike @ `b342c35` proved source paths; **this slice closes K3** (`.edds`/SAP → pyramid) and wires Deck loader.  
 **Executor:** claude-code  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
-**Follow-ons:** world objects **T-090.2–.5** · UX ref [`t090_eden_map_reference.md`](t090_eden_map_reference.md)
+**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · spike ops log [`.ai/artifacts/map_export_everon.json`](../../../.ai/artifacts/map_export_everon.json)  
+**Follow-ons:** Map view **T-090.1.1** · world objects **T-090.2–.5** · UX ref [`t090_eden_map_reference.md`](t090_eden_map_reference.md)
 
 ---
 
@@ -18,9 +18,14 @@ Render aligned Everon **dual basemap views** (Satellite + Map) under the procedu
 
 | Gate | Evidence |
 |------|----------|
-| **T-090.3** export | `packages/map-assets/everon/tiles/{z}/{x}/{y}.webp` exists (≥ z0) — see [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) |
-| **T-090.0** | Manifest `tiles.urlTemplate`, `alignmentOrigin`, `bounds` validate |
-| **Dev serve** | Tiles reachable at `/map-assets/everon/tiles/...` (symlink or Vite static — see DEV_RUNBOOK) |
+| **T-090.3.0 spike** | Shipped @ `b342c35` — [`.ai/artifacts/map_export_everon.json`](../../../.ai/artifacts/map_export_everon.json) |
+| **Satellite source (K3)** | `system/terrain/defSatMap_BCR.edds` + per-terrain SAP/satellite background (wiki *2D Map Creation*) — **this slice extracts + retiles** |
+| **T-090.0** | Manifest `tiles.satellite`, `alignmentOrigin`, `bounds` validate |
+| **Dev serve** | `make map-assets-link` → tiles at `/map-assets/everon/tiles/satellite/...` |
+
+**Spike lesson (S0):** `wb_state` entity count is **not** a loaded-world signal — confirm a populated world (e.g. `TBD_Dev_POC.ent`) before export work.
+
+**Out of scope for T-090.1:** Map cartographic tiles (`.topo` / Export Map Data) → **T-090.1.1** (source already found in spike; N9 synth **not** required).
 
 ---
 
@@ -129,15 +134,16 @@ Document measured H1/H2 results in PR / manual verify log.
 
 ## Verification gate (mandatory)
 
-**Ship T-090.1 only when ALL PASS.**
+**Ship T-090.1 only when ALL PASS.** Closes spike **K3** (sample + pyramid path proven).
 
 ### Automated
 
 ```bash
-make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
+make ci-local-frontend
 make verify-terrain
-# Requires tiles on disk (T-090.1 / T-121 — not T-091.0):
-test -d packages/map-assets/everon/tiles/0
+make schema-validate
+test -f packages/map-assets/everon/tiles/satellite/0/0/0.webp   # K3 sample tile minimum
+bash scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon  # optional: update gates.K3 pass in ops log after tile lands
 ```
 
 ### Manual (browser)

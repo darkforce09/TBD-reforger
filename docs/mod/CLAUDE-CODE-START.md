@@ -10,7 +10,9 @@
 
 **T-121 (deferred):** tiles / Arland re-export / MCP polish — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
 
-**Next Claude Code work order:** **T-090.1** (aligned tiles) → **T-092** → **T-068.13** → **T-068.7+**. Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
+
+**Next Claude Code work order:** **T-090.1** (Satellite `.edds`/SAP → pyramid + Deck loader) → **T-090.1.1** Map → **T-090.2** → **T-092** → **T-068.13+**. Handoff: [`.ai/artifacts/t090_1_claude_code_handoff.md`](../../.ai/artifacts/t090_1_claude_code_handoff.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 

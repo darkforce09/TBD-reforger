@@ -15,12 +15,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.3.0`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md`
+- **Active slice:** `T-090.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (rewritten to constants N1-N12, 2026-06-30). Schemas+goldens T-090.0.2 shipped. Blocker chain (status, not blocked_by): T-090.3.0 Workbench spike (active) -> T-090.1 Satellite basemap (queued until 0.2+3.0) -> T-090.1.1 Map -> T-090.2 taxonomy (+forest/field/water regions) -> T-090.3 export (+forest-regions, dual tiles) -> {T-090.4, T-090.6, T-090.8 forests} -> T-090.5 render (Deck-zoom LOD, forests first) -> T-090.9 interaction (hover/inspect/filter/legend, read-only) -> T-090.7 AI. Hub + Audit closure: t090_091_map_terrain_program.md.
+- **Summary:** Eden-like map detail (rewritten to constants N1-N12, 2026-06-30). T-090.3.0 spike shipped @ b342c35 (enumeration proven; K3 red = satellite tile pipeline). ACTIVE: T-090.1 Satellite basemap (.edds/SAP -> pyramid + Deck loader). Then T-090.1.1 Map (Export Map Data .topo), T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

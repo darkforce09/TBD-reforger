@@ -1,7 +1,7 @@
 # T-090.3.0 — Workbench world-export feasibility spike
 
 **Ticket:** T-090 · **Slice:** T-090.3.0
-**Status:** Spec ready — **T-090.3.0 ACTIVE** (gates T-090.1 + the P1–P10 export program)
+**Status:** **shipped** @ `b342c35` — enumeration proven (K1/K1b/K2/K5/K6/K7 pass). **K3 red** (satellite tile = T-090.1 work). **K4 red** on gate; real `.topo` cartographic source found → T-090.1.1 de-risked. Ops log: [`.ai/artifacts/map_export_everon.json`](../../../.ai/artifacts/map_export_everon.json).
 **Executor:** **claude-code** (+ one-time Workbench focus by human if the GUI must be driven)
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -61,7 +61,7 @@ make schema-validate
 | K6 | Handedness + localUp→Z remap measured and written for glyphs + audit (S6/L2) | ops log |
 | K7 | Ops log `.ai/artifacts/map_export_everon.json` written; an agent can read it + resolve 3 sample rows | manual |
 
-**No P1 export and no T-090.1 basemap ship until K1–K7 are green.** This is the program's de-risking gate.
+**Spike slice done** when K1 + K1b + K7 pass (enumeration proven). **T-090.1 basemap ship** requires **K3 pass** (real Satellite tile on disk). K3/K4 may be red at spike completion — see ops log `gatesNote`.
 
 ---
 

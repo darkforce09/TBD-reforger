@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **active — T-090.3.0** (Workbench export spike). **T-090.1** (aligned basemap) **queued** until 3.0 K1–K7 PASS. **T-091 complete** @ `dde589e`. **T-090 expanded** (2026-06-26): multi-slice **map visualization program** — tiles + typed world objects + Eden-like render.  
+**Status:** **active — T-090.1** (Satellite basemap + tile pyramid). **T-090.3.0 shipped** @ `b342c35` (enumeration proven; K3 = this slice). **T-091 complete** @ `dde589e`.  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -20,9 +20,9 @@ T-090.0    hub + schema + verify scripts (shipped)
 T-090.0.1  program expansion — slices + taxonomy + cost docs (shipped)
 T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  ✓
   → T-091.0/.1/.2  DEM + Z + hillshade (shipped)  ✓
-  → T-090.3.0  Workbench world-export feasibility spike  ← ACTIVE NOW
-  → T-090.1    Satellite basemap [queued until 0.2 + 3.0 PASS]
-  → T-090.1.1  Map basemap + Satellite/Map switch (synthesized fallback per N9)
+  → T-090.3.0  Workbench export feasibility spike (shipped @ b342c35)  ✓
+  → T-090.1    Satellite basemap + .edds/SAP pyramid  ← ACTIVE NOW
+  → T-090.1.1  Map basemap (Export Map Data .topo — N9 synth not required)
   → T-090.2    taxonomy + JSON schema (+ forest/field/waterBody region kinds)
   → T-090.3    phased export (+ forest-regions, dual tiles) — P1 → P10
   → T-090.4 + T-090.6 + T-090.8  Z/geometry audits + forest regions (parallel where deps met)
@@ -34,9 +34,8 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-126      building floor selector (idea — outside T-090)
 ```
 
-**Blocker chain (implementers):** **T-090.0.2** (schema+golden, shipped) → **T-090.3.0** (spike, active)
-→ **T-090.1** (basemap, queued until 0.2 + 3.0) → **T-090.1.1** (Map, after 0.2) → **T-090.2** →
-**T-090.3** → {**T-090.4**, **T-090.6**, **T-090.8**} → **T-090.5** → **T-090.9** → **T-090.7**.
+**Blocker chain (implementers):** **T-090.3.0** (shipped) → **T-090.1** (Satellite pyramid + Deck loader, active)
+→ **T-090.1.1** (Map) → **T-090.2** → **T-090.3** → {**T-090.4**, **T-090.6**, **T-090.8**} → **T-090.5** → **T-090.9** → **T-090.7**.
 
 ---
 
@@ -52,7 +51,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-091.0** | [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) | claude-code | **shipped** @ `6d96339` |
 | **T-091.1** | [`t091_1_dem_loader.md`](t091_1_dem_loader.md) | claude-code | **shipped** @ `2c56c2e` |
 | **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | **shipped** @ `dde589e` |
-| **T-090.1** | [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | claude-code | **Satellite** pyramid — **queued** (after T-090.3.0) |
+| **T-090.3.0** | [`t090_3_0_workbench_export_spike.md`](t090_3_0_workbench_export_spike.md) | claude-code | **shipped** @ `b342c35` |
+| **T-090.1** | [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | claude-code | **Satellite** pyramid + Deck loader — **active** |
 | **T-090.1.1** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | Enums + census + golden per `buildingClass` |
 | **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |
@@ -60,7 +60,6 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.6** | [`t090_6_geometry_placement_audit.md`](t090_6_geometry_placement_audit.md) | claude-code | Phase B OBB / visibility audit |
 | **T-090.5** | [`t090_5_map_object_render_layer.md`](t090_5_map_object_render_layer.md) + [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md) | claude-code | Layers + SVG atlas per class |
 | **T-090.7** | [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | `resolveWorldObject` + AI context pack |
-| **T-090.3.0** | [`t090_3_0_workbench_export_spike.md`](t090_3_0_workbench_export_spike.md) | claude-code | **spike** — enumerate + OBB + tiles + forest mask (K1–K7) |
 | **T-090.8** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | forest-regions export + render + inspect (F1–F6) |
 | **T-090.9** | [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md) | claude-code | hover + inspect + filter + legend (I1–I8) |
 
@@ -110,7 +109,7 @@ make ticket-sync ticket-check-strict
 make schema-validate          # golden missions + terrain manifest + anchors example
 make verify-terrain           # stub OK — manifest ↔ terrains.ts + anchor schema
 make verify-terrain-strict    # T-091.0 gate — GetSurfaceY plugin DEM + ≥10 anchors ±1 m
-make map-census TERRAIN=everon   # exact object counts (pending until T-090.3.0 export)
+make map-census TERRAIN=everon   # pending_export until full T-090.3 export census
 make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
 ```
 
