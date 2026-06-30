@@ -84,9 +84,7 @@ function BottomToolbeltInner() {
             aria-pressed={active}
             className={cn(
               'flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-label-md transition-colors',
-              active
-                ? 'bg-primary/20 text-primary'
-                : 'text-on-surface-variant hover:bg-white/10',
+              active ? 'bg-primary/20 text-primary' : 'text-on-surface-variant hover:bg-white/10',
               !t.enabled && 'opacity-30 hover:bg-transparent',
             )}
           >
@@ -103,13 +101,22 @@ function BottomToolbeltInner() {
           {showSel ? 'SEL' : 'CUR'}
         </span>
         <span>
-          X<span className="ml-1 text-on-surface tabular-nums">{x != null ? fmtCoord(x) : '       —'}</span>
+          X
+          <span className="ml-1 text-on-surface tabular-nums">
+            {x != null ? fmtCoord(x) : '       —'}
+          </span>
         </span>
         <span>
-          Y<span className="ml-1 text-on-surface tabular-nums">{y != null ? fmtCoord(y) : '       —'}</span>
+          Y
+          <span className="ml-1 text-on-surface tabular-nums">
+            {y != null ? fmtCoord(y) : '       —'}
+          </span>
         </span>
         <span>
-          Z<span className="ml-1 text-on-surface tabular-nums">{z != null ? fmtCoord(z) : '       —'}</span>
+          Z
+          <span className="ml-1 text-on-surface tabular-nums">
+            {z != null ? fmtCoord(z) : '       —'}
+          </span>
         </span>
       </div>
 
@@ -126,7 +133,8 @@ function BottomToolbeltInner() {
           SEL<span className="ml-1 text-on-surface">{selectedCount}</span>
         </span>
         <span title="Estimated server save size">
-          SZ<span className="ml-1 text-on-surface">{estBytes > 0 ? formatBytes(estBytes) : '—'}</span>
+          SZ
+          <span className="ml-1 text-on-surface">{estBytes > 0 ? formatBytes(estBytes) : '—'}</span>
         </span>
       </div>
     </div>

@@ -5,10 +5,7 @@ import { cn } from '@/lib/utils'
  * Inline macOS-style toggle. Wraps Base UI Switch.
  * Use for boolean list-row state (published / pinned / signups_open).
  */
-export function Switch({
-  className,
-  ...props
-}: SwitchPrimitive.Root.Props) {
+export function Switch({ className, ...props }: SwitchPrimitive.Root.Props) {
   return (
     <SwitchPrimitive.Root
       className={cn(

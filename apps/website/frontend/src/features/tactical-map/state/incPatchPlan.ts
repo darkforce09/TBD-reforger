@@ -31,7 +31,12 @@ export const REMOVE_PATCH_CAP = 10_000
 export type PatchPlan =
   | { kind: 'slot-fields'; ids: ID[] }
   | { kind: 'slot-add'; slot: Slot; squads: Record<ID, Squad>; layers: Record<ID, EditorLayer> }
-  | { kind: 'slot-add-bulk'; slots: Slot[]; squads: Record<ID, Squad>; layers: Record<ID, EditorLayer> }
+  | {
+      kind: 'slot-add-bulk'
+      slots: Slot[]
+      squads: Record<ID, Squad>
+      layers: Record<ID, EditorLayer>
+    }
   | { kind: 'slot-remove'; ids: ID[]; squads: Record<ID, Squad>; layers: Record<ID, EditorLayer> }
   | { kind: 'meta'; meta: MissionMeta }
   | { kind: 'editor-layers'; patches: Record<ID, EditorLayer> }

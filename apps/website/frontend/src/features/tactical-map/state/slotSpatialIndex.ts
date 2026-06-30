@@ -87,11 +87,7 @@ export function clear(): void {
 }
 
 /** Nearest icon to a screen-pixel click within `radiusPx` (world-projected), else null. */
-export function pickNearest(
-  px: [number, number],
-  viewport: Viewport,
-  radiusPx = 4,
-): ID | null {
+export function pickNearest(px: [number, number], viewport: Viewport, radiusPx = 4): ID | null {
   const center = viewport.unproject(px)
   const cx = center[0]
   const cy = center[1]

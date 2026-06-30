@@ -10,20 +10,12 @@
 import type { TerrainDef } from './terrains'
 
 /** World meters -> Deck common space (identity under flipY:false / CARTESIAN). */
-export function worldToPixel(
-  _terrain: TerrainDef,
-  x: number,
-  y: number,
-): [number, number] {
+export function worldToPixel(_terrain: TerrainDef, x: number, y: number): [number, number] {
   return [x, y]
 }
 
 /** Deck common space -> world meters (identity under flipY:false / CARTESIAN). */
-export function pixelToWorld(
-  _terrain: TerrainDef,
-  px: number,
-  py: number,
-): [number, number] {
+export function pixelToWorld(_terrain: TerrainDef, px: number, py: number): [number, number] {
   return [px, py]
 }
 

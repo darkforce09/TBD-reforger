@@ -150,7 +150,8 @@ export function useAnnouncements(limit = 20, offset = 0) {
   return useQuery({
     queryKey: ['announcements', limit, offset],
     queryFn: async () =>
-      (await api.get<Paginated<Announcement>>('/announcements', { params: { limit, offset } })).data,
+      (await api.get<Paginated<Announcement>>('/announcements', { params: { limit, offset } }))
+        .data,
     enabled: authed,
   })
 }
@@ -373,8 +374,7 @@ export function useAuditLogs(params?: { severity?: string; q?: string }) {
   const isAdmin = useIsAdmin()
   return useQuery({
     queryKey: ['audit-logs', params],
-    queryFn: async () =>
-      (await api.get<AuditLogResponse>('/admin/audit-logs', { params })).data,
+    queryFn: async () => (await api.get<AuditLogResponse>('/admin/audit-logs', { params })).data,
     enabled: authed && isAdmin,
   })
 }

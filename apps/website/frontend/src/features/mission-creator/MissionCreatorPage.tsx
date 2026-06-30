@@ -7,7 +7,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { toast } from 'sonner'
-import { TacticalMap, addSlot, moveEntities, pasteSlots, removeEntities, useMapStore } from '@/features/tactical-map'
+import {
+  TacticalMap,
+  addSlot,
+  moveEntities,
+  pasteSlots,
+  removeEntities,
+  useMapStore,
+} from '@/features/tactical-map'
 import type { AssetDropPayload, ClipboardSlot, TacticalMapApi } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useMissionEditor } from './hooks/useMissionEditor'
@@ -153,7 +160,9 @@ export default function MissionCreatorPage() {
       const { selection, slotsById, setSelection } = useMapStore.getState()
       if (e.code === 'Space') {
         if (selection.kind === 'none') return
-        const slots = selection.ids.map((sid) => slotsById[sid]).filter(Boolean) as { position: { x: number; y: number } }[]
+        const slots = selection.ids.map((sid) => slotsById[sid]).filter(Boolean) as {
+          position: { x: number; y: number }
+        }[]
         if (!slots.length) return
         e.preventDefault()
         const cx = slots.reduce((a, s) => a + s.position.x, 0) / slots.length
@@ -174,7 +183,9 @@ export default function MissionCreatorPage() {
   // Surface it with a toast in addition to the blocking error overlay below.
   useEffect(() => {
     if (editor.docStatus === 'error') {
-      toast.error('Could not load this mission from local storage — your saved changes were not restored.')
+      toast.error(
+        'Could not load this mission from local storage — your saved changes were not restored.',
+      )
     }
   }, [editor.docStatus])
 
@@ -290,11 +301,7 @@ export default function MissionCreatorPage() {
         </div>
       )}
 
-      <AttributesModal
-        md={md}
-        slotId={attributesId}
-        onOpenChange={onAttributesOpenChange}
-      />
+      <AttributesModal md={md} slotId={attributesId} onOpenChange={onAttributesOpenChange} />
 
       {/* Load conflict: the server has a saved version and the local draft has edits. */}
       <Dialog

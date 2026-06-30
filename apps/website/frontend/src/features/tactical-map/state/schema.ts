@@ -135,13 +135,7 @@ export type ToolId =
   | 'waypoint'
   | 'objective'
 
-export type SelectionKind =
-  | 'none'
-  | 'slot'
-  | 'squad'
-  | 'objective'
-  | 'vehicle'
-  | 'marker'
+export type SelectionKind = 'none' | 'slot' | 'squad' | 'objective' | 'vehicle' | 'marker'
 
 export interface Selection {
   kind: SelectionKind

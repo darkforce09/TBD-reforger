@@ -86,30 +86,30 @@ export function SheetContent({
           children
         ) : (
           <>
-        {title != null && (
-          <div className="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
-            <div className="min-w-0">
-              <DialogPrimitive.Title className="text-headline-sm text-on-surface">
-                {title}
-              </DialogPrimitive.Title>
-              {description != null && (
-                <DialogPrimitive.Description className="mt-1 text-label-md text-on-surface-variant">
-                  {description}
-                </DialogPrimitive.Description>
-              )}
-            </div>
-            <DialogPrimitive.Close
-              className="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
-              aria-label="Close"
-            >
-              <MaterialIcon name="close" />
-            </DialogPrimitive.Close>
-          </div>
-        )}
-        <div className="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">{children}</div>
-        {footer != null && (
-          <div className="border-t border-outline-variant/30 px-6 py-4">{footer}</div>
-        )}
+            {title != null && (
+              <div className="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                <div className="min-w-0">
+                  <DialogPrimitive.Title className="text-headline-sm text-on-surface">
+                    {title}
+                  </DialogPrimitive.Title>
+                  {description != null && (
+                    <DialogPrimitive.Description className="mt-1 text-label-md text-on-surface-variant">
+                      {description}
+                    </DialogPrimitive.Description>
+                  )}
+                </div>
+                <DialogPrimitive.Close
+                  className="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                  aria-label="Close"
+                >
+                  <MaterialIcon name="close" />
+                </DialogPrimitive.Close>
+              </div>
+            )}
+            <div className="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">{children}</div>
+            {footer != null && (
+              <div className="border-t border-outline-variant/30 px-6 py-4">{footer}</div>
+            )}
           </>
         )}
       </DialogPrimitive.Popup>

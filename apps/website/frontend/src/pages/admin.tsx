@@ -10,13 +10,7 @@ import { ListDetailItem } from '@/components/ui/list-detail-item'
 import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import {
-  useApprovals,
-  useAuditLogs,
-  useEvents,
-  useMissions,
-  usePersonnel,
-} from '@/hooks/queries'
+import { useApprovals, useAuditLogs, useEvents, useMissions, usePersonnel } from '@/hooks/queries'
 import {
   useApproveMission,
   useBanUser,
@@ -41,8 +35,18 @@ const inputClass =
   'w-full rounded-lg border border-outline-variant/40 bg-surface px-3 py-2 text-label-md outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/40 disabled:opacity-50'
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ]
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
@@ -397,7 +401,9 @@ export function EventManagerPage() {
                   </div>
                 ))}
                 {staged.length === 0 && (
-                  <p className="px-1 text-sm text-on-surface-variant/70">No missions attached yet.</p>
+                  <p className="px-1 text-sm text-on-surface-variant/70">
+                    No missions attached yet.
+                  </p>
                 )}
               </div>
 
@@ -525,8 +531,7 @@ export function MissionApprovalsPage() {
   const [tab, setTab] = useState<ReviewStatus>('pending')
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
-  const rows =
-    tab === 'pending' ? pendingRows : tab === 'approved' ? MOCK_APPROVED : MOCK_REJECTED
+  const rows = tab === 'pending' ? pendingRows : tab === 'approved' ? MOCK_APPROVED : MOCK_REJECTED
   const selected = rows.find((r) => r.mission_id === selectedId) ?? rows[0] ?? null
 
   const TABS: { value: ReviewStatus; label: string; count?: number }[] = [
@@ -567,9 +572,7 @@ export function MissionApprovalsPage() {
           master={
             rows.length === 0 ? (
               <p className="px-1 py-4 text-label-md text-on-surface-variant">
-                {tab === 'pending'
-                  ? 'No pending approvals.'
-                  : `No ${tab} missions.`}
+                {tab === 'pending' ? 'No pending approvals.' : `No ${tab} missions.`}
               </p>
             ) : (
               rows.map((r) => {
@@ -597,7 +600,9 @@ export function MissionApprovalsPage() {
                     <h3
                       className={cn(
                         'mt-1 truncate text-label-md font-semibold',
-                        active ? 'text-on-surface' : 'text-on-surface-variant group-hover:text-on-surface',
+                        active
+                          ? 'text-on-surface'
+                          : 'text-on-surface-variant group-hover:text-on-surface',
                       )}
                     >
                       {r.title}
@@ -726,8 +731,8 @@ function ReviewInspector({
       <div className="px-8 py-7">
         <p className="text-body-md text-on-surface-variant">
           Combined-arms assault across contested farmland. BLUFOR pushes from the south to seize the
-          northern town while a mechanized OPFOR garrison holds the objective. Review the latest push
-          before approving for the live mission database.
+          northern town while a mechanized OPFOR garrison holds the objective. Review the latest
+          push before approving for the live mission database.
         </p>
         <div className="mt-6 grid grid-cols-3 gap-3">
           <StatTile label="BLUFOR Slots" value="32" />
@@ -792,9 +797,7 @@ function ReviewInspector({
           // Already live — let admins yank it back off the server.
           <button
             type="button"
-            onClick={() =>
-              toast.success('Mission unpublished — pulled from the live server')
-            }
+            onClick={() => toast.success('Mission unpublished — pulled from the live server')}
             className="rounded-full border border-error-alert/50 bg-error-alert/10 px-7 py-3 text-label-md font-bold text-error-alert shadow-[0_0_20px_rgba(239,68,68,0.2)] transition hover:bg-error-alert/20"
           >
             Revoke Approval &amp; Unpublish
@@ -1025,7 +1028,10 @@ export function PersonnelRosterPage() {
                             )}
                           >
                             <div className="flex items-center gap-3">
-                              <Avatar name={u.discord_handle || u.username} className="size-8 text-xs" />
+                              <Avatar
+                                name={u.discord_handle || u.username}
+                                className="size-8 text-xs"
+                              />
                               <span className="truncate text-on-surface">
                                 {u.discord_handle || u.username}
                               </span>
@@ -1153,7 +1159,9 @@ function PersonnelDossier({
         {/* Inline role editor */}
         {editingRole && (
           <div className="mt-4">
-            <label className="mb-1 block text-label-sm text-on-surface-variant uppercase">Role</label>
+            <label className="mb-1 block text-label-sm text-on-surface-variant uppercase">
+              Role
+            </label>
             <select
               value={role}
               onChange={(e) => handleRoleChange(e.target.value)}
@@ -1333,7 +1341,12 @@ export function ContentManagerPage() {
             ))}
             detail={
               selected ? (
-                <ContentEditor key={selected.id} doc={selected} publish={publish} onChange={saveDoc} />
+                <ContentEditor
+                  key={selected.id}
+                  doc={selected}
+                  publish={publish}
+                  onChange={saveDoc}
+                />
               ) : (
                 <SplitPaneEmpty
                   icon={<MaterialIcon name="edit_note" className="text-4xl" />}

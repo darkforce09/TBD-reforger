@@ -16,7 +16,12 @@ function AssetPaletteInner() {
   const [tab, setTab] = useState<Tab>('Factions')
 
   return (
-    <div className={cn(overlayDocked, 'flex h-full w-full flex-col overflow-hidden border-l border-white/10')}>
+    <div
+      className={cn(
+        overlayDocked,
+        'flex h-full w-full flex-col overflow-hidden border-l border-white/10',
+      )}
+    >
       <div className="custom-scrollbar flex shrink-0 gap-0.5 overflow-x-auto border-b border-white/10 p-2">
         {TABS.map((t) => (
           <button

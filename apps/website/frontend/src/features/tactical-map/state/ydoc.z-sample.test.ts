@@ -8,13 +8,7 @@ vi.mock('../dem', () => ({
   isDemReady: () => dem.ready,
 }))
 
-import {
-  createMissionDoc,
-  addSlot,
-  pasteSlots,
-  moveEntities,
-  updateSlotPosition,
-} from './ydoc'
+import { createMissionDoc, addSlot, pasteSlots, moveEntities, updateSlotPosition } from './ydoc'
 import type { Slot } from './schema'
 
 function posOf(md: ReturnType<typeof createMissionDoc>, id: string): Slot['position'] {

@@ -16,11 +16,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useRegistry } from '@/hooks/queries'
 import type { RegistryItemKind } from '@/types/models/registry'
-import {
-  buildLoadoutExport,
-  downloadLoadoutJson,
-  type LoadoutGear,
-} from '../loadout/loadoutExport'
+import { buildLoadoutExport, downloadLoadoutJson, type LoadoutGear } from '../loadout/loadoutExport'
 import {
   Field,
   NumberField,
@@ -49,9 +45,7 @@ function AttributesModalInner({
   onOpenChange: (open: boolean) => void
 }) {
   const slot = useMapStore((s) => (slotId ? s.slotsById[slotId] : undefined))
-  const squadName = useMapStore((s) =>
-    slot ? (s.squadsById[slot.squadId]?.name ?? '—') : '—',
-  )
+  const squadName = useMapStore((s) => (slot ? (s.squadsById[slot.squadId]?.name ?? '—') : '—'))
   const [tab, setTab] = useState<Tab>('Identity')
 
   return (
@@ -80,12 +74,8 @@ function AttributesModalInner({
               ))}
             </div>
 
-            {tab === 'Transform' && (
-              <TransformTab md={md} slot={slot} />
-            )}
-            {tab === 'Identity' && (
-              <IdentityTab md={md} slot={slot} squadName={squadName} />
-            )}
+            {tab === 'Transform' && <TransformTab md={md} slot={slot} />}
+            {tab === 'Identity' && <IdentityTab md={md} slot={slot} squadName={squadName} />}
             {tab === 'States' && <StatesTab />}
             {tab === 'Arsenal' && <ArsenalTab slot={slot} />}
           </div>
@@ -99,9 +89,21 @@ function TransformTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-3 gap-3">
-        <NumberField label="X" value={slot.position.x} onCommit={(x) => updateSlotPosition(md, slot.id, { x })} />
-        <NumberField label="Y" value={slot.position.y} onCommit={(y) => updateSlotPosition(md, slot.id, { y })} />
-        <NumberField label="Z" value={slot.position.z} onCommit={(z) => updateSlotPosition(md, slot.id, { z })} />
+        <NumberField
+          label="X"
+          value={slot.position.x}
+          onCommit={(x) => updateSlotPosition(md, slot.id, { x })}
+        />
+        <NumberField
+          label="Y"
+          value={slot.position.y}
+          onCommit={(y) => updateSlotPosition(md, slot.id, { y })}
+        />
+        <NumberField
+          label="Z"
+          value={slot.position.z}
+          onCommit={(z) => updateSlotPosition(md, slot.id, { z })}
+        />
       </div>
       <NumberField
         label="Rotation"
@@ -122,15 +124,7 @@ function TransformTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   )
 }
 
-function IdentityTab({
-  md,
-  slot,
-  squadName,
-}: {
-  md: MissionDoc
-  slot: Slot
-  squadName: string
-}) {
+function IdentityTab({ md, slot, squadName }: { md: MissionDoc; slot: Slot; squadName: string }) {
   return (
     <div className="flex flex-col gap-4">
       <TextField

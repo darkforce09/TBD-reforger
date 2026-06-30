@@ -19,11 +19,7 @@ import {
   type MissionDoc,
   type UndoController,
 } from '@/features/tactical-map'
-import {
-  detectLegacyV1,
-  hasV2Persist,
-  legacyDbName,
-} from '../persistence/missionPersistSchema'
+import { detectLegacyV1, hasV2Persist, legacyDbName } from '../persistence/missionPersistSchema'
 import { loadSlotsWithProgress } from '../persistence/slotChunkStore'
 import { loadMissionMetaIntoDoc } from '../persistence/missionMetaStore'
 import { migrateLegacyToV2 } from '../persistence/migrateLegacyToV2'
@@ -54,7 +50,8 @@ const frac = (done: number, total: number) => (total > 0 ? Math.min(done / total
 // motion without a fake %; MissionCreatorPage shows the indeterminate sweep for that case.
 export const restoringPhase = (done: number, total?: number): LoadProgress => ({
   phase: 'restoring',
-  value: total != null && total > 0 ? 0.15 * Math.min(done / total, 1) : 0.15 * (done / (done + 50_000)),
+  value:
+    total != null && total > 0 ? 0.15 * Math.min(done / total, 1) : 0.15 * (done / (done + 50_000)),
   label: 'Reading local save…',
   done,
   total,
@@ -63,9 +60,7 @@ export const downloadPhase = (loaded: number, total?: number): LoadProgress => (
   phase: 'downloading',
   // Content-Length is often unknown for a gzipped/streamed response — `frac(loaded, 0)` would
   // jump straight to the band top. Until `total` is known, ride a soft curve on bytes loaded.
-  value:
-    0.15 +
-    0.2 * (total && total > 0 ? frac(loaded, total) : loaded / (loaded + 2_000_000)),
+  value: 0.15 + 0.2 * (total && total > 0 ? frac(loaded, total) : loaded / (loaded + 2_000_000)),
   label: 'Downloading mission…',
 })
 export const applyPhase = (done: number, total: number): LoadProgress => ({
@@ -96,10 +91,7 @@ export interface UseMissionDocOptions {
    *  May return a Promise; the doc isn't marked `ready` until it settles, so a large
    *  server hydrate keeps the loading overlay up until its content is in the store.
    *  `onLoadProgress` reports the download + apply phases for the load overlay. */
-  onSynced?: (
-    md: MissionDoc,
-    onLoadProgress?: (p: LoadProgress) => void,
-  ) => void | Promise<void>
+  onSynced?: (md: MissionDoc, onLoadProgress?: (p: LoadProgress) => void) => void | Promise<void>
 }
 
 const INITIAL_LOAD: LoadProgress = restoringPhase(0)

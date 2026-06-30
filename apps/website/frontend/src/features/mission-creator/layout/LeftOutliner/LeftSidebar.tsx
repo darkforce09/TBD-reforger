@@ -67,8 +67,8 @@ function LeftSidebarInner({ md, onActivateSlot }: LeftSidebarProps) {
   // folders — LeftSidebar mounts only after the doc is ready (MissionCreatorPage defers it), so
   // the lazy initializer captures the populated trees on first render. Seed-once (the initializer
   // runs once) means a folder the user later collapses stays collapsed across edits.
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(
-    () => collectDefaultExpanded([...orbatNodes, ...editor.nodes], new Set()),
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() =>
+    collectDefaultExpanded([...orbatNodes, ...editor.nodes], new Set()),
   )
   const toggle = (id: string) =>
     setExpanded((prev) => {
@@ -100,7 +100,12 @@ function LeftSidebarInner({ md, onActivateSlot }: LeftSidebarProps) {
   }
 
   return (
-    <div className={cn(overlayDocked, 'flex h-full w-full flex-col overflow-hidden border-r border-white/10')}>
+    <div
+      className={cn(
+        overlayDocked,
+        'flex h-full w-full flex-col overflow-hidden border-r border-white/10',
+      )}
+    >
       <header className="shrink-0 border-b border-white/10 px-3 py-2">
         <p className="text-label-sm uppercase tracking-wider text-outline">Outliner</p>
         <p className="truncate text-label-md font-semibold text-on-surface">{title}</p>

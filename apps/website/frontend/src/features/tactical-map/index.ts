@@ -6,12 +6,7 @@ export { useMapContext } from './context/MapContext'
 export { getTerrain, TERRAINS, DEFAULT_TERRAIN } from './coords/terrains'
 export type { TerrainDef, TerrainId } from './coords/terrains'
 export { ASSET_DND_MIME } from './types'
-export type {
-  MapViewState,
-  TacticalMapProps,
-  TacticalMapApi,
-  AssetDropPayload,
-} from './types'
+export type { MapViewState, TacticalMapProps, TacticalMapApi, AssetDropPayload } from './types'
 
 // DEM elevation (T-091.1)
 export { sampleElevation, isDemReady, isDemDegraded, loadDemForTerrain } from './dem'

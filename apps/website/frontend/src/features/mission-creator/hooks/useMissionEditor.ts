@@ -24,11 +24,7 @@ import {
   type LoadProgress,
   type MissionDocHandle,
 } from './useMissionDoc'
-import {
-  clearEditorSession,
-  markEditorSessionReady,
-  readWarmEditorSession,
-} from './editorSession'
+import { clearEditorSession, markEditorSessionReady, readWarmEditorSession } from './editorSession'
 import { flushSlots, saveSlotsFromDocDebounced } from '../persistence/slotChunkStore'
 import { flushMeta, saveMissionMetaFromDocDebounced } from '../persistence/missionMetaStore'
 // Compile + version-blob assembly run in a Web Worker (T-066); call sites below are unchanged.
@@ -122,7 +118,10 @@ const DIRECT_UPLOAD_THRESHOLD = 1_048_576 // 1 MB
 let warnedDirectUpload = false
 /** Resolve the version POST baseURL + a label for it. `baseURL: undefined` → axios uses the client
  *  default (proxy in dev, or an already-absolute VITE_API_URL). T-060.1.2/.3. */
-function resolveVersionUpload(bodyBytes: number): { baseURL: string | undefined; route: UploadRoute } {
+function resolveVersionUpload(bodyBytes: number): {
+  baseURL: string | undefined
+  route: UploadRoute
+} {
   const configured = import.meta.env.VITE_API_URL
   // Client baseURL already absolute → axios hits the API directly; nothing to override.
   if (typeof configured === 'string' && configured.startsWith('http')) {
@@ -391,7 +390,9 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
         report.uploadRoute = route
         const base =
           baseURL ??
-          (typeof import.meta.env.VITE_API_URL === 'string' ? import.meta.env.VITE_API_URL : '/api/v1')
+          (typeof import.meta.env.VITE_API_URL === 'string'
+            ? import.meta.env.VITE_API_URL
+            : '/api/v1')
         report.uploadUrl = `${base}/missions/${missionId}/versions`
         if (route === 'direct' && !warnedDirectUpload) {
           warnedDirectUpload = true

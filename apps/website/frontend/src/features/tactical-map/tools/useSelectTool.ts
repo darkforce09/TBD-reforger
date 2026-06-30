@@ -184,8 +184,7 @@ export function useSelectTool({
         const startWorld = vp.unproject(g.startPx) as Pt
         if (g.iconId) {
           const sel = useMapStore.getState().selection
-          const ids =
-            sel.kind === 'slot' && sel.ids.includes(g.iconId) ? sel.ids : [g.iconId]
+          const ids = sel.kind === 'slot' && sel.ids.includes(g.iconId) ? sel.ids : [g.iconId]
           if (!(sel.kind === 'slot' && sel.ids.includes(g.iconId))) {
             useMapStore.getState().setSelection({ kind: 'slot', ids })
           }
@@ -306,7 +305,9 @@ export function useSelectTool({
             // Ctrl/Cmd-click toggles this slot in/out of the current selection.
             const cur = store.selection.kind === 'slot' ? store.selection.ids : []
             const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
-            store.setSelection(next.length ? { kind: 'slot', ids: next } : { kind: 'none', ids: [] })
+            store.setSelection(
+              next.length ? { kind: 'slot', ids: next } : { kind: 'none', ids: [] },
+            )
           } else {
             store.setSelection({ kind: 'slot', ids: [id] })
           }

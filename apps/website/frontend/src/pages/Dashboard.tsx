@@ -99,7 +99,9 @@ export function DashboardPage() {
                 <div className="mb-2 flex items-end justify-between">
                   <span className="font-mono text-3xl font-light text-on-surface">
                     {server?.player_count ?? 0}
-                    <span className="text-lg text-on-surface-variant">/{server?.max_players ?? 0}</span>
+                    <span className="text-lg text-on-surface-variant">
+                      /{server?.max_players ?? 0}
+                    </span>
                   </span>
                   <span className="mb-1 font-mono text-xs text-on-surface-variant">PLAYERS</span>
                 </div>
@@ -138,7 +140,9 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex flex-col">
-                    <span className="font-bold tracking-wide text-on-surface">{assignment.faction}</span>
+                    <span className="font-bold tracking-wide text-on-surface">
+                      {assignment.faction}
+                    </span>
                     <span className="text-sm text-on-surface-variant">{assignment.squad}</span>
                     <span className="mt-1 font-mono text-xs text-primary uppercase">
                       Role: {assignment.role}
@@ -146,7 +150,9 @@ export function DashboardPage() {
                   </div>
                 </div>
               ) : (
-                <p className="relative z-10 mt-4 text-sm text-on-surface-variant">No active assignment</p>
+                <p className="relative z-10 mt-4 text-sm text-on-surface-variant">
+                  No active assignment
+                </p>
               )}
             </OpsCard>
 

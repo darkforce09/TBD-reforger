@@ -80,7 +80,13 @@ function walk(
     if (isExpanded) {
       if (hasInlineChildren) walk(n.children ?? [], section, depth + 1, expanded, out)
       if (hasVirtual) {
-        out.push({ kind: 'slots', ids: n.virtualSlotIds ?? [], depth: depth + 1, parentId: n.id, section })
+        out.push({
+          kind: 'slots',
+          ids: n.virtualSlotIds ?? [],
+          depth: depth + 1,
+          parentId: n.id,
+          section,
+        })
       }
     }
   }
@@ -88,7 +94,11 @@ function walk(
 
 /** Build the full segment list: ORBAT header + tree, then Editor Layers header + tree +
  *  trailing root-drop row. Segment count is O(expanded folders + small inline subtrees). */
-export function buildOutlinerSegments({ orbatNodes, editorNodes, expanded }: BuildOpts): OutlinerSegment[] {
+export function buildOutlinerSegments({
+  orbatNodes,
+  editorNodes,
+  expanded,
+}: BuildOpts): OutlinerSegment[] {
   const out: OutlinerSegment[] = []
 
   out.push(headerRow('ORBAT', 'orbat'))
@@ -100,7 +110,9 @@ export function buildOutlinerSegments({ orbatNodes, editorNodes, expanded }: Bui
 
   out.push(headerRow('Editor Layers', 'editor'))
   if (editorNodes.length === 0) {
-    out.push(emptyRow('No entities yet. Drag an asset from the right panel onto the map.', 'editor'))
+    out.push(
+      emptyRow('No entities yet. Drag an asset from the right panel onto the map.', 'editor'),
+    )
   } else {
     walk(editorNodes, 'editor', 0, expanded, out)
     out.push({

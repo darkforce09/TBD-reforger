@@ -5,6 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import jsdoc from 'eslint-plugin-jsdoc'
 import importX from 'eslint-plugin-import-x'
+import eslintConfigPrettier from 'eslint-config-prettier'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -103,4 +104,8 @@ export default defineConfig([
       ],
     },
   },
+  // FMT-3 (T-125.5): eslint-config-prettier LAST — turns off only the ESLint rules that
+  // conflict with Prettier formatting. All TS-2..7 / LOG-2 / COMP-1 lint rules stay on;
+  // Prettier itself runs via `npm run format:check`, not through ESLint (no eslint-plugin-prettier).
+  eslintConfigPrettier,
 ])

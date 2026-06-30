@@ -18,7 +18,10 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         return (
           <div
             key={section.title}
-            className={cn('mb-6', section.admin && 'rounded-lg border border-red-500/20 bg-red-900/10 p-3')}
+            className={cn(
+              'mb-6',
+              section.admin && 'rounded-lg border border-red-500/20 bg-red-900/10 p-3',
+            )}
           >
             <h3
               className={cn(

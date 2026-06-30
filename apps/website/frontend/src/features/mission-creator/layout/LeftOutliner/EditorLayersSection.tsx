@@ -141,14 +141,27 @@ export function useEditorLayersOutliner(md: MissionDoc) {
       e.stopPropagation()
       fn()
     }
-    const btn = 'rounded p-0.5 text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface'
+    const btn =
+      'rounded p-0.5 text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface'
     if (layersById[id]) {
       return (
         <>
-          <button type="button" aria-label="Rename folder" title="Rename" className={btn} onClick={stop(() => setRenamingId(id))}>
+          <button
+            type="button"
+            aria-label="Rename folder"
+            title="Rename"
+            className={btn}
+            onClick={stop(() => setRenamingId(id))}
+          >
             <Pencil className="size-3" />
           </button>
-          <button type="button" aria-label="Delete folder" title="Delete folder" className={cn(btn, 'hover:text-error')} onClick={stop(() => deleteFolder(id))}>
+          <button
+            type="button"
+            aria-label="Delete folder"
+            title="Delete folder"
+            className={cn(btn, 'hover:text-error')}
+            onClick={stop(() => deleteFolder(id))}
+          >
             <Trash2 className="size-3" />
           </button>
         </>
@@ -156,7 +169,13 @@ export function useEditorLayersOutliner(md: MissionDoc) {
     }
     if (slotsById[id]) {
       return (
-        <button type="button" aria-label="Delete unit" title="Delete unit" className={cn(btn, 'hover:text-error')} onClick={stop(() => deleteSlot(id))}>
+        <button
+          type="button"
+          aria-label="Delete unit"
+          title="Delete unit"
+          className={cn(btn, 'hover:text-error')}
+          onClick={stop(() => deleteSlot(id))}
+        >
           <Trash2 className="size-3" />
         </button>
       )

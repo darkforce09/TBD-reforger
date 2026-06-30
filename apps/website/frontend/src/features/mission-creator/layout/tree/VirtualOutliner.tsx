@@ -13,12 +13,7 @@ import { cn } from '@/lib/utils'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { TreeRow } from './TreeRow'
 import { rowAt, totalRowCount } from './flattenOutliner'
-import {
-  INDENT_PX,
-  ROW_HEIGHT,
-  type OutlinerSegment,
-  type TreeRowModel,
-} from './treeRowModel'
+import { INDENT_PX, ROW_HEIGHT, type OutlinerSegment, type TreeRowModel } from './treeRowModel'
 import { TREE_MIME } from '../LeftOutliner/EditorLayersSection'
 
 interface VirtualOutlinerProps {
@@ -122,7 +117,9 @@ export function VirtualOutliner({
         if (row.kind === 'empty') {
           return (
             <div {...common}>
-              <p className="px-2 py-3 text-center text-label-sm normal-case text-outline">{row.label}</p>
+              <p className="px-2 py-3 text-center text-label-sm normal-case text-outline">
+                {row.label}
+              </p>
             </div>
           )
         }
@@ -196,7 +193,9 @@ export function VirtualOutliner({
                     }
                   : undefined
               }
-              onDragLeave={isDropTarget ? () => dragOverId === row.id && setDragOverId(null) : undefined}
+              onDragLeave={
+                isDropTarget ? () => dragOverId === row.id && setDragOverId(null) : undefined
+              }
               onDrop={
                 isDropTarget
                   ? (e) => {

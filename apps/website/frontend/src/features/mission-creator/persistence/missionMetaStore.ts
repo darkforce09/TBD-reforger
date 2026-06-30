@@ -5,12 +5,7 @@
 
 import type { MissionDoc } from '../../tactical-map/state/ydoc'
 import { INIT_ORIGIN, entityToYMap } from '../../tactical-map/state/ydoc'
-import {
-  META_STORE,
-  PERSIST_SCHEMA_V2,
-  metaKey,
-  openPersistDb,
-} from './missionPersistSchema'
+import { META_STORE, PERSIST_SCHEMA_V2, metaKey, openPersistDb } from './missionPersistSchema'
 import type { MissionMetaRecord } from './missionPersistSchema'
 import { clearAutosaveFailure, notifyAutosaveFailure } from './slotChunkStore'
 

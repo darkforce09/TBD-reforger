@@ -123,8 +123,8 @@ export async function docToSnapshotWithProgress(
 let bulkDepth = 0
 let bulkPending = false
 let activeFlush: (() => void) | null = null
-let activeBulkFlush: ((onProgress?: (done: number, total: number) => void) => Promise<void>) | null =
-  null
+let activeBulkFlush:
+  ((onProgress?: (done: number, total: number) => void) => Promise<void>) | null = null
 
 export function beginBulkSync(): void {
   bulkDepth++

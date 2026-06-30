@@ -113,7 +113,9 @@ export function ServerControlPage() {
             masterHeader={
               <h1 className="w-full text-label-md font-semibold tracking-wide text-on-surface uppercase">
                 Servers
-                <span className="ml-2 font-mono text-code-md text-outline">{MOCK_SERVERS.length}</span>
+                <span className="ml-2 font-mono text-code-md text-outline">
+                  {MOCK_SERVERS.length}
+                </span>
               </h1>
             }
             master={MOCK_SERVERS.map((s) => {
@@ -160,64 +162,64 @@ export function ServerControlPage() {
               <div className="flex h-full min-w-0 flex-1 flex-col">
                 {/* Command header */}
                 <header className="flex flex-wrap items-center justify-between gap-4 border-b border-white/5 p-6 pb-6">
-            <div className="min-w-0">
-              <h2 className="truncate text-headline-lg text-on-surface">{server.name}</h2>
-              <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
-                <MaterialIcon name="lan" className="text-[16px] text-on-surface-variant" />
-                <span className="font-mono text-code-md text-on-surface">{server.ip}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => toast.message(`Restart requested for ${server.name}`)}
-                className="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2.5 text-label-md text-on-surface transition hover:bg-white/5"
-              >
-                <MaterialIcon name="restart_alt" className="text-[18px]" />
-                Restart
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.message(`Stop requested for ${server.name}`)}
-                className="flex items-center gap-1.5 rounded-full border border-error-alert/30 px-4 py-2.5 text-label-md text-error-alert transition hover:bg-error-alert/10"
-              >
-                <MaterialIcon name="stop" className="text-[18px]" />
-                Stop
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.success(`Connecting to ${server.ip}…`)}
-                className="flex items-center gap-2 rounded-full bg-action px-6 py-2.5 text-label-md font-bold text-on-action shadow-[0_0_30px_rgba(59,130,246,0.4)] transition hover:bg-action/90"
-              >
-                <MaterialIcon name="rocket_launch" className="text-[18px]" />
-                LAUNCH &amp; CONNECT
-              </button>
-            </div>
-          </header>
+                  <div className="min-w-0">
+                    <h2 className="truncate text-headline-lg text-on-surface">{server.name}</h2>
+                    <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1">
+                      <MaterialIcon name="lan" className="text-[16px] text-on-surface-variant" />
+                      <span className="font-mono text-code-md text-on-surface">{server.ip}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toast.message(`Restart requested for ${server.name}`)}
+                      className="flex items-center gap-1.5 rounded-full border border-white/10 px-4 py-2.5 text-label-md text-on-surface transition hover:bg-white/5"
+                    >
+                      <MaterialIcon name="restart_alt" className="text-[18px]" />
+                      Restart
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.message(`Stop requested for ${server.name}`)}
+                      className="flex items-center gap-1.5 rounded-full border border-error-alert/30 px-4 py-2.5 text-label-md text-error-alert transition hover:bg-error-alert/10"
+                    >
+                      <MaterialIcon name="stop" className="text-[18px]" />
+                      Stop
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toast.success(`Connecting to ${server.ip}…`)}
+                      className="flex items-center gap-2 rounded-full bg-action px-6 py-2.5 text-label-md font-bold text-on-action shadow-[0_0_30px_rgba(59,130,246,0.4)] transition hover:bg-action/90"
+                    >
+                      <MaterialIcon name="rocket_launch" className="text-[18px]" />
+                      LAUNCH &amp; CONNECT
+                    </button>
+                  </div>
+                </header>
 
-          {/* Telemetry grid */}
-          <div className="grid shrink-0 grid-cols-3 divide-x divide-white/10 border-b border-white/5">
-            <TelemetryCol
-              primaryLabel="Active Personnel"
-              primaryValue={`${server.players} / ${server.maxPlayers}`}
-              secondaryLabel="Uptime"
-              secondaryValue={server.uptime}
-            />
-            <TelemetryCol
-              primaryLabel="Terrain"
-              primaryValue={server.terrain}
-              secondaryLabel="Active Mission"
-              secondaryValue={server.mission}
-            />
-            <TelemetryCol
-              primaryLabel="Server FPS"
-              primaryValue={`${server.fps} Hz`}
-              secondaryLabel="Mod Configuration"
-              secondaryValue={server.modConfig}
-            />
-          </div>
+                {/* Telemetry grid */}
+                <div className="grid shrink-0 grid-cols-3 divide-x divide-white/10 border-b border-white/5">
+                  <TelemetryCol
+                    primaryLabel="Active Personnel"
+                    primaryValue={`${server.players} / ${server.maxPlayers}`}
+                    secondaryLabel="Uptime"
+                    secondaryValue={server.uptime}
+                  />
+                  <TelemetryCol
+                    primaryLabel="Terrain"
+                    primaryValue={server.terrain}
+                    secondaryLabel="Active Mission"
+                    secondaryValue={server.mission}
+                  />
+                  <TelemetryCol
+                    primaryLabel="Server FPS"
+                    primaryValue={`${server.fps} Hz`}
+                    secondaryLabel="Mod Configuration"
+                    secondaryValue={server.modConfig}
+                  />
+                </div>
 
-          {/* RCON console — fills the bottom half */}
+                {/* RCON console — fills the bottom half */}
                 <RconConsole key={server.id} server={server} />
               </div>
             }

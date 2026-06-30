@@ -63,13 +63,7 @@ export function SplitPane({
 }
 
 /** Placeholder shown in the detail pane when nothing is selected. */
-export function SplitPaneEmpty({
-  icon,
-  message,
-}: {
-  icon?: ReactNode
-  message: string
-}) {
+export function SplitPaneEmpty({ icon, message }: { icon?: ReactNode; message: string }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-3 text-outline">
       {icon}

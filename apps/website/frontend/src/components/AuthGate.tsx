@@ -23,7 +23,10 @@ export function AuthGate({ children }: AuthGateProps) {
     return (
       <div className="flex min-h-[40vh] flex-col items-center justify-center gap-4 text-center">
         <p className="text-on-surface-variant">Sign in to load live data from the platform.</p>
-        <Link to="/login" className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-on-primary">
+        <Link
+          to="/login"
+          className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-on-primary"
+        >
           Sign in with Discord
         </Link>
       </div>

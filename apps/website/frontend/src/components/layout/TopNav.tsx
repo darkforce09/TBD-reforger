@@ -27,7 +27,9 @@ export function TopNav() {
           <>
             <span className="text-label-md text-on-surface-variant">{breadcrumb.parent}</span>
             <span className="text-outline">/</span>
-            <span className="text-label-md font-semibold text-on-surface">{breadcrumb.current}</span>
+            <span className="text-label-md font-semibold text-on-surface">
+              {breadcrumb.current}
+            </span>
           </>
         ) : (
           <span className="text-label-md font-semibold text-on-surface">TBD Reforger</span>

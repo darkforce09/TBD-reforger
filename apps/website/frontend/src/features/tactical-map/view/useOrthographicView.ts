@@ -26,10 +26,7 @@ interface UseOrthographicView {
 }
 
 export function useOrthographicView(terrain: TerrainDef): UseOrthographicView {
-  const view = useMemo(
-    () => new OrthographicView({ id: 'tactical-ortho', flipY: false }),
-    [],
-  )
+  const view = useMemo(() => new OrthographicView({ id: 'tactical-ortho', flipY: false }), [])
 
   const [viewState, setViewState] = useState<MapViewState>(() => ({
     target: terrainCenterPixel(terrain),

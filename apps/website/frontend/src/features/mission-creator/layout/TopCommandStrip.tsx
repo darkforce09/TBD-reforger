@@ -151,7 +151,9 @@ function TopCommandStripInner({
   const time = env?.time ?? '06:00'
 
   return (
-    <div className={cn(overlayDocked, 'flex h-full items-center gap-2 border-b border-white/10 px-3')}>
+    <div
+      className={cn(overlayDocked, 'flex h-full items-center gap-2 border-b border-white/10 px-3')}
+    >
       <nav className="flex shrink-0 items-center">
         {MENUS.map((m) => (
           <button
@@ -301,7 +303,9 @@ function TopCommandStripInner({
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="text-label-sm uppercase tracking-wider text-outline">Notes (optional)</span>
+              <span className="text-label-sm uppercase tracking-wider text-outline">
+                Notes (optional)
+              </span>
               <input
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
@@ -312,7 +316,8 @@ function TopCommandStripInner({
             {/* Measured size before save starts (T-060.1.3). */}
             {!phase && !saveError && preInfo && (
               <p className="font-mono text-code-md tabular-nums text-on-surface-variant">
-                ~{formatBytes(preInfo.estimatedBytes)} estimated · {preInfo.slotCount.toLocaleString()} objects
+                ~{formatBytes(preInfo.estimatedBytes)} estimated ·{' '}
+                {preInfo.slotCount.toLocaleString()} objects
                 <span className="ml-2 text-outline">LOC {formatBytes(preInfo.localDocBytes)}</span>
               </p>
             )}

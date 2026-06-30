@@ -18,12 +18,7 @@ import {
   useLeaderboards,
 } from '@/hooks/queries'
 import { EventHubView } from '@/pages/events'
-import {
-  countdownLabel,
-  formatLocalDateTime,
-  formatShortDate,
-  tagLabel,
-} from '@/lib/format'
+import { countdownLabel, formatLocalDateTime, formatShortDate, tagLabel } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 const LEADERBOARD_TABS = [
@@ -39,9 +34,7 @@ export function AnnouncementsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   // Pinned first, then the rest — preserving incoming order within each group.
-  const posts = [...(data?.data ?? [])].sort(
-    (a, b) => Number(b.is_pinned) - Number(a.is_pinned),
-  )
+  const posts = [...(data?.data ?? [])].sort((a, b) => Number(b.is_pinned) - Number(a.is_pinned))
   const selected = posts.find((p) => p.id === selectedId) ?? posts[0] ?? null
 
   return (
@@ -164,13 +157,11 @@ const MOCK_WIN_RATE = '68%'
 // Inline SVG data-URIs so thumbnails always render offline (no CDN dependency).
 const FAV_WEAPON = {
   name: 'M4A1 Block II',
-  img:
-    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='56'><rect width='120' height='56' fill='%23242a3a'/><rect x='12' y='25' width='86' height='6' rx='2' fill='%23adc6ff'/><rect x='80' y='22' width='11' height='18' rx='2' fill='%233a4252'/><rect x='30' y='31' width='10' height='12' rx='2' fill='%233a4252'/></svg>",
+  img: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='56'><rect width='120' height='56' fill='%23242a3a'/><rect x='12' y='25' width='86' height='6' rx='2' fill='%23adc6ff'/><rect x='80' y='22' width='11' height='18' rx='2' fill='%233a4252'/><rect x='30' y='31' width='10' height='12' rx='2' fill='%233a4252'/></svg>",
 }
 const FAV_ASSET = {
   name: 'M1A2 Abrams',
-  img:
-    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='56'><rect width='120' height='56' fill='%23242a3a'/><rect x='22' y='28' width='76' height='14' rx='3' fill='%233a4252'/><rect x='44' y='20' width='30' height='10' rx='2' fill='%233a4252'/><rect x='70' y='30' width='34' height='4' rx='2' fill='%23adc6ff'/><circle cx='36' cy='44' r='5' fill='%23adc6ff'/><circle cx='84' cy='44' r='5' fill='%23adc6ff'/></svg>",
+  img: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='56'><rect width='120' height='56' fill='%23242a3a'/><rect x='22' y='28' width='76' height='14' rx='3' fill='%233a4252'/><rect x='44' y='20' width='30' height='10' rx='2' fill='%233a4252'/><rect x='70' y='30' width='34' height='4' rx='2' fill='%23adc6ff'/><circle cx='36' cy='44' r='5' fill='%23adc6ff'/><circle cx='84' cy='44' r='5' fill='%23adc6ff'/></svg>",
 }
 const BANNER_IMG =
   "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='200'><rect width='400' height='200' fill='%23151b2b'/><g stroke='%23adc6ff' stroke-width='0.5' opacity='0.5'><path d='M0 40 H400 M0 80 H400 M0 120 H400 M0 160 H400 M50 0 V200 M120 0 V200 M190 0 V200 M260 0 V200 M330 0 V200'/></g><circle cx='190' cy='100' r='26' fill='none' stroke='%23facc15' stroke-width='1.5'/><path d='M190 66 V134 M156 100 H224' stroke='%23facc15' stroke-width='1'/></svg>"
@@ -196,7 +187,9 @@ function TelemetryStat({
       <span className="font-mono text-[10px] uppercase tracking-widest text-on-surface-variant">
         {label}
       </span>
-      <p className={cn('text-[5rem] font-bold leading-none tracking-tighter', className)}>{value}</p>
+      <p className={cn('text-[5rem] font-bold leading-none tracking-tighter', className)}>
+        {value}
+      </p>
     </div>
   )
 }
@@ -387,44 +380,168 @@ export function DeploymentsPage() {
 
 // --- Mock leaderboard data (used until the backend serves ranked rows) ------
 const MOCK_LEADERBOARD: LeaderboardRow[] = [
-  { rank: 1, discord_id: 'mock-1', username: 'Reaper', avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png', kills: 1842, deaths: 311, kd_ratio: 5.92, team_kills: 1, command_win_rate: 81, missions_played: 154, longest_kill_m: 912 },
-  { rank: 2, discord_id: 'mock-2', username: 'Wraith', avatar_url: 'https://cdn.discordapp.com/embed/avatars/1.png', kills: 1610, deaths: 354, kd_ratio: 4.55, team_kills: 3, command_win_rate: 74, missions_played: 138, longest_kill_m: 1043 },
-  { rank: 3, discord_id: 'mock-3', username: 'Havoc', avatar_url: 'https://cdn.discordapp.com/embed/avatars/2.png', kills: 1455, deaths: 402, kd_ratio: 3.62, team_kills: 0, command_win_rate: 69, missions_played: 171, longest_kill_m: 720 },
-  { rank: 4, discord_id: 'mock-4', username: 'Cobra', avatar_url: 'https://cdn.discordapp.com/embed/avatars/3.png', kills: 1245, deaths: 388, kd_ratio: 3.21, team_kills: 5, command_win_rate: 66, missions_played: 129, longest_kill_m: 655 },
-  { rank: 5, discord_id: 'mock-5', username: 'Specter', avatar_url: 'https://cdn.discordapp.com/embed/avatars/4.png', kills: 1130, deaths: 410, kd_ratio: 2.76, team_kills: 2, command_win_rate: 61, missions_played: 147, longest_kill_m: 588 },
-  { rank: 6, discord_id: 'mock-6', username: 'Viper', avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png', kills: 998, deaths: 421, kd_ratio: 2.37, team_kills: 8, command_win_rate: 57, missions_played: 112, longest_kill_m: 503 },
-  { rank: 7, discord_id: 'mock-7', username: 'Ghost', avatar_url: 'https://cdn.discordapp.com/embed/avatars/1.png', kills: 874, deaths: 399, kd_ratio: 2.19, team_kills: 4, command_win_rate: 54, missions_played: 133, longest_kill_m: 471 },
-  { rank: 8, discord_id: 'mock-8', username: 'Bandit', avatar_url: 'https://cdn.discordapp.com/embed/avatars/2.png', kills: 765, deaths: 388, kd_ratio: 1.97, team_kills: 11, command_win_rate: 49, missions_played: 121, longest_kill_m: 402 },
+  {
+    rank: 1,
+    discord_id: 'mock-1',
+    username: 'Reaper',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
+    kills: 1842,
+    deaths: 311,
+    kd_ratio: 5.92,
+    team_kills: 1,
+    command_win_rate: 81,
+    missions_played: 154,
+    longest_kill_m: 912,
+  },
+  {
+    rank: 2,
+    discord_id: 'mock-2',
+    username: 'Wraith',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/1.png',
+    kills: 1610,
+    deaths: 354,
+    kd_ratio: 4.55,
+    team_kills: 3,
+    command_win_rate: 74,
+    missions_played: 138,
+    longest_kill_m: 1043,
+  },
+  {
+    rank: 3,
+    discord_id: 'mock-3',
+    username: 'Havoc',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/2.png',
+    kills: 1455,
+    deaths: 402,
+    kd_ratio: 3.62,
+    team_kills: 0,
+    command_win_rate: 69,
+    missions_played: 171,
+    longest_kill_m: 720,
+  },
+  {
+    rank: 4,
+    discord_id: 'mock-4',
+    username: 'Cobra',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/3.png',
+    kills: 1245,
+    deaths: 388,
+    kd_ratio: 3.21,
+    team_kills: 5,
+    command_win_rate: 66,
+    missions_played: 129,
+    longest_kill_m: 655,
+  },
+  {
+    rank: 5,
+    discord_id: 'mock-5',
+    username: 'Specter',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/4.png',
+    kills: 1130,
+    deaths: 410,
+    kd_ratio: 2.76,
+    team_kills: 2,
+    command_win_rate: 61,
+    missions_played: 147,
+    longest_kill_m: 588,
+  },
+  {
+    rank: 6,
+    discord_id: 'mock-6',
+    username: 'Viper',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/0.png',
+    kills: 998,
+    deaths: 421,
+    kd_ratio: 2.37,
+    team_kills: 8,
+    command_win_rate: 57,
+    missions_played: 112,
+    longest_kill_m: 503,
+  },
+  {
+    rank: 7,
+    discord_id: 'mock-7',
+    username: 'Ghost',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/1.png',
+    kills: 874,
+    deaths: 399,
+    kd_ratio: 2.19,
+    team_kills: 4,
+    command_win_rate: 54,
+    missions_played: 133,
+    longest_kill_m: 471,
+  },
+  {
+    rank: 8,
+    discord_id: 'mock-8',
+    username: 'Bandit',
+    avatar_url: 'https://cdn.discordapp.com/embed/avatars/2.png',
+    kills: 765,
+    deaths: 388,
+    kd_ratio: 1.97,
+    team_kills: 11,
+    command_win_rate: 49,
+    missions_played: 121,
+    longest_kill_m: 402,
+  },
 ]
 
 // Per-category stat extraction: the value to rank/sort by, plus the formatted
 // primary (headline) and secondary stat and an accent colour for the primary.
 function categoryValue(r: LeaderboardRow, category: string): number {
   switch (category) {
-    case 'command_win': return r.command_win_rate ?? 0
-    case 'missions': return r.missions_played ?? 0
-    case 'longest_kill': return r.longest_kill_m ?? 0
-    case 'team_kills': return r.team_kills ?? 0
-    default: return r.kd_ratio ?? 0
+    case 'command_win':
+      return r.command_win_rate ?? 0
+    case 'missions':
+      return r.missions_played ?? 0
+    case 'longest_kill':
+      return r.longest_kill_m ?? 0
+    case 'team_kills':
+      return r.team_kills ?? 0
+    default:
+      return r.kd_ratio ?? 0
   }
 }
 
-function statFor(r: LeaderboardRow, category: string): {
+function statFor(
+  r: LeaderboardRow,
+  category: string,
+): {
   primary: string
   secondary: string
   accent: string
 } {
   switch (category) {
     case 'command_win':
-      return { primary: `${(r.command_win_rate ?? 0).toFixed(0)}%`, secondary: `${r.missions_played ?? 0} Ops`, accent: 'text-success' }
+      return {
+        primary: `${(r.command_win_rate ?? 0).toFixed(0)}%`,
+        secondary: `${r.missions_played ?? 0} Ops`,
+        accent: 'text-success',
+      }
     case 'missions':
-      return { primary: `${r.missions_played ?? 0}`, secondary: `${r.kills ?? 0} Kills`, accent: 'text-primary' }
+      return {
+        primary: `${r.missions_played ?? 0}`,
+        secondary: `${r.kills ?? 0} Kills`,
+        accent: 'text-primary',
+      }
     case 'longest_kill':
-      return { primary: `${r.longest_kill_m ?? 0}m`, secondary: `${r.kills ?? 0} Kills`, accent: 'text-tactical-yellow' }
+      return {
+        primary: `${r.longest_kill_m ?? 0}m`,
+        secondary: `${r.kills ?? 0} Kills`,
+        accent: 'text-tactical-yellow',
+      }
     case 'team_kills':
-      return { primary: `${r.team_kills ?? 0}`, secondary: `${r.missions_played ?? 0} Ops`, accent: 'text-error-alert' }
+      return {
+        primary: `${r.team_kills ?? 0}`,
+        secondary: `${r.missions_played ?? 0} Ops`,
+        accent: 'text-error-alert',
+      }
     default:
-      return { primary: (r.kd_ratio ?? 0).toFixed(2), secondary: `${r.kills ?? 0} Kills`, accent: 'text-success' }
+      return {
+        primary: (r.kd_ratio ?? 0).toFixed(2),
+        secondary: `${r.kills ?? 0} Kills`,
+        accent: 'text-success',
+      }
   }
 }
 
@@ -433,9 +550,27 @@ const PODIUM_TIERS: Record<
   number,
   { avatar: string; ring: string; badge: string; score: string; order: string }
 > = {
-  1: { avatar: 'h-32 w-32', ring: 'border-tactical-yellow shadow-[0_0_50px_rgba(250,204,21,0.5)]', badge: 'bg-tactical-yellow text-black', score: 'text-4xl text-tactical-yellow', order: 'order-2' },
-  2: { avatar: 'h-24 w-24', ring: 'border-slate-300 shadow-[0_0_35px_rgba(203,213,225,0.45)]', badge: 'bg-slate-300 text-black', score: 'text-2xl text-slate-200', order: 'order-1' },
-  3: { avatar: 'h-20 w-20', ring: 'border-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.45)]', badge: 'bg-orange-400 text-black', score: 'text-xl text-orange-300', order: 'order-3' },
+  1: {
+    avatar: 'h-32 w-32',
+    ring: 'border-tactical-yellow shadow-[0_0_50px_rgba(250,204,21,0.5)]',
+    badge: 'bg-tactical-yellow text-black',
+    score: 'text-4xl text-tactical-yellow',
+    order: 'order-2',
+  },
+  2: {
+    avatar: 'h-24 w-24',
+    ring: 'border-slate-300 shadow-[0_0_35px_rgba(203,213,225,0.45)]',
+    badge: 'bg-slate-300 text-black',
+    score: 'text-2xl text-slate-200',
+    order: 'order-1',
+  },
+  3: {
+    avatar: 'h-20 w-20',
+    ring: 'border-orange-400 shadow-[0_0_30px_rgba(251,146,60,0.45)]',
+    badge: 'bg-orange-400 text-black',
+    score: 'text-xl text-orange-300',
+    order: 'order-3',
+  },
 }
 
 function PodiumPlace({ row, category }: { row: LeaderboardRow; category: string }) {
@@ -568,7 +703,9 @@ export function LeaderboardsPage() {
                           <span className="hidden text-sm text-on-surface-variant sm:inline">
                             {stat.secondary}
                           </span>
-                          <span className={cn('w-16 text-right font-mono font-semibold', stat.accent)}>
+                          <span
+                            className={cn('w-16 text-right font-mono font-semibold', stat.accent)}
+                          >
                             {stat.primary}
                           </span>
                           <MaterialIcon
@@ -607,7 +744,9 @@ export function EventSchedulePage() {
         <SplitPane
           masterWidth="24rem"
           masterHeader={
-            <h2 className="text-headline-sm tracking-wide text-on-surface uppercase">Upcoming Ops</h2>
+            <h2 className="text-headline-sm tracking-wide text-on-surface uppercase">
+              Upcoming Ops
+            </h2>
           }
           master={
             events.length === 0 ? (
@@ -636,7 +775,9 @@ export function EventSchedulePage() {
                         {formatLocalDateTime(e.start_time)}
                       </span>
                       <Badge
-                        variant={label === 'LIVE' ? 'primary' : label === 'LOCKED' ? 'neutral' : 'success'}
+                        variant={
+                          label === 'LIVE' ? 'primary' : label === 'LOCKED' ? 'neutral' : 'success'
+                        }
                       >
                         {label}
                       </Badge>

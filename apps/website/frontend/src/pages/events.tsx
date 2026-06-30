@@ -16,12 +16,7 @@ import {
 } from '@/hooks/mutations'
 import { useAuthStore } from '@/store/useAuthStore'
 import { DEFAULT_AVATAR } from '@/lib/avatar'
-import {
-  countdownLabel,
-  formatLocalDateTime,
-  gameModeLabel,
-  terrainLabel,
-} from '@/lib/format'
+import { countdownLabel, formatLocalDateTime, gameModeLabel, terrainLabel } from '@/lib/format'
 import type { EventHub, EventMissionDossier } from '@/types/api'
 import { cn } from '@/lib/utils'
 
@@ -40,7 +35,10 @@ export function EventHubPage() {
             <div className="bg-topo-map bg-grid-overlay absolute inset-0 z-0" />
             <div className="custom-scrollbar relative z-10 h-full w-full overflow-y-auto bg-surface-glass backdrop-blur-xl">
               <div className="mx-auto w-full max-w-5xl p-6 md:p-8">
-                <Link to="/events" className="mb-4 inline-flex items-center gap-1 text-label-md text-primary hover:underline">
+                <Link
+                  to="/events"
+                  className="mb-4 inline-flex items-center gap-1 text-label-md text-primary hover:underline"
+                >
                   <MaterialIcon name="chevron_left" className="text-base" /> All Operations
                 </Link>
                 <EventHubView event={event} />
@@ -86,7 +84,9 @@ export function EventHubView({ event }: { event: EventHub }) {
           </div>
           <p className="text-on-surface-variant">{formatLocalDateTime(event.start_time)}</p>
           {event.briefing && (
-            <p className="max-w-2xl whitespace-pre-line text-on-surface-variant">{event.briefing}</p>
+            <p className="max-w-2xl whitespace-pre-line text-on-surface-variant">
+              {event.briefing}
+            </p>
           )}
           <div className="mt-2 flex flex-wrap gap-3 text-label-md">
             <span className="flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-high px-3 py-2">
@@ -107,9 +107,13 @@ export function EventHubView({ event }: { event: EventHub }) {
         </div>
       </section>
 
-      <h2 className="mb-4 text-label-md text-on-surface-variant uppercase tracking-wide">Mission Dossiers</h2>
+      <h2 className="mb-4 text-label-md text-on-surface-variant uppercase tracking-wide">
+        Mission Dossiers
+      </h2>
       {missions.length === 0 ? (
-        <p className="text-on-surface-variant">No missions have been added to this operation yet.</p>
+        <p className="text-on-surface-variant">
+          No missions have been added to this operation yet.
+        </p>
       ) : (
         <div className="flex flex-col gap-6">
           {missions.map((m, i) => (
@@ -169,9 +173,7 @@ function factionSide(name: string): number {
 }
 
 function sortFactions(factions: string[]): string[] {
-  return [...factions].sort(
-    (a, b) => factionSide(a) - factionSide(b) || a.localeCompare(b),
-  )
+  return [...factions].sort((a, b) => factionSide(a) - factionSide(b) || a.localeCompare(b))
 }
 
 function MetaBadge({ label, value }: { label: string; value: string }) {
@@ -198,7 +200,8 @@ function MissionDossier({ index, m }: { index: number; m: EventMissionDossier })
           </span>
           <h3 className="mt-1 text-xl font-semibold">{m.title}</h3>
           <p className="mt-1 text-sm text-on-surface-variant">
-            {terrainLabel(m.terrain)} • {gameModeLabel(m.game_mode)} • {formatLocalDateTime(m.start_time)}
+            {terrainLabel(m.terrain)} • {gameModeLabel(m.game_mode)} •{' '}
+            {formatLocalDateTime(m.start_time)}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <MetaBadge label="Maker" value={PLACEHOLDER_MAKER} />
@@ -212,7 +215,9 @@ function MissionDossier({ index, m }: { index: number; m: EventMissionDossier })
               {m.my_state.toUpperCase()}
             </span>
           )}
-          <p className="font-mono text-sm text-on-surface-variant">{m.filled}/{m.total} slots filled</p>
+          <p className="font-mono text-sm text-on-surface-variant">
+            {m.filled}/{m.total} slots filled
+          </p>
           <button
             type="button"
             disabled
@@ -402,7 +407,9 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
     return <p className="text-sm text-on-surface-variant">Loading ORBAT…</p>
   }
   if (!squads || squads.length === 0) {
-    return <p className="text-sm text-on-surface-variant">No ORBAT slots defined for this mission.</p>
+    return (
+      <p className="text-sm text-on-surface-variant">No ORBAT slots defined for this mission.</p>
+    )
   }
 
   const reservedBy = activeSquad?.reserved_by
@@ -450,11 +457,18 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                 )}
               >
                 <span className="flex items-center gap-1.5">
-                  {s.reserved_by && <MaterialIcon name="lock" className="text-sm text-on-surface-variant" />}
+                  {s.reserved_by && (
+                    <MaterialIcon name="lock" className="text-sm text-on-surface-variant" />
+                  )}
                   <span className="font-medium text-on-surface">{s.squad}</span>
                   {s.callsign && <span className="ml-1 text-xs">{s.callsign}</span>}
                 </span>
-                <span className={cn('font-mono text-xs', s.filled >= s.total ? 'text-error' : 'text-on-surface-variant')}>
+                <span
+                  className={cn(
+                    'font-mono text-xs',
+                    s.filled >= s.total ? 'text-error' : 'text-on-surface-variant',
+                  )}
+                >
                   {s.filled}/{s.total}
                 </span>
               </button>
@@ -472,7 +486,10 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                 <h4 className="font-semibold">
                   {activeSquad.squad}
                   {activeSquad.callsign && (
-                    <span className="text-sm font-normal text-on-surface-variant"> | {activeSquad.callsign}</span>
+                    <span className="text-sm font-normal text-on-surface-variant">
+                      {' '}
+                      | {activeSquad.callsign}
+                    </span>
                   )}
                 </h4>
                 <div className="flex items-center gap-2">
@@ -536,7 +553,9 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                         )}
                       >
                         <span className="flex items-center gap-2">
-                          <span className="text-on-surface-variant tabular-nums">{slot.number}:</span>
+                          <span className="text-on-surface-variant tabular-nums">
+                            {slot.number}:
+                          </span>
                           <span className="font-medium">{slot.role}</span>
                           {slot.loadout && (
                             <span className="text-on-surface-variant">({slot.loadout})</span>
@@ -577,7 +596,11 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                         </span>
                       </div>
                       {canManage && !taken && assigning === slot.id && (
-                        <AssignPicker emid={emid} slotId={slot.id} onClose={() => setAssigning(null)} />
+                        <AssignPicker
+                          emid={emid}
+                          slotId={slot.id}
+                          onClose={() => setAssigning(null)}
+                        />
                       )}
                     </li>
                   )
@@ -699,7 +722,8 @@ export function OrbatSelectionPage() {
             to={`/events/${id}`}
             className="mb-4 inline-flex items-center gap-1 text-sm text-primary hover:underline"
           >
-            <MaterialIcon name="chevron_left" className="text-base" /> {event?.name_override ?? 'Operation'}
+            <MaterialIcon name="chevron_left" className="text-base" />{' '}
+            {event?.name_override ?? 'Operation'}
           </Link>
           <PageHeader
             title={dossier?.title ?? 'Order of Battle'}

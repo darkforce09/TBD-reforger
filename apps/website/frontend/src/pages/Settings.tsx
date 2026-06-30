@@ -53,7 +53,10 @@ export function SettingsPage() {
       <QueryState isLoading={isLoading} isError={isError} error={error as Error}>
         {user && (
           <div className="mx-auto w-full max-w-2xl">
-            <PageHeader title="Settings" subtitle="Account profile, Arma identity, and service statistics." />
+            <PageHeader
+              title="Settings"
+              subtitle="Account profile, Arma identity, and service statistics."
+            />
 
             <OpsCard glass className="mb-6">
               <h2 className="mb-4 text-lg font-semibold">Profile</h2>
@@ -125,11 +128,15 @@ export function SettingsPage() {
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-on-surface-variant">Total Operations</span>
-                  <p className="font-mono text-headline-lg text-primary">{user.total_deployments ?? 0}</p>
+                  <p className="font-mono text-headline-lg text-primary">
+                    {user.total_deployments ?? 0}
+                  </p>
                 </div>
                 <div>
                   <span className="text-on-surface-variant">Attendance</span>
-                  <p className="font-mono text-headline-lg text-success">{user.attendance_rate ?? 0}%</p>
+                  <p className="font-mono text-headline-lg text-success">
+                    {user.attendance_rate ?? 0}%
+                  </p>
                 </div>
               </div>
             </OpsCard>

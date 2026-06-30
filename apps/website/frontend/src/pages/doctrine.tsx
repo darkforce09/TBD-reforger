@@ -30,7 +30,13 @@ function GlassSplit({
     <div className="relative h-full w-full overflow-hidden">
       <div className="bg-topo-map bg-grid-overlay absolute inset-0 z-0" />
       <div className="relative z-10 flex h-full w-full bg-surface-glass backdrop-blur-xl">
-        <SplitPane transparent masterWidth={masterWidth} masterHeader={masterHeader} master={master} detail={detail} />
+        <SplitPane
+          transparent
+          masterWidth={masterWidth}
+          masterHeader={masterHeader}
+          master={master}
+          detail={detail}
+        />
       </div>
     </div>
   )
@@ -142,8 +148,7 @@ export function ModpacksPage() {
     if (!q) return packs
     return packs.filter(
       (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.mods.some((m) => m.name.toLowerCase().includes(q)),
+        p.name.toLowerCase().includes(q) || p.mods.some((m) => m.name.toLowerCase().includes(q)),
     )
   }, [packs, query])
 
@@ -470,7 +475,11 @@ type CalloutVariant = 'critical' | 'warning' | 'info'
 
 const CALLOUT_STYLES: Record<CalloutVariant, { box: string; label: string; title: string }> = {
   critical: { box: 'bg-error/10 border-error', label: 'text-error-alert', title: 'CRITICAL RULE' },
-  warning: { box: 'bg-tactical-yellow/10 border-tactical-yellow', label: 'text-tactical-yellow', title: 'WARNING' },
+  warning: {
+    box: 'bg-tactical-yellow/10 border-tactical-yellow',
+    label: 'text-tactical-yellow',
+    title: 'WARNING',
+  },
   info: { box: 'bg-primary/10 border-primary', label: 'text-primary', title: 'NOTE' },
 }
 
@@ -848,64 +857,64 @@ export function WikiPage() {
         }
         detail={
           <section className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-          <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-8 pt-8 pb-5 md:px-12">
-            <div className="min-w-0">
-              <div className="mb-3 flex items-center gap-2">
-                <Badge variant="neutral" icon="schedule">
-                  Last updated {active.updated}
-                </Badge>
-                <span className="font-mono text-xs tracking-widest text-outline uppercase">
-                  {active.category}
-                </span>
+            <header className="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-8 pt-8 pb-5 md:px-12">
+              <div className="min-w-0">
+                <div className="mb-3 flex items-center gap-2">
+                  <Badge variant="neutral" icon="schedule">
+                    Last updated {active.updated}
+                  </Badge>
+                  <span className="font-mono text-xs tracking-widest text-outline uppercase">
+                    {active.category}
+                  </span>
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight text-white">{active.title}</h1>
               </div>
-              <h1 className="text-4xl font-bold tracking-tight text-white">{active.title}</h1>
-            </div>
-            {/* Read / Edit toggle — admin only; removed from the DOM otherwise. */}
-            {isAdmin && (
-              <div className="inline-flex shrink-0 gap-1 rounded-full border border-white/5 bg-black/20 p-1 font-mono text-xs">
-                <button
-                  type="button"
-                  onClick={() => setMode('read')}
-                  className={cn(
-                    'rounded-full px-3 py-1 font-medium transition-all',
-                    mode === 'read'
-                      ? 'bg-surface-glass text-on-surface shadow-md'
-                      : 'text-on-surface-variant hover:text-on-surface',
-                  )}
-                >
-                  [ READ ]
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('edit')}
-                  className={cn(
-                    'rounded-full px-3 py-1 font-medium transition-all',
-                    mode === 'edit'
-                      ? 'bg-surface-glass text-on-surface shadow-md'
-                      : 'text-on-surface-variant hover:text-on-surface',
-                  )}
-                >
-                  [ EDIT ]
-                </button>
-              </div>
-            )}
-          </header>
+              {/* Read / Edit toggle — admin only; removed from the DOM otherwise. */}
+              {isAdmin && (
+                <div className="inline-flex shrink-0 gap-1 rounded-full border border-white/5 bg-black/20 p-1 font-mono text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setMode('read')}
+                    className={cn(
+                      'rounded-full px-3 py-1 font-medium transition-all',
+                      mode === 'read'
+                        ? 'bg-surface-glass text-on-surface shadow-md'
+                        : 'text-on-surface-variant hover:text-on-surface',
+                    )}
+                  >
+                    [ READ ]
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('edit')}
+                    className={cn(
+                      'rounded-full px-3 py-1 font-medium transition-all',
+                      mode === 'edit'
+                        ? 'bg-surface-glass text-on-surface shadow-md'
+                        : 'text-on-surface-variant hover:text-on-surface',
+                    )}
+                  >
+                    [ EDIT ]
+                  </button>
+                </div>
+              )}
+            </header>
 
-          {isAdmin && mode === 'edit' ? (
-            // Distraction-free Markdown editor — fills the entire pane.
-            <textarea
-              value={source}
-              onChange={(e) => setEdits((prev) => ({ ...prev, [active.id]: e.target.value }))}
-              spellCheck={false}
-              className="h-full w-full flex-1 resize-none border-none bg-transparent p-8 font-mono text-sm leading-relaxed text-on-surface-variant outline-none focus:ring-0 md:p-12"
-            />
-          ) : (
-            <article className="custom-scrollbar flex-1 overflow-y-auto p-8 md:p-12">
-              <div className="max-w-3xl">
-                <Markdown source={source} />
-              </div>
-            </article>
-          )}
+            {isAdmin && mode === 'edit' ? (
+              // Distraction-free Markdown editor — fills the entire pane.
+              <textarea
+                value={source}
+                onChange={(e) => setEdits((prev) => ({ ...prev, [active.id]: e.target.value }))}
+                spellCheck={false}
+                className="h-full w-full flex-1 resize-none border-none bg-transparent p-8 font-mono text-sm leading-relaxed text-on-surface-variant outline-none focus:ring-0 md:p-12"
+              />
+            ) : (
+              <article className="custom-scrollbar flex-1 overflow-y-auto p-8 md:p-12">
+                <div className="max-w-3xl">
+                  <Markdown source={source} />
+                </div>
+              </article>
+            )}
           </section>
         }
       />
@@ -945,7 +954,11 @@ const VEHICLES: VehicleIntel[] = [
       '8×8 wheeled amphibious APC. A fast road mover for shuttling infantry — thin armour means it is a battle taxi, not a fighting vehicle.',
     criticalDirective:
       'Do not let it bully you with the KPVT. The hull stops rifle rounds only — a single RPG or sustained .50 cal will brew it up with the whole squad inside.',
-    telemetry: { mobility: '80 km/h · Amphibious', defense: 'Light · ~10mm steel', capacity: '2 crew + 8 pax' },
+    telemetry: {
+      mobility: '80 km/h · Amphibious',
+      defense: 'Light · ~10mm steel',
+      capacity: '2 crew + 8 pax',
+    },
     armament: ['14.5mm KPVT HMG', '7.62mm PKT coax'],
     primaryThreats: ['Infantry AT', 'Heavy MG', 'Autocannon'],
     image:
@@ -961,7 +974,11 @@ const VEHICLES: VehicleIntel[] = [
       'Tracked IFV pairing a hard-hitting 30mm autocannon with an ATGM. Lethal to infantry and light vehicles, but its armour is still thin.',
     criticalDirective:
       'The 30mm is the real threat to your squad, not the hull. Break line of sight immediately — do not try to outrun it across open ground.',
-    telemetry: { mobility: '65 km/h · Amphibious', defense: 'Light · spaced steel', capacity: '3 crew + 7 pax' },
+    telemetry: {
+      mobility: '65 km/h · Amphibious',
+      defense: 'Light · spaced steel',
+      capacity: '3 crew + 7 pax',
+    },
     armament: ['30mm 2A42 autocannon', '9M113 Konkurs ATGM', '7.62mm PKT coax'],
     primaryThreats: ['Tank main gun', 'Tandem ATGM', 'Top-attack'],
   },
@@ -975,7 +992,11 @@ const VEHICLES: VehicleIntel[] = [
       'Main battle tank. The frontal armour is near-impervious to most man-portable AT; the exploitable threat is its flanks, rear, and top.',
     criticalDirective:
       'Never engage frontally with light AT — you will only give away your position. Maneuver for a side or rear shot, or hit the top with tandem/top-attack munitions.',
-    telemetry: { mobility: '67 km/h · 1500 hp', defense: 'Composite + DU armour', capacity: '4 crew' },
+    telemetry: {
+      mobility: '67 km/h · 1500 hp',
+      defense: 'Composite + DU armour',
+      capacity: '4 crew',
+    },
     armament: ['120mm M256 smoothbore', '12.7mm M2 cupola', '7.62mm M240 coax'],
     primaryThreats: ['Tandem ATGM', 'Top-attack', 'AT mines'],
   },
@@ -989,7 +1010,11 @@ const VEHICLES: VehicleIntel[] = [
       'Tracked IFV pairing a 25mm autocannon with TOW missiles. It will shred infantry up close and kill armour at range.',
     criticalDirective:
       'The TOW outranges your AT launchers. Close the distance through hard cover, or stay out of its line of sight entirely — do not trade in the open.',
-    telemetry: { mobility: '66 km/h · 600 hp', defense: 'Aluminium + appliqué', capacity: '3 crew + 6 pax' },
+    telemetry: {
+      mobility: '66 km/h · 600 hp',
+      defense: 'Aluminium + appliqué',
+      capacity: '3 crew + 6 pax',
+    },
     armament: ['25mm M242 Bushmaster', 'TOW ATGM launcher', '7.62mm M240 coax'],
     primaryThreats: ['Tank main gun', 'Tandem ATGM', 'Autocannon'],
   },
@@ -1006,7 +1031,9 @@ export function VehicleDatabasePage() {
   const [selectedId, setSelectedId] = useState('btr-70')
 
   const filtered = q
-    ? VEHICLES.filter((v) => `${v.name} ${v.class} ${v.faction}`.toLowerCase().includes(q.toLowerCase()))
+    ? VEHICLES.filter((v) =>
+        `${v.name} ${v.class} ${v.faction}`.toLowerCase().includes(q.toLowerCase()),
+      )
     : VEHICLES
 
   const byFaction = filtered.reduce<Record<string, VehicleIntel[]>>((acc, v) => {
@@ -1045,9 +1072,7 @@ export function VehicleDatabasePage() {
                       active={v.id === selectedId}
                       onClick={() => setSelectedId(v.id)}
                       title={v.name}
-                      preview={
-                        <span className="font-mono uppercase text-outline">{v.class}</span>
-                      }
+                      preview={<span className="font-mono uppercase text-outline">{v.class}</span>}
                     />
                   ))}
                 </div>
@@ -1073,7 +1098,9 @@ export function VehicleDatabasePage() {
 function VehicleStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-      <p className="font-mono text-[11px] tracking-widest text-on-surface-variant uppercase">{label}</p>
+      <p className="font-mono text-[11px] tracking-widest text-on-surface-variant uppercase">
+        {label}
+      </p>
       <p className="mt-1 font-mono text-base text-white">{value}</p>
     </div>
   )
@@ -1103,11 +1130,17 @@ function VehicleDossier({ vehicle }: { vehicle: VehicleIntel }) {
         <div className="absolute right-8 bottom-6 left-8">
           <div className="mb-3 flex flex-wrap items-center gap-2">
             <Badge variant="neutral">CLASS: {vehicle.class}</Badge>
-            <Badge variant={threatBadgeVariant(vehicle.threatLevel)}>THREAT: {vehicle.threatLevel}</Badge>
+            <Badge variant={threatBadgeVariant(vehicle.threatLevel)}>
+              THREAT: {vehicle.threatLevel}
+            </Badge>
             <Badge variant="primary">{vehicle.faction}</Badge>
           </div>
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase">{vehicle.name}</h1>
-          <p className="mt-2 max-w-2xl text-body-md text-on-surface-variant">{vehicle.shortDescription}</p>
+          <h1 className="text-4xl font-black tracking-tighter text-white uppercase">
+            {vehicle.name}
+          </h1>
+          <p className="mt-2 max-w-2xl text-body-md text-on-surface-variant">
+            {vehicle.shortDescription}
+          </p>
         </div>
       </div>
 
@@ -1117,7 +1150,9 @@ function VehicleDossier({ vehicle }: { vehicle: VehicleIntel }) {
           <p className="mb-1 font-mono text-xs font-bold tracking-widest text-tactical-yellow uppercase">
             Critical Directive
           </p>
-          <p className="text-body-md leading-relaxed text-on-surface-variant">{vehicle.criticalDirective}</p>
+          <p className="text-body-md leading-relaxed text-on-surface-variant">
+            {vehicle.criticalDirective}
+          </p>
         </div>
 
         {/* Telemetry */}
@@ -1188,100 +1223,103 @@ export function MortarCalculatorPage() {
         {/* Global topo-map background */}
         <div className="bg-topo-map bg-grid-overlay absolute inset-0 z-0" />
         <div className="relative z-10 flex h-full w-full flex-col gap-4 bg-surface-glass p-6 backdrop-blur-xl md:p-8">
-        <PageHeader title="Mortar Calculator" subtitle="Enter grid coordinates for M252 81mm solution." />
-        <OpsCard glass className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="text-sm">
-            FP X
-            <input
-              type="number"
-              value={fpX}
-              onChange={(e) => setFpX(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="text-sm">
-            FP Y
-            <input
-              type="number"
-              value={fpY}
-              onChange={(e) => setFpY(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="text-sm">
-            TGT X
-            <input
-              type="number"
-              value={tgtX}
-              onChange={(e) => setTgtX(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="text-sm">
-            TGT Y
-            <input
-              type="number"
-              value={tgtY}
-              onChange={(e) => setTgtY(Number(e.target.value))}
-              className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
-            />
-          </label>
-        </OpsCard>
-        <button
-          type="button"
-          onClick={handleSolve}
-          disabled={solve.isPending}
-          className="self-start rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
-        >
-          {solve.isPending ? 'Computing…' : 'Calculate Solution'}
-        </button>
-        <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-border-subtle bg-surface-container-lowest">
-          <div
-            className="absolute inset-0 opacity-30"
-            style={{
-              backgroundImage:
-                'linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px)',
-              backgroundSize: '40px 40px',
-            }}
+          <PageHeader
+            title="Mortar Calculator"
+            subtitle="Enter grid coordinates for M252 81mm solution."
           />
-          <div
-            className="absolute top-1/4 left-1/3 h-4 w-4 rounded-full border-2 border-success bg-success/30"
-            title="Fire Position"
-          />
-          <div
-            className="absolute top-1/2 left-2/3 h-4 w-4 rounded-full border-2 border-error bg-error/30"
-            title="Target"
-          />
-          <OpsCard glass className="absolute right-4 bottom-4 w-72 border-t-2 border-tertiary">
-            <h2 className="text-sm font-semibold text-primary">
-              Firing Solution — {solution?.weapon_system ?? 'M252 81mm'}
-            </h2>
-            {solution ? (
-              <dl className="mt-3 space-y-2 font-mono text-sm">
-                <div className="flex justify-between">
-                  <dt className="text-on-surface-variant">Distance</dt>
-                  <dd>{Math.round(solution.distance_m).toLocaleString()} m</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-on-surface-variant">Azimuth</dt>
-                  <dd>{solution.azimuth_deg.toFixed(1)}°</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-on-surface-variant">Elevation</dt>
-                  <dd className="text-primary">{solution.elevation_mils} mils</dd>
-                </div>
-                <div className="flex justify-between">
-                  <dt className="text-on-surface-variant">TOF</dt>
-                  <dd>{solution.time_of_flight_s.toFixed(1)} s</dd>
-                </div>
-              </dl>
-            ) : (
-              <p className="mt-3 text-xs text-on-surface-variant">
-                Enter coordinates and calculate to see solution.
-              </p>
-            )}
+          <OpsCard glass className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="text-sm">
+              FP X
+              <input
+                type="number"
+                value={fpX}
+                onChange={(e) => setFpX(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm">
+              FP Y
+              <input
+                type="number"
+                value={fpY}
+                onChange={(e) => setFpY(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm">
+              TGT X
+              <input
+                type="number"
+                value={tgtX}
+                onChange={(e) => setTgtX(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="text-sm">
+              TGT Y
+              <input
+                type="number"
+                value={tgtY}
+                onChange={(e) => setTgtY(Number(e.target.value))}
+                className="mt-1 w-full rounded-lg border border-border-subtle bg-surface px-3 py-2 text-sm"
+              />
+            </label>
           </OpsCard>
-        </div>
+          <button
+            type="button"
+            onClick={handleSolve}
+            disabled={solve.isPending}
+            className="self-start rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
+          >
+            {solve.isPending ? 'Computing…' : 'Calculate Solution'}
+          </button>
+          <div className="relative min-h-0 flex-1 overflow-hidden rounded-xl border border-border-subtle bg-surface-container-lowest">
+            <div
+              className="absolute inset-0 opacity-30"
+              style={{
+                backgroundImage:
+                  'linear-gradient(rgba(59,130,246,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.08) 1px, transparent 1px)',
+                backgroundSize: '40px 40px',
+              }}
+            />
+            <div
+              className="absolute top-1/4 left-1/3 h-4 w-4 rounded-full border-2 border-success bg-success/30"
+              title="Fire Position"
+            />
+            <div
+              className="absolute top-1/2 left-2/3 h-4 w-4 rounded-full border-2 border-error bg-error/30"
+              title="Target"
+            />
+            <OpsCard glass className="absolute right-4 bottom-4 w-72 border-t-2 border-tertiary">
+              <h2 className="text-sm font-semibold text-primary">
+                Firing Solution — {solution?.weapon_system ?? 'M252 81mm'}
+              </h2>
+              {solution ? (
+                <dl className="mt-3 space-y-2 font-mono text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-on-surface-variant">Distance</dt>
+                    <dd>{Math.round(solution.distance_m).toLocaleString()} m</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-on-surface-variant">Azimuth</dt>
+                    <dd>{solution.azimuth_deg.toFixed(1)}°</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-on-surface-variant">Elevation</dt>
+                    <dd className="text-primary">{solution.elevation_mils} mils</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-on-surface-variant">TOF</dt>
+                    <dd>{solution.time_of_flight_s.toFixed(1)} s</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="mt-3 text-xs text-on-surface-variant">
+                  Enter coordinates and calculate to see solution.
+                </p>
+              )}
+            </OpsCard>
+          </div>
         </div>
       </div>
     </AuthGate>

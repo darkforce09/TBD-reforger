@@ -482,6 +482,33 @@ make ci-local                                 # full gate; report wall-clock
 **Acceptance:** `make ci-local` green **and** `ci.yml` would pass on push. Formatting diff is
 **style-only** (no logic changes).
 
+**Shipped (T-125.5)** — `make ci-local` green @ **22.7s** (Node 26; editorconfig 0 errors, FE 21/21):
+- **FMT-2 `.editorconfig`:** root [`.editorconfig`](../../.editorconfig) — `[*]` utf-8/lf/final-newline/trim;
+  `[*.go]` tab; `[*.{ts,tsx,js,mjs,cjs}]` + `[*.{json,yml,yaml}]` 2-space; `[{Makefile,*.mk}]` tab.
+  **Carve-outs (engineering-correct, beyond the spec's literal example):** `[*.md]` keeps `trim_trailing_whitespace = false`
+  (Markdown hard breaks) and is **not** indent-pinned (prose/nested-list/fenced-snippet indents vary); **CSS indent is
+  owned by Prettier (FMT-3)** so editorconfig governs only its charset/EOL/final-newline (the two tools disagreed on
+  multi-line comment bodies Prettier leaves untouched).
+- **FMT-2 checker:** **editorconfig-checker v3.8.0** via `go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest`
+  (→ `~/go/bin`; the [`Makefile`](../../Makefile) PATH export now adds `~/go/bin`). Excludes in
+  [`.editorconfig-checker.json`](../../.editorconfig-checker.json): `node_modules`, `dist`, generated `types/contract`,
+  `apps/mod/`, `public/map-assets`, `.ai/artifacts/`, archive/mockup tiers (`docs/specs/macOS_Blueprints/`,
+  `docs/specs/Mission_Creator_Mock_Up/`, `stitch-exports/`, `*.html`), mod binaries (`*.rdb/.ent/.meta`), lockfile.
+  Repo-root run **clean (0 errors)**.
+- **FMT-3 Prettier:** **prettier 3.9.4** + **eslint-config-prettier 10.1.8** devDeps;
+  [`.prettierrc`](../../apps/website/frontend/.prettierrc) (`semi:false, singleQuote:true, tabWidth:2, trailingComma:all, printWidth:100`)
+  + [`.prettierignore`](../../apps/website/frontend/.prettierignore) (`dist, node_modules, src/types/contract, package-lock.json`).
+  Scripts: `format`/`format:check` over `src/**/*.{ts,tsx,css}` **and** root `*.{ts,tsx}` (covers `vite.config.ts`/`vitest.config.ts`;
+  the empty `*.css` glob was dropped to avoid a zero-match check failure).
+- **ESLint compat:** `eslint-config-prettier` extended **last** in [`eslint.config.js`](../../apps/website/frontend/eslint.config.js)
+  (flat config); **no** `eslint-plugin-prettier`. `npm run lint` stays green — TS-2..7 / LOG-2 / COMP-1 untouched.
+- **One-time reformat:** `npm run format` → **58 files** reformatted (style-only), incl. `src/index.css` normalized.
+- **Wiring:** `make verify-editorconfig` (new target) runs first in **`ci-local`**; `npm run format:check` added to
+  **`ci-local-frontend`** (after `npm ci`, before `lint`). [`ci.yml`](../../.github/workflows/ci.yml): `format:check` step in the
+  **frontend** job + a dedicated **`editorconfig`** job (`setup-go` + `go install …@latest` + checker from repo root).
+- **Verify:** `editorconfig-checker` / `npm run format:check` / `npm run lint` / `npm run build` / `npm test` (**21/21**) all exit 0;
+  `make ci-local` green @ **22.7s**.
+
 ---
 
 ## T-125.6 — Doc sync (Cursor)

@@ -2,9 +2,11 @@
 COMPOSE := $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
 WEB := apps/website
 # Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
-export PATH := $(HOME)/.local/go/bin:$(PATH)
+# ~/go/bin is the default GOPATH/bin where `go install` drops tools (editorconfig-checker, T-125.5);
+# golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
+export PATH := $(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-editorconfig verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -62,6 +64,12 @@ verify-coding-standards: ## GO-9 imports + ERR-4 envelope + LOG-3 logging + SIZE
 	@bash scripts/website/verify-handler-logging.sh
 	@node scripts/website/verify-file-length.mjs
 
+# FMT-2 (CODING_STANDARDS §7): root .editorconfig honored across apps/, packages/, docs/, scripts/.
+# Excludes live in .editorconfig-checker.json. Install (drops binary in ~/go/bin):
+#   go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest
+verify-editorconfig: ## FMT-2: run editorconfig-checker from repo root (CODING_STANDARDS §7)
+	editorconfig-checker
+
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain
 
@@ -87,7 +95,8 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 	./scripts/verify-monorepo-migration.sh
 
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
-# backend -> frontend -> schema; each sub-target is a separate $(MAKE) so a non-zero recipe
+# editorconfig (FMT-2) -> backend -> frontend (incl. format:check FMT-3) -> schema; each
+# sub-target is a separate $(MAKE) so a non-zero recipe
 # halts the run (fail-fast). `go` resolves via the ~/.local/go/bin PATH export above; the
 # frontend job uses whatever `nvm use` (.nvmrc -> Node 26) selected.
 # Backend sub-steps run in this exact order: gofmt (FMT-1) -> CI-1 (scripts/website/verify-ci1.sh)
@@ -96,6 +105,7 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 # Makefile, so the §G doc-accuracy forbidden-rg can scan the Makefile cleanly.)
 # golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
+	$(MAKE) verify-editorconfig
 	$(MAKE) ci-local-backend
 	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-frontend
@@ -108,8 +118,8 @@ ci-local-backend: ## CI gate: gofmt (FMT-1) + CI-1 + golangci-lint + go build + 
 	cd $(WEB) && go build ./...
 	$(MAKE) test-it
 
-ci-local-frontend: ## CI gate: npm ci + lint + build + unit tests (run `nvm use` -> Node 26 first)
-	cd $(WEB)/frontend && npm ci && npm run lint && npm run build && npm test
+ci-local-frontend: ## CI gate: npm ci + format:check (FMT-3) + lint + build + unit tests (run `nvm use` -> Node 26 first)
+	cd $(WEB)/frontend && npm ci && npm run format:check && npm run lint && npm run build && npm test
 
 ci-local-schema: ## CI gate: schema validate (TEST-3) + @contract citation verify
 	$(MAKE) schema-validate

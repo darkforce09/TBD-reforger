@@ -1,0 +1,35 @@
+# EditorConfig — repo-root whitespace governance (CODING_STANDARDS.md §7 FMT-2, T-125.5).
+# Go formatting stays authoritative under gofmt (FMT-1); editorconfig only aligns editors +
+# the editorconfig-checker CI gate. See .editorconfig-checker.json for path excludes.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.go]
+indent_style = tab
+
+[*.{ts,tsx,js,mjs,cjs}]
+indent_style = space
+indent_size = 2
+
+[*.{json,yml,yaml}]
+indent_style = space
+indent_size = 2
+
+# CSS indentation is owned by Prettier (FMT-3, the TS/TSX/CSS formatter-of-record); editorconfig
+# only governs its charset/EOL/final-newline (via [*]) so the two tools don't disagree on
+# multi-line comment bodies Prettier leaves untouched.
+
+# Markdown: hard breaks use trailing two-space (trim off); indent is intentionally not
+# pinned to a 2-space multiple — prose, nested lists, and fenced snippets legitimately vary
+# (FMT-2 governs charset/EOL/final-newline for .md, not its indentation).
+[*.md]
+trim_trailing_whitespace = false
+
+# Make recipes require literal tabs.
+[{Makefile,*.mk}]
+indent_style = tab

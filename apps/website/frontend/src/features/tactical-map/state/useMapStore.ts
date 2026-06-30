@@ -183,7 +183,8 @@ export const useMapStore = create<MapStoreState>()((set, get) => ({
   _patchSlots: (patches) => {
     set({ slotsById: { ...get().slotsById, ...patches } })
     const positions: Record<ID, { x: number; y: number }> = {}
-    for (const id in patches) positions[id] = { x: patches[id].position.x, y: patches[id].position.y }
+    for (const id in patches)
+      positions[id] = { x: patches[id].position.x, y: patches[id].position.y }
     slotIconCache.setPositions(positions)
     set({ iconCacheVersion: slotIconCache.getVersion() })
   },

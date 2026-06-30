@@ -40,8 +40,7 @@ function bufferResponse(path: string): Response {
   return {
     ok: true,
     status: 200,
-    arrayBuffer: async () =>
-      buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
+    arrayBuffer: async () => buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength),
   } as unknown as Response
 }
 

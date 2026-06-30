@@ -71,9 +71,7 @@ export function TreeView({
   onRenameCommit,
   onRenameCancel,
 }: TreeViewProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(() =>
-    collectExpanded(nodes, new Set()),
-  )
+  const [expanded, setExpanded] = useState<Set<string>>(() => collectExpanded(nodes, new Set()))
   const [dragOverId, setDragOverId] = useState<string | null>(null)
 
   const toggle = (id: string) =>
@@ -188,9 +186,7 @@ function TreeNode({
               }
             : undefined
         }
-        onDragLeave={
-          isDropTarget ? () => dragOverId === node.id && setDragOverId(null) : undefined
-        }
+        onDragLeave={isDropTarget ? () => dragOverId === node.id && setDragOverId(null) : undefined}
         onDrop={
           isDropTarget
             ? (e) => {

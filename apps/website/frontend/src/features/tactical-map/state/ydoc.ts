@@ -19,11 +19,7 @@ function terrainZ(x: number, y: number): number {
   return isDemReady() ? sampleElevation(x, y) : 0
 }
 
-const VALID_TERRAINS: ReadonlySet<MissionMeta['terrain']> = new Set([
-  'everon',
-  'arland',
-  'custom',
-])
+const VALID_TERRAINS: ReadonlySet<MissionMeta['terrain']> = new Set(['everon', 'arland', 'custom'])
 
 const clamp = (n: number, lo: number, hi: number): number => Math.min(Math.max(n, lo), hi)
 
@@ -63,7 +59,10 @@ export function createMissionDoc(): MissionDoc {
 
 /** Every shared type the UndoManager / observers should scope to. */
 export function trackedTypes(md: MissionDoc): Y.AbstractType<unknown>[] {
-  return [md.meta, ...ENTITY_MAPS.map((n) => md.entities[n])] as unknown as Y.AbstractType<unknown>[]
+  return [
+    md.meta,
+    ...ENTITY_MAPS.map((n) => md.entities[n]),
+  ] as unknown as Y.AbstractType<unknown>[]
 }
 
 /** Run a mutation as a single local transaction (one undo step). */
@@ -267,11 +266,7 @@ export function moveEntity(
 
 /** Move several positioned entities by a shared world delta in ONE transaction (one
  *  undo step) — the atomic group move behind Eden's drag-to-move (Phase 7b). */
-export function moveEntities(
-  md: MissionDoc,
-  ids: ID[],
-  delta: { x: number; y: number },
-): void {
+export function moveEntities(md: MissionDoc, ids: ID[], delta: { x: number; y: number }): void {
   if (!ids.length) return
   const map = md.entities.slots
   transact(md, () => {
@@ -295,18 +290,28 @@ function removeEntityInner(md: MissionDoc, mapName: EntityMapName, id: ID): void
   if (mapName === 'slots') {
     const squadId = slots.get(id)?.get('squadId') as ID | undefined
     const squad = squadId ? squads.get(squadId) : undefined
-    squad?.set('slotIds', (squad.get('slotIds') as ID[]).filter((s) => s !== id))
+    squad?.set(
+      'slotIds',
+      (squad.get('slotIds') as ID[]).filter((s) => s !== id),
+    )
     // Detach from whichever Outliner folder held it.
     for (const layer of editorLayers.values()) {
       const ids = layer.get('entityIds') as ID[]
-      if (ids.includes(id)) layer.set('entityIds', ids.filter((e) => e !== id))
+      if (ids.includes(id))
+        layer.set(
+          'entityIds',
+          ids.filter((e) => e !== id),
+        )
     }
   } else if (mapName === 'squads') {
     const squad = squads.get(id)
     for (const slotId of (squad?.get('slotIds') as ID[]) ?? []) slots.delete(slotId)
     const factionId = squad?.get('factionId') as ID | undefined
     const faction = factionId ? factions.get(factionId) : undefined
-    faction?.set('squadIds', (faction.get('squadIds') as ID[]).filter((s) => s !== id))
+    faction?.set(
+      'squadIds',
+      (faction.get('squadIds') as ID[]).filter((s) => s !== id),
+    )
   } else if (mapName === 'factions') {
     for (const squadId of (factions.get(id)?.get('squadIds') as ID[]) ?? []) {
       const squad = squads.get(squadId)
@@ -344,13 +349,19 @@ export function removeEntities(md: MissionDoc, mapName: EntityMapName, ids: ID[]
       for (const sid of affectedSquads) {
         const squad = squads.get(sid)
         if (!squad) continue
-        squad.set('slotIds', (squad.get('slotIds') as ID[]).filter((s) => !idSet.has(s)))
+        squad.set(
+          'slotIds',
+          (squad.get('slotIds') as ID[]).filter((s) => !idSet.has(s)),
+        )
       }
       // One pass over the folders; only rewrite a folder whose entityIds actually held a deleted id.
       for (const layer of editorLayers.values()) {
         const eids = layer.get('entityIds') as ID[]
         if (eids.some((e) => idSet.has(e))) {
-          layer.set('entityIds', eids.filter((e) => !idSet.has(e)))
+          layer.set(
+            'entityIds',
+            eids.filter((e) => !idSet.has(e)),
+          )
         }
       }
       for (const id of ids) slots.delete(id)
@@ -421,10 +432,7 @@ export function seedDefaultLayer(md: MissionDoc): void {
 }
 
 /** Create a new (root or nested) Outliner folder; returns its id. */
-export function addEditorLayer(
-  md: MissionDoc,
-  opts?: { name?: string; parentId?: ID | null },
-): ID {
+export function addEditorLayer(md: MissionDoc, opts?: { name?: string; parentId?: ID | null }): ID {
   const id = newId()
   transact(md, () => {
     const n = md.entities.editorLayers.size + 1
@@ -474,7 +482,11 @@ export function moveSlotToLayer(md: MissionDoc, slotId: ID, targetLayerId: ID): 
   transact(md, () => {
     for (const layer of editorLayers.values()) {
       const ids = layer.get('entityIds') as ID[]
-      if (ids.includes(slotId)) layer.set('entityIds', ids.filter((e) => e !== slotId))
+      if (ids.includes(slotId))
+        layer.set(
+          'entityIds',
+          ids.filter((e) => e !== slotId),
+        )
     }
     const tIds = target.get('entityIds') as ID[]
     if (!tIds.includes(slotId)) target.set('entityIds', [...tIds, slotId])
@@ -490,7 +502,7 @@ export function removeEditorLayer(md: MissionDoc, id: ID): void {
   if (!editorLayers.get(id) || editorLayers.size <= 1) return
   // Collect the subtree: `id` plus every layer whose parent chain reaches it.
   const subtree = new Set<ID>([id])
-  for (let added = true; added; ) {
+  for (let added = true; added;) {
     added = false
     for (const l of editorLayers.values()) {
       const lid = l.get('id') as ID
@@ -758,10 +770,7 @@ export function addSquad(md: MissionDoc, factionId: ID): ID {
     const faction = md.entities.factions.get(factionId)
     if (!faction) return
     const n = (faction.get('squadIds') as ID[]).length + 1
-    md.entities.squads.set(
-      id,
-      entityToYMap({ id, factionId, name: `Squad ${n}`, slotIds: [] }),
-    )
+    md.entities.squads.set(id, entityToYMap({ id, factionId, name: `Squad ${n}`, slotIds: [] }))
     faction.set('squadIds', [...(faction.get('squadIds') as ID[]), id])
   })
   return id

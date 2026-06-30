@@ -32,7 +32,7 @@ function buildHillshadeImage(
   const scale = Math.max(1, Math.ceil(Math.max(srcW, srcH) / MAX_EDGE))
   const w = Math.max(1, Math.floor(srcW / scale))
   const h = Math.max(1, Math.floor(srcH / scale))
-  const cellMeters = (srcW / w) // ≈ scale * metersPerPixel; square cells
+  const cellMeters = srcW / w // ≈ scale * metersPerPixel; square cells
 
   // Downsample (stride) into a small meters grid.
   const ds = new Float32Array(w * h)

@@ -27,7 +27,12 @@ export const navigation: NavSection[] = [
     items: [
       { label: 'Event Schedule', path: '/events', icon: 'calendar_month', minRole: 'enlisted' },
       { label: 'My Deployments', path: '/deployments', icon: 'military_tech', minRole: 'enlisted' },
-      { label: 'Global Leaderboards', path: '/leaderboards', icon: 'leaderboard', minRole: 'enlisted' },
+      {
+        label: 'Global Leaderboards',
+        path: '/leaderboards',
+        icon: 'leaderboard',
+        minRole: 'enlisted',
+      },
     ],
   },
   {
@@ -38,7 +43,9 @@ export const navigation: NavSection[] = [
   },
   {
     title: 'Field Tools',
-    items: [{ label: 'Mortar Calculator', path: '/tools/mortar', icon: 'calculate', minRole: 'enlisted' }],
+    items: [
+      { label: 'Mortar Calculator', path: '/tools/mortar', icon: 'calculate', minRole: 'enlisted' },
+    ],
   },
   {
     title: 'Doctrine & Info',
@@ -53,8 +60,18 @@ export const navigation: NavSection[] = [
     admin: true,
     items: [
       { label: 'Event Manager', path: '/admin/events', icon: 'event_available', minRole: 'admin' },
-      { label: 'Mission Approvals', path: '/admin/approvals', icon: 'fact_check', minRole: 'admin' },
-      { label: 'Server Control', path: '/admin/server', icon: 'settings_system_daydream', minRole: 'admin' },
+      {
+        label: 'Mission Approvals',
+        path: '/admin/approvals',
+        icon: 'fact_check',
+        minRole: 'admin',
+      },
+      {
+        label: 'Server Control',
+        path: '/admin/server',
+        icon: 'settings_system_daydream',
+        minRole: 'admin',
+      },
       { label: 'Personnel Roster', path: '/admin/personnel', icon: 'groups', minRole: 'admin' },
       { label: 'Comms Broadcaster', path: '/admin/content', icon: 'campaign', minRole: 'admin' },
       { label: 'Audit Logs', path: '/admin/audit', icon: 'receipt_long', minRole: 'admin' },

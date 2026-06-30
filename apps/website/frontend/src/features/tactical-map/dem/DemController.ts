@@ -5,11 +5,7 @@
 
 import { toast } from 'sonner'
 import { getTerrain, type TerrainId } from '../coords/terrains'
-import {
-  fetchTerrainManifest,
-  resolveDemUrl,
-  type TerrainManifest,
-} from './terrainManifest'
+import { fetchTerrainManifest, resolveDemUrl, type TerrainManifest } from './terrainManifest'
 import { decodeDemPng, buildMetersCache } from './DemTexture'
 import { worldToPixel, bilinearSample } from './sampleElevation'
 
@@ -149,15 +145,13 @@ export function sampleElevation(x: number, y: number): number {
  * Internal overlay accessor (T-091.2 hillshade) — NOT re-exported from the public barrel.
  * Returns the ready meters cache + dims + terrain id/manifest, else null.
  */
-export function getDemRasterForOverlay():
-  | {
-      metersCache: Float32Array
-      width: number
-      height: number
-      terrainId: TerrainId
-      manifest: TerrainManifest
-    }
-  | null {
+export function getDemRasterForOverlay(): {
+  metersCache: Float32Array
+  width: number
+  height: number
+  terrainId: TerrainId
+  manifest: TerrainManifest
+} | null {
   if (state !== 'ready' || !data || !loadedTerrainId) return null
   return {
     metersCache: data.metersCache,

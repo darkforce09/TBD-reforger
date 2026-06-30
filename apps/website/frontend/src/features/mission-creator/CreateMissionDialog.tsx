@@ -142,7 +142,9 @@ export function CreateMissionDialog({ open, onOpenChange, onCreated }: CreateMis
           </div>
 
           <div>
-            <label className="mb-2 block text-label-md text-on-surface-variant">Insertion Time</label>
+            <label className="mb-2 block text-label-md text-on-surface-variant">
+              Insertion Time
+            </label>
             <input
               type="time"
               value={timeOfDay}

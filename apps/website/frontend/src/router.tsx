@@ -13,12 +13,7 @@ import { EventHubPage, OrbatSelectionPage } from '@/pages/events'
 import { DashboardPage } from '@/pages/Dashboard'
 import { ServerIntelPage } from '@/pages/ServerIntel'
 import { MissionLibraryPage, MissionOverviewPage } from '@/pages/missions'
-import {
-  ModpacksPage,
-  MortarCalculatorPage,
-  VehicleDatabasePage,
-  WikiPage,
-} from '@/pages/doctrine'
+import { ModpacksPage, MortarCalculatorPage, VehicleDatabasePage, WikiPage } from '@/pages/doctrine'
 import {
   AuditLogsPage,
   ContentManagerPage,
@@ -55,7 +50,11 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      { index: true, element: <DashboardPage />, ...breadcrumb('Command Center', 'Dashboard', { fullBleed: true }) },
+      {
+        index: true,
+        element: <DashboardPage />,
+        ...breadcrumb('Command Center', 'Dashboard', { fullBleed: true }),
+      },
       {
         path: 'server-intel',
         element: <ServerIntelPage />,
@@ -101,8 +100,16 @@ export const router = createBrowserRouter([
         element: <OrbatSelectionPage />,
         ...breadcrumb('Operations', 'ORBAT Selection'),
       },
-      { path: 'wiki', element: <WikiPage />, ...breadcrumb('Doctrine & Info', 'SOPs & Manuals', { fullBleed: true }) },
-      { path: 'wiki/:slug', element: <WikiPage />, ...breadcrumb('Doctrine & Info', 'SOPs & Manuals', { fullBleed: true }) },
+      {
+        path: 'wiki',
+        element: <WikiPage />,
+        ...breadcrumb('Doctrine & Info', 'SOPs & Manuals', { fullBleed: true }),
+      },
+      {
+        path: 'wiki/:slug',
+        element: <WikiPage />,
+        ...breadcrumb('Doctrine & Info', 'SOPs & Manuals', { fullBleed: true }),
+      },
       {
         path: 'vehicles',
         element: <VehicleDatabasePage />,

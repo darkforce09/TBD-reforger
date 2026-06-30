@@ -9,12 +9,7 @@ import {
   type MissionMeta,
 } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import {
-  ReadonlyField,
-  SelectField,
-  TextField,
-  ToggleField,
-} from './RightInspector/fields'
+import { ReadonlyField, SelectField, TextField, ToggleField } from './RightInspector/fields'
 
 type Weather = MissionMeta['environment']['weather']
 
@@ -39,10 +34,7 @@ export function MissionSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        title="Mission Settings"
-        description="Global environment for this mission."
-      >
+      <DialogContent title="Mission Settings" description="Global environment for this mission.">
         <div className="flex flex-col gap-4">
           <ReadonlyField label="Terrain" value={meta?.terrain ?? 'everon'} />
 

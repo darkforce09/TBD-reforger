@@ -6,11 +6,7 @@
  * @model models.RegistryItem
  */
 export type RegistryItemKind =
-  | 'character'
-  | 'gear_primary'
-  | 'gear_uniform'
-  | 'gear_vest'
-  | 'gear_helmet'
+  'character' | 'gear_primary' | 'gear_uniform' | 'gear_vest' | 'gear_helmet'
 
 /**
  * One Virtual Arsenal catalog item, identified by its full Enfusion resource_name.

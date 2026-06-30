@@ -23,7 +23,12 @@ import { loadDemForTerrain, sampleElevation, isDemReady } from './dem'
 import { useDemVersion } from './dem/useDemVersion'
 import { useDemLayer } from './layers/useDemLayer'
 import { ZOOM_CLUSTER_MAX, CLUSTER_SLOT_THRESHOLD } from './state/constants'
-import { ASSET_DND_MIME, type AssetDropPayload, type MapViewState, type TacticalMapProps } from './types'
+import {
+  ASSET_DND_MIME,
+  type AssetDropPayload,
+  type MapViewState,
+  type TacticalMapProps,
+} from './types'
 
 function TacticalMapInner({
   terrain: terrainId,
@@ -37,8 +42,7 @@ function TacticalMapInner({
   onEntitiesMove,
 }: TacticalMapProps) {
   const terrain = useMemo(() => getTerrain(terrainId), [terrainId])
-  const { view, viewState, onViewStateChange, flyTo: viewFlyTo } =
-    useOrthographicView(terrain)
+  const { view, viewState, onViewStateChange, flyTo: viewFlyTo } = useOrthographicView(terrain)
 
   // Drop zone + pointer-gesture host: Deck's controller ignores HTML5 drag/drop and
   // (with dragPan off) our custom drags, so both bubble to this container.
@@ -195,9 +199,12 @@ function TacticalMapInner({
   }, [onCursorMove])
 
   // Cancel any pending cursor frame on unmount.
-  useEffect(() => () => {
-    if (cursorRaf.current) cancelAnimationFrame(cursorRaf.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (cursorRaf.current) cancelAnimationFrame(cursorRaf.current)
+    },
+    [],
+  )
 
   // Identity projection (flipY:false → common space == world space), so a world
   // position centers directly. Stable across renders for the onReady handle.
@@ -244,10 +251,7 @@ function TacticalMapInner({
   // Expose flyTo to sibling panels (Outliner) that live outside MapContext.
   useEffect(() => onReady?.({ flyTo }), [onReady, flyTo])
 
-  const ctx = useMemo(
-    () => createMapContextValue(terrain, flyTo),
-    [terrain, flyTo],
-  )
+  const ctx = useMemo(() => createMapContextValue(terrain, flyTo), [terrain, flyTo])
 
   return (
     <MapContextProvider value={ctx}>

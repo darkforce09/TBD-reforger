@@ -1,0 +1,22 @@
+{
+  "Verbose": false,
+  "Debug": false,
+  "IgnoreDefaults": false,
+  "SpacesAfterTabs": false,
+  "Exclude": [
+    "node_modules",
+    "dist",
+    "apps/website/frontend/src/types/contract",
+    "apps/mod/",
+    "public/map-assets",
+    "\\.ai/artifacts/",
+    "docs/specs/macOS_Blueprints/",
+    "docs/specs/Mission_Creator_Mock_Up/",
+    "stitch-exports/",
+    "package-lock\\.json",
+    "\\.html$",
+    "\\.rdb$",
+    "\\.ent$",
+    "\\.meta$"
+  ]
+}
