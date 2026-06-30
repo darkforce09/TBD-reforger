@@ -98,6 +98,15 @@ if (existsSync(goldenPath)) {
   checkInventory("golden/type-inventory-pending-everon.json", readJSON(goldenPath));
 }
 
+// T-090.3.0 spike subregion census (opt-in; staging is gitignored so this is a no-op in CI —
+// a LOCAL gate that exercises K1b when the spike has produced type-inventory-spike.json).
+for (const t of ["everon", "arland", "custom"]) {
+  const spikePath = join(repoRoot, "packages", "map-assets", t, "staging", "spike", "type-inventory-spike.json");
+  if (existsSync(spikePath)) {
+    checkInventory(`${t}/staging/spike/type-inventory-spike.json`, readJSON(spikePath));
+  }
+}
+
 if (failures.length) {
   console.error(`verify-type-inventory: FAIL (${failures.length})`);
   for (const f of failures) console.error(`  ${f}`);

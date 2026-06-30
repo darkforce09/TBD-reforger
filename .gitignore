@@ -7,3 +7,6 @@ scripts/deploy/deploy.env
 # Python bytecode caches (ticket/migration scripts)
 __pycache__/
 *.pyc
+
+# T-090.3.0 map-export staging (local scratch — proof lives in committed ops log + verifiers)
+packages/map-assets/**/staging/

@@ -25,14 +25,24 @@ const verify = spawnSync(process.execPath, [verifyScript], { stdio: "inherit" })
 if (verify.status !== 0) process.exit(verify.status ?? 1);
 
 const inv = JSON.parse(readFileSync(inventoryPath, "utf8"));
-const rawExport = join(repoRoot, "packages", "map-assets", terrain, "staging", "spike", "raw-entities.jsonl");
+// T-090.3.0 census guard (Option 1): the "finish full census" guard keys off the FULL-MAP export
+// path only. The spike subregion (staging/spike/raw-entities.jsonl) is a feasibility probe — it must
+// NOT block `make map-census` while the committed inventory is legitimately still pending_export.
+const fullExport = join(repoRoot, "packages", "map-assets", terrain, "export", "raw-entities.jsonl");
+const spikeExport = join(repoRoot, "packages", "map-assets", terrain, "staging", "spike", "raw-entities.jsonl");
 
 if (inv.censusStatus === "pending_export") {
-  if (existsSync(rawExport)) {
+  if (existsSync(fullExport)) {
     console.error(
-      "map-census: raw export exists but censusStatus is still pending_export — run full classify + census implementation (T-090.2/.3)",
+      "map-census: full-map export exists but censusStatus is still pending_export — run full classify + census implementation (T-090.2/.3)",
     );
     process.exit(1);
+  }
+  if (existsSync(spikeExport)) {
+    console.log(
+      `map-census: ${terrain} censusStatus=pending_export — T-090.3.0 spike subregion export present (staging/spike); full-map census still pending (expected)`,
+    );
+    process.exit(0);
   }
   console.log(
     `map-census: ${terrain} censusStatus=pending_export — exact counts unknown until Workbench export + classify (see t090_world_object_type_inventory.md)`,
