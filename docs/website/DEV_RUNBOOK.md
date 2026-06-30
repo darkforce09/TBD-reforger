@@ -7,15 +7,15 @@ Backend docs: [`docs/backend/README.md`](backend/README.md).
 
 **Toolchain (T-124):** Go **1.26**, Node **26** (repo root [`.nvmrc`](../../.nvmrc) — `nvm use` before frontend work), Postgres **18** (`postgres:18-alpine` in compose).
 
-**CI replay (T-125.1–.4):** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) on every push/PR to `main`. Local mirror:
+**CI replay (T-125 — full program):** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) on every push/PR to `main`. Local mirror:
 
 ```bash
 make db-up          # Postgres on host :5434
 nvm use             # Node 26
-make ci-local       # gofmt + CI-1 + golangci + build + test-it + verify-coding-standards + FE lint/build/test + schema + citations
+make ci-local       # verify-editorconfig + backend + verify-coding-standards + FE format:check/lint/build/test + schema/citations
 ```
 
-Coding-standards script bundle: `make verify-coding-standards` (GO-9 imports, ERR-4 envelope, LOG-3 logging, SIZE file length — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11). Go lint: `cd apps/website && golangci-lint run ./...`. CI-1: `bash scripts/website/verify-ci1.sh`. Supplements: [`contracts.yml`](../../.github/workflows/contracts.yml) (path-filtered), [`schema.yml`](../../.github/workflows/schema.yml).
+**Formatting (T-125.5):** `make verify-editorconfig` (FMT-2, repo root; needs `editorconfig-checker` in `~/go/bin`) · `cd apps/website/frontend && npm run format:check` (FMT-3). Coding-standards bundle: `make verify-coding-standards` — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11.
 
 ```bash
 # 1. Postgres (port 5434) — quick, run in foreground

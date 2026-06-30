@@ -3,7 +3,7 @@
 **Status:** living
 **Audience:** every engineer and AI agent that writes Go, TypeScript/React, or Enfusion code in this monorepo
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/website/README.md`](../website/README.md) → **this doc** (supporting tier)
-**Updated:** 2026-06-29
+**Updated:** 2026-06-30
 
 > This document is the source of truth for **how code is documented** across the three
 > boundaries of `TBD-Reforger`. It is **ruthless and prescriptive**: where it says REQUIRED,
@@ -23,14 +23,15 @@ The monorepo spans three hard boundaries:
 | [`apps/website`](../../apps/website) | Go (Gin + GORM) + React/TS | API server + SPA. |
 | [`apps/mod`](../../apps/mod) | Enfusion / Enforce Script (`.c`) | The Arma Reforger game framework. |
 
-A single concept — a mission, a loadout, a registry item — is re-declared as a hand-copied type
-in **all four** places (schema, Go struct, TS interface, Enforce DTO) with **no codegen, no
-shared import, and no runtime schema validation on the Go side**. The result: a developer reading
-an Enfusion DTO cannot mechanically discover which Go route feeds it or which schema defines it.
-**Architectural context is lost at every boundary crossing.** This document fixes that with: a
-contract ontology (§2), a cross-boundary hyperlink vocabulary (§3), strict per-language syntax
-(§4–§6), mandatory network-authority tagging in Enfusion (§7), a decision-record tier (§8), a
-codegen + validation mandate (§9), and CI gates that enforce all of it (§10).
+A single concept — a mission, a loadout, a registry item — is declared in **four** places (schema,
+Go struct, TS interface, Enforce DTO). **Go and TS contract projections are generated** from
+`packages/tbd-schema` (T-123); Enforce DTOs stay hand-written with `@contract` + golden fixtures
+(Enforce has no codegen). GORM models remain the snake_case DB/API source of truth. The result
+without tags: a developer reading an Enfusion DTO cannot mechanically discover which Go route feeds
+it or which schema defines it. **Architectural context is lost at every boundary crossing.** This
+document fixes that with: a contract ontology (§2), a cross-boundary hyperlink vocabulary (§3),
+strict per-language syntax (§4–§6), mandatory network-authority tagging in Enfusion (§7), a
+decision-record tier (§8), codegen + validation (§9), and CI gates that enforce all of it (§10).
 
 ---
 
@@ -359,14 +360,15 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
 
 ## 10. CI enforcement gates
 
-Ruthless means enforced. These gates are **specified here**; **T-123.6** wires them into CI.
+Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml)
+(`make ci-local`); path-filtered supplements in `contracts.yml` / `schema.yml`.
 
 | Gate | Tool | Scope |
 |------|------|-------|
-| Go exported-doc | `golangci-lint` + `revive` exported rules | every exported identifier documented (locks the ~100% baseline) |
-| TS contract docs | `eslint-plugin-jsdoc` (+ `@microsoft/tsdoc`) | TSDoc required on exported symbols in `src/types/`, `src/api/`, `src/hooks/`; `@contract`/`@model` required on cross-boundary types |
-| Citation integrity | a Node verifier extending [`packages/tbd-schema/scripts/`](../../packages/tbd-schema/scripts) | every `@contract` tag in the repo resolves to a real schema file **and** a valid JSON pointer; wired into [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) (`schema.yml` validates golden fixtures only) |
-| Enfusion DTO conformance | golden fixture + `validate.mjs` | each DTO has a `@contract` header and a fixture that validates |
+| Go exported-doc | `golangci-lint` + `revive` `exported` | every exported identifier documented (`ci.yml` backend) |
+| TS contract docs | `eslint-plugin-jsdoc` `require-jsdoc` | TSDoc on exports in `src/types/`, `src/api/`, `src/hooks/` (`ci.yml` frontend `npm run lint`) |
+| TS cross-boundary tags | [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs) | `@contract`/`@model` on FE exports; `@route` route-match on handlers; Enfusion `@contract` resolve (`ci.yml` schema) |
+| Enfusion DTO conformance | golden fixture + `validate.mjs` | each Backend `@contract` DTO has a validating fixture (T-125.4 ENF-4; `ci.yml` schema) |
 
 The citation verifier is the keystone: it turns `@contract` from a comment into a **checked link**,
 so a renamed schema definition fails CI instead of silently parsing to empty.

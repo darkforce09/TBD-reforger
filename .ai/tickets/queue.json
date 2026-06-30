@@ -18,13 +18,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "branch": "ticket/T-092"
-    },
-    {
-      "id": "T-125",
-      "title": "Coding standards + 11/10 enforcement",
-      "status": "ready",
-      "spec": "docs/platform/t125_coding_standards_enforcement.md",
-      "branch": "ticket/T-125"
     }
   ]
 }

@@ -4,7 +4,7 @@
 **Audience:** every engineer and AI agent that writes Go, TypeScript/React, or Enfusion code in this monorepo
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/platform/README.md`](README.md) → **this doc** (supporting tier)
 **Updated:** 2026-06-30
-**Ticket:** [T-125](t125_coding_standards_enforcement.md) — authored **T-125.0/.0.1**; **T-125.1–.4 shipped** @ `cb508cf` (tag **T-125.4**); **T-125.5–.6** remaining.
+**Ticket:** [T-125](t125_coding_standards_enforcement.md) — **shipped** @ `e21dac3` (tag **T-125.5**); program **T-125.0–.6 complete** (38 rules, all CI gates live).
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
@@ -258,11 +258,11 @@ this is precisely why ENF-1/ENF-2 are the only sanctioned **MANUAL** gates.
 - **FMT-1 (Readability) — Go is gofmt clean.** Gate: **CI-BLOCK** —
   `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"`.
 - **FMT-2 (Readability) — A root `.editorconfig` governs whitespace** (UTF-8, LF, final newline,
-  trailing-whitespace trim; tabs for Go, 2-space for TS/JSON/YAML). Added in **T-125.5**. Gate:
-  **CI-BLOCK** (`editorconfig-checker`).
+  trailing-whitespace trim; tabs for Go, 2-space for TS/JSON/YAML). Live @ **T-125.5** (`e21dac3`).
+  Gate: **CI-BLOCK** (`editorconfig-checker` via `make verify-editorconfig`).
 - **FMT-3 (Readability) — Prettier is the TS/TSX/CSS formatter-of-record.** eslint keeps lint rules,
-  drops formatting opinions; a `format` + `format:check` npm script is added. Configured in **T-125.5**
-  (a one-time repo-wide reformat diff — treat it as formatting-only). Gate: **CI-BLOCK** (`prettier --check`).
+  drops formatting opinions via `eslint-config-prettier`; `format` + `format:check` npm scripts.
+  Live @ **T-125.5** (one-time repo-wide reformat diff). Gate: **CI-BLOCK** (`npm run format:check`).
 
 ---
 
@@ -369,8 +369,8 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **TEST-2** | De | features hooks/utils ⇒ vitest | CI-BLOCK | `ci.yml` frontend | `npm test` | T-125.1 | live |
 | **TEST-3** | Us | Schema change ⇒ validate + fixture | CI-BLOCK | `ci.yml` schema | `make schema-validate` | T-125.1 | live |
 | **FMT-1** | Re | gofmt clean | CI-BLOCK | `gofmt -l` empty | `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"` | T-125.1 | live |
-| **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `editorconfig-checker` | T-125.5 | planned |
-| **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | planned |
+| **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `make verify-editorconfig` | T-125.5 | live |
+| **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | live |
 | **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `verify-file-length.mjs` (warn band) | `node scripts/website/verify-file-length.mjs` | T-125.4 | live |
 | **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `node scripts/website/verify-file-length.mjs` | T-125.2 | live |
 | **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `scripts/website/verify-file-length.mjs` | `node scripts/website/verify-file-length.mjs` | T-125.4 | live |
@@ -400,9 +400,9 @@ Enforcement artefacts in the repo (T-125.1–.4). Primary workflow:
 | [`verify-file-length.mjs`](../../scripts/website/verify-file-length.mjs) | SIZE-1, SIZE-3 | T-125.4 | live |
 | [`validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs) Enfusion DTO branch | ENF-4 | T-125.4 | live |
 | **`make verify-coding-standards`** (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 | live |
+| [`verify-editorconfig`](../../Makefile) (`editorconfig-checker` + `.editorconfig-checker.json`) | FMT-2 | T-125.5 | live |
+| Prettier + `eslint-config-prettier` (`apps/website/frontend/`) | FMT-3 | T-125.5 | live |
 | [`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml) | SIZE-2, SIZE-3, GO-9 structural | T-125.2/.4 | live |
-
----
 
 ## 11. Verify — replay block
 
@@ -413,6 +413,9 @@ exist until that slice ships.
 ```bash
 make ci-local                          # whole gate (CI-1, CI-2); needs `make db-up` + `nvm use`
 
+# 0. EditorConfig (FMT-2) — first in ci-local
+make verify-editorconfig
+
 # 1. Go format + lint (ci-local-backend)
 test -z "$(gofmt -l apps/website/internal apps/website/cmd)"   # FMT-1
 bash scripts/website/verify-ci1.sh                               # CI-1
@@ -422,18 +425,15 @@ make test-it                                                   # TEST-1, GO-5, E
 make verify-coding-standards                                   # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3
 # 2. Frontend (ci-local-frontend)
 cd apps/website/frontend
-  npm ci && npm run lint && npm run build && npm test          # TEST-2, TS-1..7, LOG-2, COMP-1(TS), TS-5
-  npm run format:check                 # FMT-3                          [after T-125.5]
-  editorconfig-checker                 # FMT-2                          [after T-125.5]
+  npm ci && npm run format:check && npm run lint && npm run build && npm test   # FMT-3, TEST-2, TS-1..7, LOG-2, COMP-1(TS), TS-5
 # 3. Schema + citations (ci-local-schema)
 make schema-validate                   # TEST-3, ENF-4
 make verify-citations                  # TS-6, GO-7 @route route-match, ENF-3
 ```
 
-> **Slice availability (2026-06-30):** **T-125.1–.4 shipped** — `make ci-local`, full golangci, CI-1,
-> TS strict + eslint gates, TS-6 `@model`/`@contract`, GO-7 route-match, verify-* handler scripts,
-> ENF-4 DTO fixtures, and `ci.yml` backend `verify-coding-standards` step are live. Still **planned:**
-> Prettier/editorconfig (**T-125.5**); final registry/hub prose (**T-125.6**).
+> **Slice availability (2026-06-30):** **T-125 program complete** — all **38** rules in §10 are **live**
+> (CI-BLOCK, CI-SCRIPT, ALLOWLIST, or MANUAL for Enfusion-only ENF-1/2). `make ci-local` mirrors
+> **`ci.yml`** (backend + frontend + schema + **editorconfig** jobs).
 
 ---
 
@@ -444,7 +444,7 @@ Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECK
 | Language | Before you commit |
 |----------|-------------------|
 | **Go** | Handler thin (logic in `services/`, imports allowlisted)? DB errors handled or `//nolint:errcheck // best-effort:`? Errors `%w`-wrapped? Dup key → 409 via `23505`? `@route` on the handler? `golangci-lint run ./...` + `make test-it` green? |
-| **TS/React** | strict-clean, no `any`? Right layer (`pages`/`features`/`ui`)? No empty catch (errors surfaced)? `@contract`/`@model` on cross-boundary types? `npm run lint && npm test && npm run build` clean? |
+| **TS/React** | strict-clean, no `any`? Right layer (`pages`/`features`/`ui`)? No empty catch? `@contract`/`@model` on cross-boundary types? `npm run format:check && npm run lint && npm test && npm run build` clean? |
 | **Errors** | `{ error, details? }` only (no other keys)? Right status from the §4 table? Named IT per status class? |
 | **Enfusion** | `enfusion-mcp` consulted? Dev toggles default off? Gates commented? Tags per DOC_STANDARDS §6–§7? Slice assigns `claude-code` to this `.c`? |
 | **Always** | File ≤ 1000 L (or allowlisted) and ≤ 600 L ideally? Function complexity ≤ 15 (or inline opt-out w/ reason)? `make verify-citations` covers `@route` + `@model`; `make ci-local` is the full gate — **no commit without `make ci-local` green** (post T-125.1). Doc-comments updated in the **same commit** (DOC_STANDARDS §1)? |

@@ -1,7 +1,7 @@
 # T-125 — Coding standards + 11/10 enforcement
 
-**Ticket:** T-125 · **Program:** platform · **Status:** **ready** (T-124 shipped @ `cd11db0`)  
-**Depends on:** T-124 (met) · **Active slice:** T-125.5 · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
+**Ticket:** T-125 · **Program:** platform · **Status:** **shipped** (T-125.6 doc sync) · **Tag:** **T-125.5** @ `e21dac3` (code); program **T-125.0–.6 complete**  
+**Depends on:** T-124 (met) · **Handoff:** [`.ai/artifacts/t125_claude_code_handoff.md`](../../.ai/artifacts/t125_claude_code_handoff.md)
 
 ## In one sentence
 
@@ -511,24 +511,26 @@ make ci-local                                 # full gate; report wall-clock
 
 ---
 
-## T-125.6 — Doc sync (Cursor)
+## T-125.6 — Doc sync (Cursor) — **shipped**
 
 - Mark T-125 **shipped** in registry; `./scripts/ticket sync`
-- [`CLAUDE.md`](../../CLAUDE.md) §Done bullet
-- Fix DOCUMENTATION_STANDARDS meta-drift (§0 “no codegen”; §10 eslint row)
-- [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) — CI replay commands
+- [`CLAUDE.md`](../../CLAUDE.md) §Done bullet + collapse ACTIVE SLICE block
+- [`CODING_STANDARDS.md`](CODING_STANDARDS.md) §10 FMT-2/FMT-3 → **live**; §11 replay updated
+- [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) §0 codegen drift + §10 gate table
+- [`DEV_RUNBOOK.md`](../website/DEV_RUNBOOK.md) — `verify-editorconfig` + `format:check` in CI replay
 
 ---
 
 ## Acceptance criteria (11/10)
 
-- [ ] `CODING_STANDARDS.md` exists and cross-linked; distinct from DOCUMENTATION_STANDARDS
-- [ ] **`ci.yml` green on `main`** — includes `make test-it`, FE build/lint/test, schema validate
-- [ ] **golangci** runs full linter set **without** `only-new-issues`
+- [x] `CODING_STANDARDS.md` exists and cross-linked; distinct from DOCUMENTATION_STANDARDS
+- [x] **`ci.yml` green on `main`** — includes `make test-it`, FE build/lint/test/format, schema validate, editorconfig job
+- [x] **golangci** runs full linter set **without** `only-new-issues`
 - [x] **TypeScript `strict: true`** — build clean (T-125.3 @ `e5fbf4b`)
 - [x] **Every handler** has `@route` matching `Register()`; GO-7 route-match live (T-125.4 @ `cb508cf`)
 - [x] Citation verifier + coding-standards scripts exit 0 (T-125.4)
-- [x] Replay commands documented in spec and DEV_RUNBOOK (T-125.4)
+- [x] Replay commands documented in spec and DEV_RUNBOOK (T-125.4–.6)
+- [x] **FMT-2/FMT-3** live — `.editorconfig` + Prettier wired (T-125.5 @ `e21dac3`)
 
 ---
 

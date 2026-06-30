@@ -11,7 +11,6 @@
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
-- **T-125** (1250) — Coding standards + 11/10 enforcement [ready] — CODING_STANDARDS.md + enforcement. Shipped through T-125.4 @ cb508cf (GO-7 route-match, M6 15/15, verify-* scripts, ENF-4 ×10, ci.yml verify-coding-standards). Active T-125.5: Prettier/editorconfig. Remaining T-125.6 final hub sync. Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.
 
 ## Next queued (top 10)
 
@@ -35,5 +34,4 @@ flowchart LR
   T068[T-068] --> T070[T-070]
   T092[T-092] --> T071[T-071]
   T091[T-091] --> T092[T-092]
-  T124[T-124] --> T125[T-125]
 ```
