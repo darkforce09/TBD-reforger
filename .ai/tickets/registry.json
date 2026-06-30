@@ -1822,7 +1822,7 @@
       "order": 900,
       "program": "infra",
       "status": "active",
-      "active_slice": "T-090.1.1",
+      "active_slice": "T-090.1.2.1",
       "surfaces": [
         "MAP"
       ],
@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1 shipped @ 564419e (interim rasterization basemap + LOD — aligned). T-090.1.2 shipped (SAP supertexture satellite @ 1 m/px, z0–5 pyramid). ACTIVE: T-090.1.1 Map (.topo). Then T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Follow-up: lossless tile pyramid + z6. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2 shipped @ c2730a3 (SAP supertexture @ 1 m/px). ACTIVE: T-090.1.2.1 lossless z0–6 pyramid (picture-perfect max zoom). Then T-090.1.1 Map (.topo), T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1838,6 +1838,7 @@
         "T-090.0.2",
         "T-090.1",
         "T-090.1.2",
+        "T-090.1.2.1",
         "T-090.1.1",
         "T-090.2",
         "T-090.3",
@@ -1905,6 +1906,15 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md",
           "status": "shipped",
           "shipped_at": "c2730a3"
+        },
+        "T-090.1.2.1": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md",
+          "status": "ready"
         },
         "T-090.1.1": {
           "targets": [

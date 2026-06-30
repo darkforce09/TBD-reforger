@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **active — T-090.1.1** (Map / `.topo` cartographic view). **T-090.1.2 shipped** (SAP supertexture satellite @ 1 m/px ortho, z0–5 pyramid). **T-090.1 shipped** @ `564419e` (interim rasterization + LOD — aligned). **T-090.3.0 shipped** @ `b342c35`. **T-091 complete** @ `dde589e`.  
+**Status:** **active — T-090.1.2.1** (lossless satellite pyramid — picture-perfect max zoom). **T-090.1.2 shipped** @ `c2730a3`. **T-090.1 shipped** @ `564419e`. **T-090.3.0 shipped** @ `b342c35`. **T-091 complete** @ `dde589e`.  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -24,8 +24,9 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-091.0/.1/.2  DEM + Z + hillshade (shipped)  ✓
   → T-090.3.0  Workbench export feasibility spike (shipped @ b342c35)  ✓
   → T-090.1    Satellite basemap (interim rasterization + LOD)  ✓ @ 564419e
-  → T-090.1.2  SAP supertexture ortho — true satellite detail  ✓ shipped
-  → T-090.1.1  Map (.topo) cartographic view                  ← ACTIVE NOW
+  → T-090.1.2  SAP supertexture ortho — true satellite detail  ✓ @ c2730a3
+  → T-090.1.2.1  Lossless z0–6 pyramid — picture-perfect zoom  ← ACTIVE NOW
+  → T-090.1.1  Map (.topo) cartographic view
   → T-090.2    taxonomy + JSON schema (+ forest/field/waterBody region kinds)
   → T-090.3    phased export (+ forest-regions, dual tiles) — P1 → P10
   → T-090.4 + T-090.6 + T-090.8  Z/geometry audits + forest regions (parallel where deps met)
@@ -37,7 +38,7 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-126      building floor selector (idea — outside T-090)
 ```
 
-**Blocker chain (implementers):** **T-090.1** (shipped @ `564419e`) → **T-090.1.2** (SAP supertexture detail, shipped) → **T-090.1.1** (Map, active) → **T-090.2** → **T-090.3** → {**T-090.4**, **T-090.6**, **T-090.8**} → **T-090.5** → **T-090.9** → **T-090.7**.
+**Blocker chain (implementers):** **T-090.1** (shipped @ `564419e`) → **T-090.1.2** (SAP ortho, shipped @ `c2730a3`) → **T-090.1.2.1** (lossless pyramid, active) → **T-090.1.1** (Map) → **T-090.2** → …
 
 ---
 
@@ -55,8 +56,9 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-091.2** | [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) | claude-code | **shipped** @ `dde589e` |
 | **T-090.3.0** | [`t090_3_0_workbench_export_spike.md`](t090_3_0_workbench_export_spike.md) | claude-code | **shipped** @ `b342c35` |
 | **T-090.1** | [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) | claude-code | **shipped** @ `564419e` — interim rasterization + LOD |
-| **T-090.1.2** | [`t090_1_2_sap_supertexture_satellite.md`](t090_1_2_sap_supertexture_satellite.md) | claude-code | **SAP supertexture** high-detail satellite — **shipped** |
-| **T-090.1.1** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch — **active** |
+| **T-090.1.2** | [`t090_1_2_sap_supertexture_satellite.md`](t090_1_2_sap_supertexture_satellite.md) | claude-code | **SAP supertexture** ortho — **shipped** @ `c2730a3` |
+| **T-090.1.2.1** | [`t090_1_2_1_lossless_satellite_pyramid.md`](t090_1_2_1_lossless_satellite_pyramid.md) | claude-code | **Lossless z0–6 pyramid** — **active** |
+| **T-090.1.1** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | Enums + census + golden per `buildingClass` |
 | **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |
 | **T-090.4** | [`t090_4_z_placement_audit.md`](t090_4_z_placement_audit.md) | claude-code | Phase A pivot audit @ 1M |

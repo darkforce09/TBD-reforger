@@ -70,10 +70,12 @@ Ortho PNG (staging, gitignored): `everon-sap-ortho.png`, 12800², sRGB.
 
 ## Follow-ups (110% bar — not in this ship)
 
+**→ T-090.1.2.1** [`t090_1_2_1_lossless_satellite_pyramid.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md)
+
 | Issue | Root cause | Fix |
 |-------|------------|-----|
-| Basemap vanishes at max zoom | Manifest `maxZoom: 6` while z6 directory empty → LOD requests missing tiles | Ship z0–5 only (`maxZoom: 5`); rebuild z6 when ready |
-| Tiles look compressed | `build-tile-pyramid.sh` uses `cwebp -q 80` (lossy) | Rebuild with `cwebp -lossless` or PNG tiles; expect ~2–4× LFS size |
+| Basemap vanishes at max zoom | Manifest `maxZoom: 6` while z6 empty | Cap z5 @ ship; full z6 in T-090.1.2.1 |
+| Unacceptable blur at max zoom | q=80 WebP + z5 stretch at deck zoom 6 | Lossless z0–6 rebuild |
 
 ## Notes
 

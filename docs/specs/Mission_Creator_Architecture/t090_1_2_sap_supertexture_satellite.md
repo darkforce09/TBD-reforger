@@ -143,10 +143,12 @@ node scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon
 
 ## Follow-ups (110% bar — post-ship)
 
-| Issue | Root cause | Planned fix |
-|-------|------------|-------------|
-| Basemap vanishes at max deck zoom | Manifest briefly advertised `maxZoom: 6` while z6 tiles were never built → LOD fetched 404 tiles | Ship z0–5 (`maxZoom: 5`); add z6 when pyramid rebuild completes |
-| Visible WebP compression | `build-tile-pyramid.sh` encodes with `cwebp -q 80` | Rebuild pyramid with `cwebp -lossless` (or PNG); update verify + LFS budget |
+Tracked as **T-090.1.2.1** [`t090_1_2_1_lossless_satellite_pyramid.md`](t090_1_2_1_lossless_satellite_pyramid.md):
+
+| Issue | Root cause | Slice |
+|-------|------------|-------|
+| Basemap vanishes at max deck zoom | Manifest `maxZoom: 6` without complete z6 | Cap at z5 @ ship; z6 in T-090.1.2.1 |
+| Unacceptable blur at max zoom | q=80 WebP + z5 stretch at deck zoom 6 | Lossless z0–6 rebuild |
 
 ---
 

@@ -770,6 +770,33 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print("DO NOT: edit documentation")
     if shipped:
         print(f"DO NOT REOPEN (shipped): {', '.join(shipped)}")
+    if active == "T-090.1.2.1":
+        print(
+            "SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — "
+            "build-tile-pyramid.sh --lossless, verify VP8L, manifest maxZoom 6"
+        )
+        print(
+            "DO NOT REOPEN: T-090.1.2 decode/stitch/orientation (shipped @ c2730a3) "
+            "unless verify-sap-ortho fails"
+        )
+        print(
+            "ORTH: packages/map-assets/everon/staging/sap/everon-sap-ortho.png "
+            "(12800² — already built; do NOT re-stitch)"
+        )
+        print(
+            "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090"
+        )
+        print(
+            "HANDOFF: .ai/artifacts/t090_1_2_1_claude_code_handoff.md"
+        )
+        print(
+            "VERIFY: node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon && "
+            "EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon && "
+            "make verify-terrain && make ci-local-frontend"
+        )
+        print(
+            "MANUAL: L1 max-zoom field/road pixel-sharp; L2 north-up; L3 alignment; L4 ≥55 fps"
+        )
     elif tid == "T-122":
         print(
             "SCOPE: ALL findings in docs/platform/CODEBASE_AUDIT_2026.md (C/R/T/M/D) — one branch"
