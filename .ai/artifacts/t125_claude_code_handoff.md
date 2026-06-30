@@ -1,7 +1,7 @@
 # T-125 — Claude Code handoff
 
-**Status:** **in progress** · active slice **T-125.4** · doc prep @ `bcf179b` + spec expand  
-**Spec:** [`docs/platform/t125_coding_standards_enforcement.md`](../docs/platform/t125_coding_standards_enforcement.md) §T-125.4 (expanded)  
+**Status:** **in progress** · active slice **T-125.4** · **110% bar** (no deferrals) · spec @ current main  
+**Spec:** [`docs/platform/t125_coding_standards_enforcement.md`](../docs/platform/t125_coding_standards_enforcement.md) §T-125.4 (110% expanded)  
 **Authority:** [`CODING_STANDARDS.md`](../docs/platform/CODING_STANDARDS.md) §2 Go, §4 Errors, §5 Enfusion, §8 Size, §9 Logging, §10 matrix · [`DOCUMENTATION_STANDARDS.md`](../docs/platform/DOCUMENTATION_STANDARDS.md) §3 `@route`
 
 **Shipped:** T-125.0 @ `a54f491` · T-125.1 @ `9792182` · T-125.2/.2.1 @ `80c7f07` · T-125.3 @ `e5fbf4b` (tag **T-125.3**)
@@ -11,6 +11,38 @@
 ## T-125.3 — DONE ✓
 
 Strict TS, eslint TS-2..7/LOG-2/COMP-1(TS), TS-6 `@model`/`@contract` on 36 FE exports. Do not redo.
+
+---
+
+## 110% bar (operator — non-negotiable)
+
+Anything previously labeled “v1”, “deferred”, “post-ship”, or “local-only” is **in scope for T-125.4**:
+
+| Gap | 110% requirement |
+|-----|------------------|
+| `ci.yml` | Backend job runs `make verify-coding-standards` (same as `ci-local`) |
+| LOG-3 | **All 75 5xx** + **mutator 400/409/413** logged; script enforces both |
+| GO-7 | `@route` presence **and** match to `Register()` method+path |
+| ENF-4 | **All 10** Backend `@contract` DTOs → sample JSON + validate.mjs |
+| M6 bucket B | Non-NotFound errors → `log.Printf` even when handler returns 200 |
+| telemetry | `RefreshLeaderboard` failure → log even on 200 (today WriteAudit only) |
+
+**Revised task list (matches Claude plan — holding for go-ahead):**
+
+| # | Task | Key deliverable |
+|---|------|-----------------|
+| T1 | GO-7 route-match | 82 handlers; Register parse; missing/mismatch/**unwired** fail |
+| T2 | M6 ×15 | Bucket A 500+log; bucket B log non-NotFound @ 200 |
+| T3 | GO-3 ×15 | WriteAudit `//nolint:errcheck` + reason |
+| T4 | GO-9 | `services.RefreshLeaderboard`; allowlist auth/realtime only; verify-handler-imports.sh |
+| T5 | ERR-4 | verify-error-envelope.sh (awk, brace-balanced) |
+| T6 | LOG-3 two-band | 75 5xx + mutator 400/409/413 (~subset of 79 4xx); awk mutator set |
+| T7 | SIZE | verify-file-length.mjs (dep-free node) |
+| T8 | ENF-4 ×10 | `enfusion/*.sample.json`; root = smallest golden |
+| T9 | Wiring | ci-local + **ci.yml backend step** |
+| T10 | Shipped note | No-deferral summary |
+
+**Acceptance:** `make ci-local` green AND `ci.yml` passes on push. Scripts: grep/awk, dep-free Node.
 
 ---
 
@@ -97,9 +129,8 @@ TASK 1 — GO-7: @route on every HTTP handler + verifier extension
   in apps/website/internal/handlers/*.go EXCLUDING *_test.go.
 
   EXCLUDE (not HTTP handlers):
-    func (h *Handler) JWT()
-    func (h *Handler) Discord()
-    func (h *Handler) Webhook()
+    func (h *Handler) JWT() / Discord() / Webhook()
+    Lowercase helpers (loadEvent, loadMission, loadPending, auditQuery, …) — not Register targets
 
   Already tagged (5 — use as examples):
     registry.go      ListRegistry       GET /api/v1/registry
@@ -112,6 +143,10 @@ TASK 1 — GO-7: @route on every HTTP handler + verifier extension
     • Scan apps/website/internal/handlers/*.go (skip *_test.go)
     • For each func (h *Handler) Name(c *gin.Context), preceding /** */ Godoc MUST match /@route\s+(GET|POST|PUT|PATCH|DELETE)\s+\S+/
     • Exit 1: file:line: Name missing @route (GO-7)
+    • **110% route-match:** parse handlers.go Register() — nested Group() prefixes +
+      METHOD("path", …, h.HandlerName) → HandlerName → (METHOD, pathTemplate)
+    • Fail: missing @route, @route mismatch vs wired route, **unwired handler** (tagged or
+      exported Handler(c) but not in Register())
     • Keep existing passes: @contract resolve, TS-6 FE @model/@contract
 
   Godoc quality: keep GO-6 (revive exported) — comment starts with handler name; @route sits in block.
@@ -140,7 +175,8 @@ TASK 2 — M6 / GO-2: fix 15 silent _ = h.db.First(...).Error sites
 
   Context-aware fixes:
     • Hydration after create/update where row MUST exist → 500 on unexpected error
-    • Optional enrichment joins → skip row on NotFound, continue
+    • Optional enrichment joins (Bucket B: dashboard 60/94/96/98, deployments 66) → skip on
+      NotFound; **log.Printf on any other error** even if handler still returns 200
     • Never leave _ = when the struct is read afterward
 
   NO blanket //nolint on these reads.
@@ -172,9 +208,9 @@ TASK 4 — GO-1/GO-9: scripts/website/verify-handler-imports.sh
     telemetry.go → db
     auth.go, me.go → auth
 
-  Prefer: move DB touch in telemetry ingest into services/ (minimal extraction).
-  If refactor too large: add GO-9 rows to .coding-standards-allowlist.yaml with expires + reason;
-  document in Shipped note.
+  Prefer: extract telemetry DB → services.RefreshLeaderboard (GO-9); allowlist ONLY structural
+  auth/realtime on handlers.go, auth.go, me.go (.coding-standards-allowlist.yaml + Shipped note).
+  Do NOT allowlist telemetry db import without extraction.
 
 ═══════════════════════════════════════════════════════════════════════════════
 TASK 5 — ERR-4: scripts/website/verify-error-envelope.sh
@@ -182,72 +218,76 @@ TASK 5 — ERR-4: scripts/website/verify-error-envelope.sh
 
   Assert every error JSON response uses ONLY keys {error, details}:
     • Scan handlers/ for c.JSON(http.Status*4xx*|*5xx*, gin.H{…})
-    • Also StatusBadRequest, StatusNotFound, etc.
+    • Use awk with brace-balanced gin.H parsing (portable; passes today as guard-only)
     • Fail on keys like message, err, errors, status in the gin.H literal
     • {error: err.Error()} on 500 is OK if key is exactly "error"
 
 ═══════════════════════════════════════════════════════════════════════════════
-TASK 6 — LOG-3: scripts/website/verify-handler-logging.sh
+TASK 6 — LOG-3 (full, two-band): logHandlerErr + timing + script
 ═══════════════════════════════════════════════════════════════════════════════
 
-  Heuristic: consequential 4xx/5xx handlers should log id + status + duration
-  (see CreateVersion log.Printf pattern in missions.go).
+  Add middleware/timing.go; mount first in Register().
 
-  Expected-miss exemptions: bare 401 auth failures, simple 404 id lookups.
+  logHandlerErr(c, name, status, detail) → log.Printf with c.FullPath(), status, dur from middleware.
 
-  Ship a working script (exit 1 on violation). If heuristic needs v1 carve-outs,
-  document them in script header comments — prefer tightening over disabling.
+  **Band 1 — 5xx (75 sites):** 74 InternalServerError + 1 BadGateway (cms.go).
+  logHandlerErr before each. CreateVersion: add on branches missing status=+dur= in prior 3 lines.
+
+  **Band 2 — mutator 4xx:** log before 400 (validation/bind/details), 409, 413 on
+  POST/PUT/PATCH/DELETE. Total 4xx error JSON in handlers today: 79; band 2 = mutator subset.
+  Exempt: GET 404 id lookups, bare 401 auth, simple GET validation 400.
+
+  **Operational 200:** telemetry RefreshLeaderboard failure → log.Printf (path, dur, err) even on 200.
+
+  Script verify-handler-logging.sh (awk + grep-derived mutator set) — exit 1 if:
+    • any 5xx lacks logHandlerErr/log.Printf with status= in preceding 3 lines
+    • any band-2 400/409/413 on mutator lacks same
+  Shipped note: "LOG-3: 5xx + mutator 400/409/413 enforced; GET miss 404 exempt."
 
 ═══════════════════════════════════════════════════════════════════════════════
 TASK 7 — SIZE-1/3: scripts/website/verify-file-length.mjs
 ═══════════════════════════════════════════════════════════════════════════════
 
-  Node script; read .coding-standards-allowlist.yaml for SIZE-2/SIZE-3 exemptions.
+  Node script (dep-free — fs only); read .coding-standards-allowlist.yaml for SIZE-2/SIZE-3 exemptions.
 
   Rules:
     • >600 lines → WARN (stderr, exit 0) — SIZE-1
     • >1000 lines → exit 1 unless allowlisted — SIZE-3
 
   Add SIZE-3 allowlist rows (if missing) for standing debt:
-    apps/website/frontend/src/pages/admin.tsx      (~1628 L)
-    apps/website/frontend/src/pages/doctrine.tsx     (~1288 L)
-    apps/website/internal/handlers/events.go         (~1038 L)
+    apps/website/frontend/src/pages/admin.tsx      (1628 L)
+    apps/website/frontend/src/pages/doctrine.tsx   (1289 L)
+    apps/website/internal/handlers/events.go       (1041 L)
 
   SIZE-2 tactical-map/** already allowlisted — skip SIZE-3 fail for those paths.
 
   Scan: apps/website/**.{go,ts,tsx} + apps/website/frontend/src/** (exclude node_modules, dist)
 
 ═══════════════════════════════════════════════════════════════════════════════
-TASK 8 — ENF-4: validate.mjs Enfusion DTO branch
+TASK 8 — ENF-4: all 10 Backend @contract DTO fixtures
 ═══════════════════════════════════════════════════════════════════════════════
 
-  Extend packages/tbd-schema/scripts/validate.mjs:
+  Extend packages/tbd-schema/scripts/validate.mjs — data-driven scan of
+  apps/mod/tbd-framework/Scripts/Game/TBD/Backend/*.c for @contract tags.
 
-  Start with TBD_MissionSlotStruct.c (@contract mission.schema.json#/$defs/slot):
-    • Add packages/tbd-schema/enfusion/mission-slot.sample.json (or registry/ path)
-      — valid instance of $defs/slot
-    • validate.mjs: "Enfusion DTO fixtures:" section — compile schema pointer, validate fixture
+  Required fixtures packages/tbd-schema/enfusion/ (filename → pointer in validate.mjs):
+    slot, meta, faction, circle, shape, zone, role, group, orbatFaction, root.sample.json
+    • Nine $defs fixtures: minimal valid instances
+    • root.sample.json: copy smallest packages/tbd-schema/golden-missions/*.json
 
-  Scan apps/mod/tbd-framework/Scripts/Game/TBD/Backend/*.c for @contract tags;
-  each requires a matching golden JSON that validates.
-
-  Do NOT broad-edit mod gameplay code. enfusion-mcp if touching .c files.
+  Scan apps/mod/tbd-framework/Scripts/Game/TBD/Backend/*.c for @contract tags.
+  Each fixture validates via Ajv. Do NOT broad-edit mod gameplay code.
 
 ═══════════════════════════════════════════════════════════════════════════════
-TASK 9 — Makefile + ci-local wiring
+TASK 9 — Makefile + ci-local + ci.yml
 ═══════════════════════════════════════════════════════════════════════════════
 
-  Root Makefile — add:
+  Root Makefile — add verify-coding-standards target (4 scripts bundle).
+  Wire into ci-local after ci-local-backend.
 
-  verify-coding-standards:
-  	bash scripts/website/verify-handler-imports.sh
-  	bash scripts/website/verify-error-envelope.sh
-  	bash scripts/website/verify-handler-logging.sh
-  	node scripts/website/verify-file-length.mjs
-
-  Add $(MAKE) verify-coding-standards to ci-local (after ci-local-backend, before or with schema).
-
-  GO-7 @route pass lives in verify-citations (Task 1) — already in ci-local-schema.
+  **110% — edit .github/workflows/ci.yml:**
+    backend job: step `make verify-coding-standards` after integration tests.
+  GO-7 rides verify-citations (schema job); ENF-4 rides schema-validate.
 
   Update Makefile help comment for verify-coding-standards (CODING_STANDARDS §11).
 
@@ -256,8 +296,8 @@ TASK 10 — Shipped note (only doc edit allowed)
 ═══════════════════════════════════════════════════════════════════════════════
 
   Append **Shipped (T-125.4):** to docs/platform/t125_coding_standards_enforcement.md §T-125.4:
-    @route count added; M6 sites fixed; WriteAudit annotations; scripts added;
-    allowlist rows; ENF-4 fixture; make ci-local wall-clock; any GO-9 debt allowlisted.
+    no-deferral summary — @route count + Register cross-check; M6 15/15; WriteAudit N;
+    LOG-3 band counts; script paths; allowlist rows; ENF-4 10/10; ci.yml step; ci-local wall-clock.
 
 ═══════════════════════════════════════════════════════════════════════════════
 VERIFY — ALL MUST EXIT 0
@@ -268,6 +308,7 @@ VERIFY — ALL MUST EXIT 0
   make schema-validate           # includes ENF-4 branch
   make test-it                   # no handler regressions
   make ci-local                  # full gate; report wall-clock
+  # Confirm ci.yml backend job would pass (verify-coding-standards step present)
 
   cd apps/website/frontend && npm run build && npm run lint && npm test  # no FE regressions
 
@@ -279,10 +320,10 @@ COMMIT + TAG
   git commit -m "$(cat <<'EOF'
 T-125.4 platform: @route tags, M6 fixes, verify-* scripts, ENF-4 DTO gate
 
-Complete @route on ~90 handlers + GO-7 verifier pass; fix 15 silent db.First
+Complete @route on ~82 handlers + GO-7 verifier (Register cross-check); fix 15 silent db.First
 reads; GO-3 WriteAudit annotations; add verify-handler-imports/error-envelope/
-logging/file-length scripts + make verify-coding-standards; ENF-4 Enfusion fixture
-in validate.mjs; wire ci-local.
+logging/file-length scripts + make verify-coding-standards; ENF-4 10 fixtures in validate.mjs;
+wire ci-local + ci.yml backend step.
 
 Co-Authored-By: Claude Code <noreply@anthropic.com>
 EOF
@@ -297,13 +338,16 @@ RETURN REPORT (paste back to operator for Cursor doc sync)
 
   1. Commit hash + tag T-125.4
   2. @route: N added (M total handlers checked)
-  3. M6: 15/15 db.First sites fixed? (list any deferred)
+  3. M6: 15/15 db.First sites fixed (Bucket B non-NotFound logged)
   4. WriteAudit: N annotated
-  5. Scripts: list new files + any allowlist rows added
-  6. ENF-4: fixture path + validate.mjs output
-  7. GO-9: violations fixed vs allowlisted
-  8. make test-it + make ci-local wall-clock
-  9. Ready for T-125.5: yes/no
+  5. LOG-3: 5xx count + mutator 4xx count logged; script passes
+  6. Scripts: list new files + allowlist rows
+  7. ENF-4: 10/10 fixtures + validate.mjs output
+  8. GO-7: @route count + Register cross-check passes
+  9. GO-9: telemetry extracted; auth/realtime allowlisted only
+  10. ci.yml: verify-coding-standards step added
+  11. make test-it + make ci-local wall-clock
+  12. Ready for T-125.5: yes/no
 
 ═══════════════════════════════════════════════════════════════════════════════
 END T-125.4 PROMPT
