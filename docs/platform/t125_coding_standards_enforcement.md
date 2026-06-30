@@ -99,6 +99,8 @@ staticcheck 1 → `fmt.Fprintf`. Result: `golangci-lint run ./...` **0 issues**,
 (SIZE-2 MC-perf stub). Note: the M6 `_ = db.First(...).Error` reads are a struct **field** access (not
 a func call) so errcheck does not flag them — they stay **T-125.4** (which owns `_ = db.First` fixes).
 
+**T-125.2.1:** ci.yml step-order comment + CI-1 moved to verify-ci1.sh for §G forbidden-rg.
+
 ---
 
 ## T-125.3 — TypeScript strict + eslint tags
