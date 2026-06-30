@@ -1903,7 +1903,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "c2730a3"
         },
         "T-090.1.1": {
           "targets": [
