@@ -83,7 +83,8 @@ Ortho PNG (staging, gitignored): `everon-sap-ortho.png`, 12800², sRGB.
   The interim rasterization tinted water blue; the raw SAP is the real ground/seabed — no
   synthetic tint added (would be fake detail). Flag for operator: editor will show seabed,
   not blue water.
-- **manifest** `tiles.maxZoom` **5** (z0–5 pyramid shipped; z6 deferred — manifest had briefly advertised 6 while z6 build incomplete, which caused max-zoom basemap 404/disappear), `tiles.satellite.source → sap-supertexture-stitch`,
+- **manifest** `tiles.maxZoom` **6**, `satellite.encoding: webp-lossless` (T-090.1.2.1 @ `19bc785`).
+- **Follow-on backlog:** seams **T-090.1.2.2**, pan **T-090.1.2.3**, water **T-090.1.2.5** — see [`t090_1_2_satellite_backlog.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md).
   top-level `metersPerPixel 2→1` (DEM keeps `dem.widthPx 6400` + `precision.demNativeMetersPerPixel 2`;
   no runtime reads top-level `metersPerPixel`). Schema enum gained `sap-supertexture-stitch`.
 - **Incidental:** prettier-formatted `useTerrainBasemapLayer.ts` (pre-existing line-wrap drift

@@ -790,6 +790,46 @@ def cmd_brief(args: argparse.Namespace) -> None:
         print(
             "MANUAL: S1 operator seam location invisible at max zoom"
         )
+    elif active == "T-090.1.2.3":
+        print(
+            "SCOPE: basemap tile prefetch + cache — fix pan ~40 fps flicker; "
+            "useTerrainBasemapLayer.ts (+ basemapTileCache.ts)"
+        )
+        print(
+            "PARALLEL: frontend only — safe alongside T-090.1.2.2"
+        )
+        print(
+            "HANDOFF: .ai/artifacts/t090_1_2_3_claude_code_handoff.md"
+        )
+        print(
+            "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
+        )
+        print(
+            "VERIFY: cd apps/website/frontend && npm run build && npm run lint && npm test && make ci-local-frontend"
+        )
+        print(
+            "MANUAL: P1 no pop-in; P2 pan fps ≥55"
+        )
+    elif active == "T-090.1.2.5":
+        print(
+            "SCOPE: satellite water — ocean + inland on SAP ortho; P0 mask spike, "
+            "composite-water-ortho.mjs, lossless pyramid rebuild"
+        )
+        print(
+            "DEPENDS: run after T-090.1.2.2 seam ortho when possible"
+        )
+        print(
+            "HANDOFF: .ai/artifacts/t090_1_2_5_claude_code_handoff.md"
+        )
+        print(
+            "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
+        )
+        print(
+            "VERIFY: water spike + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid"
+        )
+        print(
+            "MANUAL: W1 coast water; W2 inland lakes/rivers"
+        )
     elif active == "T-090.1.2.1":
         print(
             "SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — "

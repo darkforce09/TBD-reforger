@@ -5,7 +5,7 @@
 
 ## Running / Review
 
-- **T-090** (900) — Map visualization program [active] — Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 SAP cell seams. Queued: T-090.1.2.3 pan prefetch, T-090.1.2.5 satellite water (ocean+inland). Idea: T-090.1.2.4 engine render ortho. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [active] — Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 seams. Queued: .2.3 prefetch, .2.5 water. Idea: .2.4 engine render. Backlog: t090_1_2_satellite_backlog.md. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.
 
 ## Ready
 

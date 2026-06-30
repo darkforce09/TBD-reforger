@@ -36,8 +36,33 @@ Stop Satellite basemap **flicker and pop-in** when panning — prefetch and cach
 
 ---
 
+## Implementation notes
+
+| Area | Direction |
+|------|-----------|
+| **Cache** | New module e.g. `basemapTileCache.ts` — LRU cap ~128 entries; store `ImageBitmap` |
+| **Prefetch** | After `computeLod`, warm `{z,x±1,y±1}` via idle fetch |
+| **Hold** | Layer opacity 0→1 when loaded; or keep prior z tiles until new z ready |
+| **Worker** | If decode-bound: VP8L decode off main thread |
+| **Tests** | Vitest: cache hit returns same bitmap ref |
+
+## Manual acceptance
+
+| ID | Pass |
+|----|------|
+| **P1** | Pan across tile boundary — no blank flash |
+| **P2** | Pan fps **≥55** (was ~40) |
+| **P3** | Max zoom sharpness unchanged |
+
+Log: `.ai/artifacts/t090_1_2_3_verify_log.md`
+
+---
+
 ## Ship
 
-Tag **`T-090.1.2.3`** · manual **P1** — pan across tile boundary with no visible pop-in.
+Tag **`T-090.1.2.3`**
 
-Handoff: `.ai/artifacts/t090_1_2_3_claude_code_handoff.md` (write when promoted to `ready`).
+Handoff: [`.ai/artifacts/t090_1_2_3_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_3_claude_code_handoff.md) · send-off [`.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md)
+
+Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
+

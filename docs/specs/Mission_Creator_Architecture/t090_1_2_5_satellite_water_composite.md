@@ -96,7 +96,9 @@ Run **after T-090.1.2.2** (seams) — each ortho change triggers full pyramid re
 
 Tag **`T-090.1.2.5`** · prefix **`T-090.1.2.5:`**
 
-Handoff: `.ai/artifacts/t090_1_2_5_claude_code_handoff.md` (when promoted to `ready`).
+Handoff: [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_5_claude_code_handoff.md) · send-off [`.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md)
+
+Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
 
 ---
 

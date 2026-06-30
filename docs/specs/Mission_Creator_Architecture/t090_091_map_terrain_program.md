@@ -42,11 +42,15 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-126      building floor selector (idea — outside T-090)
 ```
 
-**Blocker chain (implementers):** **T-090.1.2.1** (shipped @ `19bc785`) → **T-090.1.2.2** (seams, active) → **T-090.1.2.3** (prefetch, queued) → **T-090.1.1** (Map) → **T-090.2** → …
+**Blocker chain (implementers):** **T-090.1.2.1** (shipped @ `19bc785`) → **T-090.1.2.2** (seams, active) → **T-090.1.2.3** (prefetch, queued; FE-only, may parallel .2.2) → **T-090.1.2.5** (water, queued; ortho rebuild after .2.2) → **T-090.1.1** (Map) → **T-090.2** → …
+
+**Satellite backlog (resume):** [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md) · operator one-pager [`.ai/artifacts/t090_1_2_operator_resume.md`](../../../.ai/artifacts/t090_1_2_operator_resume.md)
 
 ---
 
 ## Slice specs (read these — not optional)
+
+**Satellite backlog (T-090.1.2.2–.2.5):** [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md) · operator one-pager [`.ai/artifacts/t090_1_2_operator_resume.md`](../../../.ai/artifacts/t090_1_2_operator_resume.md)
 
 Each slice has its **own spec file** with locked decisions, file touch list, and **mandatory verification gate** (automated commands + acceptance table).
 

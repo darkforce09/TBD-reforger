@@ -143,12 +143,14 @@ node scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon
 
 ## Follow-ups (110% bar — post-ship)
 
-Tracked as **T-090.1.2.1** [`t090_1_2_1_lossless_satellite_pyramid.md`](t090_1_2_1_lossless_satellite_pyramid.md):
+Tracked in [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md):
 
-| Issue | Root cause | Slice |
-|-------|------------|-------|
-| Basemap vanishes at max deck zoom | Manifest `maxZoom: 6` without complete z6 | Cap at z5 @ ship; z6 in T-090.1.2.1 |
-| Unacceptable blur at max zoom | q=80 WebP + z5 stretch at deck zoom 6 | Lossless z0–6 rebuild |
+| Slice | Issue |
+|-------|-------|
+| **T-090.1.2.2** | SAP cell seam lines @ 256 m grid |
+| **T-090.1.2.3** | Pan ~40 fps + tile pop-in |
+| **T-090.1.2.5** | No readable water (ocean + inland) |
+| **T-090.1.2.4** | Engine render ortho R&D (idea, deferred) |
 
 ---
 

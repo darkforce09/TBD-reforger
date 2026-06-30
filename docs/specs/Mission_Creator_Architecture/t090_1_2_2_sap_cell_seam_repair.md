@@ -133,5 +133,7 @@ Tag **`T-090.1.2.2`** · prefix **`T-090.1.2.2:`** · `active_slice` → **T-090
 
 ## Related
 
-- Handoff: [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md)
+Handoff: [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md) · send-off [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md)
+
+Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
 - Pan flicker: **T-090.1.2.3**
