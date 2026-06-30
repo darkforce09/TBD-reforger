@@ -30,7 +30,7 @@ Playbook: [`tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead vie
 | **Backend / API** | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | **Cross-boundary code comments** | [`docs/platform/DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) — §11 cheat sheet; in-code = same commit as code (§1) |
 | **Platform deps / toolchain** | [`docs/platform/t124_dependency_upgrade.md`](../platform/t124_dependency_upgrade.md) — Go 1.26, Node 26, Postgres 18 (T-124 shipped) |
-| **Coding standards (T-125)** | [`docs/platform/t125_coding_standards_enforcement.md`](../platform/t125_coding_standards_enforcement.md) — pending `CODING_STANDARDS.md` |
+| **Coding standards (T-125)** | [`docs/platform/CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) + [`t125_coding_standards_enforcement.md`](../platform/t125_coding_standards_enforcement.md) — before commit: `make ci-local` green (needs `make db-up` + `nvm use`); Go: `golangci-lint run ./...` |
 | **Tag contract** | [`docs/TAGS.md`](TAGS.md) |
 
 If the registry row has a `spec`, read it before editing code.

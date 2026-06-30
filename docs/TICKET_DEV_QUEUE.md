@@ -32,9 +32,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-125 — Coding standards + 11/10 enforcement
 
-- **Active slice:** `T-125.0`
+- **Active slice:** `T-125.3`
 - **Slice spec:** `docs/platform/t125_coding_standards_enforcement.md`
 - **Program hub:** `docs/platform/t125_coding_standards_enforcement.md`
 - **Branch:** `ticket/T-125`
 - **Targets:** root, website, mod
-- **Summary:** Author CODING_STANDARDS.md (style/structure/errors/tests, distinct from DOCUMENTATION_STANDARDS). Full CI gate (test-it, FE build/lint/test), golangci errcheck/govet/staticcheck without only-new-issues, TS strict:true, complete @route on handlers, error-handling policy, Enfusion DTO fixture gate. Depends on T-124. Hub: t125_coding_standards_enforcement.md.
+- **Summary:** CODING_STANDARDS.md + enforcement. Shipped through T-125.2.1 @ 80c7f07 (ci.yml, make ci-local, golangci full gate, verify-ci1.sh). Active T-125.3: TS strict + eslint tags. Remaining: T-125.4–.6 (@route, M6, Prettier, doc sync). Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.

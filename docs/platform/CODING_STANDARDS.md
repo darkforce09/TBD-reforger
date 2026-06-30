@@ -3,8 +3,8 @@
 **Status:** living
 **Audience:** every engineer and AI agent that writes Go, TypeScript/React, or Enfusion code in this monorepo
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/platform/README.md`](README.md) → **this doc** (supporting tier)
-**Updated:** 2026-06-30
-**Ticket:** [T-125](t125_coding_standards_enforcement.md) — authored in **T-125.0**, hardened in **T-125.0.1**; enforcement wired in **T-125.1–.5**.
+**Updated:** 2026-06-26
+**Ticket:** [T-125](t125_coding_standards_enforcement.md) — authored **T-125.0/.0.1**; **T-125.1–.2.1 shipped** @ `80c7f07`; **T-125.3–.5** remaining.
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
@@ -24,11 +24,12 @@ is too fat, whether a swallowed `_ = db.First(...)` is acceptable, what HTTP sta
 returns, how big a file may grow, and — critically — **which tool checks each rule**. The 2026 audit
 ([`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md)) surfaced the symptoms: **M6** (31 swallowed
 DB/audit errors), god-files (`admin.tsx` 1628 L, `doctrine.tsx` 1288 L, `events.go` 1038 L), and
-inconsistent error envelopes. This document fixes that. Go exported-doc coverage is **gated by
-`revive`'s `exported` rule** in [`apps/website/.golangci.yml`](../../apps/website/.golangci.yml);
-today [`contracts.yml`](../../.github/workflows/contracts.yml) runs it with `only-new-issues: true`,
-so it locks **new/changed** code only — **T-125.2** removes that flag to make it a full-repo gate.
-§10 maps **every rule to the exact tool, config, verify command, and T-125 slice** that enforces it.
+inconsistent error envelopes. This document fixes that. Go lint is **gated by the full
+[`apps/website/.golangci.yml`](../../apps/website/.golangci.yml) set** (revive, errcheck, errorlint,
+staticcheck, govet, cyclop) on every **`ci.yml`** push/PR to `main` and via **`make ci-local`**.
+[`contracts.yml`](../../.github/workflows/contracts.yml) is a path-filtered supplement (no
+`only-new-issues` since **T-125.2**). §10 maps **every rule to the exact tool, config, verify command,
+and T-125 slice** that enforces it.
 
 ### 0.1 Boundary matrix — what lives where (zero overlap)
 
@@ -66,10 +67,10 @@ precisely is not ready to ship.
 
 ### 0.3 Meta-gates — rules about the CI configuration itself
 
-- **CI-1 (Debuggability) — `only-new-issues` SHALL NOT survive.** After **T-125.2**,
+- **CI-1 (Debuggability) — `only-new-issues` SHALL NOT survive.** After **T-125.2** (shipped),
   [`contracts.yml`](../../.github/workflows/contracts.yml) MUST NOT set `only-new-issues: true` on the
-  golangci job (it would let pre-existing defects through). Gate: **CI-SCRIPT** —
-  `grep -q 'only-new-issues: true' .github/workflows/contracts.yml && exit 1`, run inside `make ci-local`.
+  golangci job. Gate: **CI-SCRIPT** — [`scripts/website/verify-ci1.sh`](../../scripts/website/verify-ci1.sh),
+  run inside `make ci-local-backend`.
 - **CI-2 (Debuggability) — `ci.yml` SHALL gate every push/PR to `main`.** It MUST run **backend**
   (Postgres 18, `make test-it`), **frontend** (`npm run lint`/`build`/`test`), and **schema**
   (`make schema-validate`, `make verify-citations`). Gate: **CI-BLOCK** (the workflow itself). Slice **T-125.1**.
@@ -331,13 +332,13 @@ Re=Readability, Us=Usability, De=Debuggability.
 | Rule | Pillar | Statement | Gate | Enforcement (tool + config) | Verify (exit 0) | Slice | Status |
 |------|:--:|-----------|------|-----------------------------|-----------------|:--:|:--:|
 | **GO-1** | Sc | Logic in `services/`; handlers HTTP-only | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` | `bash scripts/website/verify-handler-imports.sh` | T-125.4 | planned |
-| **GO-2** | De | Handle DB-read errors (no silent `_=`) | CI-BLOCK | golangci `errcheck` (`check-blank: true`) | `cd apps/website && golangci-lint run ./...` | T-125.2 | planned |
-| **GO-3** | De | Best-effort write needs `//nolint:errcheck // best-effort:` | CI-BLOCK | golangci `errcheck` `check-blank: true` | `golangci-lint run ./...` | T-125.2 | planned |
-| **GO-4** | De | Wrap propagated errors with `%w` | CI-BLOCK | golangci `errorlint` | `golangci-lint run ./...` | T-125.2 | planned |
+| **GO-2** | De | Handle DB-read errors (no silent `_=`) | CI-BLOCK | golangci `errcheck` (`check-blank: true`) | `cd apps/website && golangci-lint run ./...` | T-125.2 | live |
+| **GO-3** | De | Best-effort write needs `//nolint:errcheck // best-effort:` | CI-BLOCK | golangci `errcheck` `check-blank: true` | `golangci-lint run ./...` | T-125.2 | live |
+| **GO-4** | De | Wrap propagated errors with `%w` | CI-BLOCK | golangci `errorlint` | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-5** | Us | Dup key → 409 via SQLSTATE `23505` | CI-BLOCK | IT `TestDuplicateSemver_409` + `staticcheck` | `make test-it` | T-125.4 | planned |
-| **GO-6** | Re | Exported Godoc starts with name | CI-BLOCK | golangci `revive` `exported` (no `only-new-issues`) | `golangci-lint run ./...` | T-125.2 | live→full |
+| **GO-6** | Re | Exported Godoc starts with name | CI-BLOCK | golangci `revive` `exported` (no `only-new-issues`) | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-7** | Re | Handler func has `@route` | CI-SCRIPT | `verify-contract-citations.mjs` (+`@route` on `^func [A-Z]` in handlers/) | `make verify-citations` | T-125.4 | planned |
-| **GO-8** | De | `staticcheck` on; `internal/contract/**` excluded | CI-BLOCK | `.golangci.yml`: `staticcheck` + `issues.exclude-rules` path | `golangci-lint run ./...` | T-125.2 | planned |
+| **GO-8** | De | `staticcheck` on; `internal/contract/**` excluded | CI-BLOCK | `.golangci.yml`: `staticcheck` + `linters.exclusions.rules` path | `golangci-lint run ./...` | T-125.2 | live |
 | **GO-9** | Sc | `handlers` imports ⊆ {services,models,middleware,contract,config} | CI-SCRIPT | `scripts/website/verify-handler-imports.sh` (import allowlist) | `bash …/verify-handler-imports.sh` | T-125.4 | planned |
 | **TS-1** | De | `tsconfig.app.json` `strict:true` | CI-BLOCK | `tsc -b` | `npm run build` | T-125.3 | planned |
 | **TS-2** | Sc | `pages/` wiring-only; no page imported by feature | CI-BLOCK | eslint `import/no-restricted-paths` (zones) | `npm run lint` | T-125.3 | planned |
@@ -354,28 +355,30 @@ Re=Readability, Us=Usability, De=Debuggability.
 | **ENF-2** | De | `// Authority only — <reason>` on gates | MANUAL | Enfusion runtime — no Enforce-Script static analyser | Workbench pass | — | manual |
 | **ENF-3** | Re | `@contract`/`@authority` resolve on `.c` | CI-SCRIPT | `verify-contract-citations.mjs` | `make verify-citations` | T-125.4 | planned |
 | **ENF-4** | Us | DTO has validating golden fixture | CI-SCRIPT | `validate.mjs` Enfusion DTO branch | `make schema-validate` | T-125.4 | planned |
-| **TEST-1** | De | Handler change ⇒ `make test-it` green | CI-BLOCK | `ci.yml` backend (PG18) | `make test-it` | T-125.1 | planned |
-| **TEST-2** | De | features hooks/utils ⇒ vitest | CI-BLOCK | `ci.yml` frontend | `npm test` | T-125.1 | planned |
-| **TEST-3** | Us | Schema change ⇒ validate + fixture | CI-BLOCK | `ci.yml` schema | `make schema-validate` | T-125.1 | planned |
-| **FMT-1** | Re | gofmt clean | CI-BLOCK | `gofmt -l` empty | `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"` | T-125.1 | planned |
+| **TEST-1** | De | Handler change ⇒ `make test-it` green | CI-BLOCK | `ci.yml` backend (PG18) | `make test-it` | T-125.1 | live |
+| **TEST-2** | De | features hooks/utils ⇒ vitest | CI-BLOCK | `ci.yml` frontend | `npm test` | T-125.1 | live |
+| **TEST-3** | Us | Schema change ⇒ validate + fixture | CI-BLOCK | `ci.yml` schema | `make schema-validate` | T-125.1 | live |
+| **FMT-1** | Re | gofmt clean | CI-BLOCK | `gofmt -l` empty | `test -z "$(gofmt -l apps/website/internal apps/website/cmd)"` | T-125.1 | live |
 | **FMT-2** | Re | `.editorconfig` honored | CI-BLOCK | `editorconfig-checker` | `editorconfig-checker` | T-125.5 | planned |
 | **FMT-3** | Re | Prettier for TS/TSX/CSS | CI-BLOCK | `prettier --check` | `npm run format:check` | T-125.5 | planned |
 | **SIZE-1** | Sc | >600 L ⇒ WARN | CI-SCRIPT | `verify-file-length.mjs` (warn band) | `node scripts/website/verify-file-length.mjs` | T-125.4 | planned |
-| **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `node scripts/website/verify-file-length.mjs` | T-125.2 | planned |
+| **SIZE-2** | Sc | `tactical-map/**` size-exempt | ALLOWLIST | `.coding-standards-allowlist.yaml` (`reason: MC-perf`) | `node scripts/website/verify-file-length.mjs` | T-125.2 | live |
 | **SIZE-3** | Sc | >1000 L ⇒ exit 1 unless allowlisted | CI-SCRIPT | `scripts/website/verify-file-length.mjs` | `node scripts/website/verify-file-length.mjs` | T-125.4 | planned |
-| **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | planned |
+| **COMP-1** | Re | Cyclomatic ≤ 15/fn (hard); inline opt-out only | CI-BLOCK | golangci `cyclop` `max-complexity:15` · eslint `complexity:["error",{max:15}]` | `golangci-lint run ./...` · `npm run lint` | T-125.2/.3 | live/partial |
 | **LOG-2** | De | No committed FE `console.log` | CI-BLOCK | eslint `no-console {allow:["warn","error"]}` | `npm run lint` | T-125.3 | planned |
 | **LOG-3** | De | 4xx/5xx log id+status+dur (≠ expected miss) | CI-SCRIPT | `scripts/website/verify-handler-logging.sh` | `bash …/verify-handler-logging.sh` | T-125.4 | planned |
-| **CI-1** | De | No `only-new-issues:true` post-T-125.2 | CI-SCRIPT | `grep -q 'only-new-issues: true' contracts.yml && exit 1` | `make ci-local` | T-125.2 | planned |
-| **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `make ci-local` (mirror) | T-125.1 | planned |
+| **CI-1** | De | No `only-new-issues:true` post-T-125.2 | CI-SCRIPT | `scripts/website/verify-ci1.sh` (via `make ci-local-backend`) | `bash scripts/website/verify-ci1.sh` | T-125.2 | live |
+| **CI-2** | De | `ci.yml` gates every push/PR to main | CI-BLOCK | `ci.yml` backend+frontend+schema jobs | `make ci-local` (mirror) | T-125.1 | live |
 
 **Count by pillar:** Scalability 6 · Readability 9 · Usability 9 · Debuggability 14 · **38 total.**
 **Count by gate:** CI-BLOCK 24 · CI-SCRIPT 11 · ALLOWLIST 1 · MANUAL 2 (ENF-1, ENF-2 — Enfusion only).
 
 ### 10.1 Planned CI scripts inventory
 
-Every enforcement artefact the matrix references that is **not yet in the repo**. Building these is the
-work of T-125.1–.5 (this slice only specifies them).
+Enforcement artefacts **not yet in the repo** (or not yet extended). Shipped in T-125.1–.2.1:
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), `make ci-local`,
+[`.coding-standards-allowlist.yaml`](../../.coding-standards-allowlist.yaml),
+[`scripts/website/verify-ci1.sh`](../../scripts/website/verify-ci1.sh) (CI-1).
 
 | Script / artefact | Rules it satisfies | Slice |
 |-------------------|--------------------|:--:|
@@ -384,10 +387,8 @@ work of T-125.1–.5 (this slice only specifies them).
 | `scripts/website/verify-error-envelope.sh` | ERR-4 | T-125.4 |
 | `scripts/website/verify-handler-logging.sh` | LOG-3 | T-125.4 |
 | `scripts/website/verify-file-length.mjs` | SIZE-1, SIZE-3 | T-125.4 |
-| `.coding-standards-allowlist.yaml` | SIZE-2, SIZE-3 debt | T-125.2 |
 | `validate.mjs` Enfusion DTO branch | ENF-4 | T-125.4 |
-| `.github/workflows/ci.yml` | CI-2, TEST-1/2/3, FMT-1 | T-125.1 |
-| `make ci-local` + `make verify-coding-standards` (meta targets) | all CI-SCRIPT + CI-1 | T-125.1 / .4 |
+| `make verify-coding-standards` (meta target) | GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3 | T-125.4 |
 
 ---
 
@@ -398,36 +399,35 @@ what it wraps. Each line names the rules it satisfies; `# after T-125.X` marks a
 exist until that slice ships.
 
 ```bash
-make ci-local                          # (T-125.1) the whole gate; CI-1, CI-2 mirror
+make ci-local                          # whole gate (CI-1, CI-2); needs `make db-up` + `nvm use`
 
-# 1. Go format + lint
+# 1. Go format + lint (ci-local-backend)
 test -z "$(gofmt -l apps/website/internal apps/website/cmd)"   # FMT-1
-cd apps/website && golangci-lint run ./...                     # GO-2,3,4,6,8 + COMP-1(Go)  [after T-125.2]
-# 2. Go integration
-make db-up && make test-it             # TEST-1, GO-5, ERR-1, ERR-2, ERR-5
-# 3. Frontend
+bash scripts/website/verify-ci1.sh                               # CI-1
+cd apps/website && golangci-lint run ./...                     # GO-2,3,4,6,8 + COMP-1(Go)
+cd apps/website && go build ./...
+make test-it                                                   # TEST-1, GO-5, ERR-1, ERR-2, ERR-5
+# 2. Frontend (ci-local-frontend)
 cd apps/website/frontend
-  npm run lint                         # TS-2,3,4,5,7 + LOG-2 + COMP-1(TS)
-  npm test                             # TEST-2
-  npm run build                        # TS-1 (tsc -b strict) + vite
+  npm ci && npm run lint && npm run build && npm test          # TEST-2, TS-5, …
   npm run format:check                 # FMT-3                          [after T-125.5]
   editorconfig-checker                 # FMT-2                          [after T-125.5]
-# 4. Schema + citations
+# 3. Schema + citations (ci-local-schema)
 make schema-validate                   # TEST-3, ENF-4
-make verify-citations                  # GO-7, TS-6, ENF-3  (covers @route + @model)
-# 5. Coding-standards scripts
-make verify-coding-standards           # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3, CI-1  [after T-125.4]
+make verify-citations                  # ENF-3 (GO-7/TS-6 extensions: T-125.3/.4)
+# 4. Coding-standards scripts
+make verify-coding-standards           # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3  [after T-125.4]
 ```
 
-> **Slice availability:** at T-125.0.1 none of the gates above are wired yet — they land in T-125.1–.5.
-> Until each slice ships, run only the pieces that already exist (`make test-it`, `npm run build`,
-> `npm run lint`, `npm test`, `make schema-validate`, `make verify-citations`).
+> **Slice availability (2026-06):** **T-125.1–.2.1 shipped** — `make ci-local`, full golangci, and
+> CI-1 via `verify-ci1.sh` are live. Still **planned:** TS strict/eslint hardening (T-125.3), verify-*
+> scripts (T-125.4), Prettier/editorconfig (T-125.5).
 
 ---
 
 ## 12. Quick-reference cheat sheet
 
-Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md) (Cursor, T-125.6).
+Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md) (T-125.6).
 
 | Language | Before you commit |
 |----------|-------------------|

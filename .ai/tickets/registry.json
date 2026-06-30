@@ -2581,7 +2581,7 @@
       ],
       "executor": "claude-code",
       "status": "ready",
-      "active_slice": "T-125.0",
+      "active_slice": "T-125.3",
       "surfaces": [
         "DATA"
       ],
@@ -2591,7 +2591,7 @@
         "api"
       ],
       "title": "Coding standards + 11/10 enforcement",
-      "summary": "Author CODING_STANDARDS.md (style/structure/errors/tests, distinct from DOCUMENTATION_STANDARDS). Full CI gate (test-it, FE build/lint/test), golangci errcheck/govet/staticcheck without only-new-issues, TS strict:true, complete @route on handlers, error-handling policy, Enfusion DTO fixture gate. Depends on T-124. Hub: t125_coding_standards_enforcement.md.",
+      "summary": "CODING_STANDARDS.md + enforcement. Shipped through T-125.2.1 @ 80c7f07 (ci.yml, make ci-local, golangci full gate, verify-ci1.sh). Active T-125.3: TS strict + eslint tags. Remaining: T-125.4–.6 (@route, M6, Prettier, doc sync). Depends on T-124 (met). Hub: t125_coding_standards_enforcement.md.",
       "spec": "docs/platform/t125_coding_standards_enforcement.md",
       "slices": [
         "T-125.0",
@@ -2609,7 +2609,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t125_coding_standards_enforcement.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "a54f491"
         },
         "T-125.1": {
           "targets": [
@@ -2618,7 +2619,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t125_coding_standards_enforcement.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "9792182"
         },
         "T-125.2": {
           "targets": [
@@ -2626,7 +2628,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t125_coding_standards_enforcement.md",
-          "status": "queued"
+          "status": "shipped",
+          "shipped_at": "80c7f07"
         },
         "T-125.3": {
           "targets": [

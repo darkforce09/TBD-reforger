@@ -174,6 +174,17 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
+### ACTIVE SLICE — T-125 (Coding standards + enforcement)
+
+See [`t125_coding_standards_enforcement.md`](docs/platform/t125_coding_standards_enforcement.md) · [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) · active slice **`T-125.3`** (TS `strict: true` + eslint tags).
+
+**Shipped (T-125.0–.2.1 @ `80c7f07`):**
+- **T-125.0/.0.1** — `CODING_STANDARDS.md` (38 rules, gate taxonomy, enforcement matrix) @ `a54f491`.
+- **T-125.1** — primary [`ci.yml`](.github/workflows/ci.yml) (3 jobs, every push/PR to `main`) + `make ci-local` @ `9792182`.
+- **T-125.2/.2.1** — golangci full gate (revive, errcheck, errorlint, staticcheck, govet, cyclop); `only-new-issues` removed; [`verify-ci1.sh`](scripts/website/verify-ci1.sh); [`.coding-standards-allowlist.yaml`](.coding-standards-allowlist.yaml) stub @ `80c7f07`.
+
+**Next:** **T-125.3** strict TS · **T-125.4** `@route` + M6 `_ = db.First` + verify scripts · **T-125.5** Prettier/editorconfig · **T-125.6** final doc sync + registry shipped.
+
 **Done (shipped):**
 - T-124 **Dependency & toolchain upgrade** @ `cd11db0`. FE npm to latest (vitest **4.1.9**, deck.gl 9.3.5, vite 8); Go modules gin **1.12**, gorm **1.31.2**, pgx **5.10**; **Go 1.26**, **Node 26** (`.nvmrc` + CI), **Postgres 18** dev image; dropped unused `@tailwindcss/container-queries`. Verify: FE build/lint/**21/21** tests, `make build`, `make test-it`, `make schema-codegen` clean. Spec: [`t124_dependency_upgrade.md`](docs/platform/t124_dependency_upgrade.md).
 - T-123 **Documentation standards rollout** @ `169e47d` (tag **T-123**). In-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); schema codegen → `apps/website/internal/contract/` + `apps/website/frontend/src/types/contract/` via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json` (400 on invalid; `internal/contract/validate.go`); `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift). Resolves audit T1/T8. Spec: [`t123_documentation_standards_rollout.md`](docs/platform/t123_documentation_standards_rollout.md).
@@ -600,3 +611,8 @@ Source of truth for the API contract is the Go handlers + `internal/models` tags
 frontend types yield to Go on conflict. To check a wire change for real, run the stack,
 `dev-login`, hit the endpoint, and confirm the JSON matches the TS type — `tsc` alone
 only proves the frontend is self-consistent, not that it matches the backend.
+
+**Platform CI replay (T-125):** `make db-up` → `nvm use` → **`make ci-local`** (mirrors
+[`ci.yml`](.github/workflows/ci.yml): gofmt, CI-1, golangci, build, test-it, FE lint/build/test,
+schema validate, citations). Go lint alone: `cd apps/website && golangci-lint run ./...`.
+See [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) §11.

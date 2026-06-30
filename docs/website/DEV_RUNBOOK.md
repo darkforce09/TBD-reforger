@@ -5,7 +5,18 @@ Backend docs: [`docs/backend/README.md`](backend/README.md).
 
 ## Start everything
 
-**Toolchain (T-124):** Go **1.26**, Node **26** (repo root [`.nvmrc`](../../.nvmrc) — `nvm use` before frontend work), Postgres **18** (`postgres:18-alpine` in compose). CI matches via [`contracts.yml`](../../.github/workflows/contracts.yml) + [`schema.yml`](../../.github/workflows/schema.yml).
+**Toolchain (T-124):** Go **1.26**, Node **26** (repo root [`.nvmrc`](../../.nvmrc) — `nvm use` before frontend work), Postgres **18** (`postgres:18-alpine` in compose).
+
+**CI replay (T-125.1–.2.1):** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) on every push/PR to `main`. Local mirror:
+
+```bash
+make db-up          # Postgres on host :5434
+nvm use             # Node 26
+make ci-local       # gofmt + CI-1 + golangci + build + test-it + FE lint/build/test + schema + citations
+```
+
+Go lint: `cd apps/website && golangci-lint run ./...` (full set — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md)). CI-1:
+`bash scripts/website/verify-ci1.sh`. Supplements: [`contracts.yml`](../../.github/workflows/contracts.yml) (path-filtered), [`schema.yml`](../../.github/workflows/schema.yml).
 
 ```bash
 # 1. Postgres (port 5434) — quick, run in foreground
@@ -43,7 +54,7 @@ cd packages/tbd-schema && npm run validate
 make verify-citations
 ```
 
-These run in CI via [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml): `@contract` citation integrity, schema codegen-drift (`make schema-codegen` must be a no-op), golangci-lint (`revive` exported-doc), and the ESLint TSDoc gate; schema validation runs in [`schema.yml`](../../.github/workflows/schema.yml). `CreateVersion` validates the mission version payload against `mission-editor-payload.schema.json` before persist.
+These run in CI via [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (primary full-repo gate: backend integration tests + golangci + frontend build/lint/test + schema validate + citations) and path-filtered supplements in [`contracts.yml`](../../.github/workflows/contracts.yml) (codegen-drift, supplemental golangci, ESLint TSDoc) and [`schema.yml`](../../.github/workflows/schema.yml). `CreateVersion` validates the mission version payload against `mission-editor-payload.schema.json` before persist.
 
 ## Log in (no Discord needed)
 
