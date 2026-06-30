@@ -5,11 +5,13 @@
 import {
   updateEnvironment,
   useMapStore,
+  useBasemapView,
+  setBasemapView,
   type MissionDoc,
   type MissionMeta,
 } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { ReadonlyField, SelectField, TextField, ToggleField } from './RightInspector/fields'
+import { Field, ReadonlyField, SelectField, TextField, ToggleField } from './RightInspector/fields'
 
 type Weather = MissionMeta['environment']['weather']
 
@@ -31,6 +33,9 @@ export function MissionSettingsDialog({
 }) {
   const meta = useMapStore((s) => s.meta)
   const env = meta?.environment
+  // Basemap view is a per-user pref (localStorage), not mission meta — it travels with the
+  // user, not the mission (dual-view N8). T-090.1 ships Satellite; Map lands in T-090.1.1.
+  const basemapView = useBasemapView()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -65,6 +70,30 @@ export function MissionSettingsDialog({
             checked={env?.thermals ?? false}
             onChange={(thermals) => updateEnvironment(md, { thermals })}
           />
+
+          <Field label="Basemap">
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setBasemapView('satellite')}
+                className={`flex-1 rounded-md border px-2.5 py-1.5 text-label-md transition-colors ${
+                  basemapView === 'satellite'
+                    ? 'border-primary/60 bg-primary/10 text-on-surface'
+                    : 'border-outline-variant/40 text-outline hover:bg-surface-container-lowest/60'
+                }`}
+              >
+                Satellite
+              </button>
+              <button
+                type="button"
+                disabled
+                title="Map view ships in T-090.1.1"
+                className="flex-1 cursor-not-allowed rounded-md border border-outline-variant/20 px-2.5 py-1.5 text-label-md text-outline"
+              >
+                Map <span className="opacity-60">(soon)</span>
+              </button>
+            </div>
+          </Field>
 
           <ToggleField
             label="Show grid"

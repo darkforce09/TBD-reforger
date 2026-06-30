@@ -64,6 +64,12 @@ export default function MissionCreatorPage() {
     if (useMapStore.getState().selection.ids.length <= 1) setAttributesId(id)
   }, [])
 
+  // Satellite basemap 404 → keep editing on the grid, tell the user once (T-090.1).
+  const onBasemapDegraded = useCallback(
+    () => toast.error('Satellite basemap unavailable — showing grid only.'),
+    [],
+  )
+
   // Cursor read-out goes straight into the engine store (rAF-throttled upstream) so the page
   // never re-renders on pointer move — only BottomToolbelt subscribes to it (T-057).
   const onCursorMove = useCallback(
@@ -203,6 +209,7 @@ export default function MissionCreatorPage() {
         onEntityActivate={onEntityActivate}
         onAssetDrop={onAssetDrop}
         onEntitiesMove={onEntitiesMove}
+        onBasemapDegraded={onBasemapDegraded}
       />
 
       {/* Overlay layer: spans the screen and ignores pointer events so the map gap pans;

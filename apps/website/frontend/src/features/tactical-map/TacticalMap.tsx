@@ -4,12 +4,14 @@
 // layers (Ultra Plan §4.3). Deck owns all entity rendering — React never draws
 // per-entity DOM — which is what holds 60 fps with hundreds of slots.
 
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import type { DeckGLRef } from '@deck.gl/react'
 import { getTerrain } from './coords/terrains'
 import { useOrthographicView } from './view/useOrthographicView'
 import { useBaseMapLayer } from './layers/useBaseMapLayer'
+import { useTerrainBasemapLayer } from './layers/useTerrainBasemapLayer'
+import { useBasemapView } from './state/basemapView'
 import { useIconLayer, useDragIconLayer } from './layers/useIconLayer'
 import { useClusterIconLayer } from './layers/useClusterIconLayer'
 import { useSelectionLayer } from './layers/useSelectionLayer'
@@ -40,6 +42,7 @@ function TacticalMapInner({
   onEntityActivate,
   onAssetDrop,
   onEntitiesMove,
+  onBasemapDegraded,
 }: TacticalMapProps) {
   const terrain = useMemo(() => getTerrain(terrainId), [terrainId])
   const { view, viewState, onViewStateChange, flyTo: viewFlyTo } = useOrthographicView(terrain)
@@ -58,6 +61,53 @@ function TacticalMapInner({
   const clusterMode = slotCount > CLUSTER_SLOT_THRESHOLD && viewState.zoom <= ZOOM_CLUSTER_MAX
 
   const baseMap = useBaseMapLayer(terrain, showGrid, showHillshade)
+  // Aligned satellite basemap under the grid (T-090.1). Reads the per-user view pref and the
+  // terrain manifest; renders nothing (grid-only) + fires onBasemapDegraded when tiles 404.
+  const basemapView = useBasemapView()
+  // Visible world AABB for basemap tile culling (T-090.1.1 LOD). Recomputed on pan/zoom (the only
+  // inputs that move it); null on the very first paint before the container is measured → the hook
+  // falls back to the full world (correct at the default zoom-to-fit). Container read is safe here
+  // because viewState already drives the re-render.
+  // Container size tracked in state (via ResizeObserver) rather than read from the ref during
+  // render — changes only on resize, so it never adds per-frame work to pan/zoom.
+  const [containerSize, setContainerSize] = useState<{ width: number; height: number } | null>(null)
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const update = () => {
+      const r = el.getBoundingClientRect()
+      setContainerSize({ width: r.width, height: r.height })
+    }
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+  const basemapViewBounds = useMemo<[number, number, number, number] | null>(() => {
+    if (!containerSize?.width || !containerSize.height) return null
+    const vp = view.makeViewport({
+      width: containerSize.width,
+      height: containerSize.height,
+      viewState,
+    })
+    if (!vp) return null
+    const c0 = vp.unproject([0, 0])
+    const c1 = vp.unproject([containerSize.width, containerSize.height])
+    return [
+      Math.min(c0[0], c1[0]),
+      Math.min(c0[1], c1[1]),
+      Math.max(c0[0], c1[0]),
+      Math.max(c0[1], c1[1]),
+    ]
+  }, [view, viewState, containerSize])
+  const basemapLayers = useTerrainBasemapLayer({
+    terrain,
+    basemapView,
+    visible: true,
+    viewState,
+    viewBounds: basemapViewBounds,
+    onDegraded: onBasemapDegraded,
+  })
   // Re-render on DEM state changes (ready/degraded/reload) so the hillshade + cursor Z refresh
   // without an extra interaction (T-091.2 follow-up).
   const demVersion = useDemVersion()
@@ -276,11 +326,13 @@ function TacticalMapInner({
           }
           // dragPan off: left-drag is select/move, middle/right-drag pans (useSelectTool).
           controller={{ dragPan: false, doubleClickZoom: false }}
-          // Deck paints later entries on top. Bottom→top: hillshade relief → grid lines →
-          // icons, so the ~40% BitmapLayer can't bury the LineLayer grid (T-091.2 M5/M6). The
-          // grid stays in the array always (its `visible` prop handles the toggle) — removing
-          // then re-adding the memoized layer leaves it finalized/blank.
+          // Deck paints later entries on top. Bottom→top: satellite basemap → hillshade relief
+          // → grid lines → icons (T-090.1 dual-view stack order), so the raster underlays the
+          // ~40% hillshade and the LineLayer grid (T-091.2 M5/M6). The grid stays in the array
+          // always (its `visible` prop handles the toggle) — removing then re-adding the
+          // memoized layer leaves it finalized/blank.
           layers={[
+            ...basemapLayers,
             ...(hillshade ? [hillshade] : []),
             baseMap,
             ...clusterLayers,

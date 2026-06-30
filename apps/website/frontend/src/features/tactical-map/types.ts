@@ -49,6 +49,8 @@ export interface TacticalMapProps {
   onAssetDrop?: (payload: AssetDropPayload, world: { x: number; y: number }) => void
   /** Commit a drag-move of one or more entities by a world-meter delta (Phase 7b). */
   onEntitiesMove?: (ids: string[], delta: { x: number; y: number }) => void
+  /** Fired once when the satellite basemap can't load (404) → host shows a grid-only toast (T-090.1). */
+  onBasemapDegraded?: () => void
 }
 
 /** Imperative handle exposed via onReady. */

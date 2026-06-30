@@ -64,7 +64,7 @@
     "K1": "pass",
     "K1b": "pass",
     "K2": "pass",
-    "K3": "fail",
+    "K3": "pass",
     "K4": "fail",
     "K5": "pass",
     "K6": "pass",
@@ -85,9 +85,12 @@
   "forestSource": "derived-hull-mandated",
   "tileFindings": {
     "satellite": {
-      "path": null,
-      "escalate": true,
-      "evidence": "asset_search 'sat' -> system/terrain/defSatMap_BCR.edds + per-terrain SAP satellite background (wiki '2D Map Creation'). No one-call tile capture API; .edds extraction + retiling = T-090.1."
+      "path": "packages/map-assets/everon/tiles/satellite/0/0/0.webp",
+      "urlTemplate": "packages/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp",
+      "fullImage": "packages/map-assets/everon/tiles/satellite/full.webp",
+      "escalate": false,
+      "method": "TBD_SatelliteExportPlugin.c -> MapDataExporter.ExportRasterization(worlds/Eden/Eden.ent) -> 4096x4096 RGBA TGA -> build-tile-pyramid.sh (no flip; magick respects the TGA origin bit so the raw export is north-up for Deck top->north) -> z0-5 WebP + full.webp. winRc=0 with exportPath=profile DIR (engine names output <world>.tga = Eden.tga). Orientation confirmed north-up vs the real-Everon reference (T-090.1.1; the initial --flip-v shipped upside-down). Frontend renders pyramid w/ viewport LOD. 4096 is engine-locked (no size param on MapDataExporter). K3 CLOSED.",
+      "evidence": "asset_search 'sat' -> only engine-default defSatMap_BCR.edds (generic); real Everon ortho = generated SAP/super-texture (worlds/Eden/Eden/.Data/Eden_*_supertexture.edds). No one-call tile capture API; the scriptable engine map rasterizer (MapDataExporter.ExportRasterization, same call as the WE Export Map Data->Rasterization tool) produced the aligned ortho."
     },
     "map": {
       "path": null,

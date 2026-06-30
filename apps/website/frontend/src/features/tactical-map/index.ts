@@ -11,6 +11,10 @@ export type { MapViewState, TacticalMapProps, TacticalMapApi, AssetDropPayload }
 // DEM elevation (T-091.1)
 export { sampleElevation, isDemReady, isDemDegraded, loadDemForTerrain } from './dem'
 
+// Satellite basemap view pref (T-090.1) — per-user, localStorage-backed.
+export { useBasemapView, getBasemapView, setBasemapView } from './state/basemapView'
+export type { BasemapView } from './state/basemapView'
+
 // State foundation (Ultra Plan §2)
 export { useMapStore, pickMapSnapshot } from './state/useMapStore'
 export type { MapStoreState, MapSnapshot } from './state/useMapStore'
