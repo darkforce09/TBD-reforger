@@ -105,4 +105,4 @@ Stop everyday Y.Doc edits from flushing the entire Zustand mirror via `docToSnap
 
 ## Documentation sync (Cursor — done on ship)
 
-`agent_execution.md`, `ROADMAP.md`, `feature_inventory.md` PERF-BIND-001, `mission-editor.md`, `TAGS.md`, `CLAUDE.md`, spec footers, `docs/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`.
+`agent_execution.md`, `ROADMAP.md`, `feature_inventory.md` PERF-BIND-001, `mission-editor.md`, `TAGS.md`, `CLAUDE.md`, spec footers, `docs/website/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`.

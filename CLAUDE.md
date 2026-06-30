@@ -19,7 +19,7 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `apps/website/` — Go API + React SPA (run via root `Makefile`)
 - `apps/mod/` — Enfusion mod framework (`tbd-framework`, gitignored `crf_framework`/EnfusionMCP)
 - `packages/tbd-schema/` — mission JSON schema + golden missions
-- `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs
+- `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
 - `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy)
 - `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline output
 - `apps/website/cmd/api/` — API entrypoint (loads `.env`, runs migrations on boot, serves `/api/v1`).
@@ -81,7 +81,7 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 |-------------|--------|
 | Shipped feature / milestone | **§Status** — new T-0xx bullet under **Done**; bump `latest shipped` line |
 | **Active slice** (code in progress, not shipped) | **§Status — ACTIVE SLICE** block at top; keep `latest shipped` on last **git tag** only |
-| New/changed route | Matching `apps/website/frontend/docs/pages/*.md` + row in `apps/website/frontend/docs/INDEX.md`; verify against `apps/website/frontend/src/router.tsx` |
+| New/changed route | Matching `docs/website/frontend/pages/*.md` + row in `docs/website/frontend/INDEX.md`; verify against `apps/website/frontend/src/router.tsx` |
 | UI surface (no new route) | Relevant page doc + `Live source:` path to `apps/website/frontend/src/pages/` or `features/` |
 | API / model change | `internal/models/` tags + matching `apps/website/frontend/src/types/`; note handler if behavior changed |
 | Mission Creator | MC README, `agent_execution.md` Decisions log, and/or `feature_inventory.md` — only if editor contract or Eden parity changed |

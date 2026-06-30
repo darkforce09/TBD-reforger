@@ -1,4 +1,4 @@
-/** Historical reference mapping for Stitch folders; prefer live routes in frontend/src/pages. See frontend/docs/INDEX.md */
+/** Historical reference mapping for Stitch folders; prefer live routes in apps/website/frontend/src/pages. See docs/website/frontend/INDEX.md */
 export const stitchMap: Record<string, string | null> = {
   '/': 'tbd_reforger_dashboard_content',
   '/server-intel': 'server_intel_dashboard',

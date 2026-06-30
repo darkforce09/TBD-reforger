@@ -96,4 +96,4 @@ Real missions (~128 ORBAT slots) are tiny; this slice targets **future object-he
 
 ## Documentation sync (Cursor — this commit)
 
-`agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `mission-editor.md`, `feature_inventory.md`, `TAGS.md`, `docs/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, `docs/backend/architecture.md`, spec footers (`t062_1`, `t062`, `t062_2`, `t060_1`, `t057`–`t061`, `t070`).
+`agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `mission-editor.md`, `feature_inventory.md`, `TAGS.md`, `docs/website/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, `docs/backend/architecture.md`, spec footers (`t062_1`, `t062`, `t062_2`, `t060_1`, `t057`–`t061`, `t070`).

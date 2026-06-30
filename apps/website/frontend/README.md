@@ -1,12 +1,9 @@
 # TBD Reforger — Frontend
 
 React 19 + TypeScript + Vite SPA for the TBD Arma Reforger platform. Talks to the
-Go API (see [`CLAUDE.md`](../CLAUDE.md) and [`docs/backend/README.md`](../docs/backend/README.md)).
-Documentation: start at [`docs/TICKET_LEAD.md`](../docs/TICKET_LEAD.md) (queue) and [`docs/frontend/ROADMAP.md`](../docs/frontend/ROADMAP.md) (surfaces).
+Go API (see [`CLAUDE.md`](../../CLAUDE.md) and [`docs/website/backend/README.md`](../../../docs/website/backend/README.md)).
 
-**Documentation:** per-route specs, T-0xx ticket IDs, and theme tokens live in
-[docs/frontend/README.md](../docs/frontend/README.md) (hub) →
-[frontend/docs/INDEX.md](docs/INDEX.md).
+**Documentation:** per-route specs live under [`docs/website/frontend/`](../../../docs/website/frontend/) — start at [`ROADMAP.md`](../../../docs/website/frontend/ROADMAP.md) and [`INDEX.md`](../../../docs/website/frontend/INDEX.md). Ticket queue: [`docs/TICKET_LEAD.md`](../../../docs/TICKET_LEAD.md).
 
 ## Stack
 - **React 19** + **Vite** (HMR, `tsc -b && vite build`)

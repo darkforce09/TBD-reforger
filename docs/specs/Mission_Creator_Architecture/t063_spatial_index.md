@@ -95,7 +95,7 @@ Replace Deck GPU picking with an **rbush** R-tree in world meters, kept in sync 
 
 ## Documentation sync (Cursor — this commit)
 
-`agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `feature_inventory.md` (PERF-PICK-001 + SEL-MAP), `mission-editor.md`, `TAGS.md`, `docs/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, spec footers (`t057`–`t062`, `t070`).
+`agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `feature_inventory.md` (PERF-PICK-001 + SEL-MAP), `mission-editor.md`, `TAGS.md`, `docs/website/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, spec footers (`t057`–`t062`, `t070`).
 
 ---
 

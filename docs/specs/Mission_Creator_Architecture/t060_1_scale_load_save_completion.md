@@ -236,8 +236,8 @@ proxy: {
 | [CLAUDE.md](../../../CLAUDE.md) §Status | T-060 bullet + 360k acceptance |
 | [docs/TAGS.md](../../website/TAGS.md) | T-060.1 note |
 | [feature_inventory.md](feature_inventory.md) | PERF-LOAD-001 / PERF-SAVE-001 acceptance |
-| [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | PERF-003/004 determinate + 360k gate |
-| [docs/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md) | T-060 acceptance |
+| [mission-editor.md](../../../website/frontend/pages/mission-editor.md) | PERF-003/004 determinate + 360k gate |
+| [docs/website/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md) | T-060 acceptance |
 | [docs/AGENT_COMMIT_CHECKLIST.md](../../website/AGENT_COMMIT_CHECKLIST.md) | T-060.1.4 gate before tag |
 
 ---

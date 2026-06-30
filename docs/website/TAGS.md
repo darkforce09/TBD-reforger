@@ -33,7 +33,7 @@ Planning narrative lives in domain ROADMAPs; ticket IDs live in the registry.
 | Domain | ROADMAP |
 |--------|---------|
 | Platform hub | [`docs/README.md`](README.md) |
-| Frontend | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
+| Frontend | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
 | Backend | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) |
 

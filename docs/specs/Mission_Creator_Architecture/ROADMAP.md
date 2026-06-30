@@ -146,9 +146,9 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **[`t050_cursor_z_readout.md`](t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
 | **[`t049_terrain_title_position.md`](t049_terrain_title_position.md)** | **T-049** — Terrain + title hydrate + numeric position (shipped) |
 | **[`t048_library_create_dialog.md`](t048_library_create_dialog.md)** | T-048 — Library create dialog (shipped) |
-| [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
-| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
-| [`frontend/docs/pages/mission-creator.md`](../../../apps/website/frontend/docs/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
+| [`docs/website/frontend/pages/mission-library.md`](../../../website/frontend/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
+| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
+| [`docs/website/frontend/pages/mission-creator.md`](../../../website/frontend/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
 | **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub (**Phase 1 shipped**; active **T-068.7**) |
 | [`t068_5_1_visual_equip_fix.md`](t068_5_1_visual_equip_fix.md) | **T-068.5.1 shipped** — visual wear on test NPC @ `b233b11` |
 | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **T-068.6 shipped** — Phase 1 E2E sign-off PASS @ 2026-06-27 |

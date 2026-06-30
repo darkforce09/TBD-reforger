@@ -126,7 +126,7 @@ Replace the 500-row cap with **real list virtualization** so users can expand an
 
 ## Documentation sync (Cursor — T-064 ship) — **complete** (2026-06-24)
 
-Synced: `agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `feature_inventory.md` (PERF-OUTLINER-001 + KEY-COPY-001), `mission-editor.md`, `TAGS.md`, `docs/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, spec footers (`t056`–`t063`, `t070`, etc.).
+Synced: `agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `feature_inventory.md` (PERF-OUTLINER-001 + KEY-COPY-001), `mission-editor.md`, `TAGS.md`, `docs/website/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, spec footers (`t056`–`t063`, `t070`, etc.).
 
 ---
 

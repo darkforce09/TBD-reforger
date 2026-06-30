@@ -8,8 +8,8 @@
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
-> code is documented** (the cross-boundary tag vocabulary and per-language doc-comment rules). The two
-> do not overlap — see the boundary matrix in §0.1. This doc is **prescriptive**: **MUST**/**SHALL**
+> code is documented** (the cross-boundary tag vocabulary and per-language doc-comment rules) and
+> **where markdown files live** (§8.2). The two do not overlap — see the boundary matrix in §0.1. This doc is **prescriptive**: **MUST**/**SHALL**
 > are mandatory, **FORBIDDEN** patterns must not be introduced, and every rule names exactly one
 > enforcement **gate** (§0.2). It defers to running code and never overrides a rule in
 > [`CLAUDE.md`](../../CLAUDE.md) or the [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md).

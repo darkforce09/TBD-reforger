@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-editorconfig verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -58,11 +58,16 @@ schema-codegen: ## Regenerate Go + TS contract types from packages/tbd-schema/sc
 verify-citations: ## Verify @contract citations + GO-7 @route route-match (DOCUMENTATION_STANDARDS §10, CODING_STANDARDS §2)
 	node packages/tbd-schema/scripts/verify-contract-citations.mjs
 
-verify-coding-standards: ## GO-9 imports + ERR-4 envelope + LOG-3 logging + SIZE file length (CODING_STANDARDS §11)
+verify-coding-standards: ## GO-9 imports + ERR-4 envelope + LOG-3 logging + SIZE file length + doc layout (CODING_STANDARDS §11)
+	$(MAKE) verify-doc-layout
 	@bash scripts/website/verify-handler-imports.sh
 	@bash scripts/website/verify-error-envelope.sh
 	@bash scripts/website/verify-handler-logging.sh
 	@node scripts/website/verify-file-length.mjs
+
+verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs
+	@! find apps packages -type f -path '*/docs/*.md' ! -path '*/node_modules/*' 2>/dev/null | grep -q . || \
+	  (echo "FORBIDDEN: markdown under apps/**/docs/ or packages/**/docs/ — use docs/website/ instead" && exit 1)
 
 # FMT-2 (CODING_STANDARDS §7): root .editorconfig honored across apps/, packages/, docs/, scripts/.
 # Excludes live in .editorconfig-checker.json. Install (drops binary in ~/go/bin):

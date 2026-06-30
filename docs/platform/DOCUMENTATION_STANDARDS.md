@@ -314,6 +314,57 @@ Three tiers. Pick by **scope of the decision**, not by length.
 existing Decisions-log pattern (e.g. the UX Decisions log in
 [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md)).
 
+### 8.2 Documentation filesystem layout
+
+**Rule 8.2.1 — Single docs root.** All markdown documentation MUST live under repo-root
+[`docs/`](../../docs/). Exceptions:
+
+- Root [`README.md`](../../README.md) and [`CLAUDE.md`](../../CLAUDE.md) (agent runtime)
+- Per-package **`README.md` only** (one file, no `docs/` subtree) under `apps/*` and `packages/*`
+- Generated pipeline output under [`.ai/artifacts/`](../../.ai/artifacts/) (not hand-authored specs)
+- Archive tiers named in [`docs/website/archive/README.md`](../website/archive/README.md)
+
+**Rule 8.2.2 — FORBIDDEN paths.**
+
+- `apps/**/docs/**` (e.g. `apps/website/frontend/docs/`) — **never create**
+- `packages/**/docs/**` except a single schema README adjacent to JSON (not surface specs)
+- Duplicate hub trees mirroring `docs/website/` inside application folders
+
+**Rule 8.2.3 — Frontend surface spec contract.** When adding or changing a frontend route
+([`apps/website/frontend/src/router.tsx`](../../apps/website/frontend/src/router.tsx)):
+
+1. Create or update [`docs/website/frontend/pages/<name>.md`](../website/frontend/pages/) from
+   [`_template.md`](../website/frontend/_template.md)
+2. Add a row to [`docs/website/frontend/INDEX.md`](../website/frontend/INDEX.md)
+3. Update [`docs/website/frontend/ROADMAP.md`](../website/frontend/ROADMAP.md)
+4. Sync per [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md)
+
+**Rule 8.2.4 — Link style.**
+
+- **Within the same hub:** relative paths (`pages/foo.md`, `../platform/...`)
+- **From MC specs to page docs:** `../../website/frontend/pages/...` (from
+  `docs/specs/Mission_Creator_Architecture/`)
+- **In authority docs:** prose uses canonical `docs/website/frontend/...`; markdown hrefs may be
+  relative within `docs/website/`
+- **Never** use `docs/frontend/` (directory does not exist) or `frontend/docs/` (retired)
+
+**Rule 8.2.5 — Doc tree map.**
+
+| Doc type | Location |
+|----------|----------|
+| Platform standards | `docs/platform/` |
+| Website hub | `docs/website/README.md` |
+| Frontend surfaces | `docs/website/frontend/pages/` |
+| Backend API | `docs/website/backend/` |
+| Mission Creator engineering | `docs/specs/Mission_Creator_Architecture/` |
+| Tickets (generated views) | `docs/TICKET_*.md` (registry + `./scripts/ticket sync`) |
+| Live code | `apps/website/`, `apps/mod/`, `packages/` |
+
+**Rule 8.2.6 — Agent routing.** Cursor owns all paths under `docs/`. Claude Code MUST NOT create
+markdown under `apps/` except in-code comments per §1.
+
+Enforced by `make verify-doc-layout` (see [`Makefile`](../../Makefile)).
+
 **Decisions-log entry format** (normative):
 
 ```markdown
@@ -377,7 +428,8 @@ so a renamed schema definition fails CI instead of silently parsing to empty.
 
 ## 11. Quick-reference cheat sheet
 
-Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md).
+Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md). Doc
+**placement** (where markdown files live): §8.2.
 
 **Every exported symbol needs:**
 

@@ -120,8 +120,8 @@ Re-export: `selectSlotCount` alongside `selectSlotIcons`.
 | [`agent_execution.md`](agent_execution.md) | Decisions log row; ACTIVE SLICE → T-059 bulk paste |
 | [`ux_spec.md`](ux_spec.md) | Interaction table row for OBJ/SEL readout |
 | [`docs/TAGS.md`](../../website/TAGS.md) | T-058 row → shipped |
-| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Recently shipped row + recommended next → **T-060.1** acceptance |
-| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Element inventory row 5 + M3.13 milestone |
+| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Recently shipped row + recommended next → **T-060.1** acceptance |
+| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Element inventory row 5 + M3.13 milestone |
 
 **One T-058 commit** on `main`: code + doc finalize + CLAUDE §Status. Co-Authored-By when applicable.
 

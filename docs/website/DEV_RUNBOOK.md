@@ -15,7 +15,7 @@ nvm use             # Node 26
 make ci-local       # verify-editorconfig + backend + verify-coding-standards + FE format:check/lint/build/test + schema/citations
 ```
 
-**Formatting (T-125.5):** `make verify-editorconfig` (FMT-2, repo root; needs `editorconfig-checker` in `~/go/bin`) · `cd apps/website/frontend && npm run format:check` (FMT-3). Coding-standards bundle: `make verify-coding-standards` — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11.
+**Formatting (T-125.5):** `make verify-editorconfig` (FMT-2, repo root; needs `editorconfig-checker` in `~/go/bin`) · `cd apps/website/frontend && npm run format:check` (FMT-3). Coding-standards bundle: `make verify-coding-standards` (includes `verify-doc-layout` per DOCUMENTATION_STANDARDS §8.2) — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11.
 
 ```bash
 # 1. Postgres (port 5434) — quick, run in foreground

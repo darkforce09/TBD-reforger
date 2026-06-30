@@ -287,14 +287,14 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
-| [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md) | Status → `doc-complete`; M3/M4 milestones checked |
-| [`frontend/docs/shell/sidebar.md`](../../../apps/website/frontend/docs/shell/sidebar.md) | Check off T-048 milestone |
-| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Move T-048 from IN PROGRESS → DONE shipped table |
+| [`docs/website/frontend/pages/mission-library.md`](../../../website/frontend/pages/mission-library.md) | Status → `doc-complete`; M3/M4 milestones checked |
+| [`docs/website/frontend/shell/sidebar.md`](../../../website/frontend/shell/sidebar.md) | Check off T-048 milestone |
+| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Move T-048 from IN PROGRESS → DONE shipped table |
 | [`docs/specs/.../ROADMAP.md`](ROADMAP.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
 | [`t048_library_create_dialog.md`](t048_library_create_dialog.md) | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-048 Done bullet; bump latest-feature line |
 | [`agent_execution.md`](agent_execution.md) | **Update stale `/missions/create` refs** in repository map (lines ~92, ~151), phase table (~207), DEFERRED table (~448) — Decisions log already correct |
-| [`frontend/docs/TRACKING.md`](../../../apps/website/frontend/docs/TRACKING.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
+| [`docs/website/frontend/TRACKING.md`](../../../website/frontend/TRACKING.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
 | [`.cursor/rules/tbd-documentation.mdc`](../../.cursor/rules/tbd-documentation.mdc) | Create Cursor rule (optional but recommended) |
 | [`docs/backend/architecture.md`](../../website/backend/architecture.md) | Optional: "Mission Creator wizard" → "Library create dialog" (line ~547) |
 
@@ -323,6 +323,6 @@ Docs are PRE-STAGED — do not revert target-state docs; FINALIZE per spec §Doc
 
 ## Related
 
-- Surface spec (target): [`frontend/docs/pages/mission-library.md`](../../../apps/website/frontend/docs/pages/mission-library.md)
-- Frontend ROADMAP: [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md)
+- Surface spec (target): [`docs/website/frontend/pages/mission-library.md`](../../../website/frontend/pages/mission-library.md)
+- Frontend ROADMAP: [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md)
 - MC ROADMAP: [`ROADMAP.md`](ROADMAP.md)

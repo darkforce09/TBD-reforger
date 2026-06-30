@@ -19,7 +19,7 @@ Full commands: [`DEV_RUNBOOK.md`](DEV_RUNBOOK.md)
 | Role | Start here |
 |------|------------|
 | **Ticket backlog** | [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) · [`docs/TICKET_REGISTRY.md`](docs/TICKET_REGISTRY.md) |
-| Frontend | [`docs/frontend/ROADMAP.md`](docs/frontend/ROADMAP.md) |
+| Frontend | [`docs/website/frontend/ROADMAP.md`](docs/website/frontend/ROADMAP.md) |
 | Backend | [`docs/backend/ROADMAP.md`](docs/backend/ROADMAP.md) |
 | Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](docs/specs/Mission_Creator_Architecture/ROADMAP.md) |
 | AI agents | [`CLAUDE.md`](CLAUDE.md) |

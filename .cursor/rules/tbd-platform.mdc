@@ -8,6 +8,7 @@ alwaysApply: true
 - Read [`CLAUDE.md`](CLAUDE.md) first — status, run commands, conventions, agent roles.
 - **HARD GATE:** Read [`.cursor/rules/cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc) — step phrases, three modes, forbidden code edits.
 - Repo root: `/home/Samuel/Projects/TBD-Reforger/`. Mission Creator specs: `docs/specs/Mission_Creator_Architecture/`.
+- Frontend surface specs: `docs/website/frontend/` only — never `apps/website/frontend/docs/` (§8.2).
 - Ticket source of truth: `.ai/tickets/registry.json`. After edits run `./scripts/ticket sync` and `./scripts/ticket check`.
 - Do not hand-edit generated `docs/TICKET_*.md` or `<!-- ticket-sync:status -->` markers in CLAUDE.md.
 - **Cursor:** docs, brainstorm, registry, spec markdown (`executor: cursor-docs` slices).

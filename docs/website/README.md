@@ -6,7 +6,7 @@
 
 | Domain | ROADMAP |
 |--------|---------|
-| Frontend | [`docs/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
+| Frontend | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
 | Backend | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) |
 

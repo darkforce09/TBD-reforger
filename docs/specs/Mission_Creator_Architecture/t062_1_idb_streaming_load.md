@@ -132,4 +132,4 @@ Single DB **`tbd-mission-persist`**, two object stores:
 
 ## Documentation sync (Cursor — done)
 
-`agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `mission-editor.md`, `feature_inventory.md` (PERF-IDB-001, DATA-IDB-001, PERF-LOAD-001), `TAGS.md`, `docs/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, `docs/backend/architecture.md`, `engineering_plan.md`, spec footers (`t060_1`, `t060_fast_initial_load`, `t062`, `t062_2`, `t056`–`t059`, `t061`, `t070`).
+`agent_execution.md`, `ROADMAP.md`, `CLAUDE.md`, `mission-editor.md`, `feature_inventory.md` (PERF-IDB-001, DATA-IDB-001, PERF-LOAD-001), `TAGS.md`, `docs/website/frontend/ROADMAP.md`, `docs/AGENT_COMMIT_CHECKLIST.md`, `docs/backend/architecture.md`, `engineering_plan.md`, spec footers (`t060_1`, `t060_fast_initial_load`, `t062`, `t062_2`, `t056`–`t059`, `t061`, `t070`).

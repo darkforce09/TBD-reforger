@@ -174,7 +174,7 @@ Key shell files: `MissionCreatorPage.tsx`, `layout/{TopCommandStrip,BottomToolbe
 | Path | Role |
 |------|------|
 | `CLAUDE.md` (T-029–T-032) | Shipped status snapshot — update in DOC-0 |
-| `frontend/docs/pages/mission-library.md` | Create-mission dialog spec (T-048; superseded the `/missions/create` wizard) |
+| `docs/website/frontend/pages/mission-library.md` | Create-mission dialog spec (T-048; superseded the `/missions/create` wizard) |
 | `frontend/src/stitch-exports/mission_creator_setup_wizard/` | Wizard HTML mock (archived) |
 
 ---

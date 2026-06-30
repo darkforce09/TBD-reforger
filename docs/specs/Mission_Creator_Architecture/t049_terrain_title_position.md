@@ -321,11 +321,11 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
-| [`frontend/docs/pages/mission-editor.md`](../../../apps/website/frontend/docs/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
+| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
 | [`docs/specs/.../feature_inventory.md`](feature_inventory.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
 | [`ROADMAP.md`](ROADMAP.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |
-| [`docs/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | mission-editor notes |
+| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | mission-editor notes |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-049 bullet |
 | **This file** | Status → **shipped** |
 

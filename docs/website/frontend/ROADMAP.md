@@ -4,7 +4,7 @@
 
 **Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
 
-**Code:** [`frontend/src/`](../../../apps/website/frontend/src) · **Routes:** [`frontend/src/router.tsx`](../../../apps/website/frontend/src/router.tsx)
+**Code:** [`apps/website/frontend/src/`](../../../apps/website/frontend/src) · **Routes:** [`apps/website/frontend/src/router.tsx`](../../../apps/website/frontend/src/router.tsx)
 
 ---
 
@@ -12,9 +12,9 @@
 
 | Doc | When to open it |
 |-----|-----------------|
-| **[`frontend/docs/INDEX.md`](../../../apps/website/frontend/docs/INDEX.md)** | Per-route surface specs (28 pages) |
-| **[`frontend/docs/THEME.md`](../../../apps/website/frontend/docs/THEME.md)** | Aegis tokens in use |
-| **[`frontend/docs/_template.md`](../../../apps/website/frontend/docs/_template.md)** | Template for new page docs |
+| **[`docs/website/frontend/INDEX.md`](INDEX.md)** | Per-route surface specs (28 pages) |
+| **[`docs/website/frontend/THEME.md`](THEME.md)** | Aegis tokens in use |
+| **[`docs/website/frontend/_template.md`](_template.md)** | Template for new page docs |
 | **[Mission Creator ROADMAP](../../specs/Mission_Creator_Architecture/ROADMAP.md)** | 2D editor ticket queue |
 | **[`docs/platform/CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md)** | T-122 audit + T-123 resolutions (T1/T8) |
 | **[`docs/platform/DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md)** | Cross-boundary `@contract` / codegen / validation (T-123 shipped) |
@@ -27,35 +27,35 @@
 
 ## DONE — shipped surfaces
 
-All routes below have a surface spec unless noted. Live UI = `frontend/src/pages` + `features/`.
+All routes below have a surface spec unless noted. Live UI = `apps/website/frontend/src/pages` + `features/`.
 
 | Route | Doc | Notes |
 |-------|-----|-------|
-| `/` | [dashboard.md](../../../apps/website/frontend/docs/pages/dashboard.md) | Glass bento home |
-| `/login`, `/auth/callback` | [login.md](../../../apps/website/frontend/docs/auth/login.md), [auth-callback.md](../../../apps/website/frontend/docs/auth/auth-callback.md) | Discord OAuth + dev-login |
-| `/server-intel` | [server-intel.md](../../../apps/website/frontend/docs/pages/server-intel.md) | |
-| `/announcements` | [announcements.md](../../../apps/website/frontend/docs/pages/announcements.md) | Live: `operations.tsx` |
-| `/deployments` | [deployments.md](../../../apps/website/frontend/docs/pages/deployments.md) | Live: `operations.tsx`; **T-122** ORBAT deep-link from Modify Assignment |
-| `/leaderboards` | [leaderboards.md](../../../apps/website/frontend/docs/pages/leaderboards.md) | Live: `operations.tsx` |
-| `/missions` | [mission-library.md](../../../apps/website/frontend/docs/pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
-| `/missions/:id` | [mission-overview.md](../../../apps/website/frontend/docs/pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.1** aligned tiles active |
-| `/events` | [event-schedule.md](../../../apps/website/frontend/docs/pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
-| `/events/:id` | [event-hub.md](../../../apps/website/frontend/docs/pages/event-hub.md) | Inline ORBAT |
-| `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](../../../apps/website/frontend/docs/pages/event-hub.md) | Wired from Deployments (T-122 R2) |
-| `/wiki`, `/wiki/:slug` | [wiki.md](../../../apps/website/frontend/docs/pages/wiki.md) | Doctrine SOPs |
-| `/vehicles` | [vehicle-database.md](../../../apps/website/frontend/docs/pages/vehicle-database.md) | Split from wiki |
-| `/modpacks` | [modpacks.md](../../../apps/website/frontend/docs/pages/modpacks.md) | |
-| `/tools/mortar` | [mortar-calculator.md](../../../apps/website/frontend/docs/pages/mortar-calculator.md) | |
-| `/settings` | [settings.md](../../../apps/website/frontend/docs/pages/settings.md) | |
-| `/admin/events` | [event-manager.md](../../../apps/website/frontend/docs/pages/event-manager.md) | |
-| `/admin/approvals` | [mission-approvals.md](../../../apps/website/frontend/docs/pages/mission-approvals.md) | |
-| `/admin/server` | [server-control.md](../../../apps/website/frontend/docs/pages/server-control.md) | **stub** — **T-086** |
-| `/admin/personnel` | [personnel-roster.md](../../../apps/website/frontend/docs/pages/personnel-roster.md) | Live API |
-| `/admin/content` | [content-manager.md](../../../apps/website/frontend/docs/pages/content-manager.md) | Nav: Comms Broadcaster |
-| `/admin/audit` | [audit-logs.md](../../../apps/website/frontend/docs/pages/audit-logs.md) | Live API |
-| `*` | [not-found.md](../../../apps/website/frontend/docs/pages/not-found.md) | |
-| (shell) | [sidebar.md](../../../apps/website/frontend/docs/shell/sidebar.md), [topnav.md](../../../apps/website/frontend/docs/shell/topnav.md), [app-layout.md](../../../apps/website/frontend/docs/shell/app-layout.md) | |
+| `/` | [dashboard.md](pages/dashboard.md) | Glass bento home |
+| `/login`, `/auth/callback` | [login.md](auth/login.md), [auth-callback.md](auth/auth-callback.md) | Discord OAuth + dev-login |
+| `/server-intel` | [server-intel.md](pages/server-intel.md) | |
+| `/announcements` | [announcements.md](pages/announcements.md) | Live: `operations.tsx` |
+| `/deployments` | [deployments.md](pages/deployments.md) | Live: `operations.tsx`; **T-122** ORBAT deep-link from Modify Assignment |
+| `/leaderboards` | [leaderboards.md](pages/leaderboards.md) | Live: `operations.tsx` |
+| `/missions` | [mission-library.md](pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
+| `/missions/:id` | [mission-overview.md](pages/mission-overview.md) | Sheet dossier |
+| `/missions/:id/edit` | [mission-editor.md](pages/mission-editor.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.1** aligned tiles active |
+| `/events` | [event-schedule.md](pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
+| `/events/:id` | [event-hub.md](pages/event-hub.md) | Inline ORBAT |
+| `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](pages/event-hub.md) | Wired from Deployments (T-122 R2) |
+| `/wiki`, `/wiki/:slug` | [wiki.md](pages/wiki.md) | Doctrine SOPs |
+| `/vehicles` | [vehicle-database.md](pages/vehicle-database.md) | Split from wiki |
+| `/modpacks` | [modpacks.md](pages/modpacks.md) | |
+| `/tools/mortar` | [mortar-calculator.md](pages/mortar-calculator.md) | |
+| `/settings` | [settings.md](pages/settings.md) | |
+| `/admin/events` | [event-manager.md](pages/event-manager.md) | |
+| `/admin/approvals` | [mission-approvals.md](pages/mission-approvals.md) | |
+| `/admin/server` | [server-control.md](pages/server-control.md) | **stub** — **T-086** |
+| `/admin/personnel` | [personnel-roster.md](pages/personnel-roster.md) | Live API |
+| `/admin/content` | [content-manager.md](pages/content-manager.md) | Nav: Comms Broadcaster |
+| `/admin/audit` | [audit-logs.md](pages/audit-logs.md) | Live API |
+| `*` | [not-found.md](pages/not-found.md) | |
+| (shell) | [sidebar.md](shell/sidebar.md), [topnav.md](shell/topnav.md), [app-layout.md](shell/app-layout.md) | |
 
 ---
 
@@ -63,11 +63,11 @@ All routes below have a surface spec unless noted. Live UI = `frontend/src/pages
 
 | T-ID | Item | Doc | Blocked by |
 |------|------|-----|------------|
-| **T-085** | Wiki markdown renderer | [wiki.md](../../../apps/website/frontend/docs/pages/wiki.md) | react-markdown |
-| **T-086** | Server Control `/admin/server` | [server-control.md](../../../apps/website/frontend/docs/pages/server-control.md) | **T-086** backend RCON API |
-| **T-087** | CMS rich text | [content-manager.md](../../../apps/website/frontend/docs/pages/content-manager.md) | WYSIWYG choice |
-| **T-088** | Multi-server picker | [server-intel.md](../../../apps/website/frontend/docs/pages/server-intel.md) | UI for `GET /servers` |
-| **T-068+** | Mission editor Eden parity | [mission-editor.md](../../../apps/website/frontend/docs/pages/mission-editor.md) | **T-068 Phase 1 shipped**; Phase 2 paused; **T-090–T-092** map gate active |
+| **T-085** | Wiki markdown renderer | [wiki.md](pages/wiki.md) | react-markdown |
+| **T-086** | Server Control `/admin/server` | [server-control.md](pages/server-control.md) | **T-086** backend RCON API |
+| **T-087** | CMS rich text | [content-manager.md](pages/content-manager.md) | WYSIWYG choice |
+| **T-088** | Multi-server picker | [server-intel.md](pages/server-intel.md) | UI for `GET /servers` |
+| **T-068+** | Mission editor Eden parity | [mission-editor.md](pages/mission-editor.md) | **T-068 Phase 1 shipped**; Phase 2 paused; **T-090–T-092** map gate active |
 
 Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
@@ -109,7 +109,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
 ## Design system
 
-- **Live tokens:** [`frontend/src/index.css`](../../../apps/website/frontend/src/index.css)
+- **Live tokens:** [`apps/website/frontend/src/index.css`](../../../apps/website/frontend/src/index.css)
 - **Reference YAML:** [`docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md`](../../specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md)
 - **Methodology:** [`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)
 
