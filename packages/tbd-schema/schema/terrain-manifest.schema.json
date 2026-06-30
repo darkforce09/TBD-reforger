@@ -101,7 +101,7 @@
             "urlTemplate": { "type": "string" },
             "source": {
               "type": "string",
-              "enum": ["workbench-ortho", "sap", "color-ortho"]
+              "enum": ["workbench-ortho", "sap", "sap-supertexture-stitch", "color-ortho"]
             }
           }
         },

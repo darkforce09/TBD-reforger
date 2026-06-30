@@ -63,7 +63,15 @@ const clampInt = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi
 type Lod =
   | { kind: 'none' }
   | { kind: 'single'; image: string }
-  | { kind: 'pyramid'; z: number; txMin: number; txMax: number; tyMin: number; tyMax: number; template: string }
+  | {
+      kind: 'pyramid'
+      z: number
+      txMin: number
+      txMax: number
+      tyMin: number
+      tyMax: number
+      template: string
+    }
 
 /**
  * Choose the pyramid level from the deck zoom, then cull tiles to the visible world AABB and drop
@@ -78,9 +86,15 @@ function computeLod(
   visible: boolean,
   basemapView: BasemapView,
 ): Lod {
-  if (basemapView !== 'satellite' || !visible || resolved.mode === 'loading' || resolved.mode === 'none')
+  if (
+    basemapView !== 'satellite' ||
+    !visible ||
+    resolved.mode === 'loading' ||
+    resolved.mode === 'none'
+  )
     return { kind: 'none' }
-  if (resolved.mode === 'single-bitmap' && resolved.image) return { kind: 'single', image: resolved.image }
+  if (resolved.mode === 'single-bitmap' && resolved.image)
+    return { kind: 'single', image: resolved.image }
   if (resolved.mode !== 'pyramid' || !resolved.template) return { kind: 'none' }
 
   const { width: w, height: h } = terrain

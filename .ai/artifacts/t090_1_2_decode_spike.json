@@ -1,0 +1,61 @@
+{
+  "slice": "T-090.1.2",
+  "phase": "P0-decode-spike",
+  "result": "PASS",
+  "generatedAt": "2026-06-30T18:52:08Z",
+  "terrain": "everon",
+  "cell": {
+    "n": 0,
+    "eddsPath": "worlds/Eden/Eden/.Data/Eden_0_supertexture.edds",
+    "pak": "data_worlds.pak"
+  },
+  "format": {
+    "container": "enfusion-edds (no DDS magic; DX10 BC7)",
+    "dxgiFormat": 99,
+    "dxgiName": "BC7_UNORM_SRGB",
+    "dxgiOffset": "0x48",
+    "chunkTableOffset": "0x5c",
+    "chunkRecord": "[4B tag][u32LE len]",
+    "chunkTags": [
+      "COPY",
+      "LZ4 "
+    ],
+    "mipCount": 9,
+    "mip0Side": 256,
+    "lz4ChunkPrefixBytes": 8,
+    "bc7BytesPerPixel": 1
+  },
+  "decode": {
+    "decoder": "scripts/map-assets/decode-edds.mjs",
+    "bc7": "vendor/bcdec.wasm (iOrange bcdec v0.97, clang wasm32)",
+    "lz4": "pure-JS raw block (verified byte-identical to liblz4)",
+    "pakRead": "enfusion-mcp PakVirtualFS.readFile (zlib)",
+    "rgbaBytes": 262144,
+    "sha256Rgba": "68fa3c25c05a02c9c49e4f4a851a7e7b4ec8272071abc0a50552178b41a5e2ac",
+    "goldenPng": "packages/map-assets/everon/staging/sap/cell-0.png (gitignored staging)",
+    "reproduce": "node scripts/map-assets/decode-edds.mjs 0 | sha256sum  # RGBA stream"
+  },
+  "sanity": {
+    "nonFlat": true,
+    "stddev": {
+      "r": 5.2,
+      "g": 4.7,
+      "b": 4.2
+    },
+    "distinctColors": 769,
+    "meanRgb": {
+      "r": 75,
+      "g": 75,
+      "b": 69
+    }
+  },
+  "crossCheck": "RGB AE=PAE=MAE=0 vs liblz4+Pillow reference oracle (in-session)",
+  "world": {
+    "gridMapping": "row-major N=y*50+x; cell gridY=0 = world Z=0 (south); ortho assembled north-up (south at image bottom)",
+    "gridX": 0,
+    "gridY": 0,
+    "cellMeters": 256,
+    "metersPerPixel": 1,
+    "fullOrtho": "12800x12800"
+  }
+}

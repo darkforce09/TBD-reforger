@@ -2,7 +2,7 @@
   "terrainId": "everon",
   "schemaVersion": 1,
   "worldBounds": [0, 0, 12800, 12800],
-  "metersPerPixel": 2,
+  "metersPerPixel": 1,
   "dem": {
     "path": "dem/everon-dem-16bit.png",
     "widthPx": 6400,
@@ -29,7 +29,7 @@
     "satellite": {
       "path": "tiles/satellite",
       "urlTemplate": "/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp",
-      "source": "workbench-ortho"
+      "source": "sap-supertexture-stitch"
     },
     "map": {
       "path": "tiles/map",

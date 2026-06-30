@@ -1,7 +1,7 @@
 # T-090.1.2 — SAP supertexture satellite ortho (high detail)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2  
-**Status:** **ACTIVE** — replaces interim rasterization tiles with true terrain-surface ortho  
+**Status:** **SHIPPED** — SAP supertexture ortho replaces interim rasterization tiles (follow-up: lossless pyramid @ z6)  
 **Executor:** claude-code (+ operator time for decode/spike if needed)  
 **Depends on:** **T-090.1** shipped @ `564419e` (Cartesian loader, pyramid, alignment proven)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) · ops log [`.ai/artifacts/map_export_everon.json`](../../../.ai/artifacts/map_export_everon.json)
@@ -138,6 +138,15 @@ node scripts/map-assets/verify-spike-ops-log.mjs TERRAIN=everon
 ```
 
 **Ship:** tag **`T-090.1.2`** · commit prefix **`T-090.1.2:`** · `active_slice` → **T-090.1.1** (Cursor sync).
+
+---
+
+## Follow-ups (110% bar — post-ship)
+
+| Issue | Root cause | Planned fix |
+|-------|------------|-------------|
+| Basemap vanishes at max deck zoom | Manifest briefly advertised `maxZoom: 6` while z6 tiles were never built → LOD fetched 404 tiles | Ship z0–5 (`maxZoom: 5`); add z6 when pyramid rebuild completes |
+| Visible WebP compression | `build-tile-pyramid.sh` encodes with `cwebp -q 80` | Rebuild pyramid with `cwebp -lossless` (or PNG); update verify + LFS budget |
 
 ---
 
