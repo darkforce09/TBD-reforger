@@ -5,7 +5,7 @@
 
 ## Running / Review
 
-- **T-090** (900) — Map visualization program [active] — Eden-like map detail (N1-N12). T-090.1.2 shipped @ c2730a3 (SAP supertexture @ 1 m/px). ACTIVE: T-090.1.2.1 lossless z0–6 pyramid (picture-perfect max zoom). Then T-090.1.1 Map (.topo), T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [active] — Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785 (lossless VP8L z0–6, 299M LFS). ACTIVE: T-090.1.1 Map (.topo). Then T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Hub: t090_091_map_terrain_program.md.
 
 ## Ready
 

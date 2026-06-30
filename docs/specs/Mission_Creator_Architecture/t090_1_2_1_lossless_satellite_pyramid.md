@@ -1,7 +1,7 @@
 # T-090.1.2.1 — Lossless satellite pyramid (picture-perfect zoom)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.1  
-**Status:** **READY** — blocks crisp Satellite acceptance; run **before** T-090.1.1 Map tiles  
+**Status:** **SHIPPED** @ `19bc785` — lossless VP8L z0–6 pyramid (299M LFS)  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2** shipped @ `c2730a3` (12800² SAP ortho + decode/stitch pipeline)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t090_1_2_sap_supertexture_satellite.md`](t090_1_2_sap_supertexture_satellite.md)
