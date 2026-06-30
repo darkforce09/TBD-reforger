@@ -82,7 +82,7 @@
 | T-087 | 870 | deferred | platform | CMS rich text editor | Rich text editor for announcements and CMS content. |
 | T-088 | 880 | deferred | platform | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | deferred | platform | Mission title PATCH sync | PATCH mission title to server on edit (absorbs former T-051 scope). |
-| T-090 | 900 | active | infra | Map visualization program | Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785 (lossless VP8L z0–6, 299M LFS). ACTIVE: T-090.1.1 Map (.topo). Then T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Hub: t090_091_map_terrain_program.md. |
+| T-090 | 900 | active | infra | Map visualization program | Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785 (lossless VP8L z0–6). ACTIVE: T-090.1.2.2 SAP cell seam repair. Queued: T-090.1.2.3 basemap tile prefetch. Then T-090.1.1 Map (.topo), T-090.2+. Hub: t090_091_map_terrain_program.md. |
 | T-091 | 910 | shipped | infra | DEM + auto Z | T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md. |
 | T-092 | 920 | ready | infra | Spawn transform parity + mod mission compile | Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | scale | Continuous autosave polish | Background autosave UX and conflict handling polish. |

@@ -15,12 +15,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.1.1`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md`
+- **Active slice:** `T-090.1.2.2`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785 (lossless VP8L z0–6, 299M LFS). ACTIVE: T-090.1.1 Map (.topo). Then T-090.2 taxonomy, T-090.3 export, {T-090.4/.6/.8}, T-090.5 render, T-090.9 interaction, T-090.7 AI. Hub: t090_091_map_terrain_program.md.
+- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785 (lossless VP8L z0–6). ACTIVE: T-090.1.2.2 SAP cell seam repair. Queued: T-090.1.2.3 basemap tile prefetch. Then T-090.1.1 Map (.topo), T-090.2+. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

@@ -770,7 +770,27 @@ def cmd_brief(args: argparse.Namespace) -> None:
     print("DO NOT: edit documentation")
     if shipped:
         print(f"DO NOT REOPEN (shipped): {', '.join(shipped)}")
-    if active == "T-090.1.2.1":
+    if active == "T-090.1.2.2":
+        print(
+            "SCOPE: SAP cell seam repair — analyze 256 m grid edges, feather/blend in stitch-sap-ortho.mjs, "
+            "rebuild lossless z0–6 pyramid"
+        )
+        print(
+            "DO NOT REOPEN: T-090.1.2 decode contract, T-090.1.2.1 lossless pyramid encode (reuse --lossless rebuild)"
+        )
+        print(
+            "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090"
+        )
+        print(
+            "HANDOFF: .ai/artifacts/t090_1_2_2_claude_code_handoff.md"
+        )
+        print(
+            "VERIFY: analyze-sap-seams + verify-sap-seams + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid + make verify-terrain"
+        )
+        print(
+            "MANUAL: S1 operator seam location invisible at max zoom"
+        )
+    elif active == "T-090.1.2.1":
         print(
             "SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — "
             "build-tile-pyramid.sh --lossless, verify VP8L, manifest maxZoom 6"
