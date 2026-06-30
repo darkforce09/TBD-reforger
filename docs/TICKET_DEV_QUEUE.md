@@ -20,7 +20,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 SAP cell seams. Queued: T-090.1.2.3 pan prefetch. Idea: T-090.1.2.4 engine render ortho spike (deferred). Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.
+- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 SAP cell seams. Queued: T-090.1.2.3 pan prefetch, T-090.1.2.5 satellite water (ocean+inland). Idea: T-090.1.2.4 engine render ortho. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

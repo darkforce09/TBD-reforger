@@ -28,6 +28,7 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.1  Lossless z0–6 pyramid  ✓ @ 19bc785
   → T-090.1.2.2  SAP cell seam repair  ← ACTIVE NOW
   → T-090.1.2.3  Basemap tile prefetch (pan flicker)  (queued)
+  → T-090.1.2.5  Satellite water — ocean + inland lakes/rivers  (queued)
   → T-090.1.2.4  Engine render ortho export spike  (idea — deferred)
   → T-090.1.1  Map (.topo) cartographic view
   → T-090.2    taxonomy + JSON schema (+ forest/field/waterBody region kinds)
@@ -63,7 +64,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.1.2.1** | [`t090_1_2_1_lossless_satellite_pyramid.md`](t090_1_2_1_lossless_satellite_pyramid.md) | claude-code | **Lossless z0–6** — **shipped** @ `19bc785` |
 | **T-090.1.2.2** | [`t090_1_2_2_sap_cell_seam_repair.md`](t090_1_2_2_sap_cell_seam_repair.md) | claude-code | **SAP cell seams** — **active** |
 | **T-090.1.2.3** | [`t090_1_2_3_basemap_tile_prefetch.md`](t090_1_2_3_basemap_tile_prefetch.md) | claude-code | **Pan prefetch/cache** — queued |
-| **T-090.1.2.4** | [`t090_1_2_4_engine_render_ortho_spike.md`](t090_1_2_4_engine_render_ortho_spike.md) | claude-code | **Engine render ortho** — **idea** (deferred) |
+| **T-090.1.2.5** | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | claude-code | **Satellite water** (ocean + inland) — queued |
+| **T-090.1.2.4** | [`t090_1_2_4_engine_render_ortho_spike.md`](t090_1_2_4_engine_render_ortho_spike.md) | claude-code | **Engine render ortho** — **idea** |
 | **T-090.1.1** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | Enums + census + golden per `buildingClass` |
 | **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |
@@ -138,6 +140,7 @@ Scripts live in `packages/tbd-schema/scripts/verify-terrain-*.mjs`.
 | Blocky patches at 1 m scale | **BC7 source** — 4×4 block compression in game `.edds` | **Deferred** — see **T-090.1.2.4** (idea); SAP + lossless is production ceiling for now |
 | z7+ pyramid | Would **interpolate** 1 m/px ortho — fake detail | Not planned |
 | Engine render ortho | Custom Workbench render — **may** beat BC7; unproven | **T-090.1.2.4** idea — future future |
+| No readable water (ocean grey, inland dry) | SAP shows seabed/lakebed texture; interim raster had blue ocean only, no inland | **T-090.1.2.5** queued — engine/DEM mask composite |
 | Overall darkness | In-game SAP exposure / no tone lift in editor | Later — color grade or brightness pass |
 
 ---

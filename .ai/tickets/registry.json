@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 SAP cell seams. Queued: T-090.1.2.3 pan prefetch. Idea: T-090.1.2.4 engine render ortho spike (deferred). Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 SAP cell seams. Queued: T-090.1.2.3 pan prefetch, T-090.1.2.5 satellite water (ocean+inland). Idea: T-090.1.2.4 engine render ortho. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1842,6 +1842,7 @@
         "T-090.1.2.2",
         "T-090.1.2.3",
         "T-090.1.2.4",
+        "T-090.1.2.5",
         "T-090.1.1",
         "T-090.2",
         "T-090.3",
@@ -1945,6 +1946,15 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md",
           "status": "idea"
+        },
+        "T-090.1.2.5": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md",
+          "status": "queued"
         },
         "T-090.1.1": {
           "targets": [
