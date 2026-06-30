@@ -8,7 +8,7 @@
 
 **T-091.0 (shipped @ `6d96339`):** Everon 6400² DEM via `TBD_TerrainExportPlugin.c` + strict verify — spec [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
 
-**T-121 (deferred):** tiles / Arland re-export / MCP polish — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
+**T-121 (deferred):** Arland re-export + optional game-mode fallback — MCP hardening **shipped** @ `e7e7232` — spec [`t121_terrain_dem_export_automation.md`](../specs/Mission_Creator_Architecture/t121_terrain_dem_export_automation.md).
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
@@ -27,12 +27,16 @@ bash scripts/mod/deploy-staging.sh --dry-run
 
 ## Workbench MCP setup (Claude Code runs this)
 
-`tbd-dev-bootstrap.sh` is the **single entrypoint** — Claude Code runs it at the start of every T-068.1 / .5 / .8 slice. It:
+**Full reference:** [`MCP_TOOLING.md`](MCP_TOOLING.md)
+
+`tbd-dev-bootstrap.sh` is the **single entrypoint** — Claude Code runs it at the start of every mod slice. It:
 
 1. Builds MCP pak symlink farm (`setup-mcp-game-root.sh`)
-2. Copies gitignored `EnfusionMCP/` handlers from the `enfusion-mcp` npm package
-3. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910`, wait up to **180s**)
-4. Runs `wb_connect` + `mod_validate`
+2. Runs `npm ci` in `scripts/mod/` when `enfusion-mcp` is not installed (pinned @ 0.6.1)
+3. Copies gitignored `EnfusionMCP/` handlers from the npm package
+4. **Launches Workbench** if Net API port **5775** is closed (`steam -applaunch 1874910`, wait up to **180s**)
+5. **Pre-warms the MCP daemon** (one-time ~35 s index load)
+6. Runs `wb_connect` + `mod_validate`
 
 ```bash
 bash scripts/mod/tbd-dev-bootstrap.sh
@@ -44,7 +48,7 @@ Expect ~19 `.c` files under `EnfusionMCP/` after first run. Staging deploy exclu
 
 | Method | When |
 |--------|------|
-| **`bash scripts/mod/mcp-call.sh <tool> '<json>'`** | Claude Code **terminal** (always works) |
+| **`bash scripts/mod/mcp-call.sh <tool> '<json>'`** | Claude Code **terminal** (daemon-first; warm ~0.3 s) |
 | Copy [`apps/mod/.mcp.json`](../../apps/mod/.mcp.json) → project `.mcp.json` | Optional native MCP tools in IDE session |
 | Copy → [`.cursor/mcp.json`](../../.cursor/mcp.json) | Cursor IDE Workbench chats only |
 
@@ -53,8 +57,20 @@ Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSI
 **Smoke** (after bootstrap exit 0):
 
 ```bash
-bash scripts/mod/mcp-call.sh wb_connect '{}'
+bash scripts/mod/mcp-smoke.sh
 bash scripts/mod/mcp-call.sh mod_validate '{"modPath":"'"$PWD"'/apps/mod/tbd-framework"}'
+```
+
+**Offline self-test** (no Workbench):
+
+```bash
+bash scripts/mod/mcp-call-selftest.sh   # 19/19 gates
+```
+
+**Clean slate** if processes leak or load spikes:
+
+```bash
+bash scripts/mod/mcp-daemon.sh stop-all
 ```
 
 If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and retry.
@@ -64,7 +80,7 @@ If `wb_connect` fails: reload `tbd-framework` in Workbench Resource Browser and 
 ## T-068.1 typical MCP flow
 
 ```
-tbd-dev-bootstrap.sh  (auto-launch Workbench if needed)
+tbd-dev-bootstrap.sh  (auto-launch Workbench + daemon pre-warm)
 → wb_connect → asset_search / game_read / game_browse
 → implement export script in tbd-framework
 → wb_reload → mod_validate → run export
@@ -111,11 +127,14 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-090.3.0 — active (Workbench export spike) — **start here**
+## T-090.1 — active (Satellite basemap)
 
-**Spec:** [`t090_3_0_workbench_export_spike.md`](../specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md) — T-090.1 (aligned basemap) is **queued** until the spike's K1–K7 PASS.
+**Spec:** [`t090_1_aligned_basemap.md`](../specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md)  
+**Handoff:** [`.ai/artifacts/t090_1_claude_code_handoff.md`](../../.ai/artifacts/t090_1_claude_code_handoff.md)
 
 **T-091 complete** @ `dde589e` — DEM export, loader, Z UX + hillshade shipped. Do not redo `dem/*` or `ydoc` Z wiring unless regression fix.
+
+**MCP infra** @ `e7e7232` — use `mcp-call.sh` for Workbench probes; no raw JSON-RPC workaround needed.
 
 ---
 

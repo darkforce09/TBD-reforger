@@ -9,6 +9,8 @@
 
 **Hard gate:** **T-091.0** anchor verify **PASS** (`make verify-terrain-strict` @ `6d96339`). T-071 ORBAT / T-068 Phase 2 loadout still blocked on **T-092.2** mod compile + spawn verify. **Building floor selector** explicitly **out of scope** → **T-126** (`idea`).
 
+**Workbench MCP:** shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../../mod/MCP_TOOLING.md). Offline: `make mcp-selftest`. Live: `bash scripts/mod/tbd-dev-bootstrap.sh` then `make mcp-smoke`.
+
 ---
 
 ## Program order

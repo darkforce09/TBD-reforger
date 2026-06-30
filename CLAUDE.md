@@ -20,7 +20,7 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `apps/mod/` — Enfusion mod framework (`tbd-framework`, gitignored `crf_framework`/EnfusionMCP)
 - `packages/tbd-schema/` — mission JSON schema + golden missions
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
-- `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy)
+- `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`scripts/mod/mcp-call.sh`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
 - `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline output
 - `apps/website/cmd/api/` — API entrypoint (loads `.env`, runs migrations on boot, serves `/api/v1`).
 - `apps/website/internal/handlers/` — HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).

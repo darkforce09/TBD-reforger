@@ -29,7 +29,7 @@ Follow-on automation after T-091.0: **DEM refresh**, Arland export, and Workbenc
 
 1. ~~**Tile pyramid**~~ → **T-090.3** [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) (T-090.1 renders; T-090.3 exports).
 2. **Arland DEM** — repeat plugin export + manifest + anchors.
-3. **MCP helper hardening** — `mcp-call.sh` round-trip reliability (session drops noted @ T-091.0).
+3. ~~**MCP helper hardening**~~ — **shipped** @ `e7e7232`: warm daemon + hardened one-shot, pinned `enfusion-mcp@0.6.1`, offline self-test + live smoke. See [`docs/mod/MCP_TOOLING.md`](../../mod/MCP_TOOLING.md).
 4. **Optional:** game-mode export fallback (`TBD_HeightmapExportComponent`) if Workbench plugin context regresses on future engine versions.
 
 ---

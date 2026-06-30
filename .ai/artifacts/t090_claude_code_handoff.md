@@ -18,6 +18,8 @@ Enumeration proven on real Everon. Ops log: [`.ai/artifacts/map_export_everon.js
 
 Harness: `scripts/map-assets/verify-spike-*.mjs`, `verify-spike-all.sh`, `TBD_TerrainWorldExportPlugin.c`
 
+**Infra:** MCP shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../docs/mod/MCP_TOOLING.md). Use `mcp-call.sh` for Workbench probes (no raw JSON-RPC workaround).
+
 ---
 
 ## Active slice: T-090.1 — Satellite basemap

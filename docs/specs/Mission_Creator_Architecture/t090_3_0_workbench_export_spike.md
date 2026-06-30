@@ -63,6 +63,8 @@ make schema-validate
 
 **Spike slice done** when K1 + K1b + K7 pass (enumeration proven). **T-090.1 basemap ship** requires **K3 pass** (real Satellite tile on disk). K3/K4 may be red at spike completion — see ops log `gatesNote`.
 
+**Post-spike lesson (MCP):** Some args-bearing Workbench probes during the spike used hand-rolled raw JSON-RPC because `mcp-call.sh` had a bash `${2:-{}}` bug that corrupted JSON args (fixed @ `e7e7232` — see [`docs/mod/MCP_TOOLING.md`](../../mod/MCP_TOOLING.md)). Future slices must use `bash scripts/mod/mcp-call.sh`.
+
 ---
 
 ## Artifacts

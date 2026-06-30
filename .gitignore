@@ -10,3 +10,6 @@ __pycache__/
 
 # T-090.3.0 map-export staging (local scratch — proof lives in committed ops log + verifiers)
 packages/map-assets/**/staging/
+
+# scripts/mod npm deps (enfusion-mcp — install via npm ci in scripts/mod/)
+scripts/mod/node_modules/

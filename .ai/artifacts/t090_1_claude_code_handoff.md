@@ -62,9 +62,17 @@ Manual: H1/H2/H2b alignment log in PR or `.ai/artifacts/t090_1_verify_log.md`.
 
 ---
 
-## Pre-step: MCP harden (optional same session)
+## MCP (prerequisite — shipped @ `e7e7232`)
 
-If `scripts/mod/mcp-call.sh` flakes on cold `npx`, harden first — see handoff in user prompt. Bootstrap must pass: `bash scripts/mod/tbd-dev-bootstrap.sh`.
+Shell MCP is reliable — warm daemon ~0.3 s per call. Reference: [`docs/mod/MCP_TOOLING.md`](../docs/mod/MCP_TOOLING.md).
+
+```bash
+bash scripts/mod/mcp-call-selftest.sh   # offline 19/19
+bash scripts/mod/tbd-dev-bootstrap.sh   # pre-warms daemon + wb_connect
+bash scripts/mod/mcp-smoke.sh           # live gate
+```
+
+During the T-090.3.0 spike, args-bearing calls were flaky due to a bash `${2:-{}}` brace bug (fixed @ `e7e7232`) — do not use raw JSON-RPC workarounds.
 
 ---
 

@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link ci-local ci-local-backend ci-local-frontend ci-local-schema
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -110,6 +110,11 @@ map-glyphs-build: ## T-090.5 stub — build world-glyph atlas from packages/map-
 	@echo "map-glyphs-build: not implemented (T-090.5, see t090_world_object_glyphs.md)"; exit 1
 map-render-verify: ## T-090.5 stub — per-phase render smoke (layer instance count + purity)
 	@echo "map-render-verify: not implemented (T-090.5)"; exit 1
+
+mcp-selftest: ## Offline MCP gates (19/19) — no Workbench
+	bash scripts/mod/mcp-call-selftest.sh
+mcp-smoke: ## Live MCP smoke — wb_connect + wb_state (Workbench Net API up)
+	bash scripts/mod/mcp-smoke.sh
 
 tickets: ## Run Claude Code on ready tickets in parallel
 	./scripts/ticket run
