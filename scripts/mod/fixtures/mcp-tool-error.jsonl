@@ -1,0 +1,2 @@
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{},"serverInfo":{"name":"enfusion-mcp","version":"0.6.1"}}}
+{"jsonrpc":"2.0","id":2,"error":{"code":-32601,"message":"Method not found: totally_fake_tool"}}

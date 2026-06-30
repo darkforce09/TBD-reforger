@@ -1,0 +1,2 @@
+{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{},"serverInfo":{"name":"enfusion-mcp","version":"0.6.1"}}}
+{"jsonrpc":"2.0","id":2,"result":{"content":[{"type":"text","text":"MCP error -32602: Tool totally_fake_tool not found"}],"isError":true}}
