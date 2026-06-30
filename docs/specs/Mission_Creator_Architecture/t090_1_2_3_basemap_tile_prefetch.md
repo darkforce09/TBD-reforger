@@ -10,13 +10,13 @@
 
 ## In one sentence
 
-Stop Satellite basemap **flicker and pop-in** when panning — prefetch and cache tile textures so the map stays visually continuous at 140+ fps even while new VP8L tiles decode.
+Stop Satellite basemap **flicker and pop-in** when panning — prefetch and cache tile textures so the map stays visually continuous while new VP8L tiles decode (operator: **~40 fps** while panning with flicker; static view much higher).
 
 ---
 
 ## Problem
 
-`useTerrainBasemapLayer.ts` mounts one `BitmapLayer` per visible tile; each `image` URL fetches on mount. Panning crosses tile boundaries → old layers unmount / new layers mount → **blank frames until fetch+decode**. Operator: ~140 fps while panning but **significant flicker** (not a GPU perf cap — I/O + layer swap).
+`useTerrainBasemapLayer.ts` mounts one `BitmapLayer` per visible tile; each `image` URL fetches on mount. Panning crosses tile boundaries → old layers unmount / new layers mount → **blank frames until fetch+decode**. Operator: **~40 fps** while panning with **significant flicker** (static ~165 fps — decode + layer churn, not idle GPU cap).
 
 ---
 
