@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "terrainId": "everon",
+  "censusStatus": "pending_export",
+  "generatedAt": null,
+  "importPhaseMax": null,
+  "sourceExportPath": null,
+  "levels": {
+    "uniquePrefabs": null,
+    "totalInstances": null
+  },
+  "byKind": {
+    "building": { "prefabTypes": null, "instances": null },
+    "tree": { "prefabTypes": null, "instances": null },
+    "vegetation": { "prefabTypes": null, "instances": null },
+    "rock": { "prefabTypes": null, "instances": null },
+    "prop": { "prefabTypes": null, "instances": null },
+    "utility": { "prefabTypes": null, "instances": null },
+    "water": { "prefabTypes": null, "instances": null },
+    "road": { "prefabTypes": null, "instances": null, "segments": null }
+  },
+  "byBuildingClass": {},
+  "byRoadClass": {},
+  "bySpeciesClass": {},
+  "needsReview": {
+    "prefabTypes": null,
+    "prefabs": []
+  }
+}

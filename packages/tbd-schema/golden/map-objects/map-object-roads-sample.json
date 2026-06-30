@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "1.0.0",
+  "terrainId": "everon",
+  "roadSegments": [
+    {
+      "id": "road-everon-0001",
+      "roadClass": "highway_paved",
+      "points": [[5000, 4000], [5200, 4100], [5400, 4150]]
+    },
+    {
+      "id": "road-everon-0002",
+      "roadClass": "road_dirt",
+      "points": [[6000, 3000], [6010, 3050], [6040, 3120]],
+      "tags": ["bridge"]
+    },
+    {
+      "id": "road-everon-0003",
+      "roadClass": "track",
+      "points": [[7000, 2000], [7010, 2050]]
+    }
+  ]
+}

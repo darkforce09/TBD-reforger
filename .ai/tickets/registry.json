@@ -1822,19 +1822,31 @@
       "order": 900,
       "program": "infra",
       "status": "active",
-      "active_slice": "T-090.1",
+      "active_slice": "T-090.3.0",
       "surfaces": [
         "MAP"
       ],
       "impact": [
         "ui"
       ],
-      "title": "Aligned map tiles",
-      "summary": "Map asset program: terrain manifest schema, export runbook, aligned Cartesian basemap (Everon first). Hub: t090_091_map_terrain_program.md.",
+      "title": "Map visualization program",
+      "summary": "Eden-like map detail (rewritten to constants N1-N12, 2026-06-30). Schemas+goldens T-090.0.2 shipped. Blocker chain (status, not blocked_by): T-090.3.0 Workbench spike (active) -> T-090.1 Satellite basemap (queued until 0.2+3.0) -> T-090.1.1 Map -> T-090.2 taxonomy (+forest/field/water regions) -> T-090.3 export (+forest-regions, dual tiles) -> {T-090.4, T-090.6, T-090.8 forests} -> T-090.5 render (Deck-zoom LOD, forests first) -> T-090.9 interaction (hover/inspect/filter/legend, read-only) -> T-090.7 AI. Hub + Audit closure: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
-        "T-090.1"
+        "T-090.0.1",
+        "T-090.0.2",
+        "T-090.1",
+        "T-090.1.1",
+        "T-090.2",
+        "T-090.3",
+        "T-090.4",
+        "T-090.5",
+        "T-090.6",
+        "T-090.7",
+        "T-090.3.0",
+        "T-090.8",
+        "T-090.9"
       ],
       "depends_on": [],
       "unblocks": [
@@ -1857,13 +1869,114 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t090_0_map_program_hub.md",
           "status": "shipped"
         },
+        "T-090.0.1": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+          "status": "shipped"
+        },
+        "T-090.0.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+          "status": "shipped"
+        },
         "T-090.1": {
           "targets": [
             "website"
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md",
-          "status": "active"
+          "status": "queued"
+        },
+        "T-090.1.1": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md",
+          "status": "ready"
+        },
+        "T-090.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md",
+          "status": "ready"
+        },
+        "T-090.3": {
+          "targets": [
+            "root",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
+          "status": "ready"
+        },
+        "T-090.4": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_4_z_placement_audit.md",
+          "status": "ready"
+        },
+        "T-090.5": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "ready"
+        },
+        "T-090.6": {
+          "targets": [
+            "root",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
+          "status": "ready"
+        },
+        "T-090.7": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_ai_world_object_schema.md",
+          "status": "ready"
+        },
+        "T-090.3.0": {
+          "targets": [
+            "root",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md",
+          "status": "ready"
+        },
+        "T-090.8": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md",
+          "status": "ready"
+        },
+        "T-090.9": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_9_world_object_interaction.md",
+          "status": "ready"
         }
       }
     },
@@ -2675,6 +2788,35 @@
         "T-124"
       ],
       "unblocks": []
+    },
+    {
+      "id": "T-126",
+      "order": 1260,
+      "program": "infra",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "active_slice": null,
+      "surfaces": [
+        "MAP",
+        "UI"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Building floor selector",
+      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Explicit deferral from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5 world buildings.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
+      "slices": [],
+      "depends_on": [
+        "T-090"
+      ],
+      "unblocks": [],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-126"
     }
   ]
 }

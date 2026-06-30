@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "terrainId": "everon",
+  "prefabs": [
+    {
+      "prefabId": 0,
+      "resourceName": "{0000000000000001}Prefabs/Vegetation/Trees/Tree_Pinus_M.et",
+      "kind": "tree",
+      "class": "conifer",
+      "label": "Pine tree (medium)",
+      "ai": { "summary": "Medium conifer pine; soft cover to ~4 m standing.", "taxonomyPath": "vegetation/tree/conifer", "classificationSource": "rules-v1/prefab-name", "confidence": 0.92, "needsReview": false },
+      "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1.2, "y": 1.2, "z": 6 }, "heightM": 12 },
+      "gameplay": { "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 4 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false },
+      "render": { "iconKey": "tree-conifer", "lodMinZoom": 1, "baseSizePx": 18, "anchor": [0.5, 1.0], "tintable": true, "defaultColor": "#2d5a27" }
+    },
+    {
+      "prefabId": 1,
+      "resourceName": "{000000000000000A}Prefabs/Structures/Residential/House_Village_01.et",
+      "kind": "building",
+      "class": "residential",
+      "label": "Village house",
+      "ai": { "summary": "Residential village house; hard cover; enterable.", "taxonomyPath": "structure/building/residential", "classificationSource": "rules-v1/prefab-name", "confidence": 0.85, "needsReview": false },
+      "spatial": { "model": "obb", "pivot": "center", "halfExtentsM": { "x": 5, "y": 5, "z": 4 }, "heightM": 8, "footprintM2": 100 },
+      "gameplay": { "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 }, "movement": { "blocksInfantry": true, "blocksVehicle": true }, "lineOfSight": "full", "destructible": true, "climbable": false, "enterable": true, "ladder": false, "door": true, "bridge": false, "runway": false }
+    }
+  ],
+  "instances": [
+    { "id": "ent-99101", "prefabId": 0, "x": 5120.5, "y": 4800.0, "z": 138.2, "rotationDeg": 90 },
+    ["ent-99102", 1, 5130.0, 4810.0, 138.0, 0]
+  ],
+  "regions": [
+    {
+      "id": "forest-everon-001",
+      "kind": "forest",
+      "polygon": [[[5000, 4700], [5300, 4700], [5300, 5000], [5000, 5000], [5000, 4700]]],
+      "treeCount": 12400,
+      "dominantSpeciesClass": "conifer",
+      "densityPerHa": 420,
+      "areaHa": 38.0,
+      "coverType": "soft",
+      "source": "derived-hull"
+    }
+  ],
+  "roadSegments": [
+    { "id": "road-everon-0001", "roadClass": "highway_paved", "points": [[5000, 4000], [5200, 4100], [5400, 4150]] }
+  ],
+  "unassignedTrees": 248
+}

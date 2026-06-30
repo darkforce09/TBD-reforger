@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-125**
 
-**ACTIVE NOW:** **T-090** — T-090.1 (Aligned map tiles). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md`.
+**ACTIVE NOW:** **T-090** — T-090.3.0 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -142,11 +142,13 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 updated; doc links repaired (incl. pre-existing `docs/specs/**` rot). Verified: go build,
 frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
-### ACTIVE SLICE — T-090 Map & terrain program
+### ACTIVE SLICE — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-091 shipped** @ `dde589e` · active slice **`T-090.1`** (aligned basemap tiles).
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · Eden UX ref [`t090_eden_map_reference.md`](docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md) · **T-091 shipped** @ `dde589e` · active slice **`T-090.3.0`** (Workbench export spike); **`T-090.1`** (aligned basemap tiles) **queued** until 3.0 K1–K7 PASS.
 
-**Program order:** **T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Spawn transform = **T-092** (not T-096 telemetry).
+**T-090 slices:** `.0.1` docs + **`.0.2`** schemas/goldens/verify **shipped** · **`.3.0`** Workbench spike **active** · **`.1`** basemap tiles (queued) · **`.1.1`** Map view · **`.2`** taxonomy (+ forest/field/water regions) · **`.3`** **`make map-export`** (all maps) · **`.4`/`.6`** Z/geometry audits · **`.8`** forest regions · **`.5`** Deck render (Deck-zoom LOD) · **`.9`** world-object interaction (read-only) · **`.7`** Eden AI. **T-126** (`idea`): building floors — out of scope.
+
+**Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
@@ -583,7 +585,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 - **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
 **Active map program (blocks T-071 + T-068 Phase 2):**
-- **T-090** / **T-091** — aligned map tiles + DEM / Z-axis — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`; **T-090.1 tiles active**.
+- **T-090** / **T-091** — aligned map tiles + DEM / Z-axis — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`; **T-090.3.0** Workbench spike active; **T-090.1** tiles **queued** until 3.0.
 - **T-092** — mod compile + spawn Y/yaw — [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)
 - **T-071** — ORBAT Manager modal (queued, after T-092)
 - Ruler/LoS/viewshed — after **T-091** heightmap phase.

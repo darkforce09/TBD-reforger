@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-region/v1.json",
+  "title": "TBD Map Object Region (forest / field / waterBody)",
+  "description": "A first-class area region (N5). Forests are derived at export from kind=tree instance density + concave/alpha hull (source=derived-hull) OR ingested from an Enfusion vegetation/forest mask (source=engine-mask). Ship gate: byRegionKind.forest.treeCount + unassignedTrees = type-inventory byKind.tree.instances (exact integer equality). Rendered as polygon fill at deckZoom ≤ FOREST_REGION_MAX_ZOOM (N3), never as per-tree icons at low zoom.",
+  "type": "object",
+  "required": ["id", "kind", "polygon", "coverType", "source"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "kind": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/regionKind" },
+    "polygon": {
+      "type": "array",
+      "description": "One or more linear rings in world meters. Ring = array of [x,y] vertices (>=4, closed).",
+      "minItems": 1,
+      "items": {
+        "type": "array",
+        "minItems": 4,
+        "items": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "number" }
+        }
+      }
+    },
+    "treeCount": { "type": "integer", "minimum": 0 },
+    "dominantSpeciesClass": {
+      "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/forestClass"
+    },
+    "densityPerHa": { "type": "number", "minimum": 0 },
+    "areaHa": { "type": "number", "minimum": 0 },
+    "coverType": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/coverType" },
+    "source": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/regionSource" }
+  }
+}

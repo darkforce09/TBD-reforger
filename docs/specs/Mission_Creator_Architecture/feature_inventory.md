@@ -223,6 +223,40 @@
 
 ---
 
+## MAP — Basemap & world objects (T-090)
+
+#### MAP-BASEMAP-001 — Satellite basemap tiles
+- **Slice:** T-090.1 · aligned Everon Satellite WebP pyramid under the grid (Cartesian, XYZ Y-flip).
+
+#### MAP-BASEMAP-002 — Map basemap view + Satellite/Map switch
+- **Slice:** T-090.1.1 · cartographic (or synthesized-cartographic) pyramid; Google-Maps-style radio (N9).
+
+#### MAP-WORLD-001 — Forest region polygons
+- **Slice:** T-090.8 · forests/fields/water as polygon areas; per-tree glyphs only at high deckZoom (N5).
+
+#### MAP-WORLD-002 — World object layer toggles
+- **Slice:** T-090.5 · roads/buildings/trees/props Deck layers, toggled; `localStorage` `tbd-mc-world-layers` (N8).
+
+#### MAP-WORLD-003 — Hover tooltip (world)
+- **Slice:** T-090.9 · container pointermove → worldSpatialIndex pick → label/class/cover tooltip (read-only).
+
+#### MAP-WORLD-004 — Click inspect panel (read-only)
+- **Slice:** T-090.9 · ResolvedWorldObject inspect; slot-wins / Alt forces world; no mutation (Workbench only).
+
+#### MAP-WORLD-005 — Filter/search by taxonomy
+- **Slice:** T-090.9 · kind→class filter + prefab search + within-selection; shared WorldObjectFilter.
+
+#### MAP-WORLD-006 — Map legend panel
+- **Slice:** T-090.9 · glyph + roadClass + forest + Z-trust key; color **and** shape (a11y, L4).
+
+#### MAP-WORLD-007 — Z-trust badge on inspect
+- **Slice:** T-090.9 · severity ok/warn/fail from T-090.4/.6 audits (GAP-M3).
+
+#### MAP-AI-001 — Ask AI about world object
+- **Slice:** T-090.7 + T-090.9 · getAiContextPack; region summaries for forests (≤256 KB/50, GAP-M6).
+
+---
+
 ## SEL — Selection
 
 #### SEL-MAP-001 — Click-select single slot

@@ -91,7 +91,7 @@ make schema-validate
 make verify-terrain
 
 # Frontend still builds
-cd apps/website/frontend && npm run build && npm run lint
+make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
 ```
 
 ### Acceptance criteria
@@ -104,7 +104,7 @@ cd apps/website/frontend && npm run build && npm run lint
 | S4 | terrains.ts | Everon 12800², Arland **4096²**; height ranges match Biki |
 | S5 | terrains ↔ manifest | `verify-terrain-manifest.ts` exit 0 |
 | S6 | Alignment stub | `verify-terrain-alignment.ts` exit 0 with stub warning |
-| S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-090 — T-090.1** |
+| S7 | ACTIVE NOW | `CLAUDE.md` sync block: **T-090 — T-090.3.0** |
 | S8 | No legacy IDs | `make ticket-check-strict` exit 0 |
 | S9 | LFS | `.gitattributes` covers map-assets PNG/WebP |
 
@@ -118,7 +118,7 @@ cd apps/website/frontend && npm run build && npm run lint
 
 ## Advance slice
 
-**T-090.0 + T-091 shipped @ `dde589e`.** Active: **T-090.1** (aligned tiles). See [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md).
+**T-090.0 + T-091 shipped @ `dde589e`.** Active: **T-090.3.0** (Workbench spike); **T-090.1** (aligned tiles) **queued**. See [`t090_3_0_workbench_export_spike.md`](t090_3_0_workbench_export_spike.md).
 
 ---
 

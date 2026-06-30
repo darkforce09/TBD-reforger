@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-roads/v1.json",
+  "title": "TBD Map Object Road Network",
+  "description": "Road network polylines (T-090.2). Roads share roadClass but each segment has a unique polyline, so they are not deduped through prefab/instance. ~5k-20k segments on Everon — one roads.json.gz.",
+  "type": "object",
+  "required": ["schemaVersion", "terrainId", "roadSegments"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "terrainId": { "type": "string" },
+    "roadSegments": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/roadSegment" }
+    }
+  },
+  "$defs": {
+    "roadSegment": {
+      "type": "object",
+      "required": ["id", "roadClass", "points"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "roadClass": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/roadClass" },
+        "points": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 3,
+            "items": { "type": "number" }
+          }
+        },
+        "prefabId": { "type": "integer", "minimum": 0 },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

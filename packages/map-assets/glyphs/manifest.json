@@ -1,0 +1,20 @@
+{
+  "schemaVersion": "1.0.0",
+  "refZoom": 3,
+  "atlas": {
+    "image": "atlas/world-glyphs.webp",
+    "rects": "atlas/world-glyphs.json"
+  },
+  "glyphs": {
+    "tree-conifer": { "svg": "svg/tree-conifer.svg", "baseSizePx": 18, "anchor": [0.5, 1.0], "tintable": true, "defaultColor": "#2d5a27" },
+    "tree-deciduous": { "svg": "svg/tree-deciduous.svg", "baseSizePx": 16, "anchor": [0.5, 1.0], "tintable": true, "defaultColor": "#4a7a32" },
+    "tree-palm": { "svg": "svg/tree-palm.svg", "baseSizePx": 16, "anchor": [0.5, 1.0], "tintable": true, "defaultColor": "#5a8a3a" },
+    "vegetation-bush": { "svg": "svg/vegetation-bush.svg", "baseSizePx": 12, "anchor": [0.5, 1.0], "tintable": true, "defaultColor": "#3d6a28" },
+    "rock-boulder": { "svg": "svg/rock-boulder.svg", "baseSizePx": 14, "anchor": [0.5, 0.5], "tintable": false },
+    "prop-fence": { "svg": "svg/prop-fence.svg", "baseSizePx": 12, "anchor": [0.5, 1.0], "tintable": false },
+    "utility-powerline": { "svg": "svg/utility-powerline.svg", "baseSizePx": 12, "anchor": [0.5, 1.0], "tintable": false },
+    "building-badge-military": { "svg": "svg/building-badge-military.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false },
+    "building-badge-bunker": { "svg": "svg/building-badge-bunker.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false },
+    "building-badge-tower": { "svg": "svg/building-badge-tower.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false }
+  }
+}

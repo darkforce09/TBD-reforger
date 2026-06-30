@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-instance/v1.json",
+  "title": "TBD Map Object Instance (catalog v1 placement row)",
+  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Two equivalent encodings: an expanded object (golden/readability) or a compact positional array [id, prefabId, x, y, z?, rotationDeg?] (T-110 binary compile input).",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": ["id", "prefabId", "x", "y"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "prefabId": { "type": "integer", "minimum": 0 },
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "z": { "type": "number" },
+        "rotationDeg": { "type": "number" },
+        "pitchDeg": { "type": "number" },
+        "rollDeg": { "type": "number" },
+        "tags": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    {
+      "type": "array",
+      "description": "Compact positional tuple [id, prefabId, x, y, z?, rotationDeg?] (T-110 binary compile input). Position 0 is the string id; 1 is the integer prefabId; 2..5 are numbers (x, y, z?, rotationDeg?).",
+      "minItems": 4,
+      "maxItems": 6,
+      "items": { "type": ["string", "number"] }
+    }
+  ]
+}

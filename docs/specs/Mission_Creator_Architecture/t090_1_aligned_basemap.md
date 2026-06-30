@@ -1,15 +1,16 @@
 # T-090.1 — Aligned Cartesian basemap
 
-**Ticket:** T-090 · **Slice:** T-090.1  
-**Status:** Spec ready — **blocked on tile pyramid** (T-090.1 / T-121 — DEM shipped @ T-091.0)  
+**Ticket:** T-090 · **Slice:** T-090.1 **(1 of 6 — raster basemap only)**  
+**Status:** Spec ready — **blocked on tile pyramid** (export: **T-090.3**; was T-121)  
 **Executor:** claude-code  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
+**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
+**Follow-ons:** world objects **T-090.2–.5** · UX ref [`t090_eden_map_reference.md`](t090_eden_map_reference.md)
 
 ---
 
 ## In one sentence
 
-Render aligned Everon top-down tiles under the procedural grid in `<TacticalMap>`, clipped to terrain bounds, with grid-only fallback when tiles 404.
+Render aligned Everon **dual basemap views** (Satellite + Map) under the procedural grid in `<TacticalMap>` — Google Maps-style switch, same bounds — with grid-only fallback when tiles 404. See [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md).
 
 ---
 
@@ -17,7 +18,7 @@ Render aligned Everon top-down tiles under the procedural grid in `<TacticalMap>
 
 | Gate | Evidence |
 |------|----------|
-| **T-090.1 / T-121** | `packages/map-assets/everon/tiles/{z}/{x}/{y}.webp` exists (≥ z0) — **not** gated by T-091.0 (tiles deferred) |
+| **T-090.3** export | `packages/map-assets/everon/tiles/{z}/{x}/{y}.webp` exists (≥ z0) — see [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) |
 | **T-090.0** | Manifest `tiles.urlTemplate`, `alignmentOrigin`, `bounds` validate |
 | **Dev serve** | Tiles reachable at `/map-assets/everon/tiles/...` (symlink or Vite static — see DEV_RUNBOOK) |
 
@@ -32,10 +33,11 @@ Render aligned Everon top-down tiles under the procedural grid in `<TacticalMap>
 ## Goal
 
 1. Load terrain manifest via `manifestUrl` from [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts).
-2. Add basemap layer using **Cartesian** coordinates — **BitmapLayer** (single extent) **or** TileLayer with explicit world bbox — **never default Web Mercator** ([`engineering_plan.md`](engineering_plan.md) §4.1).
-3. Keep existing grid overlay on top (semi-transparent).
-4. Clip to `worldBounds` from manifest.
-5. Degraded mode: fetch 404 → grid-only + non-blocking toast (same as today).
+2. Add **Satellite** basemap (`tiles.satellite`) — **T-090.1 ship target**.
+3. Stub **Map** basemap (`tiles.map`) + UI radio — full tiles @ **T-090.1.1** ([`t090_basemap_dual_view.md`](t090_basemap_dual_view.md)).
+4. **Cartesian** TileLayer/BitmapLayer — **never Web Mercator** ([`engineering_plan.md`](engineering_plan.md) §4.1).
+5. Grid overlay on top (semi-transparent); clip to `worldBounds`.
+6. Degraded: 404 → grid-only + toast.
 
 ---
 
@@ -52,14 +54,56 @@ Render aligned Everon top-down tiles under the procedural grid in `<TacticalMap>
 | Decision | Choice |
 |----------|--------|
 | Coordinate system | `COORDINATE_SYSTEM.CARTESIAN`, `flipY: false`, origin bottom-left |
-| Tile URL | Manifest `tiles.urlTemplate` — default `/map-assets/everon/tiles/{z}/{x}/{y}.webp` |
+| Tile URL | **`tiles.satellite.urlTemplate`** — default `/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp` |
+| Map view URL | **`tiles.map.urlTemplate`** — `/map-assets/everon/tiles/map/{z}/{x}/{y}.webp` (**T-090.1.1**) |
+| Basemap mode | **`basemapView`**: `'satellite' \| 'map'` — mutually exclusive (Google Maps pattern) |
 | Zoom range | Manifest `minZoom`–`maxZoom` (default 0–5) |
 | Layer order | Basemap **below** grid lines |
-| Toggle | Basemap on/off lands in **T-091.2** (`MissionSettingsDialog`) — optional stub prop @ T-090.1 |
+| Toggle | **Satellite / Map** radio in Mission Settings — [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md); hillshade/grid remain separate toggles (T-091.2) |
+| **Tile Y-axis (XYZ vs TMS)** | Exported WebP pyramids use **XYZ** tile indexing: **`y=0` = northernmost** row. Deck.gl `TileLayer` under `COORDINATE_SYSTEM.CARTESIAN` + `flipY: false` maps tile **`y=0` to the southernmost** world edge. **Never pass raw `{y}` into the URL template on a `TileLayer`.** |
+| **TileLayer Y fix** | Override `getTileData` (or equivalent fetch hook): `tmsY = 2 ** z - 1 - y` (i.e. `Math.pow(2, z) - 1 - y`); request `{z}/{x}/{tmsY}.webp`. |
+| **BitmapLayer fallback** | Single-image path: **no Y flip** — `bounds: [minX, minY, maxX, maxY]` (Everon: `[0, 0, 12800, 12800]`) maps the **top** row of the image to the **north** (`maxY`) bound. |
 
 ---
 
 ## Implementation specification
+
+### Tile Y-axis trap (mandatory — do not skip)
+
+Our editor uses **`COORDINATE_SYSTEM.CARTESIAN`** with **`flipY: false`** (bottom-left origin, +Y north). That matches Arma world meters — but it **conflicts** with how most map tile pyramids are stored on disk.
+
+| System | Tile `y=0` row |
+|--------|----------------|
+| **XYZ export** (our WebP pyramid from T-090.3) | **Northernmost** edge of the map |
+| **Deck.gl `TileLayer`** @ Cartesian + `flipY: false` | **Southernmost** world edge |
+
+If the implementing agent passes Deck's tile index `y` straight into `tiles.urlTemplate` (`…/{z}/{x}/{y}.webp`), the basemap will load but appear **vertically scrambled** (north/south flipped). H2 landmark tests may still “sort of” pass at a glance — treat **explicit Y inversion** as a hard requirement, not an optimization.
+
+#### `TileLayer` path (pyramid)
+
+When using `@deck.gl/geo-layers` `TileLayer` (or any tiled fetch keyed by `{z,x,y}`):
+
+1. Let `y` be the index Deck.gl requests (southern-first in our Cartesian setup).
+2. Before building the URL, compute the on-disk XYZ row:
+
+```typescript
+const tmsY = Math.pow(2, z) - 1 - y;
+const url = urlTemplate.replace('{z}', String(z)).replace('{x}', String(x)).replace('{y}', String(tmsY));
+```
+
+3. Prefer encapsulating this in **`getTileData`** (or a single `fetchTile(z, x, y)` helper) so no code path can accidentally use raw `y`.
+4. Document in code **why** — future refactors have removed this flip and shipped upside-down maps before.
+
+**Do not** enable default Web Mercator tiling or assume TMS/XYZ “just works” with Cartesian bounds.
+
+#### `BitmapLayer` path (single extent)
+
+When using one full-terrain image instead of a pyramid:
+
+- **No Y-index flip** is required.
+- Set `bounds` to manifest world extents, e.g. Everon **`[0, 0, 12800, 12800]`** — Deck.gl maps the **top** scanline of the bitmap to the **north** (`maxY`) bound and the bottom scanline to the south (`minY`), which matches a north-up export aligned to world bounds.
+
+Use this path for z0-only prototypes; production expects the pyramid (`TileLayer` + Y inversion above).
 
 ### Files to touch
 
@@ -76,6 +120,7 @@ Render aligned Everon top-down tiles under the procedural grid in `<TacticalMap>
 |----|------|--------|
 | **H1** | Grid origin | World (0,0) pixel = southwest map corner tile pixel |
 | **H2** | Landmark | Pick 1 Biki-known coordinate (e.g. airfield center) — tile color/feature within **≤50 m** of expected world point @ z3 |
+| **H2b** | **Y-axis / north-up** | Known **north vs south** feature (e.g. Everon north coast vs south coast) matches Reforger — **not** mirror-flipped. Fail if only east/west looks right. |
 | **H3** | Bounds clip | Pan beyond 12800 m — basemap does not draw outside bounds |
 
 Document measured H1/H2 results in PR / manual verify log.
@@ -89,7 +134,7 @@ Document measured H1/H2 results in PR / manual verify log.
 ### Automated
 
 ```bash
-cd apps/website/frontend && npm run build && npm run lint
+make ci-local-frontend        # frontend lint + build + unit tests (apps/website/frontend)
 make verify-terrain
 # Requires tiles on disk (T-090.1 / T-121 — not T-091.0):
 test -d packages/map-assets/everon/tiles/0
@@ -109,9 +154,9 @@ test -d packages/map-assets/everon/tiles/0
 
 | ID | Check | Pass condition |
 |----|-------|----------------|
-| S1 | Build/lint | `npm run build && npm run lint` exit 0 |
-| S2 | Cartesian | No `@deck.gl/geo-layers` TileLayer without explicit bbox |
-| S3 | H1/H2 | Manual log attached — horizontal alignment documented |
+| S1 | Build/lint | `make ci-local-frontend` exit 0 |
+| S2 | Cartesian | No `@deck.gl/geo-layers` TileLayer without explicit bbox **and** XYZ→fetch Y inversion (`tmsY = 2**z - 1 - y`) |
+| S3 | H1/H2/H2b | Manual log attached — horizontal **and north/south** alignment documented |
 | S4 | Degraded | M3 pass |
 | S5 | Perf | M4 pass |
 
@@ -119,5 +164,6 @@ test -d packages/map-assets/everon/tiles/0
 
 ## Related
 
+- [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) — **Satellite + Map views (vital)**
 - [`t091_0_dem_tile_export.md`](t091_0_dem_tile_export.md) — tile export runbook
 - [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) — basemap toggle in settings

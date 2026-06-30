@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-enums/v1.json",
+  "title": "TBD Map Object Enums",
+  "description": "T-090.2 single source of truth for every closed enum used by the map-object prefab/instance/region/roads/resolved schemas, the prefab-classify rules, and the glyph manifest. Any `class`/`kind` value in any artifact MUST be a member of the matching enum here — enforced by verify-map-object-enums.mjs. Extend only via schema version bump + rule update (N5/GAP-M5).",
+  "$defs": {
+    "kind": {
+      "type": "string",
+      "description": "Top-level object/region kind. road/building/tree/vegetation/rock/prop/utility/water are instances; forest/field/waterBody are regions (N5).",
+      "enum": [
+        "road",
+        "building",
+        "tree",
+        "vegetation",
+        "rock",
+        "prop",
+        "utility",
+        "water",
+        "forest",
+        "field",
+        "waterBody"
+      ]
+    },
+    "regionKind": {
+      "type": "string",
+      "enum": ["forest", "field", "waterBody"]
+    },
+    "buildingClass": {
+      "type": "string",
+      "enum": [
+        "residential",
+        "commercial",
+        "industrial",
+        "agricultural",
+        "civic",
+        "military",
+        "bunker",
+        "hangar",
+        "garage",
+        "tower",
+        "ruin",
+        "wall",
+        "generic",
+        "unknown"
+      ]
+    },
+    "roadClass": {
+      "type": "string",
+      "enum": [
+        "highway_paved",
+        "road_paved",
+        "road_dirt",
+        "track",
+        "path",
+        "runway",
+        "unknown"
+      ]
+    },
+    "speciesClass": {
+      "type": "string",
+      "description": "Tree and vegetation species (union). Tree: conifer/deciduous/palm/dead/unknown. Vegetation: bush/grass/fern/dead/unknown.",
+      "enum": [
+        "conifer",
+        "deciduous",
+        "palm",
+        "bush",
+        "grass",
+        "fern",
+        "dead",
+        "unknown"
+      ]
+    },
+    "forestClass": {
+      "type": "string",
+      "description": "Dominant species of a forest region.",
+      "enum": ["conifer", "deciduous", "mixed", "palm", "dead", "unknown"]
+    },
+    "rockClass": {
+      "type": "string",
+      "enum": ["boulder", "cliff", "pebble", "scree", "unknown"]
+    },
+    "propClass": {
+      "type": "string",
+      "enum": ["fence", "barrier", "sign", "furniture", "debris", "pebble", "unknown"]
+    },
+    "utilityClass": {
+      "type": "string",
+      "enum": ["powerline", "lamp", "antenna", "pipeline", "unknown"]
+    },
+    "waterClass": {
+      "type": "string",
+      "enum": ["pier", "dock", "buoy", "unknown"]
+    },
+    "coverType": {
+      "type": "string",
+      "enum": ["none", "soft", "hard"]
+    },
+    "lineOfSight": {
+      "type": "string",
+      "enum": ["none", "partial", "full"]
+    },
+    "spatialModel": {
+      "type": "string",
+      "enum": ["aabb", "obb", "line", "polygon"]
+    },
+    "pivot": {
+      "type": "string",
+      "enum": ["base", "center"]
+    },
+    "classificationSource": {
+      "type": "string",
+      "enum": ["rules-v1/prefab-name", "override", "export-metadata", "llm-batch"]
+    },
+    "regionSource": {
+      "type": "string",
+      "enum": ["engine-mask", "derived-hull"]
+    }
+  }
+}

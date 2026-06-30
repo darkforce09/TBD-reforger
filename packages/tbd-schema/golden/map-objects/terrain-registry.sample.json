@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "1.0.0",
+  "terrains": [
+    {
+      "terrainId": "everon",
+      "displayName": "Everon",
+      "worldBoundsM": [0, 0, 12800, 12800],
+      "manifestPath": "everon/manifest.json",
+      "workbenchWorld": "Worlds/Everon/Everon.ent",
+      "exportProfile": "default",
+      "status": "active",
+      "importPhaseMax": "P1_buildings",
+      "importPhaseShipped": []
+    },
+    {
+      "terrainId": "arland",
+      "displayName": "Arland",
+      "worldBoundsM": [0, 0, 4096, 4096],
+      "manifestPath": "arland/manifest.json",
+      "workbenchWorld": "Worlds/Arland/Arland.ent",
+      "exportProfile": "default",
+      "status": "queued"
+    }
+  ]
+}

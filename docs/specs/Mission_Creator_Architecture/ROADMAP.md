@@ -29,9 +29,11 @@
 
 | Active now | Blocked until map gate |
 |------------|-------------------------|
-| **T-090.1** aligned basemap tiles | **T-071** ORBAT Manager |
-| **T-092** mod mission compile (ready) | **T-068.7+** loadout Phase 2 |
-| **Shipped** | **T-090.0** hub · **T-091** complete @ `dde589e` (`.0`/`.1`/`.2`) |
+| **T-090.3.0** Workbench export spike (active) → **T-090.1** basemap | **T-071** ORBAT Manager |
+| **T-090.2–.9** typed world objects + **forests (.8)** + **interaction (.9)** → export → Z audit → Deck-zoom render | **T-068.7+** loadout Phase 2 |
+| **T-092** mod mission compile (ready) | |
+| **Shipped** | **T-090.0** + **T-090.0.1** + **T-090.0.2** (map-object schemas + goldens + verify) · **T-091** @ `dde589e` |
+| **Deferred idea** | **T-126** building floor selector (not T-090) |
 
 **T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.
 
@@ -309,13 +311,16 @@ Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_prog
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| **Aligned map imagery** (top-down Everon/Arland tiles, same origin as Reforger) | **T-090.1** — queued | Today: grid only. [`engineering_plan.md`](engineering_plan.md) §0.3 asset hosting. |
+| **Aligned map imagery** (Satellite + Map basemap views, same origin as Reforger) | **T-090.1** + **T-090.1.1** — **queued** (after T-090.3.0 spike) | Today: grid only. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
 | **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
 | **DEM loader / `sampleElevation`** | **Done (T-091.1)** @ `2c56c2e` | `tactical-map/dem/*`; consumed by T-091.2. |
 | **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `make verify-terrain-strict` PASS. |
 | **Z on place & move** (sample DEM at x,y) | **Done (T-091.2)** @ `dde589e` | `terrainZ` in `addSlot` / `pasteSlots` / `moveEntities`; Attributes X/Y re-sample. |
 | **Z in UI** (toolbelt + Attributes, editable) | **Done (T-091.2)** @ `dde589e` | CUR/SEL + X/Y/Z @ 3 dp; hillshade + grid toggles in Mission Settings. |
-| **Aligned tile basemap** | **T-090.1** — **active** | Procedural grid + hillshade today; WebP pyramid pending. |
+| **Satellite / Map basemap views** | **T-090.1** Satellite + **T-090.1.1** Map — **queued** (after T-090.3.0 spike) | Procedural grid + hillshade today; dual WebP pyramids pending export (**T-090.3**). [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
+| **Typed world objects** (roads, trees, buildings on map) | **T-090.2–.5** — spec ready | Taxonomy → Workbench export → Z audit → Deck layers. Eden UX ref: [`t090_eden_map_reference.md`](t090_eden_map_reference.md). |
+| **Z burial / floating props** | **T-090.4** + **T-090.6** — automated @ 1M | Phase A: pivot vs DEM. Phase B: OBB samples + `visibleAboveGroundPct` (no manual verify). |
+| **Building floor selector** | **T-126** — idea | Explicit out of T-090 scope. |
 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
 | **Mod spawn parity** (x/z/y/headingDeg) | **T-092** — queued | Compiler emits `editor.slots` only today — no mod `slots[]`. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |

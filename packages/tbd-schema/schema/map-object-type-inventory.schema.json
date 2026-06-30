@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-type-inventory/v1.json",
+  "title": "TBD Map Object Type Inventory",
+  "description": "Exact prefab/instance census for a terrain (T-090.2). Every count is a non-negative integer when censusStatus=complete — no ranges, no rounding, no ± tolerance on totals. Verification gates I1–I6 in t090_world_object_type_inventory.md.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "terrainId",
+    "censusStatus",
+    "levels",
+    "byKind"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": "1.0.0" },
+    "terrainId": { "type": "string", "enum": ["everon", "arland", "custom"] },
+    "censusStatus": {
+      "type": "string",
+      "enum": ["pending_export", "partial", "complete"],
+      "description": "pending_export = no Workbench export yet (counts must be null). partial = phased import in progress. complete = full P10 census frozen."
+    },
+    "generatedAt": { "type": ["string", "null"], "format": "date-time" },
+    "importPhaseMax": { "type": ["string", "null"] },
+    "sourceExportPath": {
+      "type": ["string", "null"],
+      "description": "Relative path to raw-entities.jsonl or catalog used for this census (audit trail)."
+    },
+    "levels": {
+      "type": "object",
+      "required": ["uniquePrefabs", "totalInstances"],
+      "additionalProperties": false,
+      "properties": {
+        "uniquePrefabs": { "$ref": "#/$defs/exactCount" },
+        "totalInstances": { "$ref": "#/$defs/exactCount" }
+      }
+    },
+    "byKind": {
+      "type": "object",
+      "required": [
+        "building",
+        "tree",
+        "vegetation",
+        "rock",
+        "prop",
+        "utility",
+        "water",
+        "road"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "building": { "$ref": "#/$defs/kindBucket" },
+        "tree": { "$ref": "#/$defs/kindBucket" },
+        "vegetation": { "$ref": "#/$defs/kindBucket" },
+        "rock": { "$ref": "#/$defs/kindBucket" },
+        "prop": { "$ref": "#/$defs/kindBucket" },
+        "utility": { "$ref": "#/$defs/kindBucket" },
+        "water": { "$ref": "#/$defs/kindBucket" },
+        "road": { "$ref": "#/$defs/roadBucket" }
+      }
+    },
+    "byBuildingClass": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/classBucket" }
+    },
+    "byRoadClass": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/classBucket" }
+    },
+    "bySpeciesClass": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/classBucket" }
+    },
+    "byRegionKind": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "forest": {
+          "type": "object",
+          "required": ["count", "treeCount"],
+          "additionalProperties": false,
+          "properties": {
+            "count": { "$ref": "#/$defs/exactCount" },
+            "treeCount": { "$ref": "#/$defs/exactCount" }
+          }
+        },
+        "field": {
+          "type": "object",
+          "required": ["count"],
+          "additionalProperties": false,
+          "properties": {
+            "count": { "$ref": "#/$defs/exactCount" }
+          }
+        },
+        "waterBody": {
+          "type": "object",
+          "required": ["count"],
+          "additionalProperties": false,
+          "properties": {
+            "count": { "$ref": "#/$defs/exactCount" }
+          }
+        }
+      }
+    },
+    "unassignedTrees": { "$ref": "#/$defs/exactCount" },
+    "needsReview": {
+      "type": "object",
+      "required": ["prefabTypes"],
+      "additionalProperties": false,
+      "properties": {
+        "prefabTypes": { "$ref": "#/$defs/exactCount" },
+        "prefabs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["resourceName", "instanceCount", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "resourceName": { "type": "string" },
+              "instanceCount": { "type": "integer", "minimum": 0 },
+              "reason": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "exactCount": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Exact integer count. null only when censusStatus=pending_export."
+    },
+    "kindBucket": {
+      "type": "object",
+      "required": ["prefabTypes", "instances"],
+      "additionalProperties": false,
+      "properties": {
+        "prefabTypes": { "$ref": "#/$defs/exactCount" },
+        "instances": { "$ref": "#/$defs/exactCount" }
+      }
+    },
+    "roadBucket": {
+      "type": "object",
+      "required": ["prefabTypes", "instances", "segments"],
+      "additionalProperties": false,
+      "properties": {
+        "prefabTypes": { "$ref": "#/$defs/exactCount" },
+        "instances": { "$ref": "#/$defs/exactCount" },
+        "segments": { "$ref": "#/$defs/exactCount" }
+      }
+    },
+    "classBucket": {
+      "type": "object",
+      "required": ["prefabTypes", "instances"],
+      "additionalProperties": false,
+      "properties": {
+        "prefabTypes": { "$ref": "#/$defs/exactCount" },
+        "instances": { "$ref": "#/$defs/exactCount" },
+        "prefabs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["resourceName", "prefabId", "instanceCount", "class"],
+            "additionalProperties": false,
+            "properties": {
+              "resourceName": { "type": "string" },
+              "prefabId": { "type": "string" },
+              "instanceCount": { "type": "integer", "minimum": 0 },
+              "class": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "censusStatus": { "const": "pending_export" } } },
+      "then": {
+        "type": "object",
+        "properties": {
+          "levels": {
+            "type": "object",
+            "properties": {
+              "uniquePrefabs": { "const": null },
+              "totalInstances": { "const": null }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "censusStatus": { "enum": ["partial", "complete"] } }
+      },
+      "then": {
+        "type": "object",
+        "required": ["generatedAt", "importPhaseMax"],
+        "properties": {
+          "generatedAt": { "type": "string", "format": "date-time" },
+          "importPhaseMax": { "type": "string", "minLength": 1 },
+          "levels": {
+            "type": "object",
+            "properties": {
+              "uniquePrefabs": { "type": "integer", "minimum": 0 },
+              "totalInstances": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

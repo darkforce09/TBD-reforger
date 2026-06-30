@@ -9,7 +9,7 @@
 
 ## In one sentence
 
-Follow-on automation after T-091.0: tile pyramid (EMT), Arland DEM re-export, and Workbench/MCP tooling polish — **not** the initial Everon DEM gate (that shipped via `TBD_TerrainExportPlugin.c`).
+Follow-on automation after T-091.0: **DEM refresh**, Arland export, and Workbench/MCP tooling polish — **not** the initial Everon DEM gate (that shipped via `TBD_TerrainExportPlugin.c`). **Tile pyramid + world object export → T-090.3** (absorbed from T-121).
 
 ---
 
@@ -27,7 +27,7 @@ Follow-on automation after T-091.0: tile pyramid (EMT), Arland DEM re-export, an
 
 ## T-121 scope (when picked up)
 
-1. **Tile pyramid** — Enhanced Map Tool / WE Export Map data → `tiles/{z}/{x}/{y}.webp` + V5 ops log (**T-090.1** may own this instead).
+1. ~~**Tile pyramid**~~ → **T-090.3** [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) (T-090.1 renders; T-090.3 exports).
 2. **Arland DEM** — repeat plugin export + manifest + anchors.
 3. **MCP helper hardening** — `mcp-call.sh` round-trip reliability (session drops noted @ T-091.0).
 4. **Optional:** game-mode export fallback (`TBD_HeightmapExportComponent`) if Workbench plugin context regresses on future engine versions.

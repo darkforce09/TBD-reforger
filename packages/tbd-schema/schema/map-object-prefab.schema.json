@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-prefab/v1.json",
+  "title": "TBD Map Object Prefab (catalog v1 type row)",
+  "description": "One deduplicated prefab type row (T-090.2). N6 — Normative shipped geometry: oriented bounding rectangle from spatial.halfExtentsM + rotationDeg. Real footprint polygon rings are populated only when T-090.3.0 proves Enfusion footprint export; when present, polygons supersede OBB rectangles for render. `class` MUST be a member of the matching map-object-enums.schema.json $def for `kind` (verify-map-object-enums.mjs).",
+  "type": "object",
+  "required": ["prefabId", "resourceName", "kind", "class", "ai", "spatial", "gameplay"],
+  "additionalProperties": false,
+  "properties": {
+    "prefabId": { "type": "integer", "minimum": 0 },
+    "resourceName": {
+      "type": "string",
+      "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\-]+$"
+    },
+    "kind": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/kind" },
+    "class": { "type": "string", "minLength": 1 },
+    "label": { "type": "string" },
+    "ai": {
+      "type": "object",
+      "required": ["summary", "taxonomyPath", "classificationSource", "confidence", "needsReview"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "minLength": 1 },
+        "taxonomyPath": { "type": "string", "minLength": 1 },
+        "edenEquivalent": { "type": "string" },
+        "gameplayTags": { "type": "array", "items": { "type": "string" } },
+        "classificationSource": {
+          "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/classificationSource"
+        },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "needsReview": { "type": "boolean" }
+      }
+    },
+    "spatial": {
+      "type": "object",
+      "required": ["model", "pivot", "heightM"],
+      "additionalProperties": false,
+      "properties": {
+        "model": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/spatialModel" },
+        "pivot": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/pivot" },
+        "halfExtentsM": {
+          "type": "object",
+          "required": ["x", "y", "z"],
+          "additionalProperties": false,
+          "properties": {
+            "x": { "type": "number", "minimum": 0 },
+            "y": { "type": "number", "minimum": 0 },
+            "z": { "type": "number", "minimum": 0 }
+          }
+        },
+        "widthM": { "type": "number", "minimum": 0 },
+        "heightM": { "type": "number", "minimum": 0 },
+        "footprintM2": { "type": "number", "minimum": 0 }
+      }
+    },
+    "gameplay": {
+      "type": "object",
+      "required": ["cover", "movement", "lineOfSight", "destructible", "climbable", "enterable", "ladder", "door", "bridge", "runway"],
+      "additionalProperties": false,
+      "properties": {
+        "cover": {
+          "type": "object",
+          "required": ["type", "standing", "prone", "crouch", "heightM"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/coverType" },
+            "standing": { "type": "boolean" },
+            "prone": { "type": "boolean" },
+            "crouch": { "type": "boolean" },
+            "heightM": { "type": "number", "minimum": 0 }
+          }
+        },
+        "movement": {
+          "type": "object",
+          "required": ["blocksInfantry", "blocksVehicle"],
+          "additionalProperties": false,
+          "properties": {
+            "blocksInfantry": { "type": "boolean" },
+            "blocksVehicle": { "type": "boolean" }
+          }
+        },
+        "lineOfSight": { "$ref": "https://schema.tbdevent.eu/map-object-enums/v1.json#/$defs/lineOfSight" },
+        "destructible": { "type": "boolean" },
+        "climbable": { "type": "boolean" },
+        "enterable": { "type": "boolean" },
+        "ladder": { "type": "boolean" },
+        "door": { "type": "boolean" },
+        "bridge": { "type": "boolean" },
+        "runway": { "type": "boolean" }
+      }
+    },
+    "render": {
+      "type": "object",
+      "required": ["iconKey", "lodMinZoom", "baseSizePx", "anchor"],
+      "additionalProperties": false,
+      "description": "Required when the kind renders via IconLayer (tree/vegetation/rock/prop/utility). Buildings may omit (polygon/OBB-only). lodMinZoom + baseSizePx are Deck orthographic zoom (N1/N2/N4), never tile z0-5.",
+      "properties": {
+        "iconKey": { "type": "string", "minLength": 1 },
+        "lodMinZoom": { "type": "number", "minimum": -6, "maximum": 6 },
+        "baseSizePx": { "type": "number", "exclusiveMinimum": 0 },
+        "anchor": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "tintable": { "type": "boolean" },
+        "defaultColor": { "type": "string" }
+      }
+    },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

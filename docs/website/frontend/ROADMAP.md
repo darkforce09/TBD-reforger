@@ -39,7 +39,7 @@ All routes below have a surface spec unless noted. Live UI = `apps/website/front
 | `/leaderboards` | [leaderboards.md](pages/leaderboards.md) | Live: `operations.tsx` |
 | `/missions` | [mission-library.md](pages/mission-library.md) | Create dialog shipped (T-048); `/missions/create` removed |
 | `/missions/:id` | [mission-overview.md](pages/mission-overview.md) | Sheet dossier |
-| `/missions/:id/edit` | [mission-editor.md](pages/mission-editor.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.1** aligned tiles active |
+| `/missions/:id/edit` | [mission-editor.md](pages/mission-editor.md) | **in-progress** — T-091 shipped @ `dde589e` (DEM + Z + hillshade); **T-090.3.0** Workbench spike active (**T-090.1** aligned tiles queued) |
 | `/events` | [event-schedule.md](pages/event-schedule.md) | SplitPane; Live: `operations.tsx` |
 | `/events/:id` | [event-hub.md](pages/event-hub.md) | Inline ORBAT |
 | `/events/:id/missions/:emid/orbat` | [event-hub.md § ORBAT deep-link](pages/event-hub.md) | Wired from Deployments (T-122 R2) |

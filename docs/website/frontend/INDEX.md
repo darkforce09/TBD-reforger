@@ -19,7 +19,7 @@ Master index for all TBD Reforger frontend surfaces.
 | [pages/mission-library.md](pages/mission-library.md) | `/missions` (+ create dialog T-048) | in-progress | §4.5 | — |
 | [pages/mission-overview.md](pages/mission-overview.md) | `/missions/:id` | doc-complete | — | — |
 | [pages/mission-creator.md](pages/mission-creator.md) | *(embedded in `/missions` — T-048)* | archived-route | — | — |
-| [pages/mission-editor.md](pages/mission-editor.md) | `/missions/:id/edit` | in-progress | — | T-091 + T-122 C3 error overlay; active T-090.1 |
+| [pages/mission-editor.md](pages/mission-editor.md) | `/missions/:id/edit` | in-progress | — | T-091 + T-122 C3 error overlay; active T-090.3.0 (T-090.1 queued) |
 | [pages/event-schedule.md](pages/event-schedule.md) | `/events` | doc-complete | — | — |
 | [pages/event-hub.md](pages/event-hub.md) | `/events/:id` | doc-complete | — | — |
 | [pages/modpacks.md](pages/modpacks.md) | `/modpacks` | doc-complete | §4.7 | — |

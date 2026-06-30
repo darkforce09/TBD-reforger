@@ -374,6 +374,7 @@ blocks**, and a banner tells the user gear data is unavailable.
 |---|-------|--------------|-------------|
 | 1 | Base map | `TileLayer` (tiled) / `BitmapLayer` (single image) | terrain imagery |
 | 2 | DEM hillshade / contours | **custom** DataTexture layer (toggleable) | `DemTexture` GPU texture |
+| 2b | **World objects** (forest regions, roads, buildings, trees, props) | `PolygonLayer` / `PathLayer` / `IconLayer` — Deck-orthographic-zoom LOD per [`t090_render_lod_contract.md`](t090_render_lod_contract.md) §N3 | catalog v1 chunks via worker ([`t090_world_objects_worker.md`](t090_world_objects_worker.md)) |
 | 3 | Areas & radii | `PolygonLayer` | safe-start areas, `objectivesById` radii (with Visual-Git red=deleted / green=added tinting) |
 | 4 | Lines | `PathLayer` | `markersById` (phase lines, arrows), ruler segments |
 | 5 | Icons | `IconLayer` (atlas, pixel-sized, pickable) | `slotsById`, `vehiclesById`, waypoint markers |
@@ -384,7 +385,7 @@ blocks**, and a banner tells the user gear data is unavailable.
 - Each layer is produced by a `use*Layer` hook reading a **memoized selector** (`state/selectors.ts`).
 - `TacticalMap.tsx` assembles the `layers` array; `updateTriggers` are keyed to the specific
   store slices a layer depends on, so editing one slot doesn't rebuild unrelated layers.
-- Picking via Deck's `onClick`/`onHover` → sets `selection` and the live X/Y/Z readout.
+- **Picking (T-057/T-063):** Deck GPU pick is **removed** (`getCursor` constant, layers `pickable:false`); slot click/marquee resolve through the `slotSpatialIndex` rbush, and the live X/Y/Z readout is unprojected on the container `pointermove`. **World objects** add a **separate** `worldSpatialIndex` rbush in a worker for read-only hover/inspect ([`t090_world_objects_worker.md`](t090_world_objects_worker.md) + [`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md)); **never** re-enable Deck pick.
 - The frame budget holds because **Deck owns rendering** (React never renders per-entity DOM —
   this is the answer to the "200 Slot Problem") and **Y.Doc edits are batched in transactions**.
 - **Viewshed** recomputes only when the observer moves (not per frame). GLSL sketch: for each
@@ -484,7 +485,7 @@ Create both feature trees (§1) as stubs. Register the `React.lazy` route `/miss
 `view/useOrthographicView.ts`, `TacticalMap.tsx`, `layers/useBaseMapLayer.ts`, `context/MapContext.tsx`.
 **Deliverable:** a blank base map with 60 fps pan/zoom.
 
-**Phase 2 — DEM / Z-axis** — **T-091 shipped** @ `dde589e` (`.0`/`.1`/`.2`). **T-090.1 active** → aligned tile basemap. Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md).
+**Phase 2 — DEM / Z-axis** — **T-091 shipped** @ `dde589e` (`.0`/`.1`/`.2`). **T-090.3.0 active** (Workbench export spike); **T-090.1** aligned tile basemap **queued**. Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md).
 
 **Phase 3 — Shell / layout** → `MissionCreatorPage.tsx`, `layout/TopCommandStrip.tsx`,
 `LeftOutliner/*`, `RightInspector/InspectorPanel.tsx` + `GlobalSettingsInspector.tsx`.

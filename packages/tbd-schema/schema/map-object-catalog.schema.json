@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/map-object-catalog/v1.json",
+  "title": "TBD Map Object Catalog (validation bundle)",
+  "description": "N12 — VALIDATION-ONLY bundle of {prefabs, instances, regions, roadSegments}. Production NEVER writes one monolithic catalog file (cost model forbids it): prefabs.json.gz, chunks/*.json.gz, forest-regions.json.gz, roads.json.gz each validate against their own schema. This bundle exists for golden fixtures + CI only.",
+  "type": "object",
+  "required": ["schemaVersion", "terrainId", "prefabs", "instances"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "terrainId": { "type": "string" },
+    "prefabs": {
+      "type": "array",
+      "items": { "$ref": "https://schema.tbdevent.eu/map-object-prefab/v1.json" }
+    },
+    "instances": {
+      "type": "array",
+      "items": { "$ref": "https://schema.tbdevent.eu/map-object-instance/v1.json" }
+    },
+    "regions": {
+      "type": "array",
+      "items": { "$ref": "https://schema.tbdevent.eu/map-object-region/v1.json" }
+    },
+    "roadSegments": {
+      "type": "array",
+      "items": { "$ref": "https://schema.tbdevent.eu/map-object-roads/v1.json#/$defs/roadSegment" }
+    },
+    "unassignedTrees": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Trees not assigned to any forest region (N5 reconciliation overflow bucket)."
+    }
+  }
+}

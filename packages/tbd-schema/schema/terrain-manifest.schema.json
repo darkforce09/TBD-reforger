@@ -73,8 +73,10 @@
     },
     "tiles": {
       "type": "object",
+      "description": "Dual basemap pyramids (T-090.1/.1.1, N9). Legacy single `urlTemplate` = satellite alias (live everon manifest unchanged). `satellite` + `map` are the Google-Maps-style switchable views; both share bounds/zoom and the XYZ disk layout + fetch-time Y inversion.",
       "properties": {
         "type": { "const": "xyz" },
+        "indexOrder": { "type": "string", "enum": ["xyz", "tms"] },
         "urlTemplate": { "type": "string" },
         "tileSizePx": { "type": "integer" },
         "minZoom": { "type": "integer" },
@@ -90,7 +92,65 @@
           "items": { "type": "number" },
           "minItems": 2,
           "maxItems": 2
+        },
+        "satellite": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string" },
+            "urlTemplate": { "type": "string" },
+            "source": {
+              "type": "string",
+              "enum": ["workbench-ortho", "sap", "color-ortho"]
+            }
+          }
+        },
+        "map": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "path": { "type": "string" },
+            "urlTemplate": { "type": "string" },
+            "source": {
+              "type": "string",
+              "description": "N9 — synthesized-cartographic = DEM hillshade + land-cover LUT + baked road vectors when Workbench has no cartographic export; UI labels it \"Synthetic map\".",
+              "enum": ["workbench-cartographic", "synthesized-cartographic"]
+            }
+          }
         }
+      }
+    },
+    "objects": {
+      "type": "object",
+      "description": "Catalog v1 world-object pointers + counts (T-090.2/.3). Optional until first object export.",
+      "additionalProperties": false,
+      "properties": {
+        "schemaVersion": { "type": "string" },
+        "format": { "type": "string" },
+        "prefabsPath": { "type": "string" },
+        "prefabCount": { "type": "integer", "minimum": 0 },
+        "instanceCount": { "type": "integer", "minimum": 0 },
+        "chunksPath": { "type": "string" },
+        "chunkSizeM": { "type": "number" },
+        "roadsPath": { "type": "string" },
+        "regionsPath": { "type": "string" },
+        "importPhaseMax": { "type": "string" },
+        "importPhaseShipped": { "type": "array", "items": { "type": "string" } },
+        "typeInventoryPath": {
+          "type": "string",
+          "description": "Relative path to type-inventory.json — exact prefab/instance counts (T-090.2)."
+        },
+        "exportedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "glyphs": {
+      "type": "object",
+      "description": "World-object SVG/atlas pointers (T-090.5). Optional.",
+      "additionalProperties": false,
+      "properties": {
+        "manifestPath": { "type": "string" },
+        "atlasPath": { "type": "string" },
+        "atlasJsonPath": { "type": "string" }
       }
     },
     "anchors": {

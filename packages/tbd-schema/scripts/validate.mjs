@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const readJSON = (p) => JSON.parse(readFileSync(p, "utf8"));
 
-const ajv = new Ajv({ allErrors: true, strict: true });
+const ajv = new Ajv({ allErrors: true, strict: true, allowUnionTypes: true });
 addFormats(ajv);
 
 const missionSchema = readJSON(join(root, "schema", "mission.schema.json"));
@@ -33,6 +33,30 @@ const validateBridge = ajv.compile(bridgeSchema);
 const validateTerrainManifest = ajv.compile(terrainManifestSchema);
 const validateTerrainAnchors = ajv.compile(terrainAnchorsSchema);
 const validateMissionEditorPayload = ajv.compile(missionEditorPayloadSchema);
+
+// T-090.2 map-object contracts. Register every schema by $id first so the cross-file $refs
+// (enums single-source + catalog/resolved bundles) resolve, then pull compiled validators.
+const mapObjectSchemas = [
+  "map-object-enums.schema.json",
+  "map-object-prefab.schema.json",
+  "map-object-instance.schema.json",
+  "map-object-region.schema.json",
+  "map-object-roads.schema.json",
+  "map-object-catalog.schema.json",
+  "map-object-resolved.schema.json",
+  "map-object-type-inventory.schema.json",
+  "terrain-registry.schema.json",
+].map((f) => readJSON(join(root, "schema", f)));
+ajv.addSchema(mapObjectSchemas);
+const byId = (name) => ajv.getSchema(`https://schema.tbdevent.eu/${name}/v1.json`);
+const validateMapPrefab = byId("map-object-prefab");
+const validateMapInstance = byId("map-object-instance");
+const validateMapRegion = byId("map-object-region");
+const validateMapRoads = byId("map-object-roads");
+const validateMapCatalog = byId("map-object-catalog");
+const validateMapResolved = byId("map-object-resolved");
+const validateMapTypeInventory = byId("map-object-type-inventory");
+const validateTerrainRegistry = byId("terrain-registry");
 
 let failures = 0;
 
@@ -107,6 +131,61 @@ for (const file of readdirSync(enfusionDir).filter((f) => f.endsWith(".sample.js
   }
   check(file, validate, readJSON(join(enfusionDir, file)));
 }
+
+// T-090.2 map-object goldens (golden/map-objects/*). Arrays are validated per row.
+const moDir = join(root, "golden", "map-objects");
+const moPath = (...p) => join(moDir, ...p);
+
+console.log("Map object prefabs (S9 — one row per buildingClass):");
+for (const [i, row] of readJSON(moPath("map-object-prefabs-sample.json")).entries()) {
+  check(`prefab[${i}] ${row.kind}/${row.class}`, validateMapPrefab, row);
+}
+
+console.log("Map object instances:");
+for (const [i, row] of readJSON(moPath("map-object-instances-sample.json")).entries()) {
+  check(`instance[${i}]`, validateMapInstance, row);
+}
+
+console.log("Map object regions (forest / field):");
+for (const [i, row] of readJSON(moPath("map-object-regions-everon-sample.json")).entries()) {
+  check(`region[${i}] ${row.kind}`, validateMapRegion, row);
+}
+
+console.log("Map object roads:");
+check("map-object-roads-sample.json", validateMapRoads, readJSON(moPath("map-object-roads-sample.json")));
+
+console.log("Map object catalog bundle (validation-only, N12):");
+check("map-object-catalog-everon-sample.json", validateMapCatalog, readJSON(moPath("map-object-catalog-everon-sample.json")));
+check("phased/P1-buildings.json", validateMapCatalog, readJSON(moPath("phased", "P1-buildings.json")));
+
+console.log("ResolvedWorldObject (Eden AI + T-090.7):");
+for (const [i, row] of readJSON(moPath("map-object-resolved-sample.json")).entries()) {
+  check(`resolved[${i}] ${row.kind}`, validateMapResolved, row);
+}
+
+console.log("Terrain registry:");
+check("golden terrain-registry.sample.json", validateTerrainRegistry, readJSON(moPath("terrain-registry.sample.json")));
+check(
+  "map-assets/terrain-registry.json",
+  validateTerrainRegistry,
+  readJSON(join(repoRoot, "packages", "map-assets", "terrain-registry.json")),
+);
+
+console.log("Dual + legacy terrain manifests (T-090.1/.1.1):");
+check("everon-dual-tiles", validateTerrainManifest, readJSON(moPath("terrain-manifest-everon-dual-tiles.json")));
+check("everon-legacy-tiles", validateTerrainManifest, readJSON(moPath("terrain-manifest-everon-legacy-tiles.json")));
+
+console.log("Map object type inventory (exact counts — pending until export):");
+check(
+  "type-inventory-pending-everon.json",
+  validateMapTypeInventory,
+  readJSON(moPath("type-inventory-pending-everon.json")),
+);
+check(
+  "map-assets/everon/objects/type-inventory.json",
+  validateMapTypeInventory,
+  readJSON(join(repoRoot, "packages", "map-assets", "everon", "objects", "type-inventory.json")),
+);
 
 if (failures > 0) {
   console.error(`\n${failures} validation failure(s).`);

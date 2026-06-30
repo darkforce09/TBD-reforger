@@ -48,8 +48,8 @@ build: ## Build the Go API and the frontend
 tidy: ## Tidy Go modules
 	cd $(WEB) && go mod tidy
 
-schema-validate: ## Validate golden missions against shared schema
-	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs
+schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency)
+	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10
 
 schema-codegen: ## Regenerate Go + TS contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
 	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
@@ -80,6 +80,36 @@ verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 
 verify-terrain-strict: ## Full anchor alignment gate (T-091.0 GetSurfaceY DEM + anchors)
 	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs --strict
+
+# T-090.0.2 — map-object contract verifiers (run inside schema-validate). Real gates.
+.PHONY: map-object-enums-verify map-glyphs-verify t090-spec-verify
+map-object-enums-verify: ## T-090.2 enum single-source: prefab-classify + golden prefabs + glyph kinds subset of map-object-enums
+	cd packages/tbd-schema && npm ci --silent && npm run verify-map-object-enums
+
+map-glyphs-verify: ## T-090.5 glyph coverage: every golden prefab render.iconKey has an SVG + manifest entry
+	cd packages/tbd-schema && npm ci --silent && npm run verify-map-glyphs
+
+t090-spec-verify: ## T-090 spec consistency grep gates (DoD): zoom space, picking, audit-closure, command existence
+	cd packages/tbd-schema && npm ci --silent && npm run verify-t090-specs
+
+# T-090.3 / T-090.5 — pipeline command surface. STUBS until the owning slice ships (exit 1 so a
+# premature run fails loudly); they exist so DoD rule 7 (every `make` referenced by a spec exists) holds.
+.PHONY: map-export map-export-all map-export-validate map-verify-phase map-census map-glyphs-build map-render-verify
+map-export: ## T-090.3 stub — export all map assets for TERRAIN=<id> PHASE=Pn (impl after T-090.3.0 spike)
+	@echo "map-export: not implemented — Workbench export spike T-090.3.0 must pass first (see t090_3_0_workbench_export_spike.md)"; exit 1
+map-export-all: ## T-090.3 stub — export every terrain in terrain-registry.json
+	@echo "map-export-all: not implemented (T-090.3)"; exit 1
+map-export-validate: ## T-090.3 stub — validate all terrain manifests + goldens (CI)
+	@echo "map-export-validate: not implemented (T-090.3) — use 'make schema-validate' for contract validation"; exit 1
+map-verify-phase: ## T-090.3 stub — mathematical phase gate for TERRAIN=<id> PHASE=Pn
+	@echo "map-verify-phase: not implemented (T-090.3, see t090_phased_object_import.md)"; exit 1
+map-census: ## T-090.2 — validate type-inventory.json; compute counts after export (TERRAIN=<id>)
+	@test -n "$(TERRAIN)" || (echo "map-census: TERRAIN=<id> required"; exit 1)
+	node scripts/map-assets/census-types.mjs
+map-glyphs-build: ## T-090.5 stub — build world-glyph atlas from packages/map-assets/glyphs/svg
+	@echo "map-glyphs-build: not implemented (T-090.5, see t090_world_object_glyphs.md)"; exit 1
+map-render-verify: ## T-090.5 stub — per-phase render smoke (layer instance count + purity)
+	@echo "map-render-verify: not implemented (T-090.5)"; exit 1
 
 tickets: ## Run Claude Code on ready tickets in parallel
 	./scripts/ticket run

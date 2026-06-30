@@ -109,9 +109,9 @@ tbd-dev-bootstrap.sh
 
 ---
 
-## T-090.1 — active (aligned basemap) — **start here**
+## T-090.3.0 — active (Workbench export spike) — **start here**
 
-**Spec:** [`t090_1_aligned_basemap.md`](../specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md)
+**Spec:** [`t090_3_0_workbench_export_spike.md`](../specs/Mission_Creator_Architecture/t090_3_0_workbench_export_spike.md) — T-090.1 (aligned basemap) is **queued** until the spike's K1–K7 PASS.
 
 **T-091 complete** @ `dde589e` — DEM export, loader, Z UX + hillshade shipped. Do not redo `dem/*` or `ydoc` Z wiring unless regression fix.
 

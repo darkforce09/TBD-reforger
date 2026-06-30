@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/terrain-registry/v1.json",
+  "title": "TBD Terrain Registry",
+  "description": "Master list of terrains driving the one-command export pipeline (T-090.3). Adding a map = add a row here + a coords/terrains.ts bounds row, then run `make map-export TERRAIN=<id>`. Export scripts read this registry — never hard-code per-map paths.",
+  "type": "object",
+  "required": ["schemaVersion", "terrains"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string" },
+    "terrains": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/terrain" }
+    }
+  },
+  "$defs": {
+    "terrain": {
+      "type": "object",
+      "required": ["terrainId", "displayName", "worldBoundsM", "manifestPath", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "terrainId": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "worldBoundsM": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "items": { "type": "number" }
+        },
+        "manifestPath": { "type": "string" },
+        "workbenchWorld": { "type": "string" },
+        "exportProfile": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "queued", "shipped", "deferred"] },
+        "importPhaseMax": { "type": "string" },
+        "importPhaseShipped": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}
