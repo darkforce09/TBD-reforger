@@ -139,6 +139,10 @@ class TBD_TerrainWorldExportPlugin : WorkbenchPlugin
 			if (pos[0] < minX || pos[0] > maxX || pos[2] < minZ || pos[2] > maxZ)
 				continue;
 
+			// S6 MEASURED (T-090.3.0): GetAngles() = (ang[0]=pitch/rotX, ang[1]=HEADING/yaw-about-Y, ang[2]=roll/rotZ).
+			// Upright buildings have ang[0]~0 and ang[2]~0 while ang[1] carries the placement heading. The "yawDeg"
+			// row field below therefore holds RAW ang[0] (=pitch); the real heading is the "pitchDeg" field (=ang[1]).
+			// T-090.3 should emit headingDeg = GetAngles()[1] (or use IEntity.GetYawPitchRoll() whose [0] is yaw).
 			vector ang = e.GetAngles();
 			vector bmin;
 			vector bmax;

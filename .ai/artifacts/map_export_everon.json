@@ -2,94 +2,103 @@
   "schemaVersion": "1.0.0",
   "terrainId": "everon",
   "slice": "T-090.3.0",
-  "generatedAt": "2026-06-30T16:00:00Z",
-  "status": "INTERIM — S1 export blocked on Workbench plugin registration (GUI/human step); S0 + API discovery + S2/S3/S4 source findings complete",
-  "subregionBBoxM": [6144.0, 6144.0, 6656.0, 6656.0],
-  "subregionBBoxNote": "Provisional. The plugin auto-selects the densest building 512 m cell from a 5x5 scan at run time; this placeholder is the central candidate cell.",
+  "generatedAt": "2026-06-30T16:20:00Z",
+  "status": "COMPLETE — enumeration proven on real Everon (TBD_Dev_POC.ent + Eden). K1/K1b/K2/K5/K6/K7 PASS; K3/K4 honest RED (tile production = T-090.1/.1.1, out of spike scope).",
+  "subregionBBoxM": [1024.0, 6144.0, 1536.0, 6656.0],
+  "subregionCellCentreM": [1280.0, 6400.0],
+  "subregionNote": "Auto-selected by the plugin's 5x5 scan as the densest building 512 m cell (coastal SW, near RaccoonRock). 7530 entities in the AABB, 7401 with origin inside the cell.",
   "probes": {
     "S0": {
       "result": "PASS",
-      "tool": "wb_state",
-      "mode": "edit",
-      "entityCount": 1235873,
-      "terrainBoundsM": "0 -204.781 0  to  12800 375.531 12800",
-      "note": "Everon world loaded in World Editor edit mode (bounds match manifest 12800^2, -204.78..375.53). No human step needed to load the world."
+      "tool": "wb_state + user-confirmed GUI",
+      "note": "FALSE-POSITIVE LESSON: wb_state initially reported entityCount=1235873 + Everon bounds while the World Editor actually had an EMPTY 'Unnamed empty world' (GetEditorEntityCount is unreliable as a world-loaded signal). The real world TBD_Framework/worlds/TBD_Dev_POC.ent (Eden/Everon terrain + TBD game mode) was opened by the user; viewport shows real towns (Gorey, Highstone, RaccoonRock). Always confirm a non-empty world before enumerating."
     },
     "S1": {
-      "result": "BLOCKED",
-      "blocker": "New WorkbenchPlugin TBD_TerrainWorldExportPlugin.c is not registered as a menu action this session. WorkbenchPlugin entries are scanned at Workbench startup; the file was added after the 14:38 startup. wb_reload (target=scripts and target=both) returns ExecuteAction=false for every compile/reload menu path, so the NetAPI cannot trigger a recompile + plugin rescan. wb_execute_action 'Plugins,TBD,Export TBD World Subregion' returns false (action unavailable).",
-      "humanStep": "In the running Arma Reforger Workbench: reload scripts / rescan plugins (or restart the Workbench) so TBD_TerrainWorldExportPlugin registers, then re-run via MCP. (Equivalent: stop + relaunch via scripts/mod/tbd-dev-bootstrap.sh.)",
-      "enumerationDesign": "FLAT EDITOR LOOP IS INSUFFICIENT: WorldEditorAPI.GetEditorEntityCount()/GetEditorEntity(i) return only the ~10 TOP-LEVEL roots (EditorEntityIterator 'Skips all entities that are not top-level'), not the 1,235,873 placed objects. Placed objects are reached via a runtime spatial query.",
-      "apisProvenViaApiSearch": [
-        "BaseWorld.QueryEntitiesByAABB(vector mins, vector maxs, QueryEntitiesCallback addEntity, filter=null, flags=ALL) -> bool",
-        "SCR_WorldEditorToolHelper.static array<IEntity> QueryEntitiesByAABB(World, mins, maxs, flags)",
-        "IEntity.GetWorld() -> BaseWorld (confirmed on entity classes)",
-        "WorldEditorAPI.EntityToSource(IEntity) -> IEntitySource; IEntitySource.GetAncestor().GetResourceName() -> prefab ResourceName",
-        "IEntity.GetOrigin(), IEntity.GetAngles() (EMCP handlers), IEntity.GetWorldBounds(out min,out max)"
-      ]
+      "result": "PASS",
+      "enumerationMethod": "BaseWorld.QueryEntitiesByAABB(mins,maxs,callback) over a 512 m cell; world handle = topLevelRoot.GetWorld(); prefab = WorldEditorAPI.EntityToSource(e).GetAncestor().GetResourceName().",
+      "keyFinding": "Flat WorldEditorAPI.GetEditorEntity loop reaches only top-level roots (~10); placed objects are reached via the runtime spatial query. QueryEntitiesByAABB returns 0 in an EMPTY world (the initial failure) and returns real objects once the world is loaded — it does work in World Editor edit mode for a populated world.",
+      "aabbHitCount": 7530,
+      "keptCount": 7401,
+      "withPrefab": 6541,
+      "stagingExport": "packages/map-assets/everon/staging/spike/raw-entities.jsonl (7401 rows; gitignored)"
+    },
+    "S1b": {
+      "result": "PASS",
+      "census": "packages/map-assets/everon/staging/spike/type-inventory-spike.json (censusStatus=partial)",
+      "levels": { "uniquePrefabs": 239, "totalInstances": 7401 },
+      "byKind": { "building": { "prefabTypes": 13, "instances": 41 }, "prop": { "prefabTypes": 224, "instances": 7355 }, "road": { "prefabTypes": 2, "instances": 5, "segments": 0 } },
+      "note": "I1 holds (41+7355+5=7401). needsReview=224 prefab types (rocks/bushes/vegetation not covered by the thin prefab-classify.json rules) — rule authoring is T-090.2, out of spike scope. Building rows present (HouseRuins, House_Mountain/Wooden, Castle walls) → K1 green."
     },
     "S2": {
-      "result": "API-PROVEN (pending export to populate a real row)",
+      "result": "PASS (real OBB)",
       "obbDecision": "real-bounds",
-      "mcpEvidence": "api_search GetWorldBounds -> IEntity/entity classes expose 'void GetWorldBounds(out vector mins, out vector maxs)' (world-space AABB). Plugin emits halfExtentsM = (max-min)/2 per row; yaw from GetAngles. This is a real world AABB (not kind-default). True oriented-OBB half-extents would need local-bounds + rotation; world-AABB is sufficient for N6/T-090.6 footprint at spike scope.",
-      "note": "Cannot show a real building row's halfExtentsM until S1 export runs; the read path is wired + proven."
+      "mcpEvidence": "api_search GetWorldBounds -> IEntity exposes void GetWorldBounds(out vector mins, out vector maxs) (world-space AABB). Plugin emits halfExtentsM=(max-min)/2 per row. Real example: House_Mountain_E_1I01 halfExtentsM=[13.3683,7.38779,13.644]; b_rosa_canina_0s=[1.4306,0.655229,1.31641]. Not kind-default — measured per entity.",
+      "note": "GetWorldBounds is an AXIS-ALIGNED world bound; a true oriented-OBB (local bounds + yaw) would combine local extents with GetAngles()[1]. World-AABB is sufficient for N6 footprint at spike scope; T-090.6 can refine to local-OBB if needed."
     },
     "S3": {
-      "result": "SOURCE FOUND, no tile extracted -> ESCALATE (K3 red)",
-      "tool": "asset_search 'sat' + wiki_search '2D Map Creation'",
-      "satelliteSource": "system/terrain/defSatMap_BCR.edds (engine default satellite map); per-terrain SAP/satellite background exists; wiki 'Satellite Background Image' field on MapEntity.et.",
-      "note": "No single-call pixel/tile capture API; extracting + retiling the .edds satellite is the T-090.1 basemap pipeline, not a spike one-call. Per locked decision: document source + escalate, do NOT fabricate a tile."
+      "result": "FAIL — source found, no one-call capture (ESCALATE per spec S3 fallback)",
+      "tool": "asset_search 'sat'",
+      "satelliteSource": "system/terrain/defSatMap_BCR.edds (engine default satellite map) + per-terrain SAP/satellite background (wiki '2D Map Creation' Satellite Background Image field on MapEntity.et).",
+      "evidence": "No single Workbench API call captures/exports a satellite tile; extracting + retiling the .edds is the T-090.1 basemap pipeline. Per locked decision: document source + escalate, do NOT fabricate a tile. K3 RED blocks T-090.1 with a concrete source path."
     },
     "S4": {
-      "result": "REAL CARTOGRAPHIC SOURCE FOUND (reshapes N9)",
+      "result": "FAIL on gate (no tile produced) — but feasibility RESOLVED: real cartographic source exists (synth NOT required)",
       "tool": "wiki_search '2D Map Creation'",
-      "cartographicSource": "World Editor toolbar 'Export Map Data' -> Map Geometry Data .topo (road network, buildings, airfields) + Satellite Background Image. This is a REAL in-engine cartographic export.",
-      "note": "synthesized-cartographic (N9) is NOT strictly required — Reforger exposes a genuine cartographic data export. Producing a committed map tile from .topo is the T-090.1.1 Map-basemap slice (GUI 'Export Map Data' tool), not a spike one-call.",
-      "synthesizedCartographicRequired": false
+      "cartographicSource": "World Editor toolbar 'Export Map Data' -> Map Geometry Data .topo (road network, buildings, airfields) + Satellite Background Image. A genuine in-engine cartographic export.",
+      "note": "synthesized-cartographic (N9) is NOT strictly required — Reforger exposes a real cartographic data export. No tile was produced this spike (tile build = T-090.1.1 GUI tool). K4 gate RED honestly, but the Map basemap path is de-risked."
     },
     "S5": {
-      "result": "PROVISIONAL (pending export)",
-      "tool": "asset_search 'sat' (Assets/Clutter/Procedural/*) + api_search",
-      "evidence": "Reforger uses procedural CLUTTER (grass atlases under Assets/Clutter/Procedural). Tree/forest cover on Everon is expected to be placed tree entities (reachable by QueryEntitiesByAABB) rather than an exported forest-region mask. 'GenSpawnableEntity' search returned nothing; an explicit forest-region/mask API was not found this pass.",
-      "forestSourceProvisional": "derived-hull-mandated",
-      "note": "Confirm by counting tree-classified entities in the export (S1) before locking N5 path A vs B."
+      "result": "PASS",
+      "tool": "export data + asset_search/api_search",
+      "evidence": "Vegetation is placed as INDIVIDUAL entities reachable by QueryEntitiesByAABB (e.g. {D9DF1D13919F19A0}Prefabs/Vegetation/Bush/b_rosa_canina_0s.et exported with transform). No explicit forest-region object / engine forest-mask API found ('GenSpawnableEntity' returned nothing; only procedural CLUTTER under Assets/Clutter/Procedural for grass). Therefore forests must be DERIVED from tree-entity clusters.",
+      "forestSourceDecision": "derived-hull-mandated"
     },
     "S6": {
-      "result": "BASIS KNOWN, remap measurement pending export",
-      "enfusionBasis": "Enfusion/Arma Reforger world space: Y-up, left-handed; +X east, +Z north, +Y up. Horizontal plane = (X,Z); editor Deck.gl uses (x=X, y=Z north). Export maps editor y -> mod z per the T-090 coordinate contract.",
-      "anglesNote": "IEntity.GetAngles() returns a vector (yaw about Y-up); exact component order (yaw/pitch/roll vs pitch/yaw/roll) to be confirmed against a known-oriented entity once S1 export runs.",
-      "note": "sampleEntity before/after rotation pending a real exported row."
+      "result": "PASS (handedness + heading remap measured)",
+      "anglesOrderFinding": "IEntity.GetAngles() returns (component0 = rotation about X / pitch, component1 = rotation about Y = HEADING/yaw, component2 = rotation about Z / roll). Empirically confirmed: upright buildings (Castle_01_InnerWall_*, Well_01) have ang0~0 and ang2~0 while ang1 carries the placement heading (e.g. House_Mountain ang1=47, House_Wooden ang1=-28.834, Castle walls 120/115/-62.49). The plugin's row field labelled 'pitchDeg' (=ang1) is the real heading; the field labelled 'yawDeg' (=ang0) is pitch.",
+      "recommendationForT090_3": "Emit headingDeg = GetAngles()[1] (or use IEntity.GetYawPitchRoll() whose component [0] is yaw directly). Do NOT trust ang[0] as yaw.",
+      "evidence": "api_search GetAngles/GetYawPitchRoll + 7401-row export angle distribution."
     }
   },
   "gates": {
-    "K1": "fail",
-    "K1b": "fail",
-    "K2": "fail",
+    "K1": "pass",
+    "K1b": "pass",
+    "K2": "pass",
     "K3": "fail",
     "K4": "fail",
-    "K5": "fail",
-    "K6": "fail",
-    "K7": "fail"
+    "K5": "pass",
+    "K6": "pass",
+    "K7": "pass"
   },
-  "gatesNote": "All gates honestly RED: every K-row depends on the S1 subregion export (raw-entities.jsonl), which is blocked on the Workbench plugin-registration GUI step. APIs are proven and the plugin is written; gates flip once a human reloads/rescans plugins and the plugin is run via MCP. K2/K3/K4 findings above already de-risk the OBB + dual-basemap source paths.",
+  "gatesNote": "Enumeration-proven minimum (K1 + K1b + K7) GREEN -> spike slice DONE. K2 green (real OBB). K5 green (forest = derived-hull). K6 green (heading remap measured). K3 RED: satellite source found, tile capture = T-090.1 (blocks T-090.1 with a clear path). K4 RED on gate: no tile produced, but a REAL cartographic source exists (synth not required) -> T-090.1.1 de-risked. No fabricated tiles.",
   "handednessRemap": {
-    "enfusionBasis": "Y-up, left-handed; +X east, +Z north, +Y up",
-    "editorToExport": "editor (x=X, y=Z) ; export z = editor y (T-090 coordinate contract)",
-    "sampleEntity": {}
+    "enfusionBasis": "Y-up, left-handed; +X east, +Y up, +Z north. Horizontal plane = (X, Z).",
+    "editorToExport": "editor Deck.gl (x = worldX, y = worldZ north); mod export z = editor y (T-090 coordinate contract). Glyph rotation / spawn heading = GetAngles()[1] (yaw about world-up Y); GetAngles()[0]=pitch, [2]=roll.",
+    "sampleEntity": {
+      "resourceName": "{BEF9077AF9F93AE7}Prefabs/Structures/Houses/Village/House_Mountain_E_1I01/House_Mountain_E_1I01.et",
+      "positionXYZ": [1232.76, 41.6405, 6240.26],
+      "getAnglesRaw": [0.0, 47.0, 0.0],
+      "interpretation": "upright building: pitch(ang0)=0, heading(ang1)=47 deg, roll(ang2)=0 -> heading is ang[1]",
+      "worldBoundsHalfExtentsM": [13.3683, 7.38779, 13.644]
+    }
   },
   "forestSource": "derived-hull-mandated",
   "tileFindings": {
     "satellite": {
       "path": null,
       "escalate": true,
-      "evidence": "asset_search 'sat' -> system/terrain/defSatMap_BCR.edds + per-terrain SAP satellite background (wiki '2D Map Creation' Satellite Background Image). No one-call tile capture; .edds extraction + retiling = T-090.1."
+      "evidence": "asset_search 'sat' -> system/terrain/defSatMap_BCR.edds + per-terrain SAP satellite background (wiki '2D Map Creation'). No one-call tile capture API; .edds extraction + retiling = T-090.1."
     },
     "map": {
       "path": null,
       "synthesizedCartographicRequired": false,
-      "note": "REAL cartographic source found: World Editor 'Export Map Data' -> .topo Map Geometry Data (roads/buildings/airfields). N9 synth not strictly required; tile production = T-090.1.1."
+      "note": "REAL cartographic source found: World Editor 'Export Map Data' -> .topo Map Geometry Data (roads/buildings/airfields). N9 synth NOT strictly required; tile production = T-090.1.1."
     }
   },
-  "sampleRows": [],
-  "mcpToolsUsed": ["wb_connect", "wb_state", "wb_entity_list", "api_search", "asset_search", "wiki_search", "wb_reload", "wb_execute_action", "mod_validate"]
+  "sampleRows": [
+    { "resourceName": "{BEF9077AF9F93AE7}Prefabs/Structures/Houses/Village/House_Mountain_E_1I01/House_Mountain_E_1I01.et", "x": 1232.76, "y": 41.6405, "z": 6240.26 },
+    { "resourceName": "{C212C8AC6001F002}Prefabs/Structures/Houses/Wooden/House_Wooden_E_1I01/House_Wooden_E_1I01.et", "x": 1180.74, "y": 34.1875, "z": 6237.72 },
+    { "resourceName": "{D9DF1D13919F19A0}Prefabs/Vegetation/Bush/b_rosa_canina_0s.et", "x": 1490.74, "y": 2.88421, "z": 6308.36 }
+  ],
+  "mcpToolsUsed": ["wb_connect", "wb_state", "wb_entity_list", "api_search", "asset_search", "wiki_search", "wb_reload", "wb_execute_action", "wb_open_resource", "mod_validate"]
 }
