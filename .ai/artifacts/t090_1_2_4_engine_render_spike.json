@@ -1,0 +1,72 @@
+{
+  "slice": "T-090.1.2.4",
+  "terrain": "everon",
+  "generatedAt": "2026-07-01T23:10:00Z",
+  "p0": "FAIL",
+  "qualityTier": "none",
+  "notSat": false,
+  "captureMethodId": "workbench-viewport-screenshot-mosaic (only viable path; perspective, unproven, heavy)",
+  "verdict": "No exposed Workbench/runtime API can render a continuous 12800x12800 @ 1 m/px north-up SAT-class ortho. There is no per-point terrain-colour read and no orthographic camera projection; the only pixel capture is a PERSPECTIVE viewport screenshot. Everon's real 1 m/px ground IS the 2500-cell SAP supertexture (the thing we already stitch); the ~256 m grid is baked into BI's supertexture cell aprons (proven T-090.1.2.2). The in-game 2D map renders the SAP texture on a flat quad + vector overlays (RenderTargetWidget.SetWorld) - it is NOT a live 3D terrain render, so capturing it returns the SAP again. The operator's 'Reforger continuous feel' is GPU-texture delivery with mips = T-090.1.2.8, not a different source.",
+  "gridPeriodic256m": true,
+  "maxDimension": {
+    "width": 0,
+    "height": 0,
+    "limitReason": "no bitmap produced this phase - capture is perspective-viewport only (no orthographic projection); a contract-compliant 1 m/px ortho is not renderable"
+  },
+  "landmarkField": {
+    "worldX": 4929,
+    "worldY": 5661,
+    "note": "SAP-side A/B crops cut (field_sap.png stddev 0.068, roof_sap.png stddev 0.044); engine-side crop pending an operator viewport-screenshot run of TBD_EngineOrthoExportPlugin.c - structural verdict does not depend on it (a single perspective screenshot cannot become the 12800^2 north-up ortho)."
+  },
+  "orientationNote": "N/A - no engine ortho produced. Contract = north-up, worldBounds [0,0,12800,12800], metersPerPixel 1 (unchanged).",
+  "apisTried": [
+    { "name": "WorldEditorAPI.GetTerrainSurfaceY", "query": "GetTerrainSurface", "result": "found (HEIGHT only - float y = f(x,z)); no colour analog", "rc": 0 },
+    { "name": "GetTerrainSurfaceColor", "query": "GetTerrainSurfaceColor", "result": "absent", "rc": 0 },
+    { "name": "GetSurfaceProperties", "query": "GetSurfaceProperties", "result": "absent", "rc": 0 },
+    { "name": "GetTerrainTextureLayers", "query": "GetTerrainTextureLayers", "result": "absent", "rc": 0 },
+    { "name": "SampleSurface / GetSurfaceType / SurfaceColor / TerrainDiffuse", "query": "SampleSurface,GetSurfaceType,SurfaceColor,TerrainDiffuse", "result": "absent (no per-point terrain colour read of any kind)", "rc": 0 },
+    { "name": "Orthographic / SetOrthographic / Frustum", "query": "Orthographic,SetOrthographic,Frustum", "result": "absent - NO orthographic projection API", "rc": 0 },
+    { "name": "CameraBase.SetVerticalFOV", "query": "SetVerticalFOV", "result": "found - PERSPECTIVE fov only (runtime cameras)", "rc": 0 },
+    { "name": "BaseWorld.GetCamera", "query": "GetCamera", "result": "found - reads camera matrix (out vector mat[4]); read-only", "rc": 0 },
+    { "name": "SCR_CoordsTool.SetCamera", "query": "SetCamera", "result": "surfaced as 'sets world editor camera pos/rot' but NOT in the class method dump - unreliable/unconfirmed for a plugin", "rc": 0 },
+    { "name": "System.MakeScreenshot", "query": "MakeScreenshot", "result": "found - bool MakeScreenshot(string path) writes a BMP of the CURRENT (perspective) viewport", "rc": 0 },
+    { "name": "System.MakeScreenshotRawData", "query": "MakeScreenshot", "result": "found - captures a viewport region -> raw pixels via ScreenshotRawDataCallback (perspective)", "rc": 0 },
+    { "name": "System.MakeScreenshotTexture", "query": "MakeScreenshot", "result": "found - viewport region -> texture via ScreenshotTextureCallback (perspective)", "rc": 0 },
+    { "name": "ScreenCapture / SaveTexture / ReadPixels / GetPixels", "query": "ScreenCapture,SaveTexture,ReadPixels,GetPixels", "result": "absent", "rc": 0 },
+    { "name": "TexTools.SaveImageData", "query": "TexTools,SaveImage,WriteImage,SaveToFile,ExportTexture", "result": "FOUND - static bool SaveImageData(path,w,h,int[] ABGR) writes a DDS. FILE-WRITE OF PIXELS IS POSSIBLE (decodable in Node); NOT a blocker.", "rc": 0 },
+    { "name": "RenderTargetWidget", "query": "RenderTarget,RenderTargetWidget", "result": "found - SetWorld(BaseWorld,camera)/SetFormat/SetRefresh/SetBlendMode; renders world offscreen BUT exposes NO pixel readback (no GetImageData)", "rc": 0 },
+    { "name": "ScreenshotTextureData", "query": "ScreenshotTextureData", "result": "found - RGBA8 texture data (used by ImageWidget.CopyImageTexture; UI-side)", "rc": 0 },
+    { "name": "MapDataExporter", "query": "MapDataExporter", "result": "found - ExportData/SetupColors/ExportRasterization ONLY; all STYLIZED cartographic (Q1 FAIL tier)", "rc": 0 },
+    { "name": "defSatMap_BCR.edds", "query": "asset_search defSatMap", "result": "found - single GLOBAL default sat map (low-res engine fallback), not Everon's real 1 m/px ground", "rc": 0 },
+    { "name": "BI wiki '2D Map Creation'", "query": "wiki_search satellite map export terrain", "result": "confirms Terrain Rasterization IS BI's documented 'Satellite Background Image' method (forests + shaded relief) = stylized = Q1 FAIL tier; 'or any other texture (e.g. a satellite map)' = supply-your-own", "rc": 0 }
+  ],
+  "blockers": [
+    "no-orthographic-projection: no Orthographic/SetOrthographic/Frustum; only perspective SetVerticalFOV -> a 1 m/px north-up ortho is not renderable; any capture is a perspective viewport that needs orthorectification, breaking the exact-1 m/px alignment contract",
+    "no-per-point-terrain-colour: only GetTerrainSurfaceY (height); no colour/diffuse/material read -> no continuous colour analog to the T-091.0 DEM GetSurfaceY resample",
+    "no-single-continuous-terrain-texture: Everon 1 m/px ground = the 2500-cell SAP supertexture (163 M px); no single combined diffuse texture exists; defSatMap_BCR.edds is a low-res global default",
+    "rtt-no-pixel-readback: RenderTargetWidget renders offscreen (SetWorld) but exposes no pixel readback; only the perspective viewport (MakeScreenshotRawData) yields pixels",
+    "256m-grid-is-source-baked: the aprons are baked into BI's supertexture cells (proven T-090.1.2.2); re-fetching/rendering cells cannot remove them without an ortho render (absent)",
+    "mapdataexporter-stylized-only: the only one-call raster export is cartographic; BI wiki confirms it IS the sat-background method -> Q1 FAIL tier"
+  ],
+  "positiveFindings": [
+    "TexTools.SaveImageData(path,w,h,int[]) writes captured pixels to DDS (decodable by our SAP decoder) - the readback-to-file wall does NOT exist",
+    "System.MakeScreenshotRawData captures real rendered terrain (SAT-class pixels) from the viewport",
+    "=> a PERSPECTIVE viewport screenshot MOSAIC is technically BUILDABLE (Workbench rung-1), but perspective distortion + distance-LOD + baked lighting/shadows + orthorectification make a grid-free 1 m/px SAT-class ortho that BEATS SAP unproven and heavy"
+  ],
+  "escalationAssessment": {
+    "q2Rung2_runtimeRenderTargetPixelDump": "Does NOT overcome the core walls: (a) runtime cameras are perspective too (no ortho), (b) RenderTargetWidget has no pixel readback, (c) the only file-writable pixel source is MakeScreenshotRawData of the VIEWPORT -> that collapses to the 'full-game screenshot stitch' the operator's Q2 explicitly excluded. TexTools.SaveImageData helps write pixels but does not add ortho or RTT readback.",
+    "conclusion": "The locked Q2 escalation ('runtime ortho camera + RenderTarget pixel dump') is not buildable as specified because no ortho projection exists and RTT has no readback; it degrades into the excluded screenshot-stitch. Surfaced to operator."
+  },
+  "recommendation": "Ship honest P0 FAIL. Keep SAP stitch + T-090.1.2.2 apron-bridge as the production satellite source (unchanged). Pivot the 110% effort to T-090.1.2.8 (unified GPU texture + mips) - that delivers the 'Reforger continuous zoom feel' (removes 5461-tile pop/flicker); the residual soft ~256 m band is inherent to BI's baked supertexture aprons and is not visible at in-game map zoom. Optional follow-ups if the operator still wants to chase a new source: (i) run TBD_EngineOrthoExportPlugin.c for ONE empirical top-down viewport screenshot to eyeball engine-vs-SAP; (ii) prototype the MakeScreenshotRawData -> TexTools.SaveImageData(DDS) -> Node orthorectify/stitch mosaic - but expect sub-SAP detail + perspective artifacts.",
+  "planningDecisions": {
+    "q1": "SAT PASS = grid-free AND sat-class (photographic|surface-color); stylized/landcover/cartographic = FAIL + notSat (belongs on T-090.1.1 Map, never Satellite). MapDataExporter rasterization is the stylized tier -> not accepted.",
+    "q2": "Escalate: Workbench api/plugin sat capture FIRST -> runtime ortho-camera+RenderTarget pixel dump -> honest FAIL. Finding: Workbench sat-capture is perspective-only and cannot meet the ortho contract; the runtime pixel-dump is not buildable as specified (no ortho, no RTT readback) and degrades into the excluded screenshot-stitch -> honest FAIL reached with the escalation ladder assessed."
+  },
+  "escalationPath": ["workbench-api-search", "workbench-plugin-capture(perspective-only)", "runtime-rendertarget-harness(not-buildable-as-specified)", "fail"],
+  "artifacts": {
+    "plugin": "apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_EngineOrthoExportPlugin.c (validated; SPIKE viewport screenshot)",
+    "abCrops": ".ai/artifacts/t090_1_2_4_ab_crops/ (field_sap.png, roof_sap.png; engine-side pending optional operator run)",
+    "verifyScript": "scripts/map-assets/verify-engine-ortho.mjs NOT built - it is P1-gated on P0 PASS (spec/handoff); no engine ortho export exists to verify",
+    "verifyLog": ".ai/artifacts/t090_1_2_4_verify_log.md"
+  }
+}
