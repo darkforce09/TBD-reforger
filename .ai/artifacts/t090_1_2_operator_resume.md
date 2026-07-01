@@ -17,9 +17,15 @@ git pull && git lfs pull && make map-assets-link
 export ENFUSION_GAME_PATH="${ENFUSION_GAME_PATH:-$HOME/.cache/enfusion-mcp-root}"
 ```
 
-**Active slice:** **T-090.1.2.2** (seams) — Claude send-off: [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](t090_1_2_2_SEND_TO_CLAUDE.md)
+**Active slice:** **T-090.1.2.2** (seams)
 
-**Full spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md)
+```bash
+./scripts/ticket prompt T-090          # canonical — paste into Claude Code
+./scripts/ticket prompt T-090 --header # includes spec/handoff paths
+./scripts/ticket brief T-090
+```
+
+Send-off bookmark: [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](t090_1_2_2_SEND_TO_CLAUDE.md) · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../tickets/CLAUDE_CODE_PROMPT.md)
 
 ### T-090.1.2.2 Claude checklist (seams)
 

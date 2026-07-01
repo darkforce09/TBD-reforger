@@ -42,7 +42,7 @@ You babble; that's fine. **Classify intent** from the message — never require 
 - After Mode A back-and-forth, user agrees and wants registry + spec + handoff
 - "Document this for claude", "same as we always do", "like T-091"
 
-**Allowed:** ONE ticket (default), spec, `.ai/artifacts/*_handoff.md`, audit report if approved, registry, ticket sync, CLAUDE.md pointer.
+**Allowed:** ONE ticket (default), spec, `.ai/artifacts/*_handoff.md`, audit report if approved, registry, ticket sync, CLAUDE.md pointer. Prompt in spec §Claude Code prompt per [`CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
 
 **FORBIDDEN:** App source edits. Batch many tickets unless user explicitly asks.
 

@@ -26,6 +26,7 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 | `./scripts/ticket run` | Up to `batch_size` parallel Claude Code runs |
 | `./scripts/ticket done ID` | Cleanup worktree + mark shipped |
 | `./scripts/ticket brief ID` | Developer handoff card |
+| `./scripts/ticket prompt ID [--slice SLICE]` | Print Claude Code prompt from slice spec |
 | `./scripts/ticket show ID` | One ticket card |
 | `./scripts/ticket next` | Active slice + next queued |
 

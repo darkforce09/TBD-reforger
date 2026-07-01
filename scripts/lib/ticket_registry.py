@@ -517,6 +517,19 @@ def slice_spec(t: dict[str, Any]) -> str:
     return str(t.get("spec", ""))
 
 
+def slice_id_to_artifact_slug(slice_id: str) -> str:
+    s = slice_id.strip()
+    if s.upper().startswith("T-"):
+        s = s[2:]
+    return "t" + s.replace(".", "_").lower()
+
+
+def slice_handoff_path(t: dict[str, Any], slice_id: str | None = None) -> str:
+    sid = slice_id or t.get("active_slice") or t.get("id", "")
+    slug = slice_id_to_artifact_slug(sid)
+    return f".ai/artifacts/{slug}_claude_code_handoff.md"
+
+
 def shipped_slices(t: dict[str, Any]) -> list[str]:
     plan = t.get("slice_plan") or {}
     return [sid for sid, row in plan.items() if row.get("status") == "shipped"]
@@ -570,12 +583,13 @@ def generate_queue_json(registry: dict[str, Any] | None = None) -> dict[str, Any
     pipeline.sort(key=_ticket_sort_key)
     tickets = []
     for t in pipeline:
+        spec = slice_spec(t) or t.get("spec", "")
         tickets.append(
             {
                 "id": t["id"],
                 "title": t.get("title", ""),
                 "status": t.get("status"),
-                "spec": t.get("spec", ""),
+                "spec": spec,
                 "branch": t.get("branch", f"ticket/{t['id']}"),
             }
         )
@@ -746,6 +760,50 @@ def cmd_check(args: argparse.Namespace) -> None:
             print(f"ERROR: {e}", file=sys.stderr)
         sys.exit(1)
     print("check OK")
+
+
+def cmd_prompt(args: argparse.Namespace) -> None:
+    registry = load_registry()
+    t = ticket_by_id(registry, args.id)
+    if not t:
+        sys.stderr.write(f"Unknown ticket: {args.id}\n")
+        sys.exit(1)
+    slice_id = args.slice or t.get("active_slice")
+    plan = t.get("slice_plan") or {}
+    if args.slice:
+        if args.slice not in plan:
+            sys.stderr.write(f"Unknown slice {args.slice} on {args.id}\n")
+            sys.exit(1)
+        spec_rel = str(plan[args.slice].get("spec", ""))
+    else:
+        spec_rel = slice_spec(t)
+    if not spec_rel:
+        sid = f" slice {slice_id}" if slice_id else ""
+        sys.stderr.write(f"No spec for {args.id}{sid}\n")
+        sys.exit(1)
+    spec_path = repo_root() / spec_rel
+    if not spec_path.is_file():
+        sys.stderr.write(f"Spec not found: {spec_rel}\n")
+        sys.exit(1)
+    sys.path.insert(0, str(repo_root() / "scripts" / "lib"))
+    from extract_claude_prompt import extract_prompt  # noqa: E402
+
+    text = spec_path.read_text(encoding="utf-8")
+    try:
+        prompt = extract_prompt(text)
+    except ValueError as e:
+        sys.stderr.write(f"{e}\n")
+        sys.stderr.write(
+            "Add §Claude Code prompt to the slice spec — see .ai/tickets/CLAUDE_CODE_PROMPT.md\n"
+        )
+        sys.exit(1)
+    if args.header:
+        handoff = slice_handoff_path(t, slice_id)
+        label = slice_id or args.id
+        print(f"# Prompt for {label} — from {spec_rel}")
+        print(f"# Handoff: {handoff}")
+        print("")
+    print(prompt)
 
 
 def cmd_brief(args: argparse.Namespace) -> None:
@@ -1209,6 +1267,16 @@ def main() -> None:
     p_brief = sub.add_parser("brief")
     p_brief.add_argument("id")
     p_brief.set_defaults(func=cmd_brief)
+
+    p_prompt = sub.add_parser("prompt")
+    p_prompt.add_argument("id")
+    p_prompt.add_argument("--slice", default="", help="Override active_slice (e.g. T-090.1.2.3)")
+    p_prompt.add_argument(
+        "--header",
+        action="store_true",
+        help="Print spec/handoff paths before the prompt body",
+    )
+    p_prompt.set_defaults(func=cmd_prompt)
 
     sub.add_parser("next").set_defaults(func=cmd_next)
 

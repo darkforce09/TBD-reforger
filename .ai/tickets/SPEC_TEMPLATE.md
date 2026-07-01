@@ -66,20 +66,59 @@ On ship: run `./scripts/ticket ship T-0xx`; update narrative docs per [`docs/AGE
 
 ---
 
+## Claude Code handoff (Mode B checklist)
+
+When marking a slice ready for Claude Code:
+
+1. Write this spec (problem, locked decisions, verify, manual acceptance).
+2. Write `.ai/artifacts/{slug}_claude_code_handoff.md` — [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md).
+3. Add **§Claude Code prompt** below using the skeleton in [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md).
+4. Optional: `.ai/artifacts/{slug}_SEND_TO_CLAUDE.md` — one line: run `./scripts/ticket prompt T-0xx`.
+5. Registry: `active_slice`, `slice_plan.{id}.status: ready`, `./scripts/ticket sync`.
+
+**Do not** put the only copy of the prompt in SEND_TO_CLAUDE — `./scripts/ticket run` reads the spec.
+
+---
+
 ## Claude Code prompt — T-0xx (copy-paste)
 
-**Read this file first.** Do **not** edit any documentation.
+**Format:** [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md). **Extract:** `./scripts/ticket prompt T-0xx`
 
 ```
 Read CLAUDE.md first.
 
-Implement T-0xx per docs/specs/Mission_Creator_Architecture/t0xx_{slug}.md.
+Implement **T-0xx** — {one-line title}.
 
-LOCKED: see spec Locked decisions.
+═══ PREFLIGHT ═══
+  git pull && make map-assets-link
+  ./scripts/ticket brief T-0xx
 
-Verify: npm run build && npm run lint (+ make test-it if backend).
+═══ READ (in order — spec wins on conflict) ═══
+  1. .ai/artifacts/t0xx_claude_code_handoff.md
+  2. docs/specs/.../t0xx_{slug}.md
 
-Commit on branch ticket/T-0xx when verify passes. DO NOT edit documentation — Cursor Composer 2.5 syncs docs after merge.
+═══ PROBLEM ═══
+  {2–4 sentences}
 
-Return file list + build/lint output + manual verify notes.
+═══ SHIPPED (do not reopen) ═══
+  - …
+
+═══ LOCKED ═══
+  - See spec §Locked decisions
+
+═══ DO ═══
+  1. …
+
+═══ DO NOT ═══
+  - Edit docs/**, registry, docs/TICKET_*.md, CLAUDE status markers
+
+═══ VERIFY (all exit 0) ═══
+  cd apps/website/frontend && npm run build && npm run lint
+
+═══ MANUAL ═══
+  - …
+
+═══ RETURN ═══
+  - Commit SHA + tag T-0xx
+  - **Ready for Cursor doc sync.**
 ```

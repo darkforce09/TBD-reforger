@@ -286,15 +286,92 @@ Update [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md) seam row
 
 ---
 
+## Claude Code prompt — T-090.1.2.2 (copy-paste)
+
+Authority: this spec + handoff. **Do not edit docs/registry.**  
+Extract: `./scripts/ticket prompt T-090` · standard: [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)
+
+```
+Read CLAUDE.md first.
+
+Implement **T-090.1.2.2** — SAP supertexture cell seam repair.
+
+═══ PREFLIGHT ═══
+  git pull && git lfs pull && make map-assets-link
+  ./scripts/ticket brief T-090
+  export ENFUSION_GAME_PATH="${ENFUSION_GAME_PATH:-$HOME/.cache/enfusion-mcp-root}"
+  command -v magick && command -v cwebp
+
+═══ READ (in order — spec wins on conflict) ═══
+  1. .ai/artifacts/t090_1_2_2_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md
+  3. scripts/map-assets/stitch-sap-ortho.mjs
+  4. scripts/map-assets/decode-edds.mjs
+  5. scripts/map-assets/verify-sap-ortho.mjs
+
+═══ PROBLEM ═══
+  Satellite @ max zoom shows ~256 m grid seams where 50×50 SAP cells meet in the stitched ortho.
+  Hard edge-to-edge paste in stitch-sap-ortho.mjs; BC7 border mismatch. NOT pyramid tile seams.
+  T-090.1.2.1 lossless VP8L preserved the artifact faithfully.
+
+═══ SHIPPED (do not reopen) ═══
+  - T-090.1.2 @ c2730a3 — SAP decode/stitch/orientation
+  - T-090.1.2.1 @ 19bc785 — lossless z0–6 pyramid encode
+
+═══ LOCKED ═══
+  - P0 analyze-sap-seams.mjs before blind blending; STOP if placement bug (strategy D)
+  - Default fix: edge feather 2–8 px on interior cell edges (strategy A)
+  - Preserve north-up row-flip in stitch (lines 66–77); orientation guard must PASS
+  - Rebuild: build-tile-pyramid.sh --lossless --maxzoom 6 (~299M LFS)
+  - No z7, AI upscale, grey fill, whole-map blur, decode contract changes
+  - Full locked table: spec §Locked decisions
+
+═══ DO ═══
+  1. P0 — analyze-sap-seams.mjs → .ai/artifacts/t090_1_2_2_seam_analysis.json (baseline)
+  2. Fix stitch-sap-ortho.mjs (smallest strategy A–D that passes)
+  3. Create verify-sap-seams.mjs (threshold from P0 baseline)
+  4. Re-stitch; post-fix analyze; verify-sap-seams + verify-sap-ortho PASS
+  5. Rebuild lossless z0–6 pyramid; EXPECT_LOSSLESS=1 verify-tile-pyramid
+  6. make verify-terrain && make ci-local-frontend
+  7. .ai/artifacts/t090_1_2_2_verify_log.md (S1–S4 + before/after metrics)
+  8. Tag **T-090.1.2.2** · prefix **T-090.1.2.2:**
+
+═══ DO NOT ═══
+  - Edit docs/**, registry, docs/TICKET_*.md, CLAUDE status markers
+  - useTerrainBasemapLayer.ts unless S4 fails
+  - decode-edds.mjs / vendor/bc7.mjs unless P0 proves decode bug
+
+═══ VERIFY (all exit 0) ═══
+  node scripts/map-assets/analyze-sap-seams.mjs TERRAIN=everon
+  node scripts/map-assets/stitch-sap-ortho.mjs TERRAIN=everon
+  node scripts/map-assets/verify-sap-seams.mjs TERRAIN=everon
+  node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
+  scripts/map-assets/build-tile-pyramid.sh \
+    --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png \
+    --out packages/map-assets/everon/tiles/satellite \
+    --minzoom 0 --maxzoom 6 --tilesize 256 --lossless
+  EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+  make verify-terrain && make ci-local-frontend
+
+═══ MANUAL ═══
+  S1: operator seam location invisible @ max zoom
+  S2: 3 other intersections (road, forest, coast)
+  S3: north-up alignment unchanged
+  S4: pan fps ≥55
+
+═══ RETURN ═══
+  - Commit SHA + tag T-090.1.2.2
+  - Seam analysis before/after (worst edge mean ΔRGB) + strategy used
+  - All automated verify output (PASS)
+  - S1 landmark note
+  - **Ready for Cursor doc sync.**
+```
+
+---
+
 ## Related
 
 - Handoff: [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md)
 - Send-off: [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md)
 - Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
 - Pan flicker next: **T-090.1.2.3**
-
----
-
-## Claude Code prompt — T-090.1.2.2 (copy-paste)
-
-See [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md) for the full operator send-off.

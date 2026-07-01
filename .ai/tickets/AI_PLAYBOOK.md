@@ -36,6 +36,13 @@ Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADM
 ./scripts/ticket run
 ```
 
+**Prompt standard:** [`CLAUDE_CODE_PROMPT.md`](CLAUDE_CODE_PROMPT.md) · handoff skeleton: [`HANDOFF_TEMPLATE.md`](HANDOFF_TEMPLATE.md)
+
+1. Write slice spec + §Claude Code prompt (fenced block in spec — **not** only in SEND_TO_CLAUDE).
+2. Write `.ai/artifacts/{slug}_claude_code_handoff.md`.
+3. Optional thin `.ai/artifacts/{slug}_SEND_TO_CLAUDE.md` → points at `./scripts/ticket prompt ID`.
+4. Human sends: `./scripts/ticket prompt T-0xx` → paste into Claude Code.
+
 ### Brainstorm (speech-to-text friendly)
 
 1. `./scripts/ticket add "Outliner search" --program eden --surfaces LEFT --impact ui`

@@ -17,6 +17,8 @@ Registry (edit .ai/tickets/registry.json, then sync):
   check [--strict]        Validate registry + outputs (strict = zero legacy IDs)
   next                    Show active slice + next queued tickets
   brief ID                Developer handoff for one ticket
+  prompt ID [--slice SLICE] [--header]
+                          Print Claude Code prompt from active slice spec
   show ID                 One ticket card
   add TITLE [opts]        Add idea ticket (T-111+)
   remove ID               Remove ticket row
@@ -235,6 +237,7 @@ main() {
       ;;
     next)       python3 "$REGISTRY_PY" next ;;
     brief)      python3 "$REGISTRY_PY" brief "$@" ;;
+    prompt)     python3 "$REGISTRY_PY" prompt "$@" ;;
     show)       python3 "$REGISTRY_PY" show "$@" ;;
     add)        python3 "$REGISTRY_PY" add "$@" ;;
     remove)     python3 "$REGISTRY_PY" remove "$@" ;;
