@@ -13,6 +13,11 @@ interface AuthState {
   setBootstrapping: (v: boolean) => void
   setSession: (session: AuthSession) => void
   setAccessToken: (token: string, expiresAt: string) => void
+  /** Persist a rotated token pair without touching `user`. Refresh tokens are
+   *  single-use — after any successful rotation the new refresh_token MUST be
+   *  stored even when no user is loaded yet, or the session dies at the next
+   *  refresh (T-126 S5/S6). */
+  setTokens: (t: { access_token: string; refresh_token: string; expires_at: string }) => void
   clearSession: () => void
   isAuthenticated: () => boolean
   hasMinRole: (role: UserRole) => boolean
@@ -36,6 +41,8 @@ export const useAuthStore = create<AuthState>()(
           bootstrapping: false,
         }),
       setAccessToken: (token, expiresAt) => set({ accessToken: token, expiresAt }),
+      setTokens: (t) =>
+        set({ accessToken: t.access_token, refreshToken: t.refresh_token, expiresAt: t.expires_at }),
       clearSession: () =>
         set({
           accessToken: null,

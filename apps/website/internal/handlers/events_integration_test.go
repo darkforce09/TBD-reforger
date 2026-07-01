@@ -3,6 +3,8 @@ package handlers
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
@@ -288,5 +290,107 @@ func TestEventLifecycleIntegration(t *testing.T) {
 	gdb.First(&reviewed, "id = ?", loa.ID)
 	if reviewed.Status != models.LeaveApproved {
 		t.Fatalf("LOA status = %q, want approved", reviewed.Status)
+	}
+}
+
+// TestSlotClaimRace proves T-126 S3: two users racing for the same single ORBAT slot
+// resolve to exactly one winner (200) and one loser (409) — the per-mission row lock
+// plus the conditional slot UPDATE make the check-then-set atomic.
+func TestSlotClaimRace(t *testing.T) {
+	r, h, gdb := setupIT(t)
+
+	adminID := fmt.Sprintf("itest-race-adm-%d", time.Now().UnixNano())
+	a := fmt.Sprintf("itest-race-a-%d", time.Now().UnixNano())
+	b := fmt.Sprintf("itest-race-b-%d", time.Now().UnixNano())
+
+	mission := models.Mission{
+		Title: "Op Race", AuthorID: adminID, Terrain: models.TerrainEveron,
+		GameMode: models.GameModePvECoop, Weather: models.WeatherClear, TimeOfDay: "14:00",
+		MaxPlayers: 64, Status: models.MissionLive,
+	}
+
+	t.Cleanup(func() {
+		var evs []models.Event
+		gdb.Unscoped().Where("created_by = ?", adminID).Find(&evs)
+		for _, e := range evs {
+			var ems []models.EventMission
+			gdb.Where("event_id = ?", e.ID).Find(&ems)
+			for _, em := range ems {
+				gdb.Where("event_mission_id = ?", em.ID).Delete(&models.OrbatSlot{})
+				gdb.Where("event_mission_id = ?", em.ID).Delete(&models.EventRegistration{})
+			}
+			gdb.Where("event_id = ?", e.ID).Delete(&models.EventMission{})
+		}
+		gdb.Unscoped().Where("created_by = ?", adminID).Delete(&models.Event{})
+		gdb.Unscoped().Where("id = ?", mission.ID).Delete(&models.Mission{})
+		gdb.Unscoped().Where("discord_id IN ?", []string{adminID, a, b}).Delete(&models.User{})
+	})
+
+	gdb.Create(&models.User{DiscordID: adminID, Username: "Race Admin", Role: models.RoleAdmin})
+	gdb.Create(&models.User{DiscordID: a, Username: "Racer A", Role: models.RoleEnlisted})
+	gdb.Create(&models.User{DiscordID: b, Username: "Racer B", Role: models.RoleEnlisted})
+	gdb.Create(&mission)
+	adminTok, _, _ := h.JWT().IssueAccess(adminID, "admin", false)
+	tA, _, _ := h.JWT().IssueAccess(a, "enlisted", false)
+	tB, _, _ := h.JWT().IssueAccess(b, "enlisted", false)
+
+	// Schedule an event and attach the mission with exactly one slot.
+	start := time.Now().Add(72 * time.Hour).UTC().Format(time.RFC3339)
+	w := do(r, "POST", "/api/v1/events", reqOpt{bearer: adminTok, body: fmt.Sprintf(`{"start_time":%q,"name_override":"Race Op"}`, start)})
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create event = %d, body=%s", w.Code, w.Body.String())
+	}
+	var event models.Event
+	mustJSON(t, w, &event)
+
+	missionStart := time.Now().Add(73 * time.Hour).UTC().Format(time.RFC3339)
+	addBody := fmt.Sprintf(`{"mission_id":%q,"start_time":%q,"orbat":[{"faction":"US Army","callsign":"HQ","squad":"HQ","slots":[{"role":"Platoon Lead","loadout":"M4A1"}]}]}`, mission.ID.String(), missionStart)
+	w = do(r, "POST", "/api/v1/events/"+event.ID.String()+"/missions", reqOpt{bearer: adminTok, body: addBody})
+	if w.Code != http.StatusCreated {
+		t.Fatalf("add event mission = %d, body=%s", w.Code, w.Body.String())
+	}
+	var em models.EventMission
+	mustJSON(t, w, &em)
+	emid := em.ID.String()
+
+	var slot models.OrbatSlot
+	if err := gdb.First(&slot, "event_mission_id = ?", em.ID).Error; err != nil {
+		t.Fatalf("load slot: %v", err)
+	}
+	claimBody := fmt.Sprintf(`{"slot_id":%q}`, slot.ID.String())
+
+	// Two users claim the one slot concurrently.
+	var wg sync.WaitGroup
+	results := make([]*httptest.ResponseRecorder, 2)
+	toks := []string{tA, tB}
+	for i := range toks {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			results[idx] = do(r, "POST", "/api/v1/event-missions/"+emid+"/register", reqOpt{bearer: toks[idx], body: claimBody})
+		}(i)
+	}
+	wg.Wait()
+
+	ok, conflict := 0, 0
+	for _, res := range results {
+		switch res.Code {
+		case http.StatusOK:
+			ok++
+		case http.StatusConflict:
+			conflict++
+		default:
+			t.Fatalf("unexpected claim status %d (body=%s)", res.Code, res.Body.String())
+		}
+	}
+	if ok != 1 || conflict != 1 {
+		t.Fatalf("slot race resolved to ok=%d conflict=%d, want exactly 1/1", ok, conflict)
+	}
+
+	// Exactly one registration holds the slot.
+	var assigned int64
+	gdb.Model(&models.OrbatSlot{}).Where("id = ? AND assigned_to IS NOT NULL", slot.ID).Count(&assigned)
+	if assigned != 1 {
+		t.Fatalf("expected slot assigned to exactly one user, got %d", assigned)
 	}
 }

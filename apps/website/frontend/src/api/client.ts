@@ -42,7 +42,10 @@ api.interceptors.response.use(
               arma_linked: Boolean(user.arma_id),
             })
           } else {
-            useAuthStore.getState().setAccessToken(data.access_token, data.expires_at)
+            // No user loaded yet (mid-bootstrap 401): still persist the FULL rotated
+            // pair — the old refresh token was just revoked server-side, so storing
+            // only the access token strands the session at its next refresh (T-126 S5).
+            useAuthStore.getState().setTokens(data)
           }
           original.headers.Authorization = `Bearer ${data.access_token}`
           return api(original)

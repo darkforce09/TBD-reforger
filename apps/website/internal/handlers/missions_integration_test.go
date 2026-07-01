@@ -215,3 +215,57 @@ func containsMission(t *testing.T, w *httptest.ResponseRecorder, id string) bool
 	}
 	return false
 }
+
+// TestExportMissionVisibility proves T-126 S1: a mission_maker cannot export another
+// author's unpublished mission (404, id not leaked), the author can export their own
+// draft, and a live mission stays exportable by anyone (T-122 GET visibility not weakened).
+func TestExportMissionVisibility(t *testing.T) {
+	r, h, gdb := setupIT(t)
+
+	authorID := fmt.Sprintf("itest-mm-a-%d", time.Now().UnixNano())
+	otherID := fmt.Sprintf("itest-mm-b-%d", time.Now().UnixNano())
+
+	t.Cleanup(func() {
+		var ms []models.Mission
+		gdb.Unscoped().Where("author_id = ?", authorID).Find(&ms)
+		for _, m := range ms {
+			gdb.Where("mission_id = ?", m.ID).Delete(&models.MissionVersion{})
+		}
+		gdb.Unscoped().Where("author_id = ?", authorID).Delete(&models.Mission{})
+		gdb.Unscoped().Where("discord_id IN ?", []string{authorID, otherID}).Delete(&models.User{})
+	})
+
+	gdb.Create(&models.User{DiscordID: authorID, Username: "Author A", Role: models.RoleMissionMaker})
+	gdb.Create(&models.User{DiscordID: otherID, Username: "Other B", Role: models.RoleMissionMaker})
+	authorTok, _, _ := h.JWT().IssueAccess(authorID, "mission_maker", false)
+	otherTok, _, _ := h.JWT().IssueAccess(otherID, "mission_maker", false)
+
+	// Author A creates a draft mission.
+	createBody := `{"title":"Secret Draft","terrain":"everon","game_mode":"pve_coop","max_players":8}`
+	w := do(r, "POST", "/api/v1/missions", reqOpt{bearer: authorTok, body: createBody})
+	if w.Code != http.StatusCreated {
+		t.Fatalf("create = %d, body=%s", w.Code, w.Body.String())
+	}
+	var mission models.Mission
+	mustJSON(t, w, &mission)
+	mid := mission.ID.String()
+
+	// S1: mission_maker B cannot export A's draft — 404 (not 403, so the id doesn't leak).
+	if w := do(r, "GET", "/api/v1/missions/"+mid+"/export", reqOpt{bearer: otherTok}); w.Code != http.StatusNotFound {
+		t.Fatalf("cross-author draft export = %d, want 404 (body=%s)", w.Code, w.Body.String())
+	}
+
+	// The author can export their own draft.
+	if w := do(r, "GET", "/api/v1/missions/"+mid+"/export", reqOpt{bearer: authorTok}); w.Code != http.StatusOK {
+		t.Fatalf("author draft export = %d, want 200 (body=%s)", w.Code, w.Body.String())
+	}
+
+	// Once live, the mission is exportable by any mission_maker (T-122 GET visibility unchanged).
+	if err := gdb.Model(&models.Mission{}).Where("id = ?", mission.ID).
+		Update("status", models.MissionLive).Error; err != nil {
+		t.Fatalf("publish: %v", err)
+	}
+	if w := do(r, "GET", "/api/v1/missions/"+mid+"/export", reqOpt{bearer: otherTok}); w.Code != http.StatusOK {
+		t.Fatalf("live cross-author export = %d, want 200 (body=%s)", w.Code, w.Body.String())
+	}
+}

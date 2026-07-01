@@ -752,12 +752,17 @@ func (h *Handler) buildMissionDoc(m *models.Mission) missionJSON {
 }
 
 // ExportMission returns the strict mission.json envelope (missionJSON) as a file
-// download.
+// download. Visibility matches GetMission (T-126 S1): drafts/pending/rejected are
+// exportable only by the author or an admin — 404 (not 403) so the id doesn't leak.
 //
 // @route GET /api/v1/missions/:id/export
 func (h *Handler) ExportMission(c *gin.Context) {
 	m, ok := h.loadMission(c)
 	if !ok {
+		return
+	}
+	if !h.canViewMission(c, m) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
 		return
 	}
 	c.Header("Content-Disposition", `attachment; filename="mission.json"`)

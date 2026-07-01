@@ -187,23 +187,46 @@ func (h *Handler) Refresh(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "lookup failed"})
 		return
 	}
-	if rt.RevokedAt != nil || time.Now().After(rt.ExpiresAt) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "expired or revoked refresh token"})
+	// Presenting an already-revoked token is a reuse signal (the legitimate client
+	// received a new token at rotation; only a replayed/stolen copy comes back) —
+	// revoke the whole family so neither branch of the fork stays valid (T-126 S2).
+	if rt.RevokedAt != nil {
+		h.revokeTokenFamily(c, "Refresh", rt.DiscordID)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token reuse detected"})
 		return
 	}
-
-	// Rotate: revoke the old token.
-	revokedAt := time.Now()
-	if err := h.db.Model(&models.RefreshToken{}).Where("id = ?", rt.ID).
-		Update("revoked_at", revokedAt).Error; err != nil {
-		logHandlerErr(c, "Refresh", http.StatusInternalServerError, "rotation failed")
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "rotation failed"})
+	if time.Now().After(rt.ExpiresAt) {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "expired refresh token"})
 		return
 	}
 
 	var user models.User
 	if err := h.db.First(&user, "discord_id = ?", rt.DiscordID).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "user not found"})
+		return
+	}
+	// Belt-and-braces with BanUser's own revocation (T-126 S4): a banned user must
+	// not be able to keep a session alive through rotation.
+	if user.IsBanned {
+		h.revokeTokenFamily(c, "Refresh", rt.DiscordID)
+		c.JSON(http.StatusForbidden, gin.H{"error": "account is banned"})
+		return
+	}
+
+	// Rotate atomically: only the request that actually flips revoked_at wins. A
+	// concurrent double-spend of the same token loses the conditional UPDATE and is
+	// treated as reuse — family revoked, both callers re-authenticate (T-126 S2).
+	res := h.db.Model(&models.RefreshToken{}).
+		Where("id = ? AND revoked_at IS NULL", rt.ID).
+		Update("revoked_at", time.Now())
+	if res.Error != nil {
+		logHandlerErr(c, "Refresh", http.StatusInternalServerError, "rotation failed")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "rotation failed"})
+		return
+	}
+	if res.RowsAffected != 1 {
+		h.revokeTokenFamily(c, "Refresh", rt.DiscordID)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "refresh token reuse detected"})
 		return
 	}
 	armaLinked := user.ArmaID != nil
@@ -244,6 +267,18 @@ func (h *Handler) Logout(c *gin.Context) {
 		Where("token_hash = ? AND revoked_at IS NULL", hash).
 		Update("revoked_at", time.Now())
 	c.Status(http.StatusNoContent)
+}
+
+// revokeTokenFamily revokes every active refresh token for a user — the response
+// to a detected token reuse (rotation double-spend / replay) or a banned account
+// presenting a still-valid token. Best-effort: the caller's 401/403 stands even if
+// the sweep fails, but a failure is logged since it leaves live tokens behind.
+func (h *Handler) revokeTokenFamily(c *gin.Context, handler, discordID string) {
+	if err := h.db.Model(&models.RefreshToken{}).
+		Where("discord_id = ? AND revoked_at IS NULL", discordID).
+		Update("revoked_at", time.Now()).Error; err != nil {
+		logHandlerErr(c, handler, http.StatusUnauthorized, "token family revocation failed: "+err.Error())
+	}
 }
 
 // issueRefresh creates and stores a new opaque refresh token (hashed) and

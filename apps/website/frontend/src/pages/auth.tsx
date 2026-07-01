@@ -87,7 +87,7 @@ interface CallbackTokens {
 export function AuthCallbackPage() {
   const navigate = useNavigate()
   const setSession = useAuthStore((s) => s.setSession)
-  const setAccessToken = useAuthStore((s) => s.setAccessToken)
+  const setTokens = useAuthStore((s) => s.setTokens)
   const [parsed] = useState(parseCallback)
   const [error, setError] = useState<string | null>(parsed.error ?? null)
 
@@ -97,8 +97,11 @@ export function AuthCallbackPage() {
     if (!parsed.tokens) return
     const { accessToken, refreshToken, expiresAt, armaLinked } = parsed.tokens
 
-    // Set the access token first so the api client attaches it to GET /me.
-    setAccessToken(accessToken, expiresAt)
+    // Persist the FULL freshly-minted pair first so the api client attaches the
+    // access token to GET /me and — critically — the refresh token is durable even
+    // if /me fails (T-126 S6): these are valid server-minted tokens, so a transient
+    // profile fetch failure must not discard them and force a re-login.
+    setTokens({ access_token: accessToken, refresh_token: refreshToken, expires_at: expiresAt })
     api
       .get<{ user: User; arma_linked: boolean }>('/me')
       .then(({ data }) => {
@@ -112,10 +115,11 @@ export function AuthCallbackPage() {
         navigate('/', { replace: true })
       })
       .catch(() => {
-        useAuthStore.getState().clearSession()
+        // Keep the persisted tokens (do NOT clearSession) — a reload re-bootstraps
+        // from the stored refresh token and retries the profile fetch.
         setError(AUTH_ERROR_COPY.server_error)
       })
-  }, [navigate, setSession, setAccessToken, parsed])
+  }, [navigate, setSession, setTokens, parsed])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">

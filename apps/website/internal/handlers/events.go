@@ -713,6 +713,16 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 
 	var result models.EventRegistration
 	txErr := h.db.Transaction(func(tx *gorm.DB) error {
+		// Serialize registrations per event mission (T-126 S3): the capacity count
+		// and the waitlist decision below are check-then-write, so concurrent
+		// registrations must queue on the mission row or both can pass the same
+		// capacity check.
+		var emLock models.EventMission
+		if err := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			First(&emLock, "id = ?", em.ID).Error; err != nil {
+			return err
+		}
+
 		var capacity int64
 		tx.Model(&models.OrbatSlot{}).Where("event_mission_id = ?", em.ID).Count(&capacity)
 		var registered int64
@@ -745,10 +755,18 @@ func (h *Handler) RegisterForEventMission(c *gin.Context) {
 					}
 				}
 			}
+			// Conditional claim (T-126 S3): only free slots (or the caller's own)
+			// are assignable — a raced claim loses the WHERE and maps to 409
+			// instead of silently overwriting the winner.
 			now := time.Now()
-			if err := tx.Model(&models.OrbatSlot{}).Where("id = ?", sid).
-				Updates(map[string]any{"assigned_to": me, "assigned_at": now}).Error; err != nil {
-				return err
+			upd := tx.Model(&models.OrbatSlot{}).
+				Where("id = ? AND event_mission_id = ? AND (assigned_to IS NULL OR assigned_to = ?)", sid, em.ID, me).
+				Updates(map[string]any{"assigned_to": me, "assigned_at": now})
+			if upd.Error != nil {
+				return upd.Error
+			}
+			if upd.RowsAffected != 1 {
+				return errSlotTaken
 			}
 			slotID = &sid
 		} else if capacity > 0 && registered >= capacity {
