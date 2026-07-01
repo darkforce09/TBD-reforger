@@ -114,9 +114,9 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-125**
+**Latest shipped:** **T-126**
 
-**ACTIVE NOW:** **T-090** — T-090.1.2.2 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`.
+**ACTIVE NOW:** **T-127** — T-127 (Fable audit — Mission Creator UX fixes). Slice spec: `docs/platform/t127_mc_ux_audit_fixes.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -142,11 +142,19 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 updated; doc links repaired (incl. pre-existing `docs/specs/**` rot). Verified: go build,
 frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
-### ACTIVE SLICE — T-090 Map visualization program
+### ACTIVE SLICE — Fable 5 audit program (ONLY work right now)
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · Eden UX ref [`t090_eden_map_reference.md`](docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md) · **T-091 shipped** @ `dde589e` · active slice **`T-090.3.0`** (Workbench export spike); **`T-090.1`** (aligned basemap tiles) **queued** until 3.0 K1–K7 PASS.
+Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · audit [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md) · resume [`.ai/artifacts/fable_audit_operator_resume.md`](.ai/artifacts/fable_audit_operator_resume.md)
 
-**T-090 slices:** `.0.1` docs + **`.0.2`** schemas/goldens/verify **shipped** · **`.3.0`** Workbench spike **active** · **`.1`** basemap tiles (queued) · **`.1.1`** Map view · **`.2`** taxonomy (+ forest/field/water regions) · **`.3`** **`make map-export`** (all maps) · **`.4`/`.6`** Z/geometry audits · **`.8`** forest regions · **`.5`** Deck render (Deck-zoom LOD) · **`.9`** world-object interaction (read-only) · **`.7`** Eden AI. **T-126** (`idea`): building floors — out of scope.
+**Order:** **T-126** shipped @ `4a47688e` → **T-127** (MC UX, **active**) → **T-128** (doc links, Cursor). **Do not** parallel T-090 or T-068.
+
+```bash
+./scripts/ticket prompt T-127
+```
+
+### PAUSED — T-090 Map visualization program
+
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.4** @ `0d6fe485` P0 FAIL · **next:** **T-090.1.2.8** after Fable program ships.
 
 **Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
 
@@ -177,6 +185,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-126 **Fable audit — security + auth follow-up** @ `4a47688e` (tag **T-126**). S1–S6: export `canViewMission`, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, `setTokens` + bootstrap `/me` blip fix. `make test-it` + FE build/lint clean; 4 new integration tests. Verify: [`.ai/artifacts/t126_verify_log.md`](.ai/artifacts/t126_verify_log.md). Spec: [`t126_audit_security_followup.md`](docs/platform/t126_audit_security_followup.md).
 - T-125 **Coding standards + 11/10 enforcement** @ `e21dac3` (tag **T-125.5**). [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) (38 rules, all gates live): golangci, strict TS, GO-7 `@route` route-match, verify-* scripts, ENF-4 ×10, `.editorconfig` + Prettier (FMT-2/3). `make ci-local` @ ~22.7s mirrors **`ci.yml`** (backend + frontend + schema + editorconfig). Spec: [`t125_coding_standards_enforcement.md`](docs/platform/t125_coding_standards_enforcement.md).
 - T-124 **Dependency & toolchain upgrade** @ `cd11db0`. FE npm to latest (vitest **4.1.9**, deck.gl 9.3.5, vite 8); Go modules gin **1.12**, gorm **1.31.2**, pgx **5.10**; **Go 1.26**, **Node 26** (`.nvmrc` + CI), **Postgres 18** dev image; dropped unused `@tailwindcss/container-queries`. Verify: FE build/lint/**21/21** tests, `make build`, `make test-it`, `make schema-codegen` clean. Spec: [`t124_dependency_upgrade.md`](docs/platform/t124_dependency_upgrade.md).
 - T-123 **Documentation standards rollout** @ `169e47d` (tag **T-123**). In-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); schema codegen → `apps/website/internal/contract/` + `apps/website/frontend/src/types/contract/` via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json` (400 on invalid; `internal/contract/validate.go`); `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift). Resolves audit T1/T8. Spec: [`t123_documentation_standards_rollout.md`](docs/platform/t123_documentation_standards_rollout.md).
@@ -184,6 +193,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 - T-091.2 **Mission Creator — Z-axis editor UX** @ `dde589e` (tag **T-091.2**).
 - T-091.1 **Mission Creator — DEM loader + sampleElevation** @ `2c56c2e` (tag **T-091.1**). Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
 - T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](.ai/artifacts/t091_0_ops_log.txt).
+- T-090.1.2.4 **Map program — engine render ortho spike (honest P0 FAIL)** @ `0d6fe485` (tag **T-090.1.2.4**). Exhaustive Workbench MCP api_search: no orthographic projection, no per-point terrain colour, no RenderTarget readback — **no grid-free sat-class 12800² source**. SAP + T-090.1.2.2 apron-bridge **locked as production source**. Pivot 110% to **T-090.1.2.8** (unified GPU texture + mips). Artifacts: [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](.ai/artifacts/t090_1_2_4_engine_render_spike.json), [verify log](.ai/artifacts/t090_1_2_4_verify_log.md). Spec: [`t090_1_2_4_engine_render_ortho_spike.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md).
 - T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md) @ `d2128cf`.
 - T-066 **Mission Creator — worker compile offload (T-066.1 `pickMapSnapshot`)**. Save Version + Export compile in `compiler.worker.ts` via Comlink; `pickMapSnapshot(useMapStore.getState())` strips Zustand actions before postMessage (fixes DataCloneError 25 on raw `getState()`). `terminateCompiler()` on mission unmount. Manual @ ~367k: Save **201**. Spec: [`t066_worker_compile.md`](docs/specs/Mission_Creator_Architecture/t066_worker_compile.md).
 - T-065 **Mission Creator — cluster/LOD @ extreme zoom**. `supercluster` index (`slotClusterIndex.ts`); pan-stable `getClusterMarkers` full-terrain cache (T-065.2); `ZOOM_CLUSTER_MAX = -4` — default zoom `-2` stays detail @ ~160 fps @ 367k; cluster discs + drill-in only when zoomed out past -4 on missions >500 slots. Spec: [`t065_cluster_lod.md`](docs/specs/Mission_Creator_Architecture/t065_cluster_lod.md).

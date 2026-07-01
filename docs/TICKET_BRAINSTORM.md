@@ -24,7 +24,7 @@
 
 - **T-110** (deferred) — Terrain base + sparse deltas [MAP, DATA] — Binary terrain base layer plus sparse delta props for 1M+ map objects.
 - **T-121** (deferred) — Terrain DEM export automation [DATA, MAP] — Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md.
-- **T-126** (idea) — Building floor selector [MAP, UI] — Per-building floor slice in Mission Creator map (which floor am I editing?). Explicit deferral from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5 world buildings.
+- **T-129** (idea) — Building floor selector [MAP, UI] — Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)
 
 ## platform
 

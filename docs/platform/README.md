@@ -5,6 +5,7 @@ Cross-cutting docs for the TBD Reforger monorepo (not tied to a single app).
 | Doc | Purpose |
 |-----|---------|
 | [`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md) | **T-122** audit findings + shipped/deferred log |
+| [`FABLE_5_AUDIT_PROGRAM.md`](FABLE_5_AUDIT_PROGRAM.md) | **T-126→128** Fable 5 remediation (T-127 active) |
 | [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) | How to document Go / TS / Enfusion boundaries |
 | [`CODING_STANDARDS.md`](CODING_STANDARDS.md) | **How code is written** — style, errors, CI gates (distinct from doc standards) |
 | [`MONOREPO_MIGRATION.md`](MONOREPO_MIGRATION.md) | M0–M3 migration runbook (`apps/` + `packages/` + `.ai/`) |

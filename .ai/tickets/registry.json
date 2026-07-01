@@ -1821,8 +1821,8 @@
       "id": "T-090",
       "order": 900,
       "program": "infra",
-      "status": "active",
-      "active_slice": "T-090.1.2.2",
+      "status": "ready",
+      "active_slice": null,
       "surfaces": [
         "MAP"
       ],
@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 seams. Queued: .2.3 prefetch, .2.5 water, .2.6 hillshade blend. Idea: .2.4 engine render. Backlog: t090_1_2_satellite_backlog.md. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). PAUSED — Fable audit T-127→128 active (T-126 shipped @ 4a47688e). Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1844,6 +1844,7 @@
         "T-090.1.2.4",
         "T-090.1.2.5",
         "T-090.1.2.6",
+        "T-090.1.2.8",
         "T-090.1.1",
         "T-090.2",
         "T-090.3",
@@ -1929,7 +1930,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "a3efdf6"
         },
         "T-090.1.2.3": {
           "targets": [
@@ -1946,7 +1948,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md",
-          "status": "idea"
+          "status": "shipped",
+          "shipped_at": "0d6fe485"
         },
         "T-090.1.2.5": {
           "targets": [
@@ -1964,6 +1967,15 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md",
           "status": "queued"
+        },
+        "T-090.1.2.8": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md",
+          "status": "ready"
         },
         "T-090.1.1": {
           "targets": [
@@ -2865,6 +2877,93 @@
     {
       "id": "T-126",
       "order": 1260,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "shipped",
+      "active_slice": null,
+      "surfaces": [
+        "DATA",
+        "SHELL"
+      ],
+      "impact": [
+        "api",
+        "ui",
+        "security"
+      ],
+      "title": "Fable audit — security + auth follow-up",
+      "summary": "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
+      "spec": "docs/platform/t126_audit_security_followup.md",
+      "shipped_at": "4a47688e",
+      "depends_on": [],
+      "unblocks": [
+        "T-127"
+      ],
+      "branch": "main"
+    },
+    {
+      "id": "T-127",
+      "order": 1270,
+      "program": "platform",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "active",
+      "active_slice": "T-127",
+      "surfaces": [
+        "MAP",
+        "UI"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "Fable audit — Mission Creator UX fixes",
+      "summary": "U1–U4: conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. After T-126. Spec: docs/platform/t127_mc_ux_audit_fixes.md.",
+      "spec": "docs/platform/t127_mc_ux_audit_fixes.md",
+      "depends_on": [
+        "T-126"
+      ],
+      "unblocks": [
+        "T-128"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "main"
+    },
+    {
+      "id": "T-128",
+      "order": 1280,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "root",
+        "website"
+      ],
+      "executor": "cursor-docs",
+      "status": "queued",
+      "active_slice": null,
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "docs"
+      ],
+      "title": "Fable audit — doc link repair + staging honesty",
+      "summary": "P0 handoff link depths, STAGING-SERVER T-092 gate honesty, apps/mod README, orphan frontend/docs, T-126→T-129 floor picker renumber. After T-127. Spec: docs/platform/t128_doc_link_repair.md.",
+      "spec": "docs/platform/t128_doc_link_repair.md",
+      "depends_on": [
+        "T-127"
+      ],
+      "unblocks": [],
+      "branch": "main"
+    },
+    {
+      "id": "T-129",
+      "order": 1290,
       "program": "infra",
       "stream": "mission-creator",
       "targets": [
@@ -2881,7 +2980,7 @@
         "ui"
       ],
       "title": "Building floor selector",
-      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Explicit deferral from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5 world buildings.",
+      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
       "slices": [],
       "depends_on": [
@@ -2889,7 +2988,7 @@
       ],
       "unblocks": [],
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-126"
+      "branch": "ticket/T-129"
     }
   ]
 }

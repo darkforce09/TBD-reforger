@@ -121,3 +121,20 @@ Manual: C1 leader PATCH; C2 match ingest; C3 corrupt IDB; C4 gamemode boot; R1 d
 **Doc pass @ merge:** Frontend surface docs + `CLAUDE.md` context_handoff path; registry `shipped`; see commit after `efe14b2`.
 
 **Shipped (T-123 @ `169e47d`):** documentation-standards program (range `f0af31a..169e47d`; CI green @ `7a08a8f`) — resolves audit **T1** (editor-payload validation) and **T8** (`exportFormatVersion` rename) above; adds in-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion), schema codegen (`make schema-codegen` → `internal/contract/`), and the `contracts.yml` CI gates. See [`t123_documentation_standards_rollout.md`](t123_documentation_standards_rollout.md).
+
+---
+
+## Fable 5 audit follow-up — T-126 (shipped @ `4a47688e`, tag **T-126**)
+
+Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §2 Backend · verify [`.ai/artifacts/t126_verify_log.md`](../../.ai/artifacts/t126_verify_log.md)
+
+| ID | Audit finding | Fix | Proof |
+|----|---------------|-----|-------|
+| **S1** | `ExportMission` skipped `canViewMission` — cross-author draft leak | Gate export like `GetMission` → **404** | `TestExportMissionVisibility` |
+| **S2** | Non-atomic refresh rotation; no reuse detection | `UPDATE … WHERE revoked_at IS NULL` + `RowsAffected==1`; spent token → **401** + token-family revoke | `TestRefreshReuseRevokesFamily` |
+| **S3** | ORBAT slot claim check-then-set race | `FOR UPDATE` on event-mission row + conditional slot `UPDATE` → **409** | `TestSlotClaimRace` |
+| **S4** | `Refresh` ignored `user.IsBanned` | **403** + family revoke | `TestRefreshBannedRejected` |
+| **S5** | 401-retry dropped rotated refresh when no user in store | `setTokens()` persists full pair | FE build + lint |
+| **S6** | Bootstrap/callback `clearSession()` after rotation + transient `/me` fail | Retain rotated pair; only failed rotation clears | FE build + lint |
+
+**Still open (Fable program):** **T-127** (MC UX U1–U4) · **T-128** (doc links + staging honesty). Mod REST `/compiled` chain (**T-092**) unchanged.

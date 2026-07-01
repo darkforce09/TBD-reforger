@@ -13,15 +13,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** website, shared, root, mod
 - **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 
-## T-090 — Map visualization program
-
-- **Active slice:** `T-090.1.2.2`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
-- **Branch:** `ticket/T-090`
-- **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 seams. Queued: .2.3 prefetch, .2.5 water, .2.6 hillshade blend. Idea: .2.4 engine render. Backlog: t090_1_2_satellite_backlog.md. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.
-
 ## T-092 — Spawn transform parity + mod mission compile
 
 - **Slice spec:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
@@ -29,3 +20,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-092`
 - **Targets:** root, website, mod
 - **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
+
+## T-127 — Fable audit — Mission Creator UX fixes
+
+- **Active slice:** `T-127`
+- **Slice spec:** `docs/platform/t127_mc_ux_audit_fixes.md`
+- **Program hub:** `docs/platform/t127_mc_ux_audit_fixes.md`
+- **Branch:** `main`
+- **Targets:** website
+- **Summary:** U1–U4: conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. After T-126. Spec: docs/platform/t127_mc_ux_audit_fixes.md.

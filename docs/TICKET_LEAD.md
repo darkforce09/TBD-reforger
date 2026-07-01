@@ -5,11 +5,12 @@
 
 ## Running / Review
 
-- **T-090** (900) — Map visualization program [active] — Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 seams. Queued: .2.3 prefetch, .2.5 water, .2.6 hillshade blend. Idea: .2.4 engine render. Backlog: t090_1_2_satellite_backlog.md. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.
+- **T-127** (1270) — Fable audit — Mission Creator UX fixes [active] — U1–U4: conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. After T-126. Spec: docs/platform/t127_mc_ux_audit_fixes.md.
 
 ## Ready
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
+- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). PAUSED — Fable audit T-127→128 active (T-126 shipped @ 4a47688e). Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
 
 ## Next queued (top 10)
@@ -33,5 +34,6 @@ flowchart LR
   T068[T-068] --> T069[T-069]
   T068[T-068] --> T070[T-070]
   T092[T-092] --> T071[T-071]
+  T090[T-090] --> T091[T-091]
   T091[T-091] --> T092[T-092]
 ```
