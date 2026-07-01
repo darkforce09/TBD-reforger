@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 seams. Queued: .2.3 prefetch, .2.5 water. Idea: .2.4 engine render. Backlog: t090_1_2_satellite_backlog.md. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2.1 shipped @ 19bc785. ACTIVE: T-090.1.2.2 seams. Queued: .2.3 prefetch, .2.5 water, .2.6 hillshade blend. Idea: .2.4 engine render. Backlog: t090_1_2_satellite_backlog.md. Then T-090.1.1 Map. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1843,6 +1843,7 @@
         "T-090.1.2.3",
         "T-090.1.2.4",
         "T-090.1.2.5",
+        "T-090.1.2.6",
         "T-090.1.1",
         "T-090.2",
         "T-090.3",
@@ -1954,6 +1955,14 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md",
+          "status": "queued"
+        },
+        "T-090.1.2.6": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md",
           "status": "queued"
         },
         "T-090.1.1": {

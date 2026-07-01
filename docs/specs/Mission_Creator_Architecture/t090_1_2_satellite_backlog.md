@@ -15,6 +15,7 @@
 | **Seams** | Visible **256 m grid lines** at cell boundaries — **T-090.1.2.2** |
 | **Pan** | **~40 fps** + tile pop-in / flicker — **T-090.1.2.3** |
 | **Water** | **None readable** — grey seabed at coast, dry lake beds inland — **T-090.1.2.5** |
+| **Hillshade blend** | Fixed ~40% overlay — muddy on Satellite + hillshade — **T-090.1.2.6** |
 | **Darkness** | SAP exposure — defer (tone pass later) |
 | **Resolution R&D** | **T-090.1.2.4** idea only — not started |
 
@@ -31,7 +32,8 @@ Orthography changes (**seams**, **water**) each require a **full lossless pyrami
 1. T-090.1.2.2  SAP cell seam repair     ← ACTIVE (ortho + pyramid rebuild)
 2. T-090.1.2.3  Basemap tile prefetch    (frontend only — CAN run parallel to #1)
 3. T-090.1.2.5  Satellite water composite (ortho + pyramid rebuild — after #1)
-4. T-090.1.1    Map cartographic view
+4. T-090.1.2.6  Hillshade blend control        (frontend only — CAN run parallel anytime)
+5. T-090.1.1    Map cartographic view
 —  T-090.1.2.4  Engine render ortho spike (idea — do not start unless promoted)
 ```
 
@@ -44,6 +46,7 @@ Orthography changes (**seams**, **water**) each require a **full lossless pyrami
 | **T-090.1.2.2** | **active** | [`t090_1_2_2_sap_cell_seam_repair.md`](t090_1_2_2_sap_cell_seam_repair.md) | [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md) |
 | **T-090.1.2.3** | queued | [`t090_1_2_3_basemap_tile_prefetch.md`](t090_1_2_3_basemap_tile_prefetch.md) | [`.ai/artifacts/t090_1_2_3_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_3_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md) |
 | **T-090.1.2.5** | queued | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_5_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md) |
+| **T-090.1.2.6** | queued | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | — | — |
 | **T-090.1.2.4** | idea | [`t090_1_2_4_engine_render_ortho_spike.md`](t090_1_2_4_engine_render_ortho_spike.md) | — (when promoted) | — |
 
 **Shipped:** T-090.1.2 @ `c2730a3` · T-090.1.2.1 @ `19bc785` — verify logs under `.ai/artifacts/t090_1_2*_verify_log.md`

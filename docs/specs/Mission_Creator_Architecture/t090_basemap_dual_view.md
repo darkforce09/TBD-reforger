@@ -29,6 +29,7 @@ Mission Creator must offer **two switchable bottom raster views** — **Satellit
 Mission Settings  (or map chrome — Eden-style layer control)
   Basemap view:  ( ) Satellite   (•) Map     ← mutually exclusive radio
   [ ] Hillshade   (optional overlay — both views)
+  Hillshade strength  (slider 0–100% when hillshade on — **T-090.1.2.6**)
   [ ] Grid
   [ ] Roads / Buildings / Trees …  (T-090.5 vector layers)
 ```
