@@ -23,6 +23,7 @@ import {
   decodeCellRgba,
   listEdenCells,
 } from "./decode-edds.mjs";
+import { SEAM_REPAIR_META, bridgeSeams } from "./blend-sap-seams.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, "../..");
@@ -86,6 +87,14 @@ if (decoded !== CELL_COUNT) {
   process.exit(1);
 }
 
+// T-090.1.2.2 — repair the baked-apron flat band at every interior 256 px cell seam
+// (strategy A: apron-bridge feather) in final NORTH-UP canvas space, before PNG write. The
+// row-flip assembly above (per-row vertical mirror) is untouched — the bridge only rewrites the
+// ~8 px dead band straddling each interior seam, linearly cross-fading between the nearest
+// detailed lines. World borders (x/y = 0, 12800) are skipped.
+const seamsBridged = bridgeSeams(canvas, { orthoPx: ORTHO_PX });
+console.error(`  seam repair: bridged ${seamsBridged} interior seams/axis (apron feather HW=4)`);
+
 mkdirSync(OUT_DIR, { recursive: true });
 const rawPath = join(OUT_DIR, ".everon-sap-ortho.rgba");
 const pngPath = join(OUT_DIR, "everon-sap-ortho.png");
@@ -113,6 +122,7 @@ const meta = {
   cellMeters: CELL_M,
   gridMapping: "row-major N=y*50+x; cell gridY=0 = world Z=0 (south); assembled north-up (south at image bottom)",
   decoder: "decode-edds.mjs + vendor/bcdec.wasm (BC7) + pure-JS LZ4",
+  ...SEAM_REPAIR_META,
   pngPath: "packages/map-assets/everon/staging/sap/everon-sap-ortho.png",
   buildSeconds: elapsedSec,
   generatedAt: new Date().toISOString().replace(/\.\d+Z$/, "Z"),
