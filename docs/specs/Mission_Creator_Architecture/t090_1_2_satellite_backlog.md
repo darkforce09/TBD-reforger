@@ -43,7 +43,7 @@ Orthography changes (**seams**, **water**) each require a **full lossless pyrami
 
 | Slice | Status | Spec | Handoff | Claude send-off |
 |-------|--------|------|---------|-----------------|
-| **T-090.1.2.2** | **active** | [`t090_1_2_2_sap_cell_seam_repair.md`](t090_1_2_2_sap_cell_seam_repair.md) | [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md) |
+| **T-090.1.2.2** | **active** | [`t090_1_2_2_sap_cell_seam_repair.md`](t090_1_2_2_sap_cell_seam_repair.md) | [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md) **← paste this** |
 | **T-090.1.2.3** | queued | [`t090_1_2_3_basemap_tile_prefetch.md`](t090_1_2_3_basemap_tile_prefetch.md) | [`.ai/artifacts/t090_1_2_3_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_3_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md) |
 | **T-090.1.2.5** | queued | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_5_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md) |
 | **T-090.1.2.6** | queued | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | — | — |

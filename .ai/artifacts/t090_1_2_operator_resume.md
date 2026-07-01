@@ -14,9 +14,22 @@
 ```bash
 git pull && git lfs pull && make map-assets-link
 ./scripts/ticket brief T-090
+export ENFUSION_GAME_PATH="${ENFUSION_GAME_PATH:-$HOME/.cache/enfusion-mcp-root}"
 ```
 
-**Active slice:** T-090.1.2.2 (seams) — send Claude [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](t090_1_2_2_SEND_TO_CLAUDE.md)
+**Active slice:** **T-090.1.2.2** (seams) — Claude send-off: [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](t090_1_2_2_SEND_TO_CLAUDE.md)
+
+**Full spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md)
+
+### T-090.1.2.2 Claude checklist (seams)
+
+1. P0 `analyze-sap-seams.mjs` → baseline JSON
+2. Fix `stitch-sap-ortho.mjs` (edge feather default)
+3. `verify-sap-seams.mjs` + `verify-sap-ortho.mjs` PASS
+4. Rebuild lossless pyramid (~299M LFS)
+5. Tag **`T-090.1.2.2`** → tell Cursor **"doc sync for T-090.1.2.2"**
+
+**Staging ortho** (gitignored): `packages/map-assets/everon/staging/sap/everon-sap-ortho.png` — re-stitch from pak if missing.
 
 ## Then (order)
 
