@@ -106,9 +106,7 @@ class TBD_TerrainWorldExportPlugin : WorkbenchPlugin
 	//------------------------------------------------------------------------------------------------
 	protected string JsonEscape(string s)
 	{
-		s.Replace("\\", "\\\\");
-		s.Replace("\"", "\\\"");
-		return s;
+		return TBD_ExportJson.Escape(s);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -170,13 +168,24 @@ class TBD_TerrainWorldExportPlugin : WorkbenchPlugin
 			written++;
 			if (buf.Length() > 8000)
 			{
-				f.Write(buf);
+				if (!TBD_ExportJson.Write(f, buf, "[TBD][World]"))
+				{
+					f.Close();
+					FileIO.DeleteFile(OUT_JSONL);
+					Print("[TBD][World] ABORTED: JSONL write failed — partial file deleted.", LogLevel.ERROR);
+					return;
+				}
 				buf = "";
 			}
 		}
-		if (buf.Length() > 0)
-			f.Write(buf);
+		bool jsonlOk = TBD_ExportJson.Write(f, buf, "[TBD][World]");
 		f.Close();
+		if (!jsonlOk)
+		{
+			FileIO.DeleteFile(OUT_JSONL);
+			Print("[TBD][World] ABORTED: JSONL write failed — partial file deleted.", LogLevel.ERROR);
+			return;
+		}
 		Print(string.Format("[TBD][World] wrote %1 rows (withPrefab=%2) to %3", written, withPrefab, OUT_JSONL));
 
 		FileHandle mh = FileIO.OpenFile(OUT_META, FileMode.WRITE);
@@ -194,8 +203,14 @@ class TBD_TerrainWorldExportPlugin : WorkbenchPlugin
 			mj += "  \"anglesOrderNote\": \"GetAngles() vector component order measured in S6\",\n";
 			mj += "  \"scanGrid\": [" + scanSummary + "]\n";
 			mj += "}\n";
-			mh.Write(mj);
+			bool metaOk = TBD_ExportJson.Write(mh, mj, "[TBD][World]");
 			mh.Close();
+			if (!metaOk)
+			{
+				FileIO.DeleteFile(OUT_META);
+				Print("[TBD][World] meta write failed — partial meta deleted (JSONL kept).", LogLevel.ERROR);
+				return;
+			}
 		}
 		Print("[TBD][World] DONE export");
 	}

@@ -81,6 +81,10 @@ class TBD_MissionDocumentStruct
 //! @route GET /api/missions/{id}/compiled (mod-expected backend route; see DOCUMENTATION_STANDARDS §3).
 class TBD_MissionLoader
 {
+	//! Hard cap on a profile mission file. A file over this would silently truncate in
+	//! Read() and then fail JSON parse with a misleading error — reject it up front (T-130.4 F1-16).
+	protected static const int MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024;
+
 	protected static ref TBD_MissionDocumentStruct s_Mission;
 	protected static string s_RawJson;
 	protected static bool s_Loaded;
@@ -300,10 +304,22 @@ class TBD_MissionLoader
 
 		FileHandle handle = FileIO.OpenFile(path, FileMode.READ);
 		if (!handle)
+		{
+			Print("[TBD] Could not open profile mission file: " + path, LogLevel.ERROR);
 			return false;
+		}
+
+		int fileSize = handle.GetLength();
+		if (fileSize > MISSION_FILE_MAX_BYTES)
+		{
+			Print(string.Format("[TBD] Profile mission file too large (%1 B > %2 B cap): %3 — refusing to parse a truncated read.",
+				fileSize, MISSION_FILE_MAX_BYTES, path), LogLevel.ERROR);
+			handle.Close();
+			return false;
+		}
 
 		string data;
-		handle.Read(data, 8 * 1024 * 1024);
+		handle.Read(data, MISSION_FILE_MAX_BYTES);
 		handle.Close();
 
 		return ParseMissionJson(data);

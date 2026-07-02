@@ -110,9 +110,7 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 	//------------------------------------------------------------------------------------------------
 	protected string JsonEscape(string s)
 	{
-		s.Replace("\\", "\\\\");
-		s.Replace("\"", "\\\"");
-		return s;
+		return TBD_ExportJson.Escape(s);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -147,6 +145,14 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			written++;
 		}
 
+		// registry-items.schema.json requires items minItems 1 — an all-failed resolve run
+		// must fail loudly, not write a schema-invalid `"items": []` (T-130.4 F1-19).
+		if (written == 0)
+		{
+			Print("[TBD][RegistryExport] FAIL: zero items resolved — refusing to write an empty registry (schema minItems 1). Check the pak set / curated paths.", LogLevel.ERROR);
+			return;
+		}
+
 		string json;
 		json += "{\n";
 		json += "  \"registryItemsVersion\": \"" + ITEMS_VERSION + "\",\n";
@@ -163,8 +169,10 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			return;
 		}
 
-		handle.Write(json);
+		bool ok = TBD_ExportJson.Write(handle, json, "[TBD][RegistryExport]");
 		handle.Close();
+		if (!ok)
+			return;
 
 		Print(string.Format("[TBD][RegistryExport] Wrote %1 items to %2", written, OUT_PATH));
 	}

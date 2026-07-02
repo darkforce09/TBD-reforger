@@ -83,10 +83,21 @@ modded class SCR_PlayerController
 	}
 
 	//! @authority server — executes on the server (RplRcver.Server): builds and returns the list.
+	//! Admin-gated like TBD_RpcAsk_SelectMission — this is an admin browser tool, and the
+	//! payload is server-built content that shouldn't stream to arbitrary clients (T-130.4 F1-17).
 	//! @rpc Reliable Server
 	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
 	protected void TBD_RpcAsk_MissionList()
 	{
+		int playerId = GetPlayerId();
+
+		SCR_PlayerListedAdminManagerComponent admins = SCR_PlayerListedAdminManagerComponent.GetInstance();
+		if (!admins || !admins.IsPlayerOnAdminList(playerId))
+		{
+			Print(string.Format("[TBD][browser] non-admin player %1 requested the mission list — denied.", playerId), LogLevel.WARNING);
+			return;
+		}
+
 		string payload = TBD_MissionBrowserService.BuildListPayload();
 		Rpc(TBD_RpcDo_ReceiveMissionList, payload);
 	}
@@ -143,6 +154,11 @@ modded class SCR_PlayerController
 //! it back on the client. Keeps the RPC signature to a single string.
 class TBD_MissionBrowserService
 {
+	//! Cap on list lines in one RPC payload — a runaway mission list must not become an
+	//! unbounded reliable-channel string (T-130.4 F1-17). Selection stays 1-based over the
+	//! full list; only the display payload is clipped.
+	protected static const int MAX_LIST_LINES = 100;
+
 	//------------------------------------------------------------------------------------------------
 	//! Server: build "n) name [terrain] N slots" lines from the cached list.
 	static string BuildListPayload()
@@ -151,14 +167,20 @@ class TBD_MissionBrowserService
 		if (!entries || entries.IsEmpty())
 			return "No missions loaded yet.";
 
+		int shown = entries.Count();
+		if (shown > MAX_LIST_LINES)
+			shown = MAX_LIST_LINES;
+
 		string result;
-		for (int i = 0; i < entries.Count(); i++)
+		for (int i = 0; i < shown; i++)
 		{
 			TBD_MissionListEntry e = entries[i];
 			if (i > 0)
 				result = result + "\n";
 			result = result + string.Format("%1) %2 [%3] %4 slots", i + 1, e.name, e.terrain, e.slotCount);
 		}
+		if (entries.Count() > shown)
+			result = result + string.Format("\n… and %1 more (list capped at %2).", entries.Count() - shown, MAX_LIST_LINES);
 		return result;
 	}
 

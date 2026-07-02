@@ -175,9 +175,9 @@ class TBD_TerrainExportPlugin : WorkbenchPlugin
 				sj += "  \"benchmarkSamples\": 40000,\n";
 				sj += "  \"anchors\": " + JsonAnchors(anchors) + "\n";
 				sj += "}\n";
-				sh.Write(sj);
+				if (TBD_ExportJson.Write(sh, sj, "[TBD][DEM]"))
+					Print("[TBD][DEM] SPIKE wrote " + OUT_SPIKE);
 				sh.Close();
-				Print("[TBD][DEM] SPIKE wrote " + OUT_SPIKE);
 			}
 			Print("[TBD][DEM] SPIKE done — set SPIKE=false to run full export");
 			return;
@@ -196,6 +196,7 @@ class TBD_TerrainExportPlugin : WorkbenchPlugin
 		string buf = "";
 		float sx = WORLD / (W - 1);
 		float sz = WORLD / (H - 1);
+		bool writeOk = true; // every flush is checked — a failed write aborts the export (T-130.4 F1-18)
 
 		for (int py = 0; py < H; py++)
 		{
@@ -208,15 +209,34 @@ class TBD_TerrainExportPlugin : WorkbenchPlugin
 				if (y > sampMax) sampMax = y;
 				buf += EncodeU16(y).ToString();
 				if (px < W - 1) buf += " ";
-				if (buf.Length() > FLUSH) { f.Write(buf); buf = ""; }
+				if (buf.Length() > FLUSH)
+				{
+					writeOk = TBD_ExportJson.Write(f, buf, "[TBD][DEM]");
+					if (!writeOk) break;
+					buf = "";
+				}
 			}
+			if (!writeOk)
+				break;
 			buf += "\n";
-			if (buf.Length() > FLUSH) { f.Write(buf); buf = ""; }
+			if (buf.Length() > FLUSH)
+			{
+				writeOk = TBD_ExportJson.Write(f, buf, "[TBD][DEM]");
+				if (!writeOk) break;
+				buf = "";
+			}
 			if (py % 256 == 0)
 				Print(string.Format("[TBD][DEM] row %1 / %2", py, H));
 		}
-		if (buf.Length() > 0) f.Write(buf);
+		if (writeOk && buf.Length() > 0)
+			writeOk = TBD_ExportJson.Write(f, buf, "[TBD][DEM]");
 		f.Close();
+		if (!writeOk)
+		{
+			FileIO.DeleteFile(OUT_RASTER);
+			Print("[TBD][DEM] ABORTED: raster write failed — partial raster deleted, meta not written.", LogLevel.ERROR);
+			return;
+		}
 		Print(string.Format("[TBD][DEM] raster written: %1 sampledMin=%2 sampledMax=%3", OUT_RASTER, sampMin, sampMax));
 
 		// --- Meta JSON ---
@@ -239,8 +259,14 @@ class TBD_TerrainExportPlugin : WorkbenchPlugin
 			mj += "  \"rasterFormat\": \"ascii-uint16-rows\",\n";
 			mj += "  \"anchors\": " + JsonAnchors(anchors) + "\n";
 			mj += "}\n";
-			mh.Write(mj);
+			bool metaOk = TBD_ExportJson.Write(mh, mj, "[TBD][DEM]");
 			mh.Close();
+			if (!metaOk)
+			{
+				FileIO.DeleteFile(OUT_META);
+				Print("[TBD][DEM] meta write failed — partial meta deleted (raster kept).", LogLevel.ERROR);
+				return;
+			}
 			Print("[TBD][DEM] meta written: " + OUT_META);
 		}
 

@@ -43,11 +43,10 @@ class TBD_SatelliteExportPlugin : WorkbenchPlugin
 
 	// ExportRasterization needs a REAL OS path - it does NOT resolve the Enfusion `$profile:` VFS
 	// prefix (FileIO does; that is why the JSON below writes fine but rc=32 "Could not open output
-	// file" earlier). Workbench runs under Proton, so `$profile:` == this Windows path in the prefix.
-	// We try several candidate forms in one run and keep the first that returns rc=0.
-	protected static const string PROFILE_WIN = "C:/Users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/";
-	protected static const string OUT_SPIKE   = "$profile:TBD_SatExport_spike.json"; // FileIO VFS - works
-	protected static const string OUT_META    = "$profile:TBD_SatExport_meta.json";
+	// file" earlier). The Proton-prefix path lives in TBD_ExportPaths.PROFILE_WIN (single source,
+	// T-130.4 F1-20). We try several candidate forms in one run and keep the first that returns rc=0.
+	protected static const string OUT_SPIKE = "$profile:TBD_SatExport_spike.json"; // FileIO VFS - works
+	protected static const string OUT_META  = "$profile:TBD_SatExport_meta.json";
 
 	// Rasterization tunables (sane defaults; mirror the SCR_WorldMapExportTool fields).
 	protected static const float SCALE_LAND        = 1.0;
@@ -106,9 +105,9 @@ class TBD_SatelliteExportPlugin : WorkbenchPlugin
 		// Try candidate OS paths until one opens (rc=0): Windows-abs file, dir (engine may name it
 		// <world>.tga), bare/relative. PROFILE_WIN maps to the native Proton prefix profile dir.
 		array<string> candidates = {};
-		candidates.Insert(PROFILE_WIN + "TBD_SatExport_everon.tga");
-		candidates.Insert(PROFILE_WIN);                // dir -> engine may write <world>.tga (Eden.tga)
-		candidates.Insert("TBD_SatExport_everon.tga"); // bare / working dir
+		candidates.Insert(TBD_ExportPaths.PROFILE_WIN + "TBD_SatExport_everon.tga");
+		candidates.Insert(TBD_ExportPaths.PROFILE_WIN); // dir -> engine may write <world>.tga (Eden.tga)
+		candidates.Insert("TBD_SatExport_everon.tga");  // bare / working dir
 
 		string attempts = "";
 		string winPath = "";
@@ -157,12 +156,12 @@ class TBD_SatelliteExportPlugin : WorkbenchPlugin
 		j += "{\n";
 		j += "  \"method\": \"mod-maprasterization-export\",\n";
 		j += "  \"spike\": " + spikeStr + ",\n";
-		j += "  \"worldPath\": \"" + WORLD_PATH + "\",\n";
+		j += "  \"worldPath\": \"" + TBD_ExportJson.Escape(WORLD_PATH) + "\",\n";
 		j += "  \"winRc\": " + winRc.ToString() + ",\n";
-		j += "  \"winPath\": \"" + winPath + "\",\n";
-		j += "  \"attempts\": \"" + attempts + "\",\n";
-		j += "  \"boundsMin\": \"" + bmin.ToString() + "\",\n";
-		j += "  \"boundsMax\": \"" + bmax.ToString() + "\",\n";
+		j += "  \"winPath\": \"" + TBD_ExportJson.Escape(winPath) + "\",\n";
+		j += "  \"attempts\": \"" + TBD_ExportJson.Escape(attempts) + "\",\n";
+		j += "  \"boundsMin\": \"" + TBD_ExportJson.Escape(bmin.ToString()) + "\",\n";
+		j += "  \"boundsMax\": \"" + TBD_ExportJson.Escape(bmax.ToString()) + "\",\n";
 		j += "  \"anchorY_4839_6620\": " + anchorY.ToString() + ",\n";
 		j += "  \"peakY_6400_6400\": " + peakY.ToString() + ",\n";
 		j += "  \"params\": {\n";
@@ -173,8 +172,10 @@ class TBD_SatelliteExportPlugin : WorkbenchPlugin
 		j += "    \"forestAreaIntensity\": " + FOREST_INTENSITY.ToString() + ", \"otherAreaIntensity\": " + OTHER_INTENSITY.ToString() + "\n";
 		j += "  }\n";
 		j += "}\n";
-		h.Write(j);
+		bool ok = TBD_ExportJson.Write(h, j, "[TBD][SAT]");
 		h.Close();
+		if (!ok)
+			return;
 		Print("[TBD][SAT] wrote " + outPath);
 	}
 }

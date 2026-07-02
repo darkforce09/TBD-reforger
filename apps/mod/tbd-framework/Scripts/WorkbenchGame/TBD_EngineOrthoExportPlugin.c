@@ -53,10 +53,9 @@ class TBD_EngineOrthoExportPlugin : WorkbenchPlugin
 	protected static const float LANDMARK_Z = 5661.0;
 
 	// MakeScreenshot needs a real OS path. Workbench runs under Proton, so `$profile:` maps to
-	// this native prefix dir (same lesson as TBD_SatelliteExportPlugin). Try VFS + native + bare;
-	// keep the first that returns true.
-	protected static const string PROFILE_WIN = "C:/Users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/";
-	protected static const string OUT_META    = "$profile:TBD_EngineOrtho_spike.json";
+	// the native prefix dir in TBD_ExportPaths.PROFILE_WIN (single source, T-130.4 F1-20; same
+	// lesson as TBD_SatelliteExportPlugin). Try VFS + native + bare; keep the first that returns true.
+	protected static const string OUT_META = "$profile:TBD_EngineOrtho_spike.json";
 
 	//------------------------------------------------------------------------------------------------
 	override void Run()
@@ -91,7 +90,7 @@ class TBD_EngineOrthoExportPlugin : WorkbenchPlugin
 		// --- Capture the current viewport (operator frames it top-down over the landmark) ---
 		// Try candidate OS paths until MakeScreenshot returns true. BMP is converted to PNG in Node.
 		array<string> candidates = {};
-		candidates.Insert(PROFILE_WIN + "TBD_EngineOrtho_everon.bmp");
+		candidates.Insert(TBD_ExportPaths.PROFILE_WIN + "TBD_EngineOrtho_everon.bmp");
 		candidates.Insert("$profile:TBD_EngineOrtho_everon.bmp"); // VFS - may or may not resolve for MakeScreenshot
 		candidates.Insert("TBD_EngineOrtho_everon.bmp");          // bare / working dir
 
@@ -133,16 +132,18 @@ class TBD_EngineOrthoExportPlugin : WorkbenchPlugin
 		j += "  \"method\": \"system-makescreenshot-viewport\",\n";
 		j += "  \"note\": \"P0 spike: perspective editor-viewport screenshot; NOT a 1 m/px north-up ortho (no orthographic-projection API exists). A/B vs SAP in Node.\",\n";
 		j += "  \"screenshotOk\": " + okStr + ",\n";
-		j += "  \"winPath\": \"" + winPath + "\",\n";
-		j += "  \"attempts\": \"" + attempts + "\",\n";
+		j += "  \"winPath\": \"" + TBD_ExportJson.Escape(winPath) + "\",\n";
+		j += "  \"attempts\": \"" + TBD_ExportJson.Escape(attempts) + "\",\n";
 		j += "  \"landmarkX\": " + LANDMARK_X.ToString() + ", \"landmarkZ\": " + LANDMARK_Z.ToString() + ",\n";
 		j += "  \"landmarkSurfaceYM\": " + landmarkY.ToString() + ",\n";
 		j += "  \"peakY_6400_6400\": " + peakY.ToString() + ",\n";
-		j += "  \"boundsMin\": \"" + bmin.ToString() + "\",\n";
-		j += "  \"boundsMax\": \"" + bmax.ToString() + "\"\n";
+		j += "  \"boundsMin\": \"" + TBD_ExportJson.Escape(bmin.ToString()) + "\",\n";
+		j += "  \"boundsMax\": \"" + TBD_ExportJson.Escape(bmax.ToString()) + "\"\n";
 		j += "}\n";
-		h.Write(j);
+		bool okw = TBD_ExportJson.Write(h, j, "[TBD][ENGO]");
 		h.Close();
+		if (!okw)
+			return;
 		Print("[TBD][ENGO] wrote " + outPath);
 	}
 }
