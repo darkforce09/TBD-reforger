@@ -325,15 +325,17 @@ export default function MissionCreatorPage() {
           <div className="flex justify-end gap-2">
             <button
               type="button"
-              onClick={() => editor.resolveConflict('server')}
-              className="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+              disabled={editor.resolvingConflict}
+              onClick={() => void editor.resolveConflict('server')}
+              className="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5 disabled:cursor-wait disabled:opacity-60"
             >
-              Load saved version
+              {editor.resolvingConflict ? 'Loading saved version…' : 'Load saved version'}
             </button>
             <button
               type="button"
-              onClick={() => editor.resolveConflict('local')}
-              className="rounded-md bg-primary/20 px-3 py-1.5 text-label-md text-primary transition-colors hover:bg-primary/30"
+              disabled={editor.resolvingConflict}
+              onClick={() => void editor.resolveConflict('local')}
+              className="rounded-md bg-primary/20 px-3 py-1.5 text-label-md text-primary transition-colors hover:bg-primary/30 disabled:opacity-60"
             >
               Keep local draft
             </button>

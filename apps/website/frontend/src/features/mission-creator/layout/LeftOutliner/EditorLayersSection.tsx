@@ -28,6 +28,17 @@ interface TreeDragPayload {
   id: ID
 }
 
+/** A folder delete awaiting user confirmation (T-127 U4): removeEditorLayer wipes the whole
+ *  subtree in one transaction, so a non-empty folder needs an explicit confirm first. */
+export interface FolderDeleteRequest {
+  id: ID
+  name: string
+  /** Nested subfolders inside the doomed subtree (excluding the folder itself). */
+  folderCount: number
+  /** Units filed anywhere in the subtree. */
+  unitCount: number
+}
+
 /** Above this many slots a folder/squad virtualizes its leaves (`virtualSlotIds`) instead of
  *  materializing per-slot `TreeNodeData` children — building 360k node objects (and rendering
  *  the rows) froze the tab (T-059 cap → T-064 virtualization). The same threshold is applied
@@ -79,6 +90,7 @@ export function useEditorLayersOutliner(md: MissionDoc) {
   const setSelection = useMapStore((s) => s.setSelection)
   const setActiveLayer = useMapStore((s) => s.setActiveLayer)
   const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<FolderDeleteRequest | null>(null)
 
   // slotsRevision: rebuild when slotsById is mutated in place (add/remove) without a ref change.
   const nodes = useMemo(
@@ -128,13 +140,47 @@ export function useEditorLayersOutliner(md: MissionDoc) {
     }
   }
 
-  const deleteFolder = (id: ID) => {
+  const performDeleteFolder = (id: ID) => {
     removeEditorLayer(md, id)
     // Drop a stale active-folder pointer so new placements fall back to the default layer.
     if (useMapStore.getState().activeLayerId === id) setActiveLayer(null)
     // The destructive delete likely removed selected units — clear the selection.
     if (useMapStore.getState().selection.kind !== 'none') setSelection({ kind: 'none', ids: [] })
   }
+
+  // Delete button → confirm first when the subtree holds anything (T-127 U4 / F4-01); an
+  // empty leaf folder deletes immediately. Mirrors removeEditorLayer's sole-layer no-op so
+  // the dialog can't promise a delete the ydoc guard would refuse.
+  const requestDeleteFolder = (id: ID) => {
+    const target = layersById[id]
+    if (!target || Object.keys(layersById).length <= 1) return
+    // Same parent-chain walk as removeEditorLayer, over the store mirror.
+    const all = Object.values(layersById)
+    const subtree = new Set<ID>([id])
+    for (let added = true; added;) {
+      added = false
+      for (const l of all) {
+        if (l.parentId && subtree.has(l.parentId) && !subtree.has(l.id)) {
+          subtree.add(l.id)
+          added = true
+        }
+      }
+    }
+    let unitCount = 0
+    for (const lid of subtree) unitCount += layersById[lid]?.entityIds.length ?? 0
+    const folderCount = subtree.size - 1
+    if (unitCount === 0 && folderCount === 0) {
+      performDeleteFolder(id)
+      return
+    }
+    setPendingDelete({ id, name: target.name, folderCount, unitCount })
+  }
+
+  const confirmPendingDelete = () => {
+    if (pendingDelete) performDeleteFolder(pendingDelete.id)
+    setPendingDelete(null)
+  }
+  const cancelPendingDelete = () => setPendingDelete(null)
 
   const renderRowActions = (id: ID): React.ReactNode => {
     const stop = (fn: () => void) => (e: React.MouseEvent) => {
@@ -160,7 +206,7 @@ export function useEditorLayersOutliner(md: MissionDoc) {
             aria-label="Delete folder"
             title="Delete folder"
             className={cn(btn, 'hover:text-error')}
-            onClick={stop(() => deleteFolder(id))}
+            onClick={stop(() => requestDeleteFolder(id))}
           >
             <Trash2 className="size-3" />
           </button>
@@ -201,5 +247,8 @@ export function useEditorLayersOutliner(md: MissionDoc) {
     onRenameCommit,
     onRenameCancel: () => setRenamingId(null),
     newFolder,
+    pendingDelete,
+    confirmPendingDelete,
+    cancelPendingDelete,
   }
 }

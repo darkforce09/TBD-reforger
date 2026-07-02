@@ -11,6 +11,7 @@ import { memo, useMemo, useState } from 'react'
 import { Boxes, History, ListTree, Layers, Settings2 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { useMapStore, type ID, type MissionDoc } from '@/features/tactical-map'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { overlayDocked } from '../overlay'
 import type { TreeNodeData } from '../tree/TreeView'
@@ -150,6 +151,45 @@ function LeftSidebarInner({ md, onActivateSlot }: LeftSidebarProps) {
           </button>
         ))}
       </nav>
+
+      {/* Destructive folder delete confirm (T-127 U4): removeEditorLayer wipes the whole
+          subtree in one transaction, so a non-empty folder must be confirmed first. */}
+      <Dialog
+        open={editor.pendingDelete != null}
+        onOpenChange={(open) => {
+          if (!open) editor.cancelPendingDelete()
+        }}
+      >
+        <DialogContent
+          title="Delete folder?"
+          description={
+            editor.pendingDelete
+              ? `“${editor.pendingDelete.name}” contains ${editor.pendingDelete.unitCount.toLocaleString()} unit${editor.pendingDelete.unitCount === 1 ? '' : 's'}` +
+                (editor.pendingDelete.folderCount > 0
+                  ? ` and ${editor.pendingDelete.folderCount.toLocaleString()} subfolder${editor.pendingDelete.folderCount === 1 ? '' : 's'}`
+                  : '') +
+                '. Deleting removes the whole subtree — one undo restores it.'
+              : undefined
+          }
+        >
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={editor.cancelPendingDelete}
+              className="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={editor.confirmPendingDelete}
+              className="rounded-md bg-error/20 px-3 py-1.5 text-label-md text-error transition-colors hover:bg-error/30"
+            >
+              Delete folder
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

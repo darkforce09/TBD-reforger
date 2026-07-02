@@ -20,6 +20,15 @@ import { countdownLabel, formatLocalDateTime, gameModeLabel, terrainLabel } from
 import type { EventHub, EventMissionDossier } from '@/types/api'
 import { cn } from '@/lib/utils'
 
+/** Surface the backend's 409 reason in ORBAT toasts (T-127 U5): "slot already taken" vs
+ *  "squad is reserved by a leader" call for different user reactions, so don't flatten
+ *  them into one generic failure line. Falls back when the error has no payload. */
+function apiErrorMessage(e: unknown, fallback: string): string {
+  const backend = (e as { response?: { data?: { error?: string } } }).response?.data?.error
+  if (!backend) return fallback
+  return backend.charAt(0).toUpperCase() + backend.slice(1)
+}
+
 // --- Event Hub -------------------------------------------------------------
 
 export function EventHubPage() {
@@ -392,7 +401,7 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
         toast.success('Registered for deployment')
         setSelectedSlot(null)
       },
-      onError: () => toast.error('Could not claim that slot'),
+      onError: (e) => toast.error(apiErrorMessage(e, 'Could not claim that slot')),
     })
   }
 
@@ -505,7 +514,8 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                           onClick={() =>
                             release.mutate(activeSquad.squad, {
                               onSuccess: () => toast.success('Squad released'),
-                              onError: () => toast.error('Could not release squad'),
+                              onError: (e) =>
+                                toast.error(apiErrorMessage(e, 'Could not release squad')),
                             })
                           }
                           disabled={release.isPending}
@@ -522,7 +532,8 @@ function OrbatSelector({ emid, myState }: { emid: string; myState?: string }) {
                         onClick={() =>
                           reserve.mutate(activeSquad.squad, {
                             onSuccess: () => toast.success(`Reserved ${activeSquad.squad}`),
-                            onError: () => toast.error('Could not reserve squad'),
+                            onError: (e) =>
+                              toast.error(apiErrorMessage(e, 'Could not reserve squad')),
                           })
                         }
                         disabled={reserve.isPending}
@@ -688,7 +699,7 @@ function AssignPicker({
                       toast.success(`Assigned ${m.username}`)
                       onClose()
                     },
-                    onError: () => toast.error('Could not assign member'),
+                    onError: (e) => toast.error(apiErrorMessage(e, 'Could not assign member')),
                   },
                 )
               }
