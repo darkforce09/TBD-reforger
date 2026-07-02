@@ -60,3 +60,62 @@ export function clearEditorSession(): void {
     /* ignore */
   }
 }
+
+// ---------------------------------------------------------------------------
+// Adopted-server marker (T-130.5 / F4-03 — closes the T-127 U1 new-tab gap).
+//
+// The warm sessionStorage record above is per-tab, so a NEW tab always cold-boots:
+// GET /missions/:id → local IndexedDB has content AND the server has a payload →
+// the conflict prompt fired even when the local copy IS the server version the user
+// just adopted (or saved). This marker records, in localStorage (cross-tab, survives
+// tab close), which server semver the local IndexedDB lineage derives from:
+//   - written on initial server hydrate, on "Load saved version", and on Save Version
+//   - cleared on "Keep local draft" (local now knowingly diverges → next cold boot
+//     must re-prompt, mirroring the pre-existing same-tab semantics)
+// A cold boot that finds marker.semver === the server's current semver trusts local
+// IDB silently — any delta is the user's own unsaved edits, not divergence. Semver is
+// the identity (unique per mission server-side); no payload hash — hashing a multi-MB
+// payload per boot costs more than the residual risk of a same-semver payload swap,
+// which the immutable versions API doesn't allow.
+
+const ADOPTED_KEY_PREFIX = 'tbd-editor-adopted:'
+
+interface AdoptedMarker {
+  semver: string
+  at: number
+}
+
+/** Record that local IndexedDB now derives from server version `semver`. */
+export function markServerVersionAdopted(missionId: string, semver: string | null): void {
+  try {
+    if (!semver) {
+      localStorage.removeItem(ADOPTED_KEY_PREFIX + missionId)
+      return
+    }
+    const marker: AdoptedMarker = { semver, at: Date.now() }
+    localStorage.setItem(ADOPTED_KEY_PREFIX + missionId, JSON.stringify(marker))
+  } catch {
+    /* storage disabled/full → cold boots fall back to the conflict prompt */
+  }
+}
+
+/** The server semver the local copy was adopted from, or null if none/unparseable. */
+export function readAdoptedServerVersion(missionId: string): string | null {
+  try {
+    const raw = localStorage.getItem(ADOPTED_KEY_PREFIX + missionId)
+    if (!raw) return null
+    const marker = JSON.parse(raw) as AdoptedMarker
+    if (typeof marker.semver !== 'string' || !marker.semver) return null
+    return marker.semver
+  } catch {
+    return null
+  }
+}
+
+export function clearAdoptedServerVersion(missionId: string): void {
+  try {
+    localStorage.removeItem(ADOPTED_KEY_PREFIX + missionId)
+  } catch {
+    /* ignore */
+  }
+}

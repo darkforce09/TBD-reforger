@@ -89,6 +89,7 @@ export function EventManagerPage() {
   const [attachOpen, setAttachOpen] = useState(false)
   // Frosted-glass create form (replaces the old form-beside-calendar layout).
   const [formOpen, setFormOpen] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   // Which existing operation on the selected day is targeted by Delete.
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
 
@@ -170,9 +171,16 @@ export function EventManagerPage() {
     }
   }
 
+  // Destructive confirm runs through the shared Aegis Dialog, not window.confirm
+  // (T-130.5 / F2F-07) — same pattern as the Mission Creator folder delete (T-127 U4).
   const handleDelete = () => {
     if (!selectedEventId) return
-    if (!window.confirm('Delete this operation? This cannot be undone.')) return
+    setConfirmDeleteOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (!selectedEventId) return
+    setConfirmDeleteOpen(false)
     deleteEvent.mutate(selectedEventId, {
       onSuccess: () => {
         toast.success('Operation deleted')
@@ -346,6 +354,32 @@ export function EventManagerPage() {
             )}
           </div>
         </div>
+
+        {/* Destructive confirm for operation delete (F2F-07) — Aegis Dialog, not window.confirm. */}
+        <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+          <DialogContent
+            title="Delete this operation?"
+            description="The operation, its attached missions' ORBATs, and all registrations are removed. This cannot be undone."
+          >
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmDeleteOpen(false)}
+                className="rounded-md border border-outline-variant/40 px-3 py-1.5 text-label-md text-on-surface-variant transition-colors hover:bg-white/5"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={deleteEvent.isPending}
+                className="rounded-md bg-error-alert/20 px-3 py-1.5 text-label-md text-error-alert transition-colors hover:bg-error-alert/30 disabled:opacity-60"
+              >
+                Delete operation
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Frosted create form — overlays the calendar, preserving context. */}
         <Dialog open={formOpen} onOpenChange={setFormOpen}>

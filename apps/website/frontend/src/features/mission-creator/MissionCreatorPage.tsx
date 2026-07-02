@@ -5,7 +5,7 @@
 // gives the editor the whole viewport.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   TacticalMap,
@@ -253,14 +253,6 @@ export default function MissionCreatorPage() {
           <BottomToolbelt />
         </div>
 
-        {editor.invalidMissionId && (
-          <div className="absolute left-1/2 top-14 -translate-x-1/2">
-            <p className="pointer-events-auto rounded-md border border-tactical-yellow/40 bg-tactical-yellow/15 px-3 py-1.5 text-label-sm normal-case text-tactical-yellow">
-              This editor URL needs a real mission id — create one from Mission Library first.
-            </p>
-          </div>
-        )}
-
         {import.meta.env.DEV && <FpsCounter />}
       </div>
 
@@ -297,6 +289,25 @@ export default function MissionCreatorPage() {
               </>
             )
           })()}
+        </div>
+      )}
+
+      {/* Invalid-id gate (T-130.5 / F4-07): a non-UUID :id can never save or export, so an
+          interactive editor here is a trap — hard-block the whole shell (above the load
+          overlay) and route the user back to the Mission Library. */}
+      {editor.invalidMissionId && (
+        <div className="pointer-events-auto absolute inset-0 z-40 flex flex-col items-center justify-center gap-3 bg-background/90 px-6 backdrop-blur-sm">
+          <p className="text-headline-sm text-on-surface">Invalid mission link</p>
+          <p className="max-w-sm text-center text-label-md text-on-surface-variant">
+            This editor URL isn’t a real mission id, so nothing placed here could be saved or
+            exported. Open a mission from the Mission Library, or create a new one there.
+          </p>
+          <Link
+            to="/missions"
+            className="rounded-md bg-primary/20 px-3 py-1.5 text-label-md text-primary transition-colors hover:bg-primary/30"
+          >
+            Open Mission Library
+          </Link>
         </div>
       )}
 

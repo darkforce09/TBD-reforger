@@ -23,7 +23,14 @@ import {
   type LoadProgress,
   type MissionDocHandle,
 } from './useMissionDoc'
-import { clearEditorSession, markEditorSessionReady, readWarmEditorSession } from './editorSession'
+import {
+  clearAdoptedServerVersion,
+  clearEditorSession,
+  markEditorSessionReady,
+  markServerVersionAdopted,
+  readAdoptedServerVersion,
+  readWarmEditorSession,
+} from './editorSession'
 import { flushSlots, saveSlotsFromDocDebounced } from '../persistence/slotChunkStore'
 import { flushMeta, saveMissionMetaFromDocDebounced } from '../persistence/missionMetaStore'
 // Compile + version-blob assembly run in a Web Worker (T-066); call sites below are unchanged.
@@ -169,6 +176,9 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
   const onSynced = useCallback(
     (md: MissionDoc, onLoadProgress?: (p: LoadProgress) => void) => {
       if (!missionId) return
+      // A non-UUID id can never exist on the API — skip the doomed GET (400) and its
+      // misleading "could not load" toast; the page hard-blocks the editor (T-130.5 F4-07).
+      if (!UUID_RE.test(missionId)) return
       // Warm session fast path (T-062.2): if THIS mission was marked ready earlier this tab
       // session (e.g. before an alt-tab HMR reload) and IndexedDB has already replayed its
       // content into the doc, skip the multi-MB GET entirely. Title/terrain/env are already
@@ -212,7 +222,13 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
             return
           }
           if (hasLocalContent(md)) {
-            setConflict(payload) // local edits + server version → prompt the user
+            // New-tab cold boot (T-130.5 F4-03): if local IndexedDB derives from exactly
+            // this server version (adopted via "Load saved version", initial hydrate, or
+            // our own save), any delta is the user's own unsaved edits — trust local
+            // silently, like the same-tab warm path, instead of re-prompting the conflict.
+            const adopted = readAdoptedServerVersion(missionId)
+            if (adopted && version?.semver && adopted === version.semver) return
+            setConflict(payload) // genuinely divergent local edits → prompt the user
           } else {
             // Empty local → adopt server. Chunked so a 300k payload reports the apply phase
             // and doesn't block; runs inside the still-open bulk window (one snapshot after).
@@ -220,6 +236,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
               onLoadProgress?.(applyPhase(d, t)),
             )
             applyMissionRowMeta(md, row) // row title wins (compile omits title from payload)
+            markServerVersionAdopted(missionId, version?.semver ?? null)
           }
         })
         .catch((e) => {
@@ -458,6 +475,9 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
             slotCount: useMapStore.getState().slotCount,
             currentSemver: semver,
           })
+          // Local state is now exactly this server version — a new-tab cold boot must not
+          // re-prompt the conflict against our own save (T-130.5 F4-03).
+          markServerVersionAdopted(missionId, semver)
         }
         return { ok: true, debug: { ...report } }
       } catch (e) {
@@ -558,6 +578,9 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
               slotCount: useMapStore.getState().slotCount,
               currentSemver,
             })
+            // Cross-tab marker (T-130.5 F4-03): a NEW tab's cold boot sees the local copy
+            // derives from this server semver and skips the conflict prompt.
+            markServerVersionAdopted(missionId, currentSemver)
           }
           if (mounted.current) setDirty(false)
         } catch (e) {
@@ -570,7 +593,12 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
           }
         }
       } else {
-        if (choice === 'local') setDirty(true) // local kept → differs from the server, unsaved
+        if (choice === 'local') {
+          setDirty(true) // local kept → differs from the server, unsaved
+          // The local copy now knowingly diverges from the server version — drop the
+          // adopted marker so the next cold boot re-prompts (T-130.5 F4-03).
+          if (missionId) clearAdoptedServerVersion(missionId)
+        }
         setConflict(null)
       }
     },
