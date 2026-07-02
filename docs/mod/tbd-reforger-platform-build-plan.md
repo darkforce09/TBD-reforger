@@ -3,6 +3,13 @@
 **Version:** 1.0 draft · **Scope:** Mission framework (Enfusion), web platform (mission wizard + slotting + payments), VON enhancement mod, admin tooling, infrastructure
 **Assumptions:** part-time community dev team, monetization approval already granted, console parity (Xbox/PS5) is a hard requirement, in-game VON only (no external voice client).
 
+> **Current status (2026-07-02, T-128):** this is the target design. The game-server REST
+> surface (`GET /api/missions/{id}/compiled`, `GET /api/events/{id}/roster`, and the rest of
+> §B7) is **not implemented in the current backend** — it existed only in the Phase-0 REST
+> spike, since removed. Building it for real is **T-092**
+> ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)).
+> The live backend serves `/api/v1` (web platform + `X-Service-Token` ingest only).
+
 ---
 
 ## 0. Design pillars
@@ -41,8 +48,8 @@ Every decision below traces back to five pillars. When in doubt, re-read these.
 
 **Key data flows**
 
-- **Mission publish → play:** Wizard saves Mission JSON → validation passes → stored with version hash → admin schedules event → game server starts with `missionId` in its config → TBD-Framework calls `GET /api/missions/{id}/compiled` at scenario load → spawner builds the world.
-- **Slot enforcement:** Player joins lobby → framework reads their platform identity → `GET /api/events/{id}/roster` → player sees only the slot they claimed on the site (plus open slots if the event allows walk-ins).
+- **Mission publish → play:** Wizard saves Mission JSON → validation passes → stored with version hash → admin schedules event → game server starts with `missionId` in its config → TBD-Framework calls `GET /api/missions/{id}/compiled` at scenario load (**T-092 — not yet live**) → spawner builds the world.
+- **Slot enforcement:** Player joins lobby → framework reads their platform identity → `GET /api/events/{id}/roster` (**T-092 — not yet live**) → player sees only the slot they claimed on the site (plus open slots if the event allows walk-ins).
 - **Telemetry:** Framework batches gameplay events (kills, captures, ticket changes, position samples) → `POST /api/telemetry` every N seconds → powers live dashboard and post-event AAR replay.
 - **Results:** Mission end → framework posts final score/winner/stats → event page updates automatically.
 - **Identity linking (one-time per player):** Site shows "link your game account" → player joins any TBD server → framework displays a 6-digit code in the lobby UI → player enters it on the site → backend binds site account ↔ Reforger identity ID.
@@ -165,7 +172,7 @@ The framework is one workshop mod containing a generic game mode plus per-terrai
 
 ### A2. Mission loader
 
-- Read order: (1) `missionId` from server config/startup parameter → (2) `GET {backend}/api/missions/{id}/compiled` with a per-server bearer token → (3) on failure, fall back to `$profile/missions/{id}.json` → (4) on failure, refuse to leave `LOADING` and print a loud error for admins.
+- Read order: (1) `missionId` from server config/startup parameter → (2) `GET {backend}/api/missions/{id}/compiled` with a per-server bearer token (**T-092 — backend route not yet live**; the loader falls through today) → (3) on failure, fall back to `$profile/missions/{id}.json` → (4) on failure, refuse to leave `LOADING` and print a loud error for admins.
 - Parse into strongly-typed mission model classes (one class per schema section). Validate hard: unknown alias, zone outside terrain bounds, role counts ≤ 0 → abort with explicit log lines, never "best effort" — a half-spawned event mission is worse than no mission.
 - Cache the fetched JSON to `$profile` with its hash so a mid-event server restart can reload identically even if the backend is down.
 
@@ -284,6 +291,8 @@ This is the product. Budget UI/UX time accordingly.
 - This is the feature that replaces the voice recording you gave up with in-game VON — make replays shareable (public URL per event) because they're also your best marketing asset.
 
 ### B7. API surface (initial)
+
+> **T-092 — none of these game-server routes exist in the current backend yet** (the Phase-0 spike that served the first two was removed).
 
 | Endpoint | Auth | Purpose |
 |---|---|---|

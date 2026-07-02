@@ -163,7 +163,7 @@ interface CreateMissionDialogProps {
 
 - Delete `missions/create` from [`router.tsx`](../../../apps/website/frontend/src/router.tsx).
 - Remove `MissionCreatorPage` import from router (pages export).
-- Direct navigation to `/missions/create` → app catch-all / 404 (verify [`not-found`](../../../apps/website/frontend/src/pages/not-found.tsx) behavior).
+- Direct navigation to `/missions/create` → app catch-all / 404 (verify [`not-found`](../../../apps/website/frontend/src/pages/utility.tsx) behavior).
 
 ### Sidebar
 
@@ -287,15 +287,15 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
-| [`docs/website/frontend/pages/mission-library.md`](../../../website/frontend/pages/mission-library.md) | Status → `doc-complete`; M3/M4 milestones checked |
-| [`docs/website/frontend/shell/sidebar.md`](../../../website/frontend/shell/sidebar.md) | Check off T-048 milestone |
+| [`docs/website/frontend/pages/mission-library.md`](../../website/frontend/pages/mission-library.md) | Status → `doc-complete`; M3/M4 milestones checked |
+| [`docs/website/frontend/shell/sidebar.md`](../../website/frontend/shell/sidebar.md) | Check off T-048 milestone |
 | [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) | Move T-048 from IN PROGRESS → DONE shipped table |
 | [`docs/specs/.../ROADMAP.md`](ROADMAP.md) | Move T-048 from IN PROGRESS → DONE (or remove IN PROGRESS block) |
 | [`t048_library_create_dialog.md`](t048_library_create_dialog.md) | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-048 Done bullet; bump latest-feature line |
 | [`agent_execution.md`](agent_execution.md) | **Update stale `/missions/create` refs** in repository map (lines ~92, ~151), phase table (~207), DEFERRED table (~448) — Decisions log already correct |
-| [`docs/website/frontend/TRACKING.md`](../../../website/frontend/TRACKING.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
-| [`.cursor/rules/tbd-documentation.mdc`](../../.cursor/rules/tbd-documentation.mdc) | Create Cursor rule (optional but recommended) |
+| [`docs/website/frontend/TRACKING.md`](../../website/frontend/TRACKING.md) | Points to `docs/TICKET_LEAD.md`; mission editor doc lives under `pages/mission-editor.md` |
+| `.cursor/rules/tbd-documentation.mdc` (gitignored — local only) | Create Cursor rule (optional but recommended) |
 | [`docs/backend/architecture.md`](../../website/backend/architecture.md) | Optional: "Mission Creator wizard" → "Library create dialog" (line ~547) |
 
 **Do not update:** archive stitch HTML, Eden wiki artifacts, historical T-034/T-039 bullets in CLAUDE.
@@ -323,6 +323,6 @@ Docs are PRE-STAGED — do not revert target-state docs; FINALIZE per spec §Doc
 
 ## Related
 
-- Surface spec (target): [`docs/website/frontend/pages/mission-library.md`](../../../website/frontend/pages/mission-library.md)
+- Surface spec (target): [`docs/website/frontend/pages/mission-library.md`](../../website/frontend/pages/mission-library.md)
 - Frontend ROADMAP: [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md)
 - MC ROADMAP: [`ROADMAP.md`](ROADMAP.md)

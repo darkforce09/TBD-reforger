@@ -15,7 +15,7 @@ Replace mock Factions catalog with `GET /registry` → tree builder → existing
 
 ## Problem (historical)
 
-Previously [`AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx) imported static [`assetCatalogMock.ts`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/assetCatalogMock.ts) (fake ids). **Fixed @ T-068.3** — live `GET /registry` feed.
+Previously [`AssetBrowser.tsx`](../../../apps/website/frontend/src/features/mission-creator/layout/RightInspector/AssetBrowser.tsx) imported static `assetCatalogMock.ts` (deleted by this ticket) (fake ids). **Fixed @ T-068.3** — live `GET /registry` feed.
 
 ---
 

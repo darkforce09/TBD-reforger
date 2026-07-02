@@ -10,7 +10,7 @@
 
 Product goal: when you open the Mission Creator map, you should see **enough world context** to place units and objectives confidently — similar to **Bohemia Eden Editor (Arma 3 / Reforger Workbench)**. This doc captures what Eden does well, what it does poorly, and how T-090 slices map to parity.
 
-**Not in scope for T-090:** building **floor selector** (which floor am I editing?) — deferred to **T-126** (`idea`).
+**Not in scope for T-090:** building **floor selector** (which floor am I editing?) — deferred to **T-129** (`idea`).
 
 ---
 
@@ -36,7 +36,7 @@ Product goal: when you open the Mission Creator map, you should see **enough wor
 | **Clutter @ high zoom** | Too many similar icons; hard to pick one prop | Typed labels + filter by category; spatial index pick (T-063) |
 | **Z ambiguity** | Objects float or bury; hard to see without 3D view | **T-090.4** pivot screen + **T-090.6** OBB “visible above ground %” @ 1M objects (no manual verify) |
 | **Performance** | Large maps stutter with all objects visible | Viewport cull + LOD (**T-112** idea); mission slots separate from world base (**T-110**) |
-| **No floor slice** | Multi-story buildings edit as one blob | **T-126** future — explicit out of T-090 |
+| **No floor slice** | Multi-story buildings edit as one blob | **T-129** future — explicit out of T-090 |
 
 ---
 

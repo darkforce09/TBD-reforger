@@ -2,7 +2,7 @@
 
 **Updated:** 2026-06-30 · **Executor:** claude-code · **Commit on:** `main`
 
-**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)
+**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)
 
 ---
 
@@ -18,14 +18,14 @@ Enumeration proven on real Everon. Ops log: [`.ai/artifacts/map_export_everon.js
 
 Harness: `scripts/map-assets/verify-spike-*.mjs`, `verify-spike-all.sh`, `TBD_TerrainWorldExportPlugin.c`
 
-**Infra:** MCP shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../docs/mod/MCP_TOOLING.md). Use `mcp-call.sh` for Workbench probes (no raw JSON-RPC workaround).
+**Infra:** MCP shell tooling hardened @ `e7e7232` — [`docs/mod/MCP_TOOLING.md`](../../docs/mod/MCP_TOOLING.md). Use `mcp-call.sh` for Workbench probes (no raw JSON-RPC workaround).
 
 ---
 
 ## Active slice: T-090.1 — Satellite basemap
 
 **Handoff:** [`.ai/artifacts/t090_1_claude_code_handoff.md`](t090_1_claude_code_handoff.md)  
-**Spec:** [`t090_1_aligned_basemap.md`](../docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md)
+**Spec:** [`t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) *(planned `t090_1_aligned_basemap.md` was never created — superseded by the program hub)*
 
 ### Blocker chain
 

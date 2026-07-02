@@ -152,7 +152,7 @@ Techniques: viewport cull, kind-specific LOD, worker parse, **T-112** GPU cull (
 ## Out of scope
 
 - Editing/moving world objects in MC — **Workbench only** (read-only context). Hover/inspect/filter/legend ship in **T-090.9** ([`t090_9_world_object_interaction.md`](t090_9_world_object_interaction.md)) — not deferred.
-- Floor selector (**T-126**)
+- Floor selector (**T-129**)
 - T-110 binary base + mission deltas @ millions
 
 ---

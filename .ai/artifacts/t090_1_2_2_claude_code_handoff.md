@@ -2,7 +2,7 @@
 
 **Slice:** T-090.1.2.2 · **Executor:** claude-code · **Branch:** `ticket/T-090`  
 **Parent shipped:** T-090.1.2.1 @ `19bc785` (lossless VP8L z0–6, 299M LFS)  
-**Spec (ONLY source of truth):** [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md)
+**Spec (ONLY source of truth):** [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md)
 
 ---
 

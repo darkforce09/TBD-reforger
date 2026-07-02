@@ -1,12 +1,12 @@
-# Fable audit — operator resume (ONLY active work)
+# Fable audit — operator resume (PROGRAM COMPLETE)
 
-**Do not start T-090.1.2.8, T-068, or anything else until T-126 → T-127 → T-128 are done.**
+**T-126 ✓ → T-127 ✓ → T-128 ✓ (2026-07-02).** Normal queue resumes at **T-090.1.2.8**.
 
 | Doc | Purpose |
 |-----|---------|
-| Hub | [`docs/platform/FABLE_5_AUDIT_PROGRAM.md`](../docs/platform/FABLE_5_AUDIT_PROGRAM.md) |
+| Hub | [`docs/platform/FABLE_5_AUDIT_PROGRAM.md`](../../docs/platform/FABLE_5_AUDIT_PROGRAM.md) |
 | Living tracker | [`.ai/artifacts/fable_5_omni_audit_report.md`](fable_5_omni_audit_report.md) |
-| Send-off | [`.ai/artifacts/t127_SEND_TO_CLAUDE.md`](t127_SEND_TO_CLAUDE.md) |
+| T-128 log | [`.ai/artifacts/t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md) |
 
 ---
 
@@ -14,35 +14,25 @@
 
 Security S1–S6 · verify [`.ai/artifacts/t126_verify_log.md`](t126_verify_log.md)
 
----
+## Done: T-127 (MC UX, `ticket/T-127` worktree)
 
-## Now: T-127 (MC UX) ← **YOU ARE HERE**
+U1–U4 (+ U5 stretch) · verify `t127_verify_log.md` · tracker rows flip on its merge
 
-```bash
-git pull
-./scripts/ticket brief T-127
-./scripts/ticket prompt T-127
-```
+## Done: T-128 (docs, `ticket/T-128` worktree, tag **T-128**)
 
-| ID | Fix | Tracker |
-|----|-----|---------|
-| **U1** | Conflict “Load server” → persist to IDB | F2F-03, F4-03 |
-| **U2** | Export compile errors → toast | F2F-04, F4-05 |
-| **U3** | `map` basemap → coerce satellite / degrade toast | F2F-05, F4-02 |
-| **U4** | Folder delete → Aegis confirm | F4-01 |
-| **U5** | *(stretch)* ORBAT 409 message mapping | F2F-06, F4-06 |
-
-**Verify:** `cd apps/website/frontend && npm run build && npm run lint`  
-**Ship:** tag **T-127** · `t127_verify_log.md` · **"doc sync for T-127"**
+Handoff link depths, staging T-092 honesty, README rewrites, orphan tree deleted, floor picker → T-129, living tracker updated. Log: [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md)
 
 ---
 
-## Then: T-128 (Cursor)
+## Merge order (operator)
 
-**"ship T-128"** — handoff link depths, staging honesty, README rot, living tracker §5
+1. Merge `ticket/T-127` → `main`.
+2. Merge `ticket/T-128` → `main` — `registry.json` conflict expected: keep T-127's row from main + T-128/T-090 rows from this branch.
+3. On main: `./scripts/ticket sync && ./scripts/ticket check` · `rmdir apps/website/internal/handlers/missions` (untracked empty dir).
+4. `./scripts/ticket prompt T-090` → **T-090.1.2.8** unified satellite texture.
 
 ---
 
-## Paused
+## Resumed
 
-T-090.1.2.8 · T-068 Phase 2 · map / spawn / arsenal queues
+T-090.1.2.8 (**next**) · T-068 Phase 2 (still map/ORBAT-gated per its program) · map / spawn / arsenal queues per [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md)

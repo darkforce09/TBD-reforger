@@ -283,7 +283,7 @@ If >45 min total, run inter-object on subset only.
 
 - Full mesh CSG / boolean operations
 - Real-time editor “select object → highlight buried verts” (future UX)
-- Building floor slicing (**T-126**)
+- Building floor slicing (**T-129**)
 
 ---
 

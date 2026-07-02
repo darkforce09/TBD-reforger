@@ -2,7 +2,7 @@
 
 **Slice:** T-090.1.2.4 · **Executor:** claude-code · **Branch:** `ticket/T-090`  
 **Parent shipped:** T-090.1.2.2 @ `a3efdf6` (SAP apron-bridge — ticket goal met; 110% not met)  
-**Spec (authority):** [`docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md)
+**Spec (authority):** [`docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md)
 
 ---
 

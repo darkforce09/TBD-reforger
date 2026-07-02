@@ -1,7 +1,7 @@
 # T-128 — Fable audit doc link repair + staging honesty
 
-**Ticket:** T-128 · **Executor:** cursor-docs · **Status:** **READY** (after **T-127**)  
-**Git tag on ship:** **T-128**  
+**Ticket:** T-128 · **Executor:** cursor-docs · **Status:** **SHIPPED** @ tag **T-128** (2026-07-02, branch `ticket/T-128` — merge after T-127)  
+**Git tag on ship:** **T-128** · **Log:** [`.ai/artifacts/t128_doc_link_repair_log.md`](../../.ai/artifacts/t128_doc_link_repair_log.md)  
 **Authority:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §5 · [`FABLE_5_AUDIT_PROGRAM.md`](FABLE_5_AUDIT_PROGRAM.md)
 
 ---

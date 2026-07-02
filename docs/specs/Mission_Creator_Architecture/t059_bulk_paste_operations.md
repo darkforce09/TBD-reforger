@@ -126,7 +126,7 @@ export function runBulk(md, fn) { bulkDepth++; try { fn() } finally { bulkDepth-
 | [`feature_inventory.md`](feature_inventory.md) | ACTION-PASTE bulk row or amend KEY-COPY-001 |
 | [`agent_execution.md`](agent_execution.md) | Decisions log; ACTIVE SLICE → **T-060.1.1** |
 | [`docs/TAGS.md`](../../website/TAGS.md) | T-059 shipped row |
-| [`mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | M3.14 milestone; PERF-002 bulk paste |
+| [`mission-editor.md`](../../website/frontend/pages/mission-editor.md) | M3.14 milestone; PERF-002 bulk paste |
 
 ---
 

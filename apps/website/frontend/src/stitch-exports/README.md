@@ -5,4 +5,4 @@
 
 Historical HTML from the Stitch design phase. Do not implement from `code.html`.
 
-See [`docs/archive/README.md`](../../../docs/archive/README.md).
+See [`docs/archive/README.md`](../../../../../docs/website/archive/README.md).

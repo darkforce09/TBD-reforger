@@ -1,25 +1,25 @@
-# Fable 5 audit remediation program
+# Fable 5 audit remediation program — COMPLETE
 
-**ONLY ACTIVE WORK** — finish **T-126 → T-127 → T-128** before anything else (no parallel T-090 / map slices).
+**Program complete (2026-07-02)** — T-126 ✓ → T-127 ✓ (parallel worktree) → T-128 ✓. Normal queue resumes at **T-090.1.2.8** / [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
 
-**Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — **living tracker** (remediation index + inline status; update on each ship)
+**Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — **living tracker** (remediation index + inline status; remaining OPEN/DEFERRED findings tracked there)
 
-**Execution order (strict — one at a time):**
+**Execution order (as run):**
 
 ```text
-1. T-126  Security + auth follow-up     (claude-code)  ✓ shipped @ 4a47688e
-2. T-127  Mission Creator UX fixes      (claude-code)  ← YOU ARE HERE
-3. T-128  Doc link repair + staging honesty (cursor-docs) — after T-127 ships
-— then resume T-090.1.2.8 (satellite) / T-068 / TICKET_LEAD
+1. T-126  Security + auth follow-up          (claude-code)  ✓ shipped @ 4a47688e
+2. T-127  Mission Creator UX fixes           (claude-code)  ✓ shipped (ticket/T-127 worktree)
+3. T-128  Doc link repair + staging honesty  (cursor-docs)  ✓ shipped (ticket/T-128 worktree, tag T-128)
+— RESUMED: T-090.1.2.8 (satellite) / T-068 / TICKET_LEAD
 ```
 
-**Paused until this program completes:**
+**Unpaused (program done):**
 
 | Ticket | What |
 |--------|------|
-| **T-090.1.2.8** | Unified GPU satellite texture |
-| **T-068** Phase 2 | Virtual Arsenal |
-| Everything else | See [`docs/TICKET_LEAD.md`](../docs/TICKET_LEAD.md) |
+| **T-090.1.2.8** | Unified GPU satellite texture — **next up** |
+| **T-068** Phase 2 | Virtual Arsenal (still gated on map/ORBAT, per its own program) |
+| Everything else | See [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) |
 
 **Not in Fable program (later):**
 
@@ -34,19 +34,19 @@
 
 ---
 
-## Operator quick start
+## Operator quick start (post-program)
 
 ```bash
 git pull && git lfs pull
-./scripts/ticket brief T-127
-./scripts/ticket prompt T-127    # paste into Claude Code — ONLY this until T-127 ships
+# Merge order: T-127 worktree → main, then T-128 worktree → main (resolve registry.json
+# by keeping T-127's row from main + T-128/T-090 rows from ticket/T-128), then:
+./scripts/ticket sync && ./scripts/ticket check
+./scripts/ticket prompt T-090    # next: T-090.1.2.8 unified satellite texture
 ```
 
-Send-off: [`.ai/artifacts/t127_SEND_TO_CLAUDE.md`](../../.ai/artifacts/t127_SEND_TO_CLAUDE.md)
-
 **T-126** shipped @ `4a47688e` (tag **T-126**).  
-**T-127** active — MC UX U1–U4 (+ U5 stretch).  
-After **T-127** ships → **"doc sync for T-127"** → Cursor ships **T-128**
+**T-127** shipped (MC UX U1–U4 + U5 stretch, `ticket/T-127` worktree).  
+**T-128** shipped (tag **T-128**, `ticket/T-128` worktree) — log [`t128_doc_link_repair_log.md`](../../.ai/artifacts/t128_doc_link_repair_log.md)
 
 One-pager: [`.ai/artifacts/fable_audit_operator_resume.md`](../../.ai/artifacts/fable_audit_operator_resume.md)
 
@@ -57,5 +57,5 @@ One-pager: [`.ai/artifacts/fable_audit_operator_resume.md`](../../.ai/artifacts/
 | ID | Status | Spec | Executor |
 |----|--------|------|----------|
 | **T-126** | shipped @ `4a47688e` | [`t126_audit_security_followup.md`](t126_audit_security_followup.md) | claude-code |
-| **T-127** | **active** | [`t127_mc_ux_audit_fixes.md`](t127_mc_ux_audit_fixes.md) | claude-code |
-| **T-128** | queued | [`t128_doc_link_repair.md`](t128_doc_link_repair.md) | cursor-docs |
+| **T-127** | shipped (`ticket/T-127`) | [`t127_mc_ux_audit_fixes.md`](t127_mc_ux_audit_fixes.md) | claude-code |
+| **T-128** | shipped (tag `T-128`) | [`t128_doc_link_repair.md`](t128_doc_link_repair.md) | cursor-docs |

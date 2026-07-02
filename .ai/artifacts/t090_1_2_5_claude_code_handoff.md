@@ -2,8 +2,8 @@
 
 **Slice:** T-090.1.2.5 · **Executor:** claude-code  
 **Depends on:** T-090.1.2.2 shipped (seam-fixed ortho preferred) · T-090.1.2.1 @ `19bc785`  
-**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md)  
-**Resume guide:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md)
+**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md)  
+**Resume guide:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md)
 
 ## Problem
 

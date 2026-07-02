@@ -146,7 +146,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-052 bullet + bump `latest feature work` line |
 | [`docs/TAGS.md`](../../website/TAGS.md) | T-052 row (planned → shipped) |
-| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Element #2 note keyboard undo/redo; **Behavior → Keyboard** subsection; M3.7 milestone `[x]` |
+| [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Element #2 note keyboard undo/redo; **Behavior → Keyboard** subsection; M3.7 milestone `[x]` |
 | [`feature_inventory.md`](feature_inventory.md) | TOP-UNDO-001 / TOP-REDO-001 edge cases + acceptance; KEY-UNDO-001 → **working** |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row **Undo keyboard (T-052)** |
 | [`ROADMAP.md`](ROADMAP.md) | Move **PLANNED T-052** → **DONE T-052**; line ~80 note keyboard undo |

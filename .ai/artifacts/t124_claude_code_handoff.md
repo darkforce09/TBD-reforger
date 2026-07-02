@@ -1,7 +1,7 @@
 # T-124 — Claude Code handoff (slices .1–.3)
 
 **Status:** **shipped @ `cd11db0`** (historical — preserved for replay)  
-**Spec:** [`docs/platform/t124_dependency_upgrade.md`](../docs/platform/t124_dependency_upgrade.md)
+**Spec:** [`docs/platform/t124_dependency_upgrade.md`](../../docs/platform/t124_dependency_upgrade.md)
 
 ## Shipped summary
 

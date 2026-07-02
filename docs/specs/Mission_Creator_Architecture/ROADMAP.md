@@ -33,7 +33,7 @@
 | **T-090.2–.9** typed world objects + **forests (.8)** + **interaction (.9)** → export → Z audit → Deck-zoom render | **T-068.7+** loadout Phase 2 |
 | **T-092** mod mission compile (ready) | |
 | **Shipped** | **T-090.0** + **T-090.0.1** + **T-090.0.2** (map-object schemas + goldens + verify) · **T-091** @ `dde589e` |
-| **Deferred idea** | **T-126** building floor selector (not T-090) |
+| **Deferred idea** | **T-129** building floor selector (not T-090) |
 
 **T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.
 
@@ -148,9 +148,9 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 | **[`t050_cursor_z_readout.md`](t050_cursor_z_readout.md)** | **T-050** — Cursor Z readout (shipped) |
 | **[`t049_terrain_title_position.md`](t049_terrain_title_position.md)** | **T-049** — Terrain + title hydrate + numeric position (shipped) |
 | **[`t048_library_create_dialog.md`](t048_library_create_dialog.md)** | T-048 — Library create dialog (shipped) |
-| [`docs/website/frontend/pages/mission-library.md`](../../../website/frontend/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
-| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
-| [`docs/website/frontend/pages/mission-creator.md`](../../../website/frontend/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
+| [`docs/website/frontend/pages/mission-library.md`](../../website/frontend/pages/mission-library.md) | Surface spec for `/missions` (+ create dialog T-048) |
+| [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Surface spec for `/missions/:id/edit` |
+| [`docs/website/frontend/pages/mission-creator.md`](../../website/frontend/pages/mission-creator.md) | Archived — wizard moved into library (T-048) |
 | **[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)** | **T-068** — Virtual Arsenal program hub (**Phase 1 shipped**; active **T-068.7**) |
 | [`t068_5_1_visual_equip_fix.md`](t068_5_1_visual_equip_fix.md) | **T-068.5.1 shipped** — visual wear on test NPC @ `b233b11` |
 | [`t068_6_phase1_e2e_gate.md`](t068_6_phase1_e2e_gate.md) | **T-068.6 shipped** — Phase 1 E2E sign-off PASS @ 2026-06-27 |
@@ -320,7 +320,7 @@ Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_prog
 | **Satellite / Map basemap views** | **T-090.1** Satellite + **T-090.1.1** Map — **queued** (after T-090.3.0 spike) | Procedural grid + hillshade today; dual WebP pyramids pending export (**T-090.3**). [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
 | **Typed world objects** (roads, trees, buildings on map) | **T-090.2–.5** — spec ready | Taxonomy → Workbench export → Z audit → Deck layers. Eden UX ref: [`t090_eden_map_reference.md`](t090_eden_map_reference.md). |
 | **Z burial / floating props** | **T-090.4** + **T-090.6** — automated @ 1M | Phase A: pivot vs DEM. Phase B: OBB samples + `visibleAboveGroundPct` (no manual verify). |
-| **Building floor selector** | **T-126** — idea | Explicit out of T-090 scope. |
+| **Building floor selector** | **T-129** — idea | Explicit out of T-090 scope. |
 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
 | **Mod spawn parity** (x/z/y/headingDeg) | **T-092** — queued | Compiler emits `editor.slots` only today — no mod `slots[]`. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |

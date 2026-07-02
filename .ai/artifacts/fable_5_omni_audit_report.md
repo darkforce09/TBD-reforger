@@ -5,7 +5,7 @@
 
 **Original audit baseline:** read-only pass @ `main` `a3efdf68` (2026-07-01). Severity: **CRITICAL** / **HIGH** / **MED** / **LOW**. EnforceScript (`.c`) plugins audited as Enfusion script, not C++.
 
-**Last tracker update:** 2026-06-26 — **T-126** shipped @ `4a47688e` (tag **T-126**); **T-127** active.
+**Last tracker update:** 2026-07-02 — **T-128** shipped (tag **T-128**, branch `ticket/T-128` — merge after T-127): doc link repair + staging honesty; log [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md). **Fable program complete** once T-127 + T-128 merge.
 
 ---
 
@@ -13,13 +13,14 @@
 
 | Status | Count | Meaning |
 |--------|------:|---------|
-| **RESOLVED** | 6 | Shipped in **T-126** (S1–S6) @ `4a47688e` |
+| **RESOLVED** | 17 | **T-126** (S1–S6) @ `4a47688e` + **T-128** (F1-05, F2B-10, F2C-02 docs-half, F2C-05, F5-01…F5-07) |
 | **ACTIVE** | 8 | Assigned to **T-127** (U1–U5) — MC UX |
-| **QUEUED** | ~40+ | **T-128** (docs/links/staging) or ticket named in table |
+| **QUEUED** | 0 | — (T-128 batch shipped; leftovers reclassified OPEN) |
 | **DEFERRED** | ~15 | Out of Fable program (**T-092**, **T-090.x**, future, T-122 carry-over) |
+| **OPEN** | ~20 | Unassigned (Discord 429, archive/delete, CI scope, misc LOW, F2C-04 note) |
 | **OK** | 12 | Verified clean at audit time — no action |
 
-**Fable program order:** T-126 ✓ → **T-127** (now) → **T-128** → resume T-090 / T-068.
+**Fable program order:** T-126 ✓ → **T-127** (parallel worktree) → **T-128 ✓** → resume T-090.1.2.8 / T-068.
 
 ### By ticket
 
@@ -27,7 +28,7 @@
 |--------|--------|-------|
 | **T-126** | **shipped** @ `4a47688e` | S1–S6 security + auth (verify [t126_verify_log.md](t126_verify_log.md)) |
 | **T-127** | **active** | U1–U4 required; U5 stretch — MC UX |
-| **T-128** | queued | §5 doc rot, staging honesty, handoff link depths, orphans |
+| **T-128** | **shipped** (tag **T-128**) | §5 doc rot, staging honesty, handoff link depths, orphans — log [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md) |
 | **T-092** | deferred | Mod REST `/compiled`, roster, mission canonical envelope, spawn/yaw |
 | **T-090.1.1** | deferred | Map tile pyramid (pairs with U3 basemap coerce) |
 | **T-090.3** | deferred | Building export `headingDeg` field names |
@@ -44,7 +45,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F1-02 | 1 | HIGH | Mod `Authorization: Bearer` vs backend `X-Service-Token` | T-092 | DEFERRED |
 | F1-03 | 1 | HIGH | Mission list envelope/casing mismatch | T-092 | DEFERRED |
 | F1-04 | 1 | HIGH | `GET /api/game/events/{id}/roster` — no route | T-092 | DEFERRED |
-| F1-05 | 1 | MED | `rest-spike-0.1.md` links deleted handlers | T-128 | QUEUED |
+| F1-05 | 1 | MED | `rest-spike-0.1.md` links deleted handlers | T-128 | **RESOLVED** |
 | F1-06 | 1 | MED | Spawn heading matrix sign vs compass semantics | T-092 | DEFERRED |
 | F1-07 | 1 | MED | TerrainWorld export swapped yaw/pitch field names | T-090.3 | DEFERRED |
 | F1-08 | 1 | HIGH | Everon manifest advertises `map` tiles; disk has satellite only | T-090.1.1 · U3 | DEFERRED · ACTIVE |
@@ -73,7 +74,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2B-07 | 2 | LOW | `missions.go` Count error ignored | — | OPEN |
 | F2B-08 | 2 | LOW | `buildMissionDoc` silent empty export on load fail | — | OPEN |
 | F2B-09 | 2 | LOW | Refresh token rows never purged | — | OPEN |
-| F2B-10 | 2 | LOW | Empty `handlers/missions/` stray dir | T-128 P3 | QUEUED |
+| F2B-10 | 2 | LOW | Empty `handlers/missions/` stray dir | T-128 P3 | **RESOLVED** (untracked dir — `rmdir` in main checkout; see T-128 log) |
 | F2B-11 | 2 | LOW | In-memory ratelimit prefix match footgun | — | OPEN |
 | F2B-12 | 2 | — | Handler envelopes, bodylimit, SSE, inject path | — | OK |
 | F2F-01 | 2 | MED | 401-retry dropped rotated refresh token | **T-126 S5** | **RESOLVED** |
@@ -85,10 +86,10 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2F-07 | 2 | LOW | `admin.tsx` uses `window.confirm` vs Aegis Dialog | — | OPEN |
 | F2F-08 | 2 | — | TS strictness, compile order, tile math, mutations | — | OK |
 | F2C-01 | 2 | — | Registry / loadout / editor-payload chains in sync | — | OK |
-| F2C-02 | 2 | HIGH | Game-server chain: no canonical `mission.json` producer; staging docs assert live routes | T-092 · T-128 | DEFERRED · QUEUED |
+| F2C-02 | 2 | HIGH | Game-server chain: no canonical `mission.json` producer; staging docs assert live routes | T-092 · T-128 | DEFERRED · **RESOLVED** (docs now mark gates BLOCKED on T-092; producer itself stays T-092) |
 | F2C-03 | 2 | MED | InjectMission path vs mod `$profile:` id/filename mismatch | T-092 | DEFERRED |
-| F2C-04 | 2 | MED | `ticket brief` prints branch vs main-only policy | T-128 P4 | QUEUED |
-| F2C-05 | 2 | LOW | Stale `apps/website/frontend/docs/` duplicate tree | T-128 P3 | QUEUED |
+| F2C-04 | 2 | MED | `ticket brief` prints branch vs main-only policy | — | OPEN (policy now hybrid — parallel tickets use `ticket/T-0xx` worktrees; script text out of T-128 scope) |
+| F2C-05 | 2 | LOW | Stale `apps/website/frontend/docs/` duplicate tree | T-128 P3 | **RESOLVED** (tree deleted) |
 | F3-01 | 3 | MED | No Discord 429 / Retry-After handling | — | OPEN |
 | F3-02 | 3 | MED | Webhook embed title not truncated (256 cap) | — | OPEN |
 | F3-03 | 3 | LOW | OAuth redirect when client_id blank | — | OPEN |
@@ -101,13 +102,13 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F4-06 | 4 | LOW | Registration 409 nuance lost in toast | **T-127 U5** | **ACTIVE** |
 | F4-07 | 4 | LOW | Non-UUID mission id — interactive but unsavable editor | — | OPEN |
 | F4-08 | 4 | LOW | No in-UI shortcut discoverability | — | OPEN |
-| F5-01 | 5 | MED | CLAUDE.md stale T-090 ACTIVE SLICE contradictions | T-128 P4 | QUEUED |
-| F5-02 | 5 | MED | Arland 10240 typo in CLAUDE + `MissionCreatorPage` comment | T-128 P4 | QUEUED |
-| F5-03 | 5 | MED | `apps/website/CLAUDE.md` + frontend README wrong `CLAUDE.md` depth | T-128 P2 | QUEUED |
-| F5-04 | 5 | MED | Staging docs phantom `/compiled` + roster gates | T-128 P1 | QUEUED |
-| F5-05 | 5 | MED | `apps/mod/README.md` pre-monorepo (25 broken links) | T-128 P2 | QUEUED |
-| F5-06 | 5 | MED | `apps/website/README.md` broken links | T-128 P2 | QUEUED |
-| F5-07 | 5 | MED | 155 broken relative markdown links (full list below) | T-128 P0–P4 | QUEUED |
+| F5-01 | 5 | MED | CLAUDE.md stale T-090 ACTIVE SLICE contradictions | T-128 P4 | **RESOLVED** (registry + sync + narrative) |
+| F5-02 | 5 | MED | Arland 10240 typo in CLAUDE + `MissionCreatorPage` comment | T-128 P4 | **RESOLVED** (both → 4096) |
+| F5-03 | 5 | MED | `apps/website/CLAUDE.md` + frontend README wrong `CLAUDE.md` depth | T-128 P2 | **RESOLVED** |
+| F5-04 | 5 | MED | Staging docs phantom `/compiled` + roster gates | T-128 P1 | **RESOLVED** (BLOCKED-on-T-092 callouts; deploy smoke skip-guarded) |
+| F5-05 | 5 | MED | `apps/mod/README.md` pre-monorepo (25 broken links) | T-128 P2 | **RESOLVED** (monorepo rewrite) |
+| F5-06 | 5 | MED | `apps/website/README.md` broken links | T-128 P2 | **RESOLVED** |
+| F5-07 | 5 | MED | 155 broken relative markdown links (full list below) | T-128 P0–P4 | **RESOLVED** (worktree scan 158 → 2 benign: one untracked scaffold, one template ellipsis placeholder — see T-128 log) |
 | F5-08 | 5 | LOW | `tileUrl.ts` variable named `tmsY` (XYZ row) | — | OPEN |
 | F5-09 | 5 | LOW | Mermaid `\n` in t092 spec labels | — | OPEN |
 | F5-10 | 5 | LOW | British/American spelling inconsistency | — | OPEN |
@@ -123,7 +124,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 - **DEFERRED (T-092)** — **HIGH** — `TBD_MissionLoader.c:237` (and `TBD_MissionListLoader.c:99`, `TBD_RosterLoader.c:94`) authenticates with `Authorization: Bearer <serverToken>`, but the backend's only service auth is the **`X-Service-Token`** header (`internal/middleware/auth.go:43`), scoped to `/api/v1/ingest/*`. Even if the routes existed, auth would 401. Also note the header string `"Authorization, Bearer %1,Accept,application/json"` — the first value arrives as `" Bearer <tok>"` with a leading space from the `", "` separator.
 - **DEFERRED (T-092)** — **HIGH** — `TBD_MissionListLoader.c:11-16` parses `{"missions":[…],"count":N}` with camelCase `slotCount`; the backend list contract is `{data,total,limit,offset}` with snake_case rows (`handlers.go` / `missions.go:136`). Envelope + casing both mismatch.
 - **DEFERRED (T-092)** — **HIGH** — `TBD_RosterLoader.c:96` fetches `GET /api/game/events/{eventId}/roster` — no such route exists. Roster enforcement silently degrades to round-robin forever.
-- **QUEUED (T-128)** — **MED** — `packages/tbd-schema/spikes/rest-spike-0.1.md` links `internal/handlers/gameserver.go`, `internal/middleware/servertoken.go`, `cmd/restspike` — all deleted. The game-server REST surface was a spike that never merged, yet the mod + staging tooling (see §2 cross-chain) still target it.
+- **RESOLVED (T-128)** — **MED** — `packages/tbd-schema/spikes/rest-spike-0.1.md` links `internal/handlers/gameserver.go`, `internal/middleware/servertoken.go`, `cmd/restspike` — all deleted. The game-server REST surface was a spike that never merged, yet the mod + staging tooling (see §2 cross-chain) still target it.
 
 ### Coordinate & transform logic
 - **DEFERRED (T-092)** — **MED** — `TBD_SpawnManager.c:146-148`: heading matrix sets forward `Transform[2] = (-sin θ, 0, cos θ)`. For compass-style headings (90° = east = +X), forward at 90° becomes (−1,0,0) = **west** — the rotation sign is the CCW convention, unverified against `headingDeg`'s intended CW compass semantics. This is precisely the open T-092 "spawn Y/yaw" scope — flagging so the sign check is explicit in that program's gate.
@@ -164,7 +165,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 - **OPEN** — **LOW** — `missions.go:126`: `q.Count(&total)` error ignored — a failed count silently reports `total: 0` alongside real rows. Same best-effort reads in `decorateMissions` (authors/bookmarks).
 - **OPEN** — **LOW** — `missions.go:713-721` (`buildMissionDoc`): a failed current-version load silently exports `payload: {}` / `version: "0.0.0"` — a broken export looks like an empty mission instead of an error.
 - **OPEN** — **LOW** — refresh-token rows accumulate forever (revoked rows are never purged); no cleanup job.
-- **QUEUED (T-128 P3)** — **LOW** — `apps/website/internal/handlers/missions/` is an empty stray directory.
+- **RESOLVED (T-128 P3)** — **LOW** — `apps/website/internal/handlers/missions/` is an empty stray directory. *(Untracked — not in git; removed via `rmdir` in the main checkout, see T-128 log.)*
 - **OPEN** — **LOW** — `middleware/ratelimit.go` is in-memory single-instance (documented); `strings.Contains(path, p)` prefix matching would misfire on any future route containing `/auth/` mid-path.
 - **OK (verified)** — error envelope `{"error": …}` is consistent across all 8 handler files; list envelope matches CLAUDE.md; `bodylimit.go` mission-version skip is correct with a concrete-path fallback; `realtime/hub.go` delete-before-close under lock is race-safe; `RequireServiceToken` is constant-time and disabled-when-empty; `InjectMission` path is traversal-safe (UUID-derived); SSE + graceful shutdown wiring is sound.
 
@@ -180,10 +181,10 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 
 ### Cross-system contract chain (Pass 5)
 - **OK (verified)** — the registry chain: `TBD_RegistryItemsExportPlugin.c` (snake_case emit) → `registry-items.schema.json` → generated `internal/contract/registryitems` + `types/contract/registryItems.ts` (byte-identical embedded schema; `diff` clean) → `registry_items` model tags → `GET /registry`. The loadout chain (`loadout-export.schema.json` → `TBD_LoadoutGearStruct`) and the editor-payload chain (compile.ts → schema → `validate.go` → `ParseOrbatTemplate`) also line up field-for-field, including the deliberate integer-vs-string `schemaVersion` namespace split. `packages/tbd-schema` `validate.mjs`: **all contracts valid**.
-- **DEFERRED (T-092) · QUEUED (T-128 P1)** — **HIGH (chain break)** — the **game-server consumption chain has no producer**: `mission.schema.json` (canonical, `x/z/headingDeg`, `meta.id: msn_*`) is what `TBD_MissionDocumentStruct` parses, but nothing in the backend emits it. `ExportMission`/`InjectMission` emit the *editor superset wrapped in the camelCase envelope* (`missionJSON`), which the mod cannot parse (no top-level `meta`/`factions`/`zones`). This is known deferred work (T-092), but three artifacts treat it as live: `docs/mod/STAGING-SERVER.md:180-181` (gates V2/V3 expect 200 from `/api/missions/:id/compiled` + `/api/game/...roster`), `scripts/mod/deploy-staging.sh:189-197` (curls the same phantom route), and `docs/mod/tbd-reforger-platform-build-plan.md:290`. Those verification gates cannot pass against the current backend. T-128 marks gates **BLOCKED on T-092**.
+- **DEFERRED (T-092) · RESOLVED (T-128 P1, docs half)** — **HIGH (chain break)** — the **game-server consumption chain has no producer**: `mission.schema.json` (canonical, `x/z/headingDeg`, `meta.id: msn_*`) is what `TBD_MissionDocumentStruct` parses, but nothing in the backend emits it. `ExportMission`/`InjectMission` emit the *editor superset wrapped in the camelCase envelope* (`missionJSON`), which the mod cannot parse (no top-level `meta`/`factions`/`zones`). This is known deferred work (T-092), but three artifacts treat it as live: `docs/mod/STAGING-SERVER.md:180-181` (gates V2/V3 expect 200 from `/api/missions/:id/compiled` + `/api/game/...roster`), `scripts/mod/deploy-staging.sh:189-197` (curls the same phantom route), and `docs/mod/tbd-reforger-platform-build-plan.md:290`. Those verification gates cannot pass against the current backend. T-128 marks gates **BLOCKED on T-092**.
 - **DEFERRED (T-092)** — **MED (chain break)** — id + filename namespace mismatch: `InjectMission` stages `missions/<uuid>.mission.json` relative to the **API process cwd** (`field_tools.go:19,140`), while the mod fallback reads `$profile:missions/<missionId>.json` with `missionId` like `msn_8f3a2c`. Different directory root, different filename pattern, different id namespace; no bridge script maps one to the other.
-- **QUEUED (T-128 P4)** — **MED** — `./scripts/ticket brief` prints `BRANCH: ticket/T-090` and `Makefile`/docs mention `ticket/T-0xx` branches, while CLAUDE.md policy (and memory) is **commit directly to `main`, never branch**. The generator contradicts the process it drives.
-- **QUEUED (T-128 P3)** — **LOW** — `apps/website/frontend/docs/pages/` is a stale duplicate of the moved `docs/website/frontend/pages/` tree (CLAUDE.md: surface specs are "not under `apps/`") — 2 orphaned files carrying 28 broken links.
+- **OPEN (was T-128 P4)** — **MED** — `./scripts/ticket brief` prints `BRANCH: ticket/T-090` and `Makefile`/docs mention `ticket/T-0xx` branches, while CLAUDE.md policy (and memory) is **commit directly to `main`, never branch**. The generator contradicts the process it drives.
+- **RESOLVED (T-128 P3)** — **LOW** — `apps/website/frontend/docs/pages/` is a stale duplicate of the moved `docs/website/frontend/pages/` tree (CLAUDE.md: surface specs are "not under `apps/`") — 2 orphaned files carrying 28 broken links.
 
 ---
 
@@ -219,20 +220,20 @@ The Mission Creator shell (`MissionCreatorPage.tsx`) is genuinely strong UX engi
 **Method:** hunspell + custom sweeps over all 486 repo markdown files (node_modules excluded), a resolver that checked every relative link target on disk (155 broken), table/format lint against `DOCUMENTATION_STANDARDS.md`/`CODING_STANDARDS.md`, and close-reads of CLAUDE.md, ticket docs, and every code comment read in Passes 1–3. Living docs are notably clean of misspellings — the true typos concentrate in the `eden-wiki` scrape (verbatim external content; flagged but arguably faithful-as-scraped).
 
 ### Factual/consistency errors in living docs
-- **QUEUED (T-128 P4)** — `CLAUDE.md` §Status "### ACTIVE SLICE — T-090" block: says "active slice **T-090.3.0** (Workbench export spike); **T-090.1** … **queued**" and "**.3.0** Workbench spike **active** · **.1** basemap tiles (queued)" — **contradicts its own header** ("ACTIVE NOW: T-090.1.2.4") and the registry (`activeSlice: T-090.1.2.4`; brief lists T-090.3.0, T-090.1, T-090.1.2.x as shipped/DO-NOT-REOPEN). Stale block, two places.
-- **QUEUED (T-128 P4)** — `CLAUDE.md` T-049 bullet: "the camera + base grid resize to Everon 12800 vs **Arland 10240**" — Arland is **4096** everywhere authoritative (`coords/terrains.ts:59`, `terrain-registry.json:18`, `arland/manifest.json:4`).
-- **QUEUED (T-128 P4)** — `MissionCreatorPage.tsx:44` code comment repeats it: "Everon 12.8km vs **Arland 10.24km**" — same wrong number in live code.
-- **QUEUED (T-128 P2)** — `apps/website/CLAUDE.md` redirect: links "[`../CLAUDE.md`](../CLAUDE.md)" = `apps/CLAUDE.md` — **does not exist** (root is two levels up). The canonical-context pointer is broken. Same one-level-short bug in `apps/website/frontend/README.md → ../../CLAUDE.md`.
-- **QUEUED (T-128 P4)** — `scripts/ticket brief` output: `BRANCH: ticket/T-090` vs the repo-wide "never branch, commit to main" rule — generator text contradicts policy (also §2).
+- **RESOLVED (T-128 P4)** — `CLAUDE.md` §Status "### ACTIVE SLICE — T-090" block: says "active slice **T-090.3.0** (Workbench export spike); **T-090.1** … **queued**" and "**.3.0** Workbench spike **active** · **.1** basemap tiles (queued)" — **contradicts its own header** ("ACTIVE NOW: T-090.1.2.4") and the registry (`activeSlice: T-090.1.2.4`; brief lists T-090.3.0, T-090.1, T-090.1.2.x as shipped/DO-NOT-REOPEN). Stale block, two places.
+- **RESOLVED (T-128 P4)** — `CLAUDE.md` T-049 bullet: "the camera + base grid resize to Everon 12800 vs **Arland 10240**" — Arland is **4096** everywhere authoritative (`coords/terrains.ts:59`, `terrain-registry.json:18`, `arland/manifest.json:4`).
+- **RESOLVED (T-128 P4)** — `MissionCreatorPage.tsx:44` code comment repeats it: "Everon 12.8km vs **Arland 10.24km**" — same wrong number in live code.
+- **RESOLVED (T-128 P2)** — `apps/website/CLAUDE.md` redirect: linked `../CLAUDE.md` (one level short) = `apps/CLAUDE.md` — **did not exist** (root is two levels up); the canonical-context pointer was broken, same bug in `apps/website/frontend/README.md → ../../CLAUDE.md`. Both fixed to the correct depth.
+- **OPEN (was T-128 P4; policy now hybrid — worktree branches in use)** — `scripts/ticket brief` output: `BRANCH: ticket/T-090` vs the repo-wide "never branch, commit to main" rule — generator text contradicts policy (also §2).
 - **OPEN** — `packages/map-assets/everon/manifest.json:5` `metersPerPixel: 1` vs schema instruction + `demNativeMetersPerPixel: 2` (also §1) — a numeric self-contradiction inside one file.
 - **OPEN** — `layers/tileUrl.ts:24`: the computed value is the on-disk **XYZ** (north-first) row, but the variable is named `tmsY` — inverted terminology (TMS is south-first); comment and name disagree with each other.
-- **QUEUED (T-128 P1)** — `docs/mod/STAGING-SERVER.md` V2/V3 gate rows + `docs/mod/MILESTONES.md:21` + `docs/mod/tbd-reforger-platform-build-plan.md:44,168,290` describe `GET /api/missions/{id}/compiled` and `GET /api/game/events/{id}/roster` as live, expected-200 endpoints — no longer true of the current backend (also §2 chain break).
-- **QUEUED (T-128 P2)** — `apps/mod/README.md` is the **pre-monorepo README** (dated 2026-06-14, "Repo: github.com/darkforce09/tbd-reforger-platform", pre-move paths) — 25 broken links; the monorepo migration's doc-link repair missed it. Same class: `apps/website/README.md` (8 broken links, pre-move relative paths).
-- **QUEUED (T-128 P3)** — `apps/website/frontend/docs/pages/` — stale duplicate doc tree left under `apps/` (CLAUDE.md: surface specs live at `docs/website/frontend/pages/`, "not under apps/"); its `mission-editor.md` alone carries 28 dead links.
+- **RESOLVED (T-128 P1)** — `docs/mod/STAGING-SERVER.md` V2/V3 gate rows + `docs/mod/MILESTONES.md:21` + `docs/mod/tbd-reforger-platform-build-plan.md:44,168,290` describe `GET /api/missions/{id}/compiled` and `GET /api/game/events/{id}/roster` as live, expected-200 endpoints — no longer true of the current backend (also §2 chain break).
+- **RESOLVED (T-128 P2)** — `apps/mod/README.md` is the **pre-monorepo README** (dated 2026-06-14, "Repo: github.com/darkforce09/tbd-reforger-platform", pre-move paths) — 25 broken links; the monorepo migration's doc-link repair missed it. Same class: `apps/website/README.md` (8 broken links, pre-move relative paths).
+- **RESOLVED (T-128 P3)** — `apps/website/frontend/docs/pages/` — stale duplicate doc tree left under `apps/` (CLAUDE.md: surface specs live at `docs/website/frontend/pages/`, "not under apps/"); its `mission-editor.md` alone carries 28 dead links.
 
 ### Broken relative markdown links — 155 total, by source file (target that does not resolve)
 
-**QUEUED (T-128 P0–P4)** — batch repair; log before/after count in `t128_doc_link_repair_log.md`.
+**RESOLVED (T-128 P0–P4)** — batch repaired 2026-07-02; before/after counts in [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md) (worktree scan 158 → 3 benign).
 
 - `.ai/tickets/AI_PLAYBOOK.md` (8): `../docs/AGENT_COMMIT_CHECKLIST.md`, `../docs/TICKET_MOD_QUEUE.md` (×2), `../docs/TICKET_REGISTRY.md`, `../docs/TICKET_LEAD.md`, `../docs/TICKET_DEV_QUEUE.md`, `../docs/MILESTONES.md`, `../docs/TICKET_BRAINSTORM.md` — systematic one-level-short `../docs/` (needs `../../docs/`); several targets also live elsewhere (`AGENT_COMMIT_CHECKLIST` is under `docs/website/`).
 - `.ai/tickets/README.md` (2): `../docs/TICKET_LEAD.md`, `../docs/AGENT_COMMIT_CHECKLIST.md` — same depth bug.
@@ -279,11 +280,11 @@ Living docs (fix-worthy):
 - **OK (no fix)** — `Eden_Editor__Scenario_Attributes.md:645` — "respawn_guerrila" (sic — Arma engine class name; correct as quoted).
 
 ### Formatting / standards drift
-- **QUEUED (T-128 P4)** — `CLAUDE.md` "### ACTIVE SLICE — T-090" stale block (above) sits inside the `<!-- ticket-sync:status -->`-adjacent §Status that the docs say must be regenerated, not hand-drifted — the contradiction indicates a missed `./scripts/ticket sync` after the registry advanced to T-090.1.2.4.
+- **RESOLVED (T-128 P4)** — `CLAUDE.md` "### ACTIVE SLICE — T-090" stale block (above) sits inside the `<!-- ticket-sync:status -->`-adjacent §Status that the docs say must be regenerated, not hand-drifted — the contradiction indicates a missed `./scripts/ticket sync` after the registry advanced to T-090.1.2.4.
 - **OPEN** — `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md:29,32`: mermaid labels use literal `\n` inside quoted strings ("payload\neditor", "string\nnative") — renders as `\neditor`/`\nnative` in some mermaid versions; use `<br/>`.
-- **QUEUED (T-128 P3)** — `apps/website/frontend/docs/` + `apps/website/internal/handlers/missions/` (empty dir) — two orphans that violate the reorg's own layout contract.
+- **RESOLVED (T-128 P3)** — `apps/website/frontend/docs/` + `apps/website/internal/handlers/missions/` (empty dir) — two orphans that violate the reorg's own layout contract.
 - **OPEN** — Domain dialect inconsistency (minor, pervasive): "artefact/artifact", "honour/honor", "modelled/modeled", "visualised/visualized" both appear across living docs; standards don't pick a side.
 
 ---
 
-*Original audit: 6 passes @ `a3efdf68` (2026-07-01). **Living tracker** — update **Remediation tracker** + inline status prefixes when T-127 / T-128 / other tickets ship. Mirror shipped security items in [`CODEBASE_AUDIT_2026.md`](../../docs/platform/CODEBASE_AUDIT_2026.md) §Fable.*
+*Original audit: 6 passes @ `a3efdf68` (2026-07-01). **Living tracker** — T-126 ✓ · T-128 ✓ (this branch) · T-127 flips its rows on its own merge; update **Remediation tracker** + inline status prefixes when further tickets ship. Mirror shipped security items in [`CODEBASE_AUDIT_2026.md`](../../docs/platform/CODEBASE_AUDIT_2026.md) §Fable.*

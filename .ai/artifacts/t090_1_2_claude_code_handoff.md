@@ -1,8 +1,8 @@
 # T-090.1.2 — Claude Code handoff (SAP supertexture satellite)
 
 **Generated:** 2026-06-30 · **Executor:** claude-code · **Commit on:** `main` (`T-090.1.2:` prefix)  
-**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md)  
-**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)
+**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_sap_supertexture_satellite.md)  
+**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)
 
 ---
 

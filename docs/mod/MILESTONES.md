@@ -18,12 +18,17 @@ from [`discord-milestone-1-post.md`](discord-milestone-1-post.md) when ready.
 - **Scale:** 20-40 players, internal test.
 - **Mission:** hand-written Mission JSON (e.g.
   [`packages/tbd-schema/golden-missions/bridgehead-at-levie.json`](../../packages/tbd-schema/golden-missions/bridgehead-at-levie.json)),
-  served via `GET /api/missions/{id}/compiled`.
+  served via `GET /api/missions/{id}/compiled` — **BLOCKED on T-092**: that route existed
+  only in the Phase-0 REST spike backend (since removed); the current backend serves
+  `/api/v1` only. Until T-092, the file fallback (`$profile:missions/{id}.json`) is the
+  working path.
 - **VOIP:** optional — in-game VON is an acceptable fallback. Not a gate.
 
 ### Success criteria
 
-- [x] Mission loads on the dedicated server from the backend REST endpoint
+- [ ] Mission loads on the dedicated server from the backend REST endpoint — verified
+      2026-06-14 against the Phase-0 REST spike backend, **since removed**; re-verify
+      **BLOCKED on T-092** (route + `X-Service-Token` auth do not exist in the current backend)
 - [x] File fallback proven as backup (`$profile:missions/{id}.json`)
 - [x] Per-slot spawn at mission JSON coords (staging dedicated server verified 2026-06-14)
 - [x] Staging server deploy on 192.168.0.140 (`scripts/mod/deploy-staging.sh`) — Workshop mod + `-config`, client Direct-Joined + spawned 2026-06-14

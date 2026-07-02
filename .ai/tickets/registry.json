@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). PAUSED — Fable audit T-127→128 active (T-126 shipped @ 4a47688e). Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). Fable audit program complete (T-126–T-128) — RESUMED. Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -2944,7 +2944,7 @@
         "website"
       ],
       "executor": "cursor-docs",
-      "status": "queued",
+      "status": "shipped",
       "active_slice": null,
       "surfaces": [
         "DATA"
@@ -2953,13 +2953,14 @@
         "docs"
       ],
       "title": "Fable audit — doc link repair + staging honesty",
-      "summary": "P0 handoff link depths, STAGING-SERVER T-092 gate honesty, apps/mod README, orphan frontend/docs, T-126→T-129 floor picker renumber. After T-127. Spec: docs/platform/t128_doc_link_repair.md.",
+      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
       "spec": "docs/platform/t128_doc_link_repair.md",
       "depends_on": [
         "T-127"
       ],
       "unblocks": [],
-      "branch": "main"
+      "branch": "main",
+      "shipped_at": "T-128"
     },
     {
       "id": "T-129",
