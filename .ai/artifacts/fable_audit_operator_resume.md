@@ -22,10 +22,10 @@ Verify: [t126_verify_log.md](t126_verify_log.md) · [t127_verify_log.md](t127_ve
 
 | Track | Where | Prompt doc |
 |-------|-------|------------|
-| **T-090.1.2.8** | `main` | [t090_1_2_8_SEND_TO_CLAUDE.md](t090_1_2_8_SEND_TO_CLAUDE.md) |
+| **T-090.1.2.5** | `main` (after **T-090.1.2.8** @ `db9057ef`) | [t090_1_2_5_SEND_TO_CLAUDE.md](t090_1_2_5_SEND_TO_CLAUDE.md) |
 | **T-130 remainder** | worktree `TBD-T-130` | [t130_SEND_TO_CLAUDE.md](t130_SEND_TO_CLAUDE.md) |
 
-**Setup T-130 registry + worktree:** [t130_SETUP_COMMANDS.md](t130_SETUP_COMMANDS.md) (needs Agent mode for `registry.json`).
+**T-130 setup:** complete @ `9f896563` (tag **T-130.0**).
 
 ---
 

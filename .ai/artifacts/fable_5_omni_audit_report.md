@@ -97,7 +97,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F3-03 | 3 | LOW | OAuth redirect when client_id blank | — | OPEN |
 | F3-04 | 3 | — | Webhook failure isolation, OAuth cookie, role sync | — | OK |
 | F4-01 | 4 | MED | Folder delete subtree — no confirm | **T-127 U4** | **RESOLVED** |
-| F4-02 | 4 | MED | Dual-view basemap logically unsound until map tiles | **T-127 U3** · T-090.1.1 | **RESOLVED** · DEFERRED |
+| F4-02 | 4 | MED | Dual-view basemap logically unsound until map tiles | **T-127 U3** · T-090.1.1 | **RESOLVED** (coerce) · DEFERRED (Map `.topo` tiles) |
 | F4-03 | 4 | MED | Conflict-resolution loop (trust) | **T-127 U1** | **PARTIAL** (same-tab ✓; new-tab deferred) |
 | F4-04 | 4 | MED | Mission library append-only (no archive/delete UX) | — | OPEN |
 | F4-05 | 4 | LOW | Export download no success/fail toast; local export omits server fields | **T-127 U2** | **RESOLVED** |

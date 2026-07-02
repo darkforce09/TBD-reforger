@@ -1,7 +1,7 @@
 # T-090.1.2.8 — Unified satellite texture (binary + GPU mips, no tile flicker)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.8  
-**Status:** **READY** — **ACTIVE** · source = SAP ortho (T-090.1.2.4 @ `0d6fe485` P0 FAIL)  
+**Status:** **SHIPPED** @ `db9057ef` (tag **T-090.1.2.8**) · format **tbd-sat v1** · source = SAP ortho (T-090.1.2.4 @ `0d6fe485` P0 FAIL)  
 **Executor:** claude-code (website + root scripts)  
 **Depends on:** **T-090.1.2.4** shipped FAIL · input = `everon-sap-ortho.png` + lossless pyramid encode path  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)

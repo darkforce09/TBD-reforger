@@ -51,6 +51,9 @@ export interface TacticalMapProps {
   onEntitiesMove?: (ids: string[], delta: { x: number; y: number }) => void
   /** Fired once when the satellite basemap can't load (404) → host shows a grid-only toast (T-090.1). */
   onBasemapDegraded?: () => void
+  /** Unified satellite bundle load progress (T-090.1.2.8): fraction 0..1 while fetching +
+   *  decoding (1 = GPU texture live); null = load abandoned (fallback/unmount) → dismiss. */
+  onBasemapProgress?: (fraction: number | null) => void
 }
 
 /** Imperative handle exposed via onReady. */

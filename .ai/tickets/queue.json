@@ -16,7 +16,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md",
       "branch": "ticket/T-090"
     },
     {

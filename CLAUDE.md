@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-128**
 
-**ACTIVE NOW:** **T-090** — T-090.1.2.8 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md`.
+**ACTIVE NOW:** **T-090** — T-090.1.2.5 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -150,7 +150,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.4** @ `0d6fe485` P0 FAIL · **next:** **T-090.1.2.8** (unified GPU satellite texture) — Fable program complete, map program unblocked.
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.8** @ `db9057ef` (tbd-sat v1) · **next:** **T-090.1.2.5** (satellite water composite) — Fable program complete, map program unblocked.
 
 **Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
 
@@ -190,6 +190,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 - T-091.2 **Mission Creator — Z-axis editor UX** @ `dde589e` (tag **T-091.2**).
 - T-091.1 **Mission Creator — DEM loader + sampleElevation** @ `2c56c2e` (tag **T-091.1**). Spec: [`t091_1_dem_loader.md`](docs/specs/Mission_Creator_Architecture/t091_1_dem_loader.md).
 - T-091.0 **Map program — Everon 16-bit DEM export + anchor verify** @ `6d96339` (tag **T-091.0**). **PATH 3:** `TBD_TerrainExportPlugin.c` resamples `WorldEditorAPI.GetTerrainSurfaceY` over 6400² grid → ASCII uint16 → `raw-u16-to-dem-png.mjs` → LFS PNG (`dem.source`: `mod-getsurfacey-resample`). Manual WE **Export Height Map** dead on packed Eden. **`make verify-terrain-strict` PASS** — 11 anchors, maxDeltaM **0.204 m** (threshold 1.0). Verify fix: pngjs `{ skipRescale: true }` + `.depth` not `.bitDepth`. Tiles deferred (T-090.1). Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md). Ops: [`.ai/artifacts/t091_0_ops_log.txt`](.ai/artifacts/t091_0_ops_log.txt).
+- T-090.1.2.8 **Map program — unified satellite texture (tbd-sat v1)** @ `db9057ef` (tag **T-090.1.2.8**). One `everon-sat.tbd-sat` bundle (205.9 MB LFS, 14-level mip chain); `satelliteUnified.ts` → single trilinear GPU texture on one BitmapLayer — zero tile HTTP/layer churn on pan/zoom; pyramid fallback via manifest `delivery: "pyramid"`. Format spike: [`.ai/artifacts/t090_1_2_8_format_spike.json`](.ai/artifacts/t090_1_2_8_format_spike.json). Verify: [`.ai/artifacts/t090_1_2_8_verify_log.md`](.ai/artifacts/t090_1_2_8_verify_log.md) (U1–U4 manual pending). Spec: [`t090_1_2_8_unified_satellite_texture.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md).
 - T-090.1.2.4 **Map program — engine render ortho spike (honest P0 FAIL)** @ `0d6fe485` (tag **T-090.1.2.4**). Exhaustive Workbench MCP api_search: no orthographic projection, no per-point terrain colour, no RenderTarget readback — **no grid-free sat-class 12800² source**. SAP + T-090.1.2.2 apron-bridge **locked as production source**. Pivot 110% to **T-090.1.2.8** (unified GPU texture + mips). Artifacts: [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](.ai/artifacts/t090_1_2_4_engine_render_spike.json), [verify log](.ai/artifacts/t090_1_2_4_verify_log.md). Spec: [`t090_1_2_4_engine_render_ortho_spike.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_4_engine_render_ortho_spike.md).
 - T-067 **Mission Creator — spatial chunks / bulk-paste scale**. **`slot-add-bulk`** incremental patch in `incPatchPlan` / `_patchAddSlotsBulk` — O(k) paste ≤10k. Dormant 512m chunk scaffolding. **T-067.0.1:** CPU viewport cull reverted — `getBaseIcons()` @ ~160 fps pan @ 367k. Follow-ons **T-111** (lazy RAM) + **T-112** (GPU cull) in registry `idea`. Spec: [`t067_spatial_chunks.md`](docs/specs/Mission_Creator_Architecture/t067_spatial_chunks.md) @ `d2128cf`.
 - T-066 **Mission Creator — worker compile offload (T-066.1 `pickMapSnapshot`)**. Save Version + Export compile in `compiler.worker.ts` via Comlink; `pickMapSnapshot(useMapStore.getState())` strips Zustand actions before postMessage (fixes DataCloneError 25 on raw `getState()`). `terminateCompiler()` on mission unmount. Manual @ ~367k: Save **201**. Spec: [`t066_worker_compile.md`](docs/specs/Mission_Creator_Architecture/t066_worker_compile.md).

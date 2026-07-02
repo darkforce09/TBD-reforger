@@ -17,7 +17,8 @@
 
 | Ticket | What |
 |--------|------|
-| **T-090.1.2.8** | Unified GPU satellite texture — **next up** |
+| **T-090.1.2.8** | Unified GPU satellite texture — **shipped** @ `db9057ef` |
+| **T-090.1.2.5** | Satellite water composite — **next on main** |
 | **T-068** Phase 2 | Virtual Arsenal (still gated on map/ORBAT, per its own program) |
 | Everything else | See [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) |
 | **OPEN + PARTIAL (~22 findings)** | **T-130** — [`t130_fable_audit_remainder.md`](t130_fable_audit_remainder.md) · worktree `ticket/T-130` |

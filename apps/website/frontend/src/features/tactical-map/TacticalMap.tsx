@@ -7,6 +7,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import DeckGL from '@deck.gl/react'
 import type { DeckGLRef } from '@deck.gl/react'
+import type { Device } from '@luma.gl/core'
 import { getTerrain } from './coords/terrains'
 import { useOrthographicView } from './view/useOrthographicView'
 import { useBaseMapLayer } from './layers/useBaseMapLayer'
@@ -43,6 +44,7 @@ function TacticalMapInner({
   onAssetDrop,
   onEntitiesMove,
   onBasemapDegraded,
+  onBasemapProgress,
 }: TacticalMapProps) {
   const terrain = useMemo(() => getTerrain(terrainId), [terrainId])
   const { view, viewState, onViewStateChange, flyTo: viewFlyTo } = useOrthographicView(terrain)
@@ -51,6 +53,11 @@ function TacticalMapInner({
   // (with dragPan off) our custom drags, so both bubble to this container.
   const containerRef = useRef<HTMLDivElement>(null)
   const deckRef = useRef<DeckGLRef | null>(null)
+
+  // luma.gl device, set once by Deck's onDeviceInitialized — the unified satellite loader
+  // needs it to create the mipmapped GPU texture outside Deck's own image pipeline
+  // (T-090.1.2.8). One state set → one extra render at boot.
+  const [device, setDevice] = useState<Device | null>(null)
 
   // Cluster / LOD gating (T-065.2): only at/below ZOOM_CLUSTER_MAX (-4) on a large mission do we draw
   // cluster discs (useClusterIconLayer) instead of every icon, with the base IconLayer rendering the
@@ -106,7 +113,9 @@ function TacticalMapInner({
     visible: true,
     viewState,
     viewBounds: basemapViewBounds,
+    device,
     onDegraded: onBasemapDegraded,
+    onProgress: onBasemapProgress,
   })
   // Re-render on DEM state changes (ready/degraded/reload) so the hillshade + cursor Z refresh
   // without an extra interaction (T-091.2 follow-up).
@@ -320,6 +329,7 @@ function TacticalMapInner({
         <DeckGL
           ref={deckRef}
           views={view}
+          onDeviceInitialized={setDevice}
           viewState={viewState}
           onViewStateChange={(params) =>
             onViewStateChange({ viewState: params.viewState as MapViewState })

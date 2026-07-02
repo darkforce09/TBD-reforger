@@ -70,6 +70,16 @@ export default function MissionCreatorPage() {
     [],
   )
 
+  // Unified satellite bundle progress (T-090.1.2.8): one sonner toast keyed by id so the
+  // ~200 MB fetch+decode shows determinate progress, flips to success when the GPU texture
+  // is live, and dismisses if the load is abandoned (pyramid fallback / unmount).
+  const onBasemapProgress = useCallback((fraction: number | null) => {
+    const id = 'sat-unified'
+    if (fraction === null) toast.dismiss(id)
+    else if (fraction >= 1) toast.success('Satellite ready', { id, duration: 1500 })
+    else toast.loading(`Loading satellite… ${Math.round(fraction * 100)}%`, { id })
+  }, [])
+
   // Cursor read-out goes straight into the engine store (rAF-throttled upstream) so the page
   // never re-renders on pointer move — only BottomToolbelt subscribes to it (T-057).
   const onCursorMove = useCallback(
@@ -210,6 +220,7 @@ export default function MissionCreatorPage() {
         onAssetDrop={onAssetDrop}
         onEntitiesMove={onEntitiesMove}
         onBasemapDegraded={onBasemapDegraded}
+        onBasemapProgress={onBasemapProgress}
       />
 
       {/* Overlay layer: spans the screen and ignores pointer events so the map gap pans;

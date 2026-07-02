@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **RESUMED** (Fable audit program **T-126→128 complete**, 2026-07-02). **T-090.1.2.4 shipped** @ `0d6fe485` (P0 FAIL). **Next:** **T-090.1.2.8**. **T-091 complete** @ `dde589e`.  
+**Status:** **ready** — **RESUMED** (Fable **T-126→128 complete**). **Active slice:** **T-090.1.2.5**. **T-090.1.2.8 shipped** @ `db9057ef` (tag **T-090.1.2.8**, tbd-sat v1). **T-091 complete** @ `dde589e`.  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -28,8 +28,8 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.1  Lossless z0–6 pyramid  ✓ @ 19bc785
   → T-090.1.2.2  SAP cell seam repair  ✓ @ a3efdf6
   → T-090.1.2.4  Engine render ortho spike  ✓ @ 0d6fe485 (P0 FAIL — SAP locked as source)
-  → T-090.1.2.8  Unified satellite texture  (NEXT — Fable T-126→128 complete)
-  → T-090.1.2.5  Satellite water  (queued — SAP ortho base)
+  → T-090.1.2.8  Unified satellite texture  ✓ @ db9057ef (tbd-sat v1 — one fetch + GPU mips)
+  → T-090.1.2.5  Satellite water composite  (NEXT)
   → T-090.1.2.6  Hillshade blend strength slider  (queued — FE only)
   → T-090.1.2.3  Basemap tile prefetch  (queued — interim pyramid only)
   → T-090.1.1  Map (.topo) cartographic view
@@ -44,9 +44,9 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-129      building floor selector (idea — outside T-090; renumbered from T-126)
 ```
 
-**Blocker chain (110% satellite — post T-090.1.2.4):** **T-090.1.2.8** (unified texture — Reforger zoom feel) → **T-090.1.2.5** (water) → **T-090.1.1** (Map) → **T-090.2** → …
+**Blocker chain (110% satellite — post T-090.1.2.8):** **T-090.1.2.5** (water) → **T-090.1.1** (Map) → **T-090.2** → …
 
-**Source locked @ T-090.1.2.4 FAIL:** SAP stitch + T-090.1.2.2 apron-bridge — no cleaner continuous sat-class ortho exists on current Enfusion APIs (see [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](../../../.ai/artifacts/t090_1_2_4_engine_render_spike.json)). Residual ~256 m soft band is source-baked; **T-090.1.2.8** fixes tile flicker, not the grid.
+**Source locked @ T-090.1.2.4 FAIL:** SAP stitch + T-090.1.2.2 apron-bridge — no cleaner continuous sat-class ortho exists on current Enfusion APIs (see [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](../../../.ai/artifacts/t090_1_2_4_engine_render_spike.json)). Residual ~256 m soft band is source-baked. **T-090.1.2.8** @ `db9057ef` fixes tile flicker (tbd-sat v1 + one GPU texture); grid may remain at max MC zoom.
 
 **Interim:** **T-090.1.2.3** prefetch helps legacy pyramid only — superseded by `.2.8` for 110% pan/zoom bar.
 
@@ -75,8 +75,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.1.2.2** | [`t090_1_2_2_sap_cell_seam_repair.md`](t090_1_2_2_sap_cell_seam_repair.md) | claude-code | **SAP cell seams** — **shipped** @ `a3efdf6` (110% → `.2.4`) |
 | **T-090.1.2.3** | [`t090_1_2_3_basemap_tile_prefetch.md`](t090_1_2_3_basemap_tile_prefetch.md) | claude-code | **Pan prefetch/cache** — queued (interim pyramid) |
 | **T-090.1.2.4** | [`t090_1_2_4_engine_render_ortho_spike.md`](t090_1_2_4_engine_render_ortho_spike.md) | claude-code | **Engine render ortho** — **shipped** @ `0d6fe485` (P0 FAIL) |
-| **T-090.1.2.8** | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | claude-code | **Unified texture** — **active** |
-| **T-090.1.2.5** | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | claude-code | **Satellite water** (ocean + inland) — queued |
+| **T-090.1.2.8** | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | claude-code | **Unified texture** — **shipped** @ `db9057ef` |
+| **T-090.1.2.5** | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | claude-code | **Water composite** — **active** |
 | **T-090.1.2.6** | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | claude-code | **Hillshade blend** — user opacity on Satellite — queued |
 | **T-090.1.1** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | Enums + census + golden per `buildingClass` |
@@ -147,12 +147,12 @@ Scripts live in `packages/tbd-schema/scripts/verify-terrain-*.mjs`.
 | Observation | Diagnosis | Worth a slice? |
 |-------------|-----------|----------------|
 | Some areas still blocky/pixelated | **Source ceiling:** 256×256 BC7 supertexture cells @ ~1 m/px; BC7 is 4×4 block compressed. z6 (0.78 m/px) already **oversamples** native — z7+ would be fake upscaling | No for pyramid; maybe investigate per-cell decode quality |
-| Vertical seam / soft grid @ 256 m | **SAP cell aprons** — baked into BI supertexture; T-090.1.2.4 @ `0d6fe485` **FAIL** — no engine ortho API | **T-090.1.2.8** fixes flicker; grid remains at max zoom |
-| Pan lag / tiles flash in | **5461 WebP tiles** + BitmapLayer churn | **T-090.1.2.8** unified texture (110%) |
+| Vertical seam / soft grid @ 256 m | **SAP cell aprons** — baked into BI supertexture; T-090.1.2.4 @ `0d6fe485` **FAIL** — no engine ortho API | Grid remains at max zoom; flicker fixed @ **T-090.1.2.8** |
+| Pan lag / tiles flash in | Was **5461 WebP tiles** + BitmapLayer churn | **Resolved** @ **T-090.1.2.8** `db9057ef` (tbd-sat v1) |
 | Blocky patches at 1 m scale | **BC7 source** in SAP `.edds` | Source ceiling — no fix on current APIs |
 | Engine render ortho | Exhaustive MCP search — **dead end** | **Shipped FAIL** @ `0d6fe485` |
-| Reforger-like zoom | One virtualized texture + GPU mips | **T-090.1.2.8** active |
-| No readable water (ocean grey, inland dry) | SAP shows seabed/lakebed texture; interim raster had blue ocean only, no inland | **T-090.1.2.5** queued — engine/DEM mask composite |
+| Reforger-like zoom | One virtualized texture + GPU mips | **Shipped** @ **T-090.1.2.8** `db9057ef` |
+| No readable water (ocean grey, inland dry) | SAP shows seabed/lakebed texture; interim raster had blue ocean only, no inland | **T-090.1.2.5** **active** — engine/DEM mask composite |
 | Overall darkness | In-game SAP exposure / no tone lift in editor | Later — color grade or brightness pass |
 
 ---

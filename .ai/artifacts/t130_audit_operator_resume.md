@@ -4,7 +4,7 @@
 
 | Track | Checkout | Branch | Next slice | Send-off |
 |-------|----------|--------|------------|----------|
-| **A — Map queue** | repo root | `main` | **T-090.1.2.8** | [t090_1_2_8_SEND_TO_CLAUDE.md](t090_1_2_8_SEND_TO_CLAUDE.md) |
+| **A — Map queue** | repo root | `main` | **T-090.1.2.5** (after **T-090.1.2.8** @ `db9057ef`) | [t090_1_2_5_SEND_TO_CLAUDE.md](t090_1_2_5_SEND_TO_CLAUDE.md) |
 | **B — Audit remainder** | `.ai/artifacts/worktrees/TBD-T-130` | `ticket/T-130` | **T-130.1** | [t130_SEND_TO_CLAUDE.md](t130_SEND_TO_CLAUDE.md) |
 
 **Living tracker:** [fable_5_omni_audit_report.md](fable_5_omni_audit_report.md) · **Spec:** [`docs/platform/t130_fable_audit_remainder.md`](../../docs/platform/t130_fable_audit_remainder.md)

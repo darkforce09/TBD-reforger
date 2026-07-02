@@ -1822,7 +1822,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.1.2.8",
+      "active_slice": "T-090.1.2.5",
       "surfaces": [
         "MAP"
       ],
@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). Fable audit program complete (T-126–T-128) — RESUMED. Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2.8 shipped @ db9057ef (tbd-sat v1 unified GPU mips). Next: T-090.1.2.5 water composite. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1975,7 +1975,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "db9057ef"
         },
         "T-090.1.1": {
           "targets": [
