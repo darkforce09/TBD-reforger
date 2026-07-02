@@ -1,7 +1,7 @@
 # T-090.1.2.3 — Basemap tile prefetch & pan stability
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.3  
-**Status:** **QUEUED** — pan flicker / tiles pop in while viewport moves  
+**Status:** **QUEUED** — interim for **legacy pyramid only**; **110% path = T-090.1.2.8** unified texture (no tile flicker). Implement only if `.2.8` delayed.  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.1** shipped @ `19bc785` (pyramid stable); ideally after **T-090.1.2.2** (ortho seams)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)

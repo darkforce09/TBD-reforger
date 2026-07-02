@@ -1,7 +1,7 @@
 # T-090.1.2.2 — SAP supertexture cell seam repair
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.2  
-**Status:** **READY** — operator-visible grid seams at 256 m SAP cell boundaries  
+**Status:** **SHIPPED** @ `a3efdf6` — apron-bridge + automated gates; **110% bar deferred** to **T-090.1.2.4** (engine ortho) + **T-090.1.2.8** (unified delivery)  
 **Git tag on ship:** **T-090.1.2.2**  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.1** shipped @ `19bc785` (lossless z0–6 pyramid)  

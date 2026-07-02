@@ -1,8 +1,8 @@
 # T-090.1.2.x — Satellite basemap backlog (resume guide)
 
 **Program hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
-**Registry active slice:** check `./scripts/ticket brief T-090`  
-**Last shipped:** **T-090.1.2.1** @ `19bc785` (lossless VP8L z0–6, 299M LFS)
+**Registry active slice:** `./scripts/ticket brief T-090` → **T-090.1.2.8**  
+**Last shipped:** **T-090.1.2.4** @ `0d6fe485` (P0 FAIL — SAP locked as source)
 
 ---
 
@@ -10,74 +10,49 @@
 
 | Aspect | State |
 |--------|--------|
-| **Source** | SAP supertexture stitch → lossless WebP pyramid |
-| **Detail @ max zoom** | Acceptable (native ~1 m/px band via z6) |
-| **Seams** | Visible **256 m grid lines** at cell boundaries — **T-090.1.2.2** |
-| **Pan** | **~40 fps** + tile pop-in / flicker — **T-090.1.2.3** |
-| **Water** | **None readable** — grey seabed at coast, dry lake beds inland — **T-090.1.2.5** |
-| **Hillshade blend** | Fixed ~40% overlay — muddy on Satellite + hillshade — **T-090.1.2.6** |
-| **Darkness** | SAP exposure — defer (tone pass later) |
-| **Resolution R&D** | **T-090.1.2.4** idea only — not started |
+| **Source** | SAP supertexture stitch + T-090.1.2.2 apron-bridge — **locked** (engine ortho dead end) |
+| **Detail @ max zoom** | Acceptable; residual soft ~256 m band is BI-baked (not fixable without new source) |
+| **Pan / zoom feel** | Tile pop-in / flicker — **5461 WebP tiles** → **T-090.1.2.8** (ACTIVE) |
+| **Water** | **T-090.1.2.5** (queued) |
+| **Hillshade** | **T-090.1.2.6** (queued) |
 
-**Staging ortho (gitignored, must exist locally):**  
-`packages/map-assets/everon/staging/sap/everon-sap-ortho.png` (12800²)
+**Spike verdict:** [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](../../../.ai/artifacts/t090_1_2_4_engine_render_spike.json)
 
 ---
 
 ## Execution order (normative)
 
-Orthography changes (**seams**, **water**) each require a **full lossless pyramid rebuild** (~299M LFS). Batch ortho fixes before rebuilding when possible.
-
 ```text
-1. T-090.1.2.2  SAP cell seam repair     ← ACTIVE (ortho + pyramid rebuild)
-2. T-090.1.2.3  Basemap tile prefetch    (frontend only — CAN run parallel to #1)
-3. T-090.1.2.5  Satellite water composite (ortho + pyramid rebuild — after #1)
-4. T-090.1.2.6  Hillshade blend control        (frontend only — CAN run parallel anytime)
-5. T-090.1.1    Map cartographic view
-—  T-090.1.2.4  Engine render ortho spike (idea — do not start unless promoted)
+1. T-090.1.2.8  Unified satellite texture     ← ACTIVE (GPU mips, no tile flicker)
+2. T-090.1.2.5  Satellite water composite
+3. T-090.1.2.6  Hillshade blend control       (parallel OK)
+4. T-090.1.1    Map cartographic view
+—  T-090.1.2.3  Tile prefetch (legacy pyramid interim only)
 ```
+
+**Shipped dead end:** T-090.1.2.4 @ `0d6fe485` — do not re-open engine ortho without new engine API evidence.
+
+**Parallel (platform):** Fable audit **T-126 → T-127 → T-128** — [`FABLE_5_AUDIT_PROGRAM.md`](../../platform/FABLE_5_AUDIT_PROGRAM.md)
 
 ---
 
 ## Slice index
 
-| Slice | Status | Spec | Handoff | Claude send-off |
-|-------|--------|------|---------|-----------------|
-| **T-090.1.2.2** | **active** | [`t090_1_2_2_sap_cell_seam_repair.md`](t090_1_2_2_sap_cell_seam_repair.md) | [`.ai/artifacts/t090_1_2_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_2_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_2_SEND_TO_CLAUDE.md) **← paste this** |
-| **T-090.1.2.3** | queued | [`t090_1_2_3_basemap_tile_prefetch.md`](t090_1_2_3_basemap_tile_prefetch.md) | [`.ai/artifacts/t090_1_2_3_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_3_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_3_SEND_TO_CLAUDE.md) |
-| **T-090.1.2.5** | queued | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_5_claude_code_handoff.md) | [`.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md) |
-| **T-090.1.2.6** | queued | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | — | — |
-| **T-090.1.2.4** | idea | [`t090_1_2_4_engine_render_ortho_spike.md`](t090_1_2_4_engine_render_ortho_spike.md) | — (when promoted) | — |
+| Slice | Status | Spec | Send-off |
+|-------|--------|------|----------|
+| **T-090.1.2.8** | **active** | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | `./scripts/ticket prompt T-090` |
+| **T-090.1.2.5** | queued | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | `t090_1_2_5_SEND_TO_CLAUDE.md` |
+| **T-090.1.2.6** | queued | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | — |
 
-**Shipped:** T-090.1.2 @ `c2730a3` · T-090.1.2.1 @ `19bc785` — verify logs under `.ai/artifacts/t090_1_2*_verify_log.md`
+**Shipped:** T-090.1.2.4 @ `0d6fe485` (FAIL) · T-090.1.2.2 @ `a3efdf6` · T-090.1.2.1 @ `19bc785`
 
 ---
 
-## Operator preflight (every session)
+## Operator preflight
 
 ```bash
-git pull && git lfs pull
-make map-assets-link
+git pull && git lfs pull && make map-assets-link
 ./scripts/ticket brief T-090
-test -f packages/map-assets/everon/staging/sap/everon-sap-ortho.png && magick identify $_
 ```
 
-**Dev login:** `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker` → Mission Creator → Satellite view.
-
----
-
-## After each Claude ship
-
-1. Hard refresh MC → manual acceptance IDs in slice verify log  
-2. Tell Cursor **"doc sync"** → registry `shipped_at`, hub, CLAUDE.md  
-3. `./scripts/ticket advance-slice T-090` (or edit registry `active_slice`)
-
----
-
-## Do not (program-wide)
-
-- Re-decode/re-stitch SAP unless verify-sap-ortho fails or slice explicitly requires it  
-- Ship `maxZoom: 6` without 4096 z6 tiles  
-- Hand-edit `docs/TICKET_*.md` or CLAUDE status markers — registry + `./scripts/ticket sync`  
-- Start **T-090.1.2.4** without promoting `idea` → `ready`  
-- AI upscale / z7 pyramid for “more detail”
+**Dev login:** Mission Creator → Satellite view · hard refresh after `.2.8` ship.
