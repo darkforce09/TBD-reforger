@@ -140,7 +140,8 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 # halts the run (fail-fast). `go` resolves via the ~/.local/go/bin PATH export above; the
 # frontend job uses whatever `nvm use` (.nvmrc -> Node 26) selected.
 # Backend sub-steps run in this exact order: gofmt (FMT-1) -> CI-1 (scripts/website/verify-ci1.sh)
-# -> golangci-lint run ./... -> go build -> test-it. golangci-lint resolves via the same
+# -> golangci-lint run ./... -> go build -> unit tests (services/middleware/realtime, T-130.3
+# F2B-06) -> test-it. golangci-lint resolves via the same
 # ~/.local/go/bin PATH export as go. (CI-1's `only-new-issues` literal lives in the script, not this
 # Makefile, so the §G doc-accuracy forbidden-rg can scan the Makefile cleanly.)
 # golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
@@ -151,11 +152,12 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm us
 	$(MAKE) ci-local-frontend
 	$(MAKE) ci-local-schema
 
-ci-local-backend: ## CI gate: gofmt (FMT-1) + CI-1 + golangci-lint + go build + test-it (needs `make db-up` @ :5434)
+ci-local-backend: ## CI gate: gofmt (FMT-1) + CI-1 + golangci-lint + go build + unit tests + test-it (needs `make db-up` @ :5434)
 	test -z "$$(gofmt -l $(WEB)/internal $(WEB)/cmd)"
 	@bash scripts/website/verify-ci1.sh
 	cd $(WEB) && golangci-lint run ./...
 	cd $(WEB) && go build ./...
+	cd $(WEB) && go test ./internal/services/... ./internal/middleware/... ./internal/realtime/... -count=1
 	$(MAKE) test-it
 
 ci-local-frontend: ## CI gate: npm ci + format:check (FMT-3) + lint + build + unit tests (run `nvm use` -> Node 26 first)

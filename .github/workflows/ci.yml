@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  # --- backend: Go 1.26 + Postgres 18 — gofmt (FMT-1) + golangci + go build + integration tests (TEST-1/GO-2..8/COMP-1) ---
-  # Step order mirrors `make ci-local-backend` exactly: gofmt -> golangci-lint -> build -> test.
+  # --- backend: Go 1.26 + Postgres 18 — gofmt (FMT-1) + golangci + go build + unit + integration tests (TEST-1/GO-2..8/COMP-1) ---
+  # Step order mirrors `make ci-local-backend` exactly: gofmt -> golangci-lint -> build -> unit tests -> integration tests.
   backend:
     name: backend (Go 1.26 + Postgres 18)
     runs-on: ubuntu-latest
@@ -62,6 +62,10 @@ jobs:
       - name: go build
         working-directory: apps/website
         run: go build ./...
+      - name: unit tests (services/middleware/realtime)
+        # T-130.3 F2B-06: these packages were only covered locally; no DB needed.
+        working-directory: apps/website
+        run: go test ./internal/services/... ./internal/middleware/... ./internal/realtime/... -count=1
       - name: integration tests (TEST-1)
         working-directory: apps/website
         env:
