@@ -7,7 +7,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   applyMissionRowMeta,
-  hydrateMissionDoc,
   hydrateMissionDocWithProgress,
   pickMapSnapshot,
   useMapStore,
@@ -98,10 +97,12 @@ export interface MissionEditorHandle extends MissionDocHandle {
     notes?: string,
     onProgress?: (p: SaveProgress) => void,
   ) => Promise<SaveResult>
-  exportJson: () => void
+  exportJson: () => Promise<void>
   /** Server payload awaiting a keep-local / load-server decision; null when none. */
   conflict: Record<string, unknown> | null
-  resolveConflict: (choice: 'local' | 'server') => void
+  resolveConflict: (choice: 'local' | 'server') => Promise<void>
+  /** True while a "load server" choice is hydrating + persisting (disable the dialog buttons). */
+  resolvingConflict: boolean
   /** The route :id isn't a real mission UUID — server persistence can't work. */
   invalidMissionId: boolean
 }
@@ -153,6 +154,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
   const [dirty, setDirty] = useState(false)
   const [currentSemver, setCurrentSemver] = useState<string | null>(null)
   const [conflict, setConflict] = useState<Record<string, unknown> | null>(null)
+  const [resolvingConflict, setResolvingConflict] = useState(false)
   const mounted = useRef(true)
   // Row metadata (title/terrain/env) from the initial GET, kept so a "load server"
   // conflict resolution can re-apply it after hydrating the payload.
@@ -506,33 +508,73 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
   )
 
   const exportJson = useCallback(async () => {
-    const state = pickMapSnapshot(useMapStore.getState()) // function-free for the Worker (T-066)
-    const payload = await compileMission(state) // worker compile (T-066)
-    const doc = toMissionExport(state.meta, payload, currentSemver ?? '0.1.0')
-    const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `mission-${state.meta?.id ?? missionId ?? 'draft'}.json`
-    a.click()
-    URL.revokeObjectURL(url)
+    // A worker-compile failure used to reject unhandled with no user feedback (T-127 U2) —
+    // surface both outcomes as toasts, mirroring saveVersion's clone-error mapping.
+    try {
+      const state = pickMapSnapshot(useMapStore.getState()) // function-free for the Worker (T-066)
+      const payload = await compileMission(state) // worker compile (T-066)
+      const doc = toMissionExport(state.meta, payload, currentSemver ?? '0.1.0')
+      const blob = new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `mission-${state.meta?.id ?? missionId ?? 'draft'}.json`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success('Mission JSON exported.')
+    } catch (e) {
+      if (import.meta.env.DEV) console.error('[mission-export] FAILED', e)
+      const msg = e instanceof Error ? e.message : String(e)
+      toast.error(
+        msg.includes('could not be cloned')
+          ? 'Export failed: non-serializable editor state (worker compile).'
+          : 'Export failed — could not compile the mission.',
+      )
+    }
   }, [currentSemver, missionId])
 
   const resolveConflict = useCallback(
-    (choice: 'local' | 'server') => {
-      if (choice === 'server' && conflict) {
-        hydrateMissionDoc(md, conflict)
-        if (lastRowMeta.current) applyMissionRowMeta(md, lastRowMeta.current)
-        setDirty(false)
-        // Adopted the server payload — drop any warm marker so the next boot re-validates
-        // against the server (the ready effect re-marks once this state settles). T-062.2.
+    async (choice: 'local' | 'server') => {
+      if (choice === 'server' && conflict && missionId) {
+        setResolvingConflict(true)
+        // Drop the stale warm marker BEFORE hydrating: a reload mid-adopt must cold-boot
+        // onto the old (still pre-conflict) IndexedDB state and re-prompt. T-062.2.
         clearEditorSession()
+        try {
+          // Chunked at scale (self-delegates to the sync path under 5k slots).
+          await hydrateMissionDocWithProgress(md, conflict)
+          if (lastRowMeta.current) applyMissionRowMeta(md, lastRowMeta.current)
+          // The hydrate ran under INIT_ORIGIN, which the LOCAL_ORIGIN autosave hook ignores —
+          // persist the adopted state explicitly (T-127 U1 / F2F-03) through the debounced
+          // writers' serialized chains (flush = immediate) so a queued save can't interleave.
+          saveMissionMetaFromDocDebounced(md, missionId, isDocCancelled)
+          saveSlotsFromDocDebounced(md, missionId, isDocCancelled)
+          await Promise.all([flushMeta(missionId), flushSlots(missionId)])
+          if (!isDocCancelled()) {
+            // Re-mark the warm session with the adopted state — the ready effect won't re-run
+            // (its deps didn't change), and without a marker the next same-tab reload is a
+            // cold boot that re-prompts this exact conflict (content presence, not divergence).
+            markEditorSessionReady(missionId, {
+              slotCount: useMapStore.getState().slotCount,
+              currentSemver,
+            })
+          }
+          if (mounted.current) setDirty(false)
+        } catch (e) {
+          if (import.meta.env.DEV) console.error('[mission-conflict] server adopt FAILED', e)
+          toast.error('Could not apply the server version.')
+        } finally {
+          if (mounted.current) {
+            setResolvingConflict(false)
+            setConflict(null)
+          }
+        }
       } else {
-        setDirty(true) // local kept → it differs from the server, so it's unsaved
+        if (choice === 'local') setDirty(true) // local kept → differs from the server, unsaved
+        setConflict(null)
       }
-      setConflict(null)
     },
-    [conflict, md],
+    [conflict, md, missionId, isDocCancelled, currentSemver],
   )
 
   return {
@@ -546,6 +588,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
     exportJson,
     conflict,
     resolveConflict,
+    resolvingConflict,
     invalidMissionId,
   }
 }

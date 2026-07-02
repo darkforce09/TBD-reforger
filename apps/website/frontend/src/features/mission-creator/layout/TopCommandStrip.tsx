@@ -38,7 +38,7 @@ interface TopCommandStripProps {
   undo: UndoController
   dirty: boolean
   suggestedSemver: string
-  onExport: () => void
+  onExport: () => void | Promise<void>
   onSaveVersion: (
     semver: string,
     notes?: string,
@@ -277,7 +277,7 @@ function TopCommandStripInner({
 
       <button
         type="button"
-        onClick={onExport}
+        onClick={() => void onExport()}
         title="Download the mission JSON"
         className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-action/20 px-2.5 py-1 text-label-md text-on-surface transition-colors hover:bg-action/30"
       >

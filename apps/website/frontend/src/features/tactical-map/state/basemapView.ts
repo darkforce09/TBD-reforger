@@ -13,7 +13,18 @@ const DEFAULT: BasemapView = 'satellite'
 
 function read(): BasemapView {
   try {
-    return localStorage.getItem(KEY) === 'map' ? 'map' : DEFAULT
+    // 'map' has no raster until T-090.1.1 — honoring a persisted 'map' pref skipped the
+    // satellite resolve entirely and left a silent grid-only canvas (T-127 U3 / F2F-05).
+    // Coerce back to satellite, rewriting the stored key one-shot; drop this when the map
+    // view ships.
+    if (localStorage.getItem(KEY) === 'map') {
+      try {
+        localStorage.setItem(KEY, DEFAULT)
+      } catch {
+        /* private mode / quota — in-memory coerce still applies */
+      }
+    }
+    return DEFAULT
   } catch {
     return DEFAULT
   }
