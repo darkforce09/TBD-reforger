@@ -124,6 +124,24 @@ Manual: C1 leader PATCH; C2 match ingest; C3 corrupt IDB; C4 gamemode boot; R1 d
 
 ---
 
+## Fable 5 audit follow-up — T-127 (shipped @ `0515aabb`, tag **T-127**)
+
+Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) · verify [`.ai/artifacts/t127_verify_log.md`](../../.ai/artifacts/t127_verify_log.md)
+
+| ID | Fix | Proof |
+|----|-----|-------|
+| **U1** | Conflict server adopt → IDB persist + warm session re-mark | Manual same-tab reload (verify log) |
+| **U2** | Export compile errors + success toasts | FE build + lint |
+| **U3** | Coerce `'map'` → `'satellite'` | FE build + lint |
+| **U4** | Folder delete Aegis confirm | FE build + lint |
+| **U5** | ORBAT 409 distinct toasts | FE build + lint |
+
+**Partial:** F4-03 new-tab cold boot conflict — divergence tracking deferred.
+
+**Still open (Fable program):** **T-128** (doc links + staging honesty). Then resume T-090 / T-068.
+
+---
+
 ## Fable 5 audit follow-up — T-126 (shipped @ `4a47688e`, tag **T-126**)
 
 Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §2 Backend · verify [`.ai/artifacts/t126_verify_log.md`](../../.ai/artifacts/t126_verify_log.md)
@@ -137,6 +155,6 @@ Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable
 | **S5** | 401-retry dropped rotated refresh when no user in store | `setTokens()` persists full pair | FE build + lint |
 | **S6** | Bootstrap/callback `clearSession()` after rotation + transient `/me` fail | Retain rotated pair; only failed rotation clears | FE build + lint |
 
-**Still open (Fable program):** **T-127** (MC UX U1–U4) · **T-128** (doc links + staging honesty). Mod REST `/compiled` chain (**T-092**) unchanged.
+**Still open (Fable program):** **T-128** (doc links + staging honesty). Mod REST `/compiled` chain (**T-092**) unchanged.
 
 **Living tracker (all findings):** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — full index + inline status on every finding. Update that file when tickets ship.

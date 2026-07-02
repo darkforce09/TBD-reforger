@@ -114,9 +114,9 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-126**
+**Latest shipped:** **T-127**
 
-**ACTIVE NOW:** **T-127** — T-127 (Fable audit — Mission Creator UX fixes). Slice spec: `docs/platform/t127_mc_ux_audit_fixes.md`.
+**ACTIVE NOW:** **T-128** — T-128 (Fable audit — doc link repair + staging honesty). Slice spec: `docs/platform/t128_doc_link_repair.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -146,10 +146,10 @@ frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
 Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · audit [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md) · resume [`.ai/artifacts/fable_audit_operator_resume.md`](.ai/artifacts/fable_audit_operator_resume.md)
 
-**Order:** **T-126** shipped @ `4a47688e` → **T-127** (MC UX, **active**) → **T-128** (doc links, Cursor). **Do not** parallel T-090 or T-068.
+**Order:** **T-126** shipped · **T-127** shipped @ `0515aabb` → **T-128** (doc links, **active**). **Do not** parallel T-090 or T-068 until **T-128** lands.
 
 ```bash
-./scripts/ticket prompt T-127
+# T-128 worktree — see .ai/artifacts/worktrees/TBD-T-128
 ```
 
 ### PAUSED — T-090 Map visualization program
@@ -185,7 +185,8 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
-- T-126 **Fable audit — security + auth follow-up** @ `4a47688e` (tag **T-126**). S1–S6: export `canViewMission`, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, `setTokens` + bootstrap `/me` blip fix. `make test-it` + FE build/lint clean; 4 new integration tests. Verify: [`.ai/artifacts/t126_verify_log.md`](.ai/artifacts/t126_verify_log.md). Spec: [`t126_audit_security_followup.md`](docs/platform/t126_audit_security_followup.md).
+- T-127 **Fable audit — Mission Creator UX fixes** @ `0515aabb` (tag **T-127**). U1–U5: conflict IDB + warm marker, export toasts, basemap `'map'` coerce, folder delete confirm, ORBAT 409 messages. Vitest 26/26; FE build/lint clean. **Partial:** F4-03 new-tab conflict deferred. Verify: [`.ai/artifacts/t127_verify_log.md`](.ai/artifacts/t127_verify_log.md). Spec: [`t127_mc_ux_audit_fixes.md`](docs/platform/t127_mc_ux_audit_fixes.md).
+- T-126 **Fable audit — security + auth follow-up** @ `4a47688e` (tag **T-126**).
 - T-125 **Coding standards + 11/10 enforcement** @ `e21dac3` (tag **T-125.5**). [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) (38 rules, all gates live): golangci, strict TS, GO-7 `@route` route-match, verify-* scripts, ENF-4 ×10, `.editorconfig` + Prettier (FMT-2/3). `make ci-local` @ ~22.7s mirrors **`ci.yml`** (backend + frontend + schema + editorconfig). Spec: [`t125_coding_standards_enforcement.md`](docs/platform/t125_coding_standards_enforcement.md).
 - T-124 **Dependency & toolchain upgrade** @ `cd11db0`. FE npm to latest (vitest **4.1.9**, deck.gl 9.3.5, vite 8); Go modules gin **1.12**, gorm **1.31.2**, pgx **5.10**; **Go 1.26**, **Node 26** (`.nvmrc` + CI), **Postgres 18** dev image; dropped unused `@tailwindcss/container-queries`. Verify: FE build/lint/**21/21** tests, `make build`, `make test-it`, `make schema-codegen` clean. Spec: [`t124_dependency_upgrade.md`](docs/platform/t124_dependency_upgrade.md).
 - T-123 **Documentation standards rollout** @ `169e47d` (tag **T-123**). In-code `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); schema codegen → `apps/website/internal/contract/` + `apps/website/frontend/src/types/contract/` via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json` (400 on invalid; `internal/contract/validate.go`); `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift). Resolves audit T1/T8. Spec: [`t123_documentation_standards_rollout.md`](docs/platform/t123_documentation_standards_rollout.md).

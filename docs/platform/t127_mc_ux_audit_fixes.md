@@ -1,8 +1,7 @@
 # T-127 — Fable audit Mission Creator UX fixes
 
-**Ticket:** T-127 · **Executor:** claude-code · **Status:** **ACTIVE** (T-126 shipped @ `4a47688e`)  
-**Git tag on ship:** **T-127**  
-**Handoff:** [`.ai/artifacts/t127_claude_code_handoff.md`](../../.ai/artifacts/t127_claude_code_handoff.md) · **Send-off:** [`.ai/artifacts/t127_SEND_TO_CLAUDE.md`](../../.ai/artifacts/t127_SEND_TO_CLAUDE.md)  
+**Ticket:** T-127 · **Executor:** claude-code · **Status:** **SHIPPED** @ `0515aabb` (tag **T-127**)  
+**Verify:** [`.ai/artifacts/t127_verify_log.md`](../../.ai/artifacts/t127_verify_log.md)  
 **Authority:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) §2 Frontend · §4 UX · [`FABLE_5_AUDIT_PROGRAM.md`](FABLE_5_AUDIT_PROGRAM.md)
 
 ---

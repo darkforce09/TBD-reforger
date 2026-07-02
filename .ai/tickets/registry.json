@@ -2913,8 +2913,8 @@
         "website"
       ],
       "executor": "claude-code",
-      "status": "active",
-      "active_slice": "T-127",
+      "status": "shipped",
+      "active_slice": null,
       "surfaces": [
         "MAP",
         "UI"
@@ -2923,8 +2923,9 @@
         "ui"
       ],
       "title": "Fable audit — Mission Creator UX fixes",
-      "summary": "ACTIVE — U1–U4 (+ U5 stretch): conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. Spec + handoff ready. After T-126 @ 4a47688e.",
+      "summary": "Shipped @ 0515aabb (tag T-127): U1–U5 MC UX — conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
       "spec": "docs/platform/t127_mc_ux_audit_fixes.md",
+      "shipped_at": "0515aabb",
       "depends_on": [
         "T-126"
       ],
@@ -2932,7 +2933,7 @@
         "T-128"
       ],
       "route": "/missions/:id/edit",
-      "branch": "main"
+      "branch": "ticket/T-127"
     },
     {
       "id": "T-128",
@@ -2944,8 +2945,8 @@
         "website"
       ],
       "executor": "cursor-docs",
-      "status": "queued",
-      "active_slice": null,
+      "status": "active",
+      "active_slice": "T-128",
       "surfaces": [
         "DATA"
       ],
@@ -2953,7 +2954,7 @@
         "docs"
       ],
       "title": "Fable audit — doc link repair + staging honesty",
-      "summary": "P0 handoff link depths, STAGING-SERVER T-092 gate honesty, apps/mod README, orphan frontend/docs, T-126→T-129 floor picker renumber. After T-127. Spec: docs/platform/t128_doc_link_repair.md.",
+      "summary": "ACTIVE — P0 handoff links, staging T-092 honesty, README rot, orphans, registry sync. After T-127 @ 0515aabb. Spec: docs/platform/t128_doc_link_repair.md.",
       "spec": "docs/platform/t128_doc_link_repair.md",
       "depends_on": [
         "T-127"

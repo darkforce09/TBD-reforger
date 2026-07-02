@@ -5,7 +5,7 @@
 
 **Original audit baseline:** read-only pass @ `main` `a3efdf68` (2026-07-01). Severity: **CRITICAL** / **HIGH** / **MED** / **LOW**. EnforceScript (`.c`) plugins audited as Enfusion script, not C++.
 
-**Last tracker update:** 2026-06-26 — **T-126** shipped @ `4a47688e` (tag **T-126**); **T-127** active.
+**Last tracker update:** 2026-07-02 — **T-127** shipped @ `0515aabb` (tag **T-127**); **T-128** active.
 
 ---
 
@@ -13,21 +13,22 @@
 
 | Status | Count | Meaning |
 |--------|------:|---------|
-| **RESOLVED** | 6 | Shipped in **T-126** (S1–S6) @ `4a47688e` |
-| **ACTIVE** | 8 | Assigned to **T-127** (U1–U5) — MC UX |
-| **QUEUED** | ~40+ | **T-128** (docs/links/staging) or ticket named in table |
+| **RESOLVED** | 13 | **T-126** S1–S6 @ `4a47688e` · **T-127** U1–U5 @ `0515aabb` |
+| **ACTIVE** | ~40+ | **T-128** (docs/links/staging) |
+| **QUEUED** | — | (folded into ACTIVE for T-128 pass) |
+| **PARTIAL** | 1 | **F4-03** — same-tab conflict loop fixed; new-tab cold boot still prompts (divergence tracking deferred) |
 | **DEFERRED** | ~15 | Out of Fable program (**T-092**, **T-090.x**, future, T-122 carry-over) |
 | **OK** | 12 | Verified clean at audit time — no action |
 
-**Fable program order:** T-126 ✓ → **T-127** (now) → **T-128** → resume T-090 / T-068.
+**Fable program order:** T-126 ✓ → T-127 ✓ → **T-128** (now) → resume T-090 / T-068.
 
 ### By ticket
 
 | Ticket | Status | Scope |
 |--------|--------|-------|
 | **T-126** | **shipped** @ `4a47688e` | S1–S6 security + auth (verify [t126_verify_log.md](t126_verify_log.md)) |
-| **T-127** | **active** | U1–U4 required; U5 stretch — MC UX |
-| **T-128** | queued | §5 doc rot, staging honesty, handoff link depths, orphans |
+| **T-127** | **shipped** @ `0515aabb` | U1–U5 MC UX (verify [t127_verify_log.md](t127_verify_log.md)) |
+| **T-128** | **active** | §5 doc rot, staging honesty, handoff link depths, orphans |
 | **T-092** | deferred | Mod REST `/compiled`, roster, mission canonical envelope, spawn/yaw |
 | **T-090.1.1** | deferred | Map tile pyramid (pairs with U3 basemap coerce) |
 | **T-090.3** | deferred | Building export `headingDeg` field names |
@@ -47,7 +48,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F1-05 | 1 | MED | `rest-spike-0.1.md` links deleted handlers | T-128 | QUEUED |
 | F1-06 | 1 | MED | Spawn heading matrix sign vs compass semantics | T-092 | DEFERRED |
 | F1-07 | 1 | MED | TerrainWorld export swapped yaw/pitch field names | T-090.3 | DEFERRED |
-| F1-08 | 1 | HIGH | Everon manifest advertises `map` tiles; disk has satellite only | T-090.1.1 · U3 | DEFERRED · ACTIVE |
+| F1-08 | 1 | HIGH | Everon manifest advertises `map` tiles; disk has satellite only | T-090.1.1 · U3 | DEFERRED · **RESOLVED** (coerce) |
 | F1-09 | 1 | MED | Everon `metersPerPixel: 1` vs schema/Biki 2 m | — | OPEN |
 | F1-10 | 1 | MED | Arland manifest tiles block; no files on disk | T-090 | DEFERRED |
 | F1-11 | 1 | LOW | `terrainId` enum mismatch registry vs manifest schema | — | OPEN |
@@ -78,10 +79,10 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2B-12 | 2 | — | Handler envelopes, bodylimit, SSE, inject path | — | OK |
 | F2F-01 | 2 | MED | 401-retry dropped rotated refresh token | **T-126 S5** | **RESOLVED** |
 | F2F-02 | 2 | MED | Bootstrap/callback `clearSession` after rotation + `/me` blip | **T-126 S6** | **RESOLVED** |
-| F2F-03 | 2 | MED | Conflict "load server" not persisted to IDB | **T-127 U1** | **ACTIVE** |
-| F2F-04 | 2 | MED | `exportJson` fire-and-forget; no compile error UX | **T-127 U2** | **ACTIVE** |
-| F2F-05 | 2 | MED | `basemapView==='map'` silent grid; no degrade toast | **T-127 U3** | **ACTIVE** |
-| F2F-06 | 2 | LOW | `events.tsx` flattens 409 error strings | **T-127 U5** | **ACTIVE** |
+| F2F-03 | 2 | MED | Conflict "load server" not persisted to IDB | **T-127 U1** | **RESOLVED** (partial: F4-03 new-tab) |
+| F2F-04 | 2 | MED | `exportJson` fire-and-forget; no compile error UX | **T-127 U2** | **RESOLVED** |
+| F2F-05 | 2 | MED | `basemapView==='map'` silent grid; no degrade toast | **T-127 U3** | **RESOLVED** |
+| F2F-06 | 2 | LOW | `events.tsx` flattens 409 error strings | **T-127 U5** | **RESOLVED** |
 | F2F-07 | 2 | LOW | `admin.tsx` uses `window.confirm` vs Aegis Dialog | — | OPEN |
 | F2F-08 | 2 | — | TS strictness, compile order, tile math, mutations | — | OK |
 | F2C-01 | 2 | — | Registry / loadout / editor-payload chains in sync | — | OK |
@@ -93,12 +94,12 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F3-02 | 3 | MED | Webhook embed title not truncated (256 cap) | — | OPEN |
 | F3-03 | 3 | LOW | OAuth redirect when client_id blank | — | OPEN |
 | F3-04 | 3 | — | Webhook failure isolation, OAuth cookie, role sync | — | OK |
-| F4-01 | 4 | MED | Folder delete subtree — no confirm | **T-127 U4** | **ACTIVE** |
-| F4-02 | 4 | MED | Dual-view basemap logically unsound until map tiles | **T-127 U3** · T-090.1.1 | **ACTIVE** · DEFERRED |
-| F4-03 | 4 | MED | Conflict-resolution loop (trust) | **T-127 U1** | **ACTIVE** |
+| F4-01 | 4 | MED | Folder delete subtree — no confirm | **T-127 U4** | **RESOLVED** |
+| F4-02 | 4 | MED | Dual-view basemap logically unsound until map tiles | **T-127 U3** · T-090.1.1 | **RESOLVED** · DEFERRED |
+| F4-03 | 4 | MED | Conflict-resolution loop (trust) | **T-127 U1** | **PARTIAL** (same-tab ✓; new-tab deferred) |
 | F4-04 | 4 | MED | Mission library append-only (no archive/delete UX) | — | OPEN |
-| F4-05 | 4 | LOW | Export download no success/fail toast; local export omits server fields | **T-127 U2** | **ACTIVE** |
-| F4-06 | 4 | LOW | Registration 409 nuance lost in toast | **T-127 U5** | **ACTIVE** |
+| F4-05 | 4 | LOW | Export download no success/fail toast; local export omits server fields | **T-127 U2** | **RESOLVED** |
+| F4-06 | 4 | LOW | Registration 409 nuance lost in toast | **T-127 U5** | **RESOLVED** |
 | F4-07 | 4 | LOW | Non-UUID mission id — interactive but unsavable editor | — | OPEN |
 | F4-08 | 4 | LOW | No in-UI shortcut discoverability | — | OPEN |
 | F5-01 | 5 | MED | CLAUDE.md stale T-090 ACTIVE SLICE contradictions | T-128 P4 | QUEUED |
@@ -132,7 +133,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 - **OK (verified)** — `TBD_TerrainExportPlugin.c` grid math (`px * WORLD/(W−1)`) matches the verify sampler's inverse by construction; anchor gate passed at 0.204 m max delta.
 
 ### Map-assets manifests vs disk
-- **DEFERRED (T-090.1.1) · ACTIVE (T-127 U3)** — **HIGH** — `packages/map-assets/everon/manifest.json:35-39` advertises a `map` pyramid at `tiles/map/{z}/{x}/{y}.webp`; **only `tiles/satellite/` exists on disk**. Combined with the frontend behavior (§2/§4), selecting the Map view renders nothing. U3 coerces or toasts until tiles ship.
+- **DEFERRED (T-090.1.1) · RESOLVED (T-127 U3 @ `0515aabb`)** — **HIGH** — Everon manifest advertises `map` pyramid; only satellite on disk. Frontend coerces persisted `'map'` → `'satellite'` until T-090.1.1.
 - **OPEN** — **MED** — `packages/map-assets/everon/manifest.json:5`: `metersPerPixel: 1` contradicts the schema's own instruction ("must come from Info & Diags — Everon Biki: 2 m", `terrain-manifest.schema.json:29-32`) and the manifest's `precision.demNativeMetersPerPixel: 2`. One of the two numbers is wrong or the field is under-specified.
 - **DEFERRED (T-090)** — **MED** — `packages/map-assets/arland/manifest.json:17-25` advertises a full `tiles` block (maxZoom 5) but `packages/map-assets/arland/` contains only `manifest.json` — no tiles, no DEM file (`widthPx: 0` stub is documented; the tiles block is not).
 - **OPEN** — **LOW** — `terrain-manifest.schema.json:19` pins `terrainId` to `["everon","arland","custom"]` while `terrain-registry.schema.json` allows any id — adding a third real map requires a schema edit; the registry/manifest disagree on extensibility.
@@ -171,10 +172,10 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 ### Frontend (React/TS)
 - **RESOLVED (T-126 S5 @ `4a47688e`)** — **MED** — `src/api/client.ts:44-46`: on 401-retry with no `user` in the store, only `setAccessToken` is called — **the rotated `refresh_token` is dropped** while the presented one was already revoked server-side. Next refresh 401s → forced logout. `setAccessToken` should persist the whole rotated pair. **Fix:** `setTokens()` on full rotated pair.
 - **RESOLVED (T-126 S6 @ `4a47688e`)** — **MED** — `src/hooks/useAuthBootstrap.ts:43-45`: a transient `/me` failure *after* a successful rotation runs `clearSession()`, discarding the freshly rotated (only valid) refresh token — a network blip at boot = forced re-login. Same pattern in `pages/auth.tsx:114-117` (callback page). Rotation success and profile-fetch failure need distinct handling. **Fix:** retain rotated pair on `/me` blip; only clear on rotation failure.
-- **ACTIVE (T-127 U1)** — **MED** — `features/mission-creator/hooks/useMissionEditor.ts:521-536` (`resolveConflict('server')`): (a) uses the **blocking** `hydrateMissionDoc` — at the 300k+ scale this codebase explicitly targets, that's a minutes-long freeze (the load path already has the chunked variant); (b) hydrate runs under `INIT_ORIGIN`, and v2 IDB persistence only triggers on `LOCAL_ORIGIN` (`useMissionEditor.ts:283`) — the adopted server state is **never written to IndexedDB**, so the next cold boot restores the old local content and re-prompts the same conflict until the user happens to make an edit.
-- **ACTIVE (T-127 U2)** — **MED** — `useMissionEditor.ts:508-519`: `exportJson` is `async`, typed `() => void`, invoked fire-and-forget from `TopCommandStrip` — a worker-compile failure is an unhandled rejection with **zero user feedback** (no toast, no error state). Pass 2's one true floating promise.
-- **ACTIVE (T-127 U3)** — **MED** — `features/tactical-map/layers/useTerrainBasemapLayer.ts:89-95,144-157`: with `basemapView === 'map'`, `computeLod` returns `none` **and** the resolve effect early-returns, so `onDegraded` never fires — Map view renders a silent grid-only canvas. `basemapView.ts` happily reads a persisted `'map'` from localStorage. Until T-090.1.1 ships map tiles, `'map'` should either be coerced to satellite or show the degraded toast.
-- **ACTIVE (T-127 U5)** — **LOW** — `pages/events.tsx:395`: mutation errors are flattened to generic strings ("Could not claim that slot") — the backend's distinct 409 reasons (`slot already taken` vs `squad is reserved by a leader`) are discarded rather than surfaced.
+- **RESOLVED (T-127 U1 @ `0515aabb`)** — **MED** — `features/mission-creator/hooks/useMissionEditor.ts:521-536` (`resolveConflict('server')`): … **Proof:** [t127_verify_log.md](t127_verify_log.md). **Partial:** new-tab cold boot still prompts (F4-03 residual).
+- **RESOLVED (T-127 U2 @ `0515aabb`)** — **MED** — `useMissionEditor.ts:508-519`: `exportJson` … **Proof:** verify log.
+- **RESOLVED (T-127 U3 @ `0515aabb`)** — **MED** — `features/tactical-map/layers/useTerrainBasemapLayer.ts` … coerce in `basemapView.ts`. **Proof:** verify log.
+- **RESOLVED (T-127 U5 @ `0515aabb`)** — **LOW** — `pages/events.tsx:395`: … **Proof:** verify log.
 - **OPEN** — **LOW** — `pages/admin.tsx:175` uses native `window.confirm` for a destructive delete while the rest of the app uses the Aegis `Dialog` — inconsistent affordance.
 - **OK (verified)** — zero `: any` in `src/`; refresh single-flight is correct (StrictMode-safe via module-level promise); `buildVersionBlob`'s hand-rolled JSON brace/comma assembly is correct; `compileMission` faction/squad/slot ordering matches Go `deriveOrbatFromEditor` exactly; `hydrateMissionDoc` clears entity maps before applying (replace, not merge); tile LOD zoom math (`ceil(log2(w/256)+zoom)`) is correct; `terrainManifest.ts` is fully defensive (`null`/`false` on any fetch failure); mutations surface errors at call sites throughout.
 
@@ -203,12 +204,12 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 The Mission Creator shell (`MissionCreatorPage.tsx`) is genuinely strong UX engineering: a determinate load gate with phase-labelled progress and an indeterminate-sweep fallback only where no total exists; a blocking, *actionable* restore-failure overlay (C3) instead of a silently empty editor; a forced-choice conflict dialog that can't be dismissed by outside-click; a degraded-basemap toast; field-focus-guarded shortcuts; and an Eden-faithful docked shell. The Save dialog's phase/progress/debug-report pipeline (T-060.1.x) is exemplary failure UX.
 
 ### Gaps and anti-patterns
-- **ACTIVE (T-127 U4)** — **MED** — **destructive folder delete with no confirmation**: `EditorLayersSection.tsx:132` calls `removeEditorLayer` (documented as deleting the folder's whole subtree, T-037) from a hover-row action. Undo is the only net; Eden's own paradigm and the rest of the app (`admin.tsx` confirms a delete) set the expectation of a confirm for subtree-destroying actions — or at minimum an "N items deleted — Undo" toast.
-- **ACTIVE (T-127 U3) · DEFERRED (T-090.1.1)** — **MED** — **dual-view basemap is logically unsound in its current shipped state**: the manifest advertises a `map` pyramid that doesn't exist (§1), the Mission Settings radio is "present but disabled" (`basemapView.ts:3-4`), yet `setBasemapView('map')` is exported and a persisted `'map'` renders a silent grid-only canvas with no degraded feedback (§2). Until T-090.1.1, the three layers (manifest, preference store, renderer) disagree about whether Map view exists. The Google-Maps-style toggle *concept* (shared bounds/zoom, single Y-flip point) is sound.
-- **ACTIVE (T-127 U1)** — **MED** — **conflict-resolution loop**: choosing "Load saved version" doesn't persist the adopted state locally (§2), so a user who loads-server and walks away is re-asked the identical question next session — a classic trust-eroding repeat prompt.
+- **RESOLVED (T-127 U4 @ `0515aabb`)** — **MED** — **destructive folder delete with no confirmation**: Aegis Dialog with subtree counts before `removeEditorLayer`.
+- **RESOLVED (T-127 U3 @ `0515aabb`)** · **DEFERRED (T-090.1.1)** — **MED** — **dual-view basemap**: `'map'` coerced to `'satellite'` until map tiles ship; degraded toast when tiles absent.
+- **PARTIAL (T-127 U1 @ `0515aabb`)** — **MED** — **conflict-resolution loop**: same-tab reload fixed (IDB + warm marker); new-tab cold boot still prompts — divergence tracking deferred.
 - **OPEN** — **MED** — mission lifecycle has no exit: users can create, edit, submit, get rejected, resubmit — but never archive or delete (§2). The library becomes an append-only pile; "My Missions" grows forever, and mission_makers will ask admins to clean up via SQL.
-- **ACTIVE (T-127 U2)** — **LOW** — export has no feedback loop: the Export action downloads (or silently fails, §2) with no success/failure toast, and the local export intentionally ships empty `gameMode`/`maxPlayers`/`armory` (`exportSchema.ts:45-51`) — a user comparing it to the server export will think data was lost. A one-line "local export — server fields omitted" note in the download flow would close that.
-- **ACTIVE (T-127 U5)** — **LOW** — backend 409 nuance is flattened at registration (`events.tsx:395`): "slot already taken" vs "squad is reserved by a leader" produce the same generic toast; the ORBAT selector loses the chance to teach squad-reservation semantics at exactly the moment the user hits it.
+- **RESOLVED (T-127 U2 @ `0515aabb`)** — **LOW** — export feedback: success/error toasts on Export (local export still omits server fields by design).
+- **RESOLVED (T-127 U5 @ `0515aabb`)** — **LOW** — registration 409 nuance: distinct backend error strings surfaced in toasts.
 - **OPEN** — **LOW** — journey seam on `/missions/:id/edit` for non-UUID ids: the editor stays fully interactive under a small yellow banner ("needs a real mission id", `MissionCreatorPage.tsx:245-251`) — work done there persists only to IndexedDB and can never be saved to the server; an interactive-but-unsavable editor is a data-loss trap dressed as a warning.
 - **OPEN** — **LOW** — `window.confirm` in the admin Event Manager (§2) breaks the otherwise consistent frosted-Dialog language; keyboard model is strong overall (undo/redo/copy/paste/space/delete) but none of it is discoverable in-UI (no shortcut cheat-sheet, tooltips carry no keybinds).
 

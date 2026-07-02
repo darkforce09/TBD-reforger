@@ -8,8 +8,8 @@
 
 ```text
 1. T-126  Security + auth follow-up     (claude-code)  ✓ shipped @ 4a47688e
-2. T-127  Mission Creator UX fixes      (claude-code)  ← YOU ARE HERE
-3. T-128  Doc link repair + staging honesty (cursor-docs) — after T-127 ships
+2. T-127  Mission Creator UX fixes      (claude-code)  ✓ shipped @ 0515aabb
+3. T-128  Doc link repair + staging honesty (cursor-docs)  ← YOU ARE HERE
 — then resume T-090.1.2.8 (satellite) / T-068 / TICKET_LEAD
 ```
 
@@ -57,5 +57,5 @@ One-pager: [`.ai/artifacts/fable_audit_operator_resume.md`](../../.ai/artifacts/
 | ID | Status | Spec | Executor |
 |----|--------|------|----------|
 | **T-126** | shipped @ `4a47688e` | [`t126_audit_security_followup.md`](t126_audit_security_followup.md) | claude-code |
-| **T-127** | **active** | [`t127_mc_ux_audit_fixes.md`](t127_mc_ux_audit_fixes.md) | claude-code |
-| **T-128** | queued | [`t128_doc_link_repair.md`](t128_doc_link_repair.md) | cursor-docs |
+| **T-127** | shipped @ `0515aabb` | [`t127_mc_ux_audit_fixes.md`](t127_mc_ux_audit_fixes.md) | claude-code |
+| **T-128** | **active** | [`t128_doc_link_repair.md`](t128_doc_link_repair.md) | cursor-docs |

@@ -5,7 +5,7 @@
 
 ## Running / Review
 
-- **T-127** (1270) — Fable audit — Mission Creator UX fixes [active] — ACTIVE — U1–U4 (+ U5 stretch): conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. Spec + handoff ready. After T-126 @ 4a47688e.
+- **T-128** (1280) — Fable audit — doc link repair + staging honesty [active] — ACTIVE — P0 handoff links, staging T-092 honesty, README rot, orphans, registry sync. After T-127 @ 0515aabb. Spec: docs/platform/t128_doc_link_repair.md.
 
 ## Ready
 
