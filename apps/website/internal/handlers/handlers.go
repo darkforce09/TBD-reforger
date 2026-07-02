@@ -107,6 +107,8 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	authed.GET("/missions", h.ListMissions)
 	authed.GET("/missions/:id", h.GetMission)
 	authed.PATCH("/missions/:id", h.UpdateMission)
+	// Soft delete (author/admin checked in-handler, like PATCH). T-130.6.
+	authed.DELETE("/missions/:id", h.DeleteMission)
 	authed.POST("/missions/:id/submit", h.SubmitMission)
 	// Mission versions carry the full compiled payload (hundreds of MB at scale), so
 	// this route gets its own high body cap; the global limiter skips it (see middleware.BodyLimit).

@@ -90,12 +90,15 @@ func (h *Handler) missionListQuery(c *gin.Context, me string) *gorm.DB {
 
 	switch c.DefaultQuery("scope", "global") {
 	case "mine":
+		// Own archived missions stay listed here (the UI badges them) — recoverable via
+		// unarchive, mirroring the announcements model (T-130.6 F2B-05/F4-04).
 		q = q.Where("author_id = ?", me)
 	case "bookmarked":
 		q = q.Where("id IN (?)", h.db.Model(&models.MissionBookmark{}).
 			Select("mission_id").Where("discord_id = ?", me))
-	default: // global = all live missions plus the caller's own drafts/pending (mine ⊆ global)
-		q = q.Where("status = ? OR author_id = ?", models.MissionLive, me)
+	default: // global = all live missions plus the caller's own drafts/pending — never archived
+		q = q.Where("status = ? OR (author_id = ? AND status <> ?)",
+			models.MissionLive, me, models.MissionArchived)
 	}
 
 	if t := c.Query("terrain"); t != "" && t != "all" {
@@ -323,7 +326,9 @@ func (h *Handler) CreateMission(c *gin.Context) {
 	c.JSON(http.StatusCreated, mission)
 }
 
-// patchMissionInput is a partial metadata update.
+// patchMissionInput is a partial metadata update. Status accepts only the archive
+// transitions (see applyMissionStatusPatch) — the review lifecycle keeps its own
+// submit/approve/reject routes.
 type patchMissionInput struct {
 	Title             *string `json:"title"`
 	Terrain           *string `json:"terrain"`
@@ -334,6 +339,50 @@ type patchMissionInput struct {
 	MaxPlayers        *int    `json:"max_players"`
 	Briefing          *string `json:"briefing"`
 	ThumbnailURL      *string `json:"thumbnail_url"`
+	Status            *string `json:"status"`
+}
+
+// applyMissionStatusPatch validates the only status changes PATCH may make (T-130.6
+// F2B-05): archive (any status → archived) and unarchive (archived → draft; a formerly
+// live mission re-enters review rather than silently going live again). Archiving is
+// blocked while the mission is attached to an upcoming event — organizers and sign-ups
+// still depend on it; past events keep rendering archived missions by id, so history is
+// unaffected. Writes the error response and returns false on rejection.
+func (h *Handler) applyMissionStatusPatch(c *gin.Context, m *models.Mission, target string, updates map[string]any) bool {
+	status := models.MissionStatus(target)
+	if status == m.Status {
+		return true // idempotent no-op
+	}
+	switch status {
+	case models.MissionArchived:
+		var upcoming int64
+		if err := h.db.Model(&models.EventMission{}).
+			Where("mission_id = ? AND start_time > ?", m.ID, time.Now()).
+			Count(&upcoming).Error; err != nil {
+			logHandlerErr(c, "UpdateMission", http.StatusInternalServerError, "could not check event attachments")
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not update mission"})
+			return false
+		}
+		if upcoming > 0 {
+			logHandlerErr(c, "UpdateMission", http.StatusConflict, "archive blocked by upcoming event")
+			c.JSON(http.StatusConflict, gin.H{"error": "mission is attached to an upcoming event — detach it there first"})
+			return false
+		}
+		updates["status"] = models.MissionArchived
+		return true
+	case models.MissionDraft:
+		if m.Status != models.MissionArchived {
+			logHandlerErr(c, "UpdateMission", http.StatusConflict, "only archived missions can be unarchived")
+			c.JSON(http.StatusConflict, gin.H{"error": "only archived missions can be set back to draft"})
+			return false
+		}
+		updates["status"] = models.MissionDraft
+		return true
+	default:
+		logHandlerErr(c, "UpdateMission", http.StatusBadRequest, "invalid status transition")
+		c.JSON(http.StatusBadRequest, gin.H{"error": "status can only be changed to archived, or to draft to unarchive"})
+		return false
+	}
 }
 
 // UpdateMission edits mission metadata (author or admin only).
@@ -407,6 +456,9 @@ func (h *Handler) UpdateMission(c *gin.Context) {
 	}
 	if in.ThumbnailURL != nil {
 		updates["thumbnail_url"] = *in.ThumbnailURL
+	}
+	if in.Status != nil && !h.applyMissionStatusPatch(c, m, *in.Status, updates) {
+		return
 	}
 
 	if len(updates) > 0 {
@@ -532,6 +584,43 @@ func (h *Handler) GetVersion(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, v)
+}
+
+// DeleteMission soft-deletes a mission (author or admin; T-130.6 F2B-05). GORM's
+// DeletedAt keeps the row (and its versions) recoverable by an operator while every
+// query — library, dossier, export, inject — stops seeing it. Deletion is refused
+// while the mission is attached to ANY event: past events' ORBATs and registrations
+// still render the mission by id, and deleting it would hole that history (archive
+// instead — it only hides the mission from the library).
+//
+// @route DELETE /api/v1/missions/:id
+func (h *Handler) DeleteMission(c *gin.Context) {
+	m, ok := h.loadMission(c)
+	if !ok {
+		return
+	}
+	if !h.canEditMission(c, m) {
+		c.JSON(http.StatusForbidden, gin.H{"error": "not your mission"})
+		return
+	}
+	var attached int64
+	if err := h.db.Model(&models.EventMission{}).Where("mission_id = ?", m.ID).
+		Count(&attached).Error; err != nil {
+		logHandlerErr(c, "DeleteMission", http.StatusInternalServerError, "could not check event attachments")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete mission"})
+		return
+	}
+	if attached > 0 {
+		logHandlerErr(c, "DeleteMission", http.StatusConflict, "delete blocked by event attachment")
+		c.JSON(http.StatusConflict, gin.H{"error": "mission is attached to an event — detach it (or archive the mission) instead"})
+		return
+	}
+	if err := h.db.Delete(m).Error; err != nil {
+		logHandlerErr(c, "DeleteMission", http.StatusInternalServerError, "could not delete mission")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not delete mission"})
+		return
+	}
+	c.Status(http.StatusNoContent)
 }
 
 // SubmitMission moves a draft into the approval queue (author/admin).

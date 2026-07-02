@@ -17,6 +17,7 @@ import {
 import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog'
 import { CreateMissionDialog } from '@/features/mission-creator/CreateMissionDialog'
 import { useMission, useMissions } from '@/hooks/queries'
+import { useDeleteMission, useSetMissionStatus } from '@/hooks/mutations'
 import { useAuthStore } from '@/store/useAuthStore'
 import { gameModeLabel, terrainLabel } from '@/lib/format'
 import type { MissionDetail } from '@/types/api'
@@ -32,6 +33,15 @@ const VISIBILITY: Record<string, { label: string; variant: 'neutral' | 'warning'
   draft: { label: 'Draft', variant: 'neutral' },
   pending_approval: { label: 'Open for review', variant: 'warning' },
   live: { label: 'Live', variant: 'success' },
+  archived: { label: 'Archived', variant: 'neutral' },
+}
+
+/** Surface the backend's reason (e.g. the 409 "attached to an event" guards) instead of
+ *  flattening every failure into one generic line — same pattern as events.tsx (T-127 U5). */
+function apiErrorMessage(e: unknown, fallback: string): string {
+  const backend = (e as { response?: { data?: { error?: string } } }).response?.data?.error
+  if (!backend) return fallback
+  return backend.charAt(0).toUpperCase() + backend.slice(1)
 }
 
 function VisibilityBadge({ status }: { status: string }) {
@@ -350,7 +360,7 @@ export function MissionLibraryPage() {
 
       {/* Slide-over mission dossier (no full-page navigation) */}
       <Sheet open={previewId != null} onOpenChange={(o) => !o && setPreviewId(null)}>
-        {previewId && <MissionDossierSheet id={previewId} />}
+        {previewId && <MissionDossierSheet id={previewId} onDeleted={() => setPreviewId(null)} />}
       </Sheet>
 
       {/* Transient create dialog (replaces the old /missions/create wizard) */}
@@ -365,7 +375,7 @@ export function MissionLibraryPage() {
  * wiring come from the design-system primitive, while this component owns the
  * edge-to-edge hero, scrollable body, and sticky two-button action footer.
  */
-function MissionDossierSheet({ id }: { id: string }) {
+function MissionDossierSheet({ id, onDeleted }: { id: string; onDeleted: () => void }) {
   const navigate = useNavigate()
   const { data: mission, isLoading, isError, error } = useMission(id)
   const user = useAuthStore((s) => s.user)
@@ -373,7 +383,6 @@ function MissionDossierSheet({ id }: { id: string }) {
   const isAdmin = useAuthStore((s) => s.hasMinRole('admin'))
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
-
   // Editing is owner-or-admin (invited-editor support is future work). The /edit route is
   // itself gated to mission_maker+, so a non-maker never reaches the editor.
   const isOwner = Boolean(mission && mission.author_id === user?.discord_id)
@@ -451,6 +460,13 @@ function MissionDossierSheet({ id }: { id: string }) {
                   )}
                 </div>
               </section>
+
+              <MissionLifecycleActions
+                id={id}
+                canEdit={canEdit}
+                isArchived={mission.status === 'archived'}
+                onDeleted={onDeleted}
+              />
             </div>
           )}
         </QueryState>
@@ -517,6 +533,108 @@ function MissionDossierSheet({ id }: { id: string }) {
         </DialogContent>
       </Dialog>
     </SheetContent>
+  )
+}
+
+/**
+ * Author/admin lifecycle actions (T-130.6 F2B-05/F4-04): archive hides the mission from
+ * the global library (own archived missions stay badged under My Missions) and is
+ * reversible, so it acts directly with a toast; delete is soft server-side but terminal
+ * in the UI, so it confirms via the Aegis Dialog. The 409 event-attachment guards
+ * surface the backend's reason.
+ */
+function MissionLifecycleActions({
+  id,
+  canEdit,
+  isArchived,
+  onDeleted,
+}: {
+  id: string
+  canEdit: boolean
+  isArchived: boolean
+  onDeleted: () => void
+}) {
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const setStatus = useSetMissionStatus(id)
+  const deleteMission = useDeleteMission(id)
+
+  // Gated here (not at the call site) so the dossier sheet stays under its complexity cap.
+  if (!canEdit) return null
+
+  const toggleArchive = () => {
+    setStatus.mutate(isArchived ? 'draft' : 'archived', {
+      onSuccess: () => toast.success(isArchived ? 'Mission restored to draft' : 'Mission archived'),
+      onError: (e) =>
+        toast.error(
+          apiErrorMessage(
+            e,
+            isArchived ? 'Could not unarchive mission' : 'Could not archive mission',
+          ),
+        ),
+    })
+  }
+
+  const confirmDelete = () => {
+    setConfirmDeleteOpen(false)
+    deleteMission.mutate(undefined, {
+      onSuccess: () => {
+        toast.success('Mission deleted')
+        onDeleted()
+      },
+      onError: (e) => toast.error(apiErrorMessage(e, 'Could not delete mission')),
+    })
+  }
+
+  return (
+    <section>
+      <h3 className="mb-2 font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
+        Manage
+      </h3>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={toggleArchive}
+          disabled={setStatus.isPending}
+          className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-white/10 disabled:opacity-60"
+        >
+          {isArchived ? 'Unarchive (restore to draft)' : 'Archive mission'}
+        </button>
+        <button
+          type="button"
+          onClick={() => setConfirmDeleteOpen(true)}
+          disabled={deleteMission.isPending}
+          className="rounded-lg border border-error-alert/30 bg-error-alert/10 px-4 py-2 text-label-md text-error-alert transition-colors hover:bg-error-alert/20 disabled:opacity-60"
+        >
+          Delete mission
+        </button>
+      </div>
+
+      {/* Destructive confirm (F4-04) — Aegis Dialog, not window.confirm. */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent
+          title="Delete this mission?"
+          description="The mission and its versions are removed from the library for everyone. Deletion is refused while the mission is attached to an event."
+        >
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setConfirmDeleteOpen(false)}
+              className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-white/10"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmDelete}
+              disabled={deleteMission.isPending}
+              className="rounded-lg bg-error-alert/20 px-4 py-2 text-label-md text-error-alert transition-colors hover:bg-error-alert/30 disabled:opacity-60"
+            >
+              Delete mission
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </section>
   )
 }
 

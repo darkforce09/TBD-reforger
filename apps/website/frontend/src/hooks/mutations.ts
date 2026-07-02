@@ -340,6 +340,42 @@ export function useSolveFireMission() {
 }
 
 /**
+ * Archive or unarchive a mission (author or admin; T-130.6). The server accepts only
+ * these two status transitions through PATCH — the review lifecycle (submit/approve/
+ * reject) keeps its own routes. 409 while attached to an upcoming event.
+ *
+ * @route PATCH /api/v1/missions/:id
+ */
+export function useSetMissionStatus(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (status: 'archived' | 'draft') => {
+      const { data } = await api.patch(`/missions/${id}`, { status })
+      return data
+    },
+    // Prefix-invalidates both the library lists (['missions', scope, filters]) and
+    // this mission's dossier (['missions', id]).
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['missions'] }),
+  })
+}
+
+/**
+ * Soft-delete a mission (author or admin; T-130.6). Recoverable by an operator; the
+ * server refuses (409) while the mission is attached to any event.
+ *
+ * @route DELETE /api/v1/missions/:id
+ */
+export function useDeleteMission(id: string) {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async () => {
+      await api.delete(`/missions/${id}`)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['missions'] }),
+  })
+}
+
+/**
  * Admin: change a member's role.
  *
  * @route PATCH /api/v1/admin/users/:discordId
