@@ -103,3 +103,21 @@ func TestRateLimitGlobalPathUsesGlobalBucket(t *testing.T) {
 		t.Fatalf("global path blocked: %d", w.Code)
 	}
 }
+
+func TestRateLimitSubstringPathNotStrict(t *testing.T) {
+	// T-130.1 F2B-11: a path merely containing "/auth/" mid-path must use the
+	// global bucket — only a rooted prefix match selects the strict limiter.
+	global := NewIPLimiter(rate.Limit(100), 100)
+	strict := NewIPLimiter(rate.Limit(0), 0) // would 429 immediately if selected
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+	r.Use(RateLimit(global, strict, []string{"/auth/"}))
+	r.GET("/missions/auth/check", func(c *gin.Context) { c.String(http.StatusOK, "ok") })
+
+	req := httptest.NewRequest(http.MethodGet, "/missions/auth/check", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	if w.Code != http.StatusOK {
+		t.Fatalf("substring path hit strict limiter: %d, want 200", w.Code)
+	}
+}

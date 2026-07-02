@@ -83,14 +83,9 @@ type missionCard struct {
 	Bookmarked   bool   `json:"bookmarked"`
 }
 
-// ListMissions powers the library browser with tabs (scope) and filters.
-// Query: ?scope=global|mine|bookmarked &terrain= &mode= &player_count=1-16 &q= &limit= &offset=
-//
-// @route GET /api/v1/missions
-func (h *Handler) ListMissions(c *gin.Context) {
-	me := middleware.DiscordID(c)
-	limit, offset := parsePage(c)
-
+// missionListQuery builds the filtered library query for ListMissions from the
+// request's scope tab + filter params.
+func (h *Handler) missionListQuery(c *gin.Context, me string) *gorm.DB {
 	q := h.db.Model(&models.Mission{})
 
 	switch c.DefaultQuery("scope", "global") {
@@ -121,9 +116,24 @@ func (h *Handler) ListMissions(c *gin.Context) {
 	if search := strings.TrimSpace(c.Query("q")); search != "" {
 		q = q.Where("title ILIKE ?", "%"+search+"%")
 	}
+	return q
+}
+
+// ListMissions powers the library browser with tabs (scope) and filters.
+// Query: ?scope=global|mine|bookmarked &terrain= &mode= &player_count=1-16 &q= &limit= &offset=
+//
+// @route GET /api/v1/missions
+func (h *Handler) ListMissions(c *gin.Context) {
+	me := middleware.DiscordID(c)
+	limit, offset := parsePage(c)
+	q := h.missionListQuery(c, me)
 
 	var total int64
-	q.Count(&total)
+	if err := q.Count(&total).Error; err != nil {
+		logHandlerErr(c, "ListMissions", http.StatusInternalServerError, "could not count missions")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not list missions"})
+		return
+	}
 
 	var missions []models.Mission
 	if err := q.Order("updated_at DESC").Limit(limit).Offset(offset).Find(&missions).Error; err != nil {
@@ -709,19 +719,25 @@ type armoryExport struct {
 
 // buildMissionDoc assembles the strict mission.json document from a mission, its
 // current version payload, and its armory. Shared by export and injection.
-func (h *Handler) buildMissionDoc(m *models.Mission) missionJSON {
+// A mission without a current version legitimately exports the `{}`/0.0.0 defaults;
+// a version row that exists but fails to load is an error — the game server must
+// never receive a silently empty payload for a mission that has one (T-130.1 F2B-08).
+func (h *Handler) buildMissionDoc(m *models.Mission) (missionJSON, error) {
 	payload := json.RawMessage("{}")
 	version := "0.0.0"
 	if m.CurrentVersionID != nil {
 		var v models.MissionVersion
-		if err := h.db.First(&v, "id = ?", *m.CurrentVersionID).Error; err == nil {
-			payload = json.RawMessage(v.JSONPayload)
-			version = v.Semver
+		if err := h.db.First(&v, "id = ?", *m.CurrentVersionID).Error; err != nil {
+			return missionJSON{}, fmt.Errorf("load current version %s: %w", *m.CurrentVersionID, err)
 		}
+		payload = json.RawMessage(v.JSONPayload)
+		version = v.Semver
 	}
 
 	var armory []models.MissionArmory
-	h.db.Where("mission_id = ?", m.ID).Order("sort_order ASC").Find(&armory)
+	if err := h.db.Where("mission_id = ?", m.ID).Order("sort_order ASC").Find(&armory).Error; err != nil {
+		return missionJSON{}, fmt.Errorf("load armory: %w", err)
+	}
 	exportArmory := make([]armoryExport, 0, len(armory))
 	for _, a := range armory {
 		exportArmory = append(exportArmory, armoryExport{
@@ -748,7 +764,7 @@ func (h *Handler) buildMissionDoc(m *models.Mission) missionJSON {
 		Armory:              exportArmory,
 		Payload:             payload,
 		ExportedAt:          time.Now().UTC(),
-	}
+	}, nil
 }
 
 // ExportMission returns the strict mission.json envelope (missionJSON) as a file
@@ -765,8 +781,14 @@ func (h *Handler) ExportMission(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "mission not found"})
 		return
 	}
+	doc, err := h.buildMissionDoc(m)
+	if err != nil {
+		logHandlerErr(c, "ExportMission", http.StatusInternalServerError, "could not build mission export: "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not build mission export"})
+		return
+	}
 	c.Header("Content-Disposition", `attachment; filename="mission.json"`)
-	c.IndentedJSON(http.StatusOK, h.buildMissionDoc(m))
+	c.IndentedJSON(http.StatusOK, doc)
 }
 
 // --- shared helpers ---

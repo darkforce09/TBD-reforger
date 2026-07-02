@@ -125,7 +125,12 @@ func (h *Handler) InjectMission(c *gin.Context) {
 		return
 	}
 
-	doc := h.buildMissionDoc(m)
+	doc, err := h.buildMissionDoc(m)
+	if err != nil {
+		logHandlerErr(c, "InjectMission", http.StatusInternalServerError, "could not build mission.json: "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not build mission.json"})
+		return
+	}
 	data, err := json.MarshalIndent(doc, "", "  ")
 	if err != nil {
 		logHandlerErr(c, "InjectMission", http.StatusInternalServerError, "could not build mission.json")

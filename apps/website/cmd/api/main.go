@@ -18,6 +18,7 @@ import (
 	"github.com/tbd-milsim/reforger-backend/internal/db"
 	"github.com/tbd-milsim/reforger-backend/internal/handlers"
 	"github.com/tbd-milsim/reforger-backend/internal/middleware"
+	"github.com/tbd-milsim/reforger-backend/internal/services"
 )
 
 const (
@@ -62,7 +63,9 @@ func main() {
 		// 1 MB cap on all JSON routes (multipart bumped); the mission-version POST is
 		// skipped here and wrapped at its own higher cap where it's registered.
 		middleware.GlobalBodyLimit(middleware.MaxJSONBody),
-		middleware.RateLimit(globalLimiter, authLimiter, []string{"/auth/", "/ingest/"}),
+		// Strict-limiter selectors are full rooted path prefixes (exact HasPrefix
+		// match, T-130.1 F2B-11) — they must name the mounted /api/v1 paths.
+		middleware.RateLimit(globalLimiter, authLimiter, []string{"/api/v1/auth/", "/api/v1/ingest/"}),
 	)
 
 	// Liveness/readiness.
@@ -89,6 +92,10 @@ func main() {
 	srv := &http.Server{Addr: ":" + cfg.Port, Handler: r}
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	// Background sweep of stale refresh-token rows (T-130.1 F2B-09; policy in
+	// services.RefreshTokenRetention). Stops with the signal context on shutdown.
+	services.StartRefreshTokenPurge(ctx, gdb)
 
 	go func() {
 		log.Printf("listening on :%s (env=%s)", cfg.Port, cfg.Env)

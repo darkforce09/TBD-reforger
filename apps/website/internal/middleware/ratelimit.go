@@ -58,13 +58,16 @@ func (l *IPLimiter) sweep() {
 }
 
 // RateLimit applies the global limiter, switching to the strict limiter for
-// requests whose path matches one of strictPrefixes (e.g. /auth, /ingest).
+// requests whose path starts with one of strictPrefixes. Prefixes are full rooted
+// paths (e.g. /api/v1/auth/) matched with HasPrefix — a substring match would also
+// catch unrelated routes that merely contain the fragment, such as a path parameter
+// spelling "auth" (T-130.1 F2B-11).
 func RateLimit(global, strict *IPLimiter, strictPrefixes []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		lim := global
 		path := c.Request.URL.Path
 		for _, p := range strictPrefixes {
-			if strings.Contains(path, p) {
+			if strings.HasPrefix(path, p) {
 				lim = strict
 				break
 			}
