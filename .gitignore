@@ -1,4 +1,6 @@
-# Monorepo gitignore (root-level paths not covered by subtree .gitignore files)
+# Ticket pipeline worktrees (git worktree add — not committed; see worktrees/README.md)
+.ai/artifacts/worktrees/TBD-*/
+
 apps/mod/crf_framework/
 
 # Staging deploy secrets (copy from scripts/deploy/deploy.env.example)
