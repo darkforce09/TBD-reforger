@@ -114,9 +114,9 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-127**
+**Latest shipped:** **T-128**
 
-**ACTIVE NOW:** **T-128** — T-128 (Fable audit — doc link repair + staging honesty). Slice spec: `docs/platform/t128_doc_link_repair.md`.
+**ACTIVE NOW:** **T-068** — Virtual Arsenal (registry + loadout export)
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -142,19 +142,15 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 updated; doc links repaired (incl. pre-existing `docs/specs/**` rot). Verified: go build,
 frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
-### ACTIVE SLICE — Fable 5 audit program (ONLY work right now)
+### COMPLETE — Fable 5 audit program (T-126 → T-127 → T-128)
 
-Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · audit [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md) · resume [`.ai/artifacts/fable_audit_operator_resume.md`](.ai/artifacts/fable_audit_operator_resume.md)
+Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · living tracker [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md)
 
-**Order:** **T-126** shipped · **T-127** shipped @ `0515aabb` → **T-128** (doc links, **active**). **Do not** parallel T-090 or T-068 until **T-128** lands.
+**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links + staging honesty (tag **T-128**; log [`.ai/artifacts/t128_doc_link_repair_log.md`](.ai/artifacts/t128_doc_link_repair_log.md)). Remaining audit findings live in the tracker as OPEN/DEFERRED (T-092, T-090.1.1, misc LOW) — next work comes from [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
 
-```bash
-# T-128 worktree — see .ai/artifacts/worktrees/TBD-T-128
-```
+### RESUMED — T-090 Map visualization program
 
-### PAUSED — T-090 Map visualization program
-
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.4** @ `0d6fe485` P0 FAIL · **next:** **T-090.1.2.8** after Fable program ships.
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.4** @ `0d6fe485` P0 FAIL · **next:** **T-090.1.2.8** (unified GPU satellite texture) — Fable program complete, map program unblocked.
 
 **Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
 
@@ -397,7 +393,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
   editor slice (no **T-090** tiles / **T-091** DEM / **T-068** registry). **Terrain:** `MissionCreatorPage`
   reads `meta.terrain` and passes it to `<TacticalMap key={terrainId} terrain={terrainId}>`
   (the `key` remounts the viewport so the camera + base grid resize to Everon 12800 vs Arland
-  10240). **Title hydrate:** new `applyMissionRowMeta` (INIT_ORIGIN) in `tactical-map`
+  4096). **Title hydrate:** new `applyMissionRowMeta` (INIT_ORIGIN) in `tactical-map`
   `state/ydoc.ts` sets `meta.title`/`terrain`/`environment` from the `GET /missions/:id`
   row; `useMissionEditor.onSynced` was rewritten so it **no longer early-returns when
   `json_payload` is `{}`** (the bug that left every freshly-created mission on "Untitled

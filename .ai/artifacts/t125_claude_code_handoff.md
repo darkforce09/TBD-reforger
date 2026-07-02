@@ -1,8 +1,8 @@
 # T-125 — Claude Code handoff
 
 **Status:** **shipped** · program **T-125.0–.6 complete** · code tag **T-125.5** @ `e21dac3`  
-**Spec:** [`docs/platform/t125_coding_standards_enforcement.md`](../docs/platform/t125_coding_standards_enforcement.md)  
-**Authority:** [`CODING_STANDARDS.md`](../docs/platform/CODING_STANDARDS.md) — all **38** §10 rules **live**
+**Spec:** [`docs/platform/t125_coding_standards_enforcement.md`](../../docs/platform/t125_coding_standards_enforcement.md)  
+**Authority:** [`CODING_STANDARDS.md`](../../docs/platform/CODING_STANDARDS.md) — all **38** §10 rules **live**
 
 **Shipped:** T-125.0 @ `a54f491` · T-125.1 @ `9792182` · T-125.2/.2.1 @ `80c7f07` · T-125.3 @ `e5fbf4b` · T-125.4 @ `cb508cf` · **T-125.5 @ `e21dac3` (tag T-125.5)**
 

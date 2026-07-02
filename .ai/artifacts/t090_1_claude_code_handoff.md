@@ -1,15 +1,15 @@
 # T-090.1 — Claude Code handoff (Satellite basemap)
 
 **Generated:** 2026-06-30 · **Executor:** claude-code · **Commit on:** `main` (`T-090.1:` prefix)  
-**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)  
+**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)  
 **Spike ops log:** [`.ai/artifacts/map_export_everon.json`](map_export_everon.json) @ spike `b342c35`
 
 ---
 
 ## Active slice: T-090.1 — Satellite basemap + tile pyramid
 
-**Spec (read first):** [`t090_1_aligned_basemap.md`](../docs/specs/Mission_Creator_Architecture/t090_1_aligned_basemap.md)  
-**Dual-view contract:** [`t090_basemap_dual_view.md`](../docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md) (Map tiles = **T-090.1.1**)
+**Spec (read first):** [`t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) *(planned `t090_1_aligned_basemap.md` was never created — superseded by the program hub)*  
+**Dual-view contract:** [`t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) *(planned `t090_basemap_dual_view.md` never created; Map tiles = **T-090.1.1**)*
 
 ### Goal
 
@@ -64,7 +64,7 @@ Manual: H1/H2/H2b alignment log in PR or `.ai/artifacts/t090_1_verify_log.md`.
 
 ## MCP (prerequisite — shipped @ `e7e7232`)
 
-Shell MCP is reliable — warm daemon ~0.3 s per call. Reference: [`docs/mod/MCP_TOOLING.md`](../docs/mod/MCP_TOOLING.md).
+Shell MCP is reliable — warm daemon ~0.3 s per call. Reference: [`docs/mod/MCP_TOOLING.md`](../../docs/mod/MCP_TOOLING.md).
 
 ```bash
 bash scripts/mod/mcp-call-selftest.sh   # offline 19/19

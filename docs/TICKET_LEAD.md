@@ -5,12 +5,11 @@
 
 ## Running / Review
 
-- **T-128** (1280) — Fable audit — doc link repair + staging honesty [active] — ACTIVE — P0 handoff links, staging T-092 honesty, README rot, orphans, registry sync. After T-127 @ 0515aabb. Spec: docs/platform/t128_doc_link_repair.md.
 
 ## Ready
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
-- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). PAUSED — Fable audit T-127→128 active (T-126 shipped @ 4a47688e). Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). Fable audit program complete (T-126–T-128) — RESUMED. Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
 
 ## Next queued (top 10)

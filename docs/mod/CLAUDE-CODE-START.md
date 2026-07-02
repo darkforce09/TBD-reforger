@@ -50,7 +50,7 @@ Expect ~19 `.c` files under `EnfusionMCP/` after first run. Staging deploy exclu
 |--------|------|
 | **`bash scripts/mod/mcp-call.sh <tool> '<json>'`** | Claude Code **terminal** (daemon-first; warm ~0.3 s) |
 | Copy [`apps/mod/.mcp.json`](../../apps/mod/.mcp.json) → project `.mcp.json` | Optional native MCP tools in IDE session |
-| Copy → [`.cursor/mcp.json`](../../.cursor/mcp.json) | Cursor IDE Workbench chats only |
+| Copy → `.cursor/mcp.json` (gitignored — local only) | Cursor IDE Workbench chats only |
 
 Verify machine paths in `ENFUSION_GAME_PATH`, `ENFUSION_WORKBENCH_PATH`, `ENFUSION_PROJECT_PATH`.
 

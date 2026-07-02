@@ -145,7 +145,7 @@ hovering an icon (no per-move hover pick). Click/dbl-click/marquee/drag picking 
 `CLAUDE.md` §Status (T-057 bullet + latest-feature line), MC [ROADMAP.md](ROADMAP.md)
 §Map performance (T-057 row → done), [docs/TAGS.md](../../website/TAGS.md),
 [docs/website/frontend/ROADMAP.md](../../website/frontend/ROADMAP.md),
-[docs/website/frontend/pages/mission-editor.md](../../../website/frontend/pages/mission-editor.md),
+[docs/website/frontend/pages/mission-editor.md](../../website/frontend/pages/mission-editor.md),
 [agent_execution.md](agent_execution.md) Decisions log + todo status.
 
 ## After T-057

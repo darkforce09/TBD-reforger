@@ -244,7 +244,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | T-056 → ✅ shipped T-056 |
 | [`feature_inventory.md`](feature_inventory.md) | copy/paste (CopyUnit/PasteUnit) row → working (Trigger, Procedure, Evidence, acceptance) |
 | [`agent_execution.md`](agent_execution.md) | Decisions log row **Copy/paste at cursor (T-056)** |
-| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) + [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Shipped/milestone row for copy-paste |
+| [`docs/website/frontend/ROADMAP.md`](../../website/frontend/ROADMAP.md) + [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Shipped/milestone row for copy-paste |
 | [`docs/TAGS.md`](../../website/TAGS.md) | T-056 row |
 
 **Do not update:** archive stitch, Eden wiki artifacts, historical CLAUDE bullets.

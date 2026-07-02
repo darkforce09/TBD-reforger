@@ -1,8 +1,8 @@
 # T-123 — Claude Code handoff (slices .1–.6)
 
 **Status:** **shipped @ `169e47d`** (historical — superseded by the merged code + the T-123 doc-sync commit; original brief preserved below)  
-**Spec:** [`docs/platform/t123_documentation_standards_rollout.md`](../docs/platform/t123_documentation_standards_rollout.md)  
-**Authority:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](../docs/platform/DOCUMENTATION_STANDARDS.md)
+**Spec:** [`docs/platform/t123_documentation_standards_rollout.md`](../../docs/platform/t123_documentation_standards_rollout.md)  
+**Authority:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](../../docs/platform/DOCUMENTATION_STANDARDS.md)
 
 ## Branch
 

@@ -116,7 +116,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 | **This file** | Status → **shipped** |
 | [`CLAUDE.md`](../../../CLAUDE.md) §Status | T-050 bullet + bump latest-feature line |
 | [`docs/TAGS.md`](../../website/TAGS.md) | T-050 row |
-| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Element #5 (toolbelt X/Y/Z incl. cursor) + M3.6 milestone |
+| [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Element #5 (toolbelt X/Y/Z incl. cursor) + M3.6 milestone |
 | [`feature_inventory.md`](feature_inventory.md) | `MAP-CURSOR-001` — X/Y/Z, Outputs fix, acceptance |
 | [`agent_execution.md`](agent_execution.md) | Decisions log — CUR readout X/Y/Z |
 | [`ROADMAP.md`](ROADMAP.md) | DONE T-050; T-050 shipped note; shipped-list cursor X/Y/Z |

@@ -119,7 +119,7 @@ not "future".
 | **T-090.6** | Geometry-aware audit — OBB samples, `visibleAboveGroundPct`, inter-object bounds |
 | T-090.7 (**optional**) | Auto visual Z correction from geometry audit — optional enhancement, **not** deferred core; the Z-trust badge (T-090.9) is the shipped surfacing |
 | T-092 | Spawn uses mod surface, not export Z |
-| T-126 | Per-floor Z bands for buildings |
+| T-129 | Per-floor Z bands for buildings |
 
 ---
 

@@ -13,14 +13,14 @@ Mod GUID: `B2C3D4E5F6A78901` · Vanilla dependency: `58D0FB3206B6F859`
 | **`tbd-framework/`** (this mod) | Production TBD framework | **Yes** |
 | **`Tbd_framework/`** | CRF reference (read patterns in Cursor only) | **No** — 60+ Coalition workshop deps |
 
-See [`Tbd_framework/REFERENCE-ONLY.md`](../Tbd_framework/REFERENCE-ONLY.md).
+See `Tbd_framework/REFERENCE-ONLY.md` (gitignored reference copy — present only in local checkouts).
 
 ---
 
 ## Features (current)
 
 - Backend config from `$profile:TBD_BackendConfig.json`
-- Mission loader: REST `GET /api/missions/{id}/compiled` → `$profile:missions/{id}.json` fallback
+- Mission loader: REST `GET /api/missions/{id}/compiled` (**T-092 — route not in current backend; always falls through today**) → `$profile:missions/{id}.json` fallback
 - Registry alias resolution (`TBD_Registry.c`)
 - **Per-slot spawn:** `TBD_SpawnManager` + modded `SCR_MenuSpawnLogic` from mission `slots[]` (schema 1.1) — **kit aliases** + round-robin/roster assign; **no in-game slot picker yet** (**T-068.13** production LOBBY UI, after **T-092.2**)
 - **Player loadout on spawn:** **T-068.12** — per-slot compiled loadout → `EquipCloth`/`EquipWeapon` on **human player** (not test NPC)
@@ -48,7 +48,7 @@ Golden mission `msn_8f3a2c` defines **18 slots** with exact spawn positions.
 ## Workbench setup
 
 ```bash
-bash scripts/setup-workbench-linux.sh
+bash scripts/mod/setup-workbench-linux.sh
 ```
 
 1. Locate `~/ArmaReforger-Base/data/ArmaReforger.gproj` as base game
@@ -61,7 +61,7 @@ bash scripts/setup-workbench-linux.sh
 **MCP verify spawn:**
 
 ```bash
-bash scripts/tbd-spawn-verify.sh
+bash scripts/mod/tbd-spawn-verify.sh
 ```
 
 ---
@@ -69,15 +69,15 @@ bash scripts/tbd-spawn-verify.sh
 ## Dedicated server (Linux)
 
 ```bash
-bash scripts/setup-server-profile.sh     # default profile: ../.local-test-profile/
-bash scripts/run-dev-server.sh
+bash scripts/mod/setup-server-profile.sh     # default profile: ../.local-test-profile/
+bash scripts/mod/run-dev-server.sh
 ```
 
 Prereqs: Steam app **1890870** (Arma Reforger Server), website API on `:8080`.
 
 Local unpublished mods use **`-server` + `-addons`**, not `-config` + `-addons`.
 
-**Staging:** see [`docs/STAGING-SERVER.md`](../docs/STAGING-SERVER.md) — `bash scripts/deploy-staging.sh`.
+**Staging:** see [`docs/STAGING-SERVER.md`](../../../docs/mod/STAGING-SERVER.md) — `bash scripts/mod/deploy-staging.sh`.
 
 ### Profile layout
 
@@ -96,7 +96,7 @@ profile/
 `…/compatdata/1874910/pfx/drive_c/users/steamuser/Documents/My Games/ArmaReforgerWorkbench/profile/`  
 (paste exact path in verify — differs from dedicated-server `.local-test-profile/`).
 
-Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `website/.env`.
+Setup script writes these automatically; token from `GAME_SERVER_TOKEN` env or `apps/website/.env`.
 
 ### Expected log lines
 
@@ -125,7 +125,7 @@ NETWORK : Starting RPL server, listening on address 0.0.0.0:2001
 ## Registry
 
 Shipped at `Data/registry.json` (vanilla POC aliases).  
-Spec: [`shared/tbd-schema/spikes/registry-poc-0.4.md`](../../shared/tbd-schema/spikes/registry-poc-0.4.md) (historical spike).
+Spec: [`shared/tbd-schema/spikes/registry-poc-0.4.md`](../../../packages/tbd-schema/spikes/registry-poc-0.4.md) (historical spike).
 
 Replace with TBD-Content export in Phase 1+.
 

@@ -25,7 +25,7 @@ Playbook: [`tickets/AI_PLAYBOOK.md`](../../.ai/tickets/AI_PLAYBOOK.md). Lead vie
 | Domain | Start here |
 |--------|------------|
 | **Any work** | [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) → registry row → spec path |
-| **Frontend surfaces** | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) → [`docs/website/frontend/INDEX.md`](../../website/frontend/INDEX.md) |
+| **Frontend surfaces** | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) → [`docs/website/frontend/INDEX.md`](frontend/INDEX.md) |
 | **Mission Creator** | MC [`ROADMAP.md`](../specs/Mission_Creator_Architecture/ROADMAP.md) → [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
 | **Backend / API** | [`docs/backend/ROADMAP.md`](backend/ROADMAP.md) |
 | **Cross-boundary code comments** | [`docs/platform/DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) — §8.2 doc placement + §11 cheat sheet; in-code = same commit as code (§1) |
@@ -43,15 +43,15 @@ If the registry row has a `spec`, read it before editing code.
 |--------------|--------------|
 | **Shipped milestone** | Registry row → `shipped`; `./scripts/ticket sync`; [`CLAUDE.md`](../../CLAUDE.md) §Status **Done** bullet (sync may auto-update markers — verify narrative) |
 | **Active slice** (in progress) | Registry `active_slice`; [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) §ACTIVE SLICE |
-| **New or removed route** | [`frontend/src/router.tsx`](../../apps/website/frontend/src/router.tsx) + matching [`docs/website/frontend/pages/*.md`](../../website/frontend/pages) + [`docs/website/frontend/INDEX.md`](../../website/frontend/INDEX.md) + [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
+| **New or removed route** | [`frontend/src/router.tsx`](../../apps/website/frontend/src/router.tsx) + matching [`docs/website/frontend/pages/*.md`](frontend/pages) + [`docs/website/frontend/INDEX.md`](frontend/INDEX.md) + [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) |
 | **UI surface (no route change)** | Relevant page spec **Element Inventory** + **`Live source:`** path |
-| **Nav / sidebar change** | [`frontend/src/config/navigation.ts`](../../apps/website/frontend/src/config/navigation.ts) + [`docs/website/frontend/shell/sidebar.md`](../../website/frontend/shell/sidebar.md) |
+| **Nav / sidebar change** | [`frontend/src/config/navigation.ts`](../../apps/website/frontend/src/config/navigation.ts) + [`docs/website/frontend/shell/sidebar.md`](frontend/shell/sidebar.md) |
 | **API / model change** | `internal/models/` JSON tags + matching `frontend/src/types/`; note handler if behavior changed |
 | **Cross-boundary type or handler** | In-code Godoc/TSDoc/Enforce comments + `@contract` / `@route` / `@model` per [`DOCUMENTATION_STANDARDS.md`](../platform/DOCUMENTATION_STANDARDS.md) §3 — **same commit as code** (Claude Code); Cursor syncs narrative docs after ship |
 | **Mission Creator UX lock** | [`agent_execution.md`](../specs/Mission_Creator_Architecture/agent_execution.md) **Decisions log** row |
 | **Mission Creator new capability** | [`feature_inventory.md`](../specs/Mission_Creator_Architecture/feature_inventory.md) FEDS row |
 | **Eden parity gap closed** | [`eden/gap_analysis.md`](../specs/Mission_Creator_Architecture/eden/gap_analysis.md) ticket column + table row |
-| **Frontend surface (MC route)** | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) recently shipped + [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) |
+| **Frontend surface (MC route)** | [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) recently shipped + [`docs/website/frontend/pages/mission-editor.md`](frontend/pages/mission-editor.md) |
 | **New T-0xx in registry** | Row in [`tickets/registry.json`](../../.ai/tickets/registry.json) + `./scripts/ticket sync`; update [`docs/TAGS.md`](TAGS.md) only if contract text changed |
 | **Deferred / blocked (not shipped)** | Registry `status: deferred` — **never** mark `shipped` until verified |
 | **Doc-only reorg** | Own T-0xx commit; §Status note if authority changed |
@@ -66,7 +66,7 @@ If the registry row has a `spec`, read it before editing code.
 | New user-facing editor feature | `feature_inventory.md` |
 | Engineering contract (schema, compiler, workers) | `engineering_plan.md` |
 | Eden UI parity | `eden/gap_analysis.md` + `eden/ui_anatomy.md` |
-| Shipped git milestone | Registry `shipped` + sync + §Status + MC ROADMAP + [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) + [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) + gap_analysis + feature_inventory + agent_execution as applicable |
+| Shipped git milestone | Registry `shipped` + sync + §Status + MC ROADMAP + [`docs/website/frontend/ROADMAP.md`](frontend/ROADMAP.md) + [`docs/website/frontend/pages/mission-editor.md`](frontend/pages/mission-editor.md) + gap_analysis + feature_inventory + agent_execution as applicable |
 
 Shell **T-033–T-040** shipped. Scale program **T-057–T-067** shipped. Next: **T-068+** per [`TICKET_LEAD.md`](../TICKET_LEAD.md).
 

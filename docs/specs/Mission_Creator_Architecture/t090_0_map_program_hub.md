@@ -27,7 +27,7 @@ Editor uses a procedural grid only; no manifest, no aligned tiles, no CI gate ty
 3. [`terrain-manifest.schema.json`](../../../packages/tbd-schema/schema/terrain-manifest.schema.json) + stub [`manifest.json`](../../../packages/map-assets/everon/manifest.json).
 4. [`terrain-anchors.schema.json`](../../../packages/tbd-schema/schema/terrain-anchors.schema.json) + example [`verification.example.json`](../../../packages/map-assets/everon/anchors/verification.example.json).
 5. Root [`.gitattributes`](../../../.gitattributes) — LFS for `packages/map-assets/**/*.png` and `*.webp`.
-6. Verify scripts: [`verify-terrain-manifest.ts`](../../../scripts/website/verify-terrain-manifest.ts), [`verify-terrain-alignment.ts`](../../../scripts/website/verify-terrain-alignment.ts).
+6. Verify scripts: [`verify-terrain-manifest.ts`](../../../packages/tbd-schema/scripts/verify-terrain-manifest.mjs), [`verify-terrain-alignment.ts`](../../../packages/tbd-schema/scripts/verify-terrain-alignment.mjs).
 7. DEV_RUNBOOK §Map assets + `packages/map-assets/README.md`.
 8. Fix [`terrains.ts`](../../../apps/website/frontend/src/features/tactical-map/coords/terrains.ts) — Biki bounds/heights, `manifestUrl`, `heightRangeMinM`/`heightRangeMaxM`.
 

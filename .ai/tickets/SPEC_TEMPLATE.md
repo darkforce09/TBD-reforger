@@ -3,7 +3,7 @@
 **Ticket:** T-0xx  
 **Status:** Spec ready — code pending  
 **Git tag on ship:** **T-0xx**  
-**Authority:** [`docs/TICKET_LEAD.md`](../docs/TICKET_LEAD.md) · [`tickets/registry.json`](registry.json)
+**Authority:** [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · [`tickets/registry.json`](registry.json)
 
 **Agent roles (locked):** **Cursor Composer 2.5** authors and syncs all documentation. **Claude Code reads this spec and implements code only** — return verify output to Cursor; do **not** edit docs.
 
@@ -62,7 +62,7 @@ cd frontend && npm run build && npm run lint
 
 ## Documentation sync (Cursor Composer 2.5 — after human merge)
 
-On ship: run `./scripts/ticket ship T-0xx`; update narrative docs per [`docs/AGENT_COMMIT_CHECKLIST.md`](../docs/AGENT_COMMIT_CHECKLIST.md).
+On ship: run `./scripts/ticket ship T-0xx`; update narrative docs per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md).
 
 ---
 

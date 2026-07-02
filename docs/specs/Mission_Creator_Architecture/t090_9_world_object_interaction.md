@@ -121,7 +121,7 @@ World-layer toggles persist in `localStorage` (`tbd-mc-world-layers`); the basem
 ---
 
 ## Out of scope
-- World object mutation (Workbench only) · building floor picker (**T-126**).
+- World object mutation (Workbench only) · building floor picker (**T-129**).
 
 ## Related
 - [`t090_world_objects_worker.md`](t090_world_objects_worker.md) · [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md)

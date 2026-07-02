@@ -1,6 +1,12 @@
 # Phase 0.1 — REST Spike (main team)
 
 > **Status:** GREEN (HTTP contract + Enfusion loader verified on dedicated server, 2026-06-13).
+>
+> **Historical (T-128 note, 2026-07-02):** the spike code below was **removed from the backend** —
+> none of these files or routes exist in the current `apps/website` tree, and the game-server REST
+> surface will be built for real in **T-092**
+> (`docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`). File paths below are
+> kept as plain text for the record.
 
 ## Goal
 
@@ -11,17 +17,17 @@ unreliable.
 
 ## What was built
 
-In [`website`](../../website):
+In `website/` (pre-monorepo; **all spike files since removed**):
 
-- Server-token middleware — [`internal/middleware/servertoken.go`](../../website/internal/middleware/servertoken.go)
-- Game-server handler — [`internal/handlers/gameserver.go`](../../website/internal/handlers/gameserver.go)
+- Server-token middleware — `internal/middleware/servertoken.go` (removed)
+- Game-server handler — `internal/handlers/gameserver.go` (removed)
   - `GET /api/missions/{id}/compiled` (serves compiled mission JSON from `MISSIONS_DIR`)
   - `POST /api/results` (log-only)
   - `POST /api/telemetry` (log-only)
-- Wired into the production router — [`internal/server/server.go`](../../website/internal/server/server.go)
-- Spike harness (no DB) — [`cmd/restspike`](../../website/cmd/restspike)
-- Spike client emulating the dedicated server — [`scripts/rest-spike.sh`](../../website/scripts/rest-spike.sh)
-- Handler tests — [`internal/handlers/gameserver_test.go`](../../website/internal/handlers/gameserver_test.go)
+- Wired into the production router — `internal/server/server.go` (removed)
+- Spike harness (no DB) — `cmd/restspike` (removed)
+- Spike client emulating the dedicated server — `scripts/rest-spike.sh` (removed)
+- Handler tests — `internal/handlers/gameserver_test.go` (removed)
 
 ## How to run
 

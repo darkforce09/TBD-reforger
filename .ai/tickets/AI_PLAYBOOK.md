@@ -27,7 +27,7 @@ Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADM
 1. Human verified merge + build/lint pass
 2. Set row `status: shipped`, remove `active_slice`
 3. `./scripts/ticket sync`
-4. Update narrative docs per [`docs/AGENT_COMMIT_CHECKLIST.md`](../docs/AGENT_COMMIT_CHECKLIST.md)
+4. Update narrative docs per [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md)
 
 ### Mark ready for Claude Code
 
@@ -63,7 +63,7 @@ Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADM
 |----------|-------|-------|
 | `claude-code` | Claude Code | `website/` code on `ticket/T-0xx` branches |
 | `cursor-docs` | Cursor | specs, registry, `./scripts/ticket sync` |
-| `workbench` / `human` | Human | `mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../docs/TICKET_MOD_QUEUE.md) |
+| `workbench` / `human` | Human | `mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) |
 
 Handoff: mark slice ready → correct executor implements → `./scripts/ticket advance-slice` or `./scripts/ticket done`.
 
@@ -87,12 +87,12 @@ If unclear: one question — *review only, or write ticket + handoff?*
 
 | File | Shows |
 |------|-------|
-| [`docs/TICKET_REGISTRY.md`](../docs/TICKET_REGISTRY.md) | All tickets |
-| [`docs/TICKET_LEAD.md`](../docs/TICKET_LEAD.md) | Lead dashboard |
-| [`docs/TICKET_DEV_QUEUE.md`](../docs/TICKET_DEV_QUEUE.md) | Claude Code ready queue |
-| [`docs/TICKET_MOD_QUEUE.md`](../docs/TICKET_MOD_QUEUE.md) | Mod / Workbench queue |
-| [`docs/MILESTONES.md`](../docs/MILESTONES.md) | M1/M2 gate from registry |
-| [`docs/TICKET_BRAINSTORM.md`](../docs/TICKET_BRAINSTORM.md) | Ideas + deferred |
+| [`docs/TICKET_REGISTRY.md`](../../docs/TICKET_REGISTRY.md) | All tickets |
+| [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) | Lead dashboard |
+| [`docs/TICKET_DEV_QUEUE.md`](../../docs/TICKET_DEV_QUEUE.md) | Claude Code ready queue |
+| [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) | Mod / Workbench queue |
+| [`docs/MILESTONES.md`](../../docs/MILESTONES.md) | M1/M2 gate from registry |
+| [`docs/TICKET_BRAINSTORM.md`](../../docs/TICKET_BRAINSTORM.md) | Ideas + deferred |
 
 ## Validation
 

@@ -41,7 +41,7 @@ export default function MissionCreatorPage() {
   // useMapStore.getState().cursor and only BottomToolbelt subscribes to it.
   const clipboardRef = useRef<ClipboardSlot[]>([])
 
-  // Terrain comes from the hydrated mission meta (Everon 12.8km vs Arland 10.24km); the
+  // Terrain comes from the hydrated mission meta (Everon 12.8km vs Arland 4.096km); the
   // `key` remounts the viewport so the camera/base-map resize to the new bounds.
   const terrainId = useMapStore((s) => s.meta?.terrain ?? 'everon')
   // Grid + hillshade overlay toggles persist on mission meta (T-091.2).

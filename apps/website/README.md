@@ -10,20 +10,20 @@ make api      # Go API on :8080
 make web      # Vite dev server on :5173
 ```
 
-Full commands: [`DEV_RUNBOOK.md`](DEV_RUNBOOK.md)
+Full commands: [`DEV_RUNBOOK.md`](../../docs/website/DEV_RUNBOOK.md)
 
 ## Documentation
 
-**All docs:** [`docs/README.md`](docs/README.md)
+**All docs:** [`docs/website/README.md`](../../docs/website/README.md)
 
 | Role | Start here |
 |------|------------|
-| **Ticket backlog** | [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) · [`docs/TICKET_REGISTRY.md`](docs/TICKET_REGISTRY.md) |
-| Frontend | [`docs/website/frontend/ROADMAP.md`](docs/website/frontend/ROADMAP.md) |
-| Backend | [`docs/backend/ROADMAP.md`](docs/backend/ROADMAP.md) |
-| Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](docs/specs/Mission_Creator_Architecture/ROADMAP.md) |
+| **Ticket backlog** | [`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · [`docs/TICKET_REGISTRY.md`](../../docs/TICKET_REGISTRY.md) |
+| Frontend | [`docs/website/frontend/ROADMAP.md`](../../docs/website/frontend/ROADMAP.md) |
+| Backend | [`docs/website/backend/ROADMAP.md`](../../docs/website/backend/ROADMAP.md) |
+| Mission Creator | [`docs/specs/Mission_Creator_Architecture/ROADMAP.md`](../../docs/specs/Mission_Creator_Architecture/ROADMAP.md) |
 | AI agents | [`CLAUDE.md`](CLAUDE.md) |
-| Archive / mockups | [`docs/archive/README.md`](docs/archive/README.md) |
+| Archive / mockups | [`docs/website/archive/README.md`](../../docs/website/archive/README.md) |
 
 ## Stack
 

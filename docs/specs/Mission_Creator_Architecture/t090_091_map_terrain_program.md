@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **PAUSED** (Fable audit **T-126→128** is the only active work). **T-090.1.2.4 shipped** @ `0d6fe485` (P0 FAIL). **Next when Fable done:** **T-090.1.2.8**. **T-091 complete** @ `dde589e`.  
+**Status:** **ready** — **RESUMED** (Fable audit program **T-126→128 complete**, 2026-07-02). **T-090.1.2.4 shipped** @ `0d6fe485` (P0 FAIL). **Next:** **T-090.1.2.8**. **T-091 complete** @ `dde589e`.  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -28,7 +28,7 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.1  Lossless z0–6 pyramid  ✓ @ 19bc785
   → T-090.1.2.2  SAP cell seam repair  ✓ @ a3efdf6
   → T-090.1.2.4  Engine render ortho spike  ✓ @ 0d6fe485 (P0 FAIL — SAP locked as source)
-  → T-090.1.2.8  Unified satellite texture  (PAUSED — after Fable T-126→128)
+  → T-090.1.2.8  Unified satellite texture  (NEXT — Fable T-126→128 complete)
   → T-090.1.2.5  Satellite water  (queued — SAP ortho base)
   → T-090.1.2.6  Hillshade blend strength slider  (queued — FE only)
   → T-090.1.2.3  Basemap tile prefetch  (queued — interim pyramid only)

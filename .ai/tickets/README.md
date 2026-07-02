@@ -59,4 +59,4 @@ make ticket-list
 
 ## Authority
 
-[`docs/TICKET_LEAD.md`](../docs/TICKET_LEAD.md) · [`docs/AGENT_COMMIT_CHECKLIST.md`](../docs/AGENT_COMMIT_CHECKLIST.md)
+[`docs/TICKET_LEAD.md`](../../docs/TICKET_LEAD.md) · [`docs/AGENT_COMMIT_CHECKLIST.md`](../../docs/website/AGENT_COMMIT_CHECKLIST.md)

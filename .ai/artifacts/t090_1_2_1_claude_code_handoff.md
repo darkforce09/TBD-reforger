@@ -1,8 +1,8 @@
 # T-090.1.2.1 — Claude Code handoff (lossless satellite pyramid)
 
 **Generated:** 2026-06-30 · **Executor:** claude-code · **Commit on:** `main` (`T-090.1.2.1:` prefix)  
-**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md)  
-**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)  
+**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_1_lossless_satellite_pyramid.md)  
+**Program hub:** [`docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`](../../docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md)  
 **Parent:** T-090.1.2 shipped @ `c2730a3` (12800² SAP ortho + decode/stitch — do not redo)
 
 ---

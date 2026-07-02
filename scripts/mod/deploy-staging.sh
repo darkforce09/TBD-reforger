@@ -177,8 +177,16 @@ else
   ssh_cmd "cd '$TBD_REMOTE_DIR/apps/website' && docker compose -f docker-compose.staging.yml up -d --build"
 fi
 
+# V2–V4 hit the game-server REST routes (/api/missions/:id/compiled, /api/game/.../roster).
+# Those existed only in the Phase-0 REST spike backend, since removed — the current backend
+# serves /api/v1 only, so these curls 404 and would abort the deploy. BLOCKED on T-092
+# (docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md). Skipped by
+# default until T-092 ships; set TBD_RUN_T092_SMOKE=1 to force-run the gate.
 echo "==> API smoke (V2–V4)"
-if [ "$DRY_RUN" -eq 1 ]; then
+if [ "${TBD_RUN_T092_SMOKE:-0}" != "1" ]; then
+  echo "[SKIP] V2–V4 API smoke — routes BLOCKED on T-092 (not in current backend; would 404)."
+  echo "       Set TBD_RUN_T092_SMOKE=1 to force once T-092 ships. See docs/mod/STAGING-SERVER.md."
+elif [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] curl mission + roster + 401 on server localhost"
 else
   ssh_cmd bash -s <<EOF

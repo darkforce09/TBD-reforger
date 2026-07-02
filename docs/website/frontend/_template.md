@@ -10,9 +10,9 @@
 - **Why:** [Business reason]
 - **Route:** `/path` or `(shell component)`
 - **Live source:** `apps/website/frontend/src/pages/...` or `apps/website/frontend/src/features/...`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/<folder>/code.html` or none (archived — see [stitch-exports README](../../../../apps/website/frontend/src/stitch-exports/README.md))
+- **Stitch reference:** `apps/website/frontend/src/stitch-exports/<folder>/code.html` or none (archived — see [stitch-exports README](../../../apps/website/frontend/src/stitch-exports/README.md))
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
-- **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.x (if applicable)
+- **Blueprint ref:** [docs/platform/context_handoff.md](../platform/context_handoff.md) §4.x (if applicable)
 
 **Doc hub:** [docs/website/frontend/README.md](README.md)
 

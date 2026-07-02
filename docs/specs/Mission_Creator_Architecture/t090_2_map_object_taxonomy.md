@@ -121,7 +121,7 @@ Optional: `canopyRadiusM`, `heightM` (from export or estimated).
 | `generic` | Building without finer rule match | hard |
 | `unknown` | Unclassified — **needs review** | none until ruled |
 
-Optional: `buildingSubClass` (string) — finer label e.g. `"apartment_block"`; `footprintM2`, `floorCount` (T-126), `heightM`.
+Optional: `buildingSubClass` (string) — finer label e.g. `"apartment_block"`; `footprintM2`, `floorCount` (T-129), `heightM`.
 
 **Ground truth counts** (how many of each class on Everon): **`type-inventory.json`** — see [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md). Counts are **unknown until first export**; schema defines **allowed** types only.
 
@@ -520,7 +520,7 @@ make schema-codegen   # if TS types generated
 - Workbench export (**T-090.3**)
 - Z audit script (**T-090.4**)
 - Deck.gl layers (**T-090.5**)
-- Building floor picker (**T-126**)
+- Building floor picker (**T-129**)
 
 ---
 

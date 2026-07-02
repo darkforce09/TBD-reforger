@@ -321,7 +321,7 @@ Use [`docs/AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md).
 
 | Doc | Change |
 |-----|--------|
-| [`docs/website/frontend/pages/mission-editor.md`](../../../website/frontend/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
+| [`docs/website/frontend/pages/mission-editor.md`](../../website/frontend/pages/mission-editor.md) | Transform editable; terrain wired; toolbelt selection readout |
 | [`docs/specs/.../feature_inventory.md`](feature_inventory.md) | Update TOP-TITLE-001, MAP-TERRAIN-001, ATTR-FIELD-OBJ-POSITION rows |
 | [`eden/gap_analysis.md`](eden/gap_analysis.md) | Mark MAP-TERRAIN-001 / TOP-TITLE-001 / ATTR-FIELD-OBJ-POSITION **partial→match** where appropriate |
 | [`ROADMAP.md`](ROADMAP.md) | Phase 1 row → ✅ T-049; add DONE T-049 section |

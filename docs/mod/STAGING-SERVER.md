@@ -4,6 +4,8 @@ Self-hosted TBD stack for LAN testing: **API + Postgres (Docker)** and **Arma Re
 
 **Join status (2026-06-14): WORKS.** The mod is published to the Workshop and staging runs **`-config` mode** (`TBD_SERVER_MODE=config` in `deploy.env`) — the only Direct-Joinable mode. The earlier local-`-addons` "Phase A" path runs the server but is **not** Direct-Joinable (no backend room) — see "Client join".
 
+> **Status (2026-07-02, T-128): gates V2–V4 are BLOCKED on T-092.** `GET /api/missions/:id/compiled` and `GET /api/game/events/:id/roster` existed only in the Phase-0 REST spike backend, since removed — the current backend serves `/api/v1` only, so those curls return **404** (not 200, and no 401 auth gate). The 2026-06-14 pass ran against the spike. Real game-server routes ship with **T-092** ([`t092_spawn_transform_program.md`](../specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)); until then `deploy-staging.sh` **skips** the V2–V4 smoke unless `TBD_RUN_T092_SMOKE=1`. The mission **file fallback** (`$profile:missions/`) is unaffected.
+
 **Do not touch PrairieLearn:** all TBD paths live under `/home/sam/tbd/` only. Never deploy to `/home/sam/prairielearn/`.
 
 ---
@@ -131,6 +133,8 @@ First build may take 5–15 minutes.
 
 ### 6. API smoke (before game server)
 
+> **BLOCKED on T-092** — these routes are not registered in the current backend (expect **404**). Kept as the target contract; re-run when T-092 ships.
+
 ```bash
 TOKEN='<your-game-server-token>'
 curl -sf -H "Authorization: Bearer $TOKEN" \
@@ -168,7 +172,7 @@ bash scripts/mod/deploy-staging.sh
 bash scripts/mod/deploy-staging.sh --dry-run   # preview only
 ```
 
-Flow: validate mission JSON → rsync → profile + addon symlink → Docker rebuild → API smoke → restart game server → remote log grep.
+Flow: validate mission JSON → rsync → profile + addon symlink → Docker rebuild → API smoke (**skipped by default until T-092** — `TBD_RUN_T092_SMOKE=1` to force) → restart game server → remote log grep.
 
 ---
 
@@ -177,9 +181,9 @@ Flow: validate mission JSON → rsync → profile + addon symlink → Docker reb
 | Step | Command | Pass |
 |------|---------|------|
 | V1 Mission JSON | `node packages/tbd-schema/scripts/validate-file.mjs packages/tbd-schema/golden-missions/msn_8f3a2c.json` (from monorepo root) | exit 0 |
-| V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | HTTP 200 |
-| V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | HTTP 200 |
-| V4 Auth gate | SSH: unauthenticated compiled URL | HTTP 401 |
+| V2 API mission | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/missions/msn_8f3a2c/compiled` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
+| V3 Roster | SSH: `curl -sf -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/game/events/b0000000-0000-4000-8000-000000000001/roster` | **BLOCKED on T-092** — route not registered; currently 404 (target: HTTP 200) |
+| V4 Auth gate | SSH: unauthenticated compiled URL | **BLOCKED on T-092** — currently 404 (target: HTTP 401) |
 | V5 Game listening | SSH: `ss -ulnp \| grep -E '2001\|17777'` — **both** game (2001) and A2S (17777) bound | yes |
 | V6 Game logs | `bash scripts/mod/remote-log-grep.sh` | see below |
 | V7 Server healthy (not crashed) | log has `Stage → LOBBY` and **no** `Unable to start replication` | yes |

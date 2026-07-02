@@ -46,9 +46,9 @@ These pages already follow the methodology — use as implementation references:
 
 | Pattern | Example | Spec |
 |---------|---------|------|
-| Split-pane master/detail | Event Schedule, Announcements, Wiki | [`event-schedule.md`](../../../website/frontend/pages/event-schedule.md) |
-| Create-over-list Dialog | Event Manager "Schedule Operation" | [`event-manager.md`](../../../website/frontend/pages/event-manager.md), `admin.tsx` |
-| Slide-over dossier (no route replace) | Mission Library card → Sheet | [`mission-library.md`](../../../website/frontend/pages/mission-library.md) |
+| Split-pane master/detail | Event Schedule, Announcements, Wiki | [`event-schedule.md`](../frontend/pages/event-schedule.md) |
+| Create-over-list Dialog | Event Manager "Schedule Operation" | [`event-manager.md`](../frontend/pages/event-manager.md), `admin.tsx` |
+| Slide-over dossier (no route replace) | Mission Library card → Sheet | [`mission-library.md`](../frontend/pages/mission-library.md) |
 | **Create-over-list Dialog (T-048)** | Mission Library **+ New Mission** → `CreateMissionDialog` | [`t048_library_create_dialog.md`](../../specs/Mission_Creator_Architecture/t048_library_create_dialog.md) |
 
 **Anti-pattern removed by T-048:** standalone `/missions/create` full-page wizard + sidebar "Mission Creator" tab — creation is a transient action on the library surface, not a nav destination.

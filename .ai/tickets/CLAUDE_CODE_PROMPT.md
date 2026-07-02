@@ -133,7 +133,7 @@ Naming: slice `T-090.1.2.2` → `.ai/artifacts/t090_1_2_2_claude_code_handoff.md
 
 ## Reference implementation
 
-**T-090.1.2.2** — [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md) §Claude Code prompt.
+**T-090.1.2.2** — [`docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md`](../../docs/specs/Mission_Creator_Architecture/t090_1_2_2_sap_cell_seam_repair.md) §Claude Code prompt.
 
 ---
 
