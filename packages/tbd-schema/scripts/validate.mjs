@@ -174,6 +174,11 @@ check(
 console.log("Dual + legacy terrain manifests (T-090.1/.1.1):");
 check("everon-dual-tiles", validateTerrainManifest, readJSON(moPath("terrain-manifest-everon-dual-tiles.json")));
 check("everon-legacy-tiles", validateTerrainManifest, readJSON(moPath("terrain-manifest-everon-legacy-tiles.json")));
+check(
+  "everon-unified-satellite",
+  validateTerrainManifest,
+  readJSON(moPath("terrain-manifest-everon-unified-satellite.json")),
+);
 
 console.log("Map object type inventory (exact counts — pending until export):");
 check(

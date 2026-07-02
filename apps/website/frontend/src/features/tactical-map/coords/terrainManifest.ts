@@ -3,13 +3,30 @@
 // pyramid descriptors. Parsing is defensive: a missing/404 manifest resolves to `null`
 // (the caller falls back to a grid-only basemap), never throws into render.
 
+/** Unified satellite bundle pointer (tbd-sat v1, T-090.1.2.8) — one fetch → one mipmapped
+ *  GPU texture (see layers/satelliteUnified.ts). */
+export interface UnifiedSource {
+  path?: string
+  url?: string
+  encoding?: string
+  baseWidthPx?: number
+  baseHeightPx?: number
+  mipCount?: number
+  bytes?: number
+}
+
 /** A single basemap pyramid (satellite or map). `urlTemplate` uses `{z}/{x}/{y}`. The
  *  full-extent single ortho is a `full.webp` sibling of the pyramid (convention, not a
- *  manifest field — the schema keeps `tiles.satellite` closed). */
+ *  manifest field — the schema keeps `tiles.satellite` closed). `delivery` picks the
+ *  primary satellite path: `unified` bundle (with the pyramid as runtime fallback) vs
+ *  legacy `pyramid` tiles (T-090.1.2.8). */
 export interface TileSource {
   path?: string
   urlTemplate?: string
   source?: string
+  encoding?: string
+  delivery?: 'pyramid' | 'unified'
+  unified?: UnifiedSource
 }
 
 /** The `tiles` block of a terrain manifest (dual pyramids — T-090.1/.1.1). */

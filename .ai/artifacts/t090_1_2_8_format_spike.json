@@ -1,0 +1,64 @@
+{
+  "slice": "T-090.1.2.8",
+  "terrain": "everon",
+  "generatedAt": "2026-07-02T18:35:00Z",
+  "p0": "PASS",
+  "decision": "tbd-sat-v1",
+  "decisionSummary": "Custom tbd-sat v1 container: 'TBDS' magic + u32 version + u32 jsonLength + JSON index + concatenated lossless-WebP (VP8L) blocks, one block grid per mip level (base tiled 2x2 over 8192px). One fetch -> one immutable rgba8unorm luma.gl texture with the full 14-level mip chain and trilinear sampling on a single BitmapLayer.",
+  "candidates": {
+    "full-webp-browser-mips": {
+      "verdict": "REJECTED (viable baseline)",
+      "how": "single 12800^2 lossless full.webp as BitmapLayer.image; deck.gl 9.3 createTexture() auto-allocates getMipLevelCount() levels, runs generateMipmapsWebGL(), and samples mipmapFilter:'linear' (verified in @deck.gl/core/dist/utils/texture.js)",
+      "why_rejected": [
+        "no device adaptivity: an 8192-limit GPU must decode the full 655 MB RGBA then browser-resize, exactly on the machines that cannot take the texture",
+        "GPU box-filter mips instead of build-time Lanczos",
+        "single-threaded decode of one 163 MPx image (the tiled base decodes ~parallel on the browser worker pool)",
+        "no self-describing header (worldBounds/provenance/sha) and dead-ends past the VP8L 16383 px dimension cap for larger terrains"
+      ]
+    },
+    "tbd-sat-v1": {
+      "verdict": "SELECTED",
+      "why": [
+        "build-time Lanczos mip chain (magick cascade) stored as lossless VP8L: zero new runtime deps - createImageBitmap decodes WebP natively",
+        "device-adaptive base level: pickBaseLevel() starts the texture at the first mip <= maxTextureDimension2D and NEVER decodes skipped levels (8192-limit GPU -> 6400^2 base, ~218 MB VRAM, no 655 MB decode)",
+        "base level tiled ceil(dim/8192)^2 -> parallel browser decode of the dominant cost + future >16383 px terrains stay encodable",
+        "GLB-style JSON index is self-describing (worldBounds, metersPerPixel, source, inputSha256) and trivially verifiable dep-free (verify-unified-satellite.mjs)",
+        "luma.gl 9.3 upload path verified in node_modules: device.createTexture({mipLevels, sampler}) uses immutable texStorage2D; texture.copyExternalImage({image,x,y,width,height,mipLevel}) does per-mip sub-rect upload; deck.gl createTexture() returns an externally-created Texture as-is and never destroys it (we own the lifecycle)"
+      ]
+    },
+    "ktx2-bc7": {
+      "verdict": "REJECTED",
+      "why_rejected": [
+        "new deps both sides: basis/toktx encoder at build time, @loaders.gl/textures transcoder at runtime",
+        "BC7 is lossy - the program locked the picture-perfect lossless satellite (T-090.1.2.1 precedent)",
+        "BC7/basis encode of 163 MPx + full mip chain is minutes-to-hours vs 79 s for VP8L",
+        "deck.gl 9.3 compressed-texture path forces mipmapFilter:'nearest' when data.length > 1 (utils/texture.js) - kills the smooth trilinear zoom this slice exists for, unless we hand-build the texture anyway (at which point the custom container is simpler)"
+      ]
+    },
+    "raw-rgba-mips-in-bundle": {
+      "verdict": "REJECTED",
+      "why_rejected": ["uncompressed chain is ~873 MB on disk/LFS/wire - VP8L inside the bundle is sanctioned by the spec sketch and 4.2x smaller"]
+    }
+  },
+  "measured": {
+    "input": "packages/map-assets/everon/staging/sap/everon-sap-ortho.png (12800^2, 198.6 MB PNG, sha256 embedded in bundle index)",
+    "bundleBytes": 205896703,
+    "bundleMB": 205.9,
+    "mipCount": 14,
+    "blocks": 17,
+    "levelBytesMB": { "0": 148.46, "1": 42.33, "2": 11.17, "3": 2.93, "4": 0.75, "5": 0.19, "6": 0.05, "7+": 0.02 },
+    "buildSeconds": 79,
+    "pyramidComparisonMB": 302,
+    "requestsPerPanZoom": { "pyramid": "up to 64 tile layers remounting per LOD change", "unified": 0 }
+  },
+  "gpuCost": {
+    "fullBase": "rgba8unorm 12800^2 + chain ~= 873 MB VRAM (desktop gaming audience, maxTextureDimension2D >= 12800 i.e. 16384 typical)",
+    "adaptive8192": "base level 1 (6400^2) ~= 218 MB VRAM, 655 MB base decode skipped entirely"
+  },
+  "verification": {
+    "structuralGate": "scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon -> OK (14 mips, 17 VP8L blocks, dims/offsets/manifest agreement)",
+    "decodeProof": "dwebp decode of sliced blocks (levels 0,1,6,13) all valid at declared dims",
+    "losslessProof": "magick compare -metric AE of bundle level-0 quadrant 0 vs source top-left 6400^2 crop = 0 (bit-identical)",
+    "serveProof": "vite dev HEAD 200, Content-Length 205896703 (determinate progress), payload starts 'TBDS'+v1"
+  }
+}

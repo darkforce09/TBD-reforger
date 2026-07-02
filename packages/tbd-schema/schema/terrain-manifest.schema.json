@@ -107,6 +107,26 @@
               "type": "string",
               "description": "Tile codec — webp-lossless (VP8L) for the picture-perfect satellite pyramid (T-090.1.2.1); webp-lossy (VP8 q=N) for interim/dev builds.",
               "enum": ["webp-lossy", "webp-lossless", "png"]
+            },
+            "delivery": {
+              "type": "string",
+              "description": "Primary satellite delivery (T-090.1.2.8): unified = one tbd-sat bundle → single GPU texture with mips; pyramid = legacy per-viewport {z}/{x}/{y} tiles. The frontend falls back to the pyramid when the unified bundle is missing/unreadable.",
+              "enum": ["pyramid", "unified"]
+            },
+            "unified": {
+              "type": "object",
+              "description": "Unified satellite bundle (tbd-sat v1, T-090.1.2.8): GLB-style container of lossless-WebP mip blocks, fetched once and uploaded as a single mipmapped GPU texture.",
+              "additionalProperties": false,
+              "required": ["path", "url", "encoding"],
+              "properties": {
+                "path": { "type": "string" },
+                "url": { "type": "string" },
+                "encoding": { "const": "tbd-sat-v1" },
+                "baseWidthPx": { "type": "integer", "minimum": 1 },
+                "baseHeightPx": { "type": "integer", "minimum": 1 },
+                "mipCount": { "type": "integer", "minimum": 1 },
+                "bytes": { "type": "integer", "minimum": 1 }
+              }
             }
           }
         },

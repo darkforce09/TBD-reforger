@@ -5,23 +5,31 @@
 // stays in the same flat world space as the slots.
 //
 // Render modes (logged as `basemapRenderMode`):
-//   • pyramid (primary)   — real viewport LOD: pick the pyramid level from the deck zoom, cull
+//   • unified (primary, T-090.1.2.8) — ONE tbd-sat bundle fetch → one mipmapped GPU texture
+//     (satelliteUnified.ts) on a single full-extent BitmapLayer. Zoom samples GPU mips
+//     (trilinear), pan never mounts/unmounts layers — no tile pop-in. While the bundle
+//     loads, the capped full.webp ortho renders as an instant preview; the swap to the
+//     sharp texture is the only layer change. Falls back to the pyramid on any
+//     fetch/parse/decode failure.
+//   • pyramid (fallback)  — real viewport LOD: pick the pyramid level from the deck zoom, cull
 //     to the visible world AABB, cap MAX_VISIBLE_BASEMAP_TILES, and mount only those tiles as
 //     BitmapLayers (each fetched through `tileUrl`, the single XYZ↔south-first Y inversion).
 //     Zooming in loads deeper, sharper tiles instead of stretching one image (T-090.1.1 blur fix).
 //   • single-bitmap (fallback) — one full-extent BitmapLayer from `full.webp` when no pyramid is
 //     on disk. Top scanline → north (maxY), no Y flip.
 //
-// The layer array is memoized on the *discrete* level+tile-range, so a micro-pan within the same
-// tiles is a no-op and Deck reuses textures (stable ids) — pan/zoom holds the T-057 ≥55 fps bar.
-// 404 / no tiles → no layers + onDegraded() (host shows a grid-only toast).
+// The pyramid layer array is memoized on the *discrete* level+tile-range, so a micro-pan within
+// the same tiles is a no-op and Deck reuses textures (stable ids) — pan/zoom holds the T-057
+// ≥55 fps bar. 404 / no tiles → no layers + onDegraded() (host shows a grid-only toast).
 
 import { useEffect, useMemo, useState } from 'react'
 import { BitmapLayer } from '@deck.gl/layers'
 import { COORDINATE_SYSTEM } from '@deck.gl/core'
+import type { Device, Texture } from '@luma.gl/core'
 import type { TerrainDef } from '../coords/terrains'
-import { loadTerrainManifest, probeUrl } from '../coords/terrainManifest'
+import { loadTerrainManifest, probeUrl, type TileSource } from '../coords/terrainManifest'
 import { tileUrl } from './tileUrl'
+import { loadUnifiedSatTexture } from './satelliteUnified'
 import type { BasemapView } from '../state/basemapView'
 import type { MapViewState } from '../types'
 
@@ -29,33 +37,83 @@ import type { MapViewState } from '../types'
 export const MAX_VISIBLE_BASEMAP_TILES = 64
 const TILE_PX = 256
 
-export type BasemapRenderMode = 'loading' | 'single-bitmap' | 'pyramid' | 'none'
+export type BasemapRenderMode = 'loading' | 'unified' | 'single-bitmap' | 'pyramid' | 'none'
 
 interface Resolved {
   mode: BasemapRenderMode
+  /** single-bitmap ortho URL; in unified mode: the instant full.webp preview (optional). */
   image?: string
   template?: string
+  unifiedUrl?: string
+  minZoom: number
+  maxZoom: number
+}
+
+/** Zoom bounds shared by every resolved mode. */
+interface ZoomRange {
   minZoom: number
   maxZoom: number
 }
 
 /**
- * Resolve the satellite render mode from the terrain manifest. **Prefers the pyramid** (probe z0
- * `0/0/0`, which exists regardless of the Y-flip since tmsY(0,0)=0) so zoomed-in detail is sharp;
- * falls back to the full-res single ortho (`full.webp`) only when no pyramid is committed.
+ * Unified-bundle branch of the resolve (T-090.1.2.8): manifest flags `delivery: "unified"`,
+ * the bundle probes OK → unified mode, with the `full.webp` sibling probed in parallel as
+ * the instant loading preview. `null` → caller falls through to the pyramid chain.
+ */
+async function resolveUnifiedMode(
+  sat: TileSource | undefined,
+  fullUrl: string | undefined,
+  zoom: ZoomRange,
+): Promise<Resolved | null> {
+  const unifiedUrl = sat?.delivery === 'unified' ? sat.unified?.url : undefined
+  if (!unifiedUrl) return null
+  const [bundleOk, previewOk] = await Promise.all([
+    probeUrl(unifiedUrl),
+    fullUrl ? probeUrl(fullUrl) : Promise.resolve(false),
+  ])
+  if (!bundleOk) return null
+  return { mode: 'unified', unifiedUrl, image: previewOk ? fullUrl : undefined, ...zoom }
+}
+
+/** Pull the satellite-relevant manifest fields (nullable manifest → safe defaults). */
+function satelliteFields(m: Awaited<ReturnType<typeof loadTerrainManifest>>): {
+  zoom: ZoomRange
+  sat?: TileSource
+  tmpl?: string
+  fullUrl?: string
+} {
+  const tiles = m?.tiles
+  const sat = tiles?.satellite
+  const tmpl = sat?.urlTemplate ?? tiles?.urlTemplate
+  return {
+    zoom: { minZoom: tiles?.minZoom ?? 0, maxZoom: tiles?.maxZoom ?? 5 },
+    sat,
+    tmpl,
+    fullUrl: tmpl?.replace('{z}/{x}/{y}', 'full'),
+  }
+}
+
+/**
+ * Resolve the satellite render mode from the terrain manifest. **Prefers the unified bundle**
+ * (`tiles.satellite.delivery === "unified"`, T-090.1.2.8). Otherwise (or with `forcePyramid`,
+ * the runtime fallback after a failed unified load) probe the pyramid (z0 `0/0/0`, which
+ * exists regardless of the Y-flip since tmsY(0,0)=0), then the full-res single ortho.
  * `none` → grid-only + degraded toast.
  */
-async function resolveSatelliteMode(manifestUrl: string | undefined): Promise<Resolved> {
-  const m = await loadTerrainManifest(manifestUrl)
-  const minZoom = m?.tiles?.minZoom ?? 0
-  const maxZoom = m?.tiles?.maxZoom ?? 5
-  const tmpl = m?.tiles?.satellite?.urlTemplate
-  if (!tmpl) return { mode: 'none', minZoom, maxZoom }
+async function resolveSatelliteMode(
+  manifestUrl: string | undefined,
+  forcePyramid = false,
+): Promise<Resolved> {
+  const { zoom, sat, tmpl, fullUrl } = satelliteFields(await loadTerrainManifest(manifestUrl))
+  if (!forcePyramid) {
+    const unified = await resolveUnifiedMode(sat, fullUrl, zoom)
+    if (unified) return unified
+  }
+  if (!tmpl) return { mode: 'none', ...zoom }
   const z0 = tmpl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
-  if (await probeUrl(z0)) return { mode: 'pyramid', template: tmpl, minZoom, maxZoom }
-  const fullUrl = tmpl.replace('{z}/{x}/{y}', 'full')
-  if (await probeUrl(fullUrl)) return { mode: 'single-bitmap', image: fullUrl, minZoom, maxZoom }
-  return { mode: 'none', minZoom, maxZoom }
+  if (await probeUrl(z0)) return { mode: 'pyramid', template: tmpl, ...zoom }
+  if (fullUrl && (await probeUrl(fullUrl))) return { mode: 'single-bitmap', image: fullUrl, ...zoom }
+  return { mode: 'none', ...zoom }
 }
 
 const clampInt = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
@@ -76,7 +134,8 @@ type Lod =
 /**
  * Choose the pyramid level from the deck zoom, then cull tiles to the visible world AABB and drop
  * coarser until the visible count fits the cap. Cheap (runs every render); the heavy layer build is
- * memoized downstream on the discrete result.
+ * memoized downstream on the discrete result. Unified mode never reaches this — one full-extent
+ * texture needs no LOD selection (the GPU picks the mip per fragment).
  */
 function computeLod(
   resolved: Resolved,
@@ -90,6 +149,7 @@ function computeLod(
     basemapView !== 'satellite' ||
     !visible ||
     resolved.mode === 'loading' ||
+    resolved.mode === 'unified' ||
     resolved.mode === 'none'
   )
     return { kind: 'none' }
@@ -128,18 +188,25 @@ export function useTerrainBasemapLayer({
   visible,
   viewState,
   viewBounds,
+  device,
   onDegraded,
+  onProgress,
 }: {
   terrain: TerrainDef
   basemapView: BasemapView
   visible: boolean
   viewState: MapViewState
   viewBounds: [number, number, number, number] | null
+  /** luma.gl device from Deck's onDeviceInitialized — required for the unified GPU texture. */
+  device: Device | null
   onDegraded?: () => void
+  /** Unified bundle load progress 0..1 (1 = texture live); null = load abandoned. */
+  onProgress?: (fraction: number | null) => void
 }): BitmapLayer[] {
   // `<TacticalMap>` is keyed on terrain id (it remounts on terrain switch), so this resets to
   // `loading` per terrain — no synchronous reset needed and no stale tiles cross terrains.
   const [resolved, setResolved] = useState<Resolved>({ mode: 'loading', minZoom: 0, maxZoom: 5 })
+  const [texture, setTexture] = useState<Texture | null>(null)
 
   useEffect(() => {
     if (basemapView !== 'satellite') return
@@ -156,6 +223,52 @@ export function useTerrainBasemapLayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [terrain.manifestUrl, basemapView])
 
+  // Unified bundle → one GPU texture (T-090.1.2.8). Runs once the Deck device exists; abort +
+  // destroy on unmount/terrain switch so VRAM (~873 MB at full base) never outlives the editor.
+  // Any failure logs, tells the host the load is abandoned (null progress), and re-resolves with
+  // the pyramid forced — onDegraded only fires if that fallback is empty too.
+  useEffect(() => {
+    if (resolved.mode !== 'unified' || !resolved.unifiedUrl || !device) return
+    const ac = new AbortController()
+    let tex: Texture | null = null
+    void loadUnifiedSatTexture(device, resolved.unifiedUrl, {
+      onProgress,
+      signal: ac.signal,
+    }).then(
+      (result) => {
+        if (ac.signal.aborted) {
+          result.texture.destroy()
+          return
+        }
+        tex = result.texture
+        setTexture(result.texture)
+      },
+      (err: unknown) => {
+        if (ac.signal.aborted) return
+        console.warn('[basemap] unified satellite failed, falling back to pyramid:', err)
+        onProgress?.(null)
+        void resolveSatelliteMode(terrain.manifestUrl, true).then((r) => {
+          if (ac.signal.aborted) return
+          setResolved(r)
+          if (r.mode === 'none') onDegraded?.()
+        })
+      },
+    )
+    return () => {
+      ac.abort()
+      // Dismiss any in-flight progress toast — abandoning the load (unmount / terrain
+      // switch) must not leave the host stuck on "Loading …%".
+      onProgress?.(null)
+      if (tex) {
+        tex.destroy()
+        setTexture(null)
+      }
+    }
+    // Host callbacks are stable (useCallback in MissionCreatorPage); real inputs are the
+    // resolved bundle URL + device identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolved.mode, resolved.unifiedUrl, device])
+
   // Cheap every-render LOD selection; the layer build below memoizes on its discrete result so a
   // pan within the same tiles doesn't rebuild.
   const lod = computeLod(resolved, viewState, viewBounds, terrain, visible, basemapView)
@@ -168,8 +281,34 @@ export function useTerrainBasemapLayer({
   const tyMax = lod.kind === 'pyramid' ? lod.tyMax : 0
   const template = lod.kind === 'pyramid' ? lod.template : undefined
 
+  // Unified render inputs (kept out of computeLod so pyramid memoization is untouched).
+  const unifiedActive = basemapView === 'satellite' && visible && resolved.mode === 'unified'
+  const previewImage = unifiedActive && !texture ? resolved.image : undefined
+  const unifiedTexture = unifiedActive ? texture : null
+
   return useMemo(() => {
     const { width: w, height: h } = terrain
+    if (unifiedTexture) {
+      return [
+        new BitmapLayer({
+          id: 'basemap-satellite-unified',
+          coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+          bounds: [0, 0, w, h],
+          image: unifiedTexture,
+        }),
+      ]
+    }
+    if (previewImage) {
+      // Instant context while the bundle loads; same full-extent geometry as single-bitmap.
+      return [
+        new BitmapLayer({
+          id: 'basemap-satellite-preview',
+          coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+          bounds: [0, 0, w, h],
+          image: previewImage,
+        }),
+      ]
+    }
     if (kind === 'single' && image) {
       return [
         new BitmapLayer({
@@ -202,5 +341,17 @@ export function useTerrainBasemapLayer({
       return layers
     }
     return []
-  }, [kind, image, z, txMin, txMax, tyMin, tyMax, template, terrain])
+  }, [
+    unifiedTexture,
+    previewImage,
+    kind,
+    image,
+    z,
+    txMin,
+    txMax,
+    tyMin,
+    tyMax,
+    template,
+    terrain,
+  ])
 }
