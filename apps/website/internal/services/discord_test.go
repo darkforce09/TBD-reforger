@@ -92,10 +92,69 @@ func TestFetchGuildMemberRoles(t *testing.T) {
 
 func TestAuthorizeURLContainsParams(t *testing.T) {
 	d, _ := mockDiscord(t)
-	u := d.AuthorizeURL("state-xyz")
+	u, err := d.AuthorizeURL("state-xyz")
+	if err != nil {
+		t.Fatalf("AuthorizeURL: %v", err)
+	}
 	for _, want := range []string{"client_id=client-1", "state=state-xyz", "response_type=code", "guilds.members.read"} {
 		if !strings.Contains(u, want) {
 			t.Errorf("authorize url missing %q: %s", want, u)
 		}
+	}
+}
+
+func TestAuthorizeURLEmptyClientID(t *testing.T) {
+	// T-130.2 F3-03: a blank client_id must fail fast, not build a broken redirect.
+	d := NewDiscordService("", "secret", "http://localhost/cb", "guild-1")
+	if _, err := d.AuthorizeURL("state"); err == nil {
+		t.Fatal("expected error for empty client_id")
+	}
+}
+
+// mock429Discord serves /users/@me with fail429 rate-limited responses before
+// succeeding, and reports how many attempts arrived.
+func mock429Discord(t *testing.T, fail429 int) (*DiscordService, *int) {
+	t.Helper()
+	attempts := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts <= fail429 {
+			w.Header().Set("Retry-After", "0")
+			http.Error(w, `{"message":"rate limited"}`, http.StatusTooManyRequests)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"id":"765611","username":"AdminDave"}`))
+	}))
+	t.Cleanup(srv.Close)
+	d := NewDiscordService("client-1", "secret-1", "http://localhost/cb", "guild-1")
+	d.SetAPIBase(srv.URL)
+	return d, &attempts
+}
+
+func TestDoRetriesOn429(t *testing.T) {
+	// T-130.2 F3-01: one 429 with Retry-After is retried and the call succeeds.
+	d, attempts := mock429Discord(t, 1)
+	u, err := d.FetchUser(context.Background(), "tok")
+	if err != nil {
+		t.Fatalf("FetchUser after 429: %v", err)
+	}
+	if u.ID != "765611" {
+		t.Errorf("id = %q", u.ID)
+	}
+	if *attempts != 2 {
+		t.Errorf("attempts = %d, want 2", *attempts)
+	}
+}
+
+func TestDoGivesUpAfterBounded429(t *testing.T) {
+	// A persistent 429 is surfaced after the bounded attempts, not retried forever.
+	d, attempts := mock429Discord(t, 100)
+	_, err := d.FetchUser(context.Background(), "tok")
+	if err == nil || !strings.Contains(err.Error(), "429") {
+		t.Fatalf("expected 429 error, got %v", err)
+	}
+	if *attempts != 3 {
+		t.Errorf("attempts = %d, want 3 (bounded)", *attempts)
 	}
 }

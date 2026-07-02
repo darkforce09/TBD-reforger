@@ -83,6 +83,26 @@ func TestOAuthCallbackRedirectsToSPA(t *testing.T) {
 	}
 }
 
+// TestOAuthLoginUnconfiguredRedirectsWithError proves T-130.2 F3-03: with no
+// Discord client_id configured (setupIT leaves it blank), the login entrypoint
+// sends the browser back to the SPA with a clear error code instead of
+// redirecting to Discord with an empty client_id.
+func TestOAuthLoginUnconfiguredRedirectsWithError(t *testing.T) {
+	r, h, _ := setupIT(t)
+	h.cfg.FrontendURL = "http://frontend.test"
+
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/auth/discord/login", nil)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	if w.Code != http.StatusFound {
+		t.Fatalf("status = %d, want 302", w.Code)
+	}
+	if loc := w.Header().Get("Location"); !strings.Contains(loc, "/auth/callback#error=oauth_unconfigured") {
+		t.Fatalf("expected oauth_unconfigured error redirect, got %q", loc)
+	}
+}
+
 func TestOAuthCallbackBadStateRedirectsWithError(t *testing.T) {
 	r, h, _ := setupIT(t)
 	h.cfg.FrontendURL = "http://frontend.test"

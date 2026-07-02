@@ -28,11 +28,19 @@ func (h *Handler) DiscordLogin(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "could not start login"})
 		return
 	}
+	// A blank client_id would 302 the user onto an opaque Discord error page —
+	// surface the misconfiguration through the SPA instead (T-130.2 F3-03).
+	authorizeURL, err := h.discord.AuthorizeURL(state)
+	if err != nil {
+		logHandlerErr(c, "DiscordLogin", http.StatusFound, "discord client_id not configured")
+		h.redirectAuthError(c, "oauth_unconfigured")
+		return
+	}
 	// 10-minute, httpOnly, SameSite=Lax state cookie to defend against CSRF on the callback
 	// (Lax still rides the top-level OAuth redirect back from Discord). Secure outside dev.
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("oauth_state", state, 600, "/", "", h.cfg.Env != "development", true)
-	c.Redirect(http.StatusTemporaryRedirect, h.discord.AuthorizeURL(state))
+	c.Redirect(http.StatusTemporaryRedirect, authorizeURL)
 }
 
 // DiscordCallback completes the flow: validate state, exchange the code, upsert

@@ -45,15 +45,20 @@ func NewDiscordService(clientID, clientSecret, redirectURL, guildID string) *Dis
 // SetAPIBase overrides the Discord API base URL (used by tests with httptest).
 func (d *DiscordService) SetAPIBase(base string) { d.apiBase = strings.TrimRight(base, "/") }
 
-// AuthorizeURL builds the consent URL the browser is redirected to.
-func (d *DiscordService) AuthorizeURL(state string) string {
+// AuthorizeURL builds the consent URL the browser is redirected to. It fails
+// when client_id is not configured — redirecting to Discord with an empty
+// client_id strands the user on an opaque Discord error page (T-130.2 F3-03).
+func (d *DiscordService) AuthorizeURL(state string) (string, error) {
+	if d.clientID == "" {
+		return "", fmt.Errorf("discord: client_id not configured")
+	}
 	q := url.Values{}
 	q.Set("client_id", d.clientID)
 	q.Set("redirect_uri", d.redirectURL)
 	q.Set("response_type", "code")
 	q.Set("scope", oauthScopes)
 	q.Set("state", state)
-	return d.apiBase + "/oauth2/authorize?" + q.Encode()
+	return d.apiBase + "/oauth2/authorize?" + q.Encode(), nil
 }
 
 // TokenResponse is the OAuth2 token-exchange payload.
@@ -155,7 +160,7 @@ func (d *DiscordService) FetchGuildMember(ctx context.Context, accessToken strin
 	}
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
-	resp, err := d.http.Do(req)
+	resp, err := doWithRetryOn429(d.http, req)
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +181,10 @@ func (d *DiscordService) FetchGuildMember(ctx context.Context, accessToken strin
 	return &out, nil
 }
 
-// do executes a request expecting a 2xx JSON response decoded into v.
+// do executes a request expecting a 2xx JSON response decoded into v, retrying
+// bounded on 429 (see doWithRetryOn429).
 func (d *DiscordService) do(req *http.Request, v any) error {
-	resp, err := d.http.Do(req)
+	resp, err := doWithRetryOn429(d.http, req)
 	if err != nil {
 		return err
 	}

@@ -48,6 +48,7 @@ const AUTH_ERROR_COPY: Record<string, string> = {
   banned: 'This account is banned from the platform.',
   server_error: 'Something went wrong completing sign-in. Please try again.',
   no_session: 'No sign-in details were found. Please start from the login page.',
+  oauth_unconfigured: 'Discord sign-in is not configured on this server. Contact an administrator.',
 }
 
 // AuthCallbackPage completes the Discord OAuth round-trip. The backend redirects

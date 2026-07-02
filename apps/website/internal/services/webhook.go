@@ -77,14 +77,16 @@ func (w *WebhookService) PushAnnouncement(ctx context.Context, a *models.Announc
 	if desc == "" {
 		desc = truncate(a.Body, 500)
 	}
+	// Discord hard-rejects embeds over its field caps (title 256, footer 2048
+	// chars) with a 400, so cap before POST (T-130.2 F3-02).
 	payload := webhookPayload{
 		Username: "TBD Operations",
 		Embeds: []embed{{
-			Title:       a.Title,
+			Title:       capRunes(a.Title, 256),
 			Description: desc,
 			Color:       tagColor(a.Tag),
 			Timestamp:   time.Now().UTC().Format(time.RFC3339),
-			Footer:      &embedFooter{Text: "Category: " + string(a.Tag)},
+			Footer:      &embedFooter{Text: capRunes("Category: "+string(a.Tag), 2048)},
 		}},
 	}
 	buf, err := json.Marshal(payload)
@@ -104,7 +106,7 @@ func (w *WebhookService) PushAnnouncement(ctx context.Context, a *models.Announc
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := w.http.Do(req)
+	resp, err := doWithRetryOn429(w.http, req)
 	if err != nil {
 		return "", err
 	}
@@ -128,4 +130,14 @@ func truncate(s string, n int) string {
 		return s
 	}
 	return string(r[:n]) + "…"
+}
+
+// capRunes shortens s so the result — ellipsis included — never exceeds n runes.
+// Unlike truncate (which appends past n), this respects hard API field caps.
+func capRunes(s string, n int) string {
+	r := []rune(s)
+	if len(r) <= n {
+		return s
+	}
+	return string(r[:n-1]) + "…"
 }
