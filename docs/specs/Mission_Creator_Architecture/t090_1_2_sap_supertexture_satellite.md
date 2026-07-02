@@ -52,7 +52,7 @@ Decode and stitch Everon **`Eden_*_supertexture.edds`** cells into a world-align
 1. **Decode** Enfusion `.edds` → lossless intermediate (PNG or raw) — proven on ≥1 Eden cell before full batch.
 2. **Inventory** all Eden supertexture cells: grid index, world bounds per cell, resolution.
 3. **Stitch** to one north-up ortho aligned to `[0,0,12800,12800]` (target ≥ **8192²** effective — ~2× interim; higher if cells native res allows).
-4. **Rebuild** `packages/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp` (z0–5, XYZ on disk) via existing `build-tile-pyramid.sh` (no `--flip-v` unless decode baseline proves upside-down).
+4. **Rebuild** `packages/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp` (tile pyramid **z0–5**, XYZ on disk; Deck orthographic zoom maps separately) via existing `build-tile-pyramid.sh` (no `--flip-v` unless decode baseline proves upside-down).
 5. **Replace** committed LFS tiles; update ops log + verify log with new source metadata.
 6. **Acceptance:** operator zoom-in shows **meter-scale ground texture** (fields, forest floor, coastal detail) — visibly sharper than interim rasterization at same zoom.
 

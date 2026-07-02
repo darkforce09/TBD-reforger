@@ -87,6 +87,10 @@ for (const { name, text } of corpus) {
     if (!makeTargets.has(m[1])) fail("7", `${name}: referenced \`make ${m[1]}\` not defined in root Makefile`);
   }
   for (const m of text.matchAll(/\bnpm run ([a-z0-9:_-]+)/g)) {
+    const lineStart = text.lastIndexOf("\n", m.index) + 1;
+    const lineEnd = text.indexOf("\n", m.index);
+    const line = text.slice(lineStart, lineEnd < 0 ? undefined : lineEnd);
+    if (/apps\/website\/frontend/.test(line)) continue;
     if (!npmScripts.has(m[1])) fail("7", `${name}: referenced \`npm run ${m[1]}\` not in packages/tbd-schema/package.json scripts`);
   }
 }
@@ -125,9 +129,17 @@ if (/move\/delete this object/i.test(read(join(specDir, "t090_eden_ai_world_obje
   fail("9", "t090_eden_ai_world_object_schema.md: still says \"move/delete this object\" (mutation is Workbench-only)");
 }
 
-// Gate 10 — the hub header (first ~600 chars) must name T-090.3.0 as active.
-if (!/T-090\.3\.0/.test(hub.slice(0, 600))) {
-  fail("10", "t090_091_map_terrain_program.md: header does not name T-090.3.0 as the active slice");
+// Gate 10 — hub header (first ~800 chars) must name the registry active slice for T-090.
+let activeSlice = "T-090.1.2.5";
+try {
+  const reg = JSON.parse(read(join(repoRoot, ".ai", "tickets", "registry.json")));
+  const t090 = reg.tickets?.find((t) => t.id === "T-090");
+  if (t090?.active_slice) activeSlice = t090.active_slice;
+} catch {
+  /* fallback */
+}
+if (!hub.slice(0, 800).includes(activeSlice)) {
+  fail("10", `t090_091_map_terrain_program.md: header does not name ${activeSlice} as the active slice`);
 }
 
 // Gate 11 — type-inventory spec must not publish order-of-magnitude Everon ranges (exact integers only).
