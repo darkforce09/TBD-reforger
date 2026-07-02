@@ -26,10 +26,12 @@ Run `make db-up api web`, dev-login, open a mission in the editor. Expect **one*
 
 | ID | Check | Status |
 |----|-------|--------|
-| U1 | Pan @ max zoom — no tile pop-in / flicker | **PENDING OPERATOR** |
-| U2 | Zoom in/out — smooth GPU mip (trilinear), no discrete layer swap | **PENDING OPERATOR** |
-| U3 | Detail acceptable @ operational zoom (SAP source — ~256 m apron grid may show @ max MC zoom, out of scope per spec) | **PENDING OPERATOR** |
-| U4 | Pan fps ≥55 (FpsCounter) | **PENDING OPERATOR** |
+| U1 | Pan @ max zoom — no tile pop-in / flicker | **PASS** (operator 2026-07-02 — "no flickering at all") |
+| U2 | Zoom in/out — smooth GPU mip (trilinear), no discrete layer swap | **PASS** (operator 2026-07-02 — "no stutter") |
+| U3 | Detail acceptable @ operational zoom (SAP source — ~256 m apron grid may show @ max MC zoom, out of scope per spec) | **PASS** (operator sign-off) |
+| U4 | Pan fps ≥55 (FpsCounter) | **PASS** (operator sign-off — smooth pan) |
+
+**Slice acceptance:** **T-090.1.2.8 COMPLETE** (automated gates + operator U1–U4).
 
 **Structural argument for U1/U2:** unified mode renders exactly one full-extent `BitmapLayer` whose texture never changes identity after load — there is no layer mount/unmount and no HTTP on pan/zoom by construction; zoom LOD is the GPU's per-fragment mip selection (trilinear sampler baked at texture creation).
 

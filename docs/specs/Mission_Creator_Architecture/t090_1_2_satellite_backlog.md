@@ -51,4 +51,6 @@
 
 ## Operator manual (U1–U4)
 
-See [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md) — automated gates PASS; U1–U4 pending in-browser sign-off.
+**PASS** @ 2026-07-02 — operator: no flicker, no stutter; satellite delivery accepted.
+
+See [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md).
