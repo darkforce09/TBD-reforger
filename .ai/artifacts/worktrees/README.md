@@ -2,9 +2,14 @@
 
 | Worktree | Branch | Ticket | Status |
 |----------|--------|--------|--------|
-| [`TBD-T-127/`](TBD-T-127/) | `ticket/T-127` | MC UX | merged → main |
-| [`TBD-T-128/`](TBD-T-128/) | `ticket/T-128` | Doc links | merged → main |
-| [`TBD-T-130/`](TBD-T-130/) | `ticket/T-130` | Fable audit remainder | **active** — merge `main` after T-130.0 setup |
+| [`TBD-T-130/`](TBD-T-130/) | `ticket/T-130` | Fable audit remainder | **active** |
+
+**Merged / cleaned:** T-127 · T-128 worktrees removed (2026-07-02).
+
+**Active parallel pair:**
+
+- **main** — T-090.1.2.8 → T-068 → T-092 ([`t090_1_2_8_SEND_TO_CLAUDE.md`](../t090_1_2_8_SEND_TO_CLAUDE.md))
+- **TBD-T-130** — T-130.1 → T-130.6 ([`t130_SEND_TO_CLAUDE.md`](../t130_SEND_TO_CLAUDE.md))
 
 **Active parallel pair:**
 
