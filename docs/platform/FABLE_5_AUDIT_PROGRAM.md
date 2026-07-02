@@ -1,6 +1,6 @@
 # Fable 5 audit remediation program — COMPLETE
 
-**Program complete (2026-07-02)** — T-126 ✓ → T-127 ✓ (parallel worktree) → T-128 ✓. Normal queue resumes at **T-090.1.2.8** / [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
+**Program complete (2026-07-02)** — T-126 ✓ → T-127 ✓ → T-128 ✓. **Remainder:** **T-130** (parallel worktree) drains OPEN/PARTIAL. **Main queue:** **T-090.1.2.8** / [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
 
 **Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — **living tracker** (remediation index + inline status; remaining OPEN/DEFERRED findings tracked there)
 
@@ -20,6 +20,7 @@
 | **T-090.1.2.8** | Unified GPU satellite texture — **next up** |
 | **T-068** Phase 2 | Virtual Arsenal (still gated on map/ORBAT, per its own program) |
 | Everything else | See [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) |
+| **OPEN + PARTIAL (~22 findings)** | **T-130** — [`t130_fable_audit_remainder.md`](t130_fable_audit_remainder.md) · worktree `ticket/T-130` |
 
 **Not in Fable program (later):**
 

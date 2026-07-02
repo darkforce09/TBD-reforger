@@ -1822,7 +1822,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": null,
+      "active_slice": "T-090.1.2.8",
       "surfaces": [
         "MAP"
       ],
@@ -2962,6 +2962,107 @@
       "unblocks": [],
       "branch": "main",
       "shipped_at": "T-128"
+    },
+    {
+      "id": "T-130",
+      "order": 1300,
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "root",
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "status": "ready",
+      "active_slice": "T-130.1",
+      "surfaces": [
+        "DATA",
+        "SHELL",
+        "MAP",
+        "UI"
+      ],
+      "impact": [
+        "api",
+        "ui",
+        "security",
+        "docs"
+      ],
+      "title": "Fable audit — remainder (OPEN + PARTIAL)",
+      "summary": "Parallel to T-090 queue: drain ~21 OPEN + F4-03 PARTIAL from fable_5_omni_audit_report.md. Slices T-130.1–.6 claude-code on ticket/T-130 worktree; T-130.7 cursor-docs. Hub: docs/platform/t130_fable_audit_remainder.md.",
+      "spec": "docs/platform/t130_fable_audit_remainder.md",
+      "depends_on": [
+        "T-128"
+      ],
+      "unblocks": [],
+      "branch": "ticket/T-130",
+      "slice_plan": {
+        "T-130.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "shipped"
+        },
+        "T-130.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "ready"
+        },
+        "T-130.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "queued"
+        },
+        "T-130.3": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "queued"
+        },
+        "T-130.4": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "queued"
+        },
+        "T-130.5": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "queued"
+        },
+        "T-130.6": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "queued"
+        },
+        "T-130.7": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/platform/t130_fable_audit_remainder.md",
+          "status": "queued"
+        }
+      }
     },
     {
       "id": "T-129",

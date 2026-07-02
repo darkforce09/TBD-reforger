@@ -13,6 +13,15 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** website, shared, root, mod
 - **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 
+## T-090 — Map visualization program
+
+- **Active slice:** `T-090.1.2.8`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
+- **Branch:** `ticket/T-090`
+- **Targets:** root, website
+- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.4 shipped @ 0d6fe485 (P0 FAIL). Fable audit program complete (T-126–T-128) — RESUMED. Next map: T-090.1.2.8 unified GPU texture. Hub: t090_091_map_terrain_program.md.
+
 ## T-092 — Spawn transform parity + mod mission compile
 
 - **Slice spec:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
@@ -20,3 +29,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-092`
 - **Targets:** root, website, mod
 - **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
+
+## T-130 — Fable audit — remainder (OPEN + PARTIAL)
+
+- **Active slice:** `T-130.1`
+- **Slice spec:** `docs/platform/t130_fable_audit_remainder.md`
+- **Program hub:** `docs/platform/t130_fable_audit_remainder.md`
+- **Branch:** `ticket/T-130`
+- **Targets:** root, website, mod
+- **Summary:** Parallel to T-090 queue: drain ~21 OPEN + F4-03 PARTIAL from fable_5_omni_audit_report.md. Slices T-130.1–.6 claude-code on ticket/T-130 worktree; T-130.7 cursor-docs. Hub: docs/platform/t130_fable_audit_remainder.md.

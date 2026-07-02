@@ -16,7 +16,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_8_unified_satellite_texture.md",
       "branch": "ticket/T-090"
     },
     {
@@ -25,6 +25,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "branch": "ticket/T-092"
+    },
+    {
+      "id": "T-130",
+      "title": "Fable audit \u2014 remainder (OPEN + PARTIAL)",
+      "status": "ready",
+      "spec": "docs/platform/t130_fable_audit_remainder.md",
+      "branch": "ticket/T-130"
     }
   ]
 }

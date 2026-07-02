@@ -5,7 +5,7 @@
 
 **Original audit baseline:** read-only pass @ `main` `a3efdf68` (2026-07-01). Severity: **CRITICAL** / **HIGH** / **MED** / **LOW**. EnforceScript (`.c`) plugins audited as Enfusion script, not C++.
 
-**Last tracker update:** 2026-07-02 — **T-127** shipped @ `0515aabb` (tag **T-127**) · **T-128** shipped (tag **T-128**): doc link repair + staging honesty; log [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md). **Fable program complete.**
+**Last tracker update:** 2026-07-02 — **T-128** shipped · **T-130** registered (OPEN/PARTIAL → slices T-130.1–.7 on `ticket/T-130` worktree). **Main queue:** T-090.1.2.8.
 
 ---
 
@@ -14,7 +14,7 @@
 | Status | Count | Meaning |
 |--------|------:|---------|
 | **RESOLVED** | 24 | **T-126** S1–S6 @ `4a47688e` · **T-127** U1–U5 @ `0515aabb` · **T-128** (F1-05, F2B-10, F2C-02 docs-half, F2C-05, F5-01…F5-07) |
-| **ACTIVE** | 0 | — (Fable program complete) |
+| **ACTIVE** | ~22 | **T-130** (OPEN + PARTIAL F4-03) — parallel worktree |
 | **QUEUED** | 0 | — |
 | **PARTIAL** | 1 | **F4-03** — same-tab conflict loop fixed; new-tab cold boot still prompts (divergence tracking deferred) |
 | **DEFERRED** | ~15 | Out of Fable program (**T-092**, **T-090.x**, future, T-122 carry-over) |
@@ -30,6 +30,7 @@
 | **T-126** | **shipped** @ `4a47688e` | S1–S6 security + auth (verify [t126_verify_log.md](t126_verify_log.md)) |
 | **T-127** | **shipped** @ `0515aabb` | U1–U5 MC UX (verify [t127_verify_log.md](t127_verify_log.md)) |
 | **T-128** | **shipped** (tag **T-128**) | §5 doc rot, staging honesty, handoff link depths, orphans — log [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md) |
+| **T-130** | **active** | OPEN + PARTIAL remainder — hub [`t130_fable_audit_remainder.md`](../../docs/platform/t130_fable_audit_remainder.md) · handoff [`t130_SEND_TO_CLAUDE.md`](t130_SEND_TO_CLAUDE.md) |
 | **T-092** | deferred | Mod REST `/compiled`, roster, mission canonical envelope, spawn/yaw |
 | **T-090.1.1** | deferred | Map tile pyramid (pairs with U3 basemap coerce) |
 | **T-090.3** | deferred | Building export `headingDeg` field names |
