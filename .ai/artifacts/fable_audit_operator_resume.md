@@ -3,7 +3,7 @@
 **Do not start T-090.1.2.8, T-068, or anything else until T-126 → T-127 → T-128 are done.**
 
 Hub: [`docs/platform/FABLE_5_AUDIT_PROGRAM.md`](../docs/platform/FABLE_5_AUDIT_PROGRAM.md)  
-Audit: [`.ai/artifacts/fable_5_omni_audit_report.md`](fable_5_omni_audit_report.md)
+Audit: [`.ai/artifacts/fable_5_omni_audit_report.md`](fable_5_omni_audit_report.md) (**living tracker** — see Remediation tracker table)
 
 ---
 

@@ -138,3 +138,5 @@ Source: [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable
 | **S6** | Bootstrap/callback `clearSession()` after rotation + transient `/me` fail | Retain rotated pair; only failed rotation clears | FE build + lint |
 
 **Still open (Fable program):** **T-127** (MC UX U1–U4) · **T-128** (doc links + staging honesty). Mod REST `/compiled` chain (**T-092**) unchanged.
+
+**Living tracker (all findings):** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — full index + inline status on every finding. Update that file when tickets ship.

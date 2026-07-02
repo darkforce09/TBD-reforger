@@ -2,7 +2,7 @@
 
 **ONLY ACTIVE WORK** — finish **T-126 → T-127 → T-128** before anything else (no parallel T-090 / map slices).
 
-**Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) (read-only audit @ `a3efdf6`, 2026-07-01)
+**Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — **living tracker** (remediation index + inline status; update on each ship)
 
 **Execution order (strict — one at a time):**
 
