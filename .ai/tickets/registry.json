@@ -2923,7 +2923,7 @@
         "ui"
       ],
       "title": "Fable audit — Mission Creator UX fixes",
-      "summary": "U1–U4: conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. After T-126. Spec: docs/platform/t127_mc_ux_audit_fixes.md.",
+      "summary": "ACTIVE — U1–U4 (+ U5 stretch): conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. Spec + handoff ready. After T-126 @ 4a47688e.",
       "spec": "docs/platform/t127_mc_ux_audit_fixes.md",
       "depends_on": [
         "T-126"

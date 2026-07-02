@@ -28,4 +28,4 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Program hub:** `docs/platform/t127_mc_ux_audit_fixes.md`
 - **Branch:** `main`
 - **Targets:** website
-- **Summary:** U1–U4: conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. After T-126. Spec: docs/platform/t127_mc_ux_audit_fixes.md.
+- **Summary:** ACTIVE — U1–U4 (+ U5 stretch): conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. Spec + handoff ready. After T-126 @ 4a47688e.

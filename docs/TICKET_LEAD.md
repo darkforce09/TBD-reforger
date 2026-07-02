@@ -5,7 +5,7 @@
 
 ## Running / Review
 
-- **T-127** (1270) — Fable audit — Mission Creator UX fixes [active] — U1–U4: conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. After T-126. Spec: docs/platform/t127_mc_ux_audit_fixes.md.
+- **T-127** (1270) — Fable audit — Mission Creator UX fixes [active] — ACTIVE — U1–U4 (+ U5 stretch): conflict IDB persist, export errors, basemap map→satellite coerce, layer delete confirm. Spec + handoff ready. After T-126 @ 4a47688e.
 
 ## Ready
 

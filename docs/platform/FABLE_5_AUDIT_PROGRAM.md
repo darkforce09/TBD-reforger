@@ -38,11 +38,14 @@
 
 ```bash
 git pull && git lfs pull
-./scripts/ticket brief T-126
-./scripts/ticket prompt T-126    # paste into Claude Code — ONLY this until T-126 ships
+./scripts/ticket brief T-127
+./scripts/ticket prompt T-127    # paste into Claude Code — ONLY this until T-127 ships
 ```
 
-**T-126** shipped @ `4a47688e` (tag **T-126**) — doc sync done.  
+Send-off: [`.ai/artifacts/t127_SEND_TO_CLAUDE.md`](../../.ai/artifacts/t127_SEND_TO_CLAUDE.md)
+
+**T-126** shipped @ `4a47688e` (tag **T-126**).  
+**T-127** active — MC UX U1–U4 (+ U5 stretch).  
 After **T-127** ships → **"doc sync for T-127"** → Cursor ships **T-128**
 
 One-pager: [`.ai/artifacts/fable_audit_operator_resume.md`](../../.ai/artifacts/fable_audit_operator_resume.md)
