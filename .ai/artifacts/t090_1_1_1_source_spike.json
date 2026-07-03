@@ -1,0 +1,38 @@
+{
+  "ticket": "T-090.1.1.1",
+  "phase": "P0 source spike — Map land-cover tint source (forest vs open)",
+  "decidedAt": "2026-07-04",
+  "winner": "L1",
+  "rejects": [
+    {
+      "id": "L2",
+      "reason": "DEM slope/elevation carries no forest-vs-field signal (forests sit on flats and slopes alike), the G1-A TGA already bakes engine relief shading into the land band, and the frontend ships an on-demand hillshade layer with an opacity slider (T-090.1.2.6/T-091.2) — a second baked hillshade would double-shade. No readability win for the M3 bar; skipped."
+    },
+    {
+      "id": "L3",
+      "reason": "No forest-region polygon export exists on disk (packages/map-assets/everon/objects/ has no forest-regions payload; census pending_export until T-090.3). T-090.8 remains the long-term engine-truth path."
+    },
+    {
+      "id": "L4",
+      "reason": "Per-point terrain colour / land-cover export remains blocked exactly as documented in t090_1_2_4_engine_render_spike.json (no API surface; material palette locked in non-zlib pak codec). VARIANT REJECTED WITH EVIDENCE: the existing G1-A TGA cannot supply land cover either — full-res histogram over all 16.78M px shows every one of the 5,281,971 land px (g>b family) inside R∈[68,105) with ZERO px on the plugin's forestArea ramp (54,70,44) and zero at landBright (120,134,96); TBD_SatelliteExportPlugin.c passes forestArea+INCLUDE_GEN_AREAS=true to SetupColors, so the forest overlay no-op'd in that export (shading compressed the land ramp to one olive band). A palette-retuned re-export could work but needs a live Workbench session and a mod-script slice (executor: workbench) — out of scope for this claude-code slice; documented as a future option."
+    }
+  ],
+  "heuristic": {
+    "source": "packages/map-assets/everon/staging/sap/everon-sap-ortho.png (12800², read-only; satellite bundle untouched)",
+    "classGrid": "3200² (4 m/px) via magick -sample (nearest — thresholds tuned on true pixel values, no averaging)",
+    "water": "b >= g → excluded (ocean/lakes/rivers belong to the .2.5.2 water pass)",
+    "forest": "g > r && g > b+8 && L <= 52 — sampled canopy cores ≈ (39-43,44-48,30-31), dark conifer/scrub bands ≈ (53,58,36), grass ≈ (62-63,66-67,40-42); cut at 52 captures the conifer band and stays 4-5 L below grass",
+    "open": "r >= g+4 && L >= 58 — tan fields ≈ (99-110,88-98,62-70) r-g=+11..12, plow ≈ (72,66,46) +6, town roofs ≈ (102,90,64) +12; grass is green-dominant (r-g ≈ -4) and grey rock/haze (r≈g) deliberately stays base olive until a real land-cover export lands",
+    "urban": "not separated in v1 — towns classify into the open/bright tier (roofs+pavement are red-dominant), which is the correct light-vs-forest read until T-090.5 vector buildings",
+    "morphology": "per class plane: close-then-open via box blur + re-threshold (grow r=6 @ >=0.35, shrink r=6 @ >=0.6, ~25 m structuring element) kills salt-and-pepper and yields chunky Google-Maps-scale regions; final r=2 blur turns the edge into a soft alpha ramp",
+    "compose": "tints applied at SOURCE res (4096²) before the Lanczos upscale — open #CDC6A3 @ 0.70 then forest #37502D @ 0.80 (forest wins overlapping soft edges), each as xc:colour + alpha-capped mask via CopyOpacity, Over-composited; grass keeps the raw TGA olive so relief shading stays visible",
+    "fractions": { "forest": 0.0834, "bright": 0.0583, "grass": 0.1679, "water": 0.6904 }
+  },
+  "evidence": {
+    "tgaMonochrome": "magick histogram over TBD_SatExport_everon.tga: total=16,777,216 ocean(b>=g)=11,495,245 land=5,281,971; land split r<68: 0 px, 68<=r<105: 5,281,971 px, r>=105: 0 px",
+    "sapSeparability": "sample boxes (magick crop means): forestA(4870,5040)=(39,44,30), forestB(5915,5880)=(43,48,31), conifer/scrubSE(8200,9200)=(53,58,36), grassRef(4900,5240)=(63,67,42), grassN(4600,2800)=(69,69,46), tanA(4955,5025)=(99,88,62), tanB(4710,5295)=(110,98,70), plowA(4705,5195)=(72,66,46), townRoof(6250,5690)=(102,90,64)",
+    "recallTune": "FOREST_LUM_MAX 48 → 52 after red-overlay audit vs SAP preview: at 48 only canopy cores classified (~16% of land, big conifer bands missed); at 52 coverage matches the visibly dark masses (~27% of land) with precision held (red sits only on dark canopy)",
+    "perf": "single-pass tint at 12800² (three Q16 overlay stages) blew the -limit budget and spilled multi-GB to /var/tmp (killed at 10min+; T-090.1.1 baseline was 50 s) — moved the land-cover pass before the upscale (4096²), restoring the known one-overlay 12800² profile"
+  },
+  "notes": "Map tab only — SAP ortho is read as classification input, never written; everon-sat.tbd-sat and tiles/satellite untouched. Masks land in staging/map/ (gitignored) and are rebuilt on every compose (~6 s, deterministic). Water + .topo road passes unchanged from T-090.1.1/.2.5.2. Buildings/vector objects remain T-090.5; engine-truth forest regions remain T-090.8."
+}

@@ -1,18 +1,24 @@
 // T-090.1.1 — Build the Map-view staging ortho (stylized cartographic, NOT satellite).
+// T-090.1.1.1 — land-cover tints (forest / open) on the same compose path.
 //
 // Base raster is the MapDataExporter.ExportRasterization TGA shipped @ T-090.1 (G1-A winner,
 // .ai/artifacts/t090_1_1_source_spike.json): 4096×4096, top-origin (north-up), stylized
-// land/ocean/forest palette + relief shading. That capture tier was honestly rejected for the
+// land/ocean palette + relief shading. That capture tier was honestly rejected for the
 // SATELLITE tab (T-090.1.2.4) — it is the correct product tier for the MAP tab. Never merge
 // this raster into the SAP satellite bundle.
 //
-// The raw TGA carries no road network and misses most inland water, so the cartographic
-// product ("roads + terrain palette", t090_basemap_dual_view.md) is composed here, all
-// offline:
-//   1. upscale TGA → full world extent (Everon 12800², 1 m/px) with Lanczos;
-//   2. tint inland water from the T-090.1.2.5.2 classifier mask (read-only reuse — the
+// The TGA's land is a single relief-shaded olive band (its forestArea palette never rendered
+// — all 5.28M land px sit in R∈[68,105), t090_1_1_1_source_spike.json), it carries no road
+// network, and it misses most inland water. The cartographic product ("roads + terrain
+// palette", t090_basemap_dual_view.md) is therefore composed here, all offline:
+//   1. tint land cover at source res (4096²) from the SAP-appearance masks
+//      (build-landcover-mask.mjs, T-090.1.1.1): open/bright fields lighten toward tan,
+//      forest darkens toward canopy green — partial alpha so the TGA relief shading ghosts
+//      through both (tinting pre-upscale is visually identical and ~10× cheaper);
+//   2. upscale → full world extent (Everon 12800², 1 m/px) with Lanczos;
+//   3. tint inland water from the T-090.1.2.5.2 classifier mask (read-only reuse — the
 //      heuristic itself is frozen; ocean is already in the TGA palette);
-//   3. stroke the .topo road network (decode-topo.mjs — airfield + 4 road tiers, the same
+//   4. stroke the .topo road network (decode-topo.mjs — airfield + 4 road tiers, the same
 //      vectors .5.2 used for road subtraction) as an MVG draw pass.
 //
 // Output: packages/map-assets/<terrain>/staging/map/<terrain>-map-ortho.png, north-up.
@@ -56,6 +62,13 @@ const ROAD_STYLE = {
   5: { color: '#7a7466', width: 3 }, // track / trail
 };
 const WATER_COLOR = '#2E5266'; // the TGA's own ocean teal — inland water matches it
+
+// Land-cover tints (T-090.1.1.1, L1 winner — t090_1_1_1_source_spike.json). Alphas < 1 so
+// the TGA relief shading stays visible under both tints; grass keeps the raw TGA olive.
+const LANDCOVER_STYLE = {
+  open: { color: '#CDC6A3', alpha: 0.7 }, // tan fields / plow / urban — lighter than grass
+  forest: { color: '#37502D', alpha: 0.8 }, // canopy green — darker than grass
+};
 
 const terrain = process.env.TERRAIN || 'everon';
 const cfg = SOURCES[terrain];
@@ -124,7 +137,11 @@ function despike(verts) {
 }
 
 const { decodeTopo } = await import(join(HERE, 'decode-topo.mjs'));
+const { buildLandcoverMasks } = await import(join(HERE, 'build-landcover-mask.mjs'));
 const topo = await decodeTopo(terrain);
+
+// ── Land-cover masks from the SAP appearance (rebuilt every compose — ~6 s, deterministic) ─
+const landcover = buildLandcoverMasks(terrain);
 const mvgPath = join(dirname(out), 'roads.mvg');
 const mvg = ['fill none stroke-linecap round stroke-linejoin round'];
 const drawn = { records: 0, verts: 0, rawVerts: 0 };
@@ -159,7 +176,49 @@ const size = `${cfg.worldPx}x${cfg.worldPx}`;
 // with multi-GB /tmp/magick-* residue).
 const LIMITS = ['-limit', 'memory', '3GiB', '-limit', 'map', '6GiB'];
 const MAGICK_ENV = { ...process.env, MAGICK_TEMPORARY_PATH: '/var/tmp' };
-const args = [...LIMITS, tga, '-alpha', 'off', '-filter', 'Lanczos', '-resize', `${size}!`];
+// Land-cover tints run at SOURCE resolution (4096²), before the upscale: solid colour with
+// the (alpha-capped) class mask as its opacity, Over-composited — same mechanism as the
+// water tint below. Tinting after the upscale is visually identical (the soft mask edges
+// ride the same Lanczos) but needs three 12800² Q16 overlay stages in one pipeline, which
+// blew past the -limit budget and spilled multi-GB to disk (observed 10min+ vs ~1min).
+// Open first, forest second (forest wins where the soft edges overlap, which is the right
+// call at a treeline against a field).
+const srcSize = `${cfg.sourcePx}x${cfg.sourcePx}`;
+const tinted = join(dirname(out), 'tinted-base-tmp.png');
+const tintArgs = [...LIMITS, tga, '-alpha', 'off'];
+for (const [name, mask] of [
+  ['open', landcover.brightMask],
+  ['forest', landcover.forestMask],
+]) {
+  const style = LANDCOVER_STYLE[name];
+  tintArgs.push(
+    '(',
+    '-size',
+    srcSize,
+    `xc:${style.color}`,
+    '(',
+    mask,
+    '-alpha',
+    'off',
+    '-resize',
+    `${srcSize}!`,
+    '-evaluate',
+    'Multiply',
+    String(style.alpha),
+    ')',
+    '-compose',
+    'CopyOpacity',
+    '-composite',
+    ')',
+    '-compose',
+    'Over',
+    '-composite',
+  );
+}
+tintArgs.push(tinted);
+execFileSync('magick', tintArgs, { stdio: 'inherit', env: MAGICK_ENV });
+
+const args = [...LIMITS, tinted, '-filter', 'Lanczos', '-resize', `${size}!`];
 if (hasWater) {
   // Solid-teal layer with the classifier mask as its alpha (white = water), Over-composited.
   args.push(
@@ -183,6 +242,7 @@ if (hasWater) {
 }
 args.push(out);
 execFileSync('magick', args, { stdio: 'inherit', env: MAGICK_ENV });
+rmSync(tinted);
 execFileSync('magick', [...LIMITS, out, '-draw', `@${mvgPath}`, out], {
   stdio: 'inherit',
   env: MAGICK_ENV,
@@ -190,7 +250,7 @@ execFileSync('magick', [...LIMITS, out, '-draw', `@${mvgPath}`, out], {
 rmSync(mvgPath);
 
 const meta = {
-  slice: 'T-090.1.1',
+  slice: 'T-090.1.1.1',
   source: 'workbench-cartographic',
   terrain,
   sourceRaster: cfg.tga,
@@ -200,6 +260,13 @@ const meta = {
   upscale: `${cfg.sourcePx}->${cfg.worldPx} magick -filter Lanczos (documented upscale, slice spec §1)`,
   orientation: 'north-up (TGA top origin preserved; no flips on this path)',
   overlays: {
+    landCover: {
+      source: 'build-landcover-mask.mjs (SAP appearance heuristic, L1)',
+      thresholds: landcover.meta.thresholds,
+      fractions: landcover.meta.fractions,
+      style: LANDCOVER_STYLE,
+      provenance: 'T-090.1.1.1 — SAP ortho read-only; satellite bundle untouched',
+    },
     inlandWater: hasWater
       ? { mask: cfg.waterMask, color: WATER_COLOR, provenance: 'T-090.1.2.5.2 classifier (read-only reuse)' }
       : null,
@@ -210,7 +277,7 @@ const meta = {
       style: ROAD_STYLE,
     },
   },
-  spikeArtifact: '.ai/artifacts/t090_1_1_source_spike.json',
+  spikeArtifact: '.ai/artifacts/t090_1_1_1_source_spike.json',
   buildSeconds: Math.round((Date.now() - started) / 1000),
   generatedAt: new Date().toISOString(),
 };
