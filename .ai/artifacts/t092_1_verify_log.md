@@ -1,10 +1,10 @@
 # T-092.1 — Verify log (mod spawn height + yaw policy)
 
-**Branch:** `ticket/T-092` (worktree `.ai/artifacts/worktrees/TBD-T-092`)
-**Date:** 2026-07-03
-**Status:** automated gates PASS · wb_play gates **PENDING** (operator decision 2026-07-03: Workbench is
-held by parallel Stream A / T-090.1.1 on `main`; wb_play runs in one coordinated window later —
-tag `T-092.1` only after those pass).
+**Branch:** `ticket/T-092` (worktree `.ai/artifacts/worktrees/TBD-T-092`) → merged to `main` @ `a73224f2`
+**Date:** 2026-07-03 · **post-merge verify 2026-07-04 on `main`**
+**Status:** **ALL GATES PASS** — automated re-run on `main` + wb_play M1–M4 + S5 measured in the
+2026-07-04 coordinated window (details below). `CAPSULE_GROUND_OFFSET_M` stays **0.0** (measured
+groundDelta ≤ 0.003 m — engine settles feet-on-ground; no calibration commit needed).
 
 ## Automated
 
@@ -13,19 +13,33 @@ tag `T-092.1` only after those pass).
 | S1 schema | `cd packages/tbd-schema && npm run validate` | **PASS** — "All contracts valid" (golden missions incl. `bridgehead-at-levie.json` validate against the 1.2 schema; `y` optional) |
 | Go regression | `cd apps/website && go build ./...` | **PASS** |
 
-## wb_play (PENDING — coordinated window)
+**Post-merge re-run on `main` @ `a73224f2` (2026-07-04):** S1 schema **PASS** ("All contracts valid"),
+`make test-it` **PASS** (handlers 5.9 s), FE `npm run build` + `lint` **PASS**, `npm test` **53/53**
+(main superset — worktree had 49; +4 from T-090.1.1 basemap suite).
 
-Workbench state at prep time: connected (`wb_connect`/`wb_state` OK), Everon/TBD_Dev_POC subscene open,
-but the loaded gproj is the **main checkout** (`Z:/home/Samuel/Projects/TBD-Reforger/apps/mod/tbd-framework/addon.gproj`),
-not this worktree — Stream A owns that tree + Workbench right now.
+## wb_play (PASS — 2026-07-04 post-merge window, `main` @ `a73224f2`)
+
+Ran exactly per the prepared recipe below (runs A + B on the patched profile mission,
+`backendUrl` blanked → profile-file path). Log: WB `logs_2026-07-04_00-00-12` (run A) /
+`logs_2026-07-04_00-04-42` (run B).
 
 | ID | Step | Pass condition | Result |
 |----|------|----------------|--------|
-| M1 | Spawn slot on hill | feet on ground, log delta < 0.5 m | **PENDING** |
-| M2 | Spawn slot in valley | same | **PENDING** |
-| M3 | Spawn with explicit jsonY | jsonY path logged | **PENDING** |
-| M4 | headingDeg 90 vs 0 | faces east ±5° | **PENDING** |
-| S5 | CAPSULE_GROUND_OFFSET_M | documented with measurement | **PENDING** — constant ships as `0.0` placeholder; calibrate from `groundDelta` below |
+| M1 | Spawn slot on hill | feet on ground, log delta < 0.5 m | **PASS** — build `slot=blufor:Alpha:SL:0 Y=174.375 jsonY=- surfaceY=174.375 delta=0 heading=90` (recipe's pre-sampled 174.375 exact); deployed `pos=<6399.13, 174.374, 7399.5> feetY=174.374 surfaceY=174.373 groundDelta=0.000579834` |
+| M2 | Spawn slot in valley | same | **PASS** — build `Y=0.125 surfaceY=0.125` (recipe exact); deployed `pos=<7800, 0.109521, 7999> groundDelta=0.000145763` |
+| M3 | Spawn with explicit jsonY | jsonY path logged | **PASS** — `slot=blufor:Alpha:TL:1 Y=102 jsonY=102 surfaceY=102 delta=0` (jsonY wins; delta 0 vs live surface) |
+| M4 | headingDeg 90 vs 0 | faces east ±5° | **PASS** — heading 90 → deployed `yaw=-89.999` (engine yaw is CCW-positive; −90 engine ≡ compass 090°/east, ±0.001°); heading 0 → deployed `yaw=0` exact |
+| S5 | CAPSULE_GROUND_OFFSET_M | documented with measurement | **PASS** — measured `groundDelta` on deployed human character: **+0.00058 m** (hill), **+0.000146 m** (valley), **−0.0029 m** (run C, T-092.2 log) → engine settles feet-on-ground; constant stays **0.0**, no commit |
+
+**Ops note (root-caused during this window):** Workbench had been started 2026-07-03 23:33:19 and
+compiled scripts at 23:33:25 — the T-092 merge commits landed 23:33:42, so the first wb_play attempt ran
+**pre-merge bytecode** (old loader URL + old `[TBD]` log format, no `[TBD][Spawn]` lines), and
+`wb_reload {"target":"scripts"}` does **not** actually recompile (every ScriptEditor/WorldEditor
+`ExecuteAction` menu path returns false → `ExecuteAction=false`). Additionally `TBD_MissionLoader`
+statics (`s_Loaded`) survive across play sessions within one Workbench process, so fixture edits are
+only picked up by a **fresh Workbench start**. Verified procedure: kill the `ArmaReforgerWorkbenchSteamDiag.exe`
+(Z:-prefixed cmdline), `wb_launch {"gprojPath": …addon.gproj}`, `wb_open_resource worlds/TBD_Dev_POC.ent`,
+then `tbd-spawn-verify.sh` — one WB cycle per fixture/config change (`wb-cycle.sh` pattern, ~90 s).
 
 ### Prepared verification recipe (run in the coordinated window)
 

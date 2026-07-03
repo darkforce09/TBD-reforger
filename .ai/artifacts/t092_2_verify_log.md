@@ -1,9 +1,10 @@
 # T-092.2 — Verify log (mod compile flatten + /compiled API)
 
-**Branch:** `ticket/T-092` (worktree `.ai/artifacts/worktrees/TBD-T-092`)
-**Date:** 2026-07-03
-**Status:** automated + live-API gates PASS · Workbench/dedicated-server gates **PENDING** (same
-coordinated window as T-092.1 — Workbench held by Stream A / T-090.1.1).
+**Branch:** `ticket/T-092` (worktree `.ai/artifacts/worktrees/TBD-T-092`) → merged to `main` @ `a73224f2`
+**Date:** 2026-07-03 · **post-merge verify 2026-07-04 on `main`**
+**Status:** **ALL GATES PASS** — automated + live-API re-run on `main`, and the Workbench REST E2E
+(S2/S3/S6/M3/M4) ran in the 2026-07-04 coordinated window via wb_play (see §Workbench below;
+M4 carries one out-of-scope harness caveat, OBS-1).
 
 ## Automated
 
@@ -16,6 +17,13 @@ coordinated window as T-092.1 — Workbench held by Stream A / T-090.1.1).
 | FE lint | `npm run lint` | **PASS** |
 | FE tests | `npm test` (vitest) | **49/49** — incl. 6 new `flattenModDocument.test.ts` |
 | Go build/vet | `go build ./...`, `go vet ./...` | **PASS** |
+
+**Post-merge re-run on `main` @ `a73224f2` (2026-07-04):** S1 goldens **PASS**; `make test-it`
+**PASS** (handlers 5.9 s incl. `TestGetCompiledMission`); FE build + lint **PASS**; FE tests **53/53**
+(main superset of the worktree's 49). Live smoke repeated against `make api` @ :8080: mission
+`ea60cf5b-…` + version 0.1.1 → **201**; `/compiled` **200** with token, **401** without, empty-version
+mission → **409** `no placed slots`; body `schemaVersion "1.2"`, 4 slots, ids/kits/y/heading/zones as
+below; **passes `scripts/validate-file.mjs`** against `mission.schema.json`.
 
 ## Live API smoke (worktree API @ :8081, dev DB @ :5434)
 
@@ -54,21 +62,35 @@ Fallbacks: unmapped/absent assetId → faction default (`blufor→kit:us_riflema
 `opfor→kit:sov_rifleman`); presets `blufor→preset:us_army_82nd`, `opfor→preset:sov_vdv`.
 Unmapped palette characters today: US Medic / MG / LAT / Engineer (fall back with a console warn).
 
-## PENDING — Workbench / dedicated server (coordinated window, with T-092.1 gates)
+## Workbench REST E2E (PASS — 2026-07-04 post-merge window, `main` @ `a73224f2`)
+
+Ran per the recipe: `TBD_BackendConfig.json` → `http://127.0.0.1:8080`, `serverToken` =
+`.env SERVICE_TOKEN` (the profile config had a stale 31-char placeholder token — would 401),
+`missionId` = live smoke mission `ea60cf5b-31c4-465c-a04f-dea7a6935b34` (created via
+dev-login → POST /missions → POST versions 0.1.1 with the 4-slot fixture payload). Fresh
+Workbench start per config change (loader statics — see T-092.1 log ops note). WB log
+`logs_2026-07-04_00-06-19`.
 
 | ID | Step | Result |
 |----|------|--------|
-| S2 | Mod loads compiled JSON (REST or profile cache); spawn points built (`[TBD] SpawnManager: built slot spawn` × N) | **PENDING** |
-| S3 | headingDeg ±5° @ 3 anchors | **PENDING** |
-| S6 | Editor save → /compiled → mod spawn @ bridgehead ±2 m horizontal | **PENDING** |
-| M3 | Dedicated/wb_play server load log | **PENDING** |
-| M4 | Deploy test player within 2 m of editor x/z | **PENDING** |
+| S2 | Mod loads compiled JSON (REST or profile cache); spawn points built | **PASS** — `[TBD] Fetching mission ea60cf5b-… from http://127.0.0.1:8080/api/v1/missions/ea60cf5b-…/compiled` → `[TBD] Mission loaded from backend: T-092 post-merge smoke` → 4× `built slot spawn`; cache written to `$profile:missions/ea60cf5b-….json` (removed after verify) |
+| S3 | headingDeg ±5° @ 3 anchors | **PASS** — 4 anchors: SL:0 `heading=270`, TL:0 `heading=90` (**450 → 90 normalization through the full pipeline**), TL:1 `heading=0`, RFL:0 `heading=90`; deployed at the heading-90 point: `yaw=-89.9984` (engine CCW ≡ compass 090°, ±0.002°) |
+| S6 | Editor save → /compiled → mod spawn @ bridgehead ±2 m horizontal | **PASS** — spawn points at **exact** editor x/z: `<4839.2, 121.787, 6620.8>`, `<4836.9, 142.5, 6626.5>` (**explicit y=142.5 passthrough**), `<4831.2, 123.6, 6628.8>`, `<6010, 215.453, 7211.5>`; `MAX_Y_DELTA_M` warn fired as designed on the synthetic 142.5 (19.18 m vs surfaceY 123.323) |
+| M3 | Dedicated/wb_play server load log | **PASS** — fetch → build → `[TBD] Stage → LOBBY` (wb_play; dedicated-server run not required for this gate) |
+| M4 | Deploy test player within 2 m of editor x/z | **PASS w/ caveat (OBS-1)** — deployed `pos=<6009.13, 215.718, 7211>` = **1.0 m** horizontal from the opfor slot's editor x/z (6010, 7211.5); `groundDelta=-0.0029 m`, `yaw=-89.9984` matches that point's heading 90. Caveat: player had been **assigned** `blufor:Alpha:SL:0` (`assigned slot … to player 1 at (4839.2,6620.8)` + `spawn requested … kit kit:us_sl`) but the respawn system deployed at the **opfor** spawn point — see OBS-1 |
 
-Recipe: point `TBD_BackendConfig.json` at a running worktree API (`http://127.0.0.1:8080`,
-serverToken = `SERVICE_TOKEN`) — the loader now fetches `/api/v1/missions/{id}/compiled` with
-`X-Service-Token` (both fixed this slice) and caches to `$profile:missions/{id}.json`; then run
-`bash scripts/mod/tbd-spawn-verify.sh` and read the `[TBD][Spawn]` + deployed-transform lines
-(instrumentation shipped in T-092.1).
+### Observations (out of T-092 scope, for follow-up)
+
+- **OBS-1 — assigned-slot ↔ deploy-point binding:** the dev roster harness is round-robin only
+  (`RosterLoader: fetch failed — round-robin slots only`); slot assignment + spawn request carry the
+  right slot/kit, but the SCR respawn point selection deployed the test player at the opfor point
+  instead of the assigned blufor slot's point. Spawn-point **transforms** (T-092 surface) are proven
+  correct at all 4 anchors; slot→player binding is the LOBBY/ORBAT program's surface (**T-068.13 /
+  T-071**), where this belongs.
+- **OBS-2 — `TBD_MissionList` still on the legacy path:** `[TBD] MissionList: fetching
+  http://127.0.0.1:8080/api/missions` → 404 (`MissionList: fetch failed`). T-092.2 fixed the mission
+  **loader** path only; the mission-browser list component still uses pre-v1 `/api/missions` and
+  needs the same `/api/v1` + `X-Service-Token` treatment in a future slice.
 
 ## Shipped code (this slice)
 
