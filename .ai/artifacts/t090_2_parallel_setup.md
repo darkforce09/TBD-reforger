@@ -1,8 +1,15 @@
 # T-090 parallel setup — water refine (.2.5.1) + taxonomy (.2)
 
-**Created:** 2026-07-03 · **Status:** ready to run
+**Status:** **CLOSED** — both streams shipped (`.2.5.1` @ `82488c6f`, `.2` @ `691d9b26` merged to `main`).
 
-Supersedes the closed **T-090.1.2.5 + T-090.1.2.6** parallel playbook ([`t090_parallel_setup.md`](t090_parallel_setup.md)).
+Worktree cleanup (optional):
+
+```bash
+git worktree remove .ai/artifacts/worktrees/TBD-T-090-2
+git branch -d ticket/T-090-2
+```
+
+Historical playbook below.
 
 ---
 

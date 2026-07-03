@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.5.1 @ 82488c6f (inland water refine). Active: T-090.1.1 Map view. Parallel: T-090.2 taxonomy @ ticket/T-090-2. Residual hydrology gaps — operator post-ship @ verify log. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.2 @ 691d9b26 (taxonomy S1–S10). T-090.1.2.5.1 @ 82488c6f (water refine). Active: T-090.1.1 Map view. T-090.3 export unblocked. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -2006,7 +2006,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "691d9b26"
         },
         "T-090.3": {
           "targets": [

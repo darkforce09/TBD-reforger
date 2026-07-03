@@ -1,10 +1,7 @@
 # T-090.2 — Map object taxonomy + schema
 
 **Ticket:** T-090 · **Slice:** T-090.2  
-**Status:** **READY** — schema scaffolding @ **T-090.0.2**; ship **S1–S10** acceptance + golden coverage + verify scripts  
-**Executor:** **claude-code** (T-090.0.2 was cursor-docs schema bootstrap)  
-**Parallel:** safe with **T-090.1.2.5.1** on `main` — no `packages/map-assets/everon/satellite/**` or ortho pipeline overlap  
-**Worktree:** `.ai/artifacts/worktrees/TBD-T-090-2` · branch `ticket/T-090-2` · playbook [`.ai/artifacts/t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md)  
+**Status:** **SHIPPED** @ `691d9b26` (tag **T-090.2**) — S1–S10 goldens + `verify-map-object-golden.mjs` + classify rules + Everon `objects` stub  
 **Blocked for:** visual render verify (**T-090.5**); Workbench export counts (**T-090.3**) — not blocking schema/golden ship  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
 **Handoff:** [`.ai/artifacts/t090_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_2_claude_code_handoff.md)
@@ -575,9 +572,11 @@ cd packages/tbd-schema && npm run verify-map-object-golden   # after T-090.2 lan
 
 ## Ship
 
-Tag **`T-090.2`** · prefix **`T-090.2:`**  
+Tag **`T-090.2`** @ `691d9b26` · merged to `main`  
 Handoff: [`.ai/artifacts/t090_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_2_claude_code_handoff.md)  
-Verify log: [`.ai/artifacts/t090_2_verify_log.md`](../../../.ai/artifacts/t090_2_verify_log.md)
+Verify log: [`.ai/artifacts/t090_2_verify_log.md`](../../../.ai/artifacts/t090_2_verify_log.md) — S1–S10 PASS, 52 prefabs, `verify-map-object-golden.mjs` in `make schema-validate`
+
+**Unblocks:** **T-090.3** phased Workbench export (classify rules + schema gates live).
 
 ---
 

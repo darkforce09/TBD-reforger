@@ -21,7 +21,7 @@
 | S10 | `make map-object-enums-verify` | **PASS** (exit 0) | 52 prefabs, 10 glyphs, enums single-source |
 | Census | `make map-census TERRAIN=everon` | **PASS** (exit 0) | `pending_export` OK — validate-only path, unchanged |
 
-**Commit:** see `git log -1` on `ticket/T-090-2` (T-090.2 ship commit) · **Tag:** `T-090.2`
+**Commit:** `691d9b26` · **Tag:** `T-090.2` · **Merged to main**
 
 ### `make schema-validate` output (primary ship gate)
 
