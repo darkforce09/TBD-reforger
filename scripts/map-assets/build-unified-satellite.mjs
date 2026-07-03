@@ -172,6 +172,16 @@ const metaPath = join(dirname(INPUT), 'TBD_SatExport_meta.json');
 if (existsSync(metaPath)) {
   const m = JSON.parse(readFileSync(metaPath, 'utf8'));
   sourceMeta = { source: m.source, seamRepair: m.seamRepair, generatedAt: m.generatedAt };
+  if (m.waterComposite) {
+    // T-090.1.2.5 — water composite provenance rides into the bundle index.
+    const w = m.waterComposite;
+    sourceMeta.waterComposite = {
+      slice: w.slice,
+      oceanMaskSource: w.oceanMaskSource,
+      inlandMaskSource: w.inlandMaskSource,
+      generatedAt: w.generatedAt,
+    };
+  }
 }
 
 const blocks = encodeJobs.map((j) => ({ job: j, buf: readFileSync(j.webp) }));

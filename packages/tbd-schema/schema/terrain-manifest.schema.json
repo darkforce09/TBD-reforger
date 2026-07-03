@@ -114,6 +114,10 @@
               "description": "Primary satellite delivery (T-090.1.2.8): unified = one tbd-sat bundle → single GPU texture with mips; pyramid = legacy per-viewport {z}/{x}/{y} tiles. The frontend falls back to the pyramid when the unified bundle is missing/unreadable.",
               "enum": ["pyramid", "unified"]
             },
+            "waterComposite": {
+              "type": "boolean",
+              "description": "T-090.1.2.5 — true when the satellite ortho has engine-sourced hydrology composited on (ocean = DEM <= sea level; inland = supertexture water appearance, DEM-filtered). Provenance: staging TBD_SatExport_meta.json waterComposite block + .ai/artifacts/t090_1_2_5_water_source_spike.json."
+            },
             "unified": {
               "type": "object",
               "description": "Unified satellite bundle (tbd-sat v1, T-090.1.2.8): GLB-style container of lossless-WebP mip blocks, fetched once and uploaded as a single mipmapped GPU texture.",

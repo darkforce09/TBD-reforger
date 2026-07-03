@@ -98,6 +98,17 @@
       "note": "REAL cartographic source found: World Editor 'Export Map Data' -> .topo Map Geometry Data (roads/buildings/airfields). N9 synth NOT strictly required; tile production = T-090.1.1."
     }
   },
+  "waterComposite": {
+    "slice": "T-090.1.2.5",
+    "appliedTo": "packages/map-assets/everon/staging/sap/everon-sap-ortho.png (seam-fixed SAP ortho, T-090.1.2.2)",
+    "oceanMaskSource": "dem-below-sea-level — engine GetTerrainSurfaceY DEM (T-091.0) <= 0 m; depth drives the oceanDark→oceanBright ramp (engine palette from TBD_SatelliteExportPlugin.c SetupColors)",
+    "inlandMaskSource": "supertexture-water-appearance-dem-filtered — pixels the engine's SAP renderer drew with the underwater/seabed treatment (smooth desaturated grey), cross-filtered by DEM: coast exclusion, engine-exact-flat pad rejection (kills runways/graded bases), slope rejection (kills rock faces), density opening (kills roads/roofs), min-area 2000 m²; 38 accepted bodies (central lake 18.8 ha + river network + coastal wetlands), each visually audited",
+    "spikeArtifact": ".ai/artifacts/t090_1_2_5_water_source_spike.json",
+    "verifyLog": ".ai/artifacts/t090_1_2_5_verify_log.md",
+    "forbiddenMethodsAttestation": "no hand-painted lakes, no AI rivers, no solid rectangles — every water pixel comes from engine data (DEM heights or engine-rendered supertexture), land pixels outside the mask are byte-identical",
+    "blockedCandidates": "Eden_<N>_layer.edds splat weights decoded but material palette locked in Eden_<N>.ttile/Eden.ent (non-zlib pak codec); .Rivers flow maps + .Shore atlas readable but placements live in Eden.ent; Workbench in game mode at spike time (WorldEditorAPI unavailable) — see spike JSON for the full trail",
+    "generatedAt": "2026-07-03T11:38:07Z"
+  },
   "sampleRows": [
     { "resourceName": "{BEF9077AF9F93AE7}Prefabs/Structures/Houses/Village/House_Mountain_E_1I01/House_Mountain_E_1I01.et", "x": 1232.76, "y": 41.6405, "z": 6240.26 },
     { "resourceName": "{C212C8AC6001F002}Prefabs/Structures/Houses/Wooden/House_Wooden_E_1I01/House_Wooden_E_1I01.et", "x": 1180.74, "y": 34.1875, "z": 6237.72 },

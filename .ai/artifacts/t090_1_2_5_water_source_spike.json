@@ -1,0 +1,740 @@
+{
+  "slice": "T-090.1.2.5",
+  "generatedAt": "2026-07-03T11:29:27.652Z",
+  "decision": {
+    "oceanMask": "A-dem-below-sea-level",
+    "inlandMask": "E-supertexture-water-appearance-dem-filtered",
+    "refine": "DEM depth drives the ocean colour ramp (oceanDark→oceanBright)",
+    "forbiddenMethodsAttestation": "No hand-painted lakes, no AI-generated rivers, no solid rectangles: ocean = engine GetTerrainSurfaceY heights <= 0 m; inland = pixels the engine's own supertexture renderer drew with the underwater/seabed treatment, cross-filtered by engine DEM (coast exclusion + engine-flattened-pad rejection) and a morphological opening. Every accepted body is enumerated below for visual audit."
+  },
+  "candidates": {
+    "A-dem-below-sea-level": {
+      "result": "PASS (ocean only)",
+      "evidence": {
+        "demSource": "mod-getsurfacey-resample",
+        "seaFraction": 0.6852,
+        "inlandBelowSeaM2": 640,
+        "note": "68.5 % of the frame is <= 0 m (ocean). Inland water does NOT appear: only ~640 m² of inland pixels sit below sea level — Everon lakes/rivers are above sea level, so the DEM alone cannot see them (GetTerrainSurfaceY sampled the bed, e.g. the central lake bed reads 34–55 m)."
+      }
+    },
+    "B-terrain-layer-material-masks": {
+      "result": "FAIL (timeboxed)",
+      "timeSpentMin": 50,
+      "evidence": {
+        "decoded": "Eden_<N>_layer.edds format cracked: headerless-DDS variant (pixel-format block at 0x14, flags 0x41 = RGB|ALPHAPIXELS, 32 bpp BGRA8 masks), chunk table at 0x48 (vs 0x5C for the BC7 supertextures), 9 mips 1→256 px; COPY mip byte counts match 4 B/px exactly; mip0 (256², 262144 B) is multi-block LZ4: [u32 total][u32 blockLen][block]… in 64 KB blocks (decoded bit-exact, 262144/262144).",
+        "blocker": "Channels are per-cell splat WEIGHTS whose material palette lives in Eden_<N>.ttile / Eden.ent — both stored with a non-zlib pak codec (zlib/zstd/brotli/raw-deflate/raw-LZ4 all fail; enfusion-mcp PakVirtualFS only inflates zlib). Without the palette a 'water/seabed' channel cannot be labelled; channel meaning demonstrably varies per cell (deep-ocean cell N=49 weight signature ≠ coastal cell N=0)."
+      }
+    },
+    "C-engine-hydrology-files": {
+      "result": "BLOCKED (placement data unreadable)",
+      "evidence": {
+        "found": "worlds/Eden/.Rivers/<hash>_flow.edds ×30 (river flow maps) + worlds/Eden/.Shore/shoreMaskAtlas.edds (BC4) — real engine hydrology textures, readable via pak VFS.",
+        "blocker": "River/lake world-space placement lives in Eden.ent (70 MB) — same non-zlib pak codec as the .ttile files. Eden.topo (10.3 MB) and Eden.smap (16.4 MB) are readable but are unlabelled binary (index-buffer-like streams, no strings); decoding them is out of slice scope. Revisit for T-090.8 waterBody regions."
+      }
+    },
+    "D-workbench-entity-query": {
+      "result": "NOT NEEDED (and currently unavailable)",
+      "evidence": "GameLib exposes LakeGeneratorEntity/RiverEntity/RiverPartEntity, but wb_state reports Workbench in GAME mode (WorldEditorAPI unavailable) at spike time, and slice rules forbid new mod plugins. Candidate E removed the need. Ground-truth entity export remains the T-090.8 refinement path."
+    },
+    "E-supertexture-water-appearance": {
+      "result": "PASS (inland)",
+      "evidence": {
+        "principle": "The engine's supertexture renderer paints water areas with the underwater/seabed treatment — smooth desaturated grey with no vegetation colour (verified: the central lake at world ~(4550, 6100) renders as a uniform grey body while its DEM bed reads 34–55 m; the existing verify-sap-ortho orientation guard already relies on this same grey↔water correlation and matches the DEM coast at AE ratio ~0.08).",
+        "calibration": {
+          "patches": {
+            "lakeInterior": {
+              "sat": 0.084,
+              "lum": 0.328
+            },
+            "runwayAsphalt": {
+              "sat": 0.052,
+              "lum": 0.318,
+              "note": "rejected by exact-flat DEM filter"
+            },
+            "deepOceanSmooth": {
+              "sat": 0.044,
+              "lum": 0.297
+            },
+            "grass": {
+              "sat": 0.198,
+              "lum": 0.259
+            },
+            "farmland": {
+              "sat": 0.239,
+              "lum": 0.279
+            }
+          },
+          "params": {
+            "detectDim": 3200,
+            "satMax": 0.12,
+            "lumMin": 0.2,
+            "lumMax": 0.44,
+            "openRadiusPx": 2,
+            "oceanDilateRadiusPx": 5,
+            "flatDilateRadiusPx": 2,
+            "minAreaM2": 2000,
+            "meanSatMax": 0.115,
+            "flatFracMax": 0.5,
+            "slopePxMaxDeg": 18,
+            "slopeMeanMaxDeg": 8
+          },
+          "dem_filters": "ocean exclusion = DEM<=0 dilated; pavement rejection = engine-exact-flat DEM plateaus (2×2 identical u16 above sea — runways/graded pads are engine-flattened; the NW airfield runways were the two largest flat plateaus and are rejected by this filter); roads/roofs removed by the 8 m morphological opening."
+        },
+        "greyOceanRecall": 0.77,
+        "acceptedBodies": [
+          {
+            "accepted": true,
+            "areaM2": 188224,
+            "meanSat": 0.0581,
+            "meanSlopeDeg": 6.88,
+            "flatFrac": 0.031,
+            "bboxOrthoPx": [
+              4192,
+              6608,
+              5048,
+              7052
+            ],
+            "centreWorldM": [
+              4618,
+              5972
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 19712,
+            "meanSat": 0.038,
+            "meanSlopeDeg": 4.24,
+            "flatFrac": 0.217,
+            "bboxOrthoPx": [
+              4676,
+              5548,
+              5084,
+              6152
+            ],
+            "centreWorldM": [
+              4878,
+              6952
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 13728,
+            "meanSat": 0.0456,
+            "meanSlopeDeg": 4.15,
+            "flatFrac": 0.175,
+            "bboxOrthoPx": [
+              1208,
+              6644,
+              1436,
+              6972
+            ],
+            "centreWorldM": [
+              1320,
+              5994
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 13520,
+            "meanSat": 0.0354,
+            "meanSlopeDeg": 3.29,
+            "flatFrac": 0.286,
+            "bboxOrthoPx": [
+              4772,
+              8652,
+              5524,
+              8860
+            ],
+            "centreWorldM": [
+              5146,
+              4046
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 13488,
+            "meanSat": 0.0422,
+            "meanSlopeDeg": 2.68,
+            "flatFrac": 0.463,
+            "bboxOrthoPx": [
+              4412,
+              3028,
+              4620,
+              3516
+            ],
+            "centreWorldM": [
+              4514,
+              9530
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 11920,
+            "meanSat": 0.0311,
+            "meanSlopeDeg": 5.1,
+            "flatFrac": 0.062,
+            "bboxOrthoPx": [
+              8228,
+              8944,
+              8720,
+              9756
+            ],
+            "centreWorldM": [
+              8472,
+              3452
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 10880,
+            "meanSat": 0.0303,
+            "meanSlopeDeg": 3.28,
+            "flatFrac": 0.165,
+            "bboxOrthoPx": [
+              3632,
+              7772,
+              4328,
+              8420
+            ],
+            "centreWorldM": [
+              3978,
+              4706
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 10608,
+            "meanSat": 0.0307,
+            "meanSlopeDeg": 5.01,
+            "flatFrac": 0.02,
+            "bboxOrthoPx": [
+              6604,
+              7752,
+              7080,
+              8148
+            ],
+            "centreWorldM": [
+              6840,
+              4852
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 10224,
+            "meanSat": 0.0371,
+            "meanSlopeDeg": 3.3,
+            "flatFrac": 0.291,
+            "bboxOrthoPx": [
+              8688,
+              9812,
+              9060,
+              10468
+            ],
+            "centreWorldM": [
+              8872,
+              2662
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 9056,
+            "meanSat": 0.0312,
+            "meanSlopeDeg": 5.16,
+            "flatFrac": 0.134,
+            "bboxOrthoPx": [
+              7308,
+              8048,
+              7820,
+              8436
+            ],
+            "centreWorldM": [
+              7562,
+              4560
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 7984,
+            "meanSat": 0.0304,
+            "meanSlopeDeg": 4.81,
+            "flatFrac": 0.144,
+            "bboxOrthoPx": [
+              4564,
+              3668,
+              4948,
+              4196
+            ],
+            "centreWorldM": [
+              4754,
+              8870
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 7504,
+            "meanSat": 0.032,
+            "meanSlopeDeg": 4.29,
+            "flatFrac": 0.313,
+            "bboxOrthoPx": [
+              5104,
+              6184,
+              5396,
+              6552
+            ],
+            "centreWorldM": [
+              5248,
+              6434
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 6672,
+            "meanSat": 0.0308,
+            "meanSlopeDeg": 2.28,
+            "flatFrac": 0.365,
+            "bboxOrthoPx": [
+              6076,
+              6956,
+              6552,
+              7312
+            ],
+            "centreWorldM": [
+              6312,
+              5668
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 6384,
+            "meanSat": 0.03,
+            "meanSlopeDeg": 7.11,
+            "flatFrac": 0,
+            "bboxOrthoPx": [
+              4324,
+              8428,
+              4728,
+              8824
+            ],
+            "centreWorldM": [
+              4524,
+              4176
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 5936,
+            "meanSat": 0.0365,
+            "meanSlopeDeg": 4.35,
+            "flatFrac": 0.129,
+            "bboxOrthoPx": [
+              4692,
+              5048,
+              4796,
+              5544
+            ],
+            "centreWorldM": [
+              4742,
+              7506
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 5776,
+            "meanSat": 0.0297,
+            "meanSlopeDeg": 5.24,
+            "flatFrac": 0.042,
+            "bboxOrthoPx": [
+              7824,
+              8428,
+              8152,
+              8764
+            ],
+            "centreWorldM": [
+              7986,
+              4206
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 5552,
+            "meanSat": 0.0727,
+            "meanSlopeDeg": 7.87,
+            "flatFrac": 0.184,
+            "bboxOrthoPx": [
+              5776,
+              8840,
+              5864,
+              9040
+            ],
+            "centreWorldM": [
+              5818,
+              3862
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 5440,
+            "meanSat": 0.0399,
+            "meanSlopeDeg": 2.67,
+            "flatFrac": 0.412,
+            "bboxOrthoPx": [
+              5196,
+              7356,
+              5352,
+              7532
+            ],
+            "centreWorldM": [
+              5272,
+              5358
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 5264,
+            "meanSat": 0.0435,
+            "meanSlopeDeg": 2.66,
+            "flatFrac": 0.444,
+            "bboxOrthoPx": [
+              6988,
+              6700,
+              7140,
+              6832
+            ],
+            "centreWorldM": [
+              7062,
+              6036
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 5152,
+            "meanSat": 0.0326,
+            "meanSlopeDeg": 3.46,
+            "flatFrac": 0.056,
+            "bboxOrthoPx": [
+              5668,
+              6760,
+              6068,
+              6960
+            ],
+            "centreWorldM": [
+              5866,
+              5942
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4944,
+            "meanSat": 0.0348,
+            "meanSlopeDeg": 5.21,
+            "flatFrac": 0.104,
+            "bboxOrthoPx": [
+              2532,
+              7388,
+              2840,
+              7548
+            ],
+            "centreWorldM": [
+              2684,
+              5334
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4928,
+            "meanSat": 0.0325,
+            "meanSlopeDeg": 3.04,
+            "flatFrac": 0.37,
+            "bboxOrthoPx": [
+              5432,
+              6644,
+              5640,
+              6784
+            ],
+            "centreWorldM": [
+              5534,
+              6088
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4736,
+            "meanSat": 0.041,
+            "meanSlopeDeg": 2.71,
+            "flatFrac": 0.199,
+            "bboxOrthoPx": [
+              3088,
+              7552,
+              3320,
+              7700
+            ],
+            "centreWorldM": [
+              3202,
+              5176
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4480,
+            "meanSat": 0.0718,
+            "meanSlopeDeg": 6.38,
+            "flatFrac": 0.043,
+            "bboxOrthoPx": [
+              10324,
+              12088,
+              10420,
+              12252
+            ],
+            "centreWorldM": [
+              10370,
+              632
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4416,
+            "meanSat": 0.0815,
+            "meanSlopeDeg": 5.7,
+            "flatFrac": 0,
+            "bboxOrthoPx": [
+              5828,
+              9400,
+              6016,
+              9460
+            ],
+            "centreWorldM": [
+              5920,
+              3372
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4240,
+            "meanSat": 0.074,
+            "meanSlopeDeg": 6.12,
+            "flatFrac": 0.472,
+            "bboxOrthoPx": [
+              2004,
+              6300,
+              2176,
+              6512
+            ],
+            "centreWorldM": [
+              2088,
+              6396
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 4224,
+            "meanSat": 0.0675,
+            "meanSlopeDeg": 5.07,
+            "flatFrac": 0.235,
+            "bboxOrthoPx": [
+              5860,
+              8484,
+              5984,
+              8568
+            ],
+            "centreWorldM": [
+              5920,
+              4276
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 3696,
+            "meanSat": 0.0304,
+            "meanSlopeDeg": 3.97,
+            "flatFrac": 0.126,
+            "bboxOrthoPx": [
+              1584,
+              7032,
+              1828,
+              7192
+            ],
+            "centreWorldM": [
+              1704,
+              5690
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 3296,
+            "meanSat": 0.0659,
+            "meanSlopeDeg": 3.95,
+            "flatFrac": 0,
+            "bboxOrthoPx": [
+              6676,
+              5960,
+              6752,
+              6040
+            ],
+            "centreWorldM": [
+              6712,
+              6802
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 3216,
+            "meanSat": 0.0321,
+            "meanSlopeDeg": 4.61,
+            "flatFrac": 0.303,
+            "bboxOrthoPx": [
+              4732,
+              3500,
+              4944,
+              3656
+            ],
+            "centreWorldM": [
+              4836,
+              9224
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 3152,
+            "meanSat": 0.0291,
+            "meanSlopeDeg": 3.67,
+            "flatFrac": 0.173,
+            "bboxOrthoPx": [
+              2008,
+              7296,
+              2252,
+              7444
+            ],
+            "centreWorldM": [
+              2128,
+              5432
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2768,
+            "meanSat": 0.0835,
+            "meanSlopeDeg": 3.88,
+            "flatFrac": 0.162,
+            "bboxOrthoPx": [
+              5612,
+              9180,
+              5700,
+              9332
+            ],
+            "centreWorldM": [
+              5654,
+              3546
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2592,
+            "meanSat": 0.0415,
+            "meanSlopeDeg": 4.51,
+            "flatFrac": 0.438,
+            "bboxOrthoPx": [
+              5688,
+              5708,
+              5792,
+              5812
+            ],
+            "centreWorldM": [
+              5738,
+              7042
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2512,
+            "meanSat": 0.0857,
+            "meanSlopeDeg": 5.86,
+            "flatFrac": 0,
+            "bboxOrthoPx": [
+              9624,
+              7792,
+              9744,
+              7908
+            ],
+            "centreWorldM": [
+              9682,
+              4952
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2384,
+            "meanSat": 0.0332,
+            "meanSlopeDeg": 1.78,
+            "flatFrac": 0.477,
+            "bboxOrthoPx": [
+              6196,
+              8292,
+              6348,
+              8428
+            ],
+            "centreWorldM": [
+              6270,
+              4442
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2304,
+            "meanSat": 0.0287,
+            "meanSlopeDeg": 5.07,
+            "flatFrac": 0.181,
+            "bboxOrthoPx": [
+              5528,
+              8492,
+              5696,
+              8636
+            ],
+            "centreWorldM": [
+              5610,
+              4238
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2288,
+            "meanSat": 0.0975,
+            "meanSlopeDeg": 3.59,
+            "flatFrac": 0.42,
+            "bboxOrthoPx": [
+              4304,
+              3472,
+              4432,
+              3524
+            ],
+            "centreWorldM": [
+              4366,
+              9304
+            ]
+          },
+          {
+            "accepted": true,
+            "areaM2": 2064,
+            "meanSat": 0.0307,
+            "meanSlopeDeg": 2.21,
+            "flatFrac": 0,
+            "bboxOrthoPx": [
+              2844,
+              7540,
+              3008,
+              7648
+            ],
+            "centreWorldM": [
+              2924,
+              5208
+            ]
+          }
+        ],
+        "rejectedComponentCount": 632
+      }
+    }
+  },
+  "outputs": {
+    "inlandMaskPng": "packages/map-assets/everon/staging/sap/water-inland-mask.png (gitignored)",
+    "previewPng": "packages/map-assets/everon/staging/sap/water-spike-preview.png (gitignored)"
+  }
+}

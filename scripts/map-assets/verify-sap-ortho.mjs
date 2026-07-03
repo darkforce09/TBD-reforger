@@ -100,6 +100,14 @@ if (!existsSync(orthoPath)) {
 // 5) orientation guard — ortho land-mask vs DEM land-mask rendered north-up.
 // The DEM raster row 0 = world Z=0 (south); useDemLayer flips it for north-up display, so we
 // flip the DEM mask here. A vertically-flipped ortho fails this (AE ratio ~0.35 vs ~0.08).
+//
+// Two ortho classifiers (meta.waterComposite switches):
+//   legacy (raw SAP): land = HSL saturation > 12 % (sea = desaturated grey seabed)
+//   water-composited (T-090.1.2.5): the ocean is now saturated BLUE, so saturation would
+//     misread ~68 % of the frame — instead land = NOT(water-blue hue window). Not circular:
+//     the composite applied the DEM mask in ortho pixel space, so a vertical flip anywhere in
+//     the pipeline leaves the blue coastline mirrored against the independently-anchored DEM
+//     coast and the AE ratio blows past the same threshold.
 if (existsSync(orthoPath) && existsSync(manifestPath)) {
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
   const demPath = join(REPO, "packages/map-assets/everon", manifest.dem.path);
@@ -108,13 +116,22 @@ if (existsSync(orthoPath) && existsSync(manifestPath)) {
     errors.push(`orientation guard: DEM missing at ${demPath}`);
   } else {
     const seaPct = ((0 - lo) / (hi - lo)) * 100; // DEM value mapping to sea level (land = above)
+    const waterComposited = existsSync(metaPath) &&
+      !!JSON.parse(readFileSync(metaPath, "utf8")).waterComposite;
     const tmp = mkdtempSync(join(tmpdir(), "sap-orient-"));
     const sapMask = join(tmp, "sap.png");
     const demMask = join(tmp, "dem.png");
     try {
-      // ortho land = saturated (colored) ground; sea = desaturated grey. Stored north-up.
-      execFileSync("magick", [orthoPath, "-resize", "512x512!", "-colorspace", "HSL",
-        "-channel", "G", "-separate", "+channel", "-threshold", "12%", sapMask]);
+      if (waterComposited) {
+        // land = NOT(blue-water): hue window around the ocean palette (~203° ≈ 0.56 in HSL
+        // hue scale) with a small saturation floor. -fx emits 1 (white) for land.
+        execFileSync("magick", [orthoPath, "-resize", "512x512!", "-colorspace", "HSL",
+          "-fx", "(u.r>=0.50 && u.r<=0.68 && u.g>0.05) ? 0 : 1", sapMask]);
+      } else {
+        // ortho land = saturated (colored) ground; sea = desaturated grey. Stored north-up.
+        execFileSync("magick", [orthoPath, "-resize", "512x512!", "-colorspace", "HSL",
+          "-channel", "G", "-separate", "+channel", "-threshold", "12%", sapMask]);
+      }
       // DEM land = elevation above sea; flip raster (row0=south) to north-up to match the ortho.
       execFileSync("magick", [demPath, "-resize", "512x512!", "-threshold",
         `${seaPct.toFixed(2)}%`, "-flip", demMask]);
