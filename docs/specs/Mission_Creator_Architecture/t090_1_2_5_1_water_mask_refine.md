@@ -1,7 +1,7 @@
 # T-090.1.2.5.1 — Inland water mask refine (road exclusion + hill rivers)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.5.1  
-**Status:** **READY** — operator feedback on first water composite ship  
+**Status:** **SHIPPED** @ `82488c6f` (tag **T-090.1.2.5.1**) — operator post-ship: mixed (residual FP/FN; see below)  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.5** shipped @ `6396960f` (inland mask **E** + ocean **A**)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · parent [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md)
@@ -97,6 +97,22 @@ Append operator regression section to `.ai/artifacts/t090_1_2_5_1_verify_log.md`
 | **R-REG3** | W3-style byte-identity on land outside mask |
 
 Baseline comparison: diff against `.2.5` committed bundle crops or `pre-water` + old mask enum in spike.
+
+---
+
+## Post-ship operator review (2026-07-03)
+
+Automated gates and **original regression coords** (town pads ~4776/9268, lake 4618/5972, SE hill streams) **PASS** per verify log. Full-map pan review: **mixed** — better in some areas, worse in others.
+
+| Gap | Symptom | Lead coords / notes |
+|-----|---------|---------------------|
+| **Residual FP** | Linear blue overlay on non-water (field drains, ditches, grey paths) | Operator viewport **~(4617, 8711)** — blue segments on field/forest boundary; wet-channel class (85 new bodies) may over-accept dark linear terrain |
+| **Residual FN** | Dry carved channels / gullies still without water tint | Same viewport — adjacent dark linear depressions without overlay; not all hill/lowland streams captured |
+| **Trade** | `.2.5` flat wetlands dropped with pavement (flatFrac 0.12) | Documented in verify log — estuaries not on operator keep-list |
+
+**Next levers (not this slice):** decode **Eden.topo** road polylines for corridor subtraction (**T-090.8** / R3 lead); per-body montage audit tightening on wet-channel thresholds; entity hydrology export (**T-090.3** / **T-090.8**). Optional follow-on slice **T-090.1.2.5.2** if operator wants another mask pass before **T-090.1.1**.
+
+Artifacts: [`.ai/artifacts/t090_1_2_5_1_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_1_verify_log.md) · [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](../../../.ai/artifacts/t090_1_2_5_1_refine_spike.json)
 
 ---
 

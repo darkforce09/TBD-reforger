@@ -66,6 +66,19 @@ build clean (pre-existing chunk-size warning only) · lint clean
 
 Known trade (documented): 13 `.2.5` bodies dropped — all pavement-class; the flatFrac 0.12 cap also drops flat coastal wetland fragments that rode in with .2.5's looser cap. Operator keep-list (ocean, lake, lowland rivers) fully retained (25/38 + segment fragmentation differences absorbed into the 85 new bodies).
 
+## Operator post-ship (2026-07-03)
+
+**Verdict:** **Mixed** — original FP sites and SE massif streams improved vs `.2.5`; full-map review still shows **residual false positives** (water on non-water) and **false negatives** (dry channels).
+
+| ID | Operator check | Result |
+|----|----------------|--------|
+| **R-FP-regression** | Town pads @ ~(4776, 9268) | **PASS** (crop_fp_road) |
+| **R-FN-regression** | Hill streams / lagoon @ ~8300/2400, ~9850/4400 | **PASS** (crops committed) |
+| **R-FP-residual** | Linear blue on field paths / ditches | **FAIL** — viewport **CUR ~(4617, 8711)**; wet-channel over-accept suspected |
+| **R-FN-residual** | Adjacent dry gullies in same viewport | **FAIL** — carved channels without overlay |
+
+Spec §Post-ship operator review captures follow-on levers (.topo road subtract, wet-channel tighten, optional **T-090.1.2.5.2**).
+
 ## LFS churn note
 
 Same class as .2.5, expected: `everon-sat.tbd-sat` rewritten (152.8 MB) + `tiles/satellite/**` z0–6 + `full.webp` (5,462 lossless WebP files).

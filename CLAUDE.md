@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-130**
 
-**ACTIVE NOW:** **T-090** — T-090.1.2.5.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md`.
+**ACTIVE NOW:** **T-090** — T-090.1.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -146,11 +146,11 @@ frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
 Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · living tracker [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md)
 
-**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-090.1.2.5** active).
+**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-090.1.1** active).
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.8** @ `db9057ef` (tbd-sat v1) · **next:** **T-090.1.2.5** (satellite water composite) — Fable program complete, map program unblocked.
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-090.1.2.5.1** @ `82488c6f` (inland water refine) · **next:** **T-090.1.1** (Map cartographic view) · parallel **T-090.2** on `ticket/T-090-2`.
 
 **Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
 
@@ -181,6 +181,9 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-090.1.2.5.1 **Map program — inland water mask refine** @ `82488c6f` (tag **T-090.1.2.5.1**). Two-tier inland mask: compact `FLAT_FRAC_MAX` 0.5→**0.12** (road FP rejection); linear grey-river + wet-channel classes with DEM valley carve (48 m boxBlur) — 114 accepted bodies, 85 new stream segments; original operator FP sites PASS; **operator post-ship: residual FP/FN** at full-map pan (~4617, 8711 viewport). R3: Eden.topo BE-float32 polylines confirmed, framing undecoded → **T-090.8** lead. Artifacts: [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](.ai/artifacts/t090_1_2_5_1_refine_spike.json), [verify log](.ai/artifacts/t090_1_2_5_1_verify_log.md). Spec: [`t090_1_2_5_1_water_mask_refine.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md).
+- T-090.1.2.6 **Map program — hillshade blend strength slider** @ `b958e3b4` (tag **T-090.1.2.6**). Mission Settings slider `hillshadeOpacity` 0–100% @ **0.1%** steps; split memo in `useDemLayer.ts`. Spec: [`t090_1_2_6_hillshade_blend_control.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md).
+- T-090.1.2.5 **Map program — satellite water composite** @ `6396960f` (tag **T-090.1.2.5**). Ocean mask A (DEM≤0) + inland mask E (SAP grey appearance ∩ DEM filters); composited ortho → unified bundle + lossless pyramid. Spec: [`t090_1_2_5_satellite_water_composite.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md).
 - T-127 **Fable audit — Mission Creator UX fixes** @ `0515aabb` (tag **T-127**). U1–U5: conflict IDB + warm marker, export toasts, basemap `'map'` coerce, folder delete confirm, ORBAT 409 messages. Vitest 26/26; FE build/lint clean. **Partial:** F4-03 new-tab conflict deferred. Verify: [`.ai/artifacts/t127_verify_log.md`](.ai/artifacts/t127_verify_log.md). Spec: [`t127_mc_ux_audit_fixes.md`](docs/platform/t127_mc_ux_audit_fixes.md).
 - T-126 **Fable audit — security + auth follow-up** @ `4a47688e` (tag **T-126**).
 - T-125 **Coding standards + 11/10 enforcement** @ `e21dac3` (tag **T-125.5**). [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) (38 rules, all gates live): golangci, strict TS, GO-7 `@route` route-match, verify-* scripts, ENF-4 ×10, `.editorconfig` + Prettier (FMT-2/3). `make ci-local` @ ~22.7s mirrors **`ci.yml`** (backend + frontend + schema + editorconfig). Spec: [`t125_coding_standards_enforcement.md`](docs/platform/t125_coding_standards_enforcement.md).
