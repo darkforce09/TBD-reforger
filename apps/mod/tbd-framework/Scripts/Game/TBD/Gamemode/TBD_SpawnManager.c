@@ -8,6 +8,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 {
 	protected const ResourceName SPAWN_POINT_PREFAB = "{E7F4D5562F48DDE4}Prefabs/MP/Spawning/SpawnPoint_Base.et";
 
+	//! Vertical offset (m) added to the resolved ground/JSON height so the character
+	//! capsule sits feet-on-ground. Measured on a human character spawn in wb_play
+	//! (T-092.1) — NOT guessed; measurement log in .ai/artifacts/t092_1_verify_log.md.
+	protected const float CAPSULE_GROUND_OFFSET_M = 0.0;
+
+	//! Warn threshold (m) between an explicit JSON y and the live terrain surface —
+	//! larger deltas usually mean a stale DEM or a mis-authored slot. Start 2.0 (T-092.1).
+	protected const float MAX_Y_DELTA_M = 2.0;
+
 	protected static TBD_SpawnManager s_Instance;
 
 	protected ref map<int, ref TBD_MissionSlotStruct> m_mPlayerSlot;
@@ -135,7 +144,25 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 			float x = slot.x;
 			float z = slot.z;
-			vector pos = Vector(x, GetGame().GetWorld().GetSurfaceY(x, z), z);
+
+			// Spawn height policy (T-092.1): explicit JSON y wins, else live terrain
+			// surface; both get the measured capsule offset on top.
+			float surfaceY = GetGame().GetWorld().GetSurfaceY(x, z);
+			float spawnY = surfaceY;
+			float delta = 0;
+			string jsonYLabel = "-";
+			if (slot.HasJsonY())
+			{
+				spawnY = slot.y;
+				delta = Math.AbsFloat(slot.y - surfaceY);
+				jsonYLabel = slot.y.ToString();
+				if (delta > MAX_Y_DELTA_M)
+					Print(string.Format("[TBD][Spawn] slot=%1 jsonY=%2 deviates %3 m from surfaceY=%4 (> %5 m) — stale DEM or mis-authored slot?",
+						slot.id, slot.y, delta, surfaceY, MAX_Y_DELTA_M), LogLevel.WARNING);
+			}
+			spawnY += CAPSULE_GROUND_OFFSET_M;
+
+			vector pos = Vector(x, spawnY, z);
 
 			EntitySpawnParams params = new EntitySpawnParams();
 			params.TransformMode = ETransformMode.WORLD;
@@ -159,6 +186,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			m_mSlotSpawnPoints.Insert(slot.id, sp);
 			built++;
 			Print(string.Format("[TBD] SpawnManager: built slot spawn %1 (%2) kit %3 at %4", slot.id, engineKey, slot.kit, pos.ToString()));
+			Print(string.Format("[TBD][Spawn] slot=%1 Y=%2 jsonY=%3 surfaceY=%4 delta=%5 heading=%6",
+				slot.id, spawnY, jsonYLabel, surfaceY, delta, slot.headingDeg));
 		}
 
 		if (built > 0)
@@ -272,6 +301,34 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		m_sDeployRequested.Insert(playerId);
 		Print(string.Format("[TBD] SpawnManager: spawn requested player %1 slot %2 kit %3", playerId, slot.id, slot.kit));
+		GetGame().GetCallqueue().CallLater(LogDeployedTransform, 3000, false, playerId);
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Post-deploy diagnostic (T-092.1): logs the spawned character's actual feet height
+	//! against the live terrain — groundDelta is the measured capsule/ground offset on a
+	//! human character spawn, the calibration source for CAPSULE_GROUND_OFFSET_M.
+	protected void LogDeployedTransform(int playerId)
+	{
+		IEntity ent = GetGame().GetPlayerManager().GetPlayerControlledEntity(playerId);
+		if (!ent)
+		{
+			Print(string.Format("[TBD][Spawn] deployed player=%1 — no controlled entity yet (spawn pending?)", playerId), LogLevel.WARNING);
+			return;
+		}
+
+		vector org = ent.GetOrigin();
+		float surfaceY = GetGame().GetWorld().GetSurfaceY(org[0], org[2]);
+		float groundDelta = org[1] - surfaceY;
+		float yaw = ent.GetYawPitchRoll()[0];
+
+		string slotId = "-";
+		TBD_MissionSlotStruct slot = GetAssignedSlot(playerId);
+		if (slot)
+			slotId = slot.id;
+
+		Print(string.Format("[TBD][Spawn] deployed player=%1 slot=%2 pos=%3 feetY=%4 surfaceY=%5 groundDelta=%6 yaw=%7",
+			playerId, slotId, org.ToString(), org[1], surfaceY, groundDelta, yaw));
 	}
 }

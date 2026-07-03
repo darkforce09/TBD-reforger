@@ -22,13 +22,29 @@
         },
         "required": ["slots"]
       }
+    },
+    {
+      "if": {
+        "properties": { "schemaVersion": { "const": "1.2" } },
+        "required": ["schemaVersion"]
+      },
+      "then": {
+        "properties": {
+          "slots": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/slot" }
+          }
+        },
+        "required": ["slots"]
+      }
     }
   ],
   "properties": {
     "schemaVersion": {
       "type": "string",
-      "enum": ["1.0", "1.1"],
-      "description": "1.1 adds required slots[] for per-player spawn positions."
+      "enum": ["1.0", "1.1", "1.2"],
+      "description": "1.1 adds required slots[] for per-player spawn positions. 1.2 adds the optional per-slot y (spawn height, metres ASL)."
     },
     "meta": { "$ref": "#/$defs/meta" },
     "environment": { "$ref": "#/$defs/environment" },
@@ -209,6 +225,10 @@
         },
         "x": { "type": "number" },
         "z": { "type": "number" },
+        "y": {
+          "type": "number",
+          "description": "Optional spawn height, metres ASL (schemaVersion 1.2). Maps from the editor's position.z. Absent → the loader uses terrain surface Y."
+        },
         "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 }
       }
     },

@@ -64,12 +64,12 @@ class TBD_MissionOrbatFactionStruct
 }
 
 //! Full mission document parsed from the backend — the canonical contract the loader
-//! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"), distinct from the
+//! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
 //! @contract mission.schema.json#/
 class TBD_MissionDocumentStruct
 {
-	string schemaVersion;                                      //!< Canonical contract version ("1.0"/"1.1").
+	string schemaVersion;                                      //!< Canonical contract version ("1.0"/"1.1"/"1.2").
 	ref TBD_MissionMetaStruct meta;                            //!< Mission header.
 	ref array<ref TBD_MissionFactionStruct> factions;         //!< Playable factions.
 	ref array<ref TBD_MissionZoneStruct> zones;               //!< Spawn/objective/boundary zones.
@@ -370,15 +370,15 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! schemaVersion 1.1 requires non-empty slots[] matching ORBAT instance count.
+	//! schemaVersion 1.1/1.2 requires non-empty slots[] matching ORBAT instance count.
 	protected static bool ValidateMissionSlots()
 	{
-		if (!s_Mission.schemaVersion || s_Mission.schemaVersion != "1.1")
+		if (!s_Mission.schemaVersion || (s_Mission.schemaVersion != "1.1" && s_Mission.schemaVersion != "1.2"))
 			return true;
 
 		if (!s_Mission.slots || s_Mission.slots.IsEmpty())
 		{
-			Print("[TBD] Mission schemaVersion 1.1 requires non-empty slots[].", LogLevel.ERROR);
+			Print(string.Format("[TBD] Mission schemaVersion %1 requires non-empty slots[].", s_Mission.schemaVersion), LogLevel.ERROR);
 			return false;
 		}
 
