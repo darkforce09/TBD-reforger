@@ -1958,7 +1958,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-090.1.2.6": {
           "targets": [
@@ -2997,6 +2997,7 @@
       ],
       "unblocks": [],
       "branch": "ticket/T-130",
+      "shipped_at": "90c9f261",
       "slice_plan": {
         "T-130.0": {
           "targets": [
@@ -3012,7 +3013,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "6426600f"
         },
         "T-130.2": {
           "targets": [
@@ -3020,7 +3022,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "9db1b9e1"
         },
         "T-130.3": {
           "targets": [
@@ -3028,7 +3031,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "755a889b"
         },
         "T-130.4": {
           "targets": [
@@ -3036,7 +3040,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "b62a66b7"
         },
         "T-130.5": {
           "targets": [
@@ -3044,7 +3049,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "bb40a61a"
         },
         "T-130.6": {
           "targets": [
@@ -3052,7 +3058,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "c8b2fd6e"
         },
         "T-130.7": {
           "targets": [
@@ -3061,7 +3068,8 @@
           ],
           "executor": "cursor-docs",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "shipped"
+          "status": "shipped",
+          "shipped_at": "5e0c7754"
         }
       }
     },

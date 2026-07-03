@@ -146,7 +146,7 @@ frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
 Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · living tracker [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md)
 
-**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links + staging honesty (tag **T-128**; log [`.ai/artifacts/t128_doc_link_repair_log.md`](.ai/artifacts/t128_doc_link_repair_log.md)). Remaining audit findings live in the tracker as OPEN/DEFERRED (T-092, T-090.1.1, misc LOW) — next work comes from [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
+**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-090.1.2.5** active).
 
 ### RESUMED — T-090 Map visualization program
 
@@ -162,9 +162,9 @@ See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/
 
 **T-091.0 shipped @ `6d96339` (tag T-091.0):** Everon 6400² DEM export + anchor verify. Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
 
-### ACTIVE SLICE — T-068 (Virtual Arsenal — Phase 2 paused)
+### T-068 — Virtual Arsenal (Phase 2 paused; not active)
 
-See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · **no active slice** until map + ORBAT gates clear · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
+See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · **paused @ T-068.7** until **T-090–T-092** map gate + **T-071.2** + **T-068.13** · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
 
 **Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). **Boundary:** web loadout-export → profile JSON → mod dresses a **non-player test NPC** @ game-mode spawn — **not** the joining human player until **T-068.12** (compiler data @ **T-068.11**).
 

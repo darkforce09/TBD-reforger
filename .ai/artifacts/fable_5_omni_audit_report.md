@@ -81,7 +81,7 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2B-12 | 2 | — | Handler envelopes, bodylimit, SSE, inject path | — | OK |
 | F2F-01 | 2 | MED | 401-retry dropped rotated refresh token | **T-126 S5** | **RESOLVED** |
 | F2F-02 | 2 | MED | Bootstrap/callback `clearSession` after rotation + `/me` blip | **T-126 S6** | **RESOLVED** |
-| F2F-03 | 2 | MED | Conflict "load server" not persisted to IDB | **T-127 U1** | **RESOLVED** (partial: F4-03 new-tab) |
+| F2F-03 | 2 | MED | Conflict "load server" not persisted to IDB | **T-127 U1** · **T-130.5** | **RESOLVED** @ `bb40a61a` |
 | F2F-04 | 2 | MED | `exportJson` fire-and-forget; no compile error UX | **T-127 U2** | **RESOLVED** |
 | F2F-05 | 2 | MED | `basemapView==='map'` silent grid; no degrade toast | **T-127 U3** | **RESOLVED** |
 | F2F-06 | 2 | LOW | `events.tsx` flattens 409 error strings | **T-127 U5** | **RESOLVED** |
@@ -131,25 +131,25 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 ### Coordinate & transform logic
 - **DEFERRED (T-092)** — **MED** — `TBD_SpawnManager.c:146-148`: heading matrix sets forward `Transform[2] = (-sin θ, 0, cos θ)`. For compass-style headings (90° = east = +X), forward at 90° becomes (−1,0,0) = **west** — the rotation sign is the CCW convention, unverified against `headingDeg`'s intended CW compass semantics. This is precisely the open T-092 "spawn Y/yaw" scope — flagging so the sign check is explicit in that program's gate.
 - **DEFERRED (T-090.3)** — **MED** — `TBD_TerrainWorldExportPlugin.c:158-167`: JSONL deliberately emits **`yawDeg` = raw `GetAngles()[0]` (pitch)** and **`pitchDeg` = `[1]` (the real heading)** — documented at lines 142-145, but the field names lie. Any consumer that trusts the names silently mirrors every building. T-090.3 must emit `headingDeg = GetAngles()[1]` and this file should stop shipping swapped names even in a spike.
-- **OK (verified)** — the tile Y-flip is correctly centralized: `tileUrl.ts` converts the editor's south-first row to the on-disk XYZ (north-first) row via `2**z − 1 − y`, with a unit test. (See §5 for its inverted `tmsY` variable naming.)
+- **OK (verified)** — the tile Y-flip is correctly centralized: `tileUrl.ts` converts the editor's south-first row to the on-disk XYZ (north-first) row via `xyzRow = 2**z − 1 − y`, with a unit test.
 - **OK (verified)** — `TBD_TerrainExportPlugin.c` grid math (`px * WORLD/(W−1)`) matches the verify sampler's inverse by construction; anchor gate passed at 0.204 m max delta.
 
 ### Map-assets manifests vs disk
 - **DEFERRED (T-090.1.1) · RESOLVED (T-127 U3 @ `0515aabb`)** — **HIGH** — Everon manifest advertises `map` pyramid; only satellite on disk. Frontend coerces persisted `'map'` → `'satellite'` until T-090.1.1.
-- **OPEN** — **MED** — `packages/map-assets/everon/manifest.json:5`: `metersPerPixel: 1` contradicts the schema's own instruction ("must come from Info & Diags — Everon Biki: 2 m", `terrain-manifest.schema.json:29-32`) and the manifest's `precision.demNativeMetersPerPixel: 2`. One of the two numbers is wrong or the field is under-specified.
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — **MED** — `packages/map-assets/everon/manifest.json`: `metersPerPixel` → **2** (aligns with Info & Diags / `demNativeMetersPerPixel`).
 - **DEFERRED (T-090)** — **MED** — `packages/map-assets/arland/manifest.json:17-25` advertises a full `tiles` block (maxZoom 5) but `packages/map-assets/arland/` contains only `manifest.json` — no tiles, no DEM file (`widthPx: 0` stub is documented; the tiles block is not).
-- **OPEN** — **LOW** — `terrain-manifest.schema.json:19` pins `terrainId` to `["everon","arland","custom"]` while `terrain-registry.schema.json` allows any id — adding a third real map requires a schema edit; the registry/manifest disagree on extensibility.
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — **LOW** — `terrainId` extensibility aligned across manifest, type-inventory, and anchors schemas (`minLength: 1`, matches registry).
 
 ### Runtime robustness
 - **DEFERRED (T-092)** — **MED** — `TBD_SpawnManager.c` has **no player-disconnect cleanup**: `m_mPlayerSlot`, `m_sDeployRequested` key on `playerId`, which Reforger reuses after disconnect. A rejoining (or new) player inheriting a used id gets a stale slot or is never deployed (`DeployPlayer` early-returns on `m_sDeployRequested.Contains`).
 - **DEFERRED (T-092)** — **MED** — `TBD_SpawnManager.c:54-62`: round-robin assignment never skips roster-assigned or already-assigned slots — a walk-in player and a rostered player can both be assigned the same slot.
 - **DEFERRED (T-122 T15)** — **MED** — `TBD_ScenarioRouter.c:13`: `TBD_ADDON_GUID = "B2C3D4E5F6A78901"` is a placeholder (own TODO, T-122 T15). Cross-terrain `RequestScenarioChangeTransition` ships a bogus addon list in production.
 - **DEFERRED (T-092)** — **LOW** — `TBD_SpawnManager.c:95-103`: `EngineFactionKey` hardcodes `blufor→US`, `opfor→USSR`; `factions[].presetId` from the mission document is ignored — any third faction silently gets no spawn points (`continue` at line 134).
-- **OPEN** — **LOW** — `TBD_MissionLoader.c:306`: profile mission read caps at 8 MB (`handle.Read(data, 8*1024*1024)`); a larger file silently truncates and surfaces as a misleading "JSON parse failed".
-- **OPEN** — **LOW** — `TBD_MissionBrowser.c:88` (`TBD_RpcAsk_MissionList`): the list RPC has no admin gate (only select does) and returns the whole list as one RPC string — unbounded payload for large libraries.
-- **OPEN** — **LOW** — file exporters (`TBD_TerrainExportPlugin.c`, `TBD_TerrainWorldExportPlugin.c`, `TBD_SatelliteExportPlugin.c`, `TBD_RegistryItemsExportPlugin.c`) never check `FileHandle.Write` results — a full disk yields a silently truncated raster/JSON.
-- **OPEN** — **LOW** — `TBD_RegistryItemsExportPlugin.c:150-157`: if every row fails to resolve, it still writes `"items": []`, violating its own schema (`minItems: 1`) with no guard.
-- **OPEN** — **LOW** — `TBD_SatelliteExportPlugin.c:163` / `TBD_EngineOrthoExportPlugin.c:137`: `attempts`/`rmsg` strings are embedded in hand-built JSON without escaping — a quote in `GetReportMessage` output corrupts the meta JSON. Hardcoded Proton path `C:/Users/steamuser/…` (line 48) is env-fragile (documented, but unconfigurable).
+- **RESOLVED (T-130.4 @ `b62a66b7`)** — **LOW** — `TBD_MissionLoader.c`: profile read rejects files >8 MB via `GetLength` before read.
+- **RESOLVED (T-130.4 @ `b62a66b7`)** — **LOW** — `TBD_MissionBrowser.c`: mission list RPC admin-gated + payload capped at 100 lines.
+- **RESOLVED (T-130.4 @ `b62a66b7`)** — **LOW** — Workbench exporters check every `FileHandle.Write` via `TBD_ExportJson.Write`.
+- **RESOLVED (T-130.4 @ `b62a66b7`)** — **LOW** — `TBD_RegistryItemsExportPlugin.c` refuses empty `items: []`.
+- **RESOLVED (T-130.4 @ `b62a66b7`)** — **LOW** — Satellite/ortho meta JSON strings escaped; `TBD_ExportPaths.c` centralizes `PROFILE_WIN`.
 - **OK (verified)** — `EMCP_WB_*` handlers use engine `JsonApiStruct` (no hand-built JSON), cap var dumps at 50, and hold no cross-call entity refs; `scripts/mod/mcp-call.sh` is genuinely hardened (daemon-first, bounded retries, PIPESTATUS-checked, tmpfile cleanup trap).
 - **OK (verified)** — `TBD_RadioBridgeStub` empty bodies are documented intentional Phase-3 stubs, not defects.
 
@@ -162,39 +162,39 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 - **RESOLVED (T-126 S2 @ `4a47688e`)** — **HIGH** — `internal/handlers/auth.go:180-202`: refresh rotation is **not atomic** — plain `First` then unconditional `Update revoked_at`. Two concurrent presentations of the same token both pass the revoked check and both mint fresh pairs (token-family fork), and there is **no reuse detection** (the standard response to a spent token is revoking the whole family). Fix: `UPDATE … WHERE id = ? AND revoked_at IS NULL` + `RowsAffected == 1` gate; treat 0 rows as reuse. **Proof:** `TestRefreshReuseRevokesFamily`.
 - **RESOLVED (T-126 S3 @ `4a47688e`)** — **MED** — `internal/handlers/events.go:731-753`: slot claim is check-then-set with no row lock or conditional update — two users claiming the same slot both get 200; last write wins and the loser's registration row points at a slot assigned to someone else. Fix: `UPDATE orbat_slots SET assigned_to=? WHERE id=? AND (assigned_to IS NULL OR assigned_to=?)` + RowsAffected. Same class: the `registered >= capacity` waitlist check (line 754) races registrations past capacity. **Proof:** `TestSlotClaimRace` (2 goroutines → one 200 / one 409).
 - **RESOLVED (T-126 S4 @ `4a47688e`)** — **MED** — `internal/handlers/auth.go:204-215`: `Refresh` never checks `user.IsBanned`. Mitigated because `BanUser` (`admin.go:160-162`) revokes refresh tokens — but that revocation's error is silently discarded; if it fails, a banned user refreshes for up to 30 days. Belt-and-braces: check the flag in `Refresh`. **Proof:** `TestRefreshBannedRejected`.
-- **OPEN** — **MED** — mission lifecycle dead-end: `models.MissionArchived` and `Mission.DeletedAt` exist (`models/mission.go:20,78`) but **no handler ever archives or deletes a mission** — no `DELETE /missions/:id`, no archive action, no UI. The library only grows.
-- **OPEN** — **MED** — CI test scope: `.github/workflows/ci.yml:69` and `Makefile:42` run only `go test ./internal/handlers/...`. Unit tests in `internal/services` (`discord_test.go`, `webhook_test.go`, `mission_payload_test.go`, `mortar_test.go`), `internal/middleware`, `internal/realtime` **never run in CI or `make ci-local`** (only the unwired `make test` covers them).
-- **OPEN** — **LOW** — `missions.go:126`: `q.Count(&total)` error ignored — a failed count silently reports `total: 0` alongside real rows. Same best-effort reads in `decorateMissions` (authors/bookmarks).
-- **OPEN** — **LOW** — `missions.go:713-721` (`buildMissionDoc`): a failed current-version load silently exports `payload: {}` / `version: "0.0.0"` — a broken export looks like an empty mission instead of an error.
-- **OPEN** — **LOW** — refresh-token rows accumulate forever (revoked rows are never purged); no cleanup job.
+- **RESOLVED (T-130.6 @ `c8b2fd6e`)** — **MED** — mission archive + soft delete handlers + library Manage UI.
+- **RESOLVED (T-130.3 @ `755a889b`)** — **MED** — CI + `make ci-local-backend` run `services`, `middleware`, `realtime` unit tests.
+- **RESOLVED (T-130.1 @ `6426600f`)** — **LOW** — `missions.go` Count error → 500.
+- **RESOLVED (T-130.1 @ `6426600f`)** — **LOW** — `buildMissionDoc` propagates load failure.
+- **RESOLVED (T-130.1 @ `6426600f`)** — **LOW** — refresh-token purge job (`token_purge.go`).
 - **RESOLVED (T-128 P3)** — **LOW** — `apps/website/internal/handlers/missions/` is an empty stray directory. *(Untracked — not in git; removed via `rmdir` in the main checkout, see T-128 log.)*
-- **OPEN** — **LOW** — `middleware/ratelimit.go` is in-memory single-instance (documented); `strings.Contains(path, p)` prefix matching would misfire on any future route containing `/auth/` mid-path.
+- **RESOLVED (T-130.1 @ `6426600f`)** — **LOW** — `middleware/ratelimit.go` strict path prefix match; `main.go` auth/ingest paths fixed.
 - **OK (verified)** — error envelope `{"error": …}` is consistent across all 8 handler files; list envelope matches CLAUDE.md; `bodylimit.go` mission-version skip is correct with a concrete-path fallback; `realtime/hub.go` delete-before-close under lock is race-safe; `RequireServiceToken` is constant-time and disabled-when-empty; `InjectMission` path is traversal-safe (UUID-derived); SSE + graceful shutdown wiring is sound.
 
 ### Frontend (React/TS)
 - **RESOLVED (T-126 S5 @ `4a47688e`)** — **MED** — `src/api/client.ts:44-46`: on 401-retry with no `user` in the store, only `setAccessToken` is called — **the rotated `refresh_token` is dropped** while the presented one was already revoked server-side. Next refresh 401s → forced logout. `setAccessToken` should persist the whole rotated pair. **Fix:** `setTokens()` on full rotated pair.
 - **RESOLVED (T-126 S6 @ `4a47688e`)** — **MED** — `src/hooks/useAuthBootstrap.ts:43-45`: a transient `/me` failure *after* a successful rotation runs `clearSession()`, discarding the freshly rotated (only valid) refresh token — a network blip at boot = forced re-login. Same pattern in `pages/auth.tsx:114-117` (callback page). Rotation success and profile-fetch failure need distinct handling. **Fix:** retain rotated pair on `/me` blip; only clear on rotation failure.
-- **RESOLVED (T-127 U1 @ `0515aabb`)** — **MED** — `features/mission-creator/hooks/useMissionEditor.ts:521-536` (`resolveConflict('server')`): … **Proof:** [t127_verify_log.md](t127_verify_log.md). **Partial:** new-tab cold boot still prompts (F4-03 residual).
+- **RESOLVED (T-130.5 @ `bb40a61a`)** — **MED** — `resolveConflict('server')` + cross-tab adopted-semver marker (F4-03 closed). **Proof:** [t130_verify_log.md](t130_verify_log.md).
 - **RESOLVED (T-127 U2 @ `0515aabb`)** — **MED** — `useMissionEditor.ts:508-519`: `exportJson` … **Proof:** verify log.
 - **RESOLVED (T-127 U3 @ `0515aabb`)** — **MED** — `features/tactical-map/layers/useTerrainBasemapLayer.ts` … coerce in `basemapView.ts`. **Proof:** verify log.
 - **RESOLVED (T-127 U5 @ `0515aabb`)** — **LOW** — `pages/events.tsx:395`: … **Proof:** verify log.
-- **OPEN** — **LOW** — `pages/admin.tsx:175` uses native `window.confirm` for a destructive delete while the rest of the app uses the Aegis `Dialog` — inconsistent affordance.
+- **RESOLVED (T-130.5 @ `bb40a61a`)** — **LOW** — `pages/admin.tsx`: destructive delete uses Aegis `Dialog` (F2F-07).
 - **OK (verified)** — zero `: any` in `src/`; refresh single-flight is correct (StrictMode-safe via module-level promise); `buildVersionBlob`'s hand-rolled JSON brace/comma assembly is correct; `compileMission` faction/squad/slot ordering matches Go `deriveOrbatFromEditor` exactly; `hydrateMissionDoc` clears entity maps before applying (replace, not merge); tile LOD zoom math (`ceil(log2(w/256)+zoom)`) is correct; `terrainManifest.ts` is fully defensive (`null`/`false` on any fetch failure); mutations surface errors at call sites throughout.
 
 ### Cross-system contract chain (Pass 5)
 - **OK (verified)** — the registry chain: `TBD_RegistryItemsExportPlugin.c` (snake_case emit) → `registry-items.schema.json` → generated `internal/contract/registryitems` + `types/contract/registryItems.ts` (byte-identical embedded schema; `diff` clean) → `registry_items` model tags → `GET /registry`. The loadout chain (`loadout-export.schema.json` → `TBD_LoadoutGearStruct`) and the editor-payload chain (compile.ts → schema → `validate.go` → `ParseOrbatTemplate`) also line up field-for-field, including the deliberate integer-vs-string `schemaVersion` namespace split. `packages/tbd-schema` `validate.mjs`: **all contracts valid**.
 - **DEFERRED (T-092) · RESOLVED (T-128 P1, docs half)** — **HIGH (chain break)** — the **game-server consumption chain has no producer**: `mission.schema.json` (canonical, `x/z/headingDeg`, `meta.id: msn_*`) is what `TBD_MissionDocumentStruct` parses, but nothing in the backend emits it. `ExportMission`/`InjectMission` emit the *editor superset wrapped in the camelCase envelope* (`missionJSON`), which the mod cannot parse (no top-level `meta`/`factions`/`zones`). This is known deferred work (T-092), but three artifacts treat it as live: `docs/mod/STAGING-SERVER.md:180-181` (gates V2/V3 expect 200 from `/api/missions/:id/compiled` + `/api/game/...roster`), `scripts/mod/deploy-staging.sh:189-197` (curls the same phantom route), and `docs/mod/tbd-reforger-platform-build-plan.md:290`. Those verification gates cannot pass against the current backend. T-128 marks gates **BLOCKED on T-092**.
 - **DEFERRED (T-092)** — **MED (chain break)** — id + filename namespace mismatch: `InjectMission` stages `missions/<uuid>.mission.json` relative to the **API process cwd** (`field_tools.go:19,140`), while the mod fallback reads `$profile:missions/<missionId>.json` with `missionId` like `msn_8f3a2c`. Different directory root, different filename pattern, different id namespace; no bridge script maps one to the other.
-- **OPEN (was T-128 P4)** — **MED** — `./scripts/ticket brief` prints `BRANCH: ticket/T-090` and `Makefile`/docs mention `ticket/T-0xx` branches, while CLAUDE.md policy (and memory) is **commit directly to `main`, never branch**. The generator contradicts the process it drives.
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — **MED** — `./scripts/ticket brief` documents hybrid main/worktree execution policy (F2C-04).
 - **RESOLVED (T-128 P3)** — **LOW** — `apps/website/frontend/docs/pages/` is a stale duplicate of the moved `docs/website/frontend/pages/` tree (CLAUDE.md: surface specs are "not under `apps/`") — 2 orphaned files carrying 28 broken links.
 
 ---
 
 ## 3. DISCORD INTEGRATION
 
-- **OPEN** — **MED** — **no 429 handling anywhere**: `services/discord.go:180-193` (`do`) and `webhook.go:107-117` treat 429 as a generic non-2xx failure — no `Retry-After` respect, no backoff, no retry. A rate-limited webhook push simply fails; a rate-limited OAuth exchange fails the login. For a community-scale app this is survivable, but announcement pushes and login bursts should honor `Retry-After` (Discord ToS expectation).
-- **OPEN** — **MED** — embed limits unenforced: `webhook.go:80-89` truncates the description to 500 runes (safe against the 4096 cap) but **`a.Title` is passed through unbounded** — Discord rejects embeds with titles > 256 chars, so a long CMS title turns into a 400 "webhook push failed" with no hint. Pre-validate/truncate title (256) and footer (2048).
-- **OPEN** — **LOW** — `handlers.go:42-48`: `DiscordService`/`WebhookService` are constructed even when unconfigured (empty client id / URL) — correct behavior is preserved by `Enabled()` checks, but `AuthorizeURL` with an empty `client_id` still redirects users to a broken Discord consent URL rather than failing fast when OAuth env is blank (known-blank in dev per CLAUDE.md; a guard + clear error would prevent a confusing prod misconfig).
+- **RESOLVED (T-130.2 @ `9db1b9e1`)** — **MED** — Discord 429 honors `Retry-After` with bounded retry (`httpretry.go`).
+- **RESOLVED (T-130.2 @ `9db1b9e1`)** — **MED** — Webhook embed title/footer truncated before POST.
+- **RESOLVED (T-130.2 @ `9db1b9e1`)** — **LOW** — OAuth blank `client_id` → SPA `#error=oauth_unconfigured`.
 - **OK (verified)** — failure isolation is correct: webhook push failure maps to a 502 with an audit trail and never crashes the request path (`cms.go:243-269`); `FetchGuildMember` tolerates non-members (`nil, nil` on 404) so login works for non-guild users; OAuth `state` cookie is httpOnly/SameSite=Lax/Secure-outside-dev with constant-time compare; tokens ride the URL *fragment* (not query) to keep them out of server logs; Discord user access tokens are used once and never stored; both HTTP clients carry a 10 s timeout; role sync (`role_sync.go`) is transactional with priority-based resolution (its `ResyncAllRoles` full-table N+1 loop is fine at community scale, noted only for growth).
 - **OK (verified)** — payload schema matches the current webhook API: `embeds[]` with `title/description/color/timestamp/footer`, `?wait=true` for the message id, RFC3339 timestamp.
 
@@ -208,12 +208,12 @@ The Mission Creator shell (`MissionCreatorPage.tsx`) is genuinely strong UX engi
 ### Gaps and anti-patterns
 - **RESOLVED (T-127 U4 @ `0515aabb`)** — **MED** — **destructive folder delete with no confirmation**: Aegis Dialog with subtree counts before `removeEditorLayer`.
 - **RESOLVED (T-127 U3 @ `0515aabb`)** · **DEFERRED (T-090.1.1)** — **MED** — **dual-view basemap**: `'map'` coerced to `'satellite'` until map tiles ship; degraded toast when tiles absent.
-- **PARTIAL (T-127 U1 @ `0515aabb`)** — **MED** — **conflict-resolution loop**: same-tab reload fixed (IDB + warm marker); new-tab cold boot still prompts — divergence tracking deferred.
-- **OPEN** — **MED** — mission lifecycle has no exit: users can create, edit, submit, get rejected, resubmit — but never archive or delete (§2). The library becomes an append-only pile; "My Missions" grows forever, and mission_makers will ask admins to clean up via SQL.
+- **RESOLVED (T-130.5 @ `bb40a61a`)** — **MED** — conflict-resolution loop closed (cross-tab adopted-semver marker; F4-03).
+- **RESOLVED (T-130.6 @ `c8b2fd6e`)** — **MED** — mission archive/delete in library dossier (F4-04).
 - **RESOLVED (T-127 U2 @ `0515aabb`)** — **LOW** — export feedback: success/error toasts on Export (local export still omits server fields by design).
 - **RESOLVED (T-127 U5 @ `0515aabb`)** — **LOW** — registration 409 nuance: distinct backend error strings surfaced in toasts.
-- **OPEN** — **LOW** — journey seam on `/missions/:id/edit` for non-UUID ids: the editor stays fully interactive under a small yellow banner ("needs a real mission id", `MissionCreatorPage.tsx:245-251`) — work done there persists only to IndexedDB and can never be saved to the server; an interactive-but-unsavable editor is a data-loss trap dressed as a warning.
-- **OPEN** — **LOW** — `window.confirm` in the admin Event Manager (§2) breaks the otherwise consistent frosted-Dialog language; keyboard model is strong overall (undo/redo/copy/paste/space/delete) but none of it is discoverable in-UI (no shortcut cheat-sheet, tooltips carry no keybinds).
+- **RESOLVED (T-130.5 @ `bb40a61a`)** — **LOW** — non-UUID mission id → full-bleed hard block (F4-07).
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — **LOW** — keyboard shortcuts table in `ux_spec.md` (F4-08).
 
 ---
 
@@ -226,9 +226,9 @@ The Mission Creator shell (`MissionCreatorPage.tsx`) is genuinely strong UX engi
 - **RESOLVED (T-128 P4)** — `CLAUDE.md` T-049 bullet: "the camera + base grid resize to Everon 12800 vs **Arland 10240**" — Arland is **4096** everywhere authoritative (`coords/terrains.ts:59`, `terrain-registry.json:18`, `arland/manifest.json:4`).
 - **RESOLVED (T-128 P4)** — `MissionCreatorPage.tsx:44` code comment repeats it: "Everon 12.8km vs **Arland 10.24km**" — same wrong number in live code.
 - **RESOLVED (T-128 P2)** — `apps/website/CLAUDE.md` redirect: linked `../CLAUDE.md` (one level short) = `apps/CLAUDE.md` — **did not exist** (root is two levels up); the canonical-context pointer was broken, same bug in `apps/website/frontend/README.md → ../../CLAUDE.md`. Both fixed to the correct depth.
-- **OPEN (was T-128 P4; policy now hybrid — worktree branches in use)** — `scripts/ticket brief` output: `BRANCH: ticket/T-090` vs the repo-wide "never branch, commit to main" rule — generator text contradicts policy (also §2).
-- **OPEN** — `packages/map-assets/everon/manifest.json:5` `metersPerPixel: 1` vs schema instruction + `demNativeMetersPerPixel: 2` (also §1) — a numeric self-contradiction inside one file.
-- **OPEN** — `layers/tileUrl.ts:24`: the computed value is the on-disk **XYZ** (north-first) row, but the variable is named `tmsY` — inverted terminology (TMS is south-first); comment and name disagree with each other.
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — `./scripts/ticket brief` hybrid execution policy documented (F2C-04).
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — `everon/manifest.json` `metersPerPixel: 2` (F1-09).
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — `tileUrl.ts` internal rename `tmsY` → `xyzRow` (F5-08).
 - **RESOLVED (T-128 P1)** — `docs/mod/STAGING-SERVER.md` V2/V3 gate rows + `docs/mod/MILESTONES.md:21` + `docs/mod/tbd-reforger-platform-build-plan.md:44,168,290` describe `GET /api/missions/{id}/compiled` and `GET /api/game/events/{id}/roster` as live, expected-200 endpoints — no longer true of the current backend (also §2 chain break).
 - **RESOLVED (T-128 P2)** — `apps/mod/README.md` is the **pre-monorepo README** (dated 2026-06-14, "Repo: github.com/darkforce09/tbd-reforger-platform", pre-move paths) — 25 broken links; the monorepo migration's doc-link repair missed it. Same class: `apps/website/README.md` (8 broken links, pre-move relative paths).
 - **RESOLVED (T-128 P3)** — `apps/website/frontend/docs/pages/` — stale duplicate doc tree left under `apps/` (CLAUDE.md: surface specs live at `docs/website/frontend/pages/`, "not under apps/"); its `mission-editor.md` alone carries 28 dead links.
@@ -283,9 +283,9 @@ Living docs (fix-worthy):
 
 ### Formatting / standards drift
 - **RESOLVED (T-128 P4)** — `CLAUDE.md` "### ACTIVE SLICE — T-090" stale block (above) sits inside the `<!-- ticket-sync:status -->`-adjacent §Status that the docs say must be regenerated, not hand-drifted — the contradiction indicates a missed `./scripts/ticket sync` after the registry advanced to T-090.1.2.4.
-- **OPEN** — `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md:29,32`: mermaid labels use literal `\n` inside quoted strings ("payload\neditor", "string\nnative") — renders as `\neditor`/`\nnative` in some mermaid versions; use `<br/>`.
+- **RESOLVED (T-130.7 @ `5e0c7754`)** — mermaid node labels use `<br/>` in `t092_spawn_transform_program.md` (F5-09).
 - **RESOLVED (T-128 P3)** — `apps/website/frontend/docs/` + `apps/website/internal/handlers/missions/` (empty dir) — two orphans that violate the reorg's own layout contract.
-- **OPEN** — Domain dialect inconsistency (minor, pervasive): "artefact/artifact", "honour/honor", "modelled/modeled", "visualised/visualized" both appear across living docs; standards don't pick a side.
+- **OPEN (F5-10 — deferred trivial)** — Domain dialect inconsistency (minor, pervasive): "artefact/artifact", "honour/honor", "modelled/modeled", "visualised/visualized" both appear across living docs; standards don't pick a side.
 
 ---
 
