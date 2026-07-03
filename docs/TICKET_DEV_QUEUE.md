@@ -5,22 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-068 — Virtual Arsenal (registry + loadout export)
-
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
-- **Branch:** `ticket/T-068`
-- **Targets:** website, shared, root, mod
-- **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **T-071.2 + T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`). Hub: t068_virtual_arsenal_program.md.
-
-## T-071 — ORBAT Manager modal
-
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
-- **Branch:** `ticket/T-071`
-- **Targets:** website
-- **Summary:** ORBAT Manager modal — squad names, numbering, membership, slotting order. **Unblocked** — T-092 spawn/compile @ `a73224f2`. Hub: t071_orbat_manager_program.md.
-
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.1.1.1`
@@ -28,4 +12,4 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). T-090.1.1 Map view @ 6e06e679. Active: T-090.1.1.1 land-cover compose; queued T-090.1.2.9 satellite road overlay. Water good-enough @ T-090.1.2.5.2 (1c07d97a). T-090.2 @ 691d9b26. Hub: t090_091_map_terrain_program.md.
+- **Summary:** Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main (objects + interaction) before Eden. Active: T-090.1.1.1 land-cover; queued T-090.1.2.9 → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.

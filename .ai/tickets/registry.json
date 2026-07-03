@@ -1152,7 +1152,7 @@
       "id": "T-068",
       "order": 680,
       "program": "eden",
-      "status": "ready",
+      "status": "deferred",
       "surfaces": [
         "RIGHT",
         "ATTR",
@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 shipped. Phase 2 **paused @ T-068.7** until **T-071.2 + T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`). Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Phase 1 shipped. Phase 2 **deferred** — operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1392,7 +1392,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Unblocked** — T-092 spawn/compile @ `a73224f2`. Hub: t071_orbat_manager_program.md.",
+      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -1407,8 +1407,7 @@
         "T-068",
         "T-069"
       ],
-      "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md",
-      "status": "ready",
+      "status": "deferred",
       "implements": [
         "LEFT-ORBAT-001",
         "CONN-GROUP-001",
@@ -1830,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.1 Map view @ 6e06e679. Active: T-090.1.1.1 land-cover compose; queued T-090.1.2.9 satellite road overlay. Water good-enough @ T-090.1.2.5.2 (1c07d97a). T-090.2 @ 691d9b26. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main (objects + interaction) before Eden. Active: T-090.1.1.1 land-cover; queued T-090.1.2.9 → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",

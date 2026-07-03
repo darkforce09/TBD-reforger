@@ -8,9 +8,7 @@
 
 ## Ready
 
-- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **T-071.2 + T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`). Hub: t068_virtual_arsenal_program.md.
-- **T-071** (710) — ORBAT Manager modal [ready] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Unblocked** — T-092 spawn/compile @ `a73224f2`. Hub: t071_orbat_manager_program.md.
-- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.1 Map view @ 6e06e679. Active: T-090.1.1.1 land-cover compose; queued T-090.1.2.9 satellite road overlay. Water good-enough @ T-090.1.2.5.2 (1c07d97a). T-090.2 @ 691d9b26. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main (objects + interaction) before Eden. Active: T-090.1.1.1 land-cover; queued T-090.1.2.9 → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.
 
 ## Next queued (top 10)
 
@@ -29,8 +27,4 @@
 
 ```mermaid
 flowchart LR
-  T067[T-067] --> T068[T-068]
-  T068[T-068] --> T069[T-069]
-  T068[T-068] --> T070[T-070]
-  T092[T-092] --> T071[T-071]
 ```

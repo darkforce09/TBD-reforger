@@ -119,16 +119,16 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 **ACTIVE NOW:** **T-090** — T-090.1.1.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md`.
 
 **Next (by order):**
-- **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
 - **T-069** — Markers on map (`queued`)
 - **T-070** — Vehicles placeable (`queued`)
-- **T-071** — ORBAT Manager modal (`ready`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
 - **T-074** — Faction submode / catalog filter (`queued`)
 - **T-075** — Spacebar flyTo vs widget (`queued`)
 - **T-076** — Vehicle crew UI (`queued`)
 - **T-077** — Alt + empty vehicle (`queued`)
+- **T-090** — Map visualization program (`ready`)
+- **T-114** — Slot roster enforcement + production slot picker (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
@@ -150,7 +150,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-092 shipped** @ **`a73224f2`** (spawn + `/compiled`) · **Map cartographic** @ **T-090.1.1** `6e06e679` · **Active:** **T-090.1.1.1** land-cover · **T-071 ready**
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **Single lane: T-090 until done** · **Active:** **T-090.1.1.1** land-cover · **T-071/T-068 deferred**
 
 **Program order:** **T-090.3.0 → T-090.1 → … → T-092** ✓ @ `a73224f2` → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
 

@@ -12,6 +12,8 @@
 
 ## eden
 
+- **T-068** (deferred) — Virtual Arsenal (registry + loadout export) [RIGHT, ATTR, DATA] — Phase 1 shipped. Phase 2 **deferred** — operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.
+- **T-071** (deferred) — ORBAT Manager modal [TOP, ORBAT, ATTR] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.
 - **T-078** (deferred) — Custom compositions [COMP] — Save and place custom entity compositions.
 - **T-079** (deferred) — Triggers + waypoints + systems [MAP, DATA] — Trigger volumes, waypoints, and game logic systems.
 - **T-080** (deferred) — Connection / sync UI [CONN] — Entity connection lines and sync group authoring.

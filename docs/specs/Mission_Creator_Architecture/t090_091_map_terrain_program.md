@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **Active slice:** **T-090.1.1.1** (Map land-cover compose). **T-090.1.1** **shipped** @ `6e06e679`. **Queued:** **T-090.1.2.9** (Satellite road overlay). **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a` (`make map-water-everon`). **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
+**Status:** **ready** — **Active slice:** **T-090.1.1.1** (Map land-cover compose). **Operator lane:** finish **entire T-090 program** on `main` before Eden (T-071 / T-068 **deferred** in registry). **T-090.1.1** **shipped** @ `6e06e679`. **Queued:** **T-090.1.2.9** → **T-090.3** export → **T-090.5/.8/.9** objects. **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a`. **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
