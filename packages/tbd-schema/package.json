@@ -12,6 +12,7 @@
     "verify-terrain-alignment": "node scripts/verify-terrain-alignment.mjs",
     "verify-terrain": "node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs",
     "verify-map-object-enums": "node scripts/verify-map-object-enums.mjs",
+    "verify-map-object-golden": "node scripts/verify-map-object-golden.mjs",
     "verify-map-glyphs": "node scripts/verify-map-glyphs-manifest.mjs",
     "verify-t090-specs": "node scripts/verify-t090-spec-consistency.mjs",
     "verify-n6": "node scripts/verify-n6-sentence.mjs",

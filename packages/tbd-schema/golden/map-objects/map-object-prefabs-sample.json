@@ -238,5 +238,295 @@
     "ai": { "summary": "Structure with no matching classification rule; needs review.", "taxonomyPath": "structure/building/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
     "spatial": { "model": "obb", "pivot": "center", "halfExtentsM": { "x": 5, "y": 5, "z": 4 }, "heightM": 8 },
     "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 23,
+    "resourceName": "{0000000000000018}Prefabs/Vegetation/Trees/Tree_Dead_M.et",
+    "kind": "tree",
+    "class": "dead",
+    "label": "Dead tree (medium)",
+    "ai": { "summary": "Dead or burned tree; bare trunk; minimal soft cover.", "taxonomyPath": "vegetation/tree/dead", "classificationSource": "rules-v1/prefab-name", "confidence": 0.8, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.6, "y": 0.6, "z": 4 }, "heightM": 8 },
+    "gameplay": { "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 1.5 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 24,
+    "resourceName": "{0000000000000019}Prefabs/Vegetation/Trees/Tree_Unclassified_01.et",
+    "kind": "tree",
+    "class": "unknown",
+    "label": "Unclassified tree",
+    "ai": { "summary": "Tree prefab with no matching classification rule; needs review.", "taxonomyPath": "vegetation/tree/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1, "y": 1, "z": 5 }, "heightM": 10 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 25,
+    "resourceName": "{000000000000001A}Prefabs/Vegetation/Grass/Grass_Patch_M.et",
+    "kind": "vegetation",
+    "class": "grass",
+    "label": "Grass patch (medium)",
+    "ai": { "summary": "Tall grass patch; prone concealment only; no ballistic protection.", "taxonomyPath": "vegetation/grass", "classificationSource": "rules-v1/prefab-name", "confidence": 0.85, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1.5, "y": 1.5, "z": 0.2 }, "heightM": 0.4 },
+    "gameplay": { "cover": { "type": "soft", "standing": false, "prone": true, "crouch": false, "heightM": 0.4 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 26,
+    "resourceName": "{000000000000001B}Prefabs/Vegetation/Undergrowth/Fern_Cluster_M.et",
+    "kind": "vegetation",
+    "class": "fern",
+    "label": "Fern cluster",
+    "ai": { "summary": "Fern undergrowth cluster; prone/crouch concealment; no protection.", "taxonomyPath": "vegetation/fern", "classificationSource": "rules-v1/prefab-name", "confidence": 0.82, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1, "y": 1, "z": 0.4 }, "heightM": 0.8 },
+    "gameplay": { "cover": { "type": "soft", "standing": false, "prone": true, "crouch": true, "heightM": 0.8 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 27,
+    "resourceName": "{000000000000001C}Prefabs/Vegetation/Bushes/Bush_Dead_S.et",
+    "kind": "vegetation",
+    "class": "dead",
+    "label": "Dead bush (small)",
+    "ai": { "summary": "Dead low vegetation; sparse prone concealment only.", "taxonomyPath": "vegetation/dead", "classificationSource": "rules-v1/prefab-name", "confidence": 0.78, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.6, "y": 0.6, "z": 0.4 }, "heightM": 0.8 },
+    "gameplay": { "cover": { "type": "soft", "standing": false, "prone": true, "crouch": false, "heightM": 0.6 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 28,
+    "resourceName": "{000000000000001D}Prefabs/Vegetation/Misc/Vegetation_Unclassified_01.et",
+    "kind": "vegetation",
+    "class": "unknown",
+    "label": "Unclassified vegetation",
+    "ai": { "summary": "Vegetation prefab with no matching classification rule; needs review.", "taxonomyPath": "vegetation/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.8, "y": 0.8, "z": 0.6 }, "heightM": 1.2 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 29,
+    "resourceName": "{000000000000001E}Prefabs/Rocks/Cliff_Granite_Face_L.et",
+    "kind": "rock",
+    "class": "cliff",
+    "label": "Granite cliff face (large)",
+    "ai": { "summary": "Large cliff face prop; hard cover; blocks movement and LOS completely.", "taxonomyPath": "terrain/rock/cliff", "classificationSource": "rules-v1/prefab-name", "confidence": 0.86, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 6, "y": 3, "z": 8 }, "heightM": 16 },
+    "gameplay": { "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 16 }, "movement": { "blocksInfantry": true, "blocksVehicle": true }, "lineOfSight": "full", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 30,
+    "resourceName": "{000000000000001F}Prefabs/Rocks/Rock_Pebble_Cluster_S.et",
+    "kind": "rock",
+    "class": "pebble",
+    "label": "Pebble cluster (small)",
+    "ai": { "summary": "Small ground rocks; decoration only; no cover or obstacle.", "taxonomyPath": "terrain/rock/pebble", "classificationSource": "rules-v1/prefab-name", "confidence": 0.8, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.4, "y": 0.4, "z": 0.15 }, "heightM": 0.3 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 31,
+    "resourceName": "{0000000000000020}Prefabs/Rocks/Rock_Scree_Field_M.et",
+    "kind": "rock",
+    "class": "scree",
+    "label": "Scree field (medium)",
+    "ai": { "summary": "Loose rock scatter; prone cover; slows vehicles.", "taxonomyPath": "terrain/rock/scree", "classificationSource": "rules-v1/prefab-name", "confidence": 0.79, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 4, "y": 4, "z": 0.3 }, "heightM": 0.6 },
+    "gameplay": { "cover": { "type": "soft", "standing": false, "prone": true, "crouch": false, "heightM": 0.5 }, "movement": { "blocksInfantry": false, "blocksVehicle": true }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 32,
+    "resourceName": "{0000000000000021}Prefabs/Rocks/Rock_Unclassified_01.et",
+    "kind": "rock",
+    "class": "unknown",
+    "label": "Unclassified rock",
+    "ai": { "summary": "Rock prefab with no matching classification rule; needs review.", "taxonomyPath": "terrain/rock/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "obb", "pivot": "center", "halfExtentsM": { "x": 1, "y": 1, "z": 0.8 }, "heightM": 1.6 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 33,
+    "resourceName": "{0000000000000022}Prefabs/Props/Barriers/Barrier_Jersey_Concrete.et",
+    "kind": "prop",
+    "class": "barrier",
+    "label": "Jersey barrier (concrete)",
+    "ai": { "summary": "Concrete jersey barrier; hard crouch/prone cover; blocks vehicles.", "taxonomyPath": "misc/prop/barrier", "classificationSource": "rules-v1/prefab-name", "confidence": 0.85, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1.5, "y": 0.3, "z": 0.5 }, "heightM": 1 },
+    "gameplay": { "cover": { "type": "hard", "standing": false, "prone": true, "crouch": true, "heightM": 1 }, "movement": { "blocksInfantry": false, "blocksVehicle": true }, "lineOfSight": "partial", "destructible": false, "climbable": true, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 34,
+    "resourceName": "{0000000000000023}Prefabs/Props/Signs/Sign_Road_Post.et",
+    "kind": "prop",
+    "class": "sign",
+    "label": "Road sign (post)",
+    "ai": { "summary": "Road sign on thin post; decoration; no cover or obstacle.", "taxonomyPath": "misc/prop/sign", "classificationSource": "rules-v1/prefab-name", "confidence": 0.83, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.3, "y": 0.1, "z": 1.25 }, "heightM": 2.5 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 35,
+    "resourceName": "{0000000000000024}Prefabs/Props/Furniture/Bench_Wood_01.et",
+    "kind": "prop",
+    "class": "furniture",
+    "label": "Wooden bench",
+    "ai": { "summary": "Static wooden bench; minor prone cover; no obstacle.", "taxonomyPath": "misc/prop/furniture", "classificationSource": "rules-v1/prefab-name", "confidence": 0.8, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1, "y": 0.35, "z": 0.45 }, "heightM": 0.9 },
+    "gameplay": { "cover": { "type": "soft", "standing": false, "prone": true, "crouch": false, "heightM": 0.5 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 36,
+    "resourceName": "{0000000000000025}Prefabs/Props/Debris/Debris_Rubble_Pile_M.et",
+    "kind": "prop",
+    "class": "debris",
+    "label": "Rubble pile (medium)",
+    "ai": { "summary": "Rubble/wreckage pile; hard prone/crouch cover; slows movement.", "taxonomyPath": "misc/prop/debris", "classificationSource": "rules-v1/prefab-name", "confidence": 0.78, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 2, "y": 2, "z": 0.6 }, "heightM": 1.2 },
+    "gameplay": { "cover": { "type": "hard", "standing": false, "prone": true, "crouch": true, "heightM": 1.2 }, "movement": { "blocksInfantry": false, "blocksVehicle": true }, "lineOfSight": "partial", "destructible": false, "climbable": true, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 37,
+    "resourceName": "{0000000000000026}Prefabs/Props/Misc/Stone_Small_01.et",
+    "kind": "prop",
+    "class": "pebble",
+    "label": "Small stone prop",
+    "ai": { "summary": "Small stone prop; ground decoration; no gameplay effect.", "taxonomyPath": "misc/prop/pebble", "classificationSource": "rules-v1/prefab-name", "confidence": 0.75, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.2, "y": 0.2, "z": 0.1 }, "heightM": 0.2 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 38,
+    "resourceName": "{0000000000000027}Prefabs/Props/Misc/Prop_Unclassified_01.et",
+    "kind": "prop",
+    "class": "unknown",
+    "label": "Unclassified prop",
+    "ai": { "summary": "Static prop with no matching classification rule; needs review.", "taxonomyPath": "misc/prop/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.5, "y": 0.5, "z": 1 }, "heightM": 2 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 39,
+    "resourceName": "{0000000000000028}Prefabs/Structures/Utility/StreetLamp_Metal_01.et",
+    "kind": "utility",
+    "class": "lamp",
+    "label": "Street lamp (metal)",
+    "ai": { "summary": "Metal street lamp; tall thin pole; night light source; no real cover.", "taxonomyPath": "infrastructure/utility/lamp", "classificationSource": "rules-v1/prefab-name", "confidence": 0.84, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.2, "y": 0.2, "z": 3 }, "heightM": 6 },
+    "gameplay": { "cover": { "type": "soft", "standing": true, "prone": false, "crouch": false, "heightM": 0.2 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 40,
+    "resourceName": "{0000000000000029}Prefabs/Structures/Utility/Antenna_Radio_Mast_25m.et",
+    "kind": "utility",
+    "class": "antenna",
+    "label": "Radio antenna mast (25 m)",
+    "ai": { "summary": "Lattice radio mast; tall landmark; climbable via service ladder.", "taxonomyPath": "infrastructure/utility/antenna", "classificationSource": "rules-v1/prefab-name", "confidence": 0.83, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1, "y": 1, "z": 12.5 }, "heightM": 25 },
+    "gameplay": { "cover": { "type": "soft", "standing": true, "prone": false, "crouch": false, "heightM": 0.5 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": true, "enterable": false, "ladder": true, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 41,
+    "resourceName": "{000000000000002A}Prefabs/Structures/Utility/Pipeline_Steel_8m.et",
+    "kind": "utility",
+    "class": "pipeline",
+    "label": "Steel pipeline (8 m)",
+    "ai": { "summary": "Above-ground steel pipeline; hard crouch/prone cover; vehicle obstacle.", "taxonomyPath": "infrastructure/utility/pipeline", "classificationSource": "rules-v1/prefab-name", "confidence": 0.8, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 4, "y": 0.4, "z": 0.4 }, "heightM": 0.8 },
+    "gameplay": { "cover": { "type": "hard", "standing": false, "prone": true, "crouch": true, "heightM": 0.8 }, "movement": { "blocksInfantry": false, "blocksVehicle": true }, "lineOfSight": "partial", "destructible": false, "climbable": true, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 42,
+    "resourceName": "{000000000000002B}Prefabs/Structures/Utility/Utility_Unclassified_01.et",
+    "kind": "utility",
+    "class": "unknown",
+    "label": "Unclassified utility",
+    "ai": { "summary": "Utility prefab with no matching classification rule; needs review.", "taxonomyPath": "infrastructure/utility/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.5, "y": 0.5, "z": 2 }, "heightM": 4 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 43,
+    "resourceName": "{000000000000002C}Prefabs/Structures/Water/Dock_Concrete_12m.et",
+    "kind": "water",
+    "class": "dock",
+    "label": "Concrete mooring dock (12 m)",
+    "ai": { "summary": "Concrete mooring dock; walkable over water; no cover.", "taxonomyPath": "infrastructure/water/dock", "classificationSource": "rules-v1/prefab-name", "confidence": 0.8, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 6, "y": 2, "z": 0.5 }, "heightM": 1 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": true, "runway": false }
+  },
+  {
+    "prefabId": 44,
+    "resourceName": "{000000000000002D}Prefabs/Structures/Water/Buoy_Navigation_01.et",
+    "kind": "water",
+    "class": "buoy",
+    "label": "Navigation buoy",
+    "ai": { "summary": "Floating navigation buoy; water marker; no gameplay effect.", "taxonomyPath": "infrastructure/water/buoy", "classificationSource": "rules-v1/prefab-name", "confidence": 0.82, "needsReview": false },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 0.5, "y": 0.5, "z": 0.75 }, "heightM": 1.5 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 45,
+    "resourceName": "{000000000000002E}Prefabs/Structures/Water/Water_Unclassified_01.et",
+    "kind": "water",
+    "class": "unknown",
+    "label": "Unclassified water structure",
+    "ai": { "summary": "Water structure with no matching classification rule; needs review.", "taxonomyPath": "infrastructure/water/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1, "y": 1, "z": 0.5 }, "heightM": 1 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 46,
+    "resourceName": "{000000000000002F}Prefabs/Roads/Highway_Asphalt_10m.et",
+    "kind": "road",
+    "class": "highway_paved",
+    "label": "Paved highway (10 m)",
+    "ai": { "summary": "Main paved highway segment; primary vehicle route; no cover.", "taxonomyPath": "infrastructure/road/highway_paved", "classificationSource": "rules-v1/prefab-name", "confidence": 0.88, "needsReview": false },
+    "spatial": { "model": "line", "pivot": "base", "widthM": 10, "heightM": 0 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 47,
+    "resourceName": "{0000000000000030}Prefabs/Roads/Road_Dirt_5m.et",
+    "kind": "road",
+    "class": "road_dirt",
+    "label": "Dirt road (5 m)",
+    "ai": { "summary": "Dirt/gravel road segment; secondary vehicle route; no cover.", "taxonomyPath": "infrastructure/road/road_dirt", "classificationSource": "rules-v1/prefab-name", "confidence": 0.85, "needsReview": false },
+    "spatial": { "model": "line", "pivot": "base", "widthM": 5, "heightM": 0 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 48,
+    "resourceName": "{0000000000000031}Prefabs/Roads/Track_Field_3m.et",
+    "kind": "road",
+    "class": "track",
+    "label": "Field track (3 m)",
+    "ai": { "summary": "Narrow field track; light vehicle route; no cover.", "taxonomyPath": "infrastructure/road/track", "classificationSource": "rules-v1/prefab-name", "confidence": 0.82, "needsReview": false },
+    "spatial": { "model": "line", "pivot": "base", "widthM": 3, "heightM": 0 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 49,
+    "resourceName": "{0000000000000032}Prefabs/Roads/Path_Foot_1m5.et",
+    "kind": "road",
+    "class": "path",
+    "label": "Footpath (1.5 m)",
+    "ai": { "summary": "Footpath segment; infantry route only; no cover.", "taxonomyPath": "infrastructure/road/path", "classificationSource": "rules-v1/prefab-name", "confidence": 0.8, "needsReview": false },
+    "spatial": { "model": "line", "pivot": "base", "widthM": 1.5, "heightM": 0 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
+  },
+  {
+    "prefabId": 50,
+    "resourceName": "{0000000000000033}Prefabs/Roads/Runway_Concrete_30m.et",
+    "kind": "road",
+    "class": "runway",
+    "label": "Concrete runway (30 m)",
+    "ai": { "summary": "Airfield runway segment; wide flat concrete; aircraft operations surface.", "taxonomyPath": "infrastructure/road/runway", "classificationSource": "rules-v1/prefab-name", "confidence": 0.87, "needsReview": false },
+    "spatial": { "model": "line", "pivot": "base", "widthM": 30, "heightM": 0 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": true }
+  },
+  {
+    "prefabId": 51,
+    "resourceName": "{0000000000000034}Prefabs/Roads/Road_Unclassified_01.et",
+    "kind": "road",
+    "class": "unknown",
+    "label": "Unclassified road",
+    "ai": { "summary": "Road prefab with no matching classification rule; needs review.", "taxonomyPath": "infrastructure/road/unknown", "classificationSource": "rules-v1/prefab-name", "confidence": 0.3, "needsReview": true },
+    "spatial": { "model": "line", "pivot": "base", "widthM": 4, "heightM": 0 },
+    "gameplay": { "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "none", "destructible": false, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false }
   }
 ]

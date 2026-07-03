@@ -17,6 +17,27 @@
       "id": "road-everon-0003",
       "roadClass": "track",
       "points": [[7000, 2000], [7010, 2050]]
+    },
+    {
+      "id": "road-everon-0004",
+      "roadClass": "road_paved",
+      "points": [[4500, 5000], [4600, 5080], [4750, 5120]]
+    },
+    {
+      "id": "road-everon-0005",
+      "roadClass": "path",
+      "points": [[8200, 6100], [8230, 6140], [8260, 6200]]
+    },
+    {
+      "id": "road-everon-0006",
+      "roadClass": "runway",
+      "points": [[3000, 9000, 41.5], [3600, 9000, 41.5]]
+    },
+    {
+      "id": "road-everon-0007",
+      "roadClass": "unknown",
+      "points": [[9500, 1200], [9540, 1260]],
+      "tags": ["needs_review"]
     }
   ]
 }
