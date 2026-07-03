@@ -13,5 +13,9 @@ __pycache__/
 # T-090.3.0 map-export staging (local scratch — proof lives in committed ops log + verifiers)
 packages/map-assets/**/staging/
 
+# Satellite/map tile pyramids — local build output (make map-water-everon / build-tile-pyramid.sh)
+# DEM + unified .tbd-sat stay in Git LFS; pyramid is optional fallback (T-090.1.2.8).
+packages/map-assets/**/tiles/
+
 # scripts/mod npm deps (enfusion-mcp — install via npm ci in scripts/mod/)
 scripts/mod/node_modules/

@@ -11,18 +11,28 @@
 //
 // No image deps: WebP magic + VP8/VP8L frame-header dims + codec fourcc are parsed by hand.
 // Usage: node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+//        VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 //        EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 import { readFileSync, existsSync, readdirSync, statSync } from "node:fs";
 
 const TERRAIN =
   process.env.TERRAIN ?? process.argv.find((a) => a.startsWith("TERRAIN="))?.split("=")[1] ?? "everon";
+const VIEW = process.env.VIEW === "map" ? "map" : "satellite";
 
 const ROOT = new URL("../../packages/map-assets/", import.meta.url).pathname;
-const TILES_DIR = `${ROOT}${TERRAIN}/tiles/satellite`;
+const TILES_DIR = `${ROOT}${TERRAIN}/tiles/${VIEW}`;
 const MANIFEST = `${ROOT}${TERRAIN}/manifest.json`;
 
 const errors = [];
 const fail = (m) => errors.push(m);
+
+// Tile pyramids are local build output (gitignored). CI / fresh clones skip — unified bundle is primary.
+if (!existsSync(TILES_DIR)) {
+  console.log(
+    `verify-tile-pyramid: SKIP ${TERRAIN}/${VIEW} — no pyramid on disk (local rebuild: make map-water-everon or build-tile-pyramid.sh)`,
+  );
+  process.exit(0);
+}
 
 // --- WebP dims + codec: RIFF....WEBP, then a chunk. fourcc distinguishes lossy (VP8 ) from
 // lossless (VP8L); the EXPECT_LOSSLESS gate below fails on VP8 . Parse keyframe dims too. ---
@@ -64,22 +74,28 @@ if (!existsSync(MANIFEST)) {
 }
 const manifest = JSON.parse(readFileSync(MANIFEST, "utf8"));
 const tiles = manifest.tiles ?? {};
+const viewBlock = VIEW === "map" ? tiles.map : tiles.satellite;
 const sat = tiles.satellite ?? {};
 const tileSize = tiles.tileSizePx ?? 256;
 const minZoom = tiles.minZoom ?? 0;
 const maxZoom = tiles.maxZoom ?? 5;
 // T-090.1.2.1 — when the satellite pyramid is advertised lossless (manifest encoding or the
 // EXPECT_LOSSLESS env), every tile must be VP8L; a VP8 (lossy) tile fails the gate.
-const expectLossless = process.env.EXPECT_LOSSLESS === "1" || sat.encoding === "webp-lossless";
+const expectLossless =
+  VIEW === "satellite" &&
+  (process.env.EXPECT_LOSSLESS === "1" || sat.encoding === "webp-lossless");
 
 // Gate 1 — K3 file gate.
 if (!existsSync(`${TILES_DIR}/0/0/0.webp`)) fail(`missing ${TILES_DIR}/0/0/0.webp (K3 file gate)`);
 
 // Gate 4 — manifest path agreement.
-const expectPath = `tiles/satellite`;
-if (sat.path && sat.path !== expectPath) fail(`manifest tiles.satellite.path=${sat.path} != ${expectPath}`);
-if (sat.urlTemplate && !sat.urlTemplate.includes(`/${TERRAIN}/tiles/satellite/`))
-  fail(`manifest tiles.satellite.urlTemplate does not point at ${TERRAIN}/tiles/satellite: ${sat.urlTemplate}`);
+const expectPath = `tiles/${VIEW}`;
+if (viewBlock?.path && viewBlock.path !== expectPath)
+  fail(`manifest tiles.${VIEW}.path=${viewBlock.path} != ${expectPath}`);
+if (viewBlock?.urlTemplate && !viewBlock.urlTemplate.includes(`/${TERRAIN}/tiles/${VIEW}/`))
+  fail(
+    `manifest tiles.${VIEW}.urlTemplate does not point at ${TERRAIN}/tiles/${VIEW}: ${viewBlock.urlTemplate}`,
+  );
 
 // Gates 2 + 3 — COMPLETE pyramid + tile validity (T-090.1.2.1). Every level in
 // [minZoom, maxZoom] must exist and be exactly (2**z)x(2**z) — no sparse levels — so the

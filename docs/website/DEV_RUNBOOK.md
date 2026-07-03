@@ -103,14 +103,16 @@ Restart `make api` after handler changes — `go run` does not hot-reload.
 
 ## Map assets (T-090 / T-091)
 
-Static terrain binaries live under `packages/map-assets/{everon,arland}/`. Large PNG/WebP files are tracked via **Git LFS** (see root `.gitattributes`).
+Static terrain binaries live under `packages/map-assets/{everon,arland}/`. **Git LFS** tracks DEM PNG and unified `.tbd-sat` bundles only (see root [`.gitattributes`](../../.gitattributes)). **Tile pyramids** under `tiles/` are **not** in git — build locally when needed.
 
 ```bash
 git lfs install   # once per clone
-git lfs pull      # after checkout if tiles/DEM missing
+git lfs pull      # DEM + unified satellite bundle
 ```
 
 Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schema/terrain-manifest.schema.json`](../../packages/tbd-schema/schema/terrain-manifest.schema.json). **Everon** has real DEM dims (6400×6400) @ T-091.0; **Arland** still stub (`widthPx/heightPx: 0`).
+
+**Tile pyramid (optional fallback):** not shipped in git. After clone, MC uses the unified `everon-sat.tbd-sat` bundle (T-090.1.2.8). Rebuild pyramid locally with `make map-water-everon` or `scripts/map-assets/build-tile-pyramid.sh` — see [`packages/map-assets/README.md`](../../packages/map-assets/README.md).
 
 **DEM re-export runbook:** [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md) §Re-export runbook (GetSurfaceY plugin — manual WE export dead on packed Eden).
 
@@ -121,9 +123,9 @@ make verify-terrain           # manifest ↔ terrains.ts + anchor schema
 make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m (PASS @ 6d96339)
 ```
 
-**Local dev serving:** run `make map-assets-link` once per clone (symlinks `packages/map-assets` → `frontend/public/map-assets`). `make web` runs this automatically. Required for Everon DEM fetch in the Mission Creator (T-091.1+). Basemap tiles still T-090.1.
+**Local dev serving:** run `make map-assets-link` once per clone (symlinks `packages/map-assets` → `frontend/public/map-assets`). `make web` runs this automatically. Required for Everon DEM fetch in the Mission Creator (T-091.1+).
 
-**Frontend tests:** `cd apps/website/frontend && npm test` — vitest `sampleElevation.test.ts` (11 anchor cases vs committed PNG; requires LFS pull).
+**Frontend tests:** `cd apps/website/frontend && npm test` — vitest `sampleElevation.test.ts` (11 anchor cases vs committed PNG; requires `git lfs pull` for DEM).
 
 ## Notes
 

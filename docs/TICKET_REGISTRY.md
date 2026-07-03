@@ -117,7 +117,7 @@
 | T-135 | — | idea | platform | Mission modset manager | Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan. |
 | T-136 | — | idea | platform | 3D AAR / OCAP-style replay | Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built. |
 | T-137 | — | idea | platform | Discord platform rework | Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human. |
-| T-138 | — | idea | infra | One-command self-host install | Single script: deps check, .env, db-up, migrate, seed, optional map-assets — fork-friendly community install story. |
+| T-138 | — | idea | infra | One-command self-host install | Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story. |
 | T-139 | — | idea | platform | Lobby loadout visual preview | In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker. |
 | T-140 | — | idea | infra | Mission client payload budget | Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092. |
 | T-141 | — | idea | eden | Procedural slot naming | Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering. |

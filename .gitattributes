@@ -1,5 +1,5 @@
-# Map terrain assets (T-090/T-091) — large binaries
+# Map terrain assets (T-090/T-091) — large binaries in Git LFS
+# Tile pyramids (packages/map-assets/**/tiles/) are gitignored — local build only; not LFS.
 packages/map-assets/**/*.png filter=lfs diff=lfs merge=lfs -text
-packages/map-assets/**/*.webp filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/*.r16 filter=lfs diff=lfs merge=lfs -text
 packages/map-assets/**/*.tbd-sat filter=lfs diff=lfs merge=lfs -text
