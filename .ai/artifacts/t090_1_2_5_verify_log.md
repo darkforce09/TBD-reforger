@@ -87,3 +87,14 @@ land pixel can ever be tinted.
 Expected, per spec ("each ortho change triggers full pyramid rebuild"):
 - `satellite/everon-sat.tbd-sat` rewritten — **152.8 MB** (was 205.9 MB; water compresses better than raw seabed)
 - `tiles/satellite/**` z0–6 + `full.webp` rewritten — 5,462 lossless WebP files
+
+## Post-ship operator feedback (2026-07-03)
+
+Overall: **strong progress** — ocean, central lake, and main river network read well. Two inland-mask gaps remain for **T-090.1.2.5.1**:
+
+| Gap | Report | Likely filter interaction |
+|-----|--------|---------------------------|
+| **Road false positives** | Paved roads / road-adjacent yards tinted blue (operator screenshots @ ~4776,9268 and similar) | Candidate **E** grey-detection treats desaturated asphalt like SAP “water appearance”; 8 m density opening drops *thin* roads but wide/connected paved areas survive `minAreaM2` 2000 m² and `flatFracMax` 0.5 |
+| **Hill river false negatives** | Stream beds in mountainous terrain still dry | `slopeMeanMaxDeg` 8° + opening fragments steep narrow channels; lake/river *surface* sits above bed in DEM so bed slope ≠ channel mask |
+
+W1/W2 bar met on audited crops; refine inland mask only (keep ocean **A** unchanged), then rebuild ortho + bundle.

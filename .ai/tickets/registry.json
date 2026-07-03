@@ -1822,7 +1822,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.1.2.5",
+      "active_slice": "T-090.1.1",
       "surfaces": [
         "MAP"
       ],
@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.1.2.6 shipped @ b958e3b4 (hillshade strength slider). Active: T-090.1.2.5 water composite. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.2.5 shipped @ 6396960f (water composite). T-090.1.2.6 @ b958e3b4. Next: T-090.1.1 Map view; water mask refine T-090.1.2.5.1 (roads FP, hill rivers FN). Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1958,7 +1958,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "6396960f"
         },
         "T-090.1.2.6": {
           "targets": [

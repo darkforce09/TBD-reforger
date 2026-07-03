@@ -15,12 +15,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.1.2.5`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md`
+- **Active slice:** `T-090.1.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.6 shipped @ b958e3b4 (hillshade strength slider). Active: T-090.1.2.5 water composite. Hub: t090_091_map_terrain_program.md.
+- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.5 shipped @ 6396960f (water composite). T-090.1.2.6 @ b958e3b4. Next: T-090.1.1 Map view; water mask refine T-090.1.2.5.1 (roads FP, hill rivers FN). Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

@@ -1,7 +1,7 @@
 # T-090.1.2.5 — Satellite basemap water (ocean + inland)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.5  
-**Status:** **READY** — inland lakes/rivers missing; ocean reads as grey seabed on SAP ortho  
+**Status:** **SHIPPED** @ `6396960f` (tag **T-090.1.2.5**) — ocean + inland water on SAP ortho; unified bundle rebuilt  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.2** (seam-fixed ortho preferred before another full pyramid rebuild) · **T-090.1.2.1** @ `19bc785`  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
@@ -99,6 +99,19 @@ Tag **`T-090.1.2.5`** · prefix **`T-090.1.2.5:`**
 Handoff: [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_5_claude_code_handoff.md) · send-off [`.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md)
 
 Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
+
+**Shipped:** @ `6396960f` · verify [`.ai/artifacts/t090_1_2_5_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_verify_log.md) · spike [`.ai/artifacts/t090_1_2_5_water_source_spike.json`](../../../.ai/artifacts/t090_1_2_5_water_source_spike.json)
+
+### Known gaps (operator feedback 2026-07-03)
+
+First ship passes W1–W4 bar but inland mask **E** (grey SAP appearance + DEM filters) still has:
+
+| Issue | Symptom | Likely cause | Follow-up |
+|-------|---------|--------------|-----------|
+| **Road false positives** | Paved roads / yards tinted blue (see verify crops + in-editor pan) | Grey low-sat SAP pixels on asphalt; density opening removes *thin* roads but wide paved areas and merged components pass `minAreaM2` + `flatFrac` | **T-090.1.2.5.1** — road exclusion via `.topo`/smap probe, tighter grey calibration, or component shape (elongation) filter |
+| **Hill river false negatives** | Mountain stream beds dry on map | `slopeMeanMaxDeg` 8° + 8 m opening fragments narrow steep channels; water surface above bed in DEM | **T-090.1.2.5.1** — valley-channel carve using DEM hydrology, relax slope for linear bodies, or T-090.8 entity export |
+
+Not a regression on ocean (A) or central lake — refine inland mask only; rebuild ortho + bundle after filter fix.
 
 ---
 
