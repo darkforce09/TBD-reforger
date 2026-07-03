@@ -48,7 +48,7 @@
 | **T-090.1.2.5.2** | shipped @ `1c07d97a` | [`t090_1_2_5_2_water_topo_refine.md`](t090_1_2_5_2_water_topo_refine.md) | verify log + crops |
 | **T-090.1.2.5.1** | shipped @ `82488c6f` | [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) | verify log |
 | **T-090.2** | shipped @ `691d9b26` | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) | verify log |
-| **T-090.1.1** | **active** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | — |
+| **T-090.1.1** | **active** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | Handoff: [`.ai/artifacts/t090_1_1_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_1_claude_code_handoff.md) |
 | **T-090.1.2.5** | shipped @ `6396960f` | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | verify log |
 | **T-090.1.2.6** | shipped @ `b958e3b4` | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | verify log |
 

@@ -2008,7 +2008,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md",
           "status": "ready"
         },
         "T-090.2": {

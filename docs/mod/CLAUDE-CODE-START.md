@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code work order:** **T-090.1.2** (SAP supertexture decode/stitch → high-detail satellite tiles) → **T-090.1.1** Map → **T-090.2** → **T-092** → **T-068.13+**. Handoff: [`.ai/artifacts/t090_1_2_claude_code_handoff.md`](../../.ai/artifacts/t090_1_2_claude_code_handoff.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**Next Claude Code work order:** **T-090.1.1** Map cartographic view (pyramid + UI switch on `main`) → **T-090.1.2.3** prefetch or **T-090.3** export → **T-092** → **T-068.13+**. Handoff: [`.ai/artifacts/t090_1_1_claude_code_handoff.md`](../../.ai/artifacts/t090_1_1_claude_code_handoff.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 

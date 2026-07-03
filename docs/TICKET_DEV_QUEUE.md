@@ -16,7 +16,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.1.1`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website

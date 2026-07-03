@@ -1,7 +1,7 @@
 # T-090 — Dual basemap views (Map + Satellite)
 
-**Status:** Spec ready — **vital product requirement**  
-**Tickets:** T-090.1 (Satellite first) · **T-090.1.1** (Map view pyramid)  
+**Status:** Cross-cutting UX contract — **T-090.1.1 active** (implementation: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md))  
+**Tickets:** T-090.1 (Satellite first) · **T-090.1.1** (Map view pyramid — **ready** on `main`)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md)
 
 ---
