@@ -16,7 +16,33 @@ Base: merged `main` @ `47a4df71` (brings T-090.1.2.8) onto Batch 1.
 | T-130.5 | `bb40a61a` | F4-03 (closes PARTIAL), F4-07, F2F-07 |
 | T-130.6 | `c8b2fd6e` | F2B-05, F4-04 |
 
-Tag **T-130** on `c8b2fd6e`+log commit (branch NOT merged — operator merges).
+Tag **T-130** @ `90c9f261` (merged to main 2026-07-03).
+
+---
+
+## T-130.7 — Doc sync (2026-07-03)
+
+**Executor:** cursor-docs · **Merge base:** `90c9f261`
+
+| ID | Fix |
+|----|-----|
+| F1-09 | `everon/manifest.json` + unified golden `metersPerPixel` → **2** |
+| F1-11 | `terrainId` schemas aligned (`minLength: 1`) |
+| F5-08 | `tileUrl.ts` `tmsY` → `xyzRow` |
+| F5-09 | Mermaid `<br/>` in t092 spec |
+| F2C-04 | `./scripts/ticket brief` hybrid execution line |
+| F4-08 | `ux_spec.md` §Keyboard shortcuts |
+| F5-10 | Deferred (trivial spelling) |
+
+```
+./scripts/ticket sync && ./scripts/ticket check     PASS
+cd apps/website/frontend && npm test                tileUrl tests PASS
+make schema-validate                                PASS (11/11 gates)
+```
+
+Living tracker: [fable_5_omni_audit_report.md](fable_5_omni_audit_report.md) — OPEN/PARTIAL → RESOLVED.
+
+---
 
 ### Verification run
 
@@ -102,7 +128,7 @@ no misleading "could not load" toast.
 |-------|-----|----------|
 | T-130.1 | `6426600f` | F2B-07, F2B-08, F2B-09, F2B-11 |
 | T-130.2 | `9db1b9e1` | F3-01, F3-02, F3-03 |
-| T-130.3 | (this commit) | F2B-06 |
+| T-130.3 | `755a889b` | F2B-06 |
 
 ### Verification run
 

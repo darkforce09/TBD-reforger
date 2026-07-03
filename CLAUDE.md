@@ -114,7 +114,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-128**
+**Latest shipped:** **T-130**
 
 **ACTIVE NOW:** **T-090** — T-090.1.2.5 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md`.
 

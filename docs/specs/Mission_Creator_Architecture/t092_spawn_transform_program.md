@@ -26,10 +26,10 @@ The editor **does not** produce what the mod loads today:
 ```mermaid
 flowchart LR
   subgraph save [Version POST]
-    V["schemaVersion 1 payload\neditor superset"]
+    V["schemaVersion 1 payload<br/>editor superset"]
   end
   subgraph moddoc [Mod compiled]
-    M["schemaVersion 1.1 string\nnative mission document"]
+    M["schemaVersion 1.1 string<br/>native mission document"]
   end
   subgraph export [Export download]
     E["camelCase buildMissionDoc wrapper"]

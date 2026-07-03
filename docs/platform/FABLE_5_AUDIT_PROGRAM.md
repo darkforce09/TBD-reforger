@@ -1,8 +1,8 @@
 # Fable 5 audit remediation program — COMPLETE
 
-**Program complete (2026-07-02)** — T-126 ✓ → T-127 ✓ → T-128 ✓. **Remainder:** **T-130** (parallel worktree) drains OPEN/PARTIAL. **Main queue:** **T-090.1.2.8** / [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
+**Program complete (2026-07-03)** — T-126 ✓ → T-127 ✓ → T-128 ✓ → **T-130 ✓** @ `90c9f261` (tag **T-130**). **Main queue:** **T-090.1.2.5** / [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md).
 
-**Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — **living tracker** (remediation index + inline status; remaining OPEN/DEFERRED findings tracked there)
+**Source:** [`.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) — **living tracker** (OPEN: **F5-10** spelling only — deferred trivial)
 
 **Execution order (as run):**
 
@@ -10,18 +10,18 @@
 1. T-126  Security + auth follow-up          (claude-code)  ✓ shipped @ 4a47688e
 2. T-127  Mission Creator UX fixes           (claude-code)  ✓ shipped @ 0515aabb
 3. T-128  Doc link repair + staging honesty  (cursor-docs)  ✓ shipped (tag T-128)
-— RESUMED: T-090.1.2.8 (satellite) / T-068 / TICKET_LEAD
+4. T-130  OPEN + PARTIAL remainder           (claude-code + cursor-docs) ✓ @ 90c9f261
+— RESUMED: T-090.1.2.5 (water) / T-068 / TICKET_LEAD
 ```
 
-**Unpaused (program done):**
+**Unpaused (Fable closed):**
 
 | Ticket | What |
 |--------|------|
 | **T-090.1.2.8** | Unified GPU satellite texture — **shipped** @ `db9057ef` |
-| **T-090.1.2.5** | Satellite water composite — **next on main** |
+| **T-090.1.2.5** | Satellite water composite — **active on main** |
 | **T-068** Phase 2 | Virtual Arsenal (still gated on map/ORBAT, per its own program) |
 | Everything else | See [`docs/TICKET_LEAD.md`](../TICKET_LEAD.md) |
-| **OPEN + PARTIAL (~22 findings)** | **T-130** — [`t130_fable_audit_remainder.md`](t130_fable_audit_remainder.md) · worktree `ticket/T-130` |
 
 **Not in Fable program (later):**
 
@@ -29,10 +29,11 @@
 |---------|--------|
 | Mod `/compiled` + roster REST | **T-092** |
 | Map tile pyramid | **T-090.1.1** |
-| Mission archive/delete | Future |
-| Discord 429 | Deferred |
+| Spelling dialect | **F5-10** deferred |
 
 **Floor selector** id → **T-129** (was T-126).
+
+**North Star gaps (unplanned backlog):** [`tbd_north_star_backlog.md`](tbd_north_star_backlog.md) · registry **T-131…T-142** (`idea`).
 
 ---
 
@@ -40,15 +41,14 @@
 
 ```bash
 git pull && git lfs pull
-# Merge order: T-127 worktree → main, then T-128 worktree → main (resolve registry.json
-# by keeping T-127's row from main + T-128/T-090 rows from ticket/T-128), then:
 ./scripts/ticket sync && ./scripts/ticket check
-./scripts/ticket prompt T-090    # next: T-090.1.2.8 unified satellite texture
+./scripts/ticket prompt T-090    # next: T-090.1.2.5 satellite water
 ```
 
 **T-126** shipped @ `4a47688e` (tag **T-126**).  
-**T-127** shipped (MC UX U1–U4 + U5 stretch, `ticket/T-127` worktree).  
-**T-128** shipped (tag **T-128**, `ticket/T-128` worktree) — log [`t128_doc_link_repair_log.md`](../../.ai/artifacts/t128_doc_link_repair_log.md)
+**T-127** shipped @ `0515aabb`.  
+**T-128** shipped (tag **T-128**).  
+**T-130** shipped @ `90c9f261` (tag **T-130**) — verify [`.ai/artifacts/t130_verify_log.md`](../../.ai/artifacts/t130_verify_log.md)
 
 One-pager: [`.ai/artifacts/fable_audit_operator_resume.md`](../../.ai/artifacts/fable_audit_operator_resume.md)
 
@@ -61,3 +61,4 @@ One-pager: [`.ai/artifacts/fable_audit_operator_resume.md`](../../.ai/artifacts/
 | **T-126** | shipped @ `4a47688e` | [`t126_audit_security_followup.md`](t126_audit_security_followup.md) | claude-code |
 | **T-127** | shipped @ `0515aabb` | [`t127_mc_ux_audit_fixes.md`](t127_mc_ux_audit_fixes.md) | claude-code |
 | **T-128** | shipped (tag `T-128`) | [`t128_doc_link_repair.md`](t128_doc_link_repair.md) | cursor-docs |
+| **T-130** | shipped @ `90c9f261` (tag `T-130`) | [`t130_fable_audit_remainder.md`](t130_fable_audit_remainder.md) | claude-code + cursor-docs |

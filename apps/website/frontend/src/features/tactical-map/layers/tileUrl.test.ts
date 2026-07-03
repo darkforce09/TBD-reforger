@@ -1,5 +1,5 @@
 // T-090.1 — tileUrl Y-flip contract. The on-disk pyramid is XYZ (y=0 = north); the editor
-// walks tiles south-first (y=0 = south). tmsY = 2**z - 1 - y is the single inversion point.
+// walks tiles south-first (y=0 = south). xyzRow = 2**z - 1 - y is the single inversion point.
 import { describe, it, expect } from 'vitest'
 import { tileUrl, tilesPerAxis } from './tileUrl'
 
@@ -11,7 +11,7 @@ describe('tileUrl Y-flip', () => {
   })
 
   it('flips y so the southern index hits the northern disk row', () => {
-    // z3: 8 rows. south-first y=0 (southern edge) -> disk tmsY=7 (last/southern row on disk
+    // z3: 8 rows. south-first y=0 (southern edge) -> disk xyzRow=7 (last/southern row on disk
     // is index 7 because disk row 0 is NORTH). south-first y=7 (north) -> disk row 0.
     expect(tileUrl(TMPL, 3, 2, 0)).toBe('/map-assets/everon/tiles/satellite/3/2/7.webp')
     expect(tileUrl(TMPL, 3, 2, 7)).toBe('/map-assets/everon/tiles/satellite/3/2/0.webp')

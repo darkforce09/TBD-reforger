@@ -19,12 +19,18 @@
 - **T-082** (deferred) — Full attribute fields [ATTR] — Complete Attributes modal field parity with Eden.
 - **T-083** (deferred) — Top menu bar [TOP] — Eden-style top menu bar with file/edit/view stubs.
 - **T-084** (deferred) — Classname / mod prefix search [RIGHT] — Classname-prefix search in asset browser.
+- **T-131** (idea) — Route planner tool [MAP, UI] — MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.
+- **T-132** (idea) — Multiplayer MC + visual git [DATA, CONN] — Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap.
+- **T-141** (idea) — Procedural slot naming [ORBAT, UI] — Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering.
+- **T-142** (idea) — MC shell layout polish [UI, TOP] — Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity.
 
 ## infra
 
 - **T-110** (deferred) — Terrain base + sparse deltas [MAP, DATA] — Binary terrain base layer plus sparse delta props for 1M+ map objects.
 - **T-121** (deferred) — Terrain DEM export automation [DATA, MAP] — Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md.
 - **T-129** (idea) — Building floor selector [MAP, UI] — Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)
+- **T-138** (idea) — One-command self-host install [DATA] — Single script: deps check, .env, db-up, migrate, seed, optional map-assets — fork-friendly community install story.
+- **T-140** (idea) — Mission client payload budget [DATA] — Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092.
 
 ## platform
 
@@ -33,6 +39,12 @@
 - **T-087** (deferred) — CMS rich text editor [SHELL] — Rich text editor for announcements and CMS content.
 - **T-088** (deferred) — Multi-server picker [SHELL] — Select among multiple game servers in intel views.
 - **T-089** (deferred) — Mission title PATCH sync [TOP, DATA] — PATCH mission title to server on edit (absorbs former T-051 scope).
+- **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
+- **T-134** (idea) — In-game marker system (mod) [MAP, UI] — Runtime Enfusion markers: readable styles, briefing sync, admin placement. Distinct from T-069 editor markers on 2D map.
+- **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
+- **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
+- **T-137** (idea) — Discord platform rework [SHELL] — Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human.
+- **T-139** (idea) — Lobby loadout visual preview [UI, ORBAT] — In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker.
 
 ## scale
 

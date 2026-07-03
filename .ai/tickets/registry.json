@@ -1,5 +1,5 @@
 {
-  "next_id": 123,
+  "next_id": 143,
   "tickets": [
     {
       "id": "T-001",
@@ -2974,9 +2974,9 @@
         "website",
         "mod"
       ],
-      "executor": "claude-code",
-      "status": "ready",
-      "active_slice": "T-130.1",
+      "executor": "cursor-docs",
+      "status": "shipped",
+      "active_slice": null,
       "surfaces": [
         "DATA",
         "SHELL",
@@ -2990,7 +2990,7 @@
         "docs"
       ],
       "title": "Fable audit — remainder (OPEN + PARTIAL)",
-      "summary": "Parallel to T-090 queue: drain ~21 OPEN + F4-03 PARTIAL from fable_5_omni_audit_report.md. Slices T-130.1–.6 claude-code on ticket/T-130 worktree; T-130.7 cursor-docs. Hub: docs/platform/t130_fable_audit_remainder.md.",
+      "summary": "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md.",
       "spec": "docs/platform/t130_fable_audit_remainder.md",
       "depends_on": [
         "T-128"
@@ -3012,7 +3012,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "ready"
+          "status": "shipped"
         },
         "T-130.2": {
           "targets": [
@@ -3020,7 +3020,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-130.3": {
           "targets": [
@@ -3028,7 +3028,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-130.4": {
           "targets": [
@@ -3036,7 +3036,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-130.5": {
           "targets": [
@@ -3044,7 +3044,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-130.6": {
           "targets": [
@@ -3052,7 +3052,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-130.7": {
           "targets": [
@@ -3061,7 +3061,7 @@
           ],
           "executor": "cursor-docs",
           "spec": "docs/platform/t130_fable_audit_remainder.md",
-          "status": "queued"
+          "status": "shipped"
         }
       }
     },
@@ -3093,6 +3093,313 @@
       "unblocks": [],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-129"
+    },
+    {
+      "id": "T-131",
+      "title": "Route planner tool",
+      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "MAP",
+        "UI"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "depends_on": [
+        "T-090"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-131"
+    },
+    {
+      "id": "T-132",
+      "title": "Multiplayer MC + visual git",
+      "summary": "Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap.",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "DATA",
+        "CONN"
+      ],
+      "impact": [
+        "state",
+        "ui"
+      ],
+      "depends_on": [
+        "T-062",
+        "T-066"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-132"
+    },
+    {
+      "id": "T-133",
+      "title": "OFCR timed objectives",
+      "summary": "Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.",
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "DATA",
+        "MAP"
+      ],
+      "impact": [
+        "schema",
+        "ui"
+      ],
+      "depends_on": [
+        "T-115"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-133"
+    },
+    {
+      "id": "T-134",
+      "title": "In-game marker system (mod)",
+      "summary": "Runtime Enfusion markers: readable styles, briefing sync, admin placement. Distinct from T-069 editor markers on 2D map.",
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "workbench",
+      "status": "idea",
+      "surfaces": [
+        "MAP",
+        "UI"
+      ],
+      "impact": [
+        "schema",
+        "ui"
+      ],
+      "depends_on": [
+        "T-069",
+        "T-092"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-134"
+    },
+    {
+      "id": "T-135",
+      "title": "Mission modset manager",
+      "summary": "Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.",
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema",
+        "ui",
+        "api"
+      ],
+      "depends_on": [
+        "T-092"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-135"
+    },
+    {
+      "id": "T-136",
+      "title": "3D AAR / OCAP-style replay",
+      "summary": "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "DATA",
+        "SHELL"
+      ],
+      "impact": [
+        "api",
+        "ui",
+        "schema"
+      ],
+      "depends_on": [
+        "T-116",
+        "T-119"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-136"
+    },
+    {
+      "id": "T-137",
+      "title": "Discord platform rework",
+      "summary": "Discord structure + bot flows: slot confirm, reminders, AAR links. Complements T-118 website slotting; mostly ops/human.",
+      "program": "platform",
+      "stream": "web-platform",
+      "targets": [
+        "website",
+        "root"
+      ],
+      "executor": "human",
+      "status": "idea",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "depends_on": [
+        "T-118"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-137"
+    },
+    {
+      "id": "T-138",
+      "title": "One-command self-host install",
+      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets — fork-friendly community install story.",
+      "program": "infra",
+      "stream": "infra",
+      "targets": [
+        "root",
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "deps",
+        "ci"
+      ],
+      "depends_on": [
+        "T-124"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-138"
+    },
+    {
+      "id": "T-139",
+      "title": "Lobby loadout visual preview",
+      "summary": "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker.",
+      "program": "platform",
+      "stream": "mod-framework",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "workbench",
+      "status": "idea",
+      "surfaces": [
+        "UI",
+        "ORBAT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "depends_on": [
+        "T-068.13",
+        "T-114"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-139"
+    },
+    {
+      "id": "T-140",
+      "title": "Mission client payload budget",
+      "summary": "Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092.",
+      "program": "infra",
+      "stream": "infra",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "schema",
+        "api"
+      ],
+      "depends_on": [
+        "T-092"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "branch": "ticket/T-140"
+    },
+    {
+      "id": "T-141",
+      "title": "Procedural slot naming",
+      "summary": "Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering.",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "ORBAT",
+        "UI"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "depends_on": [
+        "T-071"
+      ],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-141"
+    },
+    {
+      "id": "T-142",
+      "title": "MC shell layout polish",
+      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity.",
+      "program": "eden",
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "status": "idea",
+      "surfaces": [
+        "UI",
+        "TOP"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "depends_on": [],
+      "spec": "docs/platform/tbd_north_star_backlog.md",
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-142"
     }
   ]
 }

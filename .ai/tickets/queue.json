@@ -25,13 +25,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "branch": "ticket/T-092"
-    },
-    {
-      "id": "T-130",
-      "title": "Fable audit \u2014 remainder (OPEN + PARTIAL)",
-      "status": "ready",
-      "spec": "docs/platform/t130_fable_audit_remainder.md",
-      "branch": "ticket/T-130"
     }
   ]
 }

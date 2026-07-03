@@ -5,7 +5,7 @@
 
 **Original audit baseline:** read-only pass @ `main` `a3efdf68` (2026-07-01). Severity: **CRITICAL** / **HIGH** / **MED** / **LOW**. EnforceScript (`.c`) plugins audited as Enfusion script, not C++.
 
-**Last tracker update:** 2026-07-02 — **T-128** shipped · **T-130** registered (OPEN/PARTIAL → slices T-130.1–.7 on `ticket/T-130` worktree). **Main queue:** T-090.1.2.8.
+**Last tracker update:** 2026-07-03 — **T-130** shipped @ `90c9f261` (tag **T-130**) · Fable OPEN/PARTIAL program **complete**. **Main queue:** T-090.1.2.5.
 
 ---
 
@@ -13,15 +13,15 @@
 
 | Status | Count | Meaning |
 |--------|------:|---------|
-| **RESOLVED** | 24 | **T-126** S1–S6 @ `4a47688e` · **T-127** U1–U5 @ `0515aabb` · **T-128** (F1-05, F2B-10, F2C-02 docs-half, F2C-05, F5-01…F5-07) |
-| **ACTIVE** | ~22 | **T-130** (OPEN + PARTIAL F4-03) — parallel worktree |
+| **RESOLVED** | 46+ | **T-126** S1–S6 · **T-127** U1–U5 · **T-128** · **T-130** Batch 1+2 + T-130.7 doc nits |
+| **ACTIVE** | 0 | — |
 | **QUEUED** | 0 | — |
-| **PARTIAL** | 1 | **F4-03** — same-tab conflict loop fixed; new-tab cold boot still prompts (divergence tracking deferred) |
+| **PARTIAL** | 0 | — |
 | **DEFERRED** | ~15 | Out of Fable program (**T-092**, **T-090.x**, future, T-122 carry-over) |
-| **OPEN** | ~20 | Unassigned (Discord 429, archive/delete, CI scope, misc LOW, F2C-04 note) |
+| **OPEN** | 1 | **F5-10** spelling dialect (intentionally deferred — trivial) |
 | **OK** | 12 | Verified clean at audit time — no action |
 
-**Fable program order:** T-126 ✓ → T-127 ✓ → T-128 ✓ → resume T-090.1.2.8 / T-068.
+**Fable program order:** T-126 ✓ → T-127 ✓ → T-128 ✓ → **T-130 ✓** → resume T-090 / T-068.
 
 ### By ticket
 
@@ -29,8 +29,8 @@
 |--------|--------|-------|
 | **T-126** | **shipped** @ `4a47688e` | S1–S6 security + auth (verify [t126_verify_log.md](t126_verify_log.md)) |
 | **T-127** | **shipped** @ `0515aabb` | U1–U5 MC UX (verify [t127_verify_log.md](t127_verify_log.md)) |
-| **T-128** | **shipped** (tag **T-128**) | §5 doc rot, staging honesty, handoff link depths, orphans — log [`t128_doc_link_repair_log.md`](t128_doc_link_repair_log.md) |
-| **T-130** | **active** | OPEN + PARTIAL remainder — hub [`t130_fable_audit_remainder.md`](../../docs/platform/t130_fable_audit_remainder.md) · handoff [`t130_SEND_TO_CLAUDE.md`](t130_SEND_TO_CLAUDE.md) |
+| **T-128** | **shipped** (tag **T-128**) | §5 doc rot, staging honesty, handoff link depths, orphans |
+| **T-130** | **shipped** @ `90c9f261` (tag **T-130**) | OPEN + PARTIAL remainder — verify [t130_verify_log.md](t130_verify_log.md) · hub [`t130_fable_audit_remainder.md`](../../docs/platform/t130_fable_audit_remainder.md) |
 | **T-092** | deferred | Mod REST `/compiled`, roster, mission canonical envelope, spawn/yaw |
 | **T-090.1.1** | deferred | Map tile pyramid (pairs with U3 basemap coerce) |
 | **T-090.3** | deferred | Building export `headingDeg` field names |
@@ -51,18 +51,18 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F1-06 | 1 | MED | Spawn heading matrix sign vs compass semantics | T-092 | DEFERRED |
 | F1-07 | 1 | MED | TerrainWorld export swapped yaw/pitch field names | T-090.3 | DEFERRED |
 | F1-08 | 1 | HIGH | Everon manifest advertises `map` tiles; disk has satellite only | T-090.1.1 · U3 | DEFERRED · **RESOLVED** (coerce) |
-| F1-09 | 1 | MED | Everon `metersPerPixel: 1` vs schema/Biki 2 m | — | OPEN |
+| F1-09 | 1 | MED | Everon `metersPerPixel: 1` vs schema/Biki 2 m | **T-130.7** | **RESOLVED** @ `90c9f261` |
 | F1-10 | 1 | MED | Arland manifest tiles block; no files on disk | T-090 | DEFERRED |
-| F1-11 | 1 | LOW | `terrainId` enum mismatch registry vs manifest schema | — | OPEN |
+| F1-11 | 1 | LOW | `terrainId` enum mismatch registry vs manifest schema | **T-130.7** | **RESOLVED** @ `90c9f261` |
 | F1-12 | 1 | MED | SpawnManager no disconnect cleanup | T-092 | DEFERRED |
 | F1-13 | 1 | MED | Round-robin ignores roster-assigned slots | T-092 | DEFERRED |
 | F1-14 | 1 | MED | ScenarioRouter placeholder addon GUID | T-122 T15 | DEFERRED |
 | F1-15 | 1 | LOW | SpawnManager hardcoded faction presets | T-092 | DEFERRED |
-| F1-16 | 1 | LOW | Profile mission read 8 MB cap silent truncate | — | OPEN |
-| F1-17 | 1 | LOW | Mission list RPC unbounded / no admin gate | — | OPEN |
-| F1-18 | 1 | LOW | Exporters ignore `FileHandle.Write` errors | — | OPEN |
-| F1-19 | 1 | LOW | Registry export empty items violates minItems | — | OPEN |
-| F1-20 | 1 | LOW | Satellite/ortho meta JSON unescaped strings; hardcoded Proton path | — | OPEN |
+| F1-16 | 1 | LOW | Profile mission read 8 MB cap silent truncate | **T-130.4** | **RESOLVED** @ `b62a66b7` |
+| F1-17 | 1 | LOW | Mission list RPC unbounded / no admin gate | **T-130.4** | **RESOLVED** @ `b62a66b7` |
+| F1-18 | 1 | LOW | Exporters ignore `FileHandle.Write` errors | **T-130.4** | **RESOLVED** @ `b62a66b7` |
+| F1-19 | 1 | LOW | Registry export empty items violates minItems | **T-130.4** | **RESOLVED** @ `b62a66b7` |
+| F1-20 | 1 | LOW | Satellite/ortho meta JSON unescaped strings; hardcoded Proton path | **T-130.4** | **RESOLVED** @ `b62a66b7` |
 | F1-21 | 1 | — | Tile Y-flip centralized in `tileUrl.ts` | — | OK |
 | F1-22 | 1 | — | DEM export grid math + anchor gate | — | OK |
 | F1-23 | 1 | — | MCP handlers + `mcp-call.sh` hardened | — | OK |
@@ -71,13 +71,13 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2B-02 | 2 | HIGH | Refresh rotation not atomic; no reuse detection | **T-126 S2** | **RESOLVED** |
 | F2B-03 | 2 | MED | ORBAT slot claim + capacity race | **T-126 S3** | **RESOLVED** |
 | F2B-04 | 2 | MED | `Refresh` ignored `user.IsBanned` | **T-126 S4** | **RESOLVED** |
-| F2B-05 | 2 | MED | No mission archive/delete handler or UI | — | OPEN |
-| F2B-06 | 2 | MED | CI/`make ci-local` skips `internal/services` et al. | — | OPEN |
-| F2B-07 | 2 | LOW | `missions.go` Count error ignored | — | OPEN |
-| F2B-08 | 2 | LOW | `buildMissionDoc` silent empty export on load fail | — | OPEN |
-| F2B-09 | 2 | LOW | Refresh token rows never purged | — | OPEN |
+| F2B-05 | 2 | MED | No mission archive/delete handler or UI | **T-130.6** | **RESOLVED** @ `c8b2fd6e` |
+| F2B-06 | 2 | MED | CI/`make ci-local` skips `internal/services` et al. | **T-130.3** | **RESOLVED** @ `755a889b` |
+| F2B-07 | 2 | LOW | `missions.go` Count error ignored | **T-130.1** | **RESOLVED** @ `6426600f` |
+| F2B-08 | 2 | LOW | `buildMissionDoc` silent empty export on load fail | **T-130.1** | **RESOLVED** @ `6426600f` |
+| F2B-09 | 2 | LOW | Refresh token rows never purged | **T-130.1** | **RESOLVED** @ `6426600f` |
 | F2B-10 | 2 | LOW | Empty `handlers/missions/` stray dir | T-128 P3 | **RESOLVED** (untracked dir — `rmdir` in main checkout; see T-128 log) |
-| F2B-11 | 2 | LOW | In-memory ratelimit prefix match footgun | — | OPEN |
+| F2B-11 | 2 | LOW | In-memory ratelimit prefix match footgun | **T-130.1** | **RESOLVED** @ `6426600f` |
 | F2B-12 | 2 | — | Handler envelopes, bodylimit, SSE, inject path | — | OK |
 | F2F-01 | 2 | MED | 401-retry dropped rotated refresh token | **T-126 S5** | **RESOLVED** |
 | F2F-02 | 2 | MED | Bootstrap/callback `clearSession` after rotation + `/me` blip | **T-126 S6** | **RESOLVED** |
@@ -85,25 +85,25 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F2F-04 | 2 | MED | `exportJson` fire-and-forget; no compile error UX | **T-127 U2** | **RESOLVED** |
 | F2F-05 | 2 | MED | `basemapView==='map'` silent grid; no degrade toast | **T-127 U3** | **RESOLVED** |
 | F2F-06 | 2 | LOW | `events.tsx` flattens 409 error strings | **T-127 U5** | **RESOLVED** |
-| F2F-07 | 2 | LOW | `admin.tsx` uses `window.confirm` vs Aegis Dialog | — | OPEN |
+| F2F-07 | 2 | LOW | `admin.tsx` uses `window.confirm` vs Aegis Dialog | **T-130.5** | **RESOLVED** @ `bb40a61a` |
 | F2F-08 | 2 | — | TS strictness, compile order, tile math, mutations | — | OK |
 | F2C-01 | 2 | — | Registry / loadout / editor-payload chains in sync | — | OK |
 | F2C-02 | 2 | HIGH | Game-server chain: no canonical `mission.json` producer; staging docs assert live routes | T-092 · T-128 | DEFERRED · **RESOLVED** (docs now mark gates BLOCKED on T-092; producer itself stays T-092) |
 | F2C-03 | 2 | MED | InjectMission path vs mod `$profile:` id/filename mismatch | T-092 | DEFERRED |
-| F2C-04 | 2 | MED | `ticket brief` prints branch vs main-only policy | — | OPEN (policy now hybrid — parallel tickets use `ticket/T-0xx` worktrees; script text out of T-128 scope) |
+| F2C-04 | 2 | MED | `ticket brief` prints branch vs main-only policy | **T-130.7** | **RESOLVED** @ `90c9f261` |
 | F2C-05 | 2 | LOW | Stale `apps/website/frontend/docs/` duplicate tree | T-128 P3 | **RESOLVED** (tree deleted) |
-| F3-01 | 3 | MED | No Discord 429 / Retry-After handling | — | OPEN |
-| F3-02 | 3 | MED | Webhook embed title not truncated (256 cap) | — | OPEN |
-| F3-03 | 3 | LOW | OAuth redirect when client_id blank | — | OPEN |
+| F3-01 | 3 | MED | No Discord 429 / Retry-After handling | **T-130.2** | **RESOLVED** @ `9db1b9e1` |
+| F3-02 | 3 | MED | Webhook embed title not truncated (256 cap) | **T-130.2** | **RESOLVED** @ `9db1b9e1` |
+| F3-03 | 3 | LOW | OAuth redirect when client_id blank | **T-130.2** | **RESOLVED** @ `9db1b9e1` |
 | F3-04 | 3 | — | Webhook failure isolation, OAuth cookie, role sync | — | OK |
 | F4-01 | 4 | MED | Folder delete subtree — no confirm | **T-127 U4** | **RESOLVED** |
 | F4-02 | 4 | MED | Dual-view basemap logically unsound until map tiles | **T-127 U3** · T-090.1.1 | **RESOLVED** (coerce) · DEFERRED (Map `.topo` tiles) |
-| F4-03 | 4 | MED | Conflict-resolution loop (trust) | **T-127 U1** | **PARTIAL** (same-tab ✓; new-tab deferred) |
-| F4-04 | 4 | MED | Mission library append-only (no archive/delete UX) | — | OPEN |
+| F4-03 | 4 | MED | Conflict-resolution loop (trust) | **T-130.5** | **RESOLVED** @ `bb40a61a` |
+| F4-04 | 4 | MED | Mission library append-only (no archive/delete UX) | **T-130.6** | **RESOLVED** @ `c8b2fd6e` |
 | F4-05 | 4 | LOW | Export download no success/fail toast; local export omits server fields | **T-127 U2** | **RESOLVED** |
 | F4-06 | 4 | LOW | Registration 409 nuance lost in toast | **T-127 U5** | **RESOLVED** |
-| F4-07 | 4 | LOW | Non-UUID mission id — interactive but unsavable editor | — | OPEN |
-| F4-08 | 4 | LOW | No in-UI shortcut discoverability | — | OPEN |
+| F4-07 | 4 | LOW | Non-UUID mission id — interactive but unsavable editor | **T-130.5** | **RESOLVED** @ `bb40a61a` |
+| F4-08 | 4 | LOW | No in-UI shortcut discoverability | **T-130.7** | **RESOLVED** @ `90c9f261` |
 | F5-01 | 5 | MED | CLAUDE.md stale T-090 ACTIVE SLICE contradictions | T-128 P4 | **RESOLVED** (registry + sync + narrative) |
 | F5-02 | 5 | MED | Arland 10240 typo in CLAUDE + `MissionCreatorPage` comment | T-128 P4 | **RESOLVED** (both → 4096) |
 | F5-03 | 5 | MED | `apps/website/CLAUDE.md` + frontend README wrong `CLAUDE.md` depth | T-128 P2 | **RESOLVED** |
@@ -111,9 +111,9 @@ Status legend: **RESOLVED** · **ACTIVE** · **QUEUED** · **DEFERRED** · **OPE
 | F5-05 | 5 | MED | `apps/mod/README.md` pre-monorepo (25 broken links) | T-128 P2 | **RESOLVED** (monorepo rewrite) |
 | F5-06 | 5 | MED | `apps/website/README.md` broken links | T-128 P2 | **RESOLVED** |
 | F5-07 | 5 | MED | 155 broken relative markdown links (full list below) | T-128 P0–P4 | **RESOLVED** (worktree scan 158 → 2 benign: one untracked scaffold, one template ellipsis placeholder — see T-128 log) |
-| F5-08 | 5 | LOW | `tileUrl.ts` variable named `tmsY` (XYZ row) | — | OPEN |
-| F5-09 | 5 | LOW | Mermaid `\n` in t092 spec labels | — | OPEN |
-| F5-10 | 5 | LOW | British/American spelling inconsistency | — | OPEN |
+| F5-08 | 5 | LOW | `tileUrl.ts` variable named `tmsY` (XYZ row) | **T-130.7** | **RESOLVED** @ `90c9f261` |
+| F5-09 | 5 | LOW | Mermaid `\n` in t092 spec labels | **T-130.7** | **RESOLVED** @ `90c9f261` |
+| F5-10 | 5 | LOW | British/American spelling inconsistency | — | OPEN (deferred — trivial) |
 | F5-11 | 5 | — | Living docs misspellings above noise floor | — | OK |
 | F5-12 | 5 | — | Eden-wiki scrape typos (verbatim external) | — | OK (no fix) |
 

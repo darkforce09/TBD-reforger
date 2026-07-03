@@ -11,7 +11,6 @@
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
 - **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.2.8 shipped @ db9057ef (tbd-sat v1 unified GPU mips). Next: T-090.1.2.5 water composite. Hub: t090_091_map_terrain_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
-- **T-130** (1300) — Fable audit — remainder (OPEN + PARTIAL) [ready] — Parallel to T-090 queue: drain ~21 OPEN + F4-03 PARTIAL from fable_5_omni_audit_report.md. Slices T-130.1–.6 claude-code on ticket/T-130 worktree; T-130.7 cursor-docs. Hub: docs/platform/t130_fable_audit_remainder.md.
 
 ## Next queued (top 10)
 
@@ -36,5 +35,4 @@ flowchart LR
   T092[T-092] --> T071[T-071]
   T090[T-090] --> T091[T-091]
   T091[T-091] --> T092[T-092]
-  T128[T-128] --> T130[T-130]
 ```

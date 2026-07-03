@@ -2,7 +2,7 @@
   "terrainId": "everon",
   "schemaVersion": 1,
   "worldBounds": [0, 0, 12800, 12800],
-  "metersPerPixel": 1,
+  "metersPerPixel": 2,
   "dem": {
     "path": "dem/everon-dem-16bit.png",
     "widthPx": 6400,

@@ -14,7 +14,11 @@
   "additionalProperties": false,
   "properties": {
     "schemaVersion": { "const": "1.0.0" },
-    "terrainId": { "type": "string", "enum": ["everon", "arland", "custom"] },
+    "terrainId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Terrain key — same namespace as terrain-registry.json and terrain-manifest."
+    },
     "censusStatus": {
       "type": "string",
       "enum": ["pending_export", "partial", "complete"],

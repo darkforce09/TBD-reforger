@@ -16,7 +16,8 @@
   "properties": {
     "terrainId": {
       "type": "string",
-      "enum": ["everon", "arland", "custom"]
+      "minLength": 1,
+      "description": "Terrain key — must match an entry in terrain-registry.json (same id namespace as packages/map-assets/{terrainId}/)."
     },
     "schemaVersion": { "type": "integer", "minimum": 1 },
     "worldBounds": {

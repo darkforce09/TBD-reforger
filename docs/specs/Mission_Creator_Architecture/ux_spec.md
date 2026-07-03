@@ -60,6 +60,26 @@ Left and right panels are **docked flush** to the viewport edges; the map fills 
 
 ---
 
+## Keyboard shortcuts (shipped)
+
+Discoverability reference (T-130.7 / F4-08) — also shown in tooltips where wired.
+
+| Shortcut | Action |
+|----------|--------|
+| **Ctrl/Cmd+Z** | Undo |
+| **Ctrl/Cmd+Shift+Z** or **Ctrl+Y** | Redo |
+| **Ctrl/Cmd+C** | Copy selected slots |
+| **Ctrl/Cmd+V** | Paste slots at cursor |
+| **Ctrl/Cmd** + click | Toggle slot in selection |
+| **Delete** / **Backspace** | Delete selection |
+| **Spacebar** | Center camera on selection |
+| **Double-click** slot (map or outliner) | Open Attributes modal |
+| **Esc** | Clear Asset Browser search (when focused) |
+
+Ruler / LoS toolbelt buttons are stubs until **T-091** heightmap tools ship.
+
+---
+
 ## Decisions log (human-confirmed — do not re-litigate without user approval)
 
 | Topic | Decision |

@@ -824,6 +824,11 @@ def cmd_brief(args: argparse.Namespace) -> None:
     if t.get("spec") and t.get("spec") != spec:
         print(f"HUB: {t.get('spec')} (program context only)")
     print(f"BRANCH: {branch}")
+    print(
+        "EXECUTION: Default ship on main. Parallel tickets use worktree "
+        f".ai/artifacts/worktrees/TBD-{tid} @ {branch} (merge to main when done). "
+        "Docs-only slices (cursor-docs) may commit on main. See .ai/tickets/README.md."
+    )
     print(f"TARGETS: {', '.join(slice_targets(t))}")
     print("DO NOT: edit documentation")
     if shipped:
