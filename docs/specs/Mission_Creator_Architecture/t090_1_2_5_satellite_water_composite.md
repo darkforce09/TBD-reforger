@@ -1,7 +1,7 @@
 # T-090.1.2.5 — Satellite basemap water (ocean + inland)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.5  
-**Status:** **QUEUED** — inland lakes/rivers missing; ocean reads as grey seabed on SAP ortho  
+**Status:** **READY** — inland lakes/rivers missing; ocean reads as grey seabed on SAP ortho  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.2** (seam-fixed ortho preferred before another full pyramid rebuild) · **T-090.1.2.1** @ `19bc785`  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
@@ -99,6 +99,80 @@ Tag **`T-090.1.2.5`** · prefix **`T-090.1.2.5:`**
 Handoff: [`.ai/artifacts/t090_1_2_5_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_5_claude_code_handoff.md) · send-off [`.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_5_SEND_TO_CLAUDE.md)
 
 Resume: [`t090_1_2_satellite_backlog.md`](t090_1_2_satellite_backlog.md)
+
+---
+
+## Claude Code prompt — T-090.1.2.5 (copy-paste)
+
+Extract: `./scripts/ticket prompt T-090 --slice T-090.1.2.5`
+
+```
+Read CLAUDE.md first.
+
+Implement **T-090.1.2.5** — satellite water composite (ocean + inland on SAP ortho).
+
+═══ PREFLIGHT ═══
+  git pull && git lfs pull && make map-assets-link
+  ./scripts/ticket brief T-090
+  test -f packages/map-assets/everon/staging/sap/everon-sap-ortho.png
+
+═══ READ (in order — spec wins on conflict) ═══
+  1. .ai/artifacts/t090_1_2_5_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t090_1_2_5_satellite_water_composite.md
+  3. scripts/map-assets/build-unified-satellite.mjs
+  4. packages/map-assets/everon/manifest.json
+
+═══ PROBLEM ═══
+  Satellite basemap has no readable water: grey SAP seabed at coast; inland lakes/rivers
+  look like dry ground. Product call: composite engine/world-sourced hydrology onto SAP ortho
+  before shipping updated map assets. Work on **main** (parallel stream A).
+
+═══ SHIPPED (do not reopen) ═══
+  - T-090.1.2.8 @ db9057ef — unified everon-sat.tbd-sat delivery (rebuild bundle after ortho edit)
+  - T-090.1.2.2 @ a3efdf6 — seam-fixed SAP ortho source
+  - T-090.1.2.1 @ 19bc785 — pyramid encode reference (fallback only)
+
+═══ LOCKED ═══
+  - P0 spike must pick mask provenance — no hand-painted lakes or AI rivers
+  - Same [0,0,12800,12800] alignment; north-up unchanged
+  - Preserve land SAP detail outside water mask
+  - Rebuild unified bundle (primary) + optional lossless pyramid fallback
+  - No docs/registry edits
+
+═══ DO ═══
+  1. P0 — analyze-water-sources.mjs → .ai/artifacts/t090_1_2_5_water_source_spike.json
+  2. composite-water-ortho.mjs — SAP ortho + aligned mask → staging PNG
+  3. verify-sap-ortho + orientation guard on composited result
+  4. build-unified-satellite.mjs from composited ortho → everon-sat.tbd-sat
+  5. verify-unified-satellite.mjs + optional EXPECT_LOSSLESS=1 verify-tile-pyramid
+  6. Update map_export_everon.json with water mask source
+  7. .ai/artifacts/t090_1_2_5_verify_log.md — W1–W4
+  8. Tag **T-090.1.2.5** · prefix **T-090.1.2.5:**
+
+═══ DO NOT ═══
+  - Edit docs/**, `.ai/tickets/registry.json`, CLAUDE status markers
+  - Skip P0 spike — must document mask provenance
+  - Solid blue rectangle or arbitrary paint
+
+═══ VERIFY (all exit 0) ═══
+  node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
+  node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
+  EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+  make verify-terrain && cd apps/website/frontend && npm run build && npm run lint
+
+═══ MANUAL ═══
+  W1: coast reads as water (not grey seabed)
+  W2: at least two inland bodies visible
+  W3: land SAP unchanged outside mask
+  W4: H1/H2 alignment + north-up unchanged
+
+═══ RETURN ═══
+  - Commit SHA + tag T-090.1.2.5
+  - Spike JSON path + mask source choice
+  - Automated verify output (PASS)
+  - Manual notes for W1–W4
+  - **Ready for Cursor doc sync.**
+```
 
 ---
 

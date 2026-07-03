@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **RESUMED** (Fable **T-126→128 complete**). **Active slice:** **T-090.1.2.5**. **T-090.1.2.8 shipped** @ `db9057ef` (tag **T-090.1.2.8**, tbd-sat v1). **T-091 complete** @ `dde589e`.  
+**Status:** **ready** — **RESUMED** (Fable **T-126→128 complete**). **Active slice:** **T-090.1.2.5**. **T-090.1.2.6 shipped** @ `b958e3b4` (hillshade strength slider). **T-090.1.2.8 shipped** @ `db9057ef` (tag **T-090.1.2.8**, tbd-sat v1). **T-091 complete** @ `dde589e`.  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -29,8 +29,8 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.2  SAP cell seam repair  ✓ @ a3efdf6
   → T-090.1.2.4  Engine render ortho spike  ✓ @ 0d6fe485 (P0 FAIL — SAP locked as source)
   → T-090.1.2.8  Unified satellite texture  ✓ @ db9057ef (tbd-sat v1 — one fetch + GPU mips)
-  → T-090.1.2.5  Satellite water composite  (NEXT)
-  → T-090.1.2.6  Hillshade blend strength slider  (queued — FE only)
+  → T-090.1.2.5  Satellite water composite  (ACTIVE)
+  → T-090.1.2.6  Hillshade blend strength slider  ✓ @ b958e3b4 (FE only)
   → T-090.1.2.3  Basemap tile prefetch  (queued — interim pyramid only)
   → T-090.1.1  Map (.topo) cartographic view
   → T-090.2    taxonomy + JSON schema (+ forest/field/waterBody region kinds)
@@ -77,7 +77,7 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.1.2.4** | [`t090_1_2_4_engine_render_ortho_spike.md`](t090_1_2_4_engine_render_ortho_spike.md) | claude-code | **Engine render ortho** — **shipped** @ `0d6fe485` (P0 FAIL) |
 | **T-090.1.2.8** | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | claude-code | **Unified texture** — **shipped** @ `db9057ef` |
 | **T-090.1.2.5** | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | claude-code | **Water composite** — **active** |
-| **T-090.1.2.6** | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | claude-code | **Hillshade blend** — user opacity on Satellite — queued |
+| **T-090.1.2.6** | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | claude-code | **Hillshade blend** — **shipped** @ `b958e3b4` |
 | **T-090.1.1** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | Enums + census + golden per `buildingClass` |
 | **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |

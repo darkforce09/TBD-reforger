@@ -31,9 +31,20 @@ Script `composite-water-ortho.mjs`:
 - Output: composited PNG → staging
 - Ocean + inland may use different treatment; land SAP preserved outside mask
 
-## P2 — Rebuild pyramid
+## P2 — Rebuild unified bundle (T-090.1.2.8 primary)
 
-Same as T-090.1.2.1:
+After composited ortho lands in staging:
+
+```bash
+node scripts/map-assets/build-unified-satellite.mjs \
+  --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png \
+  --out packages/map-assets/everon/satellite/everon-sat.tbd-sat \
+  --terrain everon
+node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
+```
+
+Optional pyramid fallback (legacy delivery):
+
 ```bash
 scripts/map-assets/build-tile-pyramid.sh \
   --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png \
@@ -45,6 +56,7 @@ scripts/map-assets/build-tile-pyramid.sh \
 
 ```bash
 node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
+node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
 EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 make verify-terrain && make ci-local-frontend
 ```

@@ -1,7 +1,7 @@
 # T-090.1.2.6 — Satellite + hillshade blend control
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.6  
-**Status:** **QUEUED** — fixed ~40% hillshade overlay looks muddy when Satellite basemap is on  
+**Status:** **SHIPPED** @ `b958e3b4` — Mission Settings hillshade strength slider (0–100%, default 40%)  
 **Executor:** claude-code  
 **Depends on:** **T-091.2** shipped @ `dde589e` (hillshade overlay); **T-090.1.2.1** shipped @ `19bc785` (Satellite pyramid)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md)
@@ -84,6 +84,8 @@ cd apps/website/frontend && npm run build && npm run lint
 
 Manual B1–B5 in Mission Creator @ Satellite view with hillshade enabled.
 
+**Shipped:** @ `b958e3b4` (tag **T-090.1.2.6**) · verify [`.ai/artifacts/t090_1_2_6_verify_log.md`](../../../.ai/artifacts/t090_1_2_6_verify_log.md) · operator visual pass on B1 still open.
+
 ---
 
 ## File touch list (expected)
@@ -95,3 +97,74 @@ Manual B1–B5 in Mission Creator @ Satellite view with hillshade enabled.
 - `apps/website/frontend/src/features/mission-creator/MissionCreatorPage.tsx` (if not via store selector)
 
 No map-assets / pyramid / DEM export changes.
+
+Handoff: [`.ai/artifacts/t090_1_2_6_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_2_6_claude_code_handoff.md) · send-off [`.ai/artifacts/t090_1_2_6_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_1_2_6_SEND_TO_CLAUDE.md)
+
+---
+
+## Claude Code prompt — T-090.1.2.6 (copy-paste)
+
+Extract: `./scripts/ticket prompt T-090 --slice T-090.1.2.6`
+
+```
+Read CLAUDE.md first.
+
+Implement **T-090.1.2.6** — hillshade blend strength slider for Satellite basemap.
+
+═══ PREFLIGHT ═══
+  cd /path/to/TBD-T-090 worktree (branch ticket/T-090)
+  ./scripts/ticket brief T-090
+
+═══ READ (in order — spec wins on conflict) ═══
+  1. .ai/artifacts/t090_1_2_6_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t090_1_2_6_hillshade_blend_control.md
+  3. apps/website/frontend/src/features/tactical-map/layers/useDemLayer.ts
+  4. apps/website/frontend/src/features/mission-creator/layout/MissionSettingsDialog.tsx
+
+═══ PROBLEM ═══
+  Satellite + hillshade uses hard-coded OPACITY=0.4 in useDemLayer.ts — relief reads muddy
+  on photo ortho with no operator control. Add Mission Settings slider (0–100%) persisted
+  on meta.environment. Work in **worktree** `.ai/artifacts/worktrees/TBD-T-090` (parallel stream B).
+
+═══ SHIPPED (do not reopen) ═══
+  - T-091.2 @ dde589e — hillshade overlay layer
+  - T-090.1.2.8 @ db9057ef — unified satellite basemap
+
+═══ LOCKED ═══
+  - Default 0.4 when showHillshade on and field unset (backward compatible)
+  - Store as meta.environment.hillshadeOpacity (0–1 float, document in schema.ts)
+  - Slider disabled when Show hillshade off; live preview without reload
+  - Same Horn/NW algorithm — no blend-mode changes
+  - No map-assets / pyramid / DEM rebuild
+  - No docs/registry edits
+
+═══ DO ═══
+  1. schema.ts — optional environment.hillshadeOpacity; ydoc updateEnvironment path
+  2. useDemLayer.ts — replace const OPACITY with prop from store/page
+  3. MissionSettingsDialog.tsx — slider + numeric readout under Show hillshade
+  4. Wire TacticalMap / MissionCreatorPage as needed
+  5. Ensure Save Version round-trips opacity in compiled editor block
+  6. .ai/artifacts/t090_1_2_6_verify_log.md — B1–B5
+  7. Tag **T-090.1.2.6** · prefix **T-090.1.2.6:**
+
+═══ DO NOT ═══
+  - Edit docs/**, `.ai/tickets/registry.json`, CLAUDE status markers
+  - Touch scripts/map-assets/** or packages/map-assets/**
+  - Change Horn algorithm or add multiply blend modes
+
+═══ VERIFY (all exit 0) ═══
+  cd apps/website/frontend && npm run build && npm run lint
+
+═══ MANUAL ═══
+  B1: slider 0% → invisible relief; 100% → strong grey relief
+  B2: default mission matches prior ~40% look
+  B3: Save Version → reload → strength restored
+  B4: hillshade off disables slider; on uses last saved strength
+  B5: pan/zoom perf unchanged
+
+═══ RETURN ═══
+  - Commit SHA + tag T-090.1.2.6
+  - Automated verify output (PASS)
+  - Manual notes for B1–B5
+  - **Ready for Cursor doc sync.**
+```

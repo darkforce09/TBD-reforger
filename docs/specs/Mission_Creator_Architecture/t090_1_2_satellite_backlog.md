@@ -15,7 +15,7 @@
 | **Detail @ max zoom** | Acceptable; residual soft ~256 m band is BI-baked (not fixable without new source) |
 | **Pan / zoom feel** | **T-090.1.2.8 shipped** — no tile pop-in by construction (single BitmapLayer + trilinear mips) |
 | **Water** | **T-090.1.2.5** (**active**) |
-| **Hillshade** | **T-090.1.2.6** (queued) |
+| **Hillshade** | **T-090.1.2.6** shipped @ `b958e3b4` (Mission Settings strength slider) |
 
 **Format spike:** [`.ai/artifacts/t090_1_2_8_format_spike.json`](../../../.ai/artifacts/t090_1_2_8_format_spike.json) · **Verify:** [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md)
 
@@ -26,7 +26,7 @@
 ```text
 1. T-090.1.2.8  Unified satellite texture     ✓ @ db9057ef
 2. T-090.1.2.5  Satellite water composite     ← ACTIVE
-3. T-090.1.2.6  Hillshade blend control       (parallel OK)
+3. T-090.1.2.6  Hillshade blend control       ✓ @ b958e3b4
 4. T-090.1.1    Map cartographic view
 —  T-090.1.2.3  Tile prefetch (legacy pyramid interim only)
 ```
@@ -43,9 +43,9 @@
 |-------|--------|------|----------|
 | **T-090.1.2.8** | shipped @ `db9057ef` | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | verify log |
 | **T-090.1.2.5** | **active** | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | `t090_1_2_5_SEND_TO_CLAUDE.md` |
-| **T-090.1.2.6** | queued | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | — |
+| **T-090.1.2.6** | shipped @ `b958e3b4` | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | verify log |
 
-**Shipped:** T-090.1.2.8 @ `db9057ef` · T-090.1.2.4 @ `0d6fe485` (FAIL) · T-090.1.2.2 @ `a3efdf6` · T-090.1.2.1 @ `19bc785`
+**Shipped:** T-090.1.2.6 @ `b958e3b4` · T-090.1.2.8 @ `db9057ef` · T-090.1.2.4 @ `0d6fe485` (FAIL) · T-090.1.2.2 @ `a3efdf6` · T-090.1.2.1 @ `19bc785`
 
 ---
 

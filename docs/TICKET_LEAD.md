@@ -9,7 +9,7 @@
 ## Ready
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
-- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.2.8 shipped @ db9057ef (tbd-sat v1 unified GPU mips). Next: T-090.1.2.5 water composite. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). T-090.1.2.6 shipped @ b958e3b4 (hillshade strength slider). Active: T-090.1.2.5 water composite. Hub: t090_091_map_terrain_program.md.
 - **T-092** (920) — Spawn transform parity + mod mission compile [ready] — Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
 
 ## Next queued (top 10)
