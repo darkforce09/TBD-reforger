@@ -1,7 +1,12 @@
 {
   "terrainId": "everon",
   "schemaVersion": 1,
-  "worldBounds": [0, 0, 12800, 12800],
+  "worldBounds": [
+    0,
+    0,
+    12800,
+    12800
+  ],
   "metersPerPixel": 2,
   "dem": {
     "path": "dem/everon-dem-16bit.png",
@@ -15,7 +20,10 @@
     "source": "mod-getsurfacey-resample",
     "exportedAt": "2026-06-29T16:12:00Z",
     "workbenchVersion": "ArmaReforger 1.7.0.54 (engine 190965, built 2026-06-14)",
-    "axisFlip": { "x": false, "z": false }
+    "axisFlip": {
+      "x": false,
+      "z": false
+    }
   },
   "tiles": {
     "type": "xyz",
@@ -24,8 +32,16 @@
     "tileSizePx": 256,
     "minZoom": 0,
     "maxZoom": 6,
-    "bounds": [0, 0, 12800, 12800],
-    "alignmentOrigin": [0, 0],
+    "bounds": [
+      0,
+      0,
+      12800,
+      12800
+    ],
+    "alignmentOrigin": [
+      0,
+      0
+    ],
     "satellite": {
       "path": "tiles/satellite",
       "urlTemplate": "/map-assets/everon/tiles/satellite/{z}/{x}/{y}.webp",
@@ -40,7 +56,7 @@
         "baseWidthPx": 12800,
         "baseHeightPx": 12800,
         "mipCount": 14,
-        "bytes": 152767392
+        "bytes": 152713114
       }
     },
     "map": {

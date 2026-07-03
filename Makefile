@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -34,6 +34,18 @@ web: map-assets-link ## Run the Vite dev server
 map-assets-link: ## Symlink packages/map-assets → frontend public/ (T-091.1 DEM fetch)
 	@mkdir -p $(WEB)/frontend/public
 	ln -sfn ../../../../packages/map-assets $(WEB)/frontend/public/map-assets
+
+map-water-everon: ## One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify (T-090.1.2.5.2)
+	cp packages/map-assets/everon/staging/sap/everon-sap-ortho.pre-water.png packages/map-assets/everon/staging/sap/everon-sap-ortho.png
+	node -e "const f='packages/map-assets/everon/staging/sap/TBD_SatExport_meta.json',fs=require('fs'),m=JSON.parse(fs.readFileSync(f,'utf8'));delete m.waterComposite;fs.writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
+	node scripts/map-assets/analyze-water-sources.mjs
+	node --max-old-space-size=8192 scripts/map-assets/composite-water-ortho.mjs
+	node scripts/map-assets/build-unified-satellite.mjs --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/satellite/everon-sat.tbd-sat --terrain everon
+	node -e "const fs=require('fs'),mp='packages/map-assets/everon/manifest.json',m=JSON.parse(fs.readFileSync(mp,'utf8'));m.tiles.satellite.unified.bytes=fs.statSync('packages/map-assets/everon/satellite/everon-sat.tbd-sat').size;fs.writeFileSync(mp,JSON.stringify(m,null,2)+'\n')"
+	bash scripts/map-assets/build-tile-pyramid.sh --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless
+	node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
+	node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
+	EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 
 test: ## Run Go unit tests
 	cd $(WEB) && go test ./...

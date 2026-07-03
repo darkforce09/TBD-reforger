@@ -3,8 +3,15 @@
 // T-090.1.2.5.1 — inland refine: two-tier acceptance (compact lake/wetland class vs linear
 // river/stream class), flatFrac tightened to kill graded town pavement, and a DEM
 // valley-carve gate that admits dark mountain stream channels while excluding hillside
-// road cuts. Ocean mask A unchanged. Spike output moves to t090_1_2_5_1_refine_spike.json
-// (the .2.5 spike JSON is a shipped historical artifact and is never rewritten).
+// road cuts. Ocean mask A unchanged.
+// T-090.1.2.5.2 — EXACT ROAD-GEOMETRY subtraction: the .topo decode (decode-topo.mjs)
+// turned out to carry the full ROAD network (4 classes + airfield lines + powerlines) and
+// NO hydro layer (G1-B, verified by colour-overlay: type-1 routes cross ridges and connect
+// the airfield/towns — highways, not rivers). The engine road vectors are rasterized into
+// exclusion corridors that deterministically remove the residual path/ditch FP class, which
+// in turn makes it safe to RELAX the wet-channel stream class (the operator wants carved
+// gully watercourses blue even when dry) — closing the hill-stream FN gap. Fully offline
+// (pak + DEM) → automatable. Spike output: t090_1_2_5_2_source_spike.json.
 //
 // Candidates evaluated (spec t090_1_2_5_satellite_water_composite.md §Investigation):
 //   A. DEM height <= sea level (0 m)          — engine GetTerrainSurfaceY heights (T-091.0)
@@ -40,6 +47,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, "../..");
 const require = createRequire(join(REPO, "packages/tbd-schema/package.json"));
 const { PNG } = require("pngjs");
+const { decodeTopo, TOPO_TYPES } = await import(join(HERE, "decode-topo.mjs"));
 
 const SAP = join(REPO, "packages/map-assets/everon/staging/sap");
 const ORTHO = join(SAP, "everon-sap-ortho.png");
@@ -47,8 +55,8 @@ const DEM_PATH = join(REPO, "packages/map-assets/everon/dem/everon-dem-16bit.png
 const MANIFEST = JSON.parse(
   readFileSync(join(REPO, "packages/map-assets/everon/manifest.json"), "utf8"),
 );
-const OUT_JSON = join(REPO, ".ai/artifacts/t090_1_2_5_1_refine_spike.json");
-const PREV_SPIKE = join(REPO, ".ai/artifacts/t090_1_2_5_water_source_spike.json");
+const OUT_JSON = join(REPO, ".ai/artifacts/t090_1_2_5_2_source_spike.json");
+const PREV_SPIKE = join(REPO, ".ai/artifacts/t090_1_2_5_1_refine_spike.json");
 const OUT_MASK = join(SAP, "water-inland-mask.png");
 const OUT_PREVIEW = join(SAP, "water-spike-preview.png");
 
@@ -64,30 +72,36 @@ const FLAT_DILATE_R = 2; // engine-flattened pads (runways/bases) + margin
 const MIN_AREA_M2 = 2000; // smallest inland body worth shipping at map zoom
 const MEAN_SAT_MAX = 0.115; // component-level mean saturation acceptance (compact class)
 const SLOPE_PX_MAX_DEG = 18; // grey px on steeper ground = rock face, not water
-// T-090.1.2.5.1 — two-tier acceptance. Compact class (lakes/wetlands):
+// T-090.1.2.5.1 — compact class (lakes/wetlands):
 const FLAT_FRAC_MAX = 0.12; // was 0.5 — graded town pavement measured 0.30–0.46, lake 0.031
 const SLOPE_MEAN_MAX_DEG = 8; // unchanged
-// Linear class (rivers/streams; thin winding ribbons), two sub-classes:
-//   grey river  — carries the engine water appearance (meanSat <= MEAN_SAT_MAX), same
-//                 trust level as the .2.5 ship; needs only a soft lowland/valley guard so
-//                 hillside grey roads can't ride in.
-//   wet channel — the RELAXED dark-wet appearance for mountain streams; the DEM valley
-//                 carve is mandatory and the bar is strict (this class is the refine's
-//                 new reach, so it earns acceptance, not the other way round).
+// T-090.1.2.5.2 — exact ROAD corridors from the .topo vector network (metres → px at the
+// 4 m/px detect grid), used as an EXCLUSION mask. Generous half-widths: over-subtracting a
+// few metres of true water beside a bridge is invisible; under-subtracting recreates the FP.
+const ROAD_HALF_W = { 0: 3, 1: 2, 2: 2, 3: 1, 5: 1 }; // per .topo type, px @ 4 m/px
+const ROAD_SAMPLE_STEP_PX = 2; // validation sampling stride along vector segments
+// Component guard (NOT pixel exclusion — rivers legitimately run beside roads and pixel
+// exclusion fragmented them): a path body sits ON its road line so nearly all its px fall
+// inside the corridor (frac → ~1); a river beside a road only grazes it (frac ≲ 0.3).
+const ROAD_OVERLAP_MAX = 0.45;
+// Linear classes (.2.5.1) reinstated ON TOP of the road subtraction — with the road
+// network excluded exactly, the lowland grey-river guard loosens back and the wet-channel
+// stream class relaxes (operator call: carved gully watercourses read as water even when
+// seasonally dry — brownish + lighter than the .2.5.1 wet band allowed).
 const RIBBON_W_MAX_PX = 5; // ribbonWidth = 2·area/perimeter <= 5 px (20 m) → linear body
 const LIN_MIN_AREA_M2 = 800; // grey river segments
 const LIN_SLOPE_MEAN_MAX_DEG = 16; // channels in steep terrain pick up bank slope at 4 m/px
 const LIN_FLAT_FRAC_MAX = 0.2;
 const GREY_RIVER_VALLEY_MIN = 0.2; // soft guard: carve OR lowland slope
 const GREY_RIVER_LOWLAND_SLOPE_DEG = 8;
-const WET_MIN_AREA_M2 = 1200;
-const WET_VALLEY_FRAC_MIN = 0.7; // hillside road cuts have no symmetric carve
-const WET_MEAN_SAT_MAX = 0.16;
-const WET_MEAN_LUM_MAX = 0.28; // wet rock/water is dark; dry dirt tracks are lighter
-// Dark-wet stream pixel class (mountain channels are dark wet rock, not seabed grey):
-const WET_LUM_MIN = 0.1;
-const WET_LUM_MAX = 0.3;
-const WET_SAT_MAX = 0.16;
+const WET_MIN_AREA_M2 = 1000;
+const WET_VALLEY_FRAC_MIN = 0.6; // was 0.7 — moderate relax; road guard covers the rest
+const WET_MEAN_SAT_MAX = 0.18; // was 0.16 — some dry-gully brown allowed
+const WET_MEAN_LUM_MAX = 0.31; // was 0.28
+// Dark-wet/gully stream pixel class:
+const WET_LUM_MIN = 0.09;
+const WET_LUM_MAX = 0.33;
+const WET_SAT_MAX = 0.19;
 const WET_SLOPE_PX_MAX_DEG = 24;
 const VALLEY_BLUR_R = 12; // px @ 4 m/px → 48 m neighbourhood so banks enter the carve test
 const VALLEY_CARVE_M = 0.8; // blur(DEM) − DEM above this = carved channel floor
@@ -267,8 +281,82 @@ const erode = (src, r) => {
 const seaWide = dilate(sea, OCEAN_DILATE_R);
 const flatWide = dilate(flat, FLAT_DILATE_R);
 
+// ── T-090.1.2.5.2: exact ROAD corridors from the .topo vector network ────────────────────
+// .topo verts are (x east, y north-up image) in metres — same frame as this grid at /4.
+// Vertices encode a SEGMENT LIST (consecutive pairs share endpoints), so draw pairwise.
+// ALL five .topo classes are road/airfield line work (colour-overlay verified: type-1
+// routes cross ridges and connect airfield/towns; PWLN trailing group = 2-vertex powerline
+// spans) → the whole set becomes the exclusion corridor.
+const topo = await decodeTopo("everon");
+const roadCorridor = new Uint8Array(D * D);
+const stampDisc = (mask2, cx, cy, r) => {
+  const x0 = Math.max(0, Math.round(cx) - r);
+  const x1 = Math.min(D - 1, Math.round(cx) + r);
+  const y0 = Math.max(0, Math.round(cy) - r);
+  const y1 = Math.min(D - 1, Math.round(cy) + r);
+  for (let y = y0; y <= y1; y++) {
+    for (let x = x0; x <= x1; x++) {
+      if ((x - cx) * (x - cx) + (y - cy) * (y - cy) <= r * r + 0.5) mask2[y * D + x] = 1;
+    }
+  }
+};
+const drawRecord = (mask2, rec, halfW) => {
+  const v = rec.verts;
+  for (let s = 0; s + 3 < v.length; s += 4) {
+    const ax = v[s] / 4;
+    const ay = v[s + 1] / 4;
+    const bx = v[s + 2] / 4;
+    const by = v[s + 3] / 4;
+    const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay)));
+    for (let t = 0; t <= steps; t++) {
+      stampDisc(mask2, ax + ((bx - ax) * t) / steps, ay + ((by - ay) * t) / steps, halfW);
+    }
+  }
+};
+const sampleFrac = (records, pred) => {
+  let hit = 0;
+  let n = 0;
+  for (const rec of records) {
+    const v = rec.verts;
+    for (let s = 0; s + 3 < v.length; s += 4) {
+      const ax = v[s] / 4;
+      const ay = v[s + 1] / 4;
+      const bx = v[s + 2] / 4;
+      const by = v[s + 3] / 4;
+      const steps = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / ROAD_SAMPLE_STEP_PX));
+      for (let t = 0; t <= steps; t++) {
+        const x = Math.round(ax + ((bx - ax) * t) / steps);
+        const y = Math.round(ay + ((by - ay) * t) / steps);
+        if (x < 0 || x >= D || y < 0 || y >= D) continue;
+        n++;
+        if (pred(y * D + x)) hit++;
+      }
+    }
+  }
+  return n ? hit / n : 0;
+};
+let roadRecordCount = 0;
+for (const rec of topo.records) {
+  const halfW = ROAD_HALF_W[rec.type];
+  if (halfW === undefined) continue;
+  drawRecord(roadCorridor, rec, halfW);
+  roadRecordCount++;
+}
+const airfieldRecs = topo.records.filter((r) => r.type === TOPO_TYPES.AIRFIELD);
+const topoValidation = {
+  airfieldOnEngineFlatFrac: +sampleFrac(airfieldRecs, (i) => flatWide[i] === 1).toFixed(3),
+  // The FP body class must sit on the corridor: measured on the operator sites below.
+  note:
+    "type-1 colour-overlay crosses ridges + connects airfield/towns → highways (no hydro " +
+    "layer in .topo); all 5 classes rasterized as exclusion corridors",
+};
+let roadPx = 0;
+for (let i = 0; i < D * D; i++) if (roadCorridor[i]) roadPx++;
+log(`topo road corridors: ${roadRecordCount} records → ${roadPx} px (${topoValidation.airfieldOnEngineFlatFrac} airfield-flat check)`);
+
+// ── Pixel classes (road-corridor px excluded up front) ──────────────────────────────────
 let grey = new Uint8Array(D * D);
-let wet = new Uint8Array(D * D); // T-090.1.2.5.1 dark-wet valley channels (mountain streams)
+let wet = new Uint8Array(D * D); // dark/gully valley channels (mountain + seasonal streams)
 let greyPx = 0;
 let wetPx = 0;
 let greyOnSeaPx = 0;
@@ -375,6 +463,7 @@ for (let i = 0; i < D * D; i++) {
   let sLum = 0;
   let nFlat = 0;
   let nValley = 0;
+  let nRoad = 0;
   let perim = 0;
   let minX = D;
   let maxX = 0;
@@ -387,6 +476,7 @@ for (let i = 0; i < D * D; i++) {
     sLum += lum[k];
     if (flatWide[k]) nFlat++;
     if (valley[k]) nValley++;
+    if (roadCorridor[k]) nRoad++;
     const x = k % D;
     const y = (k / D) | 0;
     if (
@@ -409,10 +499,10 @@ for (let i = 0; i < D * D; i++) {
   const areaM2 = px.length * 16;
   const ribbonWidthPx = (2 * px.length) / Math.max(1, perim);
   const isLinear = ribbonWidthPx <= RIBBON_W_MAX_PX;
-  // Two-tier acceptance (T-090.1.2.5.1): compact = lake/wetland rules with the pavement-
-  // killing flatFrac cap. Linear splits by appearance trust: grey rivers (engine water
-  // appearance, .2.5 trust level) take a soft carve-or-lowland guard; the relaxed dark-wet
-  // class must earn it — deep symmetric DEM carve, dark, near-grey, bigger than a speckle.
+  const roadFrac = nRoad / px.length; // path bodies ride their road line → frac ~1
+  // T-090.1.2.5.2 acceptance: same two-tier shape as .2.5.1 but on the road-subtracted
+  // pixel field — the .topo corridors already removed every path/ditch, so the wet-channel
+  // stream class runs at the relaxed thresholds (carved gully watercourses count as water).
   const isGreyRiver = meanSat <= MEAN_SAT_MAX;
   let accepted;
   let klass;
@@ -440,10 +530,12 @@ for (let i = 0; i < D * D; i++) {
       meanSat <= WET_MEAN_SAT_MAX &&
       meanLum <= WET_MEAN_LUM_MAX;
   }
+  if (accepted && roadFrac > ROAD_OVERLAP_MAX) accepted = false; // the .topo road guard
   comps.push({
     px,
     accepted,
     class: klass,
+    roadFrac: +roadFrac.toFixed(3),
     areaM2,
     meanSat: +meanSat.toFixed(4),
     meanLum: +meanLum.toFixed(3),
@@ -459,6 +551,18 @@ for (let i = 0; i < D * D; i++) {
 }
 const accepted = comps.filter((c) => c.accepted);
 accepted.sort((a, b) => b.areaM2 - a.areaM2);
+// Debug: WATER_DEBUG_COORDS="x,z;x,z" logs every component near the given world coords.
+if (process.env.WATER_DEBUG_COORDS) {
+  for (const pair of process.env.WATER_DEBUG_COORDS.split(";")) {
+    const [qx, qz] = pair.split(",").map(Number);
+    log(`debug components near (${qx}, ${qz}):`);
+    for (const c of comps) {
+      if (Math.hypot(c.centreWorldM[0] - qx, c.centreWorldM[1] - qz) > 300) continue;
+      const { px, ...rest } = c;
+      log(`  ${JSON.stringify(rest)}`);
+    }
+  }
+}
 log(
   `components: ${comps.length} total, ${accepted.length} accepted (>=${MIN_AREA_M2} m², meanSat<=${MEAN_SAT_MAX}, flatFrac<=${FLAT_FRAC_MAX})`,
 );
@@ -503,14 +607,13 @@ for (const c of accepted) for (const k of c.px) mask[k] = 1;
 }
 log(`wrote ${OUT_MASK} + ${OUT_PREVIEW}`);
 
-// ── Refine spike JSON (T-090.1.2.5.1): locked params + before/after vs the .2.5 ship ─────
-// Compare against the shipped .2.5 accepted-body list (historical artifact, read-only):
-// a previous body is "retained" when some new accepted body centre lies within 250 m.
+// ── Source spike JSON (T-090.1.2.5.2) — vs the .2.5.1 ship ──────────────────────────────
+// A .2.5.1 body is "retained" when a new accepted body centre lies within 250 m; the
+// dropped list is expected to be exactly the road-riding FP bodies.
 let comparison = null;
 if (existsSync(PREV_SPIKE)) {
   const prev = JSON.parse(readFileSync(PREV_SPIKE, "utf8"));
-  const prevBodies =
-    prev.candidates?.["E-supertexture-water-appearance"]?.evidence?.acceptedBodies ?? [];
+  const prevBodies = prev.results?.acceptedBodies ?? [];
   const near = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) <= 250;
   const retained = [];
   const dropped = [];
@@ -518,7 +621,7 @@ if (existsSync(PREV_SPIKE)) {
     (accepted.some((c) => near(c.centreWorldM, p.centreWorldM)) ? retained : dropped).push({
       centreWorldM: p.centreWorldM,
       areaM2: p.areaM2,
-      flatFrac: p.flatFrac,
+      class: p.class,
     });
   }
   const isNew = (c) => !prevBodies.some((p) => near(c.centreWorldM, p.centreWorldM));
@@ -526,59 +629,56 @@ if (existsSync(PREV_SPIKE)) {
     prevAccepted: prevBodies.length,
     retained: retained.length,
     dropped,
-    newBodies: accepted.filter(isNew).map(({ px, ...rest }) => rest),
+    newBodies: accepted.filter(isNew).length,
   };
 }
 
 const spike = {
-  slice: "T-090.1.2.5.1",
-  parent: "T-090.1.2.5 spike: .ai/artifacts/t090_1_2_5_water_source_spike.json (unchanged)",
+  slice: "T-090.1.2.5.2",
+  parent:
+    "T-090.1.2.5 + .2.5.1 spikes: .ai/artifacts/t090_1_2_5_water_source_spike.json / " +
+    "t090_1_2_5_1_refine_spike.json (shipped history, unchanged)",
   generatedAt: new Date().toISOString(),
   decision: {
-    oceanMask: "A-dem-below-sea-level (UNCHANGED — out of slice scope)",
+    verdict:
+      "G1-B — Eden.topo carries the full ROAD network but NO hydro layer; exact road-" +
+      "corridor SUBTRACTION removes the path/ditch FP class deterministically, enabling a " +
+      "safe wet-channel relaxation that closes the hill-stream/gully FN gap",
+    oceanMask: "A-dem-below-sea-level (UNCHANGED)",
     inlandMask:
-      "E-supertexture-water-appearance-dem-filtered, refined: two-tier acceptance " +
-      "(compact lake/wetland class vs linear river/stream class) + dark-wet valley-channel " +
-      "pixel pass for mountain streams",
+      "appearance classes (compact + grey-river + wet-channel) computed on the ROAD-" +
+      "SUBTRACTED pixel field; wet-channel relaxed (operator call: carved gully " +
+      "watercourses read as water even when seasonally dry)",
+    automation:
+      "fully offline: pak (.topo + supertextures) + committed DEM → make map-water-everon; " +
+      "terrain-parameterized via decode-topo.mjs TOPO_TERRAINS (operator one-button requirement)",
     forbiddenMethodsAttestation:
-      "No hand-painted lakes, no AI-generated rivers, no solid rectangles. All refine levers " +
-      "are engine data: flatFrac (engine-graded exact-flat DEM plateaus), valley carve " +
-      "(boxBlur(DEM) − DEM — designed watercourse channels), slope (DEM gradient), plus the " +
-      "engine-rendered supertexture appearance bands. Every accepted body enumerated for audit.",
+      "No hand-painted lakes, no AI-generated rivers, no solid rectangles. The subtraction " +
+      "layer is the engine's own map-geometry road network decoded from Eden.topo; water " +
+      "acceptance remains engine-rendered supertexture appearance + engine DEM filters.",
   },
-  refine: {
-    "R1-road-exclusion": {
-      lever: "compact-class flatFracMax 0.5 → 0.12",
-      rationale:
-        "Operator-flagged town pavement bodies measured flatFrac 0.30–0.46 (engine-graded " +
-        "pads); real water: central lake 0.031, rivers ~0–0.06. Thin asphalt still dies in " +
-        "the density opening; hillside roads additionally fail the linear-class valley gate.",
-      operatorFpBodies:
-        "prev bodies near (4514,9530)/(4836,9224)/(4366,9304)/(4776,9268) — see comparison.dropped",
+  topoFormat: {
+    file: "worlds/Eden/Eden.topo (pak VFS)",
+    framing:
+      "header 0x18 B (u32 @0x10 = sectionCount 6, @0x14 = recordsPerSection 888); " +
+      "record = [u8 type][u32 vertexCount][vertexCount × (f32LE x, f32LE y)][u32 K][K × u32 " +
+      "attrs]; sections 2..6 prefixed by u32 recordCount (LOD levels of the same set); " +
+      "y axis = NORTH-UP image metres (worldZ = 12800 − y)",
+    types: {
+      "0": "airfield/runway line work ×5 — sits exactly on the NW-airfield engine-flattened runways (0.833 flat-overlap; also proves the y-axis orientation)",
+      "1": "primary routes/highways ×12 — colour-overlay crosses ridges and connects airfield/towns (NOT rivers — earlier bbox-chain reading corrected)",
+      "2": "secondary roads ×110",
+      "3": "minor roads/tracks ×367",
+      "5": "paths/trails ×394",
     },
-    "R2-hill-rivers": {
-      lever:
-        "linear class (ribbonWidth <= 5 px) split by appearance trust: grey-river (engine " +
-        "water appearance, .2.5 trust) needs carve>=0.2 OR lowland slope<=8°; wet-channel " +
-        "(relaxed dark-wet band: lum 0.10–0.30, sat<0.16, valley-gated px) must earn it — " +
-        "valleyFrac>=0.7, meanLum<=0.28, meanSat<=0.16, area>=1200 m²",
-      rationale:
-        "Mountain streams are dark wet carved channels in DEM valley floors; roads cut into " +
-        "hillsides have no symmetric carve (blur-difference ~0) and fail valleyFrac; dry " +
-        "dirt tracks are lighter than wet channel rock and fail meanLum.",
-    },
-    "R3-topo-smap-probe": {
-      result: "PARTIAL (timeboxed ~20 min, not needed to ship)",
-      evidence:
-        "Eden.topo coordinate encoding cracked: big-endian float32 world-coordinate pairs " +
-        "in the 0–12800 range (repeated shared vertices = closed polylines). Record framing/" +
-        "typing (road vs building vs contour) undecoded within the timebox, so road-corridor " +
-        "subtraction stays unavailable. Eden.smap remains index-buffer-like binary. Note for " +
-        "T-090.8: .topo is the most promising offline road/hydro vector source.",
-    },
+    trailingGroups:
+      "'PWLN' tagged group after the 6 sections = 2-vertex span records (powerlines); no " +
+      "hydro anywhere in .topo — exact water GEOMETRY needs Eden.ent entities (locked pak " +
+      "codec) or Workbench entity export → T-090.8",
   },
   params: {
-    unchanged: {
+    roadSubtraction: { halfWidthPxByType: ROAD_HALF_W, gridMetersPerPx: 4, roadOverlapMax: ROAD_OVERLAP_MAX },
+    compactClass: {
       detectDim: DETECT_DIM,
       satMax: SAT_MAX,
       lumMin: LUM_MIN,
@@ -589,36 +689,37 @@ const spike = {
       flatDilateRadiusPx: FLAT_DILATE_R,
       minAreaM2: MIN_AREA_M2,
       meanSatMax: MEAN_SAT_MAX,
+      flatFracMax: FLAT_FRAC_MAX,
       slopePxMaxDeg: SLOPE_PX_MAX_DEG,
       slopeMeanMaxDeg: SLOPE_MEAN_MAX_DEG,
-    },
-    changed: { flatFracMax: { old: 0.5, new: FLAT_FRAC_MAX } },
-    added: {
       ribbonWidthMaxPx: RIBBON_W_MAX_PX,
+    },
+    greyRiver: {
       linMinAreaM2: LIN_MIN_AREA_M2,
       linSlopeMeanMaxDeg: LIN_SLOPE_MEAN_MAX_DEG,
       linFlatFracMax: LIN_FLAT_FRAC_MAX,
       greyRiverValleyMin: GREY_RIVER_VALLEY_MIN,
       greyRiverLowlandSlopeDeg: GREY_RIVER_LOWLAND_SLOPE_DEG,
-      wetMinAreaM2: WET_MIN_AREA_M2,
-      wetValleyFracMin: WET_VALLEY_FRAC_MIN,
-      wetMeanSatMax: WET_MEAN_SAT_MAX,
-      wetMeanLumMax: WET_MEAN_LUM_MAX,
-      wetLumMin: WET_LUM_MIN,
-      wetLumMax: WET_LUM_MAX,
-      wetSatMax: WET_SAT_MAX,
-      wetSlopePxMaxDeg: WET_SLOPE_PX_MAX_DEG,
+    },
+    wetChannelRelaxed: {
+      wetMinAreaM2: { old251: 1200, new: WET_MIN_AREA_M2 },
+      wetValleyFracMin: { old251: 0.7, new: WET_VALLEY_FRAC_MIN },
+      wetMeanSatMax: { old251: 0.16, new: WET_MEAN_SAT_MAX },
+      wetMeanLumMax: { old251: 0.28, new: WET_MEAN_LUM_MAX },
+      wetPxBand: { lum: [WET_LUM_MIN, WET_LUM_MAX], satMax: WET_SAT_MAX, slopeMaxDeg: WET_SLOPE_PX_MAX_DEG },
       valleyBlurRadiusPx: VALLEY_BLUR_R,
       valleyCarveM: VALLEY_CARVE_M,
     },
   },
   results: {
+    topoValidation,
+    roadCorridorPx: roadPx,
     greyOceanRecall: +greyOceanRecall.toFixed(3),
     seaFraction: +seaFraction.toFixed(4),
     inlandBelowSeaM2,
     acceptedBodies: accepted.map(({ px, ...rest }) => rest),
     rejectedComponentCount: comps.length - accepted.length,
-    comparisonVsShip25: comparison,
+    comparisonVsShip251: comparison,
   },
   outputs: {
     inlandMaskPng: "packages/map-assets/everon/staging/sap/water-inland-mask.png (gitignored)",

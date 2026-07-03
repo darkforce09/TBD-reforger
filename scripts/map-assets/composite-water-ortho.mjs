@@ -186,11 +186,13 @@ writeFileSync(ORTHO, PNG.sync.write(ortho));
 
 meta.waterComposite = {
   slice: "T-090.1.2.5",
-  refineSlice: "T-090.1.2.5.1",
+  refineSlice: "T-090.1.2.5.2",
   oceanMaskSource: "dem-below-sea-level",
-  inlandMaskSource: "supertexture-water-appearance-dem-filtered (refined: two-tier + valley carve)",
+  inlandMaskSource:
+    "supertexture-water-appearance-dem-filtered + topo-road-subtraction (exact .topo road " +
+    "network guard; relaxed wet-channel stream class)",
   spikeArtifact: ".ai/artifacts/t090_1_2_5_water_source_spike.json",
-  refineSpikeArtifact: ".ai/artifacts/t090_1_2_5_1_refine_spike.json",
+  refineSpikeArtifact: ".ai/artifacts/t090_1_2_5_2_source_spike.json",
   palette: { oceanBright: OCEAN_BRIGHT, oceanDark: OCEAN_DARK, inland: INLAND_COLOR },
   waterAlpha: WATER_ALPHA,
   depthFullM: DEPTH_FULL_M,

@@ -105,6 +105,14 @@
     "inlandMaskSource": "supertexture-water-appearance-dem-filtered — pixels the engine's SAP renderer drew with the underwater/seabed treatment (smooth desaturated grey), cross-filtered by DEM: coast exclusion, engine-exact-flat pad rejection (kills runways/graded bases), slope rejection (kills rock faces), density opening (kills roads/roofs), min-area 2000 m²; 38 accepted bodies (central lake 18.8 ha + river network + coastal wetlands), each visually audited",
     "spikeArtifact": ".ai/artifacts/t090_1_2_5_water_source_spike.json",
     "verifyLog": ".ai/artifacts/t090_1_2_5_verify_log.md",
+    "refine2": {
+      "slice": "T-090.1.2.5.2",
+      "summary": "Eden.topo fully decoded offline (decode-topo.mjs): 6 LOD sections x 888 records = the engine ROAD network (5 classes incl. runway lines; PWLN trailing group = powerlines; NO hydro layer). Exact road-corridor subtraction via component roadFrac guard (<=0.45) removes the residual path/ditch FP class (FP bodies measured roadFrac 0.72-0.84 vs lake 0.001 / SE river 0.163); several earlier 'rivers' proven to be roads at full res and correctly dropped. Wet-channel stream class relaxed (valleyFrac>=0.6, sat<=0.18, lum<=0.31) for the dry-gully FN gap. 153 accepted bodies, montage-audited. One-button pipeline: make map-water-everon (restore -> mask -> composite -> bundle + manifest bytes auto-patch -> pyramid -> verifies), terrain-parameterized via TOPO_TERRAINS.",
+      "topoFraming": "header 0x18B (@0x10 sections=6, @0x14 perSection=888); record=[u8 type][u32 n][n x f32LE x,y][u32 K][K x u32]; y = north-up image metres",
+      "spikeArtifact": ".ai/artifacts/t090_1_2_5_2_source_spike.json",
+      "verifyLog": ".ai/artifacts/t090_1_2_5_2_verify_log.md",
+      "generatedAt": "2026-07-03T13:15:56Z"
+    },
     "refine": {
       "slice": "T-090.1.2.5.1",
       "summary": "inland mask two-tier refine: compact-class flatFrac 0.5→0.12 kills engine-graded town pavement (all operator FP sites rejected, 0 bodies within 250 m); new linear class splits grey rivers (engine water appearance, soft carve-or-lowland guard) from wet channels (dark carved mountain streams — DEM valley carve boxBlur(48 m)−DEM > 0.8 m mandatory at valleyFrac >= 0.7). 114 accepted bodies (25/38 prior retained — 13 dropped all pavement-class — + 85 new stream/marsh segments), all montage-audited. Eden.topo probe: BE-float32 world-coord polylines confirmed, framing undecoded (T-090.8 lead).",

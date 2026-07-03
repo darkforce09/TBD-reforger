@@ -1,0 +1,3999 @@
+{
+  "slice": "T-090.1.2.5.2",
+  "parent": "T-090.1.2.5 + .2.5.1 spikes: .ai/artifacts/t090_1_2_5_water_source_spike.json / t090_1_2_5_1_refine_spike.json (shipped history, unchanged)",
+  "generatedAt": "2026-07-03T13:08:23.026Z",
+  "decision": {
+    "verdict": "G1-B — Eden.topo carries the full ROAD network but NO hydro layer; exact road-corridor SUBTRACTION removes the path/ditch FP class deterministically, enabling a safe wet-channel relaxation that closes the hill-stream/gully FN gap",
+    "oceanMask": "A-dem-below-sea-level (UNCHANGED)",
+    "inlandMask": "appearance classes (compact + grey-river + wet-channel) computed on the ROAD-SUBTRACTED pixel field; wet-channel relaxed (operator call: carved gully watercourses read as water even when seasonally dry)",
+    "automation": "fully offline: pak (.topo + supertextures) + committed DEM → make map-water-everon; terrain-parameterized via decode-topo.mjs TOPO_TERRAINS (operator one-button requirement)",
+    "forbiddenMethodsAttestation": "No hand-painted lakes, no AI-generated rivers, no solid rectangles. The subtraction layer is the engine's own map-geometry road network decoded from Eden.topo; water acceptance remains engine-rendered supertexture appearance + engine DEM filters."
+  },
+  "topoFormat": {
+    "file": "worlds/Eden/Eden.topo (pak VFS)",
+    "framing": "header 0x18 B (u32 @0x10 = sectionCount 6, @0x14 = recordsPerSection 888); record = [u8 type][u32 vertexCount][vertexCount × (f32LE x, f32LE y)][u32 K][K × u32 attrs]; sections 2..6 prefixed by u32 recordCount (LOD levels of the same set); y axis = NORTH-UP image metres (worldZ = 12800 − y)",
+    "types": {
+      "0": "airfield/runway line work ×5 — sits exactly on the NW-airfield engine-flattened runways (0.833 flat-overlap; also proves the y-axis orientation)",
+      "1": "primary routes/highways ×12 — colour-overlay crosses ridges and connects airfield/towns (NOT rivers — earlier bbox-chain reading corrected)",
+      "2": "secondary roads ×110",
+      "3": "minor roads/tracks ×367",
+      "5": "paths/trails ×394"
+    },
+    "trailingGroups": "'PWLN' tagged group after the 6 sections = 2-vertex span records (powerlines); no hydro anywhere in .topo — exact water GEOMETRY needs Eden.ent entities (locked pak codec) or Workbench entity export → T-090.8"
+  },
+  "params": {
+    "roadSubtraction": {
+      "halfWidthPxByType": {
+        "0": 3,
+        "1": 2,
+        "2": 2,
+        "3": 1,
+        "5": 1
+      },
+      "gridMetersPerPx": 4,
+      "roadOverlapMax": 0.45
+    },
+    "compactClass": {
+      "detectDim": 3200,
+      "satMax": 0.12,
+      "lumMin": 0.2,
+      "lumMax": 0.44,
+      "openRadiusPx": 2,
+      "densityMin": 0.6,
+      "oceanDilateRadiusPx": 5,
+      "flatDilateRadiusPx": 2,
+      "minAreaM2": 2000,
+      "meanSatMax": 0.115,
+      "flatFracMax": 0.12,
+      "slopePxMaxDeg": 18,
+      "slopeMeanMaxDeg": 8,
+      "ribbonWidthMaxPx": 5
+    },
+    "greyRiver": {
+      "linMinAreaM2": 800,
+      "linSlopeMeanMaxDeg": 16,
+      "linFlatFracMax": 0.2,
+      "greyRiverValleyMin": 0.2,
+      "greyRiverLowlandSlopeDeg": 8
+    },
+    "wetChannelRelaxed": {
+      "wetMinAreaM2": {
+        "old251": 1200,
+        "new": 1000
+      },
+      "wetValleyFracMin": {
+        "old251": 0.7,
+        "new": 0.6
+      },
+      "wetMeanSatMax": {
+        "old251": 0.16,
+        "new": 0.18
+      },
+      "wetMeanLumMax": {
+        "old251": 0.28,
+        "new": 0.31
+      },
+      "wetPxBand": {
+        "lum": [
+          0.09,
+          0.33
+        ],
+        "satMax": 0.19,
+        "slopeMaxDeg": 24
+      },
+      "valleyBlurRadiusPx": 12,
+      "valleyCarveM": 0.8
+    }
+  },
+  "results": {
+    "topoValidation": {
+      "airfieldOnEngineFlatFrac": 0.833,
+      "note": "type-1 colour-overlay crosses ridges + connects airfield/towns → highways (no hydro layer in .topo); all 5 classes rasterized as exclusion corridors"
+    },
+    "roadCorridorPx": 256935,
+    "greyOceanRecall": 0.77,
+    "seaFraction": 0.6852,
+    "inlandBelowSeaM2": 640,
+    "acceptedBodies": [
+      {
+        "accepted": true,
+        "class": "compact",
+        "roadFrac": 0.001,
+        "areaM2": 191280,
+        "meanSat": 0.0596,
+        "meanLum": 0.338,
+        "meanSlopeDeg": 6.95,
+        "meanElevM": 44.5,
+        "flatFrac": 0.031,
+        "valleyFrac": 0.412,
+        "ribbonWidthPx": 46.79,
+        "bboxOrthoPx": [
+          4188,
+          6608,
+          5056,
+          7052
+        ],
+        "centreWorldM": [
+          4620,
+          5972
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "compact",
+        "roadFrac": 0,
+        "areaM2": 17296,
+        "meanSat": 0.1145,
+        "meanLum": 0.296,
+        "meanSlopeDeg": 7.79,
+        "meanElevM": 2,
+        "flatFrac": 0.021,
+        "valleyFrac": 0.901,
+        "ribbonWidthPx": 5.77,
+        "bboxOrthoPx": [
+          3800,
+          3696,
+          3976,
+          4268
+        ],
+        "centreWorldM": [
+          3886,
+          8820
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.103,
+        "areaM2": 13680,
+        "meanSat": 0.1479,
+        "meanLum": 0.259,
+        "meanSlopeDeg": 9.28,
+        "meanElevM": 2.4,
+        "flatFrac": 0.009,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.95,
+        "bboxOrthoPx": [
+          5616,
+          3212,
+          5832,
+          3840
+        ],
+        "centreWorldM": [
+          5722,
+          9276
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.161,
+        "areaM2": 13200,
+        "meanSat": 0.1481,
+        "meanLum": 0.269,
+        "meanSlopeDeg": 6.52,
+        "meanElevM": 1.3,
+        "flatFrac": 0.03,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.7,
+        "bboxOrthoPx": [
+          5760,
+          2100,
+          6116,
+          2408
+        ],
+        "centreWorldM": [
+          5936,
+          10548
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.121,
+        "areaM2": 10416,
+        "meanSat": 0.1512,
+        "meanLum": 0.252,
+        "meanSlopeDeg": 12.89,
+        "meanElevM": 278.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.8,
+        "bboxOrthoPx": [
+          9440,
+          8988,
+          9568,
+          9224
+        ],
+        "centreWorldM": [
+          9502,
+          3696
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.258,
+        "areaM2": 9904,
+        "meanSat": 0.1548,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 9.77,
+        "meanElevM": 10.7,
+        "flatFrac": 0.105,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.56,
+        "bboxOrthoPx": [
+          5588,
+          4232,
+          5916,
+          4504
+        ],
+        "centreWorldM": [
+          5750,
+          8434
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 9472,
+        "meanSat": 0.1568,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 6.61,
+        "meanElevM": 1.4,
+        "flatFrac": 0.09,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.89,
+        "bboxOrthoPx": [
+          2752,
+          10988,
+          3056,
+          11148
+        ],
+        "centreWorldM": [
+          2902,
+          1734
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.162,
+        "areaM2": 8416,
+        "meanSat": 0.1519,
+        "meanLum": 0.26,
+        "meanSlopeDeg": 7.78,
+        "meanElevM": 1.7,
+        "flatFrac": 0.086,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.9,
+        "bboxOrthoPx": [
+          5176,
+          488,
+          5300,
+          908
+        ],
+        "centreWorldM": [
+          5236,
+          12104
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.037,
+        "areaM2": 7408,
+        "meanSat": 0.1516,
+        "meanLum": 0.298,
+        "meanSlopeDeg": 12.87,
+        "meanElevM": 286.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.37,
+        "bboxOrthoPx": [
+          9768,
+          10184,
+          9908,
+          10332
+        ],
+        "centreWorldM": [
+          9836,
+          2544
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.037,
+        "areaM2": 6496,
+        "meanSat": 0.1351,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 9.12,
+        "meanElevM": 2.6,
+        "flatFrac": 0.081,
+        "valleyFrac": 0.97,
+        "ribbonWidthPx": 3.59,
+        "bboxOrthoPx": [
+          11152,
+          9960,
+          11296,
+          10256
+        ],
+        "centreWorldM": [
+          11222,
+          2694
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 6128,
+        "meanSat": 0.1527,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 10.75,
+        "meanElevM": 2.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.72,
+        "bboxOrthoPx": [
+          8092,
+          6984,
+          8212,
+          7340
+        ],
+        "centreWorldM": [
+          8150,
+          5640
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.064,
+        "areaM2": 6032,
+        "meanSat": 0.1175,
+        "meanLum": 0.278,
+        "meanSlopeDeg": 12.23,
+        "meanElevM": 3.4,
+        "flatFrac": 0.135,
+        "valleyFrac": 0.987,
+        "ribbonWidthPx": 4.05,
+        "bboxOrthoPx": [
+          1092,
+          840,
+          1268,
+          1016
+        ],
+        "centreWorldM": [
+          1178,
+          11874
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 5744,
+        "meanSat": 0.1519,
+        "meanLum": 0.282,
+        "meanSlopeDeg": 6.97,
+        "meanElevM": 340.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.75,
+        "bboxOrthoPx": [
+          7732,
+          9708,
+          7856,
+          9824
+        ],
+        "centreWorldM": [
+          7792,
+          3036
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.003,
+        "areaM2": 5616,
+        "meanSat": 0.0859,
+        "meanLum": 0.256,
+        "meanSlopeDeg": 8.78,
+        "meanElevM": 2.4,
+        "flatFrac": 0,
+        "valleyFrac": 0.647,
+        "ribbonWidthPx": 4.5,
+        "bboxOrthoPx": [
+          7504,
+          6584,
+          7696,
+          6828
+        ],
+        "centreWorldM": [
+          7598,
+          6096
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 5584,
+        "meanSat": 0.1491,
+        "meanLum": 0.25,
+        "meanSlopeDeg": 12.07,
+        "meanElevM": 8.1,
+        "flatFrac": 0.014,
+        "valleyFrac": 0.989,
+        "ribbonWidthPx": 3.86,
+        "bboxOrthoPx": [
+          7272,
+          11164,
+          7392,
+          11364
+        ],
+        "centreWorldM": [
+          7330,
+          1538
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "compact",
+        "roadFrac": 0,
+        "areaM2": 5584,
+        "meanSat": 0.0807,
+        "meanLum": 0.3,
+        "meanSlopeDeg": 6.83,
+        "meanElevM": 3.8,
+        "flatFrac": 0.034,
+        "valleyFrac": 0.745,
+        "ribbonWidthPx": 6.52,
+        "bboxOrthoPx": [
+          10324,
+          12088,
+          10432,
+          12308
+        ],
+        "centreWorldM": [
+          10376,
+          604
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.058,
+        "areaM2": 5520,
+        "meanSat": 0.1607,
+        "meanLum": 0.259,
+        "meanSlopeDeg": 12.57,
+        "meanElevM": 7.9,
+        "flatFrac": 0.043,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.42,
+        "bboxOrthoPx": [
+          10992,
+          1504,
+          11132,
+          1696
+        ],
+        "centreWorldM": [
+          11060,
+          11202
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.401,
+        "areaM2": 5392,
+        "meanSat": 0.0762,
+        "meanLum": 0.277,
+        "meanSlopeDeg": 8.21,
+        "meanElevM": 5.8,
+        "flatFrac": 0.11,
+        "valleyFrac": 0.801,
+        "ribbonWidthPx": 4.43,
+        "bboxOrthoPx": [
+          8076,
+          11536,
+          8292,
+          11672
+        ],
+        "centreWorldM": [
+          8182,
+          1198
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 5376,
+        "meanSat": 0.1183,
+        "meanLum": 0.274,
+        "meanSlopeDeg": 5.98,
+        "meanElevM": 2,
+        "flatFrac": 0.065,
+        "valleyFrac": 0.881,
+        "ribbonWidthPx": 4.15,
+        "bboxOrthoPx": [
+          6292,
+          10828,
+          6480,
+          10960
+        ],
+        "centreWorldM": [
+          6384,
+          1908
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "compact",
+        "roadFrac": 0,
+        "areaM2": 5168,
+        "meanSat": 0.089,
+        "meanLum": 0.293,
+        "meanSlopeDeg": 6.34,
+        "meanElevM": 1.1,
+        "flatFrac": 0.015,
+        "valleyFrac": 0.44,
+        "ribbonWidthPx": 5.05,
+        "bboxOrthoPx": [
+          5828,
+          9396,
+          6016,
+          9460
+        ],
+        "centreWorldM": [
+          5920,
+          3374
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 5168,
+        "meanSat": 0.1497,
+        "meanLum": 0.254,
+        "meanSlopeDeg": 9.77,
+        "meanElevM": 2.2,
+        "flatFrac": 0.102,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.8,
+        "bboxOrthoPx": [
+          3124,
+          10732,
+          3236,
+          11016
+        ],
+        "centreWorldM": [
+          3178,
+          1928
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4832,
+        "meanSat": 0.141,
+        "meanLum": 0.277,
+        "meanSlopeDeg": 10.62,
+        "meanElevM": 3.7,
+        "flatFrac": 0.05,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.91,
+        "bboxOrthoPx": [
+          8640,
+          7404,
+          8800,
+          7476
+        ],
+        "centreWorldM": [
+          8718,
+          5362
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.067,
+        "areaM2": 4800,
+        "meanSat": 0.1375,
+        "meanLum": 0.271,
+        "meanSlopeDeg": 8.31,
+        "meanElevM": 1.7,
+        "flatFrac": 0.003,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.73,
+        "bboxOrthoPx": [
+          6920,
+          3724,
+          7112,
+          3860
+        ],
+        "centreWorldM": [
+          7014,
+          9010
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4592,
+        "meanSat": 0.166,
+        "meanLum": 0.254,
+        "meanSlopeDeg": 11.83,
+        "meanElevM": 10.4,
+        "flatFrac": 0.028,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.78,
+        "bboxOrthoPx": [
+          1560,
+          7828,
+          1676,
+          7984
+        ],
+        "centreWorldM": [
+          1616,
+          4896
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4512,
+        "meanSat": 0.1587,
+        "meanLum": 0.274,
+        "meanSlopeDeg": 11.2,
+        "meanElevM": 2.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.17,
+        "bboxOrthoPx": [
+          7192,
+          3836,
+          7356,
+          3960
+        ],
+        "centreWorldM": [
+          7272,
+          8904
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4512,
+        "meanSat": 0.1531,
+        "meanLum": 0.263,
+        "meanSlopeDeg": 14.37,
+        "meanElevM": 132.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.59,
+        "bboxOrthoPx": [
+          6064,
+          4972,
+          6180,
+          5192
+        ],
+        "centreWorldM": [
+          6120,
+          7720
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4448,
+        "meanSat": 0.1514,
+        "meanLum": 0.27,
+        "meanSlopeDeg": 15.98,
+        "meanElevM": 279.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.52,
+        "bboxOrthoPx": [
+          7788,
+          8972,
+          7896,
+          9116
+        ],
+        "centreWorldM": [
+          7840,
+          3758
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.2,
+        "areaM2": 4240,
+        "meanSat": 0.1701,
+        "meanLum": 0.247,
+        "meanSlopeDeg": 14.17,
+        "meanElevM": 16.9,
+        "flatFrac": 0.106,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.56,
+        "bboxOrthoPx": [
+          2596,
+          8528,
+          2692,
+          8668
+        ],
+        "centreWorldM": [
+          2642,
+          4204
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4208,
+        "meanSat": 0.1345,
+        "meanLum": 0.286,
+        "meanSlopeDeg": 10.89,
+        "meanElevM": 96.1,
+        "flatFrac": 0.061,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.6,
+        "bboxOrthoPx": [
+          8716,
+          9812,
+          8888,
+          10036
+        ],
+        "centreWorldM": [
+          8800,
+          2878
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.046,
+        "areaM2": 4160,
+        "meanSat": 0.1122,
+        "meanLum": 0.268,
+        "meanSlopeDeg": 11.21,
+        "meanElevM": 117.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.51,
+        "bboxOrthoPx": [
+          8480,
+          9504,
+          8668,
+          9772
+        ],
+        "centreWorldM": [
+          8572,
+          3164
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.438,
+        "areaM2": 4160,
+        "meanSat": 0.0821,
+        "meanLum": 0.266,
+        "meanSlopeDeg": 9.06,
+        "meanElevM": 68.1,
+        "flatFrac": 0,
+        "valleyFrac": 0.527,
+        "ribbonWidthPx": 2.63,
+        "bboxOrthoPx": [
+          9060,
+          10500,
+          9216,
+          10724
+        ],
+        "centreWorldM": [
+          9136,
+          2190
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 4112,
+        "meanSat": 0.1478,
+        "meanLum": 0.26,
+        "meanSlopeDeg": 12.76,
+        "meanElevM": 280.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.8,
+        "bboxOrthoPx": [
+          8584,
+          11072,
+          8664,
+          11192
+        ],
+        "centreWorldM": [
+          8622,
+          1670
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.286,
+        "areaM2": 4080,
+        "meanSat": 0.1438,
+        "meanLum": 0.269,
+        "meanSlopeDeg": 9.28,
+        "meanElevM": 1.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.95,
+        "bboxOrthoPx": [
+          6460,
+          2976,
+          6576,
+          3132
+        ],
+        "centreWorldM": [
+          6516,
+          9748
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "compact",
+        "roadFrac": 0,
+        "areaM2": 3808,
+        "meanSat": 0.078,
+        "meanLum": 0.32,
+        "meanSlopeDeg": 4.26,
+        "meanElevM": 123.7,
+        "flatFrac": 0,
+        "valleyFrac": 0.971,
+        "ribbonWidthPx": 7.56,
+        "bboxOrthoPx": [
+          6672,
+          5960,
+          6756,
+          6052
+        ],
+        "centreWorldM": [
+          6712,
+          6796
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 3680,
+        "meanSat": 0.1545,
+        "meanLum": 0.27,
+        "meanSlopeDeg": 6.78,
+        "meanElevM": 2.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.11,
+        "bboxOrthoPx": [
+          6492,
+          10940,
+          6636,
+          11044
+        ],
+        "centreWorldM": [
+          6562,
+          1810
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.162,
+        "areaM2": 3664,
+        "meanSat": 0.1512,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 14.58,
+        "meanElevM": 254.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.49,
+        "bboxOrthoPx": [
+          9936,
+          9948,
+          10060,
+          10044
+        ],
+        "centreWorldM": [
+          9996,
+          2806
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.254,
+        "areaM2": 3408,
+        "meanSat": 0.1742,
+        "meanLum": 0.24,
+        "meanSlopeDeg": 15.25,
+        "meanElevM": 34.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.09,
+        "bboxOrthoPx": [
+          9600,
+          8372,
+          9700,
+          8480
+        ],
+        "centreWorldM": [
+          9648,
+          4376
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 3328,
+        "meanSat": 0.0975,
+        "meanLum": 0.296,
+        "meanSlopeDeg": 9.16,
+        "meanElevM": 1.5,
+        "flatFrac": 0,
+        "valleyFrac": 0.966,
+        "ribbonWidthPx": 3.71,
+        "bboxOrthoPx": [
+          3984,
+          3508,
+          4136,
+          3692
+        ],
+        "centreWorldM": [
+          4058,
+          9202
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 3184,
+        "meanSat": 0.1502,
+        "meanLum": 0.274,
+        "meanSlopeDeg": 15.43,
+        "meanElevM": 285.6,
+        "flatFrac": 0.005,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.85,
+        "bboxOrthoPx": [
+          8636,
+          11120,
+          8724,
+          11208
+        ],
+        "centreWorldM": [
+          8678,
+          1638
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 3152,
+        "meanSat": 0.1396,
+        "meanLum": 0.279,
+        "meanSlopeDeg": 9.1,
+        "meanElevM": 1.8,
+        "flatFrac": 0.01,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.1,
+        "bboxOrthoPx": [
+          9624,
+          7296,
+          9760,
+          7408
+        ],
+        "centreWorldM": [
+          9690,
+          5450
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 3072,
+        "meanSat": 0.1632,
+        "meanLum": 0.26,
+        "meanSlopeDeg": 13.62,
+        "meanElevM": 76.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.17,
+        "bboxOrthoPx": [
+          5900,
+          4576,
+          5984,
+          4664
+        ],
+        "centreWorldM": [
+          5940,
+          8182
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.022,
+        "areaM2": 2928,
+        "meanSat": 0.1272,
+        "meanLum": 0.267,
+        "meanSlopeDeg": 13.45,
+        "meanElevM": 31.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.52,
+        "bboxOrthoPx": [
+          6696,
+          9756,
+          6944,
+          9820
+        ],
+        "centreWorldM": [
+          6818,
+          3014
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "compact",
+        "roadFrac": 0,
+        "areaM2": 2864,
+        "meanSat": 0.1021,
+        "meanLum": 0.292,
+        "meanSlopeDeg": 7.83,
+        "meanElevM": 3.6,
+        "flatFrac": 0,
+        "valleyFrac": 0.832,
+        "ribbonWidthPx": 6.51,
+        "bboxOrthoPx": [
+          10244,
+          11996,
+          10324,
+          12064
+        ],
+        "centreWorldM": [
+          10282,
+          772
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.187,
+        "areaM2": 2736,
+        "meanSat": 0.1706,
+        "meanLum": 0.279,
+        "meanSlopeDeg": 14.72,
+        "meanElevM": 64.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.44,
+        "bboxOrthoPx": [
+          5384,
+          4708,
+          5444,
+          4920
+        ],
+        "centreWorldM": [
+          5412,
+          7988
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2736,
+        "meanSat": 0.1595,
+        "meanLum": 0.25,
+        "meanSlopeDeg": 10.43,
+        "meanElevM": 214.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.8,
+        "bboxOrthoPx": [
+          9536,
+          9680,
+          9624,
+          9752
+        ],
+        "centreWorldM": [
+          9578,
+          3086
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2736,
+        "meanSat": 0.1534,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 7.38,
+        "meanElevM": 2.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.9,
+        "bboxOrthoPx": [
+          6736,
+          11088,
+          6900,
+          11136
+        ],
+        "centreWorldM": [
+          6816,
+          1690
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2720,
+        "meanSat": 0.1701,
+        "meanLum": 0.259,
+        "meanSlopeDeg": 9.62,
+        "meanElevM": 5.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.33,
+        "bboxOrthoPx": [
+          6136,
+          4188,
+          6212,
+          4300
+        ],
+        "centreWorldM": [
+          6172,
+          8558
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.412,
+        "areaM2": 2640,
+        "meanSat": 0.1495,
+        "meanLum": 0.265,
+        "meanSlopeDeg": 6.66,
+        "meanElevM": 1.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.93,
+        "bboxOrthoPx": [
+          6268,
+          2916,
+          6392,
+          2952
+        ],
+        "centreWorldM": [
+          6328,
+          9868
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 2640,
+        "meanSat": 0.111,
+        "meanLum": 0.254,
+        "meanSlopeDeg": 15.29,
+        "meanElevM": 63.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.2,
+        "bboxOrthoPx": [
+          7568,
+          10936,
+          7696,
+          11156
+        ],
+        "centreWorldM": [
+          7630,
+          1756
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.309,
+        "areaM2": 2592,
+        "meanSat": 0.1392,
+        "meanLum": 0.274,
+        "meanSlopeDeg": 10.45,
+        "meanElevM": 11.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.51,
+        "bboxOrthoPx": [
+          4460,
+          2796,
+          4560,
+          2952
+        ],
+        "centreWorldM": [
+          4508,
+          9928
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2512,
+        "meanSat": 0.1629,
+        "meanLum": 0.247,
+        "meanSlopeDeg": 7.9,
+        "meanElevM": 7.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.62,
+        "bboxOrthoPx": [
+          9732,
+          7476,
+          9780,
+          7588
+        ],
+        "centreWorldM": [
+          9754,
+          5270
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 2448,
+        "meanSat": 0.0708,
+        "meanLum": 0.303,
+        "meanSlopeDeg": 10.29,
+        "meanElevM": 1.2,
+        "flatFrac": 0.007,
+        "valleyFrac": 0.856,
+        "ribbonWidthPx": 2.78,
+        "bboxOrthoPx": [
+          3916,
+          2260,
+          3972,
+          2476
+        ],
+        "centreWorldM": [
+          3942,
+          10434
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2384,
+        "meanSat": 0.1598,
+        "meanLum": 0.243,
+        "meanSlopeDeg": 13.59,
+        "meanElevM": 11.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.27,
+        "bboxOrthoPx": [
+          10628,
+          852,
+          10736,
+          908
+        ],
+        "centreWorldM": [
+          10680,
+          11922
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.135,
+        "areaM2": 2256,
+        "meanSat": 0.1673,
+        "meanLum": 0.255,
+        "meanSlopeDeg": 11.35,
+        "meanElevM": 8.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.32,
+        "bboxOrthoPx": [
+          2384,
+          8096,
+          2472,
+          8196
+        ],
+        "centreWorldM": [
+          2426,
+          4656
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2240,
+        "meanSat": 0.1743,
+        "meanLum": 0.253,
+        "meanSlopeDeg": 8.66,
+        "meanElevM": 12.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.86,
+        "bboxOrthoPx": [
+          4132,
+          9276,
+          4248,
+          9348
+        ],
+        "centreWorldM": [
+          4188,
+          3490
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.259,
+        "areaM2": 2224,
+        "meanSat": 0.1752,
+        "meanLum": 0.254,
+        "meanSlopeDeg": 7.59,
+        "meanElevM": 19.1,
+        "flatFrac": 0.122,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.36,
+        "bboxOrthoPx": [
+          3944,
+          4328,
+          4016,
+          4436
+        ],
+        "centreWorldM": [
+          3978,
+          8420
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2224,
+        "meanSat": 0.1568,
+        "meanLum": 0.245,
+        "meanSlopeDeg": 11.08,
+        "meanElevM": 274.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.43,
+        "bboxOrthoPx": [
+          9288,
+          9076,
+          9356,
+          9160
+        ],
+        "centreWorldM": [
+          9320,
+          3684
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2192,
+        "meanSat": 0.1789,
+        "meanLum": 0.266,
+        "meanSlopeDeg": 11.62,
+        "meanElevM": 222.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.82,
+        "bboxOrthoPx": [
+          8932,
+          8940,
+          9016,
+          9028
+        ],
+        "centreWorldM": [
+          8972,
+          3818
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 2160,
+        "meanSat": 0.0879,
+        "meanLum": 0.27,
+        "meanSlopeDeg": 12.03,
+        "meanElevM": 122.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.67,
+        "bboxOrthoPx": [
+          7428,
+          10556,
+          7556,
+          10716
+        ],
+        "centreWorldM": [
+          7490,
+          2166
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2160,
+        "meanSat": 0.1636,
+        "meanLum": 0.263,
+        "meanSlopeDeg": 11.92,
+        "meanElevM": 3.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.65,
+        "bboxOrthoPx": [
+          7804,
+          11312,
+          7904,
+          11384
+        ],
+        "centreWorldM": [
+          7852,
+          1454
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.414,
+        "areaM2": 2128,
+        "meanSat": 0.1682,
+        "meanLum": 0.252,
+        "meanSlopeDeg": 9.95,
+        "meanElevM": 22.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.86,
+        "bboxOrthoPx": [
+          3316,
+          8908,
+          3352,
+          9000
+        ],
+        "centreWorldM": [
+          3332,
+          3848
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.288,
+        "areaM2": 2112,
+        "meanSat": 0.1558,
+        "meanLum": 0.263,
+        "meanSlopeDeg": 6.59,
+        "meanElevM": 1.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.3,
+        "bboxOrthoPx": [
+          7464,
+          3856,
+          7560,
+          3908
+        ],
+        "centreWorldM": [
+          7510,
+          8920
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 2112,
+        "meanSat": 0.0854,
+        "meanLum": 0.269,
+        "meanSlopeDeg": 7.89,
+        "meanElevM": 9.8,
+        "flatFrac": 0.038,
+        "valleyFrac": 0.545,
+        "ribbonWidthPx": 3.67,
+        "bboxOrthoPx": [
+          9764,
+          8032,
+          9804,
+          8172
+        ],
+        "centreWorldM": [
+          9782,
+          4700
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2080,
+        "meanSat": 0.1718,
+        "meanLum": 0.19,
+        "meanSlopeDeg": 8.58,
+        "meanElevM": 97.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.74,
+        "bboxOrthoPx": [
+          7152,
+          7008,
+          7216,
+          7108
+        ],
+        "centreWorldM": [
+          7182,
+          5744
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2080,
+        "meanSat": 0.1514,
+        "meanLum": 0.303,
+        "meanSlopeDeg": 4.36,
+        "meanElevM": 78.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.13,
+        "bboxOrthoPx": [
+          5852,
+          7060,
+          5920,
+          7108
+        ],
+        "centreWorldM": [
+          5884,
+          5718
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2064,
+        "meanSat": 0.1733,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 13.86,
+        "meanElevM": 38.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.93,
+        "bboxOrthoPx": [
+          2856,
+          8576,
+          2928,
+          8680
+        ],
+        "centreWorldM": [
+          2890,
+          4174
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 2048,
+        "meanSat": 0.139,
+        "meanLum": 0.271,
+        "meanSlopeDeg": 11.32,
+        "meanElevM": 3.2,
+        "flatFrac": 0.188,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.56,
+        "bboxOrthoPx": [
+          10488,
+          9700,
+          10628,
+          9740
+        ],
+        "centreWorldM": [
+          10556,
+          3082
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.117,
+        "areaM2": 2048,
+        "meanSat": 0.0926,
+        "meanLum": 0.265,
+        "meanSlopeDeg": 14.12,
+        "meanElevM": 58.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.31,
+        "bboxOrthoPx": [
+          10836,
+          10740,
+          10992,
+          10884
+        ],
+        "centreWorldM": [
+          10912,
+          1990
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.333,
+        "areaM2": 2016,
+        "meanSat": 0.1799,
+        "meanLum": 0.246,
+        "meanSlopeDeg": 11.33,
+        "meanElevM": 8.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.8,
+        "bboxOrthoPx": [
+          5860,
+          2472,
+          5952,
+          2524
+        ],
+        "centreWorldM": [
+          5904,
+          10304
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.228,
+        "areaM2": 1968,
+        "meanSat": 0.1491,
+        "meanLum": 0.262,
+        "meanSlopeDeg": 10,
+        "meanElevM": 2.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.73,
+        "bboxOrthoPx": [
+          6596,
+          4060,
+          6644,
+          4196
+        ],
+        "centreWorldM": [
+          6618,
+          8674
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.017,
+        "areaM2": 1920,
+        "meanSat": 0.1473,
+        "meanLum": 0.305,
+        "meanSlopeDeg": 8.83,
+        "meanElevM": 13.5,
+        "flatFrac": 0.042,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.48,
+        "bboxOrthoPx": [
+          4648,
+          2260,
+          4692,
+          2324
+        ],
+        "centreWorldM": [
+          4668,
+          10510
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1920,
+        "meanSat": 0.1672,
+        "meanLum": 0.255,
+        "meanSlopeDeg": 15.83,
+        "meanElevM": 42.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.16,
+        "bboxOrthoPx": [
+          2496,
+          7988,
+          2592,
+          8060
+        ],
+        "centreWorldM": [
+          2542,
+          4778
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 1904,
+        "meanSat": 0.1008,
+        "meanLum": 0.278,
+        "meanSlopeDeg": 11.08,
+        "meanElevM": 3,
+        "flatFrac": 0.05,
+        "valleyFrac": 0.983,
+        "ribbonWidthPx": 3.13,
+        "bboxOrthoPx": [
+          10680,
+          1100,
+          10748,
+          1224
+        ],
+        "centreWorldM": [
+          10712,
+          11640
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1904,
+        "meanSat": 0.1328,
+        "meanLum": 0.28,
+        "meanSlopeDeg": 6.19,
+        "meanElevM": 1.6,
+        "flatFrac": 0.067,
+        "valleyFrac": 0.916,
+        "ribbonWidthPx": 3.5,
+        "bboxOrthoPx": [
+          9796,
+          7460,
+          9832,
+          7596
+        ],
+        "centreWorldM": [
+          9812,
+          5274
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1904,
+        "meanSat": 0.1716,
+        "meanLum": 0.251,
+        "meanSlopeDeg": 14.7,
+        "meanElevM": 13,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.05,
+        "bboxOrthoPx": [
+          2868,
+          8808,
+          2968,
+          8884
+        ],
+        "centreWorldM": [
+          2916,
+          3956
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1856,
+        "meanSat": 0.1597,
+        "meanLum": 0.253,
+        "meanSlopeDeg": 12.78,
+        "meanElevM": 225.7,
+        "flatFrac": 0.06,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.9,
+        "bboxOrthoPx": [
+          9152,
+          9476,
+          9268,
+          9528
+        ],
+        "centreWorldM": [
+          9208,
+          3300
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1824,
+        "meanSat": 0.1449,
+        "meanLum": 0.285,
+        "meanSlopeDeg": 7.99,
+        "meanElevM": 336.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.75,
+        "bboxOrthoPx": [
+          7728,
+          9636,
+          7792,
+          9716
+        ],
+        "centreWorldM": [
+          7758,
+          3126
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.054,
+        "areaM2": 1776,
+        "meanSat": 0.1464,
+        "meanLum": 0.219,
+        "meanSlopeDeg": 8.29,
+        "meanElevM": 1.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.64,
+        "bboxOrthoPx": [
+          10856,
+          732,
+          10928,
+          800
+        ],
+        "centreWorldM": [
+          10890,
+          12036
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1696,
+        "meanSat": 0.161,
+        "meanLum": 0.257,
+        "meanSlopeDeg": 12.52,
+        "meanElevM": 5.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.9,
+        "bboxOrthoPx": [
+          2684,
+          8788,
+          2720,
+          8904
+        ],
+        "centreWorldM": [
+          2700,
+          3956
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1696,
+        "meanSat": 0.1393,
+        "meanLum": 0.242,
+        "meanSlopeDeg": 15.01,
+        "meanElevM": 24.8,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.65,
+        "bboxOrthoPx": [
+          10060,
+          9528,
+          10168,
+          9568
+        ],
+        "centreWorldM": [
+          10112,
+          3254
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 1696,
+        "meanSat": 0.0914,
+        "meanLum": 0.271,
+        "meanSlopeDeg": 12.26,
+        "meanElevM": 130.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.47,
+        "bboxOrthoPx": [
+          7360,
+          10436,
+          7448,
+          10560
+        ],
+        "centreWorldM": [
+          7402,
+          2304
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.105,
+        "areaM2": 1680,
+        "meanSat": 0.1793,
+        "meanLum": 0.241,
+        "meanSlopeDeg": 12.85,
+        "meanElevM": 45.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.68,
+        "bboxOrthoPx": [
+          5764,
+          8224,
+          5820,
+          8288
+        ],
+        "centreWorldM": [
+          5790,
+          4546
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1648,
+        "meanSat": 0.153,
+        "meanLum": 0.267,
+        "meanSlopeDeg": 12.7,
+        "meanElevM": 7.3,
+        "flatFrac": 0.01,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.45,
+        "bboxOrthoPx": [
+          4716,
+          8772,
+          4808,
+          8908
+        ],
+        "centreWorldM": [
+          4760,
+          3962
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1632,
+        "meanSat": 0.1568,
+        "meanLum": 0.276,
+        "meanSlopeDeg": 7.79,
+        "meanElevM": 1.8,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.34,
+        "bboxOrthoPx": [
+          6456,
+          3164,
+          6536,
+          3216
+        ],
+        "centreWorldM": [
+          6494,
+          9612
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1616,
+        "meanSat": 0.1581,
+        "meanLum": 0.25,
+        "meanSlopeDeg": 14.13,
+        "meanElevM": 27.8,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.69,
+        "bboxOrthoPx": [
+          2496,
+          8280,
+          2612,
+          8320
+        ],
+        "centreWorldM": [
+          2552,
+          4502
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1584,
+        "meanSat": 0.1692,
+        "meanLum": 0.246,
+        "meanSlopeDeg": 15.33,
+        "meanElevM": 15,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.64,
+        "bboxOrthoPx": [
+          10036,
+          8884,
+          10120,
+          8928
+        ],
+        "centreWorldM": [
+          10076,
+          3896
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.111,
+        "areaM2": 1584,
+        "meanSat": 0.095,
+        "meanLum": 0.257,
+        "meanSlopeDeg": 8.37,
+        "meanElevM": 1.8,
+        "flatFrac": 0.111,
+        "valleyFrac": 0.394,
+        "ribbonWidthPx": 3.19,
+        "bboxOrthoPx": [
+          5748,
+          9080,
+          5784,
+          9168
+        ],
+        "centreWorldM": [
+          5764,
+          3678
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1568,
+        "meanSat": 0.1609,
+        "meanLum": 0.275,
+        "meanSlopeDeg": 8.62,
+        "meanElevM": 11.4,
+        "flatFrac": 0.02,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.31,
+        "bboxOrthoPx": [
+          4660,
+          2608,
+          4720,
+          2768
+        ],
+        "centreWorldM": [
+          4688,
+          10114
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1568,
+        "meanSat": 0.1422,
+        "meanLum": 0.284,
+        "meanSlopeDeg": 7.7,
+        "meanElevM": 1.8,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.08,
+        "bboxOrthoPx": [
+          5964,
+          3076,
+          6052,
+          3104
+        ],
+        "centreWorldM": [
+          6006,
+          9712
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.163,
+        "areaM2": 1568,
+        "meanSat": 0.1102,
+        "meanLum": 0.273,
+        "meanSlopeDeg": 12.64,
+        "meanElevM": 152.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.45,
+        "bboxOrthoPx": [
+          8308,
+          9120,
+          8432,
+          9256
+        ],
+        "centreWorldM": [
+          8368,
+          3614
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.347,
+        "areaM2": 1568,
+        "meanSat": 0.1445,
+        "meanLum": 0.286,
+        "meanSlopeDeg": 12.1,
+        "meanElevM": 336.3,
+        "flatFrac": 0.173,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.56,
+        "bboxOrthoPx": [
+          7948,
+          9864,
+          7988,
+          9940
+        ],
+        "centreWorldM": [
+          7966,
+          2900
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1568,
+        "meanSat": 0.1397,
+        "meanLum": 0.273,
+        "meanSlopeDeg": 9.53,
+        "meanElevM": 2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.17,
+        "bboxOrthoPx": [
+          8436,
+          11936,
+          8492,
+          11980
+        ],
+        "centreWorldM": [
+          8462,
+          844
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1552,
+        "meanSat": 0.1378,
+        "meanLum": 0.266,
+        "meanSlopeDeg": 13.01,
+        "meanElevM": 2.2,
+        "flatFrac": 0.103,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.31,
+        "bboxOrthoPx": [
+          912,
+          1304,
+          948,
+          1388
+        ],
+        "centreWorldM": [
+          928,
+          11456
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1552,
+        "meanSat": 0.1687,
+        "meanLum": 0.266,
+        "meanSlopeDeg": 15.24,
+        "meanElevM": 25,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.62,
+        "bboxOrthoPx": [
+          4628,
+          8640,
+          4708,
+          8756
+        ],
+        "centreWorldM": [
+          4666,
+          4104
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1520,
+        "meanSat": 0.1629,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 12.26,
+        "meanElevM": 6.6,
+        "flatFrac": 0.021,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.45,
+        "bboxOrthoPx": [
+          2240,
+          8124,
+          2332,
+          8180
+        ],
+        "centreWorldM": [
+          2284,
+          4650
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.242,
+        "areaM2": 1520,
+        "meanSat": 0.158,
+        "meanLum": 0.244,
+        "meanSlopeDeg": 9.01,
+        "meanElevM": 260.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.97,
+        "bboxOrthoPx": [
+          9404,
+          9224,
+          9480,
+          9332
+        ],
+        "centreWorldM": [
+          9440,
+          3524
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1504,
+        "meanSat": 0.1565,
+        "meanLum": 0.262,
+        "meanSlopeDeg": 13.01,
+        "meanElevM": 5.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.24,
+        "bboxOrthoPx": [
+          4832,
+          9308,
+          4876,
+          9400
+        ],
+        "centreWorldM": [
+          4852,
+          3448
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.108,
+        "areaM2": 1488,
+        "meanSat": 0.1672,
+        "meanLum": 0.255,
+        "meanSlopeDeg": 8.46,
+        "meanElevM": 16.7,
+        "flatFrac": 0.097,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.8,
+        "bboxOrthoPx": [
+          4324,
+          3640,
+          4372,
+          3696
+        ],
+        "centreWorldM": [
+          4346,
+          9134
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.12,
+        "areaM2": 1472,
+        "meanSat": 0.1635,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 6.28,
+        "meanElevM": 1.7,
+        "flatFrac": 0.033,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.35,
+        "bboxOrthoPx": [
+          7588,
+          3772,
+          7664,
+          3816
+        ],
+        "centreWorldM": [
+          7624,
+          9008
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.359,
+        "areaM2": 1472,
+        "meanSat": 0.1679,
+        "meanLum": 0.253,
+        "meanSlopeDeg": 8.88,
+        "meanElevM": 5.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.97,
+        "bboxOrthoPx": [
+          2800,
+          8792,
+          2860,
+          8864
+        ],
+        "centreWorldM": [
+          2828,
+          3974
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1456,
+        "meanSat": 0.1671,
+        "meanLum": 0.257,
+        "meanSlopeDeg": 8.01,
+        "meanElevM": 4.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.96,
+        "bboxOrthoPx": [
+          7788,
+          4652,
+          7864,
+          4700
+        ],
+        "centreWorldM": [
+          7824,
+          8126
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1440,
+        "meanSat": 0.1744,
+        "meanLum": 0.265,
+        "meanSlopeDeg": 10.65,
+        "meanElevM": 213.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.4,
+        "bboxOrthoPx": [
+          5660,
+          5476,
+          5712,
+          5544
+        ],
+        "centreWorldM": [
+          5684,
+          7292
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.233,
+        "areaM2": 1440,
+        "meanSat": 0.0541,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 3.21,
+        "meanElevM": 148.3,
+        "flatFrac": 0.1,
+        "valleyFrac": 0,
+        "ribbonWidthPx": 3.67,
+        "bboxOrthoPx": [
+          4412,
+          6000,
+          4464,
+          6064
+        ],
+        "centreWorldM": [
+          4436,
+          6770
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1392,
+        "meanSat": 0.157,
+        "meanLum": 0.258,
+        "meanSlopeDeg": 14.55,
+        "meanElevM": 6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.76,
+        "bboxOrthoPx": [
+          4736,
+          484,
+          4796,
+          548
+        ],
+        "centreWorldM": [
+          4764,
+          12286
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1376,
+        "meanSat": 0.1725,
+        "meanLum": 0.265,
+        "meanSlopeDeg": 14.01,
+        "meanElevM": 11.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.2,
+        "bboxOrthoPx": [
+          1580,
+          7408,
+          1660,
+          7448
+        ],
+        "centreWorldM": [
+          1618,
+          5374
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1376,
+        "meanSat": 0.1658,
+        "meanLum": 0.272,
+        "meanSlopeDeg": 12.1,
+        "meanElevM": 5.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.2,
+        "bboxOrthoPx": [
+          2056,
+          8028,
+          2096,
+          8084
+        ],
+        "centreWorldM": [
+          2074,
+          4746
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.198,
+        "areaM2": 1376,
+        "meanSat": 0.1694,
+        "meanLum": 0.229,
+        "meanSlopeDeg": 10.01,
+        "meanElevM": 185.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.32,
+        "bboxOrthoPx": [
+          9264,
+          11660,
+          9320,
+          11736
+        ],
+        "centreWorldM": [
+          9290,
+          1104
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.2,
+        "areaM2": 1360,
+        "meanSat": 0.1513,
+        "meanLum": 0.26,
+        "meanSlopeDeg": 9.47,
+        "meanElevM": 20.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.88,
+        "bboxOrthoPx": [
+          4376,
+          3644,
+          4464,
+          3704
+        ],
+        "centreWorldM": [
+          4418,
+          9128
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 1296,
+        "meanSat": 0.1062,
+        "meanLum": 0.288,
+        "meanSlopeDeg": 9.04,
+        "meanElevM": 40.3,
+        "flatFrac": 0,
+        "valleyFrac": 0.815,
+        "ribbonWidthPx": 3.68,
+        "bboxOrthoPx": [
+          4224,
+          2468,
+          4272,
+          2516
+        ],
+        "centreWorldM": [
+          4246,
+          10310
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1296,
+        "meanSat": 0.1673,
+        "meanLum": 0.249,
+        "meanSlopeDeg": 15.12,
+        "meanElevM": 116.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.7,
+        "bboxOrthoPx": [
+          6060,
+          4792,
+          6096,
+          4888
+        ],
+        "centreWorldM": [
+          6076,
+          7962
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1296,
+        "meanSat": 0.1591,
+        "meanLum": 0.245,
+        "meanSlopeDeg": 15.58,
+        "meanElevM": 113.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.75,
+        "bboxOrthoPx": [
+          8064,
+          7688,
+          8096,
+          7804
+        ],
+        "centreWorldM": [
+          8078,
+          5056
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1296,
+        "meanSat": 0.1695,
+        "meanLum": 0.251,
+        "meanSlopeDeg": 6.16,
+        "meanElevM": 3.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.95,
+        "bboxOrthoPx": [
+          2376,
+          8200,
+          2420,
+          8252
+        ],
+        "centreWorldM": [
+          2396,
+          4576
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1280,
+        "meanSat": 0.1656,
+        "meanLum": 0.235,
+        "meanSlopeDeg": 10.27,
+        "meanElevM": 220.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.96,
+        "bboxOrthoPx": [
+          9536,
+          9588,
+          9592,
+          9656
+        ],
+        "centreWorldM": [
+          9562,
+          3180
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1248,
+        "meanSat": 0.1407,
+        "meanLum": 0.246,
+        "meanSlopeDeg": 15.26,
+        "meanElevM": 9.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.12,
+        "bboxOrthoPx": [
+          6596,
+          4200,
+          6632,
+          4292
+        ],
+        "centreWorldM": [
+          6612,
+          8556
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1248,
+        "meanSat": 0.1353,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 15.73,
+        "meanElevM": 76.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.64,
+        "bboxOrthoPx": [
+          6440,
+          4620,
+          6472,
+          4720
+        ],
+        "centreWorldM": [
+          6454,
+          8132
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1232,
+        "meanSat": 0.1638,
+        "meanLum": 0.243,
+        "meanSlopeDeg": 13.21,
+        "meanElevM": 46.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.08,
+        "bboxOrthoPx": [
+          2656,
+          8264,
+          2724,
+          8304
+        ],
+        "centreWorldM": [
+          2688,
+          4518
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.247,
+        "areaM2": 1232,
+        "meanSat": 0.1683,
+        "meanLum": 0.249,
+        "meanSlopeDeg": 7.7,
+        "meanElevM": 5.8,
+        "flatFrac": 0.052,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.08,
+        "bboxOrthoPx": [
+          5820,
+          8492,
+          5860,
+          8560
+        ],
+        "centreWorldM": [
+          5838,
+          4276
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1232,
+        "meanSat": 0.1581,
+        "meanLum": 0.264,
+        "meanSlopeDeg": 7.07,
+        "meanElevM": 2.8,
+        "flatFrac": 0.039,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.7,
+        "bboxOrthoPx": [
+          6608,
+          11044,
+          6684,
+          11084
+        ],
+        "centreWorldM": [
+          6644,
+          1738
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.289,
+        "areaM2": 1216,
+        "meanSat": 0.148,
+        "meanLum": 0.247,
+        "meanSlopeDeg": 12.64,
+        "meanElevM": 2.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.92,
+        "bboxOrthoPx": [
+          6004,
+          2720,
+          6040,
+          2804
+        ],
+        "centreWorldM": [
+          6020,
+          10040
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.253,
+        "areaM2": 1200,
+        "meanSat": 0.1761,
+        "meanLum": 0.159,
+        "meanSlopeDeg": 11.11,
+        "meanElevM": 27.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.46,
+        "bboxOrthoPx": [
+          4300,
+          2612,
+          4376,
+          2652
+        ],
+        "centreWorldM": [
+          4336,
+          10170
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1200,
+        "meanSat": 0.1776,
+        "meanLum": 0.24,
+        "meanSlopeDeg": 10.85,
+        "meanElevM": 33.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.06,
+        "bboxOrthoPx": [
+          6084,
+          8272,
+          6128,
+          8324
+        ],
+        "centreWorldM": [
+          6104,
+          4504
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.392,
+        "areaM2": 1184,
+        "meanSat": 0.0649,
+        "meanLum": 0.249,
+        "meanSlopeDeg": 8.75,
+        "meanElevM": 101.1,
+        "flatFrac": 0,
+        "valleyFrac": 0.932,
+        "ribbonWidthPx": 2.55,
+        "bboxOrthoPx": [
+          2552,
+          6912,
+          2576,
+          7028
+        ],
+        "centreWorldM": [
+          2562,
+          5832
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1184,
+        "meanSat": 0.1279,
+        "meanLum": 0.254,
+        "meanSlopeDeg": 13.43,
+        "meanElevM": 30.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.43,
+        "bboxOrthoPx": [
+          6720,
+          9656,
+          6832,
+          9704
+        ],
+        "centreWorldM": [
+          6774,
+          3122
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1168,
+        "meanSat": 0.1625,
+        "meanLum": 0.262,
+        "meanSlopeDeg": 8.51,
+        "meanElevM": 1.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.74,
+        "bboxOrthoPx": [
+          7604,
+          3888,
+          7656,
+          3924
+        ],
+        "centreWorldM": [
+          7628,
+          8896
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.26,
+        "areaM2": 1168,
+        "meanSat": 0.1662,
+        "meanLum": 0.248,
+        "meanSlopeDeg": 13.68,
+        "meanElevM": 39.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.47,
+        "bboxOrthoPx": [
+          6068,
+          4356,
+          6148,
+          4452
+        ],
+        "centreWorldM": [
+          6106,
+          8398
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1152,
+        "meanSat": 0.1796,
+        "meanLum": 0.251,
+        "meanSlopeDeg": 12.06,
+        "meanElevM": 71.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.35,
+        "bboxOrthoPx": [
+          9236,
+          8132,
+          9296,
+          8176
+        ],
+        "centreWorldM": [
+          9264,
+          4648
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 1136,
+        "meanSat": 0.1045,
+        "meanLum": 0.3,
+        "meanSlopeDeg": 7.21,
+        "meanElevM": 1.4,
+        "flatFrac": 0,
+        "valleyFrac": 0.887,
+        "ribbonWidthPx": 2.78,
+        "bboxOrthoPx": [
+          4176,
+          3024,
+          4280,
+          3040
+        ],
+        "centreWorldM": [
+          4226,
+          9770
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1120,
+        "meanSat": 0.1617,
+        "meanLum": 0.273,
+        "meanSlopeDeg": 9.52,
+        "meanElevM": 3.7,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.86,
+        "bboxOrthoPx": [
+          7356,
+          3908,
+          7436,
+          3944
+        ],
+        "centreWorldM": [
+          7394,
+          8876
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1120,
+        "meanSat": 0.171,
+        "meanLum": 0.267,
+        "meanSlopeDeg": 10.48,
+        "meanElevM": 31.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.12,
+        "bboxOrthoPx": [
+          3956,
+          4580,
+          4012,
+          4616
+        ],
+        "centreWorldM": [
+          3982,
+          8204
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1120,
+        "meanSat": 0.1646,
+        "meanLum": 0.265,
+        "meanSlopeDeg": 15.71,
+        "meanElevM": 254.4,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.5,
+        "bboxOrthoPx": [
+          9544,
+          10076,
+          9592,
+          10124
+        ],
+        "centreWorldM": [
+          9566,
+          2702
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.229,
+        "areaM2": 1120,
+        "meanSat": 0.1576,
+        "meanLum": 0.278,
+        "meanSlopeDeg": 9.84,
+        "meanElevM": 134.6,
+        "flatFrac": 0.186,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.59,
+        "bboxOrthoPx": [
+          7220,
+          10524,
+          7268,
+          10564
+        ],
+        "centreWorldM": [
+          7242,
+          2258
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.059,
+        "areaM2": 1088,
+        "meanSat": 0.1645,
+        "meanLum": 0.263,
+        "meanSlopeDeg": 9.78,
+        "meanElevM": 1.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.32,
+        "bboxOrthoPx": [
+          7156,
+          3808,
+          7220,
+          3864
+        ],
+        "centreWorldM": [
+          7186,
+          8966
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1088,
+        "meanSat": 0.1484,
+        "meanLum": 0.306,
+        "meanSlopeDeg": 6.03,
+        "meanElevM": 76.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4.25,
+        "bboxOrthoPx": [
+          6496,
+          7192,
+          6552,
+          7228
+        ],
+        "centreWorldM": [
+          6522,
+          5592
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.015,
+        "areaM2": 1088,
+        "meanSat": 0.0613,
+        "meanLum": 0.265,
+        "meanSlopeDeg": 2.16,
+        "meanElevM": 115.6,
+        "flatFrac": 0,
+        "valleyFrac": 0.132,
+        "ribbonWidthPx": 3.89,
+        "bboxOrthoPx": [
+          3784,
+          7844,
+          3812,
+          7908
+        ],
+        "centreWorldM": [
+          3796,
+          4926
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1088,
+        "meanSat": 0.1586,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 15.7,
+        "meanElevM": 220.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 4,
+        "bboxOrthoPx": [
+          9292,
+          8672,
+          9332,
+          8724
+        ],
+        "centreWorldM": [
+          9310,
+          4104
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.176,
+        "areaM2": 1088,
+        "meanSat": 0.1684,
+        "meanLum": 0.257,
+        "meanSlopeDeg": 9.24,
+        "meanElevM": 6.6,
+        "flatFrac": 0.044,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.49,
+        "bboxOrthoPx": [
+          2868,
+          8872,
+          2932,
+          8912
+        ],
+        "centreWorldM": [
+          2898,
+          3910
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1072,
+        "meanSat": 0.1778,
+        "meanLum": 0.152,
+        "meanSlopeDeg": 4.32,
+        "meanElevM": 58.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.73,
+        "bboxOrthoPx": [
+          5184,
+          6864,
+          5236,
+          6904
+        ],
+        "centreWorldM": [
+          5208,
+          5918
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1072,
+        "meanSat": 0.124,
+        "meanLum": 0.267,
+        "meanSlopeDeg": 11.73,
+        "meanElevM": 3.3,
+        "flatFrac": 0.045,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.53,
+        "bboxOrthoPx": [
+          7144,
+          11208,
+          7216,
+          11244
+        ],
+        "centreWorldM": [
+          7178,
+          1576
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1040,
+        "meanSat": 0.1793,
+        "meanLum": 0.158,
+        "meanSlopeDeg": 6,
+        "meanElevM": 21.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.32,
+        "bboxOrthoPx": [
+          5048,
+          1020,
+          5084,
+          1088
+        ],
+        "centreWorldM": [
+          5064,
+          11748
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.369,
+        "areaM2": 1040,
+        "meanSat": 0.1572,
+        "meanLum": 0.251,
+        "meanSlopeDeg": 12.55,
+        "meanElevM": 23.8,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.24,
+        "bboxOrthoPx": [
+          5308,
+          4380,
+          5384,
+          4444
+        ],
+        "centreWorldM": [
+          5344,
+          8390
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.323,
+        "areaM2": 1040,
+        "meanSat": 0.159,
+        "meanLum": 0.259,
+        "meanSlopeDeg": 12.34,
+        "meanElevM": 8.7,
+        "flatFrac": 0.154,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.45,
+        "bboxOrthoPx": [
+          6564,
+          10412,
+          6648,
+          10472
+        ],
+        "centreWorldM": [
+          6604,
+          2360
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1040,
+        "meanSat": 0.1581,
+        "meanLum": 0.25,
+        "meanSlopeDeg": 10.33,
+        "meanElevM": 12.5,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.42,
+        "bboxOrthoPx": [
+          10384,
+          11096,
+          10416,
+          11164
+        ],
+        "centreWorldM": [
+          10398,
+          1672
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1024,
+        "meanSat": 0.1616,
+        "meanLum": 0.279,
+        "meanSlopeDeg": 8.79,
+        "meanElevM": 12.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.61,
+        "bboxOrthoPx": [
+          4656,
+          2536,
+          4704,
+          2612
+        ],
+        "centreWorldM": [
+          4678,
+          10228
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0,
+        "areaM2": 1024,
+        "meanSat": 0.1213,
+        "meanLum": 0.233,
+        "meanSlopeDeg": 13.22,
+        "meanElevM": 2.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.2,
+        "bboxOrthoPx": [
+          7372,
+          4836,
+          7400,
+          4916
+        ],
+        "centreWorldM": [
+          7384,
+          7926
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.349,
+        "areaM2": 1008,
+        "meanSat": 0.169,
+        "meanLum": 0.248,
+        "meanSlopeDeg": 7.8,
+        "meanElevM": 1.9,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.74,
+        "bboxOrthoPx": [
+          7576,
+          3852,
+          7656,
+          3900
+        ],
+        "centreWorldM": [
+          7614,
+          8926
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.032,
+        "areaM2": 1008,
+        "meanSat": 0.166,
+        "meanLum": 0.279,
+        "meanSlopeDeg": 9.25,
+        "meanElevM": 31.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.47,
+        "bboxOrthoPx": [
+          2812,
+          5784,
+          2892,
+          5868
+        ],
+        "centreWorldM": [
+          2850,
+          6976
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.365,
+        "areaM2": 1008,
+        "meanSat": 0.1773,
+        "meanLum": 0.261,
+        "meanSlopeDeg": 12.98,
+        "meanElevM": 12.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 3.07,
+        "bboxOrthoPx": [
+          6772,
+          8704,
+          6820,
+          8760
+        ],
+        "centreWorldM": [
+          6794,
+          4070
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "wet-channel",
+        "roadFrac": 0.238,
+        "areaM2": 1008,
+        "meanSat": 0.1692,
+        "meanLum": 0.24,
+        "meanSlopeDeg": 8.9,
+        "meanElevM": 221.6,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.68,
+        "bboxOrthoPx": [
+          9576,
+          9572,
+          9624,
+          9628
+        ],
+        "centreWorldM": [
+          9598,
+          3202
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 976,
+        "meanSat": 0.1075,
+        "meanLum": 0.266,
+        "meanSlopeDeg": 14.93,
+        "meanElevM": 57.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.26,
+        "bboxOrthoPx": [
+          9440,
+          10768,
+          9476,
+          10876
+        ],
+        "centreWorldM": [
+          9456,
+          1980
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 960,
+        "meanSat": 0.0794,
+        "meanLum": 0.276,
+        "meanSlopeDeg": 11.76,
+        "meanElevM": 83.1,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.93,
+        "bboxOrthoPx": [
+          7568,
+          10840,
+          7596,
+          10928
+        ],
+        "centreWorldM": [
+          7580,
+          1918
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0,
+        "areaM2": 912,
+        "meanSat": 0.0772,
+        "meanLum": 0.297,
+        "meanSlopeDeg": 5.01,
+        "meanElevM": 1.2,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.65,
+        "bboxOrthoPx": [
+          11004,
+          9864,
+          11096,
+          9904
+        ],
+        "centreWorldM": [
+          11048,
+          2918
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.208,
+        "areaM2": 848,
+        "meanSat": 0.0805,
+        "meanLum": 0.244,
+        "meanSlopeDeg": 8.22,
+        "meanElevM": 127,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.26,
+        "bboxOrthoPx": [
+          4128,
+          6072,
+          4220,
+          6088
+        ],
+        "centreWorldM": [
+          4172,
+          6722
+        ]
+      },
+      {
+        "accepted": true,
+        "class": "grey-river",
+        "roadFrac": 0.28,
+        "areaM2": 800,
+        "meanSat": 0.1072,
+        "meanLum": 0.278,
+        "meanSlopeDeg": 12.72,
+        "meanElevM": 35.3,
+        "flatFrac": 0,
+        "valleyFrac": 1,
+        "ribbonWidthPx": 2.13,
+        "bboxOrthoPx": [
+          9412,
+          10944,
+          9492,
+          11024
+        ],
+        "centreWorldM": [
+          9450,
+          1818
+        ]
+      }
+    ],
+    "rejectedComponentCount": 9154,
+    "comparisonVsShip251": {
+      "prevAccepted": 114,
+      "retained": 68,
+      "dropped": [
+        {
+          "centreWorldM": [
+            1374,
+            5968
+          ],
+          "areaM2": 17120,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            6796,
+            4800
+          ],
+          "areaM2": 14176,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            3978,
+            4706
+          ],
+          "areaM2": 10992,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7562,
+            4560
+          ],
+          "areaM2": 9200,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            8320,
+            2386
+          ],
+          "areaM2": 8480,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            8026,
+            4120
+          ],
+          "areaM2": 8432,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            4754,
+            8870
+          ],
+          "areaM2": 7984,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            2594,
+            5334
+          ],
+          "areaM2": 6960,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            9676,
+            5024
+          ],
+          "areaM2": 6016,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            4742,
+            7506
+          ],
+          "areaM2": 5936,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            1704,
+            5690
+          ],
+          "areaM2": 3696,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            2128,
+            5432
+          ],
+          "areaM2": 3280,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            10076,
+            968
+          ],
+          "areaM2": 3120,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            2834,
+            2386
+          ],
+          "areaM2": 2480,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7158,
+            2608
+          ],
+          "areaM2": 2352,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            2924,
+            5208
+          ],
+          "areaM2": 2112,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7146,
+            7082
+          ],
+          "areaM2": 1984,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            9252,
+            612
+          ],
+          "areaM2": 1968,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            8814,
+            760
+          ],
+          "areaM2": 1920,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            2868,
+            6348
+          ],
+          "areaM2": 1888,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            10656,
+            1556
+          ],
+          "areaM2": 1760,
+          "class": "wet-channel"
+        },
+        {
+          "centreWorldM": [
+            4462,
+            7730
+          ],
+          "areaM2": 1632,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            918,
+            11774
+          ],
+          "areaM2": 1616,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            3112,
+            6318
+          ],
+          "areaM2": 1536,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            8976,
+            626
+          ],
+          "areaM2": 1504,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            10046,
+            276
+          ],
+          "areaM2": 1456,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            11156,
+            1632
+          ],
+          "areaM2": 1408,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7150,
+            4712
+          ],
+          "areaM2": 1392,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            10638,
+            2312
+          ],
+          "areaM2": 1360,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            9740,
+            4970
+          ],
+          "areaM2": 1328,
+          "class": "wet-channel"
+        },
+        {
+          "centreWorldM": [
+            6894,
+            3562
+          ],
+          "areaM2": 1280,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            6830,
+            5626
+          ],
+          "areaM2": 1248,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            1898,
+            5576
+          ],
+          "areaM2": 1232,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            6624,
+            5120
+          ],
+          "areaM2": 1184,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7242,
+            6882
+          ],
+          "areaM2": 1152,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            8082,
+            2106
+          ],
+          "areaM2": 1072,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            2398,
+            6306
+          ],
+          "areaM2": 1024,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            5574,
+            9924
+          ],
+          "areaM2": 992,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            3722,
+            6778
+          ],
+          "areaM2": 992,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            6584,
+            5292
+          ],
+          "areaM2": 992,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7406,
+            6458
+          ],
+          "areaM2": 960,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            8718,
+            2568
+          ],
+          "areaM2": 944,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            11342,
+            1538
+          ],
+          "areaM2": 928,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            7288,
+            3214
+          ],
+          "areaM2": 912,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            5094,
+            6368
+          ],
+          "areaM2": 816,
+          "class": "grey-river"
+        },
+        {
+          "centreWorldM": [
+            9328,
+            470
+          ],
+          "areaM2": 800,
+          "class": "grey-river"
+        }
+      ],
+      "newBodies": 87
+    }
+  },
+  "outputs": {
+    "inlandMaskPng": "packages/map-assets/everon/staging/sap/water-inland-mask.png (gitignored)",
+    "previewPng": "packages/map-assets/everon/staging/sap/water-spike-preview.png (gitignored)"
+  }
+}
