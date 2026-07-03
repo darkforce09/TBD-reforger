@@ -105,6 +105,13 @@
     "inlandMaskSource": "supertexture-water-appearance-dem-filtered — pixels the engine's SAP renderer drew with the underwater/seabed treatment (smooth desaturated grey), cross-filtered by DEM: coast exclusion, engine-exact-flat pad rejection (kills runways/graded bases), slope rejection (kills rock faces), density opening (kills roads/roofs), min-area 2000 m²; 38 accepted bodies (central lake 18.8 ha + river network + coastal wetlands), each visually audited",
     "spikeArtifact": ".ai/artifacts/t090_1_2_5_water_source_spike.json",
     "verifyLog": ".ai/artifacts/t090_1_2_5_verify_log.md",
+    "refine": {
+      "slice": "T-090.1.2.5.1",
+      "summary": "inland mask two-tier refine: compact-class flatFrac 0.5→0.12 kills engine-graded town pavement (all operator FP sites rejected, 0 bodies within 250 m); new linear class splits grey rivers (engine water appearance, soft carve-or-lowland guard) from wet channels (dark carved mountain streams — DEM valley carve boxBlur(48 m)−DEM > 0.8 m mandatory at valleyFrac >= 0.7). 114 accepted bodies (25/38 prior retained — 13 dropped all pavement-class — + 85 new stream/marsh segments), all montage-audited. Eden.topo probe: BE-float32 world-coord polylines confirmed, framing undecoded (T-090.8 lead).",
+      "spikeArtifact": ".ai/artifacts/t090_1_2_5_1_refine_spike.json",
+      "verifyLog": ".ai/artifacts/t090_1_2_5_1_verify_log.md",
+      "generatedAt": "2026-07-03T12:21:30Z"
+    },
     "forbiddenMethodsAttestation": "no hand-painted lakes, no AI rivers, no solid rectangles — every water pixel comes from engine data (DEM heights or engine-rendered supertexture), land pixels outside the mask are byte-identical",
     "blockedCandidates": "Eden_<N>_layer.edds splat weights decoded but material palette locked in Eden_<N>.ttile/Eden.ent (non-zlib pak codec); .Rivers flow maps + .Shore atlas readable but placements live in Eden.ent; Workbench in game mode at spike time (WorldEditorAPI unavailable) — see spike JSON for the full trail",
     "generatedAt": "2026-07-03T11:38:07Z"
