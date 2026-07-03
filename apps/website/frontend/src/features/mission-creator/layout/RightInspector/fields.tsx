@@ -151,6 +151,7 @@ export function SliderField({
   min = 0,
   max = 100,
   step = 5,
+  decimals,
 }: {
   label: string
   value: number
@@ -159,8 +160,13 @@ export function SliderField({
   min?: number
   max?: number
   step?: number
+  /** Readout decimal places; defaults to 1 when step < 1, else 0. */
+  decimals?: number
 }) {
   const clamped = Math.min(max, Math.max(min, value))
+  const readoutDecimals = decimals ?? (step < 1 ? 1 : 0)
+  const readout =
+    readoutDecimals > 0 ? clamped.toFixed(readoutDecimals) : String(Math.round(clamped))
   return (
     <div
       className={cn('flex items-center justify-between gap-3 py-0.5', disabled && 'opacity-50')}
@@ -177,8 +183,8 @@ export function SliderField({
           onChange={(e) => onChange(Number(e.target.value))}
           className={cn('w-32 accent-primary', disabled && 'cursor-not-allowed')}
         />
-        <span className="w-9 text-right font-mono text-label-md tabular-nums text-on-surface">
-          {clamped}%
+        <span className="w-11 text-right font-mono text-label-md tabular-nums text-on-surface">
+          {readout}%
         </span>
       </div>
     </div>

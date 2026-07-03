@@ -29,9 +29,9 @@ const WEATHER = [
   { value: 'dense_fog', label: 'Dense Fog' },
 ]
 
-/** Stored 0–1 hillshade blend → slider percent; unset defaults to 40% (T-090.1.2.6). */
+/** Stored 0–1 hillshade blend → slider percent (0.1% steps); unset defaults to 40%. */
 function hillshadePercent(env: MissionMeta['environment'] | undefined): number {
-  return Math.round((env?.hillshadeOpacity ?? 0.4) * 100)
+  return Math.round((env?.hillshadeOpacity ?? 0.4) * 1000) / 10
 }
 
 export function MissionSettingsDialog({
@@ -123,8 +123,11 @@ export function MissionSettingsDialog({
           <SliderField
             label="Hillshade strength"
             value={hillshadePercent(env)}
+            step={0.1}
             disabled={!hillshadeOn}
-            onChange={(pct) => updateEnvironment(md, { hillshadeOpacity: pct / 100 })}
+            onChange={(pct) =>
+              updateEnvironment(md, { hillshadeOpacity: Math.round(pct * 10) / 1000 })
+            }
           />
         </div>
       </DialogContent>
