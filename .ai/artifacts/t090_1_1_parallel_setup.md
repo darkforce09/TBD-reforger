@@ -11,7 +11,9 @@
 |-------|-----|--------|---------|
 | **T-090.1.1** Map cartographic view | repo root | `main` | `scripts/map-assets/`, `packages/map-assets/everon/tiles/map/`, MC frontend basemap |
 
-**Single stream** — no worktree required (unlike T-090.2 parallel taxonomy).
+**Single stream** — no worktree required.
+
+**Parallel with:** **T-092.1 → T-092.2** on [`TBD-T-092`](../worktrees/TBD-T-092/) — see [`t092_parallel_setup.md`](../t092_parallel_setup.md).
 
 ---
 

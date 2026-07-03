@@ -150,7 +150,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a` (`make map-water-everon`) · **T-090.2** @ `691d9b26` · **next:** **T-090.1.1** · **T-090.3** · perfect water → **T-143** (`idea`).
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a` · **Parallel:** **T-092.1→.2** worktree [`TBD-T-092`](.ai/artifacts/worktrees/TBD-T-092/) · handoff [`.ai/artifacts/t092_SEND_TO_CLAUDE.md`](.ai/artifacts/t092_SEND_TO_CLAUDE.md).
 
 **Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
 

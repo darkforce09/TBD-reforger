@@ -24,8 +24,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-092 — Spawn transform parity + mod mission compile
 
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
+- **Active slice:** `T-092.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
 - **Branch:** `ticket/T-092`
 - **Targets:** root, website, mod
-- **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.
+- **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Active: T-092.1 → T-092.2 on ticket/T-092 worktree (parallel T-090.1.1 on main). Hub: t092_spawn_transform_program.md.

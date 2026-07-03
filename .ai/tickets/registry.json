@@ -2163,6 +2163,7 @@
       "order": 920,
       "program": "infra",
       "status": "ready",
+      "active_slice": "T-092.1",
       "surfaces": [
         "DATA"
       ],
@@ -2172,7 +2173,7 @@
         "compiler"
       ],
       "title": "Spawn transform parity + mod mission compile",
-      "summary": "Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md.",
+      "summary": "Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Active: T-092.1 → T-092.2 on ticket/T-092 worktree (parallel T-090.1.1 on main). Hub: t092_spawn_transform_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "slices": [
         "T-092.0",
@@ -2201,7 +2202,8 @@
             "root"
           ],
           "executor": "cursor-docs",
-          "spec": "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md"
+          "spec": "docs/specs/Mission_Creator_Architecture/t092_0_spawn_contract.md",
+          "status": "shipped"
         },
         "T-092.1": {
           "targets": [
@@ -2209,7 +2211,8 @@
             "shared"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md"
+          "spec": "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md",
+          "status": "ready"
         },
         "T-092.2": {
           "targets": [
@@ -2217,7 +2220,8 @@
             "shared"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md"
+          "spec": "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md",
+          "status": "ready"
         }
       }
     },

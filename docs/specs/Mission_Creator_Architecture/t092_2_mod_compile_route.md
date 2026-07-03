@@ -1,7 +1,7 @@
 # T-092.2 — Mod compile flatten + /compiled API
 
 **Ticket:** T-092 · **Slice:** T-092.2  
-**Status:** Spec ready — blocked on **T-092.1**  
+**Status:** Spec ready — **queued after T-092.1** (same `ticket/T-092` worktree)  
 **Executor:** claude-code  
 **Authority:** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
 

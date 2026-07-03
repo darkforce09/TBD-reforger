@@ -1,6 +1,6 @@
 # T-092 — Spawn transform parity + mod mission compile
 
-**Status:** **ready** — **T-091.2 shipped** @ `dde589e` (T-091 program complete).  
+**Status:** **ready** — **Active slice:** **T-092.1** → **T-092.2** (sequential on `ticket/T-092` worktree; parallel **T-090.1.1** on `main`). **T-091.2 shipped** @ `dde589e`.  
 **Ticket:** T-092 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Map program:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 

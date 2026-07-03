@@ -1,7 +1,7 @@
 # T-092.1 — Mod spawn height + yaw policy
 
 **Ticket:** T-092 · **Slice:** T-092.1  
-**Status:** Spec ready — **T-091.2 shipped** @ `dde589e` (unblocked)  
+**Status:** Spec ready — **active** (worktree `ticket/T-092`) — **T-091.2 shipped** @ `dde589e`  
 **Executor:** claude-code (+ MCP / Workbench verify)  
 **Authority:** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
 
