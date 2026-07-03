@@ -31,6 +31,7 @@
 - **T-129** (idea) — Building floor selector [MAP, UI] — Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)
 - **T-138** (idea) — One-command self-host install [DATA] — Single script: deps check, .env, db-up, migrate, seed, optional map-assets — fork-friendly community install story.
 - **T-140** (idea) — Mission client payload budget [DATA] — Spike: compiled mission size vs slot count; max entities for console; server-only bulk vs client sync policy. Post T-092.
+- **T-143** (idea) — Perfect water — exact hydrology + water placement guard [MAP, DATA] — Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested.
 
 ## platform
 

@@ -16,7 +16,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md",
       "branch": "ticket/T-090"
     },
     {
