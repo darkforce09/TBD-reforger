@@ -110,7 +110,7 @@ Automated gates and **original regression coords** (town pads ~4776/9268, lake 4
 | **Residual FN** | Dry carved channels / gullies still without water tint | Same viewport — adjacent dark linear depressions without overlay; not all hill/lowland streams captured |
 | **Trade** | `.2.5` flat wetlands dropped with pavement (flatFrac 0.12) | Documented in verify log — estuaries not on operator keep-list |
 
-**Next levers (not this slice):** decode **Eden.topo** road polylines for corridor subtraction (**T-090.8** / R3 lead); per-body montage audit tightening on wet-channel thresholds; entity hydrology export (**T-090.3** / **T-090.8**). Optional follow-on slice **T-090.1.2.5.2** if operator wants another mask pass before **T-090.1.1**.
+**Next levers (superseded @ `.2.5.2`):** `.2.5.2` @ `1c07d97a` shipped G1-B road guard + `make map-water-everon`; operator **good enough**. Far-future perfection → **T-143** (`idea`). Entity hydrology → **T-090.3** / **T-090.8**.
 
 Artifacts: [`.ai/artifacts/t090_1_2_5_1_verify_log.md`](../../../.ai/artifacts/t090_1_2_5_1_verify_log.md) · [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](../../../.ai/artifacts/t090_1_2_5_1_refine_spike.json)
 

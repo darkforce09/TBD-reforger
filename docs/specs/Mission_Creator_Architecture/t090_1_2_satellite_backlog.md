@@ -2,7 +2,8 @@
 
 **Program hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
 **Registry active slice:** `./scripts/ticket brief T-090` → **T-090.1.1** (Map cartographic view)  
-**Last shipped:** **T-090.1.2.5.1** @ `82488c6f` · **T-090.1.2.5** @ `6396960f` · **T-090.1.2.6** @ `b958e3b4`
+**Water (good enough):** **T-090.1.2.5.2** @ `1c07d97a` · `make map-water-everon`  
+**Last shipped:** **T-090.2** @ `691d9b26`
 
 ---
 
@@ -14,7 +15,7 @@
 | **Delivery** | **Unified** `everon-sat.tbd-sat` (205.9 MB LFS) — one fetch + GPU mip chain; pyramid fallback via `delivery: "pyramid"` |
 | **Detail @ max zoom** | Acceptable; residual soft ~256 m band is BI-baked (not fixable without new source) |
 | **Pan / zoom feel** | **T-090.1.2.8 shipped** — no tile pop-in by construction (single BitmapLayer + trilinear mips) |
-| **Water** | **T-090.1.2.5** @ `6396960f` · **T-090.1.2.5.1** @ `82488c6f` shipped · operator post-ship: **residual FP/FN** (see verify log) |
+| **Water** | **T-090.1.2.5.2** @ `1c07d97a` — **good enough** (`make map-water-everon`); perfect water → **T-143** (`idea`) |
 | **Hillshade** | **T-090.1.2.6** shipped @ `b958e3b4` (Mission Settings strength slider) |
 
 **Format spike:** [`.ai/artifacts/t090_1_2_8_format_spike.json`](../../../.ai/artifacts/t090_1_2_8_format_spike.json) · **Verify:** [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md)
@@ -26,7 +27,8 @@
 ```text
 1. T-090.1.2.8  Unified satellite texture     ✓ @ db9057ef
 2. T-090.1.2.5  Satellite water composite     ✓ @ 6396960f
-2b. T-090.1.2.5.1  Inland mask refine        ✓ @ 82488c6f (residual FP/FN — operator review)
+2b. T-090.1.2.5.1  Inland mask refine        ✓ @ 82488c6f
+2c. T-090.1.2.5.2  .topo road guard + button ✓ @ 1c07d97a (operator: good enough)
 3. T-090.1.2.6  Hillshade blend control       ✓ @ b958e3b4
 4. T-090.1.1    Map cartographic view         ← ACTIVE
 —  T-090.1.2.3  Tile prefetch (legacy pyramid interim only)
@@ -43,7 +45,8 @@
 | Slice | Status | Spec | Send-off |
 |-------|--------|------|----------|
 | **T-090.1.2.8** | shipped @ `db9057ef` | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | verify log |
-| **T-090.1.2.5.1** | shipped @ `82488c6f` | [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) | verify log + crops |
+| **T-090.1.2.5.2** | shipped @ `1c07d97a` | [`t090_1_2_5_2_water_topo_refine.md`](t090_1_2_5_2_water_topo_refine.md) | verify log + crops |
+| **T-090.1.2.5.1** | shipped @ `82488c6f` | [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) | verify log |
 | **T-090.2** | shipped @ `691d9b26` | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) | verify log |
 | **T-090.1.1** | **active** | [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | — |
 | **T-090.1.2.5** | shipped @ `6396960f` | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | verify log |

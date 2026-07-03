@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). T-090.2 @ 691d9b26 (taxonomy S1–S10). T-090.1.2.5.1 @ 82488c6f (water refine). Active: T-090.1.1 Map view. T-090.3 export unblocked. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). Water composite good-enough @ T-090.1.2.5.2 (1c07d97a, make map-water-everon). T-090.2 @ 691d9b26. Active: T-090.1.1 Map view. T-090.3 export unblocked. Perfect water → T-143 (idea). Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1844,6 +1844,7 @@
         "T-090.1.2.4",
         "T-090.1.2.5",
         "T-090.1.2.5.1",
+        "T-090.1.2.5.2",
         "T-090.1.2.6",
         "T-090.1.2.8",
         "T-090.1.1",
@@ -1971,6 +1972,16 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md",
           "status": "shipped",
           "shipped_at": "82488c6f"
+        },
+        "T-090.1.2.5.2": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_5_2_water_topo_refine.md",
+          "status": "shipped",
+          "shipped_at": "1c07d97a"
         },
         "T-090.1.2.6": {
           "targets": [

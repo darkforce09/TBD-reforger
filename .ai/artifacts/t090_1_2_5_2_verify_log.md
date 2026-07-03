@@ -65,6 +65,10 @@ R-REG3 PASS — land byte-identical (inward-only feather)
 
 **Expected visual change vs `.2.5.1` (heads-up for operator):** several long blue ribbons from earlier ships are now GREY — the `.topo` decode + full-res inspection proved them to be roads (the exact class the FP report flagged). Everon's mapped water = lake + valley stream/gully network + coastal wetlands; there is no long lowland river in the engine's own road-vs-terrain data that we can substantiate. If BI's official map shows named rivers the composite still misses, the exact-geometry escalation path is `Eden.ent` water entities via Workbench export (T-090.8) — `.topo` definitively does not carry them.
 
-## LFS churn note
+## Operator verdict (2026-07-03)
+
+**Good enough — ship stands.** Important hydrology present; minor mask misses acceptable (missions playtested). Far-future perfection + MC water placement guard → **T-143** (`idea`, registry @ `ce09b6ab`).
+
+**Commit:** `1c07d97a` · **Tag:** `T-090.1.2.5.2`
 
 Same class as prior slices: `everon-sat.tbd-sat` rewritten (152.7 MB) + 5,462 lossless WebP tiles.
