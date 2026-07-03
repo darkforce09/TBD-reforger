@@ -145,6 +145,11 @@
               "type": "string",
               "description": "N9 — synthesized-cartographic = DEM hillshade + land-cover LUT + baked road vectors when Workbench has no cartographic export; UI labels it \"Synthetic map\".",
               "enum": ["workbench-cartographic", "synthesized-cartographic"]
+            },
+            "encoding": {
+              "type": "string",
+              "description": "Tile codec — webp-lossy (VP8 q=N) is the Map-view default (stylized cartographic raster, T-090.1.1); lossless is a satellite-only requirement.",
+              "enum": ["webp-lossy", "webp-lossless", "png"]
             }
           }
         }

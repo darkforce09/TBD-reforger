@@ -7,6 +7,7 @@ import {
   useMapStore,
   useBasemapView,
   setBasemapView,
+  type BasemapView,
   type MissionDoc,
   type MissionMeta,
 } from '@/features/tactical-map'
@@ -34,6 +35,31 @@ function hillshadePercent(env: MissionMeta['environment'] | undefined): number {
   return Math.round((env?.hillshadeOpacity ?? 0.4) * 1000) / 10
 }
 
+/** One Basemap segment button (Satellite | Map) — active styling keyed on the current view. */
+function BasemapViewButton({
+  view,
+  label,
+  current,
+}: {
+  view: BasemapView
+  label: string
+  current: BasemapView
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => setBasemapView(view)}
+      className={`flex-1 rounded-md border px-2.5 py-1.5 text-label-md transition-colors ${
+        current === view
+          ? 'border-primary/60 bg-primary/10 text-on-surface'
+          : 'border-outline-variant/40 text-outline hover:bg-surface-container-lowest/60'
+      }`}
+    >
+      {label}
+    </button>
+  )
+}
+
 export function MissionSettingsDialog({
   md,
   open,
@@ -47,7 +73,7 @@ export function MissionSettingsDialog({
   const env = meta?.environment
   const hillshadeOn = env?.showHillshade === true
   // Basemap view is a per-user pref (localStorage), not mission meta — it travels with the
-  // user, not the mission (dual-view N8). T-090.1 ships Satellite; Map lands in T-090.1.1.
+  // user, not the mission (dual-view N8).
   const basemapView = useBasemapView()
 
   return (
@@ -86,25 +112,8 @@ export function MissionSettingsDialog({
 
           <Field label="Basemap">
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setBasemapView('satellite')}
-                className={`flex-1 rounded-md border px-2.5 py-1.5 text-label-md transition-colors ${
-                  basemapView === 'satellite'
-                    ? 'border-primary/60 bg-primary/10 text-on-surface'
-                    : 'border-outline-variant/40 text-outline hover:bg-surface-container-lowest/60'
-                }`}
-              >
-                Satellite
-              </button>
-              <button
-                type="button"
-                disabled
-                title="Map view ships in T-090.1.1"
-                className="flex-1 cursor-not-allowed rounded-md border border-outline-variant/20 px-2.5 py-1.5 text-label-md text-outline"
-              >
-                Map <span className="opacity-60">(soon)</span>
-              </button>
+              <BasemapViewButton view="satellite" label="Satellite" current={basemapView} />
+              <BasemapViewButton view="map" label="Map" current={basemapView} />
             </div>
           </Field>
 

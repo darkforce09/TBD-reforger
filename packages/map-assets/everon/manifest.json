@@ -62,7 +62,8 @@
     "map": {
       "path": "tiles/map",
       "urlTemplate": "/map-assets/everon/tiles/map/{z}/{x}/{y}.webp",
-      "source": "synthesized-cartographic"
+      "source": "workbench-cartographic",
+      "encoding": "webp-lossy"
     }
   },
   "objects": {

@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -46,6 +46,15 @@ map-water-everon: ## One-button Everon water composite: restore → mask → com
 	node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
 	node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
 	EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+
+map-cartographic-everon: ## One-button Everon Map view (stylized cartographic): staging ortho → pyramid → manifest patch → verify (T-090.1.1)
+	TERRAIN=everon node scripts/map-assets/build-map-cartographic.mjs
+	bash scripts/map-assets/build-tile-pyramid.sh --input packages/map-assets/everon/staging/map/everon-map-ortho.png --out packages/map-assets/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256
+	node -e "const fs=require('fs'),mp='packages/map-assets/everon/manifest.json',m=JSON.parse(fs.readFileSync(mp,'utf8'));Object.assign(m.tiles.map,{source:'workbench-cartographic',encoding:'webp-lossy'});fs.writeFileSync(mp,JSON.stringify(m,null,2)+'\n')"
+	$(MAKE) map-cartographic-verify
+
+map-cartographic-verify: ## Verify the Everon Map pyramid (complete z0–6 + manifest agreement, T-090.1.1)
+	VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 
 test: ## Run Go unit tests
 	cd $(WEB) && go test ./...

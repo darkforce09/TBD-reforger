@@ -64,9 +64,14 @@ export default function MissionCreatorPage() {
     if (useMapStore.getState().selection.ids.length <= 1) setAttributesId(id)
   }, [])
 
-  // Satellite basemap 404 → keep editing on the grid, tell the user once (T-090.1).
+  // Basemap 404 (either view) → keep editing on the grid, tell the user once (T-090.1/.1.1).
   const onBasemapDegraded = useCallback(
-    () => toast.error('Satellite basemap unavailable — showing grid only.'),
+    (view: 'satellite' | 'map') =>
+      toast.error(
+        view === 'map'
+          ? 'Map basemap unavailable — showing grid only.'
+          : 'Satellite basemap unavailable — showing grid only.',
+      ),
     [],
   )
 

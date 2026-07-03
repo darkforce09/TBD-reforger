@@ -1,0 +1,51 @@
+{
+  "ticket": "T-090.1.1",
+  "phase": "P0 source spike — Map cartographic view raster source",
+  "decidedAt": "2026-07-03",
+  "verdict": {
+    "winner": "G1-A",
+    "source": "workbench-cartographic",
+    "summary": "MapDataExporter.ExportRasterization stylized raster (the tier honestly FAILED for Satellite @ T-090.1.2.4) is the correct product tier for the Map view. The 4096x4096 export already exists on disk from T-090.1 — fully offline, no Workbench session needed. Upscaled 4096->12800 (Lanczos) to match world bounds, then tiled z0-6."
+  },
+  "candidates": [
+    {
+      "id": "G1-A",
+      "name": "MapDataExporter.ExportRasterization via TBD_SatelliteExportPlugin.c",
+      "status": "WINNER",
+      "artifact": "packages/map-assets/everon/staging/spike/TBD_SatExport_everon.tga",
+      "provenance": {
+        "producedBy": "apps/mod/tbd-framework/Scripts/WorkbenchGame/TBD_SatelliteExportPlugin.c (MapDataExporter.ExportRasterization + SetupColors land/ocean/forest palette on worlds/Eden/Eden.ent)",
+        "shippedAt": "T-090.1 @ 564419e",
+        "format": "TGA 4096x4096 8-bit sRGB, top-origin (north-up)",
+        "bytes": 67108882
+      },
+      "decision": "Upscale 4096->12800 with ImageMagick -filter Lanczos (documented upscale, sanctioned by slice spec §1). No vertical flip anywhere: TGA top row = north, build-tile-pyramid.sh crops row-major with y=0 = north = on-disk XYZ; frontend tileUrl() does the single XYZ<->south-first inversion.",
+      "notes": "The raw TGA alone missed the product bar ('roads + terrain palette'): it carries NO road network and misses most inland water (contact-sheet inspection). The shipped ortho composes the G1-A base with two offline overlays (both sanctioned Map-tier inputs): (1) inland-water tint from the T-090.1.2.5.2 classifier mask (read-only reuse, color matched to the TGA's own ocean teal #2E5266); (2) the .topo road network stroked per tier via decode-topo.mjs. NEW DECODE FINDING: .topo road records are not clean centerlines — at (nearly) every centerline vertex the polyline detours to an offset point exactly one road-width away and back (geometry-baked width encoding, e.g. constant 8.0 m on secondaries; 196,440 raw verts -> 51,045 after despike). build-map-cartographic.mjs despike() strips dups, return-spikes, and >3.5 m perpendicular excursions to recover centerlines."
+    },
+    {
+      "id": "G1-B",
+      "name": "defSatMap_BCR.edds / MapEntity background from pak",
+      "status": "REJECT",
+      "reason": "t090_1_2_4_engine_render_spike.json: single GLOBAL default sat map — low-res engine fallback, not Everon's actual terrain. Also decode-edds.mjs is hardcoded to Eden SAP supertexture cells; a loose-.edds path would be new work for a worse raster."
+    },
+    {
+      "id": "G1-D",
+      "name": "Workbench GUI export (Export Map Data -> Satellite Background Image)",
+      "status": "NOT-NEEDED",
+      "reason": "Same MapDataExporter tier as G1-A; the G1-A artifact is already on disk, so a live Workbench session (wb_* MCP tools require Workbench running under Proton) buys nothing for v1. Re-export path stays documented in build-map-cartographic.mjs error text for a lost/stale TGA."
+    },
+    {
+      "id": "G1-C",
+      "name": "N9 offline synth (DEM hillshade + land-cover LUT + .topo roads + water mask)",
+      "status": "NOT-NEEDED",
+      "reason": "Honest-stop fallback only — a real cartographic source (G1-A) exists. Also blocked on substance: no offline land-cover source (per-point terrain colour absent from engine API; material palette locked in non-zlib pak codec per t090_1_2_4 spike), and no hillshade build script exists (T-090.1.2.6 hillshade is a frontend DEM layer). .topo is vector-only input (t090_1_2_5_2_source_spike.json), not a raster."
+    }
+  ],
+  "pipeline": {
+    "stagingOrtho": "packages/map-assets/everon/staging/map/everon-map-ortho.png (12800x12800 north-up: Lanczos upscale + inland-water tint + despiked .topo road strokes)",
+    "pyramid": "packages/map-assets/everon/tiles/map z0-6, 256px WebP q80 lossy (lossless is a satellite-only rule), + full.webp fallback",
+    "oneButton": "make map-cartographic-everon",
+    "manifest": "tiles.map.source=workbench-cartographic, tiles.map.encoding=webp-lossy (pyramid LOD only — no unified delivery for Map v1)",
+    "opsNote": "ImageMagick disk spill must not land on tmpfs /tmp (OOM SIGKILL observed); build-map-cartographic.mjs sets MAGICK_TEMPORARY_PATH=/var/tmp + -limit memory/map."
+  }
+}

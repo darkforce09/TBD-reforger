@@ -3,6 +3,7 @@
 // should import (via the barrel `index.ts`).
 
 import type { TerrainId } from './coords/terrains'
+import type { BasemapView } from './state/basemapView'
 
 export type { TerrainId } from './coords/terrains'
 
@@ -51,8 +52,8 @@ export interface TacticalMapProps {
   onAssetDrop?: (payload: AssetDropPayload, world: { x: number; y: number }) => void
   /** Commit a drag-move of one or more entities by a world-meter delta (Phase 7b). */
   onEntitiesMove?: (ids: string[], delta: { x: number; y: number }) => void
-  /** Fired once when the satellite basemap can't load (404) → host shows a grid-only toast (T-090.1). */
-  onBasemapDegraded?: () => void
+  /** Fired when a basemap view can't load (404) → host shows a grid-only toast (T-090.1/.1.1). */
+  onBasemapDegraded?: (view: BasemapView) => void
   /** Unified satellite bundle load progress (T-090.1.2.8): fraction 0..1 while fetching +
    *  decoding (1 = GPU texture live); null = load abandoned (fallback/unmount) → dismiss. */
   onBasemapProgress?: (fraction: number | null) => void
