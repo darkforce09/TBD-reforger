@@ -20,7 +20,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.5 @ 6396960f (water composite). Active: T-090.1.2.5.1 inland mask refine (roads FP, hill rivers FN). Hub: t090_091_map_terrain_program.md.
+- **Summary:** Eden-like map detail (N1-N12). T-090.1.2.5 @ 6396960f (water composite). Active: T-090.1.2.5.1 inland mask refine (main). Parallel: T-090.2 taxonomy @ ticket/T-090-2 worktree. Hub: t090_091_map_terrain_program.md.
 
 ## T-092 — Spawn transform parity + mod mission compile
 

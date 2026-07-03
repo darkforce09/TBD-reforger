@@ -1,9 +1,32 @@
 # T-090.2 — Map object taxonomy + schema
 
 **Ticket:** T-090 · **Slice:** T-090.2  
-**Status:** Spec ready (blocked on **T-090.1** basemap for visual verify)  
-**Executor:** cursor-docs (spec + schema) → **claude-code** (JSON Schema + golden fixture)  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
+**Status:** **READY** — schema scaffolding @ **T-090.0.2**; ship **S1–S10** acceptance + golden coverage + verify scripts  
+**Executor:** **claude-code** (T-090.0.2 was cursor-docs schema bootstrap)  
+**Parallel:** safe with **T-090.1.2.5.1** on `main` — no `packages/map-assets/everon/satellite/**` or ortho pipeline overlap  
+**Worktree:** `.ai/artifacts/worktrees/TBD-T-090-2` · branch `ticket/T-090-2` · playbook [`.ai/artifacts/t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md)  
+**Blocked for:** visual render verify (**T-090.5**); Workbench export counts (**T-090.3**) — not blocking schema/golden ship  
+**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
+**Handoff:** [`.ai/artifacts/t090_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_2_claude_code_handoff.md)
+
+---
+
+## Bootstrap @ T-090.0.2 (shipped — Claude Code must not redo)
+
+**T-090.0.2** (cursor-docs) landed the schema scaffolding and partial goldens. **T-090.2** completes **acceptance S1–S10**, not a second schema rewrite.
+
+| Delivered @ bootstrap | Path |
+|----------------------|------|
+| Enum single-source | `schema/map-object-enums.schema.json` |
+| Prefab / instance / region / roads / catalog / resolved / type-inventory schemas | `schema/map-object-*.schema.json` |
+| AJV wiring | `packages/tbd-schema/scripts/validate.mjs` |
+| Enum drift gate (S10) | `scripts/verify-map-object-enums.mjs` |
+| Glyph gate | `scripts/verify-map-glyphs-manifest.mjs` |
+| Partial goldens | `golden/map-objects/*` |
+| Classify rules v1 | `rules/prefab-classify.json` |
+| Census stub | `scripts/map-assets/census-types.mjs` + `everon/objects/type-inventory.json` (`pending_export`) |
+
+**Baseline:** `make schema-validate` exit 0 @ `0418d952`.
 
 ---
 
@@ -478,17 +501,28 @@ If absent, T-090.6 uses **kind defaults** (see `t090_6_geometry_placement_audit.
 
 ---
 
-## Deliverables
+## Deliverables (T-090.2 ship — post bootstrap)
 
-| # | Artifact | Path |
-|---|----------|------|
-| 1 | Catalog schema | `packages/tbd-schema/schema/map-object-catalog.schema.json` |
-| 2 | Prefab schema | `packages/tbd-schema/schema/map-object-prefab.schema.json` |
-| 3 | **Enum schema (all class types)** | `packages/tbd-schema/schema/map-object-enums.schema.json` |
-| 4 | **Resolved schema (Eden AI)** | `packages/tbd-schema/schema/map-object-resolved.schema.json` |
-| 5 | Golden sample | `packages/tbd-schema/golden/map-objects-everon-sample.json` |
-| 6 | **Type inventory script** | `scripts/map-assets/census-types.mjs` → `type-inventory.json` |
-| 7 | Classify rules | `packages/tbd-schema/rules/prefab-classify.json` |
+| # | Artifact | Path | T-090.2 action |
+|---|----------|------|----------------|
+| 1–4 | Schemas | `packages/tbd-schema/schema/map-object-*.schema.json` | **Verify only** — extend enums only if S9 requires |
+| 5 | Golden fixtures | `packages/tbd-schema/golden/map-objects/*` | **Expand** — full S9 enum coverage |
+| 6 | Semantic verifier | `packages/tbd-schema/scripts/verify-map-object-golden.mjs` | **Create** — S2–S9 gates |
+| 7 | Classify rules | `packages/tbd-schema/rules/prefab-classify.json` | **Extend** — new class patterns |
+| 8 | Census script | `scripts/map-assets/census-types.mjs` | **Stub only** — full compute waits for T-090.3 |
+| 9 | Verify log | `.ai/artifacts/t090_2_verify_log.md` | **Fill on ship** |
+| 10 | Manifest stub (optional) | `packages/map-assets/everon/manifest.json` `objects` block | Schema-valid paths to goldens |
+
+---
+
+## S9 gap audit (@ bootstrap — T-090.2 must close)
+
+| Surface | Missing coverage |
+|---------|------------------|
+| `map-object-prefabs-sample.json` | tree `dead`/`unknown`; vegetation `grass`/`fern`/`dead`/`unknown`; rock `cliff`/`pebble`/`scree`/`unknown`; prop `barrier`/`sign`/`furniture`/`debris`/`pebble`/`unknown`; utility `lamp`/`antenna`/`pipeline`/`unknown`; water `dock`/`buoy`/`unknown`; road prefab all classes except `road_paved` |
+| `map-object-roads-sample.json` | `road_paved`, `path`, `runway`, `unknown` |
+| `map-object-regions-everon-sample.json` | `waterBody` region kind |
+| `buildingClass` | **Complete** (14/14) @ bootstrap |
 
 ---
 
@@ -496,8 +530,9 @@ If absent, T-090.6 uses **kind defaults** (see `t090_6_geometry_placement_audit.
 
 ```bash
 make schema-validate
-# After schema lands:
-make schema-codegen   # if TS types generated
+make map-object-enums-verify
+make map-census TERRAIN=everon
+cd packages/tbd-schema && npm run verify-map-object-golden   # after T-090.2 lands script
 ```
 
 | ID | Check | Pass |
@@ -515,12 +550,107 @@ make schema-codegen   # if TS types generated
 
 ---
 
+## Locked decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Do not re-scaffold T-090.0.2 schemas | Bootstrap shipped; T-090.2 = goldens + semantic gates |
+| `verify-map-object-golden.mjs` owns S2–S9 | S1/S10 stay in `validate.mjs` + `verify-map-object-enums.mjs` |
+| Golden paths stay under `golden/map-objects/` | No monolithic `map-objects-everon-sample.json` rename |
+| Census stays `pending_export` until T-090.3 | `census-types.mjs` validate-only path must keep exit 0 |
+| No satellite / ortho edits | Parallel stream A (`.2.5.1`) owns SAP water |
+| No render / FE code | T-090.5 |
+
+---
+
 ## Out of scope
 
 - Workbench export (**T-090.3**)
 - Z audit script (**T-090.4**)
 - Deck.gl layers (**T-090.5**)
 - Building floor picker (**T-129**)
+- Docs/registry edits during Claude Code run (Cursor sync after merge)
+
+---
+
+## Ship
+
+Tag **`T-090.2`** · prefix **`T-090.2:`**  
+Handoff: [`.ai/artifacts/t090_2_claude_code_handoff.md`](../../../.ai/artifacts/t090_2_claude_code_handoff.md)  
+Verify log: [`.ai/artifacts/t090_2_verify_log.md`](../../../.ai/artifacts/t090_2_verify_log.md)
+
+---
+
+## Claude Code prompt — T-090.2 (copy-paste)
+
+Extract: `./scripts/ticket prompt T-090 --slice T-090.2` (run from worktree)
+
+```
+Read CLAUDE.md first.
+
+Implement **T-090.2** — map object taxonomy ship (S1–S10 goldens + semantic verifier).
+
+═══ PREFLIGHT ═══
+  cd .ai/artifacts/worktrees/TBD-T-090-2
+  git fetch origin && git rebase main
+  make schema-validate
+  ./scripts/ticket brief T-090
+
+═══ READ (in order — spec wins on conflict) ═══
+  1. .ai/artifacts/t090_2_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md
+  3. packages/tbd-schema/golden/map-objects/* (current partial S9)
+  4. packages/tbd-schema/scripts/validate.mjs + verify-map-object-enums.mjs
+
+═══ PROBLEM ═══
+  T-090.0.2 shipped schemas + partial goldens. Agents and T-090.3 export need closed enum
+  coverage (S9) and automated semantic gates (S2–S8) — not just AJV. Building classes are
+  complete; tree/vegetation/rock/prop/utility/water/road prefabs and waterBody regions are not.
+
+═══ SHIPPED (do not reopen) ═══
+  - T-090.0.2 — map-object schemas + validate.mjs wiring + partial goldens
+  - T-090.0 — program hub + verify script scaffolding
+
+═══ LOCKED ═══
+  - Expand goldens under golden/map-objects/* — no schema rewrite unless S1 fails
+  - Create verify-map-object-golden.mjs for S2–S9; wire npm script + schema-validate
+  - prefab-classify.json — extend rules; do not delete bootstrap rules
+  - census-types.mjs — validate-only; censusStatus stays pending_export
+  - No packages/map-assets/everon/satellite/** or ortho scripts
+  - No docs/registry edits
+
+═══ DO ═══
+  1. P0 — gap audit vs spec §S9 gap audit; confirm baseline make schema-validate PASS
+  2. Expand map-object-prefabs-sample.json for all missing class enum examples
+  3. Expand roads + regions (waterBody) + instances + resolved + catalog goldens as needed
+  4. Implement packages/tbd-schema/scripts/verify-map-object-golden.mjs (S2–S9)
+  5. npm run verify-map-object-golden + fold into make schema-validate
+  6. Extend prefab-classify.json for obvious new patterns
+  7. Optional: everon manifest objects stub (schema-valid)
+  8. .ai/artifacts/t090_2_verify_log.md — S1–S10 PASS table
+  9. Tag **T-090.2** · prefix **T-090.2:**
+
+═══ DO NOT ═══
+  - Edit docs/**, `.ai/tickets/registry.json`, CLAUDE status markers
+  - Touch satellite ortho / water composite (T-090.1.2.5.1 on main)
+  - Workbench export or full type-inventory compute (T-090.3)
+  - Deck.gl / MC render (T-090.5)
+
+═══ VERIFY (all exit 0) ═══
+  make schema-validate
+  make map-object-enums-verify
+  make map-census TERRAIN=everon
+  cd packages/tbd-schema && npm run verify-map-object-golden
+
+═══ MANUAL ═══
+  S9-full: verify-map-object-golden reports zero missing enum examples
+  S7-spot: one building + one tree prefab — full gameplay + ai blocks
+
+═══ RETURN ═══
+  - Commit SHA + tag T-090.2
+  - t090_2_verify_log.md with automated output
+  - **Ready for Cursor doc sync.**
+```
 
 ---
 

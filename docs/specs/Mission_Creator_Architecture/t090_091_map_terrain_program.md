@@ -30,11 +30,11 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.4  Engine render ortho spike  ✓ @ 0d6fe485 (P0 FAIL — SAP locked as source)
   → T-090.1.2.8  Unified satellite texture  ✓ @ db9057ef (tbd-sat v1 — one fetch + GPU mips)
   → T-090.1.2.5  Satellite water composite  ✓ @ 6396960f
-  → T-090.1.2.5.1  Inland mask refine  (ACTIVE — roads FP, hill rivers FN)
+  → T-090.1.2.5.1  Inland mask refine  (ACTIVE on main — roads FP, hill rivers FN)
   → T-090.1.2.6  Hillshade blend strength slider  ✓ @ b958e3b4
+  → T-090.2    taxonomy ship (S1–S10)  (PARALLEL — ticket/T-090-2 worktree; safe vs .2.5.1)
   → T-090.1.2.3  Basemap tile prefetch  (queued — interim pyramid only)
   → T-090.1.1  Map (.topo) cartographic view
-  → T-090.2    taxonomy + JSON schema (+ forest/field/waterBody region kinds)
   → T-090.3    phased export (+ forest-regions, dual tiles) — P1 → P10
   → T-090.4 + T-090.6 + T-090.8  Z/geometry audits + forest regions (parallel where deps met)
   → T-090.5    Deck.gl layers (forests first, Deck-orthographic-zoom LOD per render contract)
@@ -45,7 +45,7 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-129      building floor selector (idea — outside T-090; renumbered from T-126)
 ```
 
-**Blocker chain (110% satellite — post T-090.1.2.5):** **T-090.1.2.5.1** inland refine (active) → **T-090.1.1** (Map) → **T-090.2** → …
+**Blocker chain (110% satellite — post T-090.1.2.5):** **T-090.1.2.5.1** inland refine (active on `main`) → **T-090.1.1** (Map). **T-090.2** taxonomy ship runs **in parallel** on `ticket/T-090-2` — see [`.ai/artifacts/t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md). **T-090.3** export follows **T-090.2** ship.
 
 **Source locked @ T-090.1.2.4 FAIL:** SAP stitch + T-090.1.2.2 apron-bridge — no cleaner continuous sat-class ortho exists on current Enfusion APIs (see [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](../../../.ai/artifacts/t090_1_2_4_engine_render_spike.json)). Residual ~256 m soft band is source-baked. **T-090.1.2.8** @ `db9057ef` fixes tile flicker (tbd-sat v1 + one GPU texture); grid may remain at max MC zoom.
 

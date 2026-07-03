@@ -1,8 +1,12 @@
 # T-090 parallel setup — water (.2.5) + hillshade (.2.6)
 
-**Created:** 2026-07-03 · **Status:** ready to run
+**Status:** **CLOSED** — both streams shipped (`.2.5` @ `6396960f`, `.2.6` @ `b958e3b4`).
 
-## Streams
+**Current parallel pair:** **T-090.1.2.5.1** (main) + **T-090.2** (worktree) — see [`t090_2_parallel_setup.md`](t090_2_parallel_setup.md).
+
+---
+
+## Streams (historical)
 
 | Stream | Slice | CWD | Branch | Touches |
 |--------|-------|-----|--------|---------|

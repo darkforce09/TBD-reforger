@@ -34,7 +34,7 @@
 
 **Shipped dead end:** T-090.1.2.4 @ `0d6fe485` — do not re-open engine ortho without new engine API evidence.
 
-**Parallel (platform):** Fable audit remainder **T-130** — [`t130_fable_audit_remainder.md`](../../platform/t130_fable_audit_remainder.md)
+**Parallel (platform):** **T-090.2** map object taxonomy — [`t090_2_parallel_setup.md`](../../../.ai/artifacts/t090_2_parallel_setup.md) · Fable audit remainder **T-130** — [`t130_fable_audit_remainder.md`](../../platform/t130_fable_audit_remainder.md)
 
 ---
 
@@ -44,6 +44,7 @@
 |-------|--------|------|----------|
 | **T-090.1.2.8** | shipped @ `db9057ef` | [`t090_1_2_8_unified_satellite_texture.md`](t090_1_2_8_unified_satellite_texture.md) | verify log |
 | **T-090.1.2.5.1** | **active** | [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) | `t090_1_2_5_1_SEND_TO_CLAUDE.md` |
+| **T-090.2** | **parallel** (worktree) | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) | `t090_2_SEND_TO_CLAUDE.md` |
 | **T-090.1.2.5** | shipped @ `6396960f` | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | verify log |
 | **T-090.1.2.6** | shipped @ `b958e3b4` | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | verify log |
 
