@@ -1,7 +1,7 @@
 # T-090.1.1.1 — Map cartographic land-cover compose
 
 **Ticket:** T-090 · **Slice:** T-090.1.1.1  
-**Status:** **ready** — **active slice** on `main` (Claude Code)  
+**Status:** **shipped** @ **`018ea70d`** (tag **T-090.1.1.1**) — wb_play N/A (compose-only). Operator M3 PASS @ (4870, 7760). Verify: [`.ai/artifacts/t090_1_1_1_verify_log.md`](../../../.ai/artifacts/t090_1_1_1_verify_log.md).  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.1** @ `6e06e679` (Map pyramid + UI switch shipped)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md)

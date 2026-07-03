@@ -1,7 +1,7 @@
 # T-090.1.2.9 — Satellite road stroke overlay (readability)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.9  
-**Status:** **queued** — after **T-090.1.1.1** or parallel if operator prefers Satellite first  
+**Status:** **ready** — **active slice** on `main` (Claude Code) · after **T-090.1.1.1** @ `018ea70d`  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.5.2** @ `1c07d97a` (water composite + `decode-topo.mjs` + `despike()` pattern from **T-090.1.1** @ `6e06e679`)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md)
@@ -25,7 +25,7 @@ Satellite view is photographic but **hard to read** at MC zoom — slot placemen
 ## Goal
 
 1. New compose step (script or extend pipeline): stroke **road/airfield tiers only** from `decode-topo.mjs` (+ `despike()`) onto **`everon-sap-ortho.png`** (post-water composite).
-2. Rebuild **unified bundle** + **lossless satellite pyramid** — extend **`make map-water-everon`** or add **`make map-satellite-roads-everon`** that runs water restore → road overlay → bundle → pyramid → verify.
+2. Rebuild **unified bundle** + **lossless satellite pyramid** — extend **`make map-water-everon`** or add a **`map-satellite-roads-everon`** Makefile target (wired in this slice) that runs water restore → road overlay → bundle → pyramid → verify.
 3. **Road style:** semi-transparent strokes (tune alpha so photo remains visible — operator bar in verify log). Reuse tier colours/widths from `build-map-cartographic.mjs` as starting point; may differ for photo backdrop.
 4. **Do not** touch `tiles/map/`, Map compose, or building/airfield footprint fills beyond centreline strokes.
 

@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code work order:** **T-071** ORBAT Manager (**ready**, unblocked by T-092) · **T-090.1.1.1** Map land-cover compose (`main`, cursor-docs) · **T-090.1.2.9** Satellite road overlay (queued). Specs: [`t071_orbat_manager_program.md`](../specs/Mission_Creator_Architecture/t071_orbat_manager_program.md), [`t090_1_1_1_map_landcover_compose.md`](../specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md), [`t090_1_2_9_satellite_road_overlay.md`](../specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
+**Next Claude Code work order:** **T-090.1.2.9** Satellite road overlay (**active**) · then **T-090.3** object export. Eden (**T-071**, **T-068 Phase 2**) **deferred** until T-090 ships. Specs: [`t090_1_2_9_satellite_road_overlay.md`](../specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md), [`t090_3_map_asset_export.md`](../specs/Mission_Creator_Architecture/t090_3_map_asset_export.md). Hub: [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 

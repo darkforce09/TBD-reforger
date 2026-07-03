@@ -128,10 +128,11 @@ Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schem
 
 ```bash
 make map-water-everon          # satellite ortho + unified bundle + satellite pyramid
-make map-cartographic-everon   # Map view cartographic ortho + tiles/map pyramid (T-090.1.1)
+make map-cartographic-everon   # Map view: land-cover tints + water + roads → tiles/map pyramid (T-090.1.1.1)
+make map-cartographic-verify   # Pyramid z0–6 + manifest agreement
 ```
 
-See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick 12800² builds need spill on disk (not tmpfs `/tmp`) — `build-map-cartographic.mjs` pins `MAGICK_TEMPORARY_PATH=/var/tmp`.
+See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick 12800² builds need spill on disk (not tmpfs `/tmp`) — `build-map-cartographic.mjs` pins `MAGICK_TEMPORARY_PATH=/var/tmp`. **Land-cover (T-090.1.1.1):** SAP-derived masks tint @ **4096² before Lanczos upscale** — do not stack multiple 12800² overlays in one magick pass (OOM + multi-GB `/var/tmp` spill).
 
 **DEM re-export runbook:** [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md) §Re-export runbook (GetSurfaceY plugin — manual WE export dead on packed Eden).
 

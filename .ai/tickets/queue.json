@@ -9,7 +9,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md",
       "branch": "ticket/T-090"
     }
   ]

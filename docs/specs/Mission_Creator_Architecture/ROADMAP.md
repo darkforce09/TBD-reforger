@@ -9,16 +9,16 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-068** — Virtual Arsenal (registry + loadout export) (ready)
 - **T-069** — Markers on map (queued)
 - **T-070** — Vehicles placeable (queued)
-- **T-071** — ORBAT Manager modal (ready)
 - **T-072** — Ctrl multi-place (queued)
 - **T-073** — Shift + map rotation (queued)
 - **T-074** — Faction submode / catalog filter (queued)
 - **T-075** — Spacebar flyTo vs widget (queued)
 - **T-076** — Vehicle crew UI (queued)
 - **T-077** — Alt + empty vehicle (queued)
+- **T-090** — Map visualization program (ready)
+- **T-114** — Slot roster enforcement + production slot picker (queued)
 <!-- ticket-sync:next:end -->
 
 ---

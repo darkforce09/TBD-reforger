@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.1.1.1",
+      "active_slice": "T-090.1.2.9",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main (objects + interaction) before Eden. Active: T-090.1.1.1 land-cover; queued T-090.1.2.9 → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main. **T-090.1.1.1** land-cover @ `018ea70d`. **Active:** T-090.1.2.9 satellite roads → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -2020,7 +2020,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "018ea70d"
         },
         "T-090.1.2.9": {
           "targets": [
@@ -2029,7 +2030,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-090.2": {
           "targets": [

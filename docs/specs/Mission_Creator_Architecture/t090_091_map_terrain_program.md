@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **Active slice:** **T-090.1.1.1** (Map land-cover compose). **Operator lane:** finish **entire T-090 program** on `main` before Eden (T-071 / T-068 **deferred** in registry). **T-090.1.1** **shipped** @ `6e06e679`. **Queued:** **T-090.1.2.9** → **T-090.3** export → **T-090.5/.8/.9** objects. **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a`. **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
+**Status:** **ready** — **Active slice:** **T-090.1.2.9** (Satellite road overlay). **Operator lane:** finish **entire T-090 program** on `main` before Eden (T-071 / T-068 **deferred**). **T-090.1.1.1** land-cover **shipped** @ `018ea70d`. **Queued:** **T-090.3** export → **T-090.5/.8/.9** objects. **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a`. **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -35,8 +35,8 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.6  Hillshade blend strength slider  ✓ @ b958e3b4
   → T-090.2    taxonomy ship (S1–S10)  ✓ @ 691d9b26
   → T-090.1.1  Map cartographic view  ✓ @ 6e06e679
-  → T-090.1.1.1  Map land-cover compose  (ACTIVE — forest/field tints)
-  → T-090.1.2.9  Satellite road stroke overlay  (queued — .topo on SAP ortho, no buildings)
+  → T-090.1.1.1  Map land-cover compose  ✓ @ 018ea70d
+  → T-090.1.2.9  Satellite road stroke overlay  (ACTIVE)
   → T-090.1.2.3  Basemap tile prefetch  (queued — legacy pyramid only)
   → T-090.3    phased export (+ forest-regions, dual tiles) — P1 → P10  (unblocked)
   → T-090.4 + T-090.6 + T-090.8  Z/geometry audits + forest regions (parallel where deps met)
@@ -86,8 +86,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.1.2.6** | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | claude-code | **Hillshade blend** — **shipped** @ `b958e3b4` |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | **Taxonomy S1–S10** — **shipped** @ `691d9b26` |
 | **T-090.1.1** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch — **shipped** @ `6e06e679` |
-| **T-090.1.1.1** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | claude-code | **Map** forest/field tints — **active** |
-| **T-090.1.2.9** | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | claude-code | **Satellite** `.topo` road bake — **queued** |
+| **T-090.1.1.1** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | claude-code | **Land-cover tints** — **shipped** @ `018ea70d` |
+| **T-090.1.2.9** | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | claude-code | **Satellite** `.topo` road bake — **active** |
 | **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |
 | **T-090.4** | [`t090_4_z_placement_audit.md`](t090_4_z_placement_audit.md) | claude-code | Phase A pivot audit @ 1M |
 | **T-090.6** | [`t090_6_geometry_placement_audit.md`](t090_6_geometry_placement_audit.md) | claude-code | Phase B OBB / visibility audit |

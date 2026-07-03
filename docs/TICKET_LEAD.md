@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main (objects + interaction) before Eden. Active: T-090.1.1.1 land-cover; queued T-090.1.2.9 → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main. **T-090.1.1.1** land-cover @ `018ea70d`. **Active:** T-090.1.2.9 satellite roads → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.
 
 ## Next queued (top 10)
 
