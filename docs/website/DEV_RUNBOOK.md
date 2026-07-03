@@ -101,6 +101,18 @@ Restart `make api` after handler changes — `go run` does not hot-reload.
 
 `GET /api/v1/registry` requires mission_maker+ JWT; supports weak ETag + `If-None-Match` → 304.
 
+**Mod compiled mission (T-092.2 @ `a73224f2`):** game server fetches the mod-native document (not the export wrapper):
+
+```bash
+# Requires SERVICE_TOKEN in apps/website/.env — same tier as /ingest
+curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
+  http://localhost:8080/api/v1/missions/{mission_id}/compiled | jq .schemaVersion
+
+# 401 without token; 409 when mission has no version or no placed slots
+```
+
+Mission must have a saved version with placed slots; first save after create must bump semver past auto-seeded `0.1.0`. Profile cache: `$profile:missions/{id}.json` (mod loader).
+
 ## Map assets (T-090 / T-091)
 
 Static terrain binaries live under `packages/map-assets/{everon,arland}/`. **Git LFS** tracks DEM PNG and unified `.tbd-sat` bundles only (see root [`.gitattributes`](../../.gitattributes)). **Tile pyramids** under `tiles/` are **not** in git — build locally when needed.
@@ -112,7 +124,14 @@ git lfs pull      # DEM + unified satellite bundle
 
 Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schema/terrain-manifest.schema.json`](../../packages/tbd-schema/schema/terrain-manifest.schema.json). **Everon** has real DEM dims (6400×6400) @ T-091.0; **Arland** still stub (`widthPx/heightPx: 0`).
 
-**Tile pyramid (optional fallback):** not shipped in git. After clone, MC uses the unified `everon-sat.tbd-sat` bundle (T-090.1.2.8). Rebuild pyramid locally with `make map-water-everon` or `scripts/map-assets/build-tile-pyramid.sh` — see [`packages/map-assets/README.md`](../../packages/map-assets/README.md).
+**Tile pyramid (optional fallback):** not shipped in git. After clone, MC uses the unified `everon-sat.tbd-sat` bundle (T-090.1.2.8). Rebuild locally:
+
+```bash
+make map-water-everon          # satellite ortho + unified bundle + satellite pyramid
+make map-cartographic-everon   # Map view cartographic ortho + tiles/map pyramid (T-090.1.1)
+```
+
+See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick 12800² builds need spill on disk (not tmpfs `/tmp`) — `build-map-cartographic.mjs` pins `MAGICK_TEMPORARY_PATH=/var/tmp`.
 
 **DEM re-export runbook:** [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md) §Re-export runbook (GetSurfaceY plugin — manual WE export dead on packed Eden).
 

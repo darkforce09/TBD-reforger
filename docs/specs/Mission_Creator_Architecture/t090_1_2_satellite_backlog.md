@@ -1,8 +1,9 @@
 # T-090.1.2.x — Satellite basemap backlog (resume guide)
 
 **Program hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
-**Registry active slice:** `./scripts/ticket brief T-090` → **T-090.1.1** (Map cartographic view)  
+**Registry active slice:** `./scripts/ticket brief T-090` → **T-090.1.1.1** (Map land-cover) · **queued:** **T-090.1.2.9** (Satellite roads)  
 **Water (good enough):** **T-090.1.2.5.2** @ `1c07d97a` · `make map-water-everon`  
+**Map cartographic:** **T-090.1.1** @ `6e06e679` · `make map-cartographic-everon`  
 **Last shipped:** **T-090.2** @ `691d9b26`
 
 ---
@@ -17,6 +18,7 @@
 | **Pan / zoom feel** | **T-090.1.2.8 shipped** — no tile pop-in by construction (single BitmapLayer + trilinear mips) |
 | **Water** | **T-090.1.2.5.2** @ `1c07d97a` — **good enough** (`make map-water-everon`); perfect water → **T-143** (`idea`) |
 | **Hillshade** | **T-090.1.2.6** shipped @ `b958e3b4` (Mission Settings strength slider) |
+| **Map view** | **T-090.1.1** @ `6e06e679` — cartographic pyramid + Mission Settings **Map** radio (`make map-cartographic-everon`) |
 
 **Format spike:** [`.ai/artifacts/t090_1_2_8_format_spike.json`](../../../.ai/artifacts/t090_1_2_8_format_spike.json) · **Verify:** [`.ai/artifacts/t090_1_2_8_verify_log.md`](../../../.ai/artifacts/t090_1_2_8_verify_log.md)
 
@@ -30,7 +32,9 @@
 2b. T-090.1.2.5.1  Inland mask refine        ✓ @ 82488c6f
 2c. T-090.1.2.5.2  .topo road guard + button ✓ @ 1c07d97a (operator: good enough)
 3. T-090.1.2.6  Hillshade blend control       ✓ @ b958e3b4
-4. T-090.1.1    Map cartographic view         ← ACTIVE
+4. T-090.1.1    Map cartographic view         ✓ @ 6e06e679
+4b. T-090.1.1.1 Map land-cover compose        ← ACTIVE (forest/field tints)
+4c. T-090.1.2.9 Satellite road overlay       ← queued (.topo strokes on SAP ortho)
 —  T-090.1.2.3  Tile prefetch (legacy pyramid interim only)
 ```
 
@@ -48,7 +52,9 @@
 | **T-090.1.2.5.2** | shipped @ `1c07d97a` | [`t090_1_2_5_2_water_topo_refine.md`](t090_1_2_5_2_water_topo_refine.md) | verify log + crops |
 | **T-090.1.2.5.1** | shipped @ `82488c6f` | [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) | verify log |
 | **T-090.2** | shipped @ `691d9b26` | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) | verify log |
-| **T-090.1.1** | **active** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | Handoff: [`.ai/artifacts/t090_1_1_claude_code_handoff.md`](../../../.ai/artifacts/t090_1_1_claude_code_handoff.md) |
+| **T-090.1.1** | shipped @ `6e06e679` | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | verify log + contact sheet |
+| **T-090.1.1.1** | **ready** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | Map forest/field tints |
+| **T-090.1.2.9** | queued | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | Satellite road bake — no buildings |
 | **T-090.1.2.5** | shipped @ `6396960f` | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | verify log |
 | **T-090.1.2.6** | shipped @ `b958e3b4` | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | verify log |
 

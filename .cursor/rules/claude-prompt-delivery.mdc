@@ -1,0 +1,57 @@
+---
+description: When user asks for Claude Code prompts — deliver full copy-paste code blocks (one per stream), not prose summaries.
+alwaysApply: true
+---
+
+# Claude Code prompt delivery (copy-paste)
+
+When the user asks for prompts to send to Claude Code — including parallel streams, handoffs, "give me the prompt", "Stream A and B", or after Mode B setup — **deliver prompts as fenced code blocks only**, ready to copy in one click.
+
+## Required format
+
+### Single slice
+
+One fenced block containing the **entire** prompt (use `═══` sections per [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md)). Brief one-line intro above the block is OK; **do not** split the prompt across prose paragraphs.
+
+### Parallel streams (e.g. T-090.1.1 on `main` + T-092.1 on worktree)
+
+**Exactly N code blocks for N streams** — typically **two**:
+
+1. Short heading: `# Stream A — {slice id} {title}` + CWD/branch one-liner
+2. **One complete fenced block** with the full prompt (everything Claude needs)
+3. Short heading: `# Stream B — …`
+4. **One complete fenced block** with the full prompt
+
+Preflight bash may be a **third small block** at the end (optional) — never substitute it for the main prompt blocks.
+
+## Forbidden
+
+- Summarizing the prompt in prose instead of a copy-paste block
+- "See handoff.md" as the only deliverable when user asked for the prompt
+- One block with both streams concatenated without clear separation
+- Partial prompts ("run these commands, then ask for part 2")
+- Bullet lists that duplicate content **outside** the fenced block when user wanted the full prompt
+
+## Source of truth
+
+Build from: slice spec §Claude Code prompt, `.ai/artifacts/*_handoff.md`, `./scripts/ticket brief`. If `./scripts/ticket prompt` fails (no § in spec), **still** output the full handoff-derived block — do not tell user to run the script instead of pasting.
+
+## Example shape (parallel)
+
+```markdown
+# Stream A — T-090.1.1 Map cartographic view
+
+**CWD:** repo root (`main`)
+
+```
+{full prompt — PREFLIGHT, READ, PROBLEM, DO, DO NOT, VERIFY, RETURN}
+```
+
+# Stream B — T-092.1 → T-092.2
+
+**CWD:** `.ai/artifacts/worktrees/TBD-T-092` (`ticket/T-092`)
+
+```
+{full prompt for both slices sequential}
+```
+```

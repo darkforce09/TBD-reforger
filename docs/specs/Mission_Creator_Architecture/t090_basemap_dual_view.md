@@ -1,7 +1,7 @@
 # T-090 — Dual basemap views (Map + Satellite)
 
-**Status:** Cross-cutting UX contract — **T-090.1.1 active** (implementation: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md))  
-**Tickets:** T-090.1 (Satellite first) · **T-090.1.1** (Map view pyramid — **ready** on `main`)  
+**Status:** Cross-cutting UX contract — **T-090.1.1 shipped** @ `6e06e679` (implementation: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md))
+**Tickets:** T-090.1 (Satellite first) · **T-090.1.1** (Map view pyramid — **shipped** @ `6e06e679`)
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md)
 
 ---
@@ -38,6 +38,7 @@ Mission Settings  (or map chrome — Eden-style layer control)
 - Default for new users: **`satellite`** (alignment-first); allow **`map`** as default later via terrain registry.
 - Switching view **does not** reload world objects or slots — only swaps bottom `TileLayer` URL template.
 - Toggle animation: instant swap (no cross-fade v1 — perf).
+- **Satellite road readability:** raster `.topo` road bake — **T-090.1.2.9** (queued). Toggleable vector roads — **T-090.5** (buildings out of scope for `.2.9`).
 
 ---
 

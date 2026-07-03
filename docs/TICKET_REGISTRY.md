@@ -60,10 +60,10 @@
 | T-065 | 650 | shipped | scale | Cluster LOD at extreme zoom | Supercluster index with pan-stable cache for 367k missions. |
 | T-066 | 660 | shipped | scale | Worker compile offload | Save/Export compile in Comlink worker via pickMapSnapshot. |
 | T-067 | 670 | shipped | scale | Spatial chunks | Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on. |
-| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md. |
+| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1 shipped. Phase 2 **paused @ T-068.7** until **T-071.2 + T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`). Hub: t068_virtual_arsenal_program.md. |
 | T-069 | 690 | queued | eden | Markers on map | Place and edit map markers with registry-backed types. |
 | T-070 | 700 | queued | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
-| T-071 | 710 | queued | eden | ORBAT Manager modal | ORBAT Manager modal — squad names, numbering, membership, slotting order. **Blocked on map/spawn verify (T-090–T-092).** Most web ORBAT UX not built. Hub: t071_orbat_manager_program.md. |
+| T-071 | 710 | ready | eden | ORBAT Manager modal | ORBAT Manager modal — squad names, numbering, membership, slotting order. **Unblocked** — T-092 spawn/compile @ `a73224f2`. Hub: t071_orbat_manager_program.md. |
 | T-072 | 720 | queued | eden | Ctrl multi-place | Hold Ctrl to place multiple copies without re-selecting asset. |
 | T-073 | 730 | queued | eden | Shift + map rotation | Shift-drag and map rotation widget for placed entities. |
 | T-074 | 740 | queued | eden | Faction submode / catalog filter | Faction submode tabs and catalog filtering in asset browser. |
@@ -82,9 +82,9 @@
 | T-087 | 870 | deferred | platform | CMS rich text editor | Rich text editor for announcements and CMS content. |
 | T-088 | 880 | deferred | platform | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | deferred | platform | Mission title PATCH sync | PATCH mission title to server on edit (absorbs former T-051 scope). |
-| T-090 | 900 | ready | infra | Map visualization program | Eden-like map detail (N1-N12). Water composite good-enough @ T-090.1.2.5.2 (1c07d97a, make map-water-everon). T-090.2 @ 691d9b26. Active: T-090.1.1 Map view. T-090.3 export unblocked. Perfect water → T-143 (idea). Hub: t090_091_map_terrain_program.md. |
+| T-090 | 900 | ready | infra | Map visualization program | Eden-like map detail (N1-N12). T-090.1.1 Map view @ 6e06e679. Active: T-090.1.1.1 land-cover compose; queued T-090.1.2.9 satellite road overlay. Water good-enough @ T-090.1.2.5.2 (1c07d97a). T-090.2 @ 691d9b26. Hub: t090_091_map_terrain_program.md. |
 | T-091 | 910 | shipped | infra | DEM + auto Z | T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md. |
-| T-092 | 920 | ready | infra | Spawn transform parity + mod mission compile | Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Active: T-092.1 → T-092.2 on ticket/T-092 worktree (parallel T-090.1.1 on main). Hub: t092_spawn_transform_program.md. |
+| T-092 | 920 | shipped | infra | Spawn transform parity + mod mission compile | T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | scale | Continuous autosave polish | Background autosave UX and conflict handling polish. |
 | T-094 | 940 | deferred | scale | Typed-array IconLayer | Typed-array slot icon buffer for mega-mission render path. |
 | T-095 | 950 | deferred | backend | Per-handler API reference doc | Complete docs/backend/api.md per-handler reference. |

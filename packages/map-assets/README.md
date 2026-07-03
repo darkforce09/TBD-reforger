@@ -24,10 +24,11 @@ git lfs pull          # DEM + unified .tbd-sat
 make map-assets-link  # symlink → frontend public/
 ```
 
-**Tile pyramid missing?** Mission Creator still loads via the unified bundle. For pyramid fallback (or after `make map-water-everon`):
+**Tile pyramid missing?** Mission Creator still loads Satellite via the unified bundle. For pyramid fallback (or Map view):
 
 ```bash
-make map-water-everon   # Everon: restore → water composite → bundle + pyramid → verify
+make map-water-everon         # Everon satellite: water composite → bundle + tiles/satellite
+make map-cartographic-everon  # Everon Map view: G1-A ortho + water + .topo roads → tiles/map
 # or manually:
 bash scripts/map-assets/build-tile-pyramid.sh \
   --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png \

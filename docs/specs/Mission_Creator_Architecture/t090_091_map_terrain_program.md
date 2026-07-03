@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **Active slice:** **T-090.1.1** (Map cartographic view). **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a` (`make map-water-everon`). **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
+**Status:** **ready** — **Active slice:** **T-090.1.1.1** (Map land-cover compose). **T-090.1.1** **shipped** @ `6e06e679`. **Queued:** **T-090.1.2.9** (Satellite road overlay). **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a` (`make map-water-everon`). **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
@@ -34,8 +34,10 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.2.5.2  .topo road guard + map-water-everon  ✓ @ 1c07d97a (operator: good enough)
   → T-090.1.2.6  Hillshade blend strength slider  ✓ @ b958e3b4
   → T-090.2    taxonomy ship (S1–S10)  ✓ @ 691d9b26
-  → T-090.1.2.3  Basemap tile prefetch  (queued — interim pyramid only)
-  → T-090.1.1  Map (.topo) cartographic view  (ACTIVE)
+  → T-090.1.1  Map cartographic view  ✓ @ 6e06e679
+  → T-090.1.1.1  Map land-cover compose  (ACTIVE — forest/field tints)
+  → T-090.1.2.9  Satellite road stroke overlay  (queued — .topo on SAP ortho, no buildings)
+  → T-090.1.2.3  Basemap tile prefetch  (queued — legacy pyramid only)
   → T-090.3    phased export (+ forest-regions, dual tiles) — P1 → P10  (unblocked)
   → T-090.4 + T-090.6 + T-090.8  Z/geometry audits + forest regions (parallel where deps met)
   → T-090.5    Deck.gl layers (forests first, Deck-orthographic-zoom LOD per render contract)
@@ -46,7 +48,7 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-129      building floor selector (idea — outside T-090; renumbered from T-126)
 ```
 
-**Blocker chain (110% satellite — post water composite):** **T-090.1.2.5.2** shipped @ `1c07d97a` — operator **good enough**; **`make map-water-everon`** = one-button water rebuild. **T-090.1.1** Map view (active). **T-090.3** export unblocked. Pixel-perfect hydrology + MC placement guard → **T-143** (`idea`).
+**Blocker chain (110% satellite — post water composite):** **T-090.1.2.5.2** shipped @ `1c07d97a` — operator **good enough**; **`make map-water-everon`** = one-button water rebuild. **T-090.1.1** Map view **shipped** @ `6e06e679` (`make map-cartographic-everon`). **Active: T-090.1.2.3** prefetch. **T-090.3** export unblocked. Pixel-perfect hydrology + MC placement guard → **T-143** (`idea`).
 
 **Source locked @ T-090.1.2.4 FAIL:** SAP stitch + T-090.1.2.2 apron-bridge — no cleaner continuous sat-class ortho exists on current Enfusion APIs (see [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](../../../.ai/artifacts/t090_1_2_4_engine_render_spike.json)). Residual ~256 m soft band is source-baked. **T-090.1.2.8** @ `db9057ef` fixes tile flicker (tbd-sat v1 + one GPU texture); grid may remain at max MC zoom.
 
@@ -83,7 +85,9 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.1.2.5** | [`t090_1_2_5_satellite_water_composite.md`](t090_1_2_5_satellite_water_composite.md) | claude-code | **Water composite** — **shipped** @ `6396960f` |
 | **T-090.1.2.6** | [`t090_1_2_6_hillshade_blend_control.md`](t090_1_2_6_hillshade_blend_control.md) | claude-code | **Hillshade blend** — **shipped** @ `b958e3b4` |
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | **Taxonomy S1–S10** — **shipped** @ `691d9b26` |
-| **T-090.1.1** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch — **active** |
+| **T-090.1.1** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch — **shipped** @ `6e06e679` |
+| **T-090.1.1.1** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | claude-code | **Map** forest/field tints — **active** |
+| **T-090.1.2.9** | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | claude-code | **Satellite** `.topo` road bake — **queued** |
 | **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |
 | **T-090.4** | [`t090_4_z_placement_audit.md`](t090_4_z_placement_audit.md) | claude-code | Phase A pivot audit @ 1M |
 | **T-090.6** | [`t090_6_geometry_placement_audit.md`](t090_6_geometry_placement_audit.md) | claude-code | Phase B OBB / visibility audit |

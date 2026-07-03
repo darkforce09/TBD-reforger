@@ -11,22 +11,21 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
 - **Branch:** `ticket/T-068`
 - **Targets:** website, shared, root, mod
-- **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.
+- **Summary:** Phase 1 shipped. Phase 2 **paused @ T-068.7** until **T-071.2 + T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`). Hub: t068_virtual_arsenal_program.md.
+
+## T-071 — ORBAT Manager modal
+
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
+- **Branch:** `ticket/T-071`
+- **Targets:** website
+- **Summary:** ORBAT Manager modal — squad names, numbering, membership, slotting order. **Unblocked** — T-092 spawn/compile @ `a73224f2`. Hub: t071_orbat_manager_program.md.
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.1.1`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md`
+- **Active slice:** `T-090.1.1.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). Water composite good-enough @ T-090.1.2.5.2 (1c07d97a, make map-water-everon). T-090.2 @ 691d9b26. Active: T-090.1.1 Map view. T-090.3 export unblocked. Perfect water → T-143 (idea). Hub: t090_091_map_terrain_program.md.
-
-## T-092 — Spawn transform parity + mod mission compile
-
-- **Active slice:** `T-092.1`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md`
-- **Branch:** `ticket/T-092`
-- **Targets:** root, website, mod
-- **Summary:** Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Active: T-092.1 → T-092.2 on ticket/T-092 worktree (parallel T-090.1.1 on main). Hub: t092_spawn_transform_program.md.
+- **Summary:** Eden-like map detail (N1-N12). T-090.1.1 Map view @ 6e06e679. Active: T-090.1.1.1 land-cover compose; queued T-090.1.2.9 satellite road overlay. Water good-enough @ T-090.1.2.5.2 (1c07d97a). T-090.2 @ 691d9b26. Hub: t090_091_map_terrain_program.md.

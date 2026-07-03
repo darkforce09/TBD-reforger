@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 shipped. Phase 2 **paused @ T-068.7** until **map verify (T-090–T-092) + T-071.2 + T-068.13** (production LOBBY slot picker). Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Phase 1 shipped. Phase 2 **paused @ T-068.7** until **T-071.2 + T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`). Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1392,7 +1392,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Blocked on map/spawn verify (T-090–T-092).** Most web ORBAT UX not built. Hub: t071_orbat_manager_program.md.",
+      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Unblocked** — T-092 spawn/compile @ `a73224f2`. Hub: t071_orbat_manager_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -1408,7 +1408,7 @@
         "T-069"
       ],
       "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md",
-      "status": "queued",
+      "status": "ready",
       "implements": [
         "LEFT-ORBAT-001",
         "CONN-GROUP-001",
@@ -1822,7 +1822,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.1.1",
+      "active_slice": "T-090.1.1.1",
       "surfaces": [
         "MAP"
       ],
@@ -1830,7 +1830,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). Water composite good-enough @ T-090.1.2.5.2 (1c07d97a, make map-water-everon). T-090.2 @ 691d9b26. Active: T-090.1.1 Map view. T-090.3 export unblocked. Perfect water → T-143 (idea). Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). T-090.1.1 Map view @ 6e06e679. Active: T-090.1.1.1 land-cover compose; queued T-090.1.2.9 satellite road overlay. Water good-enough @ T-090.1.2.5.2 (1c07d97a). T-090.2 @ 691d9b26. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1848,6 +1848,8 @@
         "T-090.1.2.6",
         "T-090.1.2.8",
         "T-090.1.1",
+        "T-090.1.1.1",
+        "T-090.1.2.9",
         "T-090.2",
         "T-090.3",
         "T-090.4",
@@ -2009,7 +2011,26 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md",
+          "status": "shipped",
+          "shipped_at": "6e06e679"
+        },
+        "T-090.1.1.1": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md",
           "status": "ready"
+        },
+        "T-090.1.2.9": {
+          "targets": [
+            "website",
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md",
+          "status": "queued"
         },
         "T-090.2": {
           "targets": [
@@ -2162,8 +2183,8 @@
       "id": "T-092",
       "order": 920,
       "program": "infra",
-      "status": "ready",
-      "active_slice": "T-092.1",
+      "status": "shipped",
+      "active_slice": null,
       "surfaces": [
         "DATA"
       ],
@@ -2173,7 +2194,7 @@
         "compiler"
       ],
       "title": "Spawn transform parity + mod mission compile",
-      "summary": "Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Active: T-092.1 → T-092.2 on ticket/T-092 worktree (parallel T-090.1.1 on main). Hub: t092_spawn_transform_program.md.",
+      "summary": "T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "slices": [
         "T-092.0",
@@ -2212,7 +2233,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t092_1_mod_spawn_policy.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "4eefc169"
         },
         "T-092.2": {
           "targets": [
@@ -2221,7 +2243,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t092_2_mod_compile_route.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "a73224f2"
         }
       }
     },

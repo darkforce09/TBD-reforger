@@ -226,10 +226,13 @@
 ## MAP — Basemap & world objects (T-090)
 
 #### MAP-BASEMAP-001 — Satellite basemap tiles
-- **Slice:** T-090.1 · aligned Everon Satellite WebP pyramid under the grid (Cartesian, XYZ Y-flip).
+- **Slice:** T-090.1 · aligned Everon Satellite WebP pyramid under the grid (Cartesian, XYZ Y-flip). **Shipped** @ `564419e`; unified delivery @ **T-090.1.2.8**.
 
 #### MAP-BASEMAP-002 — Map basemap view + Satellite/Map switch
-- **Slice:** T-090.1.1 · cartographic (or synthesized-cartographic) pyramid; Google-Maps-style radio (N9).
+- **Slice:** T-090.1.1 · **shipped** @ `6e06e679` — roads + water + UI switch. **Follow-on:** **T-090.1.1.1** land-cover (forest/field tints).
+
+#### MAP-BASEMAP-003 — Satellite road readability overlay
+- **Slice:** T-090.1.2.9 · bake `.topo` road strokes onto SAP Satellite ortho (no buildings). Queued after/alongside `.1.1.1`.
 
 #### MAP-WORLD-001 — Forest region polygons
 - **Slice:** T-090.8 · forests/fields/water as polygon areas; per-tree glyphs only at high deckZoom (N5).

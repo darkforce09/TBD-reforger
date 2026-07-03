@@ -1,6 +1,6 @@
 ---
 name: Mission Creator — Agent Execution Plan
-overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 Phase 1 shipped @ 2026-06-27; active slice T-068.7 (compat matrix spec)."
+overview: "Self-contained agent handoff for Mission Creator. T-057–T-067 shipped. T-068 Phase 1 shipped @ 2026-06-27; active slice T-068.7 (compat matrix spec). T-090.1.1 Map basemap shipped @ 6e06e679."
 todos:
   - id: step-0-publish
     content: "STEP 0: Plan published to docs/specs/Mission_Creator_Architecture/agent_execution.md"
@@ -52,7 +52,7 @@ Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_prog
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-090.3.0 active** (Workbench spike); T-090.1 queued. **T-091 shipped @ dde589e.** **T-091.0 shipped — no Workbench/MCP redo.**
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-092 shipped** @ `a73224f2`. **T-090.1.1.1** active. **T-071 ready.** **T-091 shipped** @ `dde589e`.
 Read t091_1_dem_loader.md. Per docs/TICKET_DEV_QUEUE.md.
 ```
 
@@ -350,10 +350,12 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 | **T-091.2 shipped** (2026-06-29) | **`dde589e`** (tag **T-091.2**). `terrainZ` in `ydoc` (add/paste/move + Attributes X/Y re-sample); `useDemLayer` hillshade (BitmapLayer ≤1024 px); `useDemVersion` async CUR refresh; Mission Settings `showGrid`/`showHillshade`; toolbelt X/Y/Z @ 3 dp; grid over hillshade with boosted line alpha. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md). |
 | **T-091.2 handoff** (2026-06-29) | Historical — [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../../.ai/artifacts/t091_2_claude_code_handoff.md). |
 | **T-091.1 shipped** (2026-06-29) | **`2c56c2e`** (tag **T-091.1**). `tactical-map/dem/*` — manifest fetch, pngjs decode → Float32 meters cache, `loadDemForTerrain` / `sampleElevation` / `isDemReady` / `isDemDegraded`; vitest 15/15 (11 anchors ±0.01 m). Vite: `pngjs→browser` alias + `buffer` polyfill. Wired from `TacticalMap`; **consumed by T-091.2** @ `dde589e`. Spec: [`t091_1_dem_loader.md`](t091_1_dem_loader.md). |
-| **Map-verify program order** (2026-06-28) | **T-090 → T-091 → T-092** before **T-071** and **T-068 Phase 2**. **T-091 shipped** @ `dde589e`. **T-090.3.0 active** (Workbench spike); T-090.1 queued. **T-057..T-067** perf/scale **shipped**. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
-| **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until map gate + T-071.2 + T-068.13. |
-| **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 queued** (blocked on **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |
-| **Phase order** | … **T-057–T-067 shipped.** **T-068 Phase 1 shipped; Phase 2 paused.** **T-090.0 + T-091 shipped @ dde589e.** **Active: T-090.3.0** (T-090.1 queued). **T-110** terrain base (optional, after T-090/T-091). … |
+| **Map-verify program order** (2026-06-28) | **T-092 shipped** @ `a73224f2`. **Active:** **T-090.1.1.1** land-cover; **queued:** **T-090.1.2.9** satellite roads. **T-071 ready.** Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
+| **T-092 spawn + compile** (2026-07-04, **shipped** @ `a73224f2`) | **T-092.1** @ `4eefc169`: schema 1.2 optional `y`, spawn policy + logs. **T-092.2**: flatten TS/Go, `GET /api/v1/missions/:id/compiled`, mod loader v1 + `X-Service-Token`. wb_play + REST E2E **PASS** @ `452ce501`. **Unblocks T-071.** OBS-1 roster deploy → T-068.13/T-071; OBS-2 `TBD_MissionList` legacy path. Verify logs in `.ai/artifacts/t092_*`. |
+| **T-090.1.1 Map cartographic view** (2026-07-03, **shipped** @ `6e06e679`) | G1-A base + water + `.topo` roads; **`make map-cartographic-everon`**. Spec: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md). |
+| **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until **T-071.2 + T-068.13** (T-092 gate cleared). |
+| **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 ready** (was blocked on **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |
+| **Phase order** | … **T-092 shipped** @ `a73224f2`. **Active: T-090.1.1.1** Map land-cover; **T-071 ready.** Phase 2 VA: **T-071.2 + T-068.13**. … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049 (**T-089** deferred); Save Version still compiles payload only. |
 | **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement queued tickets from [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
@@ -362,7 +364,7 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-091 shipped** @ `dde589e`; **active slice T-090.3.0** (Workbench spike); T-090.1 queued. **T-068 Phase 2 paused**. Then this file, then `engineering_plan.md` §0–§2.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-092 shipped** @ `a73224f2`; **T-090.1.1.1** active; **T-071 ready**; **T-068 Phase 2 paused**. Then this file, then `engineering_plan.md` §0–§2.
 2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
 3. **Verify gate** after every phase:
    ```bash
@@ -380,32 +382,34 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ---
 
-### ACTIVE SLICE — T-091 Map & terrain program (2026-06-29)
+### ACTIVE SLICE — T-090 map polish + Eden queue (2026-07-04)
 
-**ACTIVE NOW:** **T-090.3.0** — Workbench export spike. **T-090.1** aligned WebP tile basemap **queued** until 3.0. **T-091 shipped** @ `dde589e`. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
+Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · spawn hub [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) (**shipped** @ `a73224f2`)
 
-**Program order:** **T-090.3.0 → T-090.1 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
+**T-092 complete** — unblocks **T-071** (ORBAT Manager) + **T-068.13** (LOBBY slot picker). Phase 2 Virtual Arsenal still needs **T-071.2** + **T-068.13** before `./scripts/ticket done T-068`.
 
-**T-091.1 shipped @ `2c56c2e` (tag T-091.1):** `tactical-map/dem/*` — CPU Float32 meters cache, public `sampleElevation(x,y)` (clamp-then-sample, degraded→0), `loadDemForTerrain` wired from `TacticalMap`; vitest 15/15; `make verify-terrain-strict` unchanged. Vite: `pngjs→browser` + `buffer` polyfill. **T-091.2** @ `dde589e` consumes the API (toolbelt/slot Z, hillshade). Spec: [`t091_1_dem_loader.md`](t091_1_dem_loader.md).
-
-| Slice | Status | Executor | Delivers |
-|-------|--------|----------|----------|
-| **T-090.0** | **shipped** | cursor-docs | Map program hub + terrain-manifest schema |
-| **T-091.0** | **shipped** @ `6d96339` | claude-code | Everon DEM + anchor verify (GetSurfaceY plugin) |
-| **T-091.1** | **shipped** @ `2c56c2e` | claude-code | DEM loader + `sampleElevation` API |
-| **T-091.2** | **shipped** @ `dde589e` | claude-code | Z UX + hillshade — [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md) |
-| **T-090.0.2** | **shipped** | cursor-docs | Map-object schemas + goldens + verify |
-| **T-090.3.0** | **active** | claude-code | Workbench export spike — [`t090_3_0_workbench_export_spike.md`](t090_3_0_workbench_export_spike.md) |
-| **T-090.1** | **queued** | claude-code | Aligned basemap (after T-090.3.0) — [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md) |
-| **T-092.0–.2** | queued | mixed | Mod compile + spawn — [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) |
-| **T-071.0–.2** | queued | claude-code | ORBAT Manager — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| Slice | Status | Executor | Notes |
+|-------|--------|----------|-------|
+| **T-090.1.1.1** | **active** | claude-code | Map land-cover tints |
+| **T-090.1.2.9** | queued | claude-code | Satellite `.topo` road overlay |
+| **T-071** | **ready** | claude-code | ORBAT Manager modal |
 | **T-068.7** | paused | cursor-docs | Compat matrix spec (Phase 2) |
 | **T-068.13** | queued | claude-code | Production LOBBY slot picker |
-| **T-068.14** | queued | human | Phase 2 E2E → `./scripts/ticket done T-068` |
+| **T-092** | **shipped** @ `a73224f2` | — | Tags T-092.1 / T-092.2 · verify @ `452ce501` |
 
-Phase 1 Virtual Arsenal (**T-068.6 PASS**): web → JSON → mod **test NPC** only — not human player until T-068.11–.14.
+**Follow-on (not blocking):** `TBD_MissionListLoader` still hits legacy `/api/missions` (404) — needs same v1 + `X-Service-Token` fix as loader (OBS-2 in verify log).
 
-Full ladder **T-068.0 → T-068.14** in [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md).
+---
+
+### ACTIVE SLICE — T-091 Map & terrain program (2026-06-29) — **complete**
+
+**T-091 program complete** @ `dde589e`. Map basemap work continues under **T-090** — see §ACTIVE SLICE — T-090 / T-092 above. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
+
+| Slice | Status | Shipped |
+|-------|--------|---------|
+| **T-091.0** | shipped | `6d96339` — Everon DEM + anchor verify |
+| **T-091.1** | shipped | `2c56c2e` — DEM loader + `sampleElevation` |
+| **T-091.2** | shipped | `dde589e` — Z UX + hillshade |
 
 **Locked out of scope (Phase 1):** `registry.worker.ts`, smart Forge, compat matrix, compiler loadout export — see Phase 2 slices. Vehicles/Markers tabs (**T-069**/**T-070**).
 

@@ -1,6 +1,6 @@
 # T-071 — ORBAT Manager (web program)
 
-**Status:** **QUEUED** — blocked on **T-092.2** (map/spawn verify).  
+**Status:** **READY** — T-092 spawn/compile **shipped** @ `a73224f2` (wb_play + REST E2E PASS 2026-07-04).  
 **Ticket:** T-071 · **Route:** `/missions/:id/edit` · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [`eden/gap_analysis.md`](eden/gap_analysis.md) · [`ux_spec.md`](ux_spec.md)
 
@@ -11,7 +11,7 @@
 ## Program order (locked)
 
 ```text
-T-090 / T-091 / T-092 (map + mod compile) → T-071.0–.2 → T-068.13 → T-068.7+
+T-090 / T-091 / T-092 ✓ @ `a73224f2` → **T-071.0–.2** (active) → T-068.13 → T-068.7+
 ```
 
 Phase 1 Virtual Arsenal (test NPC only) stays shipped. **Do not** resume T-068 Phase 2 loadout until ORBAT baseline + mod slot picker exist.
@@ -24,15 +24,15 @@ Phase 1 Virtual Arsenal (test NPC only) stays shipped. **Do not** resume T-068 P
 |------------|-------|--------|------|
 | **Author ORBAT** | Website Mission Creator | **T-071** | Squad names, membership, slotting order — **writes** export truth |
 | **Play / slotting** | Arma Reforger mod | **T-068.13** → **T-114** | Production LOBBY slot picker — **reads** compiled `slots[]` |
-| **Map / spawn accuracy** | Website + mod | **T-090–T-092** | **Hard gate** — DEM, tiles, mod native compile, spawn Y/yaw |
+| **Map / spawn accuracy** | Website + mod | **T-090–T-092** ✓ | DEM, tiles, mod native compile, spawn Y/yaw — **gate cleared** @ `a73224f2` |
 
-**Map/spawn workstream must PASS before ORBAT/loadout Phase 2 (T-068.7+) is meaningful.**
+**Map/spawn gate cleared @ `a73224f2`.** ORBAT/loadout Phase 2 (T-068.7+) waits on **T-071.2** + **T-068.13**.
 
 ---
 
 ## Minimum bar before T-068 Phase 2 loadout
 
-1. **T-091.0 verify PASS + T-092.2** — anchor verify done @ `6d96339`; mod compiled `slots[]` + spawn Y/yaw still pending
+1. **T-092.2** ✓ @ `a73224f2` — mod compiled `slots[]` + spawn Y/yaw verified (verify @ `452ce501`)
 2. **T-071.2** — squad order in export
 3. **T-068.13** — production LOBBY slot picker (Aegis UX; no CLI)
 4. **T-068.11–.14** — loadout on **human player**
@@ -47,7 +47,7 @@ Phase 1 Virtual Arsenal (test NPC only) stays shipped. **Do not** resume T-068 P
 |---------|--------|---------|
 | Mission Creator | Read-only Faction → Squad → Slot tree; default squads on drop | Squad names, numbering, order, ORBAT Manager modal, logos, standardizations |
 | Event Hub | Auto-materialize ORBAT; inline claim | Full slotting-screen parity; **T-118** admin polish |
-| Compiler / mod | `orbat[]` + editor graph; **no mod flatten until T-092** | Slot order, loadout blocks (T-068.11+) |
+| Compiler / mod | `orbat[]` + editor graph; **GET /compiled** + flatten @ T-092 | Slot order, loadout blocks (T-068.11+) |
 
 ---
 

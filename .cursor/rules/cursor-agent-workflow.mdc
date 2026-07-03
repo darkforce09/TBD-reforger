@@ -34,6 +34,8 @@ You babble; that's fine. **Classify intent** from the message — never require 
 
 **End with:** Claude prompt code block (revise plan only — no code, no files).
 
+**Parallel / handoff prompts:** When user asks for prompts to paste into Claude Code, follow [`.cursor/rules/claude-prompt-delivery.mdc`](claude-prompt-delivery.mdc) — **one full fenced block per stream**, not prose summaries.
+
 ### Mode B — Write ticket / docs (Cursor docs pass)
 
 **User intent sounds like:**

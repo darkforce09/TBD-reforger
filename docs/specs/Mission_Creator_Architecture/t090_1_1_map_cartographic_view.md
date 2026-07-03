@@ -1,7 +1,7 @@
 # T-090.1.1 — Map cartographic view (pyramid + UI switch)
 
 **Ticket:** T-090 · **Slice:** T-090.1.1  
-**Status:** **ready** — active slice (Claude Code implements on `main`)  
+**Status:** **shipped** @ `6e06e679` (tag **T-090.1.1**) — **Next:** **T-090.1.2.3** (prefetch, queued) or **T-090.3** per operator  
 **Executor:** claude-code  
 **Depends on:** **T-090.1** @ `564419e`, **T-090.1.2.8** @ `db9057ef`, **T-090.1.2.5.2** @ `1c07d97a` (water styling inputs)  
 **Cross-cutting UX:** [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) (N8/N9/N10, V1–V7)  
@@ -157,7 +157,7 @@ Log → **`.ai/artifacts/t090_1_1_verify_log.md`** with spike verdict + M1–M9 
 |------|-------|
 | Commit prefix | **`T-090.1.1:`** |
 | Tag | **`T-090.1.1`** |
-| Post-ship | Cursor doc sync → `active_slice` → **T-090.1.2.3** (prefetch, queued) or **T-090.3** per operator |
+| Post-ship | Cursor doc sync → **T-090.1.1.1** (land-cover) active · **T-090.1.2.9** (satellite roads) queued |
 
 ---
 

@@ -13,18 +13,18 @@
       "branch": "ticket/T-068"
     },
     {
+      "id": "T-071",
+      "title": "ORBAT Manager modal",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md",
+      "branch": "ticket/T-071"
+    },
+    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_basemap_dual_view.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md",
       "branch": "ticket/T-090"
-    },
-    {
-      "id": "T-092",
-      "title": "Spawn transform parity + mod mission compile",
-      "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
-      "branch": "ticket/T-092"
     }
   ]
 }

@@ -116,13 +116,13 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-130**
 
-**ACTIVE NOW:** **T-090** — T-090.1.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md`.
+**ACTIVE NOW:** **T-090** — T-090.1.1.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
 - **T-069** — Markers on map (`queued`)
 - **T-070** — Vehicles placeable (`queued`)
-- **T-071** — ORBAT Manager modal (`queued`)
+- **T-071** — ORBAT Manager modal (`ready`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
 - **T-074** — Faction submode / catalog filter (`queued`)
@@ -146,13 +146,13 @@ frontend build+lint, schema, `ticket check --strict`, gate V1–V27.
 
 Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · living tracker [`.ai/artifacts/fable_5_omni_audit_report.md`](.ai/artifacts/fable_5_omni_audit_report.md)
 
-**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-090.1.1** active).
+**T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-071** ORBAT Manager · **T-090.1.1.1** land-cover).
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a` · **Parallel:** **T-092.1→.2** worktree [`TBD-T-092`](.ai/artifacts/worktrees/TBD-T-092/) · handoff [`.ai/artifacts/t092_SEND_TO_CLAUDE.md`](.ai/artifacts/t092_SEND_TO_CLAUDE.md).
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-092 shipped** @ **`a73224f2`** (spawn + `/compiled`) · **Map cartographic** @ **T-090.1.1** `6e06e679` · **Active:** **T-090.1.1.1** land-cover · **T-071 ready**
 
-**Program order:** **T-090.0.2 → T-090.3.0 → T-090.1 → … → T-090.5 → T-090.9 → T-090.7 → T-092** (map hard gate) → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout. Claude handoff: [`.ai/artifacts/t090_claude_code_handoff.md`](.ai/artifacts/t090_claude_code_handoff.md).
+**Program order:** **T-090.3.0 → T-090.1 → … → T-092** ✓ @ `a73224f2` → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
@@ -164,7 +164,7 @@ See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/
 
 ### T-068 — Virtual Arsenal (Phase 2 paused; not active)
 
-See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · **paused @ T-068.7** until **T-090–T-092** map gate + **T-071.2** + **T-068.13** · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
+See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · **paused @ T-068.7** until **T-071.2** + **T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`) · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
 
 **Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). **Boundary:** web loadout-export → profile JSON → mod dresses a **non-player test NPC** @ game-mode spawn — **not** the joining human player until **T-068.12** (compiler data @ **T-068.11**).
 
@@ -178,9 +178,11 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 - **T-068.5.1** Visual wear on test NPC @ `b233b11` (tag **T-068.5.1**) — `EquipCloth`/`EquipWeapon` + worn-verify; kit visible on **NPC**, not player. Spec: [`t068_5_1_visual_equip_fix.md`](docs/specs/Mission_Creator_Architecture/t068_5_1_visual_equip_fix.md).
 - **T-068.6** Phase 1 E2E gate **PASS** @ 2026-06-27 — E1–E12; Phase 2 approved. Spec: [`t068_6_phase1_e2e_gate.md`](docs/specs/Mission_Creator_Architecture/t068_6_phase1_e2e_gate.md).
 
-**Phase 2 next (after map gate):** **T-068.7** compat matrix spec → T-068.8–T-068.11 (website) → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) blocked on T-092** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
+**Phase 2 next (T-092 gate cleared @ `a73224f2`):** **T-071** ORBAT Manager (**ready**) → **T-068.7** compat matrix → T-068.8–T-068.11 → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. **Web ORBAT (T-071) unblocked** — [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-092 **Spawn transform parity + mod mission compile** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`; verify log commit **`452ce501`**). **T-092.1:** `mission.schema.json` optional slot `y` + **schemaVersion "1.2"**; `TBD_MissionSlotStruct`/`TBD_SpawnManager` jsonY→GetSurfaceY policy, `CAPSULE_GROUND_OFFSET_M=0.0` (measured ≈0), `headingDeg`, `[TBD][Spawn]` logs. **T-092.2:** `flattenEditorToModDocument` (TS) + `services.FlattenToModDocument` (Go), `kit-aliases.json` + codegen mirror, **`GET /api/v1/missions/:id/compiled`** (`X-Service-Token`, 409 no-slots), mod loader `/api/v1/...` + token header fix. wb_play + live REST E2E **PASS** 2026-07-04 (M4 roster caveat OBS-1 → T-068.13; OBS-2 `TBD_MissionList` legacy path). Unblocks **T-071**. Verify: [`.ai/artifacts/t092_1_verify_log.md`](.ai/artifacts/t092_1_verify_log.md), [`.ai/artifacts/t092_2_verify_log.md`](.ai/artifacts/t092_2_verify_log.md). Hub: [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md).
+- T-090.1.1 **Map program — Map cartographic view (pyramid + UI switch)** @ `6e06e679` (tag **T-090.1.1**). G1-A MapDataExporter TGA (4096² north-up) upscaled → composed ortho (inland-water tint from `.2.5.2` mask + `.topo` road strokes; **`despike()`** on geometry-baked width excursions). **`make map-cartographic-everon`** / **`map-cartographic-verify`** (`VIEW=map` z0–6, ~5461 WebP tiles local/gitignored). Manifest `tiles.map` → `workbench-cartographic` + `webp-lossy`. Frontend: T-127 `'map'` coercion removed; Map radio live; per-view `useTerrainBasemapLayer` (`basemap-map-*` ids; satellite unified texture survives switches); `basemapView.test.ts`. M1/M2/M3/M4/M5/M7/M8 PASS; M6/M9 operator browser. Ops: magick spill → `/var/tmp`. Artifacts: [`.ai/artifacts/t090_1_1_source_spike.json`](.ai/artifacts/t090_1_1_source_spike.json), [verify log](.ai/artifacts/t090_1_1_verify_log.md). Spec: [`t090_1_1_map_cartographic_view.md`](docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md).
 - T-090.1.2.5.2 **Map program — .topo road guard + one-button water** @ `1c07d97a` (tag **T-090.1.2.5.2**). `decode-topo.mjs` (G1-B: roads only, no hydro in `.topo`); `roadFrac ≤ 0.45` guard; relaxed wet-channel; **`make map-water-everon`**. Operator **good enough** 2026-07-03; perfect water → **T-143** (`idea`). Artifacts: [`.ai/artifacts/t090_1_2_5_2_source_spike.json`](.ai/artifacts/t090_1_2_5_2_source_spike.json), [verify log](.ai/artifacts/t090_1_2_5_2_verify_log.md). Spec: [`t090_1_2_5_2_water_topo_refine.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_2_water_topo_refine.md).
 - T-090.2 **Map program — map object taxonomy ship** @ `691d9b26` (tag **T-090.2**). +29 golden prefabs (S9 full enum coverage), +4 road segments, +1 `waterBody` region, instances/resolved samples; **`verify-map-object-golden.mjs`** S2–S9 wired into `make schema-validate`; +12 append-only `prefab-classify.json` rules; Everon manifest `objects` stub. Census stays `pending_export` until **T-090.3**. Verify: [`.ai/artifacts/t090_2_verify_log.md`](.ai/artifacts/t090_2_verify_log.md). Spec: [`t090_2_map_object_taxonomy.md`](docs/specs/Mission_Creator_Architecture/t090_2_map_object_taxonomy.md).
 - T-090.1.2.5.1 **Map program — inland water mask refine** @ `82488c6f` (tag **T-090.1.2.5.1**). Two-tier inland mask: compact `FLAT_FRAC_MAX` 0.5→**0.12** (road FP rejection); linear grey-river + wet-channel classes with DEM valley carve (48 m boxBlur) — 114 accepted bodies, 85 new stream segments; original operator FP sites PASS; **operator post-ship: residual FP/FN** at full-map pan (~4617, 8711 viewport). R3: Eden.topo BE-float32 polylines confirmed, framing undecoded → **T-090.8** lead. Artifacts: [`.ai/artifacts/t090_1_2_5_1_refine_spike.json`](.ai/artifacts/t090_1_2_5_1_refine_spike.json), [verify log](.ai/artifacts/t090_1_2_5_1_verify_log.md). Spec: [`t090_1_2_5_1_water_mask_refine.md`](docs/specs/Mission_Creator_Architecture/t090_1_2_5_1_water_mask_refine.md).

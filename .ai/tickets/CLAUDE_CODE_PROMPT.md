@@ -128,6 +128,13 @@ Naming: slice `T-090.1.2.2` → `.ai/artifacts/t090_1_2_2_claude_code_handoff.md
 | Entire spec pasted into prompt | Prompt summarizes; spec + handoff are attachments |
 | Cursor writes app code in the prompt | DO section references spec tasks |
 | Missing RETURN contract | Always SHA + tag + **Ready for Cursor doc sync.** |
+| Parallel streams in prose | **Two (or N) full fenced blocks** — see [`.cursor/rules/claude-prompt-delivery.mdc`](../../.cursor/rules/claude-prompt-delivery.mdc) |
+
+---
+
+## Parallel Claude Code sessions
+
+When operator runs **Stream A + Stream B** (e.g. `main` + worktree), Cursor delivers **two complete copy-paste prompts** in chat — one fenced block each. Spec §Claude Code prompt + handoff remain source of truth; chat blocks are the operator-facing copy layer.
 
 ---
 

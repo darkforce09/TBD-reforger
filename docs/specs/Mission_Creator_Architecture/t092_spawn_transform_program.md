@@ -1,6 +1,6 @@
 # T-092 — Spawn transform parity + mod mission compile
 
-**Status:** **ready** — **Active slice:** **T-092.1** → **T-092.2** (sequential on `ticket/T-092` worktree; parallel **T-090.1.1** on `main`). **T-091.2 shipped** @ `dde589e`.  
+**Status:** **shipped** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`) — wb_play + REST E2E **PASS** 2026-07-04 (verify @ `452ce501`). **Unblocks T-071 + T-068.13.**  
 **Ticket:** T-092 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Map program:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 

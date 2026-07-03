@@ -12,7 +12,7 @@
 - **T-068** — Virtual Arsenal (registry + loadout export) (ready)
 - **T-069** — Markers on map (queued)
 - **T-070** — Vehicles placeable (queued)
-- **T-071** — ORBAT Manager modal (queued)
+- **T-071** — ORBAT Manager modal (ready)
 - **T-072** — Ctrl multi-place (queued)
 - **T-073** — Shift + map rotation (queued)
 - **T-074** — Faction submode / catalog filter (queued)
@@ -311,20 +311,20 @@ Required for positioning you can trust in-game. Hub: [`t090_091_map_terrain_prog
 
 | Requirement | Status | Notes |
 |-------------|--------|-------|
-| **Aligned map imagery** (Satellite + Map basemap views, same origin as Reforger) | **T-090.1** + **T-090.1.1** — **queued** (after T-090.3.0 spike) | Today: grid only. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
+| **Aligned map imagery** (Satellite + Map basemap views, same origin as Reforger) | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified @ `.2.8`; Map cartographic pyramid + radio @ **T-090.1.1**. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
 | **Terrain wired to mission** (`meta.terrain` → viewport) | **Done (T-049)** | `terrainId` from `meta.terrain`, `key`-remounts `<TacticalMap>` on change. Bounds from Biki via `coords/terrains.ts`. |
 | **DEM loader / `sampleElevation`** | **Done (T-091.1)** @ `2c56c2e` | `tactical-map/dem/*`; consumed by T-091.2. |
 | **DEM assets (export)** | **Done (T-091.0)** @ `6d96339` | 16-bit PNG + 11 anchors; `make verify-terrain-strict` PASS. |
 | **Z on place & move** (sample DEM at x,y) | **Done (T-091.2)** @ `dde589e` | `terrainZ` in `addSlot` / `pasteSlots` / `moveEntities`; Attributes X/Y re-sample. |
 | **Z in UI** (toolbelt + Attributes, editable) | **Done (T-091.2)** @ `dde589e` | CUR/SEL + X/Y/Z @ 3 dp; hillshade + grid toggles in Mission Settings. |
-| **Satellite / Map basemap views** | **T-090.1** Satellite + **T-090.1.1** Map — **queued** (after T-090.3.0 spike) | Procedural grid + hillshade today; dual WebP pyramids pending export (**T-090.3**). [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
+| **Satellite / Map basemap views** | **Done (T-090.1 + T-090.1.1)** @ `564419e` / `6e06e679` | Satellite unified bundle + Map cartographic pyramid; Mission Settings **Satellite | Map** switch. Rebuild: `make map-water-everon` / `make map-cartographic-everon`. [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md). |
 | **Typed world objects** (roads, trees, buildings on map) | **T-090.2–.5** — spec ready | Taxonomy → Workbench export → Z audit → Deck layers. Eden UX ref: [`t090_eden_map_reference.md`](t090_eden_map_reference.md). |
 | **Z burial / floating props** | **T-090.4** + **T-090.6** — automated @ 1M | Phase A: pivot vs DEM. Phase B: OBB samples + `visibleAboveGroundPct` (no manual verify). |
 | **Building floor selector** | **T-129** — idea | Explicit out of T-090 scope. |
 | **Numeric X/Y/Z edit** (no “eyeball only”) | **Done (T-049)** | `updateSlotPosition` + Attributes `NumberField`s (blur/Enter commit; x/y clamped to terrain). |
 | **Rotation** (numeric + map) | **Partial (T-049/T-073)** | Numeric rotation editable in Transform (normalized 0–360); on-map rotate handle → **T-073**. |
-| **Mod spawn parity** (x/z/y/headingDeg) | **T-092** — queued | Compiler emits `editor.slots` only today — no mod `slots[]`. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |
-| **Export contract verified** | **Blocked** | Need T-092 compiled route + golden round-trip. |
+| **Mod spawn parity** (x/z/y/headingDeg) | **Done (T-092)** @ `a73224f2` | Schema 1.2 optional `y`; `GET /api/v1/missions/:id/compiled`; mod loader v1 + `X-Service-Token`; wb_play E2E PASS. Hub: [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md). |
+| **Export contract verified** | **Done (T-092.2)** @ `a73224f2` | `/compiled` validates against `mission.schema.json`; mod round-trip @ 4 slots. |
 | **Title hydrate from API** | **Done (T-049)** | `applyMissionRowMeta` applies the mission row `title` (+ terrain/env) to `meta` on load, including empty-`json_payload` missions. No PATCH-back (deferred **T-051**). |
 | **Autosave to mission version** | **Partial** | Save Version works; continuous autosave debounce not fully wired per [`engineering_plan.md`](engineering_plan.md). |
 
