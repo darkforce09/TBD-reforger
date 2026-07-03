@@ -2,9 +2,11 @@
 // when meta.environment.showHillshade is on AND the terrain DEM is ready. Built on the CPU
 // from the T-091.1 meters cache — a Deck BitmapLayer, not a luma.gl GLSL pass (the GPU path
 // is aspirational, see engineering_plan §4.2). The full 6400² grid as RGBA would be ~163 MB,
-// so the meters cache is downsampled to a ≤1024 px edge before the Horn hillshade build, and
-// the layer is memoized on [terrain, show] so a pan/zoom never rebuilds it — only a terrain
-// switch or a hillshade toggle does.
+// so the meters cache is downsampled to a ≤1024 px edge before the Horn hillshade build. The
+// Horn image is memoized on [terrain, show] so a pan/zoom never rebuilds it — only a terrain
+// switch or a hillshade toggle does; the blend strength (T-090.1.2.6 operator slider) lives in
+// a separate cheap layer memo, so dragging the slider swaps the BitmapLayer without re-running
+// the Horn build.
 
 import { useMemo } from 'react'
 import { BitmapLayer } from '@deck.gl/layers'
@@ -13,7 +15,6 @@ import type { TerrainDef } from '../coords/terrains'
 import { getDemRasterForOverlay, isDemReady } from '../dem/DemController'
 
 const MAX_EDGE = 1024 // downsample target — max edge of the hillshade raster
-const OPACITY = 0.4 // overlay opacity (~40%), light from NW
 
 // Light direction (NW), standard GIS hillshade.
 const AZIMUTH_RAD = (315 * Math.PI) / 180
@@ -80,33 +81,41 @@ function buildHillshadeImage(
 }
 
 /**
- * Hillshade Deck layer, or null when off / DEM not ready. `version` is the DemController
- * state counter (useDemVersion) — including it in the deps rebuilds the layer the moment the
- * DEM becomes ready, so a hillshade toggled on mid-load (or persisted on across a reload) paints
- * without an extra toggle. Memoized otherwise, so a pan/zoom never rebuilds.
+ * Hillshade Deck layer, or null when off / DEM not ready / opacity ≤ 0. `version` is the
+ * DemController state counter (useDemVersion) — including it in the deps rebuilds the image the
+ * moment the DEM becomes ready, so a hillshade toggled on mid-load (or persisted on across a
+ * reload) paints without an extra toggle. `opacity` (0–1, clamped) is the operator blend
+ * strength (T-090.1.2.6) — it only participates in the cheap layer memo, never the Horn build.
  */
 export function useDemLayer({
   terrain,
   show,
+  opacity,
   version,
 }: {
   terrain: TerrainDef
   show: boolean
+  opacity: number
   version: number
 }): BitmapLayer | null {
-  return useMemo(() => {
+  const image = useMemo(() => {
     if (!show || !isDemReady()) return null
     const dem = getDemRasterForOverlay()
     if (!dem) return null
-    const { image } = buildHillshadeImage(dem.metersCache, dem.width, dem.height)
+    return buildHillshadeImage(dem.metersCache, dem.width, dem.height).image
+    // `version` is a deliberate rebuild trigger (DEM ready/degraded/reload), not read in the body.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [terrain, show, version])
+
+  return useMemo(() => {
+    const clamped = Math.min(1, Math.max(0, opacity))
+    if (!image || clamped <= 0) return null
     return new BitmapLayer({
       id: 'dem-hillshade',
       coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
       bounds: [0, 0, terrain.width, terrain.height],
       image,
-      opacity: OPACITY,
+      opacity: clamped,
     })
-    // `version` is a deliberate rebuild trigger (DEM ready/degraded/reload), not read in the body.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [terrain, show, version])
+  }, [image, opacity, terrain])
 }

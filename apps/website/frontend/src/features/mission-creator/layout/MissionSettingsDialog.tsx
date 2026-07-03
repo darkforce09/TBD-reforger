@@ -11,7 +11,14 @@ import {
   type MissionMeta,
 } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { Field, ReadonlyField, SelectField, TextField, ToggleField } from './RightInspector/fields'
+import {
+  Field,
+  ReadonlyField,
+  SelectField,
+  SliderField,
+  TextField,
+  ToggleField,
+} from './RightInspector/fields'
 
 type Weather = MissionMeta['environment']['weather']
 
@@ -21,6 +28,11 @@ const WEATHER = [
   { value: 'heavy_rain', label: 'Heavy Rain' },
   { value: 'dense_fog', label: 'Dense Fog' },
 ]
+
+/** Stored 0–1 hillshade blend → slider percent; unset defaults to 40% (T-090.1.2.6). */
+function hillshadePercent(env: MissionMeta['environment'] | undefined): number {
+  return Math.round((env?.hillshadeOpacity ?? 0.4) * 100)
+}
 
 export function MissionSettingsDialog({
   md,
@@ -33,6 +45,7 @@ export function MissionSettingsDialog({
 }) {
   const meta = useMapStore((s) => s.meta)
   const env = meta?.environment
+  const hillshadeOn = env?.showHillshade === true
   // Basemap view is a per-user pref (localStorage), not mission meta — it travels with the
   // user, not the mission (dual-view N8). T-090.1 ships Satellite; Map lands in T-090.1.1.
   const basemapView = useBasemapView()
@@ -103,8 +116,15 @@ export function MissionSettingsDialog({
 
           <ToggleField
             label="Show hillshade"
-            checked={env?.showHillshade === true}
+            checked={hillshadeOn}
             onChange={(showHillshade) => updateEnvironment(md, { showHillshade })}
+          />
+
+          <SliderField
+            label="Hillshade strength"
+            value={hillshadePercent(env)}
+            disabled={!hillshadeOn}
+            onChange={(pct) => updateEnvironment(md, { hillshadeOpacity: pct / 100 })}
           />
         </div>
       </DialogContent>

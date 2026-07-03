@@ -37,6 +37,7 @@ function TacticalMapInner({
   terrain: terrainId,
   showGrid = false,
   showHillshade = false,
+  hillshadeOpacity = 0.4,
   className,
   onCursorMove,
   onReady,
@@ -120,7 +121,12 @@ function TacticalMapInner({
   // Re-render on DEM state changes (ready/degraded/reload) so the hillshade + cursor Z refresh
   // without an extra interaction (T-091.2 follow-up).
   const demVersion = useDemVersion()
-  const hillshade = useDemLayer({ terrain, show: showHillshade, version: demVersion })
+  const hillshade = useDemLayer({
+    terrain,
+    show: showHillshade,
+    opacity: hillshadeOpacity,
+    version: demVersion,
+  })
   const iconLayer = useIconLayer({ detail: !clusterMode, selection })
   const dragIconLayer = useDragIconLayer()
   const selectionLayer = useSelectionLayer()

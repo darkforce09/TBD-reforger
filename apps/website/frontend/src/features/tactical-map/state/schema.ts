@@ -17,6 +17,7 @@ export interface MissionMeta {
     thermals?: boolean
     showGrid?: boolean // procedural grid overlay — default true when undefined (T-091.2)
     showHillshade?: boolean // DEM hillshade overlay — default false when undefined (T-091.2)
+    hillshadeOpacity?: number // hillshade blend strength 0–1; default 0.4 when undefined (T-090.1.2.6)
   }
 }
 

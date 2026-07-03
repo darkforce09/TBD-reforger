@@ -138,6 +138,53 @@ export function ToggleField({
   )
 }
 
+/**
+ * Label + range slider + mono percent readout on one row (T-090.1.2.6 hillshade strength).
+ * Emits on every drag tick for live preview — Y.UndoManager's capture window coalesces a
+ * drag into one undo step. `disabled` dims the whole row (e.g. hillshade toggled off).
+ */
+export function SliderField({
+  label,
+  value,
+  onChange,
+  disabled = false,
+  min = 0,
+  max = 100,
+  step = 5,
+}: {
+  label: string
+  value: number
+  onChange: (v: number) => void
+  disabled?: boolean
+  min?: number
+  max?: number
+  step?: number
+}) {
+  const clamped = Math.min(max, Math.max(min, value))
+  return (
+    <div
+      className={cn('flex items-center justify-between gap-3 py-0.5', disabled && 'opacity-50')}
+    >
+      <span className="text-label-md text-on-surface-variant">{label}</span>
+      <div className="flex items-center gap-2">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={clamped}
+          disabled={disabled}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className={cn('w-32 accent-primary', disabled && 'cursor-not-allowed')}
+        />
+        <span className="w-9 text-right font-mono text-label-md tabular-nums text-on-surface">
+          {clamped}%
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function ReadonlyField({ label, value }: { label: string; value: string }) {
   return (
     <Field label={label}>

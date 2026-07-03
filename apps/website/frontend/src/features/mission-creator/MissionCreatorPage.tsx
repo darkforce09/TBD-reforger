@@ -213,6 +213,7 @@ export default function MissionCreatorPage() {
         terrain={terrainId}
         showGrid={env?.showGrid !== false}
         showHillshade={env?.showHillshade === true}
+        hillshadeOpacity={env?.hillshadeOpacity ?? 0.4}
         className="absolute inset-0 z-0 bg-background"
         onReady={onReady}
         onCursorMove={onCursorMove}

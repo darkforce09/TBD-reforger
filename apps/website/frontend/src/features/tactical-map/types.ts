@@ -36,6 +36,8 @@ export interface TacticalMapProps {
   showGrid?: boolean
   /** Draw the DEM hillshade overlay when the terrain DEM is ready (T-091.2). */
   showHillshade?: boolean
+  /** Hillshade overlay blend strength 0–1 (T-090.1.2.6). Default 0.4; ≤0 skips the layer. */
+  hillshadeOpacity?: number
   /** Extra classes for the absolutely-positioned canvas container. */
   className?: string
   /** Fired on hover with the world (meters) cursor position, or null when off-map.
