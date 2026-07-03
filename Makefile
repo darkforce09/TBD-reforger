@@ -49,7 +49,7 @@ tidy: ## Tidy Go modules
 	cd $(WEB) && go mod tidy
 
 schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency)
-	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10
+	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-object-golden && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10
 
 schema-codegen: ## Regenerate Go + TS contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
 	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
@@ -82,9 +82,12 @@ verify-terrain-strict: ## Full anchor alignment gate (T-091.0 GetSurfaceY DEM + 
 	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs --strict
 
 # T-090.0.2 — map-object contract verifiers (run inside schema-validate). Real gates.
-.PHONY: map-object-enums-verify map-glyphs-verify t090-spec-verify
+.PHONY: map-object-enums-verify map-object-golden-verify map-glyphs-verify t090-spec-verify
 map-object-enums-verify: ## T-090.2 enum single-source: prefab-classify + golden prefabs + glyph kinds subset of map-object-enums
 	cd packages/tbd-schema && npm ci --silent && npm run verify-map-object-enums
+
+map-object-golden-verify: ## T-090.2 semantic golden gates S2–S9: prefabId resolve, dedup, closed-enum coverage
+	cd packages/tbd-schema && npm ci --silent && npm run verify-map-object-golden
 
 map-glyphs-verify: ## T-090.5 glyph coverage: every golden prefab render.iconKey has an SVG + manifest entry
 	cd packages/tbd-schema && npm ci --silent && npm run verify-map-glyphs

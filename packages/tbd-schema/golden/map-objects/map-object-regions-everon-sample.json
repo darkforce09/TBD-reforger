@@ -33,5 +33,15 @@
     ],
     "coverType": "none",
     "source": "derived-hull"
+  },
+  {
+    "id": "waterbody-everon-001",
+    "kind": "waterBody",
+    "polygon": [
+      [[4200, 7800], [4550, 7820], [4600, 8100], [4300, 8150], [4200, 7800]]
+    ],
+    "areaHa": 9.8,
+    "coverType": "none",
+    "source": "engine-mask"
   }
 ]
