@@ -82,7 +82,7 @@
 | T-087 | 870 | deferred | platform | CMS rich text editor | Rich text editor for announcements and CMS content. |
 | T-088 | 880 | deferred | platform | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | deferred | platform | Mission title PATCH sync | PATCH mission title to server on edit (absorbs former T-051 scope). |
-| T-090 | 900 | ready | infra | Map visualization program | Eden-like map detail (N1-N12). T-090.1.2.5 shipped @ 6396960f (water composite). T-090.1.2.6 @ b958e3b4. Next: T-090.1.1 Map view; water mask refine T-090.1.2.5.1 (roads FP, hill rivers FN). Hub: t090_091_map_terrain_program.md. |
+| T-090 | 900 | ready | infra | Map visualization program | Eden-like map detail (N1-N12). T-090.1.2.5 @ 6396960f (water composite). Active: T-090.1.2.5.1 inland mask refine (roads FP, hill rivers FN). Hub: t090_091_map_terrain_program.md. |
 | T-091 | 910 | shipped | infra | DEM + auto Z | T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md. |
 | T-092 | 920 | ready | infra | Spawn transform parity + mod mission compile | Mod-native mission 1.1 document (slots[] id/x/z/y/headingDeg/kit), GET /api/v1/missions/:id/compiled, spawn height + capsule offset + yaw verify. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | scale | Continuous autosave polish | Background autosave UX and conflict handling polish. |

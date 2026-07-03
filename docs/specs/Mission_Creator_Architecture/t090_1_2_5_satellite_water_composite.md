@@ -111,7 +111,7 @@ First ship passes W1–W4 bar but inland mask **E** (grey SAP appearance + DEM f
 | **Road false positives** | Paved roads / yards tinted blue (see verify crops + in-editor pan) | Grey low-sat SAP pixels on asphalt; density opening removes *thin* roads but wide paved areas and merged components pass `minAreaM2` + `flatFrac` | **T-090.1.2.5.1** — road exclusion via `.topo`/smap probe, tighter grey calibration, or component shape (elongation) filter |
 | **Hill river false negatives** | Mountain stream beds dry on map | `slopeMeanMaxDeg` 8° + 8 m opening fragments narrow steep channels; water surface above bed in DEM | **T-090.1.2.5.1** — valley-channel carve using DEM hydrology, relax slope for linear bodies, or T-090.8 entity export |
 
-Not a regression on ocean (A) or central lake — refine inland mask only; rebuild ortho + bundle after filter fix.
+Not a regression on ocean (A) or central lake — refine inland mask only; rebuild ortho + bundle after filter fix. **Follow-up slice:** [`t090_1_2_5_1_water_mask_refine.md`](t090_1_2_5_1_water_mask_refine.md) (**T-090.1.2.5.1**, active).
 
 ---
 
