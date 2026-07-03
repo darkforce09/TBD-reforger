@@ -26,7 +26,7 @@ const targets = [
 ];
 
 // Schemas copied into the Go module so internal/contract can go:embed them for runtime validation.
-const embedSchemas = ["mission-editor-payload.schema.json"];
+const embedSchemas = ["mission-editor-payload.schema.json", "mission.schema.json"];
 
 const tsBanner = (s) => `/* eslint-disable */
 /**
@@ -76,6 +76,18 @@ mkdirSync(embedDir, { recursive: true });
 for (const s of embedSchemas) {
   copyFileSync(join(schemaDir, s), join(embedDir, s));
   console.log(`  embed: internal/contract/schema/${s}`);
+}
+
+// Registry data both flatten implementations consume (T-092.2): canonical copy lives in
+// packages/tbd-schema/registry/; mirrored for go:embed and for the Vite JSON import.
+const registryAssets = ["kit-aliases.json"];
+const registrySrc = join(root, "registry");
+const goRegistryDir = join(goRoot, "registry");
+mkdirSync(goRegistryDir, { recursive: true });
+for (const f of registryAssets) {
+  copyFileSync(join(registrySrc, f), join(goRegistryDir, f));
+  copyFileSync(join(registrySrc, f), join(tsOut, f));
+  console.log(`  registry: internal/contract/registry/${f} + types/contract/${f}`);
 }
 
 console.log("schema-codegen complete");

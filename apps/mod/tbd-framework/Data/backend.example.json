@@ -1,6 +1,6 @@
 {
   "backendUrl": "http://127.0.0.1:8080",
-  "serverToken": "replace-with-GAME_SERVER_TOKENS-value",
+  "serverToken": "replace-with-SERVICE_TOKEN-value",
   "missionId": "msn_8f3a2c",
   "eventId": "b0000000-0000-4000-8000-000000000001"
 }

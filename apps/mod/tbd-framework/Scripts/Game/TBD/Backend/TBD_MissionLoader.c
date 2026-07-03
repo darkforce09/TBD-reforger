@@ -78,7 +78,7 @@ class TBD_MissionDocumentStruct
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
-//! @route GET /api/missions/{id}/compiled (mod-expected backend route; see DOCUMENTATION_STANDARDS §3).
+//! @route GET /api/v1/missions/{id}/compiled (service-token tier; body = this canonical document, T-092.2).
 class TBD_MissionLoader
 {
 	//! Hard cap on a profile mission file. A file over this would silently truncate in
@@ -237,10 +237,12 @@ class TBD_MissionLoader
 		s_RestCallback.SetOnSuccess(OnBackendFetchSuccess);
 		s_RestCallback.SetOnError(OnBackendFetchError);
 
+		// Backend guards the game-server tier with X-Service-Token (middleware.RequireServiceToken),
+		// not an Authorization bearer — same header the /ingest telemetry endpoints use.
 		string token = TBD_BackendConfig.GetServerToken();
-		ctx.SetHeaders(string.Format("Authorization, Bearer %1,Accept,application/json", token));
+		ctx.SetHeaders(string.Format("X-Service-Token,%1,Accept,application/json", token));
 
-		string path = string.Format("/api/missions/%1/compiled", missionId);
+		string path = string.Format("/api/v1/missions/%1/compiled", missionId);
 		Print("[TBD] Fetching mission " + missionId + " from " + baseUrl + path);
 		ctx.GET(s_RestCallback, path);
 	}

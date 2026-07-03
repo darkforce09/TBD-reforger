@@ -192,6 +192,11 @@ func (h *Handler) Register(rg *gin.RouterGroup) {
 	ingest.POST("/link-confirm", h.IngestLinkConfirm)
 	ingest.POST("/server-status", h.IngestServerStatus)
 	ingest.POST("/match-results", h.IngestMatchResults)
+
+	// Game-server mission fetch (service-token auth): the compiled mod-native mission
+	// document TBD_MissionLoader consumes (T-092.2).
+	gameserver := rg.Group("", middleware.RequireServiceToken(h.cfg.ServiceToken))
+	gameserver.GET("/missions/:id/compiled", h.GetCompiledMission)
 }
 
 // uploadDir is the local directory for CMS thumbnail uploads, served at /uploads.
