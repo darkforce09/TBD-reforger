@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-instance/v1.json",
   "title": "TBD Map Object Instance (catalog v1 placement row)",
-  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Two equivalent encodings: an expanded object (golden/readability) or a compact positional array [id, prefabId, x, y, z?, rotationDeg?] (T-110 binary compile input).",
+  "description": "One placed object. Compact: references its prefab by index; never duplicates kind/class/resourceName/bounds (resolve via prefabs[prefabId]). T-090.2. Three equivalent encodings: an expanded object (golden/readability), a legacy id-first positional array [id, prefabId, x, y, z?, rotationDeg?], or the T-090.3.1 chunk wire tuple [prefabId, x, y, z, rotationDeg] (all numbers; id derived as {cx}_{cy}:{index}). Discriminator: element 0 string = legacy tuple, element 0 number = chunk tuple.",
   "oneOf": [
     {
       "type": "object",
@@ -22,10 +22,32 @@
     },
     {
       "type": "array",
-      "description": "Compact positional tuple [id, prefabId, x, y, z?, rotationDeg?] (T-110 binary compile input). Position 0 is the string id; 1 is the integer prefabId; 2..5 are numbers (x, y, z?, rotationDeg?).",
+      "description": "Legacy positional tuple [id, prefabId, x, y, z?, rotationDeg?] (T-110 binary compile input). Position 0 is the string id; 1 is the integer prefabId; 2..5 are numbers (x, y, z?, rotationDeg?).",
       "minItems": 4,
       "maxItems": 6,
-      "items": { "type": ["string", "number"] }
+      "prefixItems": [
+        { "type": "string", "minLength": 1 },
+        { "type": "integer", "minimum": 0 },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false
+    },
+    {
+      "type": "array",
+      "description": "Chunk wire tuple v2 [prefabId, x, y, z, rotationDeg] (T-090.3.1, plan §3.2) — all numbers, exactly 5. Instance id is derived from chunk file + index ({cx}_{cy}:{index}), unique by construction (G5). Written by objects/chunks/{cx}_{cy}.json.gz only.",
+      "minItems": 5,
+      "maxItems": 5,
+      "prefixItems": [
+        { "type": "integer", "minimum": 0 },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" },
+        { "type": "number" }
+      ],
+      "items": false
     }
   ]
 }

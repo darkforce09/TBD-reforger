@@ -1,0 +1,25 @@
+{
+  "description": "T-090.3.1 P1-4 synthetic anchor fixture. rawEntities are plugin-format rows (ENGINE coords: x=east, y=altitude, z=north, headingDeg=GetAngles()[1]); expected.* is what a correct P1 build produces after remap (map.x=x, map.y=z, map.z=y) + classify (buildings only) + dedupe (sorted by resourceName) + partition (clamp(floor(coord/512),0,24)). Pins: x=512.0 boundary -> cell 1 not 0; corner 12800.0 -> clamped to cell 24; empty-resourceName row and tree row excluded from P1. verify-map-object-golden runs scripts/map-assets/lib/anchor-check.mjs checkAnchors() against this fixture — the same function verify-phase.mjs runs against the real staged raw + committed chunks.",
+  "worldSizeM": 12800,
+  "chunkSizeM": 512,
+  "rawEntities": [
+    { "resourceName": "{000000000000000A}Prefabs/Structures/Residential/House_Village_01.et", "className": "GenericEntity", "x": 800.5, "y": 55.0, "z": 900.0, "headingDeg": 47.25, "pitchDeg": 0, "rollDeg": 0, "halfExtentsM": [5, 5, 4] },
+    { "resourceName": "{000000000000000A}Prefabs/Structures/Residential/House_Village_01.et", "className": "GenericEntity", "x": 512.0, "y": 41.3, "z": 100.0, "headingDeg": 90, "pitchDeg": 0, "rollDeg": 0, "halfExtentsM": [5, 5, 4] },
+    { "resourceName": "{000000000000000A}Prefabs/Structures/Residential/House_Village_01.et", "className": "GenericEntity", "x": 0.0, "y": 12.0, "z": 0.0, "headingDeg": 0, "pitchDeg": 0, "rollDeg": 0, "halfExtentsM": [5, 5, 4] },
+    { "resourceName": "{000000000000000F}Prefabs/Structures/Military/Barracks_01.et", "className": "GenericEntity", "x": 12800.0, "y": 92.0, "z": 12800.0, "headingDeg": 180, "pitchDeg": 0, "rollDeg": 0, "halfExtentsM": [9, 5, 4] },
+    { "resourceName": "", "className": "DecalEntity", "x": 900.0, "y": 50.0, "z": 900.0, "headingDeg": 0, "pitchDeg": 0, "rollDeg": 0, "halfExtentsM": [1, 1, 0.1] },
+    { "resourceName": "{0000000000000001}Prefabs/Vegetation/Trees/Tree_Pinus_M.et", "className": "TreeEntity", "x": 810.0, "y": 54.0, "z": 910.0, "headingDeg": 0, "pitchDeg": 0, "rollDeg": 0, "halfExtentsM": [1.2, 6, 1.2] }
+  ],
+  "expected": {
+    "prefabs": [
+      { "prefabId": 0, "resourceName": "{000000000000000A}Prefabs/Structures/Residential/House_Village_01.et", "kind": "building", "class": "residential" },
+      { "prefabId": 1, "resourceName": "{000000000000000F}Prefabs/Structures/Military/Barracks_01.et", "kind": "building", "class": "military" }
+    ],
+    "chunks": {
+      "0_0": { "instances": [[0, 0.0, 0.0, 12.0, 0]] },
+      "1_0": { "instances": [[0, 512.0, 100.0, 41.3, 90]] },
+      "1_1": { "instances": [[0, 800.5, 900.0, 55.0, 47.25]] },
+      "24_24": { "instances": [[1, 12800.0, 12800.0, 92.0, 180]] }
+    }
+  }
+}

@@ -4,8 +4,16 @@
   "slice": "T-090.3.0",
   "generatedAt": "2026-06-30T16:20:00Z",
   "status": "COMPLETE — enumeration proven on real Everon (TBD_Dev_POC.ent + Eden). K1/K1b/K2/K5/K6/K7 PASS; K3/K4 honest RED (tile production = T-090.1/.1.1, out of spike scope).",
-  "subregionBBoxM": [1024.0, 6144.0, 1536.0, 6656.0],
-  "subregionCellCentreM": [1280.0, 6400.0],
+  "subregionBBoxM": [
+    1024,
+    6144,
+    1536,
+    6656
+  ],
+  "subregionCellCentreM": [
+    1280,
+    6400
+  ],
   "subregionNote": "Auto-selected by the plugin's 5x5 scan as the densest building 512 m cell (coastal SW, near RaccoonRock). 7530 entities in the AABB, 7401 with origin inside the cell.",
   "probes": {
     "S0": {
@@ -25,8 +33,25 @@
     "S1b": {
       "result": "PASS",
       "census": "packages/map-assets/everon/staging/spike/type-inventory-spike.json (censusStatus=partial)",
-      "levels": { "uniquePrefabs": 239, "totalInstances": 7401 },
-      "byKind": { "building": { "prefabTypes": 13, "instances": 41 }, "prop": { "prefabTypes": 224, "instances": 7355 }, "road": { "prefabTypes": 2, "instances": 5, "segments": 0 } },
+      "levels": {
+        "uniquePrefabs": 239,
+        "totalInstances": 7401
+      },
+      "byKind": {
+        "building": {
+          "prefabTypes": 13,
+          "instances": 41
+        },
+        "prop": {
+          "prefabTypes": 224,
+          "instances": 7355
+        },
+        "road": {
+          "prefabTypes": 2,
+          "instances": 5,
+          "segments": 0
+        }
+      },
       "note": "I1 holds (41+7355+5=7401). needsReview=224 prefab types (rocks/bushes/vegetation not covered by the thin prefab-classify.json rules) — rule authoring is T-090.2, out of spike scope. Building rows present (HouseRuins, House_Mountain/Wooden, Castle walls) → K1 green."
     },
     "S2": {
@@ -76,10 +101,22 @@
     "editorToExport": "editor Deck.gl (x = worldX, y = worldZ north); mod export z = editor y (T-090 coordinate contract). Glyph rotation / spawn heading = GetAngles()[1] (yaw about world-up Y); GetAngles()[0]=pitch, [2]=roll.",
     "sampleEntity": {
       "resourceName": "{BEF9077AF9F93AE7}Prefabs/Structures/Houses/Village/House_Mountain_E_1I01/House_Mountain_E_1I01.et",
-      "positionXYZ": [1232.76, 41.6405, 6240.26],
-      "getAnglesRaw": [0.0, 47.0, 0.0],
+      "positionXYZ": [
+        1232.76,
+        41.6405,
+        6240.26
+      ],
+      "getAnglesRaw": [
+        0,
+        47,
+        0
+      ],
       "interpretation": "upright building: pitch(ang0)=0, heading(ang1)=47 deg, roll(ang2)=0 -> heading is ang[1]",
-      "worldBoundsHalfExtentsM": [13.3683, 7.38779, 13.644]
+      "worldBoundsHalfExtentsM": [
+        13.3683,
+        7.38779,
+        13.644
+      ]
     }
   },
   "forestSource": "derived-hull-mandated",
@@ -125,9 +162,113 @@
     "generatedAt": "2026-07-03T11:38:07Z"
   },
   "sampleRows": [
-    { "resourceName": "{BEF9077AF9F93AE7}Prefabs/Structures/Houses/Village/House_Mountain_E_1I01/House_Mountain_E_1I01.et", "x": 1232.76, "y": 41.6405, "z": 6240.26 },
-    { "resourceName": "{C212C8AC6001F002}Prefabs/Structures/Houses/Wooden/House_Wooden_E_1I01/House_Wooden_E_1I01.et", "x": 1180.74, "y": 34.1875, "z": 6237.72 },
-    { "resourceName": "{D9DF1D13919F19A0}Prefabs/Vegetation/Bush/b_rosa_canina_0s.et", "x": 1490.74, "y": 2.88421, "z": 6308.36 }
+    {
+      "resourceName": "{BEF9077AF9F93AE7}Prefabs/Structures/Houses/Village/House_Mountain_E_1I01/House_Mountain_E_1I01.et",
+      "x": 1232.76,
+      "y": 41.6405,
+      "z": 6240.26
+    },
+    {
+      "resourceName": "{C212C8AC6001F002}Prefabs/Structures/Houses/Wooden/House_Wooden_E_1I01/House_Wooden_E_1I01.et",
+      "x": 1180.74,
+      "y": 34.1875,
+      "z": 6237.72
+    },
+    {
+      "resourceName": "{D9DF1D13919F19A0}Prefabs/Vegetation/Bush/b_rosa_canina_0s.et",
+      "x": 1490.74,
+      "y": 2.88421,
+      "z": 6308.36
+    }
   ],
-  "mcpToolsUsed": ["wb_connect", "wb_state", "wb_entity_list", "api_search", "asset_search", "wiki_search", "wb_reload", "wb_execute_action", "wb_open_resource", "mod_validate"]
+  "mcpToolsUsed": [
+    "wb_connect",
+    "wb_state",
+    "wb_entity_list",
+    "api_search",
+    "asset_search",
+    "wiki_search",
+    "wb_reload",
+    "wb_execute_action",
+    "wb_open_resource",
+    "mod_validate"
+  ],
+  "fullExport": {
+    "objects": {
+      "slice": "T-090.3.1",
+      "phase": "P1_buildings",
+      "stagedAt": "2026-07-04T23:43:38.437Z",
+      "rawLineCount": 1409998,
+      "rawUniqueResourceNames": 2030,
+      "noPrefab": {
+        "count": 182661,
+        "topClassNames": [
+          {
+            "className": "GenericEntity",
+            "count": 163694
+          },
+          {
+            "className": "Building",
+            "count": 9047
+          },
+          {
+            "className": "StaticModelEntity",
+            "count": 2718
+          },
+          {
+            "className": "RoadEntity",
+            "count": 2152
+          },
+          {
+            "className": "GameEnvironmentProbeEntity",
+            "count": 1853
+          },
+          {
+            "className": "GameEntity",
+            "count": 986
+          },
+          {
+            "className": "LightEntity",
+            "count": 829
+          },
+          {
+            "className": "SCR_DestructibleBuildingEntity",
+            "count": 383
+          },
+          {
+            "className": "SCR_PrefabSpawnPoint",
+            "count": 209
+          },
+          {
+            "className": "EntityEditIcon",
+            "count": 173
+          }
+        ]
+      },
+      "outOfBounds": 0,
+      "catalog": {
+        "prefabCount": 310,
+        "instanceCount": 5606,
+        "chunkCount": 219
+      },
+      "unclassifiedRawTypes": 1523
+    },
+    "roads": {
+      "slice": "T-090.3.1",
+      "source": "decode-topo section 1",
+      "classMappingProvisional": true,
+      "classByTopoType": {
+        "0": "runway",
+        "3": "road_paved",
+        "5": "road_dirt"
+      },
+      "segments": 766,
+      "byClass": {
+        "runway": 5,
+        "road_paved": 367,
+        "road_dirt": 394
+      },
+      "points": 170112
+    }
+  }
 }

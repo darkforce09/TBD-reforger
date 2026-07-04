@@ -10,7 +10,7 @@
       "exportProfile": "default",
       "status": "active",
       "importPhaseMax": "P1_buildings",
-      "importPhaseShipped": []
+      "importPhaseShipped": ["P1_buildings"]
     },
     {
       "terrainId": "arland",
@@ -19,7 +19,9 @@
       "manifestPath": "arland/manifest.json",
       "workbenchWorld": "Worlds/Arland/Arland.ent",
       "exportProfile": "default",
-      "status": "queued"
+      "status": "queued",
+      "importPhaseMax": "P1_buildings",
+      "importPhaseShipped": []
     }
   ]
 }

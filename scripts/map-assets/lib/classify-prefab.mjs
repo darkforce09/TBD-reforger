@@ -6,7 +6,8 @@
 // whose `match.resourceNameContains` substring appears in the resourceName wins (rule order = priority);
 // otherwise the rule file's `fallback` (kind=prop, class=unknown). Substring match is case-sensitive —
 // resourceName paths preserve PascalCase (e.g. "…/House_01.et"), and the rule needles are authored to match.
-import { readFileSync } from "node:fs";
+import { createReadStream, readFileSync } from "node:fs";
+import { createInterface } from "node:readline";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,6 +39,58 @@ export function classifyResourceName(resourceName) {
   }
   const fb = rules.fallback ?? { kind: "prop", class: "unknown" };
   return { kind: fb.kind, class: fb.class, matched: false, rule: fb };
+}
+
+/**
+ * T-090.3.1 — memoized classifier for full-map streams. classifyResourceName is O(rules × needles)
+ * per call; a full Everon raw export is ~1M rows over only a few-k unique resourceNames, so the
+ * memo turns 10^8+ substring scans into hash hits. One memo per call site (rules are cached
+ * process-wide anyway).
+ * @returns {(resourceName: string) => { kind: string, class: string, matched: boolean, rule: object }}
+ */
+export function createClassifier() {
+  const memo = new Map();
+  return (resourceName) => {
+    const name = typeof resourceName === "string" ? resourceName : "";
+    let hit = memo.get(name);
+    if (!hit) {
+      hit = classifyResourceName(name);
+      memo.set(name, hit);
+    }
+    return hit;
+  };
+}
+
+/**
+ * T-090.3.1 — stream a raw-entities.jsonl of any size (full Everon ≈ 250-300 MB; readFileSync+split
+ * would ~2.5× that in heap). Calls onRow(row, lineNumber) per parsed line.
+ *
+ * Parse errors are FATAL by design (throws on the first bad line): the full pipeline's count gates
+ * (G11/I1) are exact-integer identities, and a truncated copy must never survive to a census.
+ * Spike-sized callers keep using classifyRawEntitiesJsonl (collect-and-skip semantics).
+ *
+ * @param {string} path absolute path to the jsonl
+ * @param {(row: object, lineNumber: number) => void} onRow
+ * @returns {Promise<{ lineCount: number }>}
+ */
+export async function streamRawEntities(path, onRow) {
+  const rl = createInterface({ input: createReadStream(path, { encoding: "utf8" }), crlfDelay: Infinity });
+  let lineNumber = 0;
+  let lineCount = 0;
+  for await (const raw of rl) {
+    lineNumber++;
+    const line = raw.trim();
+    if (!line) continue;
+    let row;
+    try {
+      row = JSON.parse(line);
+    } catch (e) {
+      throw new Error(`streamRawEntities: parse error at ${path}:${lineNumber} — ${e}`);
+    }
+    lineCount++;
+    onRow(row, lineNumber);
+  }
+  return { lineCount };
 }
 
 /**

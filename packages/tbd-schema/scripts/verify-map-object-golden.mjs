@@ -1,4 +1,5 @@
-// T-090.2 semantic golden gates S2–S9. AJV shape validation (S1) lives in validate.mjs and the
+// T-090.2 semantic golden gates S2–S9 (+ T-090.3.1 S11 chunk golden, S12 anchor fixture).
+// AJV shape validation (S1) lives in validate.mjs and the
 // enum drift gate (S10) in verify-map-object-enums.mjs — this script owns everything AJV cannot
 // express: prefabId resolution, prefab-table dedup, and closed-enum *coverage* (>=1 golden example
 // per class enum member per kind). Bundle isolation: each catalog bundle's instances resolve ONLY
@@ -8,6 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
+import { checkAnchors, cellOf, chunkKey } from "../../../scripts/map-assets/lib/anchor-check.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const readJSON = (p) => JSON.parse(readFileSync(p, "utf8"));
@@ -48,14 +50,18 @@ const instancesSample = readJSON(moPath("map-object-instances-sample.json"));
 const regionsSample = readJSON(moPath("map-object-regions-everon-sample.json"));
 const roadsSample = readJSON(moPath("map-object-roads-sample.json"));
 const resolvedSample = readJSON(moPath("map-object-resolved-sample.json"));
+const chunkSample = readJSON(moPath("map-object-chunk-sample.json"));
+const anchorFixture = readJSON(moPath("phased", "P1-anchor-fixture.json"));
 const catalogBundles = [
   { label: "map-object-catalog-everon-sample.json", data: readJSON(moPath("map-object-catalog-everon-sample.json")) },
   { label: "phased/P1-buildings.json", data: readJSON(moPath("phased", "P1-buildings.json")) },
 ];
 
-// Prefab tables paired with their instance arrays (bundle isolation).
+// Prefab tables paired with their instance arrays (bundle isolation). The chunk sample's
+// 5-tuples resolve against prefabs-sample (its documented pairing).
 const tables = [
   { label: "prefabs-sample", prefabs: prefabsSample, instances: instancesSample, roadSegments: roadsSample.roadSegments },
+  { label: "chunk-sample", prefabs: prefabsSample, instances: chunkSample.chunk.instances, roadSegments: [] },
   ...catalogBundles.map((b) => ({
     label: b.label,
     prefabs: b.data.prefabs ?? [],
@@ -66,8 +72,11 @@ const tables = [
 
 const gates = [];
 const gate = (id, label, errs) => gates.push({ id, label, errs });
-const instId = (row) => (Array.isArray(row) ? row[0] : row.id);
-const instPrefabId = (row) => (Array.isArray(row) ? row[1] : row.prefabId);
+// Tuple discriminator (map-object-instance oneOf): element 0 string = legacy [id, prefabId, ...],
+// element 0 number = T-090.3.1 chunk wire tuple [prefabId, x, y, z, rotationDeg] (id derived).
+const isChunkTuple = (row) => Array.isArray(row) && typeof row[0] === "number";
+const instId = (row) => (Array.isArray(row) ? (isChunkTuple(row) ? `[${row.join(",")}]` : row[0]) : row.id);
+const instPrefabId = (row) => (Array.isArray(row) ? (isChunkTuple(row) ? row[0] : row[1]) : row.prefabId);
 
 // S2 — every prefab row has kind + class; every instance resolves to a prefab carrying both.
 {
@@ -207,6 +216,73 @@ const instPrefabId = (row) => (Array.isArray(row) ? row[1] : row.prefabId);
   gate("S9", "full closed-enum coverage (prefab classes + road segments + region kinds)", errs);
 }
 
+// S11 — T-090.3.1 chunk golden: production chunk payload shape. Every row is an all-number
+// 5-tuple, AJV-valid against map-object-instance, inside the chunk's half-open bounds
+// (x=512.0 boundary row pins floor-partition G6), sorted by (x, y, prefabId); ≥1 prefabs-sample
+// row carries render.importanceZoom (schema bump coverage).
+{
+  const errs = [];
+  const ajv = new Ajv({ allErrors: true, strict: true, strictTuples: false, allowUnionTypes: true });
+  addFormats(ajv);
+  const validateInstance = ajv.compile(readJSON(join(root, "schema", "map-object-instance.schema.json")));
+  const { cx, cy, chunkSizeM } = chunkSample;
+  const rows = chunkSample.chunk.instances;
+  if (rows.length === 0) errs.push("chunk-sample: empty instances");
+  let prev = null;
+  for (const [i, row] of rows.entries()) {
+    if (!isChunkTuple(row) || row.length !== 5 || !row.every((v) => typeof v === "number")) {
+      errs.push(`chunk-sample[${i}]: not an all-number 5-tuple`);
+      continue;
+    }
+    if (!validateInstance(row)) errs.push(`chunk-sample[${i}]: schema invalid (${JSON.stringify(validateInstance.errors?.[0]?.message)})`);
+    const [, x, y] = row;
+    if (x < cx * chunkSizeM || x >= (cx + 1) * chunkSizeM) errs.push(`chunk-sample[${i}]: x ${x} outside [${cx * chunkSizeM}, ${(cx + 1) * chunkSizeM})`);
+    if (y < cy * chunkSizeM || y >= (cy + 1) * chunkSizeM) errs.push(`chunk-sample[${i}]: y ${y} outside [${cy * chunkSizeM}, ${(cy + 1) * chunkSizeM})`);
+    if (prev && !(prev[1] < x || (prev[1] === x && (prev[2] < y || (prev[2] === y && prev[0] <= row[0]))))) {
+      errs.push(`chunk-sample[${i}]: rows not sorted by (x, y, prefabId)`);
+    }
+    prev = row;
+  }
+  if (!prefabsSample.some((p) => typeof p.render?.importanceZoom === "number")) {
+    errs.push("prefabs-sample: no prefab carries render.importanceZoom (T-090.3.1 bump needs golden coverage)");
+  }
+  gate("S11", "chunk golden — 5-tuple rows, bounds, sort order, importanceZoom coverage", errs);
+}
+
+// S12 — T-090.3.1 P1-4 synthetic anchor fixture: the shared checkAnchors() (same function
+// verify-phase.mjs runs against staged raw + committed chunks) passes on the fixture; expected
+// chunks are internally consistent with the partition formula; excluded rows (empty resourceName,
+// non-building) never appear in expected chunks.
+{
+  const errs = [];
+  const { worldSizeM, chunkSizeM, rawEntities, expected } = anchorFixture;
+  const buildingAnchors = rawEntities.filter(
+    (r) => r.resourceName !== "" && expected.prefabs.some((p) => p.resourceName === r.resourceName && p.kind === "building"),
+  );
+  if (buildingAnchors.length === 0) errs.push("anchor-fixture: no building anchors");
+  errs.push(
+    ...checkAnchors({
+      anchors: buildingAnchors,
+      prefabs: expected.prefabs,
+      getChunk: (cx, cy) => expected.chunks[chunkKey(cx, cy)] ?? null,
+      chunkSizeM,
+      worldSizeM,
+    }),
+  );
+  let expectedTotal = 0;
+  for (const [key, chunk] of Object.entries(expected.chunks)) {
+    for (const row of chunk.instances) {
+      expectedTotal += 1;
+      const k = chunkKey(cellOf(row[1], chunkSizeM, worldSizeM), cellOf(row[2], chunkSizeM, worldSizeM));
+      if (k !== key) errs.push(`anchor-fixture chunk ${key}: row ${JSON.stringify(row)} partitions to ${k}`);
+    }
+  }
+  if (expectedTotal !== buildingAnchors.length) {
+    errs.push(`anchor-fixture: expected chunks hold ${expectedTotal} instances, raw has ${buildingAnchors.length} building rows (exclusion rule broken)`);
+  }
+  gate("S12", "anchor fixture — shared checkAnchors PASS + partition consistency + exclusions", errs);
+}
+
 let failures = 0;
 for (const g of gates) {
   if (g.errs.length === 0) {
@@ -223,5 +299,5 @@ if (failures) {
   process.exit(1);
 }
 console.log(
-  `\nverify-map-object-golden: OK (S2–S9; ${prefabsSample.length} prefabs, ${instancesSample.length} instances, ${roadsSample.roadSegments.length} segments, ${regionsSample.length} regions, ${resolvedSample.length} resolved; zero missing enum examples)`,
+  `\nverify-map-object-golden: OK (S2–S9 + S11/S12; ${prefabsSample.length} prefabs, ${instancesSample.length} instances, ${chunkSample.chunk.instances.length} chunk rows, ${roadsSample.roadSegments.length} segments, ${regionsSample.length} regions, ${resolvedSample.length} resolved; zero missing enum examples)`,
 );

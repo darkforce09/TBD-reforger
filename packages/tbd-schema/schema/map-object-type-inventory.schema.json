@@ -161,6 +161,12 @@
       "properties": {
         "prefabTypes": { "$ref": "#/$defs/exactCount" },
         "instances": { "$ref": "#/$defs/exactCount" },
+        "importanceZoom": {
+          "type": "number",
+          "minimum": -6,
+          "maximum": 6,
+          "description": "T-090.3.1 (plan §3.4): per-class importanceZoom default copied from prefab-classify.json rules so the LOD table is data-driven from census. Absent when no rule for the class declares one."
+        },
         "prefabs": {
           "type": "array",
           "items": {

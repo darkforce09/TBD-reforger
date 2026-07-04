@@ -11,7 +11,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 const readJSON = (p) => JSON.parse(readFileSync(p, "utf8"));
 
-const ajv = new Ajv({ allErrors: true, strict: true, allowUnionTypes: true });
+const ajv = new Ajv({ allErrors: true, strict: true, strictTuples: false, allowUnionTypes: true });
 addFormats(ajv);
 
 const missionSchema = readJSON(join(root, "schema", "mission.schema.json"));
@@ -144,6 +144,11 @@ for (const [i, row] of readJSON(moPath("map-object-prefabs-sample.json")).entrie
 console.log("Map object instances:");
 for (const [i, row] of readJSON(moPath("map-object-instances-sample.json")).entries()) {
   check(`instance[${i}]`, validateMapInstance, row);
+}
+
+console.log("Map object chunk sample (T-090.3.1 — all-number 5-tuples):");
+for (const [i, row] of readJSON(moPath("map-object-chunk-sample.json")).chunk.instances.entries()) {
+  check(`chunk-instance[${i}]`, validateMapInstance, row);
 }
 
 console.log("Map object regions (forest / field):");

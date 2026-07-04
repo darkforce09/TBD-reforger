@@ -115,7 +115,7 @@ const gate8Files = [
   ...corpus,
   ...authorityDocs.map((p) => ({ name: relative(repoRoot, p), text: existsSync(p) ? read(p) : "" })),
 ];
-const hasT0901 = /T-090\.1(?!\.\d)/; // T-090.1 but not T-090.1.1
+const hasT0901 = /T-090\.1(?!\d)(?!\.\d)/; // T-090.1 but not T-090.1.1 / T-090.10.x (T-090.3.1 regex fix)
 for (const { name, text } of gate8Files) {
   for (const line of text.split("\n")) {
     if (!hasT0901.test(line) || !/\bactive\b/i.test(line)) continue;
@@ -157,9 +157,23 @@ if (!/censusStatus/.test(inventorySpec) || !/pending_export/.test(inventorySpec)
   fail("11", "t090_world_object_type_inventory.md: must document censusStatus pending_export baseline");
 }
 
+// Gate 12 (INV-I8, T-090.3.1) — phase-budget table rows (lines starting "| P<n>") across the corpus
+// must cite inventory integers (byKind.* / levels.* / inventory / derived), never hard-coded
+// k/M-suffixed or comma-thousand instance counts.
+const budgetCount = /~?\d+(\.\d+)?\s*[kM]\b|\d{1,3},\d{3}/;
+const inventoryToken = /byKind|levels\.|inventory|derived/;
+for (const { name, text } of corpus) {
+  for (const line of text.split("\n")) {
+    if (!/^\|\s*P\d+/.test(line)) continue;
+    if (budgetCount.test(line) && !inventoryToken.test(line)) {
+      fail("12", `${name}: phase-budget row hard-codes a count — "${line.trim().slice(0, 90)}"`);
+    }
+  }
+}
+
 if (failures.length) {
   console.error(`verify-t090-specs: FAIL (${failures.length})`);
   for (const f of failures) console.error(`  ${f}`);
   process.exit(1);
 }
-console.log(`verify-t090-specs: OK (${t090Files.length} spec files + authority docs, all 11 gates pass)`);
+console.log(`verify-t090-specs: OK (${t090Files.length} spec files + authority docs, all 12 gates pass)`);

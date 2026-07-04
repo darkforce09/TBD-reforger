@@ -116,17 +116,24 @@ map-glyphs-verify: ## T-090.5 glyph coverage: every golden prefab render.iconKey
 t090-spec-verify: ## T-090 spec consistency grep gates (DoD): zoom space, picking, audit-closure, command existence
 	cd packages/tbd-schema && npm ci --silent && npm run verify-t090-specs
 
-# T-090.3 / T-090.5 — pipeline command surface. STUBS until the owning slice ships (exit 1 so a
-# premature run fails loudly); they exist so DoD rule 7 (every `make` referenced by a spec exists) holds.
+.PHONY: verify-t090-spec-consistency
+verify-t090-spec-consistency: t090-spec-verify ## Alias — spec corpus cites this name (DoD rule 7)
+
+# T-090.3.1 — map export pipeline (data-only, Map Engine v2). map-export-all stays a stub until a
+# second terrain has a Workbench export.
 .PHONY: map-export map-export-all map-export-validate map-verify-phase map-census map-glyphs-build map-render-verify
-map-export: ## T-090.3 stub — export all map assets for TERRAIN=<id> PHASE=Pn (impl after T-090.3.0 spike)
-	@echo "map-export: not implemented — Workbench export spike T-090.3.0 must pass first (see t090_3_0_workbench_export_spike.md)"; exit 1
+map-export: ## T-090.3.1 — classify staged Workbench export for TERRAIN=<id> PHASE=Pn (exit 2 = run the documented Workbench step first)
+	@test -n "$(TERRAIN)" || (echo "map-export: TERRAIN=<id> required"; exit 1)
+	@test -n "$(PHASE)" || (echo "map-export: PHASE=Pn required (e.g. PHASE=P1_buildings)"; exit 1)
+	bash scripts/map-assets/export-terrain.sh "$(TERRAIN)" --phase "$(PHASE)"
 map-export-all: ## T-090.3 stub — export every terrain in terrain-registry.json
 	@echo "map-export-all: not implemented (T-090.3)"; exit 1
-map-export-validate: ## T-090.3 stub — validate all terrain manifests + goldens (CI)
-	@echo "map-export-validate: not implemented (T-090.3) — use 'make schema-validate' for contract validation"; exit 1
-map-verify-phase: ## T-090.3 stub — mathematical phase gate for TERRAIN=<id> PHASE=Pn
-	@echo "map-verify-phase: not implemented (T-090.3, see t090_phased_object_import.md)"; exit 1
+map-export-validate: ## T-090.3.1 — validate committed export artifacts for every registry terrain (CI-safe)
+	node scripts/map-assets/validate-export-artifacts.mjs
+map-verify-phase: ## T-090.3.1 — mathematical phase gate G1-G12 + P1-* + E6 for TERRAIN=<id> PHASE=Pn (needs staging)
+	@test -n "$(TERRAIN)" || (echo "map-verify-phase: TERRAIN=<id> required"; exit 1)
+	@test -n "$(PHASE)" || (echo "map-verify-phase: PHASE=Pn required"; exit 1)
+	node scripts/map-assets/verify-phase.mjs --terrain "$(TERRAIN)" --phase "$(PHASE)"
 map-census: ## T-090.2 — validate type-inventory.json; compute counts after export (TERRAIN=<id>)
 	@test -n "$(TERRAIN)" || (echo "map-census: TERRAIN=<id> required"; exit 1)
 	node scripts/map-assets/census-types.mjs

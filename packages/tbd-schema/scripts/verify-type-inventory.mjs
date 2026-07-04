@@ -1,6 +1,8 @@
 #!/usr/bin/env node
-// T-090.2 — validate type-inventory.json mathematical invariants (I1–I6).
+// T-090.2 — validate type-inventory.json mathematical invariants (I1–I7; t090_world_object_type_inventory.md).
 // Runs on every `make schema-validate`. When censusStatus=complete, every count is exact integer equality.
+// T-090.3.1 adds: I3 (every class key ∈ its closed enum), I5/I7 (manifest.objects prefabCount /
+// instanceCount cross-check against the committed sibling manifest.json).
 import { readFileSync, existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +17,7 @@ const ajv = new Ajv({ allErrors: true, strict: true });
 addFormats(ajv);
 const schema = readJSON(join(schemaRoot, "schema", "map-object-type-inventory.schema.json"));
 const validate = ajv.compile(schema);
+const enums = readJSON(join(schemaRoot, "schema", "map-object-enums.schema.json")).$defs;
 
 const INSTANCE_KINDS = ["building", "tree", "vegetation", "rock", "prop", "utility", "water", "road"];
 const failures = [];
@@ -29,7 +32,7 @@ const sumKindInstances = (byKind) =>
 const sumClassInstances = (bucket) =>
   Object.values(bucket ?? {}).reduce((acc, row) => acc + (row?.instances ?? 0), 0);
 
-const checkInventory = (label, inv) => {
+const checkInventory = (label, inv, manifest = null) => {
   if (!validate(inv)) {
     for (const err of validate.errors ?? []) {
       fail(`${label}: schema ${err.instancePath || "/"} ${err.message}`);
@@ -80,16 +83,43 @@ const checkInventory = (label, inv) => {
     }
   }
 
+  // I3 — every per-class key is a member of its closed enum (T-090.3.1)
+  for (const [bucket, enumName] of [
+    ["byBuildingClass", "buildingClass"],
+    ["byRoadClass", "roadClass"],
+    ["bySpeciesClass", "speciesClass"],
+  ]) {
+    const allowed = new Set(enums[enumName].enum);
+    for (const cls of Object.keys(inv[bucket] ?? {})) {
+      if (!allowed.has(cls)) fail(`${label}: I3 ${bucket} key '${cls}' not in ${enumName} enum`);
+    }
+  }
+
   // I4 — needsReview.prefabTypes = 0 before ship (only when complete)
   if (inv.censusStatus === "complete" && inv.needsReview?.prefabTypes !== 0) {
     fail(`${label}: I4 complete census requires needsReview.prefabTypes = 0 (got ${inv.needsReview?.prefabTypes})`);
   }
+
+  // I5 / I7 — manifest.objects cross-check (T-090.3.1): once the sibling manifest carries an
+  // objects export block, its counts must equal the inventory levels exactly.
+  if (manifest?.objects && typeof manifest.objects.prefabCount === "number") {
+    if (manifest.objects.prefabCount !== inv.levels.uniquePrefabs) {
+      fail(`${label}: I5 manifest.objects.prefabCount ${manifest.objects.prefabCount} !== levels.uniquePrefabs ${inv.levels.uniquePrefabs}`);
+    }
+    if (manifest.objects.instanceCount !== inv.levels.totalInstances) {
+      fail(`${label}: I7 manifest.objects.instanceCount ${manifest.objects.instanceCount} !== levels.totalInstances ${inv.levels.totalInstances}`);
+    }
+  }
 };
 
-// Everon committed baseline (pending until T-090.3.0 export + map-census)
-const everonPath = join(repoRoot, "packages", "map-assets", "everon", "objects", "type-inventory.json");
-if (existsSync(everonPath)) {
-  checkInventory("everon/objects/type-inventory.json", readJSON(everonPath));
+// Every registry terrain's committed inventory (+ I5/I7 against its sibling manifest.json)
+const registryPath = join(repoRoot, "packages", "map-assets", "terrain-registry.json");
+for (const t of existsSync(registryPath) ? readJSON(registryPath).terrains : []) {
+  const invPath = join(repoRoot, "packages", "map-assets", t.terrainId, "objects", "type-inventory.json");
+  if (!existsSync(invPath)) continue;
+  const manifestPath = join(repoRoot, "packages", "map-assets", t.manifestPath);
+  const manifest = existsSync(manifestPath) ? readJSON(manifestPath) : null;
+  checkInventory(`${t.terrainId}/objects/type-inventory.json`, readJSON(invPath), manifest);
 }
 
 // Golden pending fixture

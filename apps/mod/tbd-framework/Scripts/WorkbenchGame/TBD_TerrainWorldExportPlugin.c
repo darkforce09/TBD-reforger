@@ -24,6 +24,17 @@
  *   (or NetAPI wb_execute_action menuPath "Plugins,TBD,Export TBD World Subregion").
  */
 
+/**
+ * T-090.3.1 — full-world export (second plugin class below; the subregion spike class above stays
+ * intact for the T-090.3.0 verifiers). "Export TBD World Objects (full)" iterates the whole terrain
+ * in 512 m cell passes (bounded memory: one QueryEntitiesByAABB hit list at a time), writes ONE
+ * JSONL to $profile:TBD_WorldExport_full.jsonl, then TBD_WorldExport_full_meta.json LAST — the meta
+ * file is the completion sentinel copy-world-export-profile.mjs --full requires (keptCount must
+ * equal the JSONL line count). Cell membership = clamp(floor(coord/512), 0, cells-1) on the entity
+ * ORIGIN — exact partition, no cross-cell double count (the spike's closed-interval keep test would
+ * double-count origins on shared edges); origins outside [0, worldSize] are dropped + counted.
+ * S6 fix: headingDeg = GetAngles()[1] (the spike's "yawDeg"/"pitchDeg" labels were swapped).
+ */
 [WorkbenchPluginAttribute(name: "Export TBD World Subregion", description: "Spatial-query the densest building 512 m cell; write raw-entities JSONL (prefab + transform + world-AABB).", category: "TBD")]
 class TBD_TerrainWorldExportPlugin : WorkbenchPlugin
 {
@@ -270,5 +281,234 @@ class TBD_TerrainWorldExportPlugin : WorkbenchPlugin
 		Print(string.Format("[TBD][World][SCAN] best cell (%1,%2) buildingish=%3", bestCx, bestCz, bestB));
 
 		ExportCell(world, api, bestCx, bestCz, scanSummary);
+	}
+}
+
+[WorkbenchPluginAttribute(name: "Export TBD World Objects (full)", description: "T-090.3.1: iterate the whole terrain in 512 m cell passes; write raw-entities JSONL + completion-sentinel meta to $profile.", category: "TBD")]
+class TBD_TerrainWorldFullExportPlugin : WorkbenchPlugin
+{
+	protected static const float CELL_M = 512.0;
+	protected static const float Y_MIN  = -1000.0; // AABB vertical span (covers Everon -204..375 m)
+	protected static const float Y_MAX  = 2000.0;
+	protected static const int   FLUSH  = 8000;    // buffered-write threshold (chars) — DEM plugin idiom
+
+	protected static const string OUT_JSONL = "$profile:TBD_WorldExport_full.jsonl";
+	protected static const string OUT_META  = "$profile:TBD_WorldExport_full_meta.json";
+
+	protected ref array<IEntity> m_aHits;
+
+	//------------------------------------------------------------------------------------------------
+	protected bool CollectEntity(IEntity e)
+	{
+		if (e)
+			m_aHits.Insert(e);
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected BaseWorld ResolveWorld(WorldEditorAPI api)
+	{
+		int rootCount = api.GetEditorEntityCount();
+		for (int i = 0; i < rootCount; i++)
+		{
+			IEntitySource s = api.GetEditorEntity(i);
+			if (!s)
+				continue;
+			IEntity re = api.SourceToEntity(s);
+			if (re)
+			{
+				BaseWorld w = re.GetWorld();
+				if (w)
+					return w;
+			}
+		}
+		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected string ResolvePrefab(WorldEditorAPI api, IEntity e)
+	{
+		IEntitySource src = api.EntityToSource(e);
+		if (!src)
+			return "";
+		BaseContainer anc = src.GetAncestor();
+		if (!anc)
+			return "";
+		return anc.GetResourceName();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Partition formula — MUST agree with the host side (scripts/map-assets/lib/anchor-check.mjs
+	//! cellOf): clamp(floor(coord / 512), 0, cells-1). coord == worldSize lands in the last cell.
+	protected int CellIndex(float coord, int cells)
+	{
+		int c = Math.Floor(coord / CELL_M);
+		if (c < 0)
+			c = 0;
+		if (c > cells - 1)
+			c = cells - 1;
+		return c;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	override void Run()
+	{
+		WorldEditor we = Workbench.GetModule(WorldEditor);
+		if (!we)
+		{
+			Print("[TBD][WorldFull] WorldEditor module not available", LogLevel.ERROR);
+			return;
+		}
+		WorldEditorAPI api = we.GetApi();
+		if (!api)
+		{
+			Print("[TBD][WorldFull] WorldEditorAPI not available", LogLevel.ERROR);
+			return;
+		}
+		BaseWorld world = ResolveWorld(api);
+		if (!world)
+		{
+			Print("[TBD][WorldFull] could not resolve BaseWorld from top-level entities", LogLevel.ERROR);
+			return;
+		}
+
+		vector bMin, bMax;
+		if (!we.GetTerrainBounds(bMin, bMax))
+		{
+			Print("[TBD][WorldFull] GetTerrainBounds failed", LogLevel.ERROR);
+			return;
+		}
+		float worldSize = bMax[0];
+		if (bMax[2] > worldSize)
+			worldSize = bMax[2];
+		int cells = Math.Ceil(worldSize / CELL_M);
+		Print(string.Format("[TBD][WorldFull] terrain %1 m -> %2 x %3 cell passes", worldSize, cells, cells));
+
+		// Stale sentinel must die BEFORE any writing — a crashed run must never look complete.
+		FileIO.DeleteFile(OUT_META);
+
+		FileHandle f = FileIO.OpenFile(OUT_JSONL, FileMode.WRITE);
+		if (!f)
+		{
+			Print("[TBD][WorldFull] cannot open " + OUT_JSONL, LogLevel.ERROR);
+			return;
+		}
+
+		int tick0 = System.GetTickCount();
+		int aabbHits = 0;
+		int kept = 0;
+		int withPrefab = 0;
+		int outOfBounds = 0;
+		string buf = "";
+
+		for (int iz = 0; iz < cells; iz++)
+		{
+			for (int ix = 0; ix < cells; ix++)
+			{
+				float x0 = ix * CELL_M;
+				float z0 = iz * CELL_M;
+				m_aHits = {};
+				vector mins = Vector(x0, Y_MIN, z0);
+				vector maxs = Vector(x0 + CELL_M, Y_MAX, z0 + CELL_M);
+				world.QueryEntitiesByAABB(mins, maxs, CollectEntity);
+				aabbHits += m_aHits.Count();
+
+				int cellKept = 0;
+				foreach (IEntity e : m_aHits)
+				{
+					vector pos = e.GetOrigin();
+					if (pos[0] < 0 || pos[0] > worldSize || pos[2] < 0 || pos[2] > worldSize)
+					{
+						// counted once when its (clamped) home pass sees it; cheap dedup: only count
+						// in the (0,0) pass so the meta counter stays exact.
+						if (ix == 0 && iz == 0)
+							outOfBounds++;
+						continue;
+					}
+					if (CellIndex(pos[0], cells) != ix || CellIndex(pos[2], cells) != iz)
+						continue;
+
+					// S6 MEASURED: GetAngles() = (pitch, HEADING/yaw-about-Y, roll).
+					vector ang = e.GetAngles();
+					vector bmin;
+					vector bmax2;
+					e.GetWorldBounds(bmin, bmax2);
+					float hx = (bmax2[0] - bmin[0]) * 0.5;
+					float hy = (bmax2[1] - bmin[1]) * 0.5;
+					float hz = (bmax2[2] - bmin[2]) * 0.5;
+
+					string rn = ResolvePrefab(api, e);
+					if (rn != "")
+						withPrefab++;
+
+					string row = "{";
+					row += "\"resourceName\":\"" + TBD_ExportJson.Escape(rn) + "\",";
+					row += "\"className\":\"" + TBD_ExportJson.Escape(e.ClassName()) + "\",";
+					row += "\"x\":" + pos[0].ToString() + ",";
+					row += "\"y\":" + pos[1].ToString() + ",";
+					row += "\"z\":" + pos[2].ToString() + ",";
+					row += "\"headingDeg\":" + ang[1].ToString() + ",";
+					row += "\"pitchDeg\":" + ang[0].ToString() + ",";
+					row += "\"rollDeg\":" + ang[2].ToString() + ",";
+					row += "\"halfExtentsM\":[" + hx.ToString() + "," + hy.ToString() + "," + hz.ToString() + "]";
+					row += "}\n";
+					buf += row;
+					kept++;
+					cellKept++;
+					if (buf.Length() > FLUSH)
+					{
+						if (!TBD_ExportJson.Write(f, buf, "[TBD][WorldFull]"))
+						{
+							f.Close();
+							FileIO.DeleteFile(OUT_JSONL);
+							Print("[TBD][WorldFull] ABORTED: JSONL write failed — partial file deleted.", LogLevel.ERROR);
+							return;
+						}
+						buf = "";
+					}
+				}
+				Print(string.Format("[TBD][WorldFull] cell (%1,%2) hits %3 kept %4 (total kept %5)", ix, iz, m_aHits.Count(), cellKept, kept));
+			}
+		}
+
+		bool jsonlOk = TBD_ExportJson.Write(f, buf, "[TBD][WorldFull]");
+		f.Close();
+		if (!jsonlOk)
+		{
+			FileIO.DeleteFile(OUT_JSONL);
+			Print("[TBD][WorldFull] ABORTED: JSONL write failed — partial file deleted.", LogLevel.ERROR);
+			return;
+		}
+
+		int elapsedMs = System.GetTickCount() - tick0;
+
+		// Meta LAST — completion sentinel for copy-world-export-profile.mjs --full.
+		FileHandle mh = FileIO.OpenFile(OUT_META, FileMode.WRITE);
+		if (!mh)
+		{
+			Print("[TBD][WorldFull] cannot open meta " + OUT_META + " — export UNSEALED (copy will refuse)", LogLevel.ERROR);
+			return;
+		}
+		string mj = "{\n";
+		mj += "  \"worldSizeM\": " + worldSize.ToString() + ",\n";
+		mj += "  \"cellSizeM\": " + CELL_M.ToString() + ",\n";
+		mj += "  \"cells\": " + cells.ToString() + ",\n";
+		mj += "  \"aabbHitCount\": " + aabbHits.ToString() + ",\n";
+		mj += "  \"keptCount\": " + kept.ToString() + ",\n";
+		mj += "  \"withPrefab\": " + withPrefab.ToString() + ",\n";
+		mj += "  \"outOfBounds\": " + outOfBounds.ToString() + ",\n";
+		mj += "  \"elapsedMs\": " + elapsedMs.ToString() + ",\n";
+		mj += "  \"anglesRule\": \"headingDeg=GetAngles()[1] (S6); pitch=[0], roll=[2]\",\n";
+		mj += "  \"partitionRule\": \"clamp(floor(coord/512), 0, cells-1) on entity origin\"\n";
+		mj += "}\n";
+		bool metaOk = TBD_ExportJson.Write(mh, mj, "[TBD][WorldFull]");
+		mh.Close();
+		if (!metaOk)
+		{
+			FileIO.DeleteFile(OUT_META);
+			Print("[TBD][WorldFull] meta write failed — export UNSEALED (copy will refuse).", LogLevel.ERROR);
+			return;
+		}
+		Print(string.Format("[TBD][WorldFull] DONE — kept %1 (withPrefab %2, aabbHits %3, oob %4) in %5 ms", kept, withPrefab, aabbHits, outOfBounds, elapsedMs));
 	}
 }

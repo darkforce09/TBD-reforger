@@ -175,6 +175,27 @@
           "type": "string",
           "description": "Relative path to type-inventory.json — exact prefab/instance counts (T-090.2)."
         },
+        "densityPath": {
+          "type": "string",
+          "description": "RESERVED (T-090.3.2): relative dir of per-chunk tree/rock corner-density grids objects/density/{cx}_{cy}.bin (TBDD binary, plan §3.3). Field documented in T-090.3.1; first written by T-090.3.2."
+        },
+        "densityCellM": {
+          "type": "number",
+          "description": "RESERVED (T-090.3.2): density grid cell size in meters — locked 32 (17×17 corners per 512 m chunk, plan Q3)."
+        },
+        "lod": {
+          "type": "object",
+          "description": "RESERVED (T-090.3.2): LOD gate constants snapshot for cache-busting (plan §3.4/§5) — refZoom + per-class minZoom gates. Field documented in T-090.3.1; first written by T-090.3.2.",
+          "additionalProperties": false,
+          "properties": {
+            "schemaVersion": { "type": "string" },
+            "refZoom": { "type": "number" },
+            "gates": {
+              "type": "object",
+              "additionalProperties": { "type": "number" }
+            }
+          }
+        },
         "exportedAt": { "type": "string", "format": "date-time" }
       }
     },

@@ -1,0 +1,1319 @@
+{
+  "chunkSizeM": 512,
+  "cells": [
+    {
+      "cx": 1,
+      "cy": 11,
+      "path": "objects/chunks/1_11.json.gz",
+      "instanceCount": 20
+    },
+    {
+      "cx": 1,
+      "cy": 12,
+      "path": "objects/chunks/1_12.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 1,
+      "cy": 22,
+      "path": "objects/chunks/1_22.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 1,
+      "cy": 23,
+      "path": "objects/chunks/1_23.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 2,
+      "cy": 10,
+      "path": "objects/chunks/2_10.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 2,
+      "cy": 11,
+      "path": "objects/chunks/2_11.json.gz",
+      "instanceCount": 185
+    },
+    {
+      "cx": 2,
+      "cy": 12,
+      "path": "objects/chunks/2_12.json.gz",
+      "instanceCount": 59
+    },
+    {
+      "cx": 2,
+      "cy": 22,
+      "path": "objects/chunks/2_22.json.gz",
+      "instanceCount": 33
+    },
+    {
+      "cx": 3,
+      "cy": 10,
+      "path": "objects/chunks/3_10.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 3,
+      "cy": 11,
+      "path": "objects/chunks/3_11.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 4,
+      "cy": 8,
+      "path": "objects/chunks/4_8.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 4,
+      "cy": 9,
+      "path": "objects/chunks/4_9.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 4,
+      "cy": 10,
+      "path": "objects/chunks/4_10.json.gz",
+      "instanceCount": 11
+    },
+    {
+      "cx": 4,
+      "cy": 11,
+      "path": "objects/chunks/4_11.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 4,
+      "cy": 12,
+      "path": "objects/chunks/4_12.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 4,
+      "cy": 13,
+      "path": "objects/chunks/4_13.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 4,
+      "cy": 14,
+      "path": "objects/chunks/4_14.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 5,
+      "cy": 3,
+      "path": "objects/chunks/5_3.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 5,
+      "cy": 4,
+      "path": "objects/chunks/5_4.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 5,
+      "cy": 7,
+      "path": "objects/chunks/5_7.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 5,
+      "cy": 8,
+      "path": "objects/chunks/5_8.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 5,
+      "cy": 9,
+      "path": "objects/chunks/5_9.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 5,
+      "cy": 10,
+      "path": "objects/chunks/5_10.json.gz",
+      "instanceCount": 70
+    },
+    {
+      "cx": 5,
+      "cy": 11,
+      "path": "objects/chunks/5_11.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 5,
+      "cy": 12,
+      "path": "objects/chunks/5_12.json.gz",
+      "instanceCount": 64
+    },
+    {
+      "cx": 5,
+      "cy": 13,
+      "path": "objects/chunks/5_13.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 6,
+      "cy": 2,
+      "path": "objects/chunks/6_2.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 6,
+      "cy": 4,
+      "path": "objects/chunks/6_4.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 6,
+      "cy": 7,
+      "path": "objects/chunks/6_7.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 6,
+      "cy": 8,
+      "path": "objects/chunks/6_8.json.gz",
+      "instanceCount": 94
+    },
+    {
+      "cx": 6,
+      "cy": 9,
+      "path": "objects/chunks/6_9.json.gz",
+      "instanceCount": 52
+    },
+    {
+      "cx": 6,
+      "cy": 10,
+      "path": "objects/chunks/6_10.json.gz",
+      "instanceCount": 13
+    },
+    {
+      "cx": 6,
+      "cy": 11,
+      "path": "objects/chunks/6_11.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 6,
+      "cy": 12,
+      "path": "objects/chunks/6_12.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 6,
+      "cy": 13,
+      "path": "objects/chunks/6_13.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 6,
+      "cy": 14,
+      "path": "objects/chunks/6_14.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 7,
+      "cy": 7,
+      "path": "objects/chunks/7_7.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 7,
+      "cy": 8,
+      "path": "objects/chunks/7_8.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 7,
+      "cy": 9,
+      "path": "objects/chunks/7_9.json.gz",
+      "instanceCount": 17
+    },
+    {
+      "cx": 7,
+      "cy": 10,
+      "path": "objects/chunks/7_10.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 7,
+      "cy": 12,
+      "path": "objects/chunks/7_12.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 7,
+      "cy": 13,
+      "path": "objects/chunks/7_13.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 7,
+      "cy": 14,
+      "path": "objects/chunks/7_14.json.gz",
+      "instanceCount": 18
+    },
+    {
+      "cx": 7,
+      "cy": 15,
+      "path": "objects/chunks/7_15.json.gz",
+      "instanceCount": 22
+    },
+    {
+      "cx": 7,
+      "cy": 16,
+      "path": "objects/chunks/7_16.json.gz",
+      "instanceCount": 11
+    },
+    {
+      "cx": 7,
+      "cy": 17,
+      "path": "objects/chunks/7_17.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 7,
+      "cy": 20,
+      "path": "objects/chunks/7_20.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 7,
+      "cy": 21,
+      "path": "objects/chunks/7_21.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 8,
+      "cy": 7,
+      "path": "objects/chunks/8_7.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 8,
+      "cy": 8,
+      "path": "objects/chunks/8_8.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 8,
+      "cy": 9,
+      "path": "objects/chunks/8_9.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 8,
+      "cy": 10,
+      "path": "objects/chunks/8_10.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 8,
+      "cy": 11,
+      "path": "objects/chunks/8_11.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 8,
+      "cy": 12,
+      "path": "objects/chunks/8_12.json.gz",
+      "instanceCount": 9
+    },
+    {
+      "cx": 8,
+      "cy": 13,
+      "path": "objects/chunks/8_13.json.gz",
+      "instanceCount": 26
+    },
+    {
+      "cx": 8,
+      "cy": 14,
+      "path": "objects/chunks/8_14.json.gz",
+      "instanceCount": 5
+    },
+    {
+      "cx": 8,
+      "cy": 15,
+      "path": "objects/chunks/8_15.json.gz",
+      "instanceCount": 41
+    },
+    {
+      "cx": 8,
+      "cy": 16,
+      "path": "objects/chunks/8_16.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 8,
+      "cy": 17,
+      "path": "objects/chunks/8_17.json.gz",
+      "instanceCount": 5
+    },
+    {
+      "cx": 8,
+      "cy": 18,
+      "path": "objects/chunks/8_18.json.gz",
+      "instanceCount": 189
+    },
+    {
+      "cx": 8,
+      "cy": 19,
+      "path": "objects/chunks/8_19.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 8,
+      "cy": 20,
+      "path": "objects/chunks/8_20.json.gz",
+      "instanceCount": 213
+    },
+    {
+      "cx": 8,
+      "cy": 21,
+      "path": "objects/chunks/8_21.json.gz",
+      "instanceCount": 201
+    },
+    {
+      "cx": 8,
+      "cy": 22,
+      "path": "objects/chunks/8_22.json.gz",
+      "instanceCount": 78
+    },
+    {
+      "cx": 8,
+      "cy": 23,
+      "path": "objects/chunks/8_23.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 9,
+      "cy": 6,
+      "path": "objects/chunks/9_6.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 9,
+      "cy": 7,
+      "path": "objects/chunks/9_7.json.gz",
+      "instanceCount": 70
+    },
+    {
+      "cx": 9,
+      "cy": 8,
+      "path": "objects/chunks/9_8.json.gz",
+      "instanceCount": 5
+    },
+    {
+      "cx": 9,
+      "cy": 10,
+      "path": "objects/chunks/9_10.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 9,
+      "cy": 11,
+      "path": "objects/chunks/9_11.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 9,
+      "cy": 12,
+      "path": "objects/chunks/9_12.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 9,
+      "cy": 13,
+      "path": "objects/chunks/9_13.json.gz",
+      "instanceCount": 160
+    },
+    {
+      "cx": 9,
+      "cy": 14,
+      "path": "objects/chunks/9_14.json.gz",
+      "instanceCount": 152
+    },
+    {
+      "cx": 9,
+      "cy": 15,
+      "path": "objects/chunks/9_15.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 9,
+      "cy": 16,
+      "path": "objects/chunks/9_16.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 9,
+      "cy": 17,
+      "path": "objects/chunks/9_17.json.gz",
+      "instanceCount": 80
+    },
+    {
+      "cx": 9,
+      "cy": 18,
+      "path": "objects/chunks/9_18.json.gz",
+      "instanceCount": 17
+    },
+    {
+      "cx": 9,
+      "cy": 19,
+      "path": "objects/chunks/9_19.json.gz",
+      "instanceCount": 80
+    },
+    {
+      "cx": 9,
+      "cy": 20,
+      "path": "objects/chunks/9_20.json.gz",
+      "instanceCount": 70
+    },
+    {
+      "cx": 9,
+      "cy": 21,
+      "path": "objects/chunks/9_21.json.gz",
+      "instanceCount": 58
+    },
+    {
+      "cx": 9,
+      "cy": 22,
+      "path": "objects/chunks/9_22.json.gz",
+      "instanceCount": 33
+    },
+    {
+      "cx": 9,
+      "cy": 23,
+      "path": "objects/chunks/9_23.json.gz",
+      "instanceCount": 38
+    },
+    {
+      "cx": 9,
+      "cy": 24,
+      "path": "objects/chunks/9_24.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 10,
+      "cy": 7,
+      "path": "objects/chunks/10_7.json.gz",
+      "instanceCount": 31
+    },
+    {
+      "cx": 10,
+      "cy": 8,
+      "path": "objects/chunks/10_8.json.gz",
+      "instanceCount": 105
+    },
+    {
+      "cx": 10,
+      "cy": 9,
+      "path": "objects/chunks/10_9.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 10,
+      "cy": 10,
+      "path": "objects/chunks/10_10.json.gz",
+      "instanceCount": 65
+    },
+    {
+      "cx": 10,
+      "cy": 11,
+      "path": "objects/chunks/10_11.json.gz",
+      "instanceCount": 36
+    },
+    {
+      "cx": 10,
+      "cy": 12,
+      "path": "objects/chunks/10_12.json.gz",
+      "instanceCount": 34
+    },
+    {
+      "cx": 10,
+      "cy": 13,
+      "path": "objects/chunks/10_13.json.gz",
+      "instanceCount": 40
+    },
+    {
+      "cx": 10,
+      "cy": 14,
+      "path": "objects/chunks/10_14.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 10,
+      "cy": 16,
+      "path": "objects/chunks/10_16.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 10,
+      "cy": 17,
+      "path": "objects/chunks/10_17.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 10,
+      "cy": 18,
+      "path": "objects/chunks/10_18.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 10,
+      "cy": 19,
+      "path": "objects/chunks/10_19.json.gz",
+      "instanceCount": 67
+    },
+    {
+      "cx": 10,
+      "cy": 20,
+      "path": "objects/chunks/10_20.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 10,
+      "cy": 21,
+      "path": "objects/chunks/10_21.json.gz",
+      "instanceCount": 54
+    },
+    {
+      "cx": 10,
+      "cy": 22,
+      "path": "objects/chunks/10_22.json.gz",
+      "instanceCount": 19
+    },
+    {
+      "cx": 10,
+      "cy": 23,
+      "path": "objects/chunks/10_23.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 10,
+      "cy": 24,
+      "path": "objects/chunks/10_24.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 11,
+      "cy": 6,
+      "path": "objects/chunks/11_6.json.gz",
+      "instanceCount": 60
+    },
+    {
+      "cx": 11,
+      "cy": 7,
+      "path": "objects/chunks/11_7.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 11,
+      "cy": 9,
+      "path": "objects/chunks/11_9.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 11,
+      "cy": 10,
+      "path": "objects/chunks/11_10.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 11,
+      "cy": 11,
+      "path": "objects/chunks/11_11.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 11,
+      "cy": 12,
+      "path": "objects/chunks/11_12.json.gz",
+      "instanceCount": 25
+    },
+    {
+      "cx": 11,
+      "cy": 13,
+      "path": "objects/chunks/11_13.json.gz",
+      "instanceCount": 45
+    },
+    {
+      "cx": 11,
+      "cy": 14,
+      "path": "objects/chunks/11_14.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 11,
+      "cy": 18,
+      "path": "objects/chunks/11_18.json.gz",
+      "instanceCount": 11
+    },
+    {
+      "cx": 11,
+      "cy": 19,
+      "path": "objects/chunks/11_19.json.gz",
+      "instanceCount": 35
+    },
+    {
+      "cx": 11,
+      "cy": 20,
+      "path": "objects/chunks/11_20.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 12,
+      "cy": 3,
+      "path": "objects/chunks/12_3.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 12,
+      "cy": 4,
+      "path": "objects/chunks/12_4.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 12,
+      "cy": 6,
+      "path": "objects/chunks/12_6.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 12,
+      "cy": 8,
+      "path": "objects/chunks/12_8.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 12,
+      "cy": 9,
+      "path": "objects/chunks/12_9.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 12,
+      "cy": 10,
+      "path": "objects/chunks/12_10.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 12,
+      "cy": 11,
+      "path": "objects/chunks/12_11.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 12,
+      "cy": 12,
+      "path": "objects/chunks/12_12.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 12,
+      "cy": 13,
+      "path": "objects/chunks/12_13.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 12,
+      "cy": 14,
+      "path": "objects/chunks/12_14.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 12,
+      "cy": 15,
+      "path": "objects/chunks/12_15.json.gz",
+      "instanceCount": 27
+    },
+    {
+      "cx": 12,
+      "cy": 16,
+      "path": "objects/chunks/12_16.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 12,
+      "cy": 18,
+      "path": "objects/chunks/12_18.json.gz",
+      "instanceCount": 47
+    },
+    {
+      "cx": 12,
+      "cy": 19,
+      "path": "objects/chunks/12_19.json.gz",
+      "instanceCount": 26
+    },
+    {
+      "cx": 13,
+      "cy": 3,
+      "path": "objects/chunks/13_3.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 13,
+      "cy": 4,
+      "path": "objects/chunks/13_4.json.gz",
+      "instanceCount": 39
+    },
+    {
+      "cx": 13,
+      "cy": 5,
+      "path": "objects/chunks/13_5.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 13,
+      "cy": 6,
+      "path": "objects/chunks/13_6.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 13,
+      "cy": 7,
+      "path": "objects/chunks/13_7.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 13,
+      "cy": 8,
+      "path": "objects/chunks/13_8.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 13,
+      "cy": 9,
+      "path": "objects/chunks/13_9.json.gz",
+      "instanceCount": 35
+    },
+    {
+      "cx": 13,
+      "cy": 10,
+      "path": "objects/chunks/13_10.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 13,
+      "cy": 11,
+      "path": "objects/chunks/13_11.json.gz",
+      "instanceCount": 134
+    },
+    {
+      "cx": 13,
+      "cy": 12,
+      "path": "objects/chunks/13_12.json.gz",
+      "instanceCount": 9
+    },
+    {
+      "cx": 13,
+      "cy": 13,
+      "path": "objects/chunks/13_13.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 13,
+      "cy": 15,
+      "path": "objects/chunks/13_15.json.gz",
+      "instanceCount": 15
+    },
+    {
+      "cx": 13,
+      "cy": 16,
+      "path": "objects/chunks/13_16.json.gz",
+      "instanceCount": 22
+    },
+    {
+      "cx": 13,
+      "cy": 17,
+      "path": "objects/chunks/13_17.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 14,
+      "cy": 2,
+      "path": "objects/chunks/14_2.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 14,
+      "cy": 3,
+      "path": "objects/chunks/14_3.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 14,
+      "cy": 4,
+      "path": "objects/chunks/14_4.json.gz",
+      "instanceCount": 36
+    },
+    {
+      "cx": 14,
+      "cy": 5,
+      "path": "objects/chunks/14_5.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 14,
+      "cy": 6,
+      "path": "objects/chunks/14_6.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 14,
+      "cy": 8,
+      "path": "objects/chunks/14_8.json.gz",
+      "instanceCount": 54
+    },
+    {
+      "cx": 14,
+      "cy": 9,
+      "path": "objects/chunks/14_9.json.gz",
+      "instanceCount": 88
+    },
+    {
+      "cx": 14,
+      "cy": 10,
+      "path": "objects/chunks/14_10.json.gz",
+      "instanceCount": 91
+    },
+    {
+      "cx": 14,
+      "cy": 11,
+      "path": "objects/chunks/14_11.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 14,
+      "cy": 12,
+      "path": "objects/chunks/14_12.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 14,
+      "cy": 13,
+      "path": "objects/chunks/14_13.json.gz",
+      "instanceCount": 54
+    },
+    {
+      "cx": 14,
+      "cy": 14,
+      "path": "objects/chunks/14_14.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 14,
+      "cy": 15,
+      "path": "objects/chunks/14_15.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 14,
+      "cy": 16,
+      "path": "objects/chunks/14_16.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 14,
+      "cy": 17,
+      "path": "objects/chunks/14_17.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 14,
+      "cy": 18,
+      "path": "objects/chunks/14_18.json.gz",
+      "instanceCount": 30
+    },
+    {
+      "cx": 15,
+      "cy": 2,
+      "path": "objects/chunks/15_2.json.gz",
+      "instanceCount": 5
+    },
+    {
+      "cx": 15,
+      "cy": 3,
+      "path": "objects/chunks/15_3.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 15,
+      "cy": 4,
+      "path": "objects/chunks/15_4.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 15,
+      "cy": 5,
+      "path": "objects/chunks/15_5.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 15,
+      "cy": 7,
+      "path": "objects/chunks/15_7.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 15,
+      "cy": 8,
+      "path": "objects/chunks/15_8.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 15,
+      "cy": 9,
+      "path": "objects/chunks/15_9.json.gz",
+      "instanceCount": 15
+    },
+    {
+      "cx": 15,
+      "cy": 15,
+      "path": "objects/chunks/15_15.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 15,
+      "cy": 17,
+      "path": "objects/chunks/15_17.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 16,
+      "cy": 1,
+      "path": "objects/chunks/16_1.json.gz",
+      "instanceCount": 102
+    },
+    {
+      "cx": 16,
+      "cy": 2,
+      "path": "objects/chunks/16_2.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 16,
+      "cy": 4,
+      "path": "objects/chunks/16_4.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 16,
+      "cy": 5,
+      "path": "objects/chunks/16_5.json.gz",
+      "instanceCount": 6
+    },
+    {
+      "cx": 16,
+      "cy": 6,
+      "path": "objects/chunks/16_6.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 16,
+      "cy": 7,
+      "path": "objects/chunks/16_7.json.gz",
+      "instanceCount": 14
+    },
+    {
+      "cx": 16,
+      "cy": 8,
+      "path": "objects/chunks/16_8.json.gz",
+      "instanceCount": 21
+    },
+    {
+      "cx": 16,
+      "cy": 9,
+      "path": "objects/chunks/16_9.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 16,
+      "cy": 10,
+      "path": "objects/chunks/16_10.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 17,
+      "cy": 1,
+      "path": "objects/chunks/17_1.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 17,
+      "cy": 4,
+      "path": "objects/chunks/17_4.json.gz",
+      "instanceCount": 52
+    },
+    {
+      "cx": 17,
+      "cy": 5,
+      "path": "objects/chunks/17_5.json.gz",
+      "instanceCount": 76
+    },
+    {
+      "cx": 17,
+      "cy": 6,
+      "path": "objects/chunks/17_6.json.gz",
+      "instanceCount": 13
+    },
+    {
+      "cx": 17,
+      "cy": 7,
+      "path": "objects/chunks/17_7.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 17,
+      "cy": 9,
+      "path": "objects/chunks/17_9.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 17,
+      "cy": 10,
+      "path": "objects/chunks/17_10.json.gz",
+      "instanceCount": 12
+    },
+    {
+      "cx": 18,
+      "cy": 0,
+      "path": "objects/chunks/18_0.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 18,
+      "cy": 1,
+      "path": "objects/chunks/18_1.json.gz",
+      "instanceCount": 10
+    },
+    {
+      "cx": 18,
+      "cy": 2,
+      "path": "objects/chunks/18_2.json.gz",
+      "instanceCount": 126
+    },
+    {
+      "cx": 18,
+      "cy": 3,
+      "path": "objects/chunks/18_3.json.gz",
+      "instanceCount": 158
+    },
+    {
+      "cx": 18,
+      "cy": 4,
+      "path": "objects/chunks/18_4.json.gz",
+      "instanceCount": 29
+    },
+    {
+      "cx": 18,
+      "cy": 5,
+      "path": "objects/chunks/18_5.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 18,
+      "cy": 6,
+      "path": "objects/chunks/18_6.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 18,
+      "cy": 7,
+      "path": "objects/chunks/18_7.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 18,
+      "cy": 9,
+      "path": "objects/chunks/18_9.json.gz",
+      "instanceCount": 11
+    },
+    {
+      "cx": 18,
+      "cy": 10,
+      "path": "objects/chunks/18_10.json.gz",
+      "instanceCount": 50
+    },
+    {
+      "cx": 19,
+      "cy": 0,
+      "path": "objects/chunks/19_0.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 19,
+      "cy": 1,
+      "path": "objects/chunks/19_1.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 19,
+      "cy": 2,
+      "path": "objects/chunks/19_2.json.gz",
+      "instanceCount": 129
+    },
+    {
+      "cx": 19,
+      "cy": 3,
+      "path": "objects/chunks/19_3.json.gz",
+      "instanceCount": 100
+    },
+    {
+      "cx": 19,
+      "cy": 4,
+      "path": "objects/chunks/19_4.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 19,
+      "cy": 5,
+      "path": "objects/chunks/19_5.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 19,
+      "cy": 9,
+      "path": "objects/chunks/19_9.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 19,
+      "cy": 10,
+      "path": "objects/chunks/19_10.json.gz",
+      "instanceCount": 2
+    },
+    {
+      "cx": 20,
+      "cy": 0,
+      "path": "objects/chunks/20_0.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 20,
+      "cy": 3,
+      "path": "objects/chunks/20_3.json.gz",
+      "instanceCount": 25
+    },
+    {
+      "cx": 20,
+      "cy": 4,
+      "path": "objects/chunks/20_4.json.gz",
+      "instanceCount": 5
+    },
+    {
+      "cx": 20,
+      "cy": 5,
+      "path": "objects/chunks/20_5.json.gz",
+      "instanceCount": 5
+    },
+    {
+      "cx": 20,
+      "cy": 23,
+      "path": "objects/chunks/20_23.json.gz",
+      "instanceCount": 7
+    },
+    {
+      "cx": 21,
+      "cy": 2,
+      "path": "objects/chunks/21_2.json.gz",
+      "instanceCount": 3
+    },
+    {
+      "cx": 21,
+      "cy": 3,
+      "path": "objects/chunks/21_3.json.gz",
+      "instanceCount": 136
+    },
+    {
+      "cx": 21,
+      "cy": 4,
+      "path": "objects/chunks/21_4.json.gz",
+      "instanceCount": 62
+    },
+    {
+      "cx": 21,
+      "cy": 5,
+      "path": "objects/chunks/21_5.json.gz",
+      "instanceCount": 9
+    },
+    {
+      "cx": 21,
+      "cy": 16,
+      "path": "objects/chunks/21_16.json.gz",
+      "instanceCount": 13
+    },
+    {
+      "cx": 21,
+      "cy": 17,
+      "path": "objects/chunks/21_17.json.gz",
+      "instanceCount": 19
+    },
+    {
+      "cx": 21,
+      "cy": 22,
+      "path": "objects/chunks/21_22.json.gz",
+      "instanceCount": 72
+    },
+    {
+      "cx": 21,
+      "cy": 23,
+      "path": "objects/chunks/21_23.json.gz",
+      "instanceCount": 61
+    },
+    {
+      "cx": 22,
+      "cy": 2,
+      "path": "objects/chunks/22_2.json.gz",
+      "instanceCount": 4
+    },
+    {
+      "cx": 22,
+      "cy": 3,
+      "path": "objects/chunks/22_3.json.gz",
+      "instanceCount": 21
+    },
+    {
+      "cx": 22,
+      "cy": 4,
+      "path": "objects/chunks/22_4.json.gz",
+      "instanceCount": 66
+    },
+    {
+      "cx": 22,
+      "cy": 21,
+      "path": "objects/chunks/22_21.json.gz",
+      "instanceCount": 20
+    },
+    {
+      "cx": 22,
+      "cy": 23,
+      "path": "objects/chunks/22_23.json.gz",
+      "instanceCount": 8
+    },
+    {
+      "cx": 23,
+      "cy": 2,
+      "path": "objects/chunks/23_2.json.gz",
+      "instanceCount": 1
+    },
+    {
+      "cx": 23,
+      "cy": 3,
+      "path": "objects/chunks/23_3.json.gz",
+      "instanceCount": 23
+    },
+    {
+      "cx": 23,
+      "cy": 4,
+      "path": "objects/chunks/23_4.json.gz",
+      "instanceCount": 1
+    }
+  ]
+}

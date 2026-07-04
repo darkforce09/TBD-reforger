@@ -97,6 +97,12 @@
       "properties": {
         "iconKey": { "type": "string", "minLength": 1 },
         "lodMinZoom": { "type": "number", "minimum": -6, "maximum": 6 },
+        "importanceZoom": {
+          "type": "number",
+          "minimum": -6,
+          "maximum": 6,
+          "description": "T-090.3.1 (plan §3.4): minimum deckZoom at which instances of this prefab draw, overriding its class LOD gate — A3 per-type importance analogue. Landmark classes (military, tower, lighthouse, transmitter) get negative offsets (recommend -4). Default when absent: the class gate."
+        },
         "baseSizePx": { "type": "number", "exclusiveMinimum": 0 },
         "anchor": {
           "type": "array",

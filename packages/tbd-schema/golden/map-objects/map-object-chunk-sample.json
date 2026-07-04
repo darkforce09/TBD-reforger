@@ -1,0 +1,14 @@
+{
+  "description": "T-090.3.1 golden for one objects/chunks/{cx}_{cy}.json.gz payload (gunzipped). `chunk` mirrors the production file content byte-shape: {instances: [[prefabId, x, y, z, rotationDeg], ...]} — all-number 5-tuples (map-object-instance chunk wire branch), sorted by (x, y, prefabId). prefabIds pair with map-object-prefabs-sample.json (bundle isolation, S6). cx=1 means x ∈ [512, 1024): the 512.0 row pins the half-open floor partition (G6) — x exactly on the boundary belongs to THIS chunk, never cell 0.",
+  "terrainId": "everon",
+  "chunkSizeM": 512,
+  "cx": 1,
+  "cy": 1,
+  "chunk": {
+    "instances": [
+      [9, 512.0, 700.25, 41.3, 90],
+      [14, 800.5, 900.0, 55.0, 47.25],
+      [18, 1023.999, 640.0, 60.1, 359.5]
+    ]
+  }
+}

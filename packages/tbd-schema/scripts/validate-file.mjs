@@ -27,7 +27,7 @@ try {
   process.exit(1);
 }
 
-const ajv = new Ajv({ allErrors: true, strict: true });
+const ajv = new Ajv({ allErrors: true, strict: true, strictTuples: false });
 addFormats(ajv);
 const schema = JSON.parse(
   readFileSync(join(root, "schema", "mission.schema.json"), "utf8")

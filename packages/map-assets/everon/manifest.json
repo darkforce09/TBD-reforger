@@ -69,7 +69,18 @@
   "objects": {
     "schemaVersion": "1.0.0",
     "format": "catalog-v1",
-    "typeInventoryPath": "objects/type-inventory.json"
+    "typeInventoryPath": "objects/type-inventory.json",
+    "prefabsPath": "objects/prefabs.json.gz",
+    "prefabCount": 310,
+    "instanceCount": 5606,
+    "chunksPath": "objects/chunks",
+    "chunkSizeM": 512,
+    "roadsPath": "objects/roads.json.gz",
+    "importPhaseMax": "P1_buildings",
+    "importPhaseShipped": [
+      "P1_buildings"
+    ],
+    "exportedAt": "2026-07-04T23:43:38.437Z"
   },
   "anchors": [],
   "precision": {

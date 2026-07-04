@@ -459,6 +459,374 @@
       }
     },
     {
+      "match": { "resourceNameContains": ["Structures/Military/Fortifications"] },
+      "kind": "prop",
+      "class": "barrier",
+      "ai": {
+        "summary": "Military fortification obstacle (hedgehog, dragon teeth, trench segment); hard low cover; blocks vehicles.",
+        "taxonomyPath": "misc/prop/barrier",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": { "x": 1.5, "y": 0.5, "z": 0.6 },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": false, "prone": true, "crouch": true, "heightM": 1.2 },
+        "movement": { "blocksInfantry": false, "blocksVehicle": true },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Military/Bunkers"] },
+      "kind": "building",
+      "class": "bunker",
+      "ai": {
+        "summary": "Concrete bunker; heavy hard cover; enterable firing positions.",
+        "taxonomyPath": "structure/building/bunker",
+        "confidence": 0.88
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 3, "y": 3, "z": 1.5 },
+        "heightM": 3,
+        "footprintM2": 36
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 3 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": false,
+        "climbable": true,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Military/"] },
+      "kind": "building",
+      "class": "military",
+      "ai": {
+        "summary": "Military structure (barracks, guardhouse, base building); hard cover; enterable.",
+        "taxonomyPath": "structure/building/military",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 6, "y": 4, "z": 3 },
+        "heightM": 6,
+        "footprintM2": 96
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-badge-military",
+        "lodMinZoom": 1,
+        "importanceZoom": -4,
+        "baseSizePx": 10,
+        "anchor": [0.5, 0.5]
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Agriculture/"] },
+      "kind": "building",
+      "class": "agricultural",
+      "ai": {
+        "summary": "Agricultural building (barn, stable, granary); hard cover; large open interior.",
+        "taxonomyPath": "structure/building/agricultural",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 6, "y": 6, "z": 4 },
+        "heightM": 8,
+        "footprintM2": 144
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["/Ruins/", "Ruin_"] },
+      "kind": "building",
+      "class": "ruin",
+      "ai": {
+        "summary": "Ruined structure; partial hard cover; broken walls and openings.",
+        "taxonomyPath": "structure/building/ruin",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 5, "y": 5, "z": 3 },
+        "heightM": 6,
+        "footprintM2": 100
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": true,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Cultural/"] },
+      "kind": "building",
+      "class": "civic",
+      "ai": {
+        "summary": "Cultural or civic structure (church, chapel, monument hall); hard cover; landmark.",
+        "taxonomyPath": "structure/building/civic",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 6, "y": 6, "z": 6 },
+        "heightM": 12,
+        "footprintM2": 144
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Services/"] },
+      "kind": "building",
+      "class": "civic",
+      "ai": {
+        "summary": "Service building (fire station, municipal office, hotel); hard cover; enterable.",
+        "taxonomyPath": "structure/building/civic",
+        "confidence": 0.82
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 7, "y": 6, "z": 4 },
+        "heightM": 8,
+        "footprintM2": 168
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Industrial/Towers"] },
+      "kind": "building",
+      "class": "tower",
+      "ai": {
+        "summary": "Industrial tower (light tower, water tower); tall thin landmark; minimal cover.",
+        "taxonomyPath": "structure/building/tower",
+        "confidence": 0.84
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": { "x": 2, "y": 2, "z": 8 },
+        "heightM": 16,
+        "footprintM2": 16
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "partial",
+        "destructible": true,
+        "climbable": true,
+        "enterable": false,
+        "ladder": true,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-badge-tower",
+        "lodMinZoom": 1,
+        "importanceZoom": -4,
+        "baseSizePx": 10,
+        "anchor": [0.5, 0.5]
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Industrial/"] },
+      "kind": "building",
+      "class": "industrial",
+      "ai": {
+        "summary": "Industrial building (factory hall, warehouse, plant); hard cover; large footprint.",
+        "taxonomyPath": "structure/building/industrial",
+        "confidence": 0.84
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 8, "y": 6, "z": 5 },
+        "heightM": 10,
+        "footprintM2": 192
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Commercial/"] },
+      "kind": "building",
+      "class": "commercial",
+      "ai": {
+        "summary": "Commercial building (shop, booth, kiosk); hard cover; street-facing entrances.",
+        "taxonomyPath": "structure/building/commercial",
+        "confidence": 0.84
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 5, "y": 5, "z": 4 },
+        "heightM": 8,
+        "footprintM2": 100
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Airport/Hangar"] },
+      "kind": "building",
+      "class": "hangar",
+      "ai": {
+        "summary": "Aircraft hangar; very large open hard-cover structure at an airfield.",
+        "taxonomyPath": "structure/building/hangar",
+        "confidence": 0.87
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": { "x": 12, "y": 10, "z": 5 },
+        "heightM": 10,
+        "footprintM2": 480
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": { "resourceNameContains": ["Structures/Airport/ControlTower"] },
+      "kind": "building",
+      "class": "tower",
+      "ai": {
+        "summary": "Airfield control tower; tall landmark; overwatch position.",
+        "taxonomyPath": "structure/building/tower",
+        "confidence": 0.87
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": { "x": 4, "y": 4, "z": 7 },
+        "heightM": 14,
+        "footprintM2": 64
+      },
+      "gameplay": {
+        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
+        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": true,
+        "enterable": true,
+        "ladder": true,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-badge-tower",
+        "lodMinZoom": 1,
+        "importanceZoom": -4,
+        "baseSizePx": 10,
+        "anchor": [0.5, 0.5]
+      }
+    },
+    {
       "match": { "resourceNameContains": ["Runway", "Airstrip"] },
       "kind": "road",
       "class": "runway",

@@ -28,7 +28,9 @@ const inv = JSON.parse(readFileSync(inventoryPath, "utf8"));
 // T-090.3.0 census guard (Option 1): the "finish full census" guard keys off the FULL-MAP export
 // path only. The spike subregion (staging/spike/raw-entities.jsonl) is a feasibility probe — it must
 // NOT block `make map-census` while the committed inventory is legitimately still pending_export.
-const fullExport = join(repoRoot, "packages", "map-assets", terrain, "export", "raw-entities.jsonl");
+// T-090.3.1: the full-map export stages under staging/export/ (gitignored); build-world-objects.mjs
+// writes the real census from it.
+const fullExport = join(repoRoot, "packages", "map-assets", terrain, "staging", "export", "raw-entities.jsonl");
 const spikeExport = join(repoRoot, "packages", "map-assets", terrain, "staging", "spike", "raw-entities.jsonl");
 
 if (inv.censusStatus === "pending_export") {
