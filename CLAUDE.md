@@ -152,7 +152,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
 
-**Active:** **T-090.3.1** export (buildings+roads) · **T-090.5.1** render scaffold (parallel).
+**Active:** **T-090.3.1** only (single lane — no parallel slices).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 

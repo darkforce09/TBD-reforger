@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code work order:** **T-090.3.1** export core (buildings + roads) — **active**. Parallel optional: **T-090.5.1** render scaffold. Plan: [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) §7.
+**Next Claude Code:** **T-090.3.1** only. Do not start T-090.5.1 until 3.1 ships.
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 

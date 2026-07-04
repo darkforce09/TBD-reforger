@@ -390,8 +390,8 @@ Plan shipped @ `a222a146` · [`.ai/artifacts/t090_10_map_engine_v2_implementatio
 
 | Slice | Status | Notes |
 |-------|--------|-------|
-| **T-090.3.1** | **active** | Export: PH-P1 buildings + roads pulled forward (Q1 yes) |
-| **T-090.5.1** | ready | Render scaffold — parallel w/ 3.1 |
+| **T-090.3.1** | **active** | Export only — single lane |
+| **T-090.5.1** | queued | After 3.1 ships |
 | **T-090.10.1** | shipped @ `a222a146` | Plan artifact only |
 
 LOD v2 locked in [`t090_render_lod_contract.md`](t090_render_lod_contract.md) — world cluster purged.
