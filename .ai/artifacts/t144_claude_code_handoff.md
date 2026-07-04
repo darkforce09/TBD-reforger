@@ -7,12 +7,12 @@
 
 ## What you are doing
 
-**Read-only archaeology** of Bohemia’s Arma 3 **2D map canvas** — how Eden/mission editor loads terrain imagery, draws world objects, handles zoom/LOD, and maps world coordinates to pixels. Output is a **report + gap table** that tells T-090 what to build next (not a code port).
+**Read-only archaeology** of Bohemia’s Arma 3 **2D mission-editor map** — discover where it really lives in source, then document data flow, layering, zoom/LOD, and coords. **Do not assume** `uiMap.hpp` is correct until you prove it.
 
 ```text
-Recon seed files → trace DrawField / DisplayArcadeMap → document data flow
-  → compare to T-090 (SAP compose, Deck.gl, phased export)
-  → write t144_arma3_map_architecture_report.md → tag T-144.1
+Phase 0 discover entry points (prove uiMap.* or find better spine)
+  → trace draw + data from validated chain only
+  → compare to T-090 → report §0–§11 → tag T-144.1
 ```
 
 ---
@@ -26,39 +26,76 @@ Recon seed files → trace DrawField / DisplayArcadeMap → document data flow
 
 ---
 
-## Start symbols (grep from these)
+## Phase 0 — Discovery (do this first)
+
+**Goal:** Answer “where is the Eden / mission editor **2D map** implemented?” with evidence — not filename guessing.
+
+### Step 1 — Orient
 
 ```bash
 ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
-
-# Core map UI
-rg -n "class CStaticMap|DrawField|DisplayArcadeMap|CStaticMapArcadeViewer" \
-  "$ARMA/lib/UI/uiMap.hpp" "$ARMA/lib/UI/uiMap.cpp" "$ARMA/lib/UI/uiMapExt.cpp"
-
-# Satellite vs chart
-rg -n "satellite|user chart|UserChart|MapChart" "$ARMA/lib/UI/uiMap.cpp"
-
-# Editor shell
-rg -n "DisplayMapEditor|EditorObject|EditorMode" "$ARMA/lib/UI/uiMapExt.cpp" "$ARMA/lib/UI/missionEditor.cpp"
-
-# World / terrain hooks
-rg -n "DisplayMap|GetMap\(\)|Landscape" "$ARMA/lib/world.cpp" | head -40
+ls "$ARMA"
+find "$ARMA/lib" -maxdepth 2 -type d | head -40
 ```
+
+### Step 2 — Broad search (behavior, not paths)
+
+Run several **independent** queries; record hit counts and top files in §0:
+
+```bash
+# Editor + 2D map (mission editor, not 3D)
+rg -l "DisplayArcadeMap|DisplayMapEditor|MissionEditor|ArcadeMap" "$ARMA/lib" --glob '*.{cpp,hpp,h}'
+
+# Map draw / widget
+rg -l "CStaticMap|DrawField|StaticMap" "$ARMA/lib" --glob '*.{cpp,hpp,h}'
+
+# Raster / satellite / chart
+rg -l "satellite|UserChart|MapChart|user chart" "$ARMA/lib" --glob '*.{cpp,hpp,h}' | head -30
+
+# Config-driven map UI
+rg -l "RscDisplay.*Map|RscMap|controls.*Map" "$ARMA" --glob '*.{cpp,hpp,h,sqs,sqf}' 2>/dev/null | head -20
+```
+
+### Step 3 — Validate each candidate
+
+For every file that looks like “the map”:
+
+| Question | Pass = keep tracing |
+|----------|---------------------|
+| Is this **mission editor** 2D, not in-game GPS/briefing/UAV? | `#if _ENABLE_EDITOR`, `DisplayArcadeMap`, editor modes |
+| Does it **draw the terrain backdrop** or only icons/overlays? | Find `DrawField`, texture bind, landscape sample |
+| Is it compiled in retail path or `#if _VBS3` / dead code? | Check guards |
+
+**Reject** and log: briefing maps, diary maps, artillery/UAV terminals, pure 3D `ui3DEditor` (mention separately).
+
+### Step 4 — Hypothesis check: `uiMap.hpp`
+
+Cursor guessed `lib/UI/uiMap.*`. Your job:
+
+- **Confirm** — show call chain from editor open → this file → pixel draw  
+- **Or debunk** — “uiMap is in-game map only; editor uses X instead”  
+- **Or split** — shared base in uiMap, editor specialization elsewhere  
+
+This verdict is **§0 row 1** in the report.
+
+### Step 5 — Lock the spine
+
+One paragraph: “The authoritative chain for **mission editor 2D map** is …” with 5–10 symbols. **All later sections trace from this only.**
 
 ---
 
-## Investigation checklist
+## Investigation checklist (after spine locked)
 
 Answer each with **file:line + mechanism**:
 
-1. **What pixels fill the map background?** (satellite texture? procedural? multi-layer?)  
-2. **Is there a separate “map view” vs “satellite view”?** How switched?  
-3. **Where do roads/buildings/trees come from on the 2D map?** (pre-baked raster vs vector draw vs icons)  
-4. **Zoom:** discrete levels or continuous? What simplifies at low zoom?  
-5. **Pick / hit-test:** how does editor know what object was clicked on the map?  
-6. **Height / Z:** does 2D map sample terrain DEM or only use object pivots?  
-7. **Mission file vs world database:** what is loaded when editor opens a map?  
-8. **External tools:** `mapViewer.exe` pipe in `gameStateExt.cpp` — still relevant?
+1. **What pixels fill the map background?**  
+2. **Separate “map view” vs “satellite view”?** How switched?  
+3. **Roads/buildings/trees** — baked raster vs vector vs icons?  
+4. **Zoom / LOD** — continuous or stepped?  
+5. **Pick / hit-test** on 2D editor map  
+6. **Height / Z** — DEM on 2D map or pivot only?  
+7. **What loads when editor opens** — mission file vs world database  
+8. **Legacy tools** — e.g. external mapViewer pipe — still used?
 
 ---
 
@@ -66,11 +103,11 @@ Answer each with **file:line + mechanism**:
 
 | T-090 today | Question for report |
 |-------------|---------------------|
-| SAP ortho + offline water/road compose | Does A3 bake roads into raster or draw vectors live? |
-| `build-landcover-mask.mjs` SAP heuristic | Does A3 use engine land-cover or photo classification? |
-| `make map-export` (T-090.3 planned) | What does A3 load from disk/world at editor boot? |
-| Deck.gl IconLayer + supercluster (T-065) | How does A3 cluster/limit icon draw count? |
-| rbush pick (T-063) | A3 editor pick path on 2D map |
+| SAP ortho + offline compose | A3: bake roads into raster or draw vectors live? |
+| SAP land-cover heuristic | A3: engine land-cover or photo? |
+| T-090.3 export (planned) | A3: what loads at editor boot? |
+| Deck.gl cluster (T-065) | A3: icon LOD / cull? |
+| rbush pick (T-063) | A3: 2D editor pick path? |
 
 ---
 
@@ -78,9 +115,9 @@ Answer each with **file:line + mechanism**:
 
 | File | Purpose |
 |------|---------|
-| `.ai/artifacts/t144_arma3_map_architecture_report.md` | Main 11-section report |
-| `.ai/artifacts/t144_verify_log.md` | R1–R5 self-check |
-| Optional `.ai/artifacts/t144_arma3_map_callgraph.md` | Deep call graph if report too long |
+| `.ai/artifacts/t144_arma3_map_architecture_report.md` | §0 discovery + §1–§11 architecture |
+| `.ai/artifacts/t144_verify_log.md` | R1–R6 |
+| Optional `.ai/artifacts/t144_arma3_map_callgraph.md` | Deep call graph |
 
 **Commit in TBD-Reforger only** — artifacts + verify log. Prefix `T-144.1:` · tag `T-144.1`.
 

@@ -38,20 +38,36 @@ T-090 basemap work (Satellite + Map tiles, heuristic land-cover, `.topo` roads) 
 
 ---
 
-## Seed files (start here — not exhaustive)
+## Discovery first (do not trust this doc’s file names)
 
-| Path (under `Arma_3_SourceCode_Old/`) | Role |
-|---------------------------------------|------|
-| `lib/UI/uiMap.hpp` | `CStaticMap`, `CStaticMapMain`, `DisplayArcadeMap`, `DisplayMapEditor`, draw API |
-| `lib/UI/uiMap.cpp` | `DrawField`, satellite vs user chart, map texture bind |
-| `lib/UI/uiMapExt.cpp` | Editor map UI, modes, object move/rotate |
-| `lib/UI/uiMapExport.cpp` | Map-related export hooks |
-| `lib/UI/missionEditor.*`, `baseEditor.*` | Editor shell around map |
-| `lib/editor.hpp` / `editor.cpp` | Landscape / visitor / bulldozer hooks |
-| `lib/world.cpp` | `DisplayMap`, terrain, map singleton |
-| `lib/gameStateExt.cpp` | External `mapViewer.exe` pipe (BIS internal tool — note if dead) |
+**We do not know** that `uiMap.hpp` (or any path in TBD-Reforger docs) is the authoritative entry point until **you prove it from the A3 tree**. Cursor’s prior grep was a **hypothesis**, not ground truth.
 
-Trace **call chains** from `CStaticMap::DrawField` / `DisplayArcadeMap::OnDraw` outward.
+**Phase 0 — Entry point discovery** (mandatory; log in report §0):
+
+1. **Orient** — list top-level dirs under `Arma_3_SourceCode_Old/`; note build layout (`lib/`, `lib/UI/`, tools, extern).
+2. **Search by behavior**, not filename — examples:
+   - mission editor / arcade map / 2D map / map control / draw map
+   - satellite, user chart, map chart, DrawField, zoom map
+   - `_ENABLE_EDITOR`, Eden, EditorObject, landscape map
+3. **Validate candidates** — for each hit: who calls it? is it **mission editor 2D** vs in-game GPS map vs briefing map vs 3D editor?
+4. **Reject dead ends** — log paths that looked promising but are wrong surface (briefing chrome, UAV terminal map, VBS-only, `#if 0`, etc.).
+5. **Name the spine** — once validated, state the **primary call chain** (display class → map widget → draw → data source) with evidence.
+
+Write **§0 Entry point discovery** in the report *before* architecture sections. Include a table:
+
+| Candidate path | Why searched | Verdict (primary / secondary / reject) | Evidence |
+
+**Hypotheses to verify** (may be wrong — confirm or debunk):
+
+| Hypothesis | If true, you should find… |
+|------------|---------------------------|
+| `lib/UI/uiMap.*` | 2D map widget, `DrawField`, editor `DisplayArcadeMap` |
+| `lib/UI/missionEditor.*` | Editor shell opening the map display |
+| `lib/editor.*` | Landscape/world data feeding map (may be bulldozer-only) |
+| `lib/world.cpp` | `GetMap()`, terrain singleton wiring |
+| Separate `mapViewer` tool | Pipe in `gameStateExt.cpp` — legacy or parallel path? |
+
+Only after §0 is done: trace raster, objects, coords, zoom from **your** validated spine — not from this table alone.
 
 ---
 
@@ -61,6 +77,7 @@ Trace **call chains** from `CStaticMap::DrawField` / `DisplayArcadeMap::OnDraw` 
 
 Required sections (headings mandatory):
 
+0. **Entry point discovery** — search log + validated spine (see §Discovery first); explicitly answer “is `uiMap.hpp` the right place?”  
 1. **Executive summary** — 10 bullets: how A3 map *actually* works vs our T-090 assumptions  
 2. **Architecture diagram** — mermaid: data sources → compose → GPU/UI draw → editor overlays  
 3. **Raster stack** — satellite vs “map chart” vs grid; config keys; file formats  
@@ -81,11 +98,12 @@ Optional: [`.ai/artifacts/t144_arma3_map_callgraph.md`](../../../.ai/artifacts/t
 
 | ID | Check | Pass |
 |----|-------|------|
-| **R1** | Report exists with all 11 sections | Yes |
-| **R2** | ≥15 primary source files cited with path + symbol | Yes |
+| **R1** | Report exists with all **12** sections (§0–§11) | Yes |
+| **R2** | §0 documents ≥3 search strategies + verdict on `uiMap.*` hypothesis | Yes |
 | **R3** | Gap table references live T-090 slices by id | Yes |
-| **R4** | No edits under `Arma_3_SourceCode_Old/` | Yes |
-| **R5** | No edits to `apps/`, `packages/`, `docs/` in TBD-Reforger (Cursor sync after) | Yes |
+| **R4** | ≥15 primary source files cited with path + symbol (from **your** discovery, not this spec) | Yes |
+| **R5** | No edits under `Arma_3_SourceCode_Old/` | Yes |
+| **R6** | No edits to `apps/`, `packages/`, `docs/` in TBD-Reforger (Cursor sync after) | Yes |
 
 Log: **`.ai/artifacts/t144_verify_log.md`**
 
@@ -123,49 +141,47 @@ Execute **T-144.1** — Arma 3 map architecture study (read-only source analysis
   git pull
   ./scripts/ticket brief T-144 --slice T-144.1
   Confirm external tree exists:
-    ls /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old/lib/UI/uiMap.hpp
+    test -d /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old/lib
 
 ═══ READ (in order) ═══
   1. .ai/artifacts/t144_claude_code_handoff.md
   2. docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md
-  3. docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md (what we built — compare only)
+  3. docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md (compare only)
   4. docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md
 
 ═══ PROBLEM ═══
-  T-090 map work (SAP ortho heuristics, offline compose, Deck.gl tiles) may not match
-  how Arma 3 Eden actually feeds and draws the 2D mission editor map. Operator has A3
-  engine source — produce a ground-truth architecture report before more T-090 code.
+  We may be building T-090 wrong — SAP heuristics, offline compose, Deck tiles — because
+  we never traced how A3 Eden actually implements the 2D mission editor map. Discover the
+  real entry points in source (uiMap.hpp is a **hypothesis**, not gospel).
 
 ═══ LOCKED ═══
-  - **Read-only** on `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old/**`
-  - **No port** — analysis + recommendations only
-  - Focus **2D map** (DisplayArcadeMap / CStaticMap / DrawField) — not full 3D editor
-  - Deliverable in **TBD-Reforger** `.ai/artifacts/` only
-  - Do **not** edit docs/**, registry, CLAUDE.md, or application code in TBD-Reforger
-  - Cite file paths + class/function names; quote short snippets where decisive
+  - **Discovery first** — Phase 0: find + validate spine before deep tracing
+  - Report **§0** must verdict: is `lib/UI/uiMap.*` primary, secondary, or wrong?
+  - Read-only on Arma_3_SourceCode_Old/** · no port · artifacts in .ai/artifacts/ only
+  - Focus mission editor **2D map** — not briefing/GPS/UAV/3D-only paths
+  - No edits to docs/registry/app code in TBD-Reforger
 
 ═══ DO ═══
-  1. Recon — ripgrep + read seed files in handoff; expand to top ~30 files
-  2. Trace raster path: satellite vs map chart vs grid — config + load + draw
-  3. Trace editor map: DisplayArcadeMap → CStaticMapArcadeViewer → draw + input
-  4. Trace world objects on map: icons, layers, LOD, clustering (if any)
-  5. Document coord transform + zoom behavior with concrete formulas/constants
-  6. Write `.ai/artifacts/t144_arma3_map_architecture_report.md` (11 sections per spec)
-  7. Write `.ai/artifacts/t144_verify_log.md` (R1–R5)
-  8. Commit **only** artifact files in TBD-Reforger; prefix **T-144.1:** · tag **T-144.1**
+  1. Phase 0 — broad rg searches (handoff); validate/reject candidates; write §0 discovery log
+  2. From **your** spine only: raster stack, coords, zoom, objects on map
+  3. Editor pick + terrain height usage on 2D canvas
+  4. Gap table vs T-090 slices + phased recommendation
+  5. `.ai/artifacts/t144_arma3_map_architecture_report.md` (§0–§11)
+  6. `.ai/artifacts/t144_verify_log.md` (R1–R6)
+  7. Commit artifacts only · prefix **T-144.1:** · tag **T-144.1**
 
 ═══ DO NOT ═══
-  - Modify Arma 3 source tree
-  - Implement T-090 changes or “quick fixes” in the website
-  - Edit generated docs or ticket registry (Cursor doc sync follows)
-  - Spend time on briefing/GPS/radio UI chrome unrelated to map canvas
+  - Skip §0 or assume uiMap.hpp without evidence
+  - Modify A3 source or implement T-090 fixes
+  - Edit docs/registry (Cursor sync follows)
+  - Deep-dive briefing/GPS/radio chrome
 
 ═══ VERIFY ═══
-  Self-check R1–R5 in t144_verify_log.md (no make targets for this slice)
+  Self-check R1–R6 in t144_verify_log.md
 
 ═══ RETURN ═══
-  - Commit SHA + tag T-144.1
-  - Report path + top 5 surprises vs T-090
-  - Recommended T-090 program reorder (bullets)
+  - SHA + tag T-144.1
+  - §0 one-liner: confirmed spine vs uiMap hypothesis
+  - Top 5 surprises vs T-090 · recommended program reorder
   - **Ready for Cursor doc sync.**
 ```
