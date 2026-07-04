@@ -52,7 +52,7 @@ Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_prog
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **Single lane: T-090 until done.** **T-090.1.2.9** active. **T-090.1.1.1** @ `018ea70d`. **T-071/T-068 deferred.** **T-091** @ `dde589e`.
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-144.1 active** — A3 map source study. **T-090 paused.** External: `TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`.
 Read t091_1_dem_loader.md. Per docs/TICKET_DEV_QUEUE.md.
 ```
 
@@ -383,20 +383,23 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ---
 
-### ACTIVE SLICE — T-090 map program (single lane — 2026-07-04)
+### ACTIVE SLICE — T-144 Arma 3 map study (2026-07-04)
 
-Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · spawn hub [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) (**shipped** @ `a73224f2`)
-
-**Operator policy:** finish **T-090** (basemap polish → object export → render → interaction) before Eden. **T-071** / **T-068 Phase 2** **deferred** in registry.
+Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · **T-090 paused** until report
 
 | Slice | Status | Executor | Notes |
 |-------|--------|----------|-------|
-| **T-090.1.2.9** | **active** | claude-code | Satellite `.topo` road overlay |
-| **T-090.1.1.1** | **shipped** @ `018ea70d` | claude-code | Map land-cover tints |
-| **T-090.3** | ready | claude-code | Workbench object export (after .2.9) |
-| **T-071** | **deferred** | claude-code | ORBAT Manager — after T-090 |
-| **T-068.7+** | **deferred** | — | Phase 2 loadout — after T-071.2 + T-068.13 |
-| **T-092** | **shipped** @ `a73224f2` | — | Tags T-092.1 / T-092.2 · verify @ `452ce501` |
+| **T-144.1** | **active** | claude-code | Read-only A3 source analysis |
+| **T-144.0** | shipped | cursor-docs | Spec + handoff |
+| **T-090** | **paused** | — | Resume after T-144.1 + doc sync |
+
+**External source:** `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
+
+---
+
+### T-090 map program — paused @ T-144
+
+Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · basemap through **T-090.1.1.1** @ `018ea70d` shipped
 
 **Follow-on (not blocking):** `TBD_MissionListLoader` still hits legacy `/api/missions` (404) — needs same v1 + `X-Service-Token` fix as loader (OBS-2 in verify log).
 

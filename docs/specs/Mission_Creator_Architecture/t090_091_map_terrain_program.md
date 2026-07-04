@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **ready** — **Active slice:** **T-090.1.2.9** (Satellite road overlay). **Operator lane:** finish **entire T-090 program** on `main` before Eden (T-071 / T-068 **deferred**). **T-090.1.1.1** land-cover **shipped** @ `018ea70d`. **Queued:** **T-090.3** export → **T-090.5/.8/.9** objects. **Water good-enough** @ **T-090.1.2.5.2** `1c07d97a`. **T-090.2** @ `691d9b26`. **T-091** @ `dde589e`. Perfect water → **T-143** (`idea`).  
+**Status:** **paused @ T-144** — A3 source architecture study before more implementation. **T-090.1.1.1** land-cover **shipped** @ `018ea70d`. **Next after T-144:** T-090.1.2.9 → T-090.3 export. Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md).  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  

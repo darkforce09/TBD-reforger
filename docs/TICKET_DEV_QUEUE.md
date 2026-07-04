@@ -5,11 +5,11 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-090 — Map visualization program
+## T-144 — Arma 3 map architecture study
 
-- **Active slice:** `T-090.1.2.9`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
-- **Branch:** `ticket/T-090`
-- **Targets:** root, website
-- **Summary:** Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main. **T-090.1.1.1** land-cover @ `018ea70d`. **Active:** T-090.1.2.9 satellite roads → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.
+- **Active slice:** `T-144.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md`
+- **Branch:** `main`
+- **Targets:** root
+- **Summary:** Read-only analysis of A3 engine 2D map (DisplayArcadeMap / CStaticMap / DrawField) vs T-090. Source: /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old. **Pauses T-090** until report lands. Hub: t144_arma3_map_architecture_study.md.

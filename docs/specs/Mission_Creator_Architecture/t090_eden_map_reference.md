@@ -12,6 +12,8 @@ Product goal: when you open the Mission Creator map, you should see **enough wor
 
 **Not in scope for T-090:** building **floor selector** (which floor am I editing?) — deferred to **T-129** (`idea`).
 
+**Architecture authority:** **T-144** read-only study of Arma 3 engine map code — [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md). T-090 implementation **paused** until T-144.1 report + Cursor doc sync.
+
 ---
 
 ## Eden strengths (copy these)

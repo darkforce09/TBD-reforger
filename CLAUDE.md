@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-130**
 
-**ACTIVE NOW:** **T-090** — T-090.1.2.9 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md`.
+**ACTIVE NOW:** **T-144** — T-144.1 (Arma 3 map architecture study). Slice spec: `docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -150,7 +150,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **Single lane: T-090 until done** · **Active:** **T-090.1.2.9** satellite roads · **T-071/T-068 deferred**
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **PAUSED @ T-144** (A3 map study) · [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md)
 
 **Program order:** **T-090.3.0 → T-090.1 → … → T-092** ✓ @ `a73224f2` → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
 

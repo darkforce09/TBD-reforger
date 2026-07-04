@@ -1,5 +1,5 @@
 {
-  "next_id": 144,
+  "next_id": 145,
   "tickets": [
     {
       "id": "T-001",
@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.1.2.9",
+      "active_slice": null,
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main. **T-090.1.1.1** land-cover @ `018ea70d`. **Active:** T-090.1.2.9 satellite roads → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). **Paused @ T-144** — A3 source study before more implementation. Shipped basemap through T-090.1.1.1 @ `018ea70d`. Resume after T-144.1 report. Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -3489,6 +3489,57 @@
         "root"
       ],
       "executor": "claude-code"
+    },
+    {
+      "id": "T-144",
+      "order": 1440,
+      "program": "infra",
+      "status": "ready",
+      "active_slice": "T-144.1",
+      "surfaces": [
+        "MAP",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "infra"
+      ],
+      "title": "Arma 3 map architecture study",
+      "summary": "Read-only analysis of A3 engine 2D map (DisplayArcadeMap / CStaticMap / DrawField) vs T-090. Source: /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old. **Pauses T-090** until report lands. Hub: t144_arma3_map_architecture_study.md.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
+      "slices": [
+        "T-144.0",
+        "T-144.1"
+      ],
+      "depends_on": [],
+      "unblocks": [
+        "T-090"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "main",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "slice_plan": {
+        "T-144.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
+          "status": "shipped"
+        },
+        "T-144.1": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
+          "status": "ready"
+        }
+      }
     }
   ]
 }

@@ -8,7 +8,8 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). **Single lane:** finish T-090 on main. **T-090.1.1.1** land-cover @ `018ea70d`. **Active:** T-090.1.2.9 satellite roads → T-090.3 export. T-071/T-068 deferred. Hub: t090_091_map_terrain_program.md.
+- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). **Paused @ T-144** — A3 source study before more implementation. Shipped basemap through T-090.1.1.1 @ `018ea70d`. Resume after T-144.1 report. Hub: t090_091_map_terrain_program.md.
+- **T-144** (1440) — Arma 3 map architecture study [ready] — Read-only analysis of A3 engine 2D map (DisplayArcadeMap / CStaticMap / DrawField) vs T-090. Source: /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old. **Pauses T-090** until report lands. Hub: t144_arma3_map_architecture_study.md.
 
 ## Next queued (top 10)
 
