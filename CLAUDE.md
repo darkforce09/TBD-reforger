@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-090** — T-090.3.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md`.
+**ACTIVE NOW:** **T-090** — T-090.3.2 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -152,7 +152,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
 
-**Active:** **T-090.3.1** only (single lane — no parallel slices).
+**Active:** **T-090.3.2** only (single lane — density grids + trees).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
@@ -181,7 +181,8 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after T-090 map program):** **T-071** ORBAT Manager (**deferred** — map-first lane) → **T-068.7** compat matrix → T-068.8–T-068.11 → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. Hub: [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
-- T-090.10.1 **Map Engine v2 implementation plan** @ `a222a146` (tag **T-090.10.1**). A3→Deck mapping (14 layers), data contract (density grid `TBDD`, schema bumps), LOD v2 (density gates, **no world cluster**), 9 phased slices T-090.3.1→T-090.10.2. Roads in first export slice (Q1). Artifacts: [plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md), [verify log](.ai/artifacts/t090_10_1_verify_log.md). LOD: [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md) v2.
+- T-090.3.1 **Map Engine v2 export core (P1 buildings + roads)** @ `e47f25fc` (tag **T-090.3.1**). Full-world export 1.41M entities / 8.9 s; **310** building prefabs, **5,606** instances, **219** chunks (84 KB gz); **roads.json.gz** 766 segments (decode-topo). Gates 19/19 PASS. Verify: [`.ai/artifacts/t090_3_1_verify_log.md`](.ai/artifacts/t090_3_1_verify_log.md). **Note:** Workbench new plugin classes need Script Editor compile (`wb_reload` insufficient).
+- T-090.10.1 **Map Engine v2 implementation plan** @ `a222a146` (tag **T-090.10.1**).
 - T-144.1 **Arma 3 map architecture study** @ `b1949182` (tag **T-144.1**). A3 Arcade editor 2D map — no basemap tiles; live `GLandscape`; vectors on top. Artifacts: [report](.ai/artifacts/t144_arma3_map_architecture_report.md). Spec: [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md).
 - T-090.1.1.1 **Map program — cartographic land-cover compose** @ `018ea70d` (tag **T-090.1.1.1**). **L1** SAP-read-only forest/open masks (`build-landcover-mask.mjs` @ 3200² → soft masks; water excluded; ~25 m morphology) + pre-upscale tint pass in `build-map-cartographic.mjs` (open `#CDC6A3` @ 0.70, forest `#37502D` @ 0.80; TGA olive relief preserved). Spike: TGA provably monochrome — zero px on plugin `forestArea` ramp. **`make map-cartographic-everon`** ~2 min (tints @ 4096² before Lanczos — avoids 12800² magick OOM). M3 operator PASS @ (4870, 7760); M4 alignment ≪50 m. Satellite frozen. Verify: [`.ai/artifacts/t090_1_1_1_source_spike.json`](.ai/artifacts/t090_1_1_1_source_spike.json), [verify log](.ai/artifacts/t090_1_1_1_verify_log.md). Spec: [`t090_1_1_1_map_landcover_compose.md`](docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md).
 - T-092 **Spawn transform parity + mod mission compile** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`; verify log commit **`452ce501`**). **T-092.1:** `mission.schema.json` optional slot `y` + **schemaVersion "1.2"**; `TBD_MissionSlotStruct`/`TBD_SpawnManager` jsonY→GetSurfaceY policy, `CAPSULE_GROUND_OFFSET_M=0.0` (measured ≈0), `headingDeg`, `[TBD][Spawn]` logs. **T-092.2:** `flattenEditorToModDocument` (TS) + `services.FlattenToModDocument` (Go), `kit-aliases.json` + codegen mirror, **`GET /api/v1/missions/:id/compiled`** (`X-Service-Token`, 409 no-slots), mod loader `/api/v1/...` + token header fix. wb_play + live REST E2E **PASS** 2026-07-04 (M4 roster caveat OBS-1 → T-068.13; OBS-2 `TBD_MissionList` legacy path). Unblocks **T-071**. Verify: [`.ai/artifacts/t092_1_verify_log.md`](.ai/artifacts/t092_1_verify_log.md), [`.ai/artifacts/t092_2_verify_log.md`](.ai/artifacts/t092_2_verify_log.md). Hub: [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md).

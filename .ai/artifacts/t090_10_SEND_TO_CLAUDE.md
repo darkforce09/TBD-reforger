@@ -1,15 +1,16 @@
-# Send-off — T-090.3.1 (Map Engine v2 export core)
+# Send-off — T-090.3.2 (density grids + PH-P2 trees)
 
 **CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
 
 ```bash
-./scripts/ticket prompt T-090 --slice T-090.3.1
+./scripts/ticket prompt T-090 --slice T-090.3.2
 ```
 
-**Plan (normative):** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §3 + §7 row T-090.3.1  
-**LOD v2:** [`docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md`](../../docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)  
-**Parallel (optional):** T-090.5.1 render scaffold — separate session
+**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §3.3 + §7 row T-090.3.2  
+**Prior:** T-090.3.1 shipped @ `e47f25fc` — [verify log](t090_3_1_verify_log.md)
 
-**Scope:** Plugin full-world iterate + host post-process → `prefabs.json.gz`, `chunks/{cx}_{cy}.json.gz`, **`roads.json.gz` (Q1 pulled forward)**, census, schema bumps (`render.importanceZoom`). Realize `make map-export` / `map-verify-phase` stubs.
+**Scope:** `objects/density/{cx}_{cy}.bin` (TBDD 32 m corners) + PH-P2 tree instance chunks + forest-regions (t090_8 path B) + census real ints. Re-export from staged raw JSONL — **no second full Workbench run** if raw still staged.
 
-**Do NOT:** extend raster compose; reopen cancelled slices; dual-pyramid pass A2.
+**Single lane:** no T-090.5.1 until this ships.
+
+**Workbench note:** new plugin classes require **Script Editor compile** — `wb_reload` alone does not register them.

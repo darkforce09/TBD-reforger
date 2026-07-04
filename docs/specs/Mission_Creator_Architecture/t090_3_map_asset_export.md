@@ -1,7 +1,7 @@
 # T-090.3 — Map asset export (Workbench → repo)
 
 **Ticket:** T-090 · **Slice:** T-090.3  
-**Status:** **ready** — blocked on **T-090.10.1** plan approval · **v2: data-only** (no map tile pyramid)  
+**Status:** **in progress** — **T-090.3.1 shipped** @ `e47f25fc` · **active:** **T-090.3.2** · v2 data-only (no map tile pyramid)  
 **Executor:** **claude-code** (automation + Workbench plugin)  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
 **One command:** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md)  

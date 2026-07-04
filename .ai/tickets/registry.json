@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.3.1",
+      "active_slice": "T-090.3.2",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Map Engine v2 @ T-090.10.1 `a222a146`. **Single lane:** **T-090.3.1** export only. Plan: t090_10_map_engine_v2_implementation_plan.md.",
+      "summary": "Map Engine v2. **T-090.3.1** shipped @ `e47f25fc` (5.6k buildings + 766 roads). **Active:** **T-090.3.2** density+trees. Single lane.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -2068,7 +2068,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "e47f25fc"
         },
         "T-090.3.2": {
           "targets": [
@@ -2077,7 +2078,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-090.4": {
           "targets": [

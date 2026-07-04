@@ -7,9 +7,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.3.1`
+- **Active slice:** `T-090.3.2`
 - **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Map Engine v2 @ T-090.10.1 `a222a146`. **Active:** **T-090.3.1** export (buildings+roads). Plan: t090_10_map_engine_v2_implementation_plan.md. LOD v2: density gates, no world cluster.
+- **Summary:** Map Engine v2. **T-090.3.1** shipped @ `e47f25fc` (5.6k buildings + 766 roads). **Active:** **T-090.3.2** density+trees. Single lane.

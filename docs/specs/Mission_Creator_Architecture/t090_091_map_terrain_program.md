@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **T-090.10.1 shipped** @ `a222a146` — implementation plan locked. **Active:** **T-090.3.1** only (**single lane**).  
+**Status:** **T-090.3.1 shipped** @ `e47f25fc` · **Active:** **T-090.3.2** (density + trees). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
@@ -39,9 +39,9 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.1.1.1  Map land-cover compose  ✓ @ 018ea70d
   → T-144.1      A3 map architecture study  ✓ @ b1949182
   → T-090.10.1   implementation plan  ✓ @ a222a146
-  → T-090.3.1    export core (PH-P1 buildings + roads)  (ACTIVE)
-  → T-090.5.1    render spine scaffold  (after 3.1)
-  → T-090.3.2    density grid + trees (PH-P2)
+  → T-090.3.1    export P1 buildings + roads  ✓ @ e47f25fc (310 prefabs / 5,606 inst / 219 chunks / 766 road segs)
+  → T-090.3.2    density grids + trees (PH-P2)  (ACTIVE)
+  → T-090.5.1    render spine scaffold  (after 3.2)
   → T-090.5.2    roads + buildings layers
   → T-090.5.3    chunk streaming @ scale
   → T-090.8.1    forest/rock mass (marching squares)
@@ -98,8 +98,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.1.1** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch — **shipped** @ `6e06e679` |
 | **T-090.1.1.1** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | claude-code | **Land-cover tints** — **shipped** @ `018ea70d` |
 | **T-090.10.1** | plan artifact | claude-code | **shipped** @ `a222a146` |
-| **T-090.3.1** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + plan §7 | claude-code | **export core** — **active** |
-| **T-090.3.2** | same + density + PH-P2 | claude-code | queued |
+| **T-090.3.1** | export P1 + roads | claude-code | **shipped** @ `e47f25fc` |
+| **T-090.3.2** | density + PH-P2 trees | claude-code | **active** |
 | **T-090.5.1** | render scaffold | claude-code | queued (after 3.1) |
 | **T-090.5.2** … **T-090.5.5** | render layers per plan §7 | claude-code | queued |
 | **T-090.8.1** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | queued |

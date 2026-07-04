@@ -82,7 +82,7 @@
 | T-087 | 870 | deferred | platform | CMS rich text editor | Rich text editor for announcements and CMS content. |
 | T-088 | 880 | deferred | platform | Multi-server picker | Select among multiple game servers in intel views. |
 | T-089 | 890 | deferred | platform | Mission title PATCH sync | PATCH mission title to server on edit (absorbs former T-051 scope). |
-| T-090 | 900 | ready | infra | Map visualization program | Map Engine v2 @ T-090.10.1 `a222a146`. **Active:** **T-090.3.1** export (buildings+roads). Plan: t090_10_map_engine_v2_implementation_plan.md. LOD v2: density gates, no world cluster. |
+| T-090 | 900 | ready | infra | Map visualization program | Map Engine v2. **T-090.3.1** shipped @ `e47f25fc` (5.6k buildings + 766 roads). **Active:** **T-090.3.2** density+trees. Single lane. |
 | T-091 | 910 | shipped | infra | DEM + auto Z | T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md. |
 | T-092 | 920 | shipped | infra | Spawn transform parity + mod mission compile | T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md. |
 | T-093 | 930 | deferred | scale | Continuous autosave polish | Background autosave UX and conflict handling polish. |
