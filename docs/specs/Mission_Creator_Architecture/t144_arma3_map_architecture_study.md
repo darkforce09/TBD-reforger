@@ -23,6 +23,8 @@ T-090 basemap work (Satellite + Map tiles, heuristic land-cover, `.topo` roads) 
 
 **Do not commit to that repo.** Analysis artifacts live in **this** repo under `.ai/artifacts/`.
 
+**Exploration scope:** the **entire** `Arma_3_SourceCode_Old/` tree is in bounds — `lib/`, `cfg/`, tools, `extern/`, scripts, resources. Do **not** artificially limit yourself to `lib/UI/uiMap.*`. Follow every validated call chain across modules (landscape, world, config, texture load, visitor, tools). Complexity is expected; thoroughness beats speed.
+
 ---
 
 ## Scope
@@ -90,7 +92,11 @@ Required sections (headings mandatory):
 10. **Phased recommendation** — reorder or replace T-090.1.2.9 / T-090.3 / T-090.5 based on findings  
 11. **File index** — top 30 source files with one-line role  
 
-Optional: [`.ai/artifacts/t144_arma3_map_callgraph.md`](../../../.ai/artifacts/t144_arma3_map_callgraph.md) if call depth warrants split.
+Optional deliverables (use when complexity warrants — encouraged for this slice):
+
+- [`.ai/artifacts/t144_arma3_map_callgraph.md`](../../../.ai/artifacts/t144_arma3_map_callgraph.md) — deep call graph  
+- [`.ai/artifacts/t144_arma3_map_data_flow.md`](../../../.ai/artifacts/t144_arma3_map_data_flow.md) — raster + object + config pipeline detail  
+- [`.ai/artifacts/t144_arma3_search_log.md`](../../../.ai/artifacts/t144_arma3_search_log.md) — full discovery journal (queries, hit counts, rejects)
 
 ---
 
@@ -101,7 +107,7 @@ Optional: [`.ai/artifacts/t144_arma3_map_callgraph.md`](../../../.ai/artifacts/t
 | **R1** | Report exists with all **12** sections (§0–§11) | Yes |
 | **R2** | §0 documents ≥3 search strategies + verdict on `uiMap.*` hypothesis | Yes |
 | **R3** | Gap table references live T-090 slices by id | Yes |
-| **R4** | ≥15 primary source files cited with path + symbol (from **your** discovery, not this spec) | Yes |
+| **R4** | ≥15 primary source files cited with path + symbol (from **your** discovery, not this spec); **≥40** if full-tree exploration was needed | Yes |
 | **R5** | No edits under `Arma_3_SourceCode_Old/` | Yes |
 | **R6** | No edits to `apps/`, `packages/`, `docs/` in TBD-Reforger (Cursor sync after) | Yes |
 
@@ -134,14 +140,16 @@ Authority: this spec + handoff. **Do not edit docs/registry in TBD-Reforger.**
 ```
 Read CLAUDE.md first (TBD-Reforger repo).
 
-Execute **T-144.1** — Arma 3 map architecture study (read-only source analysis).
+Execute **T-144.1** — Arma 3 map architecture study (read-only, **exhaustive**).
 
 ═══ PREFLIGHT ═══
   cd /home/Samuel/Projects/TBD-Reforger
   git pull
-  ./scripts/ticket brief T-144 --slice T-144.1
-  Confirm external tree exists:
-    test -d /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old/lib
+  ./scripts/ticket brief T-144
+  ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
+  test -d "$ARMA/lib" && test -d "$ARMA/cfg" || exit 1
+  # Orient the whole tree — not just lib/UI
+  find "$ARMA" -maxdepth 2 -type d | head -60
 
 ═══ READ (in order) ═══
   1. .ai/artifacts/t144_claude_code_handoff.md
@@ -150,38 +158,70 @@ Execute **T-144.1** — Arma 3 map architecture study (read-only source analysis
   4. docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md
 
 ═══ PROBLEM ═══
-  We may be building T-090 wrong — SAP heuristics, offline compose, Deck tiles — because
-  we never traced how A3 Eden actually implements the 2D mission editor map. Discover the
-  real entry points in source (uiMap.hpp is a **hypothesis**, not gospel).
+  T-090 (SAP ortho, offline compose, Deck tiles, heuristic land-cover) may be architecturally
+  wrong because we never studied how Arma 3 actually builds the 2D mission-editor map.
+  This system is **deep and cross-cutting** — UI, landscape DB, textures, config, world sim.
+  Operator authorizes **full-tree read-only exploration** of the A3 source. Take the time
+  to be thorough. uiMap.hpp is one hypothesis among many.
+
+═══ COMPLEXITY (explicit permission) ═══
+  - **Explore the entire** Arma_3_SourceCode_Old tree — lib/, cfg/, tools/, extern/, etc.
+  - **Follow call chains wherever they lead** — landscape, world, texture, visitor, config
+  - **Do not stop** at the first plausible file; cross-validate from 2+ independent paths
+  - Large files (uiMap.cpp ~32k lines): read by **offset/section**, trace symbols, never whole-file
+  - Source is **Arma3_2012** era — classic **Arcade** 2D editor, not 2016 Eden 3D; state caveat
+  - Retail vs **VBS-only** (#if _VBS3): validate what ships in retail path
+  - It's OK if this takes many exploration passes — completeness > speed
 
 ═══ LOCKED ═══
-  - **Discovery first** — Phase 0: find + validate spine before deep tracing
-  - Report **§0** must verdict: is `lib/UI/uiMap.*` primary, secondary, or wrong?
-  - Read-only on Arma_3_SourceCode_Old/** · no port · artifacts in .ai/artifacts/ only
-  - Focus mission editor **2D map** — not briefing/GPS/UAV/3D-only paths
-  - No edits to docs/registry/app code in TBD-Reforger
+  - Phase 0 discovery **before** deep architecture (§0 mandatory)
+  - §0 verdict: `lib/UI/uiMap.*` primary / secondary / wrong — with evidence
+  - Read-only on A3 source · artifacts only in TBD-Reforger `.ai/artifacts/`
+  - **Center of gravity** = mission editor **2D map** canvas (not briefing/GPS/UAV chrome)
+  - No port, no T-090 fixes, no docs/registry edits in TBD-Reforger
 
 ═══ DO ═══
-  1. Phase 0 — broad rg searches (handoff); validate/reject candidates; write §0 discovery log
-  2. From **your** spine only: raster stack, coords, zoom, objects on map
-  3. Editor pick + terrain height usage on 2D canvas
-  4. Gap table vs T-090 slices + phased recommendation
-  5. `.ai/artifacts/t144_arma3_map_architecture_report.md` (§0–§11)
-  6. `.ai/artifacts/t144_verify_log.md` (R1–R6)
-  7. Commit artifacts only · prefix **T-144.1:** · tag **T-144.1**
+  **Phase 0 — Discovery (≥6 independent search strategies; log all in §0 + optional search_log)**
+  1. Display/editor classes across **entire** tree (not only lib/UI)
+  2. Draw/render: DrawField, StaticMap, texture bind, LandGrid, pictureMap
+  3. Data feed: Landscape, world objects, roads, forests, satellite/chart
+  4. Config: CfgWorlds, RscDisplay*, map-related param classes in cfg/
+  5. Tools: mapViewer, visitor, export — parallel or legacy paths?
+  6. Editor guards: _ENABLE_EDITOR, retail vs VBS, dead #if 0 branches
+  Validate each candidate; reject dead ends with reason; lock **spine** paragraph
+
+  **Phase 1 — Deep trace (from spine; chase into landscape/cfg/tools as needed)**
+  7. §3 Raster stack — every layer that hits pixels; switch mechanisms
+  8. §4 Coordinates — world ↔ pixel math with constants
+  9. §5 Zoom/LOD — thresholds, per-band visibility tables
+  10. §6 World objects — DB, cull, forest polygon vs icons, road vectors
+  11. §7 Editor — pick/hit-test, load sequence at editor open
+  12. §8 Terrain/height on 2D vs 3D GetSurfaceY
+  13. §9–§10 Gap table + T-090 program reorder (cite slice IDs)
+  14. §1–§2 Executive summary + mermaid (write last)
+  15. §11 File index — **top 40** files if tree-wide exploration; min 30
+
+  **Deliverables**
+  16. `.ai/artifacts/t144_arma3_map_architecture_report.md` (§0–§11)
+  17. `.ai/artifacts/t144_verify_log.md` (R1–R6)
+  18. Optional but encouraged if complex: `t144_arma3_map_callgraph.md`, `t144_arma3_map_data_flow.md`, `t144_arma3_search_log.md`
+  19. Commit artifacts only · **T-144.1:** · tag **T-144.1**
 
 ═══ DO NOT ═══
-  - Skip §0 or assume uiMap.hpp without evidence
-  - Modify A3 source or implement T-090 fixes
-  - Edit docs/registry (Cursor sync follows)
-  - Deep-dive briefing/GPS/radio chrome
+  - Artificially confine search to lib/UI/uiMap.* only
+  - Skip §0 or stop tracing when a call crosses module boundaries
+  - Modify A3 source; implement T-090; edit docs/registry
+  - Treat briefing/GPS/diary maps as the mission editor (log as rejects)
+  - Claim Eden 3D parity without provenance caveat
 
 ═══ VERIFY ═══
-  Self-check R1–R6 in t144_verify_log.md
+  R1–R6 in verify log · optional FE build/lint sanity (note pre-existing failures)
 
 ═══ RETURN ═══
   - SHA + tag T-144.1
-  - §0 one-liner: confirmed spine vs uiMap hypothesis
-  - Top 5 surprises vs T-090 · recommended program reorder
+  - §0 spine one-liner + uiMap verdict
+  - **Top 10** surprises vs T-090 (not just 5 — system is complex)
+  - Modules explored beyond lib/UI (bullet list)
+  - Recommended T-090 reorder with rationale
   - **Ready for Cursor doc sync.**
 ```

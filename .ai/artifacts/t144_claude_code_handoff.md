@@ -22,7 +22,9 @@ Phase 0 discover entry points (prove uiMap.* or find better spine)
 | Repo | Path | Your access |
 |------|------|-------------|
 | **TBD-Reforger** (this) | `/home/Samuel/Projects/TBD-Reforger` | Write **`.ai/artifacts/t144_*` only** |
-| **Arma 3 source** (external) | `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` | **Read only** |
+| **Arma 3 source** (external) | `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old` | **Read only — entire tree** |
+
+**Scope:** You are **not** confined to `lib/UI/`. Follow the map pipeline wherever it goes: `landscape.*`, `world.cpp`, `cfg/`, texture loaders, visitor/tools, `extern/`. Operator expects **exhaustive** archaeology.
 
 ---
 
@@ -38,23 +40,33 @@ ls "$ARMA"
 find "$ARMA/lib" -maxdepth 2 -type d | head -40
 ```
 
-### Step 2 — Broad search (behavior, not paths)
+### Step 2 — Broad search (entire tree — behavior, not paths)
 
-Run several **independent** queries; record hit counts and top files in §0:
+`$ARMA` = full source root. Run queries under **`$ARMA`** (not only `$ARMA/lib`):
 
 ```bash
-# Editor + 2D map (mission editor, not 3D)
-rg -l "DisplayArcadeMap|DisplayMapEditor|MissionEditor|ArcadeMap" "$ARMA/lib" --glob '*.{cpp,hpp,h}'
+ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
 
-# Map draw / widget
-rg -l "CStaticMap|DrawField|StaticMap" "$ARMA/lib" --glob '*.{cpp,hpp,h}'
+# 1. Editor + 2D map displays
+rg -l "DisplayArcadeMap|DisplayMapEditor|MissionEditor|ArcadeMap" "$ARMA" --glob '*.{cpp,hpp,h,sqf}' 2>/dev/null | head -40
 
-# Raster / satellite / chart
-rg -l "satellite|UserChart|MapChart|user chart" "$ARMA/lib" --glob '*.{cpp,hpp,h}' | head -30
+# 2. Map widget / draw
+rg -l "CStaticMap|DrawField|DrawExt|StaticMap" "$ARMA" --glob '*.{cpp,hpp,h}' | head -40
 
-# Config-driven map UI
-rg -l "RscDisplay.*Map|RscMap|controls.*Map" "$ARMA" --glob '*.{cpp,hpp,h,sqs,sqf}' 2>/dev/null | head -20
+# 3. Raster / chart / satellite
+rg -l "satellite|UserChart|MapChart|LandGrid|pictureMap|LandTexture" "$ARMA" --glob '*.{cpp,hpp,h}' | head -40
+
+# 4. Landscape + world object feed (often NOT in UI/)
+rg -l "Landscape|LandObject|DrawMapObjects|mapObject" "$ARMA/lib" --glob '*.{cpp,hpp,h}' | head -40
+
+# 5. Config-driven map (cfg/ + stringtable)
+rg -l "RscDisplayArcadeMap|RscMap|class Map" "$ARMA" 2>/dev/null | head -30
+
+# 6. Tools / legacy
+rg -l "mapViewer|VisitorExchange|ExportMap" "$ARMA" --glob '*.{cpp,hpp,h}' | head -20
 ```
+
+**When a symbol crosses modules**, read the callee — do not stop at UI boundary.
 
 ### Step 3 — Validate each candidate
 
