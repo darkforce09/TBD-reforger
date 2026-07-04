@@ -172,6 +172,25 @@ Execute **T-144.1** — Arma 3 map architecture study (read-only, **exhaustive**
   - Source is **Arma3_2012** era — classic **Arcade** 2D editor, not 2016 Eden 3D; state caveat
   - Retail vs **VBS-only** (#if _VBS3): validate what ships in retail path
   - It's OK if this takes many exploration passes — completeness > speed
+  - **Parallel subagents encouraged** — see handoff §Parallel agents; parent synthesizes one report
+
+═══ PARALLEL AGENTS (operator-approved — use when runtime is long) ═══
+  You MAY spawn **read-only** parallel explorers after a 15-min parent orient. Parent owns
+  §0 spine verdict, final report, gap table, commit, and tag. Subagents write ONLY partial
+  drafts under `.ai/artifacts/t144_parallel/` — never commit partials as final.
+
+  Suggested split (launch in parallel once $ARMA path confirmed):
+  | Agent | Scope | Partial output |
+  |-------|-------|----------------|
+  | **A — UI/Editor** | lib/UI/*, DisplayArcadeMap, missionEditor*, uiArcade, baseEditor, cursor | `t144_parallel_A_ui_editor.md` |
+  | **B — Landscape/World** | landscape.*, world.cpp, object DB, roads/forests on map | `t144_parallel_B_landscape_world.md` |
+  | **C — Raster/Draw** | DrawField, CStaticMap*, textures, LandGrid, satellite/chart switch | `t144_parallel_C_raster_draw.md` |
+  | **D — Config** | cfg/, CfgWorlds, RscDisplay*Map*, map params | `t144_parallel_D_config.md` |
+  | **E — Tools/Legacy** | VisitorExchange/, buldozer/, CfgEdit/, mapViewer, TerSynth/, extern/ | `t144_parallel_E_tools_legacy.md` |
+
+  Each partial MUST include: files touched (path:line), symbols, rejects, open questions.
+  Parent: cross-validate ≥2 agents before locking spine; merge into one coherent report.
+  Delete or archive `t144_parallel/` in verify log (optional keep for audit).
 
 ═══ LOCKED ═══
   - Phase 0 discovery **before** deep architecture (§0 mandatory)

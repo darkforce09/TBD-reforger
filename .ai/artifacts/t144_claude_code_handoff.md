@@ -10,10 +10,45 @@
 **Read-only archaeology** of Bohemia’s Arma 3 **2D mission-editor map** — discover where it really lives in source, then document data flow, layering, zoom/LOD, and coords. **Do not assume** `uiMap.hpp` is correct until you prove it.
 
 ```text
-Phase 0 discover entry points (prove uiMap.* or find better spine)
-  → trace draw + data from validated chain only
-  → compare to T-090 → report §0–§11 → tag T-144.1
+Parent: orient → (optional) parallel read-only subagents → synthesize spine
+  → deep trace + T-090 compare → report §0–§11 → tag T-144.1
 ```
+
+---
+
+## Parallel agents (operator-approved)
+
+This slice is **long**. Parallel subagents are **encouraged** — not forbidden.
+
+| Role | Responsibility |
+|------|----------------|
+| **Parent** | Orient, spawn agents, lock §0 spine, merge partials, write final report + verify log, commit + tag |
+| **Subagents A–E** | Read-only deep dive on one slice of `$ARMA`; write **partial** markdown only |
+
+**Rules:**
+- Subagents: **read-only** on A3 source; write only to `.ai/artifacts/t144_parallel/*.md`
+- Parent: **only** agent that commits `t144_arma3_map_architecture_report.md` and tags **T-144.1**
+- No subagent edits docs/, apps/, registry
+- Parent must **cross-validate** spine from ≥2 partials before §0 is final
+
+### Subagent briefs (copy to each parallel task)
+
+**Shared header for all subagents:**
+```text
+T-144.1 partial — read-only. ARMA=/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old
+Write ONLY your assigned partial file. Cite path:line + symbols. Log rejects. No TBD-Reforger code/docs edits.
+Arcade 2012 source — not Eden 3D. Retail vs VBS guards matter.
+```
+
+| ID | Prompt focus | Output file |
+|----|--------------|-------------|
+| **A** | UI/editor: DisplayArcadeMap, DisplayMapEditor, missionEditor*, uiMap*, uiArcade, missionEditorCursor, dispMissionEditor — who opens the 2D map? | `t144_parallel_A_ui_editor.md` |
+| **B** | Landscape/world: Landscape, LandObject, world objects on map, roads, forests, cull — how does data reach the map widget? | `t144_parallel_B_landscape_world.md` |
+| **C** | Raster/draw: DrawField, CStaticMap*, texture bind, LandGrid, pictureMap, satellite vs chart switch | `t144_parallel_C_raster_draw.md` |
+| **D** | Config: cfg/, CfgWorlds, RscDisplay*Map*, map-related ParamEntry — what config drives the map? | `t144_parallel_D_config.md` |
+| **E** | Tools/legacy: VisitorExchange/, buldozer/, CfgEdit/, mapViewer pipe, TerSynth/, binarize/ — parallel or dead paths? | `t144_parallel_E_tools_legacy.md` |
+
+Parent merges partials → validates uiMap.* hypothesis → writes §0–§11.
 
 ---
 
