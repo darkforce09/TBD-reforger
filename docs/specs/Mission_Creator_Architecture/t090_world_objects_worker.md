@@ -9,8 +9,9 @@
 ## In one sentence
 
 A dedicated Web Worker fetches, gunzips and parses world-object chunks and builds the **world** rbush
-spatial index + **world** cluster index off the main thread, so a 50–500 MB catalog never blocks the UI
-and the editor holds ≥55 fps (N11).
+spatial index off the main thread, so a 50–500 MB catalog never blocks the UI and the editor holds ≥55 fps (N11).
+
+**v2 (T-090.10.1):** no world supercluster — `visibleInstances(bbox, zoom)` respects `lodGates.ts` density bands; returns typed arrays via transferables.
 
 ---
 
@@ -20,9 +21,7 @@ and the editor holds ≥55 fps (N11).
 - World picking must mirror `state/slotSpatialIndex.ts` but over a **different, much larger** dataset.
   It uses a **separate world** rbush — the slot index is a single-mounted-doc singleton owned by
   authored slots and must not be shared.
-- Tree clustering at scale (`byKind.tree.instances` from `type-inventory.json`) needs `supercluster.load()` (whole-forest rebuild). That is a **separate
-  world** cluster index, distinct from the slot `slotClusterIndex` singleton, and its `load()` runs in
-  the worker, never on the UI thread.
+- **v2:** density-gate visibility (`lodGates.classVisible`) replaces tree clustering; forest mass from density grids (T-090.8.1).
 
 ---
 
@@ -34,7 +33,6 @@ features/tactical-map/workers/
   worldObjectsClient.ts      # main-thread Comlink proxy + lifecycle (terminate on mission unmount)
 state/
   worldSpatialIndex.ts       # rbush wrapper, SAME API surface as slotSpatialIndex (separate instance)
-  worldClusterIndex.ts       # supercluster wrapper for kind=tree (separate from slotClusterIndex)
 ```
 
 ## Comlink API (main thread → worker)
@@ -45,7 +43,7 @@ interface WorldObjectsWorker {
   loadChunksInBbox(bbox: Bbox, marginCells: number): Promise<ChunkLoadResult>; // streamed, deduped
   pickNearest(worldXY: [number, number], radiusM: number): Promise<string | null>;
   pickRect(bbox: Bbox): Promise<string[]>;                          // world ids in box (read-only)
-  clusterTrees(deckZoom: number, bbox: Bbox): Promise<ClusterMarker[]>;
+  visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet>;
   resolve(id: string): Promise<ResolvedWorldObject>;                // join prefab+instance(+audit)
   unload(): Promise<void>;
 }
@@ -84,7 +82,7 @@ interface WorldObjectsWorker {
 | W1 | Worker parses the golden chunk sample without main-thread parse | unit (Comlink mock) |
 | W2 | `pickNearest` returns the same id as a brute-force scan on the golden | vitest |
 | W3 | World rbush is a separate instance from `slotSpatialIndex` (no shared singleton) | code review |
-| W4 | `clusterTrees` `load()` runs in the worker (no main-thread supercluster import) | code review |
+| W4 | `visibleInstances` respects `lodGates` — no supercluster | vitest + code review |
 | W5 | Pan ≥55 fps with 50k visible world instances + basemap | FpsCounter (T-090.5) |
 
 ## Out of scope

@@ -9,7 +9,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
       "branch": "ticket/T-090"
     }
   ]

@@ -384,23 +384,21 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ---
 
-### ACTIVE SLICE — T-090 Map Engine v2 (2026-07-05)
+### ACTIVE SLICE — Map Engine v2 implementation (2026-07-05)
 
-Hub: [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · legacy: [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md)
+Plan shipped @ `a222a146` · [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md)
 
-| Slice | Status | Executor | Notes |
-|-------|--------|----------|-------|
-| **T-090.10.1** | **active** | claude-code | Implementation **plan** only → `.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md` |
-| **T-090.10** | shipped | cursor-docs | Architecture scaffold |
-| **T-090.3** | ready | claude-code | Data export — after plan approved |
-| **T-090.5** | ready | claude-code | Deck v2 render spine |
-| **T-090.1.2.9** / **.1.2.3** | **cancelled** | — | Raster compose retired |
+| Slice | Status | Notes |
+|-------|--------|-------|
+| **T-090.3.1** | **active** | Export: PH-P1 buildings + roads pulled forward (Q1 yes) |
+| **T-090.5.1** | ready | Render scaffold — parallel w/ 3.1 |
+| **T-090.10.1** | shipped @ `a222a146` | Plan artifact only |
 
-**Handoff:** [`.ai/artifacts/t090_10_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_10_SEND_TO_CLAUDE.md)
+LOD v2 locked in [`t090_render_lod_contract.md`](t090_render_lod_contract.md) — world cluster purged.
 
 ---
 
-### COMPLETE — T-144 Arma 3 map study (2026-07-04)
+### COMPLETE — T-090.10.1 Map Engine v2 plan (2026-07-05)
 
 Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
 

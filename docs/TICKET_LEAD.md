@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Map Engine v2 — A3-structural pivot (data+vectors, not raster compose). **Active:** **T-090.10.1** plan. **Cancelled:** .1.2.9, .1.2.3. **Frozen:** map pyramid compose. Authority: t090_10_map_engine_v2.md · T-144.1 @ b1949182.
+- **T-090** (900) — Map visualization program [ready] — Map Engine v2 @ T-090.10.1 `a222a146`. **Active:** **T-090.3.1** export (buildings+roads). Plan: t090_10_map_engine_v2_implementation_plan.md. LOD v2: density gates, no world cluster.
 
 ## Next queued (top 10)
 

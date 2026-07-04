@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.10.1",
+      "active_slice": "T-090.3.1",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Map Engine v2 — A3-structural pivot (data+vectors, not raster compose). **Active:** **T-090.10.1** plan. **Cancelled:** .1.2.9, .1.2.3. **Frozen:** map pyramid compose. Authority: t090_10_map_engine_v2.md · T-144.1 @ b1949182.",
+      "summary": "Map Engine v2 @ T-090.10.1 `a222a146`. **Active:** **T-090.3.1** export (buildings+roads). Plan: t090_10_map_engine_v2_implementation_plan.md. LOD v2: density gates, no world cluster.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1851,15 +1851,24 @@
         "T-090.1.2.9",
         "T-090.2",
         "T-090.3",
+        "T-090.3.1",
+        "T-090.3.2",
         "T-090.4",
         "T-090.5",
+        "T-090.5.1",
+        "T-090.5.2",
+        "T-090.5.3",
+        "T-090.5.4",
+        "T-090.5.5",
         "T-090.6",
         "T-090.7",
         "T-090.3.0",
         "T-090.8",
+        "T-090.8.1",
         "T-090.9",
         "T-090.10",
-        "T-090.10.1"
+        "T-090.10.1",
+        "T-090.10.2"
       ],
       "depends_on": [],
       "unblocks": [
@@ -2050,7 +2059,25 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
+          "status": "deferred"
+        },
+        "T-090.3.1": {
+          "targets": [
+            "root",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
           "status": "ready"
+        },
+        "T-090.3.2": {
+          "targets": [
+            "root",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
+          "status": "queued"
         },
         "T-090.4": {
           "targets": [
@@ -2066,7 +2093,47 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "deferred"
+        },
+        "T-090.5.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
           "status": "ready"
+        },
+        "T-090.5.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "queued"
+        },
+        "T-090.5.3": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "queued"
+        },
+        "T-090.5.4": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "queued"
+        },
+        "T-090.5.5": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "queued"
         },
         "T-090.6": {
           "targets": [
@@ -2102,7 +2169,16 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md",
-          "status": "ready"
+          "status": "deferred"
+        },
+        "T-090.8.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md",
+          "status": "queued"
         },
         "T-090.9": {
           "targets": [
@@ -2126,7 +2202,16 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "a222a146"
+        },
+        "T-090.10.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md",
+          "status": "queued"
         }
       }
     },

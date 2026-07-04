@@ -1,8 +1,8 @@
 # T-090.10 — Map Engine v2 (A3-aligned render spine)
 
 **Ticket:** T-090 · **Slice:** T-090.10 (architecture) · **T-090.10.1** (detailed plan — Claude Code)  
-**Status:** **T-090.10** scaffold **shipped** (cursor-docs) · **active slice:** **T-090.10.1**  
-**Executor:** T-090.10 cursor-docs · **T-090.10.1** claude-code  
+**Status:** **T-090.10.1 shipped** @ `a222a146` · **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md)  
+**Active implementation:** **T-090.3.1** (export) · **T-090.5.1** (render scaffold, parallel)  
 **Authority:** [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) · [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md)  
 **Hub:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · **Legacy (frozen):** [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md)
 

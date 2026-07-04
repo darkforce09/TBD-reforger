@@ -160,9 +160,9 @@ Road **PathLayer**: no icon rotation; stroke follows polyline.
 
 | deckZoom | Trees / props | Buildings |
 |----------|---------------|-----------|
-| ≤ 0 (`WORLD_CLUSTER_MAX_ZOOM`) | **Cluster disc** — no per-tree SVG | OBB rect (thin) |
-| 0 … +3 | glyph `baseSizePx * 2^(deckZoom − REF_ZOOM)` | OBB rect + class badge |
-| ≥ +3 (`PROP_MIN_ZOOM`) | full glyph; props layer on | OBB rect (+ footprint ring if exported) + badge |
+| &lt; 0 | Forest mass polygon only — **no** tree glyphs | OBB rect (thin) @ ≥ −2.5 |
+| 0 … +3 | glyph `baseSizePx * 2^(deckZoom − REF_ZOOM)` | OBB rect + class badge @ ≥ +1 |
+| ≥ +3 (`PROP_MIN_ZOOM`) | full glyph; props layer on | OBB (+ footprint ring if exported) + badge |
 
 ```typescript
 getSize: (d, { zoom }) =>
@@ -171,10 +171,7 @@ getSize: (d, { zoom }) =>
 
 Optional: scale tree glyph by `spatial.heightM` clamp — tall trees slightly larger icon (cap 1.5×).
 
-**Cluster:** a **separate world** supercluster index for `kind=tree` (built in the worker — **not** the
-slot `slotClusterIndex` singleton; see [`t090_world_objects_worker.md`](t090_world_objects_worker.md)) —
-the cluster disc shows count, not stacked SVGs. Below `WORLD_CLUSTER_MAX_ZOOM` (deckZoom ≤ 0), forest
-**regions** replace individual trees entirely ([`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md)).
+**v2 (no world cluster):** below `TREE_GLYPH_MIN_ZOOM` (0), forest **regions** replace individual trees entirely ([`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md)). Individual glyphs from deckZoom ≥ 0 only.
 
 ---
 

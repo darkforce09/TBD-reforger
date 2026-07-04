@@ -72,7 +72,7 @@ During P2 **development**, hull assignment may temporarily miss up to **±2%** o
 Forests follow the canonical ladder in [`t090_render_lod_contract.md`](t090_render_lod_contract.md) §N3;
 do not restate the numbers. Summary by Deck orthographic zoom: at deckZoom ≤ `FOREST_REGION_MAX_ZOOM`
 (1) forests are translucent **`PolygonLayer`** fills (`rgba(34,120,60,α)`); above +1 the fill fades to
-context and per-tree glyphs take over (deckZoom ≥ `WORLD_CLUSTER_MAX_ZOOM`+ via the world cluster index).
+context and per-tree glyphs take over (deckZoom ≥ `TREE_GLYPH_MIN_ZOOM` per LOD v2).
 Fields render as a lighter hatch; water bodies as a blue fill.
 
 ---

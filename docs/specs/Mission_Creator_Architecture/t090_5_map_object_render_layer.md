@@ -75,11 +75,7 @@ military/tower/bunker get a center badge at deckZoom ≥ `BUILDING_BADGE_MIN_ZOO
 
 ### Trees (`IconLayer` + glyph atlas)
 
-Below `WORLD_CLUSTER_MAX_ZOOM` (deckZoom ≤ 0): **cluster discs** via a **separate world** cluster index
-(*not* the slot `slotClusterIndex` singleton); above it, individual glyphs from the `world-glyphs` atlas
-by `render.iconKey`, rotated by `rotationDeg` (north-up SVG, clockwise yaw), sized
-`baseSizePx * 2^(deckZoom − REF_ZOOM)` (N2/N4). See [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md)
-+ [`t090_world_objects_worker.md`](t090_world_objects_worker.md).
+At deckZoom **≥ `TREE_GLYPH_MIN_ZOOM` (0)** per [`t090_render_lod_contract.md`](t090_render_lod_contract.md) v2: individual glyphs from the `world-glyphs` atlas by `render.iconKey`, rotated by `rotationDeg`, sized `baseSizePx * 2^(deckZoom − REF_ZOOM)`. **Below 0:** trees **hidden** — forest mass polygons (T-090.8.1) carry readability. **No world supercluster.**
 
 ### Props / rocks / utility
 
