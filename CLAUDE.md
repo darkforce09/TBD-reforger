@@ -114,9 +114,9 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-130**
+**Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-144** — T-144.1 (Arma 3 map architecture study). Slice spec: `docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md`.
+**ACTIVE NOW:** **T-090** — T-090.3 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -150,9 +150,11 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 ### RESUMED — T-090 Map visualization program
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **PAUSED @ T-144** (A3 map study) · [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md)
+See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-144.1 shipped** @ `b1949182` — [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](.ai/artifacts/t144_arma3_map_architecture_report.md)
 
-**Program order:** **T-090.3.0 → T-090.1 → … → T-092** ✓ @ `a73224f2` → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
+**Active slice:** **T-090.3** map-object export. **Parked:** T-090.1.2.9 (roads → T-090.5), T-090.1.2.3 (legacy prefetch).
+
+**Program order:** **T-090.3** → **T-090.5** (+ T-090.8) → **T-090.9** → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
@@ -181,6 +183,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after T-090 map program):** **T-071** ORBAT Manager (**deferred** — map-first lane) → **T-068.7** compat matrix → T-068.8–T-068.11 → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. Hub: [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-144.1 **Arma 3 map architecture study** @ `b1949182` (tag **T-144.1**). Read-only analysis of Arma3_2012 **Arcade** editor 2D map — **no basemap tiles**; live `GLandscape` draw; Sat↔Map = zoom crossfade; vectors on top. Spine: `CDPCreateEditor` → `DisplayArcadeMap` → `CStaticMap` → `DrawBackground`. Pivot T-090: promote **T-090.3** export; park **T-090.1.2.9** (roads → **T-090.5**); density-gate LOD (no clustering). Verify R1–R6 PASS. Artifacts: [report](.ai/artifacts/t144_arma3_map_architecture_report.md), [search log](.ai/artifacts/t144_arma3_search_log.md), [verify log](.ai/artifacts/t144_verify_log.md). Spec: [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md).
 - T-090.1.1.1 **Map program — cartographic land-cover compose** @ `018ea70d` (tag **T-090.1.1.1**). **L1** SAP-read-only forest/open masks (`build-landcover-mask.mjs` @ 3200² → soft masks; water excluded; ~25 m morphology) + pre-upscale tint pass in `build-map-cartographic.mjs` (open `#CDC6A3` @ 0.70, forest `#37502D` @ 0.80; TGA olive relief preserved). Spike: TGA provably monochrome — zero px on plugin `forestArea` ramp. **`make map-cartographic-everon`** ~2 min (tints @ 4096² before Lanczos — avoids 12800² magick OOM). M3 operator PASS @ (4870, 7760); M4 alignment ≪50 m. Satellite frozen. Verify: [`.ai/artifacts/t090_1_1_1_source_spike.json`](.ai/artifacts/t090_1_1_1_source_spike.json), [verify log](.ai/artifacts/t090_1_1_1_verify_log.md). Spec: [`t090_1_1_1_map_landcover_compose.md`](docs/specs/Mission_Creator_Architecture/t090_1_1_1_map_landcover_compose.md).
 - T-092 **Spawn transform parity + mod mission compile** @ **`a73224f2`** (tags **T-092.1** `4eefc169`, **T-092.2** `a73224f2`; verify log commit **`452ce501`**). **T-092.1:** `mission.schema.json` optional slot `y` + **schemaVersion "1.2"**; `TBD_MissionSlotStruct`/`TBD_SpawnManager` jsonY→GetSurfaceY policy, `CAPSULE_GROUND_OFFSET_M=0.0` (measured ≈0), `headingDeg`, `[TBD][Spawn]` logs. **T-092.2:** `flattenEditorToModDocument` (TS) + `services.FlattenToModDocument` (Go), `kit-aliases.json` + codegen mirror, **`GET /api/v1/missions/:id/compiled`** (`X-Service-Token`, 409 no-slots), mod loader `/api/v1/...` + token header fix. wb_play + live REST E2E **PASS** 2026-07-04 (M4 roster caveat OBS-1 → T-068.13; OBS-2 `TBD_MissionList` legacy path). Unblocks **T-071**. Verify: [`.ai/artifacts/t092_1_verify_log.md`](.ai/artifacts/t092_1_verify_log.md), [`.ai/artifacts/t092_2_verify_log.md`](.ai/artifacts/t092_2_verify_log.md). Hub: [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md).
 - T-090.1.1 **Map program — Map cartographic view (pyramid + UI switch)** @ `6e06e679` (tag **T-090.1.1**). G1-A MapDataExporter TGA (4096² north-up) upscaled → composed ortho (inland-water tint from `.2.5.2` mask + `.topo` road strokes; **`despike()`** on geometry-baked width excursions). **`make map-cartographic-everon`** / **`map-cartographic-verify`** (`VIEW=map` z0–6, ~5461 WebP tiles local/gitignored). Manifest `tiles.map` → `workbench-cartographic` + `webp-lossy`. Frontend: T-127 `'map'` coercion removed; Map radio live; per-view `useTerrainBasemapLayer` (`basemap-map-*` ids; satellite unified texture survives switches); `basemapView.test.ts`. M1/M2/M3/M4/M5/M7/M8 PASS; M6/M9 operator browser. Ops: magick spill → `/var/tmp`. Artifacts: [`.ai/artifacts/t090_1_1_source_spike.json`](.ai/artifacts/t090_1_1_source_spike.json), [verify log](.ai/artifacts/t090_1_1_verify_log.md). Spec: [`t090_1_1_map_cartographic_view.md`](docs/specs/Mission_Creator_Architecture/t090_1_1_map_cartographic_view.md).

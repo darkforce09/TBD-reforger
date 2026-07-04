@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": null,
+      "active_slice": "T-090.3",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Eden-like map detail (N1-N12). **Paused @ T-144** — A3 source study before more implementation. Shipped basemap through T-090.1.1.1 @ `018ea70d`. Resume after T-144.1 report. Hub: t090_091_map_terrain_program.md.",
+      "summary": "Eden-like map detail (N1-N12). **T-144.1** A3 study @ `b1949182` — pivot **data+vectors** over raster bake. **Active:** **T-090.3** export. **Parked:** T-090.1.2.9 (roads → T-090.5). Basemap through T-090.1.1.1 @ `018ea70d`. Hub: t090_091_map_terrain_program.md · authority: t144 report.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1942,7 +1942,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_3_basemap_tile_prefetch.md",
-          "status": "queued"
+          "status": "deferred"
         },
         "T-090.1.2.4": {
           "targets": [
@@ -2030,7 +2030,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_1_2_9_satellite_road_overlay.md",
-          "status": "ready"
+          "status": "deferred"
         },
         "T-090.2": {
           "targets": [
@@ -3494,8 +3494,8 @@
       "id": "T-144",
       "order": 1440,
       "program": "infra",
-      "status": "ready",
-      "active_slice": "T-144.1",
+      "status": "shipped",
+      "active_slice": null,
       "surfaces": [
         "MAP",
         "DATA"
@@ -3505,7 +3505,7 @@
         "infra"
       ],
       "title": "Arma 3 map architecture study",
-      "summary": "Read-only analysis of A3 engine 2D map (DisplayArcadeMap / CStaticMap / DrawField) vs T-090. Source: /home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old. **Pauses T-090** until report lands. Hub: t144_arma3_map_architecture_study.md.",
+      "summary": "A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
       "slices": [
         "T-144.0",
@@ -3537,7 +3537,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "b1949182"
         }
       }
     }

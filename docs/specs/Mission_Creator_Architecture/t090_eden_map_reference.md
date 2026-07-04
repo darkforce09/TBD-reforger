@@ -12,7 +12,7 @@ Product goal: when you open the Mission Creator map, you should see **enough wor
 
 **Not in scope for T-090:** building **floor selector** (which floor am I editing?) — deferred to **T-129** (`idea`).
 
-**Architecture authority:** **T-144** read-only study of Arma 3 engine map code — [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md). T-090 implementation **paused** until T-144.1 report + Cursor doc sync.
+**Architecture authority:** **T-144.1** shipped @ `b1949182` — [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) · [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md). Key A3 lesson: **no basemap tiles** — map drawn live from world data; Sat↔Map = zoom crossfade + toggle; vectors (roads, forests, objects) always on top. T-090 keeps our raster basemaps for web perf but **prioritizes export + vector layers** per report §10.
 
 ---
 
@@ -25,7 +25,7 @@ Product goal: when you open the Mission Creator map, you should see **enough wor
 | **Basemap view switch** | User picks Satellite **or** Map | Mission Settings radio — [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) |
 | **Road readability** | Major roads visible at medium zoom; minor tracks fade | **T-090.5** typed road layer + width/color by `roadClass` |
 | **Structure silhouettes** | Building footprints / roofs visible @ zoom | **T-090.5** `building` instances (simple fill or icon) |
-| **Vegetation mass** | Tree clusters read as “forest” without 1:1 icons @ low zoom | **T-090.5** cluster LOD; full tree glyph @ high zoom |
+| **Vegetation mass** | Tree clusters read as “forest” without 1:1 icons @ low zoom | **T-090.8** marching squares on density grid; **T-090.5** density-gate LOD (A3: no clustering) |
 | **Layer toggles** | User can hide categories (units, objects, triggers…) | **T-090.5** MC settings: basemap / roads / structures / vegetation |
 | **Horizontal alignment** | Map matches in-game coords | **T-090.1** H1/H2 gates + manifest `alignmentOrigin` |
 

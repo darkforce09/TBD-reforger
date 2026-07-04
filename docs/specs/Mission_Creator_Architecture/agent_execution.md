@@ -52,7 +52,7 @@ Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_prog
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-144.1 active** — A3 map source study. **T-090 paused.** External: `TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`.
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-090.3 active** — map-object export. **T-144.1 shipped** @ `b1949182`. Hub: t090_091_map_terrain_program.md.
 Read t091_1_dem_loader.md. Per docs/TICKET_DEV_QUEUE.md.
 ```
 
@@ -350,13 +350,14 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 | **T-091.2 shipped** (2026-06-29) | **`dde589e`** (tag **T-091.2**). `terrainZ` in `ydoc` (add/paste/move + Attributes X/Y re-sample); `useDemLayer` hillshade (BitmapLayer ≤1024 px); `useDemVersion` async CUR refresh; Mission Settings `showGrid`/`showHillshade`; toolbelt X/Y/Z @ 3 dp; grid over hillshade with boosted line alpha. Vitest **21/21**. **T-091 program complete.** Spec: [`t091_2_z_axis_editor.md`](t091_2_z_axis_editor.md). |
 | **T-091.2 handoff** (2026-06-29) | Historical — [`.ai/artifacts/t091_2_claude_code_handoff.md`](../../../.ai/artifacts/t091_2_claude_code_handoff.md). |
 | **T-091.1 shipped** (2026-06-29) | **`2c56c2e`** (tag **T-091.1**). `tactical-map/dem/*` — manifest fetch, pngjs decode → Float32 meters cache, `loadDemForTerrain` / `sampleElevation` / `isDemReady` / `isDemDegraded`; vitest 15/15 (11 anchors ±0.01 m). Vite: `pngjs→browser` alias + `buffer` polyfill. Wired from `TacticalMap`; **consumed by T-091.2** @ `dde589e`. Spec: [`t091_1_dem_loader.md`](t091_1_dem_loader.md). |
-| **Map-verify program order** (2026-07-04) | **Single lane:** finish **T-090** on `main`. **T-090.1.1.1 shipped** @ `018ea70d`. **Active:** **T-090.1.2.9** satellite roads → **T-090.3** export. **T-071/T-068 deferred** until T-090 done. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
+| **Map-verify program order** (2026-07-04) | **Single lane:** finish **T-090** on `main`. **T-144.1 shipped** @ `b1949182` — pivot export+vectors. **Active:** **T-090.3** export → **T-090.5** vectors. **Parked:** T-090.1.2.9, T-090.1.2.3. **T-071/T-068 deferred** until T-090 done. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md). |
+| **T-144.1 A3 map study** (2026-07-04, **shipped** @ `b1949182`) | Read-only Arma3_2012 Arcade editor map architecture. **No basemap tiles** — live GLandscape; Sat↔Map crossfade; vectors on top. Pivot: **T-090.3** export promoted; **T-090.1.2.9** deferred (roads → **T-090.5**); **T-090.5** density-gate LOD; **T-143** down-ranked. Report: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md). |
 | **T-090.1.1.1 land-cover** (2026-07-04, **shipped** @ `018ea70d`) | L1 SAP masks + pre-upscale tint (`build-landcover-mask.mjs`); TGA monochrome finding logged. **`make map-cartographic-everon`** ~2 min. Spec: [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md). |
 | **T-092 spawn + compile** (2026-07-04, **shipped** @ `a73224f2`) | **T-092.1** @ `4eefc169`: schema 1.2 optional `y`, spawn policy + logs. **T-092.2**: flatten TS/Go, `GET /api/v1/missions/:id/compiled`, mod loader v1 + `X-Service-Token`. wb_play + REST E2E **PASS** @ `452ce501`. **Unblocks T-071.** OBS-1 roster deploy → T-068.13/T-071; OBS-2 `TBD_MissionList` legacy path. Verify logs in `.ai/artifacts/t092_*`. |
 | **T-090.1.1 Map cartographic view** (2026-07-03, **shipped** @ `6e06e679`) | G1-A base + water + `.topo` roads; **`make map-cartographic-everon`**. Spec: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md). |
 | **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until **T-071.2 + T-068.13** (T-092 gate cleared). |
 | **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 deferred** (map-first lane; unblocked by **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |
-| **Phase order** | … **T-090 single lane** until done. **Active: T-090.1.2.9** Satellite roads. **T-071/T-068 deferred.** Phase 2 VA after map: **T-071.2 + T-068.13**. … |
+| **Phase order** | … **T-090 single lane** until done. **Active: T-090.3** export. **T-071/T-068 deferred.** Phase 2 VA after map: **T-071.2 + T-068.13**. … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049 (**T-089** deferred); Save Version still compiles payload only. |
 | **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement queued tickets from [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
@@ -365,7 +366,7 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **single lane T-090**; **T-090.1.2.9** active; **T-071/T-068 deferred**. Then this file, then `engineering_plan.md` §0–§2.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **single lane T-090**; **T-090.3** active; **T-071/T-068 deferred**. Then this file, then `engineering_plan.md` §0–§2.
 2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
 3. **Verify gate** after every phase:
    ```bash
@@ -383,23 +384,35 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ---
 
-### ACTIVE SLICE — T-144 Arma 3 map study (2026-07-04)
+### ACTIVE SLICE — T-090 map program (2026-07-04, resumed post T-144)
 
-Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · **T-090 paused** until report
+Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · authority: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
 
 | Slice | Status | Executor | Notes |
 |-------|--------|----------|-------|
-| **T-144.1** | **active** | claude-code | Read-only A3 source analysis |
-| **T-144.0** | shipped | cursor-docs | Spec + handoff |
-| **T-090** | **paused** | — | Resume after T-144.1 + doc sync |
+| **T-090.3** | **active** | claude-code | Phased map-object export (P1→P10) — promoted per T-144 §10 |
+| **T-090.1.2.9** | deferred | — | Roads → **T-090.5** vectors, not sat raster bake |
+| **T-090.1.2.3** | deferred | — | Legacy pyramid prefetch; A3 has no tile pyramid |
+| **T-144.1** | shipped @ `b1949182` | claude-code | A3 map architecture study |
+
+**Program order:** T-090.3 → T-090.5 (+ T-090.8 forests) → T-090.9 interaction → T-071 → T-068.13. **T-071/T-068 deferred** (map-first lane).
+
+---
+
+### COMPLETE — T-144 Arma 3 map study (2026-07-04)
+
+Hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
+
+| Slice | Status | Shipped |
+|-------|--------|---------|
+| **T-144.1** | shipped | `b1949182` — read-only A3 source analysis (R1–R6 PASS) |
+| **T-144.0** | shipped | cursor-docs spec + handoff |
 
 **External source:** `/home/Samuel/Projects/TBD_Arma_3_Remaster/Arma_3_SourceCode_Old`
 
 ---
 
-### T-090 map program — paused @ T-144
-
-Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · basemap through **T-090.1.1.1** @ `018ea70d` shipped
+### T-090 map program — basemap shipped through T-090.1.1.1
 
 **Follow-on (not blocking):** `TBD_MissionListLoader` still hits legacy `/api/missions` (404) — needs same v1 + `X-Service-Token` fix as loader (OBS-2 in verify log).
 

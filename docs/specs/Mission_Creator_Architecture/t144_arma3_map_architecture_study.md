@@ -1,8 +1,8 @@
 # T-144 — Arma 3 map architecture study (reference analysis)
 
 **Ticket:** T-144 · **Program:** map reference · **Route:** `/missions/:id/edit` (informs **T-090**)  
-**Status:** **ready** — **active slice:** **T-144.1** (Claude Code research)  
-**Executor:** T-144.0 cursor-docs · **T-144.1** claude-code  
+**Status:** **shipped** @ `b1949182` (tag **T-144.1**)  
+**Executor:** T-144.0 cursor-docs · **T-144.1** claude-code ✓  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 ---
@@ -11,7 +11,7 @@
 
 T-090 basemap work (Satellite + Map tiles, heuristic land-cover, `.topo` roads) diverges from how **Arma 3 Eden** actually builds map readability. Operator has **Arma 3 engine source** access and wants a **ground-truth architecture study** before more T-090 implementation — not a port, but the **standard** for data flow, layering, zoom/LOD, and object draw.
 
-**Pauses T-090 implementation slices** (`.1.2.9` onward) until this study lands and Cursor doc-syncs recommendations into the T-090 hub.
+**Pauses T-090 implementation slices** until this study lands and Cursor doc-syncs recommendations into the T-090 hub. **Done** — T-090 **resumed** @ **T-090.3** per report §10.
 
 ---
 
@@ -22,6 +22,16 @@ T-090 basemap work (Satellite + Map tiles, heuristic land-cover, `.topo` roads) 
 ```
 
 **Do not commit to that repo.** Analysis artifacts live in **this** repo under `.ai/artifacts/`.
+
+## Shipped artifacts (T-144.1 @ `b1949182`)
+
+| Artifact | Path |
+|----------|------|
+| Report (§0–§11) | [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) |
+| Search log | [`.ai/artifacts/t144_arma3_search_log.md`](../../../.ai/artifacts/t144_arma3_search_log.md) |
+| Verify log (R1–R6 PASS) | [`.ai/artifacts/t144_verify_log.md`](../../../.ai/artifacts/t144_verify_log.md) |
+
+**§0 spine:** `CDPCreateEditor` → `DisplayArcadeMap` (`uiMapExt.cpp`) → `CStaticMapArcade(Viewer)` → `CStaticMap` → `DrawBackground` → live `GLandscape`. **Provenance:** Arma3_2012 pre-Eden **Arcade** editor (not Eden 3D). **T-090 pivot (§10):** promote **T-090.3** export; park **T-090.1.2.9** (roads → **T-090.5**); **T-090.5** density-gate LOD; **T-143** water down-ranked.
 
 **Exploration scope:** the **entire** `Arma_3_SourceCode_Old/` tree is in bounds — `lib/`, `cfg/`, tools, `extern/`, scripts, resources. Do **not** artificially limit yourself to `lib/UI/uiMap.*`. Follow every validated call chain across modules (landscape, world, config, texture load, visitor, tools). Complexity is expected; thoroughness beats speed.
 

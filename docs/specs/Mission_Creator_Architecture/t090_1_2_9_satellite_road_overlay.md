@@ -1,10 +1,10 @@
 # T-090.1.2.9 — Satellite road stroke overlay (readability)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.9  
-**Status:** **ready** — **active slice** on `main` (Claude Code) · after **T-090.1.1.1** @ `018ea70d`  
+**Status:** **deferred** — **parked @ T-144.1** @ `b1949182` (roads belong in **T-090.5** vector layer, not baked into sat raster)  
 **Executor:** claude-code  
 **Depends on:** **T-090.1.2.5.2** @ `1c07d97a` (water composite + `decode-topo.mjs` + `despike()` pattern from **T-090.1.1** @ `6e06e679`)  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md)
+**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · A3 study [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
 
 ---
 
@@ -18,7 +18,7 @@ Bake **`.topo` road strokes only** onto the **Satellite** ortho (SAP + water com
 
 Satellite view is photographic but **hard to read** at MC zoom — slot placement against tree canopy and field texture lacks road context. Map view already draws roads; Satellite does not.
 
-**T-090.5** vector road layers are the Eden-long-term answer (toggleable, pickable); this slice is a **fast raster bake** for readability without waiting for full object export.
+**T-090.5** vector road layers are the Eden-long-term answer (toggleable, pickable); A3 draws roads as **vectors on top** of live terrain — not baked into satellite texture (**T-144.1** §3–§5). This slice was a **fast raster bake** shortcut; **deferred** in favor of T-090.5.
 
 ---
 
