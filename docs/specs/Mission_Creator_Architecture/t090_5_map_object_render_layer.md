@@ -1,9 +1,9 @@
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  
-**Status:** Spec ready (blocked on **T-090.3** phased export P1+ )  
+**Status:** Spec ready — blocked on **T-090.3** + **T-090.10.1** plan · **v2: A3 density-gate LOD, no world clustering**  
 **Executor:** **claude-code**  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · UX ref [`t090_eden_map_reference.md`](t090_eden_map_reference.md) · **Phased rollout:** [`t090_phased_object_import.md`](t090_phased_object_import.md)
+**Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
 ---
 
@@ -25,11 +25,13 @@ Tiles alone (T-090.1) don't expose **selectable structure** — road class, buil
 MissionCreatorPage
   └─ TacticalMap
        ├─ BasemapTileLayer (T-090.1)
-       ├─ WorldObjectLayers (NEW)
-       │    ├─ RoadLayer (PathLayer / GeoJsonLayer)
-       │    ├─ BuildingLayer (PolygonLayer or extruded simple)
-       │    ├─ TreeLayer (IconLayer + cluster @ low zoom)
-       │    └─ PropLayer (IconLayer, optional @ z≥4)
+       ├─ MapEngineV2Layers (T-090.5 — see t090_10_map_engine_v2.md)
+       │    ├─ SeaBandLayer (DEM ±5m)
+       │    ├─ ContourLayer
+       │    ├─ RoadLayer (PathLayer)
+       │    ├─ BuildingLayer (PolygonLayer)
+       │    ├─ ForestMassLayer (marching squares — T-090.8)
+       │    └─ TreePropLayer (IconLayer — NO cluster; density-gate LOD)
        └─ SlotIconLayer (existing)
 ```
 

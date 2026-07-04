@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-090** — T-090.3 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md`.
+**ACTIVE NOW:** **T-090** — T-090.10.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -148,13 +148,13 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 **T-126** security @ `4a47688e` → **T-127** MC UX @ `0515aabb` → **T-128** doc links (tag **T-128**) → **T-130** OPEN/PARTIAL remainder @ `90c9f261` (tag **T-130**, doc sync **T-130.7** @ `5e0c7754`). Fable program **complete** — tracker index authoritative; only **F5-10** spelling remains OPEN (trivial/deferred). Next work: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) (**T-071** ORBAT Manager · **T-090.1.1.1** land-cover).
 
-### RESUMED — T-090 Map visualization program
+### Map Engine v2 — T-090 (active)
 
-See [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md) · **T-144.1 shipped** @ `b1949182` — [`t144_arma3_map_architecture_study.md`](docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](.ai/artifacts/t144_arma3_map_architecture_report.md)
+See [`t090_10_map_engine_v2.md`](docs/specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md) · legacy retired: [`t090_legacy_raster_pipeline.md`](docs/specs/Mission_Creator_Architecture/t090_legacy_raster_pipeline.md)
 
-**Active slice:** **T-090.3** map-object export. **Parked:** T-090.1.2.9 (roads → T-090.5), T-090.1.2.3 (legacy prefetch).
+**Active slice:** **T-090.10.1** — Claude Code writes implementation plan (no code). Then **T-090.3** data export → **T-090.5** render spine.
 
-**Program order:** **T-090.3** → **T-090.5** (+ T-090.8) → **T-090.9** → **T-071** → **T-068.13** → **T-068.7+** Phase 2 loadout.
+**Cancelled:** T-090.1.2.9 (sat road bake), T-090.1.2.3 (tile prefetch). **Frozen:** map pyramid compose (T-090.1.1 / .1.1.1).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 

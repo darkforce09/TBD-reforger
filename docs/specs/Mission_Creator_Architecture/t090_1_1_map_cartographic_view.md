@@ -1,8 +1,8 @@
 # T-090.1.1 — Map cartographic view (pyramid + UI switch)
 
 **Ticket:** T-090 · **Slice:** T-090.1.1  
-**Status:** **shipped** @ `6e06e679` (tag **T-090.1.1**) — **Next:** **T-090.1.2.3** (prefetch, queued) or **T-090.3** per operator  
-**Executor:** claude-code  
+**Status:** **shipped, FROZEN** @ `6e06e679` — **legacy** map pyramid; **do not extend**. Superseded by Map Engine v2 [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md).  
+**Executor:** —  
 **Depends on:** **T-090.1** @ `564419e`, **T-090.1.2.8** @ `db9057ef`, **T-090.1.2.5.2** @ `1c07d97a` (water styling inputs)  
 **Cross-cutting UX:** [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) (N8/N9/N10, V1–V7)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)

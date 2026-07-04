@@ -1,10 +1,9 @@
 # T-090.1.2.9 — Satellite road stroke overlay (readability)
 
 **Ticket:** T-090 · **Slice:** T-090.1.2.9  
-**Status:** **deferred** — **parked @ T-144.1** @ `b1949182` (roads belong in **T-090.5** vector layer, not baked into sat raster)  
-**Executor:** claude-code  
-**Depends on:** **T-090.1.2.5.2** @ `1c07d97a` (water composite + `decode-topo.mjs` + `despike()` pattern from **T-090.1.1** @ `6e06e679`)  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · A3 study [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) · report [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
+**Status:** **cancelled** @ Map Engine v2 pivot — roads → **T-090.5** `PathLayer`  
+**Executor:** —  
+**Authority:** [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md) · [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md)
 
 ---
 

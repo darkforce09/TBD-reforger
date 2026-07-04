@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Eden-like map detail (N1-N12). **T-144.1** A3 study @ `b1949182` — pivot **data+vectors** over raster bake. **Active:** **T-090.3** export. **Parked:** T-090.1.2.9 (roads → T-090.5). Basemap through T-090.1.1.1 @ `018ea70d`. Hub: t090_091_map_terrain_program.md · authority: t144 report.
+- **T-090** (900) — Map visualization program [ready] — Map Engine v2 — A3-structural pivot (data+vectors, not raster compose). **Active:** **T-090.10.1** plan. **Cancelled:** .1.2.9, .1.2.3. **Frozen:** map pyramid compose. Authority: t090_10_map_engine_v2.md · T-144.1 @ b1949182.
 
 ## Next queued (top 10)
 

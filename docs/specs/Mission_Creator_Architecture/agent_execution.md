@@ -52,7 +52,7 @@ Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_prog
 Shorter variant:
 
 ```
-ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-090.3 active** — map-object export. **T-144.1 shipped** @ `b1949182`. Hub: t090_091_map_terrain_program.md.
+ROADMAP.md → @agent_execution.md §ACTIVE SLICE. **T-090.10.1 active** — Map Engine v2 plan (no code). Handoff: `.ai/artifacts/t090_10_SEND_TO_CLAUDE.md`.
 Read t091_1_dem_loader.md. Per docs/TICKET_DEV_QUEUE.md.
 ```
 
@@ -384,18 +384,19 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ---
 
-### ACTIVE SLICE — T-090 map program (2026-07-04, resumed post T-144)
+### ACTIVE SLICE — T-090 Map Engine v2 (2026-07-05)
 
-Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · authority: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
+Hub: [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · legacy: [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md)
 
 | Slice | Status | Executor | Notes |
 |-------|--------|----------|-------|
-| **T-090.3** | **active** | claude-code | Phased map-object export (P1→P10) — promoted per T-144 §10 |
-| **T-090.1.2.9** | deferred | — | Roads → **T-090.5** vectors, not sat raster bake |
-| **T-090.1.2.3** | deferred | — | Legacy pyramid prefetch; A3 has no tile pyramid |
-| **T-144.1** | shipped @ `b1949182` | claude-code | A3 map architecture study |
+| **T-090.10.1** | **active** | claude-code | Implementation **plan** only → `.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md` |
+| **T-090.10** | shipped | cursor-docs | Architecture scaffold |
+| **T-090.3** | ready | claude-code | Data export — after plan approved |
+| **T-090.5** | ready | claude-code | Deck v2 render spine |
+| **T-090.1.2.9** / **.1.2.3** | **cancelled** | — | Raster compose retired |
 
-**Program order:** T-090.3 → T-090.5 (+ T-090.8 forests) → T-090.9 interaction → T-071 → T-068.13. **T-071/T-068 deferred** (map-first lane).
+**Handoff:** [`.ai/artifacts/t090_10_SEND_TO_CLAUDE.md`](../../../.ai/artifacts/t090_10_SEND_TO_CLAUDE.md)
 
 ---
 

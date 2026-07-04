@@ -12,7 +12,7 @@ Product goal: when you open the Mission Creator map, you should see **enough wor
 
 **Not in scope for T-090:** building **floor selector** (which floor am I editing?) — deferred to **T-129** (`idea`).
 
-**Architecture authority:** **T-144.1** shipped @ `b1949182` — [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) · [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md). Key A3 lesson: **no basemap tiles** — map drawn live from world data; Sat↔Map = zoom crossfade + toggle; vectors (roads, forests, objects) always on top. T-090 keeps our raster basemaps for web perf but **prioritizes export + vector layers** per report §10.
+**Architecture authority:** **Map Engine v2** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · A3 ground truth [T-144 report](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) @ `b1949182`. End state: one frozen sat photo + vector/data layers + zoom crossfade — not dual raster pipelines.
 
 ---
 

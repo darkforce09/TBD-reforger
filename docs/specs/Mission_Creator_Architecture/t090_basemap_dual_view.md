@@ -1,8 +1,8 @@
 # T-090 — Dual basemap views (Map + Satellite)
 
-**Status:** Cross-cutting UX contract — **T-090.1.1 shipped** @ `6e06e679` (implementation: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md))
-**Tickets:** T-090.1 (Satellite first) · **T-090.1.1** (Map view pyramid — **shipped** @ `6e06e679`)
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t090_1_aligned_basemap.md`](t090_1_aligned_basemap.md)
+**Status:** **SUPERSEDED** by Map Engine v2 — [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md). End state: **sat opacity crossfade + toggle**, not two raster pipelines. Legacy dual-pyramid shipped @ `6e06e679` — **frozen** per [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md).  
+**Tickets:** T-090.1 (Satellite) · T-090.1.1 (Map pyramid — legacy)  
+**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
 ---
 

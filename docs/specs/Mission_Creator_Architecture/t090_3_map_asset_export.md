@@ -1,11 +1,11 @@
 # T-090.3 — Map asset export (Workbench → repo)
 
 **Ticket:** T-090 · **Slice:** T-090.3  
-**Status:** Spec ready (blocked on **T-090.2** schema)  
-**Executor:** **claude-code** (automation + Workbench plugin) — **not** a manual per-map runbook  
-**Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
+**Status:** **ready** — blocked on **T-090.10.1** plan approval · **v2: data-only** (no map tile pyramid)  
+**Executor:** **claude-code** (automation + Workbench plugin)  
+**Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
 **One command:** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md)  
-**Absorbs:** tile pyramid work from **T-121** (deferred)
+**Legacy raster:** [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md) — §A2 map pyramid **removed** in v2
 
 ---
 
@@ -40,9 +40,20 @@ Phased import: [`t090_phased_object_import.md`](t090_phased_object_import.md). *
 
 ---
 
-## Workbench export (§A — dual tile pyramids)
+## Workbench export (§A — v2 data-only)
 
-`TBD_TerrainWorldExportPlugin.c` writes **two** aligned raster pyramids per terrain (same bounds, tile zoom 0–5, XYZ disk layout):
+> **v2 pivot (T-090.10):** Pass **A2 (map cartographic pyramid)** is **retired**. Export produces **world data** for Map Engine v2 layers — not readability rasters. Satellite photo field remains **frozen `tbd-sat`** (T-090.1.2.8), not re-exported each phase unless operator requests full rebuild.
+
+`TBD_TerrainWorldExportPlugin.c` writes **structured map objects** per terrain:
+
+| Pass | Output | Workbench source |
+|------|--------|------------------|
+| **Objects P1–P10** | `staging/{terrainId}/objects/` | World entities by phase |
+| **Roads** | `objects/roads.json.gz` | Road network |
+| **Density grid** (new) | `objects/density/` | Tree/rock density per land square |
+| ~~**A2 — Map tiles**~~ | ~~`tiles/map/`~~ | **CANCELLED** — use Deck vector layers |
+
+**Legacy §A dual pyramid** (below) retained for historical reference only — do not implement on new work.
 
 | Pass | Output dir | Workbench source | Slice |
 |------|------------|------------------|-------|

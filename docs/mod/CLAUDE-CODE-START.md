@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code work order:** **T-090.3** map-object phased export (**active**) — promoted per **T-144.1** @ `b1949182`. Spec: [`t090_3_map_asset_export.md`](../specs/Mission_Creator_Architecture/t090_3_map_asset_export.md) · hub [`t090_091_map_terrain_program.md`](../specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). A3 authority: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../.ai/artifacts/t144_arma3_map_architecture_report.md).
+**Next Claude Code work order:** **T-090.10.1** Map Engine v2 implementation **plan** (**active**, no code). Handoff: [`.ai/artifacts/t090_10_SEND_TO_CLAUDE.md`](../../.ai/artifacts/t090_10_SEND_TO_CLAUDE.md). Spec: [`t090_10_map_engine_v2.md`](../specs/Mission_Creator_Architecture/t090_10_map_engine_v2.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 

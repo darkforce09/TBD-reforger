@@ -1,11 +1,12 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **resumed** — **T-144.1** A3 study **shipped** @ `b1949182`. **Active:** **T-090.3** map-object export. **T-090.1.1.1** land-cover **shipped** @ `018ea70d`. Authority: [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md) · hub: [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md).  
+**Status:** **Map Engine v2 pivot** — **T-090.10.1** active (Claude Code plan). **T-144.1** @ `b1949182`. **Legacy raster pipeline cancelled/frozen.**  
+**Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md) · [T-144 report](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Spawn parity (separate hub):** [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)  
 **UX reference:** [`t090_eden_map_reference.md`](t090_eden_map_reference.md)  
-**One-command export (all maps):** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — `make map-export TERRAIN=<id>`
+**Export (data-only v2):** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md) — `make map-export TERRAIN=<id>`
 
 **Hard gate:** **T-091.0** anchor verify **PASS** (`make verify-terrain-strict` @ `6d96339`). T-071 ORBAT / T-068 Phase 2 loadout still blocked on **T-092.2** mod compile + spawn verify. **Building floor selector** explicitly **out of scope** → **T-129** (`idea`; id renumbered — **T-126** is Fable audit security).
 
@@ -36,20 +37,26 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.2    taxonomy ship (S1–S10)  ✓ @ 691d9b26
   → T-090.1.1  Map cartographic view  ✓ @ 6e06e679
   → T-090.1.1.1  Map land-cover compose  ✓ @ 018ea70d
-  → T-144.1      A3 map architecture study  ✓ @ b1949182  (pivot: data+vectors, no basemap tiles)
-  → T-090.3      phased export (+ forest-regions, dual tiles) — P1 → P10  (ACTIVE)
-  → T-090.5    Deck.gl vector layers (roads, forests, objects — density-gate LOD, no clustering)
-  → T-090.8    forest regions via marching squares on density grid
-  → T-090.9    world-object interaction — hover, inspect, filter, legend (read-only)
-  → T-090.1.2.9  Satellite road stroke overlay  (deferred — roads belong in T-090.5, not sat raster)
-  → T-090.1.2.3  Basemap tile prefetch  (deferred — legacy pyramid; A3 has no tile pyramid)
+  → T-144.1      A3 map architecture study  ✓ @ b1949182
+  → T-090.10     Map Engine v2 architecture scaffold  ✓ (cursor-docs)
+  → T-090.10.1   Detailed implementation plan  (ACTIVE — claude-code, no code)
+  → T-090.3      data-only export P1→P10  (after .10.1 approved)
+  → T-090.5      Deck.gl v2 render spine (vectors + sat crossfade + density LOD)
+  → T-090.8      forest marching squares on density grid
+  → T-090.9      world-object interaction
+  → T-090.7      Eden AI read API
+  ✗ T-090.1.2.9  satellite road raster bake  (CANCELLED)
+  ✗ T-090.1.2.3  tile pyramid prefetch  (CANCELLED)
+  ⊘ T-090.1.1 / .1.1.1  map pyramid compose  (SHIPPED, FROZEN — legacy only)
   → T-090.7    Eden AI read API — resolveWorldObject, queryByCover, context pack
   → T-092      mod compile + spawn → T-071 → T-068.13 → T-068.7+
   → T-110      binary base + sparse deltas (consumer of catalog v1 — outside T-090)
   → T-129      building floor selector (idea — outside T-090; renumbered from T-126)
 ```
 
-**Blocker chain (post T-144):** **T-144.1** @ `b1949182` — A3 draws map **live from world data** (no basemap tiles); Sat↔Map = zoom crossfade + toggle, vectors always on top. **Promote T-090.3** export (object records = map readability). **Park T-090.1.2.9** (roads → **T-090.5** vector layer). **T-090.5** adopts density-gate LOD (no clustering). **T-143** water down-ranked (we exceed A3 sea-only). See report §9 G1–G15 + §10.
+**Engine v2 (normative):** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md). **Legacy raster:** [`t090_legacy_raster_pipeline.md`](t090_legacy_raster_pipeline.md) — cancelled `.1.2.9`, `.1.2.3`; frozen map pyramid.
+
+**Blocker chain:** **T-090.10.1** plan → operator approve → **T-090.3** (data) → **T-090.5** (render). A3 draws live from world data; we mirror structure with export + Deck layers + frozen `tbd-sat` photo field.
 
 **Source locked @ T-090.1.2.4 FAIL:** SAP stitch + T-090.1.2.2 apron-bridge — no cleaner continuous sat-class ortho exists on current Enfusion APIs (see [`.ai/artifacts/t090_1_2_4_engine_render_spike.json`](../../../.ai/artifacts/t090_1_2_4_engine_render_spike.json)). Residual ~256 m soft band is source-baked. **T-090.1.2.8** @ `db9057ef` fixes tile flicker (tbd-sat v1 + one GPU texture); grid may remain at max MC zoom.
 
@@ -88,8 +95,11 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.2** | [`t090_2_map_object_taxonomy.md`](t090_2_map_object_taxonomy.md) + [`t090_world_object_type_inventory.md`](t090_world_object_type_inventory.md) + [`t090_eden_ai_world_object_schema.md`](t090_eden_ai_world_object_schema.md) | claude-code | **Taxonomy S1–S10** — **shipped** @ `691d9b26` |
 | **T-090.1.1** | [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md) · UX [`t090_basemap_dual_view.md`](t090_basemap_dual_view.md) | claude-code | **Map** pyramid + view switch — **shipped** @ `6e06e679` |
 | **T-090.1.1.1** | [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md) | claude-code | **Land-cover tints** — **shipped** @ `018ea70d` |
-| **T-090.1.2.9** | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | claude-code | **Satellite** `.topo` road bake — **active** |
-| **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | `map-export` + **`map-verify-phase` per P1–P10** |
+| **T-090.10** | [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) | cursor-docs | **Map Engine v2 scaffold** — **shipped** |
+| **T-090.10.1** | [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) §T-090.10.1 | claude-code | **Implementation plan** — **active** (artifact only) |
+| **T-090.1.2.9** | [`t090_1_2_9_satellite_road_overlay.md`](t090_1_2_9_satellite_road_overlay.md) | — | **cancelled** |
+| **T-090.1.2.3** | [`t090_1_2_3_basemap_tile_prefetch.md`](t090_1_2_3_basemap_tile_prefetch.md) | — | **cancelled** |
+| **T-090.3** | [`t090_3_map_asset_export.md`](t090_3_map_asset_export.md) + [`t090_phased_object_import.md`](t090_phased_object_import.md) | claude-code | **Data-only** export — after `.10.1` |
 | **T-090.4** | [`t090_4_z_placement_audit.md`](t090_4_z_placement_audit.md) | claude-code | Phase A pivot audit @ 1M |
 | **T-090.6** | [`t090_6_geometry_placement_audit.md`](t090_6_geometry_placement_audit.md) | claude-code | Phase B OBB / visibility audit |
 | **T-090.5** | [`t090_5_map_object_render_layer.md`](t090_5_map_object_render_layer.md) + [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md) | claude-code | Layers + SVG atlas per class |
