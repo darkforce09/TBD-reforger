@@ -125,9 +125,10 @@ function TacticalMapInner({
     onDegraded: onBasemapDegraded,
     onProgress: onBasemapProgress,
   })
-  // Map Engine v2 world-object layers (T-090.5.1 scaffold: always [] — flag-gated, no
-  // layers exist until T-090.5.2+).
-  const worldMapLayers = useWorldMapLayers()
+  // Map Engine v2 world-object layers (T-090.5.2: roads + building OBBs + badges; flag-gated,
+  // [] when VITE_WORLDMAP_ENABLED is off). Zoom feeds the LOD class gates only — the hook
+  // memoizes on derived band state, not the raw value, so pan/zoom does not rebuild layers.
+  const worldMapLayers = useWorldMapLayers({ terrain, deckZoom: viewState.zoom })
   // Re-render on DEM state changes (ready/degraded/reload) so the hillshade + cursor Z refresh
   // without an extra interaction (T-091.2 follow-up).
   const demVersion = useDemVersion()

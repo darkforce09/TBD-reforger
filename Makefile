@@ -137,8 +137,8 @@ map-verify-phase: ## T-090.3.1 — mathematical phase gate G1-G12 + P1-* + E6 fo
 map-census: ## T-090.2 — validate type-inventory.json; compute counts after export (TERRAIN=<id>)
 	@test -n "$(TERRAIN)" || (echo "map-census: TERRAIN=<id> required"; exit 1)
 	node scripts/map-assets/census-types.mjs
-map-glyphs-build: ## T-090.5 stub — build world-glyph atlas from packages/map-assets/glyphs/svg
-	@echo "map-glyphs-build: not implemented (T-090.5, see t090_world_object_glyphs.md)"; exit 1
+map-glyphs-build: ## T-090.5.2 — build world-glyph atlas (webp + Deck mapping) from packages/map-assets/glyphs/svg
+	node scripts/map-assets/build-glyph-atlas.mjs
 map-render-verify: ## T-090.5 stub — per-phase render smoke (layer instance count + purity)
 	@echo "map-render-verify: not implemented (T-090.5)"; exit 1
 

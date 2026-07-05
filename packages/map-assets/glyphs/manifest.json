@@ -15,6 +15,15 @@
     "utility-powerline": { "svg": "svg/utility-powerline.svg", "baseSizePx": 12, "anchor": [0.5, 1.0], "tintable": false },
     "building-badge-military": { "svg": "svg/building-badge-military.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false },
     "building-badge-bunker": { "svg": "svg/building-badge-bunker.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false },
-    "building-badge-tower": { "svg": "svg/building-badge-tower.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false }
+    "building-badge-tower": { "svg": "svg/building-badge-tower.svg", "baseSizePx": 10, "anchor": [0.5, 0.5], "tintable": false },
+    "building-residential": { "svg": "svg/building-residential.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-civic": { "svg": "svg/building-civic.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-agricultural": { "svg": "svg/building-agricultural.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-industrial": { "svg": "svg/building-industrial.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-commercial": { "svg": "svg/building-commercial.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-hangar": { "svg": "svg/building-hangar.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-bunker": { "svg": "svg/building-bunker.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-tower": { "svg": "svg/building-tower.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-military": { "svg": "svg/building-military.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false }
   }
 }
