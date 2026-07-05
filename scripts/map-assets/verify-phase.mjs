@@ -55,7 +55,7 @@ if (!terrain || !phase) {
   console.error("verify-phase: --terrain <id> --phase <Pn> required");
   process.exit(1);
 }
-const PHASE_KINDS = { P1_buildings: ["building"], P2_trees: ["building", "tree"] };
+const PHASE_KINDS = { P1_buildings: ["building"], P2_trees: ["building", "tree", "water"] };
 if (!PHASE_KINDS[phase]) {
   console.error(`verify-phase: phase '${phase}' not implemented (have: ${Object.keys(PHASE_KINDS).join(", ")})`);
   process.exit(1);
@@ -311,9 +311,11 @@ if (phase === "P1_buildings") {
   }
 
   {
-    const hard = buildings.filter((p) => p.gameplay.cover.type === "hard" || p.tags?.includes("ruin-open"));
+    // T-090.3.3: class=tent is canvas — soft cover by design, exempt like ruin-open.
+    const exempt = (p) => p.tags?.includes("ruin-open") || p.class === "tent";
+    const hard = buildings.filter((p) => p.gameplay.cover.type === "hard" || exempt(p));
     const pct = buildings.length ? hard.length / buildings.length : 1;
-    gate("P1-2", "cover=hard >= 99.5% (ruin-open exceptions allowed)", pct >= 0.995 ? [] : [`only ${(pct * 100).toFixed(2)}% hard: ${buildings.filter((p) => p.gameplay.cover.type !== "hard" && !p.tags?.includes("ruin-open")).map((p) => p.resourceName).slice(0, 5).join(", ")}`]);
+    gate("P1-2", "cover=hard >= 99.5% (ruin-open + tent exceptions allowed)", pct >= 0.995 ? [] : [`only ${(pct * 100).toFixed(2)}% hard: ${buildings.filter((p) => p.gameplay.cover.type !== "hard" && !exempt(p)).map((p) => p.resourceName).slice(0, 5).join(", ")}`]);
   }
 
   gate(

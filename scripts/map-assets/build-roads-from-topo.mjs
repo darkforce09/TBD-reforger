@@ -3,11 +3,13 @@
 // first export slice). Host-side only: decode-topo.mjs (pak VFS, proven T-090.1.2.5.2) already
 // yields section-1 polylines; no Workbench pass involved.
 //
-// Class mapping is PROVISIONAL (plan decision 5 — recorded in the ops log, not in roads.json.gz;
-// the roads schema is additionalProperties:false): .topo type semantics beyond runway/river are
-// unlabeled, so type 3 ("road class A", 367 recs on Eden) -> road_paved and type 5 ("road class B",
-// 394 recs) -> road_dirt until the P6-P9 road-phase purity gates own the correction. No P1 gate
-// reads roadClass.
+// Class mapping (T-090.3.3, supersedes the provisional T-090.3.1 mapping): G1-B established the
+// .topo carries ROADS ONLY — the legacy "RIVER"/"STREAM" type names in decode-topo are wrong. The
+// five type classes have engineered constant cross-widths on Eden (0: 20 m ×5 = runways ·
+// 1: 12 m ×12, 19.7 km chaining the central valley = the main asphalt highway · 2: 8 m ×110,
+// 57.9 km = secondary asphalt · 3: 4.5 m ×367, 133 km = gravel/country net · 5: 1.75 m ×394,
+// 128 km = farm tracks/trails), which fixes the semantic mapping below. `path` has no Eden
+// records. decode-topo's exported names stay untouched (frozen legacy consumers).
 //
 // Determinism (G4/E6): records sorted by (type, first x, first y, vertexCount); ids assigned after
 // the sort; points rounded to 2 dp; gzip level 9 (node gzip mtime=0).
@@ -36,8 +38,10 @@ if (!terrain) {
 
 const ROAD_CLASS_BY_TYPE = {
   [TOPO_TYPES.AIRFIELD]: "runway",
-  [TOPO_TYPES.ROAD_A]: "road_paved",
-  [TOPO_TYPES.ROAD_B]: "road_dirt",
+  [TOPO_TYPES.RIVER]: "highway_paved", // 12 m main asphalt (legacy constant name is wrong — see header)
+  [TOPO_TYPES.STREAM]: "road_paved", // 8 m secondary asphalt
+  [TOPO_TYPES.ROAD_A]: "road_dirt", // 4.5 m gravel/country roads
+  [TOPO_TYPES.ROAD_B]: "track", // 1.75 m farm tracks / trails
 };
 
 const round2 = (v) => Math.round(v * 100) / 100;
@@ -76,10 +80,10 @@ writeFileSync(join(objectsDir, "roads.json.gz"), gzipSync(Buffer.from(JSON.strin
 const byClass = {};
 for (const s of roadSegments) byClass[s.roadClass] = (byClass[s.roadClass] ?? 0) + 1;
 const summary = {
-  slice: "T-090.3.1",
+  slice: "T-090.3.3",
   source: "decode-topo section 1",
-  classMappingProvisional: true,
-  classByTopoType: { 0: "runway", 3: "road_paved", 5: "road_dirt" },
+  classMappingProvisional: false,
+  classByTopoType: { 0: "runway", 1: "highway_paved", 2: "road_paved", 3: "road_dirt", 5: "track" },
   segments: roadSegments.length,
   byClass,
   points: roadSegments.reduce((n, s) => n + s.points.length, 0),

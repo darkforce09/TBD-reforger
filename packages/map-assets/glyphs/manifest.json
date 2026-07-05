@@ -24,6 +24,15 @@
     "building-hangar": { "svg": "svg/building-hangar.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
     "building-bunker": { "svg": "svg/building-bunker.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
     "building-tower": { "svg": "svg/building-tower.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
-    "building-military": { "svg": "svg/building-military.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false }
+    "building-military": { "svg": "svg/building-military.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-bridge": { "svg": "svg/building-bridge.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-castle": { "svg": "svg/building-castle.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-lighthouse": { "svg": "svg/building-lighthouse.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-shed": { "svg": "svg/building-shed.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-container": { "svg": "svg/building-container.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-tent": { "svg": "svg/building-tent.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-ruin": { "svg": "svg/building-ruin.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-garage": { "svg": "svg/building-garage.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false },
+    "building-generic": { "svg": "svg/building-generic.svg", "baseSizePx": 12, "anchor": [0.5, 0.5], "tintable": false }
   }
 }

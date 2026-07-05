@@ -247,28 +247,32 @@
       },
       "outOfBounds": 0,
       "catalog": {
-        "prefabCount": 361,
-        "instanceCount": 507467,
-        "chunkCount": 270
+        "prefabCount": 391,
+        "instanceCount": 508291,
+        "chunkCount": 275
       },
-      "unclassifiedRawTypes": 1411
+      "unclassifiedRawTypes": 459
     },
     "roads": {
-      "slice": "T-090.3.1",
+      "slice": "T-090.3.3",
       "source": "decode-topo section 1",
-      "classMappingProvisional": true,
+      "classMappingProvisional": false,
       "classByTopoType": {
         "0": "runway",
-        "3": "road_paved",
-        "5": "road_dirt"
+        "1": "highway_paved",
+        "2": "road_paved",
+        "3": "road_dirt",
+        "5": "track"
       },
-      "segments": 766,
+      "segments": 888,
       "byClass": {
         "runway": 5,
-        "road_paved": 367,
-        "road_dirt": 394
+        "highway_paved": 12,
+        "road_paved": 110,
+        "road_dirt": 367,
+        "track": 394
       },
-      "points": 170112
+      "points": 196440
     },
     "phases": {
       "P2_trees": {
@@ -279,8 +283,8 @@
           "files": 625,
           "bytes": 732500,
           "treeCornerSum": 501861,
-          "rockCornerSum": 307157,
-          "rockRawRows": 307157,
+          "rockCornerSum": 307431,
+          "rockRawRows": 307431,
           "rockOutOfBounds": 0
         },
         "forestRegions": {

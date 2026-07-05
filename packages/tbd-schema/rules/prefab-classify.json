@@ -1,9 +1,1659 @@
 {
   "schemaVersion": "1.0.0",
-  "description": "Shared prefab classification rules — apply to ALL terrains on export. Rules MUST emit structured gameplay, spatial, and render.iconKey for Eden AI + glyphs. See t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md.",
+  "description": "Shared prefab classification rules \u2014 apply to ALL terrains on export. Rules MUST emit structured gameplay, spatial, and render.iconKey for Eden AI + glyphs. See t090_eden_ai_world_object_schema.md and t090_world_object_glyphs.md.",
   "rules": [
     {
-      "match": { "resourceNameContains": ["Tree_Pinus", "Tree_Spruce", "Conifer"] },
+      "match": {
+        "resourceNameContains": [
+          "World/Locations/"
+        ]
+      },
+      "kind": "prop",
+      "class": "composition",
+      "ai": {
+        "summary": "Location composition prefab (whole-POI grouping entity); zero extents; children export as their own rows \u2014 never render.",
+        "taxonomyPath": "misc/prop/composition",
+        "confidence": 0.95
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.5,
+          "y": 0.5,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/BuildingParts/"
+        ]
+      },
+      "kind": "prop",
+      "class": "buildingpart",
+      "ai": {
+        "summary": "Attached building part (entry, door, ladder, graffiti); belongs to a parent structure \u2014 not a standalone footprint.",
+        "taxonomyPath": "structure/part",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1,
+          "y": 1,
+          "z": 1.5
+        },
+        "heightM": 3.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": false,
+          "crouch": true,
+          "heightM": 1.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Signs/"
+        ]
+      },
+      "kind": "prop",
+      "class": "sign",
+      "ai": {
+        "summary": "Road/tourist/warning signage; no cover; concealment only.",
+        "taxonomyPath": "misc/prop/sign",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.4,
+          "y": 0.4,
+          "z": 1.2
+        },
+        "heightM": 2.4
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "BridgeRailing"
+        ]
+      },
+      "kind": "prop",
+      "class": "fence",
+      "ai": {
+        "summary": "Bridge railing segment; low hard cover along a bridge deck.",
+        "taxonomyPath": "misc/prop/fence",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 0.2,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Crashbarrier"
+        ]
+      },
+      "kind": "prop",
+      "class": "barrier",
+      "ai": {
+        "summary": "Road crash barrier; low hard cover; blocks vehicles.",
+        "taxonomyPath": "misc/prop/barrier",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.8,
+          "y": 0.2,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 0.9
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Walls/"
+        ]
+      },
+      "kind": "prop",
+      "class": "fence",
+      "ai": {
+        "summary": "Freestanding wall/fence segment (pole, net, wood, stone, brick, concrete, pipe); linear hard cover.",
+        "taxonomyPath": "misc/prop/fence",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 0.2,
+          "z": 0.9
+        },
+        "heightM": 1.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": true,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Pavements"
+        ]
+      },
+      "kind": "prop",
+      "class": "pavement",
+      "ai": {
+        "summary": "Pavement/sidewalk piece; flat surface, no cover.",
+        "taxonomyPath": "misc/prop/pavement",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 2,
+          "y": 2,
+          "z": 0.1
+        },
+        "heightM": 0.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Railways"
+        ]
+      },
+      "kind": "prop",
+      "class": "rail",
+      "ai": {
+        "summary": "Railway track segment; ground-level; minor vehicle obstacle.",
+        "taxonomyPath": "misc/prop/rail",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 3,
+          "y": 0.8,
+          "z": 0.3
+        },
+        "heightM": 0.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Power"
+        ]
+      },
+      "kind": "utility",
+      "class": "powerline",
+      "ai": {
+        "summary": "Power pylon/pole; tall thin utility; negligible cover.",
+        "taxonomyPath": "utility/powerline",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1,
+          "y": 1,
+          "z": 8
+        },
+        "heightM": 16
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Lamps",
+          "LightRunway",
+          "LightTower_"
+        ]
+      },
+      "kind": "utility",
+      "class": "lamp",
+      "ai": {
+        "summary": "Lamp post / floodlight mast / runway light; light source at night.",
+        "taxonomyPath": "utility/lamp",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.4,
+          "y": 0.4,
+          "z": 3
+        },
+        "heightM": 6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Piping",
+          "/Culverts/",
+          "Structures/Infrastructure/Sewage",
+          "/Waterworks/",
+          "/Drainage/"
+        ]
+      },
+      "kind": "utility",
+      "class": "pipeline",
+      "ai": {
+        "summary": "Piping/culvert/drainage works; low utility structure.",
+        "taxonomyPath": "utility/pipeline",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 1,
+          "z": 0.8
+        },
+        "heightM": 1.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.8
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "ObstacleBridge"
+        ]
+      },
+      "kind": "prop",
+      "class": "barrier",
+      "ai": {
+        "summary": "Military training obstacle (bridge element of obstacle course); climbable hard cover.",
+        "taxonomyPath": "misc/prop/barrier",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 2,
+          "y": 1,
+          "z": 1
+        },
+        "heightM": 2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": false,
+          "crouch": true,
+          "heightM": 1.2
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Bridges",
+          "ConcreteBridge",
+          "Castle_01_Bridge"
+        ]
+      },
+      "kind": "building",
+      "class": "bridge",
+      "ai": {
+        "summary": "Bridge span/pillar; crossable hard structure over water or gap; chokepoint.",
+        "taxonomyPath": "structure/building/bridge",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 6,
+          "y": 3,
+          "z": 2.5
+        },
+        "heightM": 5.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.2
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": true,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-bridge",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Lighthouse"
+        ]
+      },
+      "kind": "building",
+      "class": "lighthouse",
+      "ai": {
+        "summary": "Lighthouse; tall coastal landmark tower; excellent observation point.",
+        "taxonomyPath": "structure/building/lighthouse",
+        "confidence": 0.95
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 4,
+          "y": 4,
+          "z": 12
+        },
+        "heightM": 24
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": true,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-lighthouse",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Infrastructure/Naval/"
+        ]
+      },
+      "kind": "water",
+      "class": "pier",
+      "ai": {
+        "summary": "Pier/dock/naval structure; walkable hard platform over water.",
+        "taxonomyPath": "water/pier",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 5,
+          "y": 2.5,
+          "z": 1.5
+        },
+        "heightM": 3.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "/Cemeteries/",
+          "/Calvaries/"
+        ]
+      },
+      "kind": "prop",
+      "class": "monument",
+      "ai": {
+        "summary": "Cemetery/calvary monument (gravestones, crosses); low stone cover.",
+        "taxonomyPath": "misc/prop/monument",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.6,
+          "y": 0.3,
+          "z": 0.9
+        },
+        "heightM": 1.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.9
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Cultural/Castles",
+          "Castle_Ruins"
+        ]
+      },
+      "kind": "building",
+      "class": "castle",
+      "ai": {
+        "summary": "Castle/fortress wall, tower or ruin section; historic stone landmark; hard cover.",
+        "taxonomyPath": "structure/building/castle",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 6,
+          "y": 2,
+          "z": 4
+        },
+        "heightM": 8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 3.0
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-castle",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "HouseRuin_01_BrickPile",
+          "HouseRuin_01_WoodPile"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Rubble pile from a ruined house; low scramble cover, not a structure footprint.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 2,
+          "y": 2,
+          "z": 0.8
+        },
+        "heightM": 1.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "/Ruins/",
+          "Ruin_",
+          "_ruined"
+        ]
+      },
+      "kind": "building",
+      "class": "ruin",
+      "ai": {
+        "summary": "Ruined structure shell (walls, corners, chimney); broken hard cover; partially enterable.",
+        "taxonomyPath": "structure/building/ruin",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 4,
+          "y": 3,
+          "z": 2
+        },
+        "heightM": 4
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.0
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-ruin",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Church",
+          "Chapel",
+          "FireStation",
+          "Firestation"
+        ]
+      },
+      "kind": "building",
+      "class": "civic",
+      "ai": {
+        "summary": "Civic building (church, chapel, fire station); prominent hard structure.",
+        "taxonomyPath": "structure/building/civic",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 6,
+          "y": 4,
+          "z": 6
+        },
+        "heightM": 12
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-civic",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "GarbageContainer"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Garbage container; small street furniture; low cover.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.6,
+          "z": 0.7
+        },
+        "heightM": 1.4
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.7
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "CargoContainer",
+          "ContainerMetal",
+          "MarsBoxContainer"
+        ]
+      },
+      "kind": "building",
+      "class": "container",
+      "ai": {
+        "summary": "Shipping/storage container; solid hard cover block; common at industrial and military sites.",
+        "taxonomyPath": "structure/building/container",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 3,
+          "y": 1.2,
+          "z": 1.3
+        },
+        "heightM": 2.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": false,
+        "climbable": true,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-container",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Shed"
+        ]
+      },
+      "kind": "building",
+      "class": "shed",
+      "ai": {
+        "summary": "Shed/outbuilding (garden, boat, bus, fisherman, metal); small enterable structure.",
+        "taxonomyPath": "structure/building/shed",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 2.5,
+          "y": 2,
+          "z": 1.6
+        },
+        "heightM": 3.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-shed",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Garage"
+        ]
+      },
+      "kind": "building",
+      "class": "garage",
+      "ai": {
+        "summary": "Garage; small vehicle structure; enterable hard cover.",
+        "taxonomyPath": "structure/building/garage",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 3,
+          "y": 3,
+          "z": 1.8
+        },
+        "heightM": 3.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-garage",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "TentBig",
+          "TentSmall"
+        ]
+      },
+      "kind": "building",
+      "class": "tent",
+      "ai": {
+        "summary": "Tent (camp/military); concealment only \u2014 no hard cover.",
+        "taxonomyPath": "structure/building/tent",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 2.5,
+          "y": 2,
+          "z": 1.4
+        },
+        "heightM": 2.8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.8
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-tent",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "GuardTower",
+          "DeerStand",
+          "LifeGuardTower",
+          "ControlTower",
+          "TransmitterTower",
+          "WaterTower"
+        ]
+      },
+      "kind": "building",
+      "class": "tower",
+      "ai": {
+        "summary": "Tower structure (guard/deer stand/control/transmitter/water); elevated observation position.",
+        "taxonomyPath": "structure/building/tower",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 2,
+          "y": 2,
+          "z": 5
+        },
+        "heightM": 10
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": false,
+          "crouch": true,
+          "heightM": 1.2
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": true,
+        "enterable": true,
+        "ladder": true,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-badge-tower",
+        "lodMinZoom": 4,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "GuardHouse",
+          "GuardBox"
+        ]
+      },
+      "kind": "building",
+      "class": "military",
+      "ai": {
+        "summary": "Guard house/box; small military checkpoint structure.",
+        "taxonomyPath": "structure/building/military",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 2,
+          "y": 2,
+          "z": 1.8
+        },
+        "heightM": 3.6
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-badge-military",
+        "lodMinZoom": 4,
+        "baseSizePx": 10,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Bench",
+          "MessageBoard",
+          "Clothesline",
+          "Workbench_",
+          "VegetableBed",
+          "Hotbed",
+          "/Manure"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Street/garden furniture (bench, board, clothesline, garden bed); minimal low cover.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1,
+          "y": 0.5,
+          "z": 0.5
+        },
+        "heightM": 1.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "none",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Anthill"
+        ]
+      },
+      "kind": "rock",
+      "class": "boulder",
+      "ai": {
+        "summary": "Anthill mound; low soft mound; prone concealment.",
+        "taxonomyPath": "terrain/rock/boulder",
+        "confidence": 0.8
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.6
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "FuelTank",
+          "Silo",
+          "FactoryHall",
+          "HarborCrane",
+          "EngineCrane",
+          "TransformerStation",
+          "TransformerSubstation",
+          "WeightStation",
+          "WaterStation",
+          "Sawmill"
+        ]
+      },
+      "kind": "building",
+      "class": "industrial",
+      "ai": {
+        "summary": "Industrial installation (fuel tank, silo, factory hall, crane, transformer/weight/water station).",
+        "taxonomyPath": "structure/building/industrial",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 5,
+          "y": 4,
+          "z": 4
+        },
+        "heightM": 8
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-industrial",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "FuelStation"
+        ]
+      },
+      "kind": "building",
+      "class": "commercial",
+      "ai": {
+        "summary": "Fuel station building/canopy; roadside commercial structure.",
+        "taxonomyPath": "structure/building/commercial",
+        "confidence": 0.9
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 4,
+          "y": 3,
+          "z": 2.5
+        },
+        "heightM": 5.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-commercial",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "PalletFuel",
+          "BarrelFuel",
+          "ContainerSpreader"
+        ]
+      },
+      "kind": "prop",
+      "class": "debris",
+      "ai": {
+        "summary": "Fuel pallet/barrel/crane spreader; small industrial prop; low cover.",
+        "taxonomyPath": "misc/prop/debris",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.6
+        },
+        "heightM": 1.2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.6
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Structures/Recreation/"
+        ]
+      },
+      "kind": "prop",
+      "class": "furniture",
+      "ai": {
+        "summary": "Recreation furniture (playground, stadium fittings); low props.",
+        "taxonomyPath": "misc/prop/furniture",
+        "confidence": 0.85
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "base",
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 1.5,
+          "z": 1
+        },
+        "heightM": 2
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 1.0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
+        "lineOfSight": "partial",
+        "destructible": false,
+        "climbable": false,
+        "enterable": false,
+        "ladder": false,
+        "door": false,
+        "bridge": false,
+        "runway": false
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Tree_Pinus",
+          "Tree_Spruce",
+          "Conifer"
+        ]
+      },
       "kind": "tree",
       "class": "conifer",
       "ai": {
@@ -14,12 +1664,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.2, "y": 1.2, "z": 6 },
+        "halfExtentsM": {
+          "x": 1.2,
+          "y": 1.2,
+          "z": 6
+        },
         "heightM": 12
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 4 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 4
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -33,12 +1696,21 @@
         "iconKey": "tree-conifer",
         "lodMinZoom": 3,
         "baseSizePx": 24,
-        "anchor": [0.5, 1.0],
+        "anchor": [
+          0.5,
+          1.0
+        ],
         "defaultColor": "#2d5a27"
       }
     },
     {
-      "match": { "resourceNameContains": ["Tree_Betula", "Tree_Quercus", "Deciduous"] },
+      "match": {
+        "resourceNameContains": [
+          "Tree_Betula",
+          "Tree_Quercus",
+          "Deciduous"
+        ]
+      },
       "kind": "tree",
       "class": "deciduous",
       "ai": {
@@ -49,12 +1721,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.5, "y": 1.5, "z": 5 },
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 1.5,
+          "z": 5
+        },
         "heightM": 10
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 3.5 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 3.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -68,12 +1753,21 @@
         "iconKey": "tree-deciduous",
         "lodMinZoom": 3,
         "baseSizePx": 24,
-        "anchor": [0.5, 1.0],
+        "anchor": [
+          0.5,
+          1.0
+        ],
         "defaultColor": "#4a7a32"
       }
     },
     {
-      "match": { "resourceNameContains": ["Road_", "Asphalt", "Highway"] },
+      "match": {
+        "resourceNameContains": [
+          "Road_",
+          "Asphalt",
+          "Highway"
+        ]
+      },
       "kind": "road",
       "class": "road_paved",
       "ai": {
@@ -81,10 +1775,24 @@
         "taxonomyPath": "infrastructure/road/paved",
         "confidence": 0.85
       },
-      "spatial": { "model": "line", "pivot": "base", "widthM": 6, "heightM": 0 },
+      "spatial": {
+        "model": "line",
+        "pivot": "base",
+        "widthM": 6,
+        "heightM": 0
+      },
       "gameplay": {
-        "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "none",
         "destructible": false,
         "climbable": false,
@@ -96,7 +1804,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["House", "Village", "Residential"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Houses/",
+          "Residential"
+        ]
+      },
       "kind": "building",
       "class": "residential",
       "ai": {
@@ -107,13 +1820,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 5, "y": 5, "z": 4 },
+        "halfExtentsM": {
+          "x": 5,
+          "y": 5,
+          "z": 4
+        },
         "heightM": 8,
         "footprintM2": 100
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -127,11 +1853,19 @@
         "iconKey": "building-residential",
         "lodMinZoom": 4,
         "baseSizePx": 16,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     },
     {
-      "match": { "resourceNameContains": ["Tree_Palm", "Palm_"] },
+      "match": {
+        "resourceNameContains": [
+          "Tree_Palm",
+          "Palm_"
+        ]
+      },
       "kind": "tree",
       "class": "palm",
       "ai": {
@@ -142,12 +1876,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.0, "y": 1.0, "z": 5 },
+        "halfExtentsM": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 5
+        },
         "heightM": 9
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": false, "prone": true, "crouch": true, "heightM": 2 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -161,12 +1908,21 @@
         "iconKey": "tree-palm",
         "lodMinZoom": 3,
         "baseSizePx": 24,
-        "anchor": [0.5, 1.0],
+        "anchor": [
+          0.5,
+          1.0
+        ],
         "defaultColor": "#5a8a3a"
       }
     },
     {
-      "match": { "resourceNameContains": ["Tree_Dead", "DeadTree", "Tree_Burned"] },
+      "match": {
+        "resourceNameContains": [
+          "Tree_Dead",
+          "DeadTree",
+          "Tree_Burned"
+        ]
+      },
       "kind": "tree",
       "class": "dead",
       "ai": {
@@ -177,12 +1933,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 0.6, "y": 0.6, "z": 4 },
+        "halfExtentsM": {
+          "x": 0.6,
+          "y": 0.6,
+          "z": 4
+        },
         "heightM": 8
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 1.5 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -194,7 +1963,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Bush_", "Shrub"] },
+      "match": {
+        "resourceNameContains": [
+          "Bush_",
+          "Shrub"
+        ]
+      },
       "kind": "vegetation",
       "class": "bush",
       "ai": {
@@ -205,12 +1979,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 0.8, "y": 0.8, "z": 0.6 },
+        "halfExtentsM": {
+          "x": 0.8,
+          "y": 0.8,
+          "z": 0.6
+        },
         "heightM": 1.2
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": false, "prone": true, "crouch": true, "heightM": 1 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -224,12 +2011,20 @@
         "iconKey": "vegetation-bush",
         "lodMinZoom": 4,
         "baseSizePx": 14,
-        "anchor": [0.5, 1.0],
+        "anchor": [
+          0.5,
+          1.0
+        ],
         "defaultColor": "#3d6a28"
       }
     },
     {
-      "match": { "resourceNameContains": ["Grass_", "Grass_Patch"] },
+      "match": {
+        "resourceNameContains": [
+          "Grass_",
+          "Grass_Patch"
+        ]
+      },
       "kind": "vegetation",
       "class": "grass",
       "ai": {
@@ -240,12 +2035,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.5, "y": 1.5, "z": 0.2 },
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 1.5,
+          "z": 0.2
+        },
         "heightM": 0.4
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": false, "prone": true, "crouch": false, "heightM": 0.4 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.4
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -257,7 +2065,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Cliff_", "RockFace"] },
+      "match": {
+        "resourceNameContains": [
+          "Cliff_",
+          "RockFace"
+        ]
+      },
       "kind": "rock",
       "class": "cliff",
       "ai": {
@@ -268,12 +2081,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 6, "y": 3, "z": 8 },
+        "halfExtentsM": {
+          "x": 6,
+          "y": 3,
+          "z": 8
+        },
         "heightM": 16
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 16 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 16
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": false,
         "climbable": false,
@@ -285,7 +2111,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Rock_", "Boulder"] },
+      "match": {
+        "resourceNameContains": [
+          "Rock_",
+          "Boulder"
+        ]
+      },
       "kind": "rock",
       "class": "boulder",
       "ai": {
@@ -296,12 +2127,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 2.5, "y": 2.0, "z": 1.5 },
+        "halfExtentsM": {
+          "x": 2.5,
+          "y": 2.0,
+          "z": 1.5
+        },
         "heightM": 3
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 1.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": false,
         "climbable": false,
@@ -315,11 +2159,20 @@
         "iconKey": "rock-boulder",
         "lodMinZoom": 4,
         "baseSizePx": 14,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     },
     {
-      "match": { "resourceNameContains": ["StreetLamp", "Lamp_", "LampPost"] },
+      "match": {
+        "resourceNameContains": [
+          "StreetLamp",
+          "Lamp_",
+          "LampPost"
+        ]
+      },
       "kind": "utility",
       "class": "lamp",
       "ai": {
@@ -330,12 +2183,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 0.2, "y": 0.2, "z": 3 },
+        "halfExtentsM": {
+          "x": 0.2,
+          "y": 0.2,
+          "z": 3
+        },
         "heightM": 6
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": false, "crouch": false, "heightM": 0.2 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.2
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -347,7 +2213,13 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Antenna", "Mast_", "RadioMast"] },
+      "match": {
+        "resourceNameContains": [
+          "Antenna",
+          "Mast_",
+          "RadioMast"
+        ]
+      },
       "kind": "utility",
       "class": "antenna",
       "ai": {
@@ -358,12 +2230,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1, "y": 1, "z": 12.5 },
+        "halfExtentsM": {
+          "x": 1,
+          "y": 1,
+          "z": 12.5
+        },
         "heightM": 25
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": false, "crouch": false, "heightM": 0.5 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": true,
@@ -375,7 +2260,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Pier_", "Jetty"] },
+      "match": {
+        "resourceNameContains": [
+          "Pier_",
+          "Jetty"
+        ]
+      },
       "kind": "water",
       "class": "pier",
       "ai": {
@@ -386,12 +2276,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 4, "y": 1, "z": 0.3 },
+        "halfExtentsM": {
+          "x": 4,
+          "y": 1,
+          "z": 0.3
+        },
         "heightM": 0.6
       },
       "gameplay": {
-        "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "none",
         "destructible": true,
         "climbable": false,
@@ -403,7 +2306,13 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Barrier_", "Jersey", "Roadblock"] },
+      "match": {
+        "resourceNameContains": [
+          "Barrier_",
+          "Jersey",
+          "Roadblock"
+        ]
+      },
       "kind": "prop",
       "class": "barrier",
       "ai": {
@@ -414,12 +2323,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.5, "y": 0.3, "z": 0.5 },
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 0.3,
+          "z": 0.5
+        },
         "heightM": 1
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": false, "prone": true, "crouch": true, "heightM": 1 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": true
+        },
         "lineOfSight": "partial",
         "destructible": false,
         "climbable": true,
@@ -431,7 +2353,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Sign_", "Signpost"] },
+      "match": {
+        "resourceNameContains": [
+          "Sign_",
+          "Signpost"
+        ]
+      },
       "kind": "prop",
       "class": "sign",
       "ai": {
@@ -442,12 +2369,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 0.3, "y": 0.1, "z": 1.25 },
+        "halfExtentsM": {
+          "x": 0.3,
+          "y": 0.1,
+          "z": 1.25
+        },
         "heightM": 2.5
       },
       "gameplay": {
-        "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "none",
         "destructible": true,
         "climbable": false,
@@ -459,7 +2399,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Military/Fortifications"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Military/Fortifications"
+        ]
+      },
       "kind": "prop",
       "class": "barrier",
       "ai": {
@@ -470,12 +2414,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.5, "y": 0.5, "z": 0.6 },
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 0.5,
+          "z": 0.6
+        },
         "heightM": 1.2
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": false, "prone": true, "crouch": true, "heightM": 1.2 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": false,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.2
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": true
+        },
         "lineOfSight": "partial",
         "destructible": false,
         "climbable": true,
@@ -487,7 +2444,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Military/Bunkers"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Military/Bunkers"
+        ]
+      },
       "kind": "building",
       "class": "bunker",
       "ai": {
@@ -498,13 +2459,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 3, "y": 3, "z": 1.5 },
+        "halfExtentsM": {
+          "x": 3,
+          "y": 3,
+          "z": 1.5
+        },
         "heightM": 3,
         "footprintM2": 36
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 3 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 3
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": false,
         "climbable": true,
@@ -516,7 +2490,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Military/"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Military/"
+        ]
+      },
       "kind": "building",
       "class": "military",
       "ai": {
@@ -527,13 +2505,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 6, "y": 4, "z": 3 },
+        "halfExtentsM": {
+          "x": 6,
+          "y": 4,
+          "z": 3
+        },
         "heightM": 6,
         "footprintM2": 96
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -548,11 +2539,18 @@
         "lodMinZoom": 1,
         "importanceZoom": -4,
         "baseSizePx": 10,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Agriculture/"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Agriculture/"
+        ]
+      },
       "kind": "building",
       "class": "agricultural",
       "ai": {
@@ -563,13 +2561,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 6, "y": 6, "z": 4 },
+        "halfExtentsM": {
+          "x": 6,
+          "y": 6,
+          "z": 4
+        },
         "heightM": 8,
         "footprintM2": 144
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -581,7 +2592,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["/Ruins/", "Ruin_"] },
+      "match": {
+        "resourceNameContains": [
+          "/Ruins/",
+          "Ruin_"
+        ]
+      },
       "kind": "building",
       "class": "ruin",
       "ai": {
@@ -592,13 +2608,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 5, "y": 5, "z": 3 },
+        "halfExtentsM": {
+          "x": 5,
+          "y": 5,
+          "z": 3
+        },
         "heightM": 6,
         "footprintM2": 100
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "partial",
         "destructible": false,
         "climbable": true,
@@ -610,7 +2639,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Cultural/"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Cultural/"
+        ]
+      },
       "kind": "building",
       "class": "civic",
       "ai": {
@@ -621,13 +2654,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 6, "y": 6, "z": 6 },
+        "halfExtentsM": {
+          "x": 6,
+          "y": 6,
+          "z": 6
+        },
         "heightM": 12,
         "footprintM2": 144
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -639,7 +2685,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Services/"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Services/"
+        ]
+      },
       "kind": "building",
       "class": "civic",
       "ai": {
@@ -650,13 +2700,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 7, "y": 6, "z": 4 },
+        "halfExtentsM": {
+          "x": 7,
+          "y": 6,
+          "z": 4
+        },
         "heightM": 8,
         "footprintM2": 168
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -668,7 +2731,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Industrial/Towers"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Industrial/Towers"
+        ]
+      },
       "kind": "building",
       "class": "tower",
       "ai": {
@@ -679,13 +2746,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 2, "y": 2, "z": 8 },
+        "halfExtentsM": {
+          "x": 2,
+          "y": 2,
+          "z": 8
+        },
         "heightM": 16,
         "footprintM2": 16
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": true,
@@ -700,11 +2780,18 @@
         "lodMinZoom": 1,
         "importanceZoom": -4,
         "baseSizePx": 10,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Industrial/"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Industrial/"
+        ]
+      },
       "kind": "building",
       "class": "industrial",
       "ai": {
@@ -715,13 +2802,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 8, "y": 6, "z": 5 },
+        "halfExtentsM": {
+          "x": 8,
+          "y": 6,
+          "z": 5
+        },
         "heightM": 10,
         "footprintM2": 192
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -733,7 +2833,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Commercial/"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Commercial/"
+        ]
+      },
       "kind": "building",
       "class": "commercial",
       "ai": {
@@ -744,13 +2848,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 5, "y": 5, "z": 4 },
+        "halfExtentsM": {
+          "x": 5,
+          "y": 5,
+          "z": 4
+        },
         "heightM": 8,
         "footprintM2": 100
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -762,7 +2879,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Airport/Hangar"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Airport/Hangar"
+        ]
+      },
       "kind": "building",
       "class": "hangar",
       "ai": {
@@ -773,13 +2894,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 12, "y": 10, "z": 5 },
+        "halfExtentsM": {
+          "x": 12,
+          "y": 10,
+          "z": 5
+        },
         "heightM": 10,
         "footprintM2": 480
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": false,
@@ -791,7 +2925,11 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Structures/Airport/ControlTower"] },
+      "match": {
+        "resourceNameContains": [
+          "Structures/Airport/ControlTower"
+        ]
+      },
       "kind": "building",
       "class": "tower",
       "ai": {
@@ -802,13 +2940,26 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 4, "y": 4, "z": 7 },
+        "halfExtentsM": {
+          "x": 4,
+          "y": 4,
+          "z": 7
+        },
         "heightM": 14,
         "footprintM2": 64
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 2.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": true,
         "climbable": true,
@@ -823,11 +2974,19 @@
         "lodMinZoom": 1,
         "importanceZoom": -4,
         "baseSizePx": 10,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     },
     {
-      "match": { "resourceNameContains": ["Runway", "Airstrip"] },
+      "match": {
+        "resourceNameContains": [
+          "Runway",
+          "Airstrip"
+        ]
+      },
       "kind": "road",
       "class": "runway",
       "ai": {
@@ -835,10 +2994,24 @@
         "taxonomyPath": "infrastructure/road/runway",
         "confidence": 0.87
       },
-      "spatial": { "model": "line", "pivot": "base", "widthM": 30, "heightM": 0 },
+      "spatial": {
+        "model": "line",
+        "pivot": "base",
+        "widthM": 30,
+        "heightM": 0
+      },
       "gameplay": {
-        "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "none",
+          "standing": false,
+          "prone": false,
+          "crouch": false,
+          "heightM": 0
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "none",
         "destructible": false,
         "climbable": false,
@@ -850,7 +3023,15 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["Vegetation/Tree/Debris/", "_stump_", "_fallen", "_branch_", "_stem_"] },
+      "match": {
+        "resourceNameContains": [
+          "Vegetation/Tree/Debris/",
+          "_stump_",
+          "_fallen",
+          "_branch_",
+          "_stem_"
+        ]
+      },
       "kind": "prop",
       "class": "debris",
       "ai": {
@@ -861,12 +3042,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.5, "y": 0.4, "z": 0.3 },
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 0.4,
+          "z": 0.3
+        },
         "heightM": 0.6
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": false, "prone": true, "crouch": false, "heightM": 0.5 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": false,
+          "prone": true,
+          "crouch": false,
+          "heightM": 0.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": false,
         "climbable": false,
@@ -878,7 +3072,12 @@
       }
     },
     {
-      "match": { "resourceNameContains": ["/t_picea_abies/", "/t_pinus_sylvestris/"] },
+      "match": {
+        "resourceNameContains": [
+          "/t_picea_abies/",
+          "/t_pinus_sylvestris/"
+        ]
+      },
       "kind": "tree",
       "class": "conifer",
       "ai": {
@@ -889,12 +3088,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.2, "y": 1.2, "z": 6 },
+        "halfExtentsM": {
+          "x": 1.2,
+          "y": 1.2,
+          "z": 6
+        },
         "heightM": 12
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 4 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 4
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -908,7 +3120,10 @@
         "iconKey": "tree-conifer",
         "lodMinZoom": 3,
         "baseSizePx": 24,
-        "anchor": [0.5, 1.0],
+        "anchor": [
+          0.5,
+          1.0
+        ],
         "defaultColor": "#2d5a27"
       }
     },
@@ -936,12 +3151,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "base",
-        "halfExtentsM": { "x": 1.5, "y": 1.5, "z": 5 },
+        "halfExtentsM": {
+          "x": 1.5,
+          "y": 1.5,
+          "z": 5
+        },
         "heightM": 10
       },
       "gameplay": {
-        "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 3.5 },
-        "movement": { "blocksInfantry": false, "blocksVehicle": false },
+        "cover": {
+          "type": "soft",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 3.5
+        },
+        "movement": {
+          "blocksInfantry": false,
+          "blocksVehicle": false
+        },
         "lineOfSight": "partial",
         "destructible": true,
         "climbable": false,
@@ -955,12 +3183,19 @@
         "iconKey": "tree-deciduous",
         "lodMinZoom": 3,
         "baseSizePx": 24,
-        "anchor": [0.5, 1.0],
+        "anchor": [
+          0.5,
+          1.0
+        ],
         "defaultColor": "#4a7a32"
       }
     },
     {
-      "match": { "resourceNameContains": ["Prefabs/Rocks/"] },
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Rocks/"
+        ]
+      },
       "kind": "rock",
       "class": "boulder",
       "ai": {
@@ -971,12 +3206,25 @@
       "spatial": {
         "model": "obb",
         "pivot": "center",
-        "halfExtentsM": { "x": 2.5, "y": 2.0, "z": 1.5 },
+        "halfExtentsM": {
+          "x": 2.5,
+          "y": 2.0,
+          "z": 1.5
+        },
         "heightM": 3
       },
       "gameplay": {
-        "cover": { "type": "hard", "standing": true, "prone": true, "crouch": true, "heightM": 1.5 },
-        "movement": { "blocksInfantry": true, "blocksVehicle": true },
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 1.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
         "lineOfSight": "full",
         "destructible": false,
         "climbable": false,
@@ -990,7 +3238,64 @@
         "iconKey": "rock-boulder",
         "lodMinZoom": 4,
         "baseSizePx": 14,
-        "anchor": [0.5, 0.5]
+        "anchor": [
+          0.5,
+          0.5
+        ]
+      }
+    },
+    {
+      "match": {
+        "resourceNameContains": [
+          "Prefabs/Structures/"
+        ]
+      },
+      "kind": "building",
+      "class": "generic",
+      "ai": {
+        "summary": "Unrecognized standalone structure; generic hard building footprint (needs a specific rule).",
+        "taxonomyPath": "structure/building/generic",
+        "confidence": 0.4
+      },
+      "spatial": {
+        "model": "obb",
+        "pivot": "center",
+        "halfExtentsM": {
+          "x": 3,
+          "y": 3,
+          "z": 2.5
+        },
+        "heightM": 5.0
+      },
+      "gameplay": {
+        "cover": {
+          "type": "hard",
+          "standing": true,
+          "prone": true,
+          "crouch": true,
+          "heightM": 2.5
+        },
+        "movement": {
+          "blocksInfantry": true,
+          "blocksVehicle": true
+        },
+        "lineOfSight": "full",
+        "destructible": true,
+        "climbable": false,
+        "enterable": true,
+        "ladder": false,
+        "door": true,
+        "bridge": false,
+        "runway": false
+      },
+      "render": {
+        "iconKey": "building-generic",
+        "lodMinZoom": 4,
+        "baseSizePx": 12,
+        "anchor": [
+          0.5,
+          0.5
+        ]
       }
     }
   ],
@@ -1006,12 +3311,25 @@
     "spatial": {
       "model": "obb",
       "pivot": "base",
-      "halfExtentsM": { "x": 0.5, "y": 0.5, "z": 1 },
+      "halfExtentsM": {
+        "x": 0.5,
+        "y": 0.5,
+        "z": 1
+      },
       "heightM": 1
     },
     "gameplay": {
-      "cover": { "type": "none", "standing": false, "prone": false, "crouch": false, "heightM": 0 },
-      "movement": { "blocksInfantry": false, "blocksVehicle": false },
+      "cover": {
+        "type": "none",
+        "standing": false,
+        "prone": false,
+        "crouch": false,
+        "heightM": 0
+      },
+      "movement": {
+        "blocksInfantry": false,
+        "blocksVehicle": false
+      },
       "lineOfSight": "none",
       "destructible": false,
       "climbable": false,
@@ -1025,7 +3343,10 @@
       "iconKey": "prop-unknown",
       "lodMinZoom": 4,
       "baseSizePx": 12,
-      "anchor": [0.5, 1.0]
+      "anchor": [
+        0.5,
+        1.0
+      ]
     }
   }
 }

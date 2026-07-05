@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/map-object-enums/v1.json",
   "title": "TBD Map Object Enums",
-  "description": "T-090.2 single source of truth for every closed enum used by the map-object prefab/instance/region/roads/resolved schemas, the prefab-classify rules, and the glyph manifest. Any `class`/`kind` value in any artifact MUST be a member of the matching enum here — enforced by verify-map-object-enums.mjs. Extend only via schema version bump + rule update (N5/GAP-M5).",
+  "description": "T-090.2 single source of truth for every closed enum used by the map-object prefab/instance/region/roads/resolved schemas, the prefab-classify rules, and the glyph manifest. Any `class`/`kind` value in any artifact MUST be a member of the matching enum here \u2014 enforced by verify-map-object-enums.mjs. Extend only via schema version bump + rule update (N5/GAP-M5).",
   "$defs": {
     "kind": {
       "type": "string",
@@ -23,7 +23,11 @@
     },
     "regionKind": {
       "type": "string",
-      "enum": ["forest", "field", "waterBody"]
+      "enum": [
+        "forest",
+        "field",
+        "waterBody"
+      ]
     },
     "buildingClass": {
       "type": "string",
@@ -40,6 +44,12 @@
         "tower",
         "ruin",
         "wall",
+        "bridge",
+        "castle",
+        "lighthouse",
+        "shed",
+        "container",
+        "tent",
         "generic",
         "unknown"
       ]
@@ -73,47 +83,108 @@
     "forestClass": {
       "type": "string",
       "description": "Dominant species of a forest region.",
-      "enum": ["conifer", "deciduous", "mixed", "palm", "dead", "unknown"]
+      "enum": [
+        "conifer",
+        "deciduous",
+        "mixed",
+        "palm",
+        "dead",
+        "unknown"
+      ]
     },
     "rockClass": {
       "type": "string",
-      "enum": ["boulder", "cliff", "pebble", "scree", "unknown"]
+      "enum": [
+        "boulder",
+        "cliff",
+        "pebble",
+        "scree",
+        "unknown"
+      ]
     },
     "propClass": {
       "type": "string",
-      "enum": ["fence", "barrier", "sign", "furniture", "debris", "pebble", "unknown"]
+      "enum": [
+        "fence",
+        "barrier",
+        "sign",
+        "furniture",
+        "debris",
+        "pebble",
+        "buildingpart",
+        "pavement",
+        "rail",
+        "monument",
+        "composition",
+        "unknown"
+      ]
     },
     "utilityClass": {
       "type": "string",
-      "enum": ["powerline", "lamp", "antenna", "pipeline", "unknown"]
+      "enum": [
+        "powerline",
+        "lamp",
+        "antenna",
+        "pipeline",
+        "unknown"
+      ]
     },
     "waterClass": {
       "type": "string",
-      "enum": ["pier", "dock", "buoy", "unknown"]
+      "enum": [
+        "pier",
+        "dock",
+        "buoy",
+        "unknown"
+      ]
     },
     "coverType": {
       "type": "string",
-      "enum": ["none", "soft", "hard"]
+      "enum": [
+        "none",
+        "soft",
+        "hard"
+      ]
     },
     "lineOfSight": {
       "type": "string",
-      "enum": ["none", "partial", "full"]
+      "enum": [
+        "none",
+        "partial",
+        "full"
+      ]
     },
     "spatialModel": {
       "type": "string",
-      "enum": ["aabb", "obb", "line", "polygon"]
+      "enum": [
+        "aabb",
+        "obb",
+        "line",
+        "polygon"
+      ]
     },
     "pivot": {
       "type": "string",
-      "enum": ["base", "center"]
+      "enum": [
+        "base",
+        "center"
+      ]
     },
     "classificationSource": {
       "type": "string",
-      "enum": ["rules-v1/prefab-name", "override", "export-metadata", "llm-batch"]
+      "enum": [
+        "rules-v1/prefab-name",
+        "override",
+        "export-metadata",
+        "llm-batch"
+      ]
     },
     "regionSource": {
       "type": "string",
-      "enum": ["engine-mask", "derived-hull"]
+      "enum": [
+        "engine-mask",
+        "derived-hull"
+      ]
     }
   }
 }

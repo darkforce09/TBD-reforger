@@ -67,7 +67,9 @@ const CHUNK_SIZE_M = 512;
 // legal, no consumer pins ids across phases; G4 = stable across re-export of the SAME phase).
 const PHASE_KINDS = {
   P1_buildings: ["building"],
-  P2_trees: ["building", "tree"],
+  // T-090.3.3: water (piers/docks — walkable hard structures) imports alongside P2; props/utility
+  // stay out until their own phases.
+  P2_trees: ["building", "tree", "water"],
 };
 const PHASE_ORDER = Object.keys(PHASE_KINDS);
 
@@ -128,6 +130,14 @@ const densityPhase = phaseKinds.has("tree");
 const rockRows = []; // { x, y } rounded, in-bounds
 let rockOutOfBounds = 0;
 
+// T-090.3.3 — measured prefab OBBs: the raw rows carry per-entity engine halfExtentsM
+// ([x, y-up, z-north]); collect a few samples per phase-kind resourceName and take the per-axis
+// median so prefab spatial reflects the real footprint (barns big, sheds small) instead of the
+// rule-template constants. Rule spatial stays the fallback for degenerate bounds (composition
+// entities export [0,0,0]).
+const HE_SAMPLE_CAP = 9;
+const heSamples = new Map(); // resourceName -> [ [ex, ey, ez], ... ]
+
 const { lineCount } = await streamRawEntities(rawPath, (row) => {
   const rn = typeof row.resourceName === "string" ? row.resourceName : "";
   if (rn === "") {
@@ -159,6 +169,12 @@ const { lineCount } = await streamRawEntities(rawPath, (row) => {
     return;
   }
   kept.push({ resourceName: rn, kind: cls.kind, class: cls.class, x, y, z: round2(row.y), rot: normHeading(heading) });
+  const he = row.halfExtentsM;
+  if (Array.isArray(he) && he.length === 3 && he.every((v) => Number.isFinite(v) && v >= 0)) {
+    let s = heSamples.get(rn);
+    if (!s) heSamples.set(rn, (s = []));
+    if (s.length < HE_SAMPLE_CAP) s.push(he);
+  }
 });
 
 if (typeof exportMeta.keptCount === "number" && exportMeta.keptCount !== lineCount) {
@@ -172,6 +188,33 @@ const phasePrefabNames = [...new Set(kept.map((k) => k.resourceName))].sort();
 const prefabIdByName = new Map(phasePrefabNames.map((n, i) => [n, i]));
 
 const labelOf = (rn) => basename(rn).replace(/\.et$/, "");
+
+// Measured spatial (T-090.3.3): per-axis median of the sampled engine halfExtents, remapped to
+// map axes (map x = engine x, map y = engine z/north, vertical = engine y/up — same remap as
+// positions). Degenerate medians (any axis ≤ 1 cm) fall back to the rule template.
+const median = (vals) => {
+  const s = [...vals].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+};
+const measuredSpatial = (rn, rule) => {
+  const samples = heSamples.get(rn);
+  if (!samples || samples.length === 0) return rule.spatial;
+  const ex = median(samples.map((s) => s[0]));
+  const eyUp = median(samples.map((s) => s[1]));
+  const ezNorth = median(samples.map((s) => s[2]));
+  if (ex <= 0.01 || eyUp <= 0.01 || ezNorth <= 0.01) return rule.spatial;
+  const hx = round2(ex);
+  const hy = round2(ezNorth);
+  const hv = round2(eyUp);
+  return {
+    model: "obb",
+    pivot: rule.spatial?.pivot ?? "center",
+    halfExtentsM: { x: hx, y: hy, z: hv },
+    heightM: round2(2 * hv),
+    footprintM2: round2(4 * hx * hy),
+  };
+};
+
 const prefabs = phasePrefabNames.map((rn, i) => {
   const cls = classify(rn);
   const rule = cls.rule;
@@ -188,7 +231,7 @@ const prefabs = phasePrefabNames.map((rn, i) => {
       confidence: rule.ai.confidence ?? 0.5,
       needsReview: !cls.matched,
     },
-    spatial: rule.spatial,
+    spatial: measuredSpatial(rn, rule),
     gameplay: rule.gameplay,
   };
   if (rule.render) row.render = rule.render;

@@ -60,8 +60,12 @@ export function checkAnchors({ anchors, prefabs, getChunk, chunkSizeM, worldSize
   const prefabById = new Map(prefabs.map((p) => [p.prefabId, p]));
   const buildingIds = new Set(prefabs.filter((p) => p.kind === "building").map((p) => p.prefabId));
 
-  const nearestBuilding = (chunk, mx, my) => {
+  // Returns the nearest building instance AND (T-090.3.3) the nearest one whose prefab matches
+  // `matchRn` — co-located instances (stacked containers share an x/y) tie at 0 m, so "nearest"
+  // alone can land on the twin and false-fail the resourceName identity.
+  const nearestBuilding = (chunk, mx, my, matchRn) => {
     let best = null;
+    let bestMatch = null;
     for (const row of chunk?.instances ?? []) {
       const pid = rowPrefabId(row);
       if (!buildingIds.has(pid)) continue;
@@ -69,8 +73,11 @@ export function checkAnchors({ anchors, prefabs, getChunk, chunkSizeM, worldSize
       const dy = rowY(row) - my;
       const dist = Math.hypot(dx, dy);
       if (!best || dist < best.dist) best = { dist, prefabId: pid };
+      if (matchRn && prefabById.get(pid)?.resourceName === matchRn && (!bestMatch || dist < bestMatch.dist)) {
+        bestMatch = { dist, prefabId: pid };
+      }
     }
-    return best;
+    return { best, bestMatch };
   };
 
   for (const anchor of anchors) {
@@ -79,11 +86,8 @@ export function checkAnchors({ anchors, prefabs, getChunk, chunkSizeM, worldSize
     const cy = cellOf(m.y, chunkSizeM, worldSizeM);
     const label = `anchor ${anchor.resourceName} @ map(${m.x},${m.y}) -> chunk ${chunkKey(cx, cy)}`;
 
-    const home = nearestBuilding(getChunk(cx, cy), m.x, m.y);
-    const homeOk =
-      home &&
-      home.dist <= toleranceM &&
-      prefabById.get(home.prefabId)?.resourceName === anchor.resourceName;
+    const { best: home, bestMatch } = nearestBuilding(getChunk(cx, cy), m.x, m.y, anchor.resourceName);
+    const homeOk = bestMatch && bestMatch.dist <= toleranceM;
 
     let neighborBest = null;
     for (let dx = -1; dx <= 1; dx++) {
@@ -92,7 +96,7 @@ export function checkAnchors({ anchors, prefabs, getChunk, chunkSizeM, worldSize
         const ncx = cx + dx;
         const ncy = cy + dy;
         if (ncx < 0 || ncy < 0) continue;
-        const hit = nearestBuilding(getChunk(ncx, ncy), m.x, m.y);
+        const hit = nearestBuilding(getChunk(ncx, ncy), m.x, m.y).best;
         if (hit && (!neighborBest || hit.dist < neighborBest.dist)) neighborBest = hit;
       }
     }
