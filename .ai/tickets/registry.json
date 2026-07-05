@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.8.1",
+      "active_slice": "T-090.5.4",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Map Engine v2. Streaming @ `155651b9`; roads/buildings live. **Active:** **T-090.8.1** forest mass. Single lane.",
+      "summary": "Map Engine v2 through forest mass @ `e28d073a`. **Active:** **T-090.5.4** sea-band + contours. Single lane.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -2161,7 +2161,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-090.5.5": {
           "targets": [
@@ -2214,7 +2214,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "e28d073a"
         },
         "T-090.9": {
           "targets": [

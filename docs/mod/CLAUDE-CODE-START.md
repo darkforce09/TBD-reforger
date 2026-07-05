@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code:** **T-090.8.1** only — `forestMass.ts` marching squares from TBDD density + `landCoverRegions.ts` fill/outline layers. Single lane. Plan §7 row T-090.8.1 · spec [`t090_8_forest_vegetation_regions.md`](../specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md).
+**Next Claude Code:** **T-090.5.4** only — `seaBand.ts` + `contours.ts` from DEM in worker; shoreline + iso contour Deck layers. Single lane. Plan §7 row T-090.5.4 · spec [`t090_5_map_object_render_layer.md`](../specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 

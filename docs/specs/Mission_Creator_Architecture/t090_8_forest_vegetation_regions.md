@@ -1,7 +1,7 @@
 # T-090.8 — Forest & vegetation regions (first-class areas)
 
 **Ticket:** T-090 · **Slice:** T-090.8 / **T-090.8.1** (render)
-**Status:** **T-090.8.1 active** — export (P2b regions + TBDD density) shipped @ T-090.3.2/3.3; **render** is this slice
+**Status:** **shipped** @ `e28d073a` — `world-landcover` + `world-forest` / `world-forest-outline` live
 **Executor:** **claude-code**
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · render [`t090_render_lod_contract.md`](t090_render_lod_contract.md) · N5
 
@@ -70,10 +70,14 @@ During P2 **development**, hull assignment may temporarily miss up to **±2%** o
 ## Render (Deck zoom — see N3 master table)
 
 Forests follow the canonical ladder in [`t090_render_lod_contract.md`](t090_render_lod_contract.md) §N3;
-do not restate the numbers. Summary by Deck orthographic zoom: at deckZoom ≤ `FOREST_REGION_MAX_ZOOM`
-(1) forests are translucent **`PolygonLayer`** fills (`rgba(34,120,60,α)`); above +1 the fill fades to
-context and per-tree glyphs take over (deckZoom ≥ `TREE_GLYPH_MIN_ZOOM` per LOD v2).
+do not restate the numbers. Summary by Deck orthographic zoom: at deckZoom ≤ `FOREST_FILL_MAX_ZOOM`
+(+1) forests are translucent **`PolygonLayer`** fills (`rgba(34,120,60,α)`); above +1 the fill is gated
+off by `classVisible('forestFill')` — the N3 `α 0.12` band for `+1…+3` is encoded in `forestFillAlpha` but
+latent until the contract loosens the max gate. Per-tree glyphs take over from deckZoom ≥ `TREE_GLYPH_MIN_ZOOM` (LOD v2).
 Fields render as a lighter hatch; water bodies as a blue fill.
+
+**Shipped (T-090.8.1):** slot 4 `world-landcover` (36 Path B region hulls, low-α context); slot 8
+`world-forest` + `world-forest-outline` (TBDD marching squares, worker-streamed via `forestMassStore`).
 
 ---
 

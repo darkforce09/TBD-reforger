@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Map Engine v2. Streaming @ `155651b9`; roads/buildings live. **Active:** **T-090.8.1** forest mass. Single lane.
+- **T-090** (900) — Map visualization program [ready] — Map Engine v2 through forest mass @ `e28d073a`. **Active:** **T-090.5.4** sea-band + contours. Single lane.
 
 ## Next queued (top 10)
 
