@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-090** — T-090.5.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`.
+**ACTIVE NOW:** **T-090** — T-090.5.2 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -152,7 +152,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
 
-**Active:** **T-090.5.1** only (single lane — render spine scaffold; no drawing yet).
+**Active:** **T-090.5.2** only (single lane — roads + buildings Deck layers + P1 glyph atlas).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
@@ -181,6 +181,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after T-090 map program):** **T-071** ORBAT Manager (**deferred** — map-first lane) → **T-068.7** compat matrix → T-068.8–T-068.11 → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. Hub: [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-090.5.1 **Map Engine v2 render spine scaffold** @ `589ded9e` (tag **T-090.5.1**). `worldmap/` pure modules (`styleModes`, `lodGates` N2×11, `chunkMath`); `worldLayerPrefs` + `basemapView` shim; sat `opacity` on unified layer; 3-way Satellite/Hybrid/Map; Comlink worker skeleton; `VITE_WORLDMAP_ENABLED` default off — zero world-object Deck layers. Vitest **85/85** (36 targeted spine tests); build/lint clean; verify-t090-specs 12/12. Verify: [`.ai/artifacts/t090_5_1_verify_log.md`](.ai/artifacts/t090_5_1_verify_log.md).
 - T-090.3.2 **Map Engine v2 export P2 (density + trees + forest regions)** @ `a055df95` (tag **T-090.3.2**). Built from T-090.3.1 staged raw — **no Workbench re-export**. Cumulative **361** prefabs / **507,467** instances / **270** chunks (6.25 MB gz, plain commit); **501,861** trees (51 types) + unchanged **5,606** P1 buildings. **625** `objects/density/{cx}_{cy}.bin` TBDD grids (732.5 KB); **forest-regions.json.gz** 36 Path B regions (F2 exact: 496,693 + 5,168 = 501,861). Gates: P2 24/24, P1 re-verify 19/19, schema-validate (S13/S14), map-export-validate, map-census, verify-spike-all — ALL PASS. Decisions: Latin species classify rules; debris→prop; verify-phase phase-scope split; prefabId renumber on cumulative rebuild; mega-region `forest-everon-001` (479k trees — tunable in `lib/forest-regions.mjs` @ T-090.8). Verify: [`.ai/artifacts/t090_3_2_verify_log.md`](.ai/artifacts/t090_3_2_verify_log.md).
 - T-090.3.1 **Map Engine v2 export core (P1 buildings + roads)** @ `e47f25fc` (tag **T-090.3.1**). Full-world export 1.41M entities / 8.9 s; **310** building prefabs, **5,606** instances, **219** chunks (84 KB gz); **roads.json.gz** 766 segments (decode-topo). Gates 19/19 PASS. Verify: [`.ai/artifacts/t090_3_1_verify_log.md`](.ai/artifacts/t090_3_1_verify_log.md). **Note:** Workbench new plugin classes need Script Editor compile (`wb_reload` insufficient).
 - T-090.10.1 **Map Engine v2 implementation plan** @ `a222a146` (tag **T-090.10.1**).

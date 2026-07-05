@@ -1,26 +1,23 @@
-# Send-off — T-090.5.1 (render spine scaffold)
+# Send-off — T-090.5.2 (roads + buildings live)
 
 **CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
 
-```bash
-./scripts/ticket prompt T-090 --slice T-090.5.1
-```
-
-**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.1  
+**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.2  
 **Spec:** [`docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`](../../docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md)  
+**Glyphs:** [`docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md`](../../docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md)  
 **LOD v2:** [`docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md`](../../docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)  
-**Prior:** T-090.3.2 shipped @ `a055df95` — [verify log](t090_3_2_verify_log.md)
+**Prior:** T-090.5.1 shipped @ `589ded9e` — [verify log](t090_5_1_verify_log.md)
 
-**Scope (scaffold only — no vector drawing):**
+**Scope:**
 
-- `worldmap/` skeleton: `styleModes`, `lodGates`, `chunkMath` (pure + vitest)
-- Satellite `opacity` prop on basemap layer
-- 3-way `mapStyle` + `worldLayerPrefs` migration (`basemapView` shim)
-- Worker + client skeleton (`workers/worldObjects.worker.ts`, `worldObjectsClient.ts`)
-- Feature flag `worldmap.enabled` (default off — zero regression)
+- `worldmap/roadLayer.ts` — PathLayer from `roads.json.gz` (766 segments)
+- `worldmap/buildingLayer.ts` — PolygonLayer OBB rects from P1 chunks
+- `layers/worldGlyphAtlas.ts` + P1 `building-*` SVG set + `build-glyph-atlas.mjs`
+- Wire into `useWorldMapLayers` / TacticalMap insertion point (behind `VITE_WORLDMAP_ENABLED=1`)
+- LOD vitest: road classes per band, buildings ≥ −2.5
 
-**Gates:** vitest (styleModes, lodGates table, chunkMath, prefs migration); FE build/lint; manual M1–M3 (sat unchanged @ styles-off, style switch, flag off).
+**Gates:** R1–R4 + R7 (`make map-glyphs-verify` GL-G1…G6); manual Z1–Z6; ≥55 fps @ PH-P1 data (R5).
 
-**Single lane:** no T-090.5.2 until 5.1 ships.
+**Single lane:** no T-090.5.3 until 5.2 ships.
 
-**Export data ready:** Everon manifest has P1+P2 — 361 prefabs, 507k instances, 625 TBDD density grids, 36 forest regions. Do not touch export pipeline this slice.
+**Spine ready:** `styleModes`, `lodGates`, `chunkMath`, `worldLayerPrefs`, worker skeleton — do not rewrite.

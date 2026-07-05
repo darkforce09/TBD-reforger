@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.5.1",
+      "active_slice": "T-090.5.2",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Map Engine v2. Export through P2 @ `a055df95` (501k trees, TBDD density, 36 forest regions). **Active:** **T-090.5.1** render spine. Single lane.",
+      "summary": "Map Engine v2. Render spine @ `589ded9e`; export P2 @ `a055df95`. **Active:** **T-090.5.2** roads+buildings. Single lane.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -2103,7 +2103,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "589ded9e"
         },
         "T-090.5.2": {
           "targets": [
@@ -2111,7 +2112,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-090.5.3": {
           "targets": [

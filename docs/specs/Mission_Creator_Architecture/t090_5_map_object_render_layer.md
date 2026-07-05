@@ -1,7 +1,7 @@
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  
-**Status:** **T-090.5.1 active** — export P1+P2 @ `a055df95` unblocks render · **v2: A3 density-gate LOD, no world clustering**  
+**Status:** **T-090.5.2 active** — spine @ `589ded9e`; first live layers (roads + buildings) · **v2: A3 density-gate LOD, no world clustering**  
 **Executor:** **claude-code**  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
