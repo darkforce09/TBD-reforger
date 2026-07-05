@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.5.2",
+      "active_slice": "T-090.5.3",
       "surfaces": [
         "MAP"
       ],
@@ -1829,7 +1829,7 @@
         "ui"
       ],
       "title": "Map visualization program",
-      "summary": "Map Engine v2. Render spine @ `589ded9e`; export P2 @ `a055df95`. **Active:** **T-090.5.2** roads+buildings. Single lane.",
+      "summary": "Map Engine v2. Export @ `887a6ed1` (taxonomy+highway); render through `346a31c9`. **Active:** **T-090.5.3** chunk streaming. Single lane.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-090.0",
@@ -1853,10 +1853,13 @@
         "T-090.3",
         "T-090.3.1",
         "T-090.3.2",
+        "T-090.3.3",
         "T-090.4",
         "T-090.5",
         "T-090.5.1",
         "T-090.5.2",
+        "T-090.5.2.1",
+        "T-090.5.2.2",
         "T-090.5.3",
         "T-090.5.4",
         "T-090.5.5",
@@ -2081,6 +2084,16 @@
           "status": "shipped",
           "shipped_at": "a055df95"
         },
+        "T-090.3.3": {
+          "targets": [
+            "root",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md",
+          "status": "shipped",
+          "shipped_at": "887a6ed1"
+        },
         "T-090.4": {
           "targets": [
             "root"
@@ -2112,7 +2125,26 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "e410545e"
+        },
+        "T-090.5.2.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "shipped",
+          "shipped_at": "04b60857"
+        },
+        "T-090.5.2.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+          "status": "shipped",
+          "shipped_at": "346a31c9"
         },
         "T-090.5.3": {
           "targets": [
@@ -2120,7 +2152,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-090.5.4": {
           "targets": [

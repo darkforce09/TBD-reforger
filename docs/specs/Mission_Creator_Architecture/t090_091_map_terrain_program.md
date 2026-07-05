@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **T-090.5.1 shipped** @ `589ded9e` · **Active:** **T-090.5.2** (roads + buildings layers). Single lane.  
+**Status:** **T-090.5.2.2 shipped** @ `346a31c9` · **Active:** **T-090.5.3** (chunk streaming @ scale). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
@@ -41,9 +41,10 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.10.1   implementation plan  ✓ @ a222a146
   → T-090.3.1    export P1 buildings + roads  ✓ @ e47f25fc (310 prefabs / 5,606 inst / 219 chunks / 766 road segs)
   → T-090.3.2    density grids + trees (PH-P2)  ✓ @ a055df95 (361 prefabs / 507k inst / 270 chunks / 625 TBDD grids / 36 forest regions)
-  → T-090.5.1    render spine scaffold  ✓ @ 589ded9e (worldmap/ pure modules, 3-way mapStyle, worker skeleton, flag off)
-  → T-090.5.2    roads + buildings layers  (ACTIVE)
-  → T-090.5.3    chunk streaming @ scale
+  → T-090.3.3    taxonomy + highway network  ✓ @ 887a6ed1 (391 prefabs / 508k inst / 888 roads / measured OBBs)
+  → T-090.5.1    render spine scaffold  ✓ @ 589ded9e
+  → T-090.5.2    roads + buildings live  ✓ @ e410545e (+ .2.1 centerline/casing @ 04b60857 · .2.2 taxonomy tints @ 346a31c9)
+  → T-090.5.3    chunk streaming @ scale  (ACTIVE)
   → T-090.8.1    forest/rock mass (marching squares)
   → T-090.5.4    sea-band + contours (DEM)
   → T-090.5.5    trees/veg/props glyphs
@@ -101,7 +102,9 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.3.1** | export P1 + roads | claude-code | **shipped** @ `e47f25fc` |
 | **T-090.3.2** | density + PH-P2 trees | claude-code | **shipped** @ `a055df95` |
 | **T-090.5.1** | render scaffold | claude-code | **shipped** @ `589ded9e` |
-| **T-090.5.2** | roads + buildings | claude-code | **active** |
+| **T-090.3.3** | taxonomy + highway | claude-code | **shipped** @ `887a6ed1` |
+| **T-090.5.2** | roads + buildings | claude-code | **shipped** @ `e410545e` (+ `.2.1` `.2.2`) |
+| **T-090.5.3** | chunk streaming | claude-code | **active** |
 | **T-090.8.1** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | queued |
 | **T-090.10.2** | legacy retirement | claude-code | queued after 5.4+8.1 |
 | **T-090.3** | umbrella | — | **deferred** → use `.3.1`/`.3.2` |

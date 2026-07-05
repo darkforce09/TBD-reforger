@@ -7,9 +7,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.5.2`
+- **Active slice:** `T-090.5.3`
 - **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Map Engine v2. Render spine @ `589ded9e`; export P2 @ `a055df95`. **Active:** **T-090.5.2** roads+buildings. Single lane.
+- **Summary:** Map Engine v2. Export @ `887a6ed1` (taxonomy+highway); render through `346a31c9`. **Active:** **T-090.5.3** chunk streaming. Single lane.

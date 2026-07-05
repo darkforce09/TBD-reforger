@@ -1,23 +1,24 @@
-# Send-off — T-090.5.2 (roads + buildings live)
+# Send-off — T-090.5.3 (chunk streaming @ scale)
 
 **CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
 
-**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.2  
+**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.3  
 **Spec:** [`docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`](../../docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md)  
-**Glyphs:** [`docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md`](../../docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md)  
-**LOD v2:** [`docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md`](../../docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)  
-**Prior:** T-090.5.1 shipped @ `589ded9e` — [verify log](t090_5_1_verify_log.md)
+**Worker:** [`docs/specs/Mission_Creator_Architecture/t090_world_objects_worker.md`](../../docs/specs/Mission_Creator_Architecture/t090_world_objects_worker.md) (if present)  
+**Prior:** T-090.5.2.2 @ `346a31c9` · T-090.3.3 @ `887a6ed1` — [verify log](t090_5_2_verify_log.md)
 
 **Scope:**
 
-- `worldmap/roadLayer.ts` — PathLayer from `roads.json.gz` (766 segments)
-- `worldmap/buildingLayer.ts` — PolygonLayer OBB rects from P1 chunks
-- `layers/worldGlyphAtlas.ts` + P1 `building-*` SVG set + `build-glyph-atlas.mjs`
-- Wire into `useWorldMapLayers` / TacticalMap insertion point (behind `VITE_WORLDMAP_ENABLED=1`)
-- LOD vitest: road classes per band, buildings ≥ −2.5
+- Full `worldObjects.worker.ts` (W1–W3, W5 + W4-v2 `visibleInstances`)
+- `chunkStore.ts` LRU/budget/border/oversized on main thread
+- Replace interim `worldData.ts` main-thread fetch with worker hydration
+- `≤4 ms/frame` apply budget; N11 PH-P1/P2 budgets
+- Shrink `worldData.ts` to manifest gate only
 
-**Gates:** R1–R4 + R7 (`make map-glyphs-verify` GL-G1…G6); manual Z1–Z6; ≥55 fps @ PH-P1 data (R5).
+**Gates:** W1–W5(v2); INSTANCE_BUDGET vitest; hydrate timing; ≥55 fps @ P1+P2 data with flag on.
 
-**Single lane:** no T-090.5.3 until 5.2 ships.
+**Single lane:** no T-090.8.1 until 5.3 ships (plan order: 5.3 → 5.2 already done → 8.1).
 
-**Spine ready:** `styleModes`, `lodGates`, `chunkMath`, `worldLayerPrefs`, worker skeleton — do not rewrite.
+**Do not rewrite:** `roadLayer`, `buildingLayer`, `styleModes`, `lodGates`, export pipeline.
+
+**Operator:** `VITE_WORLDMAP_ENABLED=1` + hard refresh after deploy (module caches data).

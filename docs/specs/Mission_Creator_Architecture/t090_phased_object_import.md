@@ -44,7 +44,7 @@ Each phase adds **one `kind` or `roadClass` filter** to export + render + verify
 | Phase | ID | Export filter | Render layer | Golden fixture |
 |-------|-----|---------------|--------------|----------------|
 | **P1** | `P1_buildings` | `kind=building` | `world-buildings` + footprint polygons; optional `building-*` badge glyphs | `golden/P1-buildings.json` |
-| **P2** | `P2_trees` | `kind=tree` | `world-trees` | `golden/P2-trees.json` |
+| **P2** | `P2_trees` | `kind=tree` **+ `kind=water` piers/docks** (T-090.3.3) | `world-trees` + pier footprints via building layer | `golden/P2-trees.json` |
 | **P3** | `P3_vegetation` | `kind=vegetation` | `world-vegetation` | `golden/P3-vegetation.json` |
 | **P4** | `P4_rocks` | `kind=rock` | `world-rocks` | `golden/P4-rocks.json` |
 | **P5** | `P5_props` | `kind=prop` (incl. pebbles) | `world-props` | `golden/P5-props.json` |

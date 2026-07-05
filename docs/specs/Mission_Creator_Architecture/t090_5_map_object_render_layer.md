@@ -1,7 +1,7 @@
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  
-**Status:** **T-090.5.2 active** — spine @ `589ded9e`; first live layers (roads + buildings) · **v2: A3 density-gate LOD, no world clustering**  
+**Status:** **T-090.5.3 active** — roads+buildings+piers live @ `346a31c9`; chunk streaming next · **v2: A3 density-gate LOD, no world clustering**  
 **Executor:** **claude-code**  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -65,13 +65,19 @@ Color, width, min-deckZoom and dash style per the road table in the render contr
 `@deck.gl/extensions` **PathStyleExtension** (GAP-M4) — `highway_paved`/`road_paved`/`runway` solid;
 `road_dirt`/`track`/`path` dashed.
 
+**Shipped (T-090.5.2–.2.2):** `extractRoadCenterline` converts export quad-soup polylines to centerlines;
+width from measured pair geometry (`widthM`). **`world-roads-casing`** under **`world-roads`** (near-black
+stroke +40% width). Full `.topo` type mapping (types 1+2 = asphalt highway) @ **T-090.3.3** → 888 segments.
+
 ### Buildings (`PolygonLayer`)
 
-**Normative shipped geometry:** oriented bounding **rectangle** from `spatial.halfExtentsM` +
-`rotationDeg`. Real **footprint polygon rings** are populated only when T-090.3.0 proves Enfusion
-footprint export; when present, polygons supersede OBB rectangles for render. Fill
-`rgba(120,120,130,0.35)`, stroke `#888`; `buildingClass === 'military'` tint `#a08060`;
-military/tower/bunker get a center badge at deckZoom ≥ `BUILDING_BADGE_MIN_ZOOM` (N2).
+**Normative shipped geometry:** oriented bounding **rectangle** from measured `spatial.halfExtentsM`
+(per-axis median of raw export samples @ T-090.3.3) + `rotationDeg`. Real **footprint polygon rings**
+supersede OBB when export provides them.
+
+**Shipped fills (T-090.5.2.1–.2.2):** default solid dark `rgba(38,38,44,0.72)` / stroke `rgba(150,150,158,0.8)`;
+per-class tints (bridge, pier/dock, ruin, castle, lighthouse, container, tent, military, …). **`water`**
+piers/docks render as footprints alongside buildings. Military/tower/bunker badges @ `BUILDING_BADGE_MIN_ZOOM`.
 
 ### Trees (`IconLayer` + glyph atlas)
 

@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Map Engine v2. Render spine @ `589ded9e`; export P2 @ `a055df95`. **Active:** **T-090.5.2** roads+buildings. Single lane.
+- **T-090** (900) — Map visualization program [ready] — Map Engine v2. Export @ `887a6ed1` (taxonomy+highway); render through `346a31c9`. **Active:** **T-090.5.3** chunk streaming. Single lane.
 
 ## Next queued (top 10)
 

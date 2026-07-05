@@ -137,6 +137,12 @@ Optional: `canopyRadiusM`, `heightM` (from export or estimated).
 | `garage` | Vehicle garages, workshops | hard |
 | `tower` | Watchtowers, built-up masts | hard |
 | `ruin` | Destroyed / damaged shells | soft–hard |
+| `bridge` | Road/rail bridges (footprint) | hard |
+| `castle` | Castle / fort structures | hard |
+| `lighthouse` | Lighthouses, beacons | hard |
+| `shed` | Small sheds, outbuildings | hard |
+| `container` | Shipping containers, crates (static) | hard |
+| `tent` | Tents, canvas shelters (soft cover) | soft |
 | `wall` | Compound walls, perimeter (footprint) | hard |
 | `generic` | Building without finer rule match | hard |
 | `unknown` | Unclassified — **needs review** | none until ruled |
@@ -164,6 +170,11 @@ Optional: `buildingSubClass` (string) — finer label e.g. `"apartment_block"`; 
 | `sign` | Signs, posts |
 | `furniture` | Benches, tables (static) |
 | `debris` | Rubble, wreckage |
+| `buildingpart` | Composite-building part soup (off-map until props ship) |
+| `pavement` | Paved surfaces, slabs |
+| `rail` | Railway track props |
+| `monument` | Cemeteries, calvaries, memorials |
+| `composition` | Whole-POI composition prefabs (`World/Locations/*` — never rendered) |
 | `pebble` | Small prop / stone |
 | `unknown` | Unclassified |
 
@@ -519,7 +530,7 @@ If absent, T-090.6 uses **kind defaults** (see `t090_6_geometry_placement_audit.
 | `map-object-prefabs-sample.json` | tree `dead`/`unknown`; vegetation `grass`/`fern`/`dead`/`unknown`; rock `cliff`/`pebble`/`scree`/`unknown`; prop `barrier`/`sign`/`furniture`/`debris`/`pebble`/`unknown`; utility `lamp`/`antenna`/`pipeline`/`unknown`; water `dock`/`buoy`/`unknown`; road prefab all classes except `road_paved` |
 | `map-object-roads-sample.json` | `road_paved`, `path`, `runway`, `unknown` |
 | `map-object-regions-everon-sample.json` | `waterBody` region kind |
-| `buildingClass` | **Complete** (14/14) @ bootstrap |
+| `buildingClass` | **Complete** (20/20) @ T-090.3.3 |
 
 ---
 
