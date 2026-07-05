@@ -61,8 +61,10 @@ export function obbCorners(
   return [rot(-halfX, -halfY), rot(halfX, -halfY), rot(halfX, halfY), rot(-halfX, halfY)]
 }
 
-/** prefabId → building info for the chunk filter; non-building prefabs are absent (that is the
- *  filter: trees/props in mixed P2 chunks resolve to undefined and are discarded). */
+/** prefabId → footprint info for the chunk filter. Included kinds: `building` plus `water`
+ *  pier/dock (T-090.5.2.2 — walkable hard structures that must read on the map; their
+ *  buildingClass carries the water class for styling). Everything else (trees/props in mixed
+ *  P2 chunks) resolves to undefined and is discarded. */
 export function buildingPrefabLookup(raw: unknown): Map<number, BuildingPrefabInfo> {
   const rows = (raw as { prefabs?: unknown })?.prefabs
   const lookup = new Map<number, BuildingPrefabInfo>()
@@ -74,11 +76,15 @@ export function buildingPrefabLookup(raw: unknown): Map<number, BuildingPrefabIn
       class?: unknown
       spatial?: { halfExtentsM?: { x?: unknown; y?: unknown } }
     }
-    if (p.kind !== 'building' || typeof p.prefabId !== 'number') continue
+    if (typeof p.prefabId !== 'number') continue
+    const cls = typeof p.class === 'string' ? p.class : 'unknown'
+    const included =
+      p.kind === 'building' || (p.kind === 'water' && (cls === 'pier' || cls === 'dock'))
+    if (!included) continue
     const hx = p.spatial?.halfExtentsM?.x
     const hy = p.spatial?.halfExtentsM?.y
     lookup.set(p.prefabId, {
-      buildingClass: typeof p.class === 'string' ? p.class : 'unknown',
+      buildingClass: cls,
       halfX: typeof hx === 'number' && hx > 0 ? hx : 2,
       halfY: typeof hy === 'number' && hy > 0 ? hy : 2,
     })
@@ -111,10 +117,27 @@ export function buildingsFromChunkInstances(
 }
 
 // Solid-dark A3-style footprints (operator style pass T-090.5.2.1 — supersedes the t090_5
-// ghost values rgba(120,120,130,0.35)/#888; flagged for doc sync). Military tint #7a5c3d.
-const FILL: [number, number, number, number] = [38, 38, 44, 184]
-const FILL_MILITARY: [number, number, number, number] = [0x7a, 0x5c, 0x3d, 184]
-const STROKE: [number, number, number, number] = [150, 150, 158, 204]
+// ghost values rgba(120,120,130,0.35)/#888; flagged for doc sync). T-090.5.2.2 adds per-class
+// tints over the dark default so the taxonomy reads on the map: military sand-brown, bridges
+// grey-blue, piers timber, ruins faded, castle stone-brown, lighthouse white landmark,
+// containers steel-blue, tents olive.
+type Rgba = [number, number, number, number]
+export const FILL_DEFAULT: Rgba = [38, 38, 44, 184]
+export const FILL_BY_CLASS: Record<string, Rgba> = {
+  military: [0x7a, 0x5c, 0x3d, 184],
+  bridge: [90, 90, 100, 200],
+  pier: [110, 95, 75, 190],
+  dock: [110, 95, 75, 190],
+  ruin: [58, 56, 60, 110],
+  castle: [70, 58, 48, 190],
+  lighthouse: [235, 235, 235, 220],
+  container: [60, 70, 90, 184],
+  tent: [92, 82, 50, 184],
+  shed: [50, 50, 56, 184],
+  garage: [50, 50, 56, 184],
+}
+const STROKE: Rgba = [150, 150, 158, 204]
+const STROKE_LIGHTHOUSE: Rgba = [180, 60, 50, 230]
 
 /** Build the `world-buildings` OBB PolygonLayer. `visible` gates via Deck (data stays on GPU
  *  across band crossings). Mass layer — never pickable (T-090.9 owns pick). */
@@ -132,8 +155,8 @@ export function buildBuildingLayer(opts: {
     positionFormat: 'XY',
     filled: true,
     stroked: true,
-    getFillColor: (d) => (d.buildingClass === 'military' ? FILL_MILITARY : FILL),
-    getLineColor: STROKE,
+    getFillColor: (d) => FILL_BY_CLASS[d.buildingClass] ?? FILL_DEFAULT,
+    getLineColor: (d) => (d.buildingClass === 'lighthouse' ? STROKE_LIGHTHOUSE : STROKE),
     getLineWidth: 1,
     lineWidthUnits: 'pixels',
     pickable: false,

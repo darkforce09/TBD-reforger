@@ -120,3 +120,45 @@ Operator re-check in browser (Vite HMR, flag on): roads as clean cased strokes a
 ## Follow-up for export lane (T-090.3.x, not FE)
 
 `decode-topo` road extraction emits quad soup — a future export slice can emit true centerlines + `widthM` directly and drop `extractRoadCenterline`; FE contract already matches that shape.
+
+---
+
+# T-090.3.3 + T-090.5.2.2 — Data-driven structure taxonomy + missing highway network
+
+**Date:** 2026-07-05 · **Trigger:** operator review of T-090.5.2.1 — main asphalt highway absent; lighthouse/castle/harbor sites garbled box heaps; bridges/railings/benches/signs/fences classified as buildings. Directive: enumerate the REAL structure types from the data and categorize everything.
+
+## Findings
+
+- **Missing highway = mislabeled .topo types.** decode-topo's legacy names call type 1 "RIVER" (12 recs, **12 m constant width, 19.7 km**, central-valley chain) and type 2 "STREAM" (110 recs, **8 m, 57.9 km**) — but G1-B (T-090.1.2.5.2) already proved the .topo carries roads only. Engineered constant widths confirm: types 1+2 are the asphalt highway/main-road network. Old export mapped only {0,3,5} → highway never reached `roads.json.gz`.
+- **Classify fallback dumped everything**: greedy needles (`House`, `Village`) put HouseRuin brick piles, SignVillage, GuardHouse into `residential`; `Structures/Cultural/` → 694 cemetery instances as `civic`. Confirmed on-map: the Morton_Peninsula "building" heap was 33 HouseRuin rubble rows.
+- **Raw structure taxonomy** (1.41M-row staged export, offline — no Workbench): Walls 37.5k · Infrastructure 15.2k (Pavements 7.9k, Power 2.7k, Naval/piers 2.3k, Lamps, **Bridges 113**, Railways 112) · Signs 6.4k · **BuildingParts 3.2k** (composite-building part soup) · Ruins 1.5k · Cemeteries 694 · plus Lighthouse ×10, Castle ×~135, ConcreteBridge ×~160, Piers ~1.5k, Sheds ~700, Containers ~600, Tents ~40, GuardTower/DeerStand/GuardHouse, Benches ~670.
+- **`World/Locations/Eden/*.et`** = ~180 whole-POI composition entities (towns, bays, hills) with halfExtents [0,0,0] — children export as their own rows; compositions must never render.
+- **Prefab OBBs were rule-template constants** (every residential 5×5 m) — the raw rows carry real per-entity `halfExtentsM` that the export discarded.
+
+## Shipped — T-090.3.3 (export lane, offline from staged raw)
+
+1. **Roads**: `build-roads-from-topo.mjs` full type mapping `{0: runway, 1: highway_paved, 2: road_paved, 3: road_dirt, 5: track}` (semantic; provisional flag dropped). `roads.json.gz` → **888 segments** (5 runway / 12 highway / 110 paved / 367 dirt / 394 track). decode-topo untouched (frozen consumers).
+2. **Classification**: `prefab-classify.json` rebuilt — 34 new path-prefix rules ahead of the repaired residential rule (`Structures/Houses/` only), Structures catch-all → `building/generic`. Walls→prop/fence, Signs→prop/sign, BuildingParts→prop/buildingpart, Pavements/Railways→prop, Power/Lamps/Piping→utility, Naval→**water/pier**, Bridges→**building/bridge**, Cemeteries/Calvaries→prop/monument, Castles→**building/castle**, Lighthouse→**building/lighthouse**, ruin piles→prop/debris, ruin shells→building/ruin, Shed*→**shed**, Garage→garage, containers→**container**, tents→**tent**, Guard/Deer/Control/Transmitter/Water towers→tower, GuardHouse/Box→military, benches/boards/beds→prop/furniture, Anthill→rock/boulder, fuel/silo/factory/cranes/transformers→industrial, FuelStation→commercial, `World/Locations/`→prop/**composition** (never rendered). 32-case classification matrix vitest-style smoke: 32/32.
+3. **Schema/goldens/glyphs**: enums += buildingClass{bridge,castle,lighthouse,shed,container,tent} + propClass{buildingpart,pavement,rail,monument,composition}; 11 golden prefab rows (S9 coverage); 9 new `building-*` SVGs (bridge/castle/lighthouse/shed/container/tent/ruin/garage/generic); atlas rebuilt **28 glyphs @ 1024×512 (21.3 KB)**.
+4. **Export**: `build-world-objects.mjs` — P2 kinds += `water`; **measured prefab OBBs** (per-axis median of sampled raw halfExtents, engine→map remap, rule fallback for degenerate bounds). Full rebuild: **391 prefabs / 508,291 instances / 275 chunks** (buildings 4,131 across 18 populated classes + piers 2,299 + trees 501,861 unchanged). Building footprints now real: 0–4,066 m², median 84 m².
+5. **Gate repairs** (taxonomy-driven): verify-phase PHASE_KINDS += water; P1-2 tent exemption (canvas = soft cover by design); anchor-check co-located tie fix (stacked containers share x/y — nearest-match now accepts the anchor's own prefab within tolerance).
+
+**Gates — ALL PASS:** `map-export-validate` · `map-verify-phase` P1 (incl. E6 determinism double-build) + P2 · `map-census` · `make schema-validate` (enums / golden S2–S14 / glyphs incl. everon coverage + atlas / type-inventory / t090-specs 12/12).
+
+## Shipped — T-090.5.2.2 (render lane)
+
+- `buildingPrefabLookup` includes `water` pier/dock (walkable structures) alongside buildings; buoys/trees/props stay filtered.
+- Per-class fills over the solid-dark default: bridge grey-blue, pier/dock timber, ruin faded, castle stone-brown, **lighthouse white + red stroke**, container steel-blue, tent olive, shed/garage dark, military sand-brown.
+- Vitest **107/107** (pier-inclusion, buoy exclusion, class-fill mapping); FE build + lint + prettier clean.
+- Sweep vs new export: 888 road segments parse; 6,430 footprint instances (4,131 buildings + 2,299 piers).
+
+## Doc-sync flags (Cursor)
+
+- Enum additions (6 buildingClass + 5 propClass) → `t090_2_map_object_taxonomy.md` / enums docs.
+- Road class mapping now semantic + `classMappingProvisional: false` (plan decision 5 closed).
+- P2 phase kinds include `water`; prefab `spatial` now measured (t090_phased_object_import / prefab schema docs).
+- P1-2 tent exemption + anchor tie semantics in the phase-gate doc.
+
+## Operator re-check (browser, flag on)
+
+Expect: main asphalt highway + secondary asphalt visible from whole-island zoom; gravel net brown-dashed from −2; castle/lighthouse/harbor no longer box heaps (parts are props now — excluded until T-090.5.5); bridges/piers visible as distinct tinted structures; building rects at true footprint sizes.

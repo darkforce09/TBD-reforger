@@ -4,6 +4,8 @@
 import { describe, it, expect } from 'vitest'
 import { classVisible } from './lodGates'
 import {
+  FILL_BY_CLASS,
+  FILL_DEFAULT,
   badgeIconKey,
   buildBuildingBadgeLayer,
   buildBuildingLayer,
@@ -78,7 +80,7 @@ describe('badgeIconKey (class-derived, not prefab iconKey)', () => {
   })
 })
 
-describe('prefab lookup + chunk filter (P1 buildings out of mixed P2 chunks)', () => {
+describe('prefab lookup + chunk filter (buildings + piers out of mixed P2 chunks)', () => {
   const prefabsPayload = {
     prefabs: [
       {
@@ -99,15 +101,38 @@ describe('prefab lookup + chunk filter (P1 buildings out of mixed P2 chunks)', (
         class: 'conifer',
         spatial: { halfExtentsM: { x: 2, y: 2, z: 8 } },
       },
+      {
+        prefabId: 400,
+        kind: 'water',
+        class: 'pier',
+        spatial: { halfExtentsM: { x: 10, y: 1.5, z: 1 } },
+      },
+      {
+        prefabId: 401,
+        kind: 'water',
+        class: 'buoy',
+        spatial: { halfExtentsM: { x: 0.5, y: 0.5, z: 0.5 } },
+      },
     ],
   }
 
-  it('lookup keeps buildings only (tree prefabs are the chunk filter)', () => {
+  it('lookup keeps buildings + water piers/docks (trees + buoys are filtered out)', () => {
     const lookup = buildingPrefabLookup(prefabsPayload)
-    expect(lookup.size).toBe(2)
+    expect(lookup.size).toBe(3)
     expect(lookup.get(0)).toEqual({ buildingClass: 'residential', halfX: 5, halfY: 5 })
-    expect(lookup.get(331)).toBeUndefined()
+    expect(lookup.get(400)).toEqual({ buildingClass: 'pier', halfX: 10, halfY: 1.5 })
+    expect(lookup.get(331)).toBeUndefined() // tree
+    expect(lookup.get(401)).toBeUndefined() // buoy — not a walkable structure
     expect(buildingPrefabLookup(null).size).toBe(0)
+  })
+
+  it('per-class fills: taxonomy classes styled, unknown classes fall to the dark default', () => {
+    expect(FILL_BY_CLASS.military).toEqual([0x7a, 0x5c, 0x3d, 184])
+    for (const cls of ['bridge', 'pier', 'ruin', 'castle', 'lighthouse', 'container', 'tent']) {
+      expect(FILL_BY_CLASS[cls], cls).toBeDefined()
+      expect(FILL_BY_CLASS[cls]).not.toEqual(FILL_DEFAULT)
+    }
+    expect(FILL_BY_CLASS.residential).toBeUndefined() // default fill
   })
 
   it('construction smoke: layer ids, visibility pass-through, badge layer needs the atlas', () => {
