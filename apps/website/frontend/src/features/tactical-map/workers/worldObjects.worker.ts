@@ -13,9 +13,12 @@ import {
   createWorldObjectsCore,
   type Bbox,
   type ChunkLoadResult,
+  type ContourResult,
+  type DemVectorGrid,
   type ForestMassResult,
   type LoadChunksOpts,
   type ResolvedWorldObject,
+  type SeaBandGeometry,
   type VisibleSet,
   type WorldManifestLite,
   type WorldObjectsStatus,
@@ -84,6 +87,30 @@ const api = {
       )
     }
     return Comlink.transfer(result, buffers)
+  },
+
+  /** Sea-band + contour source grid (T-090.5.4). The grid.data buffer arrives transferred from
+   *  the main thread (a move) — core takes ownership; no reply payload. */
+  setDemGrid(grid: DemVectorGrid): void {
+    core.setDemGrid(grid)
+  },
+
+  /** Sea-band fill geometry (fresh arrays → transfer; null when the grid isn't loaded). */
+  buildSeaBand(): SeaBandGeometry | null {
+    const result = core.buildSeaBand()
+    if (!result) return null
+    return Comlink.transfer(result, [
+      result.fillPositions.buffer as ArrayBuffer,
+      result.fillStartIndices.buffer as ArrayBuffer,
+      result.fillColors.buffer as ArrayBuffer,
+    ])
+  },
+
+  /** Contour segments for an interval (fresh arrays → transfer; null when gridless). */
+  buildContours(intervalM: number): ContourResult | null {
+    const result = core.buildContours(intervalM)
+    if (!result) return null
+    return Comlink.transfer(result, [result.segments.buffer as ArrayBuffer])
   },
 
   async visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet> {

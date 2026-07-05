@@ -26,6 +26,9 @@ export const VEGETATION_MIN_ZOOM = 1.5
 export const PROP_MIN_ZOOM = 3
 /** deckZoom ≥ +1 → large rock landmark glyphs. */
 export const ROCK_LARGE_MIN_ZOOM = 1
+/** deckZoom ≤ +3 → sea band fill visible (A3 DrawSea; fades out as detail takes over — the
+ *  discrete α ladder is T-090.5.4 styling, seaBand.seaFillAlpha). */
+export const SEA_FILL_MAX_ZOOM = 3
 /** Screen pick radius in px (A3 2%-viewport analogue); world radius = PICK_RADIUS_PX · 2^-zoom. */
 export const PICK_RADIUS_PX = 12
 /** Max drawn world instances at any zoom (vitest vs census once streaming lands, T-090.5.3). */
@@ -34,7 +37,8 @@ export const INSTANCE_BUDGET = 150_000
 /** Road classes (map-object-roads schema) — gates per the contract's road class table. */
 export type RoadClass = 'highway_paved' | 'road_paved' | 'road_dirt' | 'track' | 'path' | 'runway'
 
-/** Every world render class the gate table covers (contract N2/N3 rows). */
+/** Every world render class the gate table covers (contract N2/N3 rows). `sea` is a MAX gate
+ *  (like forestFill); `contour` draws across the whole band (min −6). */
 export type WorldRenderClass =
   | 'tree'
   | 'vegetation'
@@ -44,10 +48,12 @@ export type WorldRenderClass =
   | 'buildingBadge'
   | 'forestFill'
   | 'forestOutline'
+  | 'sea'
+  | 'contour'
   | RoadClass
 
-/** Min-deckZoom gate per class. `forestFill` is the one MAX gate and lives outside this map. */
-const MIN_ZOOM_GATES: Record<Exclude<WorldRenderClass, 'forestFill'>, number> = {
+/** Min-deckZoom gate per class. `forestFill`/`sea` are the MAX gates and live outside this map. */
+const MIN_ZOOM_GATES: Record<Exclude<WorldRenderClass, 'forestFill' | 'sea'>, number> = {
   tree: TREE_GLYPH_MIN_ZOOM,
   vegetation: VEGETATION_MIN_ZOOM,
   prop: PROP_MIN_ZOOM,
@@ -55,6 +61,7 @@ const MIN_ZOOM_GATES: Record<Exclude<WorldRenderClass, 'forestFill'>, number> = 
   building: BUILDING_FOOTPRINT_MIN_ZOOM,
   buildingBadge: BUILDING_BADGE_MIN_ZOOM,
   forestOutline: FOREST_OUTLINE_MIN_ZOOM,
+  contour: -6,
   highway_paved: -6,
   road_paved: -6,
   road_dirt: -2,
@@ -67,7 +74,24 @@ const MIN_ZOOM_GATES: Record<Exclude<WorldRenderClass, 'forestFill'>, number> = 
  *  importance overrides go through visibleWithImportance. */
 export function classVisible(cls: WorldRenderClass, deckZoom: number): boolean {
   if (cls === 'forestFill') return deckZoom <= FOREST_FILL_MAX_ZOOM
+  if (cls === 'sea') return deckZoom <= SEA_FILL_MAX_ZOOM
   return deckZoom >= MIN_ZOOM_GATES[cls]
+}
+
+/**
+ * Contour interval (m) for a deckZoom, per the render contract §N3 ladder. Bands step to the
+ * FINER interval at each edge (edge belongs to the finer band).
+ *
+ * NOTE — divergence: the T-090.5.4 ticket text reads `20 m @ 0…+3`, but §N3 (and the plan §5
+ * master band table) read `20 m @ 0…+1, 10 m @ +1…+3`. §N3 is the cited authority and wins;
+ * this implements N3. The ticket's vitest pin (−2 → 20 m) holds either way. Flagged for Cursor
+ * doc sync to reconcile the ticket prose.
+ */
+export function contourIntervalForZoom(deckZoom: number): number {
+  if (deckZoom < -4) return 100
+  if (deckZoom < -2.5) return 50
+  if (deckZoom < 1) return 20
+  return 10
 }
 
 /** Per-prefab `render.importanceZoom` override (contract N2): an instance is visible when

@@ -487,3 +487,44 @@ describe('resolve + unload', () => {
     expect(await core.pickNearest([1200.25, 650.5], 50)).toBeNull()
   })
 })
+
+describe('DEM vector grid (T-090.5.4 — sea band + contours, manifest-orthogonal)', () => {
+  // A 3×3 grid: ocean band on the left/top, land ridge on the right — enough to produce both
+  // a sea fill and a positive contour, on a core that never loaded an objects manifest (R11).
+  const demGrid = {
+    data: new Float32Array([
+      -20, 40, 100,
+      -20, 40, 100,
+      -20, 40, 100,
+    ]),
+    cols: 3,
+    rows: 3,
+    cellX: 100,
+    cellY: 100,
+    originX: 0,
+    originY: 0,
+    maxElevM: 100,
+  }
+
+  it('builds sea band + contours from a pushed grid with no manifest loaded', () => {
+    const core = createWorldObjectsCore({ fetchBytes: async () => null })
+    expect(core.getStatus().ready).toBe(false) // no objects export
+    core.setDemGrid({ ...demGrid, data: demGrid.data.slice() })
+    const sea = core.buildSeaBand()
+    expect(sea && sea.polygonCount).toBeGreaterThan(0)
+    const contours = core.buildContours(20)
+    expect(contours?.intervalM).toBe(20)
+    expect(contours && contours.segments.length).toBeGreaterThan(0)
+  })
+
+  it('returns null before a grid is pushed and after unload clears it', async () => {
+    const core = createWorldObjectsCore({ fetchBytes: async () => null })
+    expect(core.buildSeaBand()).toBeNull()
+    expect(core.buildContours(20)).toBeNull()
+    core.setDemGrid({ ...demGrid, data: demGrid.data.slice() })
+    expect(core.buildSeaBand()).not.toBeNull()
+    await core.unload()
+    expect(core.buildSeaBand()).toBeNull()
+    expect(core.buildContours(20)).toBeNull()
+  })
+})

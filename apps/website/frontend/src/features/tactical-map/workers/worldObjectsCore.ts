@@ -25,9 +25,12 @@ import {
 } from '../worldmap/chunkMath'
 import { INSTANCE_BUDGET, classVisible, type WorldRenderClass } from '../worldmap/lodGates'
 import { DENSITY_ISO, decodeTBDD, forestMassFromCorners } from '../worldmap/forestMass'
+import { type DemVectorGrid, reduceGrid2x } from '../worldmap/demGrid'
+import { buildSeaBandGeometry, type SeaBandGeometry } from '../worldmap/seaBand'
+import { contourGridReductions, contourLevels, contourSegments } from '../worldmap/contours'
 import { createWorldSpatialIndex } from '../state/worldSpatialIndex'
 
-export type { Bbox }
+export type { Bbox, DemVectorGrid, SeaBandGeometry }
 
 /** Chunk-instance render classes (kind/class → lodGates class). Codes index this array —
  *  the wire form of `VisibleSet.classes` (Uint8Array). Road/forest classes are not instance
@@ -154,6 +157,13 @@ export interface ForestMassResult {
   emptyIds: string[]
 }
 
+/** Contour geometry for one interval (T-090.5.4). segments = interleaved [x0,y0,x1,y1] per
+ *  iso segment; intervalM echoes the request so the store matches the async reply. */
+export interface ContourResult {
+  intervalM: number
+  segments: Float32Array
+}
+
 /** visibleInstances result — flat arrays across chunks, budget-capped (transferables). */
 export interface VisibleSet {
   count: number
@@ -194,6 +204,9 @@ export interface WorldObjectsCoreApi {
   loadManifest(terrainId: string): Promise<WorldManifestLite | null>
   loadChunksInBbox(bbox: Bbox, marginCells: number, opts: LoadChunksOpts): Promise<ChunkLoadResult>
   loadForestMass(ids: string[], iso?: number): Promise<ForestMassResult>
+  setDemGrid(grid: DemVectorGrid): void
+  buildSeaBand(): SeaBandGeometry | null
+  buildContours(intervalM: number): ContourResult | null
   visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet>
   pickNearest(worldXY: [number, number], radiusM: number, deckZoom?: number): Promise<string | null>
   pickRect(bbox: Bbox, deckZoom?: number): Promise<string[]>
@@ -362,6 +375,12 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
   let densityPath: string | null = null
   let lastRequested = new Set<string>()
   let useTick = 0
+  // DEM vector grid (T-090.5.4): the downsampled meters grid the sea-band + contour geometry
+  // marches over. Pushed once per terrain by the main thread (demVectorStore); fully orthogonal
+  // to the objects manifest — sea/contours work on DEM-only terrains where loadManifest returns
+  // null. demPyramid caches 2×-reduced grids by reduction count (0 = base) for coarse intervals.
+  let demBaseGrid: DemVectorGrid | null = null
+  const demPyramid = new Map<number, DemVectorGrid>()
 
   async function fetchJson(url: string): Promise<unknown | null> {
     const bytes = await deps.fetchBytes(url)
@@ -382,6 +401,21 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
     densityInflight.clear()
     densityPath = null
     lastRequested = new Set()
+    demBaseGrid = null
+    demPyramid.clear()
+  }
+
+  /** Base grid reduced `n` times (memoized). n=0 is the pushed grid. */
+  function reducedGrid(n: number): DemVectorGrid | null {
+    if (!demBaseGrid) return null
+    if (n <= 0) return demBaseGrid
+    const cached = demPyramid.get(n)
+    if (cached) return cached
+    const prev = reducedGrid(n - 1)
+    if (!prev) return null
+    const g = reduceGrid2x(prev)
+    demPyramid.set(n, g)
+    return g
   }
 
   async function loadManifest(terrainId: string): Promise<WorldManifestLite | null> {
@@ -687,6 +721,30 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
       results.sort((a, b) => (a.cy - b.cy) || (a.cx - b.cx))
       emptyIds.sort()
       return { chunks: results, emptyIds }
+    },
+
+    /** Store the downsampled DEM grid the sea-band/contour geometry marches over (T-090.5.4).
+     *  Replaces any prior grid + drops the reduction pyramid. The buffer arrives transferred
+     *  from the main thread (a move — the main store never retains it). */
+    setDemGrid(grid: DemVectorGrid): void {
+      demBaseGrid = grid
+      demPyramid.clear()
+    },
+
+    /** Sea-band fill geometry over the base grid, or null when no grid is loaded (the worker
+     *  was restarted on mission unmount — the store re-pushes and retries). Fresh arrays. */
+    buildSeaBand(): SeaBandGeometry | null {
+      if (!demBaseGrid) return null
+      return buildSeaBandGeometry(demBaseGrid)
+    },
+
+    /** Contour segments for an interval (coarse intervals march a reduced grid — plan R8), or
+     *  null when no grid is loaded. Fresh arrays — safe for the worker shell to transfer. */
+    buildContours(intervalM: number): ContourResult | null {
+      const grid = reducedGrid(contourGridReductions(intervalM))
+      if (!grid) return null
+      const levels = contourLevels(intervalM, grid.maxElevM)
+      return { intervalM, segments: contourSegments(grid, levels) }
     },
 
     async visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet> {

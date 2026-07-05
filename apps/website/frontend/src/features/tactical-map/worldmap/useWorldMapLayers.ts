@@ -19,7 +19,7 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { Layer } from '@deck.gl/core'
 import { WORLDMAP_ENABLED } from './config'
-import { classVisible } from './lodGates'
+import { classVisible, contourIntervalForZoom } from './lodGates'
 import { buildRoadLayers, visibleRoadClasses, type RoadClass, type RoadSegment } from './roadLayer'
 import { buildBuildingLayer, buildBuildingBadgeLayer } from './buildingLayer'
 import { loadWorldRoads } from './worldData'
@@ -31,8 +31,19 @@ import {
   setForestViewport,
   subscribeForestStream,
 } from './forestMassStore'
+import {
+  EMPTY_CONTOURS,
+  ensureDemVectors,
+  getDemVectors,
+  setContourInterval,
+  subscribeDemVectors,
+  type DemVectorSnapshot,
+} from './demVectorStore'
 import { buildForestLayers } from './forestMassLayer'
+import { buildSeaBandLayer } from './seaBandLayer'
+import { buildContourLayer } from './contourLayer'
 import { forestFillAlpha } from './forestMass'
+import { EMPTY_SEA_BAND, seaFillAlpha } from './seaBand'
 import {
   buildLandCoverLayer,
   loadLandCoverRegions,
@@ -44,6 +55,13 @@ import { useClassToggles } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
 import type { Bbox } from './chunkMath'
 
+/** Split return: `sea` layers mount ABOVE the satellite basemap but BELOW dem-hillshade;
+ *  `world` layers mount above hillshade (TacticalMap splices the two groups). */
+export interface WorldMapLayers {
+  sea: Layer[]
+  world: Layer[]
+}
+
 export interface UseWorldMapLayersOpts {
   terrain: TerrainDef
   deckZoom: number
@@ -52,17 +70,21 @@ export interface UseWorldMapLayersOpts {
 }
 
 const EMPTY_BUILDINGS: BuildingInstance[] = []
+const EMPTY_DEM_VECTORS: DemVectorSnapshot = { seaBand: EMPTY_SEA_BAND, contours: EMPTY_CONTOURS }
 const getEmptyBuildings = () => EMPTY_BUILDINGS
 const getEmptyForest = () => EMPTY_FOREST_COMPOSITE
+const getEmptyDemVectors = () => EMPTY_DEM_VECTORS
 const noop = () => undefined
 const noSubscribe = () => noop
 
 // Store bindings resolve once at module load — the flag is build-time constant, so the
-// disabled path never subscribes to (or snapshots) either store.
+// disabled path never subscribes to (or snapshots) any store.
 const subscribeBuildings = WORLDMAP_ENABLED ? subscribeWorldStream : noSubscribe
 const snapshotBuildings = WORLDMAP_ENABLED ? getWorldBuildings : getEmptyBuildings
 const subscribeForest = WORLDMAP_ENABLED ? subscribeForestStream : noSubscribe
 const snapshotForest = WORLDMAP_ENABLED ? getForestMass : getEmptyForest
+const subscribeDemVec = WORLDMAP_ENABLED ? subscribeDemVectors : noSubscribe
+const snapshotDemVec = WORLDMAP_ENABLED ? getDemVectors : getEmptyDemVectors
 
 /** Derived LOD gate state — stable within a zoom band (the memo keys on these, never on
  *  raw zoom, so continuous pan/zoom rebuilds layers only at band crossings). */
@@ -73,6 +95,10 @@ interface WorldGateState {
   forestFillVisible: boolean
   forestOutlineVisible: boolean
   forestAlpha: number
+  seaVisible: boolean
+  seaAlpha: number
+  contourVisible: boolean
+  contourIntervalM: number
 }
 
 const GATES_DISABLED: WorldGateState = {
@@ -82,6 +108,10 @@ const GATES_DISABLED: WorldGateState = {
   forestFillVisible: false,
   forestOutlineVisible: false,
   forestAlpha: 0,
+  seaVisible: false,
+  seaAlpha: 0,
+  contourVisible: false,
+  contourIntervalM: 0,
 }
 
 function deriveWorldGates(deckZoom: number): WorldGateState {
@@ -93,6 +123,10 @@ function deriveWorldGates(deckZoom: number): WorldGateState {
     forestFillVisible: classVisible('forestFill', deckZoom),
     forestOutlineVisible: classVisible('forestOutline', deckZoom),
     forestAlpha: forestFillAlpha(deckZoom),
+    seaVisible: classVisible('sea', deckZoom),
+    seaAlpha: seaFillAlpha(deckZoom),
+    contourVisible: classVisible('contour', deckZoom),
+    contourIntervalM: contourIntervalForZoom(deckZoom),
   }
 }
 
@@ -110,18 +144,37 @@ interface AssembleOpts {
   badgesVisible: boolean
   forestFillVisible: boolean
   forestOutlineVisible: boolean
+  demVectors: DemVectorSnapshot
+  seaVisible: boolean
+  seaAlpha: number
+  contourVisible: boolean
 }
 
-/** Ordered slot assembly (t090_10 stack): 4 land-cover → 6 roads → 7 buildings/badges →
+/** Ordered slot assembly (t090_10 stack). `sea` (slot 2) is split out for TacticalMap to mount
+ *  below hillshade; `world` runs 4 land-cover → 5 contours → 6 roads → 7 buildings/badges →
  *  8 forest fill + outline. Pure — the hook memo is a single call. */
-function assembleWorldLayers(o: AssembleOpts): Layer[] {
-  const layers: Layer[] = []
+function assembleWorldLayers(o: AssembleOpts): WorldMapLayers {
+  const sea: Layer[] = []
+  if (o.toggles.sea) {
+    const seaLayer = buildSeaBandLayer({
+      geometry: o.demVectors.seaBand,
+      visible: o.seaVisible,
+      fillAlpha: o.seaAlpha,
+    })
+    if (seaLayer) sea.push(seaLayer)
+  }
+
+  const world: Layer[] = []
   if (o.toggles.forest && o.regions) {
     const landcover = buildLandCoverLayer({ regions: o.regions, visible: o.forestFillVisible })
-    if (landcover) layers.push(landcover)
+    if (landcover) world.push(landcover)
+  }
+  if (o.toggles.contours) {
+    const contour = buildContourLayer({ contours: o.demVectors.contours, visible: o.contourVisible })
+    if (contour) world.push(contour)
   }
   if (o.toggles.roads && o.roads && o.roadClassKey) {
-    layers.push(
+    world.push(
       ...buildRoadLayers({
         segments: o.roads,
         visibleClasses: o.roadClassKey.split(',') as RoadClass[],
@@ -130,12 +183,12 @@ function assembleWorldLayers(o: AssembleOpts): Layer[] {
   }
   if (o.toggles.buildings) {
     const buildingLayer = buildBuildingLayer({ buildings: o.buildings, visible: o.buildingsVisible })
-    if (buildingLayer) layers.push(buildingLayer)
+    if (buildingLayer) world.push(buildingLayer)
     const badges = buildBuildingBadgeLayer({ buildings: o.buildings, atlas: o.atlas, visible: o.badgesVisible })
-    if (badges) layers.push(badges)
+    if (badges) world.push(badges)
   }
   if (o.toggles.forest) {
-    layers.push(
+    world.push(
       ...buildForestLayers({
         mass: o.forestMass,
         fillAlpha: o.forestAlpha,
@@ -144,10 +197,10 @@ function assembleWorldLayers(o: AssembleOpts): Layer[] {
       }),
     )
   }
-  return layers
+  return { sea, world }
 }
 
-export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMapLayersOpts): Layer[] {
+export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMapLayersOpts): WorldMapLayers {
   const toggles = useClassToggles()
   // Roads/regions are tagged with their terrain so a terrain switch derives back to null
   // until the new load resolves (no synchronous reset-setState in the effect).
@@ -184,10 +237,11 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     }
   }, [terrain])
 
-  // Streamed buildings/forest: each composite reference only changes when its store commits
-  // a change, so they double as the useSyncExternalStore snapshots.
+  // Streamed buildings/forest + DEM-vector (sea/contour) composites: each reference only
+  // changes when its store commits, so they double as the useSyncExternalStore snapshots.
   const buildings = useSyncExternalStore(subscribeBuildings, snapshotBuildings, snapshotBuildings)
   const forestMass = useSyncExternalStore(subscribeForest, snapshotForest, snapshotForest)
+  const demVectors = useSyncExternalStore(subscribeDemVec, snapshotDemVec, snapshotDemVec)
 
   // Viewport → streaming. Runs on every camera commit; both stores early-exit when the
   // preloaded chunk set is unchanged, so per-frame cost is chunk math only. Forest density
@@ -198,9 +252,6 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     if (toggles.forest) setForestViewport(viewBounds)
   }, [viewBounds, deckZoom, toggles.forest])
 
-  const roads = loadedRoads?.terrainId === terrain.id ? loadedRoads.roads : null
-  const regions = loadedRegions?.terrainId === terrain.id ? loadedRegions.regions : null
-
   const {
     roadClassKey,
     buildingsVisible,
@@ -208,10 +259,32 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     forestFillVisible,
     forestOutlineVisible,
     forestAlpha,
+    seaVisible,
+    seaAlpha,
+    contourVisible,
+    contourIntervalM,
   } = deriveWorldGates(deckZoom)
 
+  // DEM-vector geometry (sea + contours) — kicked once per terrain when either toggle is on
+  // (idempotent; the store waits on the DEM and produces whole-island static geometry, so
+  // nothing here is viewport-driven). Re-runs if a toggle flips on later.
+  useEffect(() => {
+    if (!WORLDMAP_ENABLED) return
+    if (toggles.sea || toggles.contours) ensureDemVectors(terrain)
+  }, [terrain, toggles.sea, toggles.contours])
+
+  // Contour interval follows the zoom band (not raw zoom): the store caches per interval and
+  // keeps the previous composite until the new one commits, so a band crossing never blanks.
+  useEffect(() => {
+    if (!WORLDMAP_ENABLED || !toggles.contours) return
+    setContourInterval(contourIntervalM)
+  }, [contourIntervalM, toggles.contours])
+
+  const roads = loadedRoads?.terrainId === terrain.id ? loadedRoads.roads : null
+  const regions = loadedRegions?.terrainId === terrain.id ? loadedRegions.regions : null
+
   return useMemo(() => {
-    if (!WORLDMAP_ENABLED) return []
+    if (!WORLDMAP_ENABLED) return { sea: [], world: [] }
     return assembleWorldLayers({
       toggles,
       regions,
@@ -225,6 +298,10 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
       badgesVisible,
       forestFillVisible,
       forestOutlineVisible,
+      demVectors,
+      seaVisible,
+      seaAlpha,
+      contourVisible,
     })
   }, [
     roads,
@@ -239,5 +316,9 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     forestFillVisible,
     forestOutlineVisible,
     forestAlpha,
+    demVectors,
+    seaVisible,
+    seaAlpha,
+    contourVisible,
   ])
 }

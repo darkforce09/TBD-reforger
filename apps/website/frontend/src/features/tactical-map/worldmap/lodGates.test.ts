@@ -4,7 +4,12 @@
 // forests as polygons, trees hidden.
 import { describe, it, expect } from 'vitest'
 import * as gates from './lodGates'
-import { classVisible, instanceBudgetCheck, visibleWithImportance } from './lodGates'
+import {
+  classVisible,
+  contourIntervalForZoom,
+  instanceBudgetCheck,
+  visibleWithImportance,
+} from './lodGates'
 
 describe('lodGates N2 constants (LOD4)', () => {
   it('exports the v2 contract values verbatim', () => {
@@ -69,6 +74,35 @@ describe('classVisible bands (N3)', () => {
     expect(classVisible('forestFill', 1)).toBe(true)
     expect(classVisible('forestFill', 1.5)).toBe(false)
     expect(classVisible('forestFill', 6)).toBe(false)
+  })
+
+  it('sea is a MAX gate (T-090.5.4): on through +3, off past it; visible at default −2', () => {
+    expect(gates.SEA_FILL_MAX_ZOOM).toBe(3)
+    expect(classVisible('sea', -2)).toBe(true)
+    expect(classVisible('sea', -6)).toBe(true)
+    expect(classVisible('sea', 3)).toBe(true)
+    expect(classVisible('sea', 4)).toBe(false)
+  })
+
+  it('contours draw across the whole band (min −6, T-090.5.4)', () => {
+    expect(classVisible('contour', -6)).toBe(true)
+    expect(classVisible('contour', -2)).toBe(true)
+    expect(classVisible('contour', 6)).toBe(true)
+  })
+})
+
+describe('contourIntervalForZoom ladder (N3, T-090.5.4)', () => {
+  it('steps 100 → 50 → 20 → 10 m, edges to the finer band', () => {
+    expect(contourIntervalForZoom(-6)).toBe(100)
+    expect(contourIntervalForZoom(-5)).toBe(100)
+    expect(contourIntervalForZoom(-4)).toBe(50) // edge to finer
+    expect(contourIntervalForZoom(-3)).toBe(50)
+    expect(contourIntervalForZoom(-2.5)).toBe(20) // edge to finer
+    expect(contourIntervalForZoom(-2)).toBe(20) // ticket vitest pin
+    expect(contourIntervalForZoom(0)).toBe(20)
+    expect(contourIntervalForZoom(1)).toBe(10) // edge to finer
+    expect(contourIntervalForZoom(3)).toBe(10)
+    expect(contourIntervalForZoom(6)).toBe(10)
   })
 })
 

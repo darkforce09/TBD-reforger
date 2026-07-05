@@ -129,7 +129,8 @@ function TacticalMapInner({
   // streaming; flag-gated, [] when VITE_WORLDMAP_ENABLED is off). Zoom feeds the LOD class
   // gates and viewBounds drives chunk hydration — the hook memoizes on derived band state +
   // the chunk-store revision, so pan/zoom inside a chunk set does not rebuild layers.
-  const worldMapLayers = useWorldMapLayers({
+  // sea band mounts below hillshade (slot 2, above the satellite field); world layers above it.
+  const { sea: seaLayers, world: worldMapLayers } = useWorldMapLayers({
     terrain,
     deckZoom: viewState.zoom,
     viewBounds: basemapViewBounds,
@@ -365,10 +366,12 @@ function TacticalMapInner({
           // memoized layer leaves it finalized/blank.
           layers={[
             ...basemapLayers,
+            // Sea band (slot 2, T-090.5.4): above the satellite field, below hillshade so relief
+            // reads over the water tint (A3 DrawSea order).
+            ...seaLayers,
             ...(hillshade ? [hillshade] : []),
-            // Map Engine v2 insertion point (plan §4.2 slots 2, 4–9): sea → land-cover →
-            // contours → roads → buildings → forest → trees/props mount here, between the
-            // raster field/hillshade and the grid. Empty until T-090.5.2+.
+            // Map Engine v2 insertion point (plan §4.2 slots 4–9): land-cover → contours → roads
+            // → buildings → forest → trees/props mount here, between hillshade and the grid.
             ...worldMapLayers,
             baseMap,
             ...clusterLayers,
