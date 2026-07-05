@@ -1,0 +1,338 @@
+{
+  "description": "S14 Path B derivation fixture (F6 as a schema gate) — deriveForestRegions(trees) must reproduce expected exactly: ring-with-hole component, a mixed-species component, and a below-minComponentCells blob left unassigned.",
+  "worldSizeM": 1024,
+  "terrainId": "fixture",
+  "trees": [
+    {
+      "x": 72,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 72.01,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 72.02,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 104,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 104.01,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 104.02,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 136,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 136.01,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 136.02,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 72,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 72.01,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 72.02,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 136,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 136.01,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 136.02,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 72,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 72.01,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 72.02,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 104,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 104.01,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 104.02,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 136,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 136.01,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 136.02,
+      "y": 136,
+      "class": "conifer"
+    },
+    {
+      "x": 104,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 328,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 328.01,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 328,
+      "y": 104,
+      "class": "deciduous"
+    },
+    {
+      "x": 328.01,
+      "y": 104,
+      "class": "deciduous"
+    },
+    {
+      "x": 360,
+      "y": 72,
+      "class": "deciduous"
+    },
+    {
+      "x": 360.01,
+      "y": 72,
+      "class": "deciduous"
+    },
+    {
+      "x": 360,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 360.01,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 392,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 392.01,
+      "y": 72,
+      "class": "conifer"
+    },
+    {
+      "x": 392,
+      "y": 104,
+      "class": "deciduous"
+    },
+    {
+      "x": 392.01,
+      "y": 104,
+      "class": "deciduous"
+    },
+    {
+      "x": 424,
+      "y": 72,
+      "class": "deciduous"
+    },
+    {
+      "x": 424.01,
+      "y": 72,
+      "class": "deciduous"
+    },
+    {
+      "x": 424,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 424.01,
+      "y": 104,
+      "class": "conifer"
+    },
+    {
+      "x": 648,
+      "y": 648,
+      "class": "deciduous"
+    },
+    {
+      "x": 648.01,
+      "y": 648,
+      "class": "deciduous"
+    },
+    {
+      "x": 648.02,
+      "y": 648,
+      "class": "deciduous"
+    },
+    {
+      "x": 648.03,
+      "y": 648,
+      "class": "deciduous"
+    },
+    {
+      "x": 648.04,
+      "y": 648,
+      "class": "deciduous"
+    }
+  ],
+  "expected": {
+    "regions": [
+      {
+        "id": "forest-fixture-001",
+        "kind": "forest",
+        "polygon": [
+          [
+            [
+              64,
+              64
+            ],
+            [
+              160,
+              64
+            ],
+            [
+              160,
+              160
+            ],
+            [
+              64,
+              160
+            ],
+            [
+              64,
+              64
+            ]
+          ],
+          [
+            [
+              96,
+              96
+            ],
+            [
+              96,
+              128
+            ],
+            [
+              128,
+              128
+            ],
+            [
+              128,
+              96
+            ],
+            [
+              96,
+              96
+            ]
+          ]
+        ],
+        "treeCount": 24,
+        "dominantSpeciesClass": "conifer",
+        "densityPerHa": 29.2969,
+        "areaHa": 0.8192,
+        "coverType": "soft",
+        "source": "derived-hull"
+      },
+      {
+        "id": "forest-fixture-002",
+        "kind": "forest",
+        "polygon": [
+          [
+            [
+              320,
+              64
+            ],
+            [
+              448,
+              64
+            ],
+            [
+              448,
+              128
+            ],
+            [
+              320,
+              128
+            ],
+            [
+              320,
+              64
+            ]
+          ]
+        ],
+        "treeCount": 16,
+        "dominantSpeciesClass": "mixed",
+        "densityPerHa": 19.5313,
+        "areaHa": 0.8192,
+        "coverType": "soft",
+        "source": "derived-hull"
+      }
+    ],
+    "unassignedTrees": 6,
+    "params": {
+      "cellM": 32,
+      "densityThreshold": 2,
+      "minComponentCells": 8,
+      "dominantShare": 0.66
+    }
+  }
+}

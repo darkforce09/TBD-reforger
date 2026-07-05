@@ -1,0 +1,65 @@
+{
+  "description": "S13 synthetic TBDD fixture — encode(fixture) must equal density-fixture.bin byte-for-byte; decode(bin) must match expectedCorners. Corner (i,j) of chunk (cx,cy) counts instances in [X-16,X+16) x [Y-16,Y+16), X = cx*512+i*32.",
+  "worldSizeM": 1024,
+  "chunk": {
+    "cx": 0,
+    "cy": 0
+  },
+  "treePositions": [
+    {
+      "x": 100,
+      "y": 100
+    },
+    {
+      "x": 100.5,
+      "y": 99.9
+    },
+    {
+      "x": 110,
+      "y": 105
+    },
+    {
+      "x": 511.99,
+      "y": 0
+    },
+    {
+      "x": 512,
+      "y": 0
+    }
+  ],
+  "rockPositions": [
+    {
+      "x": 48,
+      "y": 48
+    },
+    {
+      "x": 48,
+      "y": 48
+    },
+    {
+      "x": 700,
+      "y": 700
+    }
+  ],
+  "expectedCorners": [
+    {
+      "i": 16,
+      "j": 0,
+      "tree": 2,
+      "rock": 0
+    },
+    {
+      "i": 2,
+      "j": 2,
+      "tree": 0,
+      "rock": 2
+    },
+    {
+      "i": 3,
+      "j": 3,
+      "tree": 3,
+      "rock": 0
+    }
+  ],
+  "expectedFileBytes": 1172
+}

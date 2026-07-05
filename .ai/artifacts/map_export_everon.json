@@ -195,8 +195,8 @@
   ],
   "fullExport": {
     "objects": {
-      "slice": "T-090.3.1",
-      "phase": "P1_buildings",
+      "slice": "T-090.3.2",
+      "phase": "P2_trees",
       "stagedAt": "2026-07-04T23:43:38.437Z",
       "rawLineCount": 1409998,
       "rawUniqueResourceNames": 2030,
@@ -247,11 +247,11 @@
       },
       "outOfBounds": 0,
       "catalog": {
-        "prefabCount": 310,
-        "instanceCount": 5606,
-        "chunkCount": 219
+        "prefabCount": 361,
+        "instanceCount": 507467,
+        "chunkCount": 270
       },
-      "unclassifiedRawTypes": 1523
+      "unclassifiedRawTypes": 1411
     },
     "roads": {
       "slice": "T-090.3.1",
@@ -269,6 +269,33 @@
         "road_dirt": 394
       },
       "points": 170112
+    },
+    "phases": {
+      "P2_trees": {
+        "slice": "T-090.3.2",
+        "stagedAt": "2026-07-04T23:43:38.437Z",
+        "density": {
+          "cellM": 32,
+          "files": 625,
+          "bytes": 732500,
+          "treeCornerSum": 501861,
+          "rockCornerSum": 307157,
+          "rockRawRows": 307157,
+          "rockOutOfBounds": 0
+        },
+        "forestRegions": {
+          "cellM": 32,
+          "densityThreshold": 2,
+          "minComponentCells": 8,
+          "dominantShare": 0.66,
+          "regionCount": 36,
+          "treeCount": 496693,
+          "unassignedTrees": 5168,
+          "denseCellCount": 30715,
+          "componentCount": 251,
+          "keptComponentCount": 36
+        }
+      }
     }
   }
 }

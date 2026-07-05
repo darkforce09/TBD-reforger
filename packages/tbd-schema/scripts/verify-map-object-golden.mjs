@@ -1,4 +1,5 @@
-// T-090.2 semantic golden gates S2–S9 (+ T-090.3.1 S11 chunk golden, S12 anchor fixture).
+// T-090.2 semantic golden gates S2–S9 (+ T-090.3.1 S11 chunk golden, S12 anchor fixture;
+// + T-090.3.2 S13 TBDD density fixture, S14 forest-region derivation fixture).
 // AJV shape validation (S1) lives in validate.mjs and the
 // enum drift gate (S10) in verify-map-object-enums.mjs — this script owns everything AJV cannot
 // express: prefabId resolution, prefab-table dedup, and closed-enum *coverage* (>=1 golden example
@@ -10,6 +11,19 @@ import { fileURLToPath } from "node:url";
 import Ajv from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { checkAnchors, cellOf, chunkKey } from "../../../scripts/map-assets/lib/anchor-check.mjs";
+import {
+  TBDD_FILE_BYTES,
+  TBDD_VERSION,
+  DENSITY_CELL_M,
+  DENSITY_CHANNELS,
+  DENSITY_COLS,
+  DENSITY_ROWS,
+  accumulateCorners,
+  decodeTBDD,
+  encodeTBDD,
+  sliceChunkCorners,
+} from "../../../scripts/map-assets/lib/density-grid.mjs";
+import { deriveForestRegions } from "../../../scripts/map-assets/lib/forest-regions.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const readJSON = (p) => JSON.parse(readFileSync(p, "utf8"));
@@ -52,9 +66,13 @@ const roadsSample = readJSON(moPath("map-object-roads-sample.json"));
 const resolvedSample = readJSON(moPath("map-object-resolved-sample.json"));
 const chunkSample = readJSON(moPath("map-object-chunk-sample.json"));
 const anchorFixture = readJSON(moPath("phased", "P1-anchor-fixture.json"));
+const densityFixture = readJSON(moPath("density", "density-fixture.json"));
+const densityBin = readFileSync(moPath("density", "density-fixture.bin"));
+const regionFixture = readJSON(moPath("regions-derivation-fixture.json"));
 const catalogBundles = [
   { label: "map-object-catalog-everon-sample.json", data: readJSON(moPath("map-object-catalog-everon-sample.json")) },
   { label: "phased/P1-buildings.json", data: readJSON(moPath("phased", "P1-buildings.json")) },
+  { label: "phased/P2-trees.json", data: readJSON(moPath("phased", "P2-trees.json")) },
 ];
 
 // Prefab tables paired with their instance arrays (bundle isolation). The chunk sample's
@@ -283,6 +301,64 @@ const instPrefabId = (row) => (Array.isArray(row) ? (isChunkTuple(row) ? row[0] 
   gate("S12", "anchor fixture — shared checkAnchors PASS + partition consistency + exclusions", errs);
 }
 
+// S13 — T-090.3.2 TBDD density fixture: encode(fixture positions) is byte-identical to the
+// committed density-fixture.bin; decode(bin) matches expectedCorners; header contract exact.
+// Uses the SAME lib the export builder + verify-phase use — the fixture pins the format so a lib
+// change that alters bytes fails here without a terrain rebuild.
+{
+  const errs = [];
+  const { worldSizeM, chunk, treePositions, rockPositions, expectedCorners, expectedFileBytes } = densityFixture;
+  const tAcc = accumulateCorners(treePositions, worldSizeM);
+  const rAcc = accumulateCorners(rockPositions, worldSizeM);
+  const rebuilt = encodeTBDD([
+    sliceChunkCorners(tAcc.grid, tAcc.size, chunk.cx, chunk.cy),
+    sliceChunkCorners(rAcc.grid, rAcc.size, chunk.cx, chunk.cy),
+  ]);
+  if (expectedFileBytes !== TBDD_FILE_BYTES) errs.push(`fixture expectedFileBytes ${expectedFileBytes} != lib TBDD_FILE_BYTES ${TBDD_FILE_BYTES}`);
+  if (densityBin.length !== TBDD_FILE_BYTES) errs.push(`committed bin ${densityBin.length} bytes, want ${TBDD_FILE_BYTES}`);
+  if (!rebuilt.equals(densityBin)) errs.push("encode(fixture) != committed density-fixture.bin");
+  try {
+    const dec = decodeTBDD(densityBin);
+    if (dec.version !== TBDD_VERSION || dec.cellM !== DENSITY_CELL_M || dec.cols !== DENSITY_COLS || dec.rows !== DENSITY_ROWS || dec.channelCount !== DENSITY_CHANNELS.length) {
+      errs.push(`decoded header mismatch: ${JSON.stringify({ v: dec.version, cellM: dec.cellM, cols: dec.cols, rows: dec.rows, ch: dec.channelCount })}`);
+    }
+    const sparse = new Map(expectedCorners.map((e) => [`${e.i}_${e.j}`, e]));
+    for (let j = 0; j < dec.rows; j++) {
+      for (let i = 0; i < dec.cols; i++) {
+        const e = sparse.get(`${i}_${j}`);
+        const tree = dec.channels[0][j * dec.cols + i];
+        const rock = dec.channels[1][j * dec.cols + i];
+        if ((e?.tree ?? 0) !== tree || (e?.rock ?? 0) !== rock) {
+          errs.push(`corner (${i},${j}): decoded tree=${tree}/rock=${rock}, expected tree=${e?.tree ?? 0}/rock=${e?.rock ?? 0}`);
+        }
+      }
+    }
+  } catch (e) {
+    errs.push(`decode failed: ${e.message}`);
+  }
+  gate("S13", "TBDD density fixture — encode byte-identity, header contract, expected corners", errs.slice(0, 8));
+}
+
+// S14 — T-090.3.2 Path B derivation fixture (F6 as a schema gate): deriveForestRegions on the
+// fixture trees reproduces the committed expected block exactly — ring-with-hole tracing, mixed
+// dominant-species rule, and the below-minComponentCells blob staying unassigned.
+{
+  const errs = [];
+  const res = deriveForestRegions(regionFixture.trees, {
+    worldSizeM: regionFixture.worldSizeM,
+    terrainId: regionFixture.terrainId,
+  });
+  const exp = regionFixture.expected;
+  if (JSON.stringify(res.params) !== JSON.stringify(exp.params)) errs.push(`params drift: ${JSON.stringify(res.params)} != ${JSON.stringify(exp.params)}`);
+  if (res.unassignedTrees !== exp.unassignedTrees) errs.push(`unassignedTrees ${res.unassignedTrees} != expected ${exp.unassignedTrees}`);
+  if (JSON.stringify(res.regions) !== JSON.stringify(exp.regions)) errs.push("derived regions differ from expected (rings or aggregates)");
+  const sum = res.regions.reduce((s, r) => s + r.treeCount, 0) + res.unassignedTrees;
+  if (sum !== regionFixture.trees.length) errs.push(`F2 identity on fixture: ${sum} != ${regionFixture.trees.length} trees`);
+  if (!res.regions.some((r) => r.polygon.length > 1)) errs.push("fixture no longer exercises a hole ring");
+  if (!res.regions.some((r) => r.dominantSpeciesClass === "mixed")) errs.push("fixture no longer exercises the mixed dominant rule");
+  gate("S14", "forest-region derivation fixture — deterministic rings + aggregates + F2 identity", errs);
+}
+
 let failures = 0;
 for (const g of gates) {
   if (g.errs.length === 0) {
@@ -299,5 +375,5 @@ if (failures) {
   process.exit(1);
 }
 console.log(
-  `\nverify-map-object-golden: OK (S2–S9 + S11/S12; ${prefabsSample.length} prefabs, ${instancesSample.length} instances, ${chunkSample.chunk.instances.length} chunk rows, ${roadsSample.roadSegments.length} segments, ${regionsSample.length} regions, ${resolvedSample.length} resolved; zero missing enum examples)`,
+  `\nverify-map-object-golden: OK (S2–S9 + S11–S14; ${prefabsSample.length} prefabs, ${instancesSample.length} instances, ${chunkSample.chunk.instances.length} chunk rows, ${roadsSample.roadSegments.length} segments, ${regionsSample.length} regions, ${resolvedSample.length} resolved; zero missing enum examples)`,
 );

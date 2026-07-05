@@ -18,6 +18,17 @@ import { gunzipSync } from "node:zlib";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cellOf, chunkKey } from "./lib/anchor-check.mjs";
+import {
+  DENSITY_CELL_M,
+  DENSITY_CHANNELS,
+  DENSITY_COLS,
+  DENSITY_ROWS,
+  TBDD_FILE_BYTES,
+  TBDD_VERSION,
+  accumulateCorners,
+  decodeTBDD,
+  sliceChunkCorners,
+} from "./lib/density-grid.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const here = dirname(fileURLToPath(import.meta.url));
@@ -47,6 +58,7 @@ const byId = (n) => ajv.getSchema(`https://schema.tbdevent.eu/${n}/v1.json`);
 const vPrefab = byId("map-object-prefab");
 const vInstance = byId("map-object-instance");
 const vRoads = byId("map-object-roads");
+const vRegion = byId("map-object-region");
 const vRegistry = byId("terrain-registry");
 
 let failures = 0;
@@ -85,6 +97,7 @@ for (const t of registry.terrains) {
   const sidecar = readJSON(join(chunksDir, "manifest.json"));
   let rowTotal = 0;
   let chunkErrs = 0;
+  const treeRows = []; // committed tree instances — density tree-channel recompute below
   for (const c of sidecar.cells) {
     const doc = gunzipJSON(join(terrainDir, c.path));
     rowTotal += doc.instances.length;
@@ -92,6 +105,7 @@ for (const t of registry.terrains) {
     for (const row of doc.instances) {
       if (!vInstance(row)) chunkErrs++;
       else if (cellOf(row[1], sidecar.chunkSizeM, worldSizeM) !== c.cx || cellOf(row[2], sidecar.chunkSizeM, worldSizeM) !== c.cy) chunkErrs++;
+      if (prefabsDoc.prefabs[row[0]]?.kind === "tree") treeRows.push({ x: row[1], y: row[2] });
     }
   }
   chunkErrs === 0
@@ -108,6 +122,84 @@ for (const t of registry.terrains) {
   vRoads(roadsDoc) && roadsDoc.roadSegments.length > 0
     ? pass(`${t.terrainId}: roads.json.gz valid (${roadsDoc.roadSegments.length} segments)`)
     : fail(`${t.terrainId}: roads.json.gz invalid or empty`);
+
+  const inventory = readJSON(join(terrainDir, objects.typeInventoryPath));
+
+  // T-090.3.2 — density grids (committed-only: tree channel recomputes from committed chunks;
+  // the rock channel needs the gitignored staged raw, so CI checks its header/size only — the
+  // full rock byte-compare lives in `make map-verify-phase` D2).
+  if (objects.densityPath) {
+    const densityDir = join(terrainDir, objects.densityPath);
+    const gridCells = Math.round(worldSizeM / objects.chunkSizeM);
+    const onDisk = existsSync(densityDir) ? readdirSync(densityDir).filter((f) => f.endsWith(".bin")) : [];
+    let dErrs = 0;
+    if (onDisk.length !== gridCells * gridCells) {
+      dErrs++;
+      console.log(`        ${t.terrainId}: density file count ${onDisk.length} != ${gridCells * gridCells}`);
+    }
+    if (objects.densityCellM !== DENSITY_CELL_M) {
+      dErrs++;
+      console.log(`        ${t.terrainId}: manifest densityCellM ${objects.densityCellM} != ${DENSITY_CELL_M}`);
+    }
+    const treeAcc = accumulateCorners(treeRows, worldSizeM);
+    for (let cy = 0; cy < gridCells && dErrs < 8; cy++) {
+      for (let cx = 0; cx < gridCells && dErrs < 8; cx++) {
+        const p = join(densityDir, `${chunkKey(cx, cy)}.bin`);
+        if (!existsSync(p)) {
+          dErrs++;
+          continue;
+        }
+        const buf = readFileSync(p);
+        let dec;
+        try {
+          dec = decodeTBDD(buf);
+        } catch {
+          dErrs++;
+          continue;
+        }
+        if (
+          buf.length !== TBDD_FILE_BYTES ||
+          dec.version !== TBDD_VERSION ||
+          dec.cellM !== DENSITY_CELL_M ||
+          dec.cols !== DENSITY_COLS ||
+          dec.rows !== DENSITY_ROWS ||
+          dec.channelCount !== DENSITY_CHANNELS.length
+        ) {
+          dErrs++;
+          continue;
+        }
+        const expectTree = sliceChunkCorners(treeAcc.grid, treeAcc.size, cx, cy);
+        for (let k = 0; k < expectTree.length; k++) {
+          if (dec.channels[0][k] !== expectTree[k]) {
+            dErrs++;
+            console.log(`        ${t.terrainId}: density ${cx}_${cy} tree channel differs from committed chunks at corner ${k}`);
+            break;
+          }
+        }
+      }
+    }
+    dErrs === 0
+      ? pass(`${t.terrainId}: ${onDisk.length} density bins valid (header + tree channel == committed chunks)`)
+      : fail(`${t.terrainId}: ${dErrs} density error(s)`);
+  }
+
+  // T-090.3.2 — forest regions: rows schema-valid + F2 exact identity against the inventory.
+  if (objects.regionsPath) {
+    const doc = gunzipJSON(join(terrainDir, objects.regionsPath));
+    let rErrs = 0;
+    for (const r of doc.regions) if (!vRegion(r)) rErrs++;
+    const regionTreeSum = doc.regions.reduce((s, r) => s + (r.treeCount ?? 0), 0);
+    const f2 = regionTreeSum + (inventory.unassignedTrees ?? 0) === inventory.byKind.tree.instances;
+    if (!f2) {
+      rErrs++;
+      console.log(`        ${t.terrainId}: F2 ${regionTreeSum} + ${inventory.unassignedTrees} != tree instances ${inventory.byKind.tree.instances}`);
+    }
+    if ((inventory.byRegionKind?.forest?.count ?? -1) !== doc.regions.length) rErrs++;
+    if ((inventory.byRegionKind?.forest?.treeCount ?? -1) !== regionTreeSum) rErrs++;
+    rErrs === 0
+      ? pass(`${t.terrainId}: forest-regions.json.gz valid (${doc.regions.length} regions, F2 exact)`)
+      : fail(`${t.terrainId}: ${rErrs} forest-region error(s)`);
+  }
 }
 
 // Inventory gates (I1-I7 subset) — delegate to the schema package verifier (validates every terrain).
@@ -136,6 +228,8 @@ if (other) {
     "validate-export-artifacts.mjs",
     "export-terrain.sh",
     join("lib", "anchor-check.mjs"),
+    join("lib", "density-grid.mjs"),
+    join("lib", "forest-regions.mjs"),
   ];
   const offenders = [];
   for (const s of newScripts) {

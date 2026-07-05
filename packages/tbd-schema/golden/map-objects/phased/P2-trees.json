@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "terrainId": "everon",
+  "prefabs": [
+    {
+      "prefabId": 0,
+      "resourceName": "{00000000000000B1}Prefabs/Vegetation/Tree/t_picea_abies/t_picea_abies_1s.et",
+      "kind": "tree",
+      "class": "conifer",
+      "label": "t_picea_abies_1s",
+      "ai": { "summary": "Conifer tree (spruce/pine); static vegetation; soft cover to ~4 m standing.", "taxonomyPath": "vegetation/tree/conifer", "classificationSource": "rules-v1/prefab-name", "confidence": 0.9, "needsReview": false },
+      "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1.2, "y": 1.2, "z": 6 }, "heightM": 12 },
+      "gameplay": { "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 4 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false },
+      "render": { "iconKey": "tree-conifer", "lodMinZoom": 3, "baseSizePx": 24, "anchor": [0.5, 1.0], "defaultColor": "#2d5a27" }
+    },
+    {
+      "prefabId": 1,
+      "resourceName": "{00000000000000B2}Prefabs/Vegetation/Tree/t_betula_pendula/t_betula_pendula_0.et",
+      "kind": "tree",
+      "class": "deciduous",
+      "label": "t_betula_pendula_0",
+      "ai": { "summary": "Deciduous tree (birch/hornbeam/fruit/alder/willow/poplar/lime); static vegetation; soft cover.", "taxonomyPath": "vegetation/tree/deciduous", "classificationSource": "rules-v1/prefab-name", "confidence": 0.9, "needsReview": false },
+      "spatial": { "model": "obb", "pivot": "base", "halfExtentsM": { "x": 1.5, "y": 1.5, "z": 5 }, "heightM": 10 },
+      "gameplay": { "cover": { "type": "soft", "standing": true, "prone": true, "crouch": true, "heightM": 3.5 }, "movement": { "blocksInfantry": false, "blocksVehicle": false }, "lineOfSight": "partial", "destructible": true, "climbable": false, "enterable": false, "ladder": false, "door": false, "bridge": false, "runway": false },
+      "render": { "iconKey": "tree-deciduous", "lodMinZoom": 3, "baseSizePx": 24, "anchor": [0.5, 1.0], "defaultColor": "#4a7a32" }
+    }
+  ],
+  "instances": [
+    [0, 5121.5, 4803.25, 141.02, 12.5],
+    [0, 5123.0, 4801.0, 140.85, 251.75],
+    [1, 5140.75, 4820.5, 142.1, 0]
+  ]
+}

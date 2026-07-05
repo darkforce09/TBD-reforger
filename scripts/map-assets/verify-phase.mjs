@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 // T-090.3.1 — `make map-verify-phase`: mathematical phase gate (t090_phased_object_import.md).
-// Runs G1-G12 global invariants + P1-* phase gates + E6/G4/I6 determinism on the STAGED raw export
-// and the COMMITTED objects/ artifacts. No eyeball checks — every gate is a computable predicate.
+// Runs G1-G12 global invariants + P1-*/PH-P2-* phase gates + E6/G4/I6 determinism on the STAGED
+// raw export and the COMMITTED objects/ artifacts. No eyeball checks — every gate is a computable
+// predicate.
+//
+// T-090.3.2 phase-scope split: phases are CUMULATIVE (the committed catalog holds every kind up to
+// manifest.objects.importPhaseMax), so phase-scoped gates (G11, P1-*, PH-P2-*) filter committed
+// rows/prefabs down to the REQUESTED phase's kinds, while catalog-scope gates (G1-G10, G12, SIZE)
+// always run on the whole committed artifact set. E6 rebuilds at the COMMITTED importPhaseMax —
+// re-running PHASE=P1_buildings on a P2 catalog must stay green (no-regression rule).
+// New in 3.2: D1/D2 (TBDD density grids), F1/F2/F6 (forest regions), PH-P2-1..5.
 //
 // Needs: staging/export/{raw-entities.jsonl, export-meta.json, staged-meta.json} (gitignored) and a
 // prior `make map-export` run. Ajv is borrowed from packages/tbd-schema/node_modules via
@@ -9,7 +17,8 @@
 //
 // The P1-4 anchor check imports the SAME checkAnchors used on the synthetic golden
 // (verify-map-object-golden S12) but re-derives remap/partition inline via lib/anchor-check.mjs —
-// build-world-objects.mjs is deliberately NOT imported here (non-circularity).
+// build-world-objects.mjs is deliberately NOT imported here (non-circularity). The D2/F6
+// recompute imports the pure libs (density-grid, forest-regions) — those ARE the contract.
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
@@ -19,6 +28,20 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkAnchors, cellOf, chunkKey } from "./lib/anchor-check.mjs";
 import { createClassifier, streamRawEntities } from "./lib/classify-prefab.mjs";
+import {
+  DENSITY_CELL_M,
+  DENSITY_CHANNELS,
+  DENSITY_COLS,
+  DENSITY_ROWS,
+  TBDD_FILE_BYTES,
+  TBDD_VERSION,
+  accumulateCorners,
+  decodeTBDD,
+  encodeTBDD,
+  sliceChunkCorners,
+  sumGrid,
+} from "./lib/density-grid.mjs";
+import { deriveForestRegions } from "./lib/forest-regions.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
@@ -32,12 +55,13 @@ if (!terrain || !phase) {
   console.error("verify-phase: --terrain <id> --phase <Pn> required");
   process.exit(1);
 }
-const PHASE_KINDS = { P1_buildings: ["building"] };
+const PHASE_KINDS = { P1_buildings: ["building"], P2_trees: ["building", "tree"] };
 if (!PHASE_KINDS[phase]) {
   console.error(`verify-phase: phase '${phase}' not implemented (have: ${Object.keys(PHASE_KINDS).join(", ")})`);
   process.exit(1);
 }
 const phaseKinds = new Set(PHASE_KINDS[phase]);
+const densityPhase = phase === "P2_trees";
 const CHUNK_SIZE_M = 512;
 const MAX_CHUNK_AGGREGATE_BYTES = 40 * 1024 * 1024; // LFS decision forced before P2 trees
 
@@ -68,6 +92,7 @@ const vInstance = byId("map-object-instance");
 const vRoads = byId("map-object-roads");
 const vResolved = byId("map-object-resolved");
 const vInventory = byId("map-object-type-inventory");
+const vRegion = byId("map-object-region");
 
 const terrainDir = join(repoRoot, "packages", "map-assets", terrain);
 const objectsDir = join(terrainDir, "objects");
@@ -105,20 +130,27 @@ const gates = [];
 const gate = (id, label, errs) => gates.push({ id, label, errs: errs.slice(0, 8), errCount: errs.length });
 const round2 = (v) => Math.round(v * 100) / 100;
 
-// ---- stream staged raw once: G11 parity + P1-4 anchor pool --------------------------------------
+// ---- stream staged raw once: G11 parity + P1-4 anchor pool + D2 rock rows -----------------------
 const classify = createClassifier();
 let rawPhaseCount = 0; // classified phase-kind, resourceName != "", in-bounds after round (builder predicate)
-const anchorPool = [];
+const rawKindCounts = new Map(); // kind -> in-bounds classified count (phase-scoped G11 splits)
+const anchorPool = []; // P1-4 only — building anchors
+const rawRockRows = []; // D2 rock channel recompute (rocks are not committed instances before P4)
 await streamRawEntities(rawPath, (row) => {
   const rn = typeof row.resourceName === "string" ? row.resourceName : "";
   if (rn === "") return;
   const cls = classify(rn);
-  if (!phaseKinds.has(cls.kind)) return;
   const x = round2(row.x);
   const y = round2(row.z);
-  if (x < 0 || x > worldSizeM || y < 0 || y > worldSizeM) return;
+  const inBounds = x >= 0 && x <= worldSizeM && y >= 0 && y <= worldSizeM;
+  if (densityPhase && cls.kind === "rock" && inBounds) rawRockRows.push({ x, y });
+  if (!phaseKinds.has(cls.kind)) return;
+  if (!inBounds) return;
   rawPhaseCount++;
-  anchorPool.push({ resourceName: rn, x: row.x, y: row.y, z: row.z, headingDeg: row.headingDeg ?? row.pitchDeg ?? 0 });
+  rawKindCounts.set(cls.kind, (rawKindCounts.get(cls.kind) ?? 0) + 1);
+  if (phase === "P1_buildings") {
+    anchorPool.push({ resourceName: rn, x: row.x, y: row.y, z: row.z, headingDeg: row.headingDeg ?? row.pitchDeg ?? 0 });
+  }
 });
 
 // ---- load all chunk rows once --------------------------------------------------------------------
@@ -131,6 +163,17 @@ for (const f of allChunkFiles) {
 }
 let actualInstanceCount = 0;
 for (const rows of rowsByKey.values()) actualInstanceCount += rows.length;
+
+// Phase-scope views over the committed catalog (cumulative phases — see header).
+const committedKindCounts = new Map(); // kind -> committed instance count
+for (const rows of rowsByKey.values()) {
+  for (const row of rows) {
+    const k = prefabs[row[0]]?.kind;
+    committedKindCounts.set(k, (committedKindCounts.get(k) ?? 0) + 1);
+  }
+}
+let committedPhaseCount = 0;
+for (const [k, n] of committedKindCounts) if (phaseKinds.has(k)) committedPhaseCount += n;
 
 // ---- G1 schema validity ---------------------------------------------------------------------------
 {
@@ -249,27 +292,34 @@ for (const rows of rowsByKey.values()) actualInstanceCount += rows.length;
   gate("G10", "spatial positive (heightM, halfExtentsM)", g10);
 }
 
-// ---- G11 raw <-> catalog parity --------------------------------------------------------------------
+// ---- G11 raw <-> catalog parity (phase-scoped on both sides) ---------------------------------------
 {
   const errs = [];
-  if (rawPhaseCount !== actualInstanceCount) errs.push(`raw phase-filtered count ${rawPhaseCount} != catalog instances ${actualInstanceCount}`);
+  if (rawPhaseCount !== committedPhaseCount) errs.push(`raw phase-filtered count ${rawPhaseCount} != committed phase-kind instances ${committedPhaseCount}`);
   gate("G11", `raw <-> catalog count parity for ${phase} filter`, errs);
 }
 
-// ---- P1 gates ---------------------------------------------------------------------------------------
+// ---- P1 gates (phase scope = kind=building subset of the cumulative catalog) -----------------------
 if (phase === "P1_buildings") {
-  gate("P1-1", "all prefabs kind=building", prefabs.filter((p) => p.kind !== "building").map((p) => `prefab ${p.prefabId} kind=${p.kind}`));
+  const buildings = prefabs.filter((p) => p.kind === "building");
+  {
+    // catalog may only hold kinds the COMMITTED importPhaseMax allows (cumulative superset rule)
+    const allowed = new Set(PHASE_KINDS[manifest.objects?.importPhaseMax] ?? PHASE_KINDS[phase]);
+    const errs = prefabs.filter((p) => !allowed.has(p.kind)).map((p) => `prefab ${p.prefabId} kind=${p.kind} outside importPhaseMax kinds`);
+    if (buildings.length === 0) errs.push("no kind=building prefabs in catalog");
+    gate("P1-1", "building prefabs present; catalog kinds within committed importPhaseMax", errs);
+  }
 
   {
-    const hard = prefabs.filter((p) => p.gameplay.cover.type === "hard" || p.tags?.includes("ruin-open"));
-    const pct = prefabs.length ? hard.length / prefabs.length : 1;
-    gate("P1-2", "cover=hard >= 99.5% (ruin-open exceptions allowed)", pct >= 0.995 ? [] : [`only ${(pct * 100).toFixed(2)}% hard: ${prefabs.filter((p) => p.gameplay.cover.type !== "hard" && !p.tags?.includes("ruin-open")).map((p) => p.resourceName).slice(0, 5).join(", ")}`]);
+    const hard = buildings.filter((p) => p.gameplay.cover.type === "hard" || p.tags?.includes("ruin-open"));
+    const pct = buildings.length ? hard.length / buildings.length : 1;
+    gate("P1-2", "cover=hard >= 99.5% (ruin-open exceptions allowed)", pct >= 0.995 ? [] : [`only ${(pct * 100).toFixed(2)}% hard: ${buildings.filter((p) => p.gameplay.cover.type !== "hard" && !p.tags?.includes("ruin-open")).map((p) => p.resourceName).slice(0, 5).join(", ")}`]);
   }
 
   gate(
     "P1-3",
-    "footprint or OBB volume > 0 per prefab",
-    prefabs
+    "footprint or OBB volume > 0 per building prefab",
+    buildings
       .filter((p) => !((p.spatial.footprintM2 ?? 0) > 0 || ((p.spatial.halfExtentsM?.x ?? 0) * (p.spatial.halfExtentsM?.y ?? 0) * (p.spatial.halfExtentsM?.z ?? 0)) > 0))
       .map((p) => `prefab ${p.prefabId} ${p.resourceName}`),
   );
@@ -307,9 +357,143 @@ if (phase === "P1_buildings") {
     const classes = Object.keys(inventory.byBuildingClass ?? {});
     if (classes.length === 0) errs.push("byBuildingClass empty");
     const unknown = inventory.byBuildingClass?.unknown?.instances ?? 0;
-    const total = inventory.levels.totalInstances || 1;
+    const total = inventory.byKind.building.instances || 1; // building share, not cumulative total
     if (unknown / total >= 0.005) errs.push(`byBuildingClass.unknown ${unknown}/${total} >= 0.5%`);
-    gate("P1-6", "byBuildingClass populated; unknown < 0.5%", errs);
+    gate("P1-6", "byBuildingClass populated; unknown < 0.5% of building instances", errs);
+  }
+}
+
+// ---- PH-P2 gates + D (density) + F (forest regions) — T-090.3.2 ------------------------------------
+if (densityPhase) {
+  const treePrefabs = prefabs.filter((p) => p.kind === "tree");
+  const treeRows = []; // committed tree instances with class (D2 tree channel + F6 re-derivation)
+  for (const rows of rowsByKey.values()) {
+    for (const row of rows) {
+      const p = prefabs[row[0]];
+      if (p?.kind === "tree") treeRows.push({ x: row[1], y: row[2], class: p.class });
+    }
+  }
+
+  {
+    const badKinds = prefabs.filter((p) => !phaseKinds.has(p.kind)).map((p) => `prefab ${p.prefabId} kind=${p.kind}`);
+    const errs = [...badKinds];
+    if (treePrefabs.length === 0) errs.push("no kind=tree prefabs in catalog");
+    if ((committedKindCounts.get("building") ?? 0) === 0) errs.push("cumulative rule broken: 0 building instances in P2 catalog");
+    gate("PH-P2-1", "cumulative P1+P2 catalog; kinds subset {building, tree}; trees present", errs);
+  }
+
+  gate(
+    "PH-P2-2",
+    "tree prefabs cover=soft (dead exception)",
+    treePrefabs
+      .filter((p) => p.gameplay.cover.type !== "soft" && p.class !== "dead")
+      .map((p) => `prefab ${p.prefabId} ${p.resourceName} cover=${p.gameplay.cover.type}`),
+  );
+
+  {
+    const tall = treePrefabs.filter((p) => (p.spatial?.heightM ?? 0) >= 2);
+    const pct = treePrefabs.length ? tall.length / treePrefabs.length : 0;
+    gate("PH-P2-3", "heightM >= 2 for >= 95% of tree prefabs", pct >= 0.95 ? [] : [`only ${(pct * 100).toFixed(2)}% >= 2 m`]);
+  }
+
+  {
+    const rawTree = rawKindCounts.get("tree") ?? 0;
+    const committedTree = committedKindCounts.get("tree") ?? 0;
+    gate("PH-P2-4", "G11 count conservation for kind=tree only", rawTree === committedTree ? [] : [`raw tree count ${rawTree} != committed tree instances ${committedTree}`]);
+  }
+
+  // ---- density recompute (shared by PH-P2-5 / D1 / D2) ----
+  const treeAcc = accumulateCorners(treeRows, worldSizeM);
+  const rockAcc = accumulateCorners(rawRockRows, worldSizeM);
+
+  {
+    const sum = sumGrid(treeAcc.grid);
+    const committedTree = committedKindCounts.get("tree") ?? 0;
+    gate("PH-P2-5", "density insert identity (sum of global tree corners = tree instances)", sum === committedTree ? [] : [`corner sum ${sum} != tree instances ${committedTree}`]);
+  }
+
+  {
+    // D1 — exact file inventory + header contract; D2 — byte-identical recompute
+    const d1 = [];
+    const d2 = [];
+    const densityDir = join(objectsDir, "density");
+    const gridCells = Math.round(worldSizeM / CHUNK_SIZE_M);
+    const expected = new Set();
+    for (let cy = 0; cy < gridCells; cy++) for (let cx = 0; cx < gridCells; cx++) expected.add(chunkKey(cx, cy));
+    const onDisk = existsSync(densityDir) ? readdirSync(densityDir).filter((f) => f.endsWith(".bin")) : [];
+    for (const f of onDisk) {
+      if (!expected.has(f.replace(".bin", ""))) d1.push(`unexpected density file ${f}`);
+    }
+    for (const key of expected) {
+      const p = join(densityDir, `${key}.bin`);
+      if (!existsSync(p)) {
+        d1.push(`missing density file ${key}.bin`);
+        continue;
+      }
+      const buf = readFileSync(p);
+      if (buf.length !== TBDD_FILE_BYTES) {
+        d1.push(`${key}.bin: ${buf.length} bytes, want ${TBDD_FILE_BYTES}`);
+        continue;
+      }
+      let dec;
+      try {
+        dec = decodeTBDD(buf);
+      } catch (e) {
+        d1.push(`${key}.bin: ${e.message}`);
+        continue;
+      }
+      if (dec.version !== TBDD_VERSION || dec.cellM !== DENSITY_CELL_M || dec.cols !== DENSITY_COLS || dec.rows !== DENSITY_ROWS || dec.channelCount !== DENSITY_CHANNELS.length) {
+        d1.push(`${key}.bin: header ${JSON.stringify({ v: dec.version, cellM: dec.cellM, cols: dec.cols, rows: dec.rows, ch: dec.channelCount })} mismatch`);
+        continue;
+      }
+      const [cx, cy] = key.split("_").map(Number);
+      const rebuilt = encodeTBDD([
+        sliceChunkCorners(treeAcc.grid, treeAcc.size, cx, cy),
+        sliceChunkCorners(rockAcc.grid, rockAcc.size, cx, cy),
+      ]);
+      if (!buf.equals(rebuilt)) d2.push(`${key}.bin differs from recompute (committed chunks + raw rocks)`);
+    }
+    gate("D1", `density files complete (${expected.size} cells), TBDD header + size exact`, d1);
+    gate("D2", "density byte-identical to recompute from committed chunks + staged raw rocks", d2);
+  }
+
+  {
+    // F1 / F2 / F6 — forest regions
+    const regionsPath = join(objectsDir, "forest-regions.json.gz");
+    const f1 = [];
+    const f2 = [];
+    const f6 = [];
+    if (!existsSync(regionsPath)) {
+      f1.push("objects/forest-regions.json.gz missing");
+      gate("F1", "forest regions present + rows schema-valid", f1);
+    } else {
+      const doc = JSON.parse(gunzipSync(readFileSync(regionsPath)).toString("utf8"));
+      for (const [i, r] of doc.regions.entries()) {
+        if (!vRegion(r)) f1.push(`region[${i}] ${r.id}: ${JSON.stringify(vRegion.errors?.[0])}`);
+      }
+      gate("F1", `forest regions present + ${doc.regions.length} rows schema-valid`, f1);
+
+      const regionTreeSum = doc.regions.reduce((s, r) => s + (r.treeCount ?? 0), 0);
+      const invTree = inventory.byKind.tree.instances;
+      const invRegion = inventory.byRegionKind?.forest;
+      if (!invRegion) f2.push("inventory.byRegionKind.forest missing");
+      else {
+        if (invRegion.treeCount !== regionTreeSum) f2.push(`inventory forest.treeCount ${invRegion.treeCount} != regions file sum ${regionTreeSum}`);
+        if (invRegion.count !== doc.regions.length) f2.push(`inventory forest.count ${invRegion.count} != regions ${doc.regions.length}`);
+      }
+      if (regionTreeSum + (inventory.unassignedTrees ?? 0) !== invTree) {
+        f2.push(`F2 identity broken: ${regionTreeSum} + ${inventory.unassignedTrees} != byKind.tree.instances ${invTree}`);
+      }
+      if (invTree !== (committedKindCounts.get("tree") ?? 0)) {
+        f2.push(`inventory tree instances ${invTree} != committed tree rows ${committedKindCounts.get("tree")}`);
+      }
+      gate("F2", "forest.treeCount + unassignedTrees = byKind.tree.instances (exact)", f2);
+
+      const redo = deriveForestRegions(treeRows, { worldSizeM, terrainId: terrain });
+      if (JSON.stringify(redo.regions) !== JSON.stringify(doc.regions)) f6.push("re-derived regions differ from committed rings/aggregates");
+      if (redo.unassignedTrees !== (inventory.unassignedTrees ?? -1)) f6.push(`re-derived unassignedTrees ${redo.unassignedTrees} != inventory ${inventory.unassignedTrees}`);
+      gate("F6", "Path B derivation reproducible from committed chunk tree instances", f6);
+    }
   }
 }
 
@@ -331,14 +515,17 @@ gate(
 );
 
 // ---- E6 / G4 / I6 determinism: double scratch build + committed byte-compare ---------------------------
+// Rebuild at the COMMITTED importPhaseMax, not the requested verify phase — a P1 re-verify on a P2
+// catalog must byte-compare against a P2 rebuild (cumulative phases).
 {
   const errs = [];
+  const rebuildPhase = manifest.objects?.importPhaseMax ?? phase;
   const here = dirname(fileURLToPath(import.meta.url));
   const s1 = mkdtempSync(join(tmpdir(), "tbd-vp1-"));
   const s2 = mkdtempSync(join(tmpdir(), "tbd-vp2-"));
   try {
     for (const out of [s1, s2]) {
-      execFileSync(process.execPath, [join(here, "build-world-objects.mjs"), "--terrain", terrain, "--phase", phase, "--out", out], { stdio: "pipe" });
+      execFileSync(process.execPath, [join(here, "build-world-objects.mjs"), "--terrain", terrain, "--phase", rebuildPhase, "--out", out], { stdio: "pipe" });
       execFileSync(process.execPath, [join(here, "build-roads-from-topo.mjs"), "--terrain", terrain, "--out", out], { stdio: "pipe" });
     }
     const listFiles = (dir, base = dir) => {

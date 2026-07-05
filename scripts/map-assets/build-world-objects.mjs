@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 // T-090.3.1 — catalog-v1 world-object build: staged raw JSONL -> committed objects/ artifacts.
+// T-090.3.2 — adds the P2 tree phase artifacts from the same pass: TBDD corner-density grids
+//             (objects/density/{cx}_{cy}.bin, lib/density-grid.mjs) + Path B derived-hull forest
+//             regions (objects/forest-regions.json.gz, lib/forest-regions.mjs).
 //
 // Single streaming pass over staging/export/raw-entities.jsonl (streamRawEntities — full Everon is
 // ~1M rows, never readFileSync), then:
@@ -8,10 +11,16 @@
 //   objects/chunks/{cx}_{cy}.json.gz   {instances: [[prefabId, x, y, z, rotationDeg], ...]}
 //                                      all-number 5-tuples, sorted by (x, y, prefabId)
 //   objects/chunks/manifest.json       {chunkSizeM, cells: [{cx, cy, path, instanceCount}]}
+//   objects/density/{cx}_{cy}.bin      (P2+) TBDD tree/rock corner densities — ALL grid cells
+//                                      written unconditionally; rock channel from classified raw
+//                                      rows (rocks are density aggregates, NOT imported instances)
+//   objects/forest-regions.json.gz     (P2+) derived-hull forest regions; F2 identity holds by
+//                                      construction (every tree -> a region or unassignedTrees)
 //   objects/type-inventory.json        census of the EXPORTED CATALOG (phase scope) so I1/I7 hold;
 //                                      raw-side unclassified types -> needsReview
 //   manifest.json objects.* patch      (--patch-manifest only — skipped on --out scratch builds)
-//   .ai/artifacts/map_export_<t>.json  fullExport.objects append (--ops-log only)
+//   .ai/artifacts/map_export_<t>.json  fullExport.objects + fullExport.phases.<Pn> append
+//                                      (--ops-log only)
 //
 // Conventions (plan decisions 2/4/7 — MUST agree with scripts/map-assets/lib/anchor-check.mjs,
 // which re-implements them independently for P1-4):
@@ -34,6 +43,14 @@ import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createClassifier, loadRules, streamRawEntities } from "./lib/classify-prefab.mjs";
 import { cellOf, chunkKey } from "./lib/anchor-check.mjs";
+import {
+  DENSITY_CELL_M,
+  accumulateCorners,
+  encodeTBDD,
+  sliceChunkCorners,
+  sumGrid,
+} from "./lib/density-grid.mjs";
+import { deriveForestRegions } from "./lib/forest-regions.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const argv = process.argv.slice(2);
@@ -45,11 +62,14 @@ const arg = (flag) => {
 const terrain = arg("--terrain");
 const phase = arg("--phase");
 const CHUNK_SIZE_M = 512;
-// Cumulative kind filter per import phase (t090_phased_object_import.md). This slice implements
-// P1 only; the table exists so the phase gate fails loudly instead of silently exporting nothing.
+// Cumulative kind filter per import phase (t090_phased_object_import.md). Phases stay cumulative:
+// P2 re-exports P1 buildings alongside trees (prefabIds renumber over the combined sorted set —
+// legal, no consumer pins ids across phases; G4 = stable across re-export of the SAME phase).
 const PHASE_KINDS = {
   P1_buildings: ["building"],
+  P2_trees: ["building", "tree"],
 };
+const PHASE_ORDER = Object.keys(PHASE_KINDS);
 
 if (!terrain || !phase) {
   console.error("build-world-objects: --terrain <id> --phase <Pn> required");
@@ -101,7 +121,12 @@ const classify = createClassifier();
 const rawCensus = new Map(); // resourceName -> { count, kind, class, matched }
 const noPrefab = { count: 0, classNames: new Map() };
 let outOfBounds = 0;
-const kept = []; // phase-kind rows: { resourceName, x, y, z, rot } (map space, rounded)
+const kept = []; // phase-kind rows: { resourceName, kind, class, x, y, z, rot } (map space, rounded)
+// T-090.3.2 — the TBDD rock channel reads classified kind=rock RAW rows (rocks are density
+// aggregates, not phase-imported instances; P4 imports them). Collected only on density phases.
+const densityPhase = phaseKinds.has("tree");
+const rockRows = []; // { x, y } rounded, in-bounds
+let rockOutOfBounds = 0;
 
 const { lineCount } = await streamRawEntities(rawPath, (row) => {
   const rn = typeof row.resourceName === "string" ? row.resourceName : "";
@@ -116,6 +141,13 @@ const { lineCount } = await streamRawEntities(rawPath, (row) => {
   if (c) c.count++;
   else rawCensus.set(rn, { count: 1, kind: cls.kind, class: cls.class, matched: cls.matched });
 
+  if (densityPhase && cls.kind === "rock") {
+    const rx = round2(row.x);
+    const ry = round2(row.z);
+    if (rx < 0 || rx > worldSizeM || ry < 0 || ry > worldSizeM) rockOutOfBounds++;
+    else rockRows.push({ x: rx, y: ry });
+    return; // rock is not a phase kind before P4 — never reaches kept
+  }
   if (!phaseKinds.has(cls.kind)) return;
   // S6 label-swap compat: the T-090.3.0 spike JSONL carries the real heading in "pitchDeg"
   // (GetAngles()[1]); the T-090.3.1 plugin emits it as "headingDeg". Prefer the fixed name.
@@ -126,7 +158,7 @@ const { lineCount } = await streamRawEntities(rawPath, (row) => {
     outOfBounds++;
     return;
   }
-  kept.push({ resourceName: rn, x, y, z: round2(row.y), rot: normHeading(heading) });
+  kept.push({ resourceName: rn, kind: cls.kind, class: cls.class, x, y, z: round2(row.y), rot: normHeading(heading) });
 });
 
 if (typeof exportMeta.keptCount === "number" && exportMeta.keptCount !== lineCount) {
@@ -136,11 +168,11 @@ if (typeof exportMeta.keptCount === "number" && exportMeta.keptCount !== lineCou
 
 // ---- prefab table (deduped, sorted by resourceName — G4) ----------------------------------------
 const rules = loadRules();
-const buildingNames = [...new Set(kept.map((k) => k.resourceName))].sort();
-const prefabIdByName = new Map(buildingNames.map((n, i) => [n, i]));
+const phasePrefabNames = [...new Set(kept.map((k) => k.resourceName))].sort();
+const prefabIdByName = new Map(phasePrefabNames.map((n, i) => [n, i]));
 
 const labelOf = (rn) => basename(rn).replace(/\.et$/, "");
-const prefabs = buildingNames.map((rn, i) => {
+const prefabs = phasePrefabNames.map((rn, i) => {
   const cls = classify(rn);
   const rule = cls.rule;
   const row = {
@@ -202,6 +234,67 @@ writeFileSync(
   `${JSON.stringify({ chunkSizeM: CHUNK_SIZE_M, cells }, null, 2)}\n`,
 );
 
+// ---- density grids + forest regions (P2+, T-090.3.2) --------------------------------------------
+const densityDir = join(objectsDir, "density");
+let densitySummary = null;
+let regionsResult = null;
+if (densityPhase) {
+  const treeRows = kept.filter((k) => k.kind === "tree");
+
+  const treeAcc = accumulateCorners(treeRows, worldSizeM);
+  const rockAcc = accumulateCorners(rockRows, worldSizeM);
+  const treeCornerSum = sumGrid(treeAcc.grid);
+  const rockCornerSum = sumGrid(rockAcc.grid);
+  // PH-P2-5 identity: every instance lands in exactly one global corner window.
+  if (treeCornerSum !== treeRows.length) {
+    console.error(`build-world-objects: FATAL — density tree corner sum ${treeCornerSum} != tree instances ${treeRows.length}`);
+    process.exit(1);
+  }
+  if (rockCornerSum !== rockRows.length) {
+    console.error(`build-world-objects: FATAL — density rock corner sum ${rockCornerSum} != rock rows ${rockRows.length}`);
+    process.exit(1);
+  }
+
+  rmSync(densityDir, { recursive: true, force: true });
+  mkdirSync(densityDir, { recursive: true });
+  const gridCells = Math.round(worldSizeM / CHUNK_SIZE_M);
+  let densityBytes = 0;
+  for (let cy = 0; cy < gridCells; cy++) {
+    for (let cx = 0; cx < gridCells; cx++) {
+      const buf = encodeTBDD([
+        sliceChunkCorners(treeAcc.grid, treeAcc.size, cx, cy),
+        sliceChunkCorners(rockAcc.grid, rockAcc.size, cx, cy),
+      ]);
+      writeFileSync(join(densityDir, `${chunkKey(cx, cy)}.bin`), buf);
+      densityBytes += buf.length;
+    }
+  }
+  densitySummary = {
+    cellM: DENSITY_CELL_M,
+    files: gridCells * gridCells,
+    bytes: densityBytes,
+    treeCornerSum,
+    rockCornerSum,
+    rockRawRows: rockRows.length,
+    rockOutOfBounds,
+  };
+
+  regionsResult = deriveForestRegions(treeRows, { worldSizeM, terrainId: terrain });
+  writeFileSync(
+    join(objectsDir, "forest-regions.json.gz"),
+    gz({
+      schemaVersion: "1.0.0",
+      terrainId: terrain,
+      generatedAt: stagedAt,
+      ...regionsResult.params,
+      regions: regionsResult.regions,
+    }),
+  );
+} else {
+  // pre-density phases never leave stale density/regions artifacts in a scratch --out dir
+  rmSync(densityDir, { recursive: true, force: true });
+}
+
 // ---- census (catalog scope — I1/I7 hold; needsReview = raw unclassified types) -------------------
 const zero = { prefabTypes: 0, instances: 0 };
 const byKind = {
@@ -214,19 +307,26 @@ const byKind = {
   water: { ...zero },
   road: { ...zero, segments: 0 },
 };
-const byBuildingClass = {};
-for (const p of prefabs) {
-  byKind[p.kind].prefabTypes++;
-  const bucket = (byBuildingClass[p.class] ??= { prefabTypes: 0, instances: 0 });
-  bucket.prefabTypes++;
-  const iz = rules.rules.find((r) => r.kind === "building" && r.class === p.class)?.render?.importanceZoom;
-  if (typeof iz === "number") bucket.importanceZoom = iz;
-}
 const instByPrefab = new Array(prefabs.length).fill(0);
 for (const list of chunks.values()) for (const row of list) instByPrefab[row[0]]++;
+
+// Per-class buckets split by kind (I3: byBuildingClass keys ∈ buildingClass enum, bySpeciesClass
+// keys ∈ speciesClass enum — a tree prefab must never land in byBuildingClass).
+const byBuildingClass = {};
+const bySpeciesClass = {};
+const classBucketTargetOf = (p) =>
+  p.kind === "building" ? byBuildingClass : p.kind === "tree" || p.kind === "vegetation" ? bySpeciesClass : null;
 for (const [i, p] of prefabs.entries()) {
+  byKind[p.kind].prefabTypes++;
   byKind[p.kind].instances += instByPrefab[i];
-  byBuildingClass[p.class].instances += instByPrefab[i];
+  const target = classBucketTargetOf(p);
+  if (target) {
+    const bucket = (target[p.class] ??= { prefabTypes: 0, instances: 0 });
+    bucket.prefabTypes++;
+    bucket.instances += instByPrefab[i];
+    const iz = rules.rules.find((r) => r.kind === p.kind && r.class === p.class)?.render?.importanceZoom;
+    if (typeof iz === "number") bucket.importanceZoom = iz;
+  }
 }
 const totalInstances = kept.length;
 
@@ -239,6 +339,7 @@ const needsReviewPrefabs = [...rawCensus.entries()]
   }))
   .sort((a, b) => b.instanceCount - a.instanceCount || (a.resourceName < b.resourceName ? -1 : 1));
 
+const sortKeys = (obj) => Object.fromEntries(Object.entries(obj).sort(([a], [b]) => (a < b ? -1 : 1)));
 const inventory = {
   schemaVersion: "1.0.0",
   terrainId: terrain,
@@ -248,11 +349,21 @@ const inventory = {
   sourceExportPath: "staging/export/raw-entities.jsonl",
   levels: { uniquePrefabs: prefabs.length, totalInstances },
   byKind,
-  byBuildingClass: Object.fromEntries(Object.entries(byBuildingClass).sort(([a], [b]) => (a < b ? -1 : 1))),
+  byBuildingClass: sortKeys(byBuildingClass),
   byRoadClass: {},
-  bySpeciesClass: {},
+  bySpeciesClass: sortKeys(bySpeciesClass),
   needsReview: { prefabTypes: needsReviewPrefabs.length, prefabs: needsReviewPrefabs },
 };
+if (regionsResult) {
+  // F2 ship identity (exact, by construction): forest.treeCount + unassignedTrees = tree instances
+  inventory.byRegionKind = {
+    forest: {
+      count: regionsResult.regions.length,
+      treeCount: regionsResult.regions.reduce((s, r) => s + r.treeCount, 0),
+    },
+  };
+  inventory.unassignedTrees = regionsResult.unassignedTrees;
+}
 writeFileSync(join(objectsDir, "type-inventory.json"), `${JSON.stringify(inventory, null, 2)}\n`);
 
 // ---- manifest patch (real terrain dir only) ------------------------------------------------------
@@ -271,15 +382,36 @@ if (argv.includes("--patch-manifest")) {
     roadsPath: "objects/roads.json.gz",
     typeInventoryPath: "objects/type-inventory.json",
     importPhaseMax: phase,
-    importPhaseShipped: [phase],
+    importPhaseShipped: PHASE_ORDER.slice(0, PHASE_ORDER.indexOf(phase) + 1),
     exportedAt: stagedAt,
   };
+  if (densityPhase) {
+    manifest.objects.regionsPath = "objects/forest-regions.json.gz";
+    manifest.objects.densityPath = "objects/density";
+    manifest.objects.densityCellM = DENSITY_CELL_M;
+    // LOD gate snapshot for cache-busting (plan §3.4/§5 constants v2) — consumers read the live
+    // table from worldmap/lodGates.ts (T-090.5.1); this block only invalidates caches on change.
+    manifest.objects.lod = {
+      schemaVersion: "1.0.0",
+      refZoom: 3,
+      gates: {
+        tree: 0,
+        building: -2.5,
+        buildingBadge: 1,
+        forestOutline: -1.5,
+        forestFillMax: 1,
+        vegetation: 1.5,
+        rockLarge: 1,
+        prop: 3,
+      },
+    };
+  }
   writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 
 // ---- ops log append ------------------------------------------------------------------------------
 const summary = {
-  slice: "T-090.3.1",
+  slice: densityPhase ? "T-090.3.2" : "T-090.3.1",
   phase,
   stagedAt,
   rawLineCount: lineCount,
@@ -299,6 +431,26 @@ if (argv.includes("--ops-log")) {
   const opsPath = join(repoRoot, ".ai", "artifacts", `map_export_${terrain}.json`);
   const ops = existsSync(opsPath) ? JSON.parse(readFileSync(opsPath, "utf8")) : { terrainId: terrain };
   ops.fullExport = { ...ops.fullExport, objects: summary };
+  if (densityPhase) {
+    // APPEND-only per-phase block (spike keys + prior phase blocks untouched)
+    ops.fullExport.phases = {
+      ...ops.fullExport.phases,
+      [phase]: {
+        slice: "T-090.3.2",
+        stagedAt,
+        density: densitySummary,
+        forestRegions: {
+          ...regionsResult.params,
+          regionCount: regionsResult.regions.length,
+          treeCount: regionsResult.regions.reduce((s, r) => s + r.treeCount, 0),
+          unassignedTrees: regionsResult.unassignedTrees,
+          denseCellCount: regionsResult.denseCellCount,
+          componentCount: regionsResult.componentCount,
+          keptComponentCount: regionsResult.keptComponentCount,
+        },
+      },
+    };
+  }
   writeFileSync(opsPath, `${JSON.stringify(ops, null, 2)}\n`);
 }
 

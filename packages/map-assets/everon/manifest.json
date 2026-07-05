@@ -71,16 +71,34 @@
     "format": "catalog-v1",
     "typeInventoryPath": "objects/type-inventory.json",
     "prefabsPath": "objects/prefabs.json.gz",
-    "prefabCount": 310,
-    "instanceCount": 5606,
+    "prefabCount": 361,
+    "instanceCount": 507467,
     "chunksPath": "objects/chunks",
     "chunkSizeM": 512,
     "roadsPath": "objects/roads.json.gz",
-    "importPhaseMax": "P1_buildings",
+    "importPhaseMax": "P2_trees",
     "importPhaseShipped": [
-      "P1_buildings"
+      "P1_buildings",
+      "P2_trees"
     ],
-    "exportedAt": "2026-07-04T23:43:38.437Z"
+    "exportedAt": "2026-07-04T23:43:38.437Z",
+    "regionsPath": "objects/forest-regions.json.gz",
+    "densityPath": "objects/density",
+    "densityCellM": 32,
+    "lod": {
+      "schemaVersion": "1.0.0",
+      "refZoom": 3,
+      "gates": {
+        "tree": 0,
+        "building": -2.5,
+        "buildingBadge": 1,
+        "forestOutline": -1.5,
+        "forestFillMax": 1,
+        "vegetation": 1.5,
+        "rockLarge": 1,
+        "prop": 3
+      }
+    }
   },
   "anchors": [],
   "precision": {

@@ -9,8 +9,8 @@
       "workbenchWorld": "Worlds/Everon/Everon.ent",
       "exportProfile": "default",
       "status": "active",
-      "importPhaseMax": "P1_buildings",
-      "importPhaseShipped": ["P1_buildings"]
+      "importPhaseMax": "P2_trees",
+      "importPhaseShipped": ["P1_buildings", "P2_trees"]
     },
     {
       "terrainId": "arland",

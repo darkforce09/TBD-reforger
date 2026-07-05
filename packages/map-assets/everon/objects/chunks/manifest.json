@@ -5,283 +5,379 @@
       "cx": 1,
       "cy": 11,
       "path": "objects/chunks/1_11.json.gz",
-      "instanceCount": 20
+      "instanceCount": 194
     },
     {
       "cx": 1,
       "cy": 12,
       "path": "objects/chunks/1_12.json.gz",
-      "instanceCount": 6
+      "instanceCount": 21
     },
     {
       "cx": 1,
       "cy": 22,
       "path": "objects/chunks/1_22.json.gz",
-      "instanceCount": 2
+      "instanceCount": 989
     },
     {
       "cx": 1,
       "cy": 23,
       "path": "objects/chunks/1_23.json.gz",
-      "instanceCount": 8
+      "instanceCount": 532
+    },
+    {
+      "cx": 2,
+      "cy": 9,
+      "path": "objects/chunks/2_9.json.gz",
+      "instanceCount": 216
     },
     {
       "cx": 2,
       "cy": 10,
       "path": "objects/chunks/2_10.json.gz",
-      "instanceCount": 6
+      "instanceCount": 807
     },
     {
       "cx": 2,
       "cy": 11,
       "path": "objects/chunks/2_11.json.gz",
-      "instanceCount": 185
+      "instanceCount": 1444
     },
     {
       "cx": 2,
       "cy": 12,
       "path": "objects/chunks/2_12.json.gz",
-      "instanceCount": 59
+      "instanceCount": 1027
+    },
+    {
+      "cx": 2,
+      "cy": 21,
+      "path": "objects/chunks/2_21.json.gz",
+      "instanceCount": 25
     },
     {
       "cx": 2,
       "cy": 22,
       "path": "objects/chunks/2_22.json.gz",
-      "instanceCount": 33
+      "instanceCount": 1917
+    },
+    {
+      "cx": 2,
+      "cy": 23,
+      "path": "objects/chunks/2_23.json.gz",
+      "instanceCount": 509
+    },
+    {
+      "cx": 3,
+      "cy": 9,
+      "path": "objects/chunks/3_9.json.gz",
+      "instanceCount": 1771
     },
     {
       "cx": 3,
       "cy": 10,
       "path": "objects/chunks/3_10.json.gz",
-      "instanceCount": 6
+      "instanceCount": 1772
     },
     {
       "cx": 3,
       "cy": 11,
       "path": "objects/chunks/3_11.json.gz",
-      "instanceCount": 8
+      "instanceCount": 2653
+    },
+    {
+      "cx": 3,
+      "cy": 12,
+      "path": "objects/chunks/3_12.json.gz",
+      "instanceCount": 444
+    },
+    {
+      "cx": 3,
+      "cy": 14,
+      "path": "objects/chunks/3_14.json.gz",
+      "instanceCount": 57
+    },
+    {
+      "cx": 3,
+      "cy": 21,
+      "path": "objects/chunks/3_21.json.gz",
+      "instanceCount": 19
+    },
+    {
+      "cx": 3,
+      "cy": 22,
+      "path": "objects/chunks/3_22.json.gz",
+      "instanceCount": 318
     },
     {
       "cx": 4,
       "cy": 8,
       "path": "objects/chunks/4_8.json.gz",
-      "instanceCount": 3
+      "instanceCount": 785
     },
     {
       "cx": 4,
       "cy": 9,
       "path": "objects/chunks/4_9.json.gz",
-      "instanceCount": 16
+      "instanceCount": 1318
     },
     {
       "cx": 4,
       "cy": 10,
       "path": "objects/chunks/4_10.json.gz",
-      "instanceCount": 11
+      "instanceCount": 3348
     },
     {
       "cx": 4,
       "cy": 11,
       "path": "objects/chunks/4_11.json.gz",
-      "instanceCount": 2
+      "instanceCount": 3242
     },
     {
       "cx": 4,
       "cy": 12,
       "path": "objects/chunks/4_12.json.gz",
-      "instanceCount": 1
+      "instanceCount": 3168
     },
     {
       "cx": 4,
       "cy": 13,
       "path": "objects/chunks/4_13.json.gz",
-      "instanceCount": 4
+      "instanceCount": 3451
     },
     {
       "cx": 4,
       "cy": 14,
       "path": "objects/chunks/4_14.json.gz",
-      "instanceCount": 7
+      "instanceCount": 2746
+    },
+    {
+      "cx": 4,
+      "cy": 15,
+      "path": "objects/chunks/4_15.json.gz",
+      "instanceCount": 209
     },
     {
       "cx": 5,
       "cy": 3,
       "path": "objects/chunks/5_3.json.gz",
-      "instanceCount": 4
+      "instanceCount": 1814
     },
     {
       "cx": 5,
       "cy": 4,
       "path": "objects/chunks/5_4.json.gz",
-      "instanceCount": 6
+      "instanceCount": 338
     },
     {
       "cx": 5,
       "cy": 7,
       "path": "objects/chunks/5_7.json.gz",
-      "instanceCount": 2
+      "instanceCount": 1178
     },
     {
       "cx": 5,
       "cy": 8,
       "path": "objects/chunks/5_8.json.gz",
-      "instanceCount": 2
+      "instanceCount": 1892
     },
     {
       "cx": 5,
       "cy": 9,
       "path": "objects/chunks/5_9.json.gz",
-      "instanceCount": 7
+      "instanceCount": 2011
     },
     {
       "cx": 5,
       "cy": 10,
       "path": "objects/chunks/5_10.json.gz",
-      "instanceCount": 70
+      "instanceCount": 2128
     },
     {
       "cx": 5,
       "cy": 11,
       "path": "objects/chunks/5_11.json.gz",
-      "instanceCount": 6
+      "instanceCount": 3861
     },
     {
       "cx": 5,
       "cy": 12,
       "path": "objects/chunks/5_12.json.gz",
-      "instanceCount": 64
+      "instanceCount": 1526
     },
     {
       "cx": 5,
       "cy": 13,
       "path": "objects/chunks/5_13.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2946
+    },
+    {
+      "cx": 5,
+      "cy": 14,
+      "path": "objects/chunks/5_14.json.gz",
+      "instanceCount": 1181
     },
     {
       "cx": 6,
       "cy": 2,
       "path": "objects/chunks/6_2.json.gz",
-      "instanceCount": 1
+      "instanceCount": 284
+    },
+    {
+      "cx": 6,
+      "cy": 3,
+      "path": "objects/chunks/6_3.json.gz",
+      "instanceCount": 645
     },
     {
       "cx": 6,
       "cy": 4,
       "path": "objects/chunks/6_4.json.gz",
-      "instanceCount": 3
+      "instanceCount": 127
+    },
+    {
+      "cx": 6,
+      "cy": 6,
+      "path": "objects/chunks/6_6.json.gz",
+      "instanceCount": 737
     },
     {
       "cx": 6,
       "cy": 7,
       "path": "objects/chunks/6_7.json.gz",
-      "instanceCount": 1
+      "instanceCount": 1812
     },
     {
       "cx": 6,
       "cy": 8,
       "path": "objects/chunks/6_8.json.gz",
-      "instanceCount": 94
+      "instanceCount": 2475
     },
     {
       "cx": 6,
       "cy": 9,
       "path": "objects/chunks/6_9.json.gz",
-      "instanceCount": 52
+      "instanceCount": 2901
     },
     {
       "cx": 6,
       "cy": 10,
       "path": "objects/chunks/6_10.json.gz",
-      "instanceCount": 13
+      "instanceCount": 2469
     },
     {
       "cx": 6,
       "cy": 11,
       "path": "objects/chunks/6_11.json.gz",
-      "instanceCount": 16
+      "instanceCount": 2424
     },
     {
       "cx": 6,
       "cy": 12,
       "path": "objects/chunks/6_12.json.gz",
-      "instanceCount": 12
+      "instanceCount": 2980
     },
     {
       "cx": 6,
       "cy": 13,
       "path": "objects/chunks/6_13.json.gz",
-      "instanceCount": 2
+      "instanceCount": 2342
     },
     {
       "cx": 6,
       "cy": 14,
       "path": "objects/chunks/6_14.json.gz",
-      "instanceCount": 6
+      "instanceCount": 165
+    },
+    {
+      "cx": 7,
+      "cy": 6,
+      "path": "objects/chunks/7_6.json.gz",
+      "instanceCount": 63
     },
     {
       "cx": 7,
       "cy": 7,
       "path": "objects/chunks/7_7.json.gz",
-      "instanceCount": 1
+      "instanceCount": 3837
     },
     {
       "cx": 7,
       "cy": 8,
       "path": "objects/chunks/7_8.json.gz",
-      "instanceCount": 3
+      "instanceCount": 4168
     },
     {
       "cx": 7,
       "cy": 9,
       "path": "objects/chunks/7_9.json.gz",
-      "instanceCount": 17
+      "instanceCount": 1636
     },
     {
       "cx": 7,
       "cy": 10,
       "path": "objects/chunks/7_10.json.gz",
-      "instanceCount": 1
+      "instanceCount": 3133
+    },
+    {
+      "cx": 7,
+      "cy": 11,
+      "path": "objects/chunks/7_11.json.gz",
+      "instanceCount": 1881
     },
     {
       "cx": 7,
       "cy": 12,
       "path": "objects/chunks/7_12.json.gz",
-      "instanceCount": 12
+      "instanceCount": 3117
     },
     {
       "cx": 7,
       "cy": 13,
       "path": "objects/chunks/7_13.json.gz",
-      "instanceCount": 7
+      "instanceCount": 2207
     },
     {
       "cx": 7,
       "cy": 14,
       "path": "objects/chunks/7_14.json.gz",
-      "instanceCount": 18
+      "instanceCount": 2661
     },
     {
       "cx": 7,
       "cy": 15,
       "path": "objects/chunks/7_15.json.gz",
-      "instanceCount": 22
+      "instanceCount": 957
     },
     {
       "cx": 7,
       "cy": 16,
       "path": "objects/chunks/7_16.json.gz",
-      "instanceCount": 11
+      "instanceCount": 1112
     },
     {
       "cx": 7,
       "cy": 17,
       "path": "objects/chunks/7_17.json.gz",
-      "instanceCount": 1
+      "instanceCount": 980
+    },
+    {
+      "cx": 7,
+      "cy": 18,
+      "path": "objects/chunks/7_18.json.gz",
+      "instanceCount": 16
+    },
+    {
+      "cx": 7,
+      "cy": 19,
+      "path": "objects/chunks/7_19.json.gz",
+      "instanceCount": 536
     },
     {
       "cx": 7,
       "cy": 20,
       "path": "objects/chunks/7_20.json.gz",
-      "instanceCount": 4
+      "instanceCount": 1054
     },
     {
       "cx": 7,
@@ -291,1011 +387,1221 @@
     },
     {
       "cx": 8,
+      "cy": 6,
+      "path": "objects/chunks/8_6.json.gz",
+      "instanceCount": 525
+    },
+    {
+      "cx": 8,
       "cy": 7,
       "path": "objects/chunks/8_7.json.gz",
-      "instanceCount": 1
+      "instanceCount": 3499
     },
     {
       "cx": 8,
       "cy": 8,
       "path": "objects/chunks/8_8.json.gz",
-      "instanceCount": 4
+      "instanceCount": 1377
     },
     {
       "cx": 8,
       "cy": 9,
       "path": "objects/chunks/8_9.json.gz",
-      "instanceCount": 8
+      "instanceCount": 3136
     },
     {
       "cx": 8,
       "cy": 10,
       "path": "objects/chunks/8_10.json.gz",
-      "instanceCount": 7
+      "instanceCount": 1820
     },
     {
       "cx": 8,
       "cy": 11,
       "path": "objects/chunks/8_11.json.gz",
-      "instanceCount": 8
+      "instanceCount": 2260
     },
     {
       "cx": 8,
       "cy": 12,
       "path": "objects/chunks/8_12.json.gz",
-      "instanceCount": 9
+      "instanceCount": 2655
     },
     {
       "cx": 8,
       "cy": 13,
       "path": "objects/chunks/8_13.json.gz",
-      "instanceCount": 26
+      "instanceCount": 2340
     },
     {
       "cx": 8,
       "cy": 14,
       "path": "objects/chunks/8_14.json.gz",
-      "instanceCount": 5
+      "instanceCount": 2295
     },
     {
       "cx": 8,
       "cy": 15,
       "path": "objects/chunks/8_15.json.gz",
-      "instanceCount": 41
+      "instanceCount": 1389
     },
     {
       "cx": 8,
       "cy": 16,
       "path": "objects/chunks/8_16.json.gz",
-      "instanceCount": 1
+      "instanceCount": 4052
     },
     {
       "cx": 8,
       "cy": 17,
       "path": "objects/chunks/8_17.json.gz",
-      "instanceCount": 5
+      "instanceCount": 3052
     },
     {
       "cx": 8,
       "cy": 18,
       "path": "objects/chunks/8_18.json.gz",
-      "instanceCount": 189
+      "instanceCount": 1053
     },
     {
       "cx": 8,
       "cy": 19,
       "path": "objects/chunks/8_19.json.gz",
-      "instanceCount": 6
+      "instanceCount": 3212
     },
     {
       "cx": 8,
       "cy": 20,
       "path": "objects/chunks/8_20.json.gz",
-      "instanceCount": 213
+      "instanceCount": 2612
     },
     {
       "cx": 8,
       "cy": 21,
       "path": "objects/chunks/8_21.json.gz",
-      "instanceCount": 201
+      "instanceCount": 777
     },
     {
       "cx": 8,
       "cy": 22,
       "path": "objects/chunks/8_22.json.gz",
-      "instanceCount": 78
+      "instanceCount": 998
     },
     {
       "cx": 8,
       "cy": 23,
       "path": "objects/chunks/8_23.json.gz",
-      "instanceCount": 10
+      "instanceCount": 852
+    },
+    {
+      "cx": 8,
+      "cy": 24,
+      "path": "objects/chunks/8_24.json.gz",
+      "instanceCount": 41
     },
     {
       "cx": 9,
       "cy": 6,
       "path": "objects/chunks/9_6.json.gz",
-      "instanceCount": 1
+      "instanceCount": 873
     },
     {
       "cx": 9,
       "cy": 7,
       "path": "objects/chunks/9_7.json.gz",
-      "instanceCount": 70
+      "instanceCount": 1035
     },
     {
       "cx": 9,
       "cy": 8,
       "path": "objects/chunks/9_8.json.gz",
-      "instanceCount": 5
+      "instanceCount": 1808
+    },
+    {
+      "cx": 9,
+      "cy": 9,
+      "path": "objects/chunks/9_9.json.gz",
+      "instanceCount": 3212
     },
     {
       "cx": 9,
       "cy": 10,
       "path": "objects/chunks/9_10.json.gz",
-      "instanceCount": 6
+      "instanceCount": 1545
     },
     {
       "cx": 9,
       "cy": 11,
       "path": "objects/chunks/9_11.json.gz",
-      "instanceCount": 6
+      "instanceCount": 2460
     },
     {
       "cx": 9,
       "cy": 12,
       "path": "objects/chunks/9_12.json.gz",
-      "instanceCount": 10
+      "instanceCount": 1910
     },
     {
       "cx": 9,
       "cy": 13,
       "path": "objects/chunks/9_13.json.gz",
-      "instanceCount": 160
+      "instanceCount": 941
     },
     {
       "cx": 9,
       "cy": 14,
       "path": "objects/chunks/9_14.json.gz",
-      "instanceCount": 152
+      "instanceCount": 1157
     },
     {
       "cx": 9,
       "cy": 15,
       "path": "objects/chunks/9_15.json.gz",
-      "instanceCount": 10
+      "instanceCount": 3391
     },
     {
       "cx": 9,
       "cy": 16,
       "path": "objects/chunks/9_16.json.gz",
-      "instanceCount": 2
+      "instanceCount": 4223
     },
     {
       "cx": 9,
       "cy": 17,
       "path": "objects/chunks/9_17.json.gz",
-      "instanceCount": 80
+      "instanceCount": 2879
     },
     {
       "cx": 9,
       "cy": 18,
       "path": "objects/chunks/9_18.json.gz",
-      "instanceCount": 17
+      "instanceCount": 2834
     },
     {
       "cx": 9,
       "cy": 19,
       "path": "objects/chunks/9_19.json.gz",
-      "instanceCount": 80
+      "instanceCount": 1230
     },
     {
       "cx": 9,
       "cy": 20,
       "path": "objects/chunks/9_20.json.gz",
-      "instanceCount": 70
+      "instanceCount": 1595
     },
     {
       "cx": 9,
       "cy": 21,
       "path": "objects/chunks/9_21.json.gz",
-      "instanceCount": 58
+      "instanceCount": 844
     },
     {
       "cx": 9,
       "cy": 22,
       "path": "objects/chunks/9_22.json.gz",
-      "instanceCount": 33
+      "instanceCount": 1985
     },
     {
       "cx": 9,
       "cy": 23,
       "path": "objects/chunks/9_23.json.gz",
-      "instanceCount": 38
+      "instanceCount": 770
     },
     {
       "cx": 9,
       "cy": 24,
       "path": "objects/chunks/9_24.json.gz",
-      "instanceCount": 1
+      "instanceCount": 85
     },
     {
       "cx": 10,
       "cy": 7,
       "path": "objects/chunks/10_7.json.gz",
-      "instanceCount": 31
+      "instanceCount": 988
     },
     {
       "cx": 10,
       "cy": 8,
       "path": "objects/chunks/10_8.json.gz",
-      "instanceCount": 105
+      "instanceCount": 4524
     },
     {
       "cx": 10,
       "cy": 9,
       "path": "objects/chunks/10_9.json.gz",
-      "instanceCount": 8
+      "instanceCount": 1954
     },
     {
       "cx": 10,
       "cy": 10,
       "path": "objects/chunks/10_10.json.gz",
-      "instanceCount": 65
+      "instanceCount": 514
     },
     {
       "cx": 10,
       "cy": 11,
       "path": "objects/chunks/10_11.json.gz",
-      "instanceCount": 36
+      "instanceCount": 1613
     },
     {
       "cx": 10,
       "cy": 12,
       "path": "objects/chunks/10_12.json.gz",
-      "instanceCount": 34
+      "instanceCount": 965
     },
     {
       "cx": 10,
       "cy": 13,
       "path": "objects/chunks/10_13.json.gz",
-      "instanceCount": 40
+      "instanceCount": 874
     },
     {
       "cx": 10,
       "cy": 14,
       "path": "objects/chunks/10_14.json.gz",
-      "instanceCount": 2
+      "instanceCount": 514
+    },
+    {
+      "cx": 10,
+      "cy": 15,
+      "path": "objects/chunks/10_15.json.gz",
+      "instanceCount": 1188
     },
     {
       "cx": 10,
       "cy": 16,
       "path": "objects/chunks/10_16.json.gz",
-      "instanceCount": 4
+      "instanceCount": 3419
     },
     {
       "cx": 10,
       "cy": 17,
       "path": "objects/chunks/10_17.json.gz",
-      "instanceCount": 1
+      "instanceCount": 1698
     },
     {
       "cx": 10,
       "cy": 18,
       "path": "objects/chunks/10_18.json.gz",
-      "instanceCount": 6
+      "instanceCount": 2290
     },
     {
       "cx": 10,
       "cy": 19,
       "path": "objects/chunks/10_19.json.gz",
-      "instanceCount": 67
+      "instanceCount": 1592
     },
     {
       "cx": 10,
       "cy": 20,
       "path": "objects/chunks/10_20.json.gz",
-      "instanceCount": 16
+      "instanceCount": 3537
     },
     {
       "cx": 10,
       "cy": 21,
       "path": "objects/chunks/10_21.json.gz",
-      "instanceCount": 54
+      "instanceCount": 3653
     },
     {
       "cx": 10,
       "cy": 22,
       "path": "objects/chunks/10_22.json.gz",
-      "instanceCount": 19
+      "instanceCount": 2704
     },
     {
       "cx": 10,
       "cy": 23,
       "path": "objects/chunks/10_23.json.gz",
-      "instanceCount": 1
+      "instanceCount": 280
     },
     {
       "cx": 10,
       "cy": 24,
       "path": "objects/chunks/10_24.json.gz",
-      "instanceCount": 1
+      "instanceCount": 15
     },
     {
       "cx": 11,
       "cy": 6,
       "path": "objects/chunks/11_6.json.gz",
-      "instanceCount": 60
+      "instanceCount": 232
     },
     {
       "cx": 11,
       "cy": 7,
       "path": "objects/chunks/11_7.json.gz",
-      "instanceCount": 1
+      "instanceCount": 915
+    },
+    {
+      "cx": 11,
+      "cy": 8,
+      "path": "objects/chunks/11_8.json.gz",
+      "instanceCount": 1534
     },
     {
       "cx": 11,
       "cy": 9,
       "path": "objects/chunks/11_9.json.gz",
-      "instanceCount": 3
+      "instanceCount": 4372
     },
     {
       "cx": 11,
       "cy": 10,
       "path": "objects/chunks/11_10.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2577
     },
     {
       "cx": 11,
       "cy": 11,
       "path": "objects/chunks/11_11.json.gz",
-      "instanceCount": 12
+      "instanceCount": 682
     },
     {
       "cx": 11,
       "cy": 12,
       "path": "objects/chunks/11_12.json.gz",
-      "instanceCount": 25
+      "instanceCount": 975
     },
     {
       "cx": 11,
       "cy": 13,
       "path": "objects/chunks/11_13.json.gz",
-      "instanceCount": 45
+      "instanceCount": 2030
     },
     {
       "cx": 11,
       "cy": 14,
       "path": "objects/chunks/11_14.json.gz",
-      "instanceCount": 3
+      "instanceCount": 1842
+    },
+    {
+      "cx": 11,
+      "cy": 15,
+      "path": "objects/chunks/11_15.json.gz",
+      "instanceCount": 914
+    },
+    {
+      "cx": 11,
+      "cy": 16,
+      "path": "objects/chunks/11_16.json.gz",
+      "instanceCount": 2825
+    },
+    {
+      "cx": 11,
+      "cy": 17,
+      "path": "objects/chunks/11_17.json.gz",
+      "instanceCount": 303
     },
     {
       "cx": 11,
       "cy": 18,
       "path": "objects/chunks/11_18.json.gz",
-      "instanceCount": 11
+      "instanceCount": 870
     },
     {
       "cx": 11,
       "cy": 19,
       "path": "objects/chunks/11_19.json.gz",
-      "instanceCount": 35
+      "instanceCount": 1924
     },
     {
       "cx": 11,
       "cy": 20,
       "path": "objects/chunks/11_20.json.gz",
-      "instanceCount": 10
+      "instanceCount": 2379
+    },
+    {
+      "cx": 11,
+      "cy": 21,
+      "path": "objects/chunks/11_21.json.gz",
+      "instanceCount": 580
     },
     {
       "cx": 12,
       "cy": 3,
       "path": "objects/chunks/12_3.json.gz",
-      "instanceCount": 2
+      "instanceCount": 1876
     },
     {
       "cx": 12,
       "cy": 4,
       "path": "objects/chunks/12_4.json.gz",
-      "instanceCount": 2
+      "instanceCount": 1022
+    },
+    {
+      "cx": 12,
+      "cy": 5,
+      "path": "objects/chunks/12_5.json.gz",
+      "instanceCount": 339
     },
     {
       "cx": 12,
       "cy": 6,
       "path": "objects/chunks/12_6.json.gz",
-      "instanceCount": 4
+      "instanceCount": 33
     },
     {
       "cx": 12,
       "cy": 8,
       "path": "objects/chunks/12_8.json.gz",
-      "instanceCount": 1
+      "instanceCount": 674
     },
     {
       "cx": 12,
       "cy": 9,
       "path": "objects/chunks/12_9.json.gz",
-      "instanceCount": 12
+      "instanceCount": 1496
     },
     {
       "cx": 12,
       "cy": 10,
       "path": "objects/chunks/12_10.json.gz",
-      "instanceCount": 6
+      "instanceCount": 2946
     },
     {
       "cx": 12,
       "cy": 11,
       "path": "objects/chunks/12_11.json.gz",
-      "instanceCount": 7
+      "instanceCount": 2396
     },
     {
       "cx": 12,
       "cy": 12,
       "path": "objects/chunks/12_12.json.gz",
-      "instanceCount": 12
+      "instanceCount": 2708
     },
     {
       "cx": 12,
       "cy": 13,
       "path": "objects/chunks/12_13.json.gz",
-      "instanceCount": 10
+      "instanceCount": 3211
     },
     {
       "cx": 12,
       "cy": 14,
       "path": "objects/chunks/12_14.json.gz",
-      "instanceCount": 8
+      "instanceCount": 1823
     },
     {
       "cx": 12,
       "cy": 15,
       "path": "objects/chunks/12_15.json.gz",
-      "instanceCount": 27
+      "instanceCount": 3439
     },
     {
       "cx": 12,
       "cy": 16,
       "path": "objects/chunks/12_16.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2908
+    },
+    {
+      "cx": 12,
+      "cy": 17,
+      "path": "objects/chunks/12_17.json.gz",
+      "instanceCount": 801
     },
     {
       "cx": 12,
       "cy": 18,
       "path": "objects/chunks/12_18.json.gz",
-      "instanceCount": 47
+      "instanceCount": 208
     },
     {
       "cx": 12,
       "cy": 19,
       "path": "objects/chunks/12_19.json.gz",
-      "instanceCount": 26
+      "instanceCount": 460
+    },
+    {
+      "cx": 12,
+      "cy": 20,
+      "path": "objects/chunks/12_20.json.gz",
+      "instanceCount": 1
     },
     {
       "cx": 13,
       "cy": 3,
       "path": "objects/chunks/13_3.json.gz",
-      "instanceCount": 1
+      "instanceCount": 4309
     },
     {
       "cx": 13,
       "cy": 4,
       "path": "objects/chunks/13_4.json.gz",
-      "instanceCount": 39
+      "instanceCount": 4279
     },
     {
       "cx": 13,
       "cy": 5,
       "path": "objects/chunks/13_5.json.gz",
-      "instanceCount": 1
+      "instanceCount": 4227
     },
     {
       "cx": 13,
       "cy": 6,
       "path": "objects/chunks/13_6.json.gz",
-      "instanceCount": 10
+      "instanceCount": 3820
     },
     {
       "cx": 13,
       "cy": 7,
       "path": "objects/chunks/13_7.json.gz",
-      "instanceCount": 1
+      "instanceCount": 4166
     },
     {
       "cx": 13,
       "cy": 8,
       "path": "objects/chunks/13_8.json.gz",
-      "instanceCount": 6
+      "instanceCount": 3192
     },
     {
       "cx": 13,
       "cy": 9,
       "path": "objects/chunks/13_9.json.gz",
-      "instanceCount": 35
+      "instanceCount": 1246
     },
     {
       "cx": 13,
       "cy": 10,
       "path": "objects/chunks/13_10.json.gz",
-      "instanceCount": 8
+      "instanceCount": 2787
     },
     {
       "cx": 13,
       "cy": 11,
       "path": "objects/chunks/13_11.json.gz",
-      "instanceCount": 134
+      "instanceCount": 1638
     },
     {
       "cx": 13,
       "cy": 12,
       "path": "objects/chunks/13_12.json.gz",
-      "instanceCount": 9
+      "instanceCount": 1803
     },
     {
       "cx": 13,
       "cy": 13,
       "path": "objects/chunks/13_13.json.gz",
-      "instanceCount": 3
+      "instanceCount": 2863
+    },
+    {
+      "cx": 13,
+      "cy": 14,
+      "path": "objects/chunks/13_14.json.gz",
+      "instanceCount": 3364
     },
     {
       "cx": 13,
       "cy": 15,
       "path": "objects/chunks/13_15.json.gz",
-      "instanceCount": 15
+      "instanceCount": 3290
     },
     {
       "cx": 13,
       "cy": 16,
       "path": "objects/chunks/13_16.json.gz",
-      "instanceCount": 22
+      "instanceCount": 2687
     },
     {
       "cx": 13,
       "cy": 17,
       "path": "objects/chunks/13_17.json.gz",
-      "instanceCount": 12
+      "instanceCount": 2625
     },
     {
       "cx": 14,
       "cy": 2,
       "path": "objects/chunks/14_2.json.gz",
-      "instanceCount": 1
+      "instanceCount": 927
     },
     {
       "cx": 14,
       "cy": 3,
       "path": "objects/chunks/14_3.json.gz",
-      "instanceCount": 2
+      "instanceCount": 5075
     },
     {
       "cx": 14,
       "cy": 4,
       "path": "objects/chunks/14_4.json.gz",
-      "instanceCount": 36
+      "instanceCount": 4065
     },
     {
       "cx": 14,
       "cy": 5,
       "path": "objects/chunks/14_5.json.gz",
-      "instanceCount": 7
+      "instanceCount": 4188
     },
     {
       "cx": 14,
       "cy": 6,
       "path": "objects/chunks/14_6.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2626
+    },
+    {
+      "cx": 14,
+      "cy": 7,
+      "path": "objects/chunks/14_7.json.gz",
+      "instanceCount": 3892
     },
     {
       "cx": 14,
       "cy": 8,
       "path": "objects/chunks/14_8.json.gz",
-      "instanceCount": 54
+      "instanceCount": 4393
     },
     {
       "cx": 14,
       "cy": 9,
       "path": "objects/chunks/14_9.json.gz",
-      "instanceCount": 88
+      "instanceCount": 2662
     },
     {
       "cx": 14,
       "cy": 10,
       "path": "objects/chunks/14_10.json.gz",
-      "instanceCount": 91
+      "instanceCount": 3086
     },
     {
       "cx": 14,
       "cy": 11,
       "path": "objects/chunks/14_11.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2978
     },
     {
       "cx": 14,
       "cy": 12,
       "path": "objects/chunks/14_12.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2491
     },
     {
       "cx": 14,
       "cy": 13,
       "path": "objects/chunks/14_13.json.gz",
-      "instanceCount": 54
+      "instanceCount": 2148
     },
     {
       "cx": 14,
       "cy": 14,
       "path": "objects/chunks/14_14.json.gz",
-      "instanceCount": 3
+      "instanceCount": 2427
     },
     {
       "cx": 14,
       "cy": 15,
       "path": "objects/chunks/14_15.json.gz",
-      "instanceCount": 7
+      "instanceCount": 1856
     },
     {
       "cx": 14,
       "cy": 16,
       "path": "objects/chunks/14_16.json.gz",
-      "instanceCount": 10
+      "instanceCount": 3291
     },
     {
       "cx": 14,
       "cy": 17,
       "path": "objects/chunks/14_17.json.gz",
-      "instanceCount": 1
+      "instanceCount": 1358
     },
     {
       "cx": 14,
       "cy": 18,
       "path": "objects/chunks/14_18.json.gz",
-      "instanceCount": 30
+      "instanceCount": 32
     },
     {
       "cx": 15,
       "cy": 2,
       "path": "objects/chunks/15_2.json.gz",
-      "instanceCount": 5
+      "instanceCount": 1238
     },
     {
       "cx": 15,
       "cy": 3,
       "path": "objects/chunks/15_3.json.gz",
-      "instanceCount": 16
+      "instanceCount": 5606
     },
     {
       "cx": 15,
       "cy": 4,
       "path": "objects/chunks/15_4.json.gz",
-      "instanceCount": 3
+      "instanceCount": 3738
     },
     {
       "cx": 15,
       "cy": 5,
       "path": "objects/chunks/15_5.json.gz",
-      "instanceCount": 1
+      "instanceCount": 501
+    },
+    {
+      "cx": 15,
+      "cy": 6,
+      "path": "objects/chunks/15_6.json.gz",
+      "instanceCount": 1633
     },
     {
       "cx": 15,
       "cy": 7,
       "path": "objects/chunks/15_7.json.gz",
-      "instanceCount": 6
+      "instanceCount": 3813
     },
     {
       "cx": 15,
       "cy": 8,
       "path": "objects/chunks/15_8.json.gz",
-      "instanceCount": 10
+      "instanceCount": 3818
     },
     {
       "cx": 15,
       "cy": 9,
       "path": "objects/chunks/15_9.json.gz",
-      "instanceCount": 15
+      "instanceCount": 4427
+    },
+    {
+      "cx": 15,
+      "cy": 10,
+      "path": "objects/chunks/15_10.json.gz",
+      "instanceCount": 3253
+    },
+    {
+      "cx": 15,
+      "cy": 11,
+      "path": "objects/chunks/15_11.json.gz",
+      "instanceCount": 1377
     },
     {
       "cx": 15,
       "cy": 15,
       "path": "objects/chunks/15_15.json.gz",
-      "instanceCount": 8
+      "instanceCount": 374
+    },
+    {
+      "cx": 15,
+      "cy": 16,
+      "path": "objects/chunks/15_16.json.gz",
+      "instanceCount": 664
     },
     {
       "cx": 15,
       "cy": 17,
       "path": "objects/chunks/15_17.json.gz",
-      "instanceCount": 1
+      "instanceCount": 10
     },
     {
       "cx": 16,
       "cy": 1,
       "path": "objects/chunks/16_1.json.gz",
-      "instanceCount": 102
+      "instanceCount": 1884
     },
     {
       "cx": 16,
       "cy": 2,
       "path": "objects/chunks/16_2.json.gz",
-      "instanceCount": 1
+      "instanceCount": 6501
+    },
+    {
+      "cx": 16,
+      "cy": 3,
+      "path": "objects/chunks/16_3.json.gz",
+      "instanceCount": 2641
     },
     {
       "cx": 16,
       "cy": 4,
       "path": "objects/chunks/16_4.json.gz",
-      "instanceCount": 3
+      "instanceCount": 1272
     },
     {
       "cx": 16,
       "cy": 5,
       "path": "objects/chunks/16_5.json.gz",
-      "instanceCount": 6
+      "instanceCount": 3237
     },
     {
       "cx": 16,
       "cy": 6,
       "path": "objects/chunks/16_6.json.gz",
-      "instanceCount": 16
+      "instanceCount": 2374
     },
     {
       "cx": 16,
       "cy": 7,
       "path": "objects/chunks/16_7.json.gz",
-      "instanceCount": 14
+      "instanceCount": 3207
     },
     {
       "cx": 16,
       "cy": 8,
       "path": "objects/chunks/16_8.json.gz",
-      "instanceCount": 21
+      "instanceCount": 2715
     },
     {
       "cx": 16,
       "cy": 9,
       "path": "objects/chunks/16_9.json.gz",
-      "instanceCount": 8
+      "instanceCount": 4114
     },
     {
       "cx": 16,
       "cy": 10,
       "path": "objects/chunks/16_10.json.gz",
+      "instanceCount": 1326
+    },
+    {
+      "cx": 17,
+      "cy": 0,
+      "path": "objects/chunks/17_0.json.gz",
       "instanceCount": 2
     },
     {
       "cx": 17,
       "cy": 1,
       "path": "objects/chunks/17_1.json.gz",
-      "instanceCount": 1
+      "instanceCount": 3774
+    },
+    {
+      "cx": 17,
+      "cy": 2,
+      "path": "objects/chunks/17_2.json.gz",
+      "instanceCount": 3955
+    },
+    {
+      "cx": 17,
+      "cy": 3,
+      "path": "objects/chunks/17_3.json.gz",
+      "instanceCount": 3585
     },
     {
       "cx": 17,
       "cy": 4,
       "path": "objects/chunks/17_4.json.gz",
-      "instanceCount": 52
+      "instanceCount": 3707
     },
     {
       "cx": 17,
       "cy": 5,
       "path": "objects/chunks/17_5.json.gz",
-      "instanceCount": 76
+      "instanceCount": 3185
     },
     {
       "cx": 17,
       "cy": 6,
       "path": "objects/chunks/17_6.json.gz",
-      "instanceCount": 13
+      "instanceCount": 3184
     },
     {
       "cx": 17,
       "cy": 7,
       "path": "objects/chunks/17_7.json.gz",
-      "instanceCount": 3
+      "instanceCount": 4071
+    },
+    {
+      "cx": 17,
+      "cy": 8,
+      "path": "objects/chunks/17_8.json.gz",
+      "instanceCount": 1053
     },
     {
       "cx": 17,
       "cy": 9,
       "path": "objects/chunks/17_9.json.gz",
-      "instanceCount": 1
+      "instanceCount": 3272
     },
     {
       "cx": 17,
       "cy": 10,
       "path": "objects/chunks/17_10.json.gz",
-      "instanceCount": 12
+      "instanceCount": 2368
     },
     {
       "cx": 18,
       "cy": 0,
       "path": "objects/chunks/18_0.json.gz",
-      "instanceCount": 16
+      "instanceCount": 1917
     },
     {
       "cx": 18,
       "cy": 1,
       "path": "objects/chunks/18_1.json.gz",
-      "instanceCount": 10
+      "instanceCount": 4405
     },
     {
       "cx": 18,
       "cy": 2,
       "path": "objects/chunks/18_2.json.gz",
-      "instanceCount": 126
+      "instanceCount": 4712
     },
     {
       "cx": 18,
       "cy": 3,
       "path": "objects/chunks/18_3.json.gz",
-      "instanceCount": 158
+      "instanceCount": 1506
     },
     {
       "cx": 18,
       "cy": 4,
       "path": "objects/chunks/18_4.json.gz",
-      "instanceCount": 29
+      "instanceCount": 4439
     },
     {
       "cx": 18,
       "cy": 5,
       "path": "objects/chunks/18_5.json.gz",
-      "instanceCount": 1
+      "instanceCount": 2316
     },
     {
       "cx": 18,
       "cy": 6,
       "path": "objects/chunks/18_6.json.gz",
-      "instanceCount": 1
+      "instanceCount": 937
     },
     {
       "cx": 18,
       "cy": 7,
       "path": "objects/chunks/18_7.json.gz",
-      "instanceCount": 2
+      "instanceCount": 75
+    },
+    {
+      "cx": 18,
+      "cy": 8,
+      "path": "objects/chunks/18_8.json.gz",
+      "instanceCount": 690
     },
     {
       "cx": 18,
       "cy": 9,
       "path": "objects/chunks/18_9.json.gz",
-      "instanceCount": 11
+      "instanceCount": 2779
     },
     {
       "cx": 18,
       "cy": 10,
       "path": "objects/chunks/18_10.json.gz",
-      "instanceCount": 50
+      "instanceCount": 1052
+    },
+    {
+      "cx": 18,
+      "cy": 11,
+      "path": "objects/chunks/18_11.json.gz",
+      "instanceCount": 1
     },
     {
       "cx": 19,
       "cy": 0,
       "path": "objects/chunks/19_0.json.gz",
-      "instanceCount": 4
+      "instanceCount": 975
     },
     {
       "cx": 19,
       "cy": 1,
       "path": "objects/chunks/19_1.json.gz",
-      "instanceCount": 2
+      "instanceCount": 2683
     },
     {
       "cx": 19,
       "cy": 2,
       "path": "objects/chunks/19_2.json.gz",
-      "instanceCount": 129
+      "instanceCount": 1188
     },
     {
       "cx": 19,
       "cy": 3,
       "path": "objects/chunks/19_3.json.gz",
-      "instanceCount": 100
+      "instanceCount": 2921
     },
     {
       "cx": 19,
       "cy": 4,
       "path": "objects/chunks/19_4.json.gz",
-      "instanceCount": 1
+      "instanceCount": 1100
     },
     {
       "cx": 19,
       "cy": 5,
       "path": "objects/chunks/19_5.json.gz",
-      "instanceCount": 8
+      "instanceCount": 1071
+    },
+    {
+      "cx": 19,
+      "cy": 6,
+      "path": "objects/chunks/19_6.json.gz",
+      "instanceCount": 2759
+    },
+    {
+      "cx": 19,
+      "cy": 7,
+      "path": "objects/chunks/19_7.json.gz",
+      "instanceCount": 967
+    },
+    {
+      "cx": 19,
+      "cy": 8,
+      "path": "objects/chunks/19_8.json.gz",
+      "instanceCount": 594
     },
     {
       "cx": 19,
       "cy": 9,
       "path": "objects/chunks/19_9.json.gz",
-      "instanceCount": 3
+      "instanceCount": 276
     },
     {
       "cx": 19,
       "cy": 10,
       "path": "objects/chunks/19_10.json.gz",
-      "instanceCount": 2
+      "instanceCount": 5
     },
     {
       "cx": 20,
       "cy": 0,
       "path": "objects/chunks/20_0.json.gz",
-      "instanceCount": 3
+      "instanceCount": 533
+    },
+    {
+      "cx": 20,
+      "cy": 1,
+      "path": "objects/chunks/20_1.json.gz",
+      "instanceCount": 523
     },
     {
       "cx": 20,
       "cy": 3,
       "path": "objects/chunks/20_3.json.gz",
-      "instanceCount": 25
+      "instanceCount": 2902
     },
     {
       "cx": 20,
       "cy": 4,
       "path": "objects/chunks/20_4.json.gz",
-      "instanceCount": 5
+      "instanceCount": 1582
     },
     {
       "cx": 20,
       "cy": 5,
       "path": "objects/chunks/20_5.json.gz",
-      "instanceCount": 5
+      "instanceCount": 1123
+    },
+    {
+      "cx": 20,
+      "cy": 6,
+      "path": "objects/chunks/20_6.json.gz",
+      "instanceCount": 228
+    },
+    {
+      "cx": 20,
+      "cy": 7,
+      "path": "objects/chunks/20_7.json.gz",
+      "instanceCount": 141
+    },
+    {
+      "cx": 20,
+      "cy": 22,
+      "path": "objects/chunks/20_22.json.gz",
+      "instanceCount": 2
     },
     {
       "cx": 20,
       "cy": 23,
       "path": "objects/chunks/20_23.json.gz",
-      "instanceCount": 7
+      "instanceCount": 188
     },
     {
       "cx": 21,
       "cy": 2,
       "path": "objects/chunks/21_2.json.gz",
-      "instanceCount": 3
+      "instanceCount": 158
     },
     {
       "cx": 21,
       "cy": 3,
       "path": "objects/chunks/21_3.json.gz",
-      "instanceCount": 136
+      "instanceCount": 4991
     },
     {
       "cx": 21,
       "cy": 4,
       "path": "objects/chunks/21_4.json.gz",
-      "instanceCount": 62
+      "instanceCount": 2481
     },
     {
       "cx": 21,
       "cy": 5,
       "path": "objects/chunks/21_5.json.gz",
-      "instanceCount": 9
+      "instanceCount": 2024
     },
     {
       "cx": 21,
       "cy": 16,
       "path": "objects/chunks/21_16.json.gz",
-      "instanceCount": 13
+      "instanceCount": 67
     },
     {
       "cx": 21,
       "cy": 17,
       "path": "objects/chunks/21_17.json.gz",
-      "instanceCount": 19
+      "instanceCount": 78
+    },
+    {
+      "cx": 21,
+      "cy": 21,
+      "path": "objects/chunks/21_21.json.gz",
+      "instanceCount": 1008
     },
     {
       "cx": 21,
       "cy": 22,
       "path": "objects/chunks/21_22.json.gz",
-      "instanceCount": 72
+      "instanceCount": 1061
     },
     {
       "cx": 21,
       "cy": 23,
       "path": "objects/chunks/21_23.json.gz",
-      "instanceCount": 61
+      "instanceCount": 643
     },
     {
       "cx": 22,
       "cy": 2,
       "path": "objects/chunks/22_2.json.gz",
-      "instanceCount": 4
+      "instanceCount": 260
     },
     {
       "cx": 22,
       "cy": 3,
       "path": "objects/chunks/22_3.json.gz",
-      "instanceCount": 21
+      "instanceCount": 2811
     },
     {
       "cx": 22,
       "cy": 4,
       "path": "objects/chunks/22_4.json.gz",
-      "instanceCount": 66
+      "instanceCount": 1813
+    },
+    {
+      "cx": 22,
+      "cy": 5,
+      "path": "objects/chunks/22_5.json.gz",
+      "instanceCount": 3
     },
     {
       "cx": 22,
       "cy": 21,
       "path": "objects/chunks/22_21.json.gz",
-      "instanceCount": 20
+      "instanceCount": 1199
+    },
+    {
+      "cx": 22,
+      "cy": 22,
+      "path": "objects/chunks/22_22.json.gz",
+      "instanceCount": 1024
     },
     {
       "cx": 22,
       "cy": 23,
       "path": "objects/chunks/22_23.json.gz",
-      "instanceCount": 8
+      "instanceCount": 164
     },
     {
       "cx": 23,
@@ -1307,13 +1613,13 @@
       "cx": 23,
       "cy": 3,
       "path": "objects/chunks/23_3.json.gz",
-      "instanceCount": 23
+      "instanceCount": 464
     },
     {
       "cx": 23,
       "cy": 4,
       "path": "objects/chunks/23_4.json.gz",
-      "instanceCount": 1
+      "instanceCount": 40
     }
   ]
 }
