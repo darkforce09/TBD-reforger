@@ -67,6 +67,24 @@ export interface TreeStreamClient {
   visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet>
 }
 
+/** Debug snapshot of the stream pipeline (shown in the DEV HUD when the worldmap-debug setting is
+ *  on — worldLayerPrefs). Each field pinpoints an empty stage: manifest → lookup → calls →
+ *  streamed → drawn. */
+export interface TreeStreamDebug {
+  /** Manifest prefab-row count seen by treeStore (-1 ⇒ manifest not loaded / null / rejected). */
+  manifestRows: number
+  /** Of those rows, how many carry a render.iconKey (0 with rows>0 ⇒ narrowing/stale worker). */
+  manifestRender: number
+  /** Glyph-lookup size (0 ⇒ prefabRows carry no render). */
+  lookup: number
+  /** visibleInstances invocations so far (0 ⇒ gate/toggle blocked the stream). */
+  calls: number
+  /** Instances the worker returned on the last resolve (0 ⇒ index/self-hydrate/bbox miss). */
+  streamed: number
+  /** Last stream OR manifest failure message ('' ⇒ none). */
+  error: string
+}
+
 export interface TreeStore {
   ensureTreeStream(terrain: TerrainDef): void
   setTreeViewport(bbox: Bbox | null, deckZoom: number, toggles: TreeToggles): void
@@ -74,6 +92,7 @@ export interface TreeStore {
   getPropGlyphs(): TreeGlyphSet
   getTreeRevision(): number
   subscribeTreeStream(cb: () => void): () => void
+  getTreeStreamDebug(): TreeStreamDebug
   resetTreeStream(): void
 }
 
@@ -151,7 +170,6 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
 
   let terrain: TerrainDef | null = null
   let manifest: WorldManifestLite | null = null
-  let started = false
   let glyphs = new Map<number, GlyphInfo>()
 
   let treeSet: TreeGlyphSet = EMPTY_TREE_GLYPHS
@@ -162,6 +180,13 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
   let lastViewport: { bbox: Bbox; deckZoom: number; toggles: TreeToggles } | null = null
 
   let revision = 0
+  // Debug counters surfaced via getTreeStreamDebug() — displayed in the DEV HUD only when the
+  // worldmap-debug setting is on. Cheap to maintain unconditionally.
+  let debugCalls = 0
+  let debugStreamed = 0
+  let debugManifestRows = -1
+  let debugManifestRender = -1
+  let debugError = ''
   const listeners = new Set<() => void>()
 
   const notify = (): void => {
@@ -203,10 +228,13 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       (rect.cy1 + 1) * chunkSizeM,
     ]
     const seq = ++requestSeq
+    debugCalls++
     client
       .visibleInstances(alignedBbox, deckZoom)
       .then((set) => {
         if (seq !== requestSeq || terrain?.id == null) return // superseded by a newer viewport
+        debugStreamed = set.count
+        debugError = ''
         const { tree, prop } = partition(set, glyphs)
         treeSet = tree
         propSet = prop
@@ -215,13 +243,19 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       .catch((e: unknown) => {
         if (seq !== requestSeq) return
         lastKey = '' // allow a retry on the next viewport change
+        debugError = e instanceof Error ? e.message : String(e)
         console.warn('[worldmap] tree glyph stream failed — will retry on next viewport change', e)
       })
   }
 
   return {
     ensureTreeStream(t: TerrainDef): void {
-      if (terrain?.id === t.id && started) return
+      // Skip only once the manifest is actually LOADED for this terrain. A same-terrain call with
+      // no manifest means a prior load was stranded — e.g. the worker was terminated mid-load on a
+      // StrictMode remount (T-052 instanceKey bump) — so fall through and retry instead of blocking
+      // forever. getWorldObjects() re-spawns a fresh worker on the retry; the worker-side
+      // loadManifest dedupe keeps concurrent retries to one fetch.
+      if (terrain?.id === t.id && manifest) return
       if (terrain && terrain.id !== t.id) {
         // Terrain switch: drop local state only — the shared worker core is unloaded by
         // chunkStore's switch path (all three stores talk to the same worker session).
@@ -234,19 +268,23 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
         manifest = null
       }
       terrain = t
-      started = true
       client
         .loadManifest(t.id)
         .then((m) => {
           if (terrain?.id !== t.id) return // switched away while loading
           manifest = m
           glyphs = m ? buildGlyphLookup(m.prefabRows) : new Map()
+          debugManifestRows = m ? m.prefabRows.length : 0
+          debugManifestRender = m ? m.prefabRows.filter((r) => r.render?.iconKey).length : 0
           if (manifest && lastViewport) {
             runViewport(lastViewport.bbox, lastViewport.deckZoom, lastViewport.toggles)
           }
+          notify()
         })
         .catch((e: unknown) => {
           if (terrain?.id !== t.id) return
+          debugManifestRows = 0
+          debugError = 'manifest: ' + (e instanceof Error ? e.message : String(e))
           console.warn(`[worldmap] tree glyph manifest load failed for ${t.id} — glyphs off`, e)
         })
     },
@@ -274,10 +312,20 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       return () => listeners.delete(cb)
     },
 
+    getTreeStreamDebug(): TreeStreamDebug {
+      return {
+        manifestRows: debugManifestRows,
+        manifestRender: debugManifestRender,
+        lookup: glyphs.size,
+        calls: debugCalls,
+        streamed: debugStreamed,
+        error: debugError,
+      }
+    },
+
     resetTreeStream(): void {
       terrain = null
       manifest = null
-      started = false
       glyphs = new Map()
       treeSet = EMPTY_TREE_GLYPHS
       propSet = EMPTY_TREE_GLYPHS
@@ -303,5 +351,6 @@ export const {
   getPropGlyphs,
   getTreeRevision,
   subscribeTreeStream,
+  getTreeStreamDebug,
   resetTreeStream,
 } = defaultStore

@@ -109,4 +109,32 @@ effect (no per-pan page render, T-057); count via `subscribeTreeStream` snapshot
 count > 0 with nothing on screen ⇒ atlas/render; count 0 ⇒ stream/gate.
 
 Re-verified: vitest **240/240**, `treeProp/lodGates/worldObjectsCore` **56/56**, build + lint green.
-Operator browser confirm pending (zoom to ≥ 0 → green rotated tree glyphs over the forest).
+
+### Fix follow-up 2 — glyph-0 (stream never fired; browser-only)
+
+After the object-array fix, glyphs **still didn't render** in-browser (HUD `glyph 0`) though tests
+were green. Diagnosed live via console/HUD instrumentation. **Two compounding browser-only bugs in
+the worker manifest path** (never hit by the fake-client unit tests):
+
+1. **Concurrent `loadManifest` reset-storm.** `chunkStore` + `forestMassStore` + `treeStore` all
+   call the worker's `loadManifest` at startup. Each saw `manifest === null`, ran `reset()`, and
+   re-fetched — three interleaved loads. The 3rd caller (treeStore) never got a worker response
+   (`manifest resolved` = 0 in the trace). **Fix:** dedupe with an in-flight promise
+   (`worldObjectsCore.loadManifest` → shared `manifestPromise`; all callers await one load).
+2. **Worker terminated mid-load, no retry.** StrictMode + the T-052 `useMissionDoc` instanceKey
+   bump remounts the editor; unmount **terminates the worker**, stranding treeStore's in-flight
+   Comlink call forever. On remount, `ensureTreeStream`'s `started === true` guard **skipped the
+   retry**. Buildings survived on chunkStore's cached main-thread composite; treeStore had nothing
+   cached. **Fix:** gate the skip on `manifest` (loaded), not `started` — a same-terrain call with
+   no manifest retries (getWorldObjects respawns a fresh worker; the dedupe collapses concurrent
+   retries).
+
+Result: **19,757 glyphs drawn @ 165 fps** at z1.6 (HUD `m391/264 lut51 str19962 gly19757`). 51 tree
+species in the lookup.
+
+**Debug HUD behind a setting:** the verbose stream readout (`m rows/render · c calls · str · lut`
++ ERR) is gated behind a persisted `worldmapDebug` pref (`worldLayerPrefs`), toggled **Ctrl+Alt+D**;
+default HUD stays `z <zoom> · glyph <n> · <fps> FPS`. `treeStore.getTreeStreamDebug()` feeds it.
+
+Re-verified after cleanup: vitest **240/240**, build + lint green. Operator-confirmed in browser
+(trees render, toggle works).

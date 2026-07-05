@@ -119,4 +119,31 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
     mod.setMapStyle('map')
     expect(fired).toBe(1)
   })
+
+  // T-090.5.5 — the world-object debug HUD setting (Ctrl+Alt+D). Off by default; the toggle
+  // flips + persists + notifies; a stored `true` is read back on import.
+  it('worldmapDebug: off by default, toggles + persists + notifies', async () => {
+    const store = stubStorage()
+    const mod = await importFresh()
+    expect(mod.getWorldmapDebug()).toBe(false)
+
+    let fired = 0
+    const off = mod.subscribeWorldLayerPrefs(() => fired++)
+    mod.toggleWorldmapDebug()
+    expect(mod.getWorldmapDebug()).toBe(true)
+    expect(fired).toBe(1)
+    expect(JSON.parse(store.get(KEY) ?? '{}')).toMatchObject({ worldmapDebug: true })
+
+    mod.toggleWorldmapDebug()
+    expect(mod.getWorldmapDebug()).toBe(false)
+    expect(fired).toBe(2)
+    off()
+  })
+
+  it('worldmapDebug: a stored true survives a reload; other prefs preserved', async () => {
+    stubStorage({ [KEY]: JSON.stringify({ mapStyle: 'hybrid', worldmapDebug: true }) })
+    const mod = await importFresh()
+    expect(mod.getWorldmapDebug()).toBe(true)
+    expect(mod.getMapStyle()).toBe('hybrid')
+  })
 })

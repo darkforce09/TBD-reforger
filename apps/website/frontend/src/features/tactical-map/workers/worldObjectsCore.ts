@@ -396,6 +396,11 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
 
   const index = createWorldSpatialIndex()
   let manifest: WorldManifestLite | null = null
+  /** In-flight loadManifest dedupe (T-090.5.5): chunkStore + forestMassStore + treeStore all
+   *  call loadManifest at startup. Without this each concurrent caller hits the manifest-null
+   *  branch, runs reset(), and re-fetches — a reset/refetch storm that can strand a later
+   *  caller's promise unresolved (the tree glyph-0 bug). All callers share one load. */
+  let manifestPromise: Promise<WorldManifestLite | null> | null = null
   let terrain: TerrainDef | null = null
   let assetBase = ''
   /** prefabId → [render class code, prefab row] for parse + resolve joins. */
@@ -453,8 +458,20 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
     return g
   }
 
+  /** Deduping entry point: concurrent callers share the single in-flight load; a resolved
+   *  manifest is cached in `manifest` so later calls short-circuit. reset() (inside doLoadManifest)
+   *  deliberately does NOT clear manifestPromise — it is owned here (cleared when the load ends). */
   async function loadManifest(terrainId: string): Promise<WorldManifestLite | null> {
     if (manifest && manifest.terrainId === terrainId) return manifest
+    manifestPromise ??= doLoadManifest(terrainId)
+    try {
+      return await manifestPromise
+    } finally {
+      manifestPromise = null
+    }
+  }
+
+  async function doLoadManifest(terrainId: string): Promise<WorldManifestLite | null> {
     reset()
     const t = (TERRAINS as Record<string, TerrainDef | undefined>)[terrainId]
     if (!t?.manifestUrl) return null

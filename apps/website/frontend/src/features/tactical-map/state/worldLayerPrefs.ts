@@ -40,18 +40,25 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
 interface WorldLayerPrefs {
   mapStyle: MapStyle
   classToggles: WorldClassToggles
+  /** DEV world-object debug HUD (verbose stream counters in the FPS badge). Off by default;
+   *  toggled with Ctrl+Alt+D. Persisted so it survives reloads while debugging. */
+  worldmapDebug: boolean
 }
 
 const isMapStyle = (v: unknown): v is MapStyle => v === 'satellite' || v === 'hybrid' || v === 'map'
 
 /** One-time module-load read: this store's key wins; else migrate the legacy basemap key. */
 function read(): WorldLayerPrefs {
-  const prefs: WorldLayerPrefs = { mapStyle: DEFAULT_STYLE, classToggles: { ...DEFAULT_TOGGLES } }
+  const prefs: WorldLayerPrefs = {
+    mapStyle: DEFAULT_STYLE,
+    classToggles: { ...DEFAULT_TOGGLES },
+    worldmapDebug: false,
+  }
   try {
     const raw = localStorage.getItem(KEY)
     const parsed: unknown = raw ? JSON.parse(raw) : null
     if (parsed && typeof parsed === 'object') {
-      const p = parsed as { mapStyle?: unknown; classToggles?: unknown }
+      const p = parsed as { mapStyle?: unknown; classToggles?: unknown; worldmapDebug?: unknown }
       if (isMapStyle(p.mapStyle)) prefs.mapStyle = p.mapStyle
       if (p.classToggles && typeof p.classToggles === 'object') {
         const stored = p.classToggles as Record<string, unknown>
@@ -59,6 +66,7 @@ function read(): WorldLayerPrefs {
           if (typeof stored[k] === 'boolean') prefs.classToggles[k] = stored[k]
         }
       }
+      if (typeof p.worldmapDebug === 'boolean') prefs.worldmapDebug = p.worldmapDebug
       if (isMapStyle(p.mapStyle)) return prefs
     }
     // No (valid) mapStyle stored yet → seed from the legacy Satellite|Map pref.
@@ -121,4 +129,20 @@ export function useMapStyle(): MapStyle {
 /** React hook: current class toggles (stable reference between changes). */
 export function useClassToggles(): WorldClassToggles {
   return useSyncExternalStore(subscribeWorldLayerPrefs, getClassToggles, getClassToggles)
+}
+
+export function getWorldmapDebug(): boolean {
+  return current.worldmapDebug
+}
+
+/** Flip the DEV world-object debug HUD (bound to Ctrl+Alt+D in the FPS badge). */
+export function toggleWorldmapDebug(): void {
+  current = { ...current, worldmapDebug: !current.worldmapDebug }
+  persist()
+  notify()
+}
+
+/** React hook: whether the verbose world-object debug HUD is on. */
+export function useWorldmapDebug(): boolean {
+  return useSyncExternalStore(subscribeWorldLayerPrefs, getWorldmapDebug, getWorldmapDebug)
 }
