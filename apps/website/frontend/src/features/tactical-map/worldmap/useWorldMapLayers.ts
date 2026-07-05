@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Layer } from '@deck.gl/core'
 import { WORLDMAP_ENABLED } from './config'
 import { classVisible } from './lodGates'
-import { buildRoadLayer, visibleRoadClasses, type RoadClass } from './roadLayer'
+import { buildRoadLayers, visibleRoadClasses, type RoadClass } from './roadLayer'
 import { buildBuildingLayer, buildBuildingBadgeLayer } from './buildingLayer'
 import { loadWorldObjects, type WorldObjectsData } from './worldData'
 import { loadWorldGlyphAtlas, type WorldGlyphAtlas } from '../layers/worldGlyphAtlas'
@@ -63,11 +63,12 @@ export function useWorldMapLayers({ terrain, deckZoom }: UseWorldMapLayersOpts):
     if (!WORLDMAP_ENABLED || !data) return []
     const layers: Layer[] = []
     if (toggles.roads && roadClassKey) {
-      const roads = buildRoadLayer({
-        segments: data.roads,
-        visibleClasses: roadClassKey.split(',') as RoadClass[],
-      })
-      if (roads) layers.push(roads)
+      layers.push(
+        ...buildRoadLayers({
+          segments: data.roads,
+          visibleClasses: roadClassKey.split(',') as RoadClass[],
+        }),
+      )
     }
     if (toggles.buildings) {
       const buildings = buildBuildingLayer({ buildings: data.buildings, visible: buildingsVisible })

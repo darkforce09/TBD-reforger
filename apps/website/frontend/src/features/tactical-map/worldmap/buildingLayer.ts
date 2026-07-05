@@ -110,10 +110,11 @@ export function buildingsFromChunkInstances(
   return out
 }
 
-// Visual spec (t090_5): fill rgba(120,120,130,0.35); military tint #a08060; stroke #888 thin.
-const FILL: [number, number, number, number] = [120, 120, 130, 89]
-const FILL_MILITARY: [number, number, number, number] = [0xa0, 0x80, 0x60, 89]
-const STROKE: [number, number, number, number] = [0x88, 0x88, 0x88, 255]
+// Solid-dark A3-style footprints (operator style pass T-090.5.2.1 — supersedes the t090_5
+// ghost values rgba(120,120,130,0.35)/#888; flagged for doc sync). Military tint #7a5c3d.
+const FILL: [number, number, number, number] = [38, 38, 44, 184]
+const FILL_MILITARY: [number, number, number, number] = [0x7a, 0x5c, 0x3d, 184]
+const STROKE: [number, number, number, number] = [150, 150, 158, 204]
 
 /** Build the `world-buildings` OBB PolygonLayer. `visible` gates via Deck (data stays on GPU
  *  across band crossings). Mass layer — never pickable (T-090.9 owns pick). */

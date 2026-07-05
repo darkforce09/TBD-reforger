@@ -86,3 +86,37 @@ Code-level equivalents of R1–R3 + LOD bands are covered by the vitest gates ab
 - T-090.5.5: tree/veg/prop glyph layers (atlas already carries tree/veg/rock/prop/utility sprites).
 - T-090.9: pick wiring (`PICK_RADIUS_PX`, worker `pickNearest/pickRect`).
 - `WorldLayerToggles.tsx` UI (prefs are live via localStorage; surfaced control ships with the toggles panel deliverable).
+
+---
+
+# T-090.5.2.1 — Road centerline extraction + visual quality pass
+
+**Date:** 2026-07-05 · **Trigger:** operator in-browser review of T-090.5.2 ("roads and buildings look shit, but right direction") with screenshots.
+
+## Diagnosis
+
+1. **Roads drew as "centipedes"** — `roads.json.gz` polylines are NOT centerlines but **road-surface quad soup**: alternating cross-edge point pairs, every second cross-edge duplicated. Measured: even-indexed steps near-constant per class (runway **20.0 m**, paved **4.0 m**, dirt **1.75 m**; p10/p90 tight), 41,758 / 169,346 steps are sub-cm duplicates (≈ every 4th), only 8 true direction reversals. PathLayer connecting the raw sequence rendered perpendicular ticks along every road.
+2. **Buildings read as ghost wireframes** — spec colors (fill rgba(120,120,130,0.35), stroke #888 @ 1 px) wash out over the dimmed satellite.
+3. **Rotation checked — NOT a bug:** export `rotationDeg = GetAngles()[1]` (ops-log `handednessRemap`), left-handed Y-up ⇒ clockwise-from-north, matches glyphs-spec L2 + `obbCorners` + T-092 spawn parity.
+
+## Fix (render-side; export untouched)
+
+- `extractRoadCenterline` (pure, `roadLayer.ts`): midpoint each cross pair → centerline vertex, collapse <0.05 m dups, median pair length = **measured true width** per segment; `parseRoadsPayload` applies it (`RoadSegment.widthM`, style-table width as sanity fallback).
+- Roads render at **measured geometric width** + **near-black casing** (`world-roads-casing`, +40% width, under `world-roads`) — operator-approved style pass. **Deviations from contract/spec for Cursor doc sync:** road width source = measured data (not the px@z0 table; table keeps colors/dash + fallback), new layer id `world-roads-casing` (plan §4.2 addendum).
+- Buildings: solid dark blocks — fill `rgba(38,38,44,0.72)`, stroke `rgba(150,150,158,0.8)` 1 px, military `#7a5c3d` (supersedes t090_5 ghost values — doc sync).
+
+## Verification
+
+```
+vitest --run             → 13 files / 106 tests (6 new: quad-soup centerline, dedupe, odd-point guard,
+                           <2-midpoint null, junction-flare median width, casing+road construction smoke)
+one-off real-data sweep  → 766/766 segments centerline; residual dup steps 0;
+                           median widths runway 20 / paved 4 / dirt 1.75; >50% vertex reduction (temp test, removed)
+npm run build / lint / prettier → clean
+```
+
+Operator re-check in browser (Vite HMR, flag on): roads as clean cased strokes at true width, dirt dashed; buildings as solid dark footprints.
+
+## Follow-up for export lane (T-090.3.x, not FE)
+
+`decode-topo` road extraction emits quad soup — a future export slice can emit true centerlines + `widthM` directly and drop `extractRoadCenterline`; FE contract already matches that shape.

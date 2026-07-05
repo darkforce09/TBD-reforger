@@ -1,17 +1,33 @@
-// T-090.5.2 — Road styling + band visibility must mirror the canonical road class table in
-// t090_render_lod_contract.md (colors/widths/dash verbatim; min-zooms delegated to lodGates).
-// Contract N3 band rows for roads: −6…−4 highway/paved/runway · dirt+track from −2 · path from +4.
+// T-090.5.2/.5.2.1 — Road styling + band visibility must mirror the canonical road class table
+// in t090_render_lod_contract.md (colors/dash verbatim; min-zooms delegated to lodGates), and
+// centerline extraction must recover drawable geometry from the export's quad-soup polylines
+// (alternating cross-edge pairs; every second cross-edge duplicated).
 import { describe, it, expect } from 'vitest'
 import {
   ROAD_STYLES,
-  buildRoadLayer,
+  buildRoadLayers,
   dashArrayFor,
+  extractRoadCenterline,
   parseRoadsPayload,
   visibleRoadClasses,
 } from './roadLayer'
 
-describe('ROAD_STYLES (contract road class table, verbatim)', () => {
-  it('colors, widths (px @ z0 = meters) and dash flags match the contract', () => {
+// Road along +y at x=0, true width 4 m, in export quad-soup form:
+// cross pair → mid (0,0) · reversed pair @ y=10 → mid (0,10) · duplicated pair (the export's
+// every-second-edge dup) → same mid, deduped · pair @ y=20 → mid (0,20).
+const QUAD_SOUP: [number, number][] = [
+  [-2, 0],
+  [2, 0],
+  [2, 10],
+  [-2, 10],
+  [-2, 10],
+  [2, 10],
+  [2, 20],
+  [-2, 20],
+]
+
+describe('ROAD_STYLES (contract road class table)', () => {
+  it('colors, fallback widths and dash flags match the contract', () => {
     expect(ROAD_STYLES.highway_paved).toEqual({ color: [200, 200, 200], widthM: 4, dashed: false })
     expect(ROAD_STYLES.road_paved).toEqual({ color: [160, 160, 160], widthM: 2.5, dashed: false })
     expect(ROAD_STYLES.road_dirt).toEqual({ color: [139, 105, 20], widthM: 2, dashed: true })
@@ -29,6 +45,58 @@ describe('ROAD_STYLES (contract road class table, verbatim)', () => {
       expect(dash).toBeGreaterThan(0)
       expect(gap).toBeGreaterThan(0)
     }
+  })
+})
+
+describe('extractRoadCenterline (quad soup → centerline + measured width)', () => {
+  it('midpoints each cross pair, dedupes the duplicated edges, measures the width', () => {
+    const center = extractRoadCenterline(QUAD_SOUP)
+    expect(center).not.toBeNull()
+    expect(center?.path).toEqual([
+      [0, 0],
+      [0, 10],
+      [0, 20],
+    ])
+    expect(center?.widthM).toBe(4)
+  })
+
+  it('drops an odd trailing point', () => {
+    const center = extractRoadCenterline([...QUAD_SOUP, [999, 999]])
+    expect(center?.path).toEqual([
+      [0, 0],
+      [0, 10],
+      [0, 20],
+    ])
+  })
+
+  it('null when fewer than 2 distinct midpoints survive', () => {
+    expect(
+      extractRoadCenterline([
+        [-2, 0],
+        [2, 0],
+      ]),
+    ).toBeNull()
+    expect(
+      extractRoadCenterline([
+        [-2, 0],
+        [2, 0],
+        [2, 0],
+        [-2, 0],
+      ]),
+    ).toBeNull()
+    expect(extractRoadCenterline([])).toBeNull()
+  })
+
+  it('width is the median across cross-edges (robust to junction flares)', () => {
+    const center = extractRoadCenterline([
+      [-2, 0],
+      [2, 0],
+      [2, 10],
+      [-2, 10],
+      [-6, 20],
+      [6, 20], // 12 m flare at a junction
+    ])
+    expect(center?.widthM).toBe(4)
   })
 })
 
@@ -60,60 +128,57 @@ describe('visibleRoadClasses per N3 band', () => {
   })
 })
 
-describe('parseRoadsPayload (roads.json.gz shape)', () => {
+describe('parseRoadsPayload (roads.json.gz shape → centerlined segments)', () => {
   const good = {
     schemaVersion: '1.0.0',
     terrainId: 'everon',
     roadSegments: [
-      {
-        id: 'road-everon-0000',
-        roadClass: 'runway',
-        points: [
-          [4751.58, 12057.49],
-          [4797.59, 12057.54],
-        ],
-      },
+      { id: 'road-everon-0000', roadClass: 'runway', points: QUAD_SOUP },
       {
         id: 'road-everon-0001',
         roadClass: 'road_dirt',
         points: [
-          [0, 0],
-          [10, 10],
-          [20, 15],
+          [0, -1],
+          [0, 1],
+          [10, 1],
+          [10, -1],
         ],
       },
     ],
   }
 
-  it('narrows well-formed segments', () => {
+  it('narrows well-formed segments to centerlines with measured widths', () => {
     const segs = parseRoadsPayload(good)
     expect(segs).toHaveLength(2)
-    expect(segs[0].roadClass).toBe('runway')
-    expect(segs[1].points).toHaveLength(3)
+    expect(segs[0].points).toEqual([
+      [0, 0],
+      [0, 10],
+      [0, 20],
+    ])
+    expect(segs[0].widthM).toBe(4)
+    expect(segs[1].points).toEqual([
+      [0, 0],
+      [10, 0],
+    ])
+    expect(segs[1].widthM).toBe(2)
   })
 
-  it('buildRoadLayer construction smoke: world-roads id, class-filtered data, never pickable', () => {
+  it('buildRoadLayers construction smoke: casing under road, class-filtered, never pickable', () => {
     const segs = parseRoadsPayload(good)
-    const layer = buildRoadLayer({ segments: segs, visibleClasses: ['runway'] })
-    expect(layer?.id).toBe('world-roads')
-    expect(layer?.props.data).toHaveLength(1)
-    expect(layer?.props.pickable).toBe(false)
-    expect(layer?.props.widthMinPixels).toBe(1)
-    // No visible class with segments → no layer at all.
-    expect(buildRoadLayer({ segments: segs, visibleClasses: [] })).toBeNull()
+    const layers = buildRoadLayers({ segments: segs, visibleClasses: ['runway'] })
+    expect(layers.map((l) => l.id)).toEqual(['world-roads-casing', 'world-roads'])
+    for (const l of layers) {
+      expect(l.props.data).toHaveLength(1)
+      expect(l.props.pickable).toBe(false)
+    }
+    // No visible class with segments → no layers at all.
+    expect(buildRoadLayers({ segments: segs, visibleClasses: [] })).toEqual([])
   })
 
   it('drops malformed / unknown-class / degenerate segments and non-payloads', () => {
     const segs = parseRoadsPayload({
       roadSegments: [
-        {
-          id: 'x',
-          roadClass: 'hyperloop',
-          points: [
-            [0, 0],
-            [1, 1],
-          ],
-        }, // unknown class
+        { id: 'x', roadClass: 'hyperloop', points: QUAD_SOUP }, // unknown class
         { id: 'y', roadClass: 'track', points: [[0, 0]] }, // < 2 points
         {
           id: 'z',
@@ -123,13 +188,15 @@ describe('parseRoadsPayload (roads.json.gz shape)', () => {
             [Number.NaN, 1],
           ],
         }, // non-finite
+        { roadClass: 'track', points: QUAD_SOUP }, // no id
         {
+          id: 'w',
           roadClass: 'track',
           points: [
-            [0, 0],
-            [1, 1],
+            [-2, 0],
+            [2, 0],
           ],
-        }, // no id
+        }, // single cross-edge → no centerline
       ],
     })
     expect(segs).toEqual([])
