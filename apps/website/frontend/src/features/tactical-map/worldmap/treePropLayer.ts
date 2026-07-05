@@ -2,10 +2,15 @@
 // `world-trees` + `world-props`, drawn after forest mass per the t090_10 layer stack). The
 // last render lane: individual IconLayer glyphs from the world-glyph atlas, keyed per instance
 // by prefab `render.iconKey`, rotated by export yaw, sized `baseSizePx·2^(zoom−REF_ZOOM)` with
-// an optional heightM cap. Data is the budget-capped SoA the worker's visibleInstances returns,
-// pre-resolved into a TreeGlyphComposite by treeStore (glyph key/size/color/angle computed once
-// per stream commit — nothing per frame, T-057 rule). Below TREE_GLYPH_MIN_ZOOM (0) trees are
-// hidden and the forest-mass polygons carry readability — NO world supercluster (contract LOD5).
+// an optional heightM cap. Data is the budget-capped set the worker's visibleInstances returns,
+// resolved by treeStore into per-instance objects (glyph key/size/color/angle computed once per
+// stream commit — nothing per frame, T-057 rule). Below TREE_GLYPH_MIN_ZOOM (0) trees are hidden
+// and the forest-mass polygons carry readability — NO world supercluster (contract LOD5).
+//
+// Data shape: a plain OBJECT ARRAY + per-datum accessors — the exact form layers/useIconLayer.ts
+// uses for the 367k slot markers. IconLayer builds its instanceIconFrames by iterating `data`
+// through getIcon, which the binary `{length, attributes}` form silently breaks (zero icons pack);
+// PolygonLayer/SolidPolygonLayer (buildings/forest) accept binary, IconLayer does not.
 //
 // Pure decision exports (deckAngleForRotationDeg, treeSizeMultiplier, hexToRgba) are
 // node-testable; the two builders stay thin (spine rule). Visibility booleans come from
@@ -17,32 +22,24 @@ import { IconLayer } from '@deck.gl/layers'
 import { REF_ZOOM } from './lodGates'
 import type { WorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 
-/** Per-instance glyph data for one class group (tree or prop), SoA + parallel string keys.
- *  `sizes` is METERS (baseSizePx·mult / 2^REF_ZOOM) so the IconLayer's `sizeUnits:'meters'`
- *  scales it with zoom for free — exactly `baseSizePx·2^(zoom−REF_ZOOM)` on screen, no
- *  per-frame updateTriggers (same trick as the T-090.5.2 building badge layer). */
-export interface TreeGlyphComposite {
-  count: number
-  /** [x0,y0,x1,y1,…] world meters. */
-  positions: Float32Array
+/** One placed glyph, shaped for the IconLayer accessors (built once per stream commit). `size`
+ *  is METERS (baseSizePx·mult / 2^REF_ZOOM) so `sizeUnits:'meters'` scales it with zoom for free
+ *  — exactly `baseSizePx·2^(zoom−REF_ZOOM)` on screen (same trick as the building badge layer). */
+export interface TreeGlyphInstance {
+  position: [number, number]
   /** Deck `getAngle` degrees (handedness already converted from export yaw). */
-  anglesDeg: Float32Array
-  /** Per-instance glyph size in meters. */
-  sizes: Float32Array
-  /** rgba × count, 0–255 (Deck normalizes the uint8 color attribute). */
-  colors: Uint8Array
-  /** Atlas key per instance (getIcon accessor — the one non-binary attribute). */
-  iconKeys: string[]
+  angle: number
+  /** Glyph size in meters. */
+  size: number
+  /** rgba 0–255. */
+  color: [number, number, number, number]
+  /** Atlas key. */
+  iconKey: string
 }
 
-export const EMPTY_TREE_GLYPHS: TreeGlyphComposite = {
-  count: 0,
-  positions: new Float32Array(0),
-  anglesDeg: new Float32Array(0),
-  sizes: new Float32Array(0),
-  colors: new Uint8Array(0),
-  iconKeys: [],
-}
+export type TreeGlyphSet = TreeGlyphInstance[]
+
+export const EMPTY_TREE_GLYPHS: TreeGlyphSet = []
 
 /** Readability floor: never shrink a glyph below this on screen (plan §4.4 min-px clamps). */
 export const GLYPH_SIZE_MIN_PX = 4
@@ -94,34 +91,28 @@ export function hexToRgba(hex: string | undefined): [number, number, number, num
   ]
 }
 
-/** Shared builder for the two glyph IconLayers (world-trees / world-props). Returns null when
- *  the atlas isn't loaded (per-layer degrade, plan risk R5 — never a crash) or the composite is
- *  empty. `visible` gates via Deck so buffers stay on the GPU across band crossings. Binary
- *  attributes for position/angle/size/color; getIcon is the one per-row accessor (string key). */
+/** Shared builder for the two glyph IconLayers (world-trees / world-props). Object-array data +
+ *  per-datum accessors, mirroring layers/useIconLayer.ts (the proven 367k-icon path). Returns
+ *  null when the atlas isn't loaded (per-layer degrade, plan risk R5) or there are no instances.
+ *  `visible` gates via Deck so buffers stay on the GPU across band crossings. */
 function buildGlyphLayer(
   id: 'world-trees' | 'world-props',
-  opts: { composite: TreeGlyphComposite; atlas: WorldGlyphAtlas | null; visible: boolean },
-): IconLayer | null {
-  const { composite, atlas } = opts
-  if (!atlas || composite.count === 0) return null
-  const { iconKeys } = composite
-  return new IconLayer({
+  opts: { instances: TreeGlyphSet; atlas: WorldGlyphAtlas | null; visible: boolean },
+): IconLayer<TreeGlyphInstance> | null {
+  const { instances, atlas } = opts
+  if (!atlas || instances.length === 0) return null
+  return new IconLayer<TreeGlyphInstance>({
     id,
-    data: {
-      length: composite.count,
-      attributes: {
-        getPosition: { value: composite.positions, size: 2 },
-        getAngle: { value: composite.anglesDeg, size: 1 },
-        getSize: { value: composite.sizes, size: 1 },
-        getColor: { value: composite.colors, size: 4 },
-      },
-    },
+    data: instances,
     visible: opts.visible,
     coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
     iconAtlas: atlas.atlasUrl,
     iconMapping: atlas.iconMapping,
-    // Binary data → object is undefined; resolve the atlas key by row index.
-    getIcon: (_: unknown, info: { index: number }) => iconKeys[info.index],
+    getIcon: (d) => d.iconKey,
+    getPosition: (d) => d.position,
+    getAngle: (d) => d.angle,
+    getSize: (d) => d.size,
+    getColor: (d) => d.color,
     sizeUnits: 'meters',
     sizeMinPixels: GLYPH_SIZE_MIN_PX,
     pickable: false,
@@ -130,18 +121,18 @@ function buildGlyphLayer(
 
 /** Build the slot-9 `world-trees` IconLayer (tree + vegetation glyph group). */
 export function buildTreeGlyphLayer(opts: {
-  composite: TreeGlyphComposite
+  instances: TreeGlyphSet
   atlas: WorldGlyphAtlas | null
   visible: boolean
-}): IconLayer | null {
+}): IconLayer<TreeGlyphInstance> | null {
   return buildGlyphLayer('world-trees', opts)
 }
 
 /** Build the slot-10 `world-props` IconLayer (prop + large-rock glyph group). */
 export function buildPropGlyphLayer(opts: {
-  composite: TreeGlyphComposite
+  instances: TreeGlyphSet
   atlas: WorldGlyphAtlas | null
   visible: boolean
-}): IconLayer | null {
+}): IconLayer<TreeGlyphInstance> | null {
   return buildGlyphLayer('world-props', opts)
 }

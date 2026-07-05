@@ -1,8 +1,9 @@
 // T-090.5.5 — Tree/prop glyph gates. Pure helpers (rotation handedness R8/GL-G5, heightM size
-// cap, hex tint), the two IconLayer builders (binary plumbing + null degrade + pickable), and
-// the treeStore streaming brain: LOD3 (@ −2 trees hidden, no worker call), the glyph band opening
-// at TREE_GLYPH_MIN_ZOOM, class partition (buildings dropped, rocks ride props), dedupe, and
-// stale-reply supersede. Node env — Deck layers construct without a GL context (props only).
+// cap, hex tint), the two IconLayer builders (object-array data + accessors + null degrade +
+// pickable), and the treeStore streaming brain: LOD3 (@ −2 trees hidden, no worker call), the
+// glyph band opening at TREE_GLYPH_MIN_ZOOM, class partition (buildings dropped, rocks ride
+// props), dedupe, and stale-reply supersede. Node env — Deck layers construct without a GL
+// context (props only).
 import { describe, it, expect } from 'vitest'
 import {
   DEFAULT_GLYPH_RGBA,
@@ -14,7 +15,8 @@ import {
   glyphSizeMeters,
   hexToRgba,
   treeSizeMultiplier,
-  type TreeGlyphComposite,
+  type TreeGlyphInstance,
+  type TreeGlyphSet,
 } from './treePropLayer'
 import { createTreeStore, type TreeStreamClient } from './treeStore'
 import { REF_ZOOM, classVisible } from './lodGates'
@@ -77,25 +79,21 @@ const ATLAS: WorldGlyphAtlas = {
   },
 }
 
-const SAMPLE: TreeGlyphComposite = {
-  count: 2,
-  positions: Float32Array.from([10, 20, 30, 40]),
-  anglesDeg: Float32Array.from([0, -90]),
-  sizes: Float32Array.from([4.5, 3]),
-  colors: Uint8Array.from([45, 90, 39, 255, 74, 122, 50, 255]),
-  iconKeys: ['tree-conifer', 'prop-fence'],
-}
+const SAMPLE: TreeGlyphSet = [
+  { position: [10, 20], angle: 0, size: 4.5, color: [45, 90, 39, 255], iconKey: 'tree-conifer' },
+  { position: [30, 40], angle: -90, size: 3, color: [74, 122, 50, 255], iconKey: 'prop-fence' },
+]
 
 describe('buildTreeGlyphLayer / buildPropGlyphLayer', () => {
-  it('returns null with no atlas or an empty composite (R5 degrade)', () => {
-    expect(buildTreeGlyphLayer({ composite: SAMPLE, atlas: null, visible: true })).toBeNull()
-    expect(buildTreeGlyphLayer({ composite: EMPTY_TREE_GLYPHS, atlas: ATLAS, visible: true })).toBeNull()
-    expect(buildPropGlyphLayer({ composite: EMPTY_TREE_GLYPHS, atlas: ATLAS, visible: true })).toBeNull()
+  it('returns null with no atlas or an empty set (R5 degrade)', () => {
+    expect(buildTreeGlyphLayer({ instances: SAMPLE, atlas: null, visible: true })).toBeNull()
+    expect(buildTreeGlyphLayer({ instances: EMPTY_TREE_GLYPHS, atlas: ATLAS, visible: true })).toBeNull()
+    expect(buildPropGlyphLayer({ instances: [], atlas: ATLAS, visible: true })).toBeNull()
   })
 
-  it('builds world-trees / world-props IconLayers over binary attributes (never pickable)', () => {
-    const trees = buildTreeGlyphLayer({ composite: SAMPLE, atlas: ATLAS, visible: true })
-    const props = buildPropGlyphLayer({ composite: SAMPLE, atlas: ATLAS, visible: false })
+  it('builds world-trees / world-props IconLayers over object-array data (never pickable)', () => {
+    const trees = buildTreeGlyphLayer({ instances: SAMPLE, atlas: ATLAS, visible: true })
+    const props = buildPropGlyphLayer({ instances: SAMPLE, atlas: ATLAS, visible: false })
     expect(trees?.id).toBe('world-trees')
     expect(props?.id).toBe('world-props')
     const p = trees?.props as Record<string, unknown>
@@ -104,23 +102,25 @@ describe('buildTreeGlyphLayer / buildPropGlyphLayer', () => {
     expect(props?.props.visible).toBe(false)
     expect(p.sizeUnits).toBe('meters')
     expect(p.sizeMinPixels).toBe(GLYPH_SIZE_MIN_PX)
-    // iconAtlas/iconMapping are async Deck props (resolve to null/{} without a GL context) —
-    // the getIcon accessor test below covers the atlas mapping wiring instead.
-    const data = p.data as { length: number; attributes: Record<string, { value: unknown; size: number }> }
-    expect(data.length).toBe(2)
-    expect(data.attributes.getPosition.value).toBe(SAMPLE.positions)
-    expect(data.attributes.getPosition.size).toBe(2)
-    expect(data.attributes.getAngle.value).toBe(SAMPLE.anglesDeg)
-    expect(data.attributes.getSize.value).toBe(SAMPLE.sizes)
-    expect(data.attributes.getColor.value).toBe(SAMPLE.colors)
-    expect(data.attributes.getColor.size).toBe(4)
+    // data is the plain object array (the proven useIconLayer form; binary data breaks IconLayer
+    // icon packing). iconAtlas/iconMapping are async Deck props (null/{} without a GL context) —
+    // the getIcon accessor test below covers the atlas wiring.
+    expect(p.data).toBe(SAMPLE)
+    const getPosition = p.getPosition as (d: TreeGlyphInstance) => [number, number]
+    const getColor = p.getColor as (d: TreeGlyphInstance) => number[]
+    const getSize = p.getSize as (d: TreeGlyphInstance) => number
+    const getAngle = p.getAngle as (d: TreeGlyphInstance) => number
+    expect(getPosition(SAMPLE[0])).toEqual([10, 20])
+    expect(getColor(SAMPLE[0])).toEqual([45, 90, 39, 255])
+    expect(getSize(SAMPLE[1])).toBe(3)
+    expect(getAngle(SAMPLE[1])).toBe(-90)
   })
 
-  it('getIcon resolves the atlas key by row index (binary data → no per-row object)', () => {
-    const trees = buildTreeGlyphLayer({ composite: SAMPLE, atlas: ATLAS, visible: true })
-    const getIcon = (trees?.props as unknown as { getIcon: (o: unknown, i: { index: number }) => string }).getIcon
-    expect(getIcon(undefined, { index: 0 })).toBe('tree-conifer')
-    expect(getIcon(undefined, { index: 1 })).toBe('prop-fence')
+  it('getIcon returns the per-datum atlas key', () => {
+    const trees = buildTreeGlyphLayer({ instances: SAMPLE, atlas: ATLAS, visible: true })
+    const getIcon = (trees?.props as Record<string, unknown>).getIcon as (d: TreeGlyphInstance) => string
+    expect(getIcon(SAMPLE[0])).toBe('tree-conifer')
+    expect(getIcon(SAMPLE[1])).toBe('prop-fence')
   })
 })
 
@@ -212,14 +212,14 @@ const BBOX: [number, number, number, number] = [1024, 512, 1536, 1024]
 const ALL = { trees: true, props: true }
 
 describe('treeStore — LOD3 gate (contract LOD3: trees hidden below their band)', () => {
-  it('@ −2: no worker call, composites empty', async () => {
+  it('@ −2: no worker call, sets empty', async () => {
     const h = makeHarness()
     await ready(h)
     h.store.setTreeViewport(BBOX, -2, ALL)
     await tick()
     expect(h.calls.visible).toBe(0) // gated before the worker (skip-when-invisible)
-    expect(h.store.getTreeGlyphs().count).toBe(0)
-    expect(h.store.getPropGlyphs().count).toBe(0)
+    expect(h.store.getTreeGlyphs().length).toBe(0)
+    expect(h.store.getPropGlyphs().length).toBe(0)
   })
 
   it('both toggles off @ 0: no worker call, empty', async () => {
@@ -228,7 +228,7 @@ describe('treeStore — LOD3 gate (contract LOD3: trees hidden below their band)
     h.store.setTreeViewport(BBOX, 0, { trees: false, props: false })
     await tick()
     expect(h.calls.visible).toBe(0)
-    expect(h.store.getTreeGlyphs().count).toBe(0)
+    expect(h.store.getTreeGlyphs().length).toBe(0)
   })
 })
 
@@ -240,15 +240,16 @@ describe('treeStore — glyph band + partition', () => {
     await tick()
     expect(h.calls.visible).toBe(1)
     const trees = h.store.getTreeGlyphs()
-    expect(trees.count).toBe(2) // conifer + deciduous; building (code 0) dropped
-    expect(trees.iconKeys).toEqual(['tree-conifer', 'tree-deciduous'])
+    expect(trees.length).toBe(2) // conifer + deciduous; building (code 0) dropped
+    expect(trees.map((g) => g.iconKey)).toEqual(['tree-conifer', 'tree-deciduous'])
     // conifer heightM 20 → 1.5×; deciduous heightM 10 → 1.0×
-    expect(trees.sizes[0]).toBeCloseTo((24 * 1.5) / 2 ** REF_ZOOM, 6)
-    expect(trees.sizes[1]).toBeCloseTo(24 / 2 ** REF_ZOOM, 6)
+    expect(trees[0].size).toBeCloseTo((24 * 1.5) / 2 ** REF_ZOOM, 6)
+    expect(trees[1].size).toBeCloseTo(24 / 2 ** REF_ZOOM, 6)
     // rot 0 → 0, rot 90 → −90 (handedness)
-    expect([...trees.anglesDeg]).toEqual([0, -90])
-    expect([...trees.colors.slice(0, 4)]).toEqual([45, 90, 39, 255])
-    expect(h.store.getPropGlyphs().count).toBe(0) // prop gate closed at 0
+    expect(trees.map((g) => g.angle)).toEqual([0, -90])
+    expect(trees[0].color).toEqual([45, 90, 39, 255])
+    expect(trees[0].position).toEqual([10, 20])
+    expect(h.store.getPropGlyphs().length).toBe(0) // prop gate closed at 0
   })
 
   it('@ +3: props/rocks ride the prop group; fence has the DEFAULT tint', async () => {
@@ -257,10 +258,10 @@ describe('treeStore — glyph band + partition', () => {
     h.store.setTreeViewport(BBOX, 3, { trees: false, props: true })
     await tick()
     const props = h.store.getPropGlyphs()
-    expect(props.count).toBe(2) // fence (prop) + boulder (rockLarge)
-    expect(props.iconKeys).toEqual(['prop-fence', 'rock-boulder'])
-    expect(props.sizes[0]).toBeCloseTo(12 / 2 ** REF_ZOOM, 6) // no heightM → mult 1
-    expect([...props.colors.slice(0, 4)]).toEqual(DEFAULT_GLYPH_RGBA) // fence has no defaultColor
+    expect(props.length).toBe(2) // fence (prop) + boulder (rockLarge)
+    expect(props.map((g) => g.iconKey)).toEqual(['prop-fence', 'rock-boulder'])
+    expect(props[0].size).toBeCloseTo(12 / 2 ** REF_ZOOM, 6) // no heightM → mult 1
+    expect(props[0].color).toEqual(DEFAULT_GLYPH_RGBA) // fence has no defaultColor
   })
 })
 
@@ -285,7 +286,7 @@ describe('treeStore — dedupe + empty-terrain', () => {
     h.store.setTreeViewport(BBOX, 0, ALL)
     await tick()
     expect(h.calls.visible).toBe(0)
-    expect(h.store.getTreeGlyphs().count).toBe(0)
+    expect(h.store.getTreeGlyphs().length).toBe(0)
   })
 })
 

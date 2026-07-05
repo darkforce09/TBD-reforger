@@ -54,7 +54,7 @@ import {
   buildPropGlyphLayer,
   buildTreeGlyphLayer,
   EMPTY_TREE_GLYPHS,
-  type TreeGlyphComposite,
+  type TreeGlyphSet,
 } from './treePropLayer'
 import {
   ensureTreeStream,
@@ -172,8 +172,8 @@ interface AssembleOpts {
   seaVisible: boolean
   seaAlpha: number
   contourVisible: boolean
-  treeGlyphs: TreeGlyphComposite
-  propGlyphs: TreeGlyphComposite
+  treeGlyphs: TreeGlyphSet
+  propGlyphs: TreeGlyphSet
   treesVisible: boolean
   propsVisible: boolean
 }
@@ -235,11 +235,11 @@ function assembleWorldLayers(o: AssembleOpts): WorldMapLayers {
  *  assembleWorldLayers to keep that function under the cyclomatic-complexity gate. */
 function appendGlyphLayers(world: Layer[], o: AssembleOpts): void {
   if (o.toggles.trees) {
-    const trees = buildTreeGlyphLayer({ composite: o.treeGlyphs, atlas: o.atlas, visible: o.treesVisible })
+    const trees = buildTreeGlyphLayer({ instances: o.treeGlyphs, atlas: o.atlas, visible: o.treesVisible })
     if (trees) world.push(trees)
   }
   if (o.toggles.props) {
-    const props = buildPropGlyphLayer({ composite: o.propGlyphs, atlas: o.atlas, visible: o.propsVisible })
+    const props = buildPropGlyphLayer({ instances: o.propGlyphs, atlas: o.atlas, visible: o.propsVisible })
     if (props) world.push(props)
   }
 }

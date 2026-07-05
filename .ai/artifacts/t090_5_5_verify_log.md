@@ -85,3 +85,28 @@ GPU/browser checks (not runnable headless; consistent with prior render slices' 
    driver. Both stores share the one worker core.
 
 **Ready for Cursor doc sync.**
+
+---
+
+## Fix follow-up (post-ship, same slice)
+
+Operator reported **no tree glyphs render** even at zooms where the gate is open (buildings
+~30 px ⇒ deckZoom ≈ +1). **Root cause:** the `world-trees`/`world-props` `IconLayer`s fed Deck a
+binary `data: {length, attributes}` payload. IconLayer builds its per-instance `instanceIconFrames`
+by iterating `data` through `getIcon`; the non-iterable binary form packs **zero icons** so nothing
+draws. `PolygonLayer`/`SolidPolygonLayer` (buildings/forest) accept binary — IconLayer does not.
+
+**Fix:** switched the glyph layers to the **object-array** `data` + per-datum accessors form that
+`layers/useIconLayer.ts` uses for the 367k slot markers (`getIcon: d => d.iconKey`, `getPosition`,
+`getAngle`, `getSize`, `getColor`). `TreeGlyphComposite` (SoA) → `TreeGlyphInstance[]` / `TreeGlyphSet`;
+`treeStore.partition` builds object arrays; `treePropLayer` builders + tests updated. Pure helpers
+and the worker (SoA `VisibleSet`, self-hydration) unchanged.
+
+**Debug HUD (operator ask):** the DEV FPS badge (`mission-creator/FpsCounter.tsx`) now also shows
+the live Deck zoom and the world-glyph draw count — `z <zoom> · glyph <n> · <fps> FPS`. Zoom via a
+new transient `useMapStore.deckZoom` slice (mirrors `cursor`), set from TacticalMap's viewState
+effect (no per-pan page render, T-057); count via `subscribeTreeStream` snapshots. Self-diagnosing:
+count > 0 with nothing on screen ⇒ atlas/render; count 0 ⇒ stream/gate.
+
+Re-verified: vitest **240/240**, `treeProp/lodGates/worldObjectsCore` **56/56**, build + lint green.
+Operator browser confirm pending (zoom to ≥ 0 → green rotated tree glyphs over the forest).

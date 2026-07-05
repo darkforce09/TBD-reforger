@@ -68,6 +68,9 @@ export interface MapStoreState extends MapSnapshot {
   marquee: MarqueeRect | null
   /** Live cursor world position (meters); null off-map. Drives the toolbelt read-out. */
   cursor: CursorPos | null
+  /** Live Deck orthographic zoom (T-090.5.5 debug HUD). Transient; set from TacticalMap on
+   *  camera change so the FPS badge shows the LOD band without re-rendering the page. */
+  deckZoom: number
   /** Bumped whenever the slotIconCache changes (T-061.0.1). The base IconLayer subscribes
    *  this instead of `slotsById`, so drag boundaries refresh the layer without an O(n)
    *  re-derive from the dictionary. */
@@ -122,6 +125,7 @@ export interface MapStoreState extends MapSnapshot {
   clearDragPreview: () => void
   setMarquee: (marquee: MarqueeRect | null) => void
   setCursor: (cursor: CursorPos | null) => void
+  setDeckZoom: (zoom: number) => void
   reset: () => void
 }
 
@@ -168,6 +172,7 @@ export const useMapStore = create<MapStoreState>()((set, get) => ({
   dragPreviewDelta: null,
   marquee: null,
   cursor: null,
+  deckZoom: -2,
   iconCacheVersion: 0,
   slotCount: 0,
   slotsRevision: 0,
@@ -256,6 +261,7 @@ export const useMapStore = create<MapStoreState>()((set, get) => ({
   clearDragPreview: () => set({ dragPreviewIds: null, dragPreviewDelta: null }),
   setMarquee: (marquee) => set({ marquee }),
   setCursor: (cursor) => set({ cursor }),
+  setDeckZoom: (deckZoom) => set({ deckZoom }),
   reset: () => {
     slotIconCache.clearSlotIconCache()
     set({
@@ -266,6 +272,7 @@ export const useMapStore = create<MapStoreState>()((set, get) => ({
       dragPreviewDelta: null,
       marquee: null,
       cursor: null,
+      deckZoom: -2,
       iconCacheVersion: slotIconCache.getVersion(),
       slotCount: 0,
       slotsRevision: get().slotsRevision + 1,

@@ -174,6 +174,10 @@ function TacticalMapInner({
   const viewStateRef = useRef(viewState)
   useEffect(() => {
     viewStateRef.current = viewState
+    // Publish the live zoom for the debug HUD (T-090.5.5). Selector-equality means subscribers
+    // re-render only when the zoom value changes, and the page never subscribes — so this adds
+    // no per-pan page render (T-057).
+    useMapStore.getState().setDeckZoom(viewState.zoom)
   }, [viewState])
 
   const noopMove = useCallback(() => {

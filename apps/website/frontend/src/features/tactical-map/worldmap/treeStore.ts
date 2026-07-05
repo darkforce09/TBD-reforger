@@ -2,9 +2,9 @@
 // tree/vegetation/prop instances through the world-objects worker's visibleInstances API (the
 // budget-capped SoA the worker returns after self-hydrating the covering chunks). Sibling to
 // forestMassStore/chunkStore, but REPLACE-not-accumulate: each viewport commit yields the exact
-// visible set for the current zoom band, resolved once into two TreeGlyphComposites (tree group
-// + prop group) with per-instance glyph key / size / color / angle — nothing runs per frame
-// (T-057), deduped on the covering chunk set + zoom band so pan within a set is a no-op.
+// visible set for the current zoom band, resolved once into two TreeGlyphSets (tree group + prop
+// group) with per-instance glyph key / size / color / angle — nothing runs per frame (T-057),
+// deduped on the covering chunk set + zoom band so pan within a set is a no-op.
 //
 // Below TREE_GLYPH_MIN_ZOOM (0) no tree class is visible → the store clears to empty and the
 // forest-mass polygons carry readability. NO world supercluster (contract LOD5).
@@ -25,7 +25,8 @@ import {
   deckAngleForRotationDeg,
   glyphSizeMeters,
   hexToRgba,
-  type TreeGlyphComposite,
+  type TreeGlyphInstance,
+  type TreeGlyphSet,
 } from './treePropLayer'
 import { loadWorldManifest, worldVisibleInstances } from '../workers/worldObjectsClient'
 import {
@@ -69,8 +70,8 @@ export interface TreeStreamClient {
 export interface TreeStore {
   ensureTreeStream(terrain: TerrainDef): void
   setTreeViewport(bbox: Bbox | null, deckZoom: number, toggles: TreeToggles): void
-  getTreeGlyphs(): TreeGlyphComposite
-  getPropGlyphs(): TreeGlyphComposite
+  getTreeGlyphs(): TreeGlyphSet
+  getPropGlyphs(): TreeGlyphSet
   getTreeRevision(): number
   subscribeTreeStream(cb: () => void): () => void
   resetTreeStream(): void
@@ -94,17 +95,6 @@ function buildGlyphLookup(rows: WorldPrefabRow[]): Map<number, GlyphInfo> {
   return lookup
 }
 
-function allocComposite(count: number): TreeGlyphComposite {
-  return {
-    count,
-    positions: new Float32Array(2 * count),
-    anglesDeg: new Float32Array(count),
-    sizes: new Float32Array(count),
-    colors: new Uint8Array(4 * count),
-    iconKeys: new Array<string>(count),
-  }
-}
-
 /** Which glyph layer an instance belongs to — from its class code, only if a glyph is known.
  *  Building/unclassified codes (visibleInstances also returns buildings at the tree band) and
  *  glyph-less prefabs → null (dropped; buildings draw via chunkStore/buildingLayer). */
@@ -119,39 +109,28 @@ function groupForInstance(
   return null
 }
 
-/** Partition a VisibleSet into tree + prop glyph composites (two passes: count, then fill —
- *  avoids growable arrays for the ≤150k budget-capped set). */
+/** Partition a VisibleSet into tree + prop glyph object arrays (the IconLayer accessor form —
+ *  matches layers/useIconLayer.ts). colorRgba is shared per prefab (read-only in getColor);
+ *  position is fresh per instance. */
 function partition(
   set: VisibleSet,
   glyphs: Map<number, GlyphInfo>,
-): { tree: TreeGlyphComposite; prop: TreeGlyphComposite } {
-  let nTree = 0
-  let nProp = 0
-  for (let i = 0; i < set.count; i++) {
-    const g = groupForInstance(set.classes[i], set.prefabIdx[i], glyphs)
-    if (g === 'tree') nTree++
-    else if (g === 'prop') nProp++
-  }
-  const tree = allocComposite(nTree)
-  const prop = allocComposite(nProp)
-  let ti = 0
-  let pi = 0
+): { tree: TreeGlyphSet; prop: TreeGlyphSet } {
+  const tree: TreeGlyphSet = []
+  const prop: TreeGlyphSet = []
   for (let i = 0; i < set.count; i++) {
     const prefabId = set.prefabIdx[i]
     const g = groupForInstance(set.classes[i], prefabId, glyphs)
     if (!g) continue
     const info = glyphs.get(prefabId) as GlyphInfo
-    const dst = g === 'tree' ? tree : prop
-    const j = g === 'tree' ? ti++ : pi++
-    dst.positions[2 * j] = set.positions[2 * i]
-    dst.positions[2 * j + 1] = set.positions[2 * i + 1]
-    dst.anglesDeg[j] = deckAngleForRotationDeg(set.rotations[i])
-    dst.sizes[j] = info.sizeMeters
-    dst.colors[4 * j] = info.colorRgba[0]
-    dst.colors[4 * j + 1] = info.colorRgba[1]
-    dst.colors[4 * j + 2] = info.colorRgba[2]
-    dst.colors[4 * j + 3] = info.colorRgba[3]
-    dst.iconKeys[j] = info.iconKey
+    const glyph: TreeGlyphInstance = {
+      position: [set.positions[2 * i], set.positions[2 * i + 1]],
+      angle: deckAngleForRotationDeg(set.rotations[i]),
+      size: info.sizeMeters,
+      color: info.colorRgba,
+      iconKey: info.iconKey,
+    }
+    ;(g === 'tree' ? tree : prop).push(glyph)
   }
   return { tree, prop }
 }
@@ -175,8 +154,8 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
   let started = false
   let glyphs = new Map<number, GlyphInfo>()
 
-  let treeComposite: TreeGlyphComposite = EMPTY_TREE_GLYPHS
-  let propComposite: TreeGlyphComposite = EMPTY_TREE_GLYPHS
+  let treeSet: TreeGlyphSet = EMPTY_TREE_GLYPHS
+  let propSet: TreeGlyphSet = EMPTY_TREE_GLYPHS
   let lastKey = ''
   /** Supersede token: a stale in-flight visibleInstances reply (older viewport) is discarded. */
   let requestSeq = 0
@@ -191,10 +170,10 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
   }
 
   /** Drop to empty (below band / toggles off / terrain switch); notify only on a real change. */
-  function clearComposites(): void {
-    if (treeComposite.count === 0 && propComposite.count === 0) return
-    treeComposite = EMPTY_TREE_GLYPHS
-    propComposite = EMPTY_TREE_GLYPHS
+  function clearGlyphs(): void {
+    if (treeSet.length === 0 && propSet.length === 0) return
+    treeSet = EMPTY_TREE_GLYPHS
+    propSet = EMPTY_TREE_GLYPHS
     notify()
   }
 
@@ -206,7 +185,7 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       // Below the glyph band or both toggles off → nothing streams (forest mass carries it).
       lastKey = ''
       requestSeq++ // cancel any in-flight reply
-      clearComposites()
+      clearGlyphs()
       return
     }
     const chunkSizeM = manifest.chunkSizeM
@@ -229,8 +208,8 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       .then((set) => {
         if (seq !== requestSeq || terrain?.id == null) return // superseded by a newer viewport
         const { tree, prop } = partition(set, glyphs)
-        treeComposite = tree
-        propComposite = prop
+        treeSet = tree
+        propSet = prop
         notify()
       })
       .catch((e: unknown) => {
@@ -247,8 +226,8 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
         // Terrain switch: drop local state only — the shared worker core is unloaded by
         // chunkStore's switch path (all three stores talk to the same worker session).
         glyphs = new Map()
-        treeComposite = EMPTY_TREE_GLYPHS
-        propComposite = EMPTY_TREE_GLYPHS
+        treeSet = EMPTY_TREE_GLYPHS
+        propSet = EMPTY_TREE_GLYPHS
         lastKey = ''
         requestSeq++
         lastViewport = null
@@ -278,12 +257,12 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       runViewport(bbox, deckZoom, toggles)
     },
 
-    getTreeGlyphs(): TreeGlyphComposite {
-      return treeComposite
+    getTreeGlyphs(): TreeGlyphSet {
+      return treeSet
     },
 
-    getPropGlyphs(): TreeGlyphComposite {
-      return propComposite
+    getPropGlyphs(): TreeGlyphSet {
+      return propSet
     },
 
     getTreeRevision(): number {
@@ -300,8 +279,8 @@ export function createTreeStore(deps: { client: TreeStreamClient }): TreeStore {
       manifest = null
       started = false
       glyphs = new Map()
-      treeComposite = EMPTY_TREE_GLYPHS
-      propComposite = EMPTY_TREE_GLYPHS
+      treeSet = EMPTY_TREE_GLYPHS
+      propSet = EMPTY_TREE_GLYPHS
       lastKey = ''
       requestSeq++
       lastViewport = null
