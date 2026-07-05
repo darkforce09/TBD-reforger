@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **T-090.8.1 shipped** @ `e28d073a` · **Active:** **T-090.5.4** (sea-band + DEM contours). Single lane.  
+**Status:** **T-090.5.4 shipped** @ `bd481cf1` · **Active:** **T-090.5.5** (tree/veg/prop glyphs). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
@@ -46,8 +46,8 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.5.2    roads + buildings live  ✓ @ e410545e (+ .2.1 centerline/casing @ 04b60857 · .2.2 taxonomy tints @ 346a31c9)
   → T-090.5.3    chunk streaming @ scale  ✓ @ 155651b9 (worker SoA + chunkStore LRU, ≤4 ms/frame)
   → T-090.8.1    forest mass render  ✓ @ e28d073a (world-landcover + TBDD marching squares, 41k rings)
-  → T-090.5.4    sea-band + contours (DEM)  (ACTIVE)
-  → T-090.5.5    trees/veg/props glyphs
+  → T-090.5.4    sea-band + contours (DEM)  ✓ @ bd481cf1 (world-sea + world-contours, worker-side)
+  → T-090.5.5    trees/veg/props glyphs  (ACTIVE)
   → T-090.9      interaction
   → T-090.10.2   legacy retirement (tiles/map unmount)
   ✗ T-090.1.2.9  satellite road raster bake  (CANCELLED)
@@ -106,8 +106,9 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.5.2** | roads + buildings | claude-code | **shipped** @ `e410545e` (+ `.2.1` `.2.2`) |
 | **T-090.5.3** | chunk streaming | claude-code | **shipped** @ `155651b9` |
 | **T-090.8.1** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | **shipped** @ `e28d073a` |
-| **T-090.5.4** | sea-band + contours | claude-code | **active** |
-| **T-090.10.2** | legacy retirement | claude-code | queued after 5.4+8.1 |
+| **T-090.5.4** | sea-band + contours | claude-code | **shipped** @ `bd481cf1` |
+| **T-090.5.5** | trees/veg/props glyphs | claude-code | **active** |
+| **T-090.10.2** | legacy retirement | claude-code | queued after 5.5 |
 | **T-090.3** | umbrella | — | **deferred** → use `.3.1`/`.3.2` |
 | **T-090.5** | umbrella | — | **deferred** → use `.5.x` |
 | **T-090.4** | [`t090_4_z_placement_audit.md`](t090_4_z_placement_audit.md) | claude-code | Phase A pivot audit @ 1M |

@@ -1,7 +1,7 @@
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  
-**Status:** **T-090.8.1 shipped** @ `e28d073a` · **T-090.5.4 active** — sea-band + contours · **v2: A3 density-gate LOD, no world clustering**  
+**Status:** **T-090.5.4 shipped** @ `bd481cf1` · **T-090.5.5 active** — tree/veg/prop glyphs · **v2: A3 density-gate LOD, no world clustering**  
 **Executor:** **claude-code**  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -172,14 +172,26 @@ Techniques: viewport cull, kind-specific LOD, worker parse, **T-112** GPU cull (
 
 ---
 
-## Claude Code prompt — T-090.5.4 (copy-paste)
+## Shipped — T-090.5.4 @ `bd481cf1`
 
-Authority: plan §7 row T-090.5.4 + [`t090_render_lod_contract.md`](t090_render_lod_contract.md) §N3 contour interval ladder. **Do not edit docs/registry.**
+Runtime `world-sea` (slot 2, spliced below hillshade in `TacticalMap`) + `world-contours` (slot 5). Pure modules: `demGrid.ts`, `seaBand.ts`, `contours.ts`; worker `setDemGrid` / `buildSeaBand` / `buildContours`; main-thread `demVectorStore.ts`. Vitest **223/223**. Contour interval authority: §N3 (`20 m @ 0…+1`, `10 m @ +1…+3`) via `contourIntervalForZoom` — edges belong to the finer band. Verify: [`.ai/artifacts/t090_5_4_verify_log.md`](../../../.ai/artifacts/t090_5_4_verify_log.md).
+
+---
+
+## Claude Code prompt archive — T-090.5.4 (shipped @ `bd481cf1`)
+
+Full prompt retired — see [`.ai/artifacts/t090_5_4_verify_log.md`](../../../.ai/artifacts/t090_5_4_verify_log.md).
+
+---
+
+## Claude Code prompt — T-090.5.5 (copy-paste)
+
+Authority: plan §7 row T-090.5.5 + [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md). **Do not edit docs/registry.**
 
 ```
 Read CLAUDE.md first.
 
-Implement **T-090.5.4** — Map Engine v2 sea-band + DEM contours (worker-side geometry).
+Implement **T-090.5.5** — Map Engine v2 individual tree / vegetation / prop glyphs (IconLayer).
 
 ═══ PREFLIGHT ═══
   cd /home/Samuel/Projects/TBD-Reforger
@@ -187,67 +199,66 @@ Implement **T-090.5.4** — Map Engine v2 sea-band + DEM contours (worker-side g
   ./scripts/ticket brief T-090
 
 ═══ READ (in order — spec wins on conflict) ═══
-  1. .ai/artifacts/t090_10_map_engine_v2_implementation_plan.md — §4.2 slots 2+5, §7 row T-090.5.4, A3 DrawSea ±5 m
+  1. .ai/artifacts/t090_10_map_engine_v2_implementation_plan.md — §4.2 slots 9–10, §7 row T-090.5.5
   2. docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md (this file)
-  3. docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md — §N3 sea/land-cover + contour interval column
-  4. apps/website/frontend/src/features/tactical-map/dem/* — loadDemForTerrain, sampleElevation, DemTexture decode
-  5. apps/website/frontend/src/features/tactical-map/worldmap/useWorldMapLayers.ts — layer insertion (sea before hillshade; contours after landcover)
-  6. apps/website/frontend/src/features/tactical-map/worldmap/forestMassStore.ts — store pattern for worker-streamed geometry
-  7. apps/website/frontend/src/features/tactical-map/workers/worldObjectsCore.ts — extend worker API if DEM/contour gen belongs here
-  8. packages/map-assets/everon/manifest.json — dem.path, demNativeMetersPerPixel
+  3. docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md — atlas, iconKey, rotation, baseSizePx
+  4. docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md — §N2/N3 tree/veg/prop gates
+  5. apps/website/frontend/src/features/tactical-map/worldmap/lodGates.ts — TREE_GLYPH_MIN_ZOOM, VEGETATION_MIN_ZOOM, PROP_MIN_ZOOM, INSTANCE_BUDGET
+  6. apps/website/frontend/src/features/tactical-map/workers/worldObjectsCore.ts — visibleInstances (budget-capped SoA)
+  7. apps/website/frontend/src/features/tactical-map/worldmap/chunkStore.ts — viewport streaming pattern
+  8. apps/website/frontend/src/features/tactical-map/layers/worldGlyphAtlas.ts + buildingLayer badge pattern
+  9. packages/map-assets/everon/objects/type-inventory.json — PH-P2 tree census (501,861 instances)
 
 ═══ PROBLEM ═══
-Island zoom still lacks cartographic context below the photo field: ocean/shore band and elevation
-contours must read like A3 DrawSea + DrawCountlines — computed from the shipped 6400² DEM, not
-offline raster compose.
+501k trees are indexed in the worker but never drawn. Forest mass polygons carry island zoom;
+individual glyphs must appear only above TREE_GLYPH_MIN_ZOOM (0) per LOD v2 — no world supercluster.
 
 ═══ SHIPPED (do not reopen) ═══
-  T-090.5.3 @ 155651b9 — worker + chunkStore streaming
-  T-090.8.1 @ e28d073a — forest mass + landcover (slots 4, 8); reuse forestMassStore patterns
-  T-091.0 / T-091.1 — DEM PNG on disk + main-thread DemController loader
+  T-090.5.3 @ 155651b9 — worker streaming + visibleInstances API
+  T-090.8.1 @ e28d073a — forest mass (glyphs hidden below zoom 0 by design)
+  T-090.5.4 @ bd481cf1 — sea + contours complete the cartographic underlay
+  T-090.5.2.x — roads/buildings + 28-glyph atlas (extend for tree/veg/prop iconKeys)
 
 ═══ LOCKED ═══
-  - Layer ids: `world-sea` (slot 2, under sat field), `world-contours` (slot 5, after landcover)
-  - Sea: DEM → ocean polygon + shore gradient band (A3 ±5 m analogue); pickable:false
-  - Contours: iso polylines per §N3 interval ladder (100 m @ −6…−4, 50 m @ −4…−2.5, 50→20 m @ −2.5…0, 20 m @ 0…+3, 10 m @ +3…+6); fade/off per band table
-  - Pure geometry in `worldmap/seaBand.ts` + `worldmap/contours.ts` (node vitest); heavy work off main thread (worker or async cache keyed by interval band)
-  - Respect `worldLayerPrefs` `sea` + `contours` toggles (defaults on)
-  - No legacy `tiles/map/` changes; no mapStyle branch deletion (T-090.10.2)
-  - Do NOT add tree glyphs (T-090.5.5) or touch forestMass/road/building layers
+  - Layer ids: `world-trees` (slot 9), `world-props` (slot 10); vegetation shares tree layer or sub-filter per glyphs spec
+  - IconLayer + worldGlyphAtlas; getSize = baseSizePx * 2^(zoom − REF_ZOOM); optional heightM cap 1.5×
+  - Data from worker visibleInstances(bbox, deckZoom) — viewport cull + INSTANCE_BUDGET (150k)
+  - Respect lodGates + render.importanceZoom per prefab; pickable:false until T-090.9
+  - NO world supercluster (contract LOD5); forest mass stays below zoom 0
+  - Respect worldLayerPrefs trees/props toggles
 
 ═══ DO ═══
-  1. seaBand.ts — pure DEM samples → ocean fill + shore band polygons (vitest on small fixture grid)
-  2. contours.ts — pure marching squares / iso extraction per interval (vitest: known fixture → expected segment count)
-  3. seaBandLayer.ts + contourLayer.ts — thin Deck builders (SolidPolygon/PathLayer, binary typed arrays, pickable:false)
-  4. Wire DEM decode path in worker OR reuse main-thread meters cache with worker transfer — perf gate: contour gen never blocks pan
-  5. Integrate in useWorldMapLayers; memo keys on zoom band + toggle state (not raw zoom every frame)
-  6. Vitest: interval ladder spot checks; sea visible @ default −2; contours match band at −2 (20 m branch)
-  7. Write .ai/artifacts/t090_5_4_verify_log.md
-  8. Tag **T-090.5.4** · commit prefix **T-090.5.4:**
+  1. worldmap/treePropLayer.ts — buildTreeLayers / buildPropLayers from VisibleSet typed arrays
+  2. Add missing glyph SVGs for PH-P2…P5 kinds (make map-glyphs-build + map-glyphs-verify)
+  3. Wire viewport stream in useWorldMapLayers (chunkStore or dedicated poll of visibleInstances)
+  4. Vitest: LOD3 @ −2 trees hidden; @ 0 trees visible; INSTANCE_BUDGET; R8 rotation fixture
+  5. Write .ai/artifacts/t090_5_5_verify_log.md
+  6. Tag **T-090.5.5** · commit prefix **T-090.5.5:**
 
 ═══ DO NOT ═══
   - Edit docs/**, .ai/tickets/registry.json, docs/TICKET_*.md, CLAUDE status markers
-  - Rewrite forestMass, chunkStore core, lodGates forest gates, or export pipeline
+  - Add world supercluster or cluster discs
+  - Rewrite seaBand/contours/forestMass/road/building layers
   - Commit apps/mod/tbd-framework/resourceDatabase.rdb
 
 ═══ VERIFY (all exit 0) ═══
   make schema-validate
+  make map-glyphs-verify
   cd apps/website/frontend
-  npm run test -- --run seaBand contours lodGates
+  npm run test -- --run treeProp lodGates worldObjectsCore
   npm run build
   npm run lint
 
 ═══ MANUAL (VITE_WORLDMAP_ENABLED=1 make web — hard refresh) ═══
-  M-shore: shoreline band visually aligns with sat water-composite coast (Everon spot-check)
-  Contours: interval steps match §N3 when zooming −6 → +6
-  Z-pan: no main-thread hitch on pan; layers stable
-  R5: FpsCounter ≥55 fps with sea + contours on
-  M-reg: flag OFF unchanged; toggles hide sea/contours independently
+  LOD3: @ −2 no tree icons; zoom to 0+ → glyphs appear; forest polygons fade per gate
+  R5: ≥55 fps in tree-visible band (viewport with trees)
+  Toggle: trees/props off → layers hidden
+  M-reg: flag OFF unchanged
 
 ═══ RETURN ═══
-  - Commit SHA + tag T-090.5.4
-  - .ai/artifacts/t090_5_4_verify_log.md
-  - Vitest + build/lint output (PASS)
-  - Manual shoreline/contour notes
+  - Commit SHA + tag T-090.5.5
+  - .ai/artifacts/t090_5_5_verify_log.md
+  - Vitest + map-glyphs-verify + build/lint (PASS)
+  - Manual LOD3/R5 notes
   - **Ready for Cursor doc sync.**
 ```

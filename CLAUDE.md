@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-090** — T-090.5.4 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`.
+**ACTIVE NOW:** **T-090** — T-090.5.5 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -152,7 +152,10 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
 
-**Active:** **T-090.5.4** only (single lane — DEM sea-band + contour layers).
+**Active:** **T-090.5.5** only (single lane — individual tree/veg/prop IconLayer glyphs).
+
+**Done (Map Engine v2 render lane — latest):**
+- T-090.5.4 **Map Engine v2 sea-band + DEM contours** @ `bd481cf1` (tag **T-090.5.4**). `world-sea` (slot 2) + `world-contours` (slot 5) from 6400² DEM via worker (`demGrid`/`seaBand`/`contours` pure modules + `demVectorStore`); vitest **223/223**; whole-island static geometry per interval band. Contour ladder implements §N3 (`20 m @ 0…+1`, `10 m @ +1…+3` — ticket prose reconciled). Manual M-shore/R5 = operator GPU pass. Verify: [`.ai/artifacts/t090_5_4_verify_log.md`](.ai/artifacts/t090_5_4_verify_log.md).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 

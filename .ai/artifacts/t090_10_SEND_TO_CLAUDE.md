@@ -1,21 +1,22 @@
-# Send-off — T-090.5.4 (sea-band + DEM contours)
+# Send-off — T-090.5.5 (tree / veg / prop glyphs)
 
 **CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
 
-**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.4  
+**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.5  
 **Spec:** [`docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`](../../docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md)  
+**Glyphs:** [`docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md`](../../docs/specs/Mission_Creator_Architecture/t090_world_object_glyphs.md)  
 **LOD v2:** [`docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md`](../../docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)  
-**Prior:** T-090.8.1 @ `e28d073a` — [verify log](t090_8_1_verify_log.md)
+**Prior:** T-090.5.4 @ `bd481cf1` — [verify log](t090_5_4_verify_log.md)
 
 **Scope:**
 
-- `worldmap/seaBand.ts` — DEM → ocean/shore polygons (pure; runs in worker)
-- `worldmap/contours.ts` — DEM → iso polylines per interval band (N3 ladder)
-- Layer builders: `world-sea`, `world-contours` (plan §4.2 slots 2, 5)
-- Wire into `useWorldMapLayers`; reuse worker + existing DEM loader
+- `worldmap/treePropLayer.ts` — IconLayer over worker `visibleInstances` (viewport-streamed)
+- Layer ids: `world-trees`, `world-props` (plan §4.2 slots 9–10)
+- PH-P2…P5 glyph SVGs + atlas entries; `importanceZoom` overrides; optional `heightM` size cap (1.5×)
+- Wire into `useWorldMapLayers`; respect `trees` / `props` / `forest` toggles + lodGates
 
-**Gates:** vitest on pure fns (known DEM fixtures); manual shoreline vs water-composite visual; contour interval ladder per §N3; perf off main thread.
+**Gates:** `make map-glyphs-verify` (R7/GL-G1–G6); vitest LOD3 inversion @ −2 (trees hidden); INSTANCE_BUDGET @ +1/+3; R5 ≥55 fps @ PH-P2 visible band; R8 rotation pick.
 
-**Single lane:** no T-090.5.5 until 5.4 ships.
+**Single lane:** no T-090.9 until 5.5 ships.
 
 **Operator:** `VITE_WORLDMAP_ENABLED=1` + hard refresh.

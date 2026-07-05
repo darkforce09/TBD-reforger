@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Map Engine v2 through forest mass @ `e28d073a`. **Active:** **T-090.5.4** sea-band + contours. Single lane.
+- **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
 ## Next queued (top 10)
 

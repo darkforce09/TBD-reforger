@@ -395,7 +395,8 @@ Plan shipped @ `a222a146` · [`.ai/artifacts/t090_10_map_engine_v2_implementatio
 | **T-090.3.3** | shipped @ `887a6ed1` | Taxonomy + highway + measured OBBs |
 | **T-090.5.3** | shipped @ `155651b9` | Worker streaming + chunkStore LRU |
 | **T-090.8.1** | shipped @ `e28d073a` | Forest mass — landcover + TBDD marching squares |
-| **T-090.5.4** | **active** | Sea-band + DEM contours |
+| **T-090.5.4** | shipped @ `bd481cf1` | Sea-band + DEM contours (`world-sea`, `world-contours`) |
+| **T-090.5.5** | **active** | Tree/veg/prop IconLayer glyphs |
 | **T-090.10.1** | shipped @ `a222a146` | Plan artifact only |
 
 LOD v2 locked in [`t090_render_lod_contract.md`](t090_render_lod_contract.md) — world cluster purged.
