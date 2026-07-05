@@ -105,8 +105,7 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.3.3** | taxonomy + highway | claude-code | **shipped** @ `887a6ed1` |
 | **T-090.5.2** | roads + buildings | claude-code | **shipped** @ `e410545e` (+ `.2.1` `.2.2`) |
 | **T-090.5.3** | chunk streaming | claude-code | **shipped** @ `155651b9` |
-| **T-090.8.1** | forest mass | claude-code | **active** |
-| **T-090.8.1** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | queued |
+| **T-090.8.1** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | **active** |
 | **T-090.10.2** | legacy retirement | claude-code | queued after 5.4+8.1 |
 | **T-090.3** | umbrella | — | **deferred** → use `.3.1`/`.3.2` |
 | **T-090.5** | umbrella | — | **deferred** → use `.5.x` |
