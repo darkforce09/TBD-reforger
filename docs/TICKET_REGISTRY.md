@@ -61,19 +61,19 @@
 | T-066 | 660 | shipped | scale | Worker compile offload | Save/Export compile in Comlink worker via pickMapSnapshot. |
 | T-067 | 670 | shipped | scale | Spatial chunks | Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on. |
 | T-068 | 680 | deferred | eden | Virtual Arsenal (registry + loadout export) | Phase 1 shipped. Phase 2 **deferred** — operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md. |
-| T-069 | 690 | queued | eden | Markers on map | Place and edit map markers with registry-backed types. |
-| T-070 | 700 | queued | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
-| T-071 | 710 | deferred | eden | ORBAT Manager modal | ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md. |
+| T-069 | 690 | idea | eden | Markers on map | Place and edit map markers with registry-backed types. |
+| T-070 | 700 | idea | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
+| T-071 | 710 | queued | eden | ORBAT Manager modal | ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md. |
 | T-072 | 720 | queued | eden | Ctrl multi-place | Hold Ctrl to place multiple copies without re-selecting asset. |
 | T-073 | 730 | queued | eden | Shift + map rotation | Shift-drag and map rotation widget for placed entities. |
 | T-074 | 740 | queued | eden | Faction submode / catalog filter | Faction submode tabs and catalog filtering in asset browser. |
 | T-075 | 750 | queued | eden | Spacebar flyTo vs widget | Spacebar centers selection; resolve flyTo vs transform widget conflict. |
-| T-076 | 760 | queued | eden | Vehicle crew UI | Crew panel and boarding UI for placed vehicles. |
-| T-077 | 770 | queued | eden | Alt + empty vehicle | Alt-click to enter empty vehicle placement mode. |
+| T-076 | 760 | idea | eden | Vehicle crew UI | Crew panel and boarding UI for placed vehicles. |
+| T-077 | 770 | idea | eden | Alt + empty vehicle | Alt-click to enter empty vehicle placement mode. |
 | T-078 | 780 | deferred | eden | Custom compositions | Save and place custom entity compositions. |
-| T-079 | 790 | deferred | eden | Triggers + waypoints + systems | Trigger volumes, waypoints, and game logic systems. |
-| T-080 | 800 | deferred | eden | Connection / sync UI | Entity connection lines and sync group authoring. |
-| T-081 | 810 | deferred | eden | Transform widget + snap grid | On-map transform gizmo and snap grid. |
+| T-079 | 790 | idea | eden | Triggers + waypoints + systems | Trigger volumes, waypoints, and game logic systems. |
+| T-080 | 800 | idea | eden | Connection / sync UI | Entity connection lines and sync group authoring. |
+| T-081 | 810 | idea | eden | Transform widget + snap grid | On-map transform gizmo and snap grid. |
 | T-082 | 820 | deferred | eden | Full attribute fields | Complete Attributes modal field parity with Eden. |
 | T-083 | 830 | deferred | eden | Top menu bar | Eden-style top menu bar with file/edit/view stubs. |
 | T-084 | 840 | deferred | eden | Classname / mod prefix search | Classname-prefix search in asset browser. |
@@ -109,6 +109,11 @@
 | T-129 | 1290 | idea | infra | Building floor selector | Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.) |
 | T-130 | 1300 | shipped | platform | Fable audit — remainder (OPEN + PARTIAL) | Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md. |
 | T-144 | 1440 | shipped | infra | Arma 3 map architecture study | A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md. |
+| T-145 | 1460 | queued | eden | Enfusion Asset Data Exporter Plugin | Extract vehicles, weapons, uniforms, and ammo to JSON. Critical: Must parse vehicle turrets to trace compatible magazine/ammo types so the web UI knows exactly what fits. Skip static objects (sandbags, fences). |
+| T-146 | 1470 | queued | eden | Asset Browser Data Wiring | Hook up the exported Enfusion JSON to the frontend Asset Browser so categorized vehicles and crates are draggable onto the map. |
+| T-147 | 1480 | queued | eden | Simplified Squad Connections | Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data. |
+| T-148 | 1490 | queued | eden | Shift+Drag Rotation Tool | Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction. |
+| T-149 | 1490 | idea | eden | Forest Mass Polygon Smoothing | Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-112 | — | idea | scale | GPU viewport cull (DataFilterExtension) | Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |
@@ -124,3 +129,4 @@
 | T-141 | — | idea | eden | Procedural slot naming | Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering. |
 | T-142 | — | idea | eden | MC shell layout polish | Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity. |
 | T-143 | — | idea | infra | Perfect water — exact hydrology + water placement guard | Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested. |
+| T-145 | — | idea | Platform | Rewrite Go backend to Rust | Rewrite Go backend to Rust |

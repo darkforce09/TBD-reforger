@@ -1,5 +1,5 @@
 {
-  "next_id": 145,
+  "next_id": 146,
   "tickets": [
     {
       "id": "T-001",
@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 shipped. Phase 2 **deferred** — operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Phase 1 shipped. Phase 2 **deferred** \u2014 operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1325,7 +1325,7 @@
       "id": "T-069",
       "order": 690,
       "program": "eden",
-      "status": "queued",
+      "status": "idea",
       "surfaces": [
         "MAP",
         "MRK"
@@ -1352,7 +1352,7 @@
       "id": "T-070",
       "order": 700,
       "program": "eden",
-      "status": "queued",
+      "status": "idea",
       "surfaces": [
         "MAP",
         "VEH",
@@ -1392,7 +1392,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.",
+      "summary": "ORBAT Manager modal \u2014 squad names, numbering, membership, slotting order. **Deferred** \u2014 operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -1407,7 +1407,7 @@
         "T-068",
         "T-069"
       ],
-      "status": "deferred",
+      "status": "queued",
       "implements": [
         "LEFT-ORBAT-001",
         "CONN-GROUP-001",
@@ -1513,7 +1513,7 @@
       "id": "T-076",
       "order": 760,
       "program": "eden",
-      "status": "queued",
+      "status": "idea",
       "surfaces": [
         "VEH",
         "ATTR"
@@ -1535,7 +1535,7 @@
       "id": "T-077",
       "order": 770,
       "program": "eden",
-      "status": "queued",
+      "status": "idea",
       "surfaces": [
         "MAP",
         "VEH"
@@ -1579,7 +1579,7 @@
       "id": "T-079",
       "order": 790,
       "program": "eden",
-      "status": "deferred",
+      "status": "idea",
       "surfaces": [
         "MAP",
         "DATA"
@@ -1603,7 +1603,7 @@
       "id": "T-080",
       "order": 800,
       "program": "eden",
-      "status": "deferred",
+      "status": "idea",
       "surfaces": [
         "CONN"
       ],
@@ -1625,7 +1625,7 @@
       "id": "T-081",
       "order": 810,
       "program": "eden",
-      "status": "deferred",
+      "status": "idea",
       "surfaces": [
         "MAP",
         "XFORM"
@@ -1821,7 +1821,7 @@
       "order": 900,
       "program": "infra",
       "status": "ready",
-      "active_slice": "T-090.5.5",
+      "active_slice": "T-090.6",
       "surfaces": [
         "MAP"
       ],
@@ -2170,7 +2170,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "2b1a0dda"
         },
         "T-090.6": {
           "targets": [
@@ -2268,7 +2269,7 @@
         "schema"
       ],
       "title": "DEM + auto Z",
-      "summary": "T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md.",
+      "summary": "T-091 complete @ dde589e \u2014 DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-091.0",
@@ -2335,7 +2336,7 @@
         "compiler"
       ],
       "title": "Spawn transform parity + mod mission compile",
-      "summary": "T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
+      "summary": "T-092 complete @ `a73224f2` \u2014 schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "slices": [
         "T-092.0",
@@ -2503,7 +2504,7 @@
     {
       "id": "T-111",
       "title": "Lazy chunk residency @ 1M",
-      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
       "program": "scale",
       "surfaces": [
         "MAP",
@@ -2570,7 +2571,7 @@
       "impact": [
         "schema"
       ],
-      "title": "Monorepo migration (M0–M3)",
+      "title": "Monorepo migration (M0\u2013M3)",
       "summary": "Merge website + mod into TBD-Reforger; unified ticketing; path rewrites.",
       "milestone": "M1"
     },
@@ -2686,7 +2687,7 @@
         "api"
       ],
       "title": "Event ORBAT + identity linking UI",
-      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today.",
+      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) \u2014 neither is production-complete today.",
       "milestone": "M1"
     },
     {
@@ -2787,7 +2788,7 @@
         "docs"
       ],
       "title": "Codebase audit hotfix (single bundle)",
-      "summary": "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
+      "summary": "Shipped @ f131770 (tag T-122) \u2014 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
       "spec": "docs/platform/audit/t122_codebase_audit_hotfix.md",
       "depends_on": [],
       "unblocks": [],
@@ -2816,7 +2817,7 @@
         "ci"
       ],
       "title": "Documentation standards rollout (full program)",
-      "summary": "Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.",
+      "summary": "Shipped @ 169e47d \u2014 full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0\u2013.6. Hub: t123_documentation_standards_rollout.md.",
       "spec": "docs/platform/t123_documentation_standards_rollout.md",
       "slices": [
         "T-123.0",
@@ -2918,7 +2919,7 @@
         "infra"
       ],
       "title": "Dependency & toolchain upgrade (latest everything)",
-      "summary": "Shipped @ cd11db0 — FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
+      "summary": "Shipped @ cd11db0 \u2014 FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
       "spec": "docs/platform/t124_dependency_upgrade.md",
       "slices": [
         "T-124.1",
@@ -2983,7 +2984,7 @@
         "api"
       ],
       "title": "Coding standards + 11/10 enforcement",
-      "summary": "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0–.6. Hub: t125_coding_standards_enforcement.md.",
+      "summary": "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0\u2013.6. Hub: t125_coding_standards_enforcement.md.",
       "spec": "docs/platform/t125_coding_standards_enforcement.md",
       "slices": [
         "T-125.0",
@@ -3088,8 +3089,8 @@
         "ui",
         "security"
       ],
-      "title": "Fable audit — security + auth follow-up",
-      "summary": "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
+      "title": "Fable audit \u2014 security + auth follow-up",
+      "summary": "Shipped @ 4a47688e (tag T-126): S1\u2013S6 \u2014 export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
       "spec": "docs/platform/t126_audit_security_followup.md",
       "shipped_at": "4a47688e",
       "depends_on": [],
@@ -3116,8 +3117,8 @@
       "impact": [
         "ui"
       ],
-      "title": "Fable audit — Mission Creator UX fixes",
-      "summary": "Shipped @ 0515aabb (tag T-127): U1–U5 MC UX — conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
+      "title": "Fable audit \u2014 Mission Creator UX fixes",
+      "summary": "Shipped @ 0515aabb (tag T-127): U1\u2013U5 MC UX \u2014 conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
       "spec": "docs/platform/t127_mc_ux_audit_fixes.md",
       "shipped_at": "0515aabb",
       "depends_on": [
@@ -3147,8 +3148,8 @@
       "impact": [
         "docs"
       ],
-      "title": "Fable audit — doc link repair + staging honesty",
-      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
+      "title": "Fable audit \u2014 doc link repair + staging honesty",
+      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126\u2192T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
       "spec": "docs/platform/t128_doc_link_repair.md",
       "depends_on": [
         "T-127"
@@ -3182,7 +3183,7 @@
         "security",
         "docs"
       ],
-      "title": "Fable audit — remainder (OPEN + PARTIAL)",
+      "title": "Fable audit \u2014 remainder (OPEN + PARTIAL)",
       "summary": "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md.",
       "spec": "docs/platform/t130_fable_audit_remainder.md",
       "depends_on": [
@@ -3285,7 +3286,7 @@
         "ui"
       ],
       "title": "Building floor selector",
-      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
+      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 \u2014 requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
       "slices": [],
       "depends_on": [
@@ -3298,7 +3299,7 @@
     {
       "id": "T-131",
       "title": "Route planner tool",
-      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.",
+      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap \u2014 promote after T-090.5.",
       "program": "eden",
       "stream": "mission-creator",
       "targets": [
@@ -3429,7 +3430,7 @@
     {
       "id": "T-136",
       "title": "3D AAR / OCAP-style replay",
-      "summary": "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
+      "summary": "Post-event replay: telemetry ingest \u2192 timeline \u2192 map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
       "program": "platform",
       "stream": "web-platform",
       "targets": [
@@ -3481,7 +3482,7 @@
     {
       "id": "T-138",
       "title": "One-command self-host install",
-      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story.",
+      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) \u2014 fork-friendly community install story.",
       "program": "infra",
       "stream": "infra",
       "targets": [
@@ -3506,7 +3507,7 @@
     {
       "id": "T-139",
       "title": "Lobby loadout visual preview",
-      "summary": "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker.",
+      "summary": "In-game lobby: kit preview (icon grid \u2192 2D mannequin \u2192 stretch 3D). After T-068.13 production slot picker.",
       "program": "platform",
       "stream": "mod-framework",
       "targets": [
@@ -3582,7 +3583,7 @@
     {
       "id": "T-142",
       "title": "MC shell layout polish",
-      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity.",
+      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility \u2014 layout UX without full T-082 field parity.",
       "program": "eden",
       "stream": "mission-creator",
       "targets": [
@@ -3604,8 +3605,8 @@
     },
     {
       "id": "T-143",
-      "title": "Perfect water — exact hydrology + water placement guard",
-      "summary": "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested.",
+      "title": "Perfect water \u2014 exact hydrology + water placement guard",
+      "summary": "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads \u2014 full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable \u2014 missions get playtested.",
       "program": "infra",
       "surfaces": [
         "MAP",
@@ -3646,7 +3647,7 @@
         "infra"
       ],
       "title": "Arma 3 map architecture study",
-      "summary": "A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
+      "summary": "A3 2D Arcade map architecture study @ `b1949182` \u2014 live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
       "slices": [
         "T-144.0",
@@ -3682,6 +3683,61 @@
           "shipped_at": "b1949182"
         }
       }
+    },
+    {
+      "id": "T-145",
+      "order": 1460,
+      "status": "queued",
+      "program": "eden",
+      "title": "Enfusion Asset Data Exporter Plugin",
+      "summary": "Extract vehicles, weapons, uniforms, and ammo to JSON. Critical: Must parse vehicle turrets to trace compatible magazine/ammo types so the web UI knows exactly what fits. Skip static objects (sandbags, fences)."
+    },
+    {
+      "id": "T-146",
+      "order": 1470,
+      "status": "queued",
+      "program": "eden",
+      "title": "Asset Browser Data Wiring",
+      "summary": "Hook up the exported Enfusion JSON to the frontend Asset Browser so categorized vehicles and crates are draggable onto the map."
+    },
+    {
+      "id": "T-147",
+      "order": 1480,
+      "status": "queued",
+      "program": "eden",
+      "title": "Simplified Squad Connections",
+      "summary": "Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data."
+    },
+    {
+      "id": "T-148",
+      "order": 1490,
+      "status": "queued",
+      "program": "eden",
+      "title": "Shift+Drag Rotation Tool",
+      "summary": "Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction."
+    },
+    {
+      "id": "T-149",
+      "order": 1490,
+      "status": "idea",
+      "program": "eden",
+      "title": "Forest Mass Polygon Smoothing",
+      "summary": "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography."
+    },
+    {
+      "id": "T-145",
+      "title": "Rewrite Go backend to Rust",
+      "summary": "Rewrite Go backend to Rust",
+      "program": "Platform",
+      "surfaces": [
+        "Backend API"
+      ],
+      "impact": [
+        "Architecture rewrite to replace Go with Rust for memory safety",
+        " strict concurrency checks",
+        " and superior binary compiling pipelines."
+      ],
+      "status": "idea"
     }
   ]
 }

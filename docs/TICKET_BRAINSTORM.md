@@ -5,6 +5,10 @@
 
 `idea` + `deferred` only.
 
+## Platform
+
+- **T-145** (idea) — Rewrite Go backend to Rust [Backend API] — Rewrite Go backend to Rust
+
 ## backend
 
 - **T-095** (deferred) — Per-handler API reference doc [DATA] — Complete docs/backend/api.md per-handler reference.
@@ -13,14 +17,18 @@
 ## eden
 
 - **T-068** (deferred) — Virtual Arsenal (registry + loadout export) [RIGHT, ATTR, DATA] — Phase 1 shipped. Phase 2 **deferred** — operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.
-- **T-071** (deferred) — ORBAT Manager modal [TOP, ORBAT, ATTR] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.
+- **T-069** (idea) — Markers on map [MAP, MRK] — Place and edit map markers with registry-backed types.
+- **T-070** (idea) — Vehicles placeable [MAP, VEH, RIGHT] — Drag vehicles from palette onto map with crew hooks.
+- **T-076** (idea) — Vehicle crew UI [VEH, ATTR] — Crew panel and boarding UI for placed vehicles.
+- **T-077** (idea) — Alt + empty vehicle [MAP, VEH] — Alt-click to enter empty vehicle placement mode.
 - **T-078** (deferred) — Custom compositions [COMP] — Save and place custom entity compositions.
-- **T-079** (deferred) — Triggers + waypoints + systems [MAP, DATA] — Trigger volumes, waypoints, and game logic systems.
-- **T-080** (deferred) — Connection / sync UI [CONN] — Entity connection lines and sync group authoring.
-- **T-081** (deferred) — Transform widget + snap grid [MAP, XFORM] — On-map transform gizmo and snap grid.
+- **T-079** (idea) — Triggers + waypoints + systems [MAP, DATA] — Trigger volumes, waypoints, and game logic systems.
+- **T-080** (idea) — Connection / sync UI [CONN] — Entity connection lines and sync group authoring.
+- **T-081** (idea) — Transform widget + snap grid [MAP, XFORM] — On-map transform gizmo and snap grid.
 - **T-082** (deferred) — Full attribute fields [ATTR] — Complete Attributes modal field parity with Eden.
 - **T-083** (deferred) — Top menu bar [TOP] — Eden-style top menu bar with file/edit/view stubs.
 - **T-084** (deferred) — Classname / mod prefix search [RIGHT] — Classname-prefix search in asset browser.
+- **T-149** (idea) — Forest Mass Polygon Smoothing [] — Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.
 - **T-131** (idea) — Route planner tool [MAP, UI] — MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.
 - **T-132** (idea) — Multiplayer MC + visual git [DATA, CONN] — Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap.
 - **T-141** (idea) — Procedural slot naming [ORBAT, UI] — Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering.

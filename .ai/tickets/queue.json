@@ -9,7 +9,7 @@
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
     }
   ]

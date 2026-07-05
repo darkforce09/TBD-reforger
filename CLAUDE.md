@@ -116,19 +116,19 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-090** — T-090.5.5 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`.
+**ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
 **Next (by order):**
-- **T-069** — Markers on map (`queued`)
-- **T-070** — Vehicles placeable (`queued`)
+- **T-071** — ORBAT Manager modal (`queued`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
 - **T-074** — Faction submode / catalog filter (`queued`)
 - **T-075** — Spacebar flyTo vs widget (`queued`)
-- **T-076** — Vehicle crew UI (`queued`)
-- **T-077** — Alt + empty vehicle (`queued`)
 - **T-090** — Map visualization program (`ready`)
 - **T-114** — Slot roster enforcement + production slot picker (`queued`)
+- **T-115** — Capture win condition (`queued`)
+- **T-116** — Results POST to backend (`queued`)
+- **T-117** — Mission upload + validation UI (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
@@ -152,9 +152,10 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
 
-**Active:** **T-090.5.5** only (single lane — individual tree/veg/prop IconLayer glyphs).
+**Active:** **T-090.6** (geometry placement audit).
 
 **Done (Map Engine v2 render lane — latest):**
+- T-090.5.5 **Map Engine v2 tree/veg/prop glyphs** @ `2b1a0dda` (tag **T-090.5.5**). `IconLayer` for individual tree/veg/prop glyphs; `FpsCounter.tsx` HUD + `Ctrl+Alt+D` toggle; `getTreeStreamDebug()` surface; `loadManifest` deduplication. Verify: [`.ai/artifacts/t090_5_5_verify_log.md`](.ai/artifacts/t090_5_5_verify_log.md).
 - T-090.5.4 **Map Engine v2 sea-band + DEM contours** @ `bd481cf1` (tag **T-090.5.4**). `world-sea` (slot 2) + `world-contours` (slot 5) from 6400² DEM via worker (`demGrid`/`seaBand`/`contours` pure modules + `demVectorStore`); vitest **223/223**; whole-island static geometry per interval band. Contour ladder implements §N3 (`20 m @ 0…+1`, `10 m @ +1…+3` — ticket prose reconciled). Manual M-shore/R5 = operator GPU pass. Verify: [`.ai/artifacts/t090_5_4_verify_log.md`](.ai/artifacts/t090_5_4_verify_log.md).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).

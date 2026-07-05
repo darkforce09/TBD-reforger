@@ -9,16 +9,16 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-069** — Markers on map (queued)
-- **T-070** — Vehicles placeable (queued)
+- **T-071** — ORBAT Manager modal (queued)
 - **T-072** — Ctrl multi-place (queued)
 - **T-073** — Shift + map rotation (queued)
 - **T-074** — Faction submode / catalog filter (queued)
 - **T-075** — Spacebar flyTo vs widget (queued)
-- **T-076** — Vehicle crew UI (queued)
-- **T-077** — Alt + empty vehicle (queued)
 - **T-090** — Map visualization program (ready)
 - **T-114** — Slot roster enforcement + production slot picker (queued)
+- **T-115** — Capture win condition (queued)
+- **T-116** — Results POST to backend (queued)
+- **T-117** — Mission upload + validation UI (queued)
 <!-- ticket-sync:next:end -->
 
 ---

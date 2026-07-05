@@ -12,19 +12,20 @@
 
 ## Next queued (top 10)
 
-- **T-069** (690) — Markers on map [queued] — Place and edit map markers with registry-backed types.
-- **T-070** (700) — Vehicles placeable [queued] — Drag vehicles from palette onto map with crew hooks.
+- **T-071** (710) — ORBAT Manager modal [queued] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.
 - **T-072** (720) — Ctrl multi-place [queued] — Hold Ctrl to place multiple copies without re-selecting asset.
 - **T-073** (730) — Shift + map rotation [queued] — Shift-drag and map rotation widget for placed entities.
 - **T-074** (740) — Faction submode / catalog filter [queued] — Faction submode tabs and catalog filtering in asset browser.
 - **T-075** (750) — Spacebar flyTo vs widget [queued] — Spacebar centers selection; resolve flyTo vs transform widget conflict.
-- **T-076** (760) — Vehicle crew UI [queued] — Crew panel and boarding UI for placed vehicles.
-- **T-077** (770) — Alt + empty vehicle [queued] — Alt-click to enter empty vehicle placement mode.
 - **T-114** (1140) — Slot roster enforcement + production slot picker [queued] — Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-071). After T-068.13 production LOBBY picker + T-118.
 - **T-115** (1150) — Capture win condition [queued] — Real side victory via capture / hold / elimination objective.
+- **T-116** (1160) — Results POST to backend [queued] — Game server posts match results; visible on event page.
+- **T-117** (1170) — Mission upload + validation UI [queued] — Web UI for mission upload and schema validation (API exists).
+- **T-118** (1180) — Event ORBAT + identity linking UI [queued] — Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today.
 
 ## Dependency graph (scoped)
 
 ```mermaid
 flowchart LR
+  T092[T-092] --> T071[T-071]
 ```

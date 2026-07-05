@@ -1,7 +1,7 @@
 # T-090.6 — Geometry-aware placement audit (simplified 3D bounds)
 
 **Ticket:** T-090 · **Slice:** T-090.6  
-**Status:** Spec ready (blocked on **T-090.4** point audit + **T-090.3** bounds export)  
+**Status:** **T-090.6 active** (Geometry-aware placement audit)
 **Executor:** **claude-code** (+ optional **workbench** plugin for ground truth)  
 **Authority:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 

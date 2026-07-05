@@ -1,7 +1,7 @@
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  
-**Status:** **T-090.5.4 shipped** @ `bd481cf1` · **T-090.5.5 active** — tree/veg/prop glyphs · **v2: A3 density-gate LOD, no world clustering**  
+**Status:** **T-090.5.5 shipped** @ `2b1a0dda` · **v2: A3 density-gate LOD, no world clustering**  
 **Executor:** **claude-code**  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -184,7 +184,18 @@ Full prompt retired — see [`.ai/artifacts/t090_5_4_verify_log.md`](../../../.a
 
 ---
 
-## Claude Code prompt — T-090.5.5 (copy-paste)
+## Shipped — T-090.5.5 @ `2b1a0dda`
+
+Individual tree/veg/prop glyphs via `IconLayer` completed.
+- `FpsCounter.tsx` — HUD + `Ctrl+Alt+D` toggle for debugging.
+- `worldLayerPrefs.ts` — Persisted `worldmapDebug` flag via Zustand (+ test).
+- `treeStore.ts` — `getTreeStreamDebug()` surface for telemetry.
+- `worldObjectsCore.ts` — `loadManifest` deduplication applied.
+Working tree clean, debug HUD verified, trees render properly.
+
+---
+
+## Claude Code prompt archive — T-090.5.5 (shipped @ `2b1a0dda`)
 
 Authority: plan §7 row T-090.5.5 + [`t090_world_object_glyphs.md`](t090_world_object_glyphs.md). **Do not edit docs/registry.**
 
