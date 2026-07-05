@@ -8,7 +8,7 @@
 
 ## Ready
 
-- **T-090** (900) — Map visualization program [ready] — Map Engine v2. **T-090.3.1** shipped @ `e47f25fc` (5.6k buildings + 766 roads). **Active:** **T-090.3.2** density+trees. Single lane.
+- **T-090** (900) — Map visualization program [ready] — Map Engine v2. Export through P2 @ `a055df95` (501k trees, TBDD density, 36 forest regions). **Active:** **T-090.5.1** render spine. Single lane.
 
 ## Next queued (top 10)
 

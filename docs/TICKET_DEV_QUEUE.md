@@ -7,9 +7,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-090 — Map visualization program
 
-- **Active slice:** `T-090.3.2`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_3_map_asset_export.md`
+- **Active slice:** `T-090.5.1`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md`
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
-- **Summary:** Map Engine v2. **T-090.3.1** shipped @ `e47f25fc` (5.6k buildings + 766 roads). **Active:** **T-090.3.2** density+trees. Single lane.
+- **Summary:** Map Engine v2. Export through P2 @ `a055df95` (501k trees, TBDD density, 36 forest regions). **Active:** **T-090.5.1** render spine. Single lane.

@@ -12,7 +12,7 @@
 
 **T-090.3.0 (shipped @ `b342c35`):** Workbench spike — enumeration + OBB + forest/handedness findings. Ops log [`.ai/artifacts/map_export_everon.json`](../../.ai/artifacts/map_export_everon.json). Harness: `scripts/map-assets/verify-spike-*.mjs`.
 
-**Next Claude Code:** **T-090.3.2** only — density `objects/density/{cx}_{cy}.bin` + PH-P2 tree chunks. Single lane; **no T-090.5.1** until 3.2 ships. Plan §7 row T-090.3.2.
+**Next Claude Code:** **T-090.5.1** only — render spine scaffold (`worldmap/` pure modules, sat `opacity`, 3-way `mapStyle` + prefs migration, worker+client skeleton, `worldmap.enabled` flag). **No drawing yet.** Single lane. Plan §7 row T-090.5.1 · spec [`t090_5_map_object_render_layer.md`](../specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md).
 
 **Workspace:** monorepo root (`TBD-Reforger/`). Mod scripts live under `scripts/mod/`; run from repo root:
 
