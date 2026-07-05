@@ -14,8 +14,9 @@ import { parseRoadsPayload, type RoadSegment } from './roadLayer'
 
 /** Fetch + parse a (possibly gzipped) JSON asset. Static .gz files are served raw (no
  *  Content-Encoding), so gunzip via DecompressionStream when the gzip magic is present; a
- *  transparently-decompressed body (or plain .json) falls through to direct parse. */
-async function fetchGzJson(url: string): Promise<unknown | null> {
+ *  transparently-decompressed body (or plain .json) falls through to direct parse.
+ *  Shared with the other small main-thread one-shots (landCoverRegions, T-090.8.1). */
+export async function fetchGzJson(url: string): Promise<unknown | null> {
   const res = await fetch(url)
   const type = res.headers.get('content-type') ?? ''
   // Vite dev SPA-fallbacks unknown paths to index.html with 200 — treat as missing.

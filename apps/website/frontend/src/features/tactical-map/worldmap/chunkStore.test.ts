@@ -82,6 +82,7 @@ function makeHarness(opts: { hasOversized?: boolean; missingIds?: string[] } = {
     }),
     prefabRows: PREFABS,
     roadsPath: null,
+    densityPath: null,
     instanceCount: GRID * GRID * 2,
     hasOversized: opts.hasOversized ?? false,
   }

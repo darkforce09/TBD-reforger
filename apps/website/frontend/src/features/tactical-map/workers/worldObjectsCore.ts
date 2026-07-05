@@ -24,6 +24,7 @@ import {
   type Bbox,
 } from '../worldmap/chunkMath'
 import { INSTANCE_BUDGET, classVisible, type WorldRenderClass } from '../worldmap/lodGates'
+import { DENSITY_ISO, decodeTBDD, forestMassFromCorners } from '../worldmap/forestMass'
 import { createWorldSpatialIndex } from '../state/worldSpatialIndex'
 
 export type { Bbox }
@@ -92,6 +93,8 @@ export interface WorldManifestLite {
   prefabRows: WorldPrefabRow[]
   /** Relative paths (informational; the worker resolves URLs itself). */
   roadsPath: string | null
+  /** Density-grid dir (T-090.8.1 forest mass); null ⇒ export shipped no TBDD grids. */
+  densityPath: string | null
   instanceCount: number | null
   hasOversized: boolean
 }
@@ -127,6 +130,28 @@ export interface LoadChunksOpts {
   ids?: string[]
   /** Chunks the caller already holds — parsed/pinned worker-side but not re-delivered. */
   excludeIds?: string[]
+}
+
+/** One chunk's forest mass geometry (T-090.8.1) — marching-squares output in world meters,
+ *  shaped for Deck binary data (forestMass.ForestMassGeometry + chunk identity). Arrays are
+ *  freshly allocated per delivery (the worker-side cache keeps only the decoded corner
+ *  grids), so the worker shell can transfer the buffers without detaching any cache. */
+export interface ForestMassChunk {
+  id: string
+  cx: number
+  cy: number
+  fillPositions: Float32Array
+  fillStartIndices: Uint32Array
+  outlineSegments: Float32Array
+  /** Max tree corner count in the chunk (stats/debug; 0 never appears — empties are ids). */
+  treeMax: number
+}
+
+export interface ForestMassResult {
+  chunks: ForestMassChunk[]
+  /** Requested ids with nothing to draw (missing/undecodable file or all-below-iso grid) —
+   *  the main store caches these as hydrated-empty and never re-requests them. */
+  emptyIds: string[]
 }
 
 /** visibleInstances result — flat arrays across chunks, budget-capped (transferables). */
@@ -168,6 +193,7 @@ export interface WorldObjectsCoreDeps {
 export interface WorldObjectsCoreApi {
   loadManifest(terrainId: string): Promise<WorldManifestLite | null>
   loadChunksInBbox(bbox: Bbox, marginCells: number, opts: LoadChunksOpts): Promise<ChunkLoadResult>
+  loadForestMass(ids: string[], iso?: number): Promise<ForestMassResult>
   visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet>
   pickNearest(worldXY: [number, number], radiusM: number, deckZoom?: number): Promise<string | null>
   pickRect(bbox: Bbox, deckZoom?: number): Promise<string[]>
@@ -217,7 +243,18 @@ interface ObjectsBlock {
   chunksPath?: string
   chunkSizeM?: number
   roadsPath?: string
+  densityPath?: string
   instanceCount?: number
+}
+
+/** Worker-side density cache entry: the decoded tree-channel corner grid (never leaves the
+ *  worker — geometry is recomputed per delivery so transferred buffers can't detach it). */
+interface DensityCorners {
+  corners: Uint16Array
+  cols: number
+  rows: number
+  cellM: number
+  treeMax: number
 }
 
 /** Narrow untyped prefab rows (prefabs.json.gz) to the clone-safe subset we ship + join on. */
@@ -318,6 +355,11 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
   let cellById = new Map<string, WorldChunkCell>()
   const chunks = new Map<string, ParsedChunk | null>() // null = known-missing/empty
   const inflight = new Map<string, Promise<ParsedChunk | null>>()
+  // Density grids (T-090.8.1): tiny (≤ 625 × 289 u16 ≈ 0.4 MB) → cached for the session,
+  // no LRU; null caches a missing/undecodable file so misses never refetch.
+  const density = new Map<string, DensityCorners | null>()
+  const densityInflight = new Map<string, Promise<DensityCorners | null>>()
+  let densityPath: string | null = null
   let lastRequested = new Set<string>()
   let useTick = 0
 
@@ -336,6 +378,9 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
     cellById = new Map()
     chunks.clear()
     inflight.clear()
+    density.clear()
+    densityInflight.clear()
+    densityPath = null
     lastRequested = new Set()
   }
 
@@ -364,16 +409,51 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
     prefabById = maps.byId
     cellById = new Map((cells ?? []).map((c) => [c.id, c]))
     terrain = t
+    densityPath = typeof objects.densityPath === 'string' ? objects.densityPath : null
     manifest = {
       terrainId,
       chunkSizeM: objects.chunkSizeM ?? DEFAULT_CHUNK_SIZE_M,
       cells,
       prefabRows,
       roadsPath: objects.roadsPath ?? null,
+      densityPath,
       instanceCount: typeof objects.instanceCount === 'number' ? objects.instanceCount : null,
       hasOversized: maps.hasOversized,
     }
     return manifest
+  }
+
+  /** Fetch + decode one chunk's TBDD grid (tree channel), joined on the in-flight map.
+   *  Any failure (404, SPA HTML, bad magic/truncation) caches null — a known-empty. */
+  async function ensureDensity(id: string): Promise<DensityCorners | null> {
+    const cached = density.get(id)
+    if (cached !== undefined) return cached
+    let p = densityInflight.get(id)
+    if (!p) {
+      p = (async () => {
+        let entry: DensityCorners | null = null
+        try {
+          const bytes = densityPath ? await deps.fetchBytes(`${assetBase}/${densityPath}/${id}.bin`) : null
+          if (bytes) {
+            const grid = decodeTBDD(bytes)
+            const corners = grid.channels[0] ?? new Uint16Array(0)
+            let treeMax = 0
+            for (const v of corners) if (v > treeMax) treeMax = v
+            // All-zero grids are as empty as missing files — cache the null.
+            if (treeMax > 0) {
+              entry = { corners, cols: grid.cols, rows: grid.rows, cellM: grid.cellM, treeMax }
+            }
+          }
+        } catch {
+          entry = null
+        }
+        density.set(id, entry)
+        densityInflight.delete(id)
+        return entry
+      })()
+      densityInflight.set(id, p)
+    }
+    return p
   }
 
   function chunkUrl(id: string): string {
@@ -564,6 +644,50 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
   return {
     loadManifest,
     loadChunksInBbox,
+
+    /** Forest mass for the requested density chunks (T-090.8.1): TBDD fetch/decode (cached)
+     *  → marching squares (forestMass.ts) at the chunk's world origin. Geometry arrays are
+     *  fresh per call — safe for the worker shell to transfer. iso is a test/tuning knob;
+     *  prod always passes the DENSITY_ISO default (the corner cache is iso-agnostic). */
+    async loadForestMass(ids: string[], iso: number = DENSITY_ISO): Promise<ForestMassResult> {
+      if (!manifest || !terrain || !densityPath) return { chunks: [], emptyIds: [...ids] }
+      const chunkSizeM = manifest.chunkSizeM
+      const results: ForestMassChunk[] = []
+      const emptyIds: string[] = []
+      let cursor = 0
+      const workerLoop = async (): Promise<void> => {
+        while (cursor < ids.length) {
+          const id = ids[cursor++]
+          const entry = await ensureDensity(id)
+          if (!entry) {
+            emptyIds.push(id)
+            continue
+          }
+          const [cxStr, cyStr] = id.split('_')
+          const cx = Number(cxStr)
+          const cy = Number(cyStr)
+          const geo = forestMassFromCorners(
+            entry.corners,
+            entry.cols,
+            entry.rows,
+            cx * chunkSizeM,
+            cy * chunkSizeM,
+            entry.cellM,
+            iso,
+          )
+          if (geo.fillPositions.length === 0 && geo.outlineSegments.length === 0) {
+            emptyIds.push(id)
+            continue
+          }
+          results.push({ id, cx, cy, ...geo, treeMax: entry.treeMax })
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, ids.length)) }, workerLoop))
+      // Stable order (fetch pool completes out of order) — deterministic composites + tests.
+      results.sort((a, b) => (a.cy - b.cy) || (a.cx - b.cx))
+      emptyIds.sort()
+      return { chunks: results, emptyIds }
+    },
 
     async visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet> {
       const visibleCls = (cls: string) => classVisible(cls as WorldRenderClass, deckZoom)

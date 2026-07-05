@@ -9,6 +9,7 @@ import { PICK_RADIUS_PX } from '../worldmap/lodGates'
 import type { Bbox } from '../worldmap/chunkMath'
 import type {
   ChunkLoadResult,
+  ForestMassResult,
   LoadChunksOpts,
   ResolvedWorldObject,
   VisibleSet,
@@ -59,6 +60,12 @@ export async function loadWorldChunksInBbox(
   opts: LoadChunksOpts,
 ): Promise<ChunkLoadResult> {
   return getWorldObjects().loadChunksInBbox(bbox, marginCells, opts)
+}
+
+/** Forest mass geometry for density chunk ids (T-090.8.1) — typed arrays via transferables;
+ *  omit iso for the DENSITY_ISO default (tests/tuning only). */
+export async function loadWorldForestMass(ids: string[], iso?: number): Promise<ForestMassResult> {
+  return getWorldObjects().loadForestMass(ids, iso)
 }
 
 /** Instances visible in a bbox at a zoom, per lodGates class gates (W4, budget-capped). */

@@ -66,8 +66,25 @@ const TREE_ROWS: [number, number, number, number, number][] = [[2, 1800.25, 600.
 const gz = (obj: unknown) => new Uint8Array(gzipSync(Buffer.from(JSON.stringify(obj))))
 const plain = (obj: unknown) => new Uint8Array(Buffer.from(JSON.stringify(obj)))
 
+/** Minimal TBDD encoder (T-090.3.2 wire layout) for density fixtures — 16 B header + LE
+ *  u16 tree/rock channels (mirrors scripts/map-assets/lib/density-grid.mjs). */
+function tbdd(tree: Uint16Array, cols = 17, rows = 17): Uint8Array {
+  const bytes = new Uint8Array(16 + 2 * cols * rows * 2)
+  bytes.set([0x54, 0x42, 0x44, 0x44])
+  const dv = new DataView(bytes.buffer)
+  dv.setUint16(4, 1, true)
+  dv.setUint16(6, 32, true)
+  dv.setUint16(8, cols, true)
+  dv.setUint16(10, rows, true)
+  bytes[12] = 2
+  for (let k = 0; k < tree.length; k++) dv.setUint16(16 + 2 * k, tree[k], true)
+  return bytes // rock channel stays zero
+}
+
 interface FixtureOpts {
   withOversizedPrefab?: boolean
+  /** Omit `objects.densityPath` from the manifest (pre-T-090.3.2 export shape). */
+  withoutDensity?: boolean
 }
 
 function makeCore(opts: FixtureOpts = {}, instanceBudget?: number): WorldObjectsCoreApi {
@@ -90,11 +107,15 @@ function makeCore(opts: FixtureOpts = {}, instanceBudget?: number): WorldObjects
           chunksPath: 'objects/chunks',
           chunkSizeM: 512,
           roadsPath: 'objects/roads.json.gz',
+          ...(opts.withoutDensity ? {} : { densityPath: 'objects/density' }),
           instanceCount:
             goldenChunk.chunk.instances.length + MIXED_ROWS.length + TREE_ROWS.length,
         },
       }),
     ],
+    // Density fixtures (T-090.8.1): 1_1 fully dense, 2_1 all-zero, 3_1 missing (no file).
+    ['/map-assets/everon/objects/density/1_1.bin', tbdd(Uint16Array.from({ length: 17 * 17 }, () => 4))],
+    ['/map-assets/everon/objects/density/2_1.bin', tbdd(new Uint16Array(17 * 17))],
     ['/map-assets/everon/objects/prefabs.json.gz', gz({ prefabs })],
     [
       '/map-assets/everon/objects/chunks/manifest.json',
@@ -385,6 +406,59 @@ describe('INSTANCE_BUDGET vs the committed Everon census (data-driven)', () => {
     expect(census.byKind.tree.instances).toBeGreaterThan(INSTANCE_BUDGET)
     expect(HYDRATE_RENDER_CLASSES.includes('tree')).toBe(false)
     expect(classVisible('tree', -2)).toBe(false)
+  })
+})
+
+describe('loadForestMass (T-090.8.1 — TBDD → marching squares in the worker)', () => {
+  it('returns geometry at the chunk world origin; empties and misses land in emptyIds', async () => {
+    const core = makeCore()
+    await core.loadManifest('everon')
+    const result = await core.loadForestMass(['1_1', '2_1', '3_1'])
+    expect(result.chunks.map((c) => c.id)).toEqual(['1_1'])
+    expect(result.emptyIds).toEqual(['2_1', '3_1']) // all-zero grid + missing file
+    const chunk = result.chunks[0]
+    expect(chunk.cx).toBe(1)
+    expect(chunk.cy).toBe(1)
+    expect(chunk.treeMax).toBe(4)
+    // Fully dense 17×17 grid → one closed quad per 16×16 cell, zero contour segments.
+    expect(chunk.fillStartIndices).toHaveLength(256)
+    expect(chunk.outlineSegments).toHaveLength(0)
+    // First ring starts at the chunk origin (cx·512, cy·512).
+    expect(chunk.fillPositions[0]).toBe(512)
+    expect(chunk.fillPositions[1]).toBe(512)
+    let maxX = 0
+    for (let k = 0; k < chunk.fillPositions.length; k += 2) maxX = Math.max(maxX, chunk.fillPositions[k])
+    expect(maxX).toBe(1024) // 512 + 16 cells · 32 m
+  })
+
+  it('recomputes fresh arrays per call (worker-shell transfer can never detach the cache)', async () => {
+    const core = makeCore()
+    await core.loadManifest('everon')
+    const a = await core.loadForestMass(['1_1'])
+    const b = await core.loadForestMass(['1_1'])
+    expect(b.chunks[0].fillPositions).not.toBe(a.chunks[0].fillPositions)
+    expect([...b.chunks[0].fillPositions]).toEqual([...a.chunks[0].fillPositions])
+  })
+
+  it('iso above the grid density empties the chunk (tuning knob)', async () => {
+    const core = makeCore()
+    await core.loadManifest('everon')
+    const result = await core.loadForestMass(['1_1'], 5)
+    expect(result.chunks).toHaveLength(0)
+    expect(result.emptyIds).toEqual(['1_1'])
+  })
+
+  it('manifest without densityPath → everything empty (pre-density exports)', async () => {
+    const core = makeCore({ withoutDensity: true })
+    await core.loadManifest('everon')
+    const result = await core.loadForestMass(['1_1'])
+    expect(result.chunks).toHaveLength(0)
+    expect(result.emptyIds).toEqual(['1_1'])
+    expect((await core.loadManifest('everon'))?.densityPath).toBeNull()
+  })
+
+  it('exposes densityPath on the manifest lite', async () => {
+    expect((await makeCore().loadManifest('everon'))?.densityPath).toBe('objects/density')
   })
 })
 

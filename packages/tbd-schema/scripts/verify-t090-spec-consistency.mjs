@@ -78,20 +78,20 @@ for (const low of ["L1", "L2", "L3", "L4", "L5"]) {
 }
 
 // Gate 7 — every `make <hyphenated-target>` and `npm run <script>` referenced in the corpus exists.
+// npm scripts resolve against BOTH package.json script sets the corpus talks about: the schema
+// package's and the frontend's (specs quote `cd apps/website/frontend` blocks whose `npm run`
+// lines don't repeat the path — T-090.8.1). A script missing from both is still a gate failure.
 const makefile = read(join(repoRoot, "Makefile"));
 const makeTargets = new Set([...makefile.matchAll(/^([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
 const pkg = JSON.parse(read(join(repoRoot, "packages", "tbd-schema", "package.json")));
-const npmScripts = new Set(Object.keys(pkg.scripts ?? {}));
+const fePkg = JSON.parse(read(join(repoRoot, "apps", "website", "frontend", "package.json")));
+const npmScripts = new Set([...Object.keys(pkg.scripts ?? {}), ...Object.keys(fePkg.scripts ?? {})]);
 for (const { name, text } of corpus) {
   for (const m of text.matchAll(/\bmake\s+([a-z0-9]+(?:-[a-z0-9]+)+)/g)) {
     if (!makeTargets.has(m[1])) fail("7", `${name}: referenced \`make ${m[1]}\` not defined in root Makefile`);
   }
   for (const m of text.matchAll(/\bnpm run ([a-z0-9:_-]+)/g)) {
-    const lineStart = text.lastIndexOf("\n", m.index) + 1;
-    const lineEnd = text.indexOf("\n", m.index);
-    const line = text.slice(lineStart, lineEnd < 0 ? undefined : lineEnd);
-    if (/apps\/website\/frontend/.test(line)) continue;
-    if (!npmScripts.has(m[1])) fail("7", `${name}: referenced \`npm run ${m[1]}\` not in packages/tbd-schema/package.json scripts`);
+    if (!npmScripts.has(m[1])) fail("7", `${name}: referenced \`npm run ${m[1]}\` not in packages/tbd-schema or apps/website/frontend package.json scripts`);
   }
 }
 

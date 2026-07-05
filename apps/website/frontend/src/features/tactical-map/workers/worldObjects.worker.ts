@@ -13,6 +13,7 @@ import {
   createWorldObjectsCore,
   type Bbox,
   type ChunkLoadResult,
+  type ForestMassResult,
   type LoadChunksOpts,
   type ResolvedWorldObject,
   type VisibleSet,
@@ -68,6 +69,21 @@ const api = {
   async loadChunksInBbox(bbox: Bbox, marginCells: number, opts: LoadChunksOpts): Promise<ChunkLoadResult> {
     const result = await core.loadChunksInBbox(bbox, marginCells, opts)
     return Comlink.transfer(result, chunkBuffers(result))
+  },
+
+  /** Forest mass geometry (T-090.8.1) — buffers are fresh per call (core recomputes from
+   *  its corner cache), so transferring them can never detach worker-side state. */
+  async loadForestMass(ids: string[], iso?: number): Promise<ForestMassResult> {
+    const result = await core.loadForestMass(ids, iso)
+    const buffers: ArrayBuffer[] = []
+    for (const chunk of result.chunks) {
+      buffers.push(
+        chunk.fillPositions.buffer as ArrayBuffer,
+        chunk.fillStartIndices.buffer as ArrayBuffer,
+        chunk.outlineSegments.buffer as ArrayBuffer,
+      )
+    }
+    return Comlink.transfer(result, buffers)
   },
 
   async visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet> {
