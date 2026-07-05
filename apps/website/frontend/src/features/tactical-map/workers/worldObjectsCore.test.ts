@@ -367,6 +367,34 @@ describe('W4 — visibleInstances respects lodGates (LOD5: no cluster path)', ()
   })
 })
 
+describe('T-090.5.5 — render passthrough + self-hydrating visibleInstances', () => {
+  it('narrowPrefabRows carries the render block + spatial.heightM (glyph inputs)', async () => {
+    const manifest = await makeCore().loadManifest('everon')
+    const tree = manifest?.prefabRows.find((r) => r.prefabId === 0)
+    expect(tree?.render?.iconKey).toBe('tree-conifer')
+    expect(tree?.render?.baseSizePx).toBe(18)
+    expect(tree?.render?.defaultColor).toBe('#2d5a27')
+    expect(tree?.spatial?.heightM).toBe(12)
+  })
+
+  it('visibleInstances self-hydrates the covering chunks (no prior loadChunksInBbox)', async () => {
+    const core = makeCore()
+    await core.loadManifest('everon')
+    // Chunk 2_1 holds the mixed rows (incl. two trees). Query it at the tree band with NO chunk
+    // load first — visibleInstances must hydrate 2_1 itself before the rbush query (it is the
+    // sole tree/prop driver; no dependency on the building chunkStore).
+    const set = await core.visibleInstances([1024, 512, 1536, 1024], TREE_GLYPH_MIN_ZOOM)
+    expect(set.count).toBeGreaterThan(0)
+    expect([...set.classes]).toContain(RENDER_CLASS_CODES.indexOf('tree'))
+  })
+
+  it('skip-when-invisible: a below-band zoom returns empty without a prior chunk load', async () => {
+    const core = makeCore()
+    await core.loadManifest('everon')
+    expect((await core.visibleInstances([0, 0, 12800, 12800], -3)).count).toBe(0)
+  })
+})
+
 describe('INSTANCE_BUDGET vs the committed Everon census (data-driven)', () => {
   interface Census {
     byKind: Record<string, { instances: number }>

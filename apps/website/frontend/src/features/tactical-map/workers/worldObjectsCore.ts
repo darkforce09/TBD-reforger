@@ -66,16 +66,29 @@ export function renderClassForPrefab(kind: string, cls: string): InstanceRenderC
  *  piers), so the store asks for +1 chunk ring while any such prefab exists in the export. */
 export const OVERSIZED_HALF_EXTENT_M = 64
 
+/** Glyph render fields (prefabs.json.gz `render` block, T-090.5.5) — the tree/prop IconLayer
+ *  keys off these: iconKey → atlas rect, baseSizePx → glyph size, defaultColor → tint. Per-prefab
+ *  importanceZoom (landmark early-surface, contract N2) is carried but inert for the current Everon
+ *  census (no tree declares it; the tree class gate is already 0) — flagged for Cursor doc sync. */
+export interface WorldGlyphRender {
+  iconKey?: string
+  baseSizePx?: number
+  defaultColor?: string
+  importanceZoom?: number
+}
+
 /** Prefab row subset shipped to the main thread (structured-clone-safe). Shape mirrors the
  *  export's `prefabs.json.gz` rows closely enough that chunkStore can feed it to the existing
- *  buildingLayer.buildingPrefabLookup unchanged (single source for pier/dock + default rules). */
+ *  buildingLayer.buildingPrefabLookup unchanged (single source for pier/dock + default rules).
+ *  `render` + `spatial.heightM` (T-090.5.5) feed the tree/prop glyph layer. */
 export interface WorldPrefabRow {
   prefabId: number
   kind: string
   class: string
   label?: string
   resourceName?: string
-  spatial?: { halfExtentsM?: { x?: number; y?: number; z?: number } }
+  spatial?: { halfExtentsM?: { x?: number; y?: number; z?: number }; heightM?: number }
+  render?: WorldGlyphRender
 }
 
 /** One existing chunk cell (from the export's chunk index, or the full-grid fallback). */
@@ -282,7 +295,8 @@ function narrowPrefabRows(raw: unknown): WorldPrefabRow[] {
       class?: unknown
       label?: unknown
       resourceName?: unknown
-      spatial?: { halfExtentsM?: { x?: unknown; y?: unknown; z?: unknown } }
+      spatial?: { halfExtentsM?: { x?: unknown; y?: unknown; z?: unknown }; heightM?: unknown }
+      render?: { iconKey?: unknown; baseSizePx?: unknown; defaultColor?: unknown; importanceZoom?: unknown }
     }
     if (typeof p.prefabId !== 'number' || typeof p.kind !== 'string') continue
     out.push({
@@ -291,22 +305,43 @@ function narrowPrefabRows(raw: unknown): WorldPrefabRow[] {
       class: typeof p.class === 'string' ? p.class : 'unknown',
       label: typeof p.label === 'string' ? p.label : undefined,
       resourceName: typeof p.resourceName === 'string' ? p.resourceName : undefined,
-      spatial: narrowHalfExtents(p.spatial?.halfExtentsM),
+      spatial: narrowSpatial(p.spatial),
+      render: narrowRender(p.render),
     })
   }
   return out
 }
 
-function narrowHalfExtents(
-  he: { x?: unknown; y?: unknown; z?: unknown } | undefined,
+/** Narrow the spatial block to the clone-safe subset render layers join on: OBB half extents
+ *  (building geometry) + heightM (tree glyph 1.5× size cap, T-090.5.5). */
+function narrowSpatial(
+  spatial: { halfExtentsM?: { x?: unknown; y?: unknown; z?: unknown }; heightM?: unknown } | undefined,
 ): WorldPrefabRow['spatial'] {
-  if (!he) return undefined
-  return {
-    halfExtentsM: {
+  if (!spatial) return undefined
+  const he = spatial.halfExtentsM
+  const out: NonNullable<WorldPrefabRow['spatial']> = {}
+  if (he) {
+    out.halfExtentsM = {
       x: typeof he.x === 'number' ? he.x : undefined,
       y: typeof he.y === 'number' ? he.y : undefined,
       z: typeof he.z === 'number' ? he.z : undefined,
-    },
+    }
+  }
+  if (typeof spatial.heightM === 'number') out.heightM = spatial.heightM
+  return out
+}
+
+/** Narrow the glyph render block (T-090.5.5): iconKey/baseSizePx/defaultColor feed the tree/prop
+ *  IconLayer; importanceZoom is carried for the per-prefab landmark override (contract N2). */
+function narrowRender(
+  render: { iconKey?: unknown; baseSizePx?: unknown; defaultColor?: unknown; importanceZoom?: unknown } | undefined,
+): WorldGlyphRender | undefined {
+  if (!render) return undefined
+  return {
+    iconKey: typeof render.iconKey === 'string' ? render.iconKey : undefined,
+    baseSizePx: typeof render.baseSizePx === 'number' ? render.baseSizePx : undefined,
+    defaultColor: typeof render.defaultColor === 'string' ? render.defaultColor : undefined,
+    importanceZoom: typeof render.importanceZoom === 'number' ? render.importanceZoom : undefined,
   }
 }
 
@@ -747,7 +782,22 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
       return { intervalM, segments: contourSegments(grid, levels) }
     },
 
+    /** Instances visible in a bbox at a zoom (W4-v2 — the tree/prop glyph driver, T-090.5.5).
+     *  Self-hydrates the covering chunks so the rbush holds this viewport before it's queried —
+     *  no dependency on the building chunkStore (both drive the same worker core; ensureChunk is
+     *  idempotent-cached). Skip-when-invisible: if no instance class draws at this zoom the answer
+     *  is empty anyway → return without hydrating (a low-zoom bbox must never fetch the island).
+     *  Gates + INSTANCE_BUDGET cap unchanged; LRU stays owned by loadChunksInBbox (never evict
+     *  here — ensureChunk bumps lastUsed so a freshly hydrated viewport isn't the eviction victim). */
     async visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet> {
+      const anyClassVisible = RENDER_CLASS_CODES.some((c) => classVisible(c, deckZoom))
+      if (anyClassVisible && manifest && terrain) {
+        const chunkSizeM = manifest.chunkSizeM
+        const rect = expandChunkRect(chunkRectForBbox(bbox, terrain, chunkSizeM), 1, terrain, chunkSizeM)
+        let hydrateIds = chunkIdsForRect(rect)
+        if (manifest.cells) hydrateIds = hydrateIds.filter((id) => cellById.has(id))
+        await Promise.all(hydrateIds.map((id) => ensureChunk(id)))
+      }
       const visibleCls = (cls: string) => classVisible(cls as WorldRenderClass, deckZoom)
       const ids = index.pickRect(bbox, visibleCls)
       const count = Math.min(ids.length, budget)

@@ -50,6 +50,19 @@ import {
   type LandCoverRegion,
 } from './landCoverRegions'
 import type { BuildingInstance } from './buildingLayer'
+import {
+  buildPropGlyphLayer,
+  buildTreeGlyphLayer,
+  EMPTY_TREE_GLYPHS,
+  type TreeGlyphComposite,
+} from './treePropLayer'
+import {
+  ensureTreeStream,
+  getPropGlyphs,
+  getTreeGlyphs,
+  setTreeViewport,
+  subscribeTreeStream,
+} from './treeStore'
 import { loadWorldGlyphAtlas, type WorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { useClassToggles } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
@@ -85,6 +98,10 @@ const subscribeForest = WORLDMAP_ENABLED ? subscribeForestStream : noSubscribe
 const snapshotForest = WORLDMAP_ENABLED ? getForestMass : getEmptyForest
 const subscribeDemVec = WORLDMAP_ENABLED ? subscribeDemVectors : noSubscribe
 const snapshotDemVec = WORLDMAP_ENABLED ? getDemVectors : getEmptyDemVectors
+const getEmptyTreeGlyphs = () => EMPTY_TREE_GLYPHS
+const subscribeTree = WORLDMAP_ENABLED ? subscribeTreeStream : noSubscribe
+const snapshotTreeGlyphs = WORLDMAP_ENABLED ? getTreeGlyphs : getEmptyTreeGlyphs
+const snapshotPropGlyphs = WORLDMAP_ENABLED ? getPropGlyphs : getEmptyTreeGlyphs
 
 /** Derived LOD gate state — stable within a zoom band (the memo keys on these, never on
  *  raw zoom, so continuous pan/zoom rebuilds layers only at band crossings). */
@@ -99,6 +116,8 @@ interface WorldGateState {
   seaAlpha: number
   contourVisible: boolean
   contourIntervalM: number
+  treesVisible: boolean
+  propsVisible: boolean
 }
 
 const GATES_DISABLED: WorldGateState = {
@@ -112,6 +131,8 @@ const GATES_DISABLED: WorldGateState = {
   seaAlpha: 0,
   contourVisible: false,
   contourIntervalM: 0,
+  treesVisible: false,
+  propsVisible: false,
 }
 
 function deriveWorldGates(deckZoom: number): WorldGateState {
@@ -127,6 +148,9 @@ function deriveWorldGates(deckZoom: number): WorldGateState {
     seaAlpha: seaFillAlpha(deckZoom),
     contourVisible: classVisible('contour', deckZoom),
     contourIntervalM: contourIntervalForZoom(deckZoom),
+    // Tree/prop glyph bands: veg rides the tree layer, large rocks ride props (contract N2).
+    treesVisible: classVisible('tree', deckZoom) || classVisible('vegetation', deckZoom),
+    propsVisible: classVisible('prop', deckZoom) || classVisible('rockLarge', deckZoom),
   }
 }
 
@@ -148,6 +172,10 @@ interface AssembleOpts {
   seaVisible: boolean
   seaAlpha: number
   contourVisible: boolean
+  treeGlyphs: TreeGlyphComposite
+  propGlyphs: TreeGlyphComposite
+  treesVisible: boolean
+  propsVisible: boolean
 }
 
 /** Ordered slot assembly (t090_10 stack). `sea` (slot 2) is split out for TacticalMap to mount
@@ -197,7 +225,23 @@ function assembleWorldLayers(o: AssembleOpts): WorldMapLayers {
       }),
     )
   }
+  // Slots 9–10: individual tree/prop glyphs mount above the forest mass (T-090.5.5).
+  appendGlyphLayers(world, o)
   return { sea, world }
+}
+
+/** Push the slot-9/10 glyph IconLayers (world-trees / world-props). Below the glyph band the
+ *  composites are empty (store cleared), so the builders return null. Split out of
+ *  assembleWorldLayers to keep that function under the cyclomatic-complexity gate. */
+function appendGlyphLayers(world: Layer[], o: AssembleOpts): void {
+  if (o.toggles.trees) {
+    const trees = buildTreeGlyphLayer({ composite: o.treeGlyphs, atlas: o.atlas, visible: o.treesVisible })
+    if (trees) world.push(trees)
+  }
+  if (o.toggles.props) {
+    const props = buildPropGlyphLayer({ composite: o.propGlyphs, atlas: o.atlas, visible: o.propsVisible })
+    if (props) world.push(props)
+  }
 }
 
 export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMapLayersOpts): WorldMapLayers {
@@ -223,6 +267,7 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     let alive = true
     ensureWorldStream(terrain)
     ensureForestStream(terrain)
+    ensureTreeStream(terrain)
     void loadWorldRoads(terrain).then((roads) => {
       if (alive) setLoadedRoads({ terrainId: terrain.id, roads })
     })
@@ -242,6 +287,8 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
   const buildings = useSyncExternalStore(subscribeBuildings, snapshotBuildings, snapshotBuildings)
   const forestMass = useSyncExternalStore(subscribeForest, snapshotForest, snapshotForest)
   const demVectors = useSyncExternalStore(subscribeDemVec, snapshotDemVec, snapshotDemVec)
+  const treeGlyphs = useSyncExternalStore(subscribeTree, snapshotTreeGlyphs, snapshotTreeGlyphs)
+  const propGlyphs = useSyncExternalStore(subscribeTree, snapshotPropGlyphs, snapshotPropGlyphs)
 
   // Viewport → streaming. Runs on every camera commit; both stores early-exit when the
   // preloaded chunk set is unchanged, so per-frame cost is chunk math only. Forest density
@@ -250,7 +297,10 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     if (!WORLDMAP_ENABLED) return
     setWorldViewport(viewBounds, deckZoom)
     if (toggles.forest) setForestViewport(viewBounds)
-  }, [viewBounds, deckZoom, toggles.forest])
+    // Tree/prop glyph stream (T-090.5.5): the store gates internally on band + toggles, and
+    // clears to empty when both are off or below the glyph band — so call it unconditionally.
+    setTreeViewport(viewBounds, deckZoom, { trees: toggles.trees, props: toggles.props })
+  }, [viewBounds, deckZoom, toggles.forest, toggles.trees, toggles.props])
 
   const {
     roadClassKey,
@@ -263,6 +313,8 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     seaAlpha,
     contourVisible,
     contourIntervalM,
+    treesVisible,
+    propsVisible,
   } = deriveWorldGates(deckZoom)
 
   // DEM-vector geometry (sea + contours) — kicked once per terrain when either toggle is on
@@ -302,6 +354,10 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
       seaVisible,
       seaAlpha,
       contourVisible,
+      treeGlyphs,
+      propGlyphs,
+      treesVisible,
+      propsVisible,
     })
   }, [
     roads,
@@ -320,5 +376,9 @@ export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMap
     seaVisible,
     seaAlpha,
     contourVisible,
+    treeGlyphs,
+    propGlyphs,
+    treesVisible,
+    propsVisible,
   ])
 }
