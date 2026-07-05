@@ -1,48 +1,63 @@
-// T-090.5.2 — Map Engine v2 layer assembly hook. Single insertion point for world-object
+// T-090.5.2/.5.3 — Map Engine v2 layer assembly hook. Single insertion point for world-object
 // layers in TacticalMap's ordered array (plan §4.2 slots: sea → land-cover → contours →
-// roads → buildings → forest → trees/props; hillshade + grid stay their own hooks). This
-// slice mounts slots 6–7: `world-roads`, `world-buildings`, `world-building-badges`.
-// Later slices (T-090.5.3+ streaming, .5.4 sea/contours, .8.1 forest) extend the array.
+// roads → buildings → forest → trees/props; hillshade + grid stay their own hooks). Mounted
+// slots stay 6–7 (`world-roads`, `world-buildings`, `world-building-badges` — NO new layers
+// in .5.3); what changed is the data path: buildings stream viewport-driven through the
+// worker + chunkStore (T-090.5.3) instead of the removed fetch-all loader, roads stay a
+// one-shot main-thread load (worldData).
 //
-// WORLDMAP_ENABLED off → [] before any work: no fetch, no layers, first paint identical to
-// today (plan risk R3). Visibility authority is lodGates.classVisible only (LOD5); the memo
-// keys on the *derived* gate outputs (visible road-class set + building/badge booleans), so
-// continuous zoom rebuilds layers only at band crossings, and per-user class toggles
-// (worldLayerPrefs, N8) gate each class group.
+// WORLDMAP_ENABLED off → [] before any work: no fetch, no worker, no layers — first paint
+// identical to today (plan risk R3). Visibility authority is lodGates.classVisible only
+// (LOD5); the memo keys on the *derived* gate outputs (visible road-class set +
+// building/badge booleans) plus the chunkStore revision, so continuous pan/zoom rebuilds
+// layers only at band crossings or when streamed data actually changes. The viewport effect
+// runs per camera move but setWorldViewport early-exits on an unchanged chunk set.
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import type { Layer } from '@deck.gl/core'
 import { WORLDMAP_ENABLED } from './config'
 import { classVisible } from './lodGates'
-import { buildRoadLayers, visibleRoadClasses, type RoadClass } from './roadLayer'
+import { buildRoadLayers, visibleRoadClasses, type RoadClass, type RoadSegment } from './roadLayer'
 import { buildBuildingLayer, buildBuildingBadgeLayer } from './buildingLayer'
-import { loadWorldObjects, type WorldObjectsData } from './worldData'
+import { loadWorldRoads } from './worldData'
+import { ensureWorldStream, getWorldBuildings, setWorldViewport, subscribeWorldStream } from './chunkStore'
+import type { BuildingInstance } from './buildingLayer'
 import { loadWorldGlyphAtlas, type WorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { useClassToggles } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
+import type { Bbox } from './chunkMath'
 
 export interface UseWorldMapLayersOpts {
   terrain: TerrainDef
   deckZoom: number
+  /** Visible world AABB (TacticalMap's basemap bounds); null before first measure. */
+  viewBounds: Bbox | null
 }
 
-export function useWorldMapLayers({ terrain, deckZoom }: UseWorldMapLayersOpts): Layer[] {
+const EMPTY_BUILDINGS: BuildingInstance[] = []
+const getEmptyBuildings = () => EMPTY_BUILDINGS
+const noop = () => undefined
+const noSubscribe = () => noop
+
+export function useWorldMapLayers({ terrain, deckZoom, viewBounds }: UseWorldMapLayersOpts): Layer[] {
   const toggles = useClassToggles()
-  // Loaded data is tagged with its terrain so a terrain switch derives back to null until the
+  // Roads are tagged with their terrain so a terrain switch derives back to null until the
   // new load resolves (no synchronous reset-setState in the effect).
-  const [loadedData, setLoadedData] = useState<{
+  const [loadedRoads, setLoadedRoads] = useState<{
     terrainId: string
-    data: WorldObjectsData
+    roads: RoadSegment[]
   } | null>(null)
   const [atlas, setAtlas] = useState<WorldGlyphAtlas | null>(null)
 
-  // One data load + one atlas load per terrain (both module-cached, so re-mounts and
-  // StrictMode double-invokes join the same promise). Nothing here re-fires on pan/zoom.
+  // One roads load + one atlas load per terrain (both module-cached, so re-mounts and
+  // StrictMode double-invokes join the same promise), plus the streaming session kick-off
+  // (idempotent per terrain). Nothing here re-fires on pan/zoom.
   useEffect(() => {
     if (!WORLDMAP_ENABLED) return
     let alive = true
-    void loadWorldObjects(terrain).then((d) => {
-      if (alive) setLoadedData({ terrainId: terrain.id, data: d })
+    ensureWorldStream(terrain)
+    void loadWorldRoads(terrain).then((roads) => {
+      if (alive) setLoadedRoads({ terrainId: terrain.id, roads })
     })
     void loadWorldGlyphAtlas().then((a) => {
       if (alive) setAtlas(a)
@@ -52,7 +67,22 @@ export function useWorldMapLayers({ terrain, deckZoom }: UseWorldMapLayersOpts):
     }
   }, [terrain])
 
-  const data = loadedData?.terrainId === terrain.id ? loadedData.data : null
+  // Streamed buildings: the composite array reference only changes when the chunk store
+  // commits a drain/evict/pin change, so it doubles as the useSyncExternalStore snapshot.
+  const buildings = useSyncExternalStore(
+    WORLDMAP_ENABLED ? subscribeWorldStream : noSubscribe,
+    WORLDMAP_ENABLED ? getWorldBuildings : getEmptyBuildings,
+    WORLDMAP_ENABLED ? getWorldBuildings : getEmptyBuildings,
+  )
+
+  // Viewport → streaming. Runs on every camera commit; the store early-exits when the
+  // preloaded chunk set is unchanged, so per-frame cost is chunk math only.
+  useEffect(() => {
+    if (!WORLDMAP_ENABLED) return
+    setWorldViewport(viewBounds, deckZoom)
+  }, [viewBounds, deckZoom])
+
+  const roads = loadedRoads?.terrainId === terrain.id ? loadedRoads.roads : null
 
   // Derived LOD gate state — stable within a zoom band (memo deps, not raw zoom).
   const roadClassKey = WORLDMAP_ENABLED ? visibleRoadClasses(deckZoom).join(',') : ''
@@ -60,26 +90,22 @@ export function useWorldMapLayers({ terrain, deckZoom }: UseWorldMapLayersOpts):
   const badgesVisible = WORLDMAP_ENABLED && classVisible('buildingBadge', deckZoom)
 
   return useMemo(() => {
-    if (!WORLDMAP_ENABLED || !data) return []
+    if (!WORLDMAP_ENABLED) return []
     const layers: Layer[] = []
-    if (toggles.roads && roadClassKey) {
+    if (toggles.roads && roads && roadClassKey) {
       layers.push(
         ...buildRoadLayers({
-          segments: data.roads,
+          segments: roads,
           visibleClasses: roadClassKey.split(',') as RoadClass[],
         }),
       )
     }
     if (toggles.buildings) {
-      const buildings = buildBuildingLayer({ buildings: data.buildings, visible: buildingsVisible })
-      if (buildings) layers.push(buildings)
-      const badges = buildBuildingBadgeLayer({
-        buildings: data.buildings,
-        atlas,
-        visible: badgesVisible,
-      })
+      const buildingLayer = buildBuildingLayer({ buildings, visible: buildingsVisible })
+      if (buildingLayer) layers.push(buildingLayer)
+      const badges = buildBuildingBadgeLayer({ buildings, atlas, visible: badgesVisible })
       if (badges) layers.push(badges)
     }
     return layers
-  }, [data, atlas, toggles, roadClassKey, buildingsVisible, badgesVisible])
+  }, [roads, buildings, atlas, toggles, roadClassKey, buildingsVisible, badgesVisible])
 }

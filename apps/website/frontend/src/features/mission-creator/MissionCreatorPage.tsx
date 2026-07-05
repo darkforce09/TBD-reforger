@@ -13,6 +13,8 @@ import {
   moveEntities,
   pasteSlots,
   removeEntities,
+  resetWorldStream,
+  terminateWorldObjects,
   useMapStore,
 } from '@/features/tactical-map'
 import type { AssetDropPayload, ClipboardSlot, TacticalMapApi } from '@/features/tactical-map'
@@ -108,6 +110,18 @@ export default function MissionCreatorPage() {
       useMapStore.getState().setSelection({ kind: 'slot', ids: [newId] })
     },
     [md],
+  )
+
+  // Mission unmount tears down the world-object streaming session (T-090.5.3): reset the
+  // chunk store first so it drops references into a dying worker, then terminate the worker
+  // itself — the exact mirror of terminateCompiler (useMissionEditor). Both are safe no-ops
+  // when the worldmap flag is off (nothing was ever spawned); a remount respawns lazily.
+  useEffect(
+    () => () => {
+      resetWorldStream()
+      terminateWorldObjects()
+    },
+    [],
   )
 
   // Keyboard: Cmd/Ctrl+Z/Y undo-redo (reuses the existing UndoController); Spacebar centers

@@ -65,6 +65,7 @@ export function obbCorners(
  *  pier/dock (T-090.5.2.2 — walkable hard structures that must read on the map; their
  *  buildingClass carries the water class for styling). Everything else (trees/props in mixed
  *  P2 chunks) resolves to undefined and is discarded. */
+// eslint-disable-next-line complexity -- defensive narrowing of untyped export rows: every branch is a field guard on one row shape; splitting them hides the wire contract (pre-existing at T-090.5.2.2, annotated in T-090.5.3 when lint surfaced it)
 export function buildingPrefabLookup(raw: unknown): Map<number, BuildingPrefabInfo> {
   const rows = (raw as { prefabs?: unknown })?.prefabs
   const lookup = new Map<number, BuildingPrefabInfo>()

@@ -21,6 +21,11 @@ export { useMapStyle, getMapStyle, setMapStyle } from './state/worldLayerPrefs'
 export type { WorldClassToggles } from './state/worldLayerPrefs'
 export type { MapStyle } from './worldmap/styleModes'
 
+// Map Engine v2 streaming teardown (T-090.5.3) — mission unmount hooks (mirror of
+// terminateCompiler): reset the chunk store, then kill the worker.
+export { resetWorldStream } from './worldmap/chunkStore'
+export { terminateWorldObjects } from './workers/worldObjectsClient'
+
 // State foundation (Ultra Plan §2)
 export { useMapStore, pickMapSnapshot } from './state/useMapStore'
 export type { MapStoreState, MapSnapshot } from './state/useMapStore'

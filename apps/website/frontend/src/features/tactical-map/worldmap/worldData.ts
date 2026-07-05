@@ -1,42 +1,16 @@
-// T-090.5.2 — World-object data loader (interim, main-thread). Loads the committed Map Engine
-// v2 export for a terrain once per tab: roads.json.gz one-shot (766 Everon segments) + the P1
-// building set distilled from the chunk files (5,606 instances out of 507k mixed rows — trees
-// are parsed and immediately discarded, never retained). Deliberately simple at this scale;
-// T-090.5.3 replaces the fetch path with the worker + chunkStore LRU streaming (plan §6) and
-// this module shrinks to the manifest gate.
+// T-090.5.3 — World-object manifest gate + roads one-shot (main thread). The T-090.5.2
+// bulk loader (fetch-all chunks, distill buildings) is gone: building/pier instances now
+// stream through the worker + chunkStore (plan §6); this module keeps only what is
+// deliberately NOT streamed:
 //
-// Chunk enumeration: the export ships an index at `{chunksPath}/manifest.json`
-// ({ chunkSizeM, cells: [{cx, cy, path, instanceCount}] } — 270 Everon cells), so only files
-// that exist are fetched. If a terrain export ever lacks the index, we fall back to sweeping
-// the full chunk grid (chunkMath) and treating missing files as empty chunks.
+//  - the manifest gate — no `objects` block ⇒ v2 layers cleanly absent (plan R11), and
+//  - roads — 888 Everon segments, one small artifact, parsed once per tab. The parse
+//    (extractRoadCenterline over quad-soup) reuses roadLayer's pure exports, which import
+//    deck.gl at module scope — exactly why roads stay main-thread instead of riding the
+//    worker (the worker bundle must not drag deck.gl in; see worldObjectsCore.ts header).
 
 import type { TerrainDef } from '../coords/terrains'
-import { chunkIdsForRect, chunkRectForBbox } from './chunkMath'
 import { parseRoadsPayload, type RoadSegment } from './roadLayer'
-import {
-  buildingPrefabLookup,
-  buildingsFromChunkInstances,
-  type BuildingInstance,
-} from './buildingLayer'
-
-export interface WorldObjectsData {
-  roads: RoadSegment[]
-  buildings: BuildingInstance[]
-}
-
-/** The manifest `objects` block fields this loader consumes (terrain-manifest schema). */
-interface ObjectsBlock {
-  roadsPath?: string
-  prefabsPath?: string
-  chunksPath?: string
-  chunkSizeM?: number
-}
-
-const EMPTY: WorldObjectsData = { roads: [], buildings: [] }
-const CHUNK_FETCH_CONCURRENCY = 12
-
-const loadPromises = new Map<string, Promise<WorldObjectsData>>()
-const loaded = new Map<string, WorldObjectsData>()
 
 /** Fetch + parse a (possibly gzipped) JSON asset. Static .gz files are served raw (no
  *  Content-Encoding), so gunzip via DecompressionStream when the gzip magic is present; a
@@ -54,97 +28,44 @@ async function fetchGzJson(url: string): Promise<unknown | null> {
   return JSON.parse(new TextDecoder().decode(buf)) as unknown
 }
 
-/** One chunk-index row (`{chunksPath}/manifest.json`, written by the T-090.3 export). */
-interface ChunkCell {
-  path?: string
-}
+const roadPromises = new Map<string, Promise<RoadSegment[]>>()
+const loadedRoads = new Map<string, RoadSegment[]>()
 
-/** Chunk file URLs to fetch: the export's chunk index when present (cell paths are relative
- *  to the terrain base), else a full-grid sweep where misses read as empty chunks. */
-async function chunkUrls(
-  base: string,
-  objects: ObjectsBlock,
-  terrain: TerrainDef,
-): Promise<string[]> {
-  const index = (await fetchGzJson(`${base}/${objects.chunksPath}/manifest.json`).catch(
-    () => null,
-  )) as { cells?: ChunkCell[] } | null
-  if (Array.isArray(index?.cells)) {
-    return index.cells
-      .filter((c): c is Required<ChunkCell> => typeof c.path === 'string')
-      .map((c) => `${base}/${c.path}`)
-  }
-  const rect = chunkRectForBbox(
-    terrain.bounds,
-    { width: terrain.width, height: terrain.height },
-    objects.chunkSizeM,
-  )
-  return chunkIdsForRect(rect).map((id) => `${base}/${objects.chunksPath}/${id}.json.gz`)
-}
-
-async function loadTerrainObjects(terrain: TerrainDef): Promise<WorldObjectsData> {
-  if (!terrain.manifestUrl) return EMPTY
+async function loadTerrainRoads(terrain: TerrainDef): Promise<RoadSegment[]> {
+  if (!terrain.manifestUrl) return []
   const manifest = (await fetchGzJson(terrain.manifestUrl)) as {
-    objects?: ObjectsBlock
+    objects?: { roadsPath?: string }
   } | null
-  const objects = manifest?.objects
-  // No export for this terrain (Arland/custom) → v2 layers cleanly absent (plan R11).
-  if (!objects) return EMPTY
+  const roadsPath = manifest?.objects?.roadsPath
+  if (!roadsPath) return []
   const base = terrain.manifestUrl.slice(0, terrain.manifestUrl.lastIndexOf('/'))
-
-  const roadsPromise: Promise<RoadSegment[]> = objects.roadsPath
-    ? fetchGzJson(`${base}/${objects.roadsPath}`).then(parseRoadsPayload)
-    : Promise.resolve([])
-
-  const buildingsPromise: Promise<BuildingInstance[]> = (async () => {
-    if (!objects.prefabsPath || !objects.chunksPath) return []
-    const lookup = buildingPrefabLookup(await fetchGzJson(`${base}/${objects.prefabsPath}`))
-    if (lookup.size === 0) return []
-    const urls = await chunkUrls(base, objects, terrain)
-    const buildings: BuildingInstance[] = []
-    let next = 0
-    const worker = async () => {
-      while (next < urls.length) {
-        const url = urls[next++]
-        const chunk = await fetchGzJson(url).catch(
-          () => null, // missing chunk file (fallback sweep) or transient failure → empty
-        )
-        const instances = (chunk as { instances?: unknown } | null)?.instances
-        if (instances) buildings.push(...buildingsFromChunkInstances(instances, lookup))
-      }
-    }
-    await Promise.all(Array.from({ length: CHUNK_FETCH_CONCURRENCY }, worker))
-    return buildings
-  })()
-
-  const [roads, buildings] = await Promise.all([roadsPromise, buildingsPromise])
-  return { roads, buildings }
+  return parseRoadsPayload(await fetchGzJson(`${base}/${roadsPath}`))
 }
 
-/** Load (or join the in-flight load of) a terrain's world objects. Failures degrade to the
+/** Load (or join the in-flight load of) a terrain's road network. Failures degrade to the
  *  empty set with one warning — the editor keeps its sat/hillshade/grid path regardless. */
-export function loadWorldObjects(terrain: TerrainDef): Promise<WorldObjectsData> {
+export function loadWorldRoads(terrain: TerrainDef): Promise<RoadSegment[]> {
   const key = terrain.id
-  let p = loadPromises.get(key)
+  let p = roadPromises.get(key)
   if (!p) {
-    p = loadTerrainObjects(terrain)
+    p = loadTerrainRoads(terrain)
       .catch((e: unknown) => {
         console.warn(
-          `[worldmap] world-object load failed for ${key} — layers off`,
+          `[worldmap] road load failed for ${key} — roads off`,
           e instanceof Error ? e.message : e,
         )
-        return EMPTY
+        return []
       })
-      .then((data) => {
-        loaded.set(key, data)
-        return data
+      .then((roads) => {
+        loadedRoads.set(key, roads)
+        return roads
       })
-    loadPromises.set(key, p)
+    roadPromises.set(key, p)
   }
   return p
 }
 
-/** Synchronous view for layer assembly: resolved data or null while loading/absent. */
-export function getLoadedWorldObjects(terrainId: string): WorldObjectsData | null {
-  return loaded.get(terrainId) ?? null
+/** Synchronous view for layer assembly: resolved roads or null while loading/absent. */
+export function getLoadedWorldRoads(terrainId: string): RoadSegment[] | null {
+  return loadedRoads.get(terrainId) ?? null
 }

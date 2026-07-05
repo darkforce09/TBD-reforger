@@ -1,18 +1,54 @@
-// World-objects Web Worker (T-090.5.1 skeleton). Will own chunk fetch + gunzip
-// (DecompressionStream) + catalog/density decode + the world rbush + marching squares,
-// returning transferable typed arrays — never 1M JS objects (plan §6 W-transfer rule).
-// This slice ships the Comlink plumbing only: a stub API so the client harness, bundling
-// (`new Worker(new URL(...), { type: 'module' })` in worldObjectsClient.ts) and teardown
-// path are proven before real work lands in T-090.5.3.
+// World-objects Web Worker (T-090.5.3). Thin Comlink shell: all fetch + gunzip
+// (DecompressionStream) + chunk parse + world rbush logic lives in worldObjectsCore.ts (a
+// pure factory, node-testable — W1/W2/W4 run against it directly). This file only supplies
+// the HTTP fetchBytes dep and marks result typed arrays as transferables so the worker→main
+// hop moves buffers instead of copying them (plan §6 W-transfer rule).
 //
-// Worker-safety: comlink only (pure worldmap/ modules allowed later) — no DOM, no React,
-// no barrel imports (pattern: mission-creator/compiler/compiler.worker.ts).
+// Worker-safety: comlink + pure modules only (worldObjectsCore → chunkMath/lodGates/
+// terrains/worldSpatialIndex) — no DOM, no React, no deck.gl, no barrel imports
+// (pattern: mission-creator/compiler/compiler.worker.ts).
 
 import * as Comlink from 'comlink'
+import {
+  createWorldObjectsCore,
+  type Bbox,
+  type ChunkLoadResult,
+  type LoadChunksOpts,
+  type ResolvedWorldObject,
+  type VisibleSet,
+  type WorldManifestLite,
+  type WorldObjectsStatus,
+} from './worldObjectsCore'
 
-/** Worker lifecycle status — `ready` stays false until chunk streaming exists (T-090.5.3). */
-export interface WorldObjectsStatus {
-  ready: boolean
+export type { WorldObjectsStatus }
+
+/** Fetch a static asset to bytes. Vite dev SPA-fallbacks unknown paths to index.html with
+ *  200, so an HTML content-type reads as missing (same rule the T-090.5.2 loader used). */
+async function httpFetchBytes(url: string): Promise<Uint8Array | null> {
+  const res = await fetch(url)
+  const type = res.headers.get('content-type') ?? ''
+  if (!res.ok || type.includes('text/html')) return null
+  return new Uint8Array(await res.arrayBuffer())
+}
+
+const core = createWorldObjectsCore({ fetchBytes: httpFetchBytes })
+
+/** Collect every typed-array buffer in a chunk payload set for a zero-copy transfer. The
+ *  casts are sound: every group array is allocated here on a plain ArrayBuffer (the
+ *  TypedArray.buffer type is ArrayBufferLike only because SharedArrayBuffer exists). */
+function chunkBuffers(result: ChunkLoadResult): ArrayBuffer[] {
+  const buffers: ArrayBuffer[] = []
+  for (const chunk of result.chunks) {
+    for (const group of Object.values(chunk.groups)) {
+      buffers.push(
+        group.positions.buffer as ArrayBuffer,
+        group.prefabIdx.buffer as ArrayBuffer,
+        group.rotations.buffer as ArrayBuffer,
+        group.z.buffer as ArrayBuffer,
+      )
+    }
+  }
+  return buffers
 }
 
 const api = {
@@ -20,9 +56,44 @@ const api = {
   ping(): string {
     return 'world-objects-worker'
   },
-  /** Honest capability report: nothing is loaded and nothing can be until T-090.5.3. */
+  /** Capability report: ready once a terrain manifest is loaded. */
   getStatus(): WorldObjectsStatus {
-    return { ready: false }
+    return core.getStatus()
+  },
+
+  loadManifest(terrainId: string): Promise<WorldManifestLite | null> {
+    return core.loadManifest(terrainId)
+  },
+
+  async loadChunksInBbox(bbox: Bbox, marginCells: number, opts: LoadChunksOpts): Promise<ChunkLoadResult> {
+    const result = await core.loadChunksInBbox(bbox, marginCells, opts)
+    return Comlink.transfer(result, chunkBuffers(result))
+  },
+
+  async visibleInstances(bbox: Bbox, deckZoom: number): Promise<VisibleSet> {
+    const result = await core.visibleInstances(bbox, deckZoom)
+    return Comlink.transfer(result, [
+      result.positions.buffer as ArrayBuffer,
+      result.prefabIdx.buffer as ArrayBuffer,
+      result.rotations.buffer as ArrayBuffer,
+      result.classes.buffer as ArrayBuffer,
+    ])
+  },
+
+  pickNearest(worldXY: [number, number], radiusM: number, deckZoom?: number): Promise<string | null> {
+    return core.pickNearest(worldXY, radiusM, deckZoom)
+  },
+
+  pickRect(bbox: Bbox, deckZoom?: number): Promise<string[]> {
+    return core.pickRect(bbox, deckZoom)
+  },
+
+  resolve(id: string): Promise<ResolvedWorldObject | null> {
+    return core.resolve(id)
+  },
+
+  unload(): Promise<void> {
+    return core.unload()
   },
 }
 
