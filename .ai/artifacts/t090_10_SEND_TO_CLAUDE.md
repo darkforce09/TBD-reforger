@@ -1,24 +1,24 @@
-# Send-off — T-090.5.3 (chunk streaming @ scale)
+# Send-off — T-090.8.1 (forest / rock mass render)
 
 **CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
 
-**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.5.3  
-**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`](../../docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md)  
-**Worker:** [`docs/specs/Mission_Creator_Architecture/t090_world_objects_worker.md`](../../docs/specs/Mission_Creator_Architecture/t090_world_objects_worker.md) (if present)  
-**Prior:** T-090.5.2.2 @ `346a31c9` · T-090.3.3 @ `887a6ed1` — [verify log](t090_5_2_verify_log.md)
+**Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](t090_10_map_engine_v2_implementation_plan.md) §7 row T-090.8.1  
+**Spec:** [`docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md`](../../docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md)  
+**LOD v2:** [`docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md`](../../docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)  
+**Prior:** T-090.5.3 @ `155651b9` — [verify log](t090_5_3_verify_log.md)
 
 **Scope:**
 
-- Full `worldObjects.worker.ts` (W1–W3, W5 + W4-v2 `visibleInstances`)
-- `chunkStore.ts` LRU/budget/border/oversized on main thread
-- Replace interim `worldData.ts` main-thread fetch with worker hydration
-- `≤4 ms/frame` apply budget; N11 PH-P1/P2 budgets
-- Shrink `worldData.ts` to manifest gate only
+- `worldmap/forestMass.ts` — marching squares from `objects/density/*.bin` TBDD grids (worker or core)
+- `worldmap/landCoverRegions.ts` — `forest-regions.json.gz` Path B hulls (36 regions)
+- Deck layers: `world-forest` fill + `world-forest-outline` (plan §4.2 slots)
+- Wire into `useWorldMapLayers` behind `VITE_WORLDMAP_ENABLED=1`
+- **No individual tree glyphs** — forest polygons only @ deckZoom ≤ +1 (LOD3: trees hidden below 0)
 
-**Gates:** W1–W5(v2); INSTANCE_BUDGET vitest; hydrate timing; ≥55 fps @ P1+P2 data with flag on.
+**Gates:** F3 (@ −2 polygons, no tree icons), F4/F5, LOD3-v2 vitest, N11 P2b budgets.
 
-**Single lane:** no T-090.8.1 until 5.3 ships (plan order: 5.3 → 5.2 already done → 8.1).
+**Single lane:** no T-090.5.4 until 8.1 ships.
 
-**Do not rewrite:** `roadLayer`, `buildingLayer`, `styleModes`, `lodGates`, export pipeline.
+**Data ready:** 625 TBDD grids, 36 forest regions, 501k trees in chunks (not rendered as icons until T-090.5.5).
 
-**Operator:** `VITE_WORLDMAP_ENABLED=1` + hard refresh after deploy (module caches data).
+**Operator:** `VITE_WORLDMAP_ENABLED=1` + hard refresh after deploy.

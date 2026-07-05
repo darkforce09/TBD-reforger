@@ -1,7 +1,7 @@
 # T-090.3 — Map asset export (Workbench → repo)
 
 **Ticket:** T-090 · **Slice:** T-090.3  
-**Status:** **export through P2 + T-090.3.3** @ `887a6ed1` · **render through T-090.5.2.2** @ `346a31c9` · **next:** **T-090.5.3** chunk streaming  
+**Status:** **render through T-090.5.3** @ `155651b9` · export through **T-090.3.3** @ `887a6ed1`  
 **Executor:** **claude-code** (automation + Workbench plugin)  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)  
 **One command:** [`t090_terrain_export_pipeline.md`](t090_terrain_export_pipeline.md)  

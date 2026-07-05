@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **T-090.5.2.2 shipped** @ `346a31c9` · **Active:** **T-090.5.3** (chunk streaming @ scale). Single lane.  
+**Status:** **T-090.5.3 shipped** @ `155651b9` · **Active:** **T-090.8.1** (forest mass from density). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
@@ -44,8 +44,8 @@ T-090.0.2  map-object schemas + goldens + verify wiring (shipped @ this pass)  �
   → T-090.3.3    taxonomy + highway network  ✓ @ 887a6ed1 (391 prefabs / 508k inst / 888 roads / measured OBBs)
   → T-090.5.1    render spine scaffold  ✓ @ 589ded9e
   → T-090.5.2    roads + buildings live  ✓ @ e410545e (+ .2.1 centerline/casing @ 04b60857 · .2.2 taxonomy tints @ 346a31c9)
-  → T-090.5.3    chunk streaming @ scale  (ACTIVE)
-  → T-090.8.1    forest/rock mass (marching squares)
+  → T-090.5.3    chunk streaming @ scale  ✓ @ 155651b9 (worker SoA + chunkStore LRU, ≤4 ms/frame)
+  → T-090.8.1    forest/rock mass (marching squares)  (ACTIVE)
   → T-090.5.4    sea-band + contours (DEM)
   → T-090.5.5    trees/veg/props glyphs
   → T-090.9      interaction
@@ -104,7 +104,8 @@ Each slice has its **own spec file** with locked decisions, file touch list, and
 | **T-090.5.1** | render scaffold | claude-code | **shipped** @ `589ded9e` |
 | **T-090.3.3** | taxonomy + highway | claude-code | **shipped** @ `887a6ed1` |
 | **T-090.5.2** | roads + buildings | claude-code | **shipped** @ `e410545e` (+ `.2.1` `.2.2`) |
-| **T-090.5.3** | chunk streaming | claude-code | **active** |
+| **T-090.5.3** | chunk streaming | claude-code | **shipped** @ `155651b9` |
+| **T-090.8.1** | forest mass | claude-code | **active** |
 | **T-090.8.1** | [`t090_8_forest_vegetation_regions.md`](t090_8_forest_vegetation_regions.md) | claude-code | queued |
 | **T-090.10.2** | legacy retirement | claude-code | queued after 5.4+8.1 |
 | **T-090.3** | umbrella | — | **deferred** → use `.3.1`/`.3.2` |

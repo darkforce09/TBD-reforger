@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-144**
 
-**ACTIVE NOW:** **T-090** — T-090.5.3 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_5_map_object_render_layer.md`.
+**ACTIVE NOW:** **T-090** — T-090.8.1 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_8_forest_vegetation_regions.md`.
 
 **Next (by order):**
 - **T-069** — Markers on map (`queued`)
@@ -152,7 +152,7 @@ Hub: [`FABLE_5_AUDIT_PROGRAM.md`](docs/platform/FABLE_5_AUDIT_PROGRAM.md) · liv
 
 Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · LOD v2 [`t090_render_lod_contract.md`](docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md)
 
-**Active:** **T-090.5.3** only (single lane — worker chunk streaming + chunkStore LRU).
+**Active:** **T-090.8.1** only (single lane — forest mass polygons from TBDD density grids).
 
 **Audit:** [`CODEBASE_AUDIT_2026.md`](docs/platform/CODEBASE_AUDIT_2026.md) · **T-122 shipped** @ `f131770` (tag **T-122**).
 
@@ -181,7 +181,8 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after T-090 map program):** **T-071** ORBAT Manager (**deferred** — map-first lane) → **T-068.7** compat matrix → T-068.8–T-068.11 → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. Hub: [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
-- T-090.5.2.2 **Map Engine v2 taxonomy render pass** @ `346a31c9` (tag **T-090.5.2.2**). Piers/docks (`water`) as footprints; per-class building tints (bridge, pier, ruin, castle, lighthouse, container, tent, military, …). Vitest **107/107**; build/lint clean. Requires **T-090.3.3** export + hard browser refresh (`VITE_WORLDMAP_ENABLED=1`). Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](.ai/artifacts/t090_5_2_verify_log.md) §T-090.5.2.2.
+- T-090.5.3 **Map Engine v2 worker chunk streaming** @ `155651b9` (tag **T-090.5.3**). `worldObjectsCore.ts` + thin Comlink worker; `chunkStore` LRU (≤4 ms/frame apply, worst chunk 0.65 ms); roads main-thread one-shot; trees indexed in worker, not rendered. Vitest **150/150**; build/lint clean. Verify: [`.ai/artifacts/t090_5_3_verify_log.md`](.ai/artifacts/t090_5_3_verify_log.md).
+- T-090.5.2.2 **Map Engine v2 taxonomy render pass** @ `346a31c9` (tag **T-090.5.2.2**).
 - T-090.5.2.1 **Road centerline + casing + solid buildings** @ `04b60857` (tag **T-090.5.2.1**). `extractRoadCenterline` from quad-soup; `world-roads-casing`; dark building fills. Operator visual pass.
 - T-090.5.2 **Map Engine v2 roads + buildings live** @ `e410545e` (tag **T-090.5.2**). First world-object Deck layers: `world-roads`, `world-buildings`, `world-building-badges`; glyph atlas 19→28 glyphs; `worldData.ts` chunk loader. Vitest 102/102. Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](.ai/artifacts/t090_5_2_verify_log.md).
 - T-090.3.3 **Map Engine v2 taxonomy + highway network** @ `887a6ed1` (tag **T-090.3.3**). Full `.topo` road mapping (RIVER/STREAM → asphalt); **888** road segments; data-driven classify rebuild; measured prefab OBBs; **391** prefabs / **508,291** instances / **275** chunks (4,131 buildings + 2,299 piers + 501,861 trees). Enums + 28-glyph atlas; all export gates PASS. Verify: [`.ai/artifacts/t090_5_2_verify_log.md`](.ai/artifacts/t090_5_2_verify_log.md) §T-090.3.3.

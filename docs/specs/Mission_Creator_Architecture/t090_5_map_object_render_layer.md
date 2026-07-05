@@ -1,7 +1,7 @@
 # T-090.5 — Map object render layer (Eden-like static world)
 
 **Ticket:** T-090 · **Slice:** T-090.5  
-**Status:** **T-090.5.3 active** — roads+buildings+piers live @ `346a31c9`; chunk streaming next · **v2: A3 density-gate LOD, no world clustering**  
+**Status:** **T-090.5.3 shipped** @ `155651b9` · **T-090.8.1 active** — forest mass from density grids · **v2: A3 density-gate LOD, no world clustering**  
 **Executor:** **claude-code**  
 **Authority:** [`t090_10_map_engine_v2.md`](t090_10_map_engine_v2.md) · [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md)
 
@@ -71,9 +71,11 @@ stroke +40% width). Full `.topo` type mapping (types 1+2 = asphalt highway) @ **
 
 ### Buildings (`PolygonLayer`)
 
-**Normative shipped geometry:** oriented bounding **rectangle** from measured `spatial.halfExtentsM`
-(per-axis median of raw export samples @ T-090.3.3) + `rotationDeg`. Real **footprint polygon rings**
-supersede OBB when export provides them.
+**Normative shipped geometry:** oriented bounding **rectangle** from `spatial.halfExtentsM` +
+`rotationDeg`. Real **footprint polygon rings** are populated only when T-090.3.0 proves Enfusion
+footprint export; when present, polygons supersede OBB rectangles for render.
+
+**Measured OBBs (T-090.3.3):** export `halfExtentsM` = per-axis median of raw engine samples (not rule-template constants); footprints 0–4,066 m² on Everon.
 
 **Shipped fills (T-090.5.2.1–.2.2):** default solid dark `rgba(38,38,44,0.72)` / stroke `rgba(150,150,158,0.8)`;
 per-class tints (bridge, pier/dock, ruin, castle, lighthouse, container, tent, military, …). **`water`**
