@@ -12,7 +12,9 @@ import { getTerrain } from './coords/terrains'
 import { useOrthographicView } from './view/useOrthographicView'
 import { useBaseMapLayer } from './layers/useBaseMapLayer'
 import { useTerrainBasemapLayer } from './layers/useTerrainBasemapLayer'
-import { useBasemapView } from './state/basemapView'
+import { useMapStyle } from './state/worldLayerPrefs'
+import { basemapViewForStyle, styleForMode } from './worldmap/styleModes'
+import { useWorldMapLayers } from './worldmap/useWorldMapLayers'
 import { useIconLayer, useDragIconLayer } from './layers/useIconLayer'
 import { useClusterIconLayer } from './layers/useClusterIconLayer'
 import { useSelectionLayer } from './layers/useSelectionLayer'
@@ -69,9 +71,13 @@ function TacticalMapInner({
   const clusterMode = slotCount > CLUSTER_SLOT_THRESHOLD && viewState.zoom <= ZOOM_CLUSTER_MAX
 
   const baseMap = useBaseMapLayer(terrain, showGrid, showHillshade)
-  // Aligned satellite basemap under the grid (T-090.1). Reads the per-user view pref and the
-  // terrain manifest; renders nothing (grid-only) + fires onBasemapDegraded when tiles 404.
-  const basemapView = useBasemapView()
+  // Aligned satellite basemap under the grid (T-090.1). The per-user pref is the 3-way
+  // mapStyle (T-090.5.1): it picks which raster view renders (satellite/hybrid → sat field,
+  // map → legacy pyramid) and how strongly the sat field draws (hybrid dims to 0.55).
+  // Renders nothing (grid-only) + fires onBasemapDegraded when tiles 404.
+  const mapStyle = useMapStyle()
+  const basemapView = basemapViewForStyle(mapStyle)
+  const { satOpacity } = styleForMode(mapStyle)
   // Visible world AABB for basemap tile culling (T-090.1.1 LOD). Recomputed on pan/zoom (the only
   // inputs that move it); null on the very first paint before the container is measured → the hook
   // falls back to the full world (correct at the default zoom-to-fit). Container read is safe here
@@ -115,9 +121,13 @@ function TacticalMapInner({
     viewState,
     viewBounds: basemapViewBounds,
     device,
+    opacity: satOpacity,
     onDegraded: onBasemapDegraded,
     onProgress: onBasemapProgress,
   })
+  // Map Engine v2 world-object layers (T-090.5.1 scaffold: always [] — flag-gated, no
+  // layers exist until T-090.5.2+).
+  const worldMapLayers = useWorldMapLayers()
   // Re-render on DEM state changes (ready/degraded/reload) so the hillshade + cursor Z refresh
   // without an extra interaction (T-091.2 follow-up).
   const demVersion = useDemVersion()
@@ -350,6 +360,10 @@ function TacticalMapInner({
           layers={[
             ...basemapLayers,
             ...(hillshade ? [hillshade] : []),
+            // Map Engine v2 insertion point (plan §4.2 slots 2, 4–9): sea → land-cover →
+            // contours → roads → buildings → forest → trees/props mount here, between the
+            // raster field/hillshade and the grid. Empty until T-090.5.2+.
+            ...worldMapLayers,
             baseMap,
             ...clusterLayers,
             iconLayer,

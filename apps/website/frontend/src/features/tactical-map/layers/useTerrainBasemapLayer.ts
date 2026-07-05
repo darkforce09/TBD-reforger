@@ -123,11 +123,17 @@ async function resolveBasemapMode(
   if (!tmpl) return { mode: 'none', ...zoom }
   const z0 = tmpl.replace('{z}', '0').replace('{x}', '0').replace('{y}', '0')
   if (await probeUrl(z0)) return { mode: 'pyramid', template: tmpl, ...zoom }
-  if (fullUrl && (await probeUrl(fullUrl))) return { mode: 'single-bitmap', image: fullUrl, ...zoom }
+  if (fullUrl && (await probeUrl(fullUrl)))
+    return { mode: 'single-bitmap', image: fullUrl, ...zoom }
   return { mode: 'none', ...zoom }
 }
 
 const clampInt = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v))
+
+/** Style-driven dimming touches satellite-view layers only (T-090.5.1): in `mapStyle:'map'`
+ *  the Map pyramid IS the basemap and always draws at 1. */
+const satelliteOpacity = (view: BasemapView, opacity: number) =>
+  view === 'satellite' ? opacity : 1
 
 type Lod =
   | { kind: 'none' }
@@ -198,6 +204,7 @@ export function useTerrainBasemapLayer({
   viewState,
   viewBounds,
   device,
+  opacity = 1,
   onDegraded,
   onProgress,
 }: {
@@ -208,6 +215,10 @@ export function useTerrainBasemapLayer({
   viewBounds: [number, number, number, number] | null
   /** luma.gl device from Deck's onDeviceInitialized — required for the unified GPU texture. */
   device: Device | null
+  /** Satellite-field opacity from the mapStyle (T-090.5.1, plan §4.3): 1 satellite / 0.55
+   *  hybrid. Applies to SATELLITE-view layers only — Map-view pyramid tiles always draw at 1
+   *  (in `mapStyle:'map'` they ARE the basemap; sat is simply not the active view there). */
+  opacity?: number
   onDegraded?: (view: BasemapView) => void
   /** Unified bundle load progress 0..1 (1 = texture live); null = load abandoned. */
   onProgress?: (fraction: number | null) => void
@@ -319,6 +330,8 @@ export function useTerrainBasemapLayer({
   const previewImage = unifiedActive && !texture ? resolved.image : undefined
   const unifiedTexture = unifiedActive ? texture : null
 
+  const satOpacity = satelliteOpacity(basemapView, opacity)
+
   return useMemo(() => {
     const { width: w, height: h } = terrain
     if (unifiedTexture) {
@@ -328,6 +341,7 @@ export function useTerrainBasemapLayer({
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
           bounds: [0, 0, w, h],
           image: unifiedTexture,
+          opacity: satOpacity,
         }),
       ]
     }
@@ -339,6 +353,7 @@ export function useTerrainBasemapLayer({
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
           bounds: [0, 0, w, h],
           image: previewImage,
+          opacity: satOpacity,
         }),
       ]
     }
@@ -352,6 +367,7 @@ export function useTerrainBasemapLayer({
           coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
           bounds: [0, 0, w, h],
           image,
+          opacity: satOpacity,
         }),
       ]
     }
@@ -370,6 +386,7 @@ export function useTerrainBasemapLayer({
               coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
               bounds: [tx * twx, ty * twy, (tx + 1) * twx, (ty + 1) * twy],
               image: tileUrl(template, z, tx, ty),
+              opacity: satOpacity,
             }),
           )
         }
@@ -390,5 +407,6 @@ export function useTerrainBasemapLayer({
     template,
     terrain,
     basemapView,
+    satOpacity,
   ])
 }

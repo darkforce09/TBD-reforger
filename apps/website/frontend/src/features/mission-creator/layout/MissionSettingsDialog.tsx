@@ -5,9 +5,9 @@
 import {
   updateEnvironment,
   useMapStore,
-  useBasemapView,
-  setBasemapView,
-  type BasemapView,
+  useMapStyle,
+  setMapStyle,
+  type MapStyle,
   type MissionDoc,
   type MissionMeta,
 } from '@/features/tactical-map'
@@ -35,22 +35,23 @@ function hillshadePercent(env: MissionMeta['environment'] | undefined): number {
   return Math.round((env?.hillshadeOpacity ?? 0.4) * 1000) / 10
 }
 
-/** One Basemap segment button (Satellite | Map) — active styling keyed on the current view. */
-function BasemapViewButton({
-  view,
+/** One map-style segment button (Satellite | Hybrid | Map, T-090.5.1 §4.3) — active styling
+ *  keyed on the current style. */
+function MapStyleButton({
+  style,
   label,
   current,
 }: {
-  view: BasemapView
+  style: MapStyle
   label: string
-  current: BasemapView
+  current: MapStyle
 }) {
   return (
     <button
       type="button"
-      onClick={() => setBasemapView(view)}
+      onClick={() => setMapStyle(style)}
       className={`flex-1 rounded-md border px-2.5 py-1.5 text-label-md transition-colors ${
-        current === view
+        current === style
           ? 'border-primary/60 bg-primary/10 text-on-surface'
           : 'border-outline-variant/40 text-outline hover:bg-surface-container-lowest/60'
       }`}
@@ -72,9 +73,9 @@ export function MissionSettingsDialog({
   const meta = useMapStore((s) => s.meta)
   const env = meta?.environment
   const hillshadeOn = env?.showHillshade === true
-  // Basemap view is a per-user pref (localStorage), not mission meta — it travels with the
-  // user, not the mission (dual-view N8).
-  const basemapView = useBasemapView()
+  // Map style is a per-user pref (localStorage), not mission meta — it travels with the
+  // user, not the mission (N8). Hybrid = dimmed satellite under (future) full vectors.
+  const mapStyle = useMapStyle()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -110,10 +111,11 @@ export function MissionSettingsDialog({
             onChange={(thermals) => updateEnvironment(md, { thermals })}
           />
 
-          <Field label="Basemap">
+          <Field label="Map style">
             <div className="flex gap-2">
-              <BasemapViewButton view="satellite" label="Satellite" current={basemapView} />
-              <BasemapViewButton view="map" label="Map" current={basemapView} />
+              <MapStyleButton style="satellite" label="Satellite" current={mapStyle} />
+              <MapStyleButton style="hybrid" label="Hybrid" current={mapStyle} />
+              <MapStyleButton style="map" label="Map" current={mapStyle} />
             </div>
           </Field>
 

@@ -11,9 +11,15 @@ export type { MapViewState, TacticalMapProps, TacticalMapApi, AssetDropPayload }
 // DEM elevation (T-091.1)
 export { sampleElevation, isDemReady, isDemDegraded, loadDemForTerrain } from './dem'
 
-// Satellite basemap view pref (T-090.1) — per-user, localStorage-backed.
+// Satellite basemap view pref (T-090.1) — per-user, localStorage-backed. Shim over
+// worldLayerPrefs since T-090.5.1; deleted @ T-090.10.2.
 export { useBasemapView, getBasemapView, setBasemapView } from './state/basemapView'
 export type { BasemapView } from './state/basemapView'
+
+// Map Engine v2 style + world-layer prefs (T-090.5.1) — per-user, localStorage-backed.
+export { useMapStyle, getMapStyle, setMapStyle } from './state/worldLayerPrefs'
+export type { WorldClassToggles } from './state/worldLayerPrefs'
+export type { MapStyle } from './worldmap/styleModes'
 
 // State foundation (Ultra Plan §2)
 export { useMapStore, pickMapSnapshot } from './state/useMapStore'

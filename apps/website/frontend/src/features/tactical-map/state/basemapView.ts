@@ -1,49 +1,27 @@
-// T-090.1 — Basemap view preference (Satellite | Map), per-user + global (not per-mission).
-// Persisted to localStorage `tbd-mc-basemap-view` (dual-view N8). Both views render since
-// T-090.1.1 (the Map cartographic pyramid). Backed by useSyncExternalStore so the map
-// re-renders on a switch and non-React code (layer builders) can read the current value
-// synchronously.
+// T-090.5.1 — SHIM over worldLayerPrefs (was the T-090.1 Satellite|Map singleton). The 3-way
+// `mapStyle` in state/worldLayerPrefs.ts is the user-facing control now; this module keeps the
+// legacy 2-way surface alive for raster consumers (useTerrainBasemapLayer, degraded toasts):
+// satellite + hybrid resolve to the 'satellite' raster, 'map' to the legacy Map pyramid.
+// worldLayerPrefs migrates the old `tbd-mc-basemap-view` localStorage value on load and
+// dual-writes it on change. Deleted (with BasemapView itself) @ T-090.10.2.
 
 import { useSyncExternalStore } from 'react'
+import { basemapViewForStyle } from '../worldmap/styleModes'
+import { getMapStyle, setMapStyle, subscribeWorldLayerPrefs } from './worldLayerPrefs'
 
+/** Which raster pipeline a style renders — 'satellite' (unified/pyramid) or legacy 'map'. */
 export type BasemapView = 'satellite' | 'map'
 
-const KEY = 'tbd-mc-basemap-view'
-const DEFAULT: BasemapView = 'satellite'
-
-function read(): BasemapView {
-  try {
-    const v = localStorage.getItem(KEY)
-    return v === 'map' || v === 'satellite' ? v : DEFAULT
-  } catch {
-    return DEFAULT
-  }
-}
-
-let current: BasemapView = read()
-const listeners = new Set<() => void>()
-
 export function getBasemapView(): BasemapView {
-  return current
+  return basemapViewForStyle(getMapStyle())
 }
 
+/** Legacy setter: maps 1:1 onto the matching mapStyle (both values are valid styles). */
 export function setBasemapView(v: BasemapView): void {
-  if (v === current) return
-  current = v
-  try {
-    localStorage.setItem(KEY, v)
-  } catch {
-    /* private mode / quota — keep the in-memory value */
-  }
-  listeners.forEach((l) => l())
+  setMapStyle(v)
 }
 
-function subscribe(cb: () => void): () => void {
-  listeners.add(cb)
-  return () => listeners.delete(cb)
-}
-
-/** React hook: current basemap view, re-rendering on change. */
+/** React hook: current basemap view, re-rendering on any style change. */
 export function useBasemapView(): BasemapView {
-  return useSyncExternalStore(subscribe, getBasemapView, getBasemapView)
+  return useSyncExternalStore(subscribeWorldLayerPrefs, getBasemapView, getBasemapView)
 }
