@@ -267,7 +267,7 @@ pub async fn issue_warning(
     };
     let actor = &admin.0.discord_id;
     let warning: crate::models::Warning = sqlx::query_as(
-        "INSERT INTO warnings (discord_id, issued_by, reason, created_at) VALUES ($1, $2, $3, now()) RETURNING *",
+        "INSERT INTO warnings (discord_id, issued_by, reason, created_at) VALUES ($1, $2, $3, now()) RETURNING id, discord_id, issued_by, reason, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
     )
     .bind(&discord_id)
     .bind(actor)

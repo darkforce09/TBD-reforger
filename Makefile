@@ -107,6 +107,7 @@ verify-citations: ## Verify @contract citations + GO-7 @route route-match (DOCUM
 verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
 	$(MAKE) verify-doc-layout
 	@node scripts/website/verify-file-length.mjs
+	@bash scripts/website/verify-no-select-star.sh
 
 verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs
 	@! find apps packages -type f -path '*/docs/*.md' ! -path '*/node_modules/*' 2>/dev/null | grep -q . || \

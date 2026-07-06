@@ -36,7 +36,7 @@ pub async fn with_mods(pool: &PgPool, modpack: Modpack) -> sqlx::Result<ModpackD
 /// The active (`is_current`) modpack as a DTO, or `None` if none configured.
 /// Shared by the dashboard + modpack endpoints.
 pub async fn load_current_modpack(pool: &PgPool) -> sqlx::Result<Option<ModpackDto>> {
-    let mp: Option<Modpack> = sqlx::query_as("SELECT * FROM modpacks WHERE is_current = true")
+    let mp: Option<Modpack> = sqlx::query_as("SELECT id, name, version, total_size_bytes, COALESCE(workshop_url, '') AS workshop_url, is_current, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM modpacks WHERE is_current = true")
         .fetch_optional(pool)
         .await?;
     match mp {
@@ -47,7 +47,7 @@ pub async fn load_current_modpack(pool: &PgPool) -> sqlx::Result<Option<ModpackD
 
 /// Load one modpack DTO by id (or `None`).
 pub async fn load_modpack(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<ModpackDto>> {
-    let mp: Option<Modpack> = sqlx::query_as("SELECT * FROM modpacks WHERE id = $1")
+    let mp: Option<Modpack> = sqlx::query_as("SELECT id, name, version, total_size_bytes, COALESCE(workshop_url, '') AS workshop_url, is_current, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM modpacks WHERE id = $1")
         .bind(id)
         .fetch_optional(pool)
         .await?;
@@ -65,7 +65,7 @@ pub async fn list_modpacks(
     _u: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
     let packs: Vec<Modpack> =
-        sqlx::query_as("SELECT * FROM modpacks ORDER BY is_current DESC, created_at DESC")
+        sqlx::query_as("SELECT id, name, version, total_size_bytes, COALESCE(workshop_url, '') AS workshop_url, is_current, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM modpacks ORDER BY is_current DESC, created_at DESC")
             .fetch_all(&state.pool)
             .await?;
     let mut out = Vec::with_capacity(packs.len());

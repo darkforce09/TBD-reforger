@@ -100,7 +100,7 @@ pub async fn get_my_deployments(
             ev.name_override.clone()
         };
         let slot: Option<OrbatSlot> = sqlx::query_as(
-            "SELECT * FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
+            "SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE event_mission_id = $1 AND assigned_to = $2",
         )
         .bind(em.id)
         .bind(me)
@@ -124,14 +124,14 @@ pub async fn get_my_deployments(
 
     // Service history: past match participation.
     let stats: Vec<MatchPlayerStat> = sqlx::query_as(
-        "SELECT * FROM match_player_stats WHERE discord_id = $1 ORDER BY created_at DESC LIMIT 50",
+        "SELECT id, match_id, discord_id, arma_id, COALESCE(role_played, '') AS role_played, kills, deaths, team_kills, longest_kill_m, vehicles_destroyed, is_command, command_win, source_event_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM match_player_stats WHERE discord_id = $1 ORDER BY created_at DESC LIMIT 50",
     )
     .bind(me)
     .fetch_all(&state.pool)
     .await?;
     let mut history: Vec<ServiceRecord> = Vec::with_capacity(stats.len());
     for s in stats {
-        let m: Option<Match> = sqlx::query_as("SELECT * FROM matches WHERE id = $1")
+        let m: Option<Match> = sqlx::query_as("SELECT id, source_match_id, event_id, mission_id, terrain, started_at, ended_at, outcome, COALESCE(winning_faction, '') AS winning_faction, COALESCE(aar_replay_url, '') AS aar_replay_url, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM matches WHERE id = $1")
             .bind(s.match_id)
             .fetch_optional(&state.pool)
             .await?;
@@ -171,14 +171,14 @@ pub async fn get_my_deployments(
 }
 
 async fn load_event_mission(pool: &sqlx::PgPool, id: Uuid) -> sqlx::Result<Option<EventMission>> {
-    sqlx::query_as("SELECT * FROM event_missions WHERE id = $1")
+    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE id = $1")
         .bind(id)
         .fetch_optional(pool)
         .await
 }
 
 async fn load_event(pool: &sqlx::PgPool, id: Uuid) -> sqlx::Result<Option<Event>> {
-    sqlx::query_as("SELECT * FROM events WHERE id = $1 AND deleted_at IS NULL")
+    sqlx::query_as("SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE id = $1 AND deleted_at IS NULL")
         .bind(id)
         .fetch_optional(pool)
         .await
@@ -233,7 +233,7 @@ pub async fn submit_leave(
 
     let loa: LeaveRequest = sqlx::query_as(
         "INSERT INTO leave_requests (discord_id, starts_on, ends_on, reason, status, created_at) \
-         VALUES ($1, $2, $3, $4, 'pending', now()) RETURNING *",
+         VALUES ($1, $2, $3, $4, 'pending', now()) RETURNING id, discord_id, starts_on, ends_on, COALESCE(reason, '') AS reason, status, reviewed_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
     )
     .bind(&user.discord_id)
     .bind(start)
@@ -252,7 +252,7 @@ pub async fn list_my_leave(
     user: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
     let loas: Vec<LeaveRequest> = sqlx::query_as(
-        "SELECT * FROM leave_requests WHERE discord_id = $1 ORDER BY created_at DESC",
+        "SELECT id, discord_id, starts_on, ends_on, COALESCE(reason, '') AS reason, status, reviewed_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM leave_requests WHERE discord_id = $1 ORDER BY created_at DESC",
     )
     .bind(&user.discord_id)
     .fetch_all(&state.pool)
@@ -273,7 +273,7 @@ pub async fn list_all_leave(
         .fetch_one(&state.pool)
         .await?;
     let loas: Vec<LeaveRequest> = sqlx::query_as(
-        "SELECT * FROM leave_requests ORDER BY (status::text = 'pending') DESC, created_at DESC \
+        "SELECT id, discord_id, starts_on, ends_on, COALESCE(reason, '') AS reason, status, reviewed_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM leave_requests ORDER BY (status::text = 'pending') DESC, created_at DESC \
          LIMIT $1 OFFSET $2",
     )
     .bind(limit)

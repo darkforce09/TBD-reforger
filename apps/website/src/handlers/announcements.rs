@@ -26,7 +26,7 @@ pub async fn list_announcements(
     .fetch_one(&state.pool)
     .await?;
     let items: Vec<Announcement> = sqlx::query_as(
-        "SELECT * FROM announcements WHERE status = 'published' AND deleted_at IS NULL \
+        "SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements WHERE status = 'published' AND deleted_at IS NULL \
          ORDER BY is_pinned DESC, published_at DESC LIMIT $1 OFFSET $2",
     )
     .bind(limit)
@@ -50,7 +50,7 @@ pub async fn get_announcement(
         return Err(ApiError::bad_request("invalid id"));
     };
     let a: Option<Announcement> = sqlx::query_as(
-        "SELECT * FROM announcements WHERE id = $1 AND status = 'published' AND deleted_at IS NULL",
+        "SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements WHERE id = $1 AND status = 'published' AND deleted_at IS NULL",
     )
     .bind(id)
     .fetch_optional(&state.pool)

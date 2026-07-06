@@ -121,7 +121,8 @@ pub async fn refresh(
     let hash = auth::hash_token(&req.refresh_token);
 
     let rt: Option<RefreshToken> = sqlx::query_as(
-        "SELECT id, discord_id, token_hash, expires_at, revoked_at, created_at \
+        "SELECT id, discord_id, token_hash, expires_at, revoked_at, \
+         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at \
          FROM refresh_tokens WHERE token_hash = $1",
     )
     .bind(&hash)

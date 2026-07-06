@@ -55,7 +55,9 @@ pub async fn list_audit_logs(
     }
     .bounds();
 
-    let mut qb = QueryBuilder::new("SELECT * FROM audit_logs WHERE true");
+    let mut qb = QueryBuilder::new(
+        "SELECT id, severity, actor_id, COALESCE(actor_name, '') AS actor_name, action, message, COALESCE(target_type, '') AS target_type, COALESCE(target_id, '') AS target_id, metadata, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM audit_logs WHERE true",
+    );
     apply_filters(&mut qb, &f);
     if let Some(before) = f.before {
         qb.push(" AND id < ").push_bind(before);
@@ -80,7 +82,9 @@ pub async fn export_audit_logs_csv(
     _a: AdminUser,
     Query(f): Query<AuditFilter>,
 ) -> Result<Response, ApiError> {
-    let mut qb = QueryBuilder::new("SELECT * FROM audit_logs WHERE true");
+    let mut qb = QueryBuilder::new(
+        "SELECT id, severity, actor_id, COALESCE(actor_name, '') AS actor_name, action, message, COALESCE(target_type, '') AS target_type, COALESCE(target_id, '') AS target_id, metadata, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM audit_logs WHERE true",
+    );
     apply_filters(&mut qb, &f);
     qb.push(" ORDER BY id DESC LIMIT 10000");
     let logs: Vec<AuditLog> = qb
@@ -140,7 +144,7 @@ pub async fn stream_audit_logs(State(state): State<AppState>, _a: AdminUser) -> 
         loop {
             ticker.tick().await;
             let rows: Vec<AuditLog> = sqlx::query_as(
-                "SELECT * FROM audit_logs WHERE id > $1 ORDER BY id ASC LIMIT 100",
+                "SELECT id, severity, actor_id, COALESCE(actor_name, '') AS actor_name, action, message, COALESCE(target_type, '') AS target_type, COALESCE(target_id, '') AS target_id, metadata, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM audit_logs WHERE id > $1 ORDER BY id ASC LIMIT 100",
             ).bind(last_id).fetch_all(&pool).await.unwrap_or_default();
             for r in &rows {
                 if let Ok(js) = serde_json::to_string(r) {

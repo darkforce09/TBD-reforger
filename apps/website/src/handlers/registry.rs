@@ -35,13 +35,13 @@ pub async fn list_registry(
             let Ok(id) = Uuid::parse_str(raw) else {
                 return Err(ApiError::not_found("modpack not found"));
             };
-            sqlx::query_as::<_, Modpack>("SELECT * FROM modpacks WHERE id = $1")
+            sqlx::query_as::<_, Modpack>("SELECT id, name, version, total_size_bytes, COALESCE(workshop_url, '') AS workshop_url, is_current, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM modpacks WHERE id = $1")
                 .bind(id)
                 .fetch_optional(&state.pool)
                 .await?
                 .ok_or_else(|| ApiError::not_found("modpack not found"))?
         }
-        None => sqlx::query_as::<_, Modpack>("SELECT * FROM modpacks WHERE is_current = true")
+        None => sqlx::query_as::<_, Modpack>("SELECT id, name, version, total_size_bytes, COALESCE(workshop_url, '') AS workshop_url, is_current, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM modpacks WHERE is_current = true")
             .fetch_optional(&state.pool)
             .await?
             .ok_or_else(|| ApiError::not_found("no current modpack configured"))?,

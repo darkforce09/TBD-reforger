@@ -51,7 +51,7 @@ fn order_clause(category: &str) -> Option<&'static str> {
     }
 }
 
-const LB_SELECT: &str = "SELECT lt.discord_id, u.username, u.avatar_url, \
+const LB_SELECT: &str = "SELECT lt.discord_id, COALESCE(u.username, '') AS username, COALESCE(u.avatar_url, '') AS avatar_url, \
     lt.kills::int8 AS kills, lt.deaths::int8 AS deaths, lt.kd_ratio::float8 AS kd_ratio, \
     lt.team_kills::int8 AS team_kills, lt.longest_kill_m::int8 AS longest_kill_m, \
     lt.vehicles_destroyed::int8 AS vehicles_destroyed, lt.missions_played::int8 AS missions_played, \
@@ -164,7 +164,7 @@ pub async fn stream_server_status(
         // Current snapshot first, so the client renders without delay.
         if let Some(sid) = uuid {
             let snap: Result<Option<ServerStatus>, _> = sqlx::query_as(
-                "SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, uptime_seconds, current_match_id, ingame_time, ingame_weather, updated_at FROM server_statuses WHERE server_id = $1",
+                "SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM server_statuses WHERE server_id = $1",
             ).bind(sid).fetch_optional(&pool).await;
             if let Ok(Some(status)) = snap
                 && let Ok(js) = serde_json::to_string(&status) {

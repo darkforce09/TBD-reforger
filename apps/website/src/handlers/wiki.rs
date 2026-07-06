@@ -19,7 +19,7 @@ pub async fn list_wiki(
     _u: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
     let pages: Vec<WikiPage> =
-        sqlx::query_as("SELECT * FROM wiki_pages ORDER BY nav_order ASC, title ASC")
+        sqlx::query_as("SELECT id, slug, category, title, COALESCE(icon, '') AS icon, body_md, nav_order, updated_by, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM wiki_pages ORDER BY nav_order ASC, title ASC")
             .fetch_all(&state.pool)
             .await?;
     Ok(Json(json!({ "data": pages })))
@@ -33,7 +33,7 @@ pub async fn get_wiki_page(
     _u: AuthUser,
     Path(slug): Path<String>,
 ) -> Result<Json<WikiPage>, ApiError> {
-    let page: Option<WikiPage> = sqlx::query_as("SELECT * FROM wiki_pages WHERE slug = $1")
+    let page: Option<WikiPage> = sqlx::query_as("SELECT id, slug, category, title, COALESCE(icon, '') AS icon, body_md, nav_order, updated_by, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM wiki_pages WHERE slug = $1")
         .bind(&slug)
         .fetch_optional(&state.pool)
         .await?;
@@ -49,7 +49,7 @@ pub async fn list_vehicles(
     _u: AuthUser,
 ) -> Result<Json<Value>, ApiError> {
     let vehicles: Vec<VehicleDatabase> =
-        sqlx::query_as("SELECT * FROM vehicle_databases ORDER BY name ASC")
+        sqlx::query_as("SELECT id, name, faction, armor_type, COALESCE(amphibious, '') AS amphibious, COALESCE(primary_threat, '') AS primary_threat, COALESCE(profile_image_url, '') AS profile_image_url FROM vehicle_databases ORDER BY name ASC")
             .fetch_all(&state.pool)
             .await?;
     Ok(Json(json!({ "data": vehicles })))
@@ -103,7 +103,7 @@ pub async fn upsert_wiki_page(
     .execute(&state.pool)
     .await?;
 
-    let page: WikiPage = sqlx::query_as("SELECT * FROM wiki_pages WHERE slug = $1")
+    let page: WikiPage = sqlx::query_as("SELECT id, slug, category, title, COALESCE(icon, '') AS icon, body_md, nav_order, updated_by, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM wiki_pages WHERE slug = $1")
         .bind(&slug)
         .fetch_one(&state.pool)
         .await?;

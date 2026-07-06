@@ -114,7 +114,7 @@ pub async fn create_announcement(
         "INSERT INTO announcements \
          (title, body, snippet, tag, thumbnail_url, author_id, is_pinned, status, published_at, \
           pushed_to_discord, discord_message_id, created_at, updated_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, '', now(), now()) RETURNING *",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, false, '', now(), now()) RETURNING id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
     )
     .bind(&input.title)
     .bind(&body_html)
@@ -345,7 +345,7 @@ fn ext_lower(filename: &str) -> String {
 /// Load one announcement by id (no soft-delete filter — matches Go's `First` on a
 /// model without `DeletedAt`… announcements are archived, not soft-deleted here).
 async fn reload(state: &AppState, id: Uuid) -> Result<Option<Announcement>, ApiError> {
-    sqlx::query_as("SELECT * FROM announcements WHERE id = $1 AND deleted_at IS NULL")
+    sqlx::query_as("SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements WHERE id = $1 AND deleted_at IS NULL")
         .bind(id)
         .fetch_optional(&state.pool)
         .await

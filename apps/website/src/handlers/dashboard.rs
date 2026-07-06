@@ -49,7 +49,7 @@ pub async fn get_dashboard(
     // Next upcoming operation.
     let next_event: Option<EventSummary> = {
         let ev: Option<Event> = sqlx::query_as(
-            "SELECT * FROM events WHERE start_time > now() \
+            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE start_time > now() \
              AND status::text IN ('scheduled', 'open', 'live') AND deleted_at IS NULL \
              ORDER BY start_time ASC LIMIT 1",
         )
@@ -58,7 +58,7 @@ pub async fn get_dashboard(
         match ev {
             Some(ev) => {
                 let em: Option<EventMission> = sqlx::query_as(
-                    "SELECT * FROM event_missions WHERE event_id = $1 ORDER BY start_time ASC LIMIT 1",
+                    "SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE event_id = $1 ORDER BY start_time ASC LIMIT 1",
                 )
                 .bind(ev.id)
                 .fetch_optional(pool)
@@ -111,7 +111,7 @@ pub async fn get_dashboard(
         match slot {
             Some(slot) => {
                 let em: Option<EventMission> =
-                    sqlx::query_as("SELECT * FROM event_missions WHERE id = $1")
+                    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE id = $1")
                         .bind(slot.event_mission_id)
                         .fetch_optional(pool)
                         .await?;
@@ -149,7 +149,9 @@ pub async fn get_dashboard(
     // Live server status (single primary server assumption).
     let server_status: Option<ServerStatus> = sqlx::query_as(
         "SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, \
-         uptime_seconds, current_match_id, ingame_time, ingame_weather, updated_at \
+         uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, \
+         COALESCE(ingame_weather, '') AS ingame_weather, \
+         COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
          FROM server_statuses LIMIT 1",
     )
     .fetch_optional(pool)
@@ -158,7 +160,7 @@ pub async fn get_dashboard(
     let current_modpack = load_current_modpack(pool).await?;
 
     let recent: Vec<Announcement> = sqlx::query_as(
-        "SELECT * FROM announcements WHERE status = 'published' AND deleted_at IS NULL \
+        "SELECT id, title, body, COALESCE(snippet, '') AS snippet, tag, COALESCE(thumbnail_url, '') AS thumbnail_url, author_id, status, is_pinned, pushed_to_discord, COALESCE(discord_message_id, '') AS discord_message_id, published_at, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM announcements WHERE status = 'published' AND deleted_at IS NULL \
          ORDER BY published_at DESC LIMIT 3",
     )
     .fetch_all(pool)

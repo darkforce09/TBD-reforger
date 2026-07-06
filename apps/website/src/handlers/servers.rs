@@ -28,7 +28,7 @@ pub struct ServerIntelDto {
 /// Compose a server with its status + required modpack.
 async fn server_intel(pool: &PgPool, server: Server) -> sqlx::Result<ServerIntelDto> {
     let status: Option<ServerStatus> =
-        sqlx::query_as("SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, uptime_seconds, current_match_id, ingame_time, ingame_weather, updated_at FROM server_statuses WHERE server_id = $1")
+        sqlx::query_as("SELECT server_id, is_online, player_count, max_players, server_fps::float8 AS server_fps, uptime_seconds, current_match_id, COALESCE(ingame_time, '') AS ingame_time, COALESCE(ingame_weather, '') AS ingame_weather, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM server_statuses WHERE server_id = $1")
             .bind(server.id)
             .fetch_optional(pool)
             .await?;

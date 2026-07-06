@@ -56,9 +56,12 @@ pub fn is_unique_violation(e: &sqlx::Error) -> bool {
 /// `attendance_rate::float8` cast decodes the `numeric` column into the model's `f64`.
 pub async fn load_user(pool: &PgPool, discord_id: &str) -> sqlx::Result<Option<User>> {
     sqlx::query_as::<_, User>(
-        "SELECT discord_id, username, discord_handle, avatar_url, arma_id, arma_character, \
-         role, is_banned, ban_reason, banned_by, banned_at, total_deployments, \
-         attendance_rate::float8 AS attendance_rate, last_login_at, created_at, updated_at \
+        "SELECT discord_id, username, COALESCE(discord_handle, '') AS discord_handle, \
+         COALESCE(avatar_url, '') AS avatar_url, arma_id, COALESCE(arma_character, '') AS arma_character, \
+         role, is_banned, COALESCE(ban_reason, '') AS ban_reason, banned_by, banned_at, total_deployments, \
+         attendance_rate::float8 AS attendance_rate, last_login_at, \
+         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
+         COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
          FROM users WHERE discord_id = $1 AND deleted_at IS NULL",
     )
     .bind(discord_id)
@@ -70,9 +73,12 @@ pub async fn load_user(pool: &PgPool, discord_id: &str) -> sqlx::Result<Option<U
 /// `time without time zone` column). Returns `None` if absent or deleted.
 pub async fn load_mission(pool: &PgPool, id: Uuid) -> sqlx::Result<Option<Mission>> {
     sqlx::query_as::<_, Mission>(
-        "SELECT id, title, author_id, terrain, custom_terrain_name, game_mode, weather, \
-         time_of_day::text AS time_of_day, max_players, status, thumbnail_url, briefing, \
-         current_version_id, rejection_reason, reviewed_by, reviewed_at, created_at, updated_at \
+        "SELECT id, title, author_id, terrain, COALESCE(custom_terrain_name, '') AS custom_terrain_name, \
+         game_mode, weather, time_of_day::text AS time_of_day, max_players, status, \
+         COALESCE(thumbnail_url, '') AS thumbnail_url, COALESCE(briefing, '') AS briefing, \
+         current_version_id, COALESCE(rejection_reason, '') AS rejection_reason, reviewed_by, reviewed_at, \
+         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
+         COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
          FROM missions WHERE id = $1 AND deleted_at IS NULL",
     )
     .bind(id)

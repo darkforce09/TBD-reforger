@@ -108,7 +108,7 @@ pub async fn save_fire(
          (event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, azimuth_deg, elevation_mils, created_at) \
          VALUES ($1, $2, $3, $4, $5, $6, $7::float8::numeric, $8, now()) \
          RETURNING id, event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, \
-          azimuth_deg::float8 AS azimuth_deg, elevation_mils, created_at",
+          azimuth_deg::float8 AS azimuth_deg, elevation_mils, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
     )
     .bind(event_id)
     .bind(&user.discord_id)
@@ -139,7 +139,7 @@ pub async fn list_event_fire_missions(
     };
     let fms: Vec<FireMission> = sqlx::query_as(
         "SELECT id, event_id, created_by, weapon_system, fp_grid, target_grid, distance_m, \
-         azimuth_deg::float8 AS azimuth_deg, elevation_mils, created_at \
+         azimuth_deg::float8 AS azimuth_deg, elevation_mils, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at \
          FROM fire_missions WHERE event_id = $1 ORDER BY created_at ASC",
     )
     .bind(eid)

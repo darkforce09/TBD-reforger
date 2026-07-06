@@ -85,7 +85,7 @@ async fn decorate(
     let mission_ids: Vec<Uuid> = missions.iter().map(|m| m.id).collect();
 
     let authors: Vec<(String, String, String)> = sqlx::query_as(
-        "SELECT discord_id, username, avatar_url FROM users WHERE discord_id = ANY($1)",
+        "SELECT discord_id, COALESCE(username, '') AS username, COALESCE(avatar_url, '') AS avatar_url FROM users WHERE discord_id = ANY($1)",
     )
     .bind(&author_ids)
     .fetch_all(pool)
@@ -112,9 +112,12 @@ async fn decorate(
         .collect())
 }
 
-const MISSION_COLS: &str = "id, title, author_id, terrain, custom_terrain_name, game_mode, weather, \
-     time_of_day::text AS time_of_day, max_players, status, thumbnail_url, briefing, \
-     current_version_id, rejection_reason, reviewed_by, reviewed_at, created_at, updated_at";
+const MISSION_COLS: &str = "id, title, author_id, terrain, COALESCE(custom_terrain_name, '') AS custom_terrain_name, \
+     game_mode, weather, time_of_day::text AS time_of_day, max_players, status, \
+     COALESCE(thumbnail_url, '') AS thumbnail_url, COALESCE(briefing, '') AS briefing, \
+     current_version_id, COALESCE(rejection_reason, '') AS rejection_reason, reviewed_by, reviewed_at, \
+     COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
+     COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at";
 
 #[derive(Debug, Deserialize)]
 pub struct ListQuery {
@@ -231,14 +234,14 @@ pub async fn get_mission(
         .pop()
         .unwrap();
     let armory: Vec<MissionArmory> = sqlx::query_as(
-        "SELECT * FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
+        "SELECT id, mission_id, faction, category, item_name, quantity, COALESCE(icon, '') AS icon, sort_order FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
     )
     .bind(m.id)
     .fetch_all(&state.pool)
     .await?;
     let current_version: Option<MissionVersion> = match m.current_version_id {
         Some(vid) => {
-            sqlx::query_as("SELECT * FROM mission_versions WHERE id = $1")
+            sqlx::query_as("SELECT id, mission_id, semver, json_payload, COALESCE(editor_notes, '') AS editor_notes, created_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM mission_versions WHERE id = $1")
                 .bind(vid)
                 .fetch_optional(&state.pool)
                 .await?
@@ -585,7 +588,7 @@ pub async fn create_version(
 
     let version: Result<MissionVersion, sqlx::Error> = sqlx::query_as(
         "INSERT INTO mission_versions (mission_id, semver, json_payload, editor_notes, created_by, created_at) \
-         VALUES ($1, $2, $3::jsonb, $4, $5, now()) RETURNING *",
+         VALUES ($1, $2, $3::jsonb, $4, $5, now()) RETURNING id, mission_id, semver, json_payload, COALESCE(editor_notes, '') AS editor_notes, created_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at",
     )
     .bind(m.id)
     .bind(&input.semver)
@@ -625,7 +628,7 @@ pub async fn get_version(
         return Err(ApiError::bad_request("invalid version id"));
     };
     let v: Option<MissionVersion> =
-        sqlx::query_as("SELECT * FROM mission_versions WHERE id = $1 AND mission_id = $2")
+        sqlx::query_as("SELECT id, mission_id, semver, json_payload, COALESCE(editor_notes, '') AS editor_notes, created_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM mission_versions WHERE id = $1 AND mission_id = $2")
             .bind(vid)
             .bind(m.id)
             .fetch_optional(&state.pool)
@@ -649,7 +652,7 @@ pub async fn get_armory(
         return Err(ApiError::not_found("mission not found"));
     }
     let items: Vec<MissionArmory> = sqlx::query_as(
-        "SELECT * FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
+        "SELECT id, mission_id, faction, category, item_name, quantity, COALESCE(icon, '') AS icon, sort_order FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
     )
     .bind(m.id)
     .fetch_all(&state.pool)
@@ -715,7 +718,7 @@ pub async fn set_armory(
     tx.commit().await?;
 
     let items: Vec<MissionArmory> = sqlx::query_as(
-        "SELECT * FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
+        "SELECT id, mission_id, faction, category, item_name, quantity, COALESCE(icon, '') AS icon, sort_order FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
     )
     .bind(m.id)
     .fetch_all(&state.pool)
@@ -807,7 +810,7 @@ pub async fn get_compiled_mission(
     let Some(vid) = m.current_version_id else {
         return Err(ApiError::conflict("no saved version to compile"));
     };
-    let v: Option<MissionVersion> = sqlx::query_as("SELECT * FROM mission_versions WHERE id = $1")
+    let v: Option<MissionVersion> = sqlx::query_as("SELECT id, mission_id, semver, json_payload, COALESCE(editor_notes, '') AS editor_notes, created_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM mission_versions WHERE id = $1")
         .bind(vid)
         .fetch_optional(&state.pool)
         .await?;
@@ -856,7 +859,7 @@ pub(crate) struct MissionJson {
 pub(crate) async fn build_mission_doc(pool: &PgPool, m: &Mission) -> Result<MissionJson, ApiError> {
     let (payload, version) = match m.current_version_id {
         Some(vid) => {
-            let v: MissionVersion = sqlx::query_as("SELECT * FROM mission_versions WHERE id = $1")
+            let v: MissionVersion = sqlx::query_as("SELECT id, mission_id, semver, json_payload, COALESCE(editor_notes, '') AS editor_notes, created_by, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at FROM mission_versions WHERE id = $1")
                 .bind(vid)
                 .fetch_one(pool)
                 .await
@@ -869,7 +872,7 @@ pub(crate) async fn build_mission_doc(pool: &PgPool, m: &Mission) -> Result<Miss
         ),
     };
     let armory: Vec<MissionArmory> = sqlx::query_as(
-        "SELECT * FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
+        "SELECT id, mission_id, faction, category, item_name, quantity, COALESCE(icon, '') AS icon, sort_order FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
     )
     .bind(m.id)
     .fetch_all(pool)

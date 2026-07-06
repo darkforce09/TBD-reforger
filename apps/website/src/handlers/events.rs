@@ -45,7 +45,7 @@ async fn load_event(pool: &PgPool, id: &str) -> Result<Event, ApiError> {
     let Ok(id) = Uuid::parse_str(id) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    sqlx::query_as("SELECT * FROM events WHERE id = $1 AND deleted_at IS NULL")
+    sqlx::query_as("SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE id = $1 AND deleted_at IS NULL")
         .bind(id)
         .fetch_optional(pool)
         .await?
@@ -56,7 +56,7 @@ async fn load_em(pool: &PgPool, emid: &str) -> Result<EventMission, ApiError> {
     let Ok(id) = Uuid::parse_str(emid) else {
         return Err(ApiError::bad_request("invalid id"));
     };
-    sqlx::query_as("SELECT * FROM event_missions WHERE id = $1")
+    sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE id = $1")
         .bind(id)
         .fetch_optional(pool)
         .await?
@@ -153,7 +153,7 @@ pub async fn create_event(
     let ev: Event = sqlx::query_as(
         "INSERT INTO events (name_override, start_time, briefing, banner_image_url, status, \
          registration_locked, max_slots, created_by, created_at, updated_at) \
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now()) RETURNING *",
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now(), now()) RETURNING id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
     )
     .bind(&input.name_override)
     .bind(start_time)
@@ -215,7 +215,7 @@ pub async fn add_event_mission(
     let mut tx = state.pool.begin().await?;
     let em: EventMission = sqlx::query_as(
         "INSERT INTO event_missions (event_id, mission_id, start_time, created_at, updated_at) \
-         VALUES ($1, $2, $3, now(), now()) RETURNING *",
+         VALUES ($1, $2, $3, now(), now()) RETURNING id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at",
     )
     .bind(ev.id)
     .bind(mission_id)
@@ -304,17 +304,17 @@ pub async fn list_events(
     let (count_sql, select_sql): (&str, &str) = match q.scope.as_deref().unwrap_or("upcoming") {
         "past" => (
             "SELECT count(*) FROM events WHERE deleted_at IS NULL AND start_time <= now()",
-            "SELECT * FROM events WHERE deleted_at IS NULL AND start_time <= now() \
+            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE deleted_at IS NULL AND start_time <= now() \
              ORDER BY start_time DESC LIMIT $1 OFFSET $2",
         ),
         "all" => (
             "SELECT count(*) FROM events WHERE deleted_at IS NULL",
-            "SELECT * FROM events WHERE deleted_at IS NULL ORDER BY start_time ASC LIMIT $1 OFFSET $2",
+            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE deleted_at IS NULL ORDER BY start_time ASC LIMIT $1 OFFSET $2",
         ),
         _ => (
             "SELECT count(*) FROM events WHERE deleted_at IS NULL \
              AND (start_time > now() OR status::text = 'live')",
-            "SELECT * FROM events WHERE deleted_at IS NULL \
+            "SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE deleted_at IS NULL \
              AND (start_time > now() OR status::text = 'live') \
              ORDER BY start_time ASC LIMIT $1 OFFSET $2",
         ),
@@ -440,7 +440,7 @@ struct EventMissionDossier {
 
 async fn armory_by_faction(pool: &PgPool, mission_id: Uuid) -> Vec<ArmoryFactionDto> {
     let items: Vec<MissionArmory> = sqlx::query_as(
-        "SELECT * FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
+        "SELECT id, mission_id, faction, category, item_name, quantity, COALESCE(icon, '') AS icon, sort_order FROM mission_armories WHERE mission_id = $1 ORDER BY sort_order ASC",
     )
     .bind(mission_id)
     .fetch_all(pool)
@@ -475,7 +475,7 @@ pub async fn get_event(
     let me = &user.discord_id;
 
     let ems: Vec<EventMission> =
-        sqlx::query_as("SELECT * FROM event_missions WHERE event_id = $1 ORDER BY start_time ASC")
+        sqlx::query_as("SELECT id, event_id, mission_id, start_time, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM event_missions WHERE event_id = $1 ORDER BY start_time ASC")
             .bind(ev.id)
             .fetch_all(&state.pool)
             .await?;
@@ -492,7 +492,7 @@ pub async fn get_event(
         };
 
         let slots: Vec<OrbatSlot> =
-            sqlx::query_as("SELECT * FROM orbat_slots WHERE event_mission_id = $1")
+            sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE event_mission_id = $1")
                 .bind(em.id)
                 .fetch_all(&state.pool)
                 .await?;
@@ -661,7 +661,7 @@ pub async fn get_orbat(
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let slots: Vec<OrbatSlot> = sqlx::query_as(
-        "SELECT * FROM orbat_slots WHERE event_mission_id = $1 \
+        "SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE event_mission_id = $1 \
          ORDER BY faction ASC, squad ASC, slot_index ASC",
     )
     .bind(em.id)
@@ -690,7 +690,7 @@ pub async fn get_orbat(
     }
     let id_vec: Vec<String> = ids.into_iter().collect();
     let names: HashMap<String, String> =
-        sqlx::query_as("SELECT discord_id, username FROM users WHERE discord_id = ANY($1)")
+        sqlx::query_as("SELECT discord_id, COALESCE(username, '') AS username FROM users WHERE discord_id = ANY($1)")
             .bind(&id_vec)
             .fetch_all(&state.pool)
             .await?
@@ -764,7 +764,7 @@ pub async fn register_for_event_mission(
 ) -> Result<Json<Value>, ApiError> {
     let em = load_em(&state.pool, &emid).await?;
     let ev: Option<Event> =
-        sqlx::query_as("SELECT * FROM events WHERE id = $1 AND deleted_at IS NULL")
+        sqlx::query_as("SELECT id, COALESCE(name_override, '') AS name_override, start_time, COALESCE(briefing, '') AS briefing, COALESCE(banner_image_url, '') AS banner_image_url, status, registration_locked, max_slots, created_by, match_id, COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at FROM events WHERE id = $1 AND deleted_at IS NULL")
             .bind(em.event_id)
             .fetch_optional(&state.pool)
             .await?;
@@ -814,7 +814,7 @@ pub async fn register_for_event_mission(
             return Err(ApiError::not_found("slot not found"));
         };
         let slot: Option<OrbatSlot> =
-            sqlx::query_as("SELECT * FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
+            sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
                 .bind(sid)
                 .bind(em.id)
                 .fetch_optional(&mut *tx)
@@ -984,7 +984,7 @@ pub async fn assign_slot(
         return Err(ApiError::bad_request("user not found"));
     }
     let slot: Option<OrbatSlot> =
-        sqlx::query_as("SELECT * FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
+        sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
             .bind(slot_id)
             .bind(em.id)
             .fetch_optional(&state.pool)
@@ -1040,7 +1040,7 @@ pub async fn clear_slot(
         return Err(ApiError::bad_request("invalid slot id"));
     };
     let slot: Option<OrbatSlot> =
-        sqlx::query_as("SELECT * FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
+        sqlx::query_as("SELECT id, event_mission_id, faction, squad, COALESCE(callsign, '') AS callsign, role, COALESCE(loadout, '') AS loadout, COALESCE(tag, '') AS tag, slot_index, assigned_to, assigned_at FROM orbat_slots WHERE id = $1 AND event_mission_id = $2")
             .bind(slot_id)
             .bind(em.id)
             .fetch_optional(&state.pool)
