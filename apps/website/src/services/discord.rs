@@ -24,6 +24,18 @@ fn ensure_tls_provider() {
     });
 }
 
+/// Deserialize a field tolerating JSON `null` (→ the type's default), matching Go's
+/// `encoding/json`, where a non-pointer field left `null` keeps its zero value. Discord
+/// sends `null` for e.g. a member with no server nickname or a user with no custom
+/// avatar; serde's `#[serde(default)]` alone only covers a *missing* field, not `null`.
+fn null_default<'de, D, T>(d: D) -> Result<T, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de> + Default,
+{
+    Ok(Option::<T>::deserialize(d)?.unwrap_or_default())
+}
+
 /// Thin client for the OAuth2 + member-roles endpoints.
 #[derive(Clone)]
 pub struct DiscordService {
@@ -55,11 +67,11 @@ pub struct DiscordUser {
     pub id: String,
     #[serde(default)]
     pub username: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_default")]
     pub global_name: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_default")]
     pub discriminator: String,
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_default")]
     pub avatar: String,
 }
 
@@ -98,7 +110,7 @@ impl DiscordUser {
 /// The subset of the guild-member object we use (role snowflakes + nick).
 #[derive(Debug, Deserialize)]
 pub struct GuildMember {
-    #[serde(default)]
+    #[serde(default, deserialize_with = "null_default")]
     pub nick: String,
     #[serde(default)]
     pub roles: Vec<String>,
@@ -308,5 +320,25 @@ mod tests {
         assert_eq!(parse_retry_after(Some("100")), MAX_429_BACKOFF); // clamped
         assert_eq!(parse_retry_after(None), DEFAULT_429_BACKOFF);
         assert_eq!(parse_retry_after(Some("garbage")), DEFAULT_429_BACKOFF);
+    }
+
+    #[test]
+    fn null_fields_deserialize_like_go() {
+        // Discord sends null for a member with no nickname / a user with no avatar. Go's
+        // encoding/json kept the zero value; serde must too. Regression: a null nick failed
+        // GuildMember parse → empty roles → login resolved the wrong web role.
+        let m: GuildMember =
+            serde_json::from_str(r#"{"nick":null,"roles":["1517285898817896559"]}"#).unwrap();
+        assert_eq!(m.nick, "");
+        assert_eq!(m.roles, ["1517285898817896559"]);
+
+        let u: DiscordUser = serde_json::from_str(
+            r#"{"id":"7","username":"sam","global_name":null,"discriminator":"0","avatar":null}"#,
+        )
+        .unwrap();
+        assert_eq!(u.username, "sam");
+        assert_eq!(u.global_name, "");
+        assert_eq!(u.avatar, "");
+        assert_eq!(u.display_name(), "sam");
     }
 }
