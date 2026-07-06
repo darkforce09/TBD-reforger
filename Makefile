@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare
+.PHONY: help db-up db-down db-logs seed api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -62,7 +62,16 @@ test: ## Run backend unit tests
 test-it: ## Run backend integration tests against the local DB (needs `make db-up`)
 	$(MAKE) rust-test-it
 
-build: ## Build the backend + the frontend
+wasm: ## Build the map-engine wasm core (wasm-pack → apps/website/frontend/src/wasm/pkg) — T-145
+	wasm-pack build crates/map-engine-wasm --release --target bundler \
+		--out-dir ../../apps/website/frontend/src/wasm/pkg --out-name map_engine_wasm
+
+wasm-ci: ## Fmt + clippy + test the map-engine core/wasm crates (T-145)
+	cargo fmt --check -p map-engine-core -p map-engine-wasm
+	cargo clippy -p map-engine-core -p map-engine-wasm --all-targets -- -D warnings
+	cargo test -p map-engine-core
+
+build: wasm ## Build the wasm core + the backend + the frontend
 	cd $(WEB) && cargo build --release --bin api
 	cd $(WEB)/frontend && npm run build
 
@@ -93,6 +102,7 @@ rust-ci: ## Rust CI gate locally — fmt + clippy + build + test-it (mirrors the
 	$(MAKE) rust-fmt
 	$(MAKE) rust-clippy
 	$(MAKE) rust-build
+	$(MAKE) wasm-ci
 	$(MAKE) rust-test-it
 
 schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency)
@@ -206,7 +216,7 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm us
 	$(MAKE) ci-local-frontend
 	$(MAKE) ci-local-schema
 
-ci-local-frontend: ## CI gate: npm ci + format:check (FMT-3) + lint + build + unit tests (run `nvm use` -> Node 26 first)
+ci-local-frontend: wasm ## CI gate: wasm core + npm ci + format:check (FMT-3) + lint + build + unit tests (run `nvm use` -> Node 26 first)
 	cd $(WEB)/frontend && npm ci && npm run format:check && npm run lint && npm run build && npm test
 
 ci-local-schema: ## CI gate: schema validate (TEST-3) + @contract citation verify

@@ -1,0 +1,15 @@
+[package]
+name = "map-engine-core"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+publish = false
+description = "Pure Rust compute core for the TBD Reforger map engine, geometry, mission compiler, and (Phase 3) document model. Compiles native (backend + tests) and wasm32."
+
+[lib]
+name = "map_engine_core"
+
+# Phase 1 adds `image`/`png` behind a `png` feature; Phase 3 adds `yrs` behind a `doc` feature.
+# Kept dependency-free at Phase 0 so the native + wasm builds are trivially reproducible.
+[dependencies]
