@@ -9,4 +9,7 @@
 //!   - **T** transcendental (`atan/atan2/sin/cos`, overflow-safe `hypot`) → ≤ 1 ULP pre-quantization.
 //!   - **S** structural (algorithm replaced) → query-result-set equality.
 
+mod js;
+
 pub mod dem;
+pub mod geometry;

@@ -39,6 +39,25 @@ export function firstF32Mismatch(a: Float32Array, b: Float32Array): number {
   return a.length === b.length ? -1 : n
 }
 
+/** Exact equality of two integer typed arrays (Class R / Class S counts + indices). */
+export function intArrayEqual(a: ArrayLike<number>, b: ArrayLike<number>): boolean {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false
+  return true
+}
+
+/** Class T: max absolute per-element difference between two integer arrays (assert ≤ 1 for the
+ *  hillshade gray gate). Returns Infinity on a length mismatch. */
+export function maxAbsDiff(a: ArrayLike<number>, b: ArrayLike<number>): number {
+  if (a.length !== b.length) return Number.POSITIVE_INFINITY
+  let m = 0
+  for (let i = 0; i < a.length; i++) {
+    const d = Math.abs(a[i] - b[i])
+    if (d > m) m = d
+  }
+  return m
+}
+
 /** Class T: ULP distance between two f64 values (assert ≤ 1). +0/-0 → 0; any NaN → Infinity. */
 export function ulpDistanceF64(a: number, b: number): number {
   if (a === b) return 0

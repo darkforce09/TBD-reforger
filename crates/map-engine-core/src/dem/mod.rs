@@ -1,4 +1,8 @@
-//! DEM (digital elevation model) math. Phase 1 adds `downsample`, `hillshade`, `png`; Phase 0
-//! seeds `sample` (the `uint16 → meters` core) to prove the JS↔wasm typed-array boundary.
+//! DEM (digital elevation model) math. `sample` = the `uint16 → meters` sampler; `downsample` =
+//! the box-average vector grid the geometry marches over. Phase 1 adds `hillshade` + `png`.
 
+pub mod downsample;
+pub mod hillshade;
 pub mod sample;
+
+pub use downsample::DemVectorGrid;
