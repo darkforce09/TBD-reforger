@@ -47,8 +47,15 @@ pub async fn list_registry(
             .ok_or_else(|| ApiError::not_found("no current modpack configured"))?,
     };
 
+    // COALESCE nullable columns to Go/GORM's zero-values (non-pointer fields read NULL
+    // as "" / the zero time) — the dev seed (registry_dev.sql) leaves icon_url +
+    // created_at + updated_at NULL, which a bare `SELECT *` can't decode into the model.
     let items: Vec<RegistryItem> = sqlx::query_as(
-        "SELECT * FROM registry_items WHERE modpack_id = $1 \
+        "SELECT id, modpack_id, resource_name, display_name, category, \
+         COALESCE(icon_url, '') AS icon_url, kind, sort_order, \
+         COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
+         COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
+         FROM registry_items WHERE modpack_id = $1 \
          ORDER BY sort_order ASC, display_name ASC",
     )
     .bind(mp.id)
