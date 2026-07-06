@@ -32,6 +32,14 @@ export default defineConfig({
   // wasm-bindgen (bundler-target) `*.wasm` import + top-level instantiation; no
   // vite-plugin-top-level-await (node 26 + Vite 8's modern target support top-level await natively).
   plugins: [crossOriginIsolation(), wasm(), react(), tailwindcss(), tsconfigPaths()],
+  // The module workers (worldObjects/compiler) import the wasm core, whose ESM integration uses
+  // top-level await — unsupported in the default IIFE worker bundle. `format: 'es'` emits ESM
+  // workers (they are already `new Worker(..., { type: 'module' })`), and wasm()/tsconfigPaths()
+  // must be re-applied to the worker build (T-145 Phase 1).
+  worker: {
+    format: 'es',
+    plugins: () => [wasm(), tsconfigPaths()],
+  },
   resolve: {
     alias: {
       // pngjs 7's node entry (lib/png.js) pulls node `util`/`stream` and crashes in the

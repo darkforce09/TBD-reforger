@@ -24,11 +24,15 @@ import {
   type Bbox,
 } from '../worldmap/chunkMath'
 import { INSTANCE_BUDGET, classVisible, type WorldRenderClass } from '../worldmap/lodGates'
-import { DENSITY_ISO, decodeTBDD, forestMassFromCorners } from '../worldmap/forestMass'
+import { DENSITY_ISO } from '../worldmap/forestMass'
 import { type DemVectorGrid, reduceGrid2x } from '../worldmap/demGrid'
-import { buildSeaBandGeometry, type SeaBandGeometry } from '../worldmap/seaBand'
-import { contourGridReductions, contourLevels, contourSegments } from '../worldmap/contours'
+import { type SeaBandGeometry } from '../worldmap/seaBand'
+import { contourGridReductions, contourLevels } from '../worldmap/contours'
 import { createWorldSpatialIndex } from '../state/worldSpatialIndex'
+// T-145 Phase 1: DEM + geometry math runs in the Rust/wasm core (byte-identical to the TS
+// oracles in worldmap/{seaBand,contours,forestMass}.ts, which the differential harness pins).
+// The TS grid + reduction pyramid stay here; only the leaf compute crosses into wasm.
+import * as wasm from '@/wasm/pkg/map_engine_wasm'
 
 export type { Bbox, DemVectorGrid, SeaBandGeometry }
 
@@ -296,7 +300,12 @@ function narrowPrefabRows(raw: unknown): WorldPrefabRow[] {
       label?: unknown
       resourceName?: unknown
       spatial?: { halfExtentsM?: { x?: unknown; y?: unknown; z?: unknown }; heightM?: unknown }
-      render?: { iconKey?: unknown; baseSizePx?: unknown; defaultColor?: unknown; importanceZoom?: unknown }
+      render?: {
+        iconKey?: unknown
+        baseSizePx?: unknown
+        defaultColor?: unknown
+        importanceZoom?: unknown
+      }
     }
     if (typeof p.prefabId !== 'number' || typeof p.kind !== 'string') continue
     out.push({
@@ -315,7 +324,8 @@ function narrowPrefabRows(raw: unknown): WorldPrefabRow[] {
 /** Narrow the spatial block to the clone-safe subset render layers join on: OBB half extents
  *  (building geometry) + heightM (tree glyph 1.5× size cap, T-090.5.5). */
 function narrowSpatial(
-  spatial: { halfExtentsM?: { x?: unknown; y?: unknown; z?: unknown }; heightM?: unknown } | undefined,
+  spatial:
+    { halfExtentsM?: { x?: unknown; y?: unknown; z?: unknown }; heightM?: unknown } | undefined,
 ): WorldPrefabRow['spatial'] {
   if (!spatial) return undefined
   const he = spatial.halfExtentsM
@@ -334,7 +344,9 @@ function narrowSpatial(
 /** Narrow the glyph render block (T-090.5.5): iconKey/baseSizePx/defaultColor feed the tree/prop
  *  IconLayer; importanceZoom is carried for the per-prefab landmark override (contract N2). */
 function narrowRender(
-  render: { iconKey?: unknown; baseSizePx?: unknown; defaultColor?: unknown; importanceZoom?: unknown } | undefined,
+  render:
+    | { iconKey?: unknown; baseSizePx?: unknown; defaultColor?: unknown; importanceZoom?: unknown }
+    | undefined,
 ): WorldGlyphRender | undefined {
   if (!render) return undefined
   return {
@@ -352,7 +364,8 @@ function narrowCells(indexRaw: unknown): WorldChunkCell[] | null {
   const cells: WorldChunkCell[] = []
   for (const c of rawCells) {
     const cell = c as { cx?: unknown; cy?: unknown; path?: unknown; instanceCount?: unknown }
-    if (typeof cell.cx !== 'number' || typeof cell.cy !== 'number' || typeof cell.path !== 'string') continue
+    if (typeof cell.cx !== 'number' || typeof cell.cy !== 'number' || typeof cell.path !== 'string')
+      continue
     cells.push({
       id: chunkIdOf(cell.cx, cell.cy),
       cx: cell.cx,
@@ -519,15 +532,21 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
       p = (async () => {
         let entry: DensityCorners | null = null
         try {
-          const bytes = densityPath ? await deps.fetchBytes(`${assetBase}/${densityPath}/${id}.bin`) : null
+          const bytes = densityPath
+            ? await deps.fetchBytes(`${assetBase}/${densityPath}/${id}.bin`)
+            : null
           if (bytes) {
-            const grid = decodeTBDD(bytes)
-            const corners = grid.channels[0] ?? new Uint16Array(0)
-            let treeMax = 0
-            for (const v of corners) if (v > treeMax) treeMax = v
-            // All-zero grids are as empty as missing files — cache the null.
-            if (treeMax > 0) {
-              entry = { corners, cols: grid.cols, rows: grid.rows, cellM: grid.cellM, treeMax }
+            const grid = wasm.decode_tbdd(bytes) // throws on bad magic/truncation → caught below
+            try {
+              const corners = grid.channel(0) // fresh Uint16Array copy (survives grid.free)
+              let treeMax = 0
+              for (const v of corners) if (v > treeMax) treeMax = v
+              // All-zero grids are as empty as missing files — cache the null.
+              if (treeMax > 0) {
+                entry = { corners, cols: grid.cols, rows: grid.rows, cellM: grid.cell_m, treeMax }
+              }
+            } finally {
+              grid.free()
             }
           }
         } catch {
@@ -673,7 +692,11 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
     return { count: n, positions, prefabIdx, rotations, z }
   }
 
-  async function loadChunksInBbox(bbox: Bbox, marginCells: number, opts: LoadChunksOpts): Promise<ChunkLoadResult> {
+  async function loadChunksInBbox(
+    bbox: Bbox,
+    marginCells: number,
+    opts: LoadChunksOpts,
+  ): Promise<ChunkLoadResult> {
     if (!manifest || !terrain) return { chunkSizeM: DEFAULT_CHUNK_SIZE_M, chunks: [] }
     const chunkSizeM = manifest.chunkSizeM
 
@@ -711,10 +734,12 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
         results.push({ id, cx: chunk.cx, cy: chunk.cy, totalInstances: chunk.count, groups })
       }
     }
-    await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, ids.length)) }, workerLoop))
+    await Promise.all(
+      Array.from({ length: Math.min(concurrency, Math.max(1, ids.length)) }, workerLoop),
+    )
     evictBeyondCap()
     // Stable order for deterministic tests + apply order (fetch pool completes out of order).
-    results.sort((a, b) => (a.cy - b.cy) || (a.cx - b.cx))
+    results.sort((a, b) => a.cy - b.cy || a.cx - b.cx)
     return { chunkSizeM, chunks: results }
   }
 
@@ -752,7 +777,7 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
           const [cxStr, cyStr] = id.split('_')
           const cx = Number(cxStr)
           const cy = Number(cyStr)
-          const geo = forestMassFromCorners(
+          const r = wasm.forest_mass(
             entry.corners,
             entry.cols,
             entry.rows,
@@ -761,6 +786,12 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
             entry.cellM,
             iso,
           )
+          const geo = {
+            fillPositions: r.fill_positions,
+            fillStartIndices: r.fill_start_indices,
+            outlineSegments: r.outline_segments,
+          }
+          r.free()
           if (geo.fillPositions.length === 0 && geo.outlineSegments.length === 0) {
             emptyIds.push(id)
             continue
@@ -768,9 +799,11 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
           results.push({ id, cx, cy, ...geo, treeMax: entry.treeMax })
         }
       }
-      await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, ids.length)) }, workerLoop))
+      await Promise.all(
+        Array.from({ length: Math.min(concurrency, Math.max(1, ids.length)) }, workerLoop),
+      )
       // Stable order (fetch pool completes out of order) — deterministic composites + tests.
-      results.sort((a, b) => (a.cy - b.cy) || (a.cx - b.cx))
+      results.sort((a, b) => a.cy - b.cy || a.cx - b.cx)
       emptyIds.sort()
       return { chunks: results, emptyIds }
     },
@@ -787,7 +820,26 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
      *  was restarted on mission unmount — the store re-pushes and retries). Fresh arrays. */
     buildSeaBand(): SeaBandGeometry | null {
       if (!demBaseGrid) return null
-      return buildSeaBandGeometry(demBaseGrid)
+      const g = wasm.DemGrid.from_parts(
+        demBaseGrid.data,
+        demBaseGrid.cols,
+        demBaseGrid.rows,
+        demBaseGrid.cellX,
+        demBaseGrid.cellY,
+        demBaseGrid.originX,
+        demBaseGrid.originY,
+        demBaseGrid.maxElevM,
+      )
+      const r = g.sea_band()
+      const out: SeaBandGeometry = {
+        fillPositions: r.fill_positions,
+        fillStartIndices: r.fill_start_indices,
+        fillColors: r.fill_colors,
+        polygonCount: r.polygon_count,
+      }
+      r.free()
+      g.free()
+      return out
     },
 
     /** Contour segments for an interval (coarse intervals march a reduced grid — plan R8), or
@@ -796,7 +848,19 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
       const grid = reducedGrid(contourGridReductions(intervalM))
       if (!grid) return null
       const levels = contourLevels(intervalM, grid.maxElevM)
-      return { intervalM, segments: contourSegments(grid, levels) }
+      const g = wasm.DemGrid.from_parts(
+        grid.data,
+        grid.cols,
+        grid.rows,
+        grid.cellX,
+        grid.cellY,
+        grid.originX,
+        grid.originY,
+        grid.maxElevM,
+      )
+      const segments = g.contours(new Float64Array(levels))
+      g.free()
+      return { intervalM, segments }
     },
 
     /** Instances visible in a bbox at a zoom (W4-v2 — the tree/prop glyph driver, T-090.5.5).
@@ -810,7 +874,12 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
       const anyClassVisible = RENDER_CLASS_CODES.some((c) => classVisible(c, deckZoom))
       if (anyClassVisible && manifest && terrain) {
         const chunkSizeM = manifest.chunkSizeM
-        const rect = expandChunkRect(chunkRectForBbox(bbox, terrain, chunkSizeM), 1, terrain, chunkSizeM)
+        const rect = expandChunkRect(
+          chunkRectForBbox(bbox, terrain, chunkSizeM),
+          1,
+          terrain,
+          chunkSizeM,
+        )
         let hydrateIds = chunkIdsForRect(rect)
         if (manifest.cells) hydrateIds = hydrateIds.filter((id) => cellById.has(id))
         await Promise.all(hydrateIds.map((id) => ensureChunk(id)))
@@ -835,15 +904,23 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
       return { count, positions, prefabIdx, rotations, classes }
     },
 
-    async pickNearest(worldXY: [number, number], radiusM: number, deckZoom?: number): Promise<string | null> {
+    async pickNearest(
+      worldXY: [number, number],
+      radiusM: number,
+      deckZoom?: number,
+    ): Promise<string | null> {
       const filter =
-        deckZoom === undefined ? undefined : (cls: string) => classVisible(cls as WorldRenderClass, deckZoom)
+        deckZoom === undefined
+          ? undefined
+          : (cls: string) => classVisible(cls as WorldRenderClass, deckZoom)
       return index.pickNearest(worldXY[0], worldXY[1], radiusM, filter)
     },
 
     async pickRect(bbox: Bbox, deckZoom?: number): Promise<string[]> {
       const filter =
-        deckZoom === undefined ? undefined : (cls: string) => classVisible(cls as WorldRenderClass, deckZoom)
+        deckZoom === undefined
+          ? undefined
+          : (cls: string) => classVisible(cls as WorldRenderClass, deckZoom)
       return index.pickRect(bbox, filter)
     },
 
