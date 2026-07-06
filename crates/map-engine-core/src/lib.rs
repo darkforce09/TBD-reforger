@@ -12,6 +12,8 @@
 mod js;
 
 pub mod dem;
+#[cfg(feature = "doc")]
+pub mod doc;
 pub mod geometry;
 #[cfg(feature = "mission")]
 pub mod mission;

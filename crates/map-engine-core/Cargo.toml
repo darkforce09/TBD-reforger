@@ -12,13 +12,16 @@ name = "map_engine_core"
 
 # `png` (16-bit DEM decode) and `mission` (compiler: serde/serde_json) are behind features so each
 # consumer pulls only what it needs — the backend enables `mission`, the wasm shim enables both,
-# a DEM-only build enables `png`. Phase 3 adds `yrs` (`doc` feature).
+# a DEM-only build enables `png`. Phase 3 adds `yrs` (`doc` feature: the Yjs-wire-compatible CRDT
+# document core — the Phase 3.0 spike toward the wasm-resident SoA document model).
 [features]
 png = ["dep:png"]
 mission = ["dep:serde", "dep:serde_json", "dep:thiserror"]
+doc = ["dep:yrs"]
 
 [dependencies]
 png = { version = "0.17", optional = true }
 serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 thiserror = { version = "2", optional = true }
+yrs = { version = "0.27", optional = true }
