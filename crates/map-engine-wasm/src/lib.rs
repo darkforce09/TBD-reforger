@@ -484,3 +484,19 @@ pub fn dem_decode_png_to_meters(
         .map(|inner| DecodedDem { inner })
         .map_err(|e| JsError::new(&e.to_string()))
 }
+
+// ---------------------------------------------------------------------------------------------
+// mission compiler (shared with the Axum backend)
+// ---------------------------------------------------------------------------------------------
+
+/// Flatten the editor payload → canonical mod mission document JSON (mirrors the server's
+/// `GET /missions/:id/compiled`). `meta_json` = camelCase `MissionMeta`; `payload_json` = the
+/// stored `MissionPayload` the client already built. Same Rust code the backend runs.
+///
+/// # Errors
+/// Returns a JS error on parse failure or a compile error (e.g. no placed slots).
+#[wasm_bindgen]
+pub fn flatten_mod_document(meta_json: &[u8], payload_json: &[u8]) -> Result<Vec<u8>, JsError> {
+    map_engine_core::mission::flatten::flatten_mod_document_json(meta_json, payload_json)
+        .map_err(|e| JsError::new(&e))
+}
