@@ -1,0 +1,270 @@
+<title>T-145 — Go → Rust backend rewrite</title>
+<style>
+  :root {
+    --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+
+    /* light — a cool paper biased toward the teal accent, not a default grey */
+    --bg: #eef2f2;
+    --surface: #ffffff;
+    --surface-2: #e4ecec;
+    --border: #cdd9d8;
+    --border-strong: #b4c4c3;
+    --text: #14232a;
+    --muted: #5a7176;
+    --faint: #7d9297;
+    --accent: #12857c;
+    --accent-soft: #d6ebe8;
+    --pass: #17925c;
+    --pass-soft: #d5eddf;
+    --warn: #9c6316;
+    --warn-soft: #f0e2c9;
+    --go: #2b7c93;
+    --ember: #b0553a;
+    --shadow: 0 1px 2px rgba(20,35,42,.06), 0 8px 24px -12px rgba(20,35,42,.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1315;
+      --surface: #141d20;
+      --surface-2: #1a2529;
+      --border: #26343a;
+      --border-strong: #33454c;
+      --text: #dde7e8;
+      --muted: #8aa1a8;
+      --faint: #64797f;
+      --accent: #38c6bc;
+      --accent-soft: #12312f;
+      --pass: #52d290;
+      --pass-soft: #102b21;
+      --warn: #e3ab52;
+      --warn-soft: #2e2413;
+      --go: #63b6cc;
+      --ember: #d67d5e;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.55);
+    }
+  }
+  /* explicit toggle wins in BOTH directions */
+  :root[data-theme="light"] {
+    --bg: #eef2f2; --surface: #ffffff; --surface-2: #e4ecec; --border: #cdd9d8; --border-strong: #b4c4c3;
+    --text: #14232a; --muted: #5a7176; --faint: #7d9297; --accent: #12857c; --accent-soft: #d6ebe8;
+    --pass: #17925c; --pass-soft: #d5eddf; --warn: #9c6316; --warn-soft: #f0e2c9; --go: #2b7c93; --ember: #b0553a;
+    --shadow: 0 1px 2px rgba(20,35,42,.06), 0 8px 24px -12px rgba(20,35,42,.18);
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1315; --surface: #141d20; --surface-2: #1a2529; --border: #26343a; --border-strong: #33454c;
+    --text: #dde7e8; --muted: #8aa1a8; --faint: #64797f; --accent: #38c6bc; --accent-soft: #12312f;
+    --pass: #52d290; --pass-soft: #102b21; --warn: #e3ab52; --warn-soft: #2e2413; --go: #63b6cc; --ember: #d67d5e;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 30px -14px rgba(0,0,0,.55);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: var(--font-sans); line-height: 1.6;
+    -webkit-font-smoothing: antialiased; font-size: 16px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: clamp(1.5rem, 4vw, 4rem) clamp(1.1rem, 4vw, 2rem) 5rem; }
+  mono, .mono, code { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  a { color: var(--accent); text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent); }
+  a:hover { border-bottom-color: var(--accent); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+
+  /* ---- header ---- */
+  header { border-bottom: 1px solid var(--border); padding-bottom: 2rem; margin-bottom: 2.5rem; }
+  .eyebrow {
+    font-family: var(--font-mono); font-size: .72rem; letter-spacing: .16em; text-transform: uppercase;
+    color: var(--muted); display: flex; gap: .6rem; align-items: center; flex-wrap: wrap;
+  }
+  .eyebrow .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--pass); box-shadow: 0 0 0 3px var(--pass-soft); }
+  h1 { font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.05; letter-spacing: -.02em; text-wrap: balance; margin: 1rem 0 0; font-weight: 660; }
+  .migration { display: inline-flex; align-items: baseline; gap: .5rem; font-family: var(--font-mono); font-weight: 600; }
+  .migration .from { color: var(--go); }
+  .migration .arrow { color: var(--faint); font-weight: 400; }
+  .migration .to { color: var(--ember); }
+  .lede { color: var(--muted); font-size: 1.08rem; max-width: 62ch; margin: 1.1rem 0 0; text-wrap: pretty; }
+
+  /* ---- stat strip ---- */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: .75rem; margin: 2.5rem 0 0; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: .95rem 1rem; box-shadow: var(--shadow); }
+  .stat .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 1.55rem; font-weight: 640; letter-spacing: -.02em; line-height: 1; color: var(--accent); }
+  .stat .n.neg { color: var(--ember); }
+  .stat .k { font-size: .74rem; color: var(--muted); margin-top: .45rem; letter-spacing: .02em; }
+
+  /* ---- section scaffolding ---- */
+  section { margin-top: 3.25rem; }
+  h2 { font-size: 1.02rem; letter-spacing: .01em; margin: 0 0 1.1rem; display: flex; align-items: baseline; gap: .7rem; }
+  h2 .idx { font-family: var(--font-mono); font-size: .78rem; color: var(--accent); font-weight: 600; }
+  h2 .rule { flex: 1; height: 1px; background: var(--border); align-self: center; }
+  .note { color: var(--muted); font-size: .95rem; max-width: 66ch; margin: 0 0 1.2rem; }
+
+  /* ---- gates ---- */
+  .gates { display: grid; gap: .5rem; }
+  .gate { display: grid; grid-template-columns: auto 1fr auto; gap: .85rem; align-items: center;
+          background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .9rem; }
+  .gate .id { font-family: var(--font-mono); font-weight: 700; color: var(--accent); font-size: .9rem; min-width: 2.1rem; }
+  .gate .desc { font-size: .92rem; }
+  .gate .desc b { font-weight: 620; }
+  .gate .desc span { color: var(--muted); }
+  .badge { font-family: var(--font-mono); font-size: .72rem; font-weight: 600; letter-spacing: .03em; white-space: nowrap;
+           color: var(--pass); background: var(--pass-soft); border: 1px solid color-mix(in srgb, var(--pass) 30%, transparent);
+           padding: .18rem .5rem; border-radius: 999px; }
+
+  /* ---- timeline ---- */
+  .phases { position: relative; margin-left: .3rem; }
+  .phase { position: relative; padding: 0 0 1.3rem 2.4rem; border-left: 2px solid var(--border); }
+  .phase:last-child { border-left-color: transparent; padding-bottom: 0; }
+  .phase .marker { position: absolute; left: -.72rem; top: .05rem; width: 1.4rem; height: 1.4rem; border-radius: 50%;
+                   background: var(--surface); border: 2px solid var(--border-strong); color: var(--muted);
+                   font-family: var(--font-mono); font-size: .7rem; font-weight: 700; display: grid; place-items: center; }
+  .phase.gated .marker { border-color: var(--accent); color: var(--accent); }
+  .phase h3 { margin: 0; font-size: .97rem; font-weight: 620; display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }
+  .gchip { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .04em; color: var(--accent);
+           background: var(--accent-soft); padding: .12rem .42rem; border-radius: 5px; border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); }
+  .phase p { margin: .35rem 0 0; color: var(--muted); font-size: .9rem; max-width: 68ch; }
+  .phase p code { color: var(--text); background: var(--surface-2); padding: .04rem .3rem; border-radius: 4px; font-size: .82em; }
+
+  /* ---- tables ---- */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; min-width: 520px; }
+  th, td { text-align: left; padding: .62rem .85rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  thead th { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); font-weight: 600; background: var(--surface-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.k { font-family: var(--font-mono); color: var(--accent); white-space: nowrap; font-size: .82rem; }
+  td .caught { font-family: var(--font-mono); font-size: .78rem; color: var(--warn); background: var(--warn-soft); padding: .08rem .4rem; border-radius: 5px; white-space: nowrap; }
+  td code { font-family: var(--font-mono); font-size: .82em; background: var(--surface-2); padding: .04rem .32rem; border-radius: 4px; }
+
+  /* ---- follow-ups ---- */
+  .todo { display: grid; gap: .6rem; }
+  .todo .item { display: grid; grid-template-columns: auto 1fr; gap: .75rem; background: var(--surface); border: 1px solid var(--border);
+                border-left: 3px solid var(--warn); border-radius: 10px; padding: .75rem .9rem; }
+  .todo .item .t { font-size: .92rem; font-weight: 600; }
+  .todo .item .d { color: var(--muted); font-size: .87rem; margin-top: .2rem; }
+  .todo .tag { font-family: var(--font-mono); font-size: .64rem; letter-spacing: .05em; text-transform: uppercase; color: var(--muted);
+               border: 1px solid var(--border-strong); border-radius: 5px; padding: .12rem .4rem; height: fit-content; margin-top: .1rem; white-space: nowrap; }
+
+  /* ---- footer ---- */
+  footer { margin-top: 3.5rem; padding-top: 1.6rem; border-top: 1px solid var(--border); color: var(--muted); font-size: .85rem; }
+  footer .commits { display: flex; flex-wrap: wrap; gap: .5rem .9rem; margin-bottom: .8rem; }
+  footer .commit { font-family: var(--font-mono); font-size: .8rem; }
+  footer .commit .h { color: var(--accent); }
+  footer .path { font-family: var(--font-mono); font-size: .78rem; color: var(--faint); }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .stat, .gate, .phase, .todo .item { transition: border-color .18s ease; }
+    .gate:hover, .stat:hover { border-color: var(--border-strong); }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow"><span class="dot"></span> T-145 · engineering record · verified 1:1 port</div>
+    <h1>Backend rewrite:
+      <span class="migration"><span class="from">Go</span><span class="arrow">→</span><span class="to">Rust</span></span>
+    </h1>
+    <p class="lede">The entire <code style="font-family:var(--font-mono);font-size:.9em">apps/website</code> backend was rewritten from Gin&nbsp;+&nbsp;GORM to Axum&nbsp;+&nbsp;sqlx, held to a byte-and-semantics parity bar across nine verification gates, then the Go code was deleted. Rust is now the sole backend.</p>
+
+    <div class="stats">
+      <div class="stat"><div class="n">84</div><div class="k">HTTP routes (verbs match)</div></div>
+      <div class="stat"><div class="n">29</div><div class="k">models · 12 enums · 47 values</div></div>
+      <div class="stat"><div class="n">76</div><div class="k">tests, 0 failed (68 Go → Rust)</div></div>
+      <div class="stat"><div class="n">18/18</div><div class="k">differential responses ≡</div></div>
+      <div class="stat"><div class="n">9/9</div><div class="k">verification gates green</div></div>
+      <div class="stat"><div class="n neg">−13,099</div><div class="k">lines of Go removed</div></div>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="idx">01</span> Verification gates <span class="rule"></span></h2>
+    <p class="note">Completeness is a scripted bijection (count-equality Go↔Rust); behavior is differential — a defined relation <b>≡</b> compared Go-vs-Rust (numbers by value, strings decoded, objects key-presence-sensitive, arrays ordered, temporal leaves exact). Any failure is a concrete, reproducible counterexample.</p>
+    <div class="gates">
+      <div class="gate"><div class="id">G1</div><div class="desc"><b>Route bijection</b> — <span>84 routes, <mono>@route</mono> tags = 84, verbs 9 DEL / 38 GET / 6 PATCH / 28 POST / 3 PUT match</span></div><div class="badge">PASS 84=84</div></div>
+      <div class="gate"><div class="id">G2</div><div class="desc"><b>Schema</b> — <span><mono>pg_dump --schema-only</mono> Go vs Rust, normalized diff</span></div><div class="badge">PASS 0 lines</div></div>
+      <div class="gate"><div class="id">G3</div><div class="desc"><b>Tests</b> — <span>all 68 Go tests represented (mapping table) + suite green</span></div><div class="badge">PASS 68→76</div></div>
+      <div class="gate"><div class="id">G4</div><div class="desc"><b>Codegen</b> — <span><mono>make schema-codegen</mono> → <mono>git diff</mono> empty (Rust + TS)</span></div><div class="badge">PASS</div></div>
+      <div class="gate"><div class="id">G5</div><div class="desc"><b>Differential</b> — <span>Go &amp; Rust on seeded DBs; every response ≡</span></div><div class="badge">PASS 18/18</div></div>
+      <div class="gate"><div class="id">G6</div><div class="desc"><b>Compiled mod doc</b> — <span>ModDoc(Rust) ≡ locked contract + schema-valid + field assertions</span></div><div class="badge">PASS</div></div>
+      <div class="gate"><div class="id">G7</div><div class="desc"><b>Concurrency</b> — <span>refresh single-winner (a) + ORBAT slot single-winner (b)</span></div><div class="badge">PASS a+b</div></div>
+      <div class="gate"><div class="id">G8</div><div class="desc"><b>Sanitizer</b> — <span>ammonia vs golden corpus + no-XSS property</span></div><div class="badge">PASS</div></div>
+      <div class="gate"><div class="id">G9</div><div class="desc"><b>Soft-delete</b> — <span>delete a row → hidden across every endpoint that reads it</span></div><div class="badge">PASS</div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">02</span> Phases <span class="rule"></span></h2>
+    <p class="note">A strict sequence — each phase ended green on <mono>cargo build</mono> plus its own gate before the next began. The G5 differential harness ran continuously from Phase&nbsp;6 onward.</p>
+    <div class="phases">
+      <div class="phase"><div class="marker">0</div><h3>Scaffold + CI swap</h3><p>Cargo workspace (axum 0.8, sqlx 0.9, tokio, jsonwebtoken 10, jsonschema, reqwest+rustls-ring, ammonia, governor), toolchain pin 1.95, minimal <code>bin/api.rs</code>, additive <code>rust-backend</code> CI job + <code>rust-*</code> make targets.</p></div>
+      <div class="phase gated"><div class="marker">1</div><h3>DB schema &amp; migrations <span class="gchip">G2</span></h3><p>Schema frozen from <code>pg_dump --schema-only</code> of a Go-migrated reference DB, iterated until the diff was empty. Connect + backoff + tuned pool; <code>refresh_leaderboard</code>.</p></div>
+      <div class="phase"><div class="marker">2</div><h3>Models + encoder contract</h3><p>29 structs / 12 enums, field order = Go. The anti-regression core: <code>go_time</code> serializer, omitempty via <code>skip_serializing_if</code>, <code>float8</code> casts, jsonb passthrough, <code>time_of_day::text</code>, 4 soft-delete tables.</p></div>
+      <div class="phase"><div class="marker">3</div><h3>Config + boot</h3><p>16 env vars (hard-fail on two), boot order mirroring Go, graceful SIGINT/SIGTERM shutdown, real client IP for rate-limiting.</p></div>
+      <div class="phase"><div class="marker">4</div><h3>Middleware</h3><p>request-id · logging · panic recovery · CORS (exact allow-list, never <code>*</code>) · rate-limit (per-IP global + strict prefixes) · body-limit (1&nbsp;MB, version POST → 256&nbsp;MB) · tier extractors preserving <b>mission_maker &gt; leader</b>.</p></div>
+      <div class="phase"><div class="marker">5</div><h3>Realtime SSE hub</h3><p><code>tokio::broadcast</code> per topic; two SSE endpoints (server-status = hub, audit = DB-poll) preserving frame format + <code>X-Accel-Buffering</code>.</p></div>
+      <div class="phase gated"><div class="marker">6</div><h3>Auth vertical <span class="gchip">G7a</span></h3><p>HS256 JWT, Discord OAuth2, and the rotating single-use refresh invariant verbatim: reuse-of-revoked ⇒ revoke family + 401; atomic conditional <code>UPDATE</code> with <code>rows_affected != 1</code> ⇒ reuse.</p></div>
+      <div class="phase gated"><div class="marker">7</div><h3>Contract &amp; codegen <span class="gchip">G4</span></h3><p>Rust target added to <code>codegen.mjs</code> (quicktype serde + rustfmt); two runtime validators re-implemented with <code>jsonschema</code>; schemas reached via <code>include_str!</code>.</p></div>
+      <div class="phase gated"><div class="marker">8</div><h3>Services <span class="gchip">G6 · G8</span></h3><p>The crown jewel <code>flatten_to_mod_document</code> (compiled mod doc, sorted keys, locked coord map, <code>NoSlots</code>) + ORBAT parse/derive, mortar, webhook, discord, role sync, audit, purge, sanitizer.</p></div>
+      <div class="phase gated"><div class="marker">9</div><h3>Handlers — 84 routes <span class="gchip">G1 · G5</span></h3><p>Every route, every envelope + status code. Heaviest: events (ORBAT + the <b>slot-claim race G7b</b>), missions (413/409, <code>/compiled</code> live), telemetry (idempotent ingest + MV refresh + SSE publish — closes the live loop).</p></div>
+      <div class="phase gated"><div class="marker">10</div><h3>Tests — 68 → 76 <span class="gchip">G3</span></h3><p>Every Go test mapped; mock-HTTP webhook/discord suites, the concurrency race, archive/soft-delete lifecycle, body-limit override, token purge. 0 failed.</p></div>
+      <div class="phase gated"><div class="marker">11</div><h3>Standards + differential + cutover <span class="gchip">G5</span></h3><p>G5 harness (Go vs Rust, seeded, ≡ 18/18), <code>make rust-ci</code> green, then the cutover — 85 <code>.go</code> files + module + Go verify scripts removed; CI / Makefile / codegen rewired to Rust.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">03</span> Encoder contract <span class="rule"></span></h2>
+    <p class="note">Go's <mono>encoding/json</mono> ≠ serde. Equivalence is canonical JSON equality, not byte-identity — each hazard has an exact resolution.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Hazard</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td class="k">§5 timestamps</td><td>44 fields — Go RFC3339Nano trims trailing-zero nanos (<code>.5</code> not <code>.500</code>) → custom <code>go_time</code> serializer</td></tr>
+          <tr><td class="k">§5b dates</td><td>2 <code>date</code> cols emit full <code>…T00:00:00Z</code> → decode as midnight <code>DateTime&lt;Utc&gt;</code></td></tr>
+          <tr><td class="k">§6 omitempty</td><td>~60 fields → <code>Option&lt;T&gt;</code> + <code>skip_serializing_if</code>; empty string → <code>str::is_empty</code></td></tr>
+          <tr><td class="k">§7 numeric</td><td>6 cols — sqlx decodes <code>numeric</code>→Decimal, never f64 → <code>CAST … AS float8</code></td></tr>
+          <tr><td class="k">§8 jsonb</td><td>2 cols pass Postgres bytes verbatim → <code>Json&lt;Box&lt;RawValue&gt;&gt;</code> passthrough</td></tr>
+          <tr><td class="k">§9 time_of_day</td><td><code>time</code> column, Go field <code>string</code> → <code>SELECT time_of_day::text</code></td></tr>
+          <tr><td class="k">inet ip</td><td>Go emits bare host; <code>::text</code> keeps <code>/32</code> → <code>host(ip)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">04</span> Bugs the process caught <span class="rule"></span></h2>
+    <p class="note">The gates and tests weren't ceremony — they surfaced nine real defects, two of them found only by the live differential.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Where</th><th>Bug</th><th>Caught by</th></tr></thead>
+        <tbody>
+          <tr><td class="k">leaderboard MV</td><td>matview <code>WITH NO DATA</code> → SELECT errors (invisible to G2)</td><td><span class="caught">dashboard test</span></td></tr>
+          <tr><td class="k">event_missions&nbsp;·&nbsp;matches</td><td>nullable timestamp, no default (GORM set it app-side)</td><td><span class="caught">events / telemetry</span></td></tr>
+          <tr><td class="k">status history</td><td>GORM-pluralized table <code>server_status_histories</code></td><td><span class="caught">telemetry test</span></td></tr>
+          <tr><td class="k">numeric writes</td><td><code>f64→numeric</code> needs <code>::float8::numeric</code> cast</td><td><span class="caught">telemetry test</span></td></tr>
+          <tr><td class="k">user directory</td><td>NULL <code>avatar_url</code> crashed a <code>String</code> decode → <code>COALESCE</code></td><td><span class="caught">events test</span></td></tr>
+          <tr><td class="k">inet ip</td><td><code>ip::text</code> kept the <code>/32</code> netmask → <code>host(ip)</code></td><td><span class="caught">G5 differential</span></td></tr>
+          <tr><td class="k">timezone</td><td>Go emitted a local offset; forced UTC</td><td><span class="caught">G5 differential</span></td></tr>
+          <tr><td class="k">export tier</td><td><code>/export</code> is mission_maker-tier (403 at extractor, not 404)</td><td><span class="caught">lifecycle test</span></td></tr>
+          <tr><td class="k">body limit</td><td>over-cap body on a JSON route → 400 (only CreateVersion → 413)</td><td><span class="caught">lifecycle test</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="idx">05</span> Remaining follow-ups <span class="rule"></span></h2>
+    <p class="note">The rewrite itself is done and committed. These are the loose ends worth tracking — none block the backend running.</p>
+    <div class="todo">
+      <div class="item"><span class="tag">ops</span><div><div class="t">Reset the dev database before <code>make api</code></div><div class="d"><code>make api</code> is now <code>cargo run --bin api</code> and migrates on boot; the dev <code>tbd_reforger</code> DB is Go-migrated (no <code>_sqlx_migrations</code>) → sqlx re-runs <code>0001</code> → "type already exists". Drop + recreate it.</div></div></div>
+      <div class="item"><span class="tag">port</span><div><div class="t">Port the two Go seed tools</div><div class="d"><code>cmd/seed</code> + <code>cmd/import-registry-items</code> weren't ported. For now, roles/registry seed via <code>make seed</code> (psql on the preserved <code>internal/db/seeds/*.sql</code>).</div></div></div>
+      <div class="item"><span class="tag">docs</span><div><div class="t">Doc sync (§Status / ROADMAP)</div><div class="d">Owned by the Composer agent per the repo's split. The two commits + the test-mapping artifact are the record to hand off.</div></div></div>
+      <div class="item"><span class="tag">ship</span><div><div class="t">Merge <code>t-145-rust-rewrite</code> → main</div><div class="d">The work sits on the worktree branch. Merging + running the full CI (rust-backend + frontend + schema jobs) is the final step to land it.</div></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="commits">
+      <span class="commit"><span class="h">9cc7a161</span> · Rust port (added alongside Go)</span>
+      <span class="commit"><span class="h">c05ddbc9</span> · cutover (Go deleted)</span>
+    </div>
+    <div class="path">records · .ai/artifacts/t145_rewrite_summary.md · .ai/artifacts/t145_phase10_test_mapping.md · scripts/website/run-differential.sh</div>
+  </footer>
+</div>
