@@ -15,3 +15,4 @@ pub mod dem;
 pub mod geometry;
 #[cfg(feature = "mission")]
 pub mod mission;
+pub mod spatial;

@@ -5,6 +5,7 @@
 
 use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, png_decode, sample};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
+use map_engine_core::spatial::point_index::PointIndex;
 use wasm_bindgen::prelude::*;
 
 // ---------------------------------------------------------------------------------------------
@@ -499,4 +500,46 @@ pub fn dem_decode_png_to_meters(
 pub fn flatten_mod_document(meta_json: &[u8], payload_json: &[u8]) -> Result<Vec<u8>, JsError> {
     map_engine_core::mission::flatten::flatten_mod_document_json(meta_json, payload_json)
         .map_err(|e| JsError::new(&e))
+}
+
+// ---------------------------------------------------------------------------------------------
+// spatial index (Phase 3 spike — the Rust replacement for the JS rbush)
+// ---------------------------------------------------------------------------------------------
+
+/// A grid point index over a slot SoA (parallel `x`/`y` columns; row index = handle). Queries
+/// return the same result set as the JS rbush (`slotSpatialIndex`/`worldSpatialIndex`).
+#[wasm_bindgen]
+pub struct SlotIndex {
+    inner: PointIndex,
+}
+
+#[wasm_bindgen]
+impl SlotIndex {
+    /// Build the index over parallel `x`/`y` columns. `cell` = grid cell size (world units).
+    #[must_use]
+    pub fn build(xs: &[f32], ys: &[f32], cell: f64) -> SlotIndex {
+        SlotIndex {
+            inner: PointIndex::build(xs.to_vec(), ys.to_vec(), cell),
+        }
+    }
+
+    /// Handles inside the inclusive bbox (rbush `pickRect`).
+    #[must_use]
+    pub fn pick_rect(&self, min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> Vec<u32> {
+        self.inner.pick_rect(min_x, min_y, max_x, max_y)
+    }
+
+    /// Nearest handle within a circular radius, or `-1` (rbush `pickNearest`).
+    #[must_use]
+    pub fn pick_nearest(&self, x: f64, y: f64, radius: f64) -> i32 {
+        self.inner
+            .pick_nearest(x, y, radius)
+            .map_or(-1, |i| i as i32)
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn size(&self) -> u32 {
+        self.inner.len() as u32
+    }
 }
