@@ -1745,6 +1745,8 @@ name = "map-engine-core"
 version = "0.1.0"
 dependencies = [
  "png",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -2459,6 +2461,7 @@ dependencies = [
  "hex",
  "jsonschema",
  "jsonwebtoken",
+ "map-engine-core",
  "rand 0.10.2",
  "reqwest",
  "rust_decimal",

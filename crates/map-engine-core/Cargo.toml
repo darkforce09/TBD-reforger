@@ -10,10 +10,14 @@ description = "Pure Rust compute core for the TBD Reforger map engine, geometry,
 [lib]
 name = "map_engine_core"
 
-# `png` (16-bit DEM decode) is behind a feature so the backend, which only needs the mission
-# compiler (Phase 2), never pulls it; the wasm shim enables it. Phase 3 adds `yrs` (`doc` feature).
+# `png` (16-bit DEM decode) and `mission` (compiler: serde/serde_json) are behind features so each
+# consumer pulls only what it needs — the backend enables `mission`, the wasm shim enables both,
+# a DEM-only build enables `png`. Phase 3 adds `yrs` (`doc` feature).
 [features]
 png = ["dep:png"]
+mission = ["dep:serde", "dep:serde_json"]
 
 [dependencies]
 png = { version = "0.17", optional = true }
+serde = { version = "1", features = ["derive"], optional = true }
+serde_json = { version = "1", optional = true }
