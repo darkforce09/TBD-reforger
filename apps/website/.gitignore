@@ -7,6 +7,10 @@
 *.test
 *.out
 
+# Rust build output (Cargo.lock IS committed — application, reproducible builds;
+# .sqlx/ IS committed — sqlx offline query cache for hermetic builds)
+/target/
+
 # Frontend
 frontend/node_modules/
 frontend/dist/

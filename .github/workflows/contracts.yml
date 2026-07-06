@@ -40,9 +40,14 @@ jobs:
         with:
           go-version: "1.26"
           cache-dependency-path: apps/website/go.sum
+      # T-145: Rust toolchain so codegen can rustfmt the generated serde projections.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0"
+          components: rustfmt
       - run: make schema-codegen
       - name: Fail if generated contract output is stale
-        run: git diff --exit-code -- apps/website/internal/contract apps/website/frontend/src/types/contract
+        run: git diff --exit-code -- apps/website/internal/contract apps/website/frontend/src/types/contract apps/website/src/contract/generated
 
   go-doc-lint:
     name: golangci-lint (revive exported-doc)

@@ -34,13 +34,13 @@ type RegistryitemsGen struct {
 }
 
 type RegistryItemsSchema struct {
-	// Slash-delimited browse path, e.g. NATO/Rifleman.
-	Category    string  `json:"category"`
-	DisplayName string  `json:"display_name"`
-	IconURL     *string `json:"icon_url,omitempty"`
-	Kind        Kind    `json:"kind"`
-	// Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.
-	ResourceName string `json:"resource_name"`
+	// Slash-delimited browse path, e.g. NATO/Rifleman.                                
+	Category                                                                   string  `json:"category"`
+	DisplayName                                                                string  `json:"display_name"`
+	IconURL                                                                    *string `json:"icon_url,omitempty"`
+	Kind                                                                       Kind    `json:"kind"`
+	// Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.        
+	ResourceName                                                               string  `json:"resource_name"`
 }
 
 type Kind string

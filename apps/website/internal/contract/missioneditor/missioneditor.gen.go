@@ -29,21 +29,21 @@ func (r *MissioneditorGen) Marshal() ([]byte, error) {
 // malformed payloads and the schemaVersion namespace confusion (a string here) before
 // persist.
 type MissioneditorGen struct {
-	// Lossless editor graph. The arrays are intentionally unconstrained (no per-item schema) so
-	// validation stays O(1) on missions with hundreds of thousands of slots.
-	Editor      *Editor                `json:"editor,omitempty"`
-	Environment map[string]interface{} `json:"environment,omitempty"`
-	Loadouts    map[string]interface{} `json:"loadouts,omitempty"`
-	Map         *Map                   `json:"map,omitempty"`
-	Markers     []interface{}          `json:"markers,omitempty"`
-	Objectives  []interface{}          `json:"objectives,omitempty"`
-	// Optional backend ORBAT contract (omitted on Save Version; the server derives it from
-	// editor).
-	Orbat []interface{} `json:"orbat,omitempty"`
-	// Editor-payload format version (integer; do not confuse with the canonical mission
-	// schemaVersion, which is a string).
-	SchemaVersion *int64        `json:"schemaVersion,omitempty"`
-	Vehicles      []interface{} `json:"vehicles,omitempty"`
+	// Lossless editor graph. The arrays are intentionally unconstrained (no per-item schema) so                       
+	// validation stays O(1) on missions with hundreds of thousands of slots.                                          
+	Editor                                                                                      *Editor                `json:"editor,omitempty"`
+	Environment                                                                                 map[string]interface{} `json:"environment,omitempty"`
+	Loadouts                                                                                    map[string]interface{} `json:"loadouts,omitempty"`
+	Map                                                                                         *Map                   `json:"map,omitempty"`
+	Markers                                                                                     []interface{}          `json:"markers,omitempty"`
+	Objectives                                                                                  []interface{}          `json:"objectives,omitempty"`
+	// Optional backend ORBAT contract (omitted on Save Version; the server derives it from                            
+	// editor).                                                                                                        
+	Orbat                                                                                       []interface{}          `json:"orbat,omitempty"`
+	// Editor-payload format version (integer; do not confuse with the canonical mission                               
+	// schemaVersion, which is a string).                                                                              
+	SchemaVersion                                                                               *int64                 `json:"schemaVersion,omitempty"`
+	Vehicles                                                                                    []interface{}          `json:"vehicles,omitempty"`
 }
 
 // Lossless editor graph. The arrays are intentionally unconstrained (no per-item schema) so

@@ -17,12 +17,14 @@ const repoRoot = resolve(root, "..", "..");
 const schemaDir = join(root, "schema");
 const tsOut = join(repoRoot, "apps", "website", "frontend", "src", "types", "contract");
 const goRoot = join(repoRoot, "apps", "website", "internal", "contract");
+// T-145 Rust port: serde projections live alongside the crate source.
+const rustRoot = join(repoRoot, "apps", "website", "src", "contract", "generated");
 
-// Schemas with a cross-boundary Go + TS projection.
+// Schemas with a cross-boundary Go + TS + Rust projection.
 const targets = [
-  { schema: "registry-items.schema.json", ts: "registryItems.ts", goPkg: "registryitems" },
-  { schema: "loadout-export.schema.json", ts: "loadoutExport.ts", goPkg: "loadout" },
-  { schema: "mission-editor-payload.schema.json", ts: "missionEditorPayload.ts", goPkg: "missioneditor" },
+  { schema: "registry-items.schema.json", ts: "registryItems.ts", goPkg: "registryitems", rust: "registry_items" },
+  { schema: "loadout-export.schema.json", ts: "loadoutExport.ts", goPkg: "loadout", rust: "loadout" },
+  { schema: "mission-editor-payload.schema.json", ts: "missionEditorPayload.ts", goPkg: "missioneditor", rust: "mission_editor" },
 ];
 
 // Schemas copied into the Go module so internal/contract can go:embed them for runtime validation.
@@ -37,6 +39,7 @@ const tsBanner = (s) => `/* eslint-disable */
 
 mkdirSync(tsOut, { recursive: true });
 mkdirSync(goRoot, { recursive: true });
+mkdirSync(rustRoot, { recursive: true });
 
 for (const t of targets) {
   const schemaPath = join(schemaDir, t.schema);
@@ -67,7 +70,25 @@ for (const t of targets) {
       `// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// Source: packages/tbd-schema/schema/${t.schema} — regenerate with: make schema-codegen`,
     ),
   );
-  console.log(`  ${t.schema} -> types/contract/${t.ts} + internal/contract/${t.goPkg}/`);
+  // Rust — quicktype serde structs (T-145 Rust port). include_str! reaches the
+  // canonical schemas directly, so no schema copy step is needed on the Rust side.
+  const rustFile = join(rustRoot, `${t.rust}.rs`);
+  execFileSync(
+    "npx",
+    ["quicktype", "-s", "schema", schemaPath, "-l", "rust", "--visibility", "public", "--derive-debug", "-o", rustFile],
+    { stdio: "inherit", cwd: root },
+  );
+  {
+    const banner = `// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// Source: packages/tbd-schema/schema/${t.schema} — regenerate with: make schema-codegen\n\n`;
+    writeFileSync(rustFile, banner + readFileSync(rustFile, "utf8"));
+    // Format so the committed output is rustfmt-stable (keeps codegen-drift + `cargo
+    // fmt --check` both green). rustfmt is on PATH via the rust toolchain.
+    execFileSync("rustfmt", ["--edition", "2024", rustFile], { stdio: "inherit" });
+  }
+
+  console.log(
+    `  ${t.schema} -> types/contract/${t.ts} + internal/contract/${t.goPkg}/ + src/contract/generated/${t.rust}.rs`,
+  );
 }
 
 // Mirror the validator's schemas into the Go module tree for go:embed.

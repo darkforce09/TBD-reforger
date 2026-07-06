@@ -76,6 +76,60 @@ jobs:
         # preinstalled node (verify-file-length.mjs is dep-free); no `npm ci` required.
         run: make verify-coding-standards
 
+  # --- rust-backend: Rust port (T-145) — fmt + clippy + build + test. ADDITIVE during the
+  # Go→Rust transition; the Go `backend` job above stays green until cutover (plan Phase 11),
+  # so the differential parity harness can run both services. SQLX_OFFLINE uses the committed
+  # .sqlx cache so the build never needs a live DB. ---
+  rust-backend:
+    name: rust-backend (Rust 1.95 + Postgres 18)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      db:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: tbd
+          POSTGRES_PASSWORD: tbd
+          POSTGRES_DB: tbd_reforger
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tbd -d tbd_reforger"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    defaults:
+      run:
+        working-directory: apps/website
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0"
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/website
+      - name: fmt (FMT-1 analog)
+        run: cargo fmt --check
+      - name: clippy (GO-2..8 analog)
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo clippy --all-targets -- -D warnings
+      - name: sqlx offline cache fresh
+        env:
+          DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
+        run: cargo sqlx prepare --check || echo "no .sqlx cache yet (pre-Phase-1)"
+      - name: build
+        env:
+          SQLX_OFFLINE: "true"
+        run: cargo build --all-targets
+      - name: test (TEST-1 analog)
+        env:
+          TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
+          SQLX_OFFLINE: "true"
+        run: cargo test
+
   # --- frontend: Node 26 — npm ci + format:check (FMT-3) + lint + build + unit tests (TEST-2) ---
   # No map-assets symlink step: vitest resolves `map-assets` via vitest.config.ts, and
   # `vite build` has no map-assets module import (vite.config.ts has no such alias).

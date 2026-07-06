@@ -1,0 +1,53 @@
+[package]
+name = "reforger-backend"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+description = "TBD Reforger platform backend — Rust port of the Go API (T-145)."
+license = "UNLICENSED"
+publish = false
+
+# One library crate holds every module; the three binaries mirror cmd/{api,seed,import-registry-items}.
+[lib]
+name = "reforger_backend"
+path = "src/lib.rs"
+
+[[bin]]
+name = "api"
+path = "src/bin/api.rs"
+
+[dependencies]
+ammonia = "4.1.3"
+anyhow = "1.0.103"
+async-stream = "0.3.6"
+axum = { version = "0.8.9", features = ["macros", "multipart"] }
+axum-extra = { version = "0.12.6", features = ["typed-header", "cookie"] }
+chrono = { version = "0.4.45", features = ["serde"] }
+csv = "1.4.0"
+dotenvy = "0.15.7"
+futures = "0.3.32"
+governor = "0.10.4"
+hex = "0.4.3"
+# default-features off drops the HTTP/$ref resolver (reqwest + aws-lc-rs C build);
+# our schemas are local/embedded, so core draft-2020-12 validation is all we need.
+jsonschema = { version = "0.46.10", default-features = false }
+# rust_crypto = pure-Rust HMAC/SHA backend for HS256 (no aws-lc-rs C dependency).
+jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
+rand = "0.10.2"
+reqwest = { version = "0.13.4", default-features = false, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
+rust_decimal = { version = "1.42.1", features = ["db-postgres"] }
+rustls = { version = "0.23.41", default-features = false, features = ["ring", "std", "tls12", "logging"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.150", features = ["raw_value"] }
+sha2 = "0.11.0"
+sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "tls-rustls", "postgres", "uuid", "chrono", "json", "macros", "migrate", "rust_decimal"] }
+subtle = "2.6.1"
+thiserror = "2.0.18"
+tokio = { version = "1.52.3", features = ["full"] }
+tokio-stream = { version = "0.1.18", features = ["sync"] }
+tower = { version = "0.5.3", features = ["util"] }
+tower-http = { version = "0.7.0", features = ["cors", "catch-panic", "fs", "trace", "limit", "timeout", "set-header"] }
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
+url = "2.5.8"
+uuid = { version = "1.23.4", features = ["v4", "serde"] }

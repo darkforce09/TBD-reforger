@@ -1,0 +1,6 @@
+[toolchain]
+# Pinned to the verified-installed toolchain (mirrors Go's ~/.local/go pin).
+# rustup resolves this per-checkout; do NOT install via dnf/rpm-ostree on Bazzite.
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
