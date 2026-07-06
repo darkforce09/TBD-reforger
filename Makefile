@@ -25,8 +25,8 @@ seed: ## Apply data seeds (Discord role mappings + registry catalog) to the runn
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
 	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/registry_dev.sql
 
-api: ## Run the Go API (loads apps/website/.env; runs migrations on boot)
-	cd $(WEB) && go run ./cmd/api
+api: ## Run the API (loads apps/website/.env; migrates on boot)
+	cd $(WEB) && cargo run --bin api
 
 web: map-assets-link ## Run the Vite dev server
 	cd $(WEB)/frontend && npm run dev
@@ -56,14 +56,14 @@ map-cartographic-everon: ## One-button Everon Map view (stylized cartographic): 
 map-cartographic-verify: ## Verify the Everon Map pyramid (complete z0–6 + manifest agreement, T-090.1.1)
 	VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
 
-test: ## Run Go unit tests
-	cd $(WEB) && go test ./...
+test: ## Run backend unit tests
+	$(MAKE) rust-test
 
-test-it: ## Run integration tests against the local DB (needs `make db-up`)
-	cd $(WEB) && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_reforger?sslmode=disable go test ./internal/handlers/...
+test-it: ## Run backend integration tests against the local DB (needs `make db-up`)
+	$(MAKE) rust-test-it
 
-build: ## Build the Go API and the frontend
-	cd $(WEB) && go build ./...
+build: ## Build the backend + the frontend
+	cd $(WEB) && cargo build --release --bin api
 	cd $(WEB)/frontend && npm run build
 
 tidy: ## Tidy Go modules
@@ -98,18 +98,14 @@ rust-ci: ## Rust CI gate locally — fmt + clippy + build + test-it (mirrors the
 schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency)
 	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-object-golden && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10
 
-schema-codegen: ## Regenerate Go + TS contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
+schema-codegen: ## Regenerate TS + Rust contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
 	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
-	gofmt -w $(WEB)/internal/contract
 
 verify-citations: ## Verify @contract citations + GO-7 @route route-match (DOCUMENTATION_STANDARDS §10, CODING_STANDARDS §2)
 	node packages/tbd-schema/scripts/verify-contract-citations.mjs
 
-verify-coding-standards: ## GO-9 imports + ERR-4 envelope + LOG-3 logging + SIZE file length + doc layout (CODING_STANDARDS §11)
+verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
 	$(MAKE) verify-doc-layout
-	@bash scripts/website/verify-handler-imports.sh
-	@bash scripts/website/verify-error-envelope.sh
-	@bash scripts/website/verify-handler-logging.sh
 	@node scripts/website/verify-file-length.mjs
 
 verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs
@@ -204,18 +200,10 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 # golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
 	$(MAKE) verify-editorconfig
-	$(MAKE) ci-local-backend
+	$(MAKE) rust-ci
 	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-frontend
 	$(MAKE) ci-local-schema
-
-ci-local-backend: ## CI gate: gofmt (FMT-1) + CI-1 + golangci-lint + go build + unit tests + test-it (needs `make db-up` @ :5434)
-	test -z "$$(gofmt -l $(WEB)/internal $(WEB)/cmd)"
-	@bash scripts/website/verify-ci1.sh
-	cd $(WEB) && golangci-lint run ./...
-	cd $(WEB) && go build ./...
-	cd $(WEB) && go test ./internal/services/... ./internal/middleware/... ./internal/realtime/... -count=1
-	$(MAKE) test-it
 
 ci-local-frontend: ## CI gate: npm ci + format:check (FMT-3) + lint + build + unit tests (run `nvm use` -> Node 26 first)
 	cd $(WEB)/frontend && npm ci && npm run format:check && npm run lint && npm run build && npm test

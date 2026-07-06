@@ -1,9 +1,9 @@
-// Contract codegen (DOCUMENTATION_STANDARDS §9.1). Generates the Go and TypeScript
+// Contract codegen (DOCUMENTATION_STANDARDS §9.1). Generates the TypeScript and Rust
 // projections of the shared JSON schemas so cross-boundary types are GENERATED, not
 // hand-copied. Tools (one Node toolchain): TypeScript via `json-schema-to-typescript`
-// (preserves exact wire field names); Go via `quicktype` (emits idiomatic structs with
-// correct `json:"..."` tags). It also copies the schemas the Go validator embeds into the
-// module tree, because go:embed cannot reach files outside apps/website/.
+// (preserves exact wire field names); Rust via `quicktype` (serde structs). The Rust
+// validator + kit-aliases reach the canonical schemas directly via include_str!, so no
+// schema-copy step is needed. (Go projection removed at the T-145 cutover.)
 //
 // Run via `make schema-codegen`. Generated outputs are marked DO NOT EDIT.
 import { compileFromFile } from "json-schema-to-typescript";
@@ -16,19 +16,15 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = resolve(root, "..", "..");
 const schemaDir = join(root, "schema");
 const tsOut = join(repoRoot, "apps", "website", "frontend", "src", "types", "contract");
-const goRoot = join(repoRoot, "apps", "website", "internal", "contract");
-// T-145 Rust port: serde projections live alongside the crate source.
+// T-145: serde projections live alongside the crate source.
 const rustRoot = join(repoRoot, "apps", "website", "src", "contract", "generated");
 
-// Schemas with a cross-boundary Go + TS + Rust projection.
+// Schemas with a cross-boundary TS + Rust projection.
 const targets = [
-  { schema: "registry-items.schema.json", ts: "registryItems.ts", goPkg: "registryitems", rust: "registry_items" },
-  { schema: "loadout-export.schema.json", ts: "loadoutExport.ts", goPkg: "loadout", rust: "loadout" },
-  { schema: "mission-editor-payload.schema.json", ts: "missionEditorPayload.ts", goPkg: "missioneditor", rust: "mission_editor" },
+  { schema: "registry-items.schema.json", ts: "registryItems.ts", rust: "registry_items" },
+  { schema: "loadout-export.schema.json", ts: "loadoutExport.ts", rust: "loadout" },
+  { schema: "mission-editor-payload.schema.json", ts: "missionEditorPayload.ts", rust: "mission_editor" },
 ];
-
-// Schemas copied into the Go module so internal/contract can go:embed them for runtime validation.
-const embedSchemas = ["mission-editor-payload.schema.json", "mission.schema.json"];
 
 const tsBanner = (s) => `/* eslint-disable */
 /**
@@ -38,7 +34,6 @@ const tsBanner = (s) => `/* eslint-disable */
  */`;
 
 mkdirSync(tsOut, { recursive: true });
-mkdirSync(goRoot, { recursive: true });
 mkdirSync(rustRoot, { recursive: true });
 
 for (const t of targets) {
@@ -53,62 +48,31 @@ for (const t of targets) {
   });
   writeFileSync(join(tsOut, t.ts), ts);
 
-  // Go — quicktype emits structs with correct json tags + a "DO NOT EDIT" banner.
-  const pkgDir = join(goRoot, t.goPkg);
-  mkdirSync(pkgDir, { recursive: true });
-  const goFile = join(pkgDir, `${t.goPkg}.gen.go`);
-  execFileSync(
-    "npx",
-    ["quicktype", "-s", "schema", schemaPath, "-l", "go", "--package", t.goPkg, "-o", goFile],
-    { stdio: "inherit", cwd: root },
-  );
-  const src = readFileSync(goFile, "utf8");
-  writeFileSync(
-    goFile,
-    src.replace(
-      "// Code generated from JSON Schema using quicktype. DO NOT EDIT.",
-      `// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// Source: packages/tbd-schema/schema/${t.schema} — regenerate with: make schema-codegen`,
-    ),
-  );
-  // Rust — quicktype serde structs (T-145 Rust port). include_str! reaches the
-  // canonical schemas directly, so no schema copy step is needed on the Rust side.
+  // Rust — quicktype serde structs. include_str! reaches the canonical schemas directly,
+  // so no schema copy step is needed on the Rust side.
   const rustFile = join(rustRoot, `${t.rust}.rs`);
   execFileSync(
     "npx",
     ["quicktype", "-s", "schema", schemaPath, "-l", "rust", "--visibility", "public", "--derive-debug", "-o", rustFile],
     { stdio: "inherit", cwd: root },
   );
-  {
-    const banner = `// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// Source: packages/tbd-schema/schema/${t.schema} — regenerate with: make schema-codegen\n\n`;
-    writeFileSync(rustFile, banner + readFileSync(rustFile, "utf8"));
-    // Format so the committed output is rustfmt-stable (keeps codegen-drift + `cargo
-    // fmt --check` both green). rustfmt is on PATH via the rust toolchain.
-    execFileSync("rustfmt", ["--edition", "2024", rustFile], { stdio: "inherit" });
-  }
+  const banner = `// Code generated from JSON Schema using quicktype. DO NOT EDIT.\n// Source: packages/tbd-schema/schema/${t.schema} — regenerate with: make schema-codegen\n\n`;
+  writeFileSync(rustFile, banner + readFileSync(rustFile, "utf8"));
+  // Format so the committed output is rustfmt-stable (keeps codegen-drift + `cargo fmt
+  // --check` both green). rustfmt is on PATH via the rust toolchain.
+  execFileSync("rustfmt", ["--edition", "2024", rustFile], { stdio: "inherit" });
 
-  console.log(
-    `  ${t.schema} -> types/contract/${t.ts} + internal/contract/${t.goPkg}/ + src/contract/generated/${t.rust}.rs`,
-  );
+  console.log(`  ${t.schema} -> types/contract/${t.ts} + src/contract/generated/${t.rust}.rs`);
 }
 
-// Mirror the validator's schemas into the Go module tree for go:embed.
-const embedDir = join(goRoot, "schema");
-mkdirSync(embedDir, { recursive: true });
-for (const s of embedSchemas) {
-  copyFileSync(join(schemaDir, s), join(embedDir, s));
-  console.log(`  embed: internal/contract/schema/${s}`);
-}
-
-// Registry data both flatten implementations consume (T-092.2): canonical copy lives in
-// packages/tbd-schema/registry/; mirrored for go:embed and for the Vite JSON import.
+// Registry data the flatten implementation consumes (T-092.2): canonical copy lives in
+// packages/tbd-schema/registry/; the Rust side include_str!s it directly, so only the
+// Vite JSON import copy is mirrored here.
 const registryAssets = ["kit-aliases.json"];
 const registrySrc = join(root, "registry");
-const goRegistryDir = join(goRoot, "registry");
-mkdirSync(goRegistryDir, { recursive: true });
 for (const f of registryAssets) {
-  copyFileSync(join(registrySrc, f), join(goRegistryDir, f));
   copyFileSync(join(registrySrc, f), join(tsOut, f));
-  console.log(`  registry: internal/contract/registry/${f} + types/contract/${f}`);
+  console.log(`  registry: types/contract/${f}`);
 }
 
 console.log("schema-codegen complete");

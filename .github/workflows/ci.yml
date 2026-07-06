@@ -20,66 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  # --- backend: Go 1.26 + Postgres 18 — gofmt (FMT-1) + golangci + go build + unit + integration tests (TEST-1/GO-2..8/COMP-1) ---
-  # Step order mirrors `make ci-local-backend` exactly: gofmt -> golangci-lint -> build -> unit tests -> integration tests.
-  backend:
-    name: backend (Go 1.26 + Postgres 18)
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    services:
-      # Matches apps/website/docker-compose.yml (image + creds). CI reaches the DB at
-      # localhost:5432 (the service); local dev uses host 5434 via compose (unchanged).
-      # The integration tests self-migrate; no seed step. GitHub waits on the health-check
-      # below before any step runs, so no manual sleep/wait loop is needed.
-      db:
-        image: postgres:18-alpine
-        env:
-          POSTGRES_USER: tbd
-          POSTGRES_PASSWORD: tbd
-          POSTGRES_DB: tbd_reforger
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U tbd -d tbd_reforger"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v6
-        with:
-          go-version: "1.26"
-          cache-dependency-path: apps/website/go.sum
-      - name: gofmt (FMT-1)
-        # Run from repo root so the paths match CODING_STANDARDS.md §10 FMT-1 verbatim.
-        run: test -z "$(gofmt -l apps/website/internal apps/website/cmd)"
-      - name: golangci-lint (GO-2..GO-8, COMP-1)
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: latest
-          working-directory: apps/website
-          # NO only-new-issues — full-repo gate (CI-1)
-      - name: go build
-        working-directory: apps/website
-        run: go build ./...
-      - name: unit tests (services/middleware/realtime)
-        # T-130.3 F2B-06: these packages were only covered locally; no DB needed.
-        working-directory: apps/website
-        run: go test ./internal/services/... ./internal/middleware/... ./internal/realtime/... -count=1
-      - name: integration tests (TEST-1)
-        working-directory: apps/website
-        env:
-          TEST_DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
-        run: go test ./internal/handlers/... -count=1
-      - name: coding-standards gate (GO-9/ERR-4/LOG-3/SIZE)
-        # Repo root (Makefile + scripts live here). Uses Go from setup-go + the runner's
-        # preinstalled node (verify-file-length.mjs is dep-free); no `npm ci` required.
-        run: make verify-coding-standards
-
-  # --- rust-backend: Rust port (T-145) — fmt + clippy + build + test. ADDITIVE during the
-  # Go→Rust transition; the Go `backend` job above stays green until cutover (plan Phase 11),
-  # so the differential parity harness can run both services. SQLX_OFFLINE uses the committed
-  # .sqlx cache so the build never needs a live DB. ---
+  # --- backend: Rust 1.95 + Postgres 18 — the sole backend after the T-145 Go->Rust
+  # cutover. fmt (FMT-1) + clippy (GO-2..8 analog) + build + integration tests (TEST-1). ---
   rust-backend:
     name: rust-backend (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
@@ -116,10 +58,6 @@ jobs:
         env:
           SQLX_OFFLINE: "true"
         run: cargo clippy --all-targets -- -D warnings
-      - name: sqlx offline cache fresh
-        env:
-          DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
-        run: cargo sqlx prepare --check || echo "no .sqlx cache yet (pre-Phase-1)"
       - name: build
         env:
           SQLX_OFFLINE: "true"
