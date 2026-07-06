@@ -47,22 +47,22 @@ struct Cell {
 /// Edge pairs per non-saddle case. Edges: 0=A bottom, 1=B right, 2=C top, 3=D left. Cases 5/10 are
 /// saddles (empty here — resolved by `saddle_edges`). Mirror of `CASE_EDGES` (`contours.ts:43`).
 const CASE_EDGES: [&[(usize, usize)]; 16] = [
-    &[],             // 0
-    &[(0, 3)],       // 1
-    &[(0, 1)],       // 2
-    &[(1, 3)],       // 3
-    &[(1, 2)],       // 4
-    &[],             // 5 saddle
-    &[(0, 2)],       // 6
-    &[(2, 3)],       // 7
-    &[(2, 3)],       // 8
-    &[(0, 2)],       // 9
-    &[],             // 10 saddle
-    &[(1, 2)],       // 11
-    &[(1, 3)],       // 12
-    &[(0, 1)],       // 13
-    &[(0, 3)],       // 14
-    &[],             // 15
+    &[],       // 0
+    &[(0, 3)], // 1
+    &[(0, 1)], // 2
+    &[(1, 3)], // 3
+    &[(1, 2)], // 4
+    &[],       // 5 saddle
+    &[(0, 2)], // 6
+    &[(2, 3)], // 7
+    &[(2, 3)], // 8
+    &[(0, 2)], // 9
+    &[],       // 10 saddle
+    &[(1, 2)], // 11
+    &[(1, 3)], // 12
+    &[(0, 1)], // 13
+    &[(0, 3)], // 14
+    &[],       // 15
 ];
 
 /// Linear iso crossing between two corners (they straddle `level`). Mirror of `lerp`.
@@ -119,11 +119,7 @@ fn saddle_edges(c: u8, center_in: bool) -> [(usize, usize); 2] {
     let connected = [(0, 1), (2, 3)];
     let split = [(0, 3), (1, 2)];
     if c == 5 {
-        if center_in {
-            connected
-        } else {
-            split
-        }
+        if center_in { connected } else { split }
     } else if center_in {
         split
     } else {

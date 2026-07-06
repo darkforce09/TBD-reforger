@@ -68,8 +68,8 @@ wasm: ## Build the map-engine wasm core (wasm-pack → apps/website/frontend/src
 
 wasm-ci: ## Fmt + clippy + test the map-engine core/wasm crates (T-145)
 	cargo fmt --check -p map-engine-core -p map-engine-wasm
-	cargo clippy -p map-engine-core -p map-engine-wasm --all-targets -- -D warnings
-	cargo test -p map-engine-core
+	cargo clippy -p map-engine-core -p map-engine-wasm --all-targets --all-features -- -D warnings
+	cargo test -p map-engine-core --all-features
 
 build: wasm ## Build the wasm core + the backend + the frontend
 	cd $(WEB) && cargo build --release --bin api

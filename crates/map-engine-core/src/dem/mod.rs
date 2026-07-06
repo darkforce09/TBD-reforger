@@ -3,6 +3,8 @@
 
 pub mod downsample;
 pub mod hillshade;
+#[cfg(feature = "png")]
+pub mod png_decode;
 pub mod sample;
 
 pub use downsample::DemVectorGrid;

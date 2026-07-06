@@ -10,6 +10,10 @@ description = "Pure Rust compute core for the TBD Reforger map engine, geometry,
 [lib]
 name = "map_engine_core"
 
-# Phase 1 adds `image`/`png` behind a `png` feature; Phase 3 adds `yrs` behind a `doc` feature.
-# Kept dependency-free at Phase 0 so the native + wasm builds are trivially reproducible.
+# `png` (16-bit DEM decode) is behind a feature so the backend, which only needs the mission
+# compiler (Phase 2), never pulls it; the wasm shim enables it. Phase 3 adds `yrs` (`doc` feature).
+[features]
+png = ["dep:png"]
+
 [dependencies]
+png = { version = "0.17", optional = true }

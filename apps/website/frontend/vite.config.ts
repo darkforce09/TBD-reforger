@@ -40,16 +40,9 @@ export default defineConfig({
     format: 'es',
     plugins: () => [wasm(), tsconfigPaths()],
   },
-  resolve: {
-    alias: {
-      // pngjs 7's node entry (lib/png.js) pulls node `util`/`stream` and crashes in the
-      // browser ("util.inherits is not a function"). Its self-contained browserified UMD
-      // build ships its own Buffer/util shim and a working PNG.sync.read — use it in the
-      // app (T-091.1 DEM decode). vitest keeps the node entry (its own resolver, no alias).
-      // NOTE (T-145 Phase 1): removed once dem::png (Rust) replaces the pngjs decode path.
-      pngjs: 'pngjs/browser',
-    },
-  },
+  // (T-145 Phase 1) The pngjs → pngjs/browser alias is gone: DEM PNG decode now runs in the
+  // Rust/wasm core (dem::png_decode), so the app no longer bundles pngjs or the buffer polyfill.
+  // pngjs remains a devDependency used only by the DEM parity tests (node resolver, no alias).
   server: {
     proxy: {
       // 10-min timeouts (incoming + outgoing socket) so a large mission-version upload

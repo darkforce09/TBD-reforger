@@ -3,7 +3,7 @@
 //! Grids/geometry cross as an opaque `DemGrid` handle + result structs whose getters clone the
 //! backing `Vec`s into JS typed arrays.
 
-use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, sample};
+use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, png_decode, sample};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
 use wasm_bindgen::prelude::*;
 
@@ -437,4 +437,50 @@ pub fn hillshade(meters: &[f32], src_w: u32, src_h: u32) -> HillshadeResult {
     HillshadeResult {
         inner: hillshade::build_hillshade_image(meters, src_w as usize, src_h as usize),
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// dem::png_decode
+// ---------------------------------------------------------------------------------------------
+
+/// Decoded DEM: the meters cache + raster dims.
+#[wasm_bindgen]
+pub struct DecodedDem {
+    inner: png_decode::DecodedDem,
+}
+
+#[wasm_bindgen]
+impl DecodedDem {
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn width(&self) -> u32 {
+        self.inner.width
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn height(&self) -> u32 {
+        self.inner.height
+    }
+    /// A copy of the f32 meters cache (the JS stores it as its `Float32Array` DEM cache).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn meters(&self) -> Vec<f32> {
+        self.inner.meters.clone()
+    }
+}
+
+/// Decode a 16-bit grayscale DEM PNG straight to the meters cache. Replaces the pngjs decode
+/// (`DemTexture.ts`). Throws (JS) on a malformed / non-16-bit-grayscale PNG.
+///
+/// # Errors
+/// Returns a JS error on decode failure or an unexpected pixel format.
+#[wasm_bindgen]
+pub fn dem_decode_png_to_meters(
+    bytes: &[u8],
+    min_m: f64,
+    max_m: f64,
+) -> Result<DecodedDem, JsError> {
+    png_decode::decode_png_to_meters(bytes, min_m, max_m)
+        .map(|inner| DecodedDem { inner })
+        .map_err(|e| JsError::new(&e.to_string()))
 }

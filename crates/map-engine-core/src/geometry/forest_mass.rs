@@ -140,10 +140,30 @@ impl Builder {
         let x1 = x0 + self.cell_m;
         let y1 = y0 + self.cell_m;
         let wc = [
-            WalkCorner { v: v00, inside: in00, x: x0, y: y0 },
-            WalkCorner { v: v10, inside: in10, x: x1, y: y0 },
-            WalkCorner { v: v11, inside: in11, x: x1, y: y1 },
-            WalkCorner { v: v01, inside: in01, x: x0, y: y1 },
+            WalkCorner {
+                v: v00,
+                inside: in00,
+                x: x0,
+                y: y0,
+            },
+            WalkCorner {
+                v: v10,
+                inside: in10,
+                x: x1,
+                y: y0,
+            },
+            WalkCorner {
+                v: v11,
+                inside: in11,
+                x: x1,
+                y: y1,
+            },
+            WalkCorner {
+                v: v01,
+                inside: in01,
+                x: x0,
+                y: y1,
+            },
         ];
         let saddle = in00 == in11 && in10 == in01 && in00 != in10;
         if saddle && (v00 + v10 + v11 + v01) / 4.0 < self.iso {

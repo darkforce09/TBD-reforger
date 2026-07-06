@@ -98,10 +98,7 @@ impl Builder {
         let Some(rs) = *run_start else { return };
         let x0 = origin_x + rs as f64 * cell_x;
         let x1 = origin_x + end_plus_1 as f64 * cell_x;
-        self.emit_ring(
-            &[(x0, y0), (x1, y0), (x1, y1), (x0, y1)],
-            rgba,
-        );
+        self.emit_ring(&[(x0, y0), (x1, y0), (x1, y1), (x0, y1)], rgba);
         *run_start = None;
     }
 
@@ -109,9 +106,8 @@ impl Builder {
     /// is outside.
     fn emit_boundary_cell(&mut self, corners: [Corner; 4], iso: f64, rgba: [u8; 4]) {
         let [c00, c10, c11, c01] = corners;
-        let saddle = c00.inside == c11.inside
-            && c10.inside == c01.inside
-            && c00.inside != c10.inside;
+        let saddle =
+            c00.inside == c11.inside && c10.inside == c01.inside && c00.inside != c10.inside;
         if saddle && (c00.v + c10.v + c11.v + c01.v) / 4.0 > iso {
             for k in 0..4 {
                 let c = corners[k];
@@ -121,7 +117,11 @@ impl Builder {
                 let prev = corners[(k + 3) % 4];
                 let next = corners[(k + 1) % 4];
                 self.emit_ring(
-                    &[(c.x, c.y), crossing(&c, &next, iso), crossing(&c, &prev, iso)],
+                    &[
+                        (c.x, c.y),
+                        crossing(&c, &next, iso),
+                        crossing(&c, &prev, iso),
+                    ],
                     rgba,
                 );
             }
@@ -166,8 +166,7 @@ pub fn build_sea_band_geometry(grid: &DemVectorGrid) -> SeaBandGeometry {
                 let in10 = v10 <= iso;
                 let in11 = v11 <= iso;
                 let in01 = v01 <= iso;
-                let inside_count =
-                    in00 as u8 + in10 as u8 + in11 as u8 + in01 as u8;
+                let inside_count = in00 as u8 + in10 as u8 + in11 as u8 + in01 as u8;
                 if inside_count == 4 {
                     if run_start.is_none() {
                         run_start = Some(i);
@@ -182,16 +181,44 @@ pub fn build_sea_band_geometry(grid: &DemVectorGrid) -> SeaBandGeometry {
                 let x1 = x0 + grid.cell_x;
                 b.emit_boundary_cell(
                     [
-                        Corner { v: v00, inside: in00, x: x0, y: y0 },
-                        Corner { v: v10, inside: in10, x: x1, y: y0 },
-                        Corner { v: v11, inside: in11, x: x1, y: y1 },
-                        Corner { v: v01, inside: in01, x: x0, y: y1 },
+                        Corner {
+                            v: v00,
+                            inside: in00,
+                            x: x0,
+                            y: y0,
+                        },
+                        Corner {
+                            v: v10,
+                            inside: in10,
+                            x: x1,
+                            y: y0,
+                        },
+                        Corner {
+                            v: v11,
+                            inside: in11,
+                            x: x1,
+                            y: y1,
+                        },
+                        Corner {
+                            v: v01,
+                            inside: in01,
+                            x: x0,
+                            y: y1,
+                        },
                     ],
                     iso,
                     rgba,
                 );
             }
-            b.flush_run(&mut run_start, cols - 1, grid.origin_x, grid.cell_x, y0, y1, rgba);
+            b.flush_run(
+                &mut run_start,
+                cols - 1,
+                grid.origin_x,
+                grid.cell_x,
+                y0,
+                y1,
+                rgba,
+            );
         }
     }
 

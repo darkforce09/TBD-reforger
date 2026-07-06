@@ -131,11 +131,17 @@ mod tests {
     fn truncated() {
         let buf = encode(32, 2, 2, &[&[1, 2, 3, 4]]);
         let short = &buf[..buf.len() - 2];
-        assert!(matches!(decode_tbdd(short), Err(TbddError::Truncated { .. })));
+        assert!(matches!(
+            decode_tbdd(short),
+            Err(TbddError::Truncated { .. })
+        ));
     }
 
     #[test]
     fn short_header() {
-        assert!(matches!(decode_tbdd(&[1, 2, 3]), Err(TbddError::Short { .. })));
+        assert!(matches!(
+            decode_tbdd(&[1, 2, 3]),
+            Err(TbddError::Short { .. })
+        ));
     }
 }
