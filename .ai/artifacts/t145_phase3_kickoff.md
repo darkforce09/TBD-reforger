@@ -7,7 +7,7 @@ oracle. Full plan: `~/.claude/plans/idea-our-current-system-mossy-island.md`. Li
 
 ## Where things stand (branch `t-145-rust-rewrite`)
 
-Phases 0–2 **complete**; **Phase 3.0 spike headless-complete** (`a7fdd44c`→`09b85f37`) — all six §9.1 criteria proven headlessly. **Only criterion 6 (≥60 fps deck) + the IndexedDB round-trip remain, and both are operator-verified in-browser** at `/_spike/doc-core` (see the checklist at the bottom of this file). Next after browser sign-off: **Phase 3.1 cutover**.
+Phases 0–2 **complete**; **Phase 3.0 spike GATE CLOSED** (`a7fdd44c`→`09b85f37`) — **all six §9.1 criteria proven** (headless + browser). Operator sign-off 2026-07-07 @ `/_spike/doc-core`: **90 fps sustained pan @ 1,000,000 slots** (zero-copy `Float32Array`→deck; target was ≥60 @500k) + IndexedDB round-trip **Save 156 MB → Reload 1M in 3.89 s → identical render**. **Next: Phase 3.1 cutover.**
 
 | commit | what |
 |---|---|
@@ -96,7 +96,7 @@ Six criteria (plan §9.1). **All proven headlessly** (commits in the table above
 - **(5 pick):** `spatial::point_index` + wasm `SlotIndex` set-equal to `RBush` (100k) — `cae627d3`.
 - **(5 cluster):** `spatial::cluster` + `cluster.parity.test.ts` vs the real `slotClusterIndex` supercluster — **EXACT** on well-separated blobs + conservation on dense.
 
-**Operator browser checklist (the only remaining sign-off — criterion 6 + IDB):**
+**Operator browser checklist — PASSED 2026-07-07 (90 fps @ 1M pan; IDB 156 MB→1M round-trip identical). Repro:**
 1. `make wasm` (regenerate the gitignored pkg) → `make web` → open **`http://localhost:5173/_spike/doc-core`** (no login; it's a top-level dev route).
 2. Click **500k** → **Generate**. Pan + zoom continuously; the **FPS readout must hold ≥ 60** (on a 60 Hz display). Then try **1000k** as a stress case.
 3. Click **Save→IDB**, then **Reload←IDB** — the same slot field should re-render identically (proves the yrs update-stream IndexedDB round-trip). **Clear IDB** resets it.
