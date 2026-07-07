@@ -6,9 +6,12 @@ Standalone brief to continue the **doc-core cutover to `yrs`**. Goal: make the w
 
 ## Where things stand (branch `t-145-rust-rewrite`, tree clean)
 
-The read side + the mutator port (batches 1–2) are done, committed, green. Gates: **cargo
-`-p map-engine-core --all-features` 54/54**, **`make wasm-ci` clean** (clippy `--all-features -D
-warnings`), **frontend `npm test` 308/308**, `npm run build`+`lint`+`format:check` clean.
+The read side + the **complete mutator port (batches 1–3)** are done, committed, green — the Rust
+write API now mirrors **every** `ydoc.ts` mutator, each byte-parity-proven. Gates: **cargo
+`-p map-engine-core --all-features` 55/55** (incl. the reseed native test), **`make wasm-ci` clean**
+(clippy `--all-features -D warnings`), **frontend `npm test` 323/323** (`mutatorParity` 24),
+`npm run build`+`lint` clean (`format:check` = 23 pre-existing non-`worldmap` debt files, none ours).
+**Next = the flip** (see below). Tip `8ca31ddf`.
 
 | commit | what |
 |---|---|
@@ -19,14 +22,23 @@ warnings`), **frontend `npm test` 308/308**, `npm run build`+`lint`+`format:chec
 | `dd2233a6` | 3.2.3 — `slots_json` + `snapshotFromShadow(shadow): MapSnapshot` (SoA f32 = render-only; exact readers use JSON), proven `.toEqual(docToSnapshot)` |
 | `184c1163` | batch 1 — `update_slot`/`update_slot_position`/`move_entities`/`remove_slots` (byte-parity) |
 | `84071eaf` | batch 2 — `add_editor_layer`/`rename_editor_layer`/`reparent_editor_layer`(cycle guard)/`move_slot_to_layer` (byte-parity) |
+| `37d742f3` | batch 3a — full `add_slot`(squad/layer + all fields) + `add_faction`/`add_squad` + `factions` handle (byte-parity) |
+| `0e11a10a` | batch 3b — `paste_slots` (bulk: centroid/clamp/per-squad index, batched appends) (byte-parity) |
+| `4c40c8d1` | batch 3c — `remove_editor_layer`(reseed cascade) + `set_title`/`update_environment`/`apply_row_meta`/`seed_meta` + `meta` handle + `doc`→serde_json (byte-parity + reseed native test) |
+| `8ca31ddf` | batch 3d — `hydrate` lossless loader (lossy orbat→editor transform stays JS) (byte-parity) |
 
-**Rust `MissionDoc` write API so far** (`crates/map-engine-core/src/doc/store.rs`): `apply_update`,
-`encode_state`, `materialize` (SoA), `small_maps_json`, `slots_json`, `undo`/`redo`/`can_*`; mutators
-`add_slot` **(spike: SIMPLIFIED — slot-only, no squad/layer wiring, no index/tag/assetId/loadoutId)**,
-`set_slot_position`, `remove_slot`, `seed_random`, `update_slot`, `update_slot_position`,
-`move_entities`, `remove_slots`, `add_editor_layer`, `rename_editor_layer`, `reparent_editor_layer`,
-`move_slot_to_layer`. Root map handles held: `slots`, `squads`, `editor_layers` (undo-scoped). **No
-`factions` handle yet** — add it for `add_faction`.
+**Rust `MissionDoc` write API (COMPLETE)** (`crates/map-engine-core/src/doc/store.rs`): readers
+`apply_update`, `encode_state`, `materialize` (SoA), `small_maps_json`, `slots_json`,
+`undo`/`redo`/`can_*`; **full-fidelity mutators** `add_slot`(squad/layer wiring + all fields),
+`add_faction`, `add_squad`, `paste_slots`, `update_slot`, `update_slot_position`, `move_entities`,
+`remove_slots`, `add_editor_layer`, `rename_editor_layer`, `reparent_editor_layer`,
+`move_slot_to_layer`, `remove_editor_layer`(reseed), `set_title`, `update_environment`,
+`apply_row_meta`, `seed_meta`, `hydrate`; spike-only `set_slot_position`/`remove_slot`/`seed_random`
+remain. Root handles (all undo-scoped): `slots`, `squads`, `factions`, `editor_layers`, `meta`
+(the 5 non-tracked maps — loadouts/items/objectives/vehicles/markers — are `get_or_insert`'d inline
+in `hydrate`). Shared helpers: `append_id`, `read_id_array`, `remove_slots_in_txn`, `read_env_map`,
+`json_str_to_any`/`value_to_any`, `load_rows`/`load_row`, `position_any`, `retain_ids`. **JS mints
+all ids** and passes them + resolved squad/layer + (for `hydrate`) the editor-shaped payload in.
 
 ## Strategy (locked)
 
@@ -52,28 +64,26 @@ reversible, test-only** (no app change).
    id to Rust**) → `expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))`. Ids match (base-synced),
    so the whole `MapSnapshot` compares — real byte-parity.
 
-## Batch 3 — remaining mutators (do next)
+## Batch 3 — DONE (`37d742f3` → `8ca31ddf`; plan `~/.claude/plans/plan-written-committed-replicated-gosling.md`)
 
-- **Upgrade `add_slot` to full fidelity** (the flip needs it): the spike `add_slot` is slot-only. New
-  signature ~ `add_slot(id, squad_id, layer_id, index, role, tag: Option<String>, asset_id:
-  Option<String>, x, y, z, rotation)` — write the full Slot + append to `squad.slotIds` +
-  `layer.entityIds`. `ensureDefaultSquad`/`ensureDefaultLayer` stay in the **JS wrapper** (mint
-  faction/squad/layer ids there, create via `add_faction`/`add_squad`/`add_editor_layer`, pass concrete
-  `squad_id`/`layer_id` in). Parity test: drive Yjs `addSlot` (empty doc → mints faction+squad+layer+slot
-  ids), read those 4 ids back from the doc, replay via the Rust primitives with the same ids, compare.
-- **`add_faction`** (`ydoc.addFaction`), **`add_squad`** (append to `faction.squadIds`). Add the
-  `factions` root handle + undo scope.
-- **`paste_slots`** (bulk, `ydoc.pasteSlots`@180): centroid translate to `anchorAt` (or +20 nudge),
-  per-slot re-attach to its source squad (or default), file into layer, clamp x/y, z=0. JS mints the
-  k ids + resolves squad/layer + passes arrays; Rust does the translate/clamp + writes in one txn.
-- **`remove_editor_layer`** (`ydoc.removeEditorLayer`@500): collect the subtree (id + descendants),
-  delete each filed slot (the `remove_slots` cascade) + the layers; **if the subtree was every layer,
-  reseed a default** — JS passes a `reseed_id` used only then (matches "JS mints ids"). Parity-test the
-  non-reseed case byte-exact; reseed case = structural native test.
-- **meta**: `set_title`, `update_environment` (merge), `apply_row_meta`, `seed_meta`. Needs a `meta`
-  root handle (already read via `get_or_insert_map("meta")` in `small_maps_json`).
-- **`hydrate`** (`ydoc.hydrateMissionDoc`@535 + `…WithProgress`): rebuild the whole doc from a payload
-  (lossless `editor` path + lossy `orbat` rebuild). Big; the lossy path mints ids (JS passes them).
+All shipped byte-parity, no app change (4 reversible sub-commits — see the table above). Every
+`ydoc.ts` mutator now has a Rust twin proven via `snapshotFromShadow(yrs).toEqual(docToSnapshot(md))`
+in `mutatorParity.test.ts` (batches 3a–3d, 13 new cases) + a `remove_editor_layer` reseed native test.
+**Design decisions worth carrying to the flip:**
+- **`hydrate` is a lossless verbatim loader** — the lossy `orbat[]`→graph rebuild (which mints ids)
+  **stays in JS**; the flip's `hydrateMissionDoc` wrapper runs the existing lossy transform → an
+  `editor`-shaped payload → `wasm.hydrate(payloadJson, defaultLayerId)`. Proven by the "lossy orbat →
+  JS-minted editor dicts reconstructed byte-for-byte" parity test.
+- **Deferred to the flip (do NOT skip):** **(1) undo origin semantics** — Rust tracks every txn today;
+  `ydoc` splits `LOCAL_ORIGIN` (undo-tracked) vs `INIT_ORIGIN` (untracked: `seedMeta`/`applyRowMeta`/
+  `hydrate`/`seedDefaultLayer`). The flip needs origin-scoped transactions (`doc.transact_mut_with(origin)`
+  + `UndoOptions.tracked_origins` = the LOCAL origin) so load/seed aren't undoable. Batch 3's parity is
+  snapshot-state only, so this was invisible — it becomes real at the undo cutover. **(2) real DEM z on
+  write** — the Rust mutators write `z = 0` (batch parity held because vitest has no DEM → `terrainZ`=0);
+  the flip wrapper must sample `terrainZ(x,y)` JS-side and write it (`add_slot`/`paste_slots`/
+  `move_entities`/`update_slot_position` all touch z). For `paste_slots` this means the wrapper needs the
+  clamped px/py — either have Rust return them or clamp JS-side. **(3) chunked/progress hydrate** for the
+  load overlay (`hydrateMissionDocWithProgress`); the Rust load is one fast call, so this is UI-only.
 
 ## The flip (the finale — its own checkpoint + plan before executing)
 
@@ -116,11 +126,13 @@ round-trip; `yjs`/`y-indexeddb` gone from `package.json`.
 
 > Continue T-145 Phase 3.2 write-swap (yrs-authoritative doc-core). Read
 > `.ai/artifacts/t145_write_swap_kickoff.md` + memory `t145-wasm-port.md` + `wasm-react-lifecycle.md`
-> first. The Rust `MissionDoc` mutator port is at batch 2 (slot lifecycle + editor layers, byte-parity
-> vs `ydoc.ts`, all green, no app change). Do **batch 3**: upgrade `add_slot` to full fidelity
-> (squad/layer wiring + all fields), add `add_faction`/`add_squad` (+ the `factions` root handle),
-> `paste_slots` (bulk), `remove_editor_layer` (reseed cascade), meta ops, and `hydrate` — each a full
-> Rust mutator with JS minting the ids, proven byte-parity in `mutatorParity.test.ts`
-> (`snapshotFromShadow(yrs).toEqual(docToSnapshot(yjs))`). Commit per batch; `make wasm` before frontend
-> test/build. Then checkpoint before the flip (the big-bang: ydoc→wasm wrappers, yrs authoritative,
-> remove yjs+y-indexeddb) and I'll plan it. Hold the byte-parity bar.
+> first. **The full mutator port is DONE** — batches 1–3 (`8ca31ddf`), the Rust `MissionDoc` write API
+> mirrors every `ydoc.ts` mutator, each byte-parity-proven in `mutatorParity.test.ts`, no app change.
+> Now **plan the flip** (§The flip): `ydoc.ts` mutators → thin wrappers that mint id(s) JS-side + call
+> `md.wasm.<mutator>` (yrs authoritative, drop `Y.Doc`); bindings/store fed by `snapshotFromShadow`
+> (mutators return changed ids → O(k) patch); `UndoController`→Rust undo **+ origin-scoped transactions**
+> (the deferred undo-origin split); persistence→a yrs update-stream IDB adapter; **remove `yjs` +
+> `y-indexeddb`**; delete `docToSnapshot`/`incPatchPlan`/`state/undo.ts`/the bindings observe path; sample
+> real DEM z JS-side in the wrappers. High blast radius — write a plan (EnterPlanMode), get sign-off, then
+> execute as one checkpoint. Acceptance: editor byte-identical, ≥60 fps @500k+1M, compile byte-identical,
+> undo + IDB round-trip, `yjs`/`y-indexeddb` gone from `package.json`.
