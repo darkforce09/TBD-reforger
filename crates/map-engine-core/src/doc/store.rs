@@ -38,8 +38,9 @@ impl Clock for ZeroClock {
 pub struct MissionDocCore {
     doc: Doc,
     slots: MapRef,
+    squads: MapRef,
     editor_layers: MapRef,
-    /// `M = ()`: no per-stack-item metadata needed for the spike.
+    /// `M = ()`: no per-stack-item metadata needed.
     undo_mgr: UndoManager<()>,
 }
 
@@ -49,6 +50,7 @@ impl MissionDocCore {
     pub fn new() -> Self {
         let doc = Doc::with_client_id(CLIENT_ID);
         let slots = doc.get_or_insert_map("slots");
+        let squads = doc.get_or_insert_map("squads");
         let editor_layers = doc.get_or_insert_map("editorLayers");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
@@ -65,11 +67,13 @@ impl MissionDocCore {
         };
         let mut undo_mgr = UndoManager::with_options(opts);
         undo_mgr.expand_scope(&doc, &slots);
+        undo_mgr.expand_scope(&doc, &squads);
         undo_mgr.expand_scope(&doc, &editor_layers);
 
         Self {
             doc,
             slots,
+            squads,
             editor_layers,
             undo_mgr,
         }
@@ -276,6 +280,128 @@ impl MissionDocCore {
         }
     }
 
+    // ── Batch-1 mutators (full-fidelity ports of `ydoc.ts`; operate on existing ids) ────────────
+
+    /// Patch scalar slot fields; `None` leaves a field unchanged. Mirrors `ydoc.updateSlot`.
+    pub fn update_slot(
+        &self,
+        id: &str,
+        role: Option<String>,
+        tag: Option<String>,
+        stance: Option<String>,
+    ) {
+        let mut txn = self.doc.transact_mut();
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+            if let Some(r) = role {
+                slot.insert(&mut txn, "role", r);
+            }
+            if let Some(t) = tag {
+                slot.insert(&mut txn, "tag", t);
+            }
+            if let Some(s) = stance {
+                slot.insert(&mut txn, "stance", s);
+            }
+        }
+    }
+
+    /// Edit a slot's transform (Attributes Transform tab). `x`/`y` clamp to `[0,width]×[0,height]`,
+    /// `rotation` normalizes to `[0,360)`, and the z-policy matches `ydoc.updateSlotPosition` (manual
+    /// z sticks; an x/y edit terrain-follows → 0 here, DEM sampled JS-side). `None` = leave the axis.
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_slot_position(
+        &self,
+        id: &str,
+        x: Option<f64>,
+        y: Option<f64>,
+        z: Option<f64>,
+        rotation: Option<f64>,
+        width: f64,
+        height: f64,
+    ) {
+        let mut txn = self.doc.transact_mut();
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+            let (mut px, mut py, mut pz, mut prot) = read_position(&txn, &slot);
+            if let Some(nx) = x.filter(|v| v.is_finite()) {
+                px = nx.clamp(0.0, width);
+            }
+            if let Some(ny) = y.filter(|v| v.is_finite()) {
+                py = ny.clamp(0.0, height);
+            }
+            if let Some(nr) = rotation.filter(|v| v.is_finite()) {
+                prot = ((nr % 360.0) + 360.0) % 360.0;
+            }
+            if let Some(nz) = z.filter(|v| v.is_finite()) {
+                pz = nz;
+            } else if x.is_some() || y.is_some() {
+                pz = 0.0; // terrain-follow; DEM z is sampled on the JS side
+            }
+            slot.insert(&mut txn, "position", position_any(px, py, pz, prot));
+        }
+    }
+
+    /// Move several slots by a shared world delta (drag release). z re-sampled to 0 (DEM JS-side).
+    /// Mirrors `ydoc.moveEntities`.
+    pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64) {
+        let mut txn = self.doc.transact_mut();
+        for id in &ids {
+            if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+                let (px, py, _pz, prot) = read_position(&txn, &slot);
+                slot.insert(
+                    &mut txn,
+                    "position",
+                    position_any(px + dx, py + dy, 0.0, prot),
+                );
+            }
+        }
+    }
+
+    /// Remove several slots and detach them from their squad's `slotIds` and every layer's
+    /// `entityIds` (batched cascade). Mirrors `ydoc.removeEntities` (slots path).
+    pub fn remove_slots(&self, ids: Vec<String>) {
+        let mut txn = self.doc.transact_mut();
+        let id_set: HashSet<&str> = ids.iter().map(String::as_str).collect();
+
+        // Affected squads (one filter each, not per slot).
+        let mut affected: HashSet<String> = HashSet::new();
+        for id in &ids {
+            if let Some(Out::YMap(slot)) = self.slots.get(&txn, id)
+                && let Some(Out::Any(Any::String(sid))) = slot.get(&txn, "squadId")
+            {
+                affected.insert(sid.to_string());
+            }
+        }
+        for sid in &affected {
+            if let Some(Out::YMap(squad)) = self.squads.get(&txn, sid)
+                && let Some(Out::Any(Any::Array(arr))) = squad.get(&txn, "slotIds")
+            {
+                let kept = retain_ids(&arr, &id_set);
+                squad.insert(&mut txn, "slotIds", Any::Array(kept.into()));
+            }
+        }
+
+        // Each layer that held a removed id (collect ids first — can't mutate while iterating).
+        let layer_ids: Vec<String> = self
+            .editor_layers
+            .iter(&txn)
+            .map(|(k, _)| k.to_string())
+            .collect();
+        for lid in &layer_ids {
+            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid)
+                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
+                && arr
+                    .iter()
+                    .any(|a| matches!(a, Any::String(s) if id_set.contains(s.as_ref())))
+            {
+                let kept = retain_ids(&arr, &id_set);
+                layer.insert(&mut txn, "entityIds", Any::Array(kept.into()));
+            }
+        }
+
+        for id in &ids {
+            self.slots.remove(&mut txn, id);
+        }
+    }
+
     /// Undo the most recent tracked transaction; `true` if anything was undone.
     pub fn undo(&mut self) -> bool {
         self.undo_mgr.undo_blocking()
@@ -317,6 +443,15 @@ fn position_any(x: f64, y: f64, z: f64, rotation: f64) -> Any {
     m.insert("z".to_string(), Any::Number(z));
     m.insert("rotation".to_string(), Any::Number(rotation));
     Any::Map(Arc::new(m))
+}
+
+/// Keep every element of `arr` except `Any::String`s present in `remove` (removed slot ids). Used by
+/// the `remove_slots` cross-ref cascade to filter a `slotIds`/`entityIds` array.
+fn retain_ids(arr: &[Any], remove: &HashSet<&str>) -> Vec<Any> {
+    arr.iter()
+        .filter(|a| !matches!(a, Any::String(s) if remove.contains(s.as_ref())))
+        .cloned()
+        .collect()
 }
 
 /// Coerce a `yrs` `Any` scalar to f64. **Yjs encodes integer-valued numbers as `Any::BigInt`** and

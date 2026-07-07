@@ -716,6 +716,38 @@ impl MissionDoc {
     pub fn seed_random(&self, n: u32, w: f64, h: f64, seed: f64) {
         self.inner.seed_random(n, w, h, seed as u64);
     }
+
+    // Batch-1 slot-lifecycle mutators (full-fidelity ports of ydoc.ts; ids passed in from JS).
+    pub fn update_slot(
+        &self,
+        id: &str,
+        role: Option<String>,
+        tag: Option<String>,
+        stance: Option<String>,
+    ) {
+        self.inner.update_slot(id, role, tag, stance);
+    }
+    #[allow(clippy::too_many_arguments)]
+    pub fn update_slot_position(
+        &self,
+        id: &str,
+        x: Option<f64>,
+        y: Option<f64>,
+        z: Option<f64>,
+        rotation: Option<f64>,
+        width: f64,
+        height: f64,
+    ) {
+        self.inner
+            .update_slot_position(id, x, y, z, rotation, width, height);
+    }
+    pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64) {
+        self.inner.move_entities(ids, dx, dy);
+    }
+    pub fn remove_slots(&self, ids: Vec<String>) {
+        self.inner.remove_slots(ids);
+    }
+
     pub fn undo(&mut self) -> bool {
         self.inner.undo()
     }
