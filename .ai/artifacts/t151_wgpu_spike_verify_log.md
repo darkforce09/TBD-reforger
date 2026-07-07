@@ -100,17 +100,36 @@ Cross-backend brute-force 20M summary: Electron/webgl2 65–70 fps · Firefox/we
 Chrome/webgpu 67 fps. fps ≈ constant under pan/zoom on all three (vertex-bound, as the
 §20M analysis predicted; clipping does not reduce vertex work — the cull ladder does).
 
-## V8b — remaining (one click + feel)
+## V8b — WebGPU self-check (Chrome, Linux — 2026-07-07 23:29): PASS
 
-1. On the Chrome page: **Run self-check** → paste the JSON (must be `pass: true` on
-   `"backend":"webgpu"`); zero console errors.
-2. Binary perceptual checks (yes/no each): red square up-and-right of green center ·
-   wheel-up zooms in at the cursor · drag-right moves content right · motion feels smooth at ≤1M.
+Operator ran **Run self-check** on the webgpu backend (screenshot
+`assets/image-3bb5d59c…png`): report shows `"backend":"webgpu"` with **all 7 probes
+`pass:true`** — center of G `[0,255,0,255]`, NW/SE inside-G greens, west/north clears
+`[51,68,85,255]`, inside-R north-up proof `[255,0,0,255]`, and the R-mirror green — byte
+values identical to the V8a webgl2 reports. (The overall `pass` flag scrolled out of the
+HUD frame; it is the conjunction of the seven visible `true`s.) Same session:
+`gpu_frame_ms` 14.428 ms with the 20M pool re-seeded (gen 99.0 ms, upload 341.0 ms),
+`uniform_bytes_last_frame` 64 at target (6400, 6400) zoom −2.
 
-- [ ] WebGPU self-check JSON + feel answers pasted below:
+**Present-path orientation, visually confirmed on the webgpu canvas:** the screenshot shows
+the red R square at the **upper-right** corner of the green G square at default view —
+binary perceptual check #1 = YES. Operator drove the camera across all three evidence
+screenshots (targets 6863→6209→6400, zooms −3.824/−3.920/−2.000), so pan/zoom interaction
+is functioning on both backends.
+
+**V8 status: all numeric gates closed on both backends.** Byte-exact self-check on
+webgl2 (detected + forced) and webgpu; 20M stress with exact integer accounting and the
+64-byte navigation invariant on Firefox/webgl2, Electron/webgl2, Chrome/webgpu; GPU
+timestamp constant calibrated (13.9–14.4 ms @ brute-force 20M ⇒ ≈0.7 ms per million
+instances).
+
+Remaining formality (operator's word, three yes/no): wheel-up zooms in at the cursor ·
+drag-right moves content right · motion feels smooth at ≤1M.
+
+- [ ] Feel answers:
 
 ```
-(pending operator)
+(pending operator — three yes/no)
 ```
 
 ## Findings / deviations locked in during implementation
