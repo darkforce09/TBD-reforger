@@ -128,6 +128,8 @@ impl MissionDocCore {
             soa.ids.push(id.to_string());
             soa.xs.push(x as f32);
             soa.ys.push(y as f32);
+            soa.xy.push(x as f32);
+            soa.xy.push(y as f32);
             soa.zs.push(z as f32);
             soa.rotations.push(rot as f32);
             soa.stance.push(read_stance(&txn, &slot));
@@ -189,6 +191,34 @@ impl MissionDocCore {
     pub fn remove_slot(&self, id: &str) {
         let mut txn = self.doc.transact_mut();
         self.slots.remove(&mut txn, id);
+    }
+
+    /// Bulk-seed `n` random slots in ONE transaction — the browser-harness generator for the
+    /// criterion-6 fps/zero-copy test. Deterministic LCG positions in `[0,w)×[0,h)`; not
+    /// undo-granular (the whole seed is one step).
+    pub fn seed_random(&self, n: u32, w: f64, h: f64, seed: u64) {
+        let mut s = seed | 1;
+        let mut txn = self.doc.transact_mut();
+        for i in 0..n {
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let x = (s >> 33) as f64 / f64::from(1u32 << 31) * w;
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            let y = (s >> 33) as f64 / f64::from(1u32 << 31) * h;
+            let id = format!("s{i}");
+            let slot = self.slots.insert(
+                &mut txn,
+                id.as_str(),
+                MapPrelim::from([("id", id.as_str())]),
+            );
+            slot.insert(&mut txn, "squadId", "sq");
+            slot.insert(&mut txn, "role", "Rifleman");
+            slot.insert(&mut txn, "stance", "stand");
+            slot.insert(&mut txn, "position", position_any(x, y, 0.0, 0.0));
+        }
     }
 
     /// Undo the most recent tracked transaction; `true` if anything was undone.

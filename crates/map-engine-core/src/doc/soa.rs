@@ -24,6 +24,9 @@ pub struct SlotSoa {
     pub ids: Vec<String>,
     pub xs: Vec<f32>,
     pub ys: Vec<f32>,
+    /// Interleaved `[x0,y0,x1,y1,…]` (length `2·len`) — the deck.gl `getPosition` binary attribute,
+    /// read zero-copy through `slot_xy_ptr` (criterion 6). Row-aligned with `xs`/`ys`.
+    pub xy: Vec<f32>,
     pub zs: Vec<f32>,
     pub rotations: Vec<f32>,
     pub stance: Vec<u8>,

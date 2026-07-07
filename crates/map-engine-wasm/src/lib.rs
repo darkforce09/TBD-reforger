@@ -671,6 +671,13 @@ impl MissionDoc {
     pub fn slot_ys_ptr(&self) -> u32 {
         self.soa.ys.as_ptr() as usize as u32
     }
+    /// Offset of the interleaved `[x0,y0,…]` column — the deck.gl `getPosition` binary attribute,
+    /// read as `new Float32Array(memory.buffer, slot_xy_ptr, 2 * slot_len)`.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn slot_xy_ptr(&self) -> u32 {
+        self.soa.xy.as_ptr() as usize as u32
+    }
 
     // Undo-script mutators (criterion 4). Each is one yrs transaction = one undo step.
     #[allow(clippy::too_many_arguments)]
@@ -691,6 +698,10 @@ impl MissionDoc {
     }
     pub fn remove_slot(&self, id: &str) {
         self.inner.remove_slot(id);
+    }
+    /// Bulk-seed `n` random slots in one transaction — the browser-harness generator (criterion 6).
+    pub fn seed_random(&self, n: u32, w: f64, h: f64, seed: f64) {
+        self.inner.seed_random(n, w, h, seed as u64);
     }
     pub fn undo(&mut self) -> bool {
         self.inner.undo()
