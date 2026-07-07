@@ -10,6 +10,8 @@ import { IndexeddbPersistence } from 'y-indexeddb'
 import {
   beginBulkSync,
   bindStoreToDoc,
+  checkDocShadowParity,
+  createDocShadow,
   createMissionDoc,
   createUndoManager,
   endBulkSync,
@@ -114,12 +116,16 @@ export function useMissionDoc(
   // bump in cleanup would re-trigger itself forever. StrictMode's single setup→cleanup→setup
   // needs exactly one fresh instance, so allow the bump at most once per mount.
   const recreatedRef = useRef(false)
-  const { md, undo, dbName } = useMemo(() => {
+  const { md, undo, dbName, shadow } = useMemo(() => {
     const md = createMissionDoc()
     return {
       md,
       undo: createUndoManager(md),
       dbName: `tbd-mission-${missionKey}`,
+      // T-145 Phase 3.2 Stage 1: a passive yrs shadow (DEV only) that proves live SoA parity vs the
+      // Y.Doc across every real mutator. Recreated with `md` (missionKey / instanceKey bump); freed
+      // in the effect cleanup. Nothing reads it yet — Stage 2 feeds the render + indices off its SoA.
+      shadow: import.meta.env.DEV ? createDocShadow() : null,
     }
     // `instanceKey` is intentionally a dep with no body reference: bumping it on teardown is
     // how we force a fresh doc/undo after StrictMode destroys the previous one.
@@ -155,6 +161,21 @@ export function useMissionDoc(
     let bulkOpen = true
     beginBulkSync()
     const unbind = bindStoreToDoc(md)
+
+    // T-145 Phase 3.2 Stage 1: keep the DEV shadow yrs doc synced from the Y.Doc update stream
+    // (fires on every local transaction + every persistence replay) and assert SoA parity after each
+    // change, debounced. Passive — Y.Doc stays authoritative; nothing reads the shadow yet.
+    let parityTimer: ReturnType<typeof setTimeout> | null = null
+    const onDocUpdate = (u: Uint8Array) => {
+      if (!shadow) return
+      shadow.apply_update(u)
+      if (parityTimer) clearTimeout(parityTimer)
+      parityTimer = setTimeout(() => {
+        const mismatch = checkDocShadowParity(md, shadow)
+        if (mismatch) console.error('[doc-shadow] yrs↔Y.Doc parity mismatch:', mismatch)
+      }, 250)
+    }
+    if (shadow) md.doc.on('update', onDocUpdate)
     // Created only on the legacy branch; tracked so cleanup can destroy it if we tear down
     // mid-migration (v2 + fresh missions never touch y-indexeddb — T-062.1).
     let legacyPersistence: IndexeddbPersistence | null = null
@@ -291,6 +312,11 @@ export function useMissionDoc(
       if (bulkOpen) void endBulkSync()
       undo.destroy()
       legacyPersistence?.destroy()
+      if (shadow) {
+        md.doc.off('update', onDocUpdate)
+        if (parityTimer) clearTimeout(parityTimer)
+        shadow.free()
+      }
       md.doc.destroy()
       useMapStore.getState().reset()
       // React 19 StrictMode (dev) double-invokes this effect setup→cleanup→setup WITHOUT
@@ -307,7 +333,7 @@ export function useMissionDoc(
     // instanceKey is only read for the dev mount/unmount log; an instanceKey bump already
     // recreates md (via the useMemo above), so the effect re-runs regardless. Listed to
     // satisfy exhaustive-deps without changing behavior.
-  }, [md, undo, dbName, missionKey, reportLoad, instanceKey])
+  }, [md, undo, dbName, missionKey, reportLoad, instanceKey, shadow])
 
   return { md, undo, docStatus, loadProgress }
 }
