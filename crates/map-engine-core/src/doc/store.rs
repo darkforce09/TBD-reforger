@@ -4,9 +4,10 @@
 //! `set_slot_position` / `remove_slot`) exist to exercise the `UndoManager`; the full `state/ydoc.ts`
 //! mutator surface is ported at the 3.1 cutover, not in the spike.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
+use yrs::sync::{Clock, Timestamp};
 use yrs::undo::{Options as UndoOptions, UndoManager};
 use yrs::updates::decoder::Decode;
 use yrs::{Any, Doc, Map, MapPrelim, MapRef, Out, ReadTxn, StateVector, Transact, Update};
@@ -17,6 +18,18 @@ use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, 
 /// (parity for criteria 3/4). A client-id clash with an incoming peer update is harmless: `yrs`
 /// keys blocks by the *originating* client, and the spike doc never co-authors a slot with a peer.
 const CLIENT_ID: u64 = 1;
+
+/// A constant clock. With `capture_timeout_millis = 0` the undo manager never extends a stack item,
+/// so the timestamp value is irrelevant — and building `undo::Options` explicitly (rather than via
+/// `Options::default()`, which is `#[cfg(not(target_family = "wasm"))]` because its default
+/// `SystemClock` needs std time) is what lets the core compile for `wasm32-unknown-unknown`.
+struct ZeroClock;
+
+impl Clock for ZeroClock {
+    fn now(&self) -> Timestamp {
+        0
+    }
+}
 
 /// The `yrs`-backed document core. `slots` is a root map of nested per-slot maps; `editor_layers` is
 /// the root map whose `entityIds` arrays give each slot its Outliner folder — the `state/ydoc.ts`
@@ -43,7 +56,11 @@ impl MissionDocCore {
         // with `{ captureTimeout: 0 }` (Yjs uses the same `<`), the basis for criterion-4 parity.
         let opts = UndoOptions::<()> {
             capture_timeout_millis: 0,
-            ..Default::default()
+            tracked_origins: HashSet::new(), // empty → capture no-origin (local) transactions
+            capture_transaction: None,
+            timestamp: Arc::new(ZeroClock),
+            init_undo_stack: Vec::new(),
+            init_redo_stack: Vec::new(),
         };
         let mut undo_mgr = UndoManager::with_options(opts);
         undo_mgr.expand_scope(&doc, &slots);

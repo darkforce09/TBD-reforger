@@ -4,6 +4,7 @@
 //! backing `Vec`s into JS typed arrays.
 
 use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, png_decode, sample};
+use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
 use map_engine_core::spatial::point_index::PointIndex;
 use wasm_bindgen::prelude::*;
@@ -541,5 +542,173 @@ impl SlotIndex {
     #[must_use]
     pub fn size(&self) -> u32 {
         self.inner.len() as u32
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// document core (Phase 3.0 spike — the yrs replacement for the JS Yjs Y.Doc)
+// ---------------------------------------------------------------------------------------------
+
+/// A `yrs`-backed mission document with a cached slot SoA. `apply_update` absorbs Yjs-wire (v1)
+/// byte-streams; `encode_state` emits the persistence stream; `refresh` re-materializes the SoA
+/// cache that the column getters + the zero-copy `*_ptr`/`slot_len` view read. Class S: parity with
+/// the JS `Y.Doc` is result-set equality, not CRDT-byte identity.
+#[wasm_bindgen]
+pub struct MissionDoc {
+    inner: MissionDocCore,
+    /// Materialized on `refresh`; the column getters + pointer views read this (so a `Float32Array`
+    /// view onto `slot_xs_ptr()` stays valid until the next `refresh`/mutation grows memory).
+    soa: SlotSoa,
+}
+
+#[wasm_bindgen]
+impl MissionDoc {
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new() -> MissionDoc {
+        MissionDoc {
+            inner: MissionDocCore::new(),
+            soa: SlotSoa::default(),
+        }
+    }
+
+    /// Apply a Yjs-wire (v1) update — the bytes `Y.encodeStateAsUpdate(doc)` emits.
+    ///
+    /// # Errors
+    /// Returns a JS error on a malformed update or integration failure.
+    pub fn apply_update(&self, bytes: &[u8]) -> Result<(), JsError> {
+        self.inner.apply_update(bytes).map_err(|e| JsError::new(&e))
+    }
+
+    /// Encode the document as a Yjs-wire (v1) update stream (the persistence blob).
+    #[must_use]
+    pub fn encode_state(&self) -> Vec<u8> {
+        self.inner.encode_state()
+    }
+
+    /// Re-materialize the cached slot SoA. Call after `apply_update` / a mutation before reading the
+    /// column getters or building a zero-copy view — this is the point where memory may grow and any
+    /// prior `Float32Array` view onto `slot_xs_ptr()` is invalidated.
+    pub fn refresh(&mut self) {
+        self.soa = self.inner.materialize();
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn slot_len(&self) -> u32 {
+        self.soa.len() as u32
+    }
+
+    // Column getters (copy the cache into JS typed arrays — the parity path).
+    #[must_use]
+    pub fn slot_ids(&self) -> Vec<String> {
+        self.soa.ids.clone()
+    }
+    #[must_use]
+    pub fn slot_xs(&self) -> Vec<f32> {
+        self.soa.xs.clone()
+    }
+    #[must_use]
+    pub fn slot_ys(&self) -> Vec<f32> {
+        self.soa.ys.clone()
+    }
+    #[must_use]
+    pub fn slot_zs(&self) -> Vec<f32> {
+        self.soa.zs.clone()
+    }
+    #[must_use]
+    pub fn slot_rotations(&self) -> Vec<f32> {
+        self.soa.rotations.clone()
+    }
+    #[must_use]
+    pub fn slot_stance(&self) -> Vec<u8> {
+        self.soa.stance.clone()
+    }
+    #[must_use]
+    pub fn slot_role_idx(&self) -> Vec<u32> {
+        self.soa.role_idx.clone()
+    }
+    #[must_use]
+    pub fn slot_tag_idx(&self) -> Vec<u32> {
+        self.soa.tag_idx.clone()
+    }
+    #[must_use]
+    pub fn slot_squad_idx(&self) -> Vec<u32> {
+        self.soa.squad_idx.clone()
+    }
+    #[must_use]
+    pub fn slot_layer_idx(&self) -> Vec<u32> {
+        self.soa.layer_idx.clone()
+    }
+    #[must_use]
+    pub fn roles(&self) -> Vec<String> {
+        self.soa.roles.clone()
+    }
+    #[must_use]
+    pub fn tags(&self) -> Vec<String> {
+        self.soa.tags.clone()
+    }
+    #[must_use]
+    pub fn squads(&self) -> Vec<String> {
+        self.soa.squads.clone()
+    }
+    #[must_use]
+    pub fn layers(&self) -> Vec<String> {
+        self.soa.layers.clone()
+    }
+
+    // Zero-copy view (criterion 6): raw offsets into wasm linear memory. JS builds
+    // `new Float32Array(wasm.memory.buffer, ptr, slot_len)` — no copy. Valid until the next
+    // `refresh`/mutation (memory growth detaches the view; rebuild it after).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn slot_xs_ptr(&self) -> u32 {
+        self.soa.xs.as_ptr() as usize as u32
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn slot_ys_ptr(&self) -> u32 {
+        self.soa.ys.as_ptr() as usize as u32
+    }
+
+    // Undo-script mutators (criterion 4). Each is one yrs transaction = one undo step.
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_slot(
+        &self,
+        id: &str,
+        squad_id: &str,
+        role: &str,
+        x: f64,
+        y: f64,
+        z: f64,
+        rotation: f64,
+    ) {
+        self.inner.add_slot(id, squad_id, role, x, y, z, rotation);
+    }
+    pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
+        self.inner.set_slot_position(id, x, y, z, rotation);
+    }
+    pub fn remove_slot(&self, id: &str) {
+        self.inner.remove_slot(id);
+    }
+    pub fn undo(&mut self) -> bool {
+        self.inner.undo()
+    }
+    pub fn redo(&mut self) -> bool {
+        self.inner.redo()
+    }
+    #[must_use]
+    pub fn can_undo(&self) -> bool {
+        self.inner.can_undo()
+    }
+    #[must_use]
+    pub fn can_redo(&self) -> bool {
+        self.inner.can_redo()
+    }
+}
+
+impl Default for MissionDoc {
+    fn default() -> Self {
+        Self::new()
     }
 }
