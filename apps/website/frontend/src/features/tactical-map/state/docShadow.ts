@@ -6,6 +6,7 @@
 // Stage 1 gates the whole shadow behind `import.meta.env.DEV` (zero prod cost — nothing reads it yet);
 // Stage 2 un-gates it and feeds the render + indices off its SoA.
 
+import * as Y from 'yjs'
 import * as wasm from '@/wasm/pkg/map_engine_wasm'
 import { docToSnapshot } from './bindings'
 import type { MissionDoc } from './ydoc'
@@ -21,6 +22,13 @@ const DEEP_CAP = 20_000
 /** A fresh, empty shadow yrs doc. Free it (`.free()`) on teardown. */
 export function createDocShadow(): wasm.MissionDoc {
   return new wasm.MissionDoc()
+}
+
+/** Seed the shadow with the Y.Doc's current state, so a shadow created mid-lifecycle (e.g. the
+ *  StrictMode setup→cleanup→setup double, which does not re-run the doc `useMemo`) is instantly in
+ *  sync; thereafter `md.doc.on('update')` keeps it live. */
+export function seedDocShadow(md: MissionDoc, shadow: wasm.MissionDoc): void {
+  shadow.apply_update(Y.encodeStateAsUpdate(md.doc))
 }
 
 /** Compare the shadow yrs SoA to the authoritative Y.Doc. Returns a mismatch description, else null.

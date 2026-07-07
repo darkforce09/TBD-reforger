@@ -67,7 +67,7 @@ export {
 } from './state/bindings'
 export { createUndoManager } from './state/undo'
 export type { UndoController } from './state/undo'
-export { createDocShadow, checkDocShadowParity } from './state/docShadow'
+export { createDocShadow, seedDocShadow, checkDocShadowParity } from './state/docShadow'
 export { yieldToUi } from './state/yieldToUi'
 export { selectDragOverlayIcons } from './state/selectors'
 export type { SlotIcon } from './state/selectors'
