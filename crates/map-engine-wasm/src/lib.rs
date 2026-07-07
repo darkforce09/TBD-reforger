@@ -692,19 +692,32 @@ impl MissionDoc {
         self.soa.xy.as_ptr() as usize as u32
     }
 
-    // Undo-script mutators (criterion 4). Each is one yrs transaction = one undo step.
+    // Full-fidelity entity creation (batch 3a; ids minted JS-side). `add_slot` is also the
+    // undo-script mutator (criterion 4): one yrs transaction = one undo step.
     #[allow(clippy::too_many_arguments)]
     pub fn add_slot(
         &self,
         id: &str,
         squad_id: &str,
+        layer_id: &str,
+        index: u32,
         role: &str,
+        tag: Option<String>,
+        asset_id: Option<String>,
         x: f64,
         y: f64,
         z: f64,
         rotation: f64,
     ) {
-        self.inner.add_slot(id, squad_id, role, x, y, z, rotation);
+        self.inner.add_slot(
+            id, squad_id, layer_id, index, role, tag, asset_id, x, y, z, rotation,
+        );
+    }
+    pub fn add_faction(&self, id: &str, key: &str, name: &str) {
+        self.inner.add_faction(id, key, name);
+    }
+    pub fn add_squad(&self, id: &str, faction_id: &str, name: &str, callsign: Option<String>) {
+        self.inner.add_squad(id, faction_id, name, callsign);
     }
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
         self.inner.set_slot_position(id, x, y, z, rotation);

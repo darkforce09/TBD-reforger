@@ -168,9 +168,9 @@ describe('MissionDoc — criterion 2: Yjs-wire update apply → identical SoA', 
 describe('MissionDoc — criterion 3: yrs update-stream round-trip', () => {
   it('encode → apply into a fresh doc → identical SoA; re-encode is byte-stable', () => {
     const src = new wasm.MissionDoc()
-    src.add_slot('s1', 'sq1', 'Rifleman', 1.5, 2.25, 0, 0)
-    src.add_slot('s2', 'sq1', 'Medic', 5, 6, 7, 90)
-    src.add_slot('s3', 'sq2', 'AR', 100.75, 200.5, 0, 180)
+    src.add_slot('s1', 'sq1', 'lyr', 0, 'Rifleman', undefined, undefined, 1.5, 2.25, 0, 0)
+    src.add_slot('s2', 'sq1', 'lyr', 1, 'Medic', undefined, undefined, 5, 6, 7, 90)
+    src.add_slot('s3', 'sq2', 'lyr', 0, 'AR', undefined, undefined, 100.75, 200.5, 0, 180)
 
     const bytes = src.encode_state()
     const dst = new wasm.MissionDoc()
@@ -206,7 +206,7 @@ describe('MissionDoc — criterion 4: UndoManager parity vs Y.UndoManager', () =
         ym.set('position', { x, y, z: 0, rotation: 0 })
         jsSlots.set(id, ym)
       })
-      wDoc.add_slot(id, sq, role, x, y, 0, 0)
+      wDoc.add_slot(id, sq, 'lyr', 0, role, undefined, undefined, x, y, 0, 0)
     }
 
     const cmp = () =>
@@ -230,7 +230,20 @@ describe('MissionDoc — criterion 4: UndoManager parity vs Y.UndoManager', () =
 describe('MissionDoc — zero-copy Float32Array view (criterion 6 mechanism, headless)', () => {
   it('a view onto slot_xs_ptr aliases wasm memory and survives a grow via rebuild', () => {
     const doc = new wasm.MissionDoc()
-    for (let i = 0; i < 16; i++) doc.add_slot(`z${i}`, 'sq', 'Rifleman', i * 10 + 0.5, i * 20, 0, 0)
+    for (let i = 0; i < 16; i++)
+      doc.add_slot(
+        `z${i}`,
+        'sq',
+        'lyr',
+        i,
+        'Rifleman',
+        undefined,
+        undefined,
+        i * 10 + 0.5,
+        i * 20,
+        0,
+        0,
+      )
     doc.refresh()
     const n = doc.slot_len
 
@@ -240,7 +253,8 @@ describe('MissionDoc — zero-copy Float32Array view (criterion 6 mechanism, hea
 
     // Force linear-memory growth with a large second doc; the old ArrayBuffer detaches.
     const big = new wasm.MissionDoc()
-    for (let i = 0; i < 40000; i++) big.add_slot(`b${i}`, 'sq', 'R', i, i, 0, 0)
+    for (let i = 0; i < 40000; i++)
+      big.add_slot(`b${i}`, 'sq', 'lyr', i, 'R', undefined, undefined, i, i, 0, 0)
     big.refresh()
 
     // Rebuild the view over the current buffer at the (stable) ptr — the documented "re-materialize

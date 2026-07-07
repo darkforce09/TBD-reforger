@@ -11,7 +11,9 @@ use yrs::sync::{Clock, Timestamp};
 use yrs::types::ToJson;
 use yrs::undo::{Options as UndoOptions, UndoManager};
 use yrs::updates::decoder::Decode;
-use yrs::{Any, Doc, Map, MapPrelim, MapRef, Out, ReadTxn, StateVector, Transact, Update};
+use yrs::{
+    Any, Doc, Map, MapPrelim, MapRef, Out, ReadTxn, StateVector, Transact, TransactionMut, Update,
+};
 
 use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
 
@@ -39,6 +41,7 @@ pub struct MissionDocCore {
     doc: Doc,
     slots: MapRef,
     squads: MapRef,
+    factions: MapRef,
     editor_layers: MapRef,
     /// `M = ()`: no per-stack-item metadata needed.
     undo_mgr: UndoManager<()>,
@@ -51,6 +54,7 @@ impl MissionDocCore {
         let doc = Doc::with_client_id(CLIENT_ID);
         let slots = doc.get_or_insert_map("slots");
         let squads = doc.get_or_insert_map("squads");
+        let factions = doc.get_or_insert_map("factions");
         let editor_layers = doc.get_or_insert_map("editorLayers");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
@@ -68,12 +72,14 @@ impl MissionDocCore {
         let mut undo_mgr = UndoManager::with_options(opts);
         undo_mgr.expand_scope(&doc, &slots);
         undo_mgr.expand_scope(&doc, &squads);
+        undo_mgr.expand_scope(&doc, &factions);
         undo_mgr.expand_scope(&doc, &editor_layers);
 
         Self {
             doc,
             slots,
             squads,
+            factions,
             editor_layers,
             undo_mgr,
         }
@@ -213,16 +219,23 @@ impl MissionDocCore {
         soa
     }
 
-    /// Insert one slot as a nested map (mirrors `slots.set(id, new Y.Map())` + a plain-object
-    /// `position`). Slot-only — layer/squad wiring is exercised by the real-`ydoc` criterion-2 path.
-    // Transform is 4 scalars (x/y/z/rotation) alongside id/squad/role — mirrors the wasm shim's flat
-    // signature; a struct would only add ceremony to a spike mutator.
+    /// Add a slot with full fidelity — the complete `Slot` map, appended to `squad.slotIds` and
+    /// filed under `layer.entityIds`. Mirrors `ydoc.addSlot` @139. The `ensureDefaultSquad` /
+    /// `ensureDefaultLayer` orchestration stays JS-side (JS mints the faction/squad/layer ids and
+    /// creates them via `add_faction`/`add_squad`/`add_editor_layer`), so this receives concrete
+    /// `squad_id`/`layer_id` + `index` (the squad's current slot count). `tag`/`asset_id` write only
+    /// when present (non-empty), matching ydoc's `...(x ? {x} : {})` spread (key omitted otherwise).
+    /// The squad/layer appends are guarded so a slot with a not-yet-created container still stores.
     #[allow(clippy::too_many_arguments)]
     pub fn add_slot(
         &self,
         id: &str,
         squad_id: &str,
+        layer_id: &str,
+        index: u32,
         role: &str,
+        tag: Option<String>,
+        asset_id: Option<String>,
         x: f64,
         y: f64,
         z: f64,
@@ -233,9 +246,48 @@ impl MissionDocCore {
             .slots
             .insert(&mut txn, id, MapPrelim::from([("id", id)]));
         slot.insert(&mut txn, "squadId", squad_id);
+        slot.insert(&mut txn, "index", Any::BigInt(i64::from(index)));
         slot.insert(&mut txn, "role", role);
-        slot.insert(&mut txn, "stance", "stand");
+        if let Some(t) = tag.filter(|s| !s.is_empty()) {
+            slot.insert(&mut txn, "tag", t);
+        }
+        if let Some(a) = asset_id.filter(|s| !s.is_empty()) {
+            slot.insert(&mut txn, "assetId", a);
+        }
         slot.insert(&mut txn, "position", position_any(x, y, z, rotation));
+        slot.insert(&mut txn, "stance", "stand");
+        slot.insert(&mut txn, "loadoutId", Any::Null);
+        append_id(&mut txn, &self.squads, squad_id, "slotIds", id);
+        append_id(&mut txn, &self.editor_layers, layer_id, "entityIds", id);
+    }
+
+    /// Create a faction (mirrors `ydoc.addFaction` and `ensureDefaultSquad`'s faction — JS supplies
+    /// `key`/`name`). Writes `{id, key, name, squadIds:[]}`.
+    pub fn add_faction(&self, id: &str, key: &str, name: &str) {
+        let mut txn = self.doc.transact_mut();
+        let f = self
+            .factions
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        f.insert(&mut txn, "key", key);
+        f.insert(&mut txn, "name", name);
+        f.insert(&mut txn, "squadIds", Any::Array(Vec::new().into()));
+    }
+
+    /// Create a squad under a faction (mirrors `ydoc.addSquad` and `ensureDefaultSquad`'s squad).
+    /// Writes `{id, factionId, name, slotIds:[]}` + `callsign` only when `Some`; appends `id` to
+    /// `faction.squadIds` if the faction exists.
+    pub fn add_squad(&self, id: &str, faction_id: &str, name: &str, callsign: Option<String>) {
+        let mut txn = self.doc.transact_mut();
+        let sq = self
+            .squads
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        sq.insert(&mut txn, "factionId", faction_id);
+        if let Some(c) = callsign {
+            sq.insert(&mut txn, "callsign", c);
+        }
+        sq.insert(&mut txn, "name", name);
+        sq.insert(&mut txn, "slotIds", Any::Array(Vec::new().into()));
+        append_id(&mut txn, &self.factions, faction_id, "squadIds", id);
     }
 
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).
@@ -553,6 +605,19 @@ fn retain_ids(arr: &[Any], remove: &HashSet<&str>) -> Vec<Any> {
         .collect()
 }
 
+/// Append `id` to `map[key].field` (an `Any::Array` of string ids), if that container map exists.
+/// Mirrors ydoc's `container.set(field, [...(container.get(field)), id])` cross-ref append.
+fn append_id(txn: &mut TransactionMut, map: &MapRef, key: &str, field: &str, id: &str) {
+    if let Some(Out::YMap(container)) = map.get(txn, key) {
+        let mut next: Vec<Any> = match container.get(txn, field) {
+            Some(Out::Any(Any::Array(arr))) => arr.iter().cloned().collect(),
+            _ => Vec::new(),
+        };
+        next.push(Any::String(id.into()));
+        container.insert(txn, field, Any::Array(next.into()));
+    }
+}
+
 /// Coerce a `yrs` `Any` scalar to f64. **Yjs encodes integer-valued numbers as `Any::BigInt`** and
 /// non-integers as `Any::Number`, so a position component can arrive as either — accept both.
 fn any_to_f64(a: &Any) -> f64 {
@@ -610,8 +675,22 @@ mod tests {
     #[test]
     fn add_slot_materializes_soa() {
         let doc = MissionDocCore::new();
-        doc.add_slot("s1", "sq1", "Rifleman", 100.5, 200.25, 0.0, 0.0);
-        doc.add_slot("s2", "sq1", "Squad Leader", 300.0, 400.0, 5.0, 90.0);
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 100.5, 200.25, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s2",
+            "sq1",
+            "lyr",
+            1,
+            "Squad Leader",
+            None,
+            None,
+            300.0,
+            400.0,
+            5.0,
+            90.0,
+        );
 
         let soa = doc.materialize();
         assert_eq!(soa.len(), 2);
@@ -670,8 +749,12 @@ mod tests {
     #[test]
     fn encode_decode_roundtrip_is_stable() {
         let a = MissionDocCore::new();
-        a.add_slot("s1", "sq1", "Rifleman", 1.0, 2.0, 3.0, 4.0);
-        a.add_slot("s2", "sq1", "Medic", 5.0, 6.0, 7.0, 8.0);
+        a.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 1.0, 2.0, 3.0, 4.0,
+        );
+        a.add_slot(
+            "s2", "sq1", "lyr", 1, "Medic", None, None, 5.0, 6.0, 7.0, 8.0,
+        );
         let bytes = a.encode_state();
 
         let b = MissionDocCore::new();
@@ -693,9 +776,15 @@ mod tests {
     fn undo_redo_sequence() {
         let mut doc = MissionDocCore::new();
         assert!(!doc.can_undo());
-        doc.add_slot("s1", "sq1", "Rifleman", 0.0, 0.0, 0.0, 0.0);
-        doc.add_slot("s2", "sq1", "Rifleman", 1.0, 1.0, 0.0, 0.0);
-        doc.add_slot("s3", "sq1", "Rifleman", 2.0, 2.0, 0.0, 0.0);
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s2", "sq1", "lyr", 1, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "s3", "sq1", "lyr", 2, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
         assert_eq!(doc.materialize().len(), 3);
 
         assert!(doc.undo()); // one step = one add_slot → removes s3
@@ -765,7 +854,9 @@ mod tests {
     #[test]
     fn slots_json_roundtrips_a_slot() {
         let doc = MissionDocCore::new();
-        doc.add_slot("s1", "sq1", "Rifleman", 100.5, 200.25, 0.0, 90.0);
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 100.5, 200.25, 0.0, 90.0,
+        );
         let json = doc.slots_json();
         assert!(json.contains("\"s1\""), "{json}");
         assert!(json.contains("Rifleman"), "{json}");
