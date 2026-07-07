@@ -1,9 +1,11 @@
 # T-151.0 — wasm packaging merge + engine batch list + editor dual mount
 
-**Program:** [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W0) ·
-**Executor:** claude-code · **Branch:** `t-151-wgpu-spike` (worktree
-`tbd-reforger-wgpu-spike/`; do **not** touch `main`) · **Baseline:** `94261dd6` (spike
-complete, all gates green — verify log
+**Status:** **shipped** @ `f019512d` (tag **T-151.0**, 2026-07-08) · verify log
+[`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **Program:**
+[`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W0) · **Executor:** claude-code ·
+**Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
+`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
+**Baseline:** `94261dd6` (spike complete, all gates green — verify log
 [`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)).
 
 ## In one sentence
@@ -125,14 +127,15 @@ Registry slice `T-151.0 → shipped` + `shipped_at`; program hub status line; ve
 Authority: this spec + handoff. **Do not edit docs/registry.**
 
 ```
-Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ on branch
-t-151-wgpu-spike (NOT main — the worktree instruction supersedes the commit-to-main rule).
+Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main).
 
 Implement **T-151.0** — wasm packaging merge + engine batch list + editor dual mount.
 
 ═══ PREFLIGHT ═══
-  cd tbd-reforger-wgpu-spike
-  git status --porcelain            # must be empty, branch t-151-wgpu-spike @ 94261dd6+
+  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  test "$(git rev-parse --show-toplevel)" = "$(pwd)"
+  git status --porcelain            # must be empty @ 94261dd6+ (or current baseline)
+  # Do NOT checkout or create branches; do NOT run ./scripts/ticket run
   git lfs pull && make map-assets-link
   cd apps/website/frontend && npm ci && cd ../../..
   make wasm                         # baseline pkg builds before you change anything
@@ -180,6 +183,8 @@ Implement **T-151.0** — wasm packaging merge + engine batch list + editor dual
   - Touch main, the Deck TacticalMap render path, worldmap/*, workers/*, or any layer code
   - Add basemap/world/slot rendering (T-151.1+), new pipelines, or new engine features
   - Change stats() field names, self_check probes, or any spike gate expectation
+  - git checkout -b / create ticket/T-151.x branches
+  - ./scripts/ticket run
 
 ═══ VERIFY (all exit 0) ═══
   cargo fmt --check
@@ -200,7 +205,8 @@ Implement **T-151.0** — wasm packaging merge + engine batch list + editor dual
 
 ═══ RETURN ═══
   - Commit SHA + tag T-151.0
-  - .ai/artifacts/t151_0_verify_log.md (all gate outputs + merged wasm byte size)
+  - .ai/artifacts/t151_0_verify_log.md (all gate outputs + merged wasm byte size; header
+    records git rev-parse --show-toplevel + HEAD SHA)
   - Automated verify output (PASS)
   - Manual notes for S1–S3 (self-check JSONs pasted)
   - **Ready for Cursor doc sync.**

@@ -1,16 +1,84 @@
 # T-151 — wgpu Mission Creator engine program (W0–W9 master blueprint)
 
-**Status:** program hub (authority for all T-151.x slices) · **Branch:** `t-151-wgpu-spike` worktree
-(`tbd-reforger-wgpu-spike/` — the operator's standing worktree instruction supersedes the
-commit-to-main convention for this program) · **Spike shipped:** commits `152b3a12…94261dd6`
+**Status:** program hub (authority for all T-151.x slices) · **Worktree:**
+`tbd-reforger-wgpu-spike/` (absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`)
+— the operator's standing worktree instruction supersedes the commit-to-main convention for this
+program. Integration ref `t-151-wgpu-spike` is git metadata only; agents do **not** manage
+branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 (camera parity + render spine + 20M stress + byte-exact self-check, verify log
-[`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)).
+[`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)) ·
+**W0 / T-151.0 shipped:** @ `f019512d` (tag **T-151.0**) — one wasm module (D1), batch list,
+editor dual mount (D3); verify log
+[`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **Next slice:**
+**T-151.1** (W1 basemap lane) — `ready`.
 
 ## In one sentence
 
 Wire the full Mission Creator tactical map — world data, spatial indexing, all fifteen render
 layers, and every editor interaction — onto the T-151 wgpu/wasm engine, one gated slice at a
 time, with the Deck.gl implementation kept as a live oracle until the final flip (T-151.9).
+
+## Execution model (worktree-only)
+
+All T-151.x slices (W0–W9) run in the **standing worktree** with **linear commits** — not via
+per-slice branches and not via `./scripts/ticket run` (which would spawn a nested worktree under
+`.ai/artifacts/worktrees/`).
+
+```mermaid
+flowchart LR
+  operator[Operator pastes prompt]
+  claude[Claude Code in spike worktree]
+  commits[Linear commits T-151.0 then T-151.1]
+  cursor[Cursor doc sync after each slice]
+  operator --> claude --> commits --> cursor
+```
+
+Rules (binding for every T-151.x slice):
+
+1. **CWD:** repo root = `tbd-reforger-wgpu-spike/` (absolute path above).
+2. **No branch churn:** do **not** `git checkout -b`, do **not** create `ticket/T-151.x`
+   branches, do **not** merge slice branches. Each slice = one (or few) commits on the
+   worktree's current HEAD, tagged `T-151.x`.
+3. **No `./scripts/ticket run` for T-151:** prompts are pasted manually (Cursor Mode B → Claude
+   Code). The queue `branch` field (`t-151-wgpu-spike`) is sync metadata only.
+4. **Do not touch `main`** from the spike worktree until the program merges back.
+5. **Preflight checks worktree location**, not branch name:
+   - `git rev-parse --show-toplevel` ends with `tbd-reforger-wgpu-spike`
+   - `git status --porcelain` empty (or only expected files)
+   - Baseline SHA from prior slice's verify log / tag
+6. **Future slice specs** (T-151.1+) inherit this section verbatim; each gets its own spec
+   file + handoff + one fenced prompt — same worktree, next commit.
+
+The worktree may remain checked out to `t-151-wgpu-spike` (git requires a branch on a
+worktree) — that is **not** something agents manage per slice.
+
+## Slice prompt template (W1+)
+
+Every slice spec ends with a `§Claude Code prompt` block. All prompts share this skeleton
+(slice-specific READ/DO/VERIFY sections replace the placeholders):
+
+```
+Read CLAUDE.md first. Work in the WORKTREE at tbd-reforger-wgpu-spike/ (NOT main).
+
+═══ PREFLIGHT ═══
+  cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+  test "$(git rev-parse --show-toplevel)" = "$(pwd)"
+  git status --porcelain            # must be empty @ baseline SHA from prior slice tag/log
+  # Do NOT checkout or create branches; do NOT run ./scripts/ticket run
+
+═══ READ (in order — spec wins on conflict) ═══
+  …
+
+═══ DO NOT ═══
+  …
+  - git checkout -b / create ticket/T-151.x branches
+  - ./scripts/ticket run
+
+═══ RETURN ═══
+  - Commit SHA + tag T-151.n
+  - .ai/artifacts/t151_{n}_verify_log.md (record git rev-parse --show-toplevel + HEAD SHA)
+  - **Ready for Cursor doc sync.**
+```
 
 ## Verification philosophy (binding for every slice)
 
@@ -88,6 +156,12 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
 ## Slice map (registry `T-151.0` … `T-151.9`; W10 = separate tickets unlocked at the end)
 
 ### T-151.0 (W0) — wasm packaging merge + engine batch list + editor dual mount
+
+**Shipped:** @ `f019512d` (tag **T-151.0**, 2026-07-08) — verify log
+[`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md). Merged
+`map_engine_wasm_bg.wasm` = **3,658,383 B** (baseline 931,424; +2.6 MB engine). L3 start-fn
+collision not needed. `WgpuTacticalMap` lazy-loaded (Vite dep-scan + raw `_bg.wasm` import).
+Automated gates exit 0; browser GPU manuals S1–S3 operator-pending.
 
 Merge per D1; refactor engine internals from hardcoded draws to an ordered `Vec<Batch>`
 (pipeline kind + buffers + range + visibility — behavior identical this slice); mount
@@ -261,7 +335,9 @@ real data volumes → flip (W9) last → features (W10) only on the flipped engi
 
 ## Documentation sync (Cursor, after each slice merge)
 
-Per-slice verify log `.ai/artifacts/t151_{n}_verify_log.md` → registry slice `shipped` +
-`shipped_at` → `./scripts/ticket sync` + `check` → CLAUDE.md §Status bullet at program
-milestones. Registry `active_slice` stays **unset** on T-151 (T-090 owns the `ACTIVE NOW`
-marker) — slice selection is explicit via `./scripts/ticket prompt T-151 --slice T-151.n`.
+Per-slice verify log `.ai/artifacts/t151_{n}_verify_log.md` (header records worktree toplevel +
+HEAD SHA) → registry slice `shipped` + `shipped_at` → `./scripts/ticket sync` + `check` →
+CLAUDE.md §Status bullet at program milestones. Registry `active_slice` stays **unset** on
+T-151 (T-090 owns the `ACTIVE NOW` marker). Slice prompts are delivered manually by Cursor
+(extractable via `./scripts/ticket prompt T-151 --slice T-151.n` for text only — never
+`./scripts/ticket run`).

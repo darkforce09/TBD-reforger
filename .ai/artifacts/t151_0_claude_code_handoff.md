@@ -1,12 +1,16 @@
 # T-151.0 — Claude Code handoff (wasm packaging merge + batch list + editor dual mount)
 
+**Shipped:** @ `f019512d` (tag **T-151.0**, 2026-07-08) — verify log
+[`t151_0_verify_log.md`](t151_0_verify_log.md). Cursor doc-sync pass follows.
+
 **Spec (wins on conflict):**
 [`t151_0_wasm_merge_dual_mount.md`](../../docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md)
 · **Program hub:**
 [`t151_wgpu_engine_program.md`](../../docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
-· **Working tree:** the `tbd-reforger-wgpu-spike/` worktree, branch `t-151-wgpu-spike` @
-`94261dd6` or later — **never `main`** (the operator's worktree instruction supersedes the
-CLAUDE.md commit-to-main convention for this program).
+· **Working tree:** the standing worktree at `tbd-reforger-wgpu-spike/` (absolute:
+`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`) @ `94261dd6` or later —
+**never `main`**. Do **not** run `./scripts/ticket run` (no nested worktrees). Do **not**
+create or checkout slice branches — commit linearly on the worktree's current HEAD.
 
 ## Operator report
 
@@ -60,6 +64,7 @@ Three things, behavior-preserving everywhere else:
   gate expectation.
 - Delete the `crates/map-engine-render` crate — it stays as a library crate; only its
   standalone wasm-pack product goes away.
+- `git checkout -b`, create `ticket/T-151.x` branches, or run `./scripts/ticket run`.
 
 ## Execution order (strict)
 
@@ -76,9 +81,10 @@ Three things, behavior-preserving everywhere else:
 ## Preflight
 
 ```bash
-cd tbd-reforger-wgpu-spike
-git branch --show-current          # t-151-wgpu-spike
-git status --porcelain             # empty
+cd /var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike
+test "$(git rev-parse --show-toplevel)" = "$(pwd)"
+git status --porcelain             # empty @ baseline SHA
+# Do NOT checkout or create branches; do NOT run ./scripts/ticket run
 git lfs pull && make map-assets-link
 cd apps/website/frontend && npm ci && cd ../../..
 make wasm                          # baseline builds BEFORE changes

@@ -166,6 +166,21 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 
 **T-091.0 shipped @ `6d96339` (tag T-091.0):** Everon 6400² DEM export + anchor verify. Spec: [`t091_0_dem_tile_export.md`](docs/specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md).
 
+### T-151 — wgpu Mission Creator engine program
+
+Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
+`tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
+
+**Next slice:** **T-151.1** (W1 basemap lane) — `ready`
+
+**Done (program slices):**
+- T-151.0 **wasm merge + batch list + editor dual mount** @ `f019512d` (tag **T-151.0**). One wasm
+  module (D1): `RenderEngine` + `MissionDoc` + `OrthoCameraJs` share one linear memory; merged
+  `map_engine_wasm_bg.wasm` = **3,658,383 B**; batch list seam; `WgpuTacticalMap` lazy-loaded
+  behind `?engine=wgpu`; L10 shared-memory HUD proof. Automated gates exit 0; browser S1–S3
+  operator-pending. Verify: [`.ai/artifacts/t151_0_verify_log.md`](.ai/artifacts/t151_0_verify_log.md).
+  Spec: [`t151_0_wasm_merge_dual_mount.md`](docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md).
+
 ### T-068 — Virtual Arsenal (Phase 2 paused; not active)
 
 See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md) · **paused @ T-068.7** until **T-071.2** + **T-068.13** (T-092 spawn/compile gate **shipped** @ `a73224f2`) · dev queue [`docs/TICKET_DEV_QUEUE.md`](docs/TICKET_DEV_QUEUE.md).
