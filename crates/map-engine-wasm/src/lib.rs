@@ -745,6 +745,30 @@ impl MissionDoc {
             anchor_x, anchor_y, width, height,
         );
     }
+
+    // Layer removal + meta (batch 3c). JS mints reseed_id (used only when the subtree = every layer).
+    pub fn remove_editor_layer(&self, id: &str, reseed_id: &str) {
+        self.inner.remove_editor_layer(id, reseed_id);
+    }
+    pub fn set_title(&self, title: &str) {
+        self.inner.set_title(title);
+    }
+    pub fn update_environment(&self, patch_json: &str) {
+        self.inner.update_environment(patch_json);
+    }
+    pub fn apply_row_meta(
+        &self,
+        title: &str,
+        terrain: &str,
+        time_of_day: Option<String>,
+        weather: Option<String>,
+    ) {
+        self.inner
+            .apply_row_meta(title, terrain, time_of_day, weather);
+    }
+    pub fn seed_meta(&self, id: &str, title: &str) {
+        self.inner.seed_meta(id, title);
+    }
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
         self.inner.set_slot_position(id, x, y, z, rotation);
     }

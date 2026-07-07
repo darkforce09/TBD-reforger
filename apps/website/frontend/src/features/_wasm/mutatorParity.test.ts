@@ -8,6 +8,7 @@ import {
   renameEditorLayer,
   reparentEditorLayer,
   moveSlotToLayer,
+  removeEditorLayer,
   addSlot,
   addFaction,
   addSquad,
@@ -16,6 +17,10 @@ import {
   updateSlotPosition,
   moveEntities,
   removeEntities,
+  setTitle,
+  updateEnvironment,
+  applyMissionRowMeta,
+  seedMeta,
 } from '@/features/tactical-map/state/ydoc'
 import { docToSnapshot, snapshotFromShadow } from '@/features/tactical-map'
 import { getTerrain } from '@/features/tactical-map/coords/terrains'
@@ -271,6 +276,72 @@ describe('Rust mutator parity vs ydoc.ts (batch 3b: bulk paste)', () => {
     const yrs = baseSync(md)
     const newIds = pasteSlots(md, clip, { anchorAt: null, layerId: l2 })
     replayPaste(yrs, newIds, clip, l2, null)
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+})
+
+describe('Rust mutator parity vs ydoc.ts (batch 3c: layer removal + meta)', () => {
+  it('remove_editor_layer (non-reseed: subtree slot cascade-deleted)', () => {
+    const { md, l2 } = baseDoc() // l2 holds s3; default holds s1/s2; two layers → no reseed
+    const yrs = baseSync(md)
+    removeEditorLayer(md, l2)
+    yrs.remove_editor_layer(l2, 'unused-reseed')
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('set_title', () => {
+    const md = createMissionDoc()
+    seedMeta(md, { id: 'm1', title: 'Old' })
+    const yrs = baseSync(md)
+    setTitle(md, 'New Title')
+    yrs.set_title('New Title')
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('update_environment (merge patch onto existing env; string + numeric fields)', () => {
+    const md = createMissionDoc()
+    seedMeta(md, { id: 'm1', title: 'Op' })
+    const yrs = baseSync(md)
+    const patch = { weather: 'overcast' as const, viewDistance: 3200 }
+    updateEnvironment(md, patch)
+    yrs.update_environment(JSON.stringify(patch))
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('apply_row_meta (valid terrain + time/weather env merge)', () => {
+    const md = createMissionDoc()
+    seedMeta(md, { id: 'm1', title: 'Old' })
+    const yrs = baseSync(md)
+    applyMissionRowMeta(md, {
+      title: 'Loaded',
+      terrain: 'arland',
+      time_of_day: '14:30',
+      weather: 'overcast',
+    })
+    yrs.apply_row_meta('Loaded', 'arland', '14:30', 'overcast')
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('apply_row_meta (invalid terrain ignored; env untouched)', () => {
+    const md = createMissionDoc()
+    seedMeta(md, { id: 'm1', title: 'Old' })
+    const yrs = baseSync(md)
+    applyMissionRowMeta(md, { title: 'X', terrain: 'bogus' })
+    yrs.apply_row_meta('X', 'bogus', undefined, undefined)
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('seed_meta (DEFAULT_META on an empty doc)', () => {
+    const md = createMissionDoc()
+    const yrs = new wasm.MissionDoc()
+    seedMeta(md, { id: 'm1', title: 'Operation X' })
+    yrs.seed_meta('m1', 'Operation X')
     expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
     yrs.free()
   })

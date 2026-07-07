@@ -17,7 +17,9 @@ name = "map_engine_core"
 [features]
 png = ["dep:png"]
 mission = ["dep:serde", "dep:serde_json", "dep:thiserror"]
-doc = ["dep:yrs"]
+# `doc` pulls serde_json too (hydrate payload + environment-patch JSON → yrs `Any`); it is already in
+# the wasm bundle via `mission`, so no new bundle cost.
+doc = ["dep:yrs", "dep:serde_json"]
 
 [dependencies]
 png = { version = "0.17", optional = true }

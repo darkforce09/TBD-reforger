@@ -43,6 +43,7 @@ pub struct MissionDocCore {
     squads: MapRef,
     factions: MapRef,
     editor_layers: MapRef,
+    meta: MapRef,
     /// `M = ()`: no per-stack-item metadata needed.
     undo_mgr: UndoManager<()>,
 }
@@ -56,6 +57,7 @@ impl MissionDocCore {
         let squads = doc.get_or_insert_map("squads");
         let factions = doc.get_or_insert_map("factions");
         let editor_layers = doc.get_or_insert_map("editorLayers");
+        let meta = doc.get_or_insert_map("meta");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `now - last_change < capture_timeout_millis` (undo.rs), and `u64 < 0`
@@ -74,6 +76,7 @@ impl MissionDocCore {
         undo_mgr.expand_scope(&doc, &squads);
         undo_mgr.expand_scope(&doc, &factions);
         undo_mgr.expand_scope(&doc, &editor_layers);
+        undo_mgr.expand_scope(&doc, &meta);
 
         Self {
             doc,
@@ -81,6 +84,7 @@ impl MissionDocCore {
             squads,
             factions,
             editor_layers,
+            meta,
             undo_mgr,
         }
     }
@@ -408,50 +412,17 @@ impl MissionDocCore {
     }
 
     /// Remove several slots and detach them from their squad's `slotIds` and every layer's
-    /// `entityIds` (batched cascade). Mirrors `ydoc.removeEntities` (slots path).
+    /// `entityIds` (batched cascade). Mirrors `ydoc.removeEntities` (slots path). The cascade body
+    /// lives in [`remove_slots_in_txn`] so `remove_editor_layer` can reuse it inside its own txn.
     pub fn remove_slots(&self, ids: Vec<String>) {
         let mut txn = self.doc.transact_mut();
-        let id_set: HashSet<&str> = ids.iter().map(String::as_str).collect();
-
-        // Affected squads (one filter each, not per slot).
-        let mut affected: HashSet<String> = HashSet::new();
-        for id in &ids {
-            if let Some(Out::YMap(slot)) = self.slots.get(&txn, id)
-                && let Some(Out::Any(Any::String(sid))) = slot.get(&txn, "squadId")
-            {
-                affected.insert(sid.to_string());
-            }
-        }
-        for sid in &affected {
-            if let Some(Out::YMap(squad)) = self.squads.get(&txn, sid)
-                && let Some(Out::Any(Any::Array(arr))) = squad.get(&txn, "slotIds")
-            {
-                let kept = retain_ids(&arr, &id_set);
-                squad.insert(&mut txn, "slotIds", Any::Array(kept.into()));
-            }
-        }
-
-        // Each layer that held a removed id (collect ids first — can't mutate while iterating).
-        let layer_ids: Vec<String> = self
-            .editor_layers
-            .iter(&txn)
-            .map(|(k, _)| k.to_string())
-            .collect();
-        for lid in &layer_ids {
-            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid)
-                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
-                && arr
-                    .iter()
-                    .any(|a| matches!(a, Any::String(s) if id_set.contains(s.as_ref())))
-            {
-                let kept = retain_ids(&arr, &id_set);
-                layer.insert(&mut txn, "entityIds", Any::Array(kept.into()));
-            }
-        }
-
-        for id in &ids {
-            self.slots.remove(&mut txn, id);
-        }
+        remove_slots_in_txn(
+            &mut txn,
+            &self.slots,
+            &self.squads,
+            &self.editor_layers,
+            &ids,
+        );
     }
 
     // ── Batch-3b bulk paste (port of `ydoc.pasteSlots`) ─────────────────────────────────────────
@@ -544,6 +515,151 @@ impl MissionDocCore {
                 layer.insert(&mut txn, "entityIds", Any::Array(arr.into()));
             }
         }
+    }
+
+    // ── Batch-3c layer removal + meta (ports of `ydoc.ts`) ──────────────────────────────────────
+
+    /// Delete an Outliner folder AND its whole subtree — every nested folder plus all filed slots —
+    /// in one transaction (mirrors `ydoc.removeEditorLayer` @500). No-op if the folder is absent or
+    /// it is the only layer (keep ≥1). If the subtree was every layer, a fresh default layer is
+    /// reseeded (JS mints `reseed_id`) so the editor is never layer-less.
+    pub fn remove_editor_layer(&self, id: &str, reseed_id: &str) {
+        let mut txn = self.doc.transact_mut();
+        if self.editor_layers.get(&txn, id).is_none() || self.editor_layers.len(&txn) <= 1 {
+            return;
+        }
+        // Collect the subtree: `id` plus every layer whose parent chain reaches it (fixpoint).
+        let mut subtree: HashSet<String> = HashSet::new();
+        subtree.insert(id.to_string());
+        loop {
+            let parents: Vec<(String, Option<String>)> = self
+                .editor_layers
+                .iter(&txn)
+                .map(|(lid, out)| {
+                    let pid = match out {
+                        Out::YMap(l) => match l.get(&txn, "parentId") {
+                            Some(Out::Any(Any::String(p))) => Some(p.to_string()),
+                            _ => None,
+                        },
+                        _ => None,
+                    };
+                    (lid.to_string(), pid)
+                })
+                .collect();
+            let mut added = false;
+            for (lid, pid) in parents {
+                if let Some(p) = pid
+                    && subtree.contains(&p)
+                    && !subtree.contains(&lid)
+                {
+                    subtree.insert(lid);
+                    added = true;
+                }
+            }
+            if !added {
+                break;
+            }
+        }
+        // Gather every slot filed in a subtree layer, cascade-remove them, then delete the layers.
+        let mut slot_ids: Vec<String> = Vec::new();
+        for lid in &subtree {
+            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid)
+                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
+            {
+                for a in arr.iter() {
+                    if let Any::String(s) = a {
+                        slot_ids.push(s.to_string());
+                    }
+                }
+            }
+        }
+        remove_slots_in_txn(
+            &mut txn,
+            &self.slots,
+            &self.squads,
+            &self.editor_layers,
+            &slot_ids,
+        );
+        for lid in &subtree {
+            self.editor_layers.remove(&mut txn, lid);
+        }
+        if self.editor_layers.len(&txn) == 0 {
+            let layer = self.editor_layers.insert(
+                &mut txn,
+                reseed_id,
+                MapPrelim::from([("id", reseed_id)]),
+            );
+            layer.insert(&mut txn, "name", "Default Layer");
+            layer.insert(&mut txn, "parentId", Any::Null);
+            layer.insert(&mut txn, "entityIds", Any::Array(Vec::new().into()));
+        }
+    }
+
+    /// Set the mission title (mirrors `ydoc.setTitle`).
+    pub fn set_title(&self, title: &str) {
+        let mut txn = self.doc.transact_mut();
+        self.meta.insert(&mut txn, "title", title);
+    }
+
+    /// Merge an environment patch (a JSON object) onto the existing `meta.environment`, mirroring
+    /// `ydoc.updateEnvironment` (`{...env, ...patch}`). Absent env → the patch becomes the env.
+    pub fn update_environment(&self, patch_json: &str) {
+        let mut txn = self.doc.transact_mut();
+        let mut env = read_env_map(&txn, &self.meta);
+        if let Any::Map(patch) = json_str_to_any(patch_json) {
+            for (k, v) in patch.iter() {
+                env.insert(k.clone(), v.clone());
+            }
+        }
+        self.meta
+            .insert(&mut txn, "environment", Any::Map(Arc::new(env)));
+    }
+
+    /// Apply mission-row fields from `GET /missions/:id` (mirrors `ydoc.applyMissionRowMeta`): title
+    /// if non-empty; terrain only if valid; `time`/`weather` merged onto the existing environment.
+    pub fn apply_row_meta(
+        &self,
+        title: &str,
+        terrain: &str,
+        time_of_day: Option<String>,
+        weather: Option<String>,
+    ) {
+        let mut txn = self.doc.transact_mut();
+        if !title.is_empty() {
+            self.meta.insert(&mut txn, "title", title);
+        }
+        if matches!(terrain, "everon" | "arland" | "custom") {
+            self.meta.insert(&mut txn, "terrain", terrain);
+        }
+        if time_of_day.is_some() || weather.is_some() {
+            let mut env = read_env_map(&txn, &self.meta);
+            if let Some(t) = time_of_day {
+                env.insert("time".to_string(), Any::String(t.as_str().into()));
+            }
+            if let Some(w) = weather {
+                env.insert("weather".to_string(), Any::String(w.as_str().into()));
+            }
+            self.meta
+                .insert(&mut txn, "environment", Any::Map(Arc::new(env)));
+        }
+    }
+
+    /// Seed default meta if empty (mirrors `ydoc.seedMeta` + `DEFAULT_META`). No-op if meta exists.
+    pub fn seed_meta(&self, id: &str, title: &str) {
+        let mut txn = self.doc.transact_mut();
+        if self.meta.len(&txn) > 0 {
+            return;
+        }
+        self.meta.insert(&mut txn, "id", id);
+        self.meta.insert(&mut txn, "title", title);
+        self.meta.insert(&mut txn, "terrain", "everon");
+        let mut env: HashMap<String, Any> = HashMap::new();
+        env.insert("time".to_string(), Any::String("06:00".into()));
+        env.insert("weather".to_string(), Any::String("clear".into()));
+        env.insert("viewDistance".to_string(), Any::BigInt(1600));
+        env.insert("thermals".to_string(), Any::Bool(false));
+        self.meta
+            .insert(&mut txn, "environment", Any::Map(Arc::new(env)));
     }
 
     // ── Batch-2 editor-layer mutators (ports of `ydoc.ts`) ──────────────────────────────────────
@@ -723,6 +839,100 @@ fn read_id_array<T: ReadTxn>(txn: &T, map: &MapRef, key: &str, field: &str) -> V
             _ => Vec::new(),
         },
         _ => Vec::new(),
+    }
+}
+
+/// Read `meta.environment` (an opaque `Any::Map`) as an owned `HashMap`; empty when absent. Backs
+/// the `update_environment` / `apply_row_meta` `{...env, ...patch}` merges.
+fn read_env_map<T: ReadTxn>(txn: &T, meta: &MapRef) -> HashMap<String, Any> {
+    match meta.get(txn, "environment") {
+        Some(Out::Any(Any::Map(m))) => (*m).clone(),
+        _ => HashMap::new(),
+    }
+}
+
+/// Delete `ids` (slots) and detach them from their squads' `slotIds` + every layer's `entityIds`,
+/// inside an existing transaction. The `remove_slots` cascade, shared with `remove_editor_layer`.
+fn remove_slots_in_txn(
+    txn: &mut TransactionMut,
+    slots: &MapRef,
+    squads: &MapRef,
+    editor_layers: &MapRef,
+    ids: &[String],
+) {
+    if ids.is_empty() {
+        return;
+    }
+    let id_set: HashSet<&str> = ids.iter().map(String::as_str).collect();
+
+    // Affected squads (one filter each, not per slot).
+    let mut affected: HashSet<String> = HashSet::new();
+    for id in ids {
+        if let Some(Out::YMap(slot)) = slots.get(&*txn, id.as_str())
+            && let Some(Out::Any(Any::String(sid))) = slot.get(&*txn, "squadId")
+        {
+            affected.insert(sid.to_string());
+        }
+    }
+    for sid in &affected {
+        if let Some(Out::YMap(squad)) = squads.get(&*txn, sid)
+            && let Some(Out::Any(Any::Array(arr))) = squad.get(&*txn, "slotIds")
+        {
+            let kept = retain_ids(&arr, &id_set);
+            squad.insert(&mut *txn, "slotIds", Any::Array(kept.into()));
+        }
+    }
+
+    // Each layer that held a removed id (collect ids first — can't mutate while iterating).
+    let layer_ids: Vec<String> = editor_layers
+        .iter(&*txn)
+        .map(|(k, _)| k.to_string())
+        .collect();
+    for lid in &layer_ids {
+        if let Some(Out::YMap(layer)) = editor_layers.get(&*txn, lid)
+            && let Some(Out::Any(Any::Array(arr))) = layer.get(&*txn, "entityIds")
+            && arr
+                .iter()
+                .any(|a| matches!(a, Any::String(s) if id_set.contains(s.as_ref())))
+        {
+            let kept = retain_ids(&arr, &id_set);
+            layer.insert(&mut *txn, "entityIds", Any::Array(kept.into()));
+        }
+    }
+
+    for id in ids {
+        slots.remove(&mut *txn, id.as_str());
+    }
+}
+
+/// Parse a JSON string to a `yrs` `Any` (JSON object → `Any::Map`, integer-valued numbers →
+/// `Any::BigInt` to match Yjs's own integer encoding). `Any::Null` on a parse error. Backs the
+/// `update_environment` patch merge + `hydrate` payload load without a yrs-version-specific
+/// `Any::from_json`.
+fn json_str_to_any(s: &str) -> Any {
+    serde_json::from_str::<serde_json::Value>(s).map_or(Any::Null, |v| value_to_any(&v))
+}
+
+/// `serde_json::Value` → `yrs::Any`, recursively. Integer-valued numbers become `Any::BigInt`
+/// (Yjs's integer encoding); other numbers `Any::Number`.
+fn value_to_any(v: &serde_json::Value) -> Any {
+    match v {
+        serde_json::Value::Null => Any::Null,
+        serde_json::Value::Bool(b) => Any::Bool(*b),
+        serde_json::Value::Number(n) => n
+            .as_i64()
+            .map_or_else(|| Any::Number(n.as_f64().unwrap_or(0.0)), Any::BigInt),
+        serde_json::Value::String(s) => Any::String(s.as_str().into()),
+        serde_json::Value::Array(arr) => {
+            Any::Array(arr.iter().map(value_to_any).collect::<Vec<_>>().into())
+        }
+        serde_json::Value::Object(map) => {
+            let m: HashMap<String, Any> = map
+                .iter()
+                .map(|(k, v)| (k.clone(), value_to_any(v)))
+                .collect();
+            Any::Map(Arc::new(m))
+        }
     }
 }
 
@@ -969,5 +1179,27 @@ mod tests {
         assert!(json.contains("\"s1\""), "{json}");
         assert!(json.contains("Rifleman"), "{json}");
         assert!(json.contains("100.5"), "{json}"); // exact f64 position (not the f32 SoA)
+    }
+
+    #[test]
+    fn remove_editor_layer_reseeds_when_subtree_is_all_layers() {
+        // root + child-of-root are the only layers; a slot filed in child. Removing root deletes the
+        // whole subtree (= every layer) → a default layer is reseeded with the JS-minted id, and the
+        // filed slot cascades away. Structural (the reseed path has no ydoc byte-parity twin to gate).
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("root", "Root", None);
+        doc.add_editor_layer("child", "Child", Some("root".to_string()));
+        doc.add_slot(
+            "s1", "sq1", "child", 0, "Rifleman", None, None, 1.0, 2.0, 0.0, 0.0,
+        );
+
+        doc.remove_editor_layer("root", "reseed-1");
+
+        assert_eq!(doc.slot_count(), 0, "the filed slot cascaded away");
+        let json = doc.small_maps_json();
+        assert!(json.contains("reseed-1"), "reseeded default id: {json}");
+        assert!(json.contains("Default Layer"), "{json}");
+        assert!(!json.contains("\"root\""), "root deleted: {json}");
+        assert!(!json.contains("\"child\""), "child deleted: {json}");
     }
 }
