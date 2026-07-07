@@ -73,24 +73,44 @@ off-canvas detection correctly selected **webgl2**. Screenshot-verified readouts
 | `uniform_bytes_last_frame` | **64**, read *after live pan/zoom* (target 6863.1, 6288.8 · zoom −3.824) — the navigation invariant held during interaction at 20M |
 | `gpu_frame_ms` | null (no TIMESTAMP_QUERY on this path) |
 
-## V8b — WebGPU half (remaining)
+## V8b — operator evidence (Chrome, Linux — 2026-07-07 23:25, WebGPU backend)
 
-Firefox route: `about:config` → `dom.webgpu.enabled = true` + `gfx.webgpu.ignore-blocklist =
-true` → restart → reload `/_spike/wgpu` (HUD should flip to **webgpu**; detection is
-automatic). Alternatively Firefox Nightly (Linux WebGPU on by default) or a Chromium.
-Linux WebGPU in Firefox stable is experimental (known black-canvas driver bugs on some
-Mesa/RADV combos) — if broken, `Run self-check` reports it numerically; `Force WebGL2` is
-the escape hatch.
+Operator installed Chrome; detection selected **webgpu** automatically (both halves of the
+backend decision are now proven on real browsers). Screenshot-verified readouts
+(`assets/image-fedab4ae…png` in the chat):
 
-1. Run self-check on the webgpu backend → paste the JSON (must be `pass: true`); zero console errors.
-2. Stress fps + stats at 1M / 5M / 20M on webgpu.
-3. Binary perceptual checks (yes/no each): red square up-and-right of green center ·
+| Metric | Operator Chrome (webgpu) |
+|---|---|
+| 20,000,000 instances | **67 fps** |
+| **`gpu_frame_ms`** | **13.894 ms** — `TIMESTAMP_QUERY` live: the GPU's own render-pass time at brute-force 20M |
+| seed end-to-end | 488 ms (gen 164.0 ms, upload 323.0 ms) |
+| `instances` | 20,000,000 exact · 10 chunks · `gpu_bytes` 640,000,160 |
+| `staging_peak_bytes` | 67,108,864 (= one 64 MiB chunk) |
+| `uniform_bytes_last_frame` | **64**, read after live pan/zoom (target 6209.1, 5685.0 · zoom −3.920) |
+
+**Calibrated §20M ladder constant (the number the stress mode existed to measure):**
+13.894 ms / 20M ≈ **0.69 ms GPU per million instances** on this hardware at the conservative
+32 B layout — so the ladder's L0 icon budget of B = 2M costs ≈ **1.4 ms** of a 16.67 ms
+frame, leaving ~15 ms of headroom for atlas sampling, culling, and everything else. Brute
+force at 20M sits at 83% of the 60 fps budget (hence 58–67 fps observed across backends) —
+the ladder remains the architecture for guaranteed 60 fps independent of N, now with a
+measured, generous constant instead of an estimate.
+
+Cross-backend brute-force 20M summary: Electron/webgl2 65–70 fps · Firefox/webgl2 58 fps ·
+Chrome/webgpu 67 fps. fps ≈ constant under pan/zoom on all three (vertex-bound, as the
+§20M analysis predicted; clipping does not reduce vertex work — the cull ladder does).
+
+## V8b — remaining (one click + feel)
+
+1. On the Chrome page: **Run self-check** → paste the JSON (must be `pass: true` on
+   `"backend":"webgpu"`); zero console errors.
+2. Binary perceptual checks (yes/no each): red square up-and-right of green center ·
    wheel-up zooms in at the cursor · drag-right moves content right · motion feels smooth at ≤1M.
 
-- [ ] WebGPU results pasted below:
+- [ ] WebGPU self-check JSON + feel answers pasted below:
 
 ```
-(pending operator — webgpu backend)
+(pending operator)
 ```
 
 ## Findings / deviations locked in during implementation
