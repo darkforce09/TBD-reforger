@@ -3,6 +3,7 @@
 //! Grids/geometry cross as an opaque `DemGrid` handle + result structs whose getters clone the
 //! backing `Vec`s into JS typed arrays.
 
+use map_engine_core::camera::OrthoCamera;
 use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, png_decode, sample};
 use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
@@ -965,5 +966,115 @@ impl ClusterIndex {
     #[must_use]
     pub fn leaf_count(&self) -> u32 {
         self.inner.leaf_count() as u32
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// camera::OrthoCamera (T-151 — parity exports for orthoCamera.parity.test.ts)
+// ---------------------------------------------------------------------------------------------
+
+/// deck.gl-parity orthographic camera (T-151). Thin shim over `camera::OrthoCamera` so the
+/// vitest live-oracle suite (`features/_wasm/orthoCamera.parity.test.ts`) can compare the
+/// wasm build against the in-process deck.gl viewport; the render engine consumes the same
+/// core type directly in `map-engine-render`.
+#[wasm_bindgen]
+pub struct OrthoCameraJs {
+    inner: OrthoCamera,
+}
+
+#[wasm_bindgen]
+impl OrthoCameraJs {
+    /// Construct from CSS-pixel dimensions + view state (unclamped, like `new OrthoCamera`).
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new(width_px: f64, height_px: f64, target_x: f64, target_y: f64, zoom: f64) -> Self {
+        Self {
+            inner: OrthoCamera::new(width_px, height_px, target_x, target_y, zoom),
+        }
+    }
+
+    /// `2^zoom` (pixels per meter) — the T2 scale-drift probe.
+    #[must_use]
+    pub fn scale(&self) -> f64 {
+        self.inner.scale()
+    }
+
+    /// `viewport.viewMatrix` (column-major 16).
+    #[must_use]
+    pub fn view_matrix(&self) -> Vec<f64> {
+        self.inner.view_matrix().to_vec()
+    }
+
+    /// `viewport.projectionMatrix`.
+    #[must_use]
+    pub fn projection_matrix(&self) -> Vec<f64> {
+        self.inner.projection_matrix().to_vec()
+    }
+
+    /// `viewport.viewProjectionMatrix`.
+    #[must_use]
+    pub fn view_projection(&self) -> Vec<f64> {
+        self.inner.view_projection().to_vec()
+    }
+
+    /// `viewport.pixelProjectionMatrix`.
+    #[must_use]
+    pub fn pixel_projection(&self) -> Vec<f64> {
+        self.inner.pixel_projection().to_vec()
+    }
+
+    /// `viewport.pixelUnprojectionMatrix` (empty vec if singular — deck warns instead).
+    #[must_use]
+    pub fn pixel_unprojection(&self) -> Vec<f64> {
+        self.inner
+            .pixel_unprojection()
+            .map(|m| m.to_vec())
+            .unwrap_or_default()
+    }
+
+    /// `viewport.project([x, y, z])` → `[px, py, pz]` (top-left).
+    #[must_use]
+    pub fn project(&self, x: f64, y: f64, z: f64) -> Vec<f64> {
+        self.inner.project([x, y, z]).to_vec()
+    }
+
+    /// `viewport.unproject([px, py])` → `[wx, wy]` (world z=0 plane).
+    #[must_use]
+    pub fn unproject_xy(&self, px: f64, py: f64) -> Vec<f64> {
+        self.inner.unproject_xy(px, py).to_vec()
+    }
+
+    /// `viewport.getBounds()` → `[minX, minY, maxX, maxY]`.
+    #[must_use]
+    pub fn visible_world_rect(&self) -> Vec<f64> {
+        self.inner.visible_world_rect().to_vec()
+    }
+
+    /// Drag-pan by a CSS-pixel delta (content follows cursor).
+    pub fn pan(&mut self, dx_px: f64, dy_px: f64) {
+        self.inner.pan(dx_px, dy_px);
+    }
+
+    /// Cursor-anchored zoom (clamped to the view-state band).
+    pub fn zoom_at(&mut self, dz: f64, cursor_x_px: f64, cursor_y_px: f64) {
+        self.inner.zoom_at(dz, cursor_x_px, cursor_y_px);
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn target_x(&self) -> f64 {
+        self.inner.target_x()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn target_y(&self) -> f64 {
+        self.inner.target_y()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn zoom(&self) -> f64 {
+        self.inner.zoom()
     }
 }

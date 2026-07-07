@@ -1,0 +1,29 @@
+[package]
+name = "map-engine-render"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.95"
+license = "UNLICENSED"
+publish = false
+description = "wgpu render engine (WebGPU + WebGL2 fallback) for the tactical map — wasm-bindgen, canvas surface. T-151 spike; built via wasm-pack --target web."
+
+[lib]
+# cdylib → the wasm artifact; rlib → so `cargo build --workspace` (native) links it too.
+crate-type = ["cdylib", "rlib"]
+
+# Plain dependencies compile natively too: the pure `scene` data module (instance structs +
+# builders, no wgpu types) is byte-level-tested under plain `cargo test` (plan §S4b).
+[dependencies]
+map-engine-core = { path = "../map-engine-core" }
+bytemuck = { version = "1", features = ["derive"] }
+
+# The heavy GPU/web stack never touches native builds (workspace CI stays fast) — wasm32 only.
+# wgpu: `webgpu` (browser WebGPU backend) + `webgl` (WebGL2/GLES fallback) + `wgsl` (naga
+# front-end, required for the GL path's WGSL→GLSL translation).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wgpu = { version = "29", default-features = false, features = ["webgpu", "webgl", "wgsl"] }
+wasm-bindgen = "0.2"
+wasm-bindgen-futures = "0.4"
+js-sys = "0.3"
+web-sys = { version = "0.3", features = ["HtmlCanvasElement"] }
+console_error_panic_hook = "0.1"

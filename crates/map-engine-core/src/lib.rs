@@ -11,6 +11,7 @@
 
 mod js;
 
+pub mod camera;
 pub mod dem;
 #[cfg(feature = "doc")]
 pub mod doc;

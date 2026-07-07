@@ -27,3 +27,10 @@ serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 thiserror = { version = "2", optional = true }
 yrs = { version = "0.27", optional = true }
+
+[dev-dependencies]
+# Unconditional for tests: the T-151 camera parity suite parses the committed deck.gl golden
+# fixture regardless of feature flags (plain `cargo test` in workspace CI runs featureless).
+# `float_roundtrip`: serde_json's default float parse is NOT correctly rounded (measured 1 ULP
+# off on fixture inputs); this feature makes parse exact — required for the ULP==0 gates.
+serde_json = { version = "1", features = ["float_roundtrip"] }

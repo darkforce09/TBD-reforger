@@ -6,4 +6,9 @@
 # `cargo build --workspace` stays green.
 [workspace]
 resolver = "3"
-members = ["apps/website", "crates/map-engine-core", "crates/map-engine-wasm"]
+members = [
+    "apps/website",
+    "crates/map-engine-core",
+    "crates/map-engine-render",
+    "crates/map-engine-wasm",
+]

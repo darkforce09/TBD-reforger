@@ -11,6 +11,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"*.{ts,tsx}\"",
     "preview": "vite preview",
     "test": "vitest run",
+    "gen:ortho-goldens": "node scripts/gen-deckgl-ortho-goldens.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {
