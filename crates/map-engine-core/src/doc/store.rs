@@ -662,6 +662,79 @@ impl MissionDocCore {
             .insert(&mut txn, "environment", Any::Map(Arc::new(env)));
     }
 
+    // ── Batch-3d hydrate (lossless loader; port of `ydoc.hydrateMissionDoc`) ─────────────────────
+
+    /// Repopulate the doc from a compiled `json_payload` — the **lossless** dict-load half of
+    /// `ydoc.hydrateMissionDoc` @535: clear every entity map (meta kept), set `environment` +
+    /// `map.terrain`, then load `objectives`/`vehicles`/`markers`, `loadouts` (object → values), and
+    /// the `editor.{factions,squads,slots,editorLayers}` graph **verbatim** (each row → a nested map;
+    /// nested objects like `position` stay opaque, exactly like `entityToYMap`). The **lossy**
+    /// `orbat[]` rebuild stays JS-side (it mints ids); the flip wrapper transforms lossy → an
+    /// `editor`-shaped payload and calls this. If no layers were loaded, a default layer is reseeded
+    /// with the JS-minted `default_layer_id` (mirrors `ensureDefaultLayer`).
+    pub fn hydrate(&self, payload_json: &str, default_layer_id: &str) {
+        let Any::Map(payload) = json_str_to_any(payload_json) else {
+            return;
+        };
+        // Grab the 5 non-tracked map handles before opening the txn (`get_or_insert_map` takes &self).
+        let loadouts = self.doc.get_or_insert_map("loadouts");
+        let items = self.doc.get_or_insert_map("items");
+        let objectives = self.doc.get_or_insert_map("objectives");
+        let vehicles = self.doc.get_or_insert_map("vehicles");
+        let markers = self.doc.get_or_insert_map("markers");
+
+        let mut txn = self.doc.transact_mut();
+        for m in [
+            &self.slots,
+            &self.squads,
+            &self.factions,
+            &self.editor_layers,
+            &loadouts,
+            &items,
+            &objectives,
+            &vehicles,
+            &markers,
+        ] {
+            m.clear(&mut txn);
+        }
+
+        if let Some(env) = payload.get("environment") {
+            self.meta.insert(&mut txn, "environment", env.clone());
+        }
+        if let Some(Any::Map(map)) = payload.get("map")
+            && let Some(Any::String(terrain)) = map.get("terrain")
+        {
+            self.meta.insert(&mut txn, "terrain", terrain.as_ref());
+        }
+
+        load_rows(&mut txn, &objectives, payload.get("objectives"));
+        load_rows(&mut txn, &vehicles, payload.get("vehicles"));
+        load_rows(&mut txn, &markers, payload.get("markers"));
+        if let Some(Any::Map(lo)) = payload.get("loadouts") {
+            for v in lo.values() {
+                load_row(&mut txn, &loadouts, v);
+            }
+        }
+
+        if let Some(Any::Map(editor)) = payload.get("editor") {
+            load_rows(&mut txn, &self.factions, editor.get("factions"));
+            load_rows(&mut txn, &self.squads, editor.get("squads"));
+            load_rows(&mut txn, &self.slots, editor.get("slots"));
+            load_rows(&mut txn, &self.editor_layers, editor.get("editorLayers"));
+        }
+
+        if self.editor_layers.len(&txn) == 0 {
+            let layer = self.editor_layers.insert(
+                &mut txn,
+                default_layer_id,
+                MapPrelim::from([("id", default_layer_id)]),
+            );
+            layer.insert(&mut txn, "name", "Default Layer");
+            layer.insert(&mut txn, "parentId", Any::Null);
+            layer.insert(&mut txn, "entityIds", Any::Array(Vec::new().into()));
+        }
+    }
+
     // ── Batch-2 editor-layer mutators (ports of `ydoc.ts`) ──────────────────────────────────────
 
     /// Create an Outliner folder (id + name computed JS-side). Mirrors `ydoc.addEditorLayer`.
@@ -932,6 +1005,32 @@ fn value_to_any(v: &serde_json::Value) -> Any {
                 .map(|(k, v)| (k.clone(), value_to_any(v)))
                 .collect();
             Any::Map(Arc::new(m))
+        }
+    }
+}
+
+/// Load an array of entity rows (`Some(Any::Array)`) into `map`. `hydrate`'s `setEach`.
+fn load_rows(txn: &mut TransactionMut, map: &MapRef, rows: Option<&Any>) {
+    if let Some(Any::Array(arr)) = rows {
+        for row in arr.iter() {
+            load_row(txn, map, row);
+        }
+    }
+}
+
+/// Load one entity row (an `Any::Map` with a string `id`) into `map` as a nested `MapRef`: create the
+/// entity keyed by `id`, then insert every other field as its `Any` value — nested objects (e.g.
+/// `position`) stay opaque `Any::Map`s, exactly like `ydoc.entityToYMap`. No-op on a missing id.
+fn load_row(txn: &mut TransactionMut, map: &MapRef, row: &Any) {
+    let Any::Map(fields) = row else { return };
+    let Some(Any::String(id)) = fields.get("id") else {
+        return;
+    };
+    let id = id.as_ref();
+    let entity = map.insert(&mut *txn, id, MapPrelim::from([("id", id)]));
+    for (k, v) in fields.iter() {
+        if k != "id" {
+            entity.insert(&mut *txn, k.as_str(), v.clone());
         }
     }
 }

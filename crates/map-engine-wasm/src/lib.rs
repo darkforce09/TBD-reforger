@@ -769,6 +769,13 @@ impl MissionDoc {
     pub fn seed_meta(&self, id: &str, title: &str) {
         self.inner.seed_meta(id, title);
     }
+
+    // Lossless hydrate (batch 3d): load a compiled json_payload verbatim. JS transforms the lossy
+    // orbat[] path → an editor-shaped payload (minting ids) before calling this; JS mints the
+    // default_layer_id used only when the payload carries no layers.
+    pub fn hydrate(&self, payload_json: &str, default_layer_id: &str) {
+        self.inner.hydrate(payload_json, default_layer_id);
+    }
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
         self.inner.set_slot_position(id, x, y, z, rotation);
     }

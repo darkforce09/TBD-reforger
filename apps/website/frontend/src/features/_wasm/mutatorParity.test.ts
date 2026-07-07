@@ -21,6 +21,7 @@ import {
   updateEnvironment,
   applyMissionRowMeta,
   seedMeta,
+  hydrateMissionDoc,
 } from '@/features/tactical-map/state/ydoc'
 import { docToSnapshot, snapshotFromShadow } from '@/features/tactical-map'
 import { getTerrain } from '@/features/tactical-map/coords/terrains'
@@ -342,6 +343,127 @@ describe('Rust mutator parity vs ydoc.ts (batch 3c: layer removal + meta)', () =
     const yrs = new wasm.MissionDoc()
     seedMeta(md, { id: 'm1', title: 'Operation X' })
     yrs.seed_meta('m1', 'Operation X')
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+})
+
+describe('Rust mutator parity vs ydoc.ts (batch 3d: hydrate)', () => {
+  // A rich lossless payload: environment + terrain + the full editor graph (factions/squads/slots
+  // with tag/assetId/varied positions + nested folders) + top-level objectives/vehicles/markers +
+  // a loadouts object. Exercises every dict the Rust loader touches.
+  const losslessPayload = {
+    environment: { time: '08:00', weather: 'overcast', viewDistance: 3200, thermals: true },
+    map: { terrain: 'arland' },
+    editor: {
+      factions: [{ id: 'f1', key: 'BLUFOR', name: 'US Army', squadIds: ['sq1'] }],
+      squads: [
+        { id: 'sq1', factionId: 'f1', callsign: 'Alpha', name: 'Alpha 1-1', slotIds: ['s1', 's2'] },
+      ],
+      slots: [
+        {
+          id: 's1',
+          squadId: 'sq1',
+          index: 0,
+          role: 'Squad Leader',
+          tag: 'CMD',
+          position: { x: 100.5, y: 200.25, z: 0, rotation: 90 },
+          stance: 'stand',
+          loadoutId: null,
+        },
+        {
+          id: 's2',
+          squadId: 'sq1',
+          index: 1,
+          role: 'Rifleman',
+          assetId: '{GUID}Prefabs/x.et',
+          position: { x: 300, y: 400, z: 12.5, rotation: 0 },
+          stance: 'prone',
+          loadoutId: null,
+        },
+      ],
+      editorLayers: [
+        { id: 'l1', name: 'Default Layer', parentId: null, entityIds: ['s1', 's2'] },
+        { id: 'l2', name: 'Bravo', parentId: 'l1', entityIds: [] },
+      ],
+    },
+    objectives: [
+      {
+        id: 'o1',
+        type: 'capture',
+        factionId: 'f1',
+        position: { x: 1, y: 2, z: 0 },
+        radius: 50,
+        triggers: [],
+      },
+    ],
+    vehicles: [
+      {
+        id: 'v1',
+        classname: 'car',
+        factionId: 'f1',
+        position: { x: 5, y: 6, z: 0, rotation: 0 },
+        inventoryItemIds: [],
+      },
+    ],
+    markers: [{ id: 'm1', kind: 'icon', points: [[1, 2]], color: '#fff' }],
+    loadouts: { ld1: { id: 'ld1', containers: {}, weapons: {}, itemIds: [] } },
+  }
+
+  it('hydrate (lossless editor block loaded verbatim)', () => {
+    const md = createMissionDoc()
+    hydrateMissionDoc(md, losslessPayload)
+    const yrs = new wasm.MissionDoc()
+    yrs.hydrate(JSON.stringify(losslessPayload), 'unused-default')
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('hydrate (lossy orbat → JS-minted editor dicts reconstructed byte-for-byte)', () => {
+    // The lossy orbat rebuild stays JS-side (it mints ids); the flip wrapper feeds its editor-shaped
+    // output to the Rust loader. Prove that composite: JS hydrates from orbat, then the Rust loader
+    // reproduces the JS-built graph.
+    const md = createMissionDoc()
+    hydrateMissionDoc(md, {
+      orbat: [
+        {
+          faction: 'BLUFOR',
+          callsign: 'A',
+          squad: 'Alpha',
+          slots: [{ role: 'SL', tag: 'CMD' }, { role: 'AR' }],
+        },
+        { faction: 'OPFOR', callsign: 'B', squad: 'Bravo', slots: [{ role: 'Rifleman' }] },
+      ],
+    })
+    const snap = docToSnapshot(md)
+    const editorPayload = {
+      editor: {
+        factions: Object.values(snap.factionsById),
+        squads: Object.values(snap.squadsById),
+        slots: Object.values(snap.slotsById),
+        editorLayers: Object.values(snap.editorLayersById),
+      },
+    }
+    const yrs = new wasm.MissionDoc()
+    yrs.hydrate(JSON.stringify(editorPayload), 'unused-default')
+    expect(snapshotFromShadow(yrs)).toEqual(snap)
+    yrs.free()
+  })
+
+  it('hydrate (no layers in payload → reseed default with the JS-minted id)', () => {
+    const md = createMissionDoc()
+    const payload = {
+      editor: {
+        factions: [{ id: 'f1', key: 'BLUFOR', name: 'US', squadIds: [] }],
+        squads: [],
+        slots: [],
+        editorLayers: [],
+      },
+    }
+    hydrateMissionDoc(md, payload) // ensureDefaultLayer mints a layer
+    const layerId = [...md.entities.editorLayers.keys()][0]
+    const yrs = new wasm.MissionDoc()
+    yrs.hydrate(JSON.stringify(payload), layerId) // Rust reseeds with the same id
     expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
     yrs.free()
   })
