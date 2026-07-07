@@ -11,6 +11,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
+    },
+    {
+      "id": "T-151",
+      "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
+      "branch": "t-151-wgpu-spike"
     }
   ]
 }

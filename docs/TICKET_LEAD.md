@@ -9,6 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6: OrthoCamera ULP-0 parity, 20M chunked pool, byte-exact self-check on webgpu+webgl2). Slices W0-W9 wire world data, all render layers, and editor interaction onto the engine; Deck stays the oracle until T-151.9. Hub: t151_wgpu_engine_program.md.
 
 ## Next queued (top 10)
 
