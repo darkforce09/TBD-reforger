@@ -57,21 +57,40 @@ as designed); the WebGPU half of V8 falls to the operator (V8b) per plan.
   constants generously. The ladder (cull + density) remains the architecture for guaranteed
   60 fps independent of N and of weaker hardware.
 
-## V8b — operator checklist (remaining)
+## V8b — operator evidence (Firefox stable, Linux — 2026-07-07 23:20)
 
-On a real browser (WebGPU-capable, e.g. Chrome):
+Operator's daily browser is **Firefox on Linux**, which does NOT ship WebGPU in stable as of
+2026-07 (default-on in Nightly only; Mozilla targets Linux stable later in 2026) — so the
+off-canvas detection correctly selected **webgl2**. Screenshot-verified readouts
+(`assets/image-d7bc4617…png` in the chat):
 
-1. `make web` → open `http://localhost:5173/_spike/wgpu` → HUD should read **webgpu**.
-2. Run self-check → paste the JSON here (must be `pass: true`); zero console errors.
-3. Stress table: fps + stats JSON at 1M / 5M / 20M on webgpu AND on `?force=webgl`.
-4. At 20M: `instances` reads exactly 20,000,000; `uniform_bytes_last_frame` reads 64 while panning.
-5. Binary perceptual checks (yes/no each): red square up-and-right of green center ·
+| Metric | Operator Firefox (webgl2) |
+|---|---|
+| 20,000,000 instances | **58 fps** |
+| seed end-to-end | 384 ms (gen 153.0 ms, upload ≈221–231 ms) |
+| `instances` | 20,000,000 exact · 10 chunks · `gpu_bytes` 640,000,160 |
+| `staging_peak_bytes` | **67,108,864** (= one 64 MiB chunk — §20M residency bound held) |
+| `uniform_bytes_last_frame` | **64**, read *after live pan/zoom* (target 6863.1, 6288.8 · zoom −3.824) — the navigation invariant held during interaction at 20M |
+| `gpu_frame_ms` | null (no TIMESTAMP_QUERY on this path) |
+
+## V8b — WebGPU half (remaining)
+
+Firefox route: `about:config` → `dom.webgpu.enabled = true` + `gfx.webgpu.ignore-blocklist =
+true` → restart → reload `/_spike/wgpu` (HUD should flip to **webgpu**; detection is
+automatic). Alternatively Firefox Nightly (Linux WebGPU on by default) or a Chromium.
+Linux WebGPU in Firefox stable is experimental (known black-canvas driver bugs on some
+Mesa/RADV combos) — if broken, `Run self-check` reports it numerically; `Force WebGL2` is
+the escape hatch.
+
+1. Run self-check on the webgpu backend → paste the JSON (must be `pass: true`); zero console errors.
+2. Stress fps + stats at 1M / 5M / 20M on webgpu.
+3. Binary perceptual checks (yes/no each): red square up-and-right of green center ·
    wheel-up zooms in at the cursor · drag-right moves content right · motion feels smooth at ≤1M.
 
-- [ ] Operator results pasted below:
+- [ ] WebGPU results pasted below:
 
 ```
-(pending operator)
+(pending operator — webgpu backend)
 ```
 
 ## Findings / deviations locked in during implementation
