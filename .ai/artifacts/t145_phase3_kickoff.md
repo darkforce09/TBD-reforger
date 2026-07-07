@@ -7,7 +7,7 @@ oracle. Full plan: `~/.claude/plans/idea-our-current-system-mossy-island.md`. Li
 
 ## Where things stand (branch `t-145-rust-rewrite`)
 
-Phases 0–2 **complete + committed + verified**; Phase 3.0 spike **partial** (criterion 5 proven).
+Phases 0–2 **complete**; **Phase 3.0 spike headless-complete** (`a7fdd44c`→`09b85f37`) — all six §9.1 criteria proven headlessly. **Only criterion 6 (≥60 fps deck) + the IndexedDB round-trip remain, and both are operator-verified in-browser** at `/_spike/doc-core` (see the checklist at the bottom of this file). Next after browser sign-off: **Phase 3.1 cutover**.
 
 | commit | what |
 |---|---|
@@ -17,7 +17,11 @@ Phases 0–2 **complete + committed + verified**; Phase 3.0 spike **partial** (c
 | `cbf0b454` | Phase 1 DEM decode — `dem::png` in wasm; **pngjs dropped from the app bundle** |
 | `bf3af85d` | Phase 2a — ORBAT + kit-aliases lifted to shared core; backend consumes it |
 | `2ea46813` | Phase 2b — mod-doc flatten → shared core + wasm; **one compiler for backend & client** |
-| `cae627d3` | Phase 3.0 spike — Rust `SlotIndex` set-equal to rbush (criterion 5) |
+| `cae627d3` | Phase 3.0 spike — Rust `SlotIndex` set-equal to rbush (criterion 5-pick) |
+| `a7fdd44c` | Phase 3.0.a — yrs `doc` core (`SlotSoa` + `MissionDocCore`); native tests = criterion 1 + Rust halves of 3/4 |
+| `0e105373` | Phase 3.0.b — wasm `MissionDoc` + `docCore.parity.test.ts`: criteria **2/3/4** green vs JS yjs (+ headless zero-copy view) |
+| `751f7bd7` | Phase 3.0.c — `spatial::cluster` supercluster-compatible; `cluster.parity.test.ts` (criterion **5-cluster**) |
+| `09b85f37` | Phase 3.0.d — browser harness `/_spike/doc-core` (criterion **6** fps + IndexedDB — operator-verified) |
 
 **What's live:** all DEM + vector-geometry math and the mission mod-doc flatten run in
 `map-engine-core` (backend links it natively; client calls it via wasm). TS = UI shell + oracles.
@@ -84,15 +88,19 @@ apps/website/frontend/           # TS UI shell
 
 ## Phase 3.0 spike — status + what's left
 
-Six criteria (plan §9.1). **Proven headlessly:**
-- **(5 pick) + (1 SoA):** `map-engine-core::spatial::point_index` + wasm `SlotIndex`; `features/_wasm/slotIndex.parity.test.ts` is set-equal to actual `RBush` over 100k points.
+Six criteria (plan §9.1). **All proven headlessly** (commits in the table above):
+- **(1 SoA):** `doc::soa::SlotSoa` materialized from the yrs doc (native `doc::store` tests).
+- **(2 Yjs-wire apply):** `docCore.parity.test.ts` — a mission authored through the **real `state/ydoc.ts`** actions → `Y.encodeStateAsUpdate` → wasm `MissionDoc.apply_update` → SoA set-equal to the `Y.Doc`, id-keyed, `Math.fround(js)===col` at the f32 boundary.
+- **(3 round-trip):** `encode_state` → fresh `apply_update` → identical SoA + deterministic re-encode (headless). *IndexedDB adapter = browser, below.*
+- **(4 undo):** yrs `UndoManager` step-for-step vs `Y.UndoManager` on a fixed op script (`captureTimeout 0` both sides).
+- **(5 pick):** `spatial::point_index` + wasm `SlotIndex` set-equal to `RBush` (100k) — `cae627d3`.
+- **(5 cluster):** `spatial::cluster` + `cluster.parity.test.ts` vs the real `slotClusterIndex` supercluster — **EXACT** on well-separated blobs + conservation on dense.
 
-**Remaining (need `yrs` + a browser):**
-- **(2)** Yjs-wire update apply vs `Y.Doc` — *partly headless in vitest*: JS Yjs makes edits → `encodeStateAsUpdate` → pass bytes to a wasm `yrs` doc → assert materialized SoA matches `Y.Doc.toJSON()`.
-- **(3)** persistence: yrs `encode_state_as_update` / `apply_update` **byte round-trip** is headless; the IndexedDB adapter is browser glue.
-- **(4)** yrs `UndoManager` parity vs `Y.UndoManager` on a fixed op script.
-- **(6)** SharedArrayBuffer zero-copy deck.gl `IconLayer` reading a `Float32Array` view onto wasm memory, **≥ 60 fps @ 500k** — **browser only; operator FPS check** (use the in-editor `FpsCounter`).
-- **cluster path of (5):** a **supercluster-compatible** cluster index (hierarchical grid + the mercator-normalization dance in `slotClusterIndex.ts`) — differential set-equality vs `supercluster`.
+**Operator browser checklist (the only remaining sign-off — criterion 6 + IDB):**
+1. `make wasm` (regenerate the gitignored pkg) → `make web` → open **`http://localhost:5173/_spike/doc-core`** (no login; it's a top-level dev route).
+2. Click **500k** → **Generate**. Pan + zoom continuously; the **FPS readout must hold ≥ 60** (on a 60 Hz display). Then try **1000k** as a stress case.
+3. Click **Save→IDB**, then **Reload←IDB** — the same slot field should re-render identically (proves the yrs update-stream IndexedDB round-trip). **Clear IDB** resets it.
+   - If FPS sits < 60 @ 500k, note the GPU/display; if Reload doesn't match, that's a real persistence gap → report. Otherwise the gate is **CLOSED** → proceed to Phase 3.1 cutover.
 
 ## Phase 3.0 first moves (recommended order)
 
