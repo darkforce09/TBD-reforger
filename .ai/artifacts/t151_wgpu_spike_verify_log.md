@@ -123,14 +123,12 @@ webgl2 (detected + forced) and webgpu; 20M stress with exact integer accounting 
 timestamp constant calibrated (13.9–14.4 ms @ brute-force 20M ⇒ ≈0.7 ms per million
 instances).
 
-Remaining formality (operator's word, three yes/no): wheel-up zooms in at the cursor ·
-drag-right moves content right · motion feels smooth at ≤1M.
+Operator feel answers (2026-07-07 23:31): **"yes ×3"** — wheel-up zooms in at the cursor
+YES · drag-right moves content right YES · motion smooth at ≤1M YES.
 
-- [ ] Feel answers:
-
-```
-(pending operator — three yes/no)
-```
+**V8 COMPLETE. All Phase 3 spine gates (V1–V8) closed.** The perceptual trio is recorded as
+the operator's statement per the verification philosophy; everything else in this log is a
+machine-checked number.
 
 ## Findings / deviations locked in during implementation
 
