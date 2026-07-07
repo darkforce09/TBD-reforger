@@ -5,3 +5,7 @@
 import { lazy } from 'react'
 
 export const DocCoreSpikePage = lazy(() => import('./DocCoreSpikePage'))
+
+// T-151 wgpu render-engine spike — same code-split rationale; reachable only at
+// /_spike/wgpu (the wgpu wasm pkg never loads for normal sessions).
+export const WgpuSpikePage = lazy(() => import('./wgpu/WgpuCanvas'))

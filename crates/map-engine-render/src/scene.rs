@@ -93,8 +93,18 @@ impl Lcg {
 /// the native byte tests.
 #[must_use]
 pub fn stress_chunk(chunk_idx: u32, count: usize, seed: u64) -> Vec<QuadInstance> {
+    let mut out = Vec::new();
+    stress_chunk_into(chunk_idx, count, seed, &mut out);
+    out
+}
+
+/// [`stress_chunk`] into a caller-owned staging `Vec` — the streaming-upload loop reuses one
+/// 64 MiB staging allocation across all chunks, so peak wasm heap is one chunk regardless of
+/// total instance count (plan §20M residency).
+pub fn stress_chunk_into(chunk_idx: u32, count: usize, seed: u64, out: &mut Vec<QuadInstance>) {
     let mut rng = Lcg::new(seed, chunk_idx);
-    let mut out = Vec::with_capacity(count);
+    out.clear();
+    out.reserve(count);
     for _ in 0..count {
         let cx = rng.unit() * 12_800.0 - 6_400.0;
         let cy = rng.unit() * 12_800.0 - 6_400.0;
@@ -108,7 +118,6 @@ pub fn stress_chunk(chunk_idx: u32, count: usize, seed: u64) -> Vec<QuadInstance
             color: [r, g, b, 1.0],
         });
     }
-    out
 }
 
 #[cfg(test)]

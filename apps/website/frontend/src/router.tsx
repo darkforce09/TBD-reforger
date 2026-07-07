@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { DocCoreSpikePage } from '@/features/_spike/routes'
+import { DocCoreSpikePage, WgpuSpikePage } from '@/features/_spike/routes'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { MissionEditorPage } from '@/features/mission-creator/routes'
 import {
@@ -53,6 +53,15 @@ export const router = createBrowserRouter([
     element: (
       <Suspense fallback={<div style={{ padding: 24 }}>Loading spike…</div>}>
         <DocCoreSpikePage />
+      </Suspense>
+    ),
+  },
+  {
+    // wgpu render-engine spike harness (T-151) — no auth, no app chrome.
+    path: '/_spike/wgpu',
+    element: (
+      <Suspense fallback={<div style={{ padding: 24 }}>Loading spike…</div>}>
+        <WgpuSpikePage />
       </Suspense>
     ),
   },

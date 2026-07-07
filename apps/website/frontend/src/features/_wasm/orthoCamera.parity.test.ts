@@ -49,6 +49,7 @@ interface Budgets {
 
 function checkCase(width: number, height: number, target: [number, number], zoom: number) {
   const viewport = view.makeViewport({ width, height, viewState: { target, zoom } })
+  if (viewport === null) throw new Error(`makeViewport null at ${width}x${height}`)
   const cam = new OrthoCameraJs(width, height, target[0], target[1], zoom)
   const integer = Number.isInteger(zoom)
   const b: Budgets = integer ? { matrix: 0, projection: 0 } : { matrix: 2, projection: 4 }

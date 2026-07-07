@@ -12,3 +12,11 @@
 //!   scene module, keeping workspace-wide CI (`cargo build/clippy/test`) fast.
 
 pub mod scene;
+
+#[cfg(target_arch = "wasm32")]
+mod engine;
+#[cfg(target_arch = "wasm32")]
+mod probe;
+
+#[cfg(target_arch = "wasm32")]
+pub use engine::RenderEngine;
