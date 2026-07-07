@@ -1,22 +1,59 @@
 import { describe, it, expect } from 'vitest'
+import Supercluster from 'supercluster'
 import * as wasm from '@/wasm/pkg/map_engine_wasm'
-import * as sci from '@/features/tactical-map/state/slotClusterIndex'
 import { getTerrain } from '@/features/tactical-map/coords/terrains'
 import type { SlotIcon } from '@/features/tactical-map/state/selectors'
 
 // Phase 3.0 spike (plan §9.1 criterion 5, cluster path) — the Rust ClusterIndex must be
-// supercluster-compatible. Class S: on well-separated groups the clustering is order-independent, so
-// parity is EXACT (same cluster count, counts, centroids vs the real `slotClusterIndex` supercluster);
-// on dense inputs (where supercluster's greedy result is KDBush-order dependent) the pinned invariant
-// is point conservation on both sides. The Rust index mirrors the same normalize→fround(mercator)→
-// cluster→inverse-project pipeline, so the projection + centroid math is what parity locks.
+// supercluster-compatible. The oracle is the REAL `supercluster` library driven through the same
+// linear world→lng/lat normalization the app used (kept as a test-only devDep after Phase 3.1 wired
+// the Rust index into slotClusterIndex.ts). Class S: on well-separated groups the clustering is
+// order-independent → EXACT parity (cluster count, counts, centroids); on dense inputs (greedy result
+// is KDBush-order dependent) the pinned invariant is point conservation on both sides.
 
 const terrain = getTerrain('everon') // 12800²
+const LNG_SPAN = 360
+const LAT_SPAN = 170
 
 interface Marker {
   x: number
   y: number
   count: number
+}
+
+const normLng = (x: number) => (x / terrain.width) * LNG_SPAN - 180
+const normLat = (y: number) => (y / terrain.height) * LAT_SPAN - 85
+const worldX = (lng: number) => ((lng + 180) / LNG_SPAN) * terrain.width
+const worldY = (lat: number) => ((lat + 85) / LAT_SPAN) * terrain.height
+const superZoom = (dz: number) => Math.max(0, Math.min(16, Math.round(dz + 8)))
+
+/** The real supercluster library, fed the app's normalization — the parity oracle. */
+function scOracle(
+  icons: SlotIcon[],
+): (bbox: [number, number, number, number], dz: number) => Marker[] {
+  const sc = new Supercluster({ radius: 60, maxZoom: 16 })
+  sc.load(
+    icons.map((ic) => ({
+      type: 'Feature' as const,
+      properties: { id: ic.id },
+      geometry: { type: 'Point' as const, coordinates: [normLng(ic.x), normLat(ic.y)] },
+    })),
+  )
+  return (bbox, dz) => {
+    const feats = sc.getClusters(
+      [normLng(bbox[0]), normLat(bbox[1]), normLng(bbox[2]), normLat(bbox[3])],
+      superZoom(dz),
+    )
+    return feats.map((f) => {
+      const [lng, lat] = f.geometry.coordinates
+      const isCluster = (f.properties as { cluster?: boolean }).cluster === true
+      return {
+        x: worldX(lng),
+        y: worldY(lat),
+        count: isCluster ? (f.properties as { point_count: number }).point_count : 1,
+      }
+    })
+  }
 }
 
 /** ClusterResult (parallel columns) → Marker[]. */
@@ -29,18 +66,11 @@ function fromWasm(res: wasm.ClusterResult): Marker[] {
   return out
 }
 
-/** supercluster ClusterMarker[] → Marker[]. */
-function fromSci(markers: { x: number; y: number; count: number }[]): Marker[] {
-  return markers.map((m) => ({ x: m.x, y: m.y, count: m.count }))
-}
-
 function build(icons: SlotIcon[]): {
   ref: (bbox: [number, number, number, number], dz: number) => Marker[]
   got: (bbox: [number, number, number, number], dz: number) => Marker[]
 } {
-  sci.clear()
-  sci.setTerrain(terrain)
-  sci.rebuild(icons)
+  const ref = scOracle(icons)
   const idx = new wasm.ClusterIndex(
     new Float32Array(icons.map((i) => i.x)),
     new Float32Array(icons.map((i) => i.y)),
@@ -48,7 +78,7 @@ function build(icons: SlotIcon[]): {
     terrain.height,
   )
   return {
-    ref: (bbox, dz) => fromSci(sci.getClusters(bbox, dz)),
+    ref,
     got: (bbox, dz) => fromWasm(idx.get_clusters(bbox[0], bbox[1], bbox[2], bbox[3], dz)),
   }
 }
@@ -118,7 +148,7 @@ describe('ClusterIndex — criterion 5 cluster path: parity vs supercluster', ()
     }
   })
 
-  it('a coarse viewport sub-bbox returns clusters (both non-empty, both conserve within reason)', () => {
+  it('a coarse viewport sub-bbox returns clusters (both non-empty, both conserve)', () => {
     const N = 800
     const icons: SlotIcon[] = []
     let s = 0x1234abcd >>> 0
