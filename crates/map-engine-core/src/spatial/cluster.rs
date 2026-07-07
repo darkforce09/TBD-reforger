@@ -104,6 +104,72 @@ pub fn deck_zoom_to_super_zoom(deck_zoom: f64) -> i32 {
     z.clamp(0, 16)
 }
 
+/// Fixed grid resolution over the `[0,1]²` tile space. 512² cells (~1 MB CSR, transient per level)
+/// keeps the clustering neighbor query O(n) at every zoom: at high zoom `r ≪ 1/512` so `within`
+/// touches ~1 cell; at low zoom `r` is large but few nodes remain.
+const GRID_COLS: usize = 512;
+
+/// Uniform CSR grid over `Node` tile coords — accelerates the clustering `within` query so a level is
+/// O(n) not O(n²). It returns the **same neighbor set** as a brute-force scan (only prunes distant
+/// candidates), so cluster membership + counts are unchanged; the neighbor *iteration order* shifts,
+/// which moves a weighted centroid by ≤ 1 ULP (well inside the Class-S tolerance).
+struct Grid {
+    cell_start: Vec<u32>,
+    items: Vec<u32>,
+}
+
+impl Grid {
+    #[inline]
+    fn cell_of(x: f64, y: f64) -> (usize, usize) {
+        let n = GRID_COLS as f64;
+        let cx = ((x * n).floor() as isize).clamp(0, GRID_COLS as isize - 1) as usize;
+        let cy = ((y * n).floor() as isize).clamp(0, GRID_COLS as isize - 1) as usize;
+        (cx, cy)
+    }
+
+    fn build(nodes: &[Node]) -> Grid {
+        let ncells = GRID_COLS * GRID_COLS;
+        let mut cell_start = vec![0u32; ncells + 1];
+        for n in nodes {
+            let (cx, cy) = Grid::cell_of(n.x, n.y);
+            cell_start[cy * GRID_COLS + cx + 1] += 1;
+        }
+        for c in 0..ncells {
+            cell_start[c + 1] += cell_start[c];
+        }
+        let mut items = vec![0u32; nodes.len()];
+        let mut cursor = cell_start.clone();
+        for (i, n) in nodes.iter().enumerate() {
+            let (cx, cy) = Grid::cell_of(n.x, n.y);
+            let c = cy * GRID_COLS + cx;
+            items[cursor[c] as usize] = i as u32;
+            cursor[c] += 1;
+        }
+        Grid { cell_start, items }
+    }
+
+    /// Fill `out` with the indices of nodes within radius `r` (`r2 = r²`) of `(x, y)`.
+    fn within(&self, nodes: &[Node], x: f64, y: f64, r: f64, r2: f64, out: &mut Vec<usize>) {
+        out.clear();
+        let (cx0, cy0) = Grid::cell_of(x - r, y - r);
+        let (cx1, cy1) = Grid::cell_of(x + r, y + r);
+        for cy in cy0..=cy1 {
+            for cx in cx0..=cx1 {
+                let c = cy * GRID_COLS + cx;
+                let (a, b) = (self.cell_start[c] as usize, self.cell_start[c + 1] as usize);
+                for &idx in &self.items[a..b] {
+                    let node = &nodes[idx as usize];
+                    let dx = node.x - x;
+                    let dy = node.y - y;
+                    if dx * dx + dy * dy <= r2 {
+                        out.push(idx as usize);
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl ClusterIndex {
     /// Build the hierarchy over world-space points (row index = leaf handle).
     #[must_use]
@@ -123,7 +189,8 @@ impl ClusterIndex {
         levels[(MAX_ZOOM + 1) as usize] = leaves;
         for z in (MIN_ZOOM..=MAX_ZOOM).rev() {
             let prev = std::mem::take(&mut levels[(z + 1) as usize]);
-            levels[z as usize] = cluster_level(&prev, z);
+            let grid = Grid::build(&prev);
+            levels[z as usize] = cluster_level(&prev, &grid, z);
             levels[(z + 1) as usize] = prev;
         }
 
@@ -197,11 +264,12 @@ impl ClusterIndex {
 
 /// One clustering pass over `prev` at `zoom` — a faithful transcription of supercluster's `_cluster`
 /// (greedy over the input order; neighbors within `r`; weighted tile-space centroid).
-fn cluster_level(prev: &[Node], zoom: i32) -> Vec<Node> {
+fn cluster_level(prev: &[Node], grid: &Grid, zoom: i32) -> Vec<Node> {
     let r = CLUSTER_RADIUS / (EXTENT * 2f64.powi(zoom));
     let r2 = r * r;
     let mut processed = vec![false; prev.len()];
     let mut next: Vec<Node> = Vec::new();
+    let mut neighbors: Vec<usize> = Vec::new();
 
     for i in 0..prev.len() {
         if processed[i] {
@@ -210,13 +278,7 @@ fn cluster_level(prev: &[Node], zoom: i32) -> Vec<Node> {
         processed[i] = true;
         let p = prev[i];
 
-        let neighbors: Vec<usize> = (0..prev.len())
-            .filter(|&k| {
-                let dx = prev[k].x - p.x;
-                let dy = prev[k].y - p.y;
-                dx * dx + dy * dy <= r2
-            })
-            .collect();
+        grid.within(prev, p.x, p.y, r, r2, &mut neighbors);
 
         // Count still-unprocessed neighbors (supercluster: those with zoom > current).
         let mut num_points = p.num_points;
@@ -304,6 +366,33 @@ mod tests {
                 .iter()
                 .any(|c| (c.x - cx).abs() < 30.0 && (c.y - cy).abs() < 30.0);
             assert!(hit, "a cluster near ({cx},{cy})");
+        }
+    }
+
+    /// Scale guard: 100k points builds + conserves. A brute-force `within` would be ~16 · 100k² ≈
+    /// 1.6e11 ops (this test would hang); the grid keeps it in the millisecond range.
+    #[test]
+    fn builds_and_conserves_at_100k() {
+        let n = 100_000usize;
+        let mut world = Vec::with_capacity(n);
+        let mut s: u64 = 0xC0FF_EE42;
+        let mut nxt = || {
+            s = s
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (s >> 33) as f64 / (1u64 << 31) as f64
+        };
+        for _ in 0..n {
+            world.push((nxt() * 12800.0, nxt() * 12800.0));
+        }
+        let idx = ClusterIndex::build(&world, 12800.0, 12800.0);
+        for deck_zoom in [-6.0, -4.0] {
+            let markers = idx.get_clusters(0.0, 0.0, 12800.0, 12800.0, deck_zoom);
+            let total: u32 = markers.iter().map(|m| m.count).sum();
+            assert_eq!(
+                total as usize, n,
+                "conservation @ 100k deck_zoom {deck_zoom}"
+            );
         }
     }
 }
