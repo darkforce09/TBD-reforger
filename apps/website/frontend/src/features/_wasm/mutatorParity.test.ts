@@ -104,7 +104,8 @@ describe('Rust mutator parity vs ydoc.ts (batch 1: slot lifecycle)', () => {
     const { md, s1, s3 } = baseDoc()
     const yrs = baseSync(md)
     moveEntities(md, [s1, s3], { x: 12.5, y: -7.25 })
-    yrs.move_entities([s1, s3], 12.5, -7.25)
+    // zs = JS-sampled DEM z at the new positions; DEM is off in vitest → zeros (byte-parity).
+    yrs.move_entities([s1, s3], 12.5, -7.25, Float64Array.from([0, 0]))
     expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
     yrs.free()
   })
@@ -249,6 +250,7 @@ describe('Rust mutator parity vs ydoc.ts (batch 3b: bulk paste)', () => {
       Float64Array.from(clip.map((c) => c.position.x)),
       Float64Array.from(clip.map((c) => c.position.y)),
       Float64Array.from(clip.map((c) => c.position.rotation)),
+      Float64Array.from(clip.map(() => 0)), // zs: DEM off in vitest → zeros (byte-parity)
       clip.map((c) => c.role),
       clip.map((c) => c.tag ?? ''),
       clip.map((c) => c.assetId ?? ''),

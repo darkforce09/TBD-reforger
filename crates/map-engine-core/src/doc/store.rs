@@ -4,6 +4,7 @@
 //! `set_slot_position` / `remove_slot`) exist to exercise the `UndoManager`; the full `state/ydoc.ts`
 //! mutator surface is ported at the 3.1 cutover, not in the spike.
 
+use std::cell::Cell;
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
@@ -12,7 +13,8 @@ use yrs::types::ToJson;
 use yrs::undo::{Options as UndoOptions, UndoManager};
 use yrs::updates::decoder::Decode;
 use yrs::{
-    Any, Doc, Map, MapPrelim, MapRef, Out, ReadTxn, StateVector, Transact, TransactionMut, Update,
+    Any, Doc, Map, MapPrelim, MapRef, Origin, Out, ReadTxn, StateVector, Transact, TransactionMut,
+    Update,
 };
 
 use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
@@ -21,6 +23,14 @@ use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, 
 /// (parity for criteria 3/4). A client-id clash with an incoming peer update is harmless: `yrs`
 /// keys blocks by the *originating* client, and the spike doc never co-authors a slot with a peer.
 const CLIENT_ID: u64 = 1;
+
+/// Transaction origins for undo scoping — mirror `ydoc.ts`'s `LOCAL_ORIGIN` / `INIT_ORIGIN`. Only
+/// `LOCAL` is undo-tracked (in `tracked_origins`); `INIT` (seed / hydrate / persistence restore) is
+/// not. yrs captures a transaction when its origin is in `tracked_origins`; with more than the undo
+/// manager's own origin present, an un-stamped (no-origin) transaction is also skipped (undo.rs
+/// `should_skip`), which is why every mutator stamps an origin.
+const LOCAL_ORIGIN: &str = "local-user";
+const INIT_ORIGIN: &str = "init";
 
 /// A constant clock. With `capture_timeout_millis = 0` the undo manager never extends a stack item,
 /// so the timestamp value is irrelevant — and building `undo::Options` explicitly (rather than via
@@ -44,6 +54,9 @@ pub struct MissionDocCore {
     factions: MapRef,
     editor_layers: MapRef,
     meta: MapRef,
+    /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
+    /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
+    init_mode: Cell<bool>,
     /// `M = ()`: no per-stack-item metadata needed.
     undo_mgr: UndoManager<()>,
 }
@@ -65,7 +78,9 @@ impl MissionDocCore {
         // with `{ captureTimeout: 0 }` (Yjs uses the same `<`), the basis for criterion-4 parity.
         let opts = UndoOptions::<()> {
             capture_timeout_millis: 0,
-            tracked_origins: HashSet::new(), // empty → capture no-origin (local) transactions
+            // Track only LOCAL — user gestures are undoable; INIT (seed / hydrate / restore) is not.
+            // `expand_scope` also adds the manager's own origin, so no-origin txns are skipped too.
+            tracked_origins: HashSet::from([Origin::from(LOCAL_ORIGIN)]),
             capture_transaction: None,
             timestamp: Arc::new(ZeroClock),
             init_undo_stack: Vec::new(),
@@ -85,8 +100,27 @@ impl MissionDocCore {
             factions,
             editor_layers,
             meta,
+            init_mode: Cell::new(false),
             undo_mgr,
         }
+    }
+
+    /// Toggle init-mode: while true, mutators stamp `INIT` (untracked). The JS wrapper brackets boot /
+    /// hydrate / default-seeding with `set_origin_init(true)` … `set_origin_init(false)` so a load is
+    /// never an undo step (mirrors `ydoc.ts` running those under `INIT_ORIGIN`).
+    pub fn set_origin_init(&self, on: bool) {
+        self.init_mode.set(on);
+    }
+
+    /// Open a write transaction stamped with the current origin (`INIT` in init-mode, else `LOCAL`).
+    /// Every mutator uses this so undo tracks exactly the local user gestures.
+    fn begin(&self) -> yrs::TransactionMut<'_> {
+        let origin = if self.init_mode.get() {
+            INIT_ORIGIN
+        } else {
+            LOCAL_ORIGIN
+        };
+        self.doc.transact_mut_with(origin)
     }
 
     /// Apply a Yjs-wire (v1) update byte-stream — the exact bytes `Y.encodeStateAsUpdate(doc)` emits.
@@ -95,9 +129,9 @@ impl MissionDocCore {
     /// Returns a message on a malformed update or an integration failure.
     pub fn apply_update(&self, bytes: &[u8]) -> Result<(), String> {
         let update = Update::decode_v1(bytes).map_err(|e| e.to_string())?;
-        // A no-origin transaction — undo-tracked in the spike (never interleaved with undo in the
-        // tests). The cutover will apply remote updates under an untracked `remote` origin.
-        let mut txn = self.doc.transact_mut();
+        // Always INIT (untracked) regardless of mode — a persistence restore / peer sync is never an
+        // undo step. (`begin()` would honor init-mode, but forcing INIT keeps this correct off-boot.)
+        let mut txn = self.doc.transact_mut_with(INIT_ORIGIN);
         txn.apply_update(update).map_err(|e| e.to_string())
     }
 
@@ -245,7 +279,7 @@ impl MissionDocCore {
         z: f64,
         rotation: f64,
     ) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         let slot = self
             .slots
             .insert(&mut txn, id, MapPrelim::from([("id", id)]));
@@ -268,7 +302,7 @@ impl MissionDocCore {
     /// Create a faction (mirrors `ydoc.addFaction` and `ensureDefaultSquad`'s faction — JS supplies
     /// `key`/`name`). Writes `{id, key, name, squadIds:[]}`.
     pub fn add_faction(&self, id: &str, key: &str, name: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         let f = self
             .factions
             .insert(&mut txn, id, MapPrelim::from([("id", id)]));
@@ -281,7 +315,7 @@ impl MissionDocCore {
     /// Writes `{id, factionId, name, slotIds:[]}` + `callsign` only when `Some`; appends `id` to
     /// `faction.squadIds` if the faction exists.
     pub fn add_squad(&self, id: &str, faction_id: &str, name: &str, callsign: Option<String>) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         let sq = self
             .squads
             .insert(&mut txn, id, MapPrelim::from([("id", id)]));
@@ -296,7 +330,7 @@ impl MissionDocCore {
 
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
             slot.insert(&mut txn, "position", position_any(x, y, z, rotation));
         }
@@ -304,7 +338,7 @@ impl MissionDocCore {
 
     /// Remove one slot (mirrors `slots.delete(id)`; layer detach is out of the spike mutator set).
     pub fn remove_slot(&self, id: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         self.slots.remove(&mut txn, id);
     }
 
@@ -313,7 +347,7 @@ impl MissionDocCore {
     /// undo-granular (the whole seed is one step).
     pub fn seed_random(&self, n: u32, w: f64, h: f64, seed: u64) {
         let mut s = seed | 1;
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         for i in 0..n {
             s = s
                 .wrapping_mul(6364136223846793005)
@@ -346,7 +380,7 @@ impl MissionDocCore {
         tag: Option<String>,
         stance: Option<String>,
     ) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
             if let Some(r) = role {
                 slot.insert(&mut txn, "role", r);
@@ -374,7 +408,7 @@ impl MissionDocCore {
         width: f64,
         height: f64,
     ) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
             let (mut px, mut py, mut pz, mut prot) = read_position(&txn, &slot);
             if let Some(nx) = x.filter(|v| v.is_finite()) {
@@ -395,17 +429,19 @@ impl MissionDocCore {
         }
     }
 
-    /// Move several slots by a shared world delta (drag release). z re-sampled to 0 (DEM JS-side).
-    /// Mirrors `ydoc.moveEntities`.
-    pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64) {
-        let mut txn = self.doc.transact_mut();
-        for id in &ids {
+    /// Move several slots by a shared world delta (drag release). `zs[i]` is the JS-sampled DEM
+    /// elevation at slot `ids[i]`'s new position (0 when the DEM is not ready — the vitest case, which
+    /// keeps byte-parity). Mirrors `ydoc.moveEntities` (`z = terrainZ(newX, newY)`).
+    pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64, zs: Vec<f64>) {
+        let mut txn = self.begin();
+        for (i, id) in ids.iter().enumerate() {
             if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
                 let (px, py, _pz, prot) = read_position(&txn, &slot);
+                let z = zs.get(i).copied().unwrap_or(0.0);
                 slot.insert(
                     &mut txn,
                     "position",
-                    position_any(px + dx, py + dy, 0.0, prot),
+                    position_any(px + dx, py + dy, z, prot),
                 );
             }
         }
@@ -415,7 +451,7 @@ impl MissionDocCore {
     /// `entityIds` (batched cascade). Mirrors `ydoc.removeEntities` (slots path). The cascade body
     /// lives in [`remove_slots_in_txn`] so `remove_editor_layer` can reuse it inside its own txn.
     pub fn remove_slots(&self, ids: Vec<String>) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         remove_slots_in_txn(
             &mut txn,
             &self.slots,
@@ -431,10 +467,11 @@ impl MissionDocCore {
     /// and resolves each slot's target squad/layer (both already existing — `ensureDefault*` runs
     /// JS-side), so the parallel arrays are index-aligned per slot. Positions translate so the clip's
     /// centroid lands at `(anchor_x, anchor_y)`, or nudge `+PASTE_NUDGE` on x/y when no anchor; x/y
-    /// clamp to `[0,width]×[0,height]`; z is 0 (terrain-follow re-sampled JS-side); rotation carries
-    /// from the source. `index` accumulates per squad (seeded from the squad's current `slotIds`).
-    /// `""` tag/asset → key omitted. Appends are batched (each squad's `slotIds` / each layer's
-    /// `entityIds` written once) — the T-059 O(k) shape.
+    /// clamp to `[0,width]×[0,height]`; `zs[i]` is the JS-sampled DEM elevation at the clamped paste
+    /// position (0 when the DEM is not ready — the vitest case, byte-parity-preserving); rotation
+    /// carries from the source. `index` accumulates per squad (seeded from the squad's current
+    /// `slotIds`). `""` tag/asset → key omitted. Appends are batched (each squad's `slotIds` / each
+    /// layer's `entityIds` written once) — the T-059 O(k) shape.
     #[allow(clippy::too_many_arguments)]
     pub fn paste_slots(
         &self,
@@ -444,6 +481,7 @@ impl MissionDocCore {
         src_x: Vec<f64>,
         src_y: Vec<f64>,
         src_rot: Vec<f64>,
+        zs: Vec<f64>,
         roles: Vec<String>,
         tags: Vec<String>,
         asset_ids: Vec<String>,
@@ -465,7 +503,7 @@ impl MissionDocCore {
             _ => (PASTE_NUDGE, PASTE_NUDGE),
         };
 
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         // Per-squad `slotIds` + per-layer `entityIds` append accumulators, seeded once from the doc.
         let mut squad_slot_ids: HashMap<String, Vec<Any>> = HashMap::new();
         let mut layer_entity_ids: HashMap<String, Vec<Any>> = HashMap::new();
@@ -493,7 +531,8 @@ impl MissionDocCore {
             if !asset_ids[i].is_empty() {
                 slot.insert(&mut txn, "assetId", asset_ids[i].as_str());
             }
-            slot.insert(&mut txn, "position", position_any(px, py, 0.0, src_rot[i]));
+            let z = zs.get(i).copied().unwrap_or(0.0);
+            slot.insert(&mut txn, "position", position_any(px, py, z, src_rot[i]));
             slot.insert(&mut txn, "stance", stances[i].as_str());
             slot.insert(&mut txn, "loadoutId", Any::Null);
             if let Some(arr) = squad_slot_ids.get_mut(squad_id) {
@@ -524,7 +563,7 @@ impl MissionDocCore {
     /// it is the only layer (keep ≥1). If the subtree was every layer, a fresh default layer is
     /// reseeded (JS mints `reseed_id`) so the editor is never layer-less.
     pub fn remove_editor_layer(&self, id: &str, reseed_id: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if self.editor_layers.get(&txn, id).is_none() || self.editor_layers.len(&txn) <= 1 {
             return;
         }
@@ -597,14 +636,14 @@ impl MissionDocCore {
 
     /// Set the mission title (mirrors `ydoc.setTitle`).
     pub fn set_title(&self, title: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         self.meta.insert(&mut txn, "title", title);
     }
 
     /// Merge an environment patch (a JSON object) onto the existing `meta.environment`, mirroring
     /// `ydoc.updateEnvironment` (`{...env, ...patch}`). Absent env → the patch becomes the env.
     pub fn update_environment(&self, patch_json: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         let mut env = read_env_map(&txn, &self.meta);
         if let Any::Map(patch) = json_str_to_any(patch_json) {
             for (k, v) in patch.iter() {
@@ -624,7 +663,7 @@ impl MissionDocCore {
         time_of_day: Option<String>,
         weather: Option<String>,
     ) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if !title.is_empty() {
             self.meta.insert(&mut txn, "title", title);
         }
@@ -646,7 +685,7 @@ impl MissionDocCore {
 
     /// Seed default meta if empty (mirrors `ydoc.seedMeta` + `DEFAULT_META`). No-op if meta exists.
     pub fn seed_meta(&self, id: &str, title: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if self.meta.len(&txn) > 0 {
             return;
         }
@@ -683,7 +722,7 @@ impl MissionDocCore {
         let vehicles = self.doc.get_or_insert_map("vehicles");
         let markers = self.doc.get_or_insert_map("markers");
 
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         for m in [
             &self.slots,
             &self.squads,
@@ -739,7 +778,7 @@ impl MissionDocCore {
 
     /// Create an Outliner folder (id + name computed JS-side). Mirrors `ydoc.addEditorLayer`.
     pub fn add_editor_layer(&self, id: &str, name: &str, parent_id: Option<String>) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         let layer = self
             .editor_layers
             .insert(&mut txn, id, MapPrelim::from([("id", id)]));
@@ -753,7 +792,7 @@ impl MissionDocCore {
 
     /// Rename an Outliner folder. Mirrors `ydoc.renameEditorLayer`.
     pub fn rename_editor_layer(&self, id: &str, name: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, id) {
             layer.insert(&mut txn, "name", name);
         }
@@ -762,7 +801,7 @@ impl MissionDocCore {
     /// Reparent an Outliner folder; rejects cycles (dropping it into its own subtree). Mirrors
     /// `ydoc.reparentEditorLayer`.
     pub fn reparent_editor_layer(&self, id: &str, new_parent_id: Option<String>) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if self.editor_layers.get(&txn, id).is_none() {
             return;
         }
@@ -782,7 +821,7 @@ impl MissionDocCore {
     /// Refile a slot into a different Outliner folder (workflow-only; squad unchanged): detach from
     /// every folder holding it, then append to the target. Mirrors `ydoc.moveSlotToLayer`.
     pub fn move_slot_to_layer(&self, slot_id: &str, target_layer_id: &str) {
-        let mut txn = self.doc.transact_mut();
+        let mut txn = self.begin();
         if self.editor_layers.get(&txn, target_layer_id).is_none() {
             return;
         }
@@ -858,6 +897,21 @@ impl MissionDocCore {
     #[must_use]
     pub fn slot_count(&self) -> usize {
         self.slots.len(&self.doc.transact()) as usize
+    }
+
+    /// True if the doc holds authored content beyond seeded defaults — any faction / slot / objective
+    /// / vehicle / marker. Backs `useMissionEditor.hasLocalContent` (the warm-session / conflict gate).
+    #[must_use]
+    pub fn has_content(&self) -> bool {
+        let objectives = self.doc.get_or_insert_map("objectives");
+        let vehicles = self.doc.get_or_insert_map("vehicles");
+        let markers = self.doc.get_or_insert_map("markers");
+        let txn = self.doc.transact();
+        self.factions.len(&txn) > 0
+            || self.slots.len(&txn) > 0
+            || objectives.len(&txn) > 0
+            || vehicles.len(&txn) > 0
+            || markers.len(&txn) > 0
     }
 }
 
@@ -1216,6 +1270,30 @@ mod tests {
             ids_sorted(&doc.materialize()),
             vec!["s1".to_string(), "s2".to_string()]
         );
+    }
+
+    #[test]
+    fn init_mode_transactions_are_not_undoable() {
+        // The flip's undo-origin split: LOCAL user gestures are undoable; INIT (seed / hydrate /
+        // restore) is not. Proves `set_origin_init` + the `tracked_origins = {LOCAL}` scoping.
+        let mut doc = MissionDocCore::new();
+        doc.add_editor_layer("l1", "Alpha", None); // LOCAL
+        assert!(doc.can_undo(), "a LOCAL op is undoable");
+        assert!(doc.undo());
+        assert!(!doc.can_undo());
+
+        doc.set_origin_init(true);
+        doc.seed_meta("m1", "Op");
+        doc.add_editor_layer("l2", "Bravo", None); // INIT
+        doc.set_origin_init(false);
+        assert!(!doc.can_undo(), "INIT ops must not push undo steps");
+
+        doc.add_editor_layer("l3", "Charlie", None); // LOCAL again
+        assert!(doc.can_undo());
+        assert!(doc.undo()); // undoes only the LOCAL Charlie
+        assert!(!doc.can_undo());
+        // The INIT-seeded l2 + Bravo survive the undo (never tracked).
+        assert!(doc.small_maps_json().contains("\"l2\""));
     }
 
     #[test]

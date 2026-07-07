@@ -731,6 +731,7 @@ impl MissionDoc {
         src_x: Vec<f64>,
         src_y: Vec<f64>,
         src_rot: Vec<f64>,
+        zs: Vec<f64>,
         roles: Vec<String>,
         tags: Vec<String>,
         asset_ids: Vec<String>,
@@ -741,7 +742,7 @@ impl MissionDoc {
         height: f64,
     ) {
         self.inner.paste_slots(
-            ids, squad_ids, layer_ids, src_x, src_y, src_rot, roles, tags, asset_ids, stances,
+            ids, squad_ids, layer_ids, src_x, src_y, src_rot, zs, roles, tags, asset_ids, stances,
             anchor_x, anchor_y, width, height,
         );
     }
@@ -811,8 +812,8 @@ impl MissionDoc {
         self.inner
             .update_slot_position(id, x, y, z, rotation, width, height);
     }
-    pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64) {
-        self.inner.move_entities(ids, dx, dy);
+    pub fn move_entities(&self, ids: Vec<String>, dx: f64, dy: f64, zs: Vec<f64>) {
+        self.inner.move_entities(ids, dx, dy, zs);
     }
     pub fn remove_slots(&self, ids: Vec<String>) {
         self.inner.remove_slots(ids);
@@ -845,6 +846,18 @@ impl MissionDoc {
     #[must_use]
     pub fn can_redo(&self) -> bool {
         self.inner.can_redo()
+    }
+
+    /// Bracket boot / hydrate / default-seeding: while init-mode is on, mutations are `INIT`
+    /// (untracked) so a load is not an undo step.
+    pub fn set_origin_init(&self, on: bool) {
+        self.inner.set_origin_init(on);
+    }
+
+    /// True if the doc holds authored content (any faction/slot/objective/vehicle/marker).
+    #[must_use]
+    pub fn has_content(&self) -> bool {
+        self.inner.has_content()
     }
 }
 
