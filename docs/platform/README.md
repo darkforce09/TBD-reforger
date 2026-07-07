@@ -5,6 +5,7 @@ Cross-cutting docs for the TBD Reforger monorepo (not tied to a single app).
 | Doc | Purpose |
 |-----|---------|
 | [`CODEBASE_AUDIT_2026.md`](CODEBASE_AUDIT_2026.md) | **T-122** audit findings + shipped/deferred log; **Fable S1–S6** @ T-126 |
+| [`known-bugs/`](known-bugs/README.md) | **Known bugs** — recorded/triaged defects not currently actioned (why + how to fix later). KB-001: MC selection-at-scale |
 | [`../../.ai/artifacts/fable_5_omni_audit_report.md`](../../.ai/artifacts/fable_5_omni_audit_report.md) | **Fable 5 living tracker** — all findings, status, ticket mapping |
 | [`FABLE_5_AUDIT_PROGRAM.md`](FABLE_5_AUDIT_PROGRAM.md) | **T-126→128** Fable 5 remediation (T-127 active) |
 | [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md) | How to document Go / TS / Enfusion boundaries |
