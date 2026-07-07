@@ -11,6 +11,14 @@ use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
 use wasm_bindgen::prelude::*;
 
+// The wgpu render engine (T-151.0 L1). Re-exporting the `#[wasm_bindgen]` `RenderEngine` from this
+// crate makes wasm-bindgen emit its bindings into the single bundler pkg, so `RenderEngine` and
+// `MissionDoc` share one wasm linear memory (the zero-copy doc→GPU precondition, program D1).
+// wasm32-only: `map-engine-render`'s GPU/web stack does not compile natively, so a plain
+// `cargo build --workspace` links only the crate's native-safe parts.
+#[cfg(target_arch = "wasm32")]
+pub use map_engine_render::RenderEngine;
+
 // ---------------------------------------------------------------------------------------------
 // dem::sample
 // ---------------------------------------------------------------------------------------------

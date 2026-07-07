@@ -1,36 +1,30 @@
-// Module glue for the map-engine-render wasm pkg (wasm-pack --target web; built by
-// `make wasm-render`). Owns the two module-level lifecycle invariants (T-151 plan §S5):
+// Module glue for the wgpu `RenderEngine`, now shipped inside the single bundler wasm pkg
+// (`make wasm` → `@/wasm/pkg/map_engine_wasm`; T-151.0 merge). Shared by the /_spike/wgpu page and
+// the editor's `WgpuTacticalMap`. Owns the one module-level lifecycle invariant that still needs a
+// home here (T-151 plan §S5):
 //
-// I1 — module init once: the web-target `init()` instantiates a wasm module + memory;
-//      calling it twice would create two instances, so the promise is memoized here.
+// I1 — module init once: NO LONGER our job. The bundler target is auto-instantiated by
+//      vite-plugin-wasm at import time and ESM guarantees a single module instance, so the old
+//      web-target `init()` promise memoization is gone — importing `RenderEngine`/`MissionDoc`
+//      anywhere yields the same wasm instance + linear memory (the merge's whole point).
 // I3 — at most one live engine per canvas, ever: `RenderEngine.create` calls are serialized
 //      through a module-level promise chain, so the React StrictMode interleave
-//      (setup₁ → cleanup₁ → setup₂ while create₁ is still awaiting) can never have two
-//      engines configuring one canvas concurrently — engine A is freed (I4 in WgpuCanvas)
-//      before engine B's surface exists.
+//      (setup₁ → cleanup₁ → setup₂ while create₁ is still awaiting) can never have two engines
+//      configuring one canvas concurrently — engine A is freed (I4 in the mount) before engine
+//      B's surface exists.
 
-import init, { RenderEngine } from '@/wasm/render/map_engine_render'
-
-let wasmReady: Promise<void> | null = null
-
-function ensureWasm(): Promise<void> {
-  wasmReady ??= init().then(() => undefined)
-  return wasmReady
-}
+import { RenderEngine } from '@/wasm/pkg/map_engine_wasm'
 
 let creationChain: Promise<unknown> = Promise.resolve()
 
-/** Serialized engine creation (invariants I1 + I3). */
+/** Serialized engine creation (invariant I3). */
 export function createEngine(
   canvas: HTMLCanvasElement,
   forceWebgl: boolean,
 ): Promise<RenderEngine> {
   const next = creationChain
     .catch(() => undefined) // a failed predecessor must not poison the chain
-    .then(async () => {
-      await ensureWasm()
-      return RenderEngine.create(canvas, forceWebgl)
-    })
+    .then(() => RenderEngine.create(canvas, forceWebgl))
   creationChain = next
   return next
 }

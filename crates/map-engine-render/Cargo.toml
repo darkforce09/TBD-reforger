@@ -5,11 +5,13 @@ edition = "2024"
 rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
-description = "wgpu render engine (WebGPU + WebGL2 fallback) for the tactical map — wasm-bindgen, canvas surface. T-151 spike; built via wasm-pack --target web."
+description = "wgpu render engine (WebGPU + WebGL2 fallback) for the tactical map — wasm-bindgen, canvas surface. T-151. Linked into map-engine-wasm (one wasm module); not wasm-packed directly."
 
 [lib]
-# cdylib → the wasm artifact; rlib → so `cargo build --workspace` (native) links it too.
-crate-type = ["cdylib", "rlib"]
+# rlib only: `map-engine-wasm` links this (re-exporting `RenderEngine` for wasm32) so wgpu ships
+# in the single bundler wasm module (T-151.0 L2). No standalone cdylib — the `--target web` pkg is
+# retired. `cargo build --workspace` (native) still links the rlib; its GPU deps are wasm32-gated.
+crate-type = ["rlib"]
 
 # Plain dependencies compile natively too: the pure `scene` data module (instance structs +
 # builders, no wgpu types) is byte-level-tested under plain `cargo test` (plan §S4b).

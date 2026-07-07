@@ -1,46 +1,73 @@
-// T-151 wgpu render-engine spike page (/_spike/wgpu) — the React ↔ canvas ↔ wasm ↔ wgpu
-// spine. Not in the app nav; no auth, no chrome (mirrors /_spike/doc-core).
+// T-151.0 editor dual mount (program D3) — renders the wgpu `RenderEngine`'s calibration scene
+// full-bleed inside the Mission Creator shell, selected by `MissionCreatorPage` behind the engine
+// flag (`VITE_MC_ENGINE=wgpu` or `?engine=wgpu`). This slice draws ONLY the existing calibration
+// scene — no basemap, world objects, or slots (those are T-151.1+). Its job is to prove the engine
+// mounts in the editor and that `MissionDoc` + `RenderEngine` share ONE wasm linear memory (the
+// shared-memory HUD line, spec L10).
 //
-// Wasm memory lifecycle invariants (plan §S5; `.free()` is NOT idempotent — see the
-// wasm-react-lifecycle memory):
-//   I1 module init once + I3 creation mutex — in wasmRender.ts.
-//   I2 the engine handle is EFFECT-LOCAL (never useMemo/useState-persisted).
-//   I4 free exactly once on every path: cleanup frees iff committed; the async create path
-//      checks `disposed` right after the await and frees-without-committing.
+// Wasm memory lifecycle invariants I2–I7 are reused VERBATIM from WgpuCanvas.tsx (the spike page):
+//   I2 the engine handle (and the proof doc) are EFFECT-LOCAL — never useMemo/useState-persisted;
+//      `.free()` is NOT idempotent (see the wasm-react-lifecycle memory).
+//   I4 free exactly once on every path: cleanup frees iff committed; the async create path checks
+//      `disposed` right after the await and frees-without-committing.
 //   I5 no render-after-free: the rAF loop re-checks the flag; rAF is cancelled before free.
 //   I6 errors surface into the banner, never swallowed.
-//   I7 retry = a NEW canvas element (React key bump) — a canvas permanently commits to its
-//      first getContext kind, so same-canvas backend retry is impossible by spec.
+//   I7 retry = a NEW canvas element (React key bump) forced to WebGL2 — a canvas permanently
+//      commits to its first getContext kind, so same-canvas backend retry is impossible.
+// (I1 module-init once + I3 creation mutex live in ./wgpu/wasmRender.)
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
-import { useFps } from '../useFps'
-import {
-  WHEEL_ZOOM_PER_PX,
-  createEngine,
-  deviceSize,
-  type RenderEngine,
-} from '@/features/tactical-map/wgpu/wasmRender'
+import { MissionDoc } from '@/wasm/pkg/map_engine_wasm'
+// `memory` lives on the internal *_bg.wasm module (ESM-deduped to the same instance the engine and
+// MissionDoc use), so a Float32Array over its buffer aliases the doc's live slot SoA — the numeric
+// proof that the merged pkg is ONE linear memory (spec L10; pattern from DocCoreSpikePage.tsx).
+import * as wasmBg from '@/wasm/pkg/map_engine_wasm_bg.wasm'
+import { WHEEL_ZOOM_PER_PX, createEngine, deviceSize, type RenderEngine } from './wgpu/wasmRender'
+import type { TacticalMapProps } from './types'
 
-const STRESS_COUNTS = [100_000, 1_000_000, 5_000_000, 20_000_000] as const
-const STRESS_SEED = 0x12345678
 const HUD_INTERVAL_MS = 250
+// Shared-memory proof (spec L10): seed 1000 slots on a 12800² world; the interleaved xy column is
+// then 2000 floats, each expected finite ∧ ≥ 0 ∧ ≤ 12800.
+const PROOF_SLOTS = 1000
+const PROOF_WORLD = 12_800
+const PROOF_SEED = 0x12345678
 
-export default function WgpuCanvas() {
+/** Run the L10 numeric shared-memory check once; returns the HUD line. Frees its own doc. */
+function sharedMemoryProof(): string {
+  const doc = new MissionDoc()
+  try {
+    doc.seed_random(PROOF_SLOTS, PROOF_WORLD, PROOF_WORLD, PROOF_SEED)
+    doc.refresh()
+    const xy = new Float32Array(wasmBg.memory.buffer, doc.slot_xy_ptr, doc.slot_len * 2)
+    let ok = 0
+    let firstBad = -1
+    for (let i = 0; i < xy.length; i++) {
+      const v = xy[i]
+      if (Number.isFinite(v) && v >= 0 && v <= PROOF_WORLD) ok += 1
+      else if (firstBad < 0) firstBad = i
+    }
+    return firstBad < 0
+      ? `shared-memory: PASS (${ok}/${xy.length} in [0,${PROOF_WORLD}])`
+      : `shared-memory: FAIL @ index ${firstBad} (${ok}/${xy.length} in [0,${PROOF_WORLD}])`
+  } finally {
+    doc.free()
+  }
+}
+
+/**
+ * The wgpu engine mount for the editor. Accepts the full `TacticalMapProps` for drop-in parity
+ * with the Deck `TacticalMap`, but this slice reads only `className` (the rest — terrain, layer
+ * toggles, callbacks — are honored by T-151.1+).
+ */
+export default function WgpuTacticalMap({ className }: TacticalMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
-  // For button handlers only — ownership stays with the effect (I2).
-  const engineRef = useRef<RenderEngine | null>(null)
   const [canvasKey, setCanvasKey] = useState(0)
-  const [forceWebgl, setForceWebgl] = useState(
-    () => new URLSearchParams(window.location.search).get('force') === 'webgl',
-  )
+  const [forceWebgl, setForceWebgl] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [backend, setBackend] = useState('initializing…')
-  const [view, setView] = useState<{ tx: number; ty: number; zoom: number } | null>(null)
-  const [statsJson, setStatsJson] = useState('')
-  const [report, setReport] = useState('')
-  const [busy, setBusy] = useState(false)
-  const fps = useFps()
+  const [fps, setFps] = useState(0)
+  const [proof, setProof] = useState('shared-memory: …')
 
   useEffect(() => {
     const container = containerRef.current
@@ -52,6 +79,11 @@ export default function WgpuCanvas() {
     let raf = 0
     let lastDpr = window.devicePixelRatio
     let lastHud = 0
+    let frames = 0
+
+    // Shared-memory proof runs at mount, independent of GPU init (it only needs the shared wasm
+    // linear memory the merged pkg gives us). Synchronous + self-freeing (L10).
+    setProof(sharedMemoryProof())
 
     const applySize = () => {
       const rect = container.getBoundingClientRect()
@@ -78,7 +110,6 @@ export default function WgpuCanvas() {
           return
         }
         engine = created
-        engineRef.current = created
         setBackend(created.backend())
         applySize()
         created.set_view(6400, 6400, -2)
@@ -91,10 +122,11 @@ export default function WgpuCanvas() {
             setError(String(err)) // I6
             return
           }
+          frames += 1
           if (now - lastHud > HUD_INTERVAL_MS) {
+            if (lastHud > 0) setFps(Math.round((frames * 1000) / (now - lastHud)))
             lastHud = now
-            setView({ tx: engine.target_x, ty: engine.target_y, zoom: engine.zoom })
-            setStatsJson(engine.stats())
+            frames = 0
           }
           raf = requestAnimationFrame(loop)
         }
@@ -150,105 +182,37 @@ export default function WgpuCanvas() {
       canvas.removeEventListener('pointerup', onPointerUp)
       canvas.removeEventListener('pointercancel', onPointerUp)
       canvas.removeEventListener('wheel', onWheel)
-      engineRef.current = null
       engine?.free() // I4 — exactly once
       engine = null
     }
   }, [forceWebgl, canvasKey])
 
-  const runSelfCheck = useCallback(async () => {
-    const engine = engineRef.current
-    if (!engine) return
-    setBusy(true)
-    setReport('running self-check…')
-    try {
-      const result: unknown = await engine.self_check()
-      setReport(typeof result === 'string' ? result : JSON.stringify(result))
-    } catch (err) {
-      setReport(`self-check FAILED: ${String(err)}`)
-    } finally {
-      setBusy(false)
-    }
-  }, [])
-
-  const seedStress = useCallback((n: number) => {
-    const engine = engineRef.current
-    if (!engine) return
-    setBusy(true)
-    setReport(`seeding ${n.toLocaleString()} instances…`)
-    // Let the status paint before the synchronous generate+upload burst.
-    setTimeout(() => {
-      try {
-        const t0 = performance.now()
-        engine.seed_stress(n, STRESS_SEED)
-        const stats = engine.stats()
-        setStatsJson(stats)
-        setReport(
-          `seeded ${n.toLocaleString()} in ${Math.round(performance.now() - t0)} ms — ${stats}`,
-        )
-      } catch (err) {
-        setReport(`seed_stress FAILED: ${String(err)}`)
-      } finally {
-        setBusy(false)
-      }
-    }, 30)
-  }, [])
-
-  const clearStress = useCallback(() => {
-    engineRef.current?.clear_stress()
-    setReport('stress pool cleared')
-  }, [])
-
   const retryWebgl = useCallback(() => {
     setError(null)
-    setReport('')
     setBackend('initializing…')
     setForceWebgl(true)
     setCanvasKey((k) => k + 1) // I7 — fresh canvas element
   }, [])
 
   return (
-    <div
-      ref={containerRef}
-      style={{ position: 'fixed', inset: 0, background: '#0b0f14', color: '#e6ebf2' }}
-    >
+    <div ref={containerRef} className={className} style={{ background: '#0b0f14' }}>
       <canvas
         key={canvasKey}
         ref={canvasRef}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
       <div style={PANEL}>
-        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151 · wgpu render spike</div>
-        <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 22, margin: '2px 0 6px' }}>
+        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.0 · wgpu editor mount</div>
+        <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
           {fps} FPS · {backend}
         </div>
-        <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, opacity: 0.85 }}>
-          {view
-            ? `target ${view.tx.toFixed(1)}, ${view.ty.toFixed(1)} · zoom ${view.zoom.toFixed(3)}`
-            : 'camera —'}
+        <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, opacity: 0.9 }}>
+          {proof}
         </div>
-        <div style={{ display: 'flex', gap: 6, margin: '8px 0 6px', flexWrap: 'wrap' }}>
-          <button onClick={() => void runSelfCheck()} disabled={busy} style={BTN}>
-            Run self-check
-          </button>
-          {STRESS_COUNTS.map((n) => (
-            <button key={n} onClick={() => seedStress(n)} disabled={busy} style={BTN}>
-              {n / 1_000_000 >= 1 ? `${n / 1_000_000}M` : `${n / 1000}k`}
-            </button>
-          ))}
-          <button onClick={clearStress} disabled={busy} style={BTN}>
-            Clear
-          </button>
-          <a href="/_spike/wgpu?force=webgl" style={{ ...BTN, textDecoration: 'none' }}>
-            Force WebGL2
-          </a>
-        </div>
-        {statsJson !== '' && <pre style={PRE}>{statsJson}</pre>}
-        {report !== '' && <pre style={PRE}>{report}</pre>}
         {error !== null && (
           <div style={{ marginTop: 8 }}>
             <div style={{ color: '#ff9c9c', maxWidth: 420, whiteSpace: 'pre-wrap' }}>{error}</div>
-            <button onClick={retryWebgl} style={{ ...BTN, marginTop: 6 }}>
+            <button onClick={retryWebgl} style={BTN}>
               Retry with WebGL2 (fresh canvas)
             </button>
           </div>
@@ -260,32 +224,23 @@ export default function WgpuCanvas() {
 
 const PANEL: CSSProperties = {
   position: 'absolute',
-  top: 16,
-  left: 16,
-  padding: '12px 14px',
+  top: 60,
+  left: '50%',
+  transform: 'translateX(-50%)',
+  padding: '10px 14px',
   borderRadius: 10,
   background: 'rgba(14,20,28,0.78)',
   backdropFilter: 'blur(8px)',
   border: '1px solid rgba(140,198,255,0.18)',
+  color: '#e6ebf2',
   font: '13px/1.3 ui-sans-serif, system-ui, sans-serif',
   maxWidth: 520,
-}
-
-const PRE: CSSProperties = {
-  margin: '6px 0 0',
-  padding: '6px 8px',
-  borderRadius: 6,
-  background: 'rgba(0,0,0,0.35)',
-  fontSize: 11,
-  whiteSpace: 'pre-wrap',
-  wordBreak: 'break-all',
-  maxWidth: 480,
-  maxHeight: 180,
-  overflow: 'auto',
+  textAlign: 'center',
 }
 
 const BTN: CSSProperties = {
   padding: '5px 10px',
+  marginTop: 6,
   borderRadius: 7,
   cursor: 'pointer',
   color: '#cdd7e4',

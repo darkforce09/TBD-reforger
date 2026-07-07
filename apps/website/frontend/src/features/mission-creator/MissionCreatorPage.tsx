@@ -4,7 +4,7 @@
 // map between them. The route carries `chromeless` so AppLayout hides the platform nav and
 // gives the editor the whole viewport.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
@@ -18,6 +18,10 @@ import {
   useMapStore,
 } from '@/features/tactical-map'
 import type { AssetDropPayload, ClipboardSlot, TacticalMapApi } from '@/features/tactical-map'
+// T-151.0 dual mount (D3): lazy + direct (not via the tactical-map barrel) so the wgpu engine glue
+// (and its raw `_bg.wasm` import) never leaks into the flag-off editor graph — it code-splits into
+// its own chunk fetched only when the engine flag is on. Selected below (L8).
+const WgpuTacticalMap = lazy(() => import('@/features/tactical-map/WgpuTacticalMap'))
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useMissionEditor } from './hooks/useMissionEditor'
 import { TopCommandStrip } from './layout/TopCommandStrip'
@@ -48,6 +52,12 @@ export default function MissionCreatorPage() {
   const terrainId = useMapStore((s) => s.meta?.terrain ?? 'everon')
   // Grid + hillshade overlay toggles persist on mission meta (T-091.2).
   const env = useMapStore((s) => s.meta?.environment)
+
+  // T-151.0 dual mount (L8): swap the Deck map for the wgpu engine when the flag is on. Read once
+  // per mount — it changes only with an env rebuild or a URL change (both reload the page).
+  const useWgpu =
+    import.meta.env.VITE_MC_ENGINE === 'wgpu' ||
+    new URLSearchParams(window.location.search).get('engine') === 'wgpu'
 
   // The map's imperative API (flyTo) — captured once for Spacebar centering.
   const mapApi = useRef<TacticalMapApi | null>(null)
@@ -226,22 +236,33 @@ export default function MissionCreatorPage() {
 
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">
-      {/* Full-bleed map behind everything. */}
-      <TacticalMap
-        key={terrainId}
-        terrain={terrainId}
-        showGrid={env?.showGrid !== false}
-        showHillshade={env?.showHillshade === true}
-        hillshadeOpacity={env?.hillshadeOpacity ?? 0.4}
-        className="absolute inset-0 z-0 bg-background"
-        onReady={onReady}
-        onCursorMove={onCursorMove}
-        onEntityActivate={onEntityActivate}
-        onAssetDrop={onAssetDrop}
-        onEntitiesMove={onEntitiesMove}
-        onBasemapDegraded={onBasemapDegraded}
-        onBasemapProgress={onBasemapProgress}
-      />
+      {/* Full-bleed map behind everything. T-151.0 (L8): the wgpu engine mount when the flag is
+          on, else the Deck map — which stays byte-identical in behavior when the flag is off. */}
+      {useWgpu ? (
+        <Suspense fallback={null}>
+          <WgpuTacticalMap
+            key={terrainId}
+            terrain={terrainId}
+            className="absolute inset-0 z-0 bg-background"
+          />
+        </Suspense>
+      ) : (
+        <TacticalMap
+          key={terrainId}
+          terrain={terrainId}
+          showGrid={env?.showGrid !== false}
+          showHillshade={env?.showHillshade === true}
+          hillshadeOpacity={env?.hillshadeOpacity ?? 0.4}
+          className="absolute inset-0 z-0 bg-background"
+          onReady={onReady}
+          onCursorMove={onCursorMove}
+          onEntityActivate={onEntityActivate}
+          onAssetDrop={onAssetDrop}
+          onEntitiesMove={onEntitiesMove}
+          onBasemapDegraded={onBasemapDegraded}
+          onBasemapProgress={onBasemapProgress}
+        />
+      )}
 
       {/* Overlay layer: spans the screen and ignores pointer events so the map gap pans;
           each docked panel re-enables hits via the `overlayDocked` recipe. */}

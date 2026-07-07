@@ -75,10 +75,24 @@ fn instance_descriptor(backends: wgpu::Backends) -> wgpu::InstanceDescriptor {
     desc
 }
 
-/// One GPU buffer of the stress pool (≤ [`CHUNK_CAPACITY`] instances).
-struct StressChunk {
-    buffer: wgpu::Buffer,
+/// The render engine's draw list is an ordered `Vec<Batch>` (T-151.0 L7) — one entry per
+/// instanced draw, iterated in order by `render()`. This is the seam the W1+ layer stack
+/// (basemap, world objects, slots) hangs off; this slice ships exactly the pre-batch-list scene
+/// (the stress pool, then the calibration scene on top), so the spike gates pass byte-identically.
+#[derive(Clone, Copy)]
+pub(crate) enum PipelineKind {
+    /// The one instanced-quad pipeline ([`create_quad_pipeline`]): per-instance `QuadInstance`
+    /// (min/max/color) over the shared unit-quad triangle strip.
+    QuadInstanced,
+}
+
+/// One instanced draw: a per-instance vertex buffer of [`CHUNK_CAPACITY`]-bounded `QuadInstance`s
+/// (≤ 64 MiB), how many instances to draw, and whether it is drawn this frame.
+struct Batch {
+    kind: PipelineKind,
+    instances: wgpu::Buffer,
     count: u32,
+    visible: bool,
 }
 
 /// GPU frame timing via `TIMESTAMP_QUERY` when the adapter offers it (plan §S4d: fps is a
@@ -222,7 +236,8 @@ pub struct RenderEngine {
     pub(crate) unit_quad_buf: wgpu::Buffer,
     pub(crate) calibration_buf: wgpu::Buffer,
     camera: OrthoCamera,
-    stress: Vec<StressChunk>,
+    /// Ordered draw list (T-151.0 L7): stress chunks first, the calibration batch always last.
+    batches: Vec<Batch>,
     stress_instances: u64,
     staging: Vec<QuadInstance>,
     staging_peak_bytes: u64,
@@ -378,6 +393,17 @@ impl RenderEngine {
             EVERON_BOUNDS[3],
         );
 
+        // Permanent calibration batch — drawn last (on top of the stress pool), 2 instances (the
+        // green square + the red orientation marker; `draw(0..4, 0..2)` in the pre-batch-list
+        // engine). Cloning the buffer here keeps `calibration_buf` as a field for
+        // `self_check`/`probe.rs`, which read it directly and stay untouched (L7).
+        let calibration_batch = Batch {
+            kind: PipelineKind::QuadInstanced,
+            instances: calibration_buf.clone(),
+            count: 2,
+            visible: true,
+        };
+
         let timer = want_timestamps.then(|| GpuTimer::new(&device, &queue));
 
         Ok(Self {
@@ -395,7 +421,7 @@ impl RenderEngine {
             unit_quad_buf,
             calibration_buf,
             camera,
-            stress: Vec::new(),
+            batches: vec![calibration_batch],
             stress_instances: 0,
             staging: Vec::new(),
             staging_peak_bytes: 0,
@@ -531,13 +557,20 @@ impl RenderEngine {
             pass.set_pipeline(&self.surface_pipeline);
             pass.set_bind_group(0, &self.bind_group, &[]);
             pass.set_vertex_buffer(0, self.unit_quad_buf.slice(..));
-            // Stress pool first (underneath), calibration instances on top.
-            for chunk in &self.stress {
-                pass.set_vertex_buffer(1, chunk.buffer.slice(..));
-                pass.draw(0..4, 0..chunk.count);
+            // Iterate the ordered draw list (L7): stress pool first (underneath), calibration
+            // batch last (on top) — the pre-batch-list draw order, unchanged. One pipeline this
+            // slice, so it is bound once above; the `kind` match is the seam for future pipelines.
+            for batch in &self.batches {
+                if !batch.visible {
+                    continue;
+                }
+                match batch.kind {
+                    PipelineKind::QuadInstanced => {
+                        pass.set_vertex_buffer(1, batch.instances.slice(..));
+                        pass.draw(0..4, 0..batch.count);
+                    }
+                }
             }
-            pass.set_vertex_buffer(1, self.calibration_buf.slice(..));
-            pass.draw(0..4, 0..2);
         }
         if take_timing && let Some(t) = &self.timer {
             encoder.resolve_query_set(&t.query_set, 0..2, &t.resolve_buf, 0);
@@ -555,6 +588,12 @@ impl RenderEngine {
     /// accounting: `stats().instances` afterwards equals exactly `n`.
     pub fn seed_stress(&mut self, n: u32, seed: u32) {
         self.clear_stress();
+        // Insert stress batches before the trailing calibration batch (draw order stress→
+        // calibration): pop it, append the freshly-generated chunks, restore it last.
+        let calibration = self
+            .batches
+            .pop()
+            .expect("calibration batch always present");
         let seed = u64::from(seed);
         let mut remaining = n as usize;
         let mut chunk_idx: u32 = 0;
@@ -578,9 +617,11 @@ impl RenderEngine {
             upload_ms += now_ms() - u0;
 
             #[allow(clippy::cast_possible_truncation)]
-            self.stress.push(StressChunk {
-                buffer,
+            self.batches.push(Batch {
+                kind: PipelineKind::QuadInstanced,
+                instances: buffer,
                 count: count as u32,
+                visible: true,
             });
             self.stress_instances += count as u64;
             self.staging_peak_bytes = self
@@ -589,15 +630,24 @@ impl RenderEngine {
             remaining -= count;
             chunk_idx += 1;
         }
+        self.batches.push(calibration);
         self.gen_ms = gen_ms;
         self.upload_ms = upload_ms;
     }
 
     /// Drop the stress pool (buffers destroyed eagerly).
     pub fn clear_stress(&mut self) {
-        for chunk in self.stress.drain(..) {
-            chunk.buffer.destroy();
+        // Drop every stress batch (all but the trailing calibration), destroying GPU buffers
+        // eagerly; the permanent calibration batch is popped aside and restored (its buffer is a
+        // clone of the kept `calibration_buf`, so it must not be destroyed).
+        let calibration = self
+            .batches
+            .pop()
+            .expect("calibration batch always present");
+        for batch in self.batches.drain(..) {
+            batch.instances.destroy();
         }
+        self.batches.push(calibration);
         self.stress_instances = 0;
         self.gen_ms = 0.0;
         self.upload_ms = 0.0;
@@ -608,7 +658,12 @@ impl RenderEngine {
     /// `gpu_frame_ms` is present only when `TIMESTAMP_QUERY` is available and sampled.
     #[must_use]
     pub fn stats(&self) -> String {
-        let stress_bytes: u64 = self.stress.iter().map(|c| u64::from(c.count) * 32).sum();
+        // Stress batches are every draw-list entry except the trailing calibration batch (L7).
+        let stress_count = self.batches.len() - 1;
+        let stress_bytes: u64 = self.batches[..stress_count]
+            .iter()
+            .map(|b| u64::from(b.count) * 32)
+            .sum();
         let gpu_bytes = stress_bytes + 64 /* uniform */ + 32 /* unit quad */ + 64 /* calibration */;
         let gpu_frame_ms = match &self.timer {
             Some(t) if t.has_sample.get() => format!("{:.3}", t.last_ms.get()),
@@ -622,7 +677,7 @@ impl RenderEngine {
             ),
             self.backend_kind,
             self.stress_instances,
-            self.stress.len(),
+            stress_count,
             gpu_bytes,
             self.staging_peak_bytes,
             self.gen_ms,

@@ -9,9 +9,9 @@ import eslintConfigPrettier from 'eslint-config-prettier'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  // Generated contract projections (make schema-codegen) + the wasm-pack outputs
-  // (make wasm / make wasm-render) are not hand-linted.
-  globalIgnores(['dist', 'src/types/contract/**', 'src/wasm/pkg/**', 'src/wasm/render/**']),
+  // Generated contract projections (make schema-codegen) + the wasm-pack output
+  // (make wasm) are not hand-linted.
+  globalIgnores(['dist', 'src/types/contract/**', 'src/wasm/pkg/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

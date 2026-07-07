@@ -13,4 +13,8 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 map-engine-core = { path = "../map-engine-core", features = ["png", "mission", "doc"] }
+# The wgpu render engine is linked in so it ships inside this single bundler wasm module — one
+# linear memory shared by `MissionDoc` and `RenderEngine` (T-151.0 L1, zero-copy doc→GPU). The
+# crate's heavy GPU/web stack is `cfg(wasm32)`-gated, so native `cargo build --workspace` stays lean.
+map-engine-render = { path = "../map-engine-render" }
 wasm-bindgen = "0.2"
