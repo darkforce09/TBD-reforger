@@ -402,6 +402,105 @@ impl MissionDocCore {
         }
     }
 
+    // ── Batch-2 editor-layer mutators (ports of `ydoc.ts`) ──────────────────────────────────────
+
+    /// Create an Outliner folder (id + name computed JS-side). Mirrors `ydoc.addEditorLayer`.
+    pub fn add_editor_layer(&self, id: &str, name: &str, parent_id: Option<String>) {
+        let mut txn = self.doc.transact_mut();
+        let layer = self
+            .editor_layers
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        layer.insert(&mut txn, "name", name);
+        match parent_id {
+            Some(p) => layer.insert(&mut txn, "parentId", p),
+            None => layer.insert(&mut txn, "parentId", Any::Null),
+        };
+        layer.insert(&mut txn, "entityIds", Any::Array(Vec::new().into()));
+    }
+
+    /// Rename an Outliner folder. Mirrors `ydoc.renameEditorLayer`.
+    pub fn rename_editor_layer(&self, id: &str, name: &str) {
+        let mut txn = self.doc.transact_mut();
+        if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, id) {
+            layer.insert(&mut txn, "name", name);
+        }
+    }
+
+    /// Reparent an Outliner folder; rejects cycles (dropping it into its own subtree). Mirrors
+    /// `ydoc.reparentEditorLayer`.
+    pub fn reparent_editor_layer(&self, id: &str, new_parent_id: Option<String>) {
+        let mut txn = self.doc.transact_mut();
+        if self.editor_layers.get(&txn, id).is_none() {
+            return;
+        }
+        if let Some(p) = new_parent_id.as_deref()
+            && (p == id || self.is_layer_descendant(&txn, id, p))
+        {
+            return;
+        }
+        if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, id) {
+            match new_parent_id {
+                Some(p) => layer.insert(&mut txn, "parentId", p),
+                None => layer.insert(&mut txn, "parentId", Any::Null),
+            };
+        }
+    }
+
+    /// Refile a slot into a different Outliner folder (workflow-only; squad unchanged): detach from
+    /// every folder holding it, then append to the target. Mirrors `ydoc.moveSlotToLayer`.
+    pub fn move_slot_to_layer(&self, slot_id: &str, target_layer_id: &str) {
+        let mut txn = self.doc.transact_mut();
+        if self.editor_layers.get(&txn, target_layer_id).is_none() {
+            return;
+        }
+        let layer_ids: Vec<String> = self
+            .editor_layers
+            .iter(&txn)
+            .map(|(k, _)| k.to_string())
+            .collect();
+        for lid in &layer_ids {
+            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, lid)
+                && let Some(Out::Any(Any::Array(arr))) = layer.get(&txn, "entityIds")
+                && arr
+                    .iter()
+                    .any(|a| matches!(a, Any::String(s) if s.as_ref() == slot_id))
+            {
+                let kept: Vec<Any> = arr
+                    .iter()
+                    .filter(|a| !matches!(a, Any::String(s) if s.as_ref() == slot_id))
+                    .cloned()
+                    .collect();
+                layer.insert(&mut txn, "entityIds", Any::Array(kept.into()));
+            }
+        }
+        if let Some(Out::YMap(target)) = self.editor_layers.get(&txn, target_layer_id)
+            && let Some(Out::Any(Any::Array(arr))) = target.get(&txn, "entityIds")
+        {
+            let mut next: Vec<Any> = arr.iter().cloned().collect();
+            next.push(Any::String(slot_id.into()));
+            target.insert(&mut txn, "entityIds", Any::Array(next.into()));
+        }
+    }
+
+    /// Is `node_id` inside `ancestor_id`'s subtree (or equal)? Walks up via `parentId`. Mirrors
+    /// `ydoc.isLayerDescendant`.
+    fn is_layer_descendant<T: ReadTxn>(&self, txn: &T, ancestor_id: &str, node_id: &str) -> bool {
+        let mut cur = Some(node_id.to_string());
+        while let Some(c) = cur {
+            if c == ancestor_id {
+                return true;
+            }
+            cur = match self.editor_layers.get(txn, &c) {
+                Some(Out::YMap(layer)) => match layer.get(txn, "parentId") {
+                    Some(Out::Any(Any::String(p))) => Some(p.to_string()),
+                    _ => None,
+                },
+                _ => None,
+            };
+        }
+        false
+    }
+
     /// Undo the most recent tracked transaction; `true` if anything was undone.
     pub fn undo(&mut self) -> bool {
         self.undo_mgr.undo_blocking()

@@ -5,6 +5,9 @@ import {
   createMissionDoc,
   seedDefaultLayer,
   addEditorLayer,
+  renameEditorLayer,
+  reparentEditorLayer,
+  moveSlotToLayer,
   addSlot,
   updateSlot,
   updateSlotPosition,
@@ -35,11 +38,12 @@ function baseSync(md: ReturnType<typeof createMissionDoc>): wasm.MissionDoc {
 function baseDoc() {
   const md = createMissionDoc()
   seedDefaultLayer(md)
+  const defaultLayer = [...md.entities.editorLayers.keys()][0]
   const l2 = addEditorLayer(md, { name: 'Bravo' })
   const s1 = addSlot(md, { x: 100.5, y: 200.25 }, { role: 'Squad Leader', tag: 'CMD' })
   const s2 = addSlot(md, { x: 1500.75, y: 900.125 }, { role: 'Rifleman' })
   const s3 = addSlot(md, { x: 3000, y: 4000 }, { role: 'Medic', tag: 'MED', layerId: l2 })
-  return { md, s1, s2, s3 }
+  return { md, defaultLayer, l2, s1, s2, s3 }
 }
 
 describe('Rust mutator parity vs ydoc.ts (batch 1: slot lifecycle)', () => {
@@ -84,6 +88,48 @@ describe('Rust mutator parity vs ydoc.ts (batch 1: slot lifecycle)', () => {
     const yrs = baseSync(md)
     removeEntities(md, 'slots', [s1, s2])
     yrs.remove_slots([s1, s2])
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+})
+
+describe('Rust mutator parity vs ydoc.ts (batch 2: editor layers)', () => {
+  it('add_editor_layer (root + nested; JS mints the id)', () => {
+    const { md, l2 } = baseDoc()
+    const yrs = baseSync(md)
+    const root = addEditorLayer(md, { name: 'Delta' })
+    yrs.add_editor_layer(root, 'Delta', undefined)
+    const nested = addEditorLayer(md, { name: 'Echo', parentId: l2 })
+    yrs.add_editor_layer(nested, 'Echo', l2)
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('rename_editor_layer', () => {
+    const { md, l2 } = baseDoc()
+    const yrs = baseSync(md)
+    renameEditorLayer(md, l2, 'Bravo Renamed')
+    yrs.rename_editor_layer(l2, 'Bravo Renamed')
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('reparent_editor_layer + cycle guard', () => {
+    const { md, defaultLayer, l2 } = baseDoc()
+    const yrs = baseSync(md)
+    reparentEditorLayer(md, l2, defaultLayer) // valid: l2 under default
+    yrs.reparent_editor_layer(l2, defaultLayer)
+    reparentEditorLayer(md, defaultLayer, l2) // cycle: default under its own child → rejected
+    yrs.reparent_editor_layer(defaultLayer, l2)
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('move_slot_to_layer (detach everywhere + append to target)', () => {
+    const { md, l2, s1 } = baseDoc()
+    const yrs = baseSync(md)
+    moveSlotToLayer(md, s1, l2)
+    yrs.move_slot_to_layer(s1, l2)
     expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
     yrs.free()
   })

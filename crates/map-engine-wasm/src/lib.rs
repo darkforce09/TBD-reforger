@@ -748,6 +748,20 @@ impl MissionDoc {
         self.inner.remove_slots(ids);
     }
 
+    // Batch-2 editor-layer mutators.
+    pub fn add_editor_layer(&self, id: &str, name: &str, parent_id: Option<String>) {
+        self.inner.add_editor_layer(id, name, parent_id);
+    }
+    pub fn rename_editor_layer(&self, id: &str, name: &str) {
+        self.inner.rename_editor_layer(id, name);
+    }
+    pub fn reparent_editor_layer(&self, id: &str, new_parent_id: Option<String>) {
+        self.inner.reparent_editor_layer(id, new_parent_id);
+    }
+    pub fn move_slot_to_layer(&self, slot_id: &str, target_layer_id: &str) {
+        self.inner.move_slot_to_layer(slot_id, target_layer_id);
+    }
+
     pub fn undo(&mut self) -> bool {
         self.inner.undo()
     }
