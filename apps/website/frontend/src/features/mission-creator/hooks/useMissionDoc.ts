@@ -1,40 +1,33 @@
-// Mission Y.Doc lifecycle for the mounted route :id (precursor to the Phase-9
-// useMissionEditor, which adds backend hydrate/autosave). Phase 4 is local-only:
-// create the doc, make it durable via y-indexeddb, attach undo, and bind it to the
-// Zustand mirror — tearing all of it down on unmount / id change. When the IndexedDB
-// snapshot loads, its inserts flow through observeDeep into the store automatically,
-// so no extra "ready" plumbing is needed.
+// Mission document lifecycle for the mounted route :id (T-145 Phase 3.2 F3). The authoritative doc is
+// the wasm `yrs` core behind a stable `WasmMissionDoc` shell: the shell is memoized (StrictMode-safe —
+// no wasm handle inside the memo), and the lifecycle effect attaches a FRESH wasm handle on setup and
+// detaches (frees) it on cleanup, so React 19 StrictMode's setup→cleanup→setup double-invoke never
+// shares — and then double-frees — one handle (wasm `.free()` is not idempotent; [[wasm-react-lifecycle]]).
+//
+// Boot: load the v3 whole-doc blob from IndexedDB (yrsPersist) → apply_update (INIT/untracked) → resync
+// the store → seed defaults if empty → reconcile with the server (onSynced) → ready. Legacy v1/v2 IDB
+// drafts are dropped (re-hydrate from the server) — the whole v1/v2/migrate branch set is gone.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { IndexeddbPersistence } from 'y-indexeddb'
+import * as wasm from '@/wasm/pkg/map_engine_wasm'
 import {
-  beginBulkSync,
-  bindStoreToDoc,
-  checkDocShadowParity,
-  createDocShadow,
   createMissionDoc,
-  seedDocShadow,
   createUndoManager,
-  endBulkSync,
   seedDefaultLayer,
   seedMeta,
   useMapStore,
   type MissionDoc,
   type UndoController,
 } from '@/features/tactical-map'
-import { detectLegacyV1, hasV2Persist, legacyDbName } from '../persistence/missionPersistSchema'
-import { loadSlotsWithProgress } from '../persistence/slotChunkStore'
-import { loadMissionMetaIntoDoc } from '../persistence/missionMetaStore'
-import { migrateLegacyToV2 } from '../persistence/migrateLegacyToV2'
+import { loadState } from '../persistence/yrsPersist'
 
-/** loading → IndexedDB snapshot + (when applicable) server hydrate still in flight.
- *  error → the local restore threw (corrupt/blocked IndexedDB, failed migration); the
- *  editor must NOT present as an empty `ready` doc — the consumer shows an error overlay. */
+/** loading → the local blob restore + (when applicable) server hydrate are still in flight.
+ *  error → the local restore threw (corrupt/blocked IndexedDB); the editor must NOT present as an
+ *  empty `ready` doc — the consumer shows an error overlay. */
 export type DocStatus = 'loading' | 'ready' | 'error'
 
-/** Load phases, in execution order: restore from IndexedDB → download server payload →
- *  apply (hydrate) → reflect into the store (the final coalesced snapshot). `value` is the
- *  overall 0..1 (monotonic). */
+/** Load phases, in execution order: restore blob → download server payload → apply (hydrate) →
+ *  reflect into the store. `value` is the overall 0..1 (monotonic). */
 export type LoadPhase = 'restoring' | 'downloading' | 'applying' | 'local'
 export interface LoadProgress {
   phase: LoadPhase
@@ -47,10 +40,8 @@ export interface LoadProgress {
 // Weighted, monotonic, in execution order (a skipped phase just fast-forwards its band):
 // restoring 0–0.15, download 0.15–0.35, apply 0.35–0.55, local (final snapshot) 0.55–1.0.
 const frac = (done: number, total: number) => (total > 0 ? Math.min(done / total, 1) : 1)
-// Restoring band (0–0.15). The v2 chunked store knows its total → a determinate fraction
-// (T-062.1). The legacy y-indexeddb replay has no per-entity signal (no `total`) → a
-// count-only soft curve that asymptotes to the band top without claiming completion — real
-// motion without a fake %; MissionCreatorPage shows the indeterminate sweep for that case.
+// The v3 blob load has no per-entity signal (one apply_update) → a count-only soft curve that
+// asymptotes to the band top; MissionCreatorPage shows the indeterminate sweep for that band.
 export const restoringPhase = (done: number, total?: number): LoadProgress => ({
   phase: 'restoring',
   value:
@@ -61,8 +52,6 @@ export const restoringPhase = (done: number, total?: number): LoadProgress => ({
 })
 export const downloadPhase = (loaded: number, total?: number): LoadProgress => ({
   phase: 'downloading',
-  // Content-Length is often unknown for a gzipped/streamed response — `frac(loaded, 0)` would
-  // jump straight to the band top. Until `total` is known, ride a soft curve on bytes loaded.
   value: 0.15 + 0.2 * (total && total > 0 ? frac(loaded, total) : loaded / (loaded + 2_000_000)),
   label: 'Downloading mission…',
 })
@@ -89,11 +78,9 @@ export interface MissionDocHandle {
 }
 
 export interface UseMissionDocOptions {
-  /** Fired once after the IndexedDB snapshot has synced and defaults are seeded — the
-   *  hook point for backend hydrate / conflict checks (Phase 9 useMissionEditor).
-   *  May return a Promise; the doc isn't marked `ready` until it settles, so a large
-   *  server hydrate keeps the loading overlay up until its content is in the store.
-   *  `onLoadProgress` reports the download + apply phases for the load overlay. */
+  /** Fired once after the local blob has restored and defaults are seeded — the hook point for
+   *  backend hydrate / conflict checks (useMissionEditor). May return a Promise; the doc isn't marked
+   *  `ready` until it settles, so a large server hydrate keeps the overlay up. */
   onSynced?: (md: MissionDoc, onLoadProgress?: (p: LoadProgress) => void) => void | Promise<void>
 }
 
@@ -109,186 +96,54 @@ export function useMissionDoc(
     onSyncedRef.current = options?.onSynced
   })
 
-  // One doc + undo manager per mission id; recreated if the id changes — or if `instanceKey`
-  // is bumped on teardown (StrictMode fix below).
+  // One shell + undo controller per mission id; recreated if the id changes — or if `instanceKey` is
+  // bumped on teardown (StrictMode fix below). The shell holds no wasm handle until the effect attaches
+  // one, so memoizing it is safe (unlike a raw wasm object).
   const missionKey = missionId ?? 'draft'
   const [instanceKey, setInstanceKey] = useState(0)
-  // Bump-once guard: the effect below depends on the recreated `md`/`undo`, so an unconditional
-  // bump in cleanup would re-trigger itself forever. StrictMode's single setup→cleanup→setup
-  // needs exactly one fresh instance, so allow the bump at most once per mount.
   const recreatedRef = useRef(false)
-  const { md, undo, dbName } = useMemo(() => {
-    const md = createMissionDoc()
-    return {
-      md,
-      undo: createUndoManager(md),
-      dbName: `tbd-mission-${missionKey}`,
-    }
-    // `instanceKey` is intentionally a dep with no body reference: bumping it on teardown is
-    // how we force a fresh doc/undo after StrictMode destroys the previous one.
+  const { shell, undo } = useMemo(() => {
+    const s = createMissionDoc()
+    return { shell: s, undo: createUndoManager(s) }
+    // `instanceKey` is intentionally a dep with no body reference: bumping it on teardown forces a
+    // fresh shell/undo after StrictMode destroys the previous one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [missionKey, instanceKey])
 
-  // 'loading' until the local IndexedDB snapshot has synced AND (when applicable) the
-  // server hydrate has completed; drives the load overlay in MissionCreatorPage. Reset
-  // to 'loading' at render time whenever a fresh doc is created (new mission id or the
-  // StrictMode instanceKey bump) — the React-sanctioned "reset state on prop change"
-  // pattern, which avoids a setState-in-effect.
   const [docStatus, setDocStatus] = useState<DocStatus>('loading')
   const [loadProgress, setLoadProgress] = useState<LoadProgress>(INITIAL_LOAD)
-  const [trackedMd, setTrackedMd] = useState(md)
-  if (trackedMd !== md) {
-    setTrackedMd(md)
+  // Reset to 'loading' at render time whenever a fresh shell is created (new id or the StrictMode
+  // instanceKey bump) — the React-sanctioned "reset state on prop change" pattern.
+  const [trackedShell, setTrackedShell] = useState(shell)
+  if (trackedShell !== shell) {
+    setTrackedShell(shell)
     setDocStatus('loading')
     setLoadProgress(INITIAL_LOAD)
   }
-  // Stable so the effect's deps don't churn; setState identity is already stable.
   const reportLoad = useCallback((p: LoadProgress) => setLoadProgress(p), [])
 
   useEffect(() => {
-    let mountedHere = true
-    // Set the instant the effect tears down so the async boot IIFE below stops applying
-    // chunks / seeding into a doc that's about to be destroyed (StrictMode setup→cleanup→setup).
+    // Set the instant the effect tears down so the async boot IIFE stops applying into a shell whose
+    // handle is about to be freed (StrictMode setup→cleanup→setup).
     let cancelled = false
     // eslint-disable-next-line no-console -- dev diagnostic behind import.meta.env.DEV (LOG-2)
     if (import.meta.env.DEV) console.debug('[mission-doc] mount', { missionKey, instanceKey })
-    // Open a bulk-sync window BEFORE binding + before any replay, so the local restore and the
-    // prime coalesce into one store flush at endBulkSync instead of flushing per-transaction
-    // (T-060 load).
-    let bulkOpen = true
-    beginBulkSync()
-    const unbind = bindStoreToDoc(md)
+    // Effect-local wasm handle — created + freed per effect invocation so StrictMode never double-frees.
+    shell.attach(new wasm.MissionDoc())
+    // loadProgress already starts at INITIAL_LOAD (restoringPhase(0)) via useState + the trackedShell
+    // reset, so no synchronous reportLoad is needed here (that would be a setState-in-effect).
 
-    // T-145 Phase 3.2 Stage 1: a passive DEV shadow yrs doc created PER effect-invocation, so the
-    // StrictMode setup→cleanup→setup double (which does not re-run the doc useMemo) never shares — and
-    // then double-frees — one wasm handle. Seeded from the Y.Doc's current state, then kept synced from
-    // the update stream (every local transaction + every persistence replay); SoA parity is asserted
-    // after each change, debounced. Passive — Y.Doc stays authoritative; nothing reads the shadow yet.
-    let shadowCleanup: (() => void) | null = null
-    if (import.meta.env.DEV) {
-      const shadow = createDocShadow()
-      seedDocShadow(md, shadow)
-      let parityTimer: ReturnType<typeof setTimeout> | null = null
-      const onDocUpdate = (u: Uint8Array) => {
-        shadow.apply_update(u)
-        if (parityTimer) clearTimeout(parityTimer)
-        parityTimer = setTimeout(() => {
-          const mismatch = checkDocShadowParity(md, shadow)
-          if (mismatch) console.error('[doc-shadow] yrs↔Y.Doc parity mismatch:', mismatch)
-        }, 250)
-      }
-      md.doc.on('update', onDocUpdate)
-      shadowCleanup = () => {
-        md.doc.off('update', onDocUpdate)
-        if (parityTimer) clearTimeout(parityTimer)
-        shadow.free()
-      }
-    }
-    // Created only on the legacy branch; tracked so cleanup can destroy it if we tear down
-    // mid-migration (v2 + fresh missions never touch y-indexeddb — T-062.1).
-    let legacyPersistence: IndexeddbPersistence | null = null
-
-    // Legacy-only restoring poll (T-060.1.1 / T-062.2): the y-indexeddb replay lands the whole
-    // doc in ONE synchronous Y.applyUpdate with no per-entity signal, so we poll slots.size to
-    // show "Reading local save…" with a growing (indeterminate) count. The v2 branch reports
-    // determinate per-chunk progress instead, so it never starts this poll. Visibility-aware:
-    // rAF is throttled in a hidden tab, so fall back to setInterval when hidden; one timer live.
-    let restoreRaf: number | null = null
-    let restoreInterval: ReturnType<typeof setInterval> | null = null
-    let polling = false
-    const tick = () => reportLoad(restoringPhase(md.entities.slots.size))
-    const clearTimers = () => {
-      if (restoreRaf != null) cancelAnimationFrame(restoreRaf)
-      restoreRaf = null
-      if (restoreInterval != null) clearInterval(restoreInterval)
-      restoreInterval = null
-    }
-    const schedule = () => {
-      clearTimers()
-      if (document.visibilityState === 'hidden') {
-        restoreInterval = setInterval(tick, 500)
-      } else {
-        const rafPoll = () => {
-          tick()
-          restoreRaf = requestAnimationFrame(rafPoll)
-        }
-        restoreRaf = requestAnimationFrame(rafPoll)
-      }
-    }
-    const onVisibilityChange = () => {
-      if (polling) schedule()
-    }
-    const startPoll = () => {
-      if (polling) return
-      polling = true
-      document.addEventListener('visibilitychange', onVisibilityChange)
-      schedule()
-    }
-    const stopRestorePoll = () => {
-      clearTimers()
-      if (!polling) return
-      polling = false
-      document.removeEventListener('visibilitychange', onVisibilityChange)
-    }
-
-    const seedDefaults = () => {
-      seedMeta(md, { id: missionKey, title: 'Untitled Mission' })
-      seedDefaultLayer(md)
-    }
-
-    // Reconcile with the server (download + hydrate reports its own phases), then close the
-    // bulk window with the single coalesced snapshot. Kept OPEN through reconcile (T-060.1 fix)
-    // so the final flush lands AFTER hydrate, not before (which double-flushed the 300k snapshot).
-    const finishReconcile = async () => {
-      const reconcile = onSyncedRef.current?.(md, reportLoad)
-      await Promise.resolve(reconcile)
-      await endBulkSync((done, total) => reportLoad(localPhase(done, total)))
-      bulkOpen = false
-      if (!cancelled && mountedHere) setDocStatus('ready')
-    }
-
-    // eslint-disable-next-line complexity -- boot restore: v2/v1 persistence paths + cancellation/StrictMode guards in one coherent async sequence
     void (async () => {
       let bootError: unknown = null
       try {
-        if (await hasV2Persist(missionKey)) {
-          // v2 — chunked restore, NO IndexeddbPersistence.
-          if (cancelled) return
-          await loadMissionMetaIntoDoc(missionKey, md)
-          if (cancelled) return
-          await loadSlotsWithProgress(
-            missionKey,
-            md,
-            (done, total) => reportLoad(restoringPhase(done, total)),
-            () => cancelled,
-          )
-          if (cancelled) return
-          seedDefaults()
-        } else if (await detectLegacyV1(missionKey)) {
-          // legacy — blocking y-indexeddb replay (poll for motion), then migrate once to v2.
-          if (cancelled) return
-          const persistence = new IndexeddbPersistence(dbName, md.doc)
-          legacyPersistence = persistence
-          startPoll()
-          await new Promise<void>((resolve) => persistence.once('synced', () => resolve()))
-          stopRestorePoll()
-          if (cancelled) return
-          seedDefaults()
-          await migrateLegacyToV2(missionKey, md, reportLoad, () => cancelled)
-          if (cancelled) return
-          // Stop observing y-indexeddb then delete its DB so future edits don't re-bloat it
-          // (v2 debounced writes own durability now). Null the ref first so cleanup's
-          // destroy() won't double-fire.
-          legacyPersistence = null
-          await persistence.destroy()
-          try {
-            indexedDB.deleteDatabase(legacyDbName(missionKey))
-          } catch {
-            /* best-effort; a stale legacy DB is harmless (hasV2Persist gates the path) */
-          }
-        } else {
-          // fresh mission — no persistence yet; v2 debounced writes engage on the first edit.
-          seedDefaults()
+        const blob = await loadState(missionKey)
+        if (cancelled) return
+        if (blob) shell.applyUpdate(blob) // INIT/untracked in the Rust doc; throws on a corrupt blob
+        useMapStore.getState()._applySnapshot(shell.snapshot())
+        if (!shell.hasContent()) {
+          // fresh mission / empty blob → seed title + a default folder (both INIT, not undoable).
+          seedMeta(shell, { id: missionKey, title: 'Untitled Mission' })
+          seedDefaultLayer(shell)
         }
       } catch (e) {
         bootError = e
@@ -296,48 +151,39 @@ export function useMissionDoc(
       }
       if (cancelled) return
       if (bootError) {
-        // Local restore failed — surface it instead of dropping the user into a blank
-        // editor that looks `ready` (perceived data loss). Balance the bulk window first.
-        if (bulkOpen) {
-          await endBulkSync()
-          bulkOpen = false
-        }
-        if (!cancelled && mountedHere) setDocStatus('error')
+        // Local restore failed — surface it instead of dropping the user into a blank `ready` editor.
+        setDocStatus('error')
         return
       }
-      await finishReconcile()
+      // Reconcile with the server (download + hydrate reports its own phases). onSynced surfaces its
+      // own load errors as toasts, so a rejection here must not block `ready`.
+      try {
+        await Promise.resolve(onSyncedRef.current?.(shell, reportLoad))
+      } catch (e) {
+        if (import.meta.env.DEV) console.error('[mission-doc] reconcile failed', e)
+      }
+      if (cancelled) return
+      // Reflect the final state (a server adopt hydrates under INIT) into the store.
+      useMapStore.getState()._applySnapshot(shell.snapshot())
+      setDocStatus('ready')
     })()
 
     return () => {
-      mountedHere = false
       cancelled = true
       // eslint-disable-next-line no-console -- dev diagnostic behind import.meta.env.DEV (LOG-2)
       if (import.meta.env.DEV) console.debug('[mission-doc] unmount', { missionKey, instanceKey })
-      stopRestorePoll()
-      unbind()
-      // Balance the bulk window if we unmounted before reconcile closed it. After unbind,
-      // activeFlush is cleared, so this end is a no-op (won't push into a torn-down store).
-      if (bulkOpen) void endBulkSync()
       undo.destroy()
-      legacyPersistence?.destroy()
-      shadowCleanup?.()
-      md.doc.destroy()
+      shell.detach() // frees the wasm handle
       useMapStore.getState().reset()
-      // React 19 StrictMode (dev) double-invokes this effect setup→cleanup→setup WITHOUT
-      // re-running the useMemo above, so the second setup would re-bind this now-destroyed
-      // doc + UndoManager (undo silently dead → canUndo() always false). Bump instanceKey so
-      // useMemo allocates a fresh md + UndoController before the next setup. Once per mount:
-      // a real missionKey change already recreates via the memo dep; on true unmount the guard
-      // avoids a setState-after-unmount.
+      // React 19 StrictMode (dev) double-invokes this effect setup→cleanup→setup WITHOUT re-running the
+      // useMemo above, so the second setup would re-attach to a shell whose handle was just freed. Bump
+      // instanceKey so useMemo allocates a fresh shell + undo before the next setup. Once per mount.
       if (!recreatedRef.current) {
         recreatedRef.current = true
         setInstanceKey((k) => k + 1)
       }
     }
-    // instanceKey is only read for the dev mount/unmount log; an instanceKey bump already
-    // recreates md (via the useMemo above), so the effect re-runs regardless. Listed to
-    // satisfy exhaustive-deps without changing behavior.
-  }, [md, undo, dbName, missionKey, reportLoad, instanceKey])
+  }, [shell, undo, missionKey, reportLoad, instanceKey])
 
-  return { md, undo, docStatus, loadProgress }
+  return { md: shell, undo, docStatus, loadProgress }
 }

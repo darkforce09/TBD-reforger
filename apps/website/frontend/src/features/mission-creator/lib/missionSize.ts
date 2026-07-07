@@ -4,7 +4,6 @@
 // diagnosable from measured bytes instead of a bare ERR_NETWORK. Estimation is sampled, not a
 // full compile, so it's cheap enough to run on slot-count change.
 
-import * as Y from 'yjs'
 import type { MapSnapshot, MissionDoc } from '@/features/tactical-map'
 
 /** Server-side mission-version body cap (matches the Go route's BodyLimit / config default,
@@ -42,7 +41,8 @@ export function estimateCompiledBytes(state: MapSnapshot): number {
   return Math.round(avgSlotBytes * n + ENVELOPE)
 }
 
-/** Exact local Y.Doc footprint in bytes (the CRDT / IndexedDB size, not the compiled upload). */
+/** Exact local doc footprint in bytes (the yrs update-stream / IndexedDB size, not the compiled
+ *  upload). */
 export function getLocalDocBytes(md: MissionDoc): number {
-  return Y.encodeStateAsUpdate(md.doc).byteLength
+  return md.encodeState().byteLength
 }

@@ -1,6 +1,6 @@
-// Zustand read-mirror of the Y.Doc (Ultra Plan §2.2). Components read via
-// useMapStore(selector); they NEVER setState entity data directly — mutations flow
-// through the Y.Doc (state/ydoc.ts) and are reflected here by state/bindings.ts.
+// Zustand read-mirror of the wasm mission doc (Ultra Plan §2.2). Components read via
+// useMapStore(selector); they NEVER setState entity data directly — mutations flow through the wasm
+// doc (state/ydoc.ts), which resyncs this mirror via _applySnapshot (T-145 F3; O(k) _patch* is F3.1).
 // Only UI/runtime state (selection, activeTool) is set on the store directly.
 
 import { create } from 'zustand'

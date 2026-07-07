@@ -33,11 +33,9 @@ export {
   createMissionDoc,
   addSlot,
   pasteSlots,
-  moveEntity,
   moveEntities,
   removeEntity,
   removeEntities,
-  clearAll,
   seedMeta,
   seedDefaultLayer,
   setTitle,
@@ -55,24 +53,11 @@ export {
   ensureDefaultLayer,
   hydrateMissionDoc,
   hydrateMissionDocWithProgress,
-  LOCAL_ORIGIN,
 } from './state/ydoc'
 export type { MissionDoc, EntityMapName } from './state/ydoc'
-export {
-  bindStoreToDoc,
-  docToSnapshot,
-  docToSnapshotWithProgress,
-  beginBulkSync,
-  endBulkSync,
-} from './state/bindings'
 export { createUndoManager } from './state/undo'
 export type { UndoController } from './state/undo'
-export {
-  createDocShadow,
-  seedDocShadow,
-  checkDocShadowParity,
-  snapshotFromShadow,
-} from './state/docShadow'
+export { snapshotFromShadow } from './state/docShadow'
 export { yieldToUi } from './state/yieldToUi'
 export { selectDragOverlayIcons } from './state/selectors'
 export type { SlotIcon } from './state/selectors'

@@ -1,8 +1,8 @@
-// Phase 9 editor lifecycle — wraps useMissionDoc (local Y.Doc + y-indexeddb) and adds the
+// Phase 9 editor lifecycle — wraps useMissionDoc (the wasm yrs doc + v3 blob persistence) and adds the
 // backend layer: load/hydrate the current server version, prompt on a local-vs-server
 // conflict (Decisions log), track unsaved changes, manual Save Version (immutable semver
 // snapshot via POST /missions/:id/versions), and Export (download the camelCase mod JSON).
-// Debounced autosave stays LOCAL (y-indexeddb) — the versions API has no draft/overwrite route.
+// Debounced autosave stays LOCAL (the yrs blob in IndexedDB) — the versions API has no draft route.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -12,7 +12,6 @@ import {
   useMapStore,
   type MissionDoc,
 } from '@/features/tactical-map'
-import { LOCAL_ORIGIN } from '@/features/tactical-map'
 import { toast } from 'sonner'
 import { api } from '@/api/client'
 import type { MissionDetail } from '@/types/api'
@@ -31,8 +30,7 @@ import {
   readAdoptedServerVersion,
   readWarmEditorSession,
 } from './editorSession'
-import { flushSlots, saveSlotsFromDocDebounced } from '../persistence/slotChunkStore'
-import { flushMeta, saveMissionMetaFromDocDebounced } from '../persistence/missionMetaStore'
+import { flushState, saveStateDebounced } from '../persistence/yrsPersist'
 // Compile + version-blob assembly run in a Web Worker (T-066); call sites below are unchanged.
 import {
   buildVersionBlob,
@@ -150,12 +148,7 @@ const bumpPatch = (semver: string | null): string => {
 }
 
 /** Does the local doc already hold authored content (beyond seeded defaults)? */
-const hasLocalContent = (md: MissionDoc): boolean =>
-  md.entities.factions.size > 0 ||
-  md.entities.slots.size > 0 ||
-  md.entities.objectives.size > 0 ||
-  md.entities.vehicles.size > 0 ||
-  md.entities.markers.size > 0
+const hasLocalContent = (md: MissionDoc): boolean => md.hasContent()
 
 export function useMissionEditor(missionId: string | undefined): MissionEditorHandle {
   const [dirty, setDirty] = useState(false)
@@ -182,7 +175,7 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
       // Warm session fast path (T-062.2): if THIS mission was marked ready earlier this tab
       // session (e.g. before an alt-tab HMR reload) and IndexedDB has already replayed its
       // content into the doc, skip the multi-MB GET entirely. Title/terrain/env are already
-      // in md.meta from y-indexeddb; restore currentSemver from the session record. Trusts
+      // in the doc from the restored yrs blob; restore currentSemver from the session record. Trusts
       // local IDB — remote changes aren't seen until a cold load (see editorSession.ts).
       const warm = readWarmEditorSession(missionId)
       if (warm && hasLocalContent(md)) {
@@ -261,23 +254,11 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
     docReadyRef.current = docStatus === 'ready'
   }, [docStatus])
 
-  // Doc-liveness guard for v2 persistence (T-062.1): useMissionDoc destroys md.doc on teardown.
-  // A debounced/queued save that's mid-flight then must NOT read the destroyed doc and rewrite a
-  // truncated record. `docAlive` flips false the instant the doc is destroyed; it's passed to the
-  // savers as their isCancelled. useMissionDoc's effect is defined first, so its destroy fires
-  // before this hook's flush cleanup runs.
-  const docAlive = useRef(true)
-  useEffect(() => {
-    docAlive.current = true
-    const onDestroy = () => {
-      docAlive.current = false
-    }
-    md.doc.on('destroy', onDestroy)
-    return () => {
-      md.doc.off('destroy', onDestroy)
-    }
-  }, [md])
-  const isDocCancelled = useCallback(() => !docAlive.current, [])
+  // Doc-liveness guard for the blob persistence: useMissionDoc detaches (frees) the wasm handle on
+  // teardown. A debounced/queued save that's mid-flight must NOT then read a detached shell and
+  // rewrite an empty record. `md.alive` flips false the instant the handle is freed; it's passed to
+  // the writer as its isCancelled.
+  const isDocCancelled = useCallback(() => !md.alive, [md])
 
   // Once the editor is ready, record a warm session marker (T-062.2) so a subsequent boot
   // of this mission in the same tab (e.g. an alt-tab HMR reload) can skip the server GET.
@@ -292,37 +273,32 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
     }
   }, [docStatus, missionId, currentSemver])
 
-  // Mark unsaved on any local (user) edit; INIT/persistence-origin (boot restore) updates don't
-  // count. The same gesture also persists to the v2 idb store (T-062.1): meta lightly debounced,
-  // slots debounced ~2s + serialized. Gated on `docReadyRef` so a stray pre-ready local edit
-  // doesn't write mid-boot.
+  // Mark unsaved on any local (user) edit; INIT-origin (boot restore / hydrate) changes don't count.
+  // The same gesture schedules an idle-gated blob persist (yrsPersist reads md.encodeState() at write
+  // time). Gated on `docReadyRef` so a stray pre-ready local edit doesn't write mid-boot.
   useEffect(() => {
     mounted.current = true
-    const onUpdate = (_u: Uint8Array, origin: unknown) => {
-      if (origin !== LOCAL_ORIGIN) return
+    const unsub = md.subscribe((origin) => {
+      if (origin !== 'local') return
       setDirty(true)
       if (docReadyRef.current && missionId) {
-        saveMissionMetaFromDocDebounced(md, missionId, isDocCancelled)
-        saveSlotsFromDocDebounced(md, missionId, isDocCancelled)
+        saveStateDebounced(missionId, () => md.encodeState(), isDocCancelled)
       }
-    }
-    md.doc.on('update', onUpdate)
+    })
     return () => {
       mounted.current = false
-      md.doc.off('update', onUpdate)
+      unsub()
     }
   }, [md, missionId, isDocCancelled])
 
-  // Flush pending v2 writes when the tab is hidden / closed / reloaded (T-062.1). These fire
-  // while the doc is still alive, so the async chunked rewrite completes and an F5 restores the
-  // latest edits. On a plain SPA unmount the doc is already destroyed (useMissionDoc tears down
-  // first), so the queued saves' isDocCancelled aborts them — never corrupting the record; the
-  // ≤2s debounce window is the only edits not persisted in that case.
+  // Flush the pending blob write when the tab is hidden / closed / reloaded (T-062.1). useMissionDoc
+  // is called first, so its effect tears down LAST — at this hook's cleanup the wasm handle is still
+  // attached, so the unmount flush reads a live shell and an F5 restores the latest edits. A queued
+  // write that fires AFTER the handle is freed is aborted by isDocCancelled (md.alive).
   useEffect(() => {
     if (!missionId) return
     const flushAll = () => {
-      void flushMeta(missionId)
-      void flushSlots(missionId)
+      void flushState(missionId)
     }
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') flushAll()
@@ -561,15 +537,13 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
         // onto the old (still pre-conflict) IndexedDB state and re-prompt. T-062.2.
         clearEditorSession()
         try {
-          // Chunked at scale (self-delegates to the sync path under 5k slots).
           await hydrateMissionDocWithProgress(md, conflict)
           if (lastRowMeta.current) applyMissionRowMeta(md, lastRowMeta.current)
-          // The hydrate ran under INIT_ORIGIN, which the LOCAL_ORIGIN autosave hook ignores —
-          // persist the adopted state explicitly (T-127 U1 / F2F-03) through the debounced
-          // writers' serialized chains (flush = immediate) so a queued save can't interleave.
-          saveMissionMetaFromDocDebounced(md, missionId, isDocCancelled)
-          saveSlotsFromDocDebounced(md, missionId, isDocCancelled)
-          await Promise.all([flushMeta(missionId), flushSlots(missionId)])
+          // The hydrate ran under INIT, which the autosave hook ignores — persist the adopted state
+          // explicitly (T-127 U1 / F2F-03) through the writer's serialized chain (flush = immediate)
+          // so a queued save can't interleave.
+          saveStateDebounced(missionId, () => md.encodeState(), isDocCancelled)
+          await flushState(missionId)
           if (!isDocCancelled()) {
             // Re-mark the warm session with the adopted state — the ready effect won't re-run
             // (its deps didn't change), and without a marker the next same-tab reload is a

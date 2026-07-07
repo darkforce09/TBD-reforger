@@ -1,47 +1,36 @@
-// Y.UndoManager wrapper (Ultra Plan §2.3). Scoped to the nine tracked maps and to
-// LOCAL_ORIGIN only, so undo/redo replays exactly the local user gestures (each one
-// transaction = one step). subscribe() drives button enabled-state now and the
-// Phase-9 "Visual-Git" timeline scrubber later.
+// Undo/redo over the wasm `yrs` doc (T-145 Phase 3.2 F3). The Rust MissionDoc owns the undo stack,
+// origin-scoped so only LOCAL user gestures are tracked (load/seed under INIT are not undoable). This
+// thin controller drives the toolbar buttons and resyncs the Zustand store after an undo/redo.
+// subscribe() fires on every change-version bump (mutation + undo/redo) so the buttons re-read
+// canUndo/canRedo. The wasm handle is freed by the shell's detach (useMissionDoc), so destroy() is a
+// no-op.
 
-import * as Y from 'yjs'
-import { LOCAL_ORIGIN, trackedTypes, type MissionDoc } from './ydoc'
+import { useMapStore } from './useMapStore'
+import type { WasmMissionDoc } from './wasmDoc'
 
 export interface UndoController {
-  manager: Y.UndoManager
   undo: () => void
   redo: () => void
-  clear: () => void
   canUndo: () => boolean
   canRedo: () => boolean
-  /** Fires after every push/pop/clear; returns an unsubscribe fn. */
+  /** Fires after every change (mutation + undo/redo); returns an unsubscribe fn. */
   subscribe: (cb: () => void) => () => void
   destroy: () => void
 }
 
-export function createUndoManager(md: MissionDoc): UndoController {
-  const manager = new Y.UndoManager(trackedTypes(md), {
-    trackedOrigins: new Set([LOCAL_ORIGIN]),
-  })
-
-  const subscribe = (cb: () => void) => {
-    manager.on('stack-item-added', cb)
-    manager.on('stack-item-popped', cb)
-    manager.on('stack-cleared', cb)
-    return () => {
-      manager.off('stack-item-added', cb)
-      manager.off('stack-item-popped', cb)
-      manager.off('stack-cleared', cb)
-    }
-  }
-
+export function createUndoManager(md: WasmMissionDoc): UndoController {
   return {
-    manager,
-    undo: () => manager.undo(),
-    redo: () => manager.redo(),
-    clear: () => manager.clear(),
-    canUndo: () => manager.undoStack.length > 0,
-    canRedo: () => manager.redoStack.length > 0,
-    subscribe,
-    destroy: () => manager.destroy(),
+    undo: () => {
+      if (md.undo()) useMapStore.getState()._applySnapshot(md.snapshot())
+    },
+    redo: () => {
+      if (md.redo()) useMapStore.getState()._applySnapshot(md.snapshot())
+    },
+    canUndo: () => md.canUndo(),
+    canRedo: () => md.canRedo(),
+    subscribe: (cb) => md.subscribe(() => cb()),
+    destroy: () => {
+      /* nothing to tear down — the wasm handle is freed by the shell's detach (useMissionDoc) */
+    },
   }
 }
