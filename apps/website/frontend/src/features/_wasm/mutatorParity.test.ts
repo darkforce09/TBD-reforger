@@ -11,6 +11,7 @@ import {
   addSlot,
   addFaction,
   addSquad,
+  pasteSlots,
   updateSlot,
   updateSlotPosition,
   moveEntities,
@@ -18,9 +19,23 @@ import {
 } from '@/features/tactical-map/state/ydoc'
 import { docToSnapshot, snapshotFromShadow } from '@/features/tactical-map'
 import { getTerrain } from '@/features/tactical-map/coords/terrains'
-import type { Slot } from '@/features/tactical-map/state/schema'
+import type { ClipboardSlot, ID, Slot } from '@/features/tactical-map/state/schema'
+import type { MissionDoc } from '@/features/tactical-map/state/ydoc'
 
 const ZERO_POS: Slot['position'] = { x: 0, y: 0, z: 0, rotation: 0 }
+
+/** Snapshot an existing slot into a serializable ClipboardSlot (Ctrl+C shape) for paste tests. */
+function toClip(md: MissionDoc, id: ID): ClipboardSlot {
+  const slot = md.entities.slots.get(id)
+  return {
+    role: (slot?.get('role') ?? '') as string,
+    tag: slot?.get('tag') as string | undefined,
+    assetId: slot?.get('assetId') as string | undefined,
+    stance: (slot?.get('stance') ?? 'stand') as Slot['stance'],
+    position: (slot?.get('position') ?? ZERO_POS) as Slot['position'],
+    squadId: (slot?.get('squadId') ?? '') as ID,
+  }
+}
 
 // T-145 Phase 3.2 batch 1 — differential parity for the Rust slot-lifecycle mutators. Build a base
 // via the real ydoc.ts (Yjs) mutators, snapshot the base into a fresh yrs doc (so it holds the same
@@ -206,6 +221,56 @@ describe('Rust mutator parity vs ydoc.ts (batch 3a: entity creation)', () => {
     const name = (sq?.get('name') ?? '') as string
     const callsign = sq?.get('callsign') as string | undefined
     yrs.add_squad(sqId, factionId, name, callsign)
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+})
+
+describe('Rust mutator parity vs ydoc.ts (batch 3b: bulk paste)', () => {
+  /** Replay ydoc.pasteSlots on the yrs twin: JS mints the ids (returned) + resolves squad/layer
+   *  (the source squads still exist, target layer is `l2`); Rust re-derives centroid/clamp/index. */
+  function replayPaste(
+    yrs: wasm.MissionDoc,
+    newIds: ID[],
+    clip: ClipboardSlot[],
+    layerId: ID,
+    anchor: { x: number; y: number } | null,
+  ): void {
+    yrs.paste_slots(
+      newIds,
+      clip.map((c) => c.squadId),
+      newIds.map(() => layerId),
+      Float64Array.from(clip.map((c) => c.position.x)),
+      Float64Array.from(clip.map((c) => c.position.y)),
+      Float64Array.from(clip.map((c) => c.position.rotation)),
+      clip.map((c) => c.role),
+      clip.map((c) => c.tag ?? ''),
+      clip.map((c) => c.assetId ?? ''),
+      clip.map((c) => c.stance),
+      anchor ? anchor.x : undefined,
+      anchor ? anchor.y : undefined,
+      T.width,
+      T.height,
+    )
+  }
+
+  it('paste_slots (anchor: centroid → cursor; index continues per squad)', () => {
+    const { md, l2, s1, s2, s3 } = baseDoc()
+    const clip = [s1, s2, s3].map((id) => toClip(md, id))
+    const yrs = baseSync(md) // base BEFORE the paste
+    const anchor = { x: 5000, y: 6000 }
+    const newIds = pasteSlots(md, clip, { anchorAt: anchor, layerId: l2 })
+    replayPaste(yrs, newIds, clip, l2, anchor)
+    expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
+    yrs.free()
+  })
+
+  it('paste_slots (no anchor → +20 nudge)', () => {
+    const { md, l2, s1, s2 } = baseDoc()
+    const clip = [s1, s2].map((id) => toClip(md, id))
+    const yrs = baseSync(md)
+    const newIds = pasteSlots(md, clip, { anchorAt: null, layerId: l2 })
+    replayPaste(yrs, newIds, clip, l2, null)
     expect(snapshotFromShadow(yrs)).toEqual(docToSnapshot(md))
     yrs.free()
   })

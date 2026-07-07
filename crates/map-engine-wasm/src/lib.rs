@@ -719,6 +719,32 @@ impl MissionDoc {
     pub fn add_squad(&self, id: &str, faction_id: &str, name: &str, callsign: Option<String>) {
         self.inner.add_squad(id, faction_id, name, callsign);
     }
+
+    // Bulk paste (batch 3b): JS mints the k ids + resolves each slot's target squad/layer; the
+    // parallel arrays are index-aligned per slot. `""` tag/asset = omit.
+    #[allow(clippy::too_many_arguments)]
+    pub fn paste_slots(
+        &self,
+        ids: Vec<String>,
+        squad_ids: Vec<String>,
+        layer_ids: Vec<String>,
+        src_x: Vec<f64>,
+        src_y: Vec<f64>,
+        src_rot: Vec<f64>,
+        roles: Vec<String>,
+        tags: Vec<String>,
+        asset_ids: Vec<String>,
+        stances: Vec<String>,
+        anchor_x: Option<f64>,
+        anchor_y: Option<f64>,
+        width: f64,
+        height: f64,
+    ) {
+        self.inner.paste_slots(
+            ids, squad_ids, layer_ids, src_x, src_y, src_rot, roles, tags, asset_ids, stances,
+            anchor_x, anchor_y, width, height,
+        );
+    }
     pub fn set_slot_position(&self, id: &str, x: f64, y: f64, z: f64, rotation: f64) {
         self.inner.set_slot_position(id, x, y, z, rotation);
     }

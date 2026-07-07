@@ -454,6 +454,98 @@ impl MissionDocCore {
         }
     }
 
+    // ── Batch-3b bulk paste (port of `ydoc.pasteSlots`) ─────────────────────────────────────────
+
+    /// Paste `k` copied slots in ONE transaction (mirrors `ydoc.pasteSlots` @180). JS mints the ids
+    /// and resolves each slot's target squad/layer (both already existing — `ensureDefault*` runs
+    /// JS-side), so the parallel arrays are index-aligned per slot. Positions translate so the clip's
+    /// centroid lands at `(anchor_x, anchor_y)`, or nudge `+PASTE_NUDGE` on x/y when no anchor; x/y
+    /// clamp to `[0,width]×[0,height]`; z is 0 (terrain-follow re-sampled JS-side); rotation carries
+    /// from the source. `index` accumulates per squad (seeded from the squad's current `slotIds`).
+    /// `""` tag/asset → key omitted. Appends are batched (each squad's `slotIds` / each layer's
+    /// `entityIds` written once) — the T-059 O(k) shape.
+    #[allow(clippy::too_many_arguments)]
+    pub fn paste_slots(
+        &self,
+        ids: Vec<String>,
+        squad_ids: Vec<String>,
+        layer_ids: Vec<String>,
+        src_x: Vec<f64>,
+        src_y: Vec<f64>,
+        src_rot: Vec<f64>,
+        roles: Vec<String>,
+        tags: Vec<String>,
+        asset_ids: Vec<String>,
+        stances: Vec<String>,
+        anchor_x: Option<f64>,
+        anchor_y: Option<f64>,
+        width: f64,
+        height: f64,
+    ) {
+        let n = ids.len();
+        if n == 0 {
+            return;
+        }
+        // Centroid in the JS reduce order (left-to-right f64 sum) → byte-identical translate.
+        let cx = src_x.iter().sum::<f64>() / n as f64;
+        let cy = src_y.iter().sum::<f64>() / n as f64;
+        let (dx, dy) = match (anchor_x, anchor_y) {
+            (Some(ax), Some(ay)) => (ax - cx, ay - cy),
+            _ => (PASTE_NUDGE, PASTE_NUDGE),
+        };
+
+        let mut txn = self.doc.transact_mut();
+        // Per-squad `slotIds` + per-layer `entityIds` append accumulators, seeded once from the doc.
+        let mut squad_slot_ids: HashMap<String, Vec<Any>> = HashMap::new();
+        let mut layer_entity_ids: HashMap<String, Vec<Any>> = HashMap::new();
+        for i in 0..n {
+            let squad_id = &squad_ids[i];
+            let layer_id = &layer_ids[i];
+            let index = {
+                let arr = squad_slot_ids
+                    .entry(squad_id.clone())
+                    .or_insert_with(|| read_id_array(&txn, &self.squads, squad_id, "slotIds"));
+                arr.len() as i64
+            };
+            let px = (src_x[i] + dx).clamp(0.0, width);
+            let py = (src_y[i] + dy).clamp(0.0, height);
+            let id = ids[i].as_str();
+            let slot = self
+                .slots
+                .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+            slot.insert(&mut txn, "squadId", squad_id.as_str());
+            slot.insert(&mut txn, "index", Any::BigInt(index));
+            slot.insert(&mut txn, "role", roles[i].as_str());
+            if !tags[i].is_empty() {
+                slot.insert(&mut txn, "tag", tags[i].as_str());
+            }
+            if !asset_ids[i].is_empty() {
+                slot.insert(&mut txn, "assetId", asset_ids[i].as_str());
+            }
+            slot.insert(&mut txn, "position", position_any(px, py, 0.0, src_rot[i]));
+            slot.insert(&mut txn, "stance", stances[i].as_str());
+            slot.insert(&mut txn, "loadoutId", Any::Null);
+            if let Some(arr) = squad_slot_ids.get_mut(squad_id) {
+                arr.push(Any::String(id.into()));
+            }
+            layer_entity_ids
+                .entry(layer_id.clone())
+                .or_insert_with(|| read_id_array(&txn, &self.editor_layers, layer_id, "entityIds"))
+                .push(Any::String(id.into()));
+        }
+
+        for (sid, arr) in squad_slot_ids {
+            if let Some(Out::YMap(squad)) = self.squads.get(&txn, &sid) {
+                squad.insert(&mut txn, "slotIds", Any::Array(arr.into()));
+            }
+        }
+        for (lid, arr) in layer_entity_ids {
+            if let Some(Out::YMap(layer)) = self.editor_layers.get(&txn, &lid) {
+                layer.insert(&mut txn, "entityIds", Any::Array(arr.into()));
+            }
+        }
+    }
+
     // ── Batch-2 editor-layer mutators (ports of `ydoc.ts`) ──────────────────────────────────────
 
     /// Create an Outliner folder (id + name computed JS-side). Mirrors `ydoc.addEditorLayer`.
@@ -615,6 +707,22 @@ fn append_id(txn: &mut TransactionMut, map: &MapRef, key: &str, field: &str, id:
         };
         next.push(Any::String(id.into()));
         container.insert(txn, field, Any::Array(next.into()));
+    }
+}
+
+/// Distance (m) a paste is offset from its originals when the cursor is off-map (`ydoc.PASTE_NUDGE`).
+const PASTE_NUDGE: f64 = 20.0;
+
+/// Read `map[key].field` (an `Any::Array` of string ids) as an owned `Vec<Any>`; empty when the
+/// container map or the array field is absent. Seeds the `paste_slots` append accumulators and backs
+/// [`append_id`].
+fn read_id_array<T: ReadTxn>(txn: &T, map: &MapRef, key: &str, field: &str) -> Vec<Any> {
+    match map.get(txn, key) {
+        Some(Out::YMap(container)) => match container.get(txn, field) {
+            Some(Out::Any(Any::Array(arr))) => arr.iter().cloned().collect(),
+            _ => Vec::new(),
+        },
+        _ => Vec::new(),
     }
 }
 
