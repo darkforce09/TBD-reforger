@@ -124,15 +124,19 @@ round-trip; `yjs`/`y-indexeddb` gone from `package.json`.
 
 ## Opening prompt for the new session
 
-> Continue T-145 Phase 3.2 write-swap (yrs-authoritative doc-core). Read
-> `.ai/artifacts/t145_write_swap_kickoff.md` + memory `t145-wasm-port.md` + `wasm-react-lifecycle.md`
-> first. **The full mutator port is DONE** — batches 1–3 (`8ca31ddf`), the Rust `MissionDoc` write API
-> mirrors every `ydoc.ts` mutator, each byte-parity-proven in `mutatorParity.test.ts`, no app change.
-> Now **plan the flip** (§The flip): `ydoc.ts` mutators → thin wrappers that mint id(s) JS-side + call
-> `md.wasm.<mutator>` (yrs authoritative, drop `Y.Doc`); bindings/store fed by `snapshotFromShadow`
-> (mutators return changed ids → O(k) patch); `UndoController`→Rust undo **+ origin-scoped transactions**
-> (the deferred undo-origin split); persistence→a yrs update-stream IDB adapter; **remove `yjs` +
-> `y-indexeddb`**; delete `docToSnapshot`/`incPatchPlan`/`state/undo.ts`/the bindings observe path; sample
-> real DEM z JS-side in the wrappers. High blast radius — write a plan (EnterPlanMode), get sign-off, then
-> execute as one checkpoint. Acceptance: editor byte-identical, ≥60 fps @500k+1M, compile byte-identical,
-> undo + IDB round-trip, `yjs`/`y-indexeddb` gone from `package.json`.
+> Continue T-145 Phase 3.2 — **THE FLIP** (yrs authoritative; remove yjs + y-indexeddb). Read
+> `.ai/artifacts/t145_write_swap_kickoff.md` + the **approved flip plan**
+> `~/.claude/plans/plan-written-committed-replicated-gosling.md` + memory `t145-wasm-port.md` +
+> `wasm-react-lifecycle.md` first. Full mutator port (batches 1–3) done; the flip is staged F1→F4 and
+> **F1 (Rust prep) is DONE** (`4ef2d91b`): origin-scoped undo (`set_origin_init` +
+> `tracked_origins={LOCAL}`), `move_entities`/`paste_slots` `zs[]` DEM-z params, `has_content()`.
+> **Next = F2** (isolated, reversible): `state/wasmDoc.ts` shell (stable + effect-local attach/detach
+> per `[[wasm-react-lifecycle]]`, `onChange` origin-tagged, `snapshot`/`encodeState`/`hasContent`/undo,
+> `setOriginInit`) + `persistence/yrsPersist.ts` (whole-blob `save/load/clear` + idle/hide/save-gated
+> debounced writer, from `_spike/yrsIndexeddb.ts`) — unit-tested, **not wired**. Then **F3** the atomic
+> swap (correctness-first: ydoc mutators→wasm wrappers with whole `snapshotFromShadow` resync; rewrite
+> `useMissionDoc`/`useMissionEditor`/`undo.ts`; full vitest gate) → **F3.1** O(k) fast-paths + operator
+> gate (fps@1M, IDB round-trip, byte-identical compile) → **F4** yjs→devDep, remove y-indexeddb, delete
+> `incPatchPlan`/v2-persistence/shadow. The contained-blast-radius finding (zero direct doc access
+> outside state/persistence/hooks → ~10-file swap), the design, and locked decisions (whole-blob
+> persistence, drop legacy drafts) are in the plan §Context/§Design. Bar: full vitest + byte-identical compile.
