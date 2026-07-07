@@ -6,6 +6,7 @@
 use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, png_decode, sample};
 use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
+use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
 use wasm_bindgen::prelude::*;
 
@@ -710,5 +711,106 @@ impl MissionDoc {
 impl Default for MissionDoc {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// cluster index (Phase 3.0 spike — the Rust replacement for the JS supercluster)
+// ---------------------------------------------------------------------------------------------
+
+/// Result of a `ClusterIndex::get_clusters` query — parallel columns in world meters. `leaves[i] < 0`
+/// marks a cluster bubble (`counts[i] > 1`); otherwise it is the leaf's row handle (`counts[i] == 1`).
+#[wasm_bindgen]
+pub struct ClusterResult {
+    xs: Vec<f64>,
+    ys: Vec<f64>,
+    counts: Vec<u32>,
+    leaves: Vec<i32>,
+}
+
+#[wasm_bindgen]
+impl ClusterResult {
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn xs(&self) -> Vec<f64> {
+        self.xs.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn ys(&self) -> Vec<f64> {
+        self.ys.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn counts(&self) -> Vec<u32> {
+        self.counts.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn leaves(&self) -> Vec<i32> {
+        self.leaves.clone()
+    }
+}
+
+/// A supercluster-compatible cluster hierarchy over a slot SoA (parallel `x`/`y` world columns).
+/// `get_clusters` returns the same cluster bubbles + lone leaves as the JS `supercluster`
+/// (`slotClusterIndex`).
+#[wasm_bindgen]
+pub struct ClusterIndex {
+    inner: cluster::ClusterIndex,
+}
+
+#[wasm_bindgen]
+impl ClusterIndex {
+    /// Build over parallel `x`/`y` world columns, given the active terrain bounds (for the
+    /// linear world→lng/lat normalization supercluster is fed).
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new(xs: &[f32], ys: &[f32], terrain_w: f64, terrain_h: f64) -> ClusterIndex {
+        let world: Vec<(f64, f64)> = xs
+            .iter()
+            .zip(ys.iter())
+            .map(|(&x, &y)| (f64::from(x), f64::from(y)))
+            .collect();
+        ClusterIndex {
+            inner: cluster::ClusterIndex::build(&world, terrain_w, terrain_h),
+        }
+    }
+
+    /// Clusters/leaves inside a world-meter bbox at a deck zoom (mirrors `getClusters`).
+    #[must_use]
+    pub fn get_clusters(
+        &self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        deck_zoom: f64,
+    ) -> ClusterResult {
+        let markers = self
+            .inner
+            .get_clusters(min_x, min_y, max_x, max_y, deck_zoom);
+        let mut xs = Vec::with_capacity(markers.len());
+        let mut ys = Vec::with_capacity(markers.len());
+        let mut counts = Vec::with_capacity(markers.len());
+        let mut leaves = Vec::with_capacity(markers.len());
+        for m in markers {
+            xs.push(m.x);
+            ys.push(m.y);
+            counts.push(m.count);
+            leaves.push(m.leaf as i32);
+        }
+        ClusterResult {
+            xs,
+            ys,
+            counts,
+            leaves,
+        }
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn leaf_count(&self) -> u32 {
+        self.inner.leaf_count() as u32
     }
 }
