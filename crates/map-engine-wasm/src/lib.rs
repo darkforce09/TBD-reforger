@@ -587,6 +587,13 @@ impl MissionDoc {
         self.inner.encode_state()
     }
 
+    /// The 8 small root maps + `meta` as one JSON object (MapSnapshot minus slotsById) — lets the
+    /// non-render readers (compile/Outliner/Attributes) source the full model from the shadow (3.2.2).
+    #[must_use]
+    pub fn small_maps_json(&self) -> String {
+        self.inner.small_maps_json()
+    }
+
     /// Re-materialize the cached slot SoA. Call after `apply_update` / a mutation before reading the
     /// column getters or building a zero-copy view — this is the point where memory may grow and any
     /// prior `Float32Array` view onto `slot_xs_ptr()` is invalidated.

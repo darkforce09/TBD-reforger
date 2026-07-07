@@ -8,6 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use yrs::sync::{Clock, Timestamp};
+use yrs::types::ToJson;
 use yrs::undo::{Options as UndoOptions, UndoManager};
 use yrs::updates::decoder::Decode;
 use yrs::{Any, Doc, Map, MapPrelim, MapRef, Out, ReadTxn, StateVector, Transact, Update};
@@ -93,6 +94,48 @@ impl MissionDocCore {
         self.doc
             .transact()
             .encode_state_as_update_v1(&StateVector::default())
+    }
+
+    /// Serialize the 8 small root maps + `meta` to one JSON object shaped like the store's
+    /// `MapSnapshot` minus `slotsById` (slots ride the fast SoA getters). The 367k-slot hot path never
+    /// runs this — these maps hold hundreds of entities. `meta` is `null` when empty (matching
+    /// `docToSnapshot`). Enables migrating every non-render reader (compile, Outliner, Attributes) onto
+    /// the shadow (Phase 3.2.2).
+    #[must_use]
+    pub fn small_maps_json(&self) -> String {
+        // Grab the root handles before opening the read txn (`get_or_insert_map` takes `&self`).
+        let meta = self.doc.get_or_insert_map("meta");
+        let named: [(&str, MapRef); 8] = [
+            ("factionsById", self.doc.get_or_insert_map("factions")),
+            ("squadsById", self.doc.get_or_insert_map("squads")),
+            ("loadoutsById", self.doc.get_or_insert_map("loadouts")),
+            ("itemsById", self.doc.get_or_insert_map("items")),
+            ("objectivesById", self.doc.get_or_insert_map("objectives")),
+            ("vehiclesById", self.doc.get_or_insert_map("vehicles")),
+            ("markersById", self.doc.get_or_insert_map("markers")),
+            (
+                "editorLayersById",
+                self.doc.get_or_insert_map("editorLayers"),
+            ),
+        ];
+
+        let txn = self.doc.transact();
+        let mut root: HashMap<String, Any> = HashMap::new();
+        root.insert(
+            "meta".to_string(),
+            if meta.len(&txn) == 0 {
+                Any::Null
+            } else {
+                meta.to_json(&txn)
+            },
+        );
+        for (key, map) in &named {
+            root.insert((*key).to_string(), map.to_json(&txn));
+        }
+
+        let mut buf = String::new();
+        Any::Map(Arc::new(root)).to_json(&mut buf);
+        buf
     }
 
     /// Materialize every slot into the columnar [`SlotSoa`] (criterion 1). Keyed by `ids[row]`.
@@ -420,6 +463,56 @@ mod tests {
         assert_eq!(
             ids_sorted(&doc.materialize()),
             vec!["s1".to_string(), "s2".to_string()]
+        );
+    }
+
+    #[test]
+    fn small_maps_json_shape_on_empty_doc() {
+        let doc = MissionDocCore::new();
+        let json = doc.small_maps_json();
+        assert!(json.contains("\"meta\":null"), "{json}"); // empty meta → null (matches docToSnapshot)
+        for key in [
+            "factionsById",
+            "squadsById",
+            "loadoutsById",
+            "itemsById",
+            "objectivesById",
+            "vehiclesById",
+            "markersById",
+            "editorLayersById",
+        ] {
+            assert!(
+                json.contains(&format!("\"{key}\":")),
+                "missing {key} in {json}"
+            );
+        }
+    }
+
+    #[test]
+    fn small_maps_json_includes_applied_entities() {
+        // A peer doc authors a faction + meta title; applying its update must surface both.
+        let peer = Doc::with_client_id(7);
+        let factions = peer.get_or_insert_map("factions");
+        let meta = peer.get_or_insert_map("meta");
+        {
+            let mut txn = peer.transact_mut();
+            let f = factions.insert(&mut txn, "f1", MapPrelim::from([("id", "f1")]));
+            f.insert(&mut txn, "name", "BLUFOR");
+            meta.insert(&mut txn, "title", "Op Test");
+        }
+        let update = peer
+            .transact()
+            .encode_state_as_update_v1(&StateVector::default());
+
+        let doc = MissionDocCore::new();
+        doc.apply_update(&update).expect("apply ok");
+        let json = doc.small_maps_json();
+        assert!(json.contains("\"f1\""), "{json}");
+        assert!(json.contains("BLUFOR"), "{json}");
+        assert!(json.contains("Op Test"), "{json}");
+        assert!(
+            !json.contains("\"meta\":null"),
+            "meta should be populated: {json}"
         );
     }
 }

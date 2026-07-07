@@ -10,6 +10,11 @@ import {
   moveSlotToLayer,
   pasteSlots,
   removeEntities,
+  setTitle,
+  updateEnvironment,
+  addFaction,
+  addSquad,
+  hydrateMissionDoc,
 } from './ydoc'
 import { createDocShadow, checkDocShadowParity } from './docShadow'
 
@@ -33,6 +38,11 @@ describe('docShadow — live yrs↔Y.Doc parity via the update stream', () => {
     updateSlotPosition(md, s3, { rotation: 270, x: 3100.5 })
     updateSlot(md, s1, { stance: 'prone', tag: 'HQ' })
     moveSlotToLayer(md, s1, l2)
+    // Exercise the small maps too (meta + explicit faction/squad) — the whole-model gate (3.2.2).
+    setTitle(md, 'Op Nightfall')
+    updateEnvironment(md, { weather: 'overcast', time: '18:30' })
+    const f2 = addFaction(md)
+    addSquad(md, f2)
 
     const s1Slot = md.entities.slots.get(s1)
     if (!s1Slot) throw new Error('s1 slot missing')
@@ -50,6 +60,57 @@ describe('docShadow — live yrs↔Y.Doc parity via the update stream', () => {
       { anchorAt: { x: 800, y: 800 } },
     )
     removeEntities(md, 'slots', [s2])
+
+    expect(checkDocShadowParity(md, shadow)).toBeNull()
+    shadow.free()
+  })
+
+  it('stays in parity after a hydrate (objectives/vehicles/markers/loadouts)', () => {
+    const md = createMissionDoc()
+    const shadow = createDocShadow()
+    md.doc.on('update', (u: Uint8Array) => shadow.apply_update(u))
+
+    hydrateMissionDoc(md, {
+      environment: { time: '06:00', weather: 'clear' },
+      map: { terrain: 'everon' },
+      objectives: [
+        {
+          id: 'o1',
+          type: 'capture',
+          factionId: 'f1',
+          position: { x: 1, y: 2, z: 0 },
+          radius: 50,
+          triggers: [],
+        },
+      ],
+      vehicles: [
+        {
+          id: 'v1',
+          classname: 'car',
+          factionId: 'f1',
+          position: { x: 3, y: 4, z: 0, rotation: 90 },
+          inventoryItemIds: [],
+        },
+      ],
+      markers: [{ id: 'm1', kind: 'icon', points: [[5, 6]], color: '#ffffff' }],
+      loadouts: { ld1: { id: 'ld1', containers: {}, weapons: {}, itemIds: [] } },
+      editor: {
+        factions: [{ id: 'f1', key: 'BLUFOR', name: 'BLUFOR', squadIds: ['sq1'] }],
+        squads: [{ id: 'sq1', factionId: 'f1', name: 'Alpha', slotIds: ['s1'] }],
+        slots: [
+          {
+            id: 's1',
+            squadId: 'sq1',
+            index: 0,
+            role: 'Rifleman',
+            position: { x: 10, y: 20, z: 0, rotation: 0 },
+            stance: 'stand',
+            loadoutId: null,
+          },
+        ],
+        editorLayers: [{ id: 'l1', name: 'L', parentId: null, entityIds: ['s1'] }],
+      },
+    })
 
     expect(checkDocShadowParity(md, shadow)).toBeNull()
     shadow.free()

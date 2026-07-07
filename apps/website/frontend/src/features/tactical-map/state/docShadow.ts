@@ -31,8 +31,36 @@ export function seedDocShadow(md: MissionDoc, shadow: wasm.MissionDoc): void {
   shadow.apply_update(Y.encodeStateAsUpdate(md.doc))
 }
 
-/** Compare the shadow yrs SoA to the authoritative Y.Doc. Returns a mismatch description, else null.
- *  DEV diagnostic only — mirrors the `docCore.parity.test.ts` comparison, run live. */
+/** Structural deep-equal: objects order-insensitive, arrays order-SENSITIVE (slotIds/entityIds are
+ *  ordered lists). Numbers via `===` — the small maps store f64 (no SoA f32 truncation). */
+function deepEqual(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false
+    return a.every((v, i) => deepEqual(v, b[i]))
+  }
+  const oa = a as Record<string, unknown>
+  const ob = b as Record<string, unknown>
+  const ka = Object.keys(oa)
+  if (ka.length !== Object.keys(ob).length) return false
+  return ka.every((k) => k in ob && deepEqual(oa[k], ob[k]))
+}
+
+const SMALL_DICTS = [
+  'factionsById',
+  'squadsById',
+  'loadoutsById',
+  'itemsById',
+  'objectivesById',
+  'vehiclesById',
+  'markersById',
+  'editorLayersById',
+] as const
+
+/** Compare the shadow yrs SoA + small maps to the authoritative Y.Doc. Returns a mismatch
+ *  description, else null. DEV diagnostic only — mirrors the `docCore.parity.test.ts` comparison,
+ *  run live over the WHOLE model (Phase 3.2.2). */
 // eslint-disable-next-line complexity -- DEV parity: one guarded compare per SoA column; flat by design
 export function checkDocShadowParity(md: MissionDoc, shadow: wasm.MissionDoc): string | null {
   shadow.refresh()
@@ -77,6 +105,15 @@ export function checkDocShadowParity(md: MissionDoc, shadow: wasm.MissionDoc): s
     if (squads[squadIdx[i]] !== s.squadId) return `squad ${id}`
     const layer = layerIdx[i] === NONE ? undefined : layers[layerIdx[i]]
     if ((layer ?? undefined) !== (layerOf.get(id) ?? undefined)) return `layer ${id}`
+  }
+
+  // Small maps (factions/squads/loadouts/items/objectives/vehicles/markers/editorLayers + meta):
+  // the shadow's JSON must deep-equal docToSnapshot's dicts. These maps are small, so this stays cheap
+  // regardless of slot count.
+  const small = JSON.parse(shadow.small_maps_json()) as Record<string, unknown>
+  if (!deepEqual(small.meta, snap.meta)) return 'meta'
+  for (const key of SMALL_DICTS) {
+    if (!deepEqual(small[key], snap[key])) return key
   }
   return null
 }
