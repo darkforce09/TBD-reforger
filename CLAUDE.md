@@ -114,7 +114,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-144**
+**Latest shipped:** **T-145**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
@@ -185,6 +185,7 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
 **Phase 2 next (after T-090 map program):** **T-071** ORBAT Manager (**deferred** — map-first lane) → **T-068.7** compat matrix → T-068.8–T-068.11 → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. Do **not** `./scripts/ticket done T-068` until **T-068.14**. Hub: [`t071_orbat_manager_program.md`](docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md).
 
 **Done (shipped):**
+- T-145 **Rust/Wasm doc core (Yjs replacement)** — backend Go→Rust (Axum + sqlx) + the mission document core moved into a Rust/wasm `yrs` doc. **Flip F1→F4 complete:** the `yrs` wasm doc behind `WasmMissionDoc` is the sole document core; **yjs + y-indexeddb removed** from the app. Commits F3 `a335cc23` · F3.1 `06fab65c` · F4 `a228ed98`. **Pivot:** the world-object zero-copy port (kickoff `.ai/artifacts/t145_world_zerocopy_kickoff.md`) is **superseded by the wgpu render-engine spike (T-151)** — Deck.gl `IconLayer` can't take binary buffers, so world objects can't reach zero-copy render through Deck; a pure wgpu/wasm engine replaces it.
 - T-090.8.1 **Map Engine v2 forest mass render** @ `e28d073a` (tag **T-090.8.1**). `world-landcover` (36 region hulls) + `world-forest` / `world-forest-outline` (TBDD marching squares, worker-streamed); vitest **192/192**; P2b headroom (2.2 MB / 29 ms full island). No tree glyphs. Verify: [`.ai/artifacts/t090_8_1_verify_log.md`](.ai/artifacts/t090_8_1_verify_log.md).
 - T-090.5.3 **Map Engine v2 worker chunk streaming** @ `155651b9` (tag **T-090.5.3**). `worldObjectsCore.ts` + thin Comlink worker; `chunkStore` LRU (≤4 ms/frame apply, worst chunk 0.65 ms); roads main-thread one-shot; trees indexed in worker, not rendered. Vitest **150/150**; build/lint clean. Verify: [`.ai/artifacts/t090_5_3_verify_log.md`](.ai/artifacts/t090_5_3_verify_log.md).
 - T-090.5.2.2 **Map Engine v2 taxonomy render pass** @ `346a31c9` (tag **T-090.5.2.2**).

@@ -3685,7 +3685,7 @@
       }
     },
     {
-      "id": "T-145",
+      "id": "T-150",
       "order": 1460,
       "status": "queued",
       "program": "eden",
@@ -3726,8 +3726,9 @@
     },
     {
       "id": "T-145",
-      "title": "Rewrite Go backend to Rust",
-      "summary": "Rewrite Go backend to Rust",
+      "order": 1495,
+      "title": "Rust/Wasm Doc Core (Yjs replacement)",
+      "summary": "Rewrite the Go backend to Rust (Axum + sqlx) and move the mission document core into a Rust/wasm yrs doc. The F1->F4 flip made the yrs wasm doc authoritative and removed yjs + y-indexeddb from the app.",
       "program": "Platform",
       "surfaces": [
         "Backend API"
@@ -3737,7 +3738,22 @@
         " strict concurrency checks",
         " and superior binary compiling pipelines."
       ],
-      "status": "idea"
+      "status": "shipped",
+      "shipped_at": "a228ed98"
+    },
+    {
+      "id": "T-151",
+      "order": 1500,
+      "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
+      "summary": "Spike a pure wgpu (WebGPU + WebGL2 fallback) renderer compiled to wasm that reads the yrs data core directly and replaces Deck.gl - driven by the IconLayer binary-attribute limit that blocks zero-copy world-object render through Deck.",
+      "program": "Platform",
+      "surfaces": [
+        "Mission Creator map render"
+      ],
+      "impact": [
+        "Replace Deck.gl with a wgpu/wasm engine reading the yrs core directly for zero-copy render at scale"
+      ],
+      "status": "queued"
     }
   ]
 }

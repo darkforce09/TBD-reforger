@@ -5,10 +5,6 @@
 
 `idea` + `deferred` only.
 
-## Platform
-
-- **T-145** (idea) — Rewrite Go backend to Rust [Backend API] — Rewrite Go backend to Rust
-
 ## backend
 
 - **T-095** (deferred) — Per-handler API reference doc [DATA] — Complete docs/backend/api.md per-handler reference.
