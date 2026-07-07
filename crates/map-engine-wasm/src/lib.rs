@@ -594,6 +594,12 @@ impl MissionDoc {
         self.inner.small_maps_json()
     }
 
+    /// The slots map as JSON (`slotsById`) — full, exact-f64 `Slot`s for non-render readers (3.2.3).
+    #[must_use]
+    pub fn slots_json(&self) -> String {
+        self.inner.slots_json()
+    }
+
     /// Re-materialize the cached slot SoA. Call after `apply_update` / a mutation before reading the
     /// column getters or building a zero-copy view — this is the point where memory may grow and any
     /// prior `Float32Array` view onto `slot_xs_ptr()` is invalidated.

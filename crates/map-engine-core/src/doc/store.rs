@@ -138,6 +138,18 @@ impl MissionDocCore {
         buf
     }
 
+    /// The `slots` map as a JSON object (`slotsById`) — full, **exact-f64** `Slot`s for the non-render
+    /// readers (compile / persistence / the store mirror). Together with `small_maps_json` this
+    /// reproduces the entire `MapSnapshot`. O(n) JSON — a one-shot (save), never the render hot path,
+    /// which reads the f32 SoA (positions there are f32-truncated, fine for pixels, lossy for compile).
+    #[must_use]
+    pub fn slots_json(&self) -> String {
+        let txn = self.doc.transact();
+        let mut buf = String::new();
+        self.slots.to_json(&txn).to_json(&mut buf);
+        buf
+    }
+
     /// Materialize every slot into the columnar [`SlotSoa`] (criterion 1). Keyed by `ids[row]`.
     #[must_use]
     pub fn materialize(&self) -> SlotSoa {
@@ -514,5 +526,15 @@ mod tests {
             !json.contains("\"meta\":null"),
             "meta should be populated: {json}"
         );
+    }
+
+    #[test]
+    fn slots_json_roundtrips_a_slot() {
+        let doc = MissionDocCore::new();
+        doc.add_slot("s1", "sq1", "Rifleman", 100.5, 200.25, 0.0, 90.0);
+        let json = doc.slots_json();
+        assert!(json.contains("\"s1\""), "{json}");
+        assert!(json.contains("Rifleman"), "{json}");
+        assert!(json.contains("100.5"), "{json}"); // exact f64 position (not the f32 SoA)
     }
 }

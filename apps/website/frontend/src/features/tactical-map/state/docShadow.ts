@@ -10,7 +10,8 @@ import * as Y from 'yjs'
 import * as wasm from '@/wasm/pkg/map_engine_wasm'
 import { docToSnapshot } from './bindings'
 import type { MissionDoc } from './ydoc'
-import type { EditorLayer, ID } from './schema'
+import type { EditorLayer, ID, Slot } from './schema'
+import type { MapSnapshot } from './useMapStore'
 
 const NONE = 0xffffffff // SlotSoa NONE_IDX (u32::MAX): no tag / unfiled layer.
 const STANCE = ['stand', 'crouch', 'prone'] as const
@@ -29,6 +30,16 @@ export function createDocShadow(): wasm.MissionDoc {
  *  sync; thereafter `md.doc.on('update')` keeps it live. */
 export function seedDocShadow(md: MissionDoc, shadow: wasm.MissionDoc): void {
   shadow.apply_update(Y.encodeStateAsUpdate(md.doc))
+}
+
+/** Reconstruct the entire `MapSnapshot` from the shadow — small maps + **exact-f64** slots, both via
+ *  JSON (not the f32 SoA, which is render-only). The reusable primitive that lets any non-render reader
+ *  (compile, and eventually the store mirror) source from the shadow instead of the Y.Doc; proven
+ *  byte-equal to `docToSnapshot` (Phase 3.2.3). O(n) — a one-shot, never the render hot path. */
+export function snapshotFromShadow(shadow: wasm.MissionDoc): MapSnapshot {
+  const small = JSON.parse(shadow.small_maps_json()) as Omit<MapSnapshot, 'slotsById'>
+  const slotsById = JSON.parse(shadow.slots_json()) as Record<ID, Slot>
+  return { ...small, slotsById }
 }
 
 /** Structural deep-equal: objects order-insensitive, arrays order-SENSITIVE (slotIds/entityIds are

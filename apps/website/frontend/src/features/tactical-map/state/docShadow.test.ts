@@ -14,9 +14,11 @@ import {
   updateEnvironment,
   addFaction,
   addSquad,
+  seedMeta,
   hydrateMissionDoc,
 } from './ydoc'
-import { createDocShadow, checkDocShadowParity } from './docShadow'
+import { docToSnapshot } from './bindings'
+import { createDocShadow, checkDocShadowParity, snapshotFromShadow } from './docShadow'
 
 // T-145 Phase 3.2 Stage 1 — the shadow yrs doc, fed the Y.Doc update stream, must stay in SoA parity
 // across real editor mutators (the live gate's mechanism, headless). docCore.parity covers the wasm
@@ -113,6 +115,32 @@ describe('docShadow — live yrs↔Y.Doc parity via the update stream', () => {
     })
 
     expect(checkDocShadowParity(md, shadow)).toBeNull()
+    shadow.free()
+  })
+
+  it('snapshotFromShadow reproduces the full MapSnapshot (deep-equals docToSnapshot)', () => {
+    const md = createMissionDoc()
+    const shadow = createDocShadow()
+    md.doc.on('update', (u: Uint8Array) => shadow.apply_update(u))
+
+    seedMeta(md, { id: 'm', title: 'Untitled Mission' })
+    seedDefaultLayer(md)
+    const l2 = addEditorLayer(md, { name: 'Bravo' })
+    addSlot(
+      md,
+      { x: 100.5, y: 200.25 },
+      { role: 'Squad Leader', tag: 'CMD', assetId: '{GUID}Rifleman.et' },
+    )
+    const s2 = addSlot(md, { x: 1500.75, y: 900.125 }, { role: 'Rifleman' })
+    addSlot(md, { x: 3000, y: 4000 }, { role: 'Medic', tag: 'MED', layerId: l2 })
+    updateSlot(md, s2, { stance: 'prone' })
+    setTitle(md, 'Op Nightfall')
+    updateEnvironment(md, { weather: 'overcast' })
+    const f2 = addFaction(md)
+    addSquad(md, f2)
+
+    // The full snapshot from the shadow (small maps + exact-f64 slots) must equal docToSnapshot.
+    expect(snapshotFromShadow(shadow)).toEqual(docToSnapshot(md))
     shadow.free()
   })
 
