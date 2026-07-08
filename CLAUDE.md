@@ -171,9 +171,8 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.3** (W3 chunk residency + spatial index + first world instances) — `ready` ·
-program hub
-[`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.3
+**Next slice:** **T-151.3** (W3 chunk residency + first world GPU instances) — `ready` · spec
+[`t151_3_world_residency.md`](docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md)
 
 **Done (program slices):**
 - T-151.2 **world parser in Rust (W2 Piece 1)** @ `a51e9dcb` (tag **T-151.2**). `world/` module +

@@ -3815,7 +3815,7 @@
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md",
           "status": "ready"
         },
         "T-151.4": {

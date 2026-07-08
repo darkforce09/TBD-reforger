@@ -13,8 +13,8 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 [`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **W2 / T-151.2 shipped:**
 @ `a51e9dcb` (tag **T-151.2**) — world parser in Rust, 275-chunk Class R/S parity; verify log
 [`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **Next slice:**
-**T-151.3** (W3 chunk residency + spatial index + first world instances) — `ready`; authority in
-program hub §T-151.3.
+**T-151.3** (W3 chunk residency + spatial index + first world instances) — `ready`; slice spec
+[`t151_3_world_residency.md`](t151_3_world_residency.md).
 
 ## In one sentence
 
@@ -226,6 +226,8 @@ sets equal (Class S); totals assert exactly **391 / 508,291 / 275 / 888 / 36 / 6
 corners + road centerline vertices ≤ 1 ULP.
 
 ### T-151.3 (W3) — chunk residency + world spatial index + first world instances
+
+Slice spec: [`t151_3_world_residency.md`](t151_3_world_residency.md) (authority for L1–L16 + prompt).
 
 Residency in Rust: viewport → chunk-id set (512 m grid math mirror of `chunkMath.ts` + 5 %
 preload margin + oversized ring), LRU `max(64, 3 × pinned)` with pinned immunity, ≤ 4 ms/frame
