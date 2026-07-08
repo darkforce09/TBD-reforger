@@ -7,10 +7,10 @@ program. Integration ref `t-151-wgpu-spike` is git metadata only; agents do **no
 branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 (camera parity + render spine + 20M stress + byte-exact self-check, verify log
 [`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)) ·
-**W0 / T-151.0 shipped:** @ `f019512d` (tag **T-151.0**) — one wasm module (D1), batch list,
-editor dual mount (D3); verify log
+**W0 / T-151.0 shipped:** @ `f019512d` (tag **T-151.0**) — verify log
 [`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **Next slice:**
-**T-151.1** (W1 basemap lane) — `ready`.
+**T-151.1** (W1 basemap lane) — `ready`; slice spec
+[`t151_1_basemap_lane.md`](t151_1_basemap_lane.md).
 
 ## In one sentence
 
@@ -174,6 +174,8 @@ isolation `! grep -l map_engine_wasm_bg dist/assets/index-*.js`; shared-memory n
 finite ∧ ∈ [0, 12800] → displayed PASS); merged wasm byte size recorded.
 
 ### T-151.1 (W1) — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback
+
+Slice spec: [`t151_1_basemap_lane.md`](t151_1_basemap_lane.md) (authority for L1–L13 + prompt).
 
 JS keeps the proven TBDS container parse (`satelliteUnified.ts`: magic `TBDS`, JSON index,
 VP8L blocks → `ImageBitmap`); engine gains basemap texture creation + per-mip-tile upload

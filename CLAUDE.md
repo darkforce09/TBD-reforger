@@ -171,7 +171,8 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.1** (W1 basemap lane) — `ready`
+**Next slice:** **T-151.1** (W1 basemap lane) — `ready` · spec
+[`t151_1_basemap_lane.md`](docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md)
 
 **Done (program slices):**
 - T-151.0 **wasm merge + batch list + editor dual mount** @ `f019512d` (tag **T-151.0**). One wasm
