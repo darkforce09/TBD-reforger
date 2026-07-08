@@ -234,25 +234,35 @@ export default function MissionCreatorPage() {
     }
   }, [editor.docStatus])
 
+  // Shared basemap props (T-151.1 L9): the wgpu mount gets the SAME layer toggles + basemap
+  // callbacks as the Deck mount. Computed once (env-derived defaults) — the interaction callbacks
+  // stay Deck-only until the wgpu picking lane (W7).
+  const basemapProps = {
+    showGrid: env?.showGrid !== false,
+    showHillshade: env?.showHillshade === true,
+    hillshadeOpacity: env?.hillshadeOpacity ?? 0.4,
+  }
+
   return (
     <div className="relative h-full w-full overflow-hidden bg-background">
-      {/* Full-bleed map behind everything. T-151.0 (L8): the wgpu engine mount when the flag is
+      {/* Full-bleed map behind everything. T-151.1 (L8/L9): the wgpu engine mount when the flag is
           on, else the Deck map — which stays byte-identical in behavior when the flag is off. */}
       {useWgpu ? (
         <Suspense fallback={null}>
           <WgpuTacticalMap
             key={terrainId}
             terrain={terrainId}
+            {...basemapProps}
             className="absolute inset-0 z-0 bg-background"
+            onBasemapDegraded={onBasemapDegraded}
+            onBasemapProgress={onBasemapProgress}
           />
         </Suspense>
       ) : (
         <TacticalMap
           key={terrainId}
           terrain={terrainId}
-          showGrid={env?.showGrid !== false}
-          showHillshade={env?.showHillshade === true}
-          hillshadeOpacity={env?.hillshadeOpacity ?? 0.4}
+          {...basemapProps}
           className="absolute inset-0 z-0 bg-background"
           onReady={onReady}
           onCursorMove={onCursorMove}
