@@ -249,7 +249,7 @@ async function bytesToJson(buf: Uint8Array): Promise<unknown> {
   return JSON.parse(new TextDecoder().decode(buf)) as unknown
 }
 
-interface ParsedChunk {
+export interface ParsedChunk {
   id: string
   cx: number
   cy: number
@@ -287,8 +287,9 @@ interface DensityCorners {
   treeMax: number
 }
 
-/** Narrow untyped prefab rows (prefabs.json.gz) to the clone-safe subset we ship + join on. */
-function narrowPrefabRows(raw: unknown): WorldPrefabRow[] {
+/** Narrow untyped prefab rows (prefabs.json.gz) to the clone-safe subset we ship + join on.
+ *  Exported for the T-151.2 parity harness (build `prefabById` for `parseChunkOracle`). */
+export function narrowPrefabRows(raw: unknown): WorldPrefabRow[] {
   const rows = (raw as { prefabs?: unknown } | null)?.prefabs
   if (!Array.isArray(rows)) return []
   const out: WorldPrefabRow[] = []
@@ -377,8 +378,9 @@ function narrowCells(indexRaw: unknown): WorldChunkCell[] | null {
   return cells
 }
 
-/** prefabId → render-class code + row, and the oversized flag (plan §6 oversized ring). */
-function buildPrefabMaps(prefabRows: WorldPrefabRow[]): {
+/** prefabId → render-class code + row, and the oversized flag (plan §6 oversized ring).
+ *  Exported for the T-151.2 parity harness (build `prefabById` for `parseChunkOracle`). */
+export function buildPrefabMaps(prefabRows: WorldPrefabRow[]): {
   byId: Map<number, { code: number; row: WorldPrefabRow }>
   hasOversized: boolean
 } {
@@ -401,6 +403,65 @@ function narrowInstanceRow(row: unknown): [number, number, number, number, numbe
   const [pid, x, y, zv, rot] = row as number[]
   if (typeof pid !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return null
   return [pid, x, y, Number.isFinite(zv) ? zv : 0, Number.isFinite(rot) ? rot : 0]
+}
+
+/**
+ * Test-only oracle export of the chunk parse (T-151.2, L11): the exact body the worker's
+ * `parseChunk` runs, lifted to module scope so the wasm differential harness can drive it
+ * without the factory. `prefabById` is a `buildPrefabMaps().byId`; `lastUsed` is 0 (the live
+ * worker overwrites it with its LRU tick). Pure — no worker behavior change.
+ */
+export function parseChunkOracle(
+  id: string,
+  raw: unknown,
+  prefabById: Map<number, { code: number; row: WorldPrefabRow }>,
+): ParsedChunk | null {
+  const instances = (raw as { instances?: unknown } | null)?.instances
+  if (!Array.isArray(instances)) return null
+  const [cxStr, cyStr] = id.split('_')
+  const n = instances.length
+  const positions = new Float32Array(2 * n)
+  const prefabIdx = new Uint16Array(n)
+  const rotations = new Float32Array(n)
+  const z = new Float32Array(n)
+  const clsCodes = new Uint8Array(n)
+  const rowLists = new Map<number, number[]>()
+  let count = 0
+  for (const inst of instances) {
+    const row = narrowInstanceRow(inst)
+    if (!row) continue
+    const [pid, x, y, zv, rot] = row
+    const i = count++
+    positions[2 * i] = x
+    positions[2 * i + 1] = y
+    prefabIdx[i] = pid
+    rotations[i] = rot
+    z[i] = zv
+    const code = prefabById.get(pid)?.code ?? NO_CLASS
+    clsCodes[i] = code
+    if (code !== NO_CLASS) {
+      let list = rowLists.get(code)
+      if (!list) rowLists.set(code, (list = []))
+      list.push(i)
+    }
+  }
+  const rowsByClass: ParsedChunk['rowsByClass'] = {}
+  for (const [code, rows] of rowLists) {
+    rowsByClass[RENDER_CLASS_CODES[code]] = Uint32Array.from(rows)
+  }
+  return {
+    id,
+    cx: Number(cxStr),
+    cy: Number(cyStr),
+    count,
+    positions,
+    prefabIdx,
+    rotations,
+    z,
+    clsCodes,
+    rowsByClass,
+    lastUsed: 0,
+  }
 }
 
 export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjectsCoreApi {
@@ -569,52 +630,11 @@ export function createWorldObjectsCore(deps: WorldObjectsCoreDeps): WorldObjects
   }
 
   function parseChunk(id: string, raw: unknown): ParsedChunk | null {
-    const instances = (raw as { instances?: unknown } | null)?.instances
-    if (!Array.isArray(instances)) return null
-    const [cxStr, cyStr] = id.split('_')
-    const n = instances.length
-    const positions = new Float32Array(2 * n)
-    const prefabIdx = new Uint16Array(n)
-    const rotations = new Float32Array(n)
-    const z = new Float32Array(n)
-    const clsCodes = new Uint8Array(n)
-    const rowLists = new Map<number, number[]>()
-    let count = 0
-    for (const raw of instances) {
-      const row = narrowInstanceRow(raw)
-      if (!row) continue
-      const [pid, x, y, zv, rot] = row
-      const i = count++
-      positions[2 * i] = x
-      positions[2 * i + 1] = y
-      prefabIdx[i] = pid
-      rotations[i] = rot
-      z[i] = zv
-      const code = prefabById.get(pid)?.code ?? NO_CLASS
-      clsCodes[i] = code
-      if (code !== NO_CLASS) {
-        let list = rowLists.get(code)
-        if (!list) rowLists.set(code, (list = []))
-        list.push(i)
-      }
-    }
-    const rowsByClass: ParsedChunk['rowsByClass'] = {}
-    for (const [code, rows] of rowLists) {
-      rowsByClass[RENDER_CLASS_CODES[code]] = Uint32Array.from(rows)
-    }
-    return {
-      id,
-      cx: Number(cxStr),
-      cy: Number(cyStr),
-      count,
-      positions,
-      prefabIdx,
-      rotations,
-      z,
-      clsCodes,
-      rowsByClass,
-      lastUsed: ++useTick,
-    }
+    // The parse body lives in the module-level `parseChunkOracle` (T-151.2 L11 — the wasm
+    // differential oracle); the worker just stamps the LRU tick onto the result.
+    const parsed = parseChunkOracle(id, raw, prefabById)
+    if (parsed) parsed.lastUsed = ++useTick
+    return parsed
   }
 
   function indexChunk(chunk: ParsedChunk): void {

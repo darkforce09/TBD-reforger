@@ -20,6 +20,14 @@ mission = ["dep:serde", "dep:serde_json", "dep:thiserror"]
 # `doc` pulls serde_json too (hydrate payload + environment-patch JSON → yrs `Any`); it is already in
 # the wasm bundle via `mission`, so no new bundle cost.
 doc = ["dep:yrs", "dep:serde_json"]
+# `world` (T-151.2 W2 world parser) parses the `.json.gz` object export (chunks/prefabs/roads/
+# regions) into a Rust SoA proven byte-exact against the JS oracle. It needs `flate2` (gunzip the
+# `.json.gz` payloads) and `serde_json` — pinned to the `float_roundtrip` feature so JSON floats
+# parse correctly-rounded like V8's `JSON.parse`; without it serde_json is ~1 ULP off, which would
+# flip an `as f32` store and fail the Class R `f32BytesEqual` gate over 508k instances. The
+# `"serde_json/float_roundtrip"` form activates the optional dep AND its feature, scoped to
+# `world`-enabled builds (the wasm shim) — the backend's `mission`-only build is untouched.
+world = ["dep:thiserror", "dep:flate2", "serde_json/float_roundtrip"]
 
 [dependencies]
 png = { version = "0.17", optional = true }
@@ -27,6 +35,7 @@ serde = { version = "1", features = ["derive"], optional = true }
 serde_json = { version = "1", optional = true }
 thiserror = { version = "2", optional = true }
 yrs = { version = "0.27", optional = true }
+flate2 = { version = "1", optional = true }
 
 [dev-dependencies]
 # Unconditional for tests: the T-151 camera parity suite parses the committed deck.gl golden

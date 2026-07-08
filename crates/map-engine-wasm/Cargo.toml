@@ -12,7 +12,7 @@ description = "wasm-bindgen shim exposing map-engine-core to the TypeScript UI s
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-map-engine-core = { path = "../map-engine-core", features = ["png", "mission", "doc"] }
+map-engine-core = { path = "../map-engine-core", features = ["png", "mission", "doc", "world"] }
 # The wgpu render engine is linked in so it ships inside this single bundler wasm module — one
 # linear memory shared by `MissionDoc` and `RenderEngine` (T-151.0 L1, zero-copy doc→GPU). The
 # crate's heavy GPU/web stack is `cfg(wasm32)`-gated, so native `cargo build --workspace` stays lean.

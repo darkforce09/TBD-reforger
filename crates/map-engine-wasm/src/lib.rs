@@ -9,6 +9,7 @@ use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
 use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
+use map_engine_core::world::{WorldError, WorldStore as CoreWorldStore};
 use wasm_bindgen::prelude::*;
 
 // The wgpu render engine (T-151.0 L1). Re-exporting the `#[wasm_bindgen]` `RenderEngine` from this
@@ -1084,5 +1085,279 @@ impl OrthoCameraJs {
     #[must_use]
     pub fn zoom(&self) -> f64 {
         self.inner.zoom()
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// world::WorldStore (T-151.2 W2) — object-export parser handle
+// ---------------------------------------------------------------------------------------------
+
+fn world_err(e: WorldError) -> JsError {
+    JsError::new(&e.to_string())
+}
+
+/// `obbCorners` (`buildingLayer.ts:47`) — Class T. Returns the 4 corners flattened
+/// `[x0,y0,x1,y1,x2,y2,x3,y3]` for the parity harness's ≤1-ULP-vs-TS check.
+#[wasm_bindgen]
+#[must_use]
+pub fn obb_corners(x: f64, y: f64, half_x: f64, half_y: f64, rotation_deg: f64) -> Vec<f64> {
+    let c = map_engine_core::world::obb_corners(x, y, half_x, half_y, rotation_deg);
+    vec![
+        c[0][0], c[0][1], c[1][0], c[1][1], c[2][0], c[2][1], c[3][0], c[3][1],
+    ]
+}
+
+/// `extractRoadCenterline` (`roadLayer.ts:72`) — Class T. `points` is `[x0,y0,x1,y1,…]`; returns
+/// `[widthM, x0,y0,x1,y1,…]`, or an empty vec when the centerline is degenerate (< 2 vertices).
+#[wasm_bindgen]
+#[must_use]
+pub fn road_centerline(points: &[f64]) -> Vec<f64> {
+    let pts: Vec<[f64; 2]> = points.chunks_exact(2).map(|c| [c[0], c[1]]).collect();
+    match map_engine_core::world::extract_road_centerline(&pts) {
+        Some((path, width)) => {
+            let mut out = Vec::with_capacity(1 + path.len() * 2);
+            out.push(width);
+            for p in path {
+                out.push(p[0]);
+                out.push(p[1]);
+            }
+            out
+        }
+        None => Vec::new(),
+    }
+}
+
+/// Wasm handle over the Rust world-object parser (T-151.2). A separate handle from `MissionDoc`
+/// / `RenderEngine` but sharing the one linear memory: `parse_chunk_gz` parses one chunk into the
+/// store's `last_chunk`, whose SoA columns JS reads via the copy getters (the Class R parity
+/// path) or the `*_ptr`/`*_len` zero-copy views (`new Float32Array(memory.buffer, ptr, len)` — the
+/// W3 render feed). `stats()` is additive and independent of `RenderEngine::stats()`.
+#[wasm_bindgen]
+pub struct WorldStore {
+    inner: CoreWorldStore,
+}
+
+#[wasm_bindgen]
+impl WorldStore {
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new() -> WorldStore {
+        WorldStore {
+            inner: CoreWorldStore::new(),
+        }
+    }
+
+    /// Parse the terrain manifest's `objects` block (declared counts + paths).
+    ///
+    /// # Errors
+    /// A `JsError` when the JSON is invalid or the object-export paths are absent.
+    pub fn load_manifest_json(&mut self, json: &str) -> Result<(), JsError> {
+        self.inner.load_manifest_json(json).map_err(world_err)
+    }
+
+    /// Load `prefabs.json.gz` → the prefab lookup + `has_oversized`. Returns the prefab count.
+    ///
+    /// # Errors
+    /// A `JsError` on a bad gzip/JSON payload.
+    pub fn load_prefabs_gz(&mut self, bytes: &[u8]) -> Result<u32, JsError> {
+        self.inner
+            .load_prefabs_gz(bytes)
+            .map(|n| n as u32)
+            .map_err(world_err)
+    }
+
+    /// Parse one `objects/chunks/{id}.json.gz` into `last_chunk`. Returns its instance count.
+    ///
+    /// # Errors
+    /// A `JsError` on a bad gzip/JSON payload.
+    pub fn parse_chunk_gz(&mut self, id: &str, bytes: &[u8]) -> Result<u32, JsError> {
+        self.inner.parse_chunk_gz(id, bytes).map_err(world_err)
+    }
+
+    /// Load `roads.json.gz` (centerlined). Returns the kept segment count.
+    ///
+    /// # Errors
+    /// A `JsError` on a bad gzip/JSON payload.
+    pub fn load_roads_gz(&mut self, bytes: &[u8]) -> Result<u32, JsError> {
+        self.inner
+            .load_roads_gz(bytes)
+            .map(|n| n as u32)
+            .map_err(world_err)
+    }
+
+    /// Load `forest-regions.json.gz`. Returns the kept region count.
+    ///
+    /// # Errors
+    /// A `JsError` on a bad gzip/JSON payload.
+    pub fn load_forest_regions_gz(&mut self, bytes: &[u8]) -> Result<u32, JsError> {
+        self.inner
+            .load_forest_regions_gz(bytes)
+            .map(|n| n as u32)
+            .map_err(world_err)
+    }
+
+    // Last-chunk copy getters (clone the column into a JS typed array — the parity path).
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_count(&self) -> u32 {
+        self.inner.last_chunk.as_ref().map_or(0, |c| c.count)
+    }
+    #[must_use]
+    pub fn chunk_positions(&self) -> Vec<f32> {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map(|c| c.positions.clone())
+            .unwrap_or_default()
+    }
+    #[must_use]
+    pub fn chunk_prefab_idx(&self) -> Vec<u16> {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map(|c| c.prefab_idx.clone())
+            .unwrap_or_default()
+    }
+    #[must_use]
+    pub fn chunk_rotations(&self) -> Vec<f32> {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map(|c| c.rotations.clone())
+            .unwrap_or_default()
+    }
+    #[must_use]
+    pub fn chunk_z(&self) -> Vec<f32> {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map(|c| c.z.clone())
+            .unwrap_or_default()
+    }
+    #[must_use]
+    pub fn chunk_cls_codes(&self) -> Vec<u8> {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map(|c| c.cls_codes.clone())
+            .unwrap_or_default()
+    }
+    /// Row indices gathered for one render-class code (empty when the class is absent). Copy
+    /// getter for the Class S `rowsByClass` parity assert; a per-class ptr view is deferred to W3.
+    #[must_use]
+    pub fn chunk_rows_for_class(&self, code: u8) -> Vec<u32> {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .and_then(|c| c.rows_by_class.get(&code).cloned())
+            .unwrap_or_default()
+    }
+
+    // Zero-copy views (criterion 6): raw offsets into wasm linear memory for the last chunk's
+    // columns. JS builds `new Float32Array(memory.buffer, ptr, len)` — no copy. Valid until the
+    // next `parse_chunk_gz` (memory growth detaches the view; rebuild it after).
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_positions_ptr(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.positions.as_ptr() as usize as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_positions_len(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.positions.len() as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_prefab_idx_ptr(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.prefab_idx.as_ptr() as usize as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_prefab_idx_len(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.prefab_idx.len() as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_rotations_ptr(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.rotations.as_ptr() as usize as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_rotations_len(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.rotations.len() as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_z_ptr(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.z.as_ptr() as usize as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_z_len(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.z.len() as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_cls_codes_ptr(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.cls_codes.as_ptr() as usize as u32)
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunk_cls_codes_len(&self) -> u32 {
+        self.inner
+            .last_chunk
+            .as_ref()
+            .map_or(0, |c| c.cls_codes.len() as u32)
+    }
+
+    /// Aggregate world counters as a JSON string (additive — NOT `RenderEngine::stats()`).
+    #[must_use]
+    pub fn stats(&self) -> String {
+        let prefab_count = self.inner.prefab_by_id.len();
+        let instance_count_total = self.inner.instance_count_total() as u64;
+        let chunk_count_loaded = self.inner.chunks_loaded;
+        let road_segment_count = self.inner.roads.len();
+        let forest_region_count = self.inner.regions.len();
+        let has_oversized = self.inner.has_oversized;
+        format!(
+            "{{\"prefab_count\":{prefab_count},\"instance_count_total\":{instance_count_total},\
+             \"chunk_count_loaded\":{chunk_count_loaded},\"road_segment_count\":{road_segment_count},\
+             \"forest_region_count\":{forest_region_count},\"has_oversized\":{has_oversized}}}"
+        )
+    }
+}
+
+impl Default for WorldStore {
+    fn default() -> Self {
+        Self::new()
     }
 }
