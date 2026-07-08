@@ -40,6 +40,24 @@ pub struct QuadInstance {
     pub color: [f32; 4],
 }
 
+/// One rotated building OBB fill instance (T-151.3 W3). Drawn by `vs_building`: the unit quad is
+/// scaled by `half`, rotated by `basis = (cos, sin)` in the `obb.rs` frame (0° = +y north,
+/// clockwise-positive), and translated to `center` (anchor-relative meters). 40 B — a NEW struct;
+/// [`QuadInstance`] stays 32 B (the stress/calibration spine, unchanged).
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Pod, Zeroable)]
+pub struct BuildingInstance {
+    /// Anchor-relative [x, y] center, meters (world minus [`ANCHOR`]).
+    pub center: [f32; 2],
+    /// Half-extents [hx, hy], meters (a size — NOT anchor-shifted).
+    pub half: [f32; 2],
+    /// `(cos(rad), sin(rad))`, `rad = deg·PI/180` — computed once (matching `obb::obb_corners`), so
+    /// the fill quad and the outline ring coincide to f32 rounding.
+    pub basis: [f32; 2],
+    /// RGBA, linear 0..1 (`byte/255`; rendered to a non-sRGB target — no transfer function).
+    pub color: [f32; 4],
+}
+
 /// The two calibration instances (plan §S4 calibration scene), anchor-relative:
 /// - G: green quad, world [6300,6300]…[6500,6500] → relative [-100,-100]…[100,100]
 /// - R: red quad, world [6450,6450]…[6490,6490] → relative [50,50]…[90,90], drawn after G
@@ -139,6 +157,37 @@ mod tests {
             expect.extend_from_slice(&v.to_le_bytes());
         }
         assert_eq!(core::mem::size_of::<QuadInstance>(), 32);
+        assert_eq!(got, expect.as_slice());
+    }
+
+    /// Class R: the `BuildingInstance` GPU layout is exactly 40 B (`center,half,basis,color` =
+    /// 10 f32, no padding), and its upload bytes are the concatenated little-endian f32s in field
+    /// order — the byte contract `upload_world_buildings` casts through.
+    #[test]
+    fn building_instance_layout_and_bytes_exact() {
+        assert_eq!(core::mem::size_of::<BuildingInstance>(), 40);
+        let inst = BuildingInstance {
+            center: [1.5, -2.5],
+            half: [40.0, 20.0],
+            basis: [0.25, 0.75],
+            color: [38.0 / 255.0, 38.0 / 255.0, 44.0 / 255.0, 1.0],
+        };
+        let got: &[u8] = bytemuck::cast_slice(core::slice::from_ref(&inst));
+        let mut expect = Vec::with_capacity(40);
+        for v in [
+            1.5_f32,
+            -2.5,
+            40.0,
+            20.0,
+            0.25,
+            0.75,
+            38.0 / 255.0,
+            38.0 / 255.0,
+            44.0 / 255.0,
+            1.0,
+        ] {
+            expect.extend_from_slice(&v.to_le_bytes());
+        }
         assert_eq!(got, expect.as_slice());
     }
 

@@ -21,6 +21,8 @@ import { useCallback, useEffect, useRef, useState, type CSSProperties } from 're
 import { WHEEL_ZOOM_PER_PX, createEngine, deviceSize, type RenderEngine } from './wgpu/wasmRender'
 import { WgpuBasemapController } from './wgpu/wgpuBasemap'
 import { useWgpuBasemap } from './wgpu/useWgpuBasemap'
+import { WgpuWorldController } from './wgpu/wgpuWorldLoader'
+import { useWgpuWorldResidency } from './wgpu/useWgpuWorldResidency'
 import { getTerrain } from './coords/terrains'
 import type { TacticalMapProps } from './types'
 
@@ -44,6 +46,7 @@ export default function WgpuTacticalMap({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const controllerRef = useRef<WgpuBasemapController | null>(null)
+  const worldControllerRef = useRef<WgpuWorldController | null>(null)
   const [canvasKey, setCanvasKey] = useState(0)
   const [forceWebgl, setForceWebgl] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,6 +71,8 @@ export default function WgpuTacticalMap({
     showHillshade,
     hillshadeOpacity,
   })
+  // World-object residency (W3): kicks the manifest/prefab/chunk-index load once ready.
+  useWgpuWorldResidency(worldControllerRef, ready, { terrainId: terrain })
 
   useEffect(() => {
     const container = containerRef.current
@@ -114,7 +119,8 @@ export default function WgpuTacticalMap({
           onProgress: (f) => onProgressRef.current?.(f),
           onDegraded: (v) => onDegradedRef.current?.(v),
         })
-        setReady(true) // fires the basemap hook effects
+        worldControllerRef.current = new WgpuWorldController(created, terrainDef)
+        setReady(true) // fires the basemap + world hook effects
         const loop = (now: number) => {
           if (disposed || !engine) return // I5
           if (window.devicePixelRatio !== lastDpr) applySize()
@@ -164,6 +170,7 @@ export default function WgpuTacticalMap({
       lastX = ev.clientX
       lastY = ev.clientY
       controllerRef.current?.onCameraMoved() // pyramid LOD follows the pan (debounced)
+      worldControllerRef.current?.onCameraMoved() // world chunk residency follows the pan
     }
     const onPointerUp = (ev: PointerEvent) => {
       dragging = false
@@ -175,6 +182,7 @@ export default function WgpuTacticalMap({
       const rect = canvas.getBoundingClientRect()
       engine.zoom_at(-ev.deltaY * WHEEL_ZOOM_PER_PX, ev.clientX - rect.left, ev.clientY - rect.top)
       controllerRef.current?.onCameraMoved()
+      worldControllerRef.current?.onCameraMoved()
     }
     canvas.addEventListener('pointerdown', onPointerDown)
     canvas.addEventListener('pointermove', onPointerMove)
@@ -193,6 +201,8 @@ export default function WgpuTacticalMap({
       canvas.removeEventListener('wheel', onWheel)
       controllerRef.current?.dispose()
       controllerRef.current = null
+      worldControllerRef.current?.dispose() // frees the WorldResidency wasm handle (once)
+      worldControllerRef.current = null
       setReady(false)
       engine?.free() // I4 — exactly once
       engine = null

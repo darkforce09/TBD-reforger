@@ -9,7 +9,10 @@ use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
 use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
-use map_engine_core::world::{WorldError, WorldStore as CoreWorldStore};
+use map_engine_core::world::{
+    WorldError, WorldResidency as CoreWorldResidency, WorldSpatialIndex as CoreWorldSpatialIndex,
+    WorldStore as CoreWorldStore,
+};
 use wasm_bindgen::prelude::*;
 
 // The wgpu render engine (T-151.0 L1). Re-exporting the `#[wasm_bindgen]` `RenderEngine` from this
@@ -1360,4 +1363,268 @@ impl Default for WorldStore {
     fn default() -> Self {
         Self::new()
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// world residency (T-151.3 W3 — multi-chunk LRU + building GPU-buffer composer, wgpu path only).
+// Separate handle from `WorldStore`: the W2 single-chunk parity path is untouched.
+// ---------------------------------------------------------------------------------------------
+
+/// Viewport-driven chunk residency for the wgpu mount (port of `chunkStore.ts`). Coordinates are
+/// emitted in WORLD meters; the render engine subtracts `scene::ANCHOR` when packing instances.
+#[wasm_bindgen]
+pub struct WorldResidency {
+    inner: CoreWorldResidency,
+}
+
+#[wasm_bindgen]
+impl WorldResidency {
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new() -> WorldResidency {
+        WorldResidency {
+            inner: CoreWorldResidency::new(),
+        }
+    }
+
+    /// Parse the terrain manifest (`objects` block + top-level `worldBounds`).
+    ///
+    /// # Errors
+    /// A `JsError` when the JSON is invalid or the object-export paths are absent.
+    pub fn load_manifest_json(&mut self, json: &str) -> Result<(), JsError> {
+        self.inner.load_manifest_json(json).map_err(world_err)
+    }
+
+    /// Load `prefabs.json.gz` → class table + u16 building lookup. Returns the prefab count.
+    ///
+    /// # Errors
+    /// A `JsError` on a bad gzip/JSON payload.
+    pub fn load_prefabs_gz(&mut self, bytes: &[u8]) -> Result<u32, JsError> {
+        self.inner
+            .load_prefabs_gz(bytes)
+            .map(|n| n as u32)
+            .map_err(world_err)
+    }
+
+    /// Load the chunk-index (`objects/chunks/manifest.json`) cell set. Returns the cell count.
+    ///
+    /// # Errors
+    /// A `JsError` when the JSON is invalid.
+    pub fn load_chunk_index_json(&mut self, json: &str) -> Result<u32, JsError> {
+        self.inner
+            .load_chunk_index_json(json)
+            .map(|n| n as u32)
+            .map_err(world_err)
+    }
+
+    /// Pin the viewport chunk set; returns the missing ids to fetch (marked in-flight).
+    #[must_use]
+    pub fn set_viewport(
+        &mut self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        deck_zoom: f64,
+    ) -> Vec<String> {
+        self.inner
+            .set_viewport(min_x, min_y, max_x, max_y, deck_zoom)
+    }
+
+    /// Parse + insert one delivered `objects/chunks/{id}.json.gz`. Returns its instance count.
+    ///
+    /// # Errors
+    /// A `JsError` on a bad gzip/JSON payload.
+    pub fn ingest_chunk_gz(&mut self, id: &str, bytes: &[u8]) -> Result<u32, JsError> {
+        self.inner.ingest_chunk_gz(id, bytes).map_err(world_err)
+    }
+
+    /// Cache a requested-but-undelivered chunk as hydrated-empty (never re-requested).
+    pub fn note_undelivered(&mut self, id: &str) {
+        self.inner.note_undelivered(id);
+    }
+
+    /// Record the frame's apply stats, then evict + rebuild the GPU buffers.
+    pub fn end_apply_frame(&mut self, elapsed_ms: f64) {
+        self.inner.end_apply_frame(elapsed_ms);
+    }
+
+    /// Building fill instances (WORLD coords): 10 f32 each `[x, y, hx, hy, cos, sin, r, g, b, a]`.
+    #[must_use]
+    pub fn world_building_fill(&self) -> Vec<f32> {
+        self.inner.world_building_fill()
+    }
+
+    /// Building outline vertices (WORLD coords): 6 f32 each `[x, y, r, g, b, a]` (`LineList`).
+    #[must_use]
+    pub fn world_building_outline(&self) -> Vec<f32> {
+        self.inner.world_building_outline()
+    }
+
+    /// Nearest world instance id `"{chunkId}:{row}"` within `radius_m`; `mask` = optional class
+    /// bitmask over the 5 render-class codes (bit `c` set ⇒ class `c` allowed).
+    #[must_use]
+    pub fn pick_nearest(
+        &mut self,
+        x: f64,
+        y: f64,
+        radius_m: f64,
+        mask: Option<u32>,
+    ) -> Option<String> {
+        self.inner.pick_nearest(x, y, radius_m, mask)
+    }
+
+    /// World instance ids inside a world-meter bbox; `mask` as in [`Self::pick_nearest`].
+    #[must_use]
+    pub fn pick_rect(
+        &mut self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        mask: Option<u32>,
+    ) -> Vec<String> {
+        self.inner.pick_rect(min_x, min_y, max_x, max_y, mask)
+    }
+
+    /// Resident chunk ids (sorted) — parity/debug.
+    #[must_use]
+    pub fn resident_chunk_ids(&self) -> Vec<String> {
+        self.inner.resident_chunk_ids()
+    }
+
+    /// Ordered eviction victims since construction — Class S eviction-order log.
+    #[must_use]
+    pub fn eviction_log(&self) -> Vec<String> {
+        self.inner.eviction_log()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn pinned_building_count(&self) -> u32 {
+        self.inner.pinned_building_count()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunks_resident(&self) -> u32 {
+        self.inner.chunks_resident() as u32
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn frames_over_budget(&self) -> u32 {
+        self.inner.frames_over_budget() as u32
+    }
+
+    /// Additive residency stats JSON (NOT `RenderEngine::stats()`).
+    #[must_use]
+    pub fn stats(&self) -> String {
+        self.inner.stats_json()
+    }
+}
+
+impl Default for WorldResidency {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// world spatial index (T-151.3 W3 — chunk-keyed, class-filtered; the rbush `worldSpatialIndex`
+// replacement for the wgpu path). Exposed standalone so the pick parity test drives it directly.
+// ---------------------------------------------------------------------------------------------
+
+/// Chunk-keyed, class-filterable world point index. `pick_*` return the same id set as the JS
+/// rbush `worldSpatialIndex` (Class S). ids are `"{chunkId}:{row}"`; radii are world meters.
+#[wasm_bindgen]
+pub struct WorldSpatialIndex {
+    inner: CoreWorldSpatialIndex,
+}
+
+#[wasm_bindgen]
+impl WorldSpatialIndex {
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new() -> WorldSpatialIndex {
+        WorldSpatialIndex {
+            inner: CoreWorldSpatialIndex::new(),
+        }
+    }
+
+    /// Bulk-insert one chunk's compacted SoA columns (idempotent). Rows with `cls == 255`
+    /// (`NO_CLASS`) are skipped; each kept row's id is `"{chunk_id}:{i}"`.
+    pub fn insert_chunk(&mut self, chunk_id: &str, xs: &[f32], ys: &[f32], cls: &[u8]) {
+        self.inner.insert_chunk(chunk_id, xs, ys, cls);
+    }
+
+    /// Remove a chunk's instances (LRU eviction). Unknown chunk = no-op.
+    pub fn remove_chunk(&mut self, chunk_id: &str) {
+        self.inner.remove_chunk(chunk_id);
+    }
+
+    /// Nearest instance id within a circular `radius_m`, optional class `mask`, else `None`.
+    #[must_use]
+    pub fn pick_nearest(
+        &mut self,
+        x: f64,
+        y: f64,
+        radius_m: f64,
+        mask: Option<u32>,
+    ) -> Option<String> {
+        self.inner.pick_nearest(x, y, radius_m, mask)
+    }
+
+    /// Instance ids inside a world-meter bbox, optional class `mask`.
+    #[must_use]
+    pub fn pick_rect(
+        &mut self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        mask: Option<u32>,
+    ) -> Vec<String> {
+        self.inner.pick_rect(min_x, min_y, max_x, max_y, mask)
+    }
+
+    pub fn clear(&mut self) {
+        self.inner.clear();
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn size(&self) -> u32 {
+        self.inner.size() as u32
+    }
+}
+
+impl Default for WorldSpatialIndex {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// The viewport → chunk-id set (T-151.3 W3, Class R) — a direct binding of
+/// `map_engine_core::world::chunk_ids_for_viewport` for the `chunkMathRust.parity.test.ts`
+/// cross-check against the JS `chunkIdsForViewport`. `extra_ring` = 0 skips the oversized ring.
+#[wasm_bindgen]
+#[must_use]
+#[allow(clippy::too_many_arguments)] // a flat bbox+terrain+opts binding for the JS parity harness
+pub fn world_chunk_ids_for_viewport(
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+    width: f64,
+    height: f64,
+    chunk_size_m: f64,
+    extra_ring: i32,
+) -> Vec<String> {
+    map_engine_core::world::chunk_ids_for_viewport(
+        [min_x, min_y, max_x, max_y],
+        map_engine_core::world::TerrainSizeM { width, height },
+        chunk_size_m,
+        i64::from(extra_ring),
+    )
 }

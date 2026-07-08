@@ -79,6 +79,16 @@ export default function WgpuCanvas() {
         }
         engine = created
         engineRef.current = created
+        // Dev-only headless hooks (GPU-R): CDP awaits these for the byte-exact self-check JSON
+        // (same mechanism T-151.1 used). `worldBuilding` is the T-151.3 S4 gate; `calibration`
+        // (T-151.0) + `texture` (T-151.1) are the regression re-runs.
+        ;(
+          window as unknown as { __selfChecks?: Record<string, () => Promise<string>> }
+        ).__selfChecks = {
+          calibration: () => created.self_check() as Promise<string>,
+          texture: () => created.texture_self_check() as Promise<string>,
+          worldBuilding: () => created.world_building_self_check() as Promise<string>,
+        }
         setBackend(created.backend())
         applySize()
         created.set_view(6400, 6400, -2)
@@ -150,6 +160,8 @@ export default function WgpuCanvas() {
       canvas.removeEventListener('pointerup', onPointerUp)
       canvas.removeEventListener('pointercancel', onPointerUp)
       canvas.removeEventListener('wheel', onWheel)
+      delete (window as unknown as { __selfChecks?: Record<string, () => Promise<string>> })
+        .__selfChecks
       engineRef.current = null
       engine?.free() // I4 — exactly once
       engine = null
@@ -166,6 +178,21 @@ export default function WgpuCanvas() {
       setReport(typeof result === 'string' ? result : JSON.stringify(result))
     } catch (err) {
       setReport(`self-check FAILED: ${String(err)}`)
+    } finally {
+      setBusy(false)
+    }
+  }, [])
+
+  const runWorldBuildingCheck = useCallback(async () => {
+    const engine = engineRef.current
+    if (!engine) return
+    setBusy(true)
+    setReport('running world-building self-check…')
+    try {
+      const result: unknown = await engine.world_building_self_check()
+      setReport(typeof result === 'string' ? result : JSON.stringify(result))
+    } catch (err) {
+      setReport(`world-building self-check FAILED: ${String(err)}`)
     } finally {
       setBusy(false)
     }
@@ -230,6 +257,9 @@ export default function WgpuCanvas() {
         <div style={{ display: 'flex', gap: 6, margin: '8px 0 6px', flexWrap: 'wrap' }}>
           <button onClick={() => void runSelfCheck()} disabled={busy} style={BTN}>
             Run self-check
+          </button>
+          <button onClick={() => void runWorldBuildingCheck()} disabled={busy} style={BTN}>
+            World-building check
           </button>
           {STRESS_COUNTS.map((n) => (
             <button key={n} onClick={() => seedStress(n)} disabled={busy} style={BTN}>

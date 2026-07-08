@@ -89,6 +89,8 @@ pub(crate) enum PipelineKind {
     QuadInstanced,
     TexturedQuad,
     Polyline,
+    /// W3 world-building fill — rotated OBB quads (`scene::BuildingInstance`, `vs_building`).
+    BuildingQuad,
 }
 
 /// The 3-way map style's satellite-field opacity mode + the derived basemap render mode, surfaced
@@ -130,17 +132,24 @@ enum LaneRole {
     Calibration,
     Satellite,
     Hillshade,
+    /// W3 world-building OBB fills (`world-buildings`).
+    WorldBuildings,
+    /// W3 world-building outline casing (`world-buildings-outline`).
+    WorldBuildingsOutline,
     Grid,
 }
 
-/// Draw-order key: basemap (satellite) under hillshade under grid; the spike batches
-/// (`Stress`/`Calibration`) sort first but are never interleaved with editor lanes.
+/// Draw-order key (T-151.3 L9): basemap → hillshade → world-buildings → world-buildings-outline →
+/// grid; the spike batches (`Stress`/`Calibration`) sort first but are never interleaved with
+/// editor lanes.
 fn lane_order(role: LaneRole) -> u8 {
     match role {
         LaneRole::Stress | LaneRole::Calibration => 0,
         LaneRole::Satellite => 1,
         LaneRole::Hillshade => 2,
-        LaneRole::Grid => 3,
+        LaneRole::WorldBuildings => 3,
+        LaneRole::WorldBuildingsOutline => 4,
+        LaneRole::Grid => 5,
     }
 }
 
@@ -176,9 +185,17 @@ struct PendingTex {
 /// The per-batch payload. `Instanced` is the T-151.0 QuadInstance stream (stress/calibration);
 /// `Textured`/`Lines` are the W1 lanes. `kind()` maps each to its [`PipelineKind`].
 enum BatchPayload {
-    Instanced { instances: wgpu::Buffer, count: u32 },
+    Instanced {
+        instances: wgpu::Buffer,
+        count: u32,
+    },
     Textured(TexLane),
     Lines(LineLane),
+    /// W3 world-building fill: `scene::BuildingInstance` stream (40 B), drawn `draw(0..4, 0..count)`.
+    BuildingInstanced {
+        instances: wgpu::Buffer,
+        count: u32,
+    },
 }
 
 impl BatchPayload {
@@ -187,6 +204,7 @@ impl BatchPayload {
             Self::Instanced { .. } => PipelineKind::QuadInstanced,
             Self::Textured(_) => PipelineKind::TexturedQuad,
             Self::Lines(_) => PipelineKind::Polyline,
+            Self::BuildingInstanced { .. } => PipelineKind::BuildingQuad,
         }
     }
 }
@@ -416,10 +434,62 @@ pub(crate) fn create_line_pipeline(
     })
 }
 
+/// The W3 world-building fill pipeline (rotated OBB quads — T-151.3 L8). Unit-quad stream 0 +
+/// `scene::BuildingInstance` stream 1 (40 B: center, half, basis, color), `vs_building`/
+/// `fs_building`, **alpha-blended** (Deck's semi-transparent footprint fill). `layout` is the
+/// camera-uniform-only layout (group 0), same as the quad/line pipelines.
+pub(crate) fn create_building_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("world-building"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_building"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2],
+                },
+                // scene::BuildingInstance: center, half, basis (cos,sin), color — 40 B.
+                wgpu::VertexBufferLayout {
+                    array_stride: 40,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &wgpu::vertex_attr_array![1 => Float32x2, 2 => Float32x2, 3 => Float32x2, 4 => Float32x4],
+                },
+            ],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_building"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            ..wgpu::PrimitiveState::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
 /// Draw the ordered batch list into `pass` (shared by the live `render()` and the offscreen
-/// readback path — T-151.1 L1/L10). Group 0 (the camera mvp) is compatible across all three
-/// pipeline layouts, so it is bound once. The pipelines are passed in because the live path uses
-/// the surface-format pipelines and the readback path rebuilds them at `Rgba8Unorm`.
+/// readback path — T-151.1 L1/L10). Group 0 (the camera mvp) is compatible across all pipeline
+/// layouts, so it is bound once. The pipelines are passed in because the live path uses the
+/// surface-format pipelines and the readback path rebuilds them at `Rgba8Unorm`.
 #[allow(clippy::too_many_arguments)]
 fn draw_batches<'a>(
     batches: &'a [Batch],
@@ -429,6 +499,7 @@ fn draw_batches<'a>(
     quad_pipeline: &'a wgpu::RenderPipeline,
     textured_pipeline: &'a wgpu::RenderPipeline,
     line_pipeline: &'a wgpu::RenderPipeline,
+    building_pipeline: &'a wgpu::RenderPipeline,
 ) {
     // group 0 (camera mvp) is set after each `set_pipeline` — its layout is identical across all
     // three pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always
@@ -459,6 +530,13 @@ fn draw_batches<'a>(
                 pass.set_vertex_buffer(0, l.verts.slice(..));
                 pass.draw(0..l.count, 0..1);
             }
+            BatchPayload::BuildingInstanced { instances, count } => {
+                pass.set_pipeline(building_pipeline);
+                pass.set_bind_group(0, bind_group, &[]);
+                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+                pass.set_vertex_buffer(1, instances.slice(..));
+                pass.draw(0..4, 0..*count);
+            }
         }
     }
 }
@@ -482,6 +560,9 @@ pub struct RenderEngine {
     tex_bind_group_layout: wgpu::BindGroupLayout,
     textured_pipeline: wgpu::RenderPipeline,
     line_pipeline: wgpu::RenderPipeline,
+    /// W3 world-building fill pipeline (rotated OBB quads). Additive — the outline reuses
+    /// `line_pipeline` unchanged.
+    building_pipeline: wgpu::RenderPipeline,
     sampler: wgpu::Sampler,
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
@@ -503,6 +584,9 @@ pub struct RenderEngine {
     gen_ms: f64,
     upload_ms: f64,
     uniform_bytes_last_frame: u32,
+    /// Resident chunks contributing to the current world-building lanes (additive `stats()` field;
+    /// set by `upload_world_buildings`, cleared by `clear_world_buildings`).
+    world_chunks_drawn: u32,
     timer: Option<GpuTimer>,
 }
 
@@ -643,6 +727,9 @@ impl RenderEngine {
         let textured_pipeline =
             create_textured_pipeline(&device, &textured_pipeline_layout, &shader, format);
         let line_pipeline = create_line_pipeline(&device, &pipeline_layout, &shader, format);
+        // W3 world-building fill pipeline (group-0 camera only, like the quad/line pipelines).
+        let building_pipeline =
+            create_building_pipeline(&device, &pipeline_layout, &shader, format);
         // Trilinear + clamp-to-edge — the unified-satellite sampler contract (`satelliteUnified.ts`).
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("basemap-sampler"),
@@ -726,6 +813,7 @@ impl RenderEngine {
             tex_bind_group_layout,
             textured_pipeline,
             line_pipeline,
+            building_pipeline,
             sampler,
             uniform_buf,
             bind_group,
@@ -741,6 +829,7 @@ impl RenderEngine {
             gen_ms: 0.0,
             upload_ms: 0.0,
             uniform_bytes_last_frame: 0,
+            world_chunks_drawn: 0,
             timer,
         })
     }
@@ -878,6 +967,7 @@ impl RenderEngine {
                 &self.surface_pipeline,
                 &self.textured_pipeline,
                 &self.line_pipeline,
+                &self.building_pipeline,
             );
         }
         if take_timing && let Some(t) = &self.timer {
@@ -956,7 +1046,8 @@ impl RenderEngine {
             .expect("calibration batch always present");
         for batch in self.batches.drain(..) {
             match batch.payload {
-                BatchPayload::Instanced { instances, .. } => instances.destroy(),
+                BatchPayload::Instanced { instances, .. }
+                | BatchPayload::BuildingInstanced { instances, .. } => instances.destroy(),
                 BatchPayload::Textured(l) => l.texture.destroy(),
                 BatchPayload::Lines(l) => l.verts.destroy(),
             }
@@ -1017,12 +1108,36 @@ impl RenderEngine {
             Some(t) if t.has_sample.get() => format!("{:.3}", t.last_ms.get()),
             _ => "null".to_owned(),
         };
+        // W3 additive fields (L15) — appended after the T-151.0/1 keys, whose positions/values are
+        // untouched. `world_building_instances` = the drawn OBB fill count (filtered from batches);
+        // `world_building_outline_vertices` = the LineList vertex count; `world_chunks_drawn` = the
+        // resident chunks contributing (from `upload_world_buildings`).
+        let world_building_instances: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::WorldBuildings)
+            .map(|b| match &b.payload {
+                BatchPayload::BuildingInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
+        let world_building_outline_vertices: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::WorldBuildingsOutline)
+            .map(|b| match &b.payload {
+                BatchPayload::Lines(l) => l.count,
+                _ => 0,
+            })
+            .sum();
         format!(
             concat!(
                 "{{\"backend\":\"{}\",\"instances\":{},\"chunks\":{},\"gpu_bytes\":{},",
                 "\"staging_peak_bytes\":{},\"gen_ms\":{:.1},\"upload_ms\":{:.1},",
                 "\"uniform_bytes_last_frame\":{},\"gpu_frame_ms\":{},",
-                "\"basemap_mode\":\"{}\",\"basemap_tiles\":{},\"basemap_bytes\":{}}}"
+                "\"basemap_mode\":\"{}\",\"basemap_tiles\":{},\"basemap_bytes\":{},",
+                "\"world_building_instances\":{},\"world_building_outline_vertices\":{},",
+                "\"world_chunks_drawn\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1036,6 +1151,9 @@ impl RenderEngine {
             basemap_mode,
             basemap_tiles,
             basemap_bytes,
+            world_building_instances,
+            world_building_outline_vertices,
+            self.world_chunks_drawn,
         )
     }
 }
@@ -1133,6 +1251,8 @@ impl RenderEngine {
             });
         let textured = create_textured_pipeline(&self.device, &tex_layout, &self.shader, fmt);
         let line = create_line_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
+        let building =
+            create_building_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
 
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         let uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
@@ -1152,8 +1272,16 @@ impl RenderEngine {
             }],
         });
 
-        let (read_buf, _view, _texture) =
-            self.render_target_readback(w, h, padded, &bind_group, &quad, &textured, &line);
+        let (read_buf, _view, _texture) = self.render_target_readback(
+            w,
+            h,
+            padded,
+            &bind_group,
+            &quad,
+            &textured,
+            &line,
+            &building,
+        );
         read_buf
     }
 
@@ -1169,6 +1297,7 @@ impl RenderEngine {
         quad: &wgpu::RenderPipeline,
         textured: &wgpu::RenderPipeline,
         line: &wgpu::RenderPipeline,
+        building: &wgpu::RenderPipeline,
     ) -> (wgpu::Buffer, wgpu::TextureView, wgpu::Texture) {
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("readback-target"),
@@ -1221,6 +1350,7 @@ impl RenderEngine {
                 quad,
                 textured,
                 line,
+                building,
             );
         }
         encoder.copy_texture_to_buffer(
@@ -1529,6 +1659,99 @@ impl RenderEngine {
         );
     }
 
+    /// Replace the `world-buildings` fill lane (T-151.3 W3). `fill` is `WorldResidency`'s flat
+    /// output — 10 f32 per instance in WORLD meters `[x, y, hx, hy, cos, sin, r, g, b, a]`; the
+    /// center is converted to anchor-relative here (the single anchor source of truth). `chunk_count`
+    /// is the resident chunks contributing (`stats().world_chunks_drawn`). Empty → drop the lane.
+    pub fn upload_world_buildings(&mut self, fill: &[f32], chunk_count: u32, visible: bool) {
+        const STRIDE: usize = 10;
+        if fill.is_empty() || !fill.len().is_multiple_of(STRIDE) {
+            self.remove_lane(LaneRole::WorldBuildings);
+            self.world_chunks_drawn = if fill.is_empty() { 0 } else { chunk_count };
+            return;
+        }
+        let mut instances = Vec::with_capacity(fill.len() / STRIDE);
+        for c in fill.chunks_exact(STRIDE) {
+            instances.push(scene::BuildingInstance {
+                center: [
+                    (f64::from(c[0]) - ANCHOR[0]) as f32,
+                    (f64::from(c[1]) - ANCHOR[1]) as f32,
+                ],
+                half: [c[2], c[3]],
+                basis: [c[4], c[5]],
+                color: [c[6], c[7], c[8], c[9]],
+            });
+        }
+        use wgpu::util::DeviceExt;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("world-buildings"),
+                contents: bytemuck::cast_slice(&instances),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let count = instances.len() as u32;
+        self.world_chunks_drawn = chunk_count;
+        self.upsert_lane(
+            LaneRole::WorldBuildings,
+            Batch {
+                role: LaneRole::WorldBuildings,
+                visible,
+                payload: BatchPayload::BuildingInstanced {
+                    instances: buf,
+                    count,
+                },
+            },
+        );
+    }
+
+    /// Replace the `world-buildings-outline` lane (T-151.3 W3). `lines` is `WorldResidency`'s flat
+    /// `LineList` output — 6 f32 per vertex in WORLD meters `[x, y, r, g, b, a]`; positions are
+    /// converted to anchor-relative here. Empty → drop the lane.
+    pub fn upload_world_building_outlines(&mut self, lines: &[f32], visible: bool) {
+        const STRIDE: usize = 6;
+        if lines.is_empty() || !lines.len().is_multiple_of(STRIDE) {
+            self.remove_lane(LaneRole::WorldBuildingsOutline);
+            return;
+        }
+        let mut verts = Vec::with_capacity(lines.len() / STRIDE);
+        for c in lines.chunks_exact(STRIDE) {
+            verts.push(lanes::LineVertex {
+                pos: [
+                    (f64::from(c[0]) - ANCHOR[0]) as f32,
+                    (f64::from(c[1]) - ANCHOR[1]) as f32,
+                ],
+                color: [c[2], c[3], c[4], c[5]],
+            });
+        }
+        use wgpu::util::DeviceExt;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("world-buildings-outline"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let count = verts.len() as u32;
+        self.upsert_lane(
+            LaneRole::WorldBuildingsOutline,
+            Batch {
+                role: LaneRole::WorldBuildingsOutline,
+                visible,
+                payload: BatchPayload::Lines(LineLane { verts: buf, count }),
+            },
+        );
+    }
+
+    /// Drop both world-building lanes (gate closed below the building band, or terrain switch).
+    pub fn clear_world_buildings(&mut self) {
+        self.remove_lane(LaneRole::WorldBuildings);
+        self.remove_lane(LaneRole::WorldBuildingsOutline);
+        self.world_chunks_drawn = 0;
+    }
+
     /// The device's `maxTextureDimension2D` — JS `pickBaseLevel` uses it to choose the unified
     /// satellite base mip that fits this GPU (T-151.1 L4).
     #[wasm_bindgen(getter)]
@@ -1787,6 +2010,170 @@ impl RenderEngine {
                 ),
                 (700, 100, [0, 255, 0, 255], "NE"),
                 (100, 500, [0, 0, 255, 255], "SW"),
+            ];
+            let mut json = Vec::with_capacity(probes.len());
+            let mut all_pass = true;
+            for (px, py, expect, label) in probes {
+                let offset = u64::from(py * padded + px * 4);
+                let got = map_read_4(&device, &read_buf, offset)
+                    .await
+                    .map_err(|e| JsValue::from_str(&e))?;
+                let pass = got == expect;
+                all_pass &= pass;
+                json.push(format!(
+                    "{{\"px\":{},\"py\":{},\"expect\":[{},{},{},{}],\"got\":[{},{},{},{}],\"pass\":{},\"label\":\"{}\"}}",
+                    px, py, expect[0], expect[1], expect[2], expect[3],
+                    got[0], got[1], got[2], got[3], pass, label,
+                ));
+            }
+            Ok(JsValue::from_str(&format!(
+                "{{\"backend\":\"{}\",\"probes\":[{}],\"pass\":{}}}",
+                backend,
+                json.join(","),
+                all_pass,
+            )))
+        })
+    }
+
+    /// Byte-exact GPU self-check for the W3 building fill pipeline (T-151.3 L14, Class GPU-R).
+    /// Draws one synthetic OBB (center = ANCHOR, half [40,20], rot 37°, **fill α = 1.0**) over
+    /// `CLEAR_COLOR` at the fixed 800×600 probe camera (rel `(dx,dy)` → pixel `(400+dx, 300−dy)`),
+    /// then reads back three texels and asserts them exactly:
+    /// - **(400,300)** center = `[38,38,44,255]` (FILL_DEFAULT rgb): α=1 collapses `ALPHA_BLENDING`
+    ///   to `src·1 + dst·0` (exact), and `k/255` round-trips unorm8 (error `< 0.5`); the centroid is
+    ///   ≥20 px interior for any rotation, so this is rotation-invariant and byte-exact.
+    /// - **(460,300)** exterior = `CLEAR_COLOR [51,68,85,255]` (60 px > the `√(40²+20²)=44.7 px`
+    ///   corner reach → outside for any rotation).
+    /// - **(425,310)** = rel `(25,−10)`: inside the **+37°** OBB but outside the **−37°** OBB (both
+    ///   ≥2 px from every edge → no rasterization ambiguity), so a wrong-sign shader reads clear here
+    ///   → proves the rotation handedness matches `obb::obb_corners`. Resolves to JSON.
+    pub fn world_building_self_check(&self) -> js_sys::Promise {
+        const PW: u32 = 800;
+        const PH: u32 = 600;
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        let shader = self.shader.clone();
+        let layout = self.pipeline_layout.clone(); // camera-only (group 0), like the live pipeline
+        let cam_bgl = self.bind_group_layout.clone();
+        let unit_quad = self.unit_quad_buf.clone();
+        let backend = self.backend_kind.clone();
+
+        wasm_bindgen_futures::future_to_promise(async move {
+            use wgpu::util::DeviceExt;
+            let fmt = wgpu::TextureFormat::Rgba8Unorm;
+
+            let camera = OrthoCamera::new(f64::from(PW), f64::from(PH), ANCHOR[0], ANCHOR[1], 0.0);
+            let mvp = camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+            let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("bld-self-check-mvp"),
+                size: 64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            queue.write_buffer(&uniform, 0, bytemuck::cast_slice(&mvp));
+            let cam_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("bld-self-check-mvp"),
+                layout: &cam_bgl,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform.as_entire_binding(),
+                }],
+            });
+
+            let rad = (37.0_f64 * std::f64::consts::PI) / 180.0;
+            let inst = scene::BuildingInstance {
+                center: [0.0, 0.0],
+                half: [40.0, 20.0],
+                basis: [rad.cos() as f32, rad.sin() as f32],
+                color: [38.0 / 255.0, 38.0 / 255.0, 44.0 / 255.0, 1.0],
+            };
+            let inst_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("bld-self-check-inst"),
+                contents: bytemuck::cast_slice(core::slice::from_ref(&inst)),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let pipeline = create_building_pipeline(&device, &layout, &shader, fmt);
+
+            let target = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("bld-self-check-target"),
+                size: wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: fmt,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let tview = target.create_view(&wgpu::TextureViewDescriptor::default());
+            let padded = padded_bytes_per_row(PW);
+            let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("bld-self-check-read"),
+                size: u64::from(padded) * u64::from(PH),
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("bld-self-check"),
+            });
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("bld-self-check"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &tview,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(CLEAR_COLOR),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_pipeline(&pipeline);
+                pass.set_bind_group(0, &cam_bind, &[]);
+                pass.set_vertex_buffer(0, unit_quad.slice(..));
+                pass.set_vertex_buffer(1, inst_buf.slice(..));
+                pass.draw(0..4, 0..1);
+            }
+            encoder.copy_texture_to_buffer(
+                target.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &read_buf,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(padded),
+                        rows_per_image: Some(PH),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+            );
+            queue.submit(Some(encoder.finish()));
+
+            let probes: [(u32, u32, [u8; 4], &str); 3] = [
+                (
+                    400,
+                    300,
+                    [38, 38, 44, 255],
+                    "center fill byte-exact (FILL_DEFAULT rgb)",
+                ),
+                (460, 300, [51, 68, 85, 255], "exterior = CLEAR_COLOR"),
+                (
+                    425,
+                    310,
+                    [38, 38, 44, 255],
+                    "orientation +37 (inside +37, outside -37)",
+                ),
             ];
             let mut json = Vec::with_capacity(probes.len());
             let mut all_pass = true;

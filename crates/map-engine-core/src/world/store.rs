@@ -28,7 +28,8 @@ pub enum WorldError {
 /// Gunzip-or-plain JSON parse (mirror of `bytesToJson`). Static `.json.gz` files are served raw,
 /// so sniff the gzip magic; otherwise parse as UTF-8 JSON. `serde_json` is built with
 /// `float_roundtrip` (see `Cargo.toml`) so floats parse correctly-rounded like `JSON.parse`.
-fn bytes_to_json(bytes: &[u8]) -> Result<Value, WorldError> {
+/// Shared with [`super::residency`] (the W3 multi-chunk ingest path uses the identical decode).
+pub(super) fn bytes_to_json(bytes: &[u8]) -> Result<Value, WorldError> {
     if bytes.len() >= 2 && bytes[0] == 0x1f && bytes[1] == 0x8b {
         let mut decoder = flate2::read::GzDecoder::new(bytes);
         let mut inflated = Vec::new();

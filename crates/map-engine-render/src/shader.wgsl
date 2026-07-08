@@ -89,3 +89,40 @@ fn vs_line(in: LineVsIn) -> LineVsOut {
 fn fs_line(in: LineVsOut) -> @location(0) vec4<f32> {
     return in.color;
 }
+
+// ── World-building OBB fill (W3) ────────────────────────────────────────────────────────────────
+// Instanced rotated quad. Stream 0 is the unit quad; stream 1 is `scene::BuildingInstance`
+// {center, half, basis=(cos,sin), color}. The unit quad is scaled by `half`, rotated in the
+// `obb.rs` frame (0° = +y north, clockwise-positive: rot(dx,dy) = [dx·c + dy·s, −dx·s + dy·c]),
+// and placed at `center` (anchor-relative meters). `basis` is precomputed on the CPU from the same
+// `rad = deg·PI/180` as `obb_corners`, so the fill and the outline ring agree. Alpha-blended.
+struct BuildingVsIn {
+    @location(0) unit: vec2<f32>,
+    @location(1) center: vec2<f32>,
+    @location(2) half: vec2<f32>,
+    @location(3) basis: vec2<f32>,
+    @location(4) color: vec4<f32>,
+};
+
+struct BuildingVsOut {
+    @builtin(position) pos: vec4<f32>,
+    @location(0) color: vec4<f32>,
+};
+
+@vertex
+fn vs_building(in: BuildingVsIn) -> BuildingVsOut {
+    // unit {0,1}² → local corner {−half, +half} (matches obb_corners' corner order).
+    let local = (in.unit * 2.0 - vec2<f32>(1.0, 1.0)) * in.half;
+    let c = in.basis.x;
+    let s = in.basis.y;
+    let world = in.center + vec2<f32>(local.x * c + local.y * s, -local.x * s + local.y * c);
+    var out: BuildingVsOut;
+    out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
+    out.color = in.color;
+    return out;
+}
+
+@fragment
+fn fs_building(in: BuildingVsOut) -> @location(0) vec4<f32> {
+    return in.color;
+}
