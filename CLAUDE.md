@@ -171,10 +171,17 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.2** (W2 world parser in Rust) — `ready` · spec
-[`t151_2_world_parser.md`](docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md)
+**Next slice:** **T-151.3** (W3 chunk residency + spatial index + first world instances) — `ready` ·
+program hub
+[`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.3
 
 **Done (program slices):**
+- T-151.2 **world parser in Rust (W2 Piece 1)** @ `a51e9dcb` (tag **T-151.2**). `world/` module +
+  wasm `WorldStore`; Class **R**/**S** on all **275** Everon chunks; census **391 / 508,291 / 888 /
+  36 / 625** exact; vitest **343** (+9); merged wasm **3,858,591 B** (+135,399). Parse-only — no
+  worker flip or GPU world draws. Verify:
+  [`.ai/artifacts/t151_2_verify_log.md`](.ai/artifacts/t151_2_verify_log.md). Spec:
+  [`t151_2_world_parser.md`](docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md).
 - T-151.1 **basemap lane (TBDS + hillshade + grid)** @ `3ab81587` (tag **T-151.1**).
   `TexturedQuad` + `Polyline` pipelines; `basemapResolve.ts` extracted (Deck-oracle); unified
   TBDS + pyramid/single/none fallback on wgpu; hillshade + procedural grid; vitest **334**

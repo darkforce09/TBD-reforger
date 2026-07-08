@@ -1,6 +1,7 @@
 # T-151.2 — world parser in Rust (`world/` module; W2 Piece 1)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `a51e9dcb` (tag **T-151.2**, 2026-07-08) · verify log
+[`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W2) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·

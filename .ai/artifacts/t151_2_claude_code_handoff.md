@@ -1,5 +1,8 @@
 # T-151.2 — Claude Code handoff (world parser in Rust; W2 Piece 1)
 
+**Shipped:** @ `a51e9dcb` (tag **T-151.2**, 2026-07-08) — verify log
+[`t151_2_verify_log.md`](t151_2_verify_log.md). Cursor doc-sync pass follows.
+
 **Spec (wins on conflict):**
 [`t151_2_world_parser.md`](../../docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md)
 · **Program hub:**

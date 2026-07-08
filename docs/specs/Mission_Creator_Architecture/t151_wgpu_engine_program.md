@@ -10,9 +10,11 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 **W0 / T-151.0 shipped:** @ `f019512d` (tag **T-151.0**) — verify log
 [`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **W1 / T-151.1 shipped:**
 @ `3ab81587` (tag **T-151.1**) — basemap TBDS/hillshade/grid on wgpu; verify log
-[`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **Next slice:**
-**T-151.2** (W2 world parser in Rust) — `ready`; slice spec
-[`t151_2_world_parser.md`](t151_2_world_parser.md).
+[`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **W2 / T-151.2 shipped:**
+@ `a51e9dcb` (tag **T-151.2**) — world parser in Rust, 275-chunk Class R/S parity; verify log
+[`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **Next slice:**
+**T-151.3** (W3 chunk residency + spatial index + first world instances) — `ready`; authority in
+program hub §T-151.3.
 
 ## In one sentence
 
@@ -199,6 +201,12 @@ source mip corner texels byte-exact (north-up proof for textures); mip-selection
 (existing harness); dual-mount screenshot diff at 3 pinned camera states (advisory ±3/channel).
 
 ### T-151.2 (W2) — world parser in Rust (`world/` module; kickoff Piece 1)
+
+**Shipped:** @ `a51e9dcb` (tag **T-151.2**, 2026-07-08) — verify log
+[`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md). Merged
+`map_engine_wasm_bg.wasm` = **3,858,591 B** (+135,399). Vitest **343** (+9). Class **R** byte-exact +
+Class **S** row-sets on all **275** Everon chunks; census **391 / 508,291 / 888 / 36 / 625** exact.
+Class **T** obb/road ≤ 1 ULP. Parse-only — worker/GPU world draws unchanged (W3).
 
 Slice spec: [`t151_2_world_parser.md`](t151_2_world_parser.md) (authority for L1–L13 + prompt).
 
