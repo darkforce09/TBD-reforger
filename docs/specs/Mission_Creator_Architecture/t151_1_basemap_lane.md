@@ -1,10 +1,11 @@
 # T-151.1 — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `3ab81587` (tag **T-151.1**, 2026-07-08) · verify log
+[`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W1) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
-**Baseline:** `f019512d` (tag **T-151.0**, 2026-07-08 — verify log
+**Baseline:** `f019512d` (tag **T-151.0** — verify log
 [`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md)).
 
 ## In one sentence

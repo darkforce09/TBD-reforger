@@ -1,5 +1,8 @@
 # T-151.1 — Claude Code handoff (basemap lane: TBDS, hillshade, grid, pyramid)
 
+**Shipped:** @ `3ab81587` (tag **T-151.1**, 2026-07-08) — verify log
+[`t151_1_verify_log.md`](t151_1_verify_log.md). Cursor doc-sync pass follows.
+
 **Spec (wins on conflict):**
 [`t151_1_basemap_lane.md`](../../docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md)
 · **Program hub:**

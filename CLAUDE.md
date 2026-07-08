@@ -171,10 +171,17 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.1** (W1 basemap lane) — `ready` · spec
-[`t151_1_basemap_lane.md`](docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md)
+**Next slice:** **T-151.2** (W2 world parser in Rust) — `ready` · program hub
+[`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.2
 
 **Done (program slices):**
+- T-151.1 **basemap lane (TBDS + hillshade + grid)** @ `3ab81587` (tag **T-151.1**).
+  `TexturedQuad` + `Polyline` pipelines; `basemapResolve.ts` extracted (Deck-oracle); unified
+  TBDS + pyramid/single/none fallback on wgpu; hillshade + procedural grid; vitest **334**
+  (+17); merged wasm **3,723,192 B**. GPU gates byte-exact via headless CDP (`texture_self_check`,
+  T-151.0 self_check regression, real-DEM hillshade). Verify:
+  [`.ai/artifacts/t151_1_verify_log.md`](.ai/artifacts/t151_1_verify_log.md). Spec:
+  [`t151_1_basemap_lane.md`](docs/specs/Mission_Creator_Architecture/t151_1_basemap_lane.md).
 - T-151.0 **wasm merge + batch list + editor dual mount** @ `f019512d` (tag **T-151.0**). One wasm
   module (D1): `RenderEngine` + `MissionDoc` + `OrthoCameraJs` share one linear memory; merged
   `map_engine_wasm_bg.wasm` = **3,658,383 B**; batch list seam; `WgpuTacticalMap` lazy-loaded

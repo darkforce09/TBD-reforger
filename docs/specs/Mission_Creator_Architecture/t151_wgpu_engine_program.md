@@ -8,9 +8,10 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 (camera parity + render spine + 20M stress + byte-exact self-check, verify log
 [`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)) ·
 **W0 / T-151.0 shipped:** @ `f019512d` (tag **T-151.0**) — verify log
-[`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **Next slice:**
-**T-151.1** (W1 basemap lane) — `ready`; slice spec
-[`t151_1_basemap_lane.md`](t151_1_basemap_lane.md).
+[`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **W1 / T-151.1 shipped:**
+@ `3ab81587` (tag **T-151.1**) — basemap TBDS/hillshade/grid on wgpu; verify log
+[`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **Next slice:**
+**T-151.2** (W2 world parser in Rust) — `ready`; authority in program hub §T-151.2.
 
 ## In one sentence
 
@@ -174,6 +175,12 @@ isolation `! grep -l map_engine_wasm_bg dist/assets/index-*.js`; shared-memory n
 finite ∧ ∈ [0, 12800] → displayed PASS); merged wasm byte size recorded.
 
 ### T-151.1 (W1) — basemap lane: TBDS satellite, hillshade, grid, pyramid fallback
+
+**Shipped:** @ `3ab81587` (tag **T-151.1**, 2026-07-08) — verify log
+[`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md). Merged
+`map_engine_wasm_bg.wasm` = **3,723,192 B** (+64,809). Vitest **334** (+17). GPU gates executed
+byte-exact via headless CDP (`texture_self_check`, T-151.0 self_check regression, hillshade
+end-to-end on real DEM). S1/S2/S4/S5 perceptual or asset-gated items documented in verify log.
 
 Slice spec: [`t151_1_basemap_lane.md`](t151_1_basemap_lane.md) (authority for L1–L13 + prompt).
 
