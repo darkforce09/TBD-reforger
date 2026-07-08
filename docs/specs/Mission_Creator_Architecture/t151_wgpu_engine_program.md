@@ -11,7 +11,8 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 [`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **W1 / T-151.1 shipped:**
 @ `3ab81587` (tag **T-151.1**) — basemap TBDS/hillshade/grid on wgpu; verify log
 [`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **Next slice:**
-**T-151.2** (W2 world parser in Rust) — `ready`; authority in program hub §T-151.2.
+**T-151.2** (W2 world parser in Rust) — `ready`; slice spec
+[`t151_2_world_parser.md`](t151_2_world_parser.md).
 
 ## In one sentence
 
@@ -198,6 +199,8 @@ source mip corner texels byte-exact (north-up proof for textures); mip-selection
 (existing harness); dual-mount screenshot diff at 3 pinned camera states (advisory ±3/channel).
 
 ### T-151.2 (W2) — world parser in Rust (`world/` module; kickoff Piece 1)
+
+Slice spec: [`t151_2_world_parser.md`](t151_2_world_parser.md) (authority for L1–L13 + prompt).
 
 New `crates/map-engine-core/src/world/`: `WorldStore` (manifest, prefab table, chunk registry)
 + `WorldChunk` SoA with columns exactly as `worldObjectsCore.ts:571–617` produces them

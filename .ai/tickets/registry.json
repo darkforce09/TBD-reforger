@@ -3805,7 +3805,7 @@
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md",
           "status": "ready"
         },
         "T-151.3": {

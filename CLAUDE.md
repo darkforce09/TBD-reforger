@@ -171,8 +171,8 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.2** (W2 world parser in Rust) — `ready` · program hub
-[`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.2
+**Next slice:** **T-151.2** (W2 world parser in Rust) — `ready` · spec
+[`t151_2_world_parser.md`](docs/specs/Mission_Creator_Architecture/t151_2_world_parser.md)
 
 **Done (program slices):**
 - T-151.1 **basemap lane (TBDS + hillshade + grid)** @ `3ab81587` (tag **T-151.1**).
