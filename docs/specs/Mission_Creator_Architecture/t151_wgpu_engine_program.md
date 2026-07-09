@@ -21,7 +21,8 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 [`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md) · **W5 / T-151.5 shipped:**
 @ `0b7621ed` (tag **T-151.5**) — glyph atlas trees/props/badges; verify
 [`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **Next slice:**
-**T-151.6** (W6 mission entities) — `ready`; authority in program hub §T-151.6.
+**T-151.5.1** (forest fidelity) — `ready`; spec
+[`t151_5_1_forest_fidelity.md`](t151_5_1_forest_fidelity.md) · then **T-151.6** — `queued`.
 
 ## In one sentence
 
@@ -286,6 +287,8 @@ dual-mount screenshot diffs.
 **372**; wasm **4,054,850 B**. Forest mass / Path B not retuned. Slot ring/clusters stay **W6**.
 
 Slice spec: [`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md).
+
+**Corrective next:** [`t151_5_1_forest_fidelity.md`](t151_5_1_forest_fidelity.md) — iso=2 + hide fill/outline/landcover when glyphs on.
 
 Atlas `world-glyphs.webp` + JSON (28 glyphs) uploaded once; **production icon instance layout
 pinned** (≤ 20 B: pos 2×f32 = 8, size 4, rotation snorm16 = 2, glyph u16 = 2, tint u32 = 4 —

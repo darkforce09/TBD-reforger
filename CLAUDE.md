@@ -171,8 +171,9 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.6** (W6 mission entities: slots, selection, drag, clusters) — `ready` ·
-program hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.6
+**Next slice:** **T-151.5.1** (forest mass / landcover fidelity) — `ready` · spec
+[`t151_5_1_forest_fidelity.md`](docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md)
+· then **T-151.6** (mission entities) — `queued`
 
 **Done (program slices):**
 - T-151.5 **glyph atlas (W5)** @ `0b7621ed` (tag **T-151.5**). Atlas once + IconInstanced **20 B**;
