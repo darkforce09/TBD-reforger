@@ -63,6 +63,52 @@ pub fn class_visible_scan_json() -> String {
 pub use map_engine_render::RenderEngine;
 
 // ---------------------------------------------------------------------------------------------
+// T-151.7.3 — pure slot GPU helpers (FE smoke / parity; SoT is map-engine-core::slots_gpu)
+// ---------------------------------------------------------------------------------------------
+
+/// Cluster mode gate: `slot_len > 500 && zoom ≤ −4` (pure; engine also exposes `cluster_mode`).
+#[wasm_bindgen(js_name = slot_cluster_mode)]
+#[must_use]
+pub fn slot_cluster_mode(slot_len: u32, deck_zoom: f64) -> bool {
+    map_engine_core::slots_gpu::cluster_mode(slot_len, deck_zoom)
+}
+
+/// Meters per CSS pixel at deck zoom (`2^(-zoom)`).
+#[wasm_bindgen]
+#[must_use]
+pub fn px_to_m_at_zoom(deck_zoom: f64) -> f32 {
+    map_engine_core::slots_gpu::px_to_m_at_zoom(deck_zoom)
+}
+
+/// Pack slot rings from interleaved xy + selected flags (test / parity only).
+#[wasm_bindgen]
+#[must_use]
+pub fn pack_slot_instances(xy: &[f32], selected: Vec<u8>) -> Vec<u8> {
+    let sel: Vec<bool> = selected.iter().map(|&b| b != 0).collect();
+    map_engine_core::slots_gpu::pack_slot_instances(xy, &sel)
+}
+
+/// Drag phase: 0=idle 1=start 2=delta 3=restart 4=end.
+#[wasm_bindgen]
+#[must_use]
+pub fn classify_drag_transition(
+    had: bool,
+    has: bool,
+    ids_changed: bool,
+    delta_changed: bool,
+) -> u8 {
+    use map_engine_core::slots_gpu::DragGpuPhase;
+    match map_engine_core::slots_gpu::classify_drag_transition(had, has, ids_changed, delta_changed)
+    {
+        DragGpuPhase::Idle => 0,
+        DragGpuPhase::Start => 1,
+        DragGpuPhase::Delta => 2,
+        DragGpuPhase::Restart => 3,
+        DragGpuPhase::End => 4,
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
 // dem::sample
 // ---------------------------------------------------------------------------------------------
 
@@ -735,6 +781,17 @@ pub struct MissionDoc {
     /// Materialized on `refresh`; the column getters + pointer views read this (so a `Float32Array`
     /// view onto `slot_xs_ptr()` stays valid until the next `refresh`/mutation grows memory).
     soa: SlotSoa,
+}
+
+/// T-151.7.3 — borrow-only MissionDoc → engine SoA bind (engine never owns the doc).
+///
+/// TS owns `WasmMissionDoc` lifetime; this only `refresh`es and copies ids/xy into the engine
+/// bridge cache for the current selection/drag/cluster policy.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn bind_mission_doc(engine: &mut RenderEngine, doc: &mut MissionDoc) {
+    doc.refresh();
+    engine.slots_bind_soa(doc.soa.ids.clone(), &doc.soa.xy);
 }
 
 #[wasm_bindgen]

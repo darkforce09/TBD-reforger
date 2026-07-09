@@ -18,13 +18,32 @@
 //!   uniform) — surfaced as `uniform_bytes_last_frame` in [`RenderEngine::stats`].
 
 use std::cell::Cell;
+use std::collections::HashSet;
 use std::rc::Rc;
 
 use map_engine_core::camera::OrthoCamera;
+use map_engine_core::slots_gpu::{
+    self, DragGpuPhase, SLOT_ICON_STRIDE, classify_drag_transition, hide_slot_row_patch,
+    pack_cluster_instances, pack_drag_overlay, pack_selection_only, pack_slot_instances,
+    selected_mask,
+};
 use wasm_bindgen::prelude::*;
 
 use crate::lanes;
 use crate::scene::{self, ANCHOR, CHUNK_CAPACITY, QuadInstance, UNIT_QUAD};
+
+/// T-151.7.3 — slot/selection/drag/cluster GPU policy state on the engine (not in TS).
+#[derive(Default)]
+struct SlotGpuBridge {
+    atlas_ready: bool,
+    last_ids: Vec<String>,
+    last_xy: Vec<f32>,
+    selected_ids: HashSet<String>,
+    last_cluster_mode: bool,
+    drag_active: bool,
+    drag_ids: Vec<String>,
+    slots_lane_selection_only: bool,
+}
 
 /// Background clear — (51, 68, 85, 255)/255. The f64→f32→unorm8 chain error (< 1.2e-7) is
 /// four orders of magnitude under the unorm8 rounding margin (1/510 ≈ 2e-3), so readback
@@ -824,8 +843,10 @@ pub struct RenderEngine {
     camera: OrthoCamera,
     /// Shared glyph atlas (None until `upload_glyph_atlas`).
     glyph_atlas: Option<GlyphAtlasGpu>,
-    /// Dedicated slot/cluster atlas (None until `upload_slot_atlas`).
+    /// Dedicated slot/cluster atlas (None until `upload_slot_atlas` / `ensure_slot_atlas`).
     slot_atlas: Option<SlotAtlasGpu>,
+    /// T-151.7.3 slot GPU policy (selection/drag/cluster) — TS is dumb UI only.
+    slot_bridge: SlotGpuBridge,
     /// Ordered draw list (T-151.0 L7 → T-151.1 L1): editor lanes (basemap → hillshade → grid,
     /// `lane_order`) or the spike batches (stress chunks then the calibration batch last).
     batches: Vec<Batch>,
@@ -1147,6 +1168,7 @@ impl RenderEngine {
             camera,
             glyph_atlas: None,
             slot_atlas: None,
+            slot_bridge: SlotGpuBridge::default(),
             batches: vec![calibration_batch],
             pending: [None, None],
             clear_color: CLEAR_COLOR,
@@ -2423,9 +2445,198 @@ impl RenderEngine {
         }
     }
 
+    // ── T-151.7.3 high-level slot GPU bridge (public wasm surface) ───────────────────────────
+
+    /// Upload dedicated slot/cluster atlas once (ring + disc). Replaces low-level
+    /// `upload_slot_atlas` as the TS entry point.
+    pub fn ensure_slot_atlas(
+        &mut self,
+        rgba: &[u8],
+        width: u32,
+        height: u32,
+        uv: &[f32],
+    ) -> Result<(), JsError> {
+        self.upload_slot_atlas(rgba, width, height, uv)?;
+        self.slot_bridge.atlas_ready = true;
+        self.sync_slot_zoom_uniform();
+        Ok(())
+    }
+
+    /// Bind SoA snapshot from MissionDoc (called via wasm free fn `bind_mission_doc`).
+    /// Does **not** retain the doc — only caches ids + xy until the next bind.
+    pub fn slots_bind_soa(&mut self, ids: Vec<String>, xy: &[f32]) {
+        self.slot_bridge.last_ids = ids;
+        self.slot_bridge.last_xy = xy.to_vec();
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let zoom = self.zoom();
+        #[allow(clippy::cast_possible_truncation)]
+        let n = self.slot_bridge.last_ids.len() as u32;
+        self.slot_bridge.last_cluster_mode = slots_gpu::cluster_mode(n, zoom);
+        if self.slot_bridge.drag_active && !self.slot_bridge.drag_ids.is_empty() {
+            let dx = self
+                .slot_atlas
+                .as_ref()
+                .map(|a| a.drag_delta[0])
+                .unwrap_or(0.0);
+            let dy = self
+                .slot_atlas
+                .as_ref()
+                .map(|a| a.drag_delta[1])
+                .unwrap_or(0.0);
+            self.start_slot_drag_overlay(dx, dy);
+        } else {
+            self.rematerialize_slot_lane();
+        }
+    }
+
+    /// Selection ids → full rematerialize (T-151.7.2). Empty = clear tint.
+    pub fn set_selection(&mut self, ids: Vec<String>) {
+        self.slot_bridge.selected_ids = ids.into_iter().collect();
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        // Invariant: dragActive only while drag_ids non-empty.
+        if self.slot_bridge.drag_active && self.slot_bridge.drag_ids.is_empty() {
+            self.clear_slot_drag_internal();
+            return;
+        }
+        if self.slot_bridge.drag_active {
+            return; // drag overlay owns tint
+        }
+        self.rematerialize_slot_lane();
+    }
+
+    /// Drag ids + world-meter delta. Empty ids = clear (T-151.7.1 start/delta/end).
+    pub fn set_drag(&mut self, ids: Vec<String>, dx: f32, dy: f32) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let had = !self.slot_bridge.drag_ids.is_empty();
+        let has = !ids.is_empty();
+        let ids_changed = self.slot_bridge.drag_ids != ids;
+        // TS only calls when store changed; same ids while dragging ⇒ delta update.
+        let delta_changed = had && has && !ids_changed;
+        let phase = classify_drag_transition(had, has, ids_changed, delta_changed);
+        match phase {
+            DragGpuPhase::Idle => {}
+            DragGpuPhase::End => {
+                self.slot_bridge.drag_ids.clear();
+                self.clear_slot_drag_internal();
+            }
+            DragGpuPhase::Delta => {
+                if self.slot_bridge.drag_active {
+                    self.set_slot_drag_delta(dx, dy);
+                }
+            }
+            DragGpuPhase::Start | DragGpuPhase::Restart => {
+                self.slot_bridge.drag_ids = ids;
+                self.slot_bridge.drag_active = true;
+                self.start_slot_drag_overlay(dx, dy);
+            }
+        }
+    }
+
+    /// Camera moved: px_to_m + cluster gate re-eval (zoom is engine SoT).
+    pub fn on_camera_changed(&mut self) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        self.sync_slot_zoom_uniform();
+        let zoom = self.zoom();
+        #[allow(clippy::cast_possible_truncation)]
+        let n = self.slot_bridge.last_ids.len() as u32;
+        let cm = slots_gpu::cluster_mode(n, zoom);
+        if cm != self.slot_bridge.last_cluster_mode {
+            self.slot_bridge.last_cluster_mode = cm;
+            if !cm {
+                self.upload_cluster_lane(&[], false);
+            }
+            // Markers re-fed by TS when cluster_mode; still rematerialize slot lane.
+            if !self.slot_bridge.drag_active {
+                self.rematerialize_slot_lane();
+            }
+        }
+    }
+
+    /// Cluster disc markers from FE supercluster (not ported this slice).
+    pub fn set_cluster_markers(&mut self, xs: &[f64], ys: &[f64], counts: &[u32]) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let zoom = self.zoom();
+        #[allow(clippy::cast_possible_truncation)]
+        let n = self.slot_bridge.last_ids.len() as u32;
+        let cm = slots_gpu::cluster_mode(n, zoom);
+        self.slot_bridge.last_cluster_mode = cm;
+        if !cm {
+            self.upload_cluster_lane(&[], false);
+            if !self.slot_bridge.drag_active {
+                self.rematerialize_slot_lane();
+            }
+            return;
+        }
+        let bytes = pack_cluster_instances(xs, ys, counts);
+        self.upload_cluster_lane(&bytes, !bytes.is_empty());
+        if !self.slot_bridge.drag_active {
+            self.rematerialize_slot_lane();
+        }
+    }
+
+    /// Whether cluster mode is active for the cached SoA + current zoom.
+    #[wasm_bindgen(js_name = cluster_mode)]
+    pub fn slots_cluster_mode(&self) -> bool {
+        #[allow(clippy::cast_possible_truncation)]
+        let n = self.slot_bridge.last_ids.len() as u32;
+        slots_gpu::cluster_mode(n, self.zoom())
+    }
+
+    /// Debug JSON for `window.__wgpuSlotStats` (engine stats + bridge flags).
+    pub fn slot_stats_json(&self) -> String {
+        let stats = self.stats();
+        let trimmed = stats.trim_end_matches('}');
+        format!(
+            "{trimmed},\"slot_len\":{},\"cluster_mode\":{},\"slots_lane_selection_only\":{},\"drag_active\":{},\"atlas_ready\":{}}}",
+            self.slot_bridge.last_ids.len(),
+            if self.slot_bridge.last_cluster_mode {
+                "true"
+            } else {
+                "false"
+            },
+            if self.slot_bridge.slots_lane_selection_only {
+                "true"
+            } else {
+                "false"
+            },
+            if self.slot_bridge.drag_active {
+                "true"
+            } else {
+                "false"
+            },
+            if self.slot_bridge.atlas_ready {
+                "true"
+            } else {
+                "false"
+            },
+        )
+    }
+
+    /// Drop slot/drag/cluster lanes and reset bridge SoA cache (keeps atlas).
+    pub fn clear_slots(&mut self) {
+        self.clear_slot_lanes();
+        let atlas_ready = self.slot_bridge.atlas_ready;
+        self.slot_bridge = SlotGpuBridge {
+            atlas_ready,
+            ..SlotGpuBridge::default()
+        };
+    }
+
+    // ── Internal slot lane helpers (not wasm-exported) ───────────────────────────────────────
+
     /// Upload dedicated slot/cluster atlas (ring + disc). `uv` is 2..28 glyphs × 4 floats
     /// (minU,minV,maxU,maxV); padded to 28. Does **not** touch the world-glyphs atlas.
-    pub fn upload_slot_atlas(
+    fn upload_slot_atlas(
         &mut self,
         rgba: &[u8],
         width: u32,
@@ -2541,8 +2752,70 @@ impl RenderEngine {
         Ok(())
     }
 
+    fn sync_slot_zoom_uniform(&mut self) {
+        let px = slots_gpu::px_to_m_at_zoom(self.zoom());
+        self.set_slot_px_to_m(px);
+    }
+
+    /// Full rematerialize from cached SoA + selection (T-151.7.2). Never OOB patch.
+    fn rematerialize_slot_lane(&mut self) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let mask = selected_mask(&self.slot_bridge.last_ids, &self.slot_bridge.selected_ids);
+        let zoom = self.zoom();
+        #[allow(clippy::cast_possible_truncation)]
+        let n = self.slot_bridge.last_ids.len() as u32;
+        let cm = slots_gpu::cluster_mode(n, zoom);
+        self.slot_bridge.last_cluster_mode = cm;
+        if cm {
+            let bytes = pack_selection_only(&self.slot_bridge.last_xy, &mask);
+            let vis = !bytes.is_empty();
+            self.upload_slot_lane(&bytes, vis);
+            self.slot_bridge.slots_lane_selection_only = true;
+        } else {
+            let bytes = pack_slot_instances(&self.slot_bridge.last_xy, &mask);
+            let vis = !self.slot_bridge.last_ids.is_empty();
+            self.upload_slot_lane(&bytes, vis);
+            self.slot_bridge.slots_lane_selection_only = false;
+        }
+    }
+
+    fn start_slot_drag_overlay(&mut self, dx: f32, dy: f32) {
+        let drag_ids = self.slot_bridge.drag_ids.clone();
+        if drag_ids.is_empty() {
+            self.clear_slot_drag_internal();
+            return;
+        }
+        self.slot_bridge.drag_active = true;
+        let (overlay, rows) = pack_drag_overlay(
+            &drag_ids,
+            &self.slot_bridge.last_ids,
+            &self.slot_bridge.last_xy,
+        );
+        let count = rows.len();
+        self.upload_slot_drag_lane(&overlay, count > 0);
+        // Hide base rows only on full-n detail lane (not selection-only short lane).
+        if !self.slot_bridge.slots_lane_selection_only {
+            let hide = hide_slot_row_patch();
+            for row in rows {
+                #[allow(clippy::cast_possible_truncation)]
+                let off = (row * SLOT_ICON_STRIDE + 8) as u32;
+                self.patch_slot_lane(off, &hide);
+            }
+        }
+        self.set_slot_drag_delta(dx, dy);
+    }
+
+    fn clear_slot_drag_internal(&mut self) {
+        self.slot_bridge.drag_active = false;
+        self.slot_bridge.drag_ids.clear();
+        self.clear_slot_drag_lane();
+        self.rematerialize_slot_lane();
+    }
+
     /// Update slot atlas `px_to_m = 2^(-zoom)` on both base + drag uniforms (no instance re-upload).
-    pub fn set_slot_px_to_m(&mut self, px_to_m: f32) {
+    fn set_slot_px_to_m(&mut self, px_to_m: f32) {
         let Some(atlas) = self.slot_atlas.as_mut() else {
             return;
         };
@@ -2561,7 +2834,7 @@ impl RenderEngine {
 
     /// Set SlotDrag drag delta (world meters). Writes 8 B drag_delta + leaves px_to_m.
     /// Gate: during drag, `uniform_bytes_last_frame` becomes 64 + 16 (mvp + delta params).
-    pub fn set_slot_drag_delta(&mut self, dx: f32, dy: f32) {
+    fn set_slot_drag_delta(&mut self, dx: f32, dy: f32) {
         let Some(atlas) = self.slot_atlas.as_mut() else {
             return;
         };
@@ -2578,12 +2851,12 @@ impl RenderEngine {
     }
 
     /// Full upload of slot ring instances (20 B each, world meters). `VERTEX|COPY_DST`.
-    pub fn upload_slot_lane(&mut self, bytes: &[u8], visible: bool) {
+    fn upload_slot_lane(&mut self, bytes: &[u8], visible: bool) {
         self.upload_slot_role_lane(LaneRole::Slots, bytes, visible);
     }
 
     /// Dirty-range patch into the Slots lane buffer (byte offset must be 20-aligned).
-    pub fn patch_slot_lane(&mut self, byte_offset: u32, bytes: &[u8]) {
+    fn patch_slot_lane(&mut self, byte_offset: u32, bytes: &[u8]) {
         if bytes.is_empty() {
             return;
         }
@@ -2611,12 +2884,12 @@ impl RenderEngine {
     }
 
     /// Upload SlotDrag overlay instances (world meters). Empty → drop lane.
-    pub fn upload_slot_drag_lane(&mut self, bytes: &[u8], visible: bool) {
+    fn upload_slot_drag_lane(&mut self, bytes: &[u8], visible: bool) {
         self.upload_slot_role_lane(LaneRole::SlotDrag, bytes, visible);
     }
 
     /// Clear the drag overlay lane.
-    pub fn clear_slot_drag_lane(&mut self) {
+    fn clear_slot_drag_lane(&mut self) {
         self.remove_lane(LaneRole::SlotDrag);
         if let Some(atlas) = self.slot_atlas.as_mut() {
             atlas.drag_delta = [0.0, 0.0];
@@ -2628,12 +2901,12 @@ impl RenderEngine {
     }
 
     /// Upload cluster disc instances (world meters). Empty → drop lane.
-    pub fn upload_cluster_lane(&mut self, bytes: &[u8], visible: bool) {
+    fn upload_cluster_lane(&mut self, bytes: &[u8], visible: bool) {
         self.upload_slot_role_lane(LaneRole::Clusters, bytes, visible);
     }
 
     /// Drop slots + drag + cluster lanes.
-    pub fn clear_slot_lanes(&mut self) {
+    fn clear_slot_lanes(&mut self) {
         self.remove_lane(LaneRole::Slots);
         self.remove_lane(LaneRole::SlotDrag);
         self.remove_lane(LaneRole::Clusters);

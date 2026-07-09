@@ -146,9 +146,102 @@ pub fn px_to_m_at_zoom(deck_zoom: f64) -> f32 {
     }
 }
 
+/// Drag GPU phase for the slot overlay lane (T-151.7.1 / T-151.7.3).
+///
+/// - `Start` / `Restart` → one overlay upload; `Delta` → `set_slot_drag_delta` only; `End` → clear.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DragGpuPhase {
+    Idle,
+    Start,
+    Delta,
+    Restart,
+    End,
+}
+
+/// Classify a drag store transition for the GPU bridge (pure; mirrors W7.1 TS helper).
+#[must_use]
+pub fn classify_drag_transition(
+    had: bool,
+    has: bool,
+    ids_changed: bool,
+    delta_changed: bool,
+) -> DragGpuPhase {
+    if !had && has {
+        return DragGpuPhase::Start;
+    }
+    if had && !has {
+        return DragGpuPhase::End;
+    }
+    if had && has && ids_changed {
+        return DragGpuPhase::Restart;
+    }
+    if had && has && delta_changed {
+        return DragGpuPhase::Delta;
+    }
+    DragGpuPhase::Idle
+}
+
+/// Pack only selected slot rings (cluster short-lane / selection-only path).
+/// Full-doc row index is **not** preserved — output is dense k selected instances.
+#[must_use]
+pub fn pack_selection_only(xy: &[f32], selected: &[bool]) -> Vec<u8> {
+    let n = xy.len() / 2;
+    let mut out = Vec::new();
+    let tint = pack_rgba_u32(SLOT_SELECTED_RGBA);
+    for i in 0..n {
+        if !selected.get(i).copied().unwrap_or(false) {
+            continue;
+        }
+        let x = xy[i * 2];
+        let y = xy[i * 2 + 1];
+        pack_icon_instance(&mut out, x, y, SLOT_SELECTED_PX, SLOT_GLYPH_RING, tint);
+    }
+    out
+}
+
+/// 12 B hide patch for base-lane size/yaw/glyph/tint at instance offset+8 (alpha 0 tint).
+#[must_use]
+pub fn hide_slot_row_patch() -> [u8; 12] {
+    let mut hide = [0u8; 12];
+    hide[0..4].copy_from_slice(&SLOT_SELECTED_PX.to_le_bytes());
+    // yaw i16 = 0, glyph u16 = 0, tint u32 = 0 (alpha 0)
+    hide
+}
+
+/// Pack drag overlay instances for the given drag ids (lookup by id → row in `ids`/`xy`).
+/// Returns packed bytes + parallel full-doc row indices that were hidden (for base patches).
+#[must_use]
+pub fn pack_drag_overlay(drag_ids: &[String], ids: &[String], xy: &[f32]) -> (Vec<u8>, Vec<usize>) {
+    let mut id_to_row: std::collections::HashMap<&str, usize> =
+        std::collections::HashMap::with_capacity(ids.len());
+    for (i, id) in ids.iter().enumerate() {
+        id_to_row.insert(id.as_str(), i);
+    }
+    let tint = pack_rgba_u32(SLOT_SELECTED_RGBA);
+    let mut out = Vec::with_capacity(drag_ids.len() * SLOT_ICON_STRIDE);
+    let mut rows = Vec::with_capacity(drag_ids.len());
+    for id in drag_ids {
+        let Some(&row) = id_to_row.get(id.as_str()) else {
+            continue;
+        };
+        let x = xy.get(row * 2).copied().unwrap_or(0.0);
+        let y = xy.get(row * 2 + 1).copied().unwrap_or(0.0);
+        pack_icon_instance(&mut out, x, y, SLOT_SELECTED_PX, SLOT_GLYPH_RING, tint);
+        rows.push(row);
+    }
+    (out, rows)
+}
+
+/// Build a dense `selected[i]` mask from SoA ids + selected id set.
+#[must_use]
+pub fn selected_mask(ids: &[String], selected: &std::collections::HashSet<String>) -> Vec<bool> {
+    ids.iter().map(|id| selected.contains(id)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashSet;
 
     #[test]
     fn icon_stride_is_20() {
@@ -220,5 +313,65 @@ mod tests {
             u16::from_le_bytes(b[14..16].try_into().unwrap()),
             SLOT_GLYPH_DISC
         );
+    }
+
+    #[test]
+    fn classify_drag_transition_truth_table() {
+        assert_eq!(
+            classify_drag_transition(false, true, true, false),
+            DragGpuPhase::Start
+        );
+        assert_eq!(
+            classify_drag_transition(true, true, false, true),
+            DragGpuPhase::Delta
+        );
+        assert_eq!(
+            classify_drag_transition(true, false, true, true),
+            DragGpuPhase::End
+        );
+        assert_eq!(
+            classify_drag_transition(true, true, true, false),
+            DragGpuPhase::Restart
+        );
+        assert_eq!(
+            classify_drag_transition(true, true, false, false),
+            DragGpuPhase::Idle
+        );
+        assert_eq!(
+            classify_drag_transition(false, false, false, true),
+            DragGpuPhase::Idle
+        );
+    }
+
+    #[test]
+    fn pack_selection_only_dense_k() {
+        let xy = [0.0_f32, 0.0, 100.0, 200.0, 300.0, 400.0];
+        let sel = [false, true, true];
+        let bytes = pack_selection_only(&xy, &sel);
+        assert_eq!(bytes.len(), 2 * SLOT_ICON_STRIDE);
+        let size0 = f32::from_le_bytes(bytes[8..12].try_into().unwrap());
+        assert!((size0 - SLOT_SELECTED_PX).abs() < 1e-6);
+        let x0 = f32::from_le_bytes(bytes[0..4].try_into().unwrap());
+        assert!((x0 - 100.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn selected_mask_from_set() {
+        let ids = vec!["a".into(), "b".into(), "c".into()];
+        let mut set = HashSet::new();
+        set.insert("b".into());
+        assert_eq!(selected_mask(&ids, &set), vec![false, true, false]);
+    }
+
+    #[test]
+    fn pack_drag_overlay_rows() {
+        let ids = vec!["a".into(), "b".into()];
+        let xy = [1.0_f32, 2.0, 3.0, 4.0];
+        let drag = vec!["b".into()];
+        let (bytes, rows) = pack_drag_overlay(&drag, &ids, &xy);
+        assert_eq!(rows, vec![1]);
+        assert_eq!(bytes.len(), SLOT_ICON_STRIDE);
+        let x = f32::from_le_bytes(bytes[0..4].try_into().unwrap());
+        assert!((x - 3.0).abs() < 1e-6);
     }
 }
