@@ -91,6 +91,8 @@ pub(crate) enum PipelineKind {
     Polyline,
     /// W3 world-building fill — rotated OBB quads (`scene::BuildingInstance`, `vs_building`).
     BuildingQuad,
+    /// W4 triangulated polygon fills (sea, landcover, forest, marquee, road strips).
+    PolygonFill,
 }
 
 /// The 3-way map style's satellite-field opacity mode + the derived basemap render mode, surfaced
@@ -131,26 +133,59 @@ enum LaneRole {
     Stress,
     Calibration,
     Satellite,
+    /// W4 sea underlay (after basemap, before hillshade).
+    Sea,
     Hillshade,
+    /// W4 land-cover hulls.
+    Landcover,
+    Contours,
+    RoadsCasing,
+    Roads,
     /// W3 world-building OBB fills (`world-buildings`).
     WorldBuildings,
     /// W3 world-building outline casing (`world-buildings-outline`).
     WorldBuildingsOutline,
+    ForestFill,
+    ForestOutline,
     Grid,
+    /// Optional selection marquee (on top of grid).
+    Marquee,
 }
 
-/// Draw-order key (T-151.3 L9): basemap → hillshade → world-buildings → world-buildings-outline →
-/// grid; the spike batches (`Stress`/`Calibration`) sort first but are never interleaved with
-/// editor lanes.
+/// Draw-order key (T-151.4 L3): basemap → sea → hillshade → landcover → contours → roads* →
+/// buildings* → forest* → grid → marquee. Spike batches sort first, never interleaved.
 fn lane_order(role: LaneRole) -> u8 {
     match role {
         LaneRole::Stress | LaneRole::Calibration => 0,
         LaneRole::Satellite => 1,
-        LaneRole::Hillshade => 2,
-        LaneRole::WorldBuildings => 3,
-        LaneRole::WorldBuildingsOutline => 4,
-        LaneRole::Grid => 5,
+        LaneRole::Sea => 2,
+        LaneRole::Hillshade => 3,
+        LaneRole::Landcover => 4,
+        LaneRole::Contours => 5,
+        LaneRole::RoadsCasing => 6,
+        LaneRole::Roads => 7,
+        LaneRole::WorldBuildings => 8,
+        LaneRole::WorldBuildingsOutline => 9,
+        LaneRole::ForestFill => 10,
+        LaneRole::ForestOutline => 11,
+        LaneRole::Grid => 12,
+        LaneRole::Marquee => 13,
     }
+}
+
+/// Map a public role u32 (upload API) → [`LaneRole`]. Returns `None` for unknown ids.
+fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
+    Some(match role {
+        0 => LaneRole::Sea,
+        1 => LaneRole::Landcover,
+        2 => LaneRole::Contours,
+        3 => LaneRole::RoadsCasing,
+        4 => LaneRole::Roads,
+        5 => LaneRole::ForestFill,
+        6 => LaneRole::ForestOutline,
+        7 => LaneRole::Marquee,
+        _ => return None,
+    })
 }
 
 /// A textured-quad lane (basemap or hillshade): one GPU texture (mip chain for unified, single
@@ -165,10 +200,22 @@ struct TexLane {
     bytes: u64,
 }
 
-/// A polyline lane (the grid): a `LineList` vertex buffer of [`lanes::LineVertex`].
+/// A polyline lane (the grid / contours / outlines): a `LineList` vertex buffer of
+/// [`lanes::LineVertex`].
 struct LineLane {
     verts: wgpu::Buffer,
     count: u32,
+}
+
+/// A polygon-fill lane (sea / landcover / forest / marquee / road strips): indexed triangle list
+/// of `LineVertex`-compatible verts (pos + color, 24 B).
+struct PolyLane {
+    verts: wgpu::Buffer,
+    indices: wgpu::Buffer,
+    index_count: u32,
+    /// Stats: polygon/segment count reported by the uploader (not triangle count).
+    #[allow(dead_code)]
+    item_count: u32,
 }
 
 /// A texture being assembled between `tex_layer_begin` and `tex_layer_commit` — blocks/tiles are
@@ -196,6 +243,8 @@ enum BatchPayload {
         instances: wgpu::Buffer,
         count: u32,
     },
+    /// W4 polygon fill / wide polyline strips (indexed triangle list).
+    Polygon(PolyLane),
 }
 
 impl BatchPayload {
@@ -205,6 +254,7 @@ impl BatchPayload {
             Self::Textured(_) => PipelineKind::TexturedQuad,
             Self::Lines(_) => PipelineKind::Polyline,
             Self::BuildingInstanced { .. } => PipelineKind::BuildingQuad,
+            Self::Polygon(_) => PipelineKind::PolygonFill,
         }
     }
 }
@@ -434,6 +484,48 @@ pub(crate) fn create_line_pipeline(
     })
 }
 
+/// W4 polygon-fill pipeline — same vertex layout as the hairline polyline (`LineVertex` 24 B)
+/// but drawn as an **indexed triangle list** with alpha blending (sea/landcover/forest/roads).
+pub(crate) fn create_polygon_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("polygon-fill"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_line"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[wgpu::VertexBufferLayout {
+                array_stride: 24,
+                step_mode: wgpu::VertexStepMode::Vertex,
+                attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Float32x4],
+            }],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_line"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            ..wgpu::PrimitiveState::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
 /// The W3 world-building fill pipeline (rotated OBB quads — T-151.3 L8). Unit-quad stream 0 +
 /// `scene::BuildingInstance` stream 1 (40 B: center, half, basis, color), `vs_building`/
 /// `fs_building`, **alpha-blended** (Deck's semi-transparent footprint fill). `layout` is the
@@ -500,10 +592,11 @@ fn draw_batches<'a>(
     textured_pipeline: &'a wgpu::RenderPipeline,
     line_pipeline: &'a wgpu::RenderPipeline,
     building_pipeline: &'a wgpu::RenderPipeline,
+    polygon_pipeline: &'a wgpu::RenderPipeline,
 ) {
     // group 0 (camera mvp) is set after each `set_pipeline` — its layout is identical across all
-    // three pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always
-    // -valid order on both the WebGPU and WebGL2 backends.
+    // pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always-valid
+    // order on both the WebGPU and WebGL2 backends.
     for batch in batches {
         if !batch.visible {
             continue;
@@ -537,6 +630,13 @@ fn draw_batches<'a>(
                 pass.set_vertex_buffer(1, instances.slice(..));
                 pass.draw(0..4, 0..*count);
             }
+            BatchPayload::Polygon(l) => {
+                pass.set_pipeline(polygon_pipeline);
+                pass.set_bind_group(0, bind_group, &[]);
+                pass.set_vertex_buffer(0, l.verts.slice(..));
+                pass.set_index_buffer(l.indices.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..l.index_count, 0, 0..1);
+            }
         }
     }
 }
@@ -563,6 +663,8 @@ pub struct RenderEngine {
     /// W3 world-building fill pipeline (rotated OBB quads). Additive — the outline reuses
     /// `line_pipeline` unchanged.
     building_pipeline: wgpu::RenderPipeline,
+    /// W4 polygon-fill / wide-polyline strip pipeline (indexed triangle list).
+    polygon_pipeline: wgpu::RenderPipeline,
     sampler: wgpu::Sampler,
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
@@ -587,6 +689,13 @@ pub struct RenderEngine {
     /// Resident chunks contributing to the current world-building lanes (additive `stats()` field;
     /// set by `upload_world_buildings`, cleared by `clear_world_buildings`).
     world_chunks_drawn: u32,
+    /// W4 additive stats counters (set by upload APIs; L14).
+    sea_polygons: u32,
+    landcover_polygons: u32,
+    contour_segments: u32,
+    road_segments: u32,
+    forest_polygons: u32,
+    forest_outline_segments: u32,
     timer: Option<GpuTimer>,
 }
 
@@ -730,6 +839,8 @@ impl RenderEngine {
         // W3 world-building fill pipeline (group-0 camera only, like the quad/line pipelines).
         let building_pipeline =
             create_building_pipeline(&device, &pipeline_layout, &shader, format);
+        // W4 polygon fill (same group-0 camera layout; indexed triangle list).
+        let polygon_pipeline = create_polygon_pipeline(&device, &pipeline_layout, &shader, format);
         // Trilinear + clamp-to-edge — the unified-satellite sampler contract (`satelliteUnified.ts`).
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("basemap-sampler"),
@@ -814,6 +925,7 @@ impl RenderEngine {
             textured_pipeline,
             line_pipeline,
             building_pipeline,
+            polygon_pipeline,
             sampler,
             uniform_buf,
             bind_group,
@@ -830,6 +942,12 @@ impl RenderEngine {
             upload_ms: 0.0,
             uniform_bytes_last_frame: 0,
             world_chunks_drawn: 0,
+            sea_polygons: 0,
+            landcover_polygons: 0,
+            contour_segments: 0,
+            road_segments: 0,
+            forest_polygons: 0,
+            forest_outline_segments: 0,
             timer,
         })
     }
@@ -968,6 +1086,7 @@ impl RenderEngine {
                 &self.textured_pipeline,
                 &self.line_pipeline,
                 &self.building_pipeline,
+                &self.polygon_pipeline,
             );
         }
         if take_timing && let Some(t) = &self.timer {
@@ -1050,6 +1169,10 @@ impl RenderEngine {
                 | BatchPayload::BuildingInstanced { instances, .. } => instances.destroy(),
                 BatchPayload::Textured(l) => l.texture.destroy(),
                 BatchPayload::Lines(l) => l.verts.destroy(),
+                BatchPayload::Polygon(l) => {
+                    l.verts.destroy();
+                    l.indices.destroy();
+                }
             }
         }
         self.batches.push(calibration);
@@ -1137,7 +1260,9 @@ impl RenderEngine {
                 "\"uniform_bytes_last_frame\":{},\"gpu_frame_ms\":{},",
                 "\"basemap_mode\":\"{}\",\"basemap_tiles\":{},\"basemap_bytes\":{},",
                 "\"world_building_instances\":{},\"world_building_outline_vertices\":{},",
-                "\"world_chunks_drawn\":{}}}"
+                "\"world_chunks_drawn\":{},",
+                "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
+                "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1154,6 +1279,12 @@ impl RenderEngine {
             world_building_instances,
             world_building_outline_vertices,
             self.world_chunks_drawn,
+            self.sea_polygons,
+            self.landcover_polygons,
+            self.contour_segments,
+            self.road_segments,
+            self.forest_polygons,
+            self.forest_outline_segments,
         )
     }
 }
@@ -1216,6 +1347,20 @@ async fn map_read_4(
 
 // ── W1 lane management (private helpers) ──────────────────────────────────────────────────────
 impl RenderEngine {
+    /// Update the W4 additive stats counter for a vector lane role.
+    fn set_vector_stat(&mut self, role: LaneRole, n: u32) {
+        match role {
+            LaneRole::Sea => self.sea_polygons = n,
+            LaneRole::Landcover => self.landcover_polygons = n,
+            LaneRole::Contours => self.contour_segments = n,
+            LaneRole::Roads => self.road_segments = n,
+            LaneRole::RoadsCasing => {}
+            LaneRole::ForestFill => self.forest_polygons = n,
+            LaneRole::ForestOutline => self.forest_outline_segments = n,
+            _ => {}
+        }
+    }
+
     /// Replace-or-insert a lane by role, keeping the fixed W1 draw order (`lane_order`). Removing
     /// the old same-role batch drops its GPU texture/buffer (freed on `Drop`).
     fn upsert_lane(&mut self, role: LaneRole, batch: Batch) {
@@ -1253,6 +1398,8 @@ impl RenderEngine {
         let line = create_line_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
         let building =
             create_building_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
+        let polygon =
+            create_polygon_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
 
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         let uniform_buf = self.device.create_buffer(&wgpu::BufferDescriptor {
@@ -1281,6 +1428,7 @@ impl RenderEngine {
             &textured,
             &line,
             &building,
+            &polygon,
         );
         read_buf
     }
@@ -1298,6 +1446,7 @@ impl RenderEngine {
         textured: &wgpu::RenderPipeline,
         line: &wgpu::RenderPipeline,
         building: &wgpu::RenderPipeline,
+        polygon: &wgpu::RenderPipeline,
     ) -> (wgpu::Buffer, wgpu::TextureView, wgpu::Texture) {
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("readback-target"),
@@ -1351,6 +1500,7 @@ impl RenderEngine {
                 textured,
                 line,
                 building,
+                polygon,
             );
         }
         encoder.copy_texture_to_buffer(
@@ -1750,6 +1900,258 @@ impl RenderEngine {
         self.remove_lane(LaneRole::WorldBuildings);
         self.remove_lane(LaneRole::WorldBuildingsOutline);
         self.world_chunks_drawn = 0;
+    }
+
+    // ── W4 vector lane uploads ────────────────────────────────────────────────────────────────
+
+    /// Upload a pre-triangulated polygon mesh (T-151.4 L1).
+    /// `positions` = interleaved world-meter `[x,y]…`, `colors` = normalized f32 `[r,g,b,a]…`
+    /// (same length as positions/2 * 4), `indices` = triangle-list u32.
+    /// `role`: 0 sea, 1 landcover, 5 forest_fill, 7 marquee.
+    /// `item_count` feeds `stats()` (polygon count). Empty → drop the lane.
+    pub fn upload_polygon_mesh(
+        &mut self,
+        role: u32,
+        positions: &[f32],
+        colors: &[f32],
+        indices: &[u32],
+        item_count: u32,
+        visible: bool,
+    ) {
+        let Some(role_enum) = lane_role_from_u32(role) else {
+            return;
+        };
+        let n_verts = positions.len() / 2;
+        if indices.is_empty()
+            || n_verts == 0
+            || colors.len() < n_verts * 4
+            || !positions.len().is_multiple_of(2)
+        {
+            self.remove_lane(role_enum);
+            self.set_vector_stat(role_enum, 0);
+            return;
+        }
+        let mut verts = Vec::with_capacity(n_verts);
+        for i in 0..n_verts {
+            verts.push(lanes::LineVertex {
+                pos: [
+                    (f64::from(positions[i * 2]) - ANCHOR[0]) as f32,
+                    (f64::from(positions[i * 2 + 1]) - ANCHOR[1]) as f32,
+                ],
+                color: [
+                    colors[i * 4],
+                    colors[i * 4 + 1],
+                    colors[i * 4 + 2],
+                    colors[i * 4 + 3],
+                ],
+            });
+        }
+        use wgpu::util::DeviceExt;
+        let vbuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("polygon-verts"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        let ibuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("polygon-indices"),
+                contents: bytemuck::cast_slice(indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let index_count = indices.len() as u32;
+        self.set_vector_stat(role_enum, item_count);
+        self.upsert_lane(
+            role_enum,
+            Batch {
+                role: role_enum,
+                visible,
+                payload: BatchPayload::Polygon(PolyLane {
+                    verts: vbuf,
+                    indices: ibuf,
+                    index_count,
+                    item_count,
+                }),
+            },
+        );
+    }
+
+    /// Upload a wide-polyline strip already expanded to a triangle list as flat
+    /// `[x,y,r,g,b,a]…` world-meter verts (6 f32/vert, 3 verts/tri). Used for road casing/
+    /// centerline (T-151.4 L2). `role`: 3 roads_casing, 4 roads.
+    pub fn upload_strip_tris(&mut self, role: u32, packed: &[f32], item_count: u32, visible: bool) {
+        const STRIDE: usize = 6;
+        let Some(role_enum) = lane_role_from_u32(role) else {
+            return;
+        };
+        if packed.is_empty() || !packed.len().is_multiple_of(STRIDE) {
+            self.remove_lane(role_enum);
+            self.set_vector_stat(role_enum, 0);
+            return;
+        }
+        let n_verts = packed.len() / STRIDE;
+        let mut verts = Vec::with_capacity(n_verts);
+        for c in packed.chunks_exact(STRIDE) {
+            verts.push(lanes::LineVertex {
+                pos: [
+                    (f64::from(c[0]) - ANCHOR[0]) as f32,
+                    (f64::from(c[1]) - ANCHOR[1]) as f32,
+                ],
+                color: [c[2], c[3], c[4], c[5]],
+            });
+        }
+        // Sequential index buffer (already a triangle list).
+        let indices: Vec<u32> = (0..n_verts as u32).collect();
+        use wgpu::util::DeviceExt;
+        let vbuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("strip-verts"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        let ibuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("strip-indices"),
+                contents: bytemuck::cast_slice(&indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let index_count = indices.len() as u32;
+        self.set_vector_stat(role_enum, item_count);
+        self.upsert_lane(
+            role_enum,
+            Batch {
+                role: role_enum,
+                visible,
+                payload: BatchPayload::Polygon(PolyLane {
+                    verts: vbuf,
+                    indices: ibuf,
+                    index_count,
+                    item_count,
+                }),
+            },
+        );
+    }
+
+    /// Upload hairline LineList segments: flat `[x,y,r,g,b,a]…` (6 f32/vert, 2 verts/segment).
+    /// `role`: 2 contours, 6 forest_outline.
+    pub fn upload_hairline_segments(
+        &mut self,
+        role: u32,
+        packed: &[f32],
+        item_count: u32,
+        visible: bool,
+    ) {
+        const STRIDE: usize = 6;
+        let Some(role_enum) = lane_role_from_u32(role) else {
+            return;
+        };
+        if packed.is_empty() || !packed.len().is_multiple_of(STRIDE) {
+            self.remove_lane(role_enum);
+            self.set_vector_stat(role_enum, 0);
+            return;
+        }
+        let mut verts = Vec::with_capacity(packed.len() / STRIDE);
+        for c in packed.chunks_exact(STRIDE) {
+            verts.push(lanes::LineVertex {
+                pos: [
+                    (f64::from(c[0]) - ANCHOR[0]) as f32,
+                    (f64::from(c[1]) - ANCHOR[1]) as f32,
+                ],
+                color: [c[2], c[3], c[4], c[5]],
+            });
+        }
+        use wgpu::util::DeviceExt;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("hairline-verts"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let count = verts.len() as u32;
+        self.set_vector_stat(role_enum, item_count);
+        self.upsert_lane(
+            role_enum,
+            Batch {
+                role: role_enum,
+                visible,
+                payload: BatchPayload::Lines(LineLane { verts: buf, count }),
+            },
+        );
+    }
+
+    /// Upload a world-meter axis-aligned marquee rect (T-151.4 L12).
+    pub fn upload_marquee(
+        &mut self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        visible: bool,
+    ) {
+        if !visible || min_x >= max_x || min_y >= max_y {
+            self.remove_lane(LaneRole::Marquee);
+            return;
+        }
+        // Aegis primary tint α≈0.24
+        let c = [173.0 / 255.0, 198.0 / 255.0, 1.0, 60.0 / 255.0];
+        let corners = [
+            [min_x, min_y],
+            [max_x, min_y],
+            [max_x, max_y],
+            [min_x, max_y],
+        ];
+        let mut verts = Vec::with_capacity(4);
+        for p in corners {
+            verts.push(lanes::LineVertex {
+                pos: [(p[0] - ANCHOR[0]) as f32, (p[1] - ANCHOR[1]) as f32],
+                color: c,
+            });
+        }
+        let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
+        use wgpu::util::DeviceExt;
+        let vbuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marquee-verts"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        let ibuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marquee-indices"),
+                contents: bytemuck::cast_slice(&indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+        self.upsert_lane(
+            LaneRole::Marquee,
+            Batch {
+                role: LaneRole::Marquee,
+                visible: true,
+                payload: BatchPayload::Polygon(PolyLane {
+                    verts: vbuf,
+                    indices: ibuf,
+                    index_count: 6,
+                    item_count: 1,
+                }),
+            },
+        );
+    }
+
+    /// Drop a W4 vector lane by role id (see `upload_polygon_mesh`).
+    pub fn clear_vector_lane(&mut self, role: u32) {
+        if let Some(r) = lane_role_from_u32(role) {
+            self.remove_lane(r);
+            self.set_vector_stat(r, 0);
+        }
     }
 
     /// The device's `maxTextureDimension2D` — JS `pickBaseLevel` uses it to choose the unified
@@ -2174,6 +2576,328 @@ impl RenderEngine {
                     [38, 38, 44, 255],
                     "orientation +37 (inside +37, outside -37)",
                 ),
+            ];
+            let mut json = Vec::with_capacity(probes.len());
+            let mut all_pass = true;
+            for (px, py, expect, label) in probes {
+                let offset = u64::from(py * padded + px * 4);
+                let got = map_read_4(&device, &read_buf, offset)
+                    .await
+                    .map_err(|e| JsValue::from_str(&e))?;
+                let pass = got == expect;
+                all_pass &= pass;
+                json.push(format!(
+                    "{{\"px\":{},\"py\":{},\"expect\":[{},{},{},{}],\"got\":[{},{},{},{}],\"pass\":{},\"label\":\"{}\"}}",
+                    px, py, expect[0], expect[1], expect[2], expect[3],
+                    got[0], got[1], got[2], got[3], pass, label,
+                ));
+            }
+            Ok(JsValue::from_str(&format!(
+                "{{\"backend\":\"{}\",\"probes\":[{}],\"pass\":{}}}",
+                backend,
+                json.join(","),
+                all_pass,
+            )))
+        })
+    }
+
+    /// GPU-R sea-band fill probe (T-151.4 L11): draw a full-target quad tinted with the ≤0 m
+    /// sea colour `[72,118,160,255]` via the polygon pipeline; center texel must be byte-exact.
+    pub fn sea_band_self_check(&self) -> js_sys::Promise {
+        const PW: u32 = 800;
+        const PH: u32 = 600;
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        let shader = self.shader.clone();
+        let layout = self.pipeline_layout.clone();
+        let cam_bgl = self.bind_group_layout.clone();
+        let backend = self.backend_kind.clone();
+
+        wasm_bindgen_futures::future_to_promise(async move {
+            use wgpu::util::DeviceExt;
+            let fmt = wgpu::TextureFormat::Rgba8Unorm;
+            let camera = OrthoCamera::new(f64::from(PW), f64::from(PH), ANCHOR[0], ANCHOR[1], 0.0);
+            let mvp = camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+            let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("sea-self-check-mvp"),
+                size: 64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            queue.write_buffer(&uniform, 0, bytemuck::cast_slice(&mvp));
+            let cam_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("sea-self-check-mvp"),
+                layout: &cam_bgl,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform.as_entire_binding(),
+                }],
+            });
+
+            // Full-viewport quad in anchor-relative meters covering the camera (zoom 0, 800×600).
+            let half_w = f64::from(PW) * 0.5;
+            let half_h = f64::from(PH) * 0.5;
+            let sea = [72.0 / 255.0, 118.0 / 255.0, 160.0 / 255.0, 1.0];
+            let corners = [
+                [-half_w as f32, -half_h as f32],
+                [half_w as f32, -half_h as f32],
+                [half_w as f32, half_h as f32],
+                [-half_w as f32, half_h as f32],
+            ];
+            let mut verts = Vec::with_capacity(4);
+            for p in corners {
+                verts.push(lanes::LineVertex { pos: p, color: sea });
+            }
+            let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
+            let vbuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("sea-self-check-verts"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let ibuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("sea-self-check-idx"),
+                contents: bytemuck::cast_slice(&indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+            let pipeline = create_polygon_pipeline(&device, &layout, &shader, fmt);
+
+            let target = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("sea-self-check-target"),
+                size: wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: fmt,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let tview = target.create_view(&wgpu::TextureViewDescriptor::default());
+            let padded = padded_bytes_per_row(PW);
+            let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("sea-self-check-read"),
+                size: u64::from(padded) * u64::from(PH),
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("sea-self-check"),
+            });
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("sea-self-check"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &tview,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(CLEAR_COLOR),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_pipeline(&pipeline);
+                pass.set_bind_group(0, &cam_bind, &[]);
+                pass.set_vertex_buffer(0, vbuf.slice(..));
+                pass.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..6, 0, 0..1);
+            }
+            encoder.copy_texture_to_buffer(
+                target.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &read_buf,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(padded),
+                        rows_per_image: Some(PH),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+            );
+            queue.submit(Some(encoder.finish()));
+
+            let probes: [(u32, u32, [u8; 4], &str); 2] = [
+                (
+                    400,
+                    300,
+                    [72, 118, 160, 255],
+                    "center = sea <=0m band colour",
+                ),
+                (50, 50, [72, 118, 160, 255], "corner interior still sea"),
+            ];
+            let mut json = Vec::with_capacity(probes.len());
+            let mut all_pass = true;
+            for (px, py, expect, label) in probes {
+                let offset = u64::from(py * padded + px * 4);
+                let got = map_read_4(&device, &read_buf, offset)
+                    .await
+                    .map_err(|e| JsValue::from_str(&e))?;
+                let pass = got == expect;
+                all_pass &= pass;
+                json.push(format!(
+                    "{{\"px\":{},\"py\":{},\"expect\":[{},{},{},{}],\"got\":[{},{},{},{}],\"pass\":{},\"label\":\"{}\"}}",
+                    px, py, expect[0], expect[1], expect[2], expect[3],
+                    got[0], got[1], got[2], got[3], pass, label,
+                ));
+            }
+            Ok(JsValue::from_str(&format!(
+                "{{\"backend\":\"{}\",\"probes\":[{}],\"pass\":{}}}",
+                backend,
+                json.join(","),
+                all_pass,
+            )))
+        })
+    }
+
+    /// GPU-R road centerline probe (T-151.4 L11): horizontal strip of known colour through
+    /// the screen centre; the centerline pixel is byte-exact.
+    pub fn road_centerline_self_check(&self) -> js_sys::Promise {
+        const PW: u32 = 800;
+        const PH: u32 = 600;
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        let shader = self.shader.clone();
+        let layout = self.pipeline_layout.clone();
+        let cam_bgl = self.bind_group_layout.clone();
+        let backend = self.backend_kind.clone();
+
+        wasm_bindgen_futures::future_to_promise(async move {
+            use wgpu::util::DeviceExt;
+            let fmt = wgpu::TextureFormat::Rgba8Unorm;
+            let camera = OrthoCamera::new(f64::from(PW), f64::from(PH), ANCHOR[0], ANCHOR[1], 0.0);
+            let mvp = camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+            let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("road-self-check-mvp"),
+                size: 64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            queue.write_buffer(&uniform, 0, bytemuck::cast_slice(&mvp));
+            let cam_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("road-self-check-mvp"),
+                layout: &cam_bgl,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform.as_entire_binding(),
+                }],
+            });
+
+            // Horizontal road strip: width 20 m, colour highway grey [200,200,200,255].
+            // At zoom 0, 20 m = 20 px; strip spans full camera width at y=0.
+            let half_w = f64::from(PW) * 0.5;
+            let half_h = 10.0_f64; // half of 20 m width
+            let road = [200.0 / 255.0, 200.0 / 255.0, 200.0 / 255.0, 1.0];
+            let corners = [
+                [-half_w as f32, -half_h as f32],
+                [half_w as f32, -half_h as f32],
+                [half_w as f32, half_h as f32],
+                [-half_w as f32, half_h as f32],
+            ];
+            let mut verts = Vec::with_capacity(4);
+            for p in corners {
+                verts.push(lanes::LineVertex {
+                    pos: p,
+                    color: road,
+                });
+            }
+            let indices: [u32; 6] = [0, 1, 2, 0, 2, 3];
+            let vbuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("road-self-check-verts"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let ibuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("road-self-check-idx"),
+                contents: bytemuck::cast_slice(&indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+            let pipeline = create_polygon_pipeline(&device, &layout, &shader, fmt);
+
+            let target = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("road-self-check-target"),
+                size: wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: fmt,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let tview = target.create_view(&wgpu::TextureViewDescriptor::default());
+            let padded = padded_bytes_per_row(PW);
+            let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("road-self-check-read"),
+                size: u64::from(padded) * u64::from(PH),
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("road-self-check"),
+            });
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("road-self-check"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &tview,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(CLEAR_COLOR),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_pipeline(&pipeline);
+                pass.set_bind_group(0, &cam_bind, &[]);
+                pass.set_vertex_buffer(0, vbuf.slice(..));
+                pass.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..6, 0, 0..1);
+            }
+            encoder.copy_texture_to_buffer(
+                target.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &read_buf,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(padded),
+                        rows_per_image: Some(PH),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+            );
+            queue.submit(Some(encoder.finish()));
+
+            let probes: [(u32, u32, [u8; 4], &str); 2] = [
+                (
+                    400,
+                    300,
+                    [200, 200, 200, 255],
+                    "centerline pixel = highway grey",
+                ),
+                (400, 50, [51, 68, 85, 255], "far exterior = CLEAR_COLOR"),
             ];
             let mut json = Vec::with_capacity(probes.len());
             let mut all_pass = true;

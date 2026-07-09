@@ -6,7 +6,13 @@
 use map_engine_core::camera::OrthoCamera;
 use map_engine_core::dem::{DemVectorGrid, downsample, hillshade, png_decode, sample};
 use map_engine_core::doc::{MissionDocCore, SlotSoa};
-use map_engine_core::geometry::{contours, forest_mass, sea_band, tbdd};
+use map_engine_core::geometry::{
+    contours, forest_mass, sea_band, tbdd,
+    vector_compose::{
+        self, CONTOUR_RGBA, LandcoverInput, RoadInput, compose_contour_hairlines,
+        compose_forest_mesh, compose_landcover_mesh, compose_roads_mesh, compose_sea_mesh,
+    },
+};
 use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
 use map_engine_core::world::{
@@ -300,6 +306,72 @@ impl SeaBandResult {
     pub fn polygon_count(&self) -> u32 {
         self.inner.polygon_count
     }
+
+    /// Triangulate + pack for wgpu polygon upload (T-151.4). `layer_alpha` = seaFillAlpha.
+    #[must_use]
+    pub fn compose_mesh(&self, layer_alpha: f64) -> PolyMeshResult {
+        let m = compose_sea_mesh(&self.inner, layer_alpha);
+        PolyMeshResult { inner: m }
+    }
+}
+
+/// Packed polygon mesh for `RenderEngine.upload_polygon_mesh` (T-151.4).
+#[wasm_bindgen]
+pub struct PolyMeshResult {
+    inner: vector_compose::PolyMeshGpu,
+}
+
+#[wasm_bindgen]
+impl PolyMeshResult {
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn positions(&self) -> Vec<f32> {
+        self.inner.positions.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn colors(&self) -> Vec<f32> {
+        self.inner.colors.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn indices(&self) -> Vec<u32> {
+        self.inner.indices.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn polygon_count(&self) -> u32 {
+        self.inner.polygon_count
+    }
+}
+
+/// Packed hairline verts for `RenderEngine.upload_hairline_segments`.
+#[wasm_bindgen]
+pub struct HairlineResult {
+    inner: vector_compose::HairlineGpu,
+}
+
+#[wasm_bindgen]
+impl HairlineResult {
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn verts(&self) -> Vec<f32> {
+        self.inner.verts.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn segment_count(&self) -> u32 {
+        self.inner.segment_count
+    }
+}
+
+/// Compose contour segments → hairline verts (T-151.4).
+#[wasm_bindgen]
+#[must_use]
+pub fn compose_contours_hairline(segments: &[f32]) -> HairlineResult {
+    HairlineResult {
+        inner: compose_contour_hairlines(segments, CONTOUR_RGBA),
+    }
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -387,6 +459,54 @@ impl ForestMassResult {
     #[must_use]
     pub fn outline_segments(&self) -> Vec<f32> {
         self.inner.outline_segments.clone()
+    }
+
+    /// Triangulate fill + pack outline for wgpu (T-151.4). `fill_alpha` = forestFillAlpha.
+    #[must_use]
+    pub fn compose(&self, fill_alpha: f64) -> ForestComposeResult {
+        let (fill, outline) = compose_forest_mesh(&self.inner, fill_alpha);
+        ForestComposeResult { fill, outline }
+    }
+}
+
+/// Forest mass compose: fill mesh + outline hairlines.
+#[wasm_bindgen]
+pub struct ForestComposeResult {
+    fill: vector_compose::PolyMeshGpu,
+    outline: vector_compose::HairlineGpu,
+}
+
+#[wasm_bindgen]
+impl ForestComposeResult {
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn fill_positions(&self) -> Vec<f32> {
+        self.fill.positions.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn fill_colors(&self) -> Vec<f32> {
+        self.fill.colors.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn fill_indices(&self) -> Vec<u32> {
+        self.fill.indices.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn fill_polygon_count(&self) -> u32 {
+        self.fill.polygon_count
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn outline_verts(&self) -> Vec<f32> {
+        self.outline.verts.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn outline_segment_count(&self) -> u32 {
+        self.outline.segment_count
     }
 }
 
@@ -1356,6 +1476,79 @@ impl WorldStore {
              \"chunk_count_loaded\":{chunk_count_loaded},\"road_segment_count\":{road_segment_count},\
              \"forest_region_count\":{forest_region_count},\"has_oversized\":{has_oversized}}}"
         )
+    }
+
+    /// Road segment count after `load_roads_gz` (T-151.4 census pin: 888).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn road_segment_count(&self) -> u32 {
+        self.inner.roads.len() as u32
+    }
+
+    /// Land-cover region count after `load_forest_regions_gz` (T-151.4 census pin: 36).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn landcover_region_count(&self) -> u32 {
+        self.inner.regions.len() as u32
+    }
+
+    /// Compose LOD-filtered road casing + centerline strips at `deck_zoom` (T-151.4 L5).
+    #[must_use]
+    pub fn compose_roads(&self, deck_zoom: f64) -> RoadComposeResult {
+        let inputs: Vec<RoadInput<'_>> = self
+            .inner
+            .roads
+            .iter()
+            .map(|r| RoadInput {
+                road_class: r.road_class.as_str(),
+                points: r.points.as_slice(),
+                width_m: r.width_m,
+            })
+            .collect();
+        let m = compose_roads_mesh(&inputs, deck_zoom);
+        RoadComposeResult { inner: m }
+    }
+
+    /// Compose all land-cover regions into one polygon mesh (T-151.4 L6).
+    #[must_use]
+    pub fn compose_landcover(&self) -> PolyMeshResult {
+        let inputs: Vec<LandcoverInput<'_>> = self
+            .inner
+            .regions
+            .iter()
+            .map(|r| LandcoverInput {
+                kind: r.kind.as_str(),
+                rings: r.polygon.as_slice(),
+            })
+            .collect();
+        PolyMeshResult {
+            inner: compose_landcover_mesh(&inputs),
+        }
+    }
+}
+
+/// Road strip compose for wgpu upload.
+#[wasm_bindgen]
+pub struct RoadComposeResult {
+    inner: vector_compose::RoadMeshGpu,
+}
+
+#[wasm_bindgen]
+impl RoadComposeResult {
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn casing(&self) -> Vec<f32> {
+        self.inner.casing.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn centerline(&self) -> Vec<f32> {
+        self.inner.centerline.clone()
+    }
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn segment_count(&self) -> u32 {
+        self.inner.segment_count
     }
 }
 

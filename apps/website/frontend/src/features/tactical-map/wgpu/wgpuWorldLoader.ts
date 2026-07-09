@@ -10,9 +10,15 @@
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building lanes.
 
-import { WorldResidency } from '@/wasm/pkg/map_engine_wasm'
+import { WorldResidency, WorldStore } from '@/wasm/pkg/map_engine_wasm'
+import { classVisible } from '../worldmap/lodGates'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
+
+/** Engine role ids (match map-engine-render `lane_role_from_u32`). */
+const ROLE_LANDCOVER = 1
+const ROLE_ROADS_CASING = 3
+const ROLE_ROADS = 4
 
 /** Concurrent chunk fetches (mirror `worldObjectsCore` `DEFAULT_FETCH_CONCURRENCY`). */
 const FETCH_CONCURRENCY = 12
@@ -33,12 +39,16 @@ async function httpFetchBytes(url: string, signal: AbortSignal): Promise<Uint8Ar
 interface ObjectsBlock {
   prefabsPath?: string
   chunksPath?: string
+  roadsPath?: string
+  regionsPath?: string
 }
 
 /** The two object-export paths, present ⇒ a v2 world export exists. */
 interface ObjectExport {
   prefabsPath: string
   chunksPath: string
+  roadsPath?: string
+  regionsPath?: string
 }
 
 interface PendingChunk {
@@ -54,10 +64,15 @@ export class WgpuWorldController {
   private readonly engine: RenderEngine
   private readonly terrain: TerrainDef
   private residency: WorldResidency | null = null
+  /** W4: roads + land-cover (whole-terrain one-shots; parse in wasm). */
+  private store: WorldStore | null = null
 
   private ready = false
   private disposed = false
   private assetBase = ''
+  private roadsLoaded = false
+  private landcoverPushed = false
+  private lastRoadZoomBand = Number.NaN
 
   private fetchAc: AbortController | null = null
   private moveTimer: ReturnType<typeof setTimeout> | null = null
@@ -68,6 +83,7 @@ export class WgpuWorldController {
     this.engine = engine
     this.terrain = terrain
     this.residency = new WorldResidency()
+    this.store = new WorldStore()
   }
 
   /** Load the manifest + prefab table + chunk index, then run the first viewport pass. Idempotent —
@@ -83,6 +99,8 @@ export class WgpuWorldController {
     this.assetBase = manifestUrl.slice(0, manifestUrl.lastIndexOf('/'))
     await this.loadPrefabsAndIndex(exp, ac.signal)
     if (this.disposed || !this.residency) return
+    await this.loadRoadsAndLandcover(exp, ac.signal)
+    if (this.disposed) return
     this.ready = true
     this.runViewport()
   }
@@ -100,12 +118,96 @@ export class WgpuWorldController {
     if (this.disposed || !this.residency) return null
     try {
       this.residency.load_manifest_json(text) // objects block + worldBounds
+      this.store?.load_manifest_json(text)
       const objects = (JSON.parse(text) as { objects?: ObjectsBlock }).objects
       if (!objects?.prefabsPath || !objects.chunksPath) return null
-      return { prefabsPath: objects.prefabsPath, chunksPath: objects.chunksPath }
+      return {
+        prefabsPath: objects.prefabsPath,
+        chunksPath: objects.chunksPath,
+        roadsPath: objects.roadsPath ?? 'objects/roads.json.gz',
+        regionsPath: objects.regionsPath ?? 'objects/forest-regions.json.gz',
+      }
     } catch (err) {
       console.warn('[wgpu-world] manifest parse failed — world lane off', err)
       return null
+    }
+  }
+
+  /** W4: one-shot roads + land-cover load into wasm WorldStore, push landcover immediately. */
+  private async loadRoadsAndLandcover(exp: ObjectExport, signal: AbortSignal): Promise<void> {
+    if (!this.store) return
+    if (exp.roadsPath) {
+      const bytes = await httpFetchBytes(`${this.assetBase}/${exp.roadsPath}`, signal)
+      if (this.disposed || !this.store) return
+      if (bytes) {
+        try {
+          this.store.load_roads_gz(bytes)
+          this.roadsLoaded = true
+        } catch (err) {
+          console.warn('[wgpu-world] roads load failed', err)
+        }
+      }
+    }
+    if (exp.regionsPath) {
+      const bytes = await httpFetchBytes(`${this.assetBase}/${exp.regionsPath}`, signal)
+      if (this.disposed || !this.store) return
+      if (bytes) {
+        try {
+          this.store.load_forest_regions_gz(bytes)
+          this.pushLandcover()
+        } catch (err) {
+          console.warn('[wgpu-world] landcover load failed', err)
+        }
+      }
+    }
+  }
+
+  private pushLandcover(): void {
+    if (!this.store || this.landcoverPushed) return
+    // Land-cover shares forestFill gate at default zoom (visible as context under mass).
+    const zoom = this.engine.zoom
+    const vis = classVisible('forestFill', zoom) || zoom <= 1
+    try {
+      const mesh = this.store.compose_landcover()
+      this.engine.upload_polygon_mesh(
+        ROLE_LANDCOVER,
+        mesh.positions,
+        mesh.colors,
+        mesh.indices,
+        mesh.polygon_count,
+        vis,
+      )
+      mesh.free()
+      this.landcoverPushed = true
+    } catch (err) {
+      console.warn('[wgpu-world] landcover compose failed', err)
+    }
+  }
+
+  private pushRoads(): void {
+    if (!this.store || !this.roadsLoaded) return
+    const zoom = this.engine.zoom
+    // Band: integer zoom steps of 0.5 so continuous pan doesn't recompose.
+    const band = Math.round(zoom * 2)
+    if (band === this.lastRoadZoomBand) return
+    this.lastRoadZoomBand = band
+    try {
+      const roads = this.store.compose_roads(zoom)
+      this.engine.upload_strip_tris(
+        ROLE_ROADS_CASING,
+        roads.casing,
+        roads.segment_count,
+        roads.segment_count > 0,
+      )
+      this.engine.upload_strip_tris(
+        ROLE_ROADS,
+        roads.centerline,
+        roads.segment_count,
+        roads.segment_count > 0,
+      )
+      roads.free()
+    } catch (err) {
+      console.warn('[wgpu-world] roads compose failed', err)
     }
   }
 
@@ -142,10 +244,14 @@ export class WgpuWorldController {
     if (this.moveTimer) clearTimeout(this.moveTimer)
     this.residency?.free() // wasm handle — free exactly once (wasm-react-lifecycle)
     this.residency = null
+    this.store?.free()
+    this.store = null
   }
 
   private runViewport(): void {
     if (this.disposed || !this.ready || !this.residency) return
+    // W4 roads recompose on LOD band change (debounced with camera).
+    this.pushRoads()
     const b = this.engine.visible_bounds()
     const missing = this.residency.set_viewport(b[0], b[1], b[2], b[3], this.engine.zoom)
     if (missing.length > 0) {

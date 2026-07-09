@@ -88,6 +88,8 @@ export default function WgpuCanvas() {
           calibration: () => created.self_check() as Promise<string>,
           texture: () => created.texture_self_check() as Promise<string>,
           worldBuilding: () => created.world_building_self_check() as Promise<string>,
+          seaBand: () => created.sea_band_self_check() as Promise<string>,
+          roadCenterline: () => created.road_centerline_self_check() as Promise<string>,
         }
         setBackend(created.backend())
         applySize()

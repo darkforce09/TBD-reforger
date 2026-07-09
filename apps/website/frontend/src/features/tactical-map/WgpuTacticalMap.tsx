@@ -23,6 +23,12 @@ import { WgpuBasemapController } from './wgpu/wgpuBasemap'
 import { useWgpuBasemap } from './wgpu/useWgpuBasemap'
 import { WgpuWorldController } from './wgpu/wgpuWorldLoader'
 import { useWgpuWorldResidency } from './wgpu/useWgpuWorldResidency'
+import { useWgpuDemVectors } from './wgpu/useWgpuDemVectors'
+import {
+  WgpuForestMassController,
+  useWgpuForestMass,
+} from './wgpu/useWgpuForestMass'
+import { useMapStore } from './state/useMapStore'
 import { getTerrain } from './coords/terrains'
 import type { TacticalMapProps } from './types'
 
@@ -47,6 +53,8 @@ export default function WgpuTacticalMap({
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const controllerRef = useRef<WgpuBasemapController | null>(null)
   const worldControllerRef = useRef<WgpuWorldController | null>(null)
+  const forestControllerRef = useRef<WgpuForestMassController | null>(null)
+  const engineRef = useRef<RenderEngine | null>(null)
   const [canvasKey, setCanvasKey] = useState(0)
   const [forceWebgl, setForceWebgl] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,6 +62,7 @@ export default function WgpuTacticalMap({
   const [fps, setFps] = useState(0)
   const [basemapMode, setBasemapMode] = useState('…')
   const [ready, setReady] = useState(false)
+  const marquee = useMapStore((s) => s.marquee)
 
   // Latest-callback refs: the controller is created ONCE (effect-local), so it must call the
   // current prop callbacks (MissionCreatorPage's are useCallback-stable, but this is robust anyway).
@@ -73,6 +82,26 @@ export default function WgpuTacticalMap({
   })
   // World-object residency (W3): kicks the manifest/prefab/chunk-index load once ready.
   useWgpuWorldResidency(worldControllerRef, ready, { terrainId: terrain })
+  // W4 DEM vectors (sea + contours).
+  useWgpuDemVectors(engineRef, ready, { terrain: terrainDef })
+  // W4 forest mass (TBDD viewport stream).
+  useWgpuForestMass(forestControllerRef, ready)
+
+  // W4 marquee polygon (optional; no pick/drag rewire — L12).
+  useEffect(() => {
+    if (!ready) return
+    const eng = engineRef.current
+    if (!eng) return
+    if (marquee) {
+      const minX = Math.min(marquee.x0, marquee.x1)
+      const maxX = Math.max(marquee.x0, marquee.x1)
+      const minY = Math.min(marquee.y0, marquee.y1)
+      const maxY = Math.max(marquee.y0, marquee.y1)
+      eng.upload_marquee(minX, minY, maxX, maxY, true)
+    } else {
+      eng.clear_vector_lane(7)
+    }
+  }, [ready, marquee])
 
   useEffect(() => {
     const container = containerRef.current
@@ -111,6 +140,7 @@ export default function WgpuTacticalMap({
           return
         }
         engine = created
+        engineRef.current = created
         setBackend(created.backend())
         applySize()
         created.set_view(terrainDef.width / 2, terrainDef.height / 2, -2)
@@ -120,6 +150,7 @@ export default function WgpuTacticalMap({
           onDegraded: (v) => onDegradedRef.current?.(v),
         })
         worldControllerRef.current = new WgpuWorldController(created, terrainDef)
+        forestControllerRef.current = new WgpuForestMassController(created, terrainDef)
         setReady(true) // fires the basemap + world hook effects
         const loop = (now: number) => {
           if (disposed || !engine) return // I5
@@ -171,6 +202,7 @@ export default function WgpuTacticalMap({
       lastY = ev.clientY
       controllerRef.current?.onCameraMoved() // pyramid LOD follows the pan (debounced)
       worldControllerRef.current?.onCameraMoved() // world chunk residency follows the pan
+      forestControllerRef.current?.onCameraMoved()
     }
     const onPointerUp = (ev: PointerEvent) => {
       dragging = false
@@ -183,6 +215,7 @@ export default function WgpuTacticalMap({
       engine.zoom_at(-ev.deltaY * WHEEL_ZOOM_PER_PX, ev.clientX - rect.left, ev.clientY - rect.top)
       controllerRef.current?.onCameraMoved()
       worldControllerRef.current?.onCameraMoved()
+      forestControllerRef.current?.onCameraMoved()
     }
     canvas.addEventListener('pointerdown', onPointerDown)
     canvas.addEventListener('pointermove', onPointerMove)
@@ -203,6 +236,9 @@ export default function WgpuTacticalMap({
       controllerRef.current = null
       worldControllerRef.current?.dispose() // frees the WorldResidency wasm handle (once)
       worldControllerRef.current = null
+      forestControllerRef.current?.dispose()
+      forestControllerRef.current = null
+      engineRef.current = null
       setReady(false)
       engine?.free() // I4 — exactly once
       engine = null
@@ -224,7 +260,7 @@ export default function WgpuTacticalMap({
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
       <div style={PANEL}>
-        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.1 · wgpu basemap</div>
+        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.4 · wgpu vectors</div>
         <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
           {fps} FPS · {backend}
         </div>

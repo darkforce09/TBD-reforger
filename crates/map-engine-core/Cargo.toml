@@ -36,6 +36,7 @@ serde_json = { version = "1", optional = true }
 thiserror = { version = "2", optional = true }
 yrs = { version = "0.27", optional = true }
 flate2 = { version = "1", optional = true }
+earcutr = "0.5.0"
 
 [dev-dependencies]
 # Unconditional for tests: the T-151 camera parity suite parses the committed deck.gl golden
