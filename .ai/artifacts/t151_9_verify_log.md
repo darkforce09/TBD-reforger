@@ -1,7 +1,7 @@
 # T-151.9 verify log — Deck flip + retirement
 
-**Tag:** `T-151.9`  
-**SHA:** `c4831451`  
+**Tag:** `T-151.9` (`c87d74fa`)  
+**Ship SHA:** `c4831451`  
 **Baseline:** T-151.8.1 (`ec59d10e`) · docs sync @ `c52d1fc8`  
 **Worktree:** `tbd-reforger-wgpu-spike/`  
 **Date:** 2026-07-09
