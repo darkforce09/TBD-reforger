@@ -13,7 +13,6 @@
 ## eden
 
 - **T-068** (deferred) — Virtual Arsenal (registry + loadout export) [RIGHT, ATTR, DATA] — Phase 1 shipped. Phase 2 **deferred** — operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.
-- **T-069** (idea) — Markers on map [MAP, MRK] — Place and edit map markers with registry-backed types.
 - **T-070** (idea) — Vehicles placeable [MAP, VEH, RIGHT] — Drag vehicles from palette onto map with crew hooks.
 - **T-076** (idea) — Vehicle crew UI [VEH, ATTR] — Crew panel and boarding UI for placed vehicles.
 - **T-077** (idea) — Alt + empty vehicle [MAP, VEH] — Alt-click to enter empty vehicle placement mode.

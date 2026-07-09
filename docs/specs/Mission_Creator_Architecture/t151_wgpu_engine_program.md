@@ -1,43 +1,20 @@
-# T-151 — wgpu Mission Creator engine program (W0–W9 master blueprint)
+# T-151 — wgpu Mission Creator engine program (W0–W9 complete; W10 = T-069+)
 
-**Status:** program hub (authority for all T-151.x slices) · **Worktree:**
+**Status:** program hub · **W0–W9 shipped** (Deck retired @ `c4831451` tag **T-151.9**) ·
+**Next:** **T-069** markers · **Worktree:**
 `tbd-reforger-wgpu-spike/` (absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`)
-— the operator's standing worktree instruction supersedes the commit-to-main convention for this
-program. Integration ref `t-151-wgpu-spike` is git metadata only; agents do **not** manage
-branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
-(camera parity + render spine + 20M stress + byte-exact self-check, verify log
+— standing worktree; agents do **not** manage branches per slice. · **Spike shipped:** commits
+`152b3a12…94261dd6` (camera parity + render spine + 20M stress + byte-exact self-check, verify log
 [`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)) ·
-**W0 / T-151.0 shipped:** @ `f019512d` (tag **T-151.0**) — verify log
-[`t151_0_verify_log.md`](../../../.ai/artifacts/t151_0_verify_log.md) · **W1 / T-151.1 shipped:**
-@ `3ab81587` (tag **T-151.1**) — basemap TBDS/hillshade/grid on wgpu; verify log
-[`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **W2 / T-151.2 shipped:**
-@ `a51e9dcb` (tag **T-151.2**) — world parser in Rust, 275-chunk Class R/S parity; verify log
-[`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **W3 / T-151.3 shipped:**
-@ `32bf5ac5` (tag **T-151.3**) — residency + building GPU on wgpu; verify log
-[`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **W4 / T-151.4 shipped:**
-@ `723490a0` (tag **T-151.4**) — vector layers; verify
-[`t151_4_verify_log.md`](../../../.ai/artifacts/t151_4_verify_log.md) · **T-151.4.1 shipped:**
-@ `552e68aa` — building wipe + road joins; verify
-[`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md) · **W5 / T-151.5 shipped:**
-@ `0b7621ed` (tag **T-151.5**) — glyph atlas trees/props/badges; verify
-[`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **T-151.5.1 shipped:**
-@ `a98fb421` — forest iso=2 + glyph-band green hide; verify
-[`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **W6 / T-151.6 shipped:**
-@ `033ff715` — slots/selection/drag/clusters; verify
-[`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **W7 / T-151.7 shipped:**
-@ `ab6bcb11` — interaction rewire; verify
-[`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **T-151.7.1 / .2 shipped:**
-@ `fa6ad959` / `64c64d98` (+ wheel `69ca1c08`) — tint/drag/zoom hotfixes · **T-151.7.3 shipped:**
-@ `804f779a` — Rust SlotGpuBridge; `wgpuSlots.ts` 56 LOC; verify
-[`t151_7_3_verify_log.md`](../../../.ai/artifacts/t151_7_3_verify_log.md) · **Next slice:**
-**T-151.8** (culling + density) — `ready`; spec
-[`t151_8_culling_density.md`](t151_8_culling_density.md).
+**W0–W8.1** shipped through tag **T-151.8.1** (`ec59d10e`) · **W9 / T-151.9 shipped:** @
+`c4831451` (tag **T-151.9**) — verify
+[`t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md).
 
 ## In one sentence
 
 Wire the full Mission Creator tactical map — world data, spatial indexing, all fifteen render
-layers, and every editor interaction — onto the T-151 wgpu/wasm engine, one gated slice at a
-time, with the Deck.gl implementation kept as a live oracle until the final flip (T-151.9).
+layers, and every editor interaction — onto the T-151 wgpu/wasm engine. **W9 complete:** Deck
+runtime retired; deck.gl remains a **devDependency** camera oracle only.
 
 ## Execution model (worktree-only)
 
@@ -399,25 +376,26 @@ wasm ~**4.12 MB**. LANGUAGE GATE held.
 
 ### T-151.9 (W9) — flip + Deck retirement (the F4 analog)
 
-**Next / ready.** Slice spec: [`t151_9_deck_retirement.md`](t151_9_deck_retirement.md) ·
-handoff [`.ai/artifacts/t151_9_claude_code_handoff.md`](../../../.ai/artifacts/t151_9_claude_code_handoff.md).
+**Shipped** @ `c4831451` (tag **T-151.9**; tip `58c8fcc3`) · verify
+[`.ai/artifacts/t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md) · spec
+[`t151_9_deck_retirement.md`](t151_9_deck_retirement.md).
 
-Default `VITE_MC_ENGINE=wgpu`; after soak, delete Deck layer modules (`useIconLayer`,
-`useClusterIconLayer`, `useSelectionLayer`, `useDemLayer`, `useTerrainBasemapLayer`,
-`useBaseMapLayer`, `worldmap/*Layer.ts`, `useWorldMapLayers`), the world worker trio, the
-Deck-side stores, and deck.gl from the runtime bundle (stays devDependency — camera oracle).
-**Gates:** full editor E2E (load ~367k mission from IDB + server, edit, Save Version 201,
-Export download, conflict path); vitest green with oracles retargeted; bundle delta recorded;
-before/after fps table; Cursor doc-sync pass (registry ship states, CLAUDE.md §Status).
+Always `WgpuTacticalMap` (no engine flag / Deck escape hatch). Deck runtime deleted
+(`TacticalMap`, layer hooks, worldmap `*Layer`/stores, worker trio, hybrids, DocCoreSpike).
+Deck-free oracles under `_wasm/oracles/`; residency goldens (22 steps). `satelliteUnified`
+parse/pick only (luma upload removed). Six deck/luma pkgs → **devDependencies**. vitest
+**281** (= 393 − 112); `dist/assets` Deck/luma-free; bundle ~7.15 → **6.27 MB**.
+`wgpuSlots.ts` **56** LOC. **T-151 program complete (W0–W9).**
 
 ### W10 — post-flip features (separate tickets, unlocked by T-151.9)
 
-**T-069** markers (+ line/area drawing on the polyline/polygon pipelines) · **T-070** vehicles
-· **Ruler** (camera math, Class R vs hand-computed distances) · **LoS/viewshed** (DEM raymarch
-in Rust over `sample_elevation_meters`, Class R vs brute-force reference sampler; viewshed as
-WebGPU compute with the CPU raymarch as its exact oracle on sampled azimuths) · **T-071–T-075**
-UI lane. Named deferred: binary chunk wire (human Workbench export), T-110 terrain deltas,
-T-111 lazy doc residency, T-143 water, per-chunk anchors beyond Everon-size worlds.
+**Next:** **T-069** markers — `ready` · spec [`t069_markers_on_map.md`](t069_markers_on_map.md)
+· handoff [`.ai/artifacts/t069_claude_code_handoff.md`](../../../.ai/artifacts/t069_claude_code_handoff.md).
+
+Then **T-070** vehicles · **Ruler** (camera math, Class R) · **LoS/viewshed** (DEM raymarch
+in Rust; viewshed WebGPU compute with CPU oracle) · **T-071–T-075** UI lane. Named deferred:
+binary chunk wire (Workbench), T-110 terrain deltas, T-111 lazy doc residency, T-143 water,
+per-chunk anchors beyond Everon-size worlds.
 
 ## Sequencing rationale
 

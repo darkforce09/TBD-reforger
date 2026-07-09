@@ -114,11 +114,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-145**
+**Latest shipped:** **T-151**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
 **Next (by order):**
+- **T-069** — Markers on map (`ready`)
 - **T-071** — ORBAT Manager modal (`queued`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
@@ -128,7 +129,6 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-114** — Slot roster enforcement + production slot picker (`queued`)
 - **T-115** — Capture win condition (`queued`)
 - **T-116** — Results POST to backend (`queued`)
-- **T-117** — Mission upload + validation UI (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
@@ -172,15 +172,22 @@ Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t15
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
 **Language gate (D5):** Rust owns engine policy (geometry, GPU sync, LOD, camera math, pack).
-TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x prompt must include
+TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x / W10 prompt must include
 `═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
-Do **not** grow fat `wgpu*Controller` logic in TS (W6–W7.x drift).
+Do **not** grow fat `wgpu*Controller` logic in TS.
 
-**Next slice:** **T-151.9** (Deck flip + retirement) — `ready` · spec
-[`t151_9_deck_retirement.md`](docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md)
-· handoff [`.ai/artifacts/t151_9_claude_code_handoff.md`](.ai/artifacts/t151_9_claude_code_handoff.md)
+**Program complete (W0–W9):** Deck runtime retired; Mission Creator is wgpu-only.
+
+**Next (W10):** **T-069** markers on map — `ready` · spec
+[`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
+· handoff [`.ai/artifacts/t069_claude_code_handoff.md`](.ai/artifacts/t069_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.9 **Deck flip + retirement (W9)** @ `c4831451` (tag **T-151.9**; tip `58c8fcc3`).
+  Always `WgpuTacticalMap`; Deck runtime deleted; deck.gl+luma → devDependencies; vitest
+  **281**; dist Deck-free; bundle ~7.15→6.27 MB. Verify:
+  [`.ai/artifacts/t151_9_verify_log.md`](.ai/artifacts/t151_9_verify_log.md). Spec:
+  [`t151_9_deck_retirement.md`](docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md).
 - T-151.8.1 **WebGPU compute cull** @ `ec59d10e` (tag **T-151.8.1**). `VERTEX|STORAGE` +
   `draw_indirect` tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 chunk draw-set.
   Verify: [`.ai/artifacts/t151_8_verify_log.md`](.ai/artifacts/t151_8_verify_log.md) §Compute cull.
@@ -693,16 +700,16 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Next (Eden — after T-068 ship @ T-068.14):**
-- **T-069** — markers on map
+**Next (W10 — unlocked by T-151.9):**
+- **T-069** — markers on map (`ready`) — [`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
 - **T-070** — vehicles placeable
 - **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
-**Active map program (blocks T-071 + T-068 Phase 2):**
-- **T-090** / **T-091** — aligned map tiles + DEM / Z-axis — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`; **T-090.3.0** Workbench spike active; **T-090.1** tiles **queued** until 3.0.
-- **T-092** — mod compile + spawn Y/yaw — [`t092_spawn_transform_program.md`](docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md)
-- **T-071** — ORBAT Manager modal (queued, after T-092)
-- Ruler/LoS/viewshed — after **T-091** heightmap phase.
+**Map / ORBAT lane (parallel):**
+- **T-090** — Map Engine v2 (ACTIVE T-090.6) — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`.
+- **T-092** — mod compile + spawn Y/yaw — **shipped** @ `a73224f2`
+- **T-071** — ORBAT Manager modal (queued)
+- Ruler/LoS/viewshed — W10 after T-069/T-070 as needed.
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API

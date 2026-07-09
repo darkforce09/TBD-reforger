@@ -8,8 +8,8 @@
 
 ## Ready
 
+- **T-069** (690) — Markers on map [ready] — W10 first slice: addMarker + wgpu render/select/move/delete for MapMarker kinds (line/arrow/phase/icon/polygon). Unlocked by T-151.9. Hub W10. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine program (spike SHIPPED; W0–W8.1 shipped @ ec59d10e; T-151.9 Deck flip ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts. D5 LANGUAGE GATE. No silent deferrals.
 
 ## Next queued (top 10)
 
@@ -28,5 +28,6 @@
 
 ```mermaid
 flowchart LR
+  T151[T-151] --> T069[T-069]
   T092[T-092] --> T071[T-071]
 ```

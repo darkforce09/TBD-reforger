@@ -6,18 +6,18 @@
   "git_base": "main",
   "tickets": [
     {
+      "id": "T-069",
+      "title": "Markers on map",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md",
+      "branch": "t-151-wgpu-spike"
+    },
+    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md",
       "branch": "ticket/T-090"
-    },
-    {
-      "id": "T-151",
-      "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
-      "branch": "t-151-wgpu-spike"
     }
   ]
 }

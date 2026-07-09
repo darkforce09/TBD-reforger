@@ -1325,7 +1325,7 @@
       "id": "T-069",
       "order": 690,
       "program": "eden",
-      "status": "idea",
+      "status": "ready",
       "surfaces": [
         "MAP",
         "MRK"
@@ -1336,17 +1336,18 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "Place and edit map markers with registry-backed types.",
+      "summary": "W10 first slice: addMarker + wgpu render/select/move/delete for MapMarker kinds (line/arrow/phase/icon/polygon). Unlocked by T-151.9. Hub W10. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.",
       "depends_on": [
-        "T-068"
+        "T-151"
       ],
       "route": "/missions/:id/edit",
-      "branch": "ticket/T-069",
+      "branch": "t-151-wgpu-spike",
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "spec": "docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md"
     },
     {
       "id": "T-070",
@@ -3745,7 +3746,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W8.1 shipped @ ec59d10e; T-151.9 Deck flip ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts. D5 LANGUAGE GATE. No silent deferrals.",
+      "summary": "wgpu Mission Creator engine program COMPLETE (W0\u2013W9). Deck runtime retired @ c4831451 (tag T-151.9). Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE. W10 = T-069+.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3753,7 +3754,8 @@
       "impact": [
         "Replace Deck.gl with a wgpu/wasm engine reading the yrs core directly for zero-copy render at scale"
       ],
-      "status": "ready",
+      "status": "shipped",
+      "shipped_at": "c4831451",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike",
       "targets": [
@@ -3894,7 +3896,9 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "c4831451",
+          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
         },
         "T-151.4.1": {
           "targets": [
