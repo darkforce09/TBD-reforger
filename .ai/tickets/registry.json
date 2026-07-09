@@ -3745,7 +3745,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6; W0/T-151.0 @ f019512d; W1/T-151.1 @ 3ab81587; W2/T-151.2 @ a51e9dcb — world parser Rust, 275-chunk parity; verify .ai/artifacts/t151_2_verify_log.md). Slices W3-W9 wire residency, render layers, and editor interaction onto the engine; Deck stays the oracle until T-151.9. Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts; no per-slice branches or ticket run.",
+      "summary": "wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6; W0/T-151.0 @ f019512d; W1/T-151.1 @ 3ab81587; W2/T-151.2 @ a51e9dcb; W3/T-151.3 @ 32bf5ac5 — residency + building GPU on wgpu; verify .ai/artifacts/t151_3_verify_log.md). Slices W4-W9 wire vector layers and editor interaction onto the engine; Deck stays the oracle until T-151.9. Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts; no per-slice branches or ticket run.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3816,7 +3816,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "32bf5ac5"
         },
         "T-151.4": {
           "targets": [
@@ -3825,7 +3826,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-151.5": {
           "targets": [

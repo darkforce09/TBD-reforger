@@ -1,5 +1,8 @@
 # T-151.3 — Claude Code handoff (chunk residency + spatial index + first world instances)
 
+**Shipped:** @ `32bf5ac5` (tag **T-151.3**, 2026-07-09) — verify log
+[`t151_3_verify_log.md`](t151_3_verify_log.md). Cursor doc-sync pass follows.
+
 **Spec (wins on conflict):**
 [`t151_3_world_residency.md`](../../docs/specs/Mission_Creator_Architecture/t151_3_world_residency.md)
 · **Program hub:**

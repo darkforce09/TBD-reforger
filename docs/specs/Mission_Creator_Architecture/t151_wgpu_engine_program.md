@@ -12,9 +12,11 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `3ab81587` (tag **T-151.1**) — basemap TBDS/hillshade/grid on wgpu; verify log
 [`t151_1_verify_log.md`](../../../.ai/artifacts/t151_1_verify_log.md) · **W2 / T-151.2 shipped:**
 @ `a51e9dcb` (tag **T-151.2**) — world parser in Rust, 275-chunk Class R/S parity; verify log
-[`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **Next slice:**
-**T-151.3** (W3 chunk residency + spatial index + first world instances) — `ready`; slice spec
-[`t151_3_world_residency.md`](t151_3_world_residency.md).
+[`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **W3 / T-151.3 shipped:**
+@ `32bf5ac5` (tag **T-151.3**) — residency + building GPU on wgpu; verify log
+[`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **Next slice:**
+**T-151.4** (W4 vector layers: sea, contours, roads, forest, landcover) — `ready`; authority in
+program hub §T-151.4.
 
 ## In one sentence
 
@@ -226,6 +228,13 @@ sets equal (Class S); totals assert exactly **391 / 508,291 / 275 / 888 / 36 / 6
 corners + road centerline vertices ≤ 1 ULP.
 
 ### T-151.3 (W3) — chunk residency + world spatial index + first world instances
+
+**Shipped:** @ `32bf5ac5` (tag **T-151.3**, 2026-07-09) — verify log
+[`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md). Merged
+`map_engine_wasm_bg.wasm` = **3,946,734 B** (+88,143). Vitest **371** (+28). Proof ledger P1–P14
+PASS; GPU-R `world_building_self_check` byte-exact; T-151.0/1 self-check regressions intact.
+10k pick probes Class **S** (0 distance ties checked); 22-step residency/eviction parity.
+Outline casing `[30,30,34,255]` ≠ Deck stroke `[150,150,158,204]` — logged, no gate impact.
 
 Slice spec: [`t151_3_world_residency.md`](t151_3_world_residency.md) (authority for L1–L16 + prompt).
 

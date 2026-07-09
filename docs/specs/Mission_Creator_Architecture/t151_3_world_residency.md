@@ -1,11 +1,16 @@
 # T-151.3 — chunk residency + world spatial index + first world instances (W3)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `32bf5ac5` (tag **T-151.3**, 2026-07-09) · verify log
+[`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W3) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `a51e9dcb` (tag **T-151.2** — verify log
 [`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md)).
+
+**Shipped note (outline colour):** wgpu building outline uses near-black `[30,30,34,255]` (spec L8);
+Deck oracle stroke is `[150,150,158,204]` (`buildingLayer.ts`) — no gate impact; reconcile at W4
+visual pass or operator call (verify log §Colour reconciliation).
 
 ## In one sentence
 
