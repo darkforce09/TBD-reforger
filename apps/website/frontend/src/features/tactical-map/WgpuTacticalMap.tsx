@@ -446,6 +446,8 @@ export default function WgpuTacticalMap({
         const vs = viewStateRef.current
         created.set_view(vs.target[0], vs.target[1], vs.zoom)
         created.hide_calibration() // W1: no calibration scene in the editor (L1)
+        // T-151.8: HUD fps needs continuous submits; idle skip is still Class R when continuous=false.
+        created.set_continuous_render(true)
         controllerRef.current = new WgpuBasemapController(created, terrainDef, {
           onProgress: (f) => onProgressRef.current?.(f),
           onDegraded: (v) => onDegradedRef.current?.(v),
@@ -582,7 +584,7 @@ export default function WgpuTacticalMap({
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
         <div style={PANEL}>
-          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7.2 · wgpu interaction · wheel</div>
+          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.8 · cull + density</div>
           <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
             {fps} FPS · {backend}
           </div>

@@ -7,6 +7,7 @@
 mod chunk;
 mod chunk_math;
 mod classify;
+mod density_ladder;
 mod glyph_math;
 mod index;
 mod lod_gates;
@@ -26,6 +27,10 @@ pub use chunk_math::{
 pub use classify::{
     NO_CLASS, OVERSIZED_HALF_EXTENT_M, RENDER_CLASS_CODES, class_code, narrow_instance_row,
     render_class_for_prefab,
+};
+pub use density_ladder::{
+    density_grid_dims, density_texel_sum_for_draw_ids, exact_tree_count, exact_tree_count_chunk,
+    heatmap_trees, pack_density_grid_r32, parse_chunk_xy,
 };
 pub use glyph_math::{
     BADGE_BASE_SIZE_PX, BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, DEFAULT_GLYPH_RGBA,

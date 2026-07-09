@@ -457,7 +457,25 @@ export class WgpuWorldController {
     this.publishDebug(rstats, engStats.world_building_instances, engStats)
   }
 
-  /** Push tree / prop / badge icon lanes (sticky empty mid-hydration). */
+  /** Sticky icon upload: skip empty mid-hydration so prior GPU lane survives. */
+  private pushIconLane(kind: number, bytes: Uint8Array, midHydration: boolean): void {
+    if (bytes.length > 0 || !midHydration) {
+      this.engine.upload_icon_lane(kind, bytes, bytes.length > 0)
+    }
+  }
+
+  /** T-151.8 density ladder — thin wasm call only (no cull/ladder math in TS). */
+  private pushDensityHeat(): void {
+    if (!this.residency) return
+    const heat = this.residency.heatmap_trees
+    const size = this.residency.density_grid_size()
+    const w = size[0] ?? 0
+    const h = size[1] ?? 0
+    const grid = heat ? this.residency.density_grid_r32_bytes() : new Uint8Array(0)
+    this.engine.upload_density_grid(grid, w, h, this.terrain.width, this.terrain.height, heat)
+  }
+
+  /** Push tree / prop / badge icon lanes + density heatmap (sticky empty mid-hydration). */
   private pushGlyphsToEngine(): void {
     if (this.disposed || !this.residency || !this.atlasReady) return
     const rstats = JSON.parse(this.residency.stats()) as {
@@ -466,43 +484,41 @@ export class WgpuWorldController {
     }
     const midHydration =
       rstats.inflight_count > 0 || this.pending.length > 0 || !rstats.pin_settled
-    const trees = this.residency.world_tree_glyphs()
-    const props = this.residency.world_prop_glyphs()
-    const badges = this.residency.world_badge_glyphs()
-    // kind: 0 trees, 1 props, 2 badges — sticky when empty mid-hydration.
-    if (trees.length > 0 || !midHydration) {
-      this.engine.upload_icon_lane(0, trees, trees.length > 0)
-    }
-    if (props.length > 0 || !midHydration) {
-      this.engine.upload_icon_lane(1, props, props.length > 0)
-    }
-    if (badges.length > 0 || !midHydration) {
-      this.engine.upload_icon_lane(2, badges, badges.length > 0)
-    }
+    this.pushIconLane(0, this.residency.world_tree_glyphs(), midHydration)
+    this.pushIconLane(1, this.residency.world_prop_glyphs(), midHydration)
+    this.pushIconLane(2, this.residency.world_badge_glyphs(), midHydration)
+    if (!midHydration) this.pushDensityHeat()
+  }
+
+  private glyphStat(
+    eng: number | undefined,
+    fromResidency: number | undefined,
+  ): number {
+    return eng ?? fromResidency ?? 0
   }
 
   /** Dev surface for S1 verify: `window.__wgpuWorldStats`. */
   private publishDebug(
-    rstats: {
-      chunks_pinned: number
-      building_instances: number
-      inflight_count: number
-      pin_settled: boolean
-      chunks_resident: number
-    },
+    rstats: Record<string, unknown>,
     engineInstances: number,
     engStats?: { tree_glyphs?: number; prop_glyphs?: number; badge_glyphs?: number },
   ): void {
     if (typeof window === 'undefined') return
-    ;(window as unknown as { __wgpuWorldStats?: unknown }).__wgpuWorldStats = {
-      ...rstats,
-      world_building_instances: engineInstances,
-      tree_glyphs: engStats?.tree_glyphs ?? this.residency?.tree_glyph_count ?? 0,
-      prop_glyphs: engStats?.prop_glyphs ?? this.residency?.prop_glyph_count ?? 0,
-      badge_glyphs: engStats?.badge_glyphs ?? this.residency?.badge_glyph_count ?? 0,
-      atlas_ready: this.atlasReady,
-      pending: this.pending.length,
-    }
+    const r = this.residency
+    ;(window as unknown as { __wgpuWorldStats?: unknown }).__wgpuWorldStats = Object.assign(
+      {},
+      rstats,
+      {
+        world_building_instances: engineInstances,
+        tree_glyphs: this.glyphStat(engStats?.tree_glyphs, r?.tree_glyph_count),
+        prop_glyphs: this.glyphStat(engStats?.prop_glyphs, r?.prop_glyph_count),
+        badge_glyphs: this.glyphStat(engStats?.badge_glyphs, r?.badge_glyph_count),
+        chunks_draw: rstats.chunks_draw ?? r?.chunks_draw ?? 0,
+        heatmap_trees: rstats.heatmap_trees ?? r?.heatmap_trees ?? false,
+        atlas_ready: this.atlasReady,
+        pending: this.pending.length,
+      },
+    )
   }
 
   private chunkUrl(id: string): string {

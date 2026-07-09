@@ -23,8 +23,13 @@ use std::collections::{HashMap, HashSet};
 use serde_json::Value;
 
 use super::chunk::{WorldChunk, parse_chunk};
-use super::chunk_math::{TerrainSizeM, chunk_ids_for_viewport};
+use super::chunk_math::{
+    Bbox, TerrainSizeM, chunk_ids_for_rect, chunk_ids_for_viewport, chunk_rect_for_bbox,
+};
 use super::classify::class_code;
+use super::density_ladder::{
+    density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32,
+};
 use super::glyph_math::{
     BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_icon_key, badge_size_meters,
     deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, pack_icon_instance, pack_rgba_u32,
@@ -36,6 +41,10 @@ use super::manifest::{ObjectsManifest, narrow_cells, parse_objects_manifest};
 use super::obb::{BuildingPrefabInfo, building_prefab_lookup, obb_corners};
 use super::prefab::{PrefabEntry, build_prefab_maps, narrow_prefab_rows};
 use super::store::{WorldError, bytes_to_json};
+
+/// No extra draw margin — residency preload covers fetch; draw cull is strict visible rect (T-151.8).
+/// Referenced by Class S tests / verify log; must stay 0.
+pub const DRAW_CULL_MARGIN_M: f64 = 0.0;
 
 /// Per-prefab glyph render resolved once at prefab load (tree/veg/prop/rockLarge only).
 #[derive(Clone, Debug)]
@@ -141,6 +150,19 @@ pub struct WorldResidency {
     tree_glyph_buf: Vec<u8>,
     prop_glyph_buf: Vec<u8>,
     badge_glyph_buf: Vec<u8>,
+
+    /// Last `set_viewport` strict bbox (no preload) — source for draw-set cull.
+    last_viewport: Bbox,
+    /// Strict visible ∩ pinned ∩ cells (sorted). Glyph/heatmap compose over this only.
+    draw_ids: Vec<String>,
+    /// Exact-count density ladder: heatmap rung active for trees.
+    heatmap_trees: bool,
+    /// Last exact tree+veg count over `draw_ids` (Class R).
+    exact_tree_count: u32,
+    /// R32Uint count grid (row-major cy×cx) for resident chunks.
+    density_grid: Vec<u32>,
+    density_grid_w: u32,
+    density_grid_h: u32,
 }
 
 fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {
@@ -191,6 +213,13 @@ impl Default for WorldResidency {
             tree_glyph_buf: Vec::new(),
             prop_glyph_buf: Vec::new(),
             badge_glyph_buf: Vec::new(),
+            last_viewport: [0.0, 0.0, 0.0, 0.0],
+            draw_ids: Vec::new(),
+            heatmap_trees: false,
+            exact_tree_count: 0,
+            density_grid: Vec::new(),
+            density_grid_w: 0,
+            density_grid_h: 0,
         }
     }
 }
@@ -211,7 +240,7 @@ impl WorldResidency {
             }
         }
         self.rebuild_glyph_lookup_from_prefabs();
-        self.rebuild_glyph_buffers();
+        self.refresh_draw_set_and_glyphs();
     }
 
     /// User layer toggles (mirrors `worldLayerPrefs.classToggles` trees/props/buildings).
@@ -225,7 +254,7 @@ impl WorldResidency {
         self.toggle_trees = trees;
         self.toggle_props = props;
         self.toggle_buildings = buildings;
-        self.rebuild_glyph_buffers();
+        self.refresh_draw_set_and_glyphs();
     }
 
     fn rebuild_glyph_lookup_from_prefabs(&mut self) {
@@ -341,15 +370,17 @@ impl WorldResidency {
     ) -> Vec<String> {
         let zoom_changed = (self.deck_zoom - deck_zoom).abs() > f64::EPSILON;
         self.deck_zoom = deck_zoom;
+        self.last_viewport = [min_x, min_y, max_x, max_y];
         if !building_visible(deck_zoom) {
             if !self.pinned_ids.is_empty() {
                 self.pinned_ids.clear();
                 self.pinned_set.clear();
                 self.pinned_key.clear();
                 self.rebuild_buffers();
-            } else if zoom_changed {
-                // Buildings already empty but glyph LOD may have closed/opened (tree band).
-                self.rebuild_glyph_buffers();
+            } else {
+                // Glyph LOD / draw-set may still change with zoom or viewport.
+                let _ = zoom_changed;
+                self.refresh_draw_set_and_glyphs();
             }
             return Vec::new();
         }
@@ -370,9 +401,8 @@ impl WorldResidency {
         let key = ids.join(",");
         if key == self.pinned_key {
             // Zoom change with same chunks still needs glyph recompose (LOD / min-px).
-            if zoom_changed {
-                self.rebuild_glyph_buffers();
-            }
+            // Draw-set always refreshes from last_viewport (strict rect may differ from pin).
+            self.refresh_draw_set_and_glyphs();
             // T-151.4.1: same pin key usually means "nothing new". But an aborted fetch can leave
             // the pin unsettled with empty inflight — re-request those undelivered ids.
             if self.pin_settled() || !self.inflight.is_empty() {
@@ -582,10 +612,52 @@ impl WorldResidency {
         }
         self.fill_buf = fill;
         self.outline_buf = outline;
+        self.refresh_draw_set_and_glyphs();
+    }
+
+    /// Strict visible rect → chunk ids ∩ pinned ∩ cells (Class S draw-set). No preload expand.
+    /// [`DRAW_CULL_MARGIN_M`] is locked at 0 — do not expand `strict_bbox` before this call.
+    #[must_use]
+    pub fn draw_chunk_ids(&self, strict_bbox: Bbox) -> Vec<String> {
+        debug_assert_eq!(DRAW_CULL_MARGIN_M, 0.0);
+        let chunk_size_m = match &self.manifest {
+            Some(m) => m.chunk_size_m,
+            None => return Vec::new(),
+        };
+        let rect = chunk_rect_for_bbox(strict_bbox, self.terrain, chunk_size_m);
+        let mut ids = chunk_ids_for_rect(rect);
+        if let Some(cells) = &self.cell_ids {
+            ids.retain(|id| cells.contains(id));
+        }
+        ids.retain(|id| self.pinned_set.contains(id));
+        ids.sort();
+        ids
+    }
+
+    /// Recompute `draw_ids` + density ladder + glyph buffers from `last_viewport`.
+    fn refresh_draw_set_and_glyphs(&mut self) {
+        self.draw_ids = self.draw_chunk_ids(self.last_viewport);
+        let (gw, gh) = density_grid_dims(self.terrain.width, self.terrain.height, {
+            self.manifest
+                .as_ref()
+                .map(|m| m.chunk_size_m)
+                .unwrap_or(512.0)
+        });
+        self.density_grid_w = gw;
+        self.density_grid_h = gh;
+        if gw > 0 && gh > 0 && self.terrain.width > 0.0 {
+            self.density_grid = pack_density_grid_r32(&self.chunks, gw, gh);
+        } else {
+            self.density_grid.clear();
+        }
+        let exact = exact_tree_count(&self.chunks, &self.draw_ids);
+        self.exact_tree_count = exact as u32;
+        self.heatmap_trees = heatmap_trees(exact);
         self.rebuild_glyph_buffers();
     }
 
-    /// Compose tree / prop / badge glyph instance buffers (replace-not-accumulate, budget-capped).
+    /// Compose tree / prop / badge glyph instance buffers from **draw_ids** only.
+    /// Tree ladder: when `heatmap_trees`, tree glyphs are cleared (heatmap lane owns the rung).
     fn rebuild_glyph_buffers(&mut self) {
         self.tree_glyph_buf.clear();
         self.prop_glyph_buf.clear();
@@ -608,19 +680,18 @@ impl WorldResidency {
         let rock_code = class_code("rockLarge");
         let building_code = class_code("building");
 
-        let mut ids = self.pinned_ids.clone();
-        ids.sort();
-        let mut total = 0usize;
+        let ids = self.draw_ids.clone();
+        // Trees: pack every draw-set instance when under budget; clear when heatmap rung.
+        let pack_trees = tree_want && !self.heatmap_trees;
+        let mut prop_total = 0usize;
+        let mut badge_total = 0usize;
 
         for id in &ids {
-            if total >= INSTANCE_BUDGET {
-                break;
-            }
             let Some(chunk) = self.chunks.get(id) else {
                 continue;
             };
 
-            if tree_want || prop_want {
+            if pack_trees || prop_want {
                 for &code in &[tree_code, veg_code, prop_code, rock_code] {
                     let class_ok = match code {
                         c if c == tree_code => class_visible("tree", z),
@@ -636,20 +707,24 @@ impl WorldResidency {
                         continue;
                     };
                     for &r in rows {
-                        if total >= INSTANCE_BUDGET {
-                            break;
-                        }
                         let r = r as usize;
                         let Some(info) = self.glyph_by_u16.get(&chunk.prefab_idx[r]).cloned()
                         else {
                             continue;
                         };
                         let is_tree_group = info.group == 0;
-                        if is_tree_group && !tree_want {
-                            continue;
-                        }
-                        if !is_tree_group && !prop_want {
-                            continue;
+                        if is_tree_group {
+                            if !pack_trees {
+                                continue;
+                            }
+                        } else {
+                            if !prop_want {
+                                continue;
+                            }
+                            // Props keep a hard composition budget (no heatmap this slice).
+                            if prop_total + badge_total >= INSTANCE_BUDGET {
+                                continue;
+                            }
                         }
                         let size =
                             size_with_min_px(f64::from(info.size_m), GLYPH_SIZE_MIN_PX, z) as f32;
@@ -676,8 +751,8 @@ impl WorldResidency {
                                 info.glyph_idx,
                                 info.tint,
                             );
+                            prop_total += 1;
                         }
-                        total += 1;
                     }
                 }
             }
@@ -687,7 +762,7 @@ impl WorldResidency {
                     continue;
                 };
                 for &r in rows {
-                    if total >= INSTANCE_BUDGET {
+                    if prop_total + badge_total >= INSTANCE_BUDGET {
                         break;
                     }
                     let r = r as usize;
@@ -710,7 +785,7 @@ impl WorldResidency {
                         glyph_idx,
                         pack_rgba_u32([255, 255, 255, 255]),
                     );
-                    total += 1;
+                    badge_total += 1;
                 }
             }
         }
@@ -759,6 +834,43 @@ impl WorldResidency {
     #[must_use]
     pub fn badge_glyph_count(&self) -> u32 {
         (self.badge_glyph_buf.len() / super::glyph_math::ICON_INSTANCE_STRIDE) as u32
+    }
+
+    /// Sorted draw-set chunk ids (strict visible ∩ pinned ∩ cells).
+    #[must_use]
+    pub fn draw_ids(&self) -> &[String] {
+        &self.draw_ids
+    }
+
+    #[must_use]
+    pub fn chunks_draw(&self) -> u32 {
+        self.draw_ids.len() as u32
+    }
+
+    /// Exact-count tree heatmap rung active.
+    #[must_use]
+    pub fn heatmap_trees_active(&self) -> bool {
+        self.heatmap_trees
+    }
+
+    #[must_use]
+    pub fn exact_tree_count_draw(&self) -> u32 {
+        self.exact_tree_count
+    }
+
+    /// R32Uint density grid bytes (little-endian u32 per texel) + width/height.
+    #[must_use]
+    pub fn density_grid_r32_bytes(&self) -> Vec<u8> {
+        let mut out = Vec::with_capacity(self.density_grid.len() * 4);
+        for &v in &self.density_grid {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out
+    }
+
+    #[must_use]
+    pub fn density_grid_dims(&self) -> (u32, u32) {
+        (self.density_grid_w, self.density_grid_h)
     }
 
     /// Pick nearest world instance id `"{chunkId}:{row}"` within `radius_m`, optional class mask.
@@ -850,10 +962,11 @@ impl WorldResidency {
 
     /// Additive residency stats JSON (separate from `RenderEngine::stats()`).
     /// T-151.4.1: appends `inflight_count` + `pin_settled` (prior keys unchanged).
+    /// T-151.8: appends `chunks_draw`, `exact_tree_count`, `heatmap_trees` (prior keys unchanged).
     #[must_use]
     pub fn stats_json(&self) -> String {
         format!(
-            "{{\"chunks_resident\":{},\"chunks_pinned\":{},\"chunks_applied\":{},\"apply_frames\":{},\"apply_budget_ms_last\":{},\"max_apply_ms\":{},\"frames_over_budget\":{},\"building_instances\":{},\"index_size\":{},\"inflight_count\":{},\"pin_settled\":{}}}",
+            "{{\"chunks_resident\":{},\"chunks_pinned\":{},\"chunks_applied\":{},\"apply_frames\":{},\"apply_budget_ms_last\":{},\"max_apply_ms\":{},\"frames_over_budget\":{},\"building_instances\":{},\"index_size\":{},\"inflight_count\":{},\"pin_settled\":{},\"chunks_draw\":{},\"exact_tree_count\":{},\"heatmap_trees\":{}}}",
             self.chunks.len(),
             self.pinned_ids.len(),
             self.chunks_applied,
@@ -865,6 +978,9 @@ impl WorldResidency {
             self.index.size(),
             self.inflight.len(),
             self.pin_settled(),
+            self.draw_ids.len(),
+            self.exact_tree_count,
+            self.heatmap_trees,
         )
     }
 }
@@ -872,6 +988,7 @@ impl WorldResidency {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::world::density_ladder::density_texel_sum_for_draw_ids;
     use flate2::Compression;
     use flate2::write::GzEncoder;
     use std::io::Write;
@@ -1060,5 +1177,116 @@ mod tests {
         // Chunk 4_4 origin (2048,2048) + (100.5,200.25) = (2148.5, 2248.25); building code 0.
         let hit = r.pick_nearest(2148.5, 2248.25, 5.0, Some(1 << 0));
         assert!(hit.is_some(), "should pick the building at chunk 4_4");
+    }
+
+    /// Class S: draw_chunk_ids == strict rect ∩ pinned ∩ cells (sorted equality).
+    #[test]
+    fn class_s_draw_set_equals_strict_reference() {
+        let mut r = setup();
+        // Pin a wide preload region via set_viewport.
+        drive(&mut r, [1500.0, 1500.0, 3500.0, 3500.0]);
+        assert!(r.pinned_ids.len() >= 9);
+
+        let strict: Bbox = [2048.0, 2048.0, 3072.0, 3072.0];
+        let draw = r.draw_chunk_ids(strict);
+        let mut reference = chunk_ids_for_rect(chunk_rect_for_bbox(strict, r.terrain, 512.0));
+        if let Some(cells) = &r.cell_ids {
+            reference.retain(|id| cells.contains(id));
+        }
+        reference.retain(|id| r.pinned_set.contains(id));
+        reference.sort();
+        assert_eq!(draw, reference);
+
+        for id in &draw {
+            assert!(r.pinned_set.contains(id));
+        }
+
+        // Preload pin ⊃ draw-set: viewport pin with preload expands beyond strict rect.
+        let pin_via_viewport = chunk_ids_for_viewport(strict, r.terrain, 512.0, 0);
+        let mut pin_set: HashSet<String> = pin_via_viewport.into_iter().collect();
+        if let Some(cells) = &r.cell_ids {
+            pin_set.retain(|id| cells.contains(id));
+        }
+        // draw is strict subset of preload viewport set whenever preload adds a ring.
+        assert!(
+            pin_set.len() > draw.len(),
+            "preload must expand beyond strict draw (pin {} vs draw {})",
+            pin_set.len(),
+            draw.len()
+        );
+        for id in &draw {
+            assert!(pin_set.contains(id), "draw id {id} must be in preload pin");
+        }
+    }
+
+    /// Class R: heatmap swap clears tree glyphs; under-budget packs every instance.
+    #[test]
+    fn class_r_heatmap_swap_and_full_pack() {
+        let mut r = setup();
+        // Inject synthetic tree rows into two resident chunks after a pin.
+        drive(&mut r, [2048.0, 2048.0, 3072.0, 3072.0]);
+        r.last_viewport = [2048.0, 2048.0, 3072.0, 3072.0];
+        r.deck_zoom = 0.0; // tree glyphs visible
+        r.toggle_trees = true;
+
+        let draw = r.draw_chunk_ids(r.last_viewport);
+        assert!(!draw.is_empty());
+        // Put 10 trees in first draw chunk — under budget → glyphs == exact.
+        let id0 = draw[0].clone();
+        {
+            let c = r.chunks.get_mut(&id0).unwrap();
+            let n = 10usize;
+            c.count = n as u32;
+            c.positions = vec![0.0; n * 2];
+            c.prefab_idx = vec![0; n];
+            c.rotations = vec![0.0; n];
+            c.z = vec![0.0; n];
+            c.cls_codes = vec![class_code("tree"); n];
+            c.rows_by_class.clear();
+            c.rows_by_class
+                .insert(class_code("tree"), (0..n as u32).collect());
+        }
+        // Prefab 0 must resolve as tree glyph — without atlas map, pack skips; force heatmap path
+        // via exact count alone for R4, and for R5 use exact_tree_count without glyph lookup.
+        r.refresh_draw_set_and_glyphs();
+        let exact = exact_tree_count(&r.chunks, &r.draw_ids);
+        assert_eq!(exact, 10);
+        assert!(!r.heatmap_trees_active());
+        // Texel sum Class R.
+        let sum = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
+        assert_eq!(sum, exact as u64);
+
+        // Force over-budget: inflate one chunk's tree rows to INSTANCE_BUDGET + 1.
+        {
+            let c = r.chunks.get_mut(&id0).unwrap();
+            let n = INSTANCE_BUDGET + 1;
+            c.count = n as u32;
+            c.positions = vec![0.0; n * 2];
+            c.prefab_idx = vec![0; n];
+            c.rotations = vec![0.0; n];
+            c.z = vec![0.0; n];
+            c.cls_codes = vec![class_code("tree"); n];
+            c.rows_by_class.clear();
+            c.rows_by_class
+                .insert(class_code("tree"), (0..n as u32).collect());
+        }
+        r.refresh_draw_set_and_glyphs();
+        assert!(r.heatmap_trees_active());
+        assert_eq!(r.tree_glyph_count(), 0);
+        assert_eq!(r.exact_tree_count_draw() as usize, INSTANCE_BUDGET + 1);
+        let sum2 = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
+        assert_eq!(sum2, (INSTANCE_BUDGET + 1) as u64);
+    }
+
+    #[test]
+    fn class_r_chunks_draw_matches_draw_ids_len() {
+        let mut r = setup();
+        drive(&mut r, [2048.0, 2048.0, 3072.0, 3072.0]);
+        assert_eq!(r.chunks_draw() as usize, r.draw_ids().len());
+        let stats: serde_json::Value = serde_json::from_str(&r.stats_json()).unwrap();
+        assert_eq!(
+            stats["chunks_draw"].as_u64().unwrap(),
+            r.draw_ids().len() as u64
+        );
     }
 }

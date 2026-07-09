@@ -168,6 +168,8 @@ enum LaneRole {
     WorldBuildingsOutline,
     ForestFill,
     ForestOutline,
+    /// T-151.8 exact-count density heatmap (tree ladder over-budget rung).
+    DensityHeat,
     /// W5 tree + vegetation glyphs.
     WorldTrees,
     /// W5 prop + rockLarge glyphs.
@@ -201,14 +203,15 @@ fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldBuildingsOutline => 9,
         LaneRole::ForestFill => 10,
         LaneRole::ForestOutline => 11,
-        LaneRole::WorldTrees => 12,
-        LaneRole::WorldProps => 13,
-        LaneRole::WorldBadges => 14,
-        LaneRole::Slots => 15,
-        LaneRole::SlotDrag => 16,
-        LaneRole::Clusters => 17,
-        LaneRole::Grid => 18,
-        LaneRole::Marquee => 19,
+        LaneRole::DensityHeat => 12,
+        LaneRole::WorldTrees => 13,
+        LaneRole::WorldProps => 14,
+        LaneRole::WorldBadges => 15,
+        LaneRole::Slots => 16,
+        LaneRole::SlotDrag => 17,
+        LaneRole::Clusters => 18,
+        LaneRole::Grid => 19,
+        LaneRole::Marquee => 20,
     }
 }
 
@@ -873,6 +876,12 @@ pub struct RenderEngine {
     forest_polygons: u32,
     forest_outline_segments: u32,
     timer: Option<GpuTimer>,
+    /// T-151.8 damage-driven render skip.
+    damage: crate::damage::RenderDamage,
+    /// Last `render()` submitted GPU work (Class R idle gate).
+    submitted_last_frame: bool,
+    /// Density heatmap visible flag (stats).
+    density_heatmap: bool,
 }
 
 #[wasm_bindgen]
@@ -1186,6 +1195,9 @@ impl RenderEngine {
             forest_polygons: 0,
             forest_outline_segments: 0,
             timer,
+            damage: crate::damage::RenderDamage::new(),
+            submitted_last_frame: false,
+            density_heatmap: false,
         })
     }
 
@@ -1202,22 +1214,42 @@ impl RenderEngine {
             self.config.height = (js_round(css_h * dpr).max(1.0)) as u32;
         }
         self.surface.configure(&self.device, &self.config);
+        self.damage.mark();
         Ok(())
     }
 
     /// Set the full view state (clamped like the editor's view-state layer).
     pub fn set_view(&mut self, target_x: f64, target_y: f64, zoom: f64) {
         self.camera.set_view(target_x, target_y, zoom);
+        self.damage.mark();
     }
 
     /// Drag-pan by CSS-pixel deltas (content follows cursor).
     pub fn pan(&mut self, dx_px: f64, dy_px: f64) {
         self.camera.pan(dx_px, dy_px);
+        self.damage.mark();
     }
 
     /// Cursor-anchored zoom (clamped to the view-state band).
     pub fn zoom_at(&mut self, dz: f64, cursor_x_px: f64, cursor_y_px: f64) {
         self.camera.zoom_at(dz, cursor_x_px, cursor_y_px);
+        self.damage.mark();
+    }
+
+    /// T-151.8 — mark the next `render()` as needing a GPU submit.
+    pub fn mark_dirty(&mut self) {
+        self.damage.mark();
+    }
+
+    /// T-151.8 — HUD continuous render (every rAF submits). Default false.
+    pub fn set_continuous_render(&mut self, on: bool) {
+        self.damage.set_continuous(on);
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn submitted_last_frame(&self) -> bool {
+        self.submitted_last_frame
     }
 
     #[wasm_bindgen(getter)]
@@ -1260,7 +1292,14 @@ impl RenderEngine {
 
     /// Render one frame to the canvas. Steady-state CPU→GPU traffic is exactly the 64-byte
     /// mvp uniform (the navigation invariant); instance data is static in GPU memory.
+    /// T-151.8: when `!dirty && !continuous`, skip surface acquire / encode / submit.
     pub fn render(&mut self) -> Result<(), JsError> {
+        if !self.damage.begin_frame().submit {
+            self.uniform_bytes_last_frame = 0;
+            self.submitted_last_frame = false;
+            return Ok(());
+        }
+
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         self.queue
             .write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(&mvp));
@@ -1275,7 +1314,11 @@ impl RenderEngine {
         use wgpu::CurrentSurfaceTexture as Cst;
         let frame = match self.surface.get_current_texture() {
             Cst::Success(f) | Cst::Suboptimal(f) => f,
-            Cst::Timeout | Cst::Occluded => return Ok(()), // skip this frame
+            Cst::Timeout | Cst::Occluded => {
+                // Surface not ready — keep dirty so the next rAF retries.
+                self.submitted_last_frame = false;
+                return Ok(());
+            }
             Cst::Outdated | Cst::Lost => {
                 // Reconfigure + retry once — also self-heals the StrictMode canvas
                 // reconfiguration race (plan §S5 I3).
@@ -1355,6 +1398,8 @@ impl RenderEngine {
         if take_timing && let Some(t) = &self.timer {
             t.kick_readback();
         }
+        self.damage.after_submit();
+        self.submitted_last_frame = true;
         Ok(())
     }
 
@@ -1580,7 +1625,8 @@ impl RenderEngine {
                 "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{},",
-                "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{}}}"
+                "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
+                "\"submitted_last_frame\":{},\"density_heatmap\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1610,6 +1656,8 @@ impl RenderEngine {
             slot_instances,
             slot_drag_instances,
             cluster_instances,
+            self.submitted_last_frame,
+            self.density_heatmap,
         )
     }
 }
@@ -1696,11 +1744,16 @@ impl RenderEngine {
             .position(|b| lane_order(b.role) > lane_order(role))
             .unwrap_or(self.batches.len());
         self.batches.insert(pos, batch);
+        self.damage.mark();
     }
 
     /// Drop every batch of `role` (its GPU resources free on `Drop`).
     fn remove_lane(&mut self, role: LaneRole) {
+        let had = self.batches.iter().any(|b| b.role == role);
         self.batches.retain(|b| b.role != role);
+        if had {
+            self.damage.mark();
+        }
     }
 
     /// Encode the live scene into an offscreen `Rgba8Unorm` target at the current camera, copy it
@@ -2413,6 +2466,109 @@ impl RenderEngine {
         self.remove_lane(LaneRole::WorldTrees);
         self.remove_lane(LaneRole::WorldProps);
         self.remove_lane(LaneRole::WorldBadges);
+    }
+
+    /// T-151.8 — upload exact-count density grid (LE u32 bytes) as a world-bounds heatmap quad.
+    /// Class R count grid lives in residency; GPU samples an RGBA8 visual encoding of those counts.
+    /// `world_w`/`world_h` = terrain meters (Everon 12800). Empty / invisible → drop lane.
+    pub fn upload_density_grid(
+        &mut self,
+        counts_le: &[u8],
+        width: u32,
+        height: u32,
+        world_w: f64,
+        world_h: f64,
+        visible: bool,
+    ) {
+        self.density_heatmap = visible && width > 0 && height > 0 && !counts_le.is_empty();
+        if !self.density_heatmap {
+            self.remove_lane(LaneRole::DensityHeat);
+            return;
+        }
+        let Some(rgba) = crate::density_heat::density_counts_to_rgba(counts_le, width, height)
+        else {
+            self.remove_lane(LaneRole::DensityHeat);
+            self.density_heatmap = false;
+            return;
+        };
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("density-heat"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            wgpu::TexelCopyTextureInfo {
+                texture: &texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            &rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("density-heat"),
+            layout: &self.tex_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.sampler),
+                },
+            ],
+        });
+        let rect = lanes::world_rect_rel([0.0, 0.0], [world_w, world_h]);
+        let inst = QuadInstance {
+            min: [rect[0], rect[1]],
+            max: [rect[2], rect[3]],
+            color: [1.0, 1.0, 1.0, 0.85],
+        };
+        use wgpu::util::DeviceExt;
+        let instances = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("density-heat-quad"),
+                contents: bytemuck::cast_slice(&[inst]),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        let lane = TexLane {
+            texture,
+            bind_group,
+            instances,
+            mode: BasemapMode::Unified,
+            tiles: 0,
+            bytes: rgba.len() as u64,
+        };
+        self.upsert_lane(
+            LaneRole::DensityHeat,
+            Batch {
+                role: LaneRole::DensityHeat,
+                visible: true,
+                payload: BatchPayload::Textured(lane),
+            },
+        );
     }
 
     // ── W6 mission slot / cluster icon lanes ─────────────────────────────────────────────────

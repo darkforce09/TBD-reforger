@@ -1799,6 +1799,40 @@ impl WorldResidency {
         self.inner.badge_glyph_count()
     }
 
+    /// T-151.8 — strict-visible draw-set size.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn chunks_draw(&self) -> u32 {
+        self.inner.chunks_draw()
+    }
+
+    /// T-151.8 — exact-count tree heatmap rung active.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn heatmap_trees(&self) -> bool {
+        self.inner.heatmap_trees_active()
+    }
+
+    /// T-151.8 — exact tree+veg count over draw_ids.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn exact_tree_count(&self) -> u32 {
+        self.inner.exact_tree_count_draw()
+    }
+
+    /// T-151.8 — R32Uint density grid (LE bytes) for `upload_density_grid`.
+    #[must_use]
+    pub fn density_grid_r32_bytes(&self) -> Vec<u8> {
+        self.inner.density_grid_r32_bytes()
+    }
+
+    /// T-151.8 — `[width, height]` of the density grid.
+    #[must_use]
+    pub fn density_grid_size(&self) -> Vec<u32> {
+        let (w, h) = self.inner.density_grid_dims();
+        vec![w, h]
+    }
+
     /// Nearest world instance id `"{chunkId}:{row}"` within `radius_m`; `mask` = optional class
     /// bitmask over the 5 render-class codes (bit `c` set ⇒ class `c` allowed).
     #[must_use]
