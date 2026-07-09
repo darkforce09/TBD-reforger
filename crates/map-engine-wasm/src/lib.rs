@@ -17,9 +17,42 @@ use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
 use map_engine_core::world::{
     WorldError, WorldResidency as CoreWorldResidency, WorldSpatialIndex as CoreWorldSpatialIndex,
-    WorldStore as CoreWorldStore,
+    WorldStore as CoreWorldStore, class_visible as core_class_visible,
 };
 use wasm_bindgen::prelude::*;
+
+/// LOD gate: `class_visible(class, deckZoom)` — Class R vs `lodGates.ts` (T-151.5 L6).
+#[wasm_bindgen]
+#[must_use]
+pub fn class_visible(cls: &str, deck_zoom: f64) -> bool {
+    core_class_visible(cls, deck_zoom)
+}
+
+/// Exhaustive LOD scan helper: returns JSON array of `{cls,z,v}` for vitest parity.
+#[wasm_bindgen]
+#[must_use]
+pub fn class_visible_scan_json() -> String {
+    use map_engine_core::world::WORLD_RENDER_CLASSES;
+    let mut out = String::from("[");
+    let mut first = true;
+    for cls in WORLD_RENDER_CLASSES {
+        for i in 0..=120 {
+            let z = -6.0 + f64::from(i) * 0.1;
+            let z = (z * 10.0).round() / 10.0;
+            let v = core_class_visible(cls, z);
+            if !first {
+                out.push(',');
+            }
+            first = false;
+            out.push_str(&format!(
+                "{{\"cls\":\"{cls}\",\"z\":{z},\"v\":{}}}",
+                if v { "true" } else { "false" }
+            ));
+        }
+    }
+    out.push(']');
+    out
+}
 
 // The wgpu render engine (T-151.0 L1). Re-exporting the `#[wasm_bindgen]` `RenderEngine` from this
 // crate makes wasm-bindgen emit its bindings into the single bundler pkg, so `RenderEngine` and
@@ -1652,6 +1685,52 @@ impl WorldResidency {
     #[must_use]
     pub fn world_building_outline(&self) -> Vec<f32> {
         self.inner.world_building_outline()
+    }
+
+    /// Register atlas icon keys in UV-table order (must match `upload_glyph_atlas` UV order).
+    pub fn set_glyph_key_map(&mut self, keys: Vec<String>) {
+        self.inner.set_glyph_key_map(&keys);
+    }
+
+    /// User layer toggles (trees / props / buildings-for-badges).
+    pub fn set_glyph_toggles(&mut self, trees: bool, props: bool, buildings: bool) {
+        self.inner.set_glyph_toggles(trees, props, buildings);
+    }
+
+    /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).
+    #[must_use]
+    pub fn world_tree_glyphs(&self) -> Vec<u8> {
+        self.inner.world_tree_glyphs()
+    }
+
+    /// Packed prop+rockLarge icon instances (WORLD coords, 20 B each).
+    #[must_use]
+    pub fn world_prop_glyphs(&self) -> Vec<u8> {
+        self.inner.world_prop_glyphs()
+    }
+
+    /// Packed building-badge icon instances (WORLD coords, 20 B each).
+    #[must_use]
+    pub fn world_badge_glyphs(&self) -> Vec<u8> {
+        self.inner.world_badge_glyphs()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn tree_glyph_count(&self) -> u32 {
+        self.inner.tree_glyph_count()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn prop_glyph_count(&self) -> u32 {
+        self.inner.prop_glyph_count()
+    }
+
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn badge_glyph_count(&self) -> u32 {
+        self.inner.badge_glyph_count()
     }
 
     /// Nearest world instance id `"{chunkId}:{row}"` within `radius_m`; `mask` = optional class

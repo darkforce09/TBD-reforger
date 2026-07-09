@@ -3,15 +3,20 @@
 // the Rust `WorldResidency` (which parses once, holds the multi-chunk LRU, and composes the
 // building GPU buffers), then this pushes those buffers to the `RenderEngine` building lanes.
 //
+// T-151.5 W5: also loads the world glyph atlas once and pushes tree/prop/badge icon lanes from
+// the same residency (replace-not-accumulate, INSTANCE_BUDGET, LOD + prefs).
+//
 // D2 framing (t145 kickoff): JS fetches, Rust parses. No per-frame JS consumer, so no
 // SharedArrayBuffer. Deck's worker/chunkStore/rbush path is untouched — this only drives the
 // `?engine=wgpu` mount.
 //
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
-// concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building lanes.
+// concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.
 
 import { WorldResidency, WorldStore } from '@/wasm/pkg/map_engine_wasm'
+import { loadWorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { classVisible } from '../worldmap/lodGates'
+import { getClassToggles } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -73,6 +78,7 @@ export class WgpuWorldController {
   private roadsLoaded = false
   private landcoverPushed = false
   private lastRoadZoomBand = Number.NaN
+  private atlasReady = false
 
   private fetchAc: AbortController | null = null
   private moveTimer: ReturnType<typeof setTimeout> | null = null
@@ -99,10 +105,64 @@ export class WgpuWorldController {
     this.assetBase = manifestUrl.slice(0, manifestUrl.lastIndexOf('/'))
     await this.loadPrefabsAndIndex(exp, ac.signal)
     if (this.disposed || !this.residency) return
+    await this.loadGlyphAtlas()
+    if (this.disposed || !this.residency) return
     await this.loadRoadsAndLandcover(exp, ac.signal)
     if (this.disposed) return
+    this.syncGlyphToggles()
     this.ready = true
     this.runViewport()
+  }
+
+  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings). */
+  syncGlyphToggles(): void {
+    if (!this.residency || this.disposed) return
+    const t = getClassToggles()
+    this.residency.set_glyph_toggles(t.trees, t.props, t.buildings)
+    if (this.ready) this.pushGlyphsToEngine()
+  }
+
+  /** Decode world-glyphs.webp + JSON → GPU atlas + UV table + key map (T-151.5 L1–L3). */
+  private async loadGlyphAtlas(): Promise<void> {
+    if (!this.residency) return
+    try {
+      const atlas = await loadWorldGlyphAtlas()
+      if (!atlas || this.disposed || !this.residency) return
+      const keys = Object.keys(atlas.iconMapping).sort()
+      if (keys.length !== 28) {
+        console.warn(`[wgpu-world] glyph atlas key count ${keys.length} ≠ 28 — glyphs off`)
+        return
+      }
+      const meta = await fetch(atlas.atlasUrl)
+      if (!meta.ok || this.disposed) return
+      const blob = await meta.blob()
+      const bmp = await createImageBitmap(blob)
+      const w = bmp.width
+      const h = bmp.height
+      const canvas = new OffscreenCanvas(w, h)
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        bmp.close()
+        return
+      }
+      ctx.drawImage(bmp, 0, 0)
+      bmp.close()
+      const imageData = ctx.getImageData(0, 0, w, h)
+      const rgba = new Uint8Array(imageData.data.buffer)
+      const uv = new Float32Array(28 * 4)
+      for (let i = 0; i < keys.length; i++) {
+        const r = atlas.iconMapping[keys[i]]
+        uv[i * 4 + 0] = r.x / w
+        uv[i * 4 + 1] = r.y / h
+        uv[i * 4 + 2] = (r.x + r.width) / w
+        uv[i * 4 + 3] = (r.y + r.height) / h
+      }
+      this.engine.upload_glyph_atlas(rgba, w, h, uv)
+      this.residency.set_glyph_key_map(keys)
+      this.atlasReady = true
+    } catch (err) {
+      console.warn('[wgpu-world] glyph atlas load failed — tree/prop glyphs off', err)
+    }
   }
 
   /** Fetch + load the terrain manifest; returns the object-export paths iff a v2 export exists. */
@@ -372,8 +432,38 @@ export class WgpuWorldController {
     }
     this.engine.upload_world_buildings(fill, rstats.chunks_pinned, true)
     this.engine.upload_world_building_outlines(outline, true)
-    const engStats = JSON.parse(this.engine.stats()) as { world_building_instances: number }
-    this.publishDebug(rstats, engStats.world_building_instances)
+    this.pushGlyphsToEngine()
+    const engStats = JSON.parse(this.engine.stats()) as {
+      world_building_instances: number
+      tree_glyphs?: number
+      prop_glyphs?: number
+      badge_glyphs?: number
+    }
+    this.publishDebug(rstats, engStats.world_building_instances, engStats)
+  }
+
+  /** Push tree / prop / badge icon lanes (sticky empty mid-hydration). */
+  private pushGlyphsToEngine(): void {
+    if (this.disposed || !this.residency || !this.atlasReady) return
+    const rstats = JSON.parse(this.residency.stats()) as {
+      inflight_count: number
+      pin_settled: boolean
+    }
+    const midHydration =
+      rstats.inflight_count > 0 || this.pending.length > 0 || !rstats.pin_settled
+    const trees = this.residency.world_tree_glyphs()
+    const props = this.residency.world_prop_glyphs()
+    const badges = this.residency.world_badge_glyphs()
+    // kind: 0 trees, 1 props, 2 badges — sticky when empty mid-hydration.
+    if (trees.length > 0 || !midHydration) {
+      this.engine.upload_icon_lane(0, trees, trees.length > 0)
+    }
+    if (props.length > 0 || !midHydration) {
+      this.engine.upload_icon_lane(1, props, props.length > 0)
+    }
+    if (badges.length > 0 || !midHydration) {
+      this.engine.upload_icon_lane(2, badges, badges.length > 0)
+    }
   }
 
   /** Dev surface for S1 verify: `window.__wgpuWorldStats`. */
@@ -386,11 +476,16 @@ export class WgpuWorldController {
       chunks_resident: number
     },
     engineInstances: number,
+    engStats?: { tree_glyphs?: number; prop_glyphs?: number; badge_glyphs?: number },
   ): void {
     if (typeof window === 'undefined') return
     ;(window as unknown as { __wgpuWorldStats?: unknown }).__wgpuWorldStats = {
       ...rstats,
       world_building_instances: engineInstances,
+      tree_glyphs: engStats?.tree_glyphs ?? this.residency?.tree_glyph_count ?? 0,
+      prop_glyphs: engStats?.prop_glyphs ?? this.residency?.prop_glyph_count ?? 0,
+      badge_glyphs: engStats?.badge_glyphs ?? this.residency?.badge_glyph_count ?? 0,
+      atlas_ready: this.atlasReady,
       pending: this.pending.length,
     }
   }

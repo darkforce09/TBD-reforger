@@ -93,6 +93,8 @@ pub(crate) enum PipelineKind {
     BuildingQuad,
     /// W4 triangulated polygon fills (sea, landcover, forest, marquee, road strips).
     PolygonFill,
+    /// W5 atlas-sampled icon instances (`scene::IconInstance`, 20 B).
+    IconInstanced,
 }
 
 /// The 3-way map style's satellite-field opacity mode + the derived basemap render mode, surfaced
@@ -147,13 +149,19 @@ enum LaneRole {
     WorldBuildingsOutline,
     ForestFill,
     ForestOutline,
+    /// W5 tree + vegetation glyphs.
+    WorldTrees,
+    /// W5 prop + rockLarge glyphs.
+    WorldProps,
+    /// W5 building badges.
+    WorldBadges,
     Grid,
     /// Optional selection marquee (on top of grid).
     Marquee,
 }
 
-/// Draw-order key (T-151.4 L3): basemap → sea → hillshade → landcover → contours → roads* →
-/// buildings* → forest* → grid → marquee. Spike batches sort first, never interleaved.
+/// Draw-order key (T-151.5 L8): … forest* → trees → props → badges → grid → marquee.
+/// Spike batches sort first, never interleaved.
 fn lane_order(role: LaneRole) -> u8 {
     match role {
         LaneRole::Stress | LaneRole::Calibration => 0,
@@ -168,8 +176,11 @@ fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldBuildingsOutline => 9,
         LaneRole::ForestFill => 10,
         LaneRole::ForestOutline => 11,
-        LaneRole::Grid => 12,
-        LaneRole::Marquee => 13,
+        LaneRole::WorldTrees => 12,
+        LaneRole::WorldProps => 13,
+        LaneRole::WorldBadges => 14,
+        LaneRole::Grid => 15,
+        LaneRole::Marquee => 16,
     }
 }
 
@@ -218,6 +229,13 @@ struct PolyLane {
     item_count: u32,
 }
 
+/// Shared glyph atlas GPU state (T-151.5): one texture + UV uniform + bind group for all icon lanes.
+struct GlyphAtlasGpu {
+    texture: wgpu::Texture,
+    bind_group: wgpu::BindGroup,
+    bytes: u64,
+}
+
 /// A texture being assembled between `tex_layer_begin` and `tex_layer_commit` — blocks/tiles are
 /// uploaded incrementally, then finalized into a [`TexLane`].
 struct PendingTex {
@@ -245,6 +263,11 @@ enum BatchPayload {
     },
     /// W4 polygon fill / wide polyline strips (indexed triangle list).
     Polygon(PolyLane),
+    /// W5 atlas icon instances (`scene::IconInstance`, 20 B each).
+    IconInstanced {
+        instances: wgpu::Buffer,
+        count: u32,
+    },
 }
 
 impl BatchPayload {
@@ -255,6 +278,7 @@ impl BatchPayload {
             Self::Lines(_) => PipelineKind::Polyline,
             Self::BuildingInstanced { .. } => PipelineKind::BuildingQuad,
             Self::Polygon(_) => PipelineKind::PolygonFill,
+            Self::IconInstanced { .. } => PipelineKind::IconInstanced,
         }
     }
 }
@@ -484,6 +508,80 @@ pub(crate) fn create_line_pipeline(
     })
 }
 
+/// W5 icon-instanced pipeline — unit quad + 20 B `IconInstance`, samples group-2 atlas.
+pub(crate) fn create_icon_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("icon-instanced"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_icon"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2],
+                },
+                wgpu::VertexBufferLayout {
+                    array_stride: 20,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &[
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: 0,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32,
+                            offset: 8,
+                            shader_location: 2,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Sint16,
+                            offset: 12,
+                            shader_location: 3,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Uint16,
+                            offset: 14,
+                            shader_location: 4,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Uint32,
+                            offset: 16,
+                            shader_location: 5,
+                        },
+                    ],
+                },
+            ],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_icon"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            ..wgpu::PrimitiveState::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
 /// W4 polygon-fill pipeline — same vertex layout as the hairline polyline (`LineVertex` 24 B)
 /// but drawn as an **indexed triangle list** with alpha blending (sea/landcover/forest/roads).
 pub(crate) fn create_polygon_pipeline(
@@ -593,6 +691,8 @@ fn draw_batches<'a>(
     line_pipeline: &'a wgpu::RenderPipeline,
     building_pipeline: &'a wgpu::RenderPipeline,
     polygon_pipeline: &'a wgpu::RenderPipeline,
+    icon_pipeline: &'a wgpu::RenderPipeline,
+    icon_atlas_bind: Option<&'a wgpu::BindGroup>,
 ) {
     // group 0 (camera mvp) is set after each `set_pipeline` — its layout is identical across all
     // pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always-valid
@@ -637,6 +737,17 @@ fn draw_batches<'a>(
                 pass.set_index_buffer(l.indices.slice(..), wgpu::IndexFormat::Uint32);
                 pass.draw_indexed(0..l.index_count, 0, 0..1);
             }
+            BatchPayload::IconInstanced { instances, count } => {
+                let Some(atlas_bg) = icon_atlas_bind else {
+                    continue;
+                };
+                pass.set_pipeline(icon_pipeline);
+                pass.set_bind_group(0, bind_group, &[]);
+                pass.set_bind_group(2, atlas_bg, &[]);
+                pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+                pass.set_vertex_buffer(1, instances.slice(..));
+                pass.draw(0..4, 0..*count);
+            }
         }
     }
 }
@@ -665,12 +776,20 @@ pub struct RenderEngine {
     building_pipeline: wgpu::RenderPipeline,
     /// W4 polygon-fill / wide-polyline strip pipeline (indexed triangle list).
     polygon_pipeline: wgpu::RenderPipeline,
+    /// W5 icon-instanced pipeline (atlas group 2).
+    icon_pipeline: wgpu::RenderPipeline,
+    icon_bind_group_layout: wgpu::BindGroupLayout,
+    icon_pipeline_layout: wgpu::PipelineLayout,
     sampler: wgpu::Sampler,
+    /// Nearest sampler for crisp glyph atlas pixels.
+    icon_sampler: wgpu::Sampler,
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     pub(crate) unit_quad_buf: wgpu::Buffer,
     pub(crate) calibration_buf: wgpu::Buffer,
     camera: OrthoCamera,
+    /// Shared glyph atlas (None until `upload_glyph_atlas`).
+    glyph_atlas: Option<GlyphAtlasGpu>,
     /// Ordered draw list (T-151.0 L7 → T-151.1 L1): editor lanes (basemap → hillshade → grid,
     /// `lane_order`) or the spike batches (stress chunks then the calibration batch last).
     batches: Vec<Batch>,
@@ -841,6 +960,50 @@ impl RenderEngine {
             create_building_pipeline(&device, &pipeline_layout, &shader, format);
         // W4 polygon fill (same group-0 camera layout; indexed triangle list).
         let polygon_pipeline = create_polygon_pipeline(&device, &pipeline_layout, &shader, format);
+        // W5 icon atlas: group 0 camera + group 2 (tex + samp + UV uniform).
+        let icon_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("glyph-atlas"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            // 28 × vec4 = 448 B
+                            min_binding_size: wgpu::BufferSize::new(448),
+                        },
+                        count: None,
+                    },
+                ],
+            });
+        let icon_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("icon-instanced"),
+            bind_group_layouts: &[
+                Some(&bind_group_layout),
+                None,
+                Some(&icon_bind_group_layout),
+            ],
+            immediate_size: 0,
+        });
+        let icon_pipeline = create_icon_pipeline(&device, &icon_pipeline_layout, &shader, format);
         // Trilinear + clamp-to-edge — the unified-satellite sampler contract (`satelliteUnified.ts`).
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("basemap-sampler"),
@@ -850,6 +1013,16 @@ impl RenderEngine {
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
             mipmap_filter: wgpu::MipmapFilterMode::Linear,
+            ..wgpu::SamplerDescriptor::default()
+        });
+        let icon_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("glyph-atlas-sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
             ..wgpu::SamplerDescriptor::default()
         });
 
@@ -926,12 +1099,17 @@ impl RenderEngine {
             line_pipeline,
             building_pipeline,
             polygon_pipeline,
+            icon_pipeline,
+            icon_bind_group_layout,
+            icon_pipeline_layout,
             sampler,
+            icon_sampler,
             uniform_buf,
             bind_group,
             unit_quad_buf,
             calibration_buf,
             camera,
+            glyph_atlas: None,
             batches: vec![calibration_batch],
             pending: [None, None],
             clear_color: CLEAR_COLOR,
@@ -1077,6 +1255,7 @@ impl RenderEngine {
             // Iterate the ordered draw list (T-151.1 L1): editor lanes basemap → hillshade → grid
             // (calibration hidden), or the spike's stress pool then calibration (on top). Group 0
             // is bound once inside `draw_batches`; the pipeline is switched per payload.
+            let atlas_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -1087,6 +1266,8 @@ impl RenderEngine {
                 &self.line_pipeline,
                 &self.building_pipeline,
                 &self.polygon_pipeline,
+                &self.icon_pipeline,
+                atlas_bg,
             );
         }
         if take_timing && let Some(t) = &self.timer {
@@ -1166,7 +1347,8 @@ impl RenderEngine {
         for batch in self.batches.drain(..) {
             match batch.payload {
                 BatchPayload::Instanced { instances, .. }
-                | BatchPayload::BuildingInstanced { instances, .. } => instances.destroy(),
+                | BatchPayload::BuildingInstanced { instances, .. }
+                | BatchPayload::IconInstanced { instances, .. } => instances.destroy(),
                 BatchPayload::Textured(l) => l.texture.destroy(),
                 BatchPayload::Lines(l) => l.verts.destroy(),
                 BatchPayload::Polygon(l) => {
@@ -1253,6 +1435,35 @@ impl RenderEngine {
                 _ => 0,
             })
             .sum();
+        // W5 additive glyph stats (L10) — prior keys untouched.
+        let tree_glyphs: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::WorldTrees)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
+        let prop_glyphs: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::WorldProps)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
+        let badge_glyphs: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::WorldBadges)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
+        let atlas_bytes = self.glyph_atlas.as_ref().map_or(0, |a| a.bytes);
         format!(
             concat!(
                 "{{\"backend\":\"{}\",\"instances\":{},\"chunks\":{},\"gpu_bytes\":{},",
@@ -1262,7 +1473,8 @@ impl RenderEngine {
                 "\"world_building_instances\":{},\"world_building_outline_vertices\":{},",
                 "\"world_chunks_drawn\":{},",
                 "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
-                "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{}}}"
+                "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
+                "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1285,6 +1497,10 @@ impl RenderEngine {
             self.road_segments,
             self.forest_polygons,
             self.forest_outline_segments,
+            tree_glyphs,
+            prop_glyphs,
+            badge_glyphs,
+            atlas_bytes,
         )
     }
 }
@@ -1419,6 +1635,8 @@ impl RenderEngine {
             }],
         });
 
+        let icon =
+            create_icon_pipeline(&self.device, &self.icon_pipeline_layout, &self.shader, fmt);
         let (read_buf, _view, _texture) = self.render_target_readback(
             w,
             h,
@@ -1429,6 +1647,7 @@ impl RenderEngine {
             &line,
             &building,
             &polygon,
+            &icon,
         );
         read_buf
     }
@@ -1447,6 +1666,7 @@ impl RenderEngine {
         line: &wgpu::RenderPipeline,
         building: &wgpu::RenderPipeline,
         polygon: &wgpu::RenderPipeline,
+        icon: &wgpu::RenderPipeline,
     ) -> (wgpu::Buffer, wgpu::TextureView, wgpu::Texture) {
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("readback-target"),
@@ -1491,6 +1711,7 @@ impl RenderEngine {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
+            let atlas_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -1501,6 +1722,8 @@ impl RenderEngine {
                 line,
                 building,
                 polygon,
+                icon,
+                atlas_bg,
             );
         }
         encoder.copy_texture_to_buffer(
@@ -1910,6 +2133,169 @@ impl RenderEngine {
         self.remove_lane(LaneRole::WorldBuildings);
         self.remove_lane(LaneRole::WorldBuildingsOutline);
         self.world_chunks_drawn = 0;
+    }
+
+    // ── W5 glyph atlas + icon lanes ───────────────────────────────────────────────────────────
+
+    /// Upload the world glyph atlas once (T-151.5 L1–L3).
+    /// `rgba` = packed RGBA8 top-row-first; `uv` = 28×4 f32 (u0,v0,u1,v1) in key order.
+    ///
+    /// # Errors
+    /// Returns `JsError` when UV count ≠ 28 or rgba length ≠ w·h·4.
+    pub fn upload_glyph_atlas(
+        &mut self,
+        rgba: &[u8],
+        width: u32,
+        height: u32,
+        uv: &[f32],
+    ) -> Result<(), JsError> {
+        use scene::ATLAS_GLYPH_COUNT;
+        if uv.len() != ATLAS_GLYPH_COUNT * 4 {
+            return Err(JsError::new(&format!(
+                "glyph-atlas-uv-count: expected {}, got {}",
+                ATLAS_GLYPH_COUNT * 4,
+                uv.len()
+            )));
+        }
+        let expected = (width as usize)
+            .checked_mul(height as usize)
+            .and_then(|n| n.checked_mul(4))
+            .unwrap_or(0);
+        if rgba.len() != expected {
+            return Err(JsError::new("glyph-atlas-rgba-size"));
+        }
+        use wgpu::util::DeviceExt;
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("glyph-atlas"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        // Pad UV table to 448 B (28 × 16).
+        let mut uv_bytes = vec![0u8; 448];
+        for (i, v) in uv.iter().enumerate() {
+            let off = i * 4;
+            if off + 4 <= uv_bytes.len() {
+                uv_bytes[off..off + 4].copy_from_slice(&v.to_le_bytes());
+            }
+        }
+        let uv_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("glyph-uv-table"),
+                contents: &uv_bytes,
+                usage: wgpu::BufferUsages::UNIFORM,
+            });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("glyph-atlas"),
+            layout: &self.icon_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.icon_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: uv_buf.as_entire_binding(),
+                },
+            ],
+        });
+        if let Some(old) = self.glyph_atlas.take() {
+            old.texture.destroy();
+        }
+        self.glyph_atlas = Some(GlyphAtlasGpu {
+            texture,
+            bind_group,
+            bytes: expected as u64,
+        });
+        Ok(())
+    }
+
+    /// Upload packed 20 B icon instances for trees (0), props (1), or badges (2).
+    /// Positions are WORLD meters; converted to anchor-relative here. Empty + visible → sticky.
+    pub fn upload_icon_lane(&mut self, kind: u32, bytes: &[u8], visible: bool) {
+        let role = match kind {
+            0 => LaneRole::WorldTrees,
+            1 => LaneRole::WorldProps,
+            2 => LaneRole::WorldBadges,
+            _ => return,
+        };
+        const STRIDE: usize = 20;
+        if bytes.is_empty() {
+            if !visible {
+                self.remove_lane(role);
+            }
+            return;
+        }
+        if !bytes.len().is_multiple_of(STRIDE) {
+            self.remove_lane(role);
+            return;
+        }
+        // Convert world pos → anchor-relative in a scratch buffer.
+        let mut converted = bytes.to_vec();
+        for chunk in converted.chunks_exact_mut(STRIDE) {
+            let x = f32::from_le_bytes(chunk[0..4].try_into().unwrap());
+            let y = f32::from_le_bytes(chunk[4..8].try_into().unwrap());
+            let ax = (f64::from(x) - ANCHOR[0]) as f32;
+            let ay = (f64::from(y) - ANCHOR[1]) as f32;
+            chunk[0..4].copy_from_slice(&ax.to_le_bytes());
+            chunk[4..8].copy_from_slice(&ay.to_le_bytes());
+        }
+        use wgpu::util::DeviceExt;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("icon-lane"),
+                contents: &converted,
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let count = (converted.len() / STRIDE) as u32;
+        self.upsert_lane(
+            role,
+            Batch {
+                role,
+                visible,
+                payload: BatchPayload::IconInstanced {
+                    instances: buf,
+                    count,
+                },
+            },
+        );
+    }
+
+    /// Drop all three glyph icon lanes.
+    pub fn clear_icon_lanes(&mut self) {
+        self.remove_lane(LaneRole::WorldTrees);
+        self.remove_lane(LaneRole::WorldProps);
+        self.remove_lane(LaneRole::WorldBadges);
     }
 
     // ── W4 vector lane uploads ────────────────────────────────────────────────────────────────
@@ -2917,6 +3303,225 @@ impl RenderEngine {
                     .await
                     .map_err(|e| JsValue::from_str(&e))?;
                 let pass = got == expect;
+                all_pass &= pass;
+                json.push(format!(
+                    "{{\"px\":{},\"py\":{},\"expect\":[{},{},{},{}],\"got\":[{},{},{},{}],\"pass\":{},\"label\":\"{}\"}}",
+                    px, py, expect[0], expect[1], expect[2], expect[3],
+                    got[0], got[1], got[2], got[3], pass, label,
+                ));
+            }
+            Ok(JsValue::from_str(&format!(
+                "{{\"backend\":\"{}\",\"probes\":[{}],\"pass\":{}}}",
+                backend,
+                json.join(","),
+                all_pass,
+            )))
+        })
+    }
+
+    /// GPU-R tree glyph probe (T-151.5 L11): synthetic solid white 1×1 atlas + one icon at
+    /// ANCHOR with forest-green tint `[74,122,50,255]` and size 40 m → center texel matches
+    /// tint (α=1 solid), exterior remains CLEAR_COLOR.
+    pub fn tree_glyph_self_check(&self) -> js_sys::Promise {
+        const PW: u32 = 800;
+        const PH: u32 = 600;
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        let shader = self.shader.clone();
+        let cam_bgl = self.bind_group_layout.clone();
+        let icon_bgl = self.icon_bind_group_layout.clone();
+        let icon_layout = self.icon_pipeline_layout.clone();
+        let unit_quad = self.unit_quad_buf.clone();
+        let backend = self.backend_kind.clone();
+
+        wasm_bindgen_futures::future_to_promise(async move {
+            use wgpu::util::DeviceExt;
+            let fmt = wgpu::TextureFormat::Rgba8Unorm;
+            let camera = OrthoCamera::new(f64::from(PW), f64::from(PH), ANCHOR[0], ANCHOR[1], 0.0);
+            let mvp = camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+            let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("tree-glyph-self-check-mvp"),
+                size: 64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            queue.write_buffer(&uniform, 0, bytemuck::cast_slice(&mvp));
+            let cam_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("tree-glyph-self-check-mvp"),
+                layout: &cam_bgl,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform.as_entire_binding(),
+                }],
+            });
+
+            // 1×1 solid white atlas + full UV for glyph 0.
+            let tex = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("tree-glyph-self-check-atlas"),
+                size: wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: fmt,
+                usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+                view_formats: &[],
+            });
+            queue.write_texture(
+                tex.as_image_copy(),
+                &[255u8, 255, 255, 255],
+                wgpu::TexelCopyBufferLayout {
+                    offset: 0,
+                    bytes_per_row: Some(4),
+                    rows_per_image: Some(1),
+                },
+                wgpu::Extent3d {
+                    width: 1,
+                    height: 1,
+                    depth_or_array_layers: 1,
+                },
+            );
+            let mut uv_bytes = vec![0u8; 448];
+            // uv[0] = (0,0,1,1)
+            for (i, v) in [0.0f32, 0.0, 1.0, 1.0].iter().enumerate() {
+                uv_bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
+            }
+            let uv_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("tree-glyph-self-check-uv"),
+                contents: &uv_bytes,
+                usage: wgpu::BufferUsages::UNIFORM,
+            });
+            let samp = device.create_sampler(&wgpu::SamplerDescriptor {
+                label: Some("tree-glyph-self-check-samp"),
+                mag_filter: wgpu::FilterMode::Nearest,
+                min_filter: wgpu::FilterMode::Nearest,
+                ..wgpu::SamplerDescriptor::default()
+            });
+            let tview = tex.create_view(&wgpu::TextureViewDescriptor::default());
+            let atlas_bg = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("tree-glyph-self-check-atlas"),
+                layout: &icon_bgl,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&tview),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&samp),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 2,
+                        resource: uv_buf.as_entire_binding(),
+                    },
+                ],
+            });
+
+            // Forest green tint DEFAULT_GLYPH_RGBA = [74,122,50,255]
+            let tint = 74u32 | (122u32 << 8) | (50u32 << 16) | (255u32 << 24);
+            let inst = scene::IconInstance {
+                pos: [0.0, 0.0],
+                size: 40.0,
+                yaw: 0,
+                glyph: 0,
+                tint,
+            };
+            let ibuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("tree-glyph-self-check-inst"),
+                contents: bytemuck::bytes_of(&inst),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let pipeline = create_icon_pipeline(&device, &icon_layout, &shader, fmt);
+
+            let target = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("tree-glyph-self-check-target"),
+                size: wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: fmt,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let target_view = target.create_view(&wgpu::TextureViewDescriptor::default());
+            let padded = padded_bytes_per_row(PW);
+            let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("tree-glyph-self-check-read"),
+                size: u64::from(padded) * u64::from(PH),
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("tree-glyph-self-check"),
+            });
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("tree-glyph-self-check"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &target_view,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(CLEAR_COLOR),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_pipeline(&pipeline);
+                pass.set_bind_group(0, &cam_bind, &[]);
+                pass.set_bind_group(2, &atlas_bg, &[]);
+                pass.set_vertex_buffer(0, unit_quad.slice(..));
+                pass.set_vertex_buffer(1, ibuf.slice(..));
+                pass.draw(0..4, 0..1);
+            }
+            encoder.copy_texture_to_buffer(
+                target.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &read_buf,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(padded),
+                        rows_per_image: Some(PH),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+            );
+            queue.submit(Some(encoder.finish()));
+
+            // Center (400,300) at zoom 0: 40 m icon → 40 px; interior solid green tint.
+            // Exterior (400,50): well outside 20 px half-size.
+            let probes: &[(u32, u32, [u8; 4], &str)] = &[
+                (400, 300, [74, 122, 50, 255], "glyph center = forest tint"),
+                (400, 50, [51, 68, 85, 255], "far exterior = CLEAR_COLOR"),
+            ];
+            let mut json = Vec::with_capacity(probes.len());
+            let mut all_pass = true;
+            for (px, py, expect, label) in probes {
+                let offset = u64::from(py * padded + px * 4);
+                let got = map_read_4(&device, &read_buf, offset)
+                    .await
+                    .map_err(|e| JsValue::from_str(&e))?;
+                // Center: require nonzero α + RGB class match (exact for solid white×tint).
+                let pass = if *label == "glyph center = forest tint" {
+                    got[3] > 0 && got[0] == expect[0] && got[1] == expect[1] && got[2] == expect[2]
+                } else {
+                    got == *expect
+                };
                 all_pass &= pass;
                 json.push(format!(
                     "{{\"px\":{},\"py\":{},\"expect\":[{},{},{},{}],\"got\":[{},{},{},{}],\"pass\":{},\"label\":\"{}\"}}",

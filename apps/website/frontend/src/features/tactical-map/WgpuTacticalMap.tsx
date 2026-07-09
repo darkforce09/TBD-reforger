@@ -29,6 +29,7 @@ import {
   useWgpuForestMass,
 } from './wgpu/useWgpuForestMass'
 import { useMapStore } from './state/useMapStore'
+import { useClassToggles } from './state/worldLayerPrefs'
 import { getTerrain } from './coords/terrains'
 import type { TacticalMapProps } from './types'
 
@@ -63,6 +64,7 @@ export default function WgpuTacticalMap({
   const [basemapMode, setBasemapMode] = useState('…')
   const [ready, setReady] = useState(false)
   const marquee = useMapStore((s) => s.marquee)
+  const classToggles = useClassToggles()
 
   // Latest-callback refs: the controller is created ONCE (effect-local), so it must call the
   // current prop callbacks (MissionCreatorPage's are useCallback-stable, but this is robust anyway).
@@ -86,6 +88,11 @@ export default function WgpuTacticalMap({
   useWgpuDemVectors(engineRef, ready, { terrain: terrainDef })
   // W4 forest mass (TBDD viewport stream).
   useWgpuForestMass(forestControllerRef, ready)
+  // W5 glyph prefs (trees/props/buildings→badges).
+  useEffect(() => {
+    if (!ready) return
+    worldControllerRef.current?.syncGlyphToggles()
+  }, [ready, classToggles.trees, classToggles.props, classToggles.buildings])
 
   // W4 marquee polygon (optional; no pick/drag rewire — L12).
   useEffect(() => {
@@ -260,7 +267,7 @@ export default function WgpuTacticalMap({
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
       <div style={PANEL}>
-        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.4 · wgpu vectors</div>
+        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.5 · wgpu glyphs</div>
         <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
           {fps} FPS · {backend}
         </div>

@@ -7,7 +7,9 @@
 mod chunk;
 mod chunk_math;
 mod classify;
+mod glyph_math;
 mod index;
+mod lod_gates;
 mod manifest;
 mod obb;
 mod prefab;
@@ -25,7 +27,19 @@ pub use classify::{
     NO_CLASS, OVERSIZED_HALF_EXTENT_M, RENDER_CLASS_CODES, class_code, narrow_instance_row,
     render_class_for_prefab,
 };
+pub use glyph_math::{
+    BADGE_BASE_SIZE_PX, BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, DEFAULT_GLYPH_RGBA,
+    GLYPH_SIZE_MIN_PX, ICON_INSTANCE_STRIDE, REF_TREE_HEIGHT_M, badge_icon_key, badge_size_meters,
+    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, pack_icon_instance, pack_rgba_u32,
+    size_with_min_px, tree_size_multiplier, yaw_to_snorm16,
+};
 pub use index::WorldSpatialIndex;
+pub use lod_gates::{
+    BUILDING_BADGE_MIN_ZOOM, BUILDING_FOOTPRINT_MIN_ZOOM, FOREST_FILL_MAX_ZOOM,
+    FOREST_OUTLINE_MIN_ZOOM, INSTANCE_BUDGET, PROP_MIN_ZOOM, REF_ZOOM, ROCK_LARGE_MIN_ZOOM,
+    SEA_FILL_MAX_ZOOM, TREE_GLYPH_MIN_ZOOM, VEGETATION_MIN_ZOOM, WORLD_RENDER_CLASSES,
+    class_visible, contour_interval_for_zoom,
+};
 pub use manifest::{
     ChunkCell, DEFAULT_CHUNK_SIZE_M, ObjectsManifest, narrow_cells, parse_objects_manifest,
 };

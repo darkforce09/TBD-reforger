@@ -126,3 +126,62 @@ fn vs_building(in: BuildingVsIn) -> BuildingVsOut {
 fn fs_building(in: BuildingVsOut) -> @location(0) vec4<f32> {
     return in.color;
 }
+
+// ── Icon instanced (W5 glyph atlas) ─────────────────────────────────────────────────────────────
+// Stream 0 = unit quad; stream 1 = IconInstance {pos, size, yaw_snorm16, glyph_u16, tint_u32}.
+// group(2): atlas texture + sampler + UV table (28 × vec4 = minUV.xy + maxUV.zw) — separate
+// from basemap group(1) so the WGSL binding space stays unique.
+// Size is already meters (min-px clamped on CPU). Yaw is screen-CCW degrees via snorm.
+struct IconUniforms {
+    uv: array<vec4<f32>, 28>,
+};
+
+@group(2) @binding(0) var icon_tex: texture_2d<f32>;
+@group(2) @binding(1) var icon_samp: sampler;
+@group(2) @binding(2) var<uniform> icon_u: IconUniforms;
+
+struct IconVsIn {
+    @location(0) unit: vec2<f32>,
+    @location(1) pos: vec2<f32>,
+    @location(2) size: f32,
+    @location(3) yaw: i32,
+    @location(4) glyph: u32,
+    @location(5) tint: u32,
+};
+
+struct IconVsOut {
+    @builtin(position) pos: vec4<f32>,
+    @location(0) uv: vec2<f32>,
+    @location(1) tint: vec4<f32>,
+};
+
+@vertex
+fn vs_icon(in: IconVsIn) -> IconVsOut {
+    // snorm16 → degrees: yaw/32767 * 180
+    let deg = f32(in.yaw) / 32767.0 * 180.0;
+    let rad = deg * 3.14159265358979323846 / 180.0;
+    let c = cos(rad);
+    let s = sin(rad);
+    // unit {0,1}² → local centered square of side `size`
+    let local = (in.unit - vec2<f32>(0.5, 0.5)) * in.size;
+    // CCW rotation in world XY (x east, y north)
+    let world = in.pos + vec2<f32>(local.x * c - local.y * s, local.x * s + local.y * c);
+    let gi = min(in.glyph, 27u);
+    let rect = icon_u.uv[gi];
+    var out: IconVsOut;
+    out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
+    out.uv = mix(rect.xy, rect.zw, in.unit);
+    let tr = f32(in.tint & 0xffu) / 255.0;
+    let tg = f32((in.tint >> 8u) & 0xffu) / 255.0;
+    let tb = f32((in.tint >> 16u) & 0xffu) / 255.0;
+    let ta = f32((in.tint >> 24u) & 0xffu) / 255.0;
+    out.tint = vec4<f32>(tr, tg, tb, ta);
+    return out;
+}
+
+@fragment
+fn fs_icon(in: IconVsOut) -> @location(0) vec4<f32> {
+    let s = textureSample(icon_tex, icon_samp, in.uv);
+    // Mask path: atlas alpha × tint (tintable glyphs are white-on-alpha).
+    return vec4<f32>(s.rgb * in.tint.rgb, s.a * in.tint.a);
+}

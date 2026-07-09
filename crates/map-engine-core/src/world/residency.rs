@@ -25,11 +25,28 @@ use serde_json::Value;
 use super::chunk::{WorldChunk, parse_chunk};
 use super::chunk_math::{TerrainSizeM, chunk_ids_for_viewport};
 use super::classify::class_code;
+use super::glyph_math::{
+    BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_icon_key, badge_size_meters,
+    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, pack_icon_instance, pack_rgba_u32,
+    size_with_min_px,
+};
 use super::index::WorldSpatialIndex;
+use super::lod_gates::{INSTANCE_BUDGET, class_visible};
 use super::manifest::{ObjectsManifest, narrow_cells, parse_objects_manifest};
 use super::obb::{BuildingPrefabInfo, building_prefab_lookup, obb_corners};
 use super::prefab::{PrefabEntry, build_prefab_maps, narrow_prefab_rows};
 use super::store::{WorldError, bytes_to_json};
+
+/// Per-prefab glyph render resolved once at prefab load (tree/veg/prop/rockLarge only).
+#[derive(Clone, Debug)]
+struct GlyphPrefabInfo {
+    /// Index into the 28-entry atlas UV table (`u16::MAX` = unknown key).
+    glyph_idx: u16,
+    size_m: f32,
+    tint: u32,
+    /// 0 = tree group (tree+vegetation), 1 = prop group (prop+rockLarge).
+    group: u8,
+}
 
 /// Per-frame ingest budget, ms (`chunkStore.ts` `APPLY_BUDGET_MS`).
 pub const APPLY_BUDGET_MS: f64 = 4.0;
@@ -74,8 +91,7 @@ fn norm(c: [u8; 4]) -> [f32; 4] {
     ]
 }
 
-/// Multi-chunk residency + LRU + world spatial index + building GPU-buffer composer.
-#[derive(Default)]
+/// Multi-chunk residency + LRU + world spatial index + building/glyph GPU-buffer composer.
 pub struct WorldResidency {
     manifest: Option<ObjectsManifest>,
     terrain: TerrainSizeM,
@@ -86,6 +102,10 @@ pub struct WorldResidency {
     /// that are integers in `[0, 65536)` are inserted (JS finds a building iff `prefabId ===` the
     /// stored u16, i.e. `prefabId < 65536`).
     building_by_u16: HashMap<u16, BuildingPrefabInfo>,
+    /// Tree/veg/prop/rockLarge glyph lookup keyed by prefab u16 id.
+    glyph_by_u16: HashMap<u16, GlyphPrefabInfo>,
+    /// Atlas iconKey → UV-table index (set by [`Self::set_glyph_key_map`]).
+    icon_key_to_idx: HashMap<String, u16>,
     cell_ids: Option<HashSet<String>>,
 
     chunks: HashMap<String, WorldChunk>,
@@ -109,6 +129,18 @@ pub struct WorldResidency {
 
     fill_buf: Vec<f32>,
     outline_buf: Vec<f32>,
+
+    /// Last viewport zoom (for glyph LOD + min-px clamp).
+    deck_zoom: f64,
+    /// User prefs (`worldLayerPrefs.classToggles`).
+    toggle_trees: bool,
+    toggle_props: bool,
+    toggle_buildings: bool,
+
+    /// Packed 20 B icon instances (WORLD coords) — replace-not-accumulate.
+    tree_glyph_buf: Vec<u8>,
+    prop_glyph_buf: Vec<u8>,
+    badge_glyph_buf: Vec<u8>,
 }
 
 fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {
@@ -122,10 +154,121 @@ fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {
     (xs, ys)
 }
 
+impl Default for WorldResidency {
+    fn default() -> Self {
+        Self {
+            manifest: None,
+            terrain: TerrainSizeM::default(),
+            prefab_by_id: HashMap::new(),
+            has_oversized: false,
+            building_by_u16: HashMap::new(),
+            glyph_by_u16: HashMap::new(),
+            icon_key_to_idx: HashMap::new(),
+            cell_ids: None,
+            chunks: HashMap::new(),
+            building_counts: HashMap::new(),
+            last_used: HashMap::new(),
+            inserted_seq: HashMap::new(),
+            use_tick: 0,
+            insert_counter: 0,
+            pinned_ids: Vec::new(),
+            pinned_set: HashSet::new(),
+            pinned_key: String::new(),
+            inflight: HashSet::new(),
+            index: WorldSpatialIndex::default(),
+            eviction_log: Vec::new(),
+            chunks_applied: 0,
+            apply_frames: 0,
+            max_apply_ms: 0.0,
+            frames_over_budget: 0,
+            apply_budget_ms_last: 0.0,
+            fill_buf: Vec::new(),
+            outline_buf: Vec::new(),
+            deck_zoom: -2.0,
+            toggle_trees: true,
+            toggle_props: false,
+            toggle_buildings: true,
+            tree_glyph_buf: Vec::new(),
+            prop_glyph_buf: Vec::new(),
+            badge_glyph_buf: Vec::new(),
+        }
+    }
+}
+
 impl WorldResidency {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Register atlas icon keys in UV-table order (must match `upload_glyph_atlas` UV order).
+    /// Rebuilds the glyph prefab lookup when prefabs are already loaded.
+    pub fn set_glyph_key_map(&mut self, keys: &[String]) {
+        self.icon_key_to_idx.clear();
+        for (i, k) in keys.iter().enumerate() {
+            if i < usize::from(u16::MAX) {
+                self.icon_key_to_idx.insert(k.clone(), i as u16);
+            }
+        }
+        self.rebuild_glyph_lookup_from_prefabs();
+        self.rebuild_glyph_buffers();
+    }
+
+    /// User layer toggles (mirrors `worldLayerPrefs.classToggles` trees/props/buildings).
+    pub fn set_glyph_toggles(&mut self, trees: bool, props: bool, buildings: bool) {
+        if self.toggle_trees == trees
+            && self.toggle_props == props
+            && self.toggle_buildings == buildings
+        {
+            return;
+        }
+        self.toggle_trees = trees;
+        self.toggle_props = props;
+        self.toggle_buildings = buildings;
+        self.rebuild_glyph_buffers();
+    }
+
+    fn rebuild_glyph_lookup_from_prefabs(&mut self) {
+        self.glyph_by_u16.clear();
+        if self.icon_key_to_idx.is_empty() {
+            return;
+        }
+        for entry in self.prefab_by_id.values() {
+            let pid = entry.row.prefab_id;
+            if !(0.0..65536.0).contains(&pid) || pid.fract() != 0.0 {
+                continue;
+            }
+            let Some(icon_key) = entry.row.icon_key.as_deref() else {
+                continue;
+            };
+            let Some(&glyph_idx) = self.icon_key_to_idx.get(icon_key) else {
+                continue;
+            };
+            let code = entry.code;
+            let tree_code = class_code("tree");
+            let veg_code = class_code("vegetation");
+            let prop_code = class_code("prop");
+            let rock_code = class_code("rockLarge");
+            let group = if code == tree_code || code == veg_code {
+                0u8
+            } else if code == prop_code || code == rock_code {
+                1u8
+            } else {
+                continue;
+            };
+            let base = entry.row.base_size_px.unwrap_or(DEFAULT_BASE_SIZE_PX);
+            let size_m = glyph_size_meters(base, entry.row.height_m) as f32;
+            let tint = pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref()));
+            self.glyph_by_u16.insert(
+                pid as u16,
+                GlyphPrefabInfo {
+                    glyph_idx,
+                    size_m,
+                    tint,
+                    group,
+                },
+            );
+        }
     }
 
     /// Parse the terrain manifest: the `objects` block (chunk size + object-export gate) and the
@@ -166,6 +309,7 @@ impl WorldResidency {
                 self.building_by_u16.insert(pid as u16, info);
             }
         }
+        self.rebuild_glyph_lookup_from_prefabs();
         Ok(self.prefab_by_id.len())
     }
 
@@ -195,12 +339,17 @@ impl WorldResidency {
         max_y: f64,
         deck_zoom: f64,
     ) -> Vec<String> {
+        let zoom_changed = (self.deck_zoom - deck_zoom).abs() > f64::EPSILON;
+        self.deck_zoom = deck_zoom;
         if !building_visible(deck_zoom) {
             if !self.pinned_ids.is_empty() {
                 self.pinned_ids.clear();
                 self.pinned_set.clear();
                 self.pinned_key.clear();
                 self.rebuild_buffers();
+            } else if zoom_changed {
+                // Buildings already empty but glyph LOD may have closed/opened (tree band).
+                self.rebuild_glyph_buffers();
             }
             return Vec::new();
         }
@@ -220,6 +369,10 @@ impl WorldResidency {
         }
         let key = ids.join(",");
         if key == self.pinned_key {
+            // Zoom change with same chunks still needs glyph recompose (LOD / min-px).
+            if zoom_changed {
+                self.rebuild_glyph_buffers();
+            }
             // T-151.4.1: same pin key usually means "nothing new". But an aborted fetch can leave
             // the pin unsettled with empty inflight — re-request those undelivered ids.
             if self.pin_settled() || !self.inflight.is_empty() {
@@ -429,6 +582,138 @@ impl WorldResidency {
         }
         self.fill_buf = fill;
         self.outline_buf = outline;
+        self.rebuild_glyph_buffers();
+    }
+
+    /// Compose tree / prop / badge glyph instance buffers (replace-not-accumulate, budget-capped).
+    fn rebuild_glyph_buffers(&mut self) {
+        self.tree_glyph_buf.clear();
+        self.prop_glyph_buf.clear();
+        self.badge_glyph_buf.clear();
+
+        let z = self.deck_zoom;
+        let tree_want =
+            self.toggle_trees && (class_visible("tree", z) || class_visible("vegetation", z));
+        let prop_want =
+            self.toggle_props && (class_visible("prop", z) || class_visible("rockLarge", z));
+        let badge_want = self.toggle_buildings && class_visible("buildingBadge", z);
+
+        if !tree_want && !prop_want && !badge_want {
+            return;
+        }
+
+        let tree_code = class_code("tree");
+        let veg_code = class_code("vegetation");
+        let prop_code = class_code("prop");
+        let rock_code = class_code("rockLarge");
+        let building_code = class_code("building");
+
+        let mut ids = self.pinned_ids.clone();
+        ids.sort();
+        let mut total = 0usize;
+
+        for id in &ids {
+            if total >= INSTANCE_BUDGET {
+                break;
+            }
+            let Some(chunk) = self.chunks.get(id) else {
+                continue;
+            };
+
+            if tree_want || prop_want {
+                for &code in &[tree_code, veg_code, prop_code, rock_code] {
+                    let class_ok = match code {
+                        c if c == tree_code => class_visible("tree", z),
+                        c if c == veg_code => class_visible("vegetation", z),
+                        c if c == prop_code => class_visible("prop", z),
+                        c if c == rock_code => class_visible("rockLarge", z),
+                        _ => false,
+                    };
+                    if !class_ok {
+                        continue;
+                    }
+                    let Some(rows) = chunk.rows_by_class.get(&code) else {
+                        continue;
+                    };
+                    for &r in rows {
+                        if total >= INSTANCE_BUDGET {
+                            break;
+                        }
+                        let r = r as usize;
+                        let Some(info) = self.glyph_by_u16.get(&chunk.prefab_idx[r]).cloned()
+                        else {
+                            continue;
+                        };
+                        let is_tree_group = info.group == 0;
+                        if is_tree_group && !tree_want {
+                            continue;
+                        }
+                        if !is_tree_group && !prop_want {
+                            continue;
+                        }
+                        let size =
+                            size_with_min_px(f64::from(info.size_m), GLYPH_SIZE_MIN_PX, z) as f32;
+                        let yaw = deck_angle_for_rotation_deg(f64::from(chunk.rotations[r]));
+                        let px = chunk.positions[2 * r];
+                        let py = chunk.positions[2 * r + 1];
+                        if is_tree_group {
+                            pack_icon_instance(
+                                &mut self.tree_glyph_buf,
+                                px,
+                                py,
+                                size,
+                                yaw,
+                                info.glyph_idx,
+                                info.tint,
+                            );
+                        } else {
+                            pack_icon_instance(
+                                &mut self.prop_glyph_buf,
+                                px,
+                                py,
+                                size,
+                                yaw,
+                                info.glyph_idx,
+                                info.tint,
+                            );
+                        }
+                        total += 1;
+                    }
+                }
+            }
+
+            if badge_want {
+                let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                    continue;
+                };
+                for &r in rows {
+                    if total >= INSTANCE_BUDGET {
+                        break;
+                    }
+                    let r = r as usize;
+                    let Some(binfo) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
+                        continue;
+                    };
+                    let Some(key) = badge_icon_key(&binfo.building_class) else {
+                        continue;
+                    };
+                    let Some(&glyph_idx) = self.icon_key_to_idx.get(key) else {
+                        continue;
+                    };
+                    let size = size_with_min_px(badge_size_meters(), BADGE_SIZE_MIN_PX, z) as f32;
+                    pack_icon_instance(
+                        &mut self.badge_glyph_buf,
+                        chunk.positions[2 * r],
+                        chunk.positions[2 * r + 1],
+                        size,
+                        0.0,
+                        glyph_idx,
+                        pack_rgba_u32([255, 255, 255, 255]),
+                    );
+                    total += 1;
+                }
+            }
+        }
     }
 
     /// Building fill instances (WORLD coords): 10 f32 each `[x, y, hx, hy, cos, sin, r, g, b, a]`.
@@ -441,6 +726,39 @@ impl WorldResidency {
     #[must_use]
     pub fn world_building_outline(&self) -> Vec<f32> {
         self.outline_buf.clone()
+    }
+
+    /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).
+    #[must_use]
+    pub fn world_tree_glyphs(&self) -> Vec<u8> {
+        self.tree_glyph_buf.clone()
+    }
+
+    /// Packed prop+rockLarge icon instances (WORLD coords, 20 B each).
+    #[must_use]
+    pub fn world_prop_glyphs(&self) -> Vec<u8> {
+        self.prop_glyph_buf.clone()
+    }
+
+    /// Packed building-badge icon instances (WORLD coords, 20 B each).
+    #[must_use]
+    pub fn world_badge_glyphs(&self) -> Vec<u8> {
+        self.badge_glyph_buf.clone()
+    }
+
+    #[must_use]
+    pub fn tree_glyph_count(&self) -> u32 {
+        (self.tree_glyph_buf.len() / super::glyph_math::ICON_INSTANCE_STRIDE) as u32
+    }
+
+    #[must_use]
+    pub fn prop_glyph_count(&self) -> u32 {
+        (self.prop_glyph_buf.len() / super::glyph_math::ICON_INSTANCE_STRIDE) as u32
+    }
+
+    #[must_use]
+    pub fn badge_glyph_count(&self) -> u32 {
+        (self.badge_glyph_buf.len() / super::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 
     /// Pick nearest world instance id `"{chunkId}:{row}"` within `radius_m`, optional class mask.

@@ -58,6 +58,26 @@ pub struct BuildingInstance {
     pub color: [f32; 4],
 }
 
+/// Atlas glyph count (world-glyphs.json).
+pub const ATLAS_GLYPH_COUNT: usize = 28;
+
+/// One icon glyph instance (T-151.5 W5). Production layout ≤ 20 B:
+/// pos 2×f32 + size f32 + yaw snorm16 + glyph u16 + tint u32.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Pod, Zeroable)]
+pub struct IconInstance {
+    /// Anchor-relative [x, y] center, meters.
+    pub pos: [f32; 2],
+    /// Glyph size in meters (min-px already applied on CPU).
+    pub size: f32,
+    /// Screen CCW angle as snorm16 (`angle_deg/180 * 32767`).
+    pub yaw: i16,
+    /// Index into the 28-entry UV uniform table.
+    pub glyph: u16,
+    /// Packed RGBA8 (r | g<<8 | b<<16 | a<<24).
+    pub tint: u32,
+}
+
 /// The two calibration instances (plan §S4 calibration scene), anchor-relative:
 /// - G: green quad, world [6300,6300]…[6500,6500] → relative [-100,-100]…[100,100]
 /// - R: red quad, world [6450,6450]…[6490,6490] → relative [50,50]…[90,90], drawn after G
@@ -158,6 +178,27 @@ mod tests {
         }
         assert_eq!(core::mem::size_of::<QuadInstance>(), 32);
         assert_eq!(got, expect.as_slice());
+    }
+
+    /// Class R: `IconInstance` is exactly 20 B (pos2 + size + yaw_i16 + glyph_u16 + tint_u32).
+    #[test]
+    fn icon_instance_layout_is_20_bytes() {
+        assert_eq!(core::mem::size_of::<IconInstance>(), 20);
+        assert_eq!(core::mem::align_of::<IconInstance>(), 4);
+        let inst = IconInstance {
+            pos: [1.5, -2.5],
+            size: 3.0,
+            yaw: -16384, // ~-90° snorm
+            glyph: 7,
+            tint: 0xFF27_5A2D, // note: little-endian store of pack order
+        };
+        let got: &[u8] = bytemuck::bytes_of(&inst);
+        assert_eq!(got.len(), 20);
+        assert_eq!(f32::from_le_bytes(got[0..4].try_into().unwrap()), 1.5);
+        assert_eq!(f32::from_le_bytes(got[4..8].try_into().unwrap()), -2.5);
+        assert_eq!(f32::from_le_bytes(got[8..12].try_into().unwrap()), 3.0);
+        assert_eq!(i16::from_le_bytes(got[12..14].try_into().unwrap()), -16384);
+        assert_eq!(u16::from_le_bytes(got[14..16].try_into().unwrap()), 7);
     }
 
     /// Class R: the `BuildingInstance` GPU layout is exactly 40 B (`center,half,basis,color` =
