@@ -176,11 +176,15 @@ TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x promp
 `═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
 Do **not** grow fat `wgpu*Controller` logic in TS (W6–W7.x drift).
 
-**Next slice:** **T-151.7.3** (Rust collapse — slot GPU out of TS) — `ready` · spec
-[`t151_7_3_rust_collapse.md`](docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md)
-· handoff [`.ai/artifacts/t151_7_3_claude_code_handoff.md`](.ai/artifacts/t151_7_3_claude_code_handoff.md)
+**Next slice:** **T-151.8** (culling + density ladder) — `ready` · spec
+[`t151_8_culling_density.md`](docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md)
+· handoff [`.ai/artifacts/t151_8_claude_code_handoff.md`](.ai/artifacts/t151_8_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.7.3 **Rust collapse** @ `804f779a` (tag **T-151.7.3**). SlotGpuBridge; `wgpuSlots.ts`
+  **56** LOC; vitest **393**; wasm **4,071,877 B**. Verify:
+  [`.ai/artifacts/t151_7_3_verify_log.md`](.ai/artifacts/t151_7_3_verify_log.md). Spec:
+  [`t151_7_3_rust_collapse.md`](docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md).
 - T-151.7.2 **residual tint + zoom SoT** @ `64c64d98` (tag **T-151.7.2**; wheel @ `69ca1c08`).
   Verify: [`.ai/artifacts/t151_7_2_verify_log.md`](.ai/artifacts/t151_7_2_verify_log.md).
 - T-151.7.1 **interaction hotfix** @ `fa6ad959` (tag **T-151.7.1**). Tint / drag FPS / zoom origin.

@@ -1,5 +1,9 @@
 # T-151.7.3 — Claude Code handoff (Rust collapse: kill fat wgpuSlots.ts)
 
+**Shipped:** @ `804f779a` (tag **T-151.7.3**) — verify [`t151_7_3_verify_log.md`](t151_7_3_verify_log.md).
+Cursor doc-sync done. **Next:** T-151.8 culling + density ladder.
+
+
 **Spec (wins on conflict):**
 [`t151_7_3_rust_collapse.md`](../../docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md)
 · **Program hub:**

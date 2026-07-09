@@ -1,11 +1,14 @@
 # T-151.7.3 — Rust collapse: slot GPU bridge out of TypeScript
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `804f779a` (tag **T-151.7.3**, 2026-07-09) · verify log
+[`t151_7_3_verify_log.md`](../../../.ai/artifacts/t151_7_3_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
-**Baseline:** `69ca1c08` (HEAD after **T-151.7.2** restore scroll-wheel; tags **T-151.7.1**
-`fa6ad959`, **T-151.7.2** `64c64d98`).
+**Baseline:** `69ca1c08` (after **T-151.7.2**).
+
+**Shipped notes:** `SlotGpuBridge` on `RenderEngine`; `wgpuSlots.ts` **56** LOC; vitest
+**393**; wasm **4,071,877 B**. D5 LANGUAGE GATE binding for later slices.
 
 ## In one sentence
 

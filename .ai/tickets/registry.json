@@ -3745,7 +3745,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W7.2 shipped @ 69ca1c08; T-151.7.3 Rust collapse ready \u2014 move slot GPU bridge out of TypeScript). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.",
+      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W7.3 shipped @ 804f779a; T-151.8 culling + density ladder ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts. D5 LANGUAGE GATE.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3870,8 +3870,8 @@
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
-          "status": "queued"
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md",
+          "status": "ready"
         },
         "T-151.9": {
           "targets": [
@@ -3930,7 +3930,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "804f779a"
         }
       }
     }

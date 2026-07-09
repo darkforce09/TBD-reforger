@@ -27,9 +27,11 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 [`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **W7 / T-151.7 shipped:**
 @ `ab6bcb11` — interaction rewire; verify
 [`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **T-151.7.1 / .2 shipped:**
-@ `fa6ad959` / `64c64d98` (+ wheel `69ca1c08`) — tint/drag/zoom hotfixes · **Next slice:**
-**T-151.7.3** (Rust collapse) — `ready`; spec
-[`t151_7_3_rust_collapse.md`](t151_7_3_rust_collapse.md).
+@ `fa6ad959` / `64c64d98` (+ wheel `69ca1c08`) — tint/drag/zoom hotfixes · **T-151.7.3 shipped:**
+@ `804f779a` — Rust SlotGpuBridge; `wgpuSlots.ts` 56 LOC; verify
+[`t151_7_3_verify_log.md`](../../../.ai/artifacts/t151_7_3_verify_log.md) · **Next slice:**
+**T-151.8** (culling + density) — `ready`; spec
+[`t151_8_culling_density.md`](t151_8_culling_density.md).
 
 ## In one sentence
 
@@ -378,12 +380,15 @@ rematerialize; engine camera SoT for pan/wheel.
 
 ### T-151.7.3 — Rust collapse (slot GPU bridge out of TypeScript)
 
-**Next / ready.** Slice spec: [`t151_7_3_rust_collapse.md`](t151_7_3_rust_collapse.md).
+**Shipped:** @ `804f779a` (tag **T-151.7.3**) — verify
+[`t151_7_3_verify_log.md`](../../../.ai/artifacts/t151_7_3_verify_log.md). `wgpuSlots.ts`
+**521 → 56**; SlotGpuBridge on RenderEngine; vitest **393**; wasm **4,071,877 B**.
 
-Move `wgpuSlots.ts` (~521 LOC) policy into Rust `SlotGpuBridge`; TS ≤ 60 LOC thin adapter.
-Binding rule: new map-engine policy goes in Rust first.
+Slice spec: [`t151_7_3_rust_collapse.md`](t151_7_3_rust_collapse.md).
 
 ### T-151.8 (W8) — culling + the density ladder productionized
+
+**Next / ready.** Slice spec: [`t151_8_culling_density.md`](t151_8_culling_density.md).
 
 CPU chunk cull on both backends (draw set = resident chunks ∩ `visible_world_rect` + margin).
 L2 density overview: TBDD grids → density texture; when a class's **exact** visible-count
