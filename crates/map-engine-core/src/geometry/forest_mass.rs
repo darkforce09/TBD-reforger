@@ -3,8 +3,10 @@
 //! `count ≥ iso`. Saddles (opposite corners inside) split into two triangles when the centre is
 //! below iso. Emits `SolidPolygonLayer` closed-ring fills + iso `LineLayer` outline segments.
 
-/// Marching-squares iso threshold in trees per corner cell (`DENSITY_ISO`, `forestMass.ts:31`).
-pub const DENSITY_ISO: f64 = 1.0;
+/// Marching-squares iso threshold in trees per corner cell.
+/// **Source of truth** (T-151.5.1): matches Path B region export floor (threshold 2).
+/// Deck TS mirrors this const for Class R only — do not treat `forestMass.ts` as authority.
+pub const DENSITY_ISO: f64 = 2.0;
 /// Forest mass fill colour rgb (`FOREST_FILL_RGB`, `forestMass.ts:34`).
 pub const FOREST_FILL_RGB: [u8; 3] = [34, 120, 60];
 
@@ -291,5 +293,19 @@ mod tests {
         assert_eq!(forest_fill_alpha(2.0), 0.12);
         assert_eq!(forest_fill_alpha(9.0), 0.0);
         assert_eq!(FOREST_FILL_RGB, [34, 120, 60]);
+    }
+
+    #[test]
+    fn density_iso_is_two() {
+        assert!((DENSITY_ISO - 2.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn count_one_corner_empty_at_default_iso() {
+        // Path B floor: lone count-1 corners are not forest mass.
+        let corners = vec![1u16, 0, 0, 0];
+        let g = forest_mass_from_corners(&corners, 2, 2, 0.0, 0.0, 32.0, DENSITY_ISO);
+        assert!(g.fill_positions.is_empty());
+        assert!(g.outline_segments.is_empty());
     }
 }

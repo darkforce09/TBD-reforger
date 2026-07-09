@@ -24,11 +24,11 @@ export interface TbddGrid {
 export const TBDD_HEADER_BYTES = 16
 export const DENSITY_CHANNEL_NAMES = ['tree', 'rock'] as const
 
-/** Marching-squares iso threshold in trees per 32 m corner cell (plan §3.3 default).
- *  Corners with count ≥ iso are inside the forest mass; the boundary interpolates between
- *  corner counts, so isolated count-1 corners collapse to zero area at iso 1 (lone trees
- *  are not forest — the region export used threshold 2 for the same reason). */
-export const DENSITY_ISO = 1
+/** Marching-squares iso threshold in trees per 32 m corner cell.
+ *  **Deck Class R mirror only** of Rust `forest_mass::DENSITY_ISO` (source of truth, T-151.5.1).
+ *  Path B region export floor is 2 — corners with count ≥ iso are inside; count-1 lone trees
+ *  are not forest mass. wgpu must use wasm `density_iso()`, not this constant. */
+export const DENSITY_ISO = 2
 
 /** Forest mass fill color (locked — t090_8 §Render / N3): rgba(34,120,60,α). */
 export const FOREST_FILL_RGB: [number, number, number] = [34, 120, 60]

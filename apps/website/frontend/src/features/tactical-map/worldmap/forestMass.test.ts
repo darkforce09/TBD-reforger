@@ -90,32 +90,35 @@ describe('forestMassFromCorners (marching squares)', () => {
   })
 
   it('single dense corner → interpolated triangle at the iso crossing', () => {
-    // 2×2 grid = one cell; only c00 dense (4 trees). iso 1 ⇒ t = (1−4)/(0−4) = 0.75.
+    // 2×2 grid = one cell; only c00 dense (4 trees). iso 2 ⇒ t = (2−4)/(0−4) = 0.5.
     const geo = forestMassFromCorners(Uint16Array.from([4, 0, 0, 0]), 2, 2, 0, 0, 32)
     expect(geo.fillStartIndices).toHaveLength(1)
     const ring = ringAt(geo, 0)
     expect(ring).toHaveLength(4) // triangle + close
     expect(ring[0]).toEqual([0, 0])
-    expect(ring[1]).toEqual([24, 0]) // 0.75 · 32 toward c10
-    expect(ring[2]).toEqual([0, 24]) // 0.75 · 32 toward c01
+    expect(ring[1]).toEqual([16, 0]) // 0.5 · 32 toward c10
+    expect(ring[2]).toEqual([0, 16]) // 0.5 · 32 toward c01
     expect(geo.outlineSegments).toHaveLength(4)
-    expect([...geo.outlineSegments]).toEqual([24, 0, 0, 24])
+    expect([...geo.outlineSegments]).toEqual([16, 0, 0, 16])
   })
 
   it('count-exactly-iso corner collapses to zero area but keeps neighbours contoured', () => {
-    // c00 = 1 (== iso): crossing sits on the corner → degenerate ring dropped.
-    const lone = forestMassFromCorners(Uint16Array.from([1, 0, 0, 0]), 2, 2, 0, 0, 32)
+    // c00 = 2 (== iso): crossing sits on the corner → degenerate ring dropped.
+    const lone = forestMassFromCorners(Uint16Array.from([2, 0, 0, 0]), 2, 2, 0, 0, 32)
     expect(lone.fillStartIndices).toHaveLength(0)
     expect(lone.outlineSegments).toHaveLength(0)
-    // c00 = 1 next to dense c10: triangle survives and the corner-hugging contour edge stays.
-    const edge = forestMassFromCorners(Uint16Array.from([1, 4, 0, 0]), 2, 2, 0, 0, 32)
+    // count-1 alone is below default iso=2 → empty (Path B floor).
+    const sparse = forestMassFromCorners(Uint16Array.from([1, 0, 0, 0]), 2, 2, 0, 0, 32)
+    expect(sparse.fillStartIndices).toHaveLength(0)
+    // c00 = 2 next to dense c10: triangle survives and the corner-hugging contour edge stays.
+    const edge = forestMassFromCorners(Uint16Array.from([2, 4, 0, 0]), 2, 2, 0, 0, 32)
     expect(edge.fillStartIndices).toHaveLength(1)
     expect(ringAt(edge, 0)).toHaveLength(4) // c00, c10, crossing + close
     expect(edge.outlineSegments).toHaveLength(4) // crossing → c00
   })
 
   it('saddle: connected hexagon when the centre average clears iso', () => {
-    // Opposite corners dense; centre avg (4+4)/4 = 2 ≥ iso 1 → one hexagon, two contour edges.
+    // Opposite corners dense; centre avg (4+4)/4 = 2 ≥ iso 2 → one hexagon, two contour edges.
     const geo = forestMassFromCorners(Uint16Array.from([4, 0, 0, 4]), 2, 2, 0, 0, 32)
     expect(geo.fillStartIndices).toHaveLength(1)
     expect(ringAt(geo, 0)).toHaveLength(7) // 6 vertices + close
@@ -152,7 +155,7 @@ describe('forestMassFromCorners (marching squares)', () => {
   })
 
   it('exports the locked defaults', () => {
-    expect(DENSITY_ISO).toBe(1)
+    expect(DENSITY_ISO).toBe(2)
     expect(FOREST_FILL_RGB).toEqual([34, 120, 60])
     expect(EMPTY_FOREST_GEOMETRY.fillPositions).toHaveLength(0)
   })

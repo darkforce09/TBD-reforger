@@ -543,7 +543,16 @@ impl ForestComposeResult {
     }
 }
 
+/// Production iso threshold (`forest_mass::DENSITY_ISO` — Rust is source of truth).
+/// wgpu must call this (or pass it into `forest_mass`) instead of a TS constant (T-151.5.1).
+#[wasm_bindgen]
+#[must_use]
+pub fn density_iso() -> f64 {
+    forest_mass::DENSITY_ISO
+}
+
 /// Per-cell marching squares over a TBDD corner grid. `forestMassFromCorners`.
+/// Pass `density_iso()` for production; explicit `iso` remains for Class R / tuning tests.
 #[wasm_bindgen]
 #[allow(clippy::too_many_arguments)]
 #[must_use]

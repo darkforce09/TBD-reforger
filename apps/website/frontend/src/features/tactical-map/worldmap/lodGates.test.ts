@@ -70,10 +70,20 @@ describe('classVisible bands (N3)', () => {
     expect(classVisible('prop', 2.5)).toBe(false)
   })
 
-  it('forest fill is a MAX gate: on at ≤ +1, off past it (glyphs take over)', () => {
-    expect(classVisible('forestFill', 1)).toBe(true)
+  it('forest fill hides in tree glyph band (zoom ≥ 0) — T-151.5.1', () => {
+    expect(classVisible('forestFill', -0.1)).toBe(true)
+    expect(classVisible('forestFill', 0)).toBe(false)
+    expect(classVisible('forestFill', 1)).toBe(false)
     expect(classVisible('forestFill', 1.5)).toBe(false)
     expect(classVisible('forestFill', 6)).toBe(false)
+  })
+
+  it('forest outline is min −1.5 and off once glyphs are on', () => {
+    expect(classVisible('forestOutline', -2)).toBe(false)
+    expect(classVisible('forestOutline', -1.5)).toBe(true)
+    expect(classVisible('forestOutline', -0.1)).toBe(true)
+    expect(classVisible('forestOutline', 0)).toBe(false)
+    expect(classVisible('forestOutline', 4)).toBe(false)
   })
 
   it('sea is a MAX gate (T-090.5.4): on through +3, off past it; visible at default −2', () => {

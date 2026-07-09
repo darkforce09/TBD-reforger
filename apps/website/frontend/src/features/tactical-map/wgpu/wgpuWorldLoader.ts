@@ -13,9 +13,8 @@
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.
 
-import { WorldResidency, WorldStore } from '@/wasm/pkg/map_engine_wasm'
+import { WorldResidency, WorldStore, class_visible } from '@/wasm/pkg/map_engine_wasm'
 import { loadWorldGlyphAtlas } from '../layers/worldGlyphAtlas'
-import { classVisible } from '../worldmap/lodGates'
 import { getClassToggles } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
@@ -76,7 +75,10 @@ export class WgpuWorldController {
   private disposed = false
   private assetBase = ''
   private roadsLoaded = false
-  private landcoverPushed = false
+  /** Regions loaded into WorldStore — re-push visibility on every camera settle (T-151.5.1). */
+  private landcoverReady = false
+  /** Last landcover visibility decision; skip recompose when unchanged. */
+  private lastLandcoverVis: boolean | null = null
   private lastRoadZoomBand = Number.NaN
   private atlasReady = false
 
@@ -214,6 +216,8 @@ export class WgpuWorldController {
       if (bytes) {
         try {
           this.store.load_forest_regions_gz(bytes)
+          this.landcoverReady = true
+          this.lastLandcoverVis = null
           this.pushLandcover()
         } catch (err) {
           console.warn('[wgpu-world] landcover load failed', err)
@@ -222,11 +226,20 @@ export class WgpuWorldController {
     }
   }
 
+  /**
+   * Land-cover LOD refresh (T-151.5.1): same exclusive glyph-band hide as forestFill.
+   * Not sticky — re-evaluate on every camera settle so zoom ≥ 0 clears the mega-hull.
+   */
   private pushLandcover(): void {
-    if (!this.store || this.landcoverPushed) return
-    // Land-cover shares forestFill gate at default zoom (visible as context under mass).
+    if (!this.store || !this.landcoverReady) return
     const zoom = this.engine.zoom
-    const vis = classVisible('forestFill', zoom) || zoom <= 1
+    const vis = class_visible('forestFill', zoom)
+    if (vis === this.lastLandcoverVis) return
+    this.lastLandcoverVis = vis
+    if (!vis) {
+      this.engine.clear_vector_lane(ROLE_LANDCOVER)
+      return
+    }
     try {
       const mesh = this.store.compose_landcover()
       this.engine.upload_polygon_mesh(
@@ -235,12 +248,12 @@ export class WgpuWorldController {
         mesh.colors,
         mesh.indices,
         mesh.polygon_count,
-        vis,
+        true,
       )
       mesh.free()
-      this.landcoverPushed = true
     } catch (err) {
       console.warn('[wgpu-world] landcover compose failed', err)
+      this.lastLandcoverVis = null
     }
   }
 
@@ -312,6 +325,8 @@ export class WgpuWorldController {
     if (this.disposed || !this.ready || !this.residency) return
     // W4 roads recompose on LOD band change (debounced with camera).
     this.pushRoads()
+    // T-151.5.1: landcover visibility tracks forestFill gate on zoom (not one-shot forever).
+    this.pushLandcover()
     const b = this.engine.visible_bounds()
     const missing = this.residency.set_viewport(b[0], b[1], b[2], b[3], this.engine.zoom)
     if (missing.length > 0) {

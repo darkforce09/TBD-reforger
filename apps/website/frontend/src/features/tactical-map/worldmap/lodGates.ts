@@ -12,9 +12,10 @@
 export const REF_ZOOM = 3
 /** deckZoom ≥ 0 → individual tree glyphs (below: hidden; forest mass only). */
 export const TREE_GLYPH_MIN_ZOOM = 0
-/** deckZoom ≤ +1 → forest polygon fill visible (α ladders are T-090.8.1 styling). */
+/** Historical N3 max fill zoom (+1). T-151.5.1: fill hides for zoom ≥ TREE_GLYPH_MIN_ZOOM;
+ *  this constant is no longer used by `classVisible` (kept for contract grep). */
 export const FOREST_FILL_MAX_ZOOM = 1
-/** deckZoom ≥ −1.5 → forest outline (A3 ptsPerSquareForEdge≈15). */
+/** deckZoom ≥ −1.5 → forest outline, and only while below tree glyph band (T-151.5.1). */
 export const FOREST_OUTLINE_MIN_ZOOM = -1.5
 /** deckZoom ≥ −2.5 → building OBB rects (A3 ptsPerSquareObj≈9; visible at default −2). */
 export const BUILDING_FOOTPRINT_MIN_ZOOM = -2.5
@@ -52,15 +53,17 @@ export type WorldRenderClass =
   | 'contour'
   | RoadClass
 
-/** Min-deckZoom gate per class. `forestFill`/`sea` are the MAX gates and live outside this map. */
-const MIN_ZOOM_GATES: Record<Exclude<WorldRenderClass, 'forestFill' | 'sea'>, number> = {
+/** Min-deckZoom gate per class. `forestFill`/`sea`/`forestOutline` have custom bands. */
+const MIN_ZOOM_GATES: Record<
+  Exclude<WorldRenderClass, 'forestFill' | 'sea' | 'forestOutline'>,
+  number
+> = {
   tree: TREE_GLYPH_MIN_ZOOM,
   vegetation: VEGETATION_MIN_ZOOM,
   prop: PROP_MIN_ZOOM,
   rockLarge: ROCK_LARGE_MIN_ZOOM,
   building: BUILDING_FOOTPRINT_MIN_ZOOM,
   buildingBadge: BUILDING_BADGE_MIN_ZOOM,
-  forestOutline: FOREST_OUTLINE_MIN_ZOOM,
   contour: -6,
   highway_paved: -6,
   road_paved: -6,
@@ -71,9 +74,13 @@ const MIN_ZOOM_GATES: Record<Exclude<WorldRenderClass, 'forestFill' | 'sea'>, nu
 }
 
 /** Is a class drawn (and pickable — N4) at this deckZoom? Class gates only; per-prefab
- *  importance overrides go through visibleWithImportance. */
+ *  importance overrides go through visibleWithImportance.
+ *  T-151.5.1: forest fill + outline hide when tree glyphs are on (zoom ≥ TREE_GLYPH_MIN_ZOOM). */
 export function classVisible(cls: WorldRenderClass, deckZoom: number): boolean {
-  if (cls === 'forestFill') return deckZoom <= FOREST_FILL_MAX_ZOOM
+  if (cls === 'forestFill') return deckZoom < TREE_GLYPH_MIN_ZOOM
+  if (cls === 'forestOutline') {
+    return deckZoom >= FOREST_OUTLINE_MIN_ZOOM && deckZoom < TREE_GLYPH_MIN_ZOOM
+  }
   if (cls === 'sea') return deckZoom <= SEA_FILL_MAX_ZOOM
   return deckZoom >= MIN_ZOOM_GATES[cls]
 }

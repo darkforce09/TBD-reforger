@@ -60,13 +60,17 @@ describe('α ladder + gate bands', () => {
     expect(layers.find((l) => l.id === 'world-forest-outline')?.props.visible).toBe(false)
   })
 
-  it('outline visible from −1.5 and stays on above the fill max', () => {
+  it('outline visible from −1.5 and off in the tree glyph band (T-151.5.1)', () => {
     expect(build(-1.5).find((l) => l.id === 'world-forest-outline')?.props.visible).toBe(true)
-    expect(build(4).find((l) => l.id === 'world-forest-outline')?.props.visible).toBe(true)
+    expect(build(-0.1).find((l) => l.id === 'world-forest-outline')?.props.visible).toBe(true)
+    expect(build(0).find((l) => l.id === 'world-forest-outline')?.props.visible).toBe(false)
+    expect(build(4).find((l) => l.id === 'world-forest-outline')?.props.visible).toBe(false)
   })
 
-  it('fill hides above FOREST_FILL_MAX_ZOOM (+1) — shipped gate wins over the 0.12 band', () => {
-    expect(build(1).find((l) => l.id === 'world-forest')?.props.visible).toBe(true)
+  it('fill hides when tree glyphs are on (zoom ≥ 0) — T-151.5.1', () => {
+    expect(build(-0.1).find((l) => l.id === 'world-forest')?.props.visible).toBe(true)
+    expect(build(0).find((l) => l.id === 'world-forest')?.props.visible).toBe(false)
+    expect(build(1).find((l) => l.id === 'world-forest')?.props.visible).toBe(false)
     expect(build(1.5).find((l) => l.id === 'world-forest')?.props.visible).toBe(false)
     // The N3 0.12 fade value stays encoded (latent) in the color fn.
     expect(forestFillColor(1.5)[3]).toBe(Math.round(255 * 0.12))

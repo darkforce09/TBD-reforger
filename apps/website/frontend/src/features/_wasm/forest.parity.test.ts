@@ -53,11 +53,13 @@ describe('map-engine-wasm geometry::tbdd — Class R (bit-identical)', () => {
 
 describe('map-engine-wasm geometry::forest_mass — Class R (byte-identical)', () => {
   // Row-major corners (j*cols+i): index 0=v00, 1=v10, 2=v01, 3=v11 for a 2×2 cell.
+  // Densities chosen so default DENSITY_ISO=2 still exercises non-empty cases.
   const patterns: { cols: number; rows: number; corners: number[]; note: string }[] = [
-    { cols: 2, rows: 2, corners: [1, 0, 0, 1], note: 'saddle split (centre < iso)' },
+    { cols: 2, rows: 2, corners: [3, 0, 0, 3], note: 'saddle split (centre < iso 4)' },
     { cols: 2, rows: 2, corners: [5, 0, 0, 5], note: 'saddle connected (centre ≥ iso)' },
     { cols: 2, rows: 2, corners: [3, 3, 3, 3], note: 'full cell (case 15)' },
     { cols: 2, rows: 2, corners: [5, 0, 0, 0], note: 'single inside corner' },
+    { cols: 2, rows: 2, corners: [1, 0, 0, 0], note: 'below iso empty' },
     { cols: 3, rows: 3, corners: [0, 0, 0, 0, 9, 0, 0, 0, 0], note: 'central peak (all boundary)' },
     {
       cols: 4,

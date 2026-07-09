@@ -3,10 +3,9 @@
 
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
-import { decode_tbdd, forest_mass } from '@/wasm/pkg/map_engine_wasm'
+import { decode_tbdd, forest_mass, density_iso, class_visible } from '@/wasm/pkg/map_engine_wasm'
 import { chunkIdsForViewport, type Bbox } from '../worldmap/chunkMath'
-import { classVisible } from '../worldmap/lodGates'
-import { forestFillAlpha, DENSITY_ISO } from '../worldmap/forestMass'
+import { forestFillAlpha } from '../worldmap/forestMass'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -134,6 +133,7 @@ export class WgpuForestMassController {
       const tbdd = decode_tbdd(bytes)
       const tree = tbdd.channel(0)
       const parts = id.split('_').map(Number)
+      // Rust owns DENSITY_ISO — never pass a TS iso (T-151.5.1).
       const mass = forest_mass(
         tree,
         tbdd.cols,
@@ -141,7 +141,7 @@ export class WgpuForestMassController {
         (parts[0] ?? 0) * CHUNK_SIZE_M,
         (parts[1] ?? 0) * CHUNK_SIZE_M,
         tbdd.cell_m,
-        DENSITY_ISO,
+        density_iso(),
       )
       // Compose at alpha 1; apply zoom α by recolouring on push.
       const composed = mass.compose(1.0)
@@ -164,8 +164,9 @@ export class WgpuForestMassController {
 
   private pushComposite(zoom: number): void {
     if (this.disposed) return
-    const fillVis = classVisible('forestFill', zoom)
-    const outVis = classVisible('forestOutline', zoom)
+    // Prefer Rust lod_gates via wasm (T-151.5.1 L2/L3).
+    const fillVis = class_visible('forestFill', zoom)
+    const outVis = class_visible('forestOutline', zoom)
     const alpha = forestFillAlpha(zoom)
     const chunks = this.loadedChunks()
     if (chunks.length === 0) {

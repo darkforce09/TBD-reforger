@@ -5,9 +5,10 @@
 pub const REF_ZOOM: f64 = 3.0;
 /// deckZoom ≥ 0 → individual tree glyphs (below: hidden; forest mass only).
 pub const TREE_GLYPH_MIN_ZOOM: f64 = 0.0;
-/// deckZoom ≤ +1 → forest polygon fill visible.
+/// Historical N3 max fill zoom (+1). T-151.5.1: fill hides for `zoom ≥ TREE_GLYPH_MIN_ZOOM`
+/// (exclusive upper = 0); this constant is no longer used by `class_visible`.
 pub const FOREST_FILL_MAX_ZOOM: f64 = 1.0;
-/// deckZoom ≥ −1.5 → forest outline.
+/// deckZoom ≥ −1.5 → forest outline (and only while below tree glyph band — T-151.5.1).
 pub const FOREST_OUTLINE_MIN_ZOOM: f64 = -1.5;
 /// deckZoom ≥ −2.5 → building OBB rects.
 pub const BUILDING_FOOTPRINT_MIN_ZOOM: f64 = -2.5;
@@ -48,7 +49,8 @@ pub const WORLD_RENDER_CLASSES: &[&str] = &[
 #[must_use]
 pub fn class_visible(cls: &str, deck_zoom: f64) -> bool {
     match cls {
-        "forestFill" => deck_zoom <= FOREST_FILL_MAX_ZOOM,
+        // T-151.5.1: hide green mass when tree glyphs are on (zoom ≥ 0).
+        "forestFill" => deck_zoom < TREE_GLYPH_MIN_ZOOM,
         "sea" => deck_zoom <= SEA_FILL_MAX_ZOOM,
         "tree" => deck_zoom >= TREE_GLYPH_MIN_ZOOM,
         "vegetation" => deck_zoom >= VEGETATION_MIN_ZOOM,
@@ -56,7 +58,8 @@ pub fn class_visible(cls: &str, deck_zoom: f64) -> bool {
         "rockLarge" => deck_zoom >= ROCK_LARGE_MIN_ZOOM,
         "building" => deck_zoom >= BUILDING_FOOTPRINT_MIN_ZOOM,
         "buildingBadge" => deck_zoom >= BUILDING_BADGE_MIN_ZOOM,
-        "forestOutline" => deck_zoom >= FOREST_OUTLINE_MIN_ZOOM,
+        // Outline only in the coarse band below glyphs (no cell-edge "grid" under trees).
+        "forestOutline" => (FOREST_OUTLINE_MIN_ZOOM..TREE_GLYPH_MIN_ZOOM).contains(&deck_zoom),
         "contour" => deck_zoom >= -6.0,
         "highway_paved" | "road_paved" | "runway" => deck_zoom >= -6.0,
         "road_dirt" | "track" => deck_zoom >= -2.0,
@@ -95,8 +98,13 @@ mod tests {
         assert!(class_visible("rockLarge", 1.0));
         assert!(!class_visible("buildingBadge", 0.9));
         assert!(class_visible("buildingBadge", 1.0));
-        assert!(class_visible("forestFill", 1.0));
-        assert!(!class_visible("forestFill", 1.1));
+        // T-151.5.1: forest fill/outline off once tree glyphs are on (zoom ≥ 0).
+        assert!(class_visible("forestFill", -0.1));
+        assert!(!class_visible("forestFill", 0.0));
+        assert!(!class_visible("forestFill", 1.0));
+        assert!(class_visible("forestOutline", -1.5));
+        assert!(!class_visible("forestOutline", -1.6));
+        assert!(!class_visible("forestOutline", 0.0));
     }
 
     /// Exhaustive Class R pin table for glyph-relevant classes (TS parity is also vitest-scanned).
