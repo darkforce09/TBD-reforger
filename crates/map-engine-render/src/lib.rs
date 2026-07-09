@@ -11,6 +11,7 @@
 //! - The GPU/web modules are `wasm32`-gated; on native this crate is just the
 //!   pure modules, keeping workspace-wide CI (`cargo build/clippy/test`) fast.
 
+pub mod compute_cull;
 pub mod damage;
 pub mod density_heat;
 pub mod lanes;
@@ -18,6 +19,8 @@ pub mod scene;
 
 #[cfg(target_arch = "wasm32")]
 mod engine;
+#[cfg(target_arch = "wasm32")]
+mod icon_cull_gpu;
 #[cfg(target_arch = "wasm32")]
 mod probe;
 

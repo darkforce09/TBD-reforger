@@ -10,7 +10,7 @@
 1. CPU **draw-set** cull (strict visible rect ∩ pinned ∩ cells) — Class S  
 2. Exact-count **density ladder** + heatmap — Class R  
 3. Damage-driven render skip — Class R  
-4. WebGPU compute cull — **DEFERRED** (this section)
+4. WebGPU compute cull — **SHIPPED** (T-151.8.1 in same program; see below)
 
 `DRAW_CULL_MARGIN_M = 0`. Streaming/pin keeps preload; glyph/heatmap compose iterates **draw_ids only**. Hub “+ margin” is satisfied by residency preload for fetch; draw cull is strict visible rect.
 
@@ -21,13 +21,20 @@ DensityHeat draw order: after forest outline, before world tree glyphs.
 
 ---
 
-## Compute cull (hub W8)
+## Compute cull (hub W8) — SHIPPED
 
-Status: **DEFERRED**  
-Shipped instead: CPU `draw_set` (strict rect ∩ pinned) + exact-count ladder.  
-Not shipped: VERTEX|STORAGE compaction, draw_indirect, WebGPU-only instance cull.  
-No TypeScript substitute.  
-Follow-up: T-151.8.1 or fold into post-W9.
+Status: **SHIPPED** (commit after T-151.8 tag; tag **T-151.8.1**)
+
+| Piece | Backend | Behavior |
+|-------|---------|----------|
+| CPU AABB oracle | both | `compute_cull::{count,compact}_icons_*` — Class R |
+| `cs_icon_cull` WGSL | WebGPU | `VERTEX\|STORAGE` compaction + atomic counter → `draw_indirect` |
+| WebGL2 | WebGL2 | chunk draw-set only (no storage buffers) — intentional |
+| Class R gate | cargo | 1k random frusta: compact count == count-only; order preserved |
+| Stats | engine | `compute_cull`, `compute_cull_cpu_count`, `compute_cull_gpu_count` |
+
+Shared AABB rule (CPU ≡ GPU): icon survives iff `[pos ± size/2]` intersects frustum (anchor-relative).  
+No TypeScript cull policy.
 
 ---
 

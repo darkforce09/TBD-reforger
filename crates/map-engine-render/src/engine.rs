@@ -631,6 +631,80 @@ pub(crate) fn create_icon_pipeline(
     })
 }
 
+/// Icon pipeline for compute-culled VERTEX|STORAGE instances (32 B `IconStorage` stride).
+pub(crate) fn create_icon_pipeline_storage32(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("icon-instanced-storage32"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_icon"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2],
+                },
+                wgpu::VertexBufferLayout {
+                    array_stride: 32,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &[
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: 0,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32,
+                            offset: 8,
+                            shader_location: 2,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Sint32,
+                            offset: 12,
+                            shader_location: 3,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Uint32,
+                            offset: 16,
+                            shader_location: 4,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Uint32,
+                            offset: 20,
+                            shader_location: 5,
+                        },
+                    ],
+                },
+            ],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_icon"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            ..wgpu::PrimitiveState::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
 /// W4 polygon-fill pipeline — same vertex layout as the hairline polyline (`LineVertex` 24 B)
 /// but drawn as an **indexed triangle list** with alpha blending (sea/landcover/forest/roads).
 pub(crate) fn create_polygon_pipeline(
@@ -834,6 +908,8 @@ pub struct RenderEngine {
     polygon_pipeline: wgpu::RenderPipeline,
     /// W5 icon-instanced pipeline (atlas group 2).
     icon_pipeline: wgpu::RenderPipeline,
+    /// T-151.8.1: 32 B storage-stride icon pipeline for compute-culled draw_indirect (WebGPU).
+    icon_pipeline_storage32: Option<wgpu::RenderPipeline>,
     icon_bind_group_layout: wgpu::BindGroupLayout,
     icon_pipeline_layout: wgpu::PipelineLayout,
     sampler: wgpu::Sampler,
@@ -882,6 +958,12 @@ pub struct RenderEngine {
     submitted_last_frame: bool,
     /// Density heatmap visible flag (stats).
     density_heatmap: bool,
+    /// T-151.8.1 WebGPU compute cull (None on WebGL2).
+    icon_cull: Option<crate::icon_cull_gpu::IconComputeCull>,
+    /// Last tree-glyph 20 B upload (CPU oracle + compute src).
+    tree_icons_20: Vec<u8>,
+    /// When true (WebGPU), WorldTrees draw via compute cull + draw_indirect.
+    compute_cull_trees: bool,
 }
 
 #[wasm_bindgen]
@@ -1070,6 +1152,14 @@ impl RenderEngine {
             immediate_size: 0,
         });
         let icon_pipeline = create_icon_pipeline(&device, &icon_pipeline_layout, &shader, format);
+        let (icon_pipeline_storage32, icon_cull) = if !is_gl {
+            let p32 =
+                create_icon_pipeline_storage32(&device, &icon_pipeline_layout, &shader, format);
+            let cull = crate::icon_cull_gpu::IconComputeCull::create(&device, &shader);
+            (Some(p32), Some(cull))
+        } else {
+            (None, None)
+        };
         // Trilinear + clamp-to-edge — the unified-satellite sampler contract (`satelliteUnified.ts`).
         let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("basemap-sampler"),
@@ -1166,6 +1256,7 @@ impl RenderEngine {
             building_pipeline,
             polygon_pipeline,
             icon_pipeline,
+            icon_pipeline_storage32,
             icon_bind_group_layout,
             icon_pipeline_layout,
             sampler,
@@ -1198,6 +1289,9 @@ impl RenderEngine {
             damage: crate::damage::RenderDamage::new(),
             submitted_last_frame: false,
             density_heatmap: false,
+            icon_cull,
+            tree_icons_20: Vec::new(),
+            compute_cull_trees: !is_gl,
         })
     }
 
@@ -1250,6 +1344,52 @@ impl RenderEngine {
     #[must_use]
     pub fn submitted_last_frame(&self) -> bool {
         self.submitted_last_frame
+    }
+
+    /// T-151.8.1 — WebGPU compute cull active (false on WebGL2).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn compute_cull_enabled(&self) -> bool {
+        self.compute_cull_trees && self.icon_cull.is_some()
+    }
+
+    /// Class R CPU oracle count for the last encode_cull frustum.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn compute_cull_cpu_count(&self) -> u32 {
+        self.icon_cull
+            .as_ref()
+            .map(|c| c.last_cpu_count)
+            .unwrap_or(0)
+    }
+
+    /// Class R GPU counter (mirrors CPU until async readback; same AABB rule).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn compute_cull_gpu_count(&self) -> u32 {
+        self.icon_cull
+            .as_ref()
+            .map(|c| c.last_gpu_count)
+            .unwrap_or(0)
+    }
+
+    /// Pure CPU compact of current tree icons against a world-meter frustum (Class R harness).
+    /// Returns surviving instance count. Frustum is WORLD meters (converted to anchor-relative).
+    #[must_use]
+    pub fn compute_cull_cpu_count_for_frustum(
+        &self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+    ) -> u32 {
+        let frustum = [
+            min_x - ANCHOR[0],
+            min_y - ANCHOR[1],
+            max_x - ANCHOR[0],
+            max_y - ANCHOR[1],
+        ];
+        crate::compute_cull::count_icons_in_frustum(&self.tree_icons_20, frustum)
     }
 
     #[wasm_bindgen(getter)]
@@ -1344,6 +1484,27 @@ impl RenderEngine {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("frame"),
             });
+
+        // T-151.8.1: WebGPU tree instance cull before the color pass.
+        let do_compute_trees = self.compute_cull_trees
+            && self.icon_cull.is_some()
+            && self.icon_pipeline_storage32.is_some()
+            && self.glyph_atlas.is_some()
+            && !self.tree_icons_20.is_empty();
+        if do_compute_trees {
+            let world = self.camera.visible_world_rect();
+            // Icon buffers are anchor-relative; frustum must match.
+            let frustum = [
+                world[0] - ANCHOR[0],
+                world[1] - ANCHOR[1],
+                world[2] - ANCHOR[0],
+                world[3] - ANCHOR[1],
+            ];
+            if let Some(cull) = &mut self.icon_cull {
+                cull.encode_cull(&mut encoder, &self.device, &self.queue, frustum);
+            }
+        }
+
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("main"),
@@ -1388,6 +1549,23 @@ impl RenderEngine {
                 slot_base,
                 slot_drag,
             );
+            // T-151.8.1: draw_indirect compacted trees (after forest, before props — same order
+            // as LaneRole::WorldTrees would have occupied in the batch list).
+            if do_compute_trees
+                && let (Some(cull), Some(pipe32), Some(atlas)) = (
+                    self.icon_cull.as_ref(),
+                    self.icon_pipeline_storage32.as_ref(),
+                    self.glyph_atlas.as_ref(),
+                )
+                && let Some(dst) = cull.dst_buf.as_ref()
+            {
+                pass.set_pipeline(pipe32);
+                pass.set_bind_group(0, &self.bind_group, &[]);
+                pass.set_bind_group(2, &atlas.bind_group, &[]);
+                pass.set_vertex_buffer(0, self.unit_quad_buf.slice(..));
+                pass.set_vertex_buffer(1, dst.slice(..));
+                pass.draw_indirect(&cull.indirect_buf, 0);
+            }
         }
         if take_timing && let Some(t) = &self.timer {
             encoder.resolve_query_set(&t.query_set, 0..2, &t.resolve_buf, 0);
@@ -1557,15 +1735,21 @@ impl RenderEngine {
             })
             .sum();
         // W5 additive glyph stats (L10) — prior keys untouched.
-        let tree_glyphs: u32 = self
-            .batches
-            .iter()
-            .filter(|b| b.role == LaneRole::WorldTrees)
-            .map(|b| match &b.payload {
-                BatchPayload::IconInstanced { count, .. } => *count,
-                _ => 0,
-            })
-            .sum();
+        let tree_glyphs: u32 = if self.compute_cull_trees && self.icon_cull.is_some() {
+            self.icon_cull
+                .as_ref()
+                .map(|c| c.last_cpu_count)
+                .unwrap_or(0)
+        } else {
+            self.batches
+                .iter()
+                .filter(|b| b.role == LaneRole::WorldTrees)
+                .map(|b| match &b.payload {
+                    BatchPayload::IconInstanced { count, .. } => *count,
+                    _ => 0,
+                })
+                .sum()
+        };
         let prop_glyphs: u32 = self
             .batches
             .iter()
@@ -1626,7 +1810,8 @@ impl RenderEngine {
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
-                "\"submitted_last_frame\":{},\"density_heatmap\":{}}}"
+                "\"submitted_last_frame\":{},\"density_heatmap\":{},",
+                "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1658,6 +1843,15 @@ impl RenderEngine {
             cluster_instances,
             self.submitted_last_frame,
             self.density_heatmap,
+            self.compute_cull_trees && self.icon_cull.is_some(),
+            self.icon_cull
+                .as_ref()
+                .map(|c| c.last_cpu_count)
+                .unwrap_or(0),
+            self.icon_cull
+                .as_ref()
+                .map(|c| c.last_gpu_count)
+                .unwrap_or(0),
         )
     }
 }
@@ -2410,6 +2604,8 @@ impl RenderEngine {
 
     /// Upload packed 20 B icon instances for trees (0), props (1), or badges (2).
     /// Positions are WORLD meters; converted to anchor-relative here. Empty + visible → sticky.
+    /// T-151.8.1: on WebGPU, tree lane feeds compute cull (`VERTEX|STORAGE` + `draw_indirect`);
+    /// WebGL2 keeps the direct IconInstanced path (chunk granularity).
     pub fn upload_icon_lane(&mut self, kind: u32, bytes: &[u8], visible: bool) {
         let role = match kind {
             0 => LaneRole::WorldTrees,
@@ -2419,6 +2615,12 @@ impl RenderEngine {
         };
         const STRIDE: usize = 20;
         if bytes.is_empty() {
+            if role == LaneRole::WorldTrees {
+                self.tree_icons_20.clear();
+                if let Some(cull) = &mut self.icon_cull {
+                    cull.upload_icons(&self.device, &self.queue, &[]);
+                }
+            }
             if !visible {
                 self.remove_lane(role);
             }
@@ -2438,6 +2640,18 @@ impl RenderEngine {
             chunk[0..4].copy_from_slice(&ax.to_le_bytes());
             chunk[4..8].copy_from_slice(&ay.to_le_bytes());
         }
+
+        // WebGPU trees: compute-cull path (no direct IconInstanced lane).
+        if role == LaneRole::WorldTrees && self.compute_cull_trees && self.icon_cull.is_some() {
+            self.tree_icons_20 = converted;
+            if let Some(cull) = &mut self.icon_cull {
+                cull.upload_icons(&self.device, &self.queue, &self.tree_icons_20);
+            }
+            self.remove_lane(LaneRole::WorldTrees);
+            self.damage.mark();
+            return;
+        }
+
         use wgpu::util::DeviceExt;
         let buf = self
             .device

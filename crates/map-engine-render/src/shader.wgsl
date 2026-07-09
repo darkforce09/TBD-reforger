@@ -190,3 +190,49 @@ fn fs_icon(in: IconVsOut) -> @location(0) vec4<f32> {
     // Mask path: atlas alpha × tint (tintable glyphs are white-on-alpha).
     return vec4<f32>(s.rgb * in.tint.rgb, s.a * in.tint.a);
 }
+
+// ── T-151.8.1 WebGPU instance cull (VERTEX|STORAGE compaction) ───────────────────────────────
+// 32 B storage record (std430-friendly). AABB rule matches `compute_cull::icon_intersects_frustum`.
+struct IconStorage {
+    pos: vec2<f32>,
+    size: f32,
+    yaw: i32,
+    glyph: u32,
+    tint: u32,
+    _pad0: u32,
+    _pad1: u32,
+};
+
+struct CullParams {
+    frustum: vec4<f32>, // min_x, min_y, max_x, max_y (same space as IconStorage.pos)
+    count: u32,
+    _pad0: u32,
+    _pad1: u32,
+    _pad2: u32,
+};
+
+@group(0) @binding(0) var<storage, read> cull_in: array<IconStorage>;
+@group(0) @binding(1) var<storage, read_write> cull_out: array<IconStorage>;
+@group(0) @binding(2) var<storage, read_write> cull_counter: array<atomic<u32>>;
+@group(0) @binding(3) var<uniform> cull_params: CullParams;
+
+fn icon_in_frustum(pos: vec2<f32>, size: f32, f: vec4<f32>) -> bool {
+    let half = max(size * 0.5, 0.0);
+    let imin = pos - vec2<f32>(half, half);
+    let imax = pos + vec2<f32>(half, half);
+    return imax.x >= f.x && imin.x <= f.z && imax.y >= f.y && imin.y <= f.w;
+}
+
+@compute @workgroup_size(64)
+fn cs_icon_cull(@builtin(global_invocation_id) gid: vec3<u32>) {
+    let i = gid.x;
+    if (i >= cull_params.count) {
+        return;
+    }
+    let inst = cull_in[i];
+    if (!icon_in_frustum(inst.pos, inst.size, cull_params.frustum)) {
+        return;
+    }
+    let slot = atomicAdd(&cull_counter[0], 1u);
+    cull_out[slot] = inst;
+}
