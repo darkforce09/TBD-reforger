@@ -20,9 +20,7 @@ import {
   packSlotInstances,
   pxToMAtZoom,
   SLOT_ICON_STRIDE,
-  SLOT_RING_PX,
   SLOT_SELECTED_PX,
-  SLOT_PRIMARY_RGBA,
   SLOT_SELECTED_RGBA,
   packRgbaU32,
   packIconInstance,
@@ -228,35 +226,51 @@ export class WgpuSlotsController {
     return ids.map((id) => set.has(id))
   }
 
+  /**
+   * T-151.7.2: GPU selection tint is always a pure function of the store.
+   * Detail = full re-pack (no per-row patch); cluster = selection-only short lane.
+   * Fixes sticky yellow rings when SEL 0 (patches skipped / OOB / dragActive stuck).
+   */
   private syncSelection(): void {
-    if (this.disposed || !this.atlasReady || !this.lastIds.length) return
+    if (this.disposed || !this.atlasReady) return
+    // Invariant: dragActive only while dragPreviewIds non-empty.
+    const dragIds = useMapStore.getState().dragPreviewIds
+    if (this.dragActive && !dragIds?.length) {
+      this.clearDragOverlay()
+      return // clearDragOverlay already re-syncs selection
+    }
     if (this.dragActive) return // drag overlay owns tint for those ids
-    // T-151.7.1 B1: never patch full-doc indices into a short cluster lane.
-    if (this.lastClusterMode || this.slotsLaneIsSelectionOnly) {
+
+    // Not dragging — drop any stale hide-row bookkeeping.
+    this.hiddenRows.clear()
+
+    if (this.lastClusterMode) {
       this.reuploadSelectionOnlyFromDoc()
       return
     }
-    const sel = useMapStore.getState().selection
-    const set =
-      sel.kind !== 'none' && sel.ids.length ? new Set(sel.ids) : new Set<string>()
-    const primary = packRgbaU32(SLOT_PRIMARY_RGBA)
-    const yellow = packRgbaU32(SLOT_SELECTED_RGBA)
-    for (let i = 0; i < this.lastIds.length; i++) {
-      if (this.hiddenRows.has(i)) continue
-      const id = this.lastIds[i]
-      if (id === undefined) continue
-      const isSel = set.has(id)
-      const size = isSel ? SLOT_SELECTED_PX : SLOT_RING_PX
-      const tint = isSel ? yellow : primary
-      // size@+8 (4) + yaw@+12 (2) + glyph@+14 (2) + tint@+16 (4) = 12 B from offset+8
-      const patch = new Uint8Array(12)
-      const dv = new DataView(patch.buffer)
-      dv.setFloat32(0, size, true)
-      dv.setInt16(4, 0, true)
-      dv.setUint16(6, 0, true) // ring glyph
-      dv.setUint32(8, tint >>> 0, true)
-      this.engine.patch_slot_lane(i * SLOT_ICON_STRIDE + 8, patch)
+    this.repackAndUploadDetailSlots()
+  }
+
+  /** Detail mode: full-n pack from SoA + current selectedMask → upload (Class R with store). */
+  private repackAndUploadDetailSlots(): void {
+    const handle = this.md?.wasm
+    if (!handle) {
+      this.engine.upload_slot_lane(new Uint8Array(0), false)
+      this.slotsLaneIsSelectionOnly = false
+      this.lastIds = []
+      this.lastLen = 0
+      return
     }
+    handle.refresh()
+    const n = handle.slot_len
+    const ids = handle.slot_ids() as string[]
+    const xy = new Float32Array(wasmBg.memory.buffer, handle.slot_xy_ptr, n * 2)
+    const xyCopy = new Float32Array(xy)
+    const bytes = packSlotInstances(xyCopy, this.selectedMask(ids))
+    this.engine.upload_slot_lane(bytes, n > 0)
+    this.slotsLaneIsSelectionOnly = false
+    this.lastIds = ids
+    this.lastLen = n
   }
 
   /** Cluster / short-lane path: re-upload k selected instances (no index patch). */
@@ -284,8 +298,7 @@ export class WgpuSlotsController {
     this.dragActive = false
     this.hiddenRows.clear()
     this.engine.clear_slot_drag_lane()
-    // Restore base lane + selection tint (detail full-n or cluster short lane).
-    this.pushFromDoc(true)
+    // Restore base lane + selection tint from store (detail or cluster).
     this.syncSelection()
   }
 

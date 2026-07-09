@@ -109,7 +109,8 @@ export default function WgpuTacticalMap({
   const marquee = useMapStore((s) => s.marquee)
   const classToggles = useClassToggles()
 
-  // View state mirror (same clamps as useOrthographicView) — drives set_view / select tool.
+  // View state mirror. T-151.7.2: engine OrthoCamera is SoT; viewStateRef is updated
+  // SYNCHRONOUSLY on every mutation so pick/pan never lag a frame behind wheel.
   const [viewState, setViewState] = useState<MapViewState>(() => ({
     target: terrainCenterPixel(terrainDef),
     zoom: -2,
@@ -204,13 +205,24 @@ export default function WgpuTacticalMap({
     [terrainDef.width, terrainDef.height],
   )
 
+  /**
+   * Pan path (useSelectTool): only target moves. Preserve live zoom from viewStateRef so a
+   * mid-pan wheel's zoom_at is not clobbered by stale React viewState (T-151.7.2 B2).
+   */
   const onViewStateChange = useCallback(
     ({ viewState: next }: { viewState: MapViewState }) => {
-      const clamped = clampViewState(next)
-      setViewState(clamped)
+      const live = viewStateRef.current
+      const merged = clampViewState({
+        ...next,
+        // Pan never owns zoom — keep whatever wheel/flyTo last committed.
+        zoom: live.zoom,
+        target: next.target,
+      })
+      viewStateRef.current = merged
+      setViewState(merged)
       const eng = engineRef.current
       if (eng) {
-        applyViewState(eng, clamped)
+        applyViewState(eng, merged)
         notifyCameraMoved()
       }
     },
@@ -222,19 +234,19 @@ export default function WgpuTacticalMap({
 
   const flyToInternal = useCallback(
     (target: [number, number], zoomDelta?: number) => {
-      setViewState((prev) => {
-        const next = clampViewState({
-          ...prev,
-          target: [target[0], target[1]],
-          zoom: zoomDelta ? clampMapZoom(prev.zoom + zoomDelta) : prev.zoom,
-        })
-        const eng = engineRef.current
-        if (eng) {
-          applyViewState(eng, next)
-          notifyCameraMoved()
-        }
-        return next
+      const prev = viewStateRef.current
+      const next = clampViewState({
+        ...prev,
+        target: [target[0], target[1]],
+        zoom: zoomDelta ? clampMapZoom(prev.zoom + zoomDelta) : prev.zoom,
       })
+      viewStateRef.current = next
+      setViewState(next)
+      const eng = engineRef.current
+      if (eng) {
+        applyViewState(eng, next)
+        notifyCameraMoved()
+      }
     },
     [clampViewState, notifyCameraMoved],
   )
@@ -244,11 +256,15 @@ export default function WgpuTacticalMap({
     [flyToInternal],
   )
 
+  /** Snapshot the LIVE engine camera when ready so pick/pan match GPU (T-151.7.2 B3). */
   const getViewport = useCallback(() => {
     const el = containerRef.current
     if (!el) return null
     const r = el.getBoundingClientRect()
-    // Snapshot current viewState so pan/marquee freeze camera at gesture start (Deck parity).
+    const eng = engineRef.current
+    if (eng) {
+      return viewportFromViewState(r.width, r.height, viewStateFromEngine(eng))
+    }
     return viewportFromViewState(r.width, r.height, viewStateRef.current)
   }, [])
 
@@ -256,15 +272,24 @@ export default function WgpuTacticalMap({
     // Host may omit onEntitiesMove; gesture SM still needs a stable handler.
   }, [])
 
+  const getLiveViewState = useCallback(() => viewStateRef.current, [])
+
+  // Pass live ref so pan/wheel never freeze a stale React-prop camera (T-151.7.2).
   const selectTool = useSelectTool({
     containerRef,
     getViewport,
     viewState,
+    getLiveViewState,
     onViewStateChange,
     onEntitiesMove: onEntitiesMove ?? noopMove,
     clusterMode,
     onClusterDrill: drillIntoCluster,
   })
+  // Wheel lives in the engine effect (stable listener); keep abortPan current via ref.
+  const abortPanRef = useRef(selectTool.abortPan)
+  useEffect(() => {
+    abortPanRef.current = selectTool.abortPan
+  }, [selectTool.abortPan])
 
   // Cursor rAF channel (T-057) + DEM z (T-091.2) — same contract as Deck TacticalMap.
   const cursorRaf = useRef(0)
@@ -275,7 +300,10 @@ export default function WgpuTacticalMap({
     const pt = lastClientPt.current
     if (!el || !pt) return
     const rect = el.getBoundingClientRect()
-    const vp = viewportFromViewState(rect.width, rect.height, viewStateRef.current)
+    // Prefer live engine snapshot so CUR matches rings after wheel (T-151.7.2).
+    const eng = engineRef.current
+    const vs = eng ? viewStateFromEngine(eng) : viewStateRef.current
+    const vp = viewportFromViewState(rect.width, rect.height, vs)
     const [x, y] = vp.unproject([pt.x - rect.left, pt.y - rect.top])
     onCursorMove({ x, y, z: isDemReady() ? sampleElevation(x, y) : 0 })
   }, [onCursorMove])
@@ -371,6 +399,8 @@ export default function WgpuTacticalMap({
     [onAssetDrop],
   )
 
+  // flyTo closes over viewStateRef but only reads it when invoked (Space / outliner), not during render.
+  // eslint-disable-next-line react-hooks/refs -- createMapContextValue stores the callback; does not call it
   const ctx = useMemo(() => createMapContextValue(terrainDef, flyTo), [terrainDef, flyTo])
 
   useEffect(() => {
@@ -459,16 +489,35 @@ export default function WgpuTacticalMap({
     ro.observe(container)
 
     // Wheel zoom only (LMB pan removed — useSelectTool owns middle/right pan + left select).
-    // T-151.7.1 B3: use container CSS rect (same origin as pan/cursor/drop), not canvas.
+    // T-151.7.2: container CSS origin + sync viewStateRef; abort frozen pan so zoom_at sticks.
     const onWheel = (ev: WheelEvent) => {
       if (!engine || disposed) return
       ev.preventDefault()
+      abortPanRef.current()
       const rect = container.getBoundingClientRect()
-      engine.zoom_at(-ev.deltaY * WHEEL_ZOOM_PER_PX, ev.clientX - rect.left, ev.clientY - rect.top)
-      // Sync React viewState from engine so cluster mode + select-tool pan stay coherent.
+      // Keep camera size aligned with the CSS rect we unproject against.
+      const dpr = window.devicePixelRatio
+      engine.resize(rect.width, rect.height, dpr)
+      engine.zoom_at(
+        -ev.deltaY * WHEEL_ZOOM_PER_PX,
+        ev.clientX - rect.left,
+        ev.clientY - rect.top,
+      )
+      // Immediate mirror — viewStateRef updated before next pick/pan frame.
       const next = clampViewState(viewStateFromEngine(engine))
+      if (
+        next.target[0] !== engine.target_x ||
+        next.target[1] !== engine.target_y ||
+        next.zoom !== engine.zoom
+      ) {
+        engine.set_view(next.target[0], next.target[1], next.zoom)
+      }
+      viewStateRef.current = next
       setViewState(next)
-      notifyCameraMoved()
+      controllerRef.current?.onCameraMoved()
+      worldControllerRef.current?.onCameraMoved()
+      forestControllerRef.current?.onCameraMoved()
+      slotsControllerRef.current?.onCameraMoved()
     }
     // Listen on container so wheel + pan share one hit target / coordinate origin.
     container.addEventListener('wheel', onWheel, { passive: false })
@@ -491,7 +540,7 @@ export default function WgpuTacticalMap({
       engine?.free() // I4 — exactly once
       engine = null
     }
-  }, [forceWebgl, canvasKey, terrainDef, notifyCameraMoved, clampViewState])
+  }, [forceWebgl, canvasKey, terrainDef, clampViewState, notifyCameraMoved])
 
   const retryWebgl = useCallback(() => {
     setError(null)
@@ -523,7 +572,7 @@ export default function WgpuTacticalMap({
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
         <div style={PANEL}>
-          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7.1 · wgpu interaction</div>
+          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7.2 · wgpu interaction</div>
           <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
             {fps} FPS · {backend}
           </div>

@@ -39,6 +39,11 @@ interface UseSelectToolArgs {
    */
   getViewport: () => MapViewport | null
   viewState: MapViewState
+  /**
+   * Optional live view-state reader (T-151.7.2). wgpu updates a ref synchronously on wheel;
+   * pan must not freeze a stale React-prop zoom/target. Deck can omit (uses `viewState`).
+   */
+  getLiveViewState?: () => MapViewState
   onViewStateChange: (params: { viewState: MapViewState }) => void
   /** Commit a group move (delta in world meters) — host wraps it in one transaction. */
   onEntitiesMove: (ids: ID[], delta: { x: number; y: number }) => void
@@ -54,18 +59,28 @@ export interface SelectToolHandlers {
   onPointerMove: (e: React.PointerEvent) => void
   onPointerUp: (e: React.PointerEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
+  /**
+   * Drop an in-flight pan freeze (T-151.7.2). Call before external camera changes
+   * (wheel zoom) so a frozen pan target/viewport cannot overwrite zoom_at.
+   */
+  abortPan: () => void
 }
 
 export function useSelectTool({
   containerRef,
   getViewport,
   viewState,
+  getLiveViewState,
   onViewStateChange,
   onEntitiesMove,
   clusterMode,
   onClusterDrill,
 }: UseSelectToolArgs): SelectToolHandlers {
   const gesture = useRef<Gesture>(null)
+  const liveView = useCallback(
+    () => (getLiveViewState ? getLiveViewState() : viewState),
+    [getLiveViewState, viewState],
+  )
   // Pan is rAF-coalesced (T-057): a high-rate mouse can fire several pointermove events per
   // frame, and each onViewStateChange re-renders TacticalMap. We stash the latest target and
   // flush at most once per animation frame.
@@ -127,9 +142,10 @@ export function useSelectTool({
         if (!vp) return
         e.preventDefault()
         containerRef.current?.setPointerCapture(e.pointerId)
+        const vs = liveView()
         gesture.current = {
           type: 'pan',
-          startTarget: [viewState.target[0], viewState.target[1]],
+          startTarget: [vs.target[0], vs.target[1]],
           startPx: px,
           vp,
         }
@@ -147,7 +163,7 @@ export function useSelectTool({
       const iconId = !clusterMode && vp ? slotSpatialIndex.pickNearest(px, vp) : null
       gesture.current = { type: 'pending-left', startPx: px, iconId }
     },
-    [localPt, getViewport, containerRef, viewState, clusterMode],
+    [localPt, getViewport, containerRef, liveView, clusterMode],
   )
 
   const onPointerMove = useCallback(
@@ -161,8 +177,10 @@ export function useSelectTool({
       if (g.type === 'pan') {
         const w0 = g.vp.unproject(g.startPx)
         const w1 = g.vp.unproject(px)
+        // Use live view state so mid-gesture wheel zoom is not overwritten by a stale prop.
+        const vs = liveView()
         pendingPan.current = {
-          ...viewState,
+          ...vs,
           target: [g.startTarget[0] - (w1[0] - w0[0]), g.startTarget[1] - (w1[1] - w0[1])],
         }
         if (!panRaf.current) panRaf.current = requestAnimationFrame(flushPan)
@@ -211,7 +229,7 @@ export function useSelectTool({
           .setMarquee({ x0: cur.startWorld[0], y0: cur.startWorld[1], x1: w1[0], y1: w1[1] })
       }
     },
-    [localPt, getViewport, viewState, containerRef, flushPan, flushDragDelta],
+    [localPt, getViewport, liveView, containerRef, flushPan, flushDragDelta],
   )
 
   const onPointerUp = useCallback(
@@ -287,7 +305,8 @@ export function useSelectTool({
         // individual slot hidden under a cluster bubble. A cluster hit drills in (no selection
         // change); otherwise treat it as an empty click (plain = deselect, additive = preserve).
         if (clusterMode) {
-          const marker = px && vp ? slotClusterIndex.pickClusterAt(px, vp, viewState.zoom) : null
+          const marker =
+            px && vp ? slotClusterIndex.pickClusterAt(px, vp, liveView().zoom) : null
           if (marker) {
             onClusterDrill({ x: marker.x, y: marker.y })
           } else if (!additive) {
@@ -321,7 +340,7 @@ export function useSelectTool({
       flushPan,
       clusterMode,
       onClusterDrill,
-      viewState,
+      liveView,
     ],
   )
 
@@ -336,5 +355,12 @@ export function useSelectTool({
 
   const onContextMenu = useCallback((e: React.MouseEvent) => e.preventDefault(), [])
 
-  return { onPointerDown, onPointerMove, onPointerUp, onContextMenu }
+  const abortPan = useCallback(() => {
+    if (gesture.current?.type === 'pan') {
+      gesture.current = null
+      cancelPan()
+    }
+  }, [cancelPan])
+
+  return { onPointerDown, onPointerMove, onPointerUp, onContextMenu, abortPan }
 }

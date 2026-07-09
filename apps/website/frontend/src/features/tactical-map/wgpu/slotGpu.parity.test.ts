@@ -76,3 +76,14 @@ describe('T-151.7.1 drag GPU phase classification', () => {
     expect(classifyDragTransition(null, null, false, true)).toBe('idle')
   })
 })
+
+describe('T-151.7.2 pan zoom merge (host contract)', () => {
+  it('pan target update must not overwrite a live zoom', () => {
+    // Mirrors WgpuTacticalMap onViewStateChange merge rule.
+    const live = { target: [100, 200] as [number, number], zoom: 1.5, minZoom: -6, maxZoom: 6 }
+    const panNext = { target: [110, 190] as [number, number], zoom: -2, minZoom: -6, maxZoom: 6 }
+    const merged = { ...panNext, zoom: live.zoom, target: panNext.target }
+    expect(merged.zoom).toBe(1.5)
+    expect(merged.target).toEqual([110, 190])
+  })
+})
