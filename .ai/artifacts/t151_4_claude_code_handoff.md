@@ -20,6 +20,24 @@ T-151.3 shipped @ `32bf5ac5` (verify log
 W4 is the **first full terrain-context slice on wgpu** (sea through forest mass). Trees/props stay
 **W5**. Deck `useWorldMapLayers` remains the visual oracle.
 
+## CURRENT STATE (do not hallucinate — baseline before this slice)
+
+`?engine=wgpu` @ zoom −2 **today** (T-151.3 only):
+
+| Layer | Status |
+|-------|--------|
+| Satellite basemap / hillshade / grid | Yes (T-151.1) |
+| Buildings OBB fill + outline | Yes when chunks load (T-151.3) |
+| Sea band (real DEM) | **No** — not wired |
+| Land-cover (36 regions) | **No** — not wired |
+| Contours | **No** — not wired |
+| Roads (888) | **No** — not wired |
+| Forest mass (TBDD) | **No** — not wired |
+
+**Deck oracle** (`?engine=` off, `VITE_WORLDMAP_ENABLED=1`) already renders the full stack via
+`useWorldMapLayers.ts` + worker — copy behavior **from** Deck; do **not** claim wgpu already has
+it. Goal of this slice = wire real data so wgpu matches that oracle.
+
 ## What you are building
 
 Six deliverables:
