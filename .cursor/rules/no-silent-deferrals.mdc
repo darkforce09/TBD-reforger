@@ -1,0 +1,39 @@
+---
+description: Never defer planned work unless the user explicitly says to defer
+alwaysApply: true
+---
+
+# No silent deferrals
+
+When implementing an approved plan, ticket, or handoff: **do the whole scope**. Do not mark items DEFERRED, "follow-up", "partial", "if feasible", or "ship later" unless the user **explicitly** says to defer that piece in this conversation.
+
+## Default
+
+- Plan / acceptance matrix / todos = **must ship** in this pass.
+- Soft plan language ("if feasible", "optional", "document partial") is **not** permission to skip. Treat it as **do it**; only the user's clear "defer X" / "skip X" / "not this slice" overrides.
+- Finishing early by writing a verify-log DEFERRED section instead of code is a **failure**.
+
+## Allowed deferrals (only these)
+
+1. User said so in this thread (quote their words in the verify note).
+2. Hard external blocker (no GPU, missing secrets, Workbench down) — **stop and ask**; do not invent a follow-up ticket and call it done.
+3. Out-of-scope listed in the plan's **Out of scope** section (not soft options inside Scope).
+
+## Forbidden
+
+```text
+❌ "Compute cull DEFERRED — follow-up T-xxx.8.1"
+❌ Shipping CPU path only when the plan also required WebGPU compute
+❌ Closing todos as completed while leaving gated work undocumented-as-deferred
+❌ Asking "want me to do the rest?" after marking the slice shipped
+```
+
+```text
+✅ Implement every Scope / acceptance-matrix row
+✅ If blocked: ask once, wait — do not tag ship
+✅ Defer only after user: "defer compute cull" / "skip W8 compute"
+```
+
+## Interaction with Mode A/B/C
+
+This rule does **not** authorize Cursor to write app code. It means: when **you** (or Claude via handoff) are executing a plan, **do not drop gated items**. Cursor Mode B handoffs must not pre-authorize "document as deferred" for in-scope work.

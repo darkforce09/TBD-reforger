@@ -7,6 +7,8 @@ alwaysApply: true
 
 These rules override helpfulness. When in doubt, **stop and ask** — do not guess.
 
+**No silent deferrals:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — plan Scope / acceptance matrix / todos must ship unless the user **explicitly** says to defer. Soft plan wording ("if feasible", "optional") is not a skip.
+
 ## Agent split (non-negotiable)
 
 | Agent | Owns | Must NOT |

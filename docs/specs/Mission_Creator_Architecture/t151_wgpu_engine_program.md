@@ -388,21 +388,19 @@ Slice spec: [`t151_7_3_rust_collapse.md`](t151_7_3_rust_collapse.md).
 
 ### T-151.8 (W8) — culling + the density ladder productionized
 
-**Next / ready.** Slice spec: [`t151_8_culling_density.md`](t151_8_culling_density.md).
+**Shipped:** @ `f4ffbfff` (tag **T-151.8**) + compute cull @ `ec59d10e` (tag **T-151.8.1**) —
+verify [`t151_8_verify_log.md`](../../../.ai/artifacts/t151_8_verify_log.md). Spec:
+[`t151_8_culling_density.md`](t151_8_culling_density.md).
 
-CPU chunk cull on both backends (draw set = resident chunks ∩ `visible_world_rect` + margin).
-L2 density overview: TBDD grids → density texture; when a class's **exact** visible-count
-estimate exceeds budget, its glyph batch swaps to the heatmap quad (aggregate rung), switch
-driven by exact per-chunk integer counts. WebGPU-only compute cull for boundary chunks and
-≥ 1M-slot missions (`VERTEX|STORAGE` compaction + `draw_indirect`); WebGL2 keeps chunk
-granularity. Damage-driven rendering (render on camera/doc/residency change; fps HUD keeps a
-continuous mode).
-**Gates:** draw-chunk set == reference viewport set per scripted frame (Class S); density
-texel sums == exact chunk instance counts (Class R integers); compute-cull readback count ==
-CPU reference count over 1k random frusta (Class R); measured band table (fps +
-`gpu_frame_ms` per LOD band, full Everon dataset + 367k-slot mission) in the verify log.
+CPU draw-set cull (strict visible ∩ pinned; `DRAW_CULL_MARGIN_M = 0`); exact-count density
+ladder + heatmap; damage-driven render; WebGPU `VERTEX|STORAGE` + `draw_indirect` tree cull
+(Class R CPU AABB oracle, 1k frusta). WebGL2 keeps chunk granularity. vitest **393**;
+wasm ~**4.12 MB**. LANGUAGE GATE held.
 
 ### T-151.9 (W9) — flip + Deck retirement (the F4 analog)
+
+**Next / ready.** Slice spec: [`t151_9_deck_retirement.md`](t151_9_deck_retirement.md) ·
+handoff [`.ai/artifacts/t151_9_claude_code_handoff.md`](../../../.ai/artifacts/t151_9_claude_code_handoff.md).
 
 Default `VITE_MC_ENGINE=wgpu`; after soak, delete Deck layer modules (`useIconLayer`,
 `useClusterIconLayer`, `useSelectionLayer`, `useDemLayer`, `useTerrainBasemapLayer`,

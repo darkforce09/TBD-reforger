@@ -1,11 +1,16 @@
 # T-151.8 — culling + density ladder (W8)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `f4ffbfff` (tag **T-151.8**) + compute cull @ `ec59d10e` (tag
+**T-151.8.1**, 2026-07-09) · verify log
+[`t151_8_verify_log.md`](../../../.ai/artifacts/t151_8_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
-**Baseline:** `804f779a` (tag **T-151.7.3** — verify log
-[`t151_7_3_verify_log.md`](../../../.ai/artifacts/t151_7_3_verify_log.md)).
+**Baseline:** `804f779a` (tag **T-151.7.3**).
+
+**Shipped notes:** CPU draw-set (Class S); exact-count density ladder + heatmap (Class R);
+damage-driven render; WebGPU compute cull (`VERTEX|STORAGE` + `draw_indirect`) — **not**
+deferred. vitest **393**; LANGUAGE GATE held.
 
 ## In one sentence
 

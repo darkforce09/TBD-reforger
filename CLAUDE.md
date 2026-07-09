@@ -176,11 +176,17 @@ TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x promp
 `═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
 Do **not** grow fat `wgpu*Controller` logic in TS (W6–W7.x drift).
 
-**Next slice:** **T-151.8** (culling + density ladder) — `ready` · spec
-[`t151_8_culling_density.md`](docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md)
-· handoff [`.ai/artifacts/t151_8_claude_code_handoff.md`](.ai/artifacts/t151_8_claude_code_handoff.md)
+**Next slice:** **T-151.9** (Deck flip + retirement) — `ready` · spec
+[`t151_9_deck_retirement.md`](docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md)
+· handoff [`.ai/artifacts/t151_9_claude_code_handoff.md`](.ai/artifacts/t151_9_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.8.1 **WebGPU compute cull** @ `ec59d10e` (tag **T-151.8.1**). `VERTEX|STORAGE` +
+  `draw_indirect` tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 chunk draw-set.
+  Verify: [`.ai/artifacts/t151_8_verify_log.md`](.ai/artifacts/t151_8_verify_log.md) §Compute cull.
+- T-151.8 **culling + density ladder (W8)** @ `f4ffbfff` (tag **T-151.8**). Strict draw-set;
+  exact-count heatmap ladder; damage-driven render. vitest **393**. Spec:
+  [`t151_8_culling_density.md`](docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md).
 - T-151.7.3 **Rust collapse** @ `804f779a` (tag **T-151.7.3**). SlotGpuBridge; `wgpuSlots.ts`
   **56** LOC; vitest **393**; wasm **4,071,877 B**. Verify:
   [`.ai/artifacts/t151_7_3_verify_log.md`](.ai/artifacts/t151_7_3_verify_log.md). Spec:

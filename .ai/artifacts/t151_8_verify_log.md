@@ -1,9 +1,10 @@
 # T-151.8 verify log — Culling + density ladder
 
-**Tag:** `T-151.8`  
+**Tag:** `T-151.8` + `T-151.8.1`  
 **Baseline:** T-151.7.3 (`804f779a`)  
 **Worktree:** `tbd-reforger-wgpu-spike/`  
-**Date:** 2026-07-09
+**Date:** 2026-07-09  
+**SHAs:** `f4ffbfff` (T-151.8) · `ec59d10e` (T-151.8.1)
 
 ## Scope shipped
 

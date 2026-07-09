@@ -3745,7 +3745,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W7.3 shipped @ 804f779a; T-151.8 culling + density ladder ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts. D5 LANGUAGE GATE.",
+      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W8.1 shipped @ ec59d10e; T-151.9 Deck flip ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts. D5 LANGUAGE GATE. No silent deferrals.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3781,6 +3781,7 @@
         "T-151.7.2",
         "T-151.7.3",
         "T-151.8",
+        "T-151.8.1",
         "T-151.9"
       ],
       "slice_plan": {
@@ -3871,7 +3872,20 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "f4ffbfff",
+          "notes": "CPU draw-set + density ladder + damage skip. Compute cull completed in T-151.8.1 (no silent deferral)."
+        },
+        "T-151.8.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_8_culling_density.md",
+          "status": "shipped",
+          "shipped_at": "ec59d10e",
+          "notes": "WebGPU VERTEX|STORAGE + draw_indirect tree cull; Class R CPU AABB oracle (1k frusta). WebGL2 keeps chunk draw-set."
         },
         "T-151.9": {
           "targets": [
@@ -3879,8 +3893,8 @@
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
-          "status": "queued"
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md",
+          "status": "ready"
         },
         "T-151.4.1": {
           "targets": [
