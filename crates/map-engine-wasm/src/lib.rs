@@ -1710,6 +1710,30 @@ impl WorldResidency {
         self.inner.frames_over_budget() as u32
     }
 
+    /// In-flight (requested, not yet delivered) chunk count — T-151.4.1.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn inflight_count(&self) -> u32 {
+        self.inner.inflight_count() as u32
+    }
+
+    /// Drop all in-flight marks (call on fetch abort so ids can be re-requested) — T-151.4.1.
+    pub fn clear_inflight(&mut self) {
+        self.inner.clear_inflight();
+    }
+
+    /// Mark chunk ids as in-flight after `clear_inflight` (active fetch) — T-151.4.1.
+    pub fn mark_inflight(&mut self, ids: Vec<String>) {
+        self.inner.mark_inflight(&ids);
+    }
+
+    /// Every pinned id is resident (or pin set empty) — T-151.4.1.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn pin_settled(&self) -> bool {
+        self.inner.pin_settled()
+    }
+
     /// Additive residency stats JSON (NOT `RenderEngine::stats()`).
     #[must_use]
     pub fn stats(&self) -> String {

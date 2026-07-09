@@ -220,7 +220,21 @@ impl WorldResidency {
         }
         let key = ids.join(",");
         if key == self.pinned_key {
-            return Vec::new();
+            // T-151.4.1: same pin key usually means "nothing new". But an aborted fetch can leave
+            // the pin unsettled with empty inflight — re-request those undelivered ids.
+            if self.pin_settled() || !self.inflight.is_empty() {
+                return Vec::new();
+            }
+            let missing: Vec<String> = self
+                .pinned_ids
+                .iter()
+                .filter(|id| !self.chunks.contains_key(*id))
+                .cloned()
+                .collect();
+            for id in &missing {
+                self.inflight.insert(id.clone());
+            }
+            return missing;
         }
         self.pinned_ids = ids.clone();
         self.pinned_set = ids.iter().cloned().collect();
@@ -485,11 +499,43 @@ impl WorldResidency {
         self.frames_over_budget
     }
 
+    /// Chunks requested but not yet delivered (T-151.4.1 — empty-push / abort diagnostics).
+    #[must_use]
+    pub fn inflight_count(&self) -> usize {
+        self.inflight.len()
+    }
+
+    /// Drop all in-flight marks (T-151.4.1). Call when a fetch is aborted so the next
+    /// `set_viewport` can re-request those ids; without this, aborted ids stay excluded forever.
+    pub fn clear_inflight(&mut self) {
+        self.inflight.clear();
+    }
+
+    /// Mark ids as in-flight (not yet resident). Used after `clear_inflight` when starting a
+    /// replacement fetch so concurrent same-key `set_viewport` does not re-queue them.
+    pub fn mark_inflight(&mut self, ids: &[String]) {
+        for id in ids {
+            if !self.chunks.contains_key(id) {
+                self.inflight.insert(id.clone());
+            }
+        }
+    }
+
+    /// True when every pinned id is either resident or known-empty (present in `chunks`).
+    /// Empty pin set (gate closed) counts as settled.
+    #[must_use]
+    pub fn pin_settled(&self) -> bool {
+        self.pinned_ids
+            .iter()
+            .all(|id| self.chunks.contains_key(id))
+    }
+
     /// Additive residency stats JSON (separate from `RenderEngine::stats()`).
+    /// T-151.4.1: appends `inflight_count` + `pin_settled` (prior keys unchanged).
     #[must_use]
     pub fn stats_json(&self) -> String {
         format!(
-            "{{\"chunks_resident\":{},\"chunks_pinned\":{},\"chunks_applied\":{},\"apply_frames\":{},\"apply_budget_ms_last\":{},\"max_apply_ms\":{},\"frames_over_budget\":{},\"building_instances\":{},\"index_size\":{}}}",
+            "{{\"chunks_resident\":{},\"chunks_pinned\":{},\"chunks_applied\":{},\"apply_frames\":{},\"apply_budget_ms_last\":{},\"max_apply_ms\":{},\"frames_over_budget\":{},\"building_instances\":{},\"index_size\":{},\"inflight_count\":{},\"pin_settled\":{}}}",
             self.chunks.len(),
             self.pinned_ids.len(),
             self.chunks_applied,
@@ -499,6 +545,8 @@ impl WorldResidency {
             self.frames_over_budget,
             self.pinned_building_count(),
             self.index.size(),
+            self.inflight.len(),
+            self.pin_settled(),
         )
     }
 }
@@ -572,6 +620,35 @@ mod tests {
         let expected =
             chunk_ids_for_viewport([2000.0, 2000.0, 2200.0, 2200.0], r.terrain, 512.0, 0);
         assert_eq!(missing, expected);
+    }
+
+    /// T-151.4.1: aborted fetch clears inflight; same-key set_viewport re-requests undelivered.
+    #[test]
+    fn clear_inflight_allows_same_key_rerequest() {
+        let mut r = setup();
+        let missing = r.set_viewport(2000.0, 2000.0, 2200.0, 2200.0, -2.0);
+        assert!(!missing.is_empty());
+        assert!(r.inflight_count() > 0);
+        assert!(!r.pin_settled());
+        // Simulate abort: wipe inflight without delivering.
+        r.clear_inflight();
+        assert_eq!(r.inflight_count(), 0);
+        // Same pin key, unsettled + empty inflight → re-request.
+        let again = r.set_viewport(2000.0, 2000.0, 2200.0, 2200.0, -2.0);
+        assert_eq!(again, missing);
+        assert_eq!(r.inflight_count(), missing.len());
+        // Deliver → settled.
+        for id in &again {
+            r.ingest_chunk_gz(id, &chunk_bytes(id)).unwrap();
+        }
+        r.end_apply_frame(0.0);
+        assert!(r.pin_settled());
+        assert!(r.pinned_building_count() > 0);
+        // Settled same key → empty missing.
+        assert!(
+            r.set_viewport(2000.0, 2000.0, 2200.0, 2200.0, -2.0)
+                .is_empty()
+        );
     }
 
     #[test]

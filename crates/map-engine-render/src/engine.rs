@@ -1815,9 +1815,19 @@ impl RenderEngine {
     /// is the resident chunks contributing (`stats().world_chunks_drawn`). Empty → drop the lane.
     pub fn upload_world_buildings(&mut self, fill: &[f32], chunk_count: u32, visible: bool) {
         const STRIDE: usize = 10;
-        if fill.is_empty() || !fill.len().is_multiple_of(STRIDE) {
+        // T-151.4.1: empty + visible → sticky (keep prior lane). Mid-hydration empty uploads
+        // used to wipe town buildings; the loader also guards, but belt-and-suspenders here.
+        // Callers that truly want to clear must pass visible=false (or clear_world_buildings).
+        if fill.is_empty() {
+            if !visible {
+                self.remove_lane(LaneRole::WorldBuildings);
+                self.world_chunks_drawn = 0;
+            }
+            return;
+        }
+        if !fill.len().is_multiple_of(STRIDE) {
             self.remove_lane(LaneRole::WorldBuildings);
-            self.world_chunks_drawn = if fill.is_empty() { 0 } else { chunk_count };
+            self.world_chunks_drawn = chunk_count;
             return;
         }
         let mut instances = Vec::with_capacity(fill.len() / STRIDE);

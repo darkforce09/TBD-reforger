@@ -257,15 +257,19 @@ export class WgpuWorldController {
     if (missing.length > 0) {
       void this.fetchAndQueue(missing)
     } else {
-      // Unchanged set / gate closed / all-cached: keep the engine buffers in sync (cheap — the
-      // composite is small and only re-pushed on a debounced camera-move end).
+      // Unchanged set / gate closed / all-cached — but never wipe GPU mid-hydration (T-151.4.1).
       this.pushToEngine()
     }
   }
 
   /** 12-way concurrent fetch of the missing chunk bytes, then a budgeted ingest drain. */
   private async fetchAndQueue(ids: string[]): Promise<void> {
+    // T-151.4.1: abort previous fetch, release ALL inflight marks, then re-mark only the ids
+    // for this fetch. Without clear_inflight, aborted ids stay excluded forever (Bug B).
+    // Without mark_inflight, clear would leave the pin unsettled and double-fetch (same key).
     this.fetchAc?.abort()
+    this.residency?.clear_inflight()
+    this.residency?.mark_inflight(ids)
     const ac = new AbortController()
     this.fetchAc = ac
     const fetched: PendingChunk[] = new Array<PendingChunk>(ids.length)
@@ -288,9 +292,13 @@ export class WgpuWorldController {
         Array.from({ length: Math.min(FETCH_CONCURRENCY, ids.length) }, () => worker()),
       )
     } catch {
+      if (ac.signal.aborted && this.residency) this.residency.clear_inflight()
       return
     }
-    if (ac.signal.aborted || this.disposed) return
+    if (ac.signal.aborted || this.disposed) {
+      this.residency?.clear_inflight()
+      return
+    }
     this.pending.push(...fetched.filter(Boolean))
     this.drain()
   }
@@ -340,14 +348,51 @@ export class WgpuWorldController {
     }
   }
 
-  /** Push the residency's composed building fill + outline buffers to the engine lanes. */
+  /**
+   * Push the residency's composed building fill + outline buffers to the engine lanes.
+   * T-151.4.1: never call upload with empty fill while hydration is in flight — that removes
+   * the WorldBuildings lane and is the root cause of "town buildings disappeared after W4".
+   */
   private pushToEngine(): void {
     if (this.disposed || !this.residency) return
     const fill = this.residency.world_building_fill()
     const outline = this.residency.world_building_outline()
-    const pinned = (JSON.parse(this.residency.stats()) as { chunks_pinned: number }).chunks_pinned
-    this.engine.upload_world_buildings(fill, pinned, true)
+    const rstats = JSON.parse(this.residency.stats()) as {
+      chunks_pinned: number
+      building_instances: number
+      inflight_count: number
+      pin_settled: boolean
+      chunks_resident: number
+    }
+    // Mid-hydration: keep the previous GPU lane (if any). Empty fill here means rebuild ran
+    // before chunks arrived — wiping would drop T-151.3-visible buildings.
+    if (fill.length === 0 && (rstats.inflight_count > 0 || this.pending.length > 0 || !rstats.pin_settled)) {
+      this.publishDebug(rstats, 0)
+      return
+    }
+    this.engine.upload_world_buildings(fill, rstats.chunks_pinned, true)
     this.engine.upload_world_building_outlines(outline, true)
+    const engStats = JSON.parse(this.engine.stats()) as { world_building_instances: number }
+    this.publishDebug(rstats, engStats.world_building_instances)
+  }
+
+  /** Dev surface for S1 verify: `window.__wgpuWorldStats`. */
+  private publishDebug(
+    rstats: {
+      chunks_pinned: number
+      building_instances: number
+      inflight_count: number
+      pin_settled: boolean
+      chunks_resident: number
+    },
+    engineInstances: number,
+  ): void {
+    if (typeof window === 'undefined') return
+    ;(window as unknown as { __wgpuWorldStats?: unknown }).__wgpuWorldStats = {
+      ...rstats,
+      world_building_instances: engineInstances,
+      pending: this.pending.length,
+    }
   }
 
   private chunkUrl(id: string): string {
