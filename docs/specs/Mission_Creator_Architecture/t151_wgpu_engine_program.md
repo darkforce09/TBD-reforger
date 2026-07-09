@@ -18,9 +18,10 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `723490a0` (tag **T-151.4**) — vector layers; verify
 [`t151_4_verify_log.md`](../../../.ai/artifacts/t151_4_verify_log.md) · **T-151.4.1 shipped:**
 @ `552e68aa` — building wipe + road joins; verify
-[`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md) · **Next slice:**
-**T-151.5** (W5 glyph atlas: trees, props, badges) — `ready`; slice spec
-[`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md).
+[`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md) · **W5 / T-151.5 shipped:**
+@ `0b7621ed` (tag **T-151.5**) — glyph atlas trees/props/badges; verify
+[`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **Next slice:**
+**T-151.6** (W6 mission entities) — `ready`; authority in program hub §T-151.6.
 
 ## In one sentence
 
@@ -280,8 +281,11 @@ dual-mount screenshot diffs.
 
 ### T-151.5 (W5) — glyph atlas + LOD gates: trees, props, badges, slot ring, cluster discs
 
-**Next / ready:** slice spec [`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md) (trees/props/badges
-on wgpu; slot ring/clusters stay **W6**). Operator priority: tree icons before forest-mass retune.
+**Shipped:** @ `0b7621ed` (tag **T-151.5**, 2026-07-09) — verify
+[`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md). IconInstanced 20 B; vitest
+**372**; wasm **4,054,850 B**. Forest mass / Path B not retuned. Slot ring/clusters stay **W6**.
+
+Slice spec: [`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md).
 
 Atlas `world-glyphs.webp` + JSON (28 glyphs) uploaded once; **production icon instance layout
 pinned** (≤ 20 B: pos 2×f32 = 8, size 4, rotation snorm16 = 2, glyph u16 = 2, tint u32 = 4 —

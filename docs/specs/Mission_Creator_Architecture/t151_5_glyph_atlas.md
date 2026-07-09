@@ -1,11 +1,15 @@
 # T-151.5 — glyph atlas + LOD gates: trees, props, badges (W5)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `0b7621ed` (tag **T-151.5**, 2026-07-09) · verify log
+[`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W5) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `552e68aa` (tag **T-151.4.1** — verify log
 [`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md)).
+
+**Shipped notes:** Atlas once + IconInstanced **20 B**; vitest **372** (+1 LOD parity); wasm
+**4,054,850 B** (+45,482). Forest mass / Path B **not** retuned (operator analysis next).
 
 ## In one sentence
 

@@ -171,10 +171,14 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.5** (W5 glyph atlas: trees, props, badges) — `ready` · spec
-[`t151_5_glyph_atlas.md`](docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md)
+**Next slice:** **T-151.6** (W6 mission entities: slots, selection, drag, clusters) — `ready` ·
+program hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.6
 
 **Done (program slices):**
+- T-151.5 **glyph atlas (W5)** @ `0b7621ed` (tag **T-151.5**). Atlas once + IconInstanced **20 B**;
+  trees/props/badges on wgpu; vitest **372**; wasm **4,054,850 B**. Forest mass not retuned.
+  Verify: [`.ai/artifacts/t151_5_verify_log.md`](.ai/artifacts/t151_5_verify_log.md). Spec:
+  [`t151_5_glyph_atlas.md`](docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md).
 - T-151.4.1 **building wipe + road joins** @ `552e68aa` (tag **T-151.4.1**). Empty mid-flight
   upload no longer clears building lane; inflight abort fixed; polyline miter joins + round caps.
   Forest overdraw deferred to post-glyph analysis. Verify:

@@ -3745,7 +3745,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6; W0\u2013W3 shipped; W4/T-151.4 @ 723490a0 vector layers; W4.1/T-151.4.1 @ 552e68aa building wipe + road joins; verify .ai/artifacts/t151_4_verify_log.md + t151_4_1_verify_log.md). Next W5/T-151.5 glyph atlas (trees/props). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts; no per-slice branches or ticket run.",
+      "summary": "wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6; W0\u2013W4.1 shipped; W5/T-151.5 @ 0b7621ed glyph atlas trees/props/badges; verify .ai/artifacts/t151_5_verify_log.md). Next W6/T-151.6 mission entities. Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts; no per-slice branches or ticket run.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3837,7 +3837,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "0b7621ed"
         },
         "T-151.6": {
           "targets": [
@@ -3846,7 +3847,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-151.7": {
           "targets": [

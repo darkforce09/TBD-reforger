@@ -1,5 +1,8 @@
 # T-151.5 — Claude Code handoff (glyph atlas: trees, props, badges)
 
+**Shipped:** @ `0b7621ed` (tag **T-151.5**) — verify [`t151_5_verify_log.md`](t151_5_verify_log.md).
+Cursor doc-sync pass follows. **Next:** T-151.6 mission entities (or forest-mass analysis).
+
 **Spec (wins on conflict):**
 [`t151_5_glyph_atlas.md`](../../docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md)
 · **Program hub:**
