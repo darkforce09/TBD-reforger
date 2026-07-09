@@ -151,6 +151,14 @@ Implement **T-151.7.3** — Rust collapse: move slot GPU bridge out of TypeScrip
   T-151.7.2 @ 64c64d98 (+ 69ca1c08 wheel restore) — selection rematerialize + camera SoT
   Do NOT keep growing wgpuSlots.ts — move logic to Rust.
 
+═══ LANGUAGE GATE (MANDATORY — D5) ═══
+  Rust OWNS: SoA→GPU sync, selection tint, drag phases, cluster lane flip, pack_*,
+  px_to_m, camera math already in OrthoCamera.
+  TypeScript ONLY: React subscribe, canvas atlas pixels once, thin wasm calls
+  (bind_doc / set_selection / set_drag / on_camera / set_cluster_markers).
+  STOP IF: about to add sync/pack/LOD/drag policy in .ts → put it in crates/map-engine-* .
+  LOC budget: wgpuSlots.ts ≤ 60 (was ~521). Fail the slice if over budget.
+
 ═══ LOCKED ═══
   - Rust owns sync/selection/drag/cluster/px_to_m policy
   - wasm surface ≤ ~10 methods (bind_doc, set_selection, set_drag, on_camera, set_cluster_markers,

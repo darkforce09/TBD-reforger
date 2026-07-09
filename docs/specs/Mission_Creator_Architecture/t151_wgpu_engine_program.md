@@ -171,10 +171,13 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
 - **D4 — Current asset wire only.** All ingestion reads the existing formats (JSON-gz chunks,
   TBDD, TBDS, roads/regions JSON-gz, DEM PNG). A Rust-native binary chunk wire requires a human
   Workbench re-export (executor gate) and is a named deferred slice, not part of W0–W9.
-- **D5 — Rust owns engine policy; TS is dumb UI.** After **T-151.7.3**, slot/selection/drag/cluster
-  GPU sync, geometry, LOD, residency, and camera math live in Rust. TypeScript may only call wasm,
-  handle React/DOM/pointer, and keep the Deck oracle until T-151.9. Do **not** grow fat
-  `wgpu*Controller` business logic in TS.
+- **D5 — Rust owns engine policy; TS is dumb UI (binding NOW).** Geometry, LOD, residency,
+  SoA→GPU sync, selection/drag/cluster GPU policy, camera math, spatial indexes, pack helpers,
+  and shaders live in **Rust** (`crates/map-engine-*`). TypeScript may only: call wasm, handle
+  React/DOM/pointer, hold Zustand UI state, generate canvas atlas *pixels* if needed, and keep
+  the Deck oracle until T-151.9. Do **not** grow fat `wgpu*Controller` business logic in TS.
+  **T-151.7.3** collapses the existing TS drift; every later T-151.x prompt must include
+  `═══ LANGUAGE GATE ═══` (see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)).
 
 ## Slice map (registry `T-151.0` … `T-151.9`; W10 = separate tickets unlocked at the end)
 

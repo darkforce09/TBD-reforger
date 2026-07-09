@@ -8,6 +8,9 @@
 
 ## Operator / architecture mandate
 
+**LANGUAGE GATE (D5):** Rust owns engine policy. TS = dumb UI only.
+See `.ai/tickets/CLAUDE_CODE_PROMPT.md` §T-151 language gate.
+
 **As much Rust as possible.** TypeScript = dumb UI only (React, pointer events, Zustand).
 Do **not** grow another TS controller with GPU/selection/drag/cluster policy.
 

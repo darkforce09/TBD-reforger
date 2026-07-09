@@ -50,22 +50,33 @@ Implement **T-0xx.Y** — {one-line title}.
 ═══ SHIPPED (do not reopen) ═══
   {Parent slices @ commit — one line each}
 
+═══ LANGUAGE GATE (T-151 / map-engine — MANDATORY) ═══
+  Rust OWNS: geometry, LOD, residency, SoA→GPU sync, selection/drag/cluster GPU policy,
+  camera math, spatial indexes, pack helpers, shaders.
+  TypeScript ONLY: React mount, pointer/DOM events, Zustand UI state, thin wasm calls,
+  canvas atlas *pixels* if needed, Deck oracle until T-151.9.
+  STOP IF: about to add engine policy / sync / pack / LOD / camera math in .ts/.tsx
+  → put it in crates/map-engine-* instead. Do not "just finish in TS".
+  LOC budget: {list TS files + max lines, e.g. wgpuSlots.ts ≤ 60}
+
 ═══ LOCKED ═══
   {Max 8 bullets — pointer: full table in spec §Locked decisions}
   - …
 
 ═══ DO ═══
-  1. {P0 / first gate}
+  1. {P0 / first gate — prefer Rust}
   2. {Implementation step}
   3. …
   N. Tag **T-0xx.Y** · commit prefix **T-0xx.Y:**
 
 ═══ DO NOT ═══
   - Edit docs/**, `.ai/tickets/registry.json`, `docs/TICKET_*.md`, CLAUDE status markers
+  - Grow fat wgpu*Controller / *Bridge business logic in TypeScript
   - {slice-specific forbidden items}
 
 ═══ VERIFY (all exit 0) ═══
   {bash block — copy from spec §Verify / Rebuild}
+  {include wc -l on budgeted TS files when LANGUAGE GATE applies}
 
 ═══ MANUAL ═══
   {Acceptance IDs — one line each, e.g. S1: …}
@@ -75,7 +86,7 @@ Implement **T-0xx.Y** — {one-line title}.
   - {slice artifacts, e.g. verify log path}
   - Automated verify output (PASS)
   - Manual notes for acceptance IDs
-  - **Ready for Cursor doc sync.**
+  - Ready for Cursor doc sync.
 ```
 ````
 
@@ -84,12 +95,30 @@ Implement **T-0xx.Y** — {one-line title}.
 | Section | Max length | Notes |
 |---------|------------|-------|
 | PROBLEM | 4 sentences | No history essays — handoff has context |
+| **LANGUAGE GATE** | Required on **T-151.x** | Omit only for pure docs / non-map-engine tickets |
 | LOCKED | 8 bullets | Rest stays in spec table |
-| DO | 3–12 numbered steps | P0 analysis gates first when applicable |
-| DO NOT | Always include doc ban | Plus slice forbidden list |
-| VERIFY | Copy spec verbatim | Same commands CI/human will run |
+| DO | 3–12 numbered steps | P0 analysis gates first when applicable; **Rust first** |
+| DO NOT | Always include doc ban | Plus **no fat TS engine policy** on T-151 |
+| VERIFY | Copy spec verbatim | Same commands CI/human will run; **LOC budgets** when gated |
 | MANUAL | One line per acceptance ID | Match spec table IDs exactly |
 | RETURN | Fixed boilerplate | Always end with **Ready for Cursor doc sync.** |
+
+---
+
+## T-151 language gate (why Grok/Claude drift)
+
+Models default to editing the React/TS files they already have open. That produced W6–W7.x
+fat controllers (`wgpuSlots.ts` ~500+ LOC) and broke zoom/selection that were fine in Rust.
+
+**Cursor (Mode B) must:**
+
+1. Put `═══ LANGUAGE GATE ═══` in **every** T-151.x copy-paste prompt (no exceptions).
+2. List **explicit TS LOC budgets** in VERIFY (`wc -l … ≤ N`).
+3. Prefer DO steps that name **Rust crates first**, then “thin TS adapter”.
+4. In DO NOT: ban growing `wgpu*Controller` / pack/LOD/sync policy in `.ts`.
+5. If a hotfix is needed: **fix in Rust** (or collapse to Rust) — do not add another TS policy layer.
+
+**Executor must STOP and ask** if the only way they see to ship is “add 100+ lines of TS policy”.
 
 ---
 
@@ -129,6 +158,7 @@ Naming: slice `T-090.1.2.2` → `.ai/artifacts/t090_1_2_2_claude_code_handoff.md
 | Cursor writes app code in the prompt | DO section references spec tasks |
 | Missing RETURN contract | Always SHA + tag + **Ready for Cursor doc sync.** |
 | Parallel streams in prose | **Two (or N) full fenced blocks** — see [`.cursor/rules/claude-prompt-delivery.mdc`](../../.cursor/rules/claude-prompt-delivery.mdc) |
+| T-151 engine logic in TypeScript | **LANGUAGE GATE** + Rust crates first; TS LOC budget in VERIFY |
 
 ---
 

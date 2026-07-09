@@ -171,6 +171,11 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
+**Language gate (D5):** Rust owns engine policy (geometry, GPU sync, LOD, camera math, pack).
+TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x prompt must include
+`═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
+Do **not** grow fat `wgpu*Controller` logic in TS (W6–W7.x drift).
+
 **Next slice:** **T-151.7.3** (Rust collapse — slot GPU out of TS) — `ready` · spec
 [`t151_7_3_rust_collapse.md`](docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md)
 · handoff [`.ai/artifacts/t151_7_3_claude_code_handoff.md`](.ai/artifacts/t151_7_3_claude_code_handoff.md)
