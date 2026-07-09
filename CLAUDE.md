@@ -171,11 +171,16 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.7.1** (interaction hotfix) — `ready` · spec
-[`t151_7_1_interaction_hotfix.md`](docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md)
-· handoff [`.ai/artifacts/t151_7_1_claude_code_handoff.md`](.ai/artifacts/t151_7_1_claude_code_handoff.md)
+**Next slice:** **T-151.7.3** (Rust collapse — slot GPU out of TS) — `ready` · spec
+[`t151_7_3_rust_collapse.md`](docs/specs/Mission_Creator_Architecture/t151_7_3_rust_collapse.md)
+· handoff [`.ai/artifacts/t151_7_3_claude_code_handoff.md`](.ai/artifacts/t151_7_3_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.7.2 **residual tint + zoom SoT** @ `64c64d98` (tag **T-151.7.2**; wheel @ `69ca1c08`).
+  Verify: [`.ai/artifacts/t151_7_2_verify_log.md`](.ai/artifacts/t151_7_2_verify_log.md).
+- T-151.7.1 **interaction hotfix** @ `fa6ad959` (tag **T-151.7.1**). Tint / drag FPS / zoom origin.
+  Verify: [`.ai/artifacts/t151_7_1_verify_log.md`](.ai/artifacts/t151_7_1_verify_log.md). Spec:
+  [`t151_7_1_interaction_hotfix.md`](docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md).
 - T-151.7 **interaction rewire (W7)** @ `ab6bcb11` (tag **T-151.7**). ULP-0 camera +
   `useSelectTool` on wgpu; vitest **391**; wasm **4,063,911 B**. Verify:
   [`.ai/artifacts/t151_7_verify_log.md`](.ai/artifacts/t151_7_verify_log.md). Spec:

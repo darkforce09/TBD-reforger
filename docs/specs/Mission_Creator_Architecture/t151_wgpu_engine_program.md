@@ -26,9 +26,10 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `033ff715` — slots/selection/drag/clusters; verify
 [`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **W7 / T-151.7 shipped:**
 @ `ab6bcb11` — interaction rewire; verify
-[`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **Next slice:**
-**T-151.7.1** (interaction hotfix) — `ready`; spec
-[`t151_7_1_interaction_hotfix.md`](t151_7_1_interaction_hotfix.md).
+[`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **T-151.7.1 / .2 shipped:**
+@ `fa6ad959` / `64c64d98` (+ wheel `69ca1c08`) — tint/drag/zoom hotfixes · **Next slice:**
+**T-151.7.3** (Rust collapse) — `ready`; spec
+[`t151_7_3_rust_collapse.md`](t151_7_3_rust_collapse.md).
 
 ## In one sentence
 
@@ -170,6 +171,10 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
 - **D4 — Current asset wire only.** All ingestion reads the existing formats (JSON-gz chunks,
   TBDD, TBDS, roads/regions JSON-gz, DEM PNG). A Rust-native binary chunk wire requires a human
   Workbench re-export (executor gate) and is a named deferred slice, not part of W0–W9.
+- **D5 — Rust owns engine policy; TS is dumb UI.** After **T-151.7.3**, slot/selection/drag/cluster
+  GPU sync, geometry, LOD, residency, and camera math live in Rust. TypeScript may only call wasm,
+  handle React/DOM/pointer, and keep the Deck oracle until T-151.9. Do **not** grow fat
+  `wgpu*Controller` business logic in TS.
 
 ## Slice map (registry `T-151.0` … `T-151.9`; W10 = separate tickets unlocked at the end)
 
@@ -358,12 +363,22 @@ Z equals `sampleElevation` (Class R).
 
 ### T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)
 
-**Next / ready.** Slice spec: [`t151_7_1_interaction_hotfix.md`](t151_7_1_interaction_hotfix.md).
+**Shipped:** @ `fa6ad959` (tag **T-151.7.1**) — verify
+[`t151_7_1_verify_log.md`](../../../.ai/artifacts/t151_7_1_verify_log.md). Spec:
+[`t151_7_1_interaction_hotfix.md`](t151_7_1_interaction_hotfix.md).
 
-Corrective after W7 operator pass: (B1) selection tint stale when cluster short-lane +
-full-doc index patch; (B2) drag ~1000 ≈ −40 FPS from per-frame `create_buffer_init` overlay
-upload; (B3) wheel zoom uses canvas rect while pan uses container → zoom-at-cursor drift.
-Fix only — no gesture redesign.
+### T-151.7.2 — residual tint + zoom SoT (+ wheel restore)
+
+**Shipped:** @ `64c64d98` (tag **T-151.7.2**); wheel restore @ `69ca1c08`. Verify
+[`t151_7_2_verify_log.md`](../../../.ai/artifacts/t151_7_2_verify_log.md). Full selection
+rematerialize; engine camera SoT for pan/wheel.
+
+### T-151.7.3 — Rust collapse (slot GPU bridge out of TypeScript)
+
+**Next / ready.** Slice spec: [`t151_7_3_rust_collapse.md`](t151_7_3_rust_collapse.md).
+
+Move `wgpuSlots.ts` (~521 LOC) policy into Rust `SlotGpuBridge`; TS ≤ 60 LOC thin adapter.
+Binding rule: new map-engine policy goes in Rust first.
 
 ### T-151.8 (W8) — culling + the density ladder productionized
 
