@@ -172,8 +172,7 @@ Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t15
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
 **Next slice:** **T-151.4** (W4 vector layers: sea, contours, roads, forest, landcover) — `ready` ·
-program hub
-[`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) §T-151.4
+spec [`t151_4_vector_layers.md`](docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md)
 
 **Done (program slices):**
 - T-151.3 **chunk residency + first world GPU instances (W3)** @ `32bf5ac5` (tag **T-151.3**).

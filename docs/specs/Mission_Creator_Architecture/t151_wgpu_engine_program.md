@@ -15,8 +15,8 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 [`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **W3 / T-151.3 shipped:**
 @ `32bf5ac5` (tag **T-151.3**) — residency + building GPU on wgpu; verify log
 [`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **Next slice:**
-**T-151.4** (W4 vector layers: sea, contours, roads, forest, landcover) — `ready`; authority in
-program hub §T-151.4.
+**T-151.4** (W4 vector layers: sea, contours, roads, forest, landcover) — `ready`; slice spec
+[`t151_4_vector_layers.md`](t151_4_vector_layers.md).
 
 ## In one sentence
 
@@ -252,6 +252,8 @@ worker rbush (Class S); building readback probe at a pinned camera (OBB center p
 color, byte-exact).
 
 ### T-151.4 (W4) — vector layers: sea, contours, roads, forest, landcover, marquee
+
+Slice spec: [`t151_4_vector_layers.md`](t151_4_vector_layers.md) (authority for L1–L16 + prompt).
 
 Rust geometry (already produced: `sea_band`, `contours`, `forest_mass`, TBDD) feeds engine
 meshes directly. New pipelines: **polygon** (triangulated fills, per-vertex color — sea

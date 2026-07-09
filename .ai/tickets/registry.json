@@ -3825,7 +3825,7 @@
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md",
           "status": "ready"
         },
         "T-151.5": {
