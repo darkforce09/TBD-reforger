@@ -2,7 +2,8 @@
 // (satellite unified / pyramid + hillshade + grid) to parity with the Deck `TacticalMap`, selected
 // by `MissionCreatorPage` behind the engine flag (`VITE_MC_ENGINE=wgpu` or `?engine=wgpu`). The
 // T-151.0 calibration scene is hidden (`hide_calibration`); it survives only on the /_spike/wgpu
-// page. T-151.6 adds mission slots / selection / drag / clusters; gesture rewire stays W7.
+// page. T-151.6 adds mission slots / selection / drag / clusters.
+// T-151.7 wires useSelectTool + page callbacks on ULP-0 OrthoCamera (no LMB pan steal).
 //
 // Wasm memory lifecycle invariants I2–I7 are reused VERBATIM from WgpuCanvas.tsx (the spike page):
 //   I2 the engine handle is EFFECT-LOCAL — never useMemo/useState-persisted; `.free()` is NOT
@@ -16,7 +17,14 @@
 // (I1 module-init once + I3 creation mutex live in ./wgpu/wasmRender.) Terrain switches remount the
 // whole component (MissionCreatorPage keys it on terrain) → a fresh canvas + engine.
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { WHEEL_ZOOM_PER_PX, createEngine, deviceSize, type RenderEngine } from './wgpu/wasmRender'
 import { WgpuBasemapController } from './wgpu/wgpuBasemap'
 import { useWgpuBasemap } from './wgpu/useWgpuBasemap'
@@ -32,7 +40,29 @@ import { useWgpuSlots } from './wgpu/useWgpuSlots'
 import { useMapStore } from './state/useMapStore'
 import { useClassToggles } from './state/worldLayerPrefs'
 import { getTerrain } from './coords/terrains'
-import type { TacticalMapProps } from './types'
+import { terrainCenterPixel } from './coords/projection'
+import { loadDemForTerrain, sampleElevation, isDemReady } from './dem'
+import { useDemVersion } from './dem/useDemVersion'
+import { ZOOM_CLUSTER_MAX, CLUSTER_SLOT_THRESHOLD } from './state/constants'
+import * as slotSpatialIndex from './state/slotSpatialIndex'
+import * as slotClusterIndex from './state/slotClusterIndex'
+import * as slotIconCache from './state/slotIconCache'
+import { useSelectTool } from './tools/useSelectTool'
+import {
+  MAP_MAX_ZOOM,
+  MAP_MIN_ZOOM,
+  applyViewState,
+  clampMapZoom,
+  viewportFromViewState,
+  viewStateFromEngine,
+} from './tools/mapCamera'
+import { MapContextProvider, createMapContextValue } from './context/MapContext'
+import {
+  ASSET_DND_MIME,
+  type AssetDropPayload,
+  type MapViewState,
+  type TacticalMapProps,
+} from './types'
 import type { WasmMissionDoc } from './state/wasmDoc'
 
 const HUD_INTERVAL_MS = 250
@@ -43,20 +73,25 @@ export type WgpuTacticalMapProps = TacticalMapProps & {
 }
 
 /**
- * The wgpu engine mount for the editor (T-151.1 + T-151.6 slots). Honors `terrain` / basemap props
- * and `missionDoc` for slot/cluster GPU lanes. Interaction + pick remain no-ops until W7.
+ * The wgpu engine mount for the editor (T-151.1 + T-151.6 slots + T-151.7 interaction).
+ * Same gesture machine + page callbacks as Deck; camera is ULP-0 OrthoCamera via RenderEngine.
  */
 export default function WgpuTacticalMap({
-  terrain = 'everon',
+  terrain: terrainId = 'everon',
   className,
   showGrid = true,
   showHillshade = false,
   hillshadeOpacity = 0.4,
   onBasemapDegraded,
   onBasemapProgress,
+  onCursorMove,
+  onReady,
+  onEntityActivate,
+  onAssetDrop,
+  onEntitiesMove,
   missionDoc = null,
 }: WgpuTacticalMapProps) {
-  const terrainDef = getTerrain(terrain)
+  const terrainDef = getTerrain(terrainId)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const controllerRef = useRef<WgpuBasemapController | null>(null)
@@ -74,6 +109,18 @@ export default function WgpuTacticalMap({
   const marquee = useMapStore((s) => s.marquee)
   const classToggles = useClassToggles()
 
+  // View state mirror (same clamps as useOrthographicView) — drives set_view / select tool.
+  const [viewState, setViewState] = useState<MapViewState>(() => ({
+    target: terrainCenterPixel(terrainDef),
+    zoom: -2,
+    minZoom: MAP_MIN_ZOOM,
+    maxZoom: MAP_MAX_ZOOM,
+  }))
+  const viewStateRef = useRef(viewState)
+  useEffect(() => {
+    viewStateRef.current = viewState
+  }, [viewState])
+
   // Latest-callback refs: the controller is created ONCE (effect-local), so it must call the
   // current prop callbacks (MissionCreatorPage's are useCallback-stable, but this is robust anyway).
   const onDegradedRef = useRef(onBasemapDegraded)
@@ -85,13 +132,13 @@ export default function WgpuTacticalMap({
 
   // Prop → controller effects (basemap view, hillshade, grid, opacity re-tints, paper tint).
   useWgpuBasemap(controllerRef, ready, {
-    terrainId: terrain,
+    terrainId,
     showGrid,
     showHillshade,
     hillshadeOpacity,
   })
   // World-object residency (W3): kicks the manifest/prefab/chunk-index load once ready.
-  useWgpuWorldResidency(worldControllerRef, ready, { terrainId: terrain })
+  useWgpuWorldResidency(worldControllerRef, ready, { terrainId })
   // W4 DEM vectors (sea + contours).
   useWgpuDemVectors(engineRef, ready, { terrain: terrainDef })
   // W4 forest mass (TBDD viewport stream).
@@ -104,7 +151,20 @@ export default function WgpuTacticalMap({
     worldControllerRef.current?.syncGlyphToggles()
   }, [ready, classToggles.trees, classToggles.props, classToggles.buildings])
 
-  // W4 marquee polygon (optional; no pick/drag rewire — L12).
+  // Keep cluster index + icon cache terrain aligned (same as Deck TacticalMap).
+  useEffect(() => {
+    slotClusterIndex.setTerrain(terrainDef)
+    slotIconCache.setChunkTerrain(terrainDef)
+  }, [terrainDef])
+
+  // DEM for CUR z (T-091); useWgpuDemVectors also loads, but ensure terrain id is current.
+  useEffect(() => {
+    void loadDemForTerrain(terrainDef.id)
+  }, [terrainDef.id])
+
+  const demVersion = useDemVersion()
+
+  // W4 marquee polygon (store-driven; select tool writes marquee).
   useEffect(() => {
     if (!ready) return
     const eng = engineRef.current
@@ -119,6 +179,199 @@ export default function WgpuTacticalMap({
       eng.clear_vector_lane(7)
     }
   }, [ready, marquee])
+
+  const notifyCameraMoved = useCallback(() => {
+    controllerRef.current?.onCameraMoved()
+    worldControllerRef.current?.onCameraMoved()
+    forestControllerRef.current?.onCameraMoved()
+    slotsControllerRef.current?.onCameraMoved()
+  }, [])
+
+  const clampViewState = useCallback(
+    (next: MapViewState): MapViewState => {
+      const zoom = clampMapZoom(next.zoom)
+      const [tx, ty] = next.target
+      return {
+        target: [
+          Math.min(Math.max(tx, 0), terrainDef.width),
+          Math.min(Math.max(ty, 0), terrainDef.height),
+        ],
+        zoom,
+        minZoom: MAP_MIN_ZOOM,
+        maxZoom: MAP_MAX_ZOOM,
+      }
+    },
+    [terrainDef.width, terrainDef.height],
+  )
+
+  const onViewStateChange = useCallback(
+    ({ viewState: next }: { viewState: MapViewState }) => {
+      const clamped = clampViewState(next)
+      setViewState(clamped)
+      const eng = engineRef.current
+      if (eng) {
+        applyViewState(eng, clamped)
+        notifyCameraMoved()
+      }
+    },
+    [clampViewState, notifyCameraMoved],
+  )
+
+  const slotCount = useMapStore((s) => s.slotCount)
+  const clusterMode = slotCount > CLUSTER_SLOT_THRESHOLD && viewState.zoom <= ZOOM_CLUSTER_MAX
+
+  const flyToInternal = useCallback(
+    (target: [number, number], zoomDelta?: number) => {
+      setViewState((prev) => {
+        const next = clampViewState({
+          ...prev,
+          target: [target[0], target[1]],
+          zoom: zoomDelta ? clampMapZoom(prev.zoom + zoomDelta) : prev.zoom,
+        })
+        const eng = engineRef.current
+        if (eng) {
+          applyViewState(eng, next)
+          notifyCameraMoved()
+        }
+        return next
+      })
+    },
+    [clampViewState, notifyCameraMoved],
+  )
+
+  const drillIntoCluster = useCallback(
+    (world: { x: number; y: number }) => flyToInternal([world.x, world.y], 1),
+    [flyToInternal],
+  )
+
+  const getViewport = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    // Snapshot current viewState so pan/marquee freeze camera at gesture start (Deck parity).
+    return viewportFromViewState(r.width, r.height, viewStateRef.current)
+  }, [])
+
+  const noopMove = useCallback(() => {
+    // Host may omit onEntitiesMove; gesture SM still needs a stable handler.
+  }, [])
+
+  const selectTool = useSelectTool({
+    containerRef,
+    getViewport,
+    viewState,
+    onViewStateChange,
+    onEntitiesMove: onEntitiesMove ?? noopMove,
+    clusterMode,
+    onClusterDrill: drillIntoCluster,
+  })
+
+  // Cursor rAF channel (T-057) + DEM z (T-091.2) — same contract as Deck TacticalMap.
+  const cursorRaf = useRef(0)
+  const lastClientPt = useRef<{ x: number; y: number } | null>(null)
+  const recomputeCursor = useCallback(() => {
+    if (!onCursorMove) return
+    const el = containerRef.current
+    const pt = lastClientPt.current
+    if (!el || !pt) return
+    const rect = el.getBoundingClientRect()
+    const vp = viewportFromViewState(rect.width, rect.height, viewStateRef.current)
+    const [x, y] = vp.unproject([pt.x - rect.left, pt.y - rect.top])
+    onCursorMove({ x, y, z: isDemReady() ? sampleElevation(x, y) : 0 })
+  }, [onCursorMove])
+
+  const emitCursor = useCallback(
+    (e: React.PointerEvent) => {
+      if (!onCursorMove) return
+      lastClientPt.current = { x: e.clientX, y: e.clientY }
+      if (cursorRaf.current) return
+      cursorRaf.current = requestAnimationFrame(() => {
+        cursorRaf.current = 0
+        recomputeCursor()
+      })
+    },
+    [onCursorMove, recomputeCursor],
+  )
+
+  useEffect(() => {
+    recomputeCursor()
+  }, [demVersion, recomputeCursor])
+
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      selectTool.onPointerMove(e)
+      emitCursor(e)
+    },
+    [selectTool, emitCursor],
+  )
+
+  const onPointerLeave = useCallback(() => {
+    if (cursorRaf.current) {
+      cancelAnimationFrame(cursorRaf.current)
+      cursorRaf.current = 0
+    }
+    onCursorMove?.(null)
+  }, [onCursorMove])
+
+  useEffect(
+    () => () => {
+      if (cursorRaf.current) cancelAnimationFrame(cursorRaf.current)
+    },
+    [],
+  )
+
+  const onDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      const el = containerRef.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const vp = viewportFromViewState(r.width, r.height, viewStateRef.current)
+      const px: [number, number] = [e.clientX - r.left, e.clientY - r.top]
+      if (clusterMode) {
+        const marker = slotClusterIndex.pickClusterAt(px, vp, viewStateRef.current.zoom)
+        if (marker) drillIntoCluster({ x: marker.x, y: marker.y })
+        return
+      }
+      const id = slotSpatialIndex.pickNearest(px, vp)
+      if (id) onEntityActivate?.(id)
+    },
+    [onEntityActivate, clusterMode, drillIntoCluster],
+  )
+
+  const flyTo = useCallback(
+    (world: { x: number; y: number }) => flyToInternal([world.x, world.y]),
+    [flyToInternal],
+  )
+
+  useEffect(() => onReady?.({ flyTo }), [onReady, flyTo])
+
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    if (!e.dataTransfer.types.includes(ASSET_DND_MIME)) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      const raw = e.dataTransfer.getData(ASSET_DND_MIME)
+      const el = containerRef.current
+      if (!raw || !el) return
+      e.preventDefault()
+      let payload: AssetDropPayload
+      try {
+        payload = JSON.parse(raw) as AssetDropPayload
+      } catch {
+        return
+      }
+      const rect = el.getBoundingClientRect()
+      const vp = viewportFromViewState(rect.width, rect.height, viewStateRef.current)
+      const [x, y] = vp.unproject([e.clientX - rect.left, e.clientY - rect.top])
+      onAssetDrop?.(payload, { x, y })
+    },
+    [onAssetDrop],
+  )
+
+  const ctx = useMemo(() => createMapContextValue(terrainDef, flyTo), [terrainDef, flyTo])
 
   useEffect(() => {
     const container = containerRef.current
@@ -160,7 +413,8 @@ export default function WgpuTacticalMap({
         engineRef.current = created
         setBackend(created.backend())
         applySize()
-        created.set_view(terrainDef.width / 2, terrainDef.height / 2, -2)
+        const vs = viewStateRef.current
+        created.set_view(vs.target[0], vs.target[1], vs.zoom)
         created.hide_calibration() // W1: no calibration scene in the editor (L1)
         controllerRef.current = new WgpuBasemapController(created, terrainDef, {
           onProgress: (f) => onProgressRef.current?.(f),
@@ -170,6 +424,7 @@ export default function WgpuTacticalMap({
         forestControllerRef.current = new WgpuForestMassController(created, terrainDef)
         slotsControllerRef.current = new WgpuSlotsController(created)
         setReady(true) // fires the basemap + world + slots hook effects
+        notifyCameraMoved()
         const loop = (now: number) => {
           if (disposed || !engine) return // I5
           if (window.devicePixelRatio !== lastDpr) applySize()
@@ -203,54 +458,23 @@ export default function WgpuTacticalMap({
     })
     ro.observe(container)
 
-    let dragging = false
-    let lastX = 0
-    let lastY = 0
-    const onPointerDown = (ev: PointerEvent) => {
-      if (ev.button !== 0) return
-      dragging = true
-      lastX = ev.clientX
-      lastY = ev.clientY
-      canvas.setPointerCapture(ev.pointerId)
-    }
-    const onPointerMove = (ev: PointerEvent) => {
-      if (!dragging || !engine || disposed) return
-      engine.pan(ev.clientX - lastX, ev.clientY - lastY)
-      lastX = ev.clientX
-      lastY = ev.clientY
-      controllerRef.current?.onCameraMoved() // pyramid LOD follows the pan (debounced)
-      worldControllerRef.current?.onCameraMoved() // world chunk residency follows the pan
-      forestControllerRef.current?.onCameraMoved()
-      slotsControllerRef.current?.onCameraMoved()
-    }
-    const onPointerUp = (ev: PointerEvent) => {
-      dragging = false
-      if (canvas.hasPointerCapture(ev.pointerId)) canvas.releasePointerCapture(ev.pointerId)
-    }
+    // Wheel zoom only (LMB pan removed — useSelectTool owns middle/right pan + left select).
     const onWheel = (ev: WheelEvent) => {
       if (!engine || disposed) return
       ev.preventDefault()
       const rect = canvas.getBoundingClientRect()
       engine.zoom_at(-ev.deltaY * WHEEL_ZOOM_PER_PX, ev.clientX - rect.left, ev.clientY - rect.top)
-      controllerRef.current?.onCameraMoved()
-      worldControllerRef.current?.onCameraMoved()
-      forestControllerRef.current?.onCameraMoved()
-      slotsControllerRef.current?.onCameraMoved()
+      // Sync React viewState from engine so cluster mode + select-tool pan stay coherent.
+      const next = clampViewState(viewStateFromEngine(engine))
+      setViewState(next)
+      notifyCameraMoved()
     }
-    canvas.addEventListener('pointerdown', onPointerDown)
-    canvas.addEventListener('pointermove', onPointerMove)
-    canvas.addEventListener('pointerup', onPointerUp)
-    canvas.addEventListener('pointercancel', onPointerUp)
     canvas.addEventListener('wheel', onWheel, { passive: false })
 
     return () => {
       disposed = true // I4
       cancelAnimationFrame(raf) // I5 — before free
       ro.disconnect()
-      canvas.removeEventListener('pointerdown', onPointerDown)
-      canvas.removeEventListener('pointermove', onPointerMove)
-      canvas.removeEventListener('pointerup', onPointerUp)
-      canvas.removeEventListener('pointercancel', onPointerUp)
       canvas.removeEventListener('wheel', onWheel)
       controllerRef.current?.dispose()
       controllerRef.current = null
@@ -265,7 +489,7 @@ export default function WgpuTacticalMap({
       engine?.free() // I4 — exactly once
       engine = null
     }
-  }, [forceWebgl, canvasKey, terrainDef])
+  }, [forceWebgl, canvasKey, terrainDef, notifyCameraMoved, clampViewState])
 
   const retryWebgl = useCallback(() => {
     setError(null)
@@ -275,30 +499,44 @@ export default function WgpuTacticalMap({
   }, [])
 
   return (
-    <div ref={containerRef} className={className} style={{ background: '#0b0f14' }}>
-      <canvas
-        key={canvasKey}
-        ref={canvasRef}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
-      />
-      <div style={PANEL}>
-        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.6 · wgpu slots</div>
-        <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
-          {fps} FPS · {backend}
-        </div>
-        <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, opacity: 0.9 }}>
-          basemap: {basemapMode}
-        </div>
-        {error !== null && (
-          <div style={{ marginTop: 8 }}>
-            <div style={{ color: '#ff9c9c', maxWidth: 420, whiteSpace: 'pre-wrap' }}>{error}</div>
-            <button onClick={retryWebgl} style={BTN}>
-              Retry with WebGL2 (fresh canvas)
-            </button>
+    <MapContextProvider value={ctx}>
+      <div
+        ref={containerRef}
+        className={className}
+        style={{ background: '#0b0f14', cursor: 'crosshair' }}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onPointerDown={selectTool.onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={selectTool.onPointerUp}
+        onPointerLeave={onPointerLeave}
+        onDoubleClick={onDoubleClick}
+        onContextMenu={selectTool.onContextMenu}
+      >
+        <canvas
+          key={canvasKey}
+          ref={canvasRef}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+        />
+        <div style={PANEL}>
+          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7 · wgpu interaction</div>
+          <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
+            {fps} FPS · {backend}
           </div>
-        )}
+          <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, opacity: 0.9 }}>
+            basemap: {basemapMode}
+          </div>
+          {error !== null && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ color: '#ff9c9c', maxWidth: 420, whiteSpace: 'pre-wrap' }}>{error}</div>
+              <button onClick={retryWebgl} style={BTN}>
+                Retry with WebGL2 (fresh canvas)
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </MapContextProvider>
   )
 }
 
@@ -316,6 +554,7 @@ const PANEL: CSSProperties = {
   font: '13px/1.3 ui-sans-serif, system-ui, sans-serif',
   maxWidth: 520,
   textAlign: 'center',
+  pointerEvents: 'none',
 }
 
 const BTN: CSSProperties = {
@@ -328,4 +567,5 @@ const BTN: CSSProperties = {
   border: '1px solid rgba(140,198,255,0.25)',
   fontWeight: 600,
   fontSize: 12,
+  pointerEvents: 'auto',
 }

@@ -1229,6 +1229,13 @@ impl RenderEngine {
         self.camera.visible_world_rect().to_vec()
     }
 
+    /// Screen CSS px → world meters on the z=0 plane (`viewport.unproject` / ULP-0 OrthoCamera).
+    /// T-151.7: `useSelectTool` pick radius, cursor, drop, and dbl-click on the wgpu mount.
+    #[must_use]
+    pub fn unproject_xy(&self, px: f64, py: f64) -> Vec<f64> {
+        self.camera.unproject_xy(px, py).to_vec()
+    }
+
     /// Render one frame to the canvas. Steady-state CPU→GPU traffic is exactly the 64-byte
     /// mvp uniform (the navigation invariant); instance data is static in GPU memory.
     pub fn render(&mut self) -> Result<(), JsError> {

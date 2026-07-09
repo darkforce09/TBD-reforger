@@ -184,9 +184,20 @@ function TacticalMapInner({
     // Intentional noop: Deck requires a handler slot here we deliberately leave empty
     // (hover/move handling was removed for perf in T-057).
   }, [])
+  // T-151.7: inject Deck viewport factory so useSelectTool shares one SM with wgpu (ULP-0 path).
+  const getViewport = useCallback(() => {
+    const el = containerRef.current
+    if (!el) return null
+    const r = el.getBoundingClientRect()
+    return view.makeViewport({
+      width: r.width,
+      height: r.height,
+      viewState,
+    }) as { unproject: (xy: number[]) => number[] } | null
+  }, [view, viewState])
   const selectTool = useSelectTool({
     containerRef,
-    view,
+    getViewport,
     viewState,
     onViewStateChange,
     onEntitiesMove: onEntitiesMove ?? noopMove,

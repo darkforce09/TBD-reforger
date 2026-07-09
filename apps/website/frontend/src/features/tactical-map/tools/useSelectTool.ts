@@ -6,35 +6,38 @@
 // into the pending-left pointerUp branch below. Mutations are reported to the host via
 // onEntitiesMove (one Y.Doc transaction = one undo step); selection + transient drag/marquee
 // live in the store. The map never pans on left-drag (Deck's dragPan is disabled in TacticalMap).
+//
+// T-151.7: camera is injected via getViewport() so the wgpu mount can use ULP-0 OrthoCamera
+// while Deck keeps view.makeViewport — gesture thresholds / modifiers are unchanged.
 
 import { useCallback, useEffect, useRef } from 'react'
-import type { OrthographicView } from '@deck.gl/core'
 import { useMapStore } from '../state/useMapStore'
 import * as slotIconCache from '../state/slotIconCache'
 import * as slotSpatialIndex from '../state/slotSpatialIndex'
 import * as slotClusterIndex from '../state/slotClusterIndex'
 import type { ID } from '../state/schema'
 import type { MapViewState } from '../types'
+import type { MapViewport } from './mapCamera'
 
 type Pt = [number, number]
 
 /** ~4 px of motion separates a click (Deck handles it) from a drag (we handle it). */
 const DRAG_THRESHOLD = 4
 
-interface Viewport {
-  unproject: (xy: number[]) => number[]
-}
-
 type Gesture =
   | { type: 'pending-left'; startPx: Pt; iconId: ID | null }
-  | { type: 'move'; ids: ID[]; startWorld: Pt; vp: Viewport }
-  | { type: 'marquee'; startPx: Pt; startWorld: Pt; vp: Viewport }
-  | { type: 'pan'; startTarget: Pt; startPx: Pt; vp: Viewport }
+  | { type: 'move'; ids: ID[]; startWorld: Pt; vp: MapViewport }
+  | { type: 'marquee'; startPx: Pt; startWorld: Pt; vp: MapViewport }
+  | { type: 'pan'; startTarget: Pt; startPx: Pt; vp: MapViewport }
   | null
 
 interface UseSelectToolArgs {
   containerRef: React.RefObject<HTMLDivElement | null>
-  view: OrthographicView
+  /**
+   * Camera seam (T-151.7): build a frozen viewport for the current container + view.
+   * Deck: `view.makeViewport({…})`. wgpu: `viewportFromViewState` / engine unproject.
+   */
+  getViewport: () => MapViewport | null
   viewState: MapViewState
   onViewStateChange: (params: { viewState: MapViewState }) => void
   /** Commit a group move (delta in world meters) — host wraps it in one transaction. */
@@ -55,7 +58,7 @@ export interface SelectToolHandlers {
 
 export function useSelectTool({
   containerRef,
-  view,
+  getViewport,
   viewState,
   onViewStateChange,
   onEntitiesMove,
@@ -112,13 +115,6 @@ export function useSelectTool({
     [containerRef],
   )
 
-  const makeViewport = useCallback((): Viewport | null => {
-    const el = containerRef.current
-    if (!el) return null
-    const r = el.getBoundingClientRect()
-    return view.makeViewport({ width: r.width, height: r.height, viewState }) as Viewport | null
-  }, [containerRef, view, viewState])
-
   const onPointerDown = useCallback(
     (e: React.PointerEvent) => {
       const px = localPt(e)
@@ -127,7 +123,7 @@ export function useSelectTool({
       // Middle / right button → pan against a viewport frozen at gesture start. Capture
       // now: these never produce a Deck click, so redirecting events is safe.
       if (e.button === 1 || e.button === 2) {
-        const vp = makeViewport()
+        const vp = getViewport()
         if (!vp) return
         e.preventDefault()
         containerRef.current?.setPointerCapture(e.pointerId)
@@ -147,11 +143,11 @@ export function useSelectTool({
       // Cluster mode (T-065.1): never pickNearest the full rbush here — a press near a bubble
       // would grab a slot hidden under it and start a move. Leave iconId null so only marquee /
       // drill-in act until the user zooms into detail.
-      const vp = makeViewport()
+      const vp = getViewport()
       const iconId = !clusterMode && vp ? slotSpatialIndex.pickNearest(px, vp) : null
       gesture.current = { type: 'pending-left', startPx: px, iconId }
     },
-    [localPt, makeViewport, containerRef, viewState, clusterMode],
+    [localPt, getViewport, containerRef, viewState, clusterMode],
   )
 
   const onPointerMove = useCallback(
@@ -176,7 +172,7 @@ export function useSelectTool({
       // Promote a pending left-press into a move or marquee once it clears the threshold.
       if (g.type === 'pending-left') {
         if (Math.hypot(px[0] - g.startPx[0], px[1] - g.startPx[1]) < DRAG_THRESHOLD) return
-        const vp = makeViewport()
+        const vp = getViewport()
         if (!vp) return
         // Now that it's a real drag, capture so it survives leaving the canvas; Deck won't
         // see a matching pointerup, so no stray click fires after the drag.
@@ -215,7 +211,7 @@ export function useSelectTool({
           .setMarquee({ x0: cur.startWorld[0], y0: cur.startWorld[1], x1: w1[0], y1: w1[1] })
       }
     },
-    [localPt, makeViewport, viewState, containerRef, flushPan, flushDragDelta],
+    [localPt, getViewport, viewState, containerRef, flushPan, flushDragDelta],
   )
 
   const onPointerUp = useCallback(
@@ -285,7 +281,7 @@ export function useSelectTool({
       // selection lives here: pick the slot under the release point and apply T-053 rules.
       if (g.type === 'pending-left') {
         const px = localPt(e)
-        const vp = px ? makeViewport() : null
+        const vp = px ? getViewport() : null
         const additive = e.ctrlKey || e.metaKey
         // Cluster mode (T-065): NEVER pickNearest the full rbush — that would select an
         // individual slot hidden under a cluster bubble. A cluster hit drills in (no selection
@@ -320,7 +316,7 @@ export function useSelectTool({
     [
       containerRef,
       localPt,
-      makeViewport,
+      getViewport,
       onEntitiesMove,
       flushPan,
       clusterMode,

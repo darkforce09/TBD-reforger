@@ -234,13 +234,20 @@ export default function MissionCreatorPage() {
     }
   }, [editor.docStatus])
 
-  // Shared basemap props (T-151.1 L9): the wgpu mount gets the SAME layer toggles + basemap
-  // callbacks as the Deck mount. Computed once (env-derived defaults) — the interaction callbacks
-  // stay Deck-only until the wgpu picking lane (W7).
+  // Shared basemap + interaction props (T-151.7 W7): wgpu and Deck get the same callbacks.
   const basemapProps = {
     showGrid: env?.showGrid !== false,
     showHillshade: env?.showHillshade === true,
     hillshadeOpacity: env?.hillshadeOpacity ?? 0.4,
+  }
+  const interactionProps = {
+    onReady,
+    onCursorMove,
+    onEntityActivate,
+    onAssetDrop,
+    onEntitiesMove,
+    onBasemapDegraded,
+    onBasemapProgress,
   }
 
   return (
@@ -253,9 +260,8 @@ export default function MissionCreatorPage() {
             key={terrainId}
             terrain={terrainId}
             {...basemapProps}
+            {...interactionProps}
             className="absolute inset-0 z-0 bg-background"
-            onBasemapDegraded={onBasemapDegraded}
-            onBasemapProgress={onBasemapProgress}
             missionDoc={md}
           />
         </Suspense>
@@ -264,14 +270,8 @@ export default function MissionCreatorPage() {
           key={terrainId}
           terrain={terrainId}
           {...basemapProps}
+          {...interactionProps}
           className="absolute inset-0 z-0 bg-background"
-          onReady={onReady}
-          onCursorMove={onCursorMove}
-          onEntityActivate={onEntityActivate}
-          onAssetDrop={onAssetDrop}
-          onEntitiesMove={onEntitiesMove}
-          onBasemapDegraded={onBasemapDegraded}
-          onBasemapProgress={onBasemapProgress}
         />
       )}
 
