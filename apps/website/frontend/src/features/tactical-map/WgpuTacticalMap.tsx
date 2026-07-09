@@ -488,45 +488,10 @@ export default function WgpuTacticalMap({
     })
     ro.observe(container)
 
-    // Wheel zoom only (LMB pan removed — useSelectTool owns middle/right pan + left select).
-    // T-151.7.2: container CSS origin + sync viewStateRef; abort frozen pan so zoom_at sticks.
-    const onWheel = (ev: WheelEvent) => {
-      if (!engine || disposed) return
-      ev.preventDefault()
-      abortPanRef.current()
-      const rect = container.getBoundingClientRect()
-      // Keep camera size aligned with the CSS rect we unproject against.
-      const dpr = window.devicePixelRatio
-      engine.resize(rect.width, rect.height, dpr)
-      engine.zoom_at(
-        -ev.deltaY * WHEEL_ZOOM_PER_PX,
-        ev.clientX - rect.left,
-        ev.clientY - rect.top,
-      )
-      // Immediate mirror — viewStateRef updated before next pick/pan frame.
-      const next = clampViewState(viewStateFromEngine(engine))
-      if (
-        next.target[0] !== engine.target_x ||
-        next.target[1] !== engine.target_y ||
-        next.zoom !== engine.zoom
-      ) {
-        engine.set_view(next.target[0], next.target[1], next.zoom)
-      }
-      viewStateRef.current = next
-      setViewState(next)
-      controllerRef.current?.onCameraMoved()
-      worldControllerRef.current?.onCameraMoved()
-      forestControllerRef.current?.onCameraMoved()
-      slotsControllerRef.current?.onCameraMoved()
-    }
-    // Listen on container so wheel + pan share one hit target / coordinate origin.
-    container.addEventListener('wheel', onWheel, { passive: false })
-
     return () => {
       disposed = true // I4
       cancelAnimationFrame(raf) // I5 — before free
       ro.disconnect()
-      container.removeEventListener('wheel', onWheel)
       controllerRef.current?.dispose()
       controllerRef.current = null
       worldControllerRef.current?.dispose() // frees the WorldResidency wasm handle (once)
@@ -540,7 +505,52 @@ export default function WgpuTacticalMap({
       engine?.free() // I4 — exactly once
       engine = null
     }
-  }, [forceWebgl, canvasKey, terrainDef, clampViewState, notifyCameraMoved])
+  }, [forceWebgl, canvasKey, terrainDef, notifyCameraMoved])
+
+  // T-151.7.2 hotfix: wheel lives OUTSIDE the engine-create effect so it cannot be torn down
+  // by unrelated dep churn, and does NOT call resize every tick (that raced render + threw).
+  useEffect(() => {
+    if (!ready) return
+    const container = containerRef.current
+    if (!container) return
+
+    const onWheel = (ev: WheelEvent) => {
+      const eng = engineRef.current
+      if (!eng) return
+      ev.preventDefault()
+      try {
+        abortPanRef.current?.()
+      } catch {
+        /* ignore */
+      }
+      const rect = container.getBoundingClientRect()
+      // CSS origin = container (same as pan/cursor). No resize here — ResizeObserver owns size.
+      eng.zoom_at(
+        -ev.deltaY * WHEEL_ZOOM_PER_PX,
+        ev.clientX - rect.left,
+        ev.clientY - rect.top,
+      )
+      // Immediate mirror so pick/pan see the new zoom before React paints.
+      const next = clampViewState(viewStateFromEngine(eng))
+      if (
+        next.target[0] !== eng.target_x ||
+        next.target[1] !== eng.target_y ||
+        next.zoom !== eng.zoom
+      ) {
+        eng.set_view(next.target[0], next.target[1], next.zoom)
+      }
+      viewStateRef.current = next
+      setViewState(next)
+      controllerRef.current?.onCameraMoved()
+      worldControllerRef.current?.onCameraMoved()
+      forestControllerRef.current?.onCameraMoved()
+      slotsControllerRef.current?.onCameraMoved()
+    }
+
+    // Capture phase so we see the event even if a child stops bubble; passive:false for preventDefault.
+    container.addEventListener('wheel', onWheel, { passive: false, capture: true })
+    return () => container.removeEventListener('wheel', onWheel, { capture: true })
+  }, [ready, clampViewState])
 
   const retryWebgl = useCallback(() => {
     setError(null)
@@ -572,7 +582,7 @@ export default function WgpuTacticalMap({
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
         <div style={PANEL}>
-          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7.2 · wgpu interaction</div>
+          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7.2 · wgpu interaction · wheel</div>
           <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
             {fps} FPS · {backend}
           </div>
