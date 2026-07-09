@@ -21,10 +21,11 @@ now; export rebuild / T-149 smoothing later.
 
 ## What you are building
 
-1. `DENSITY_ISO = 2` (TS + Rust).
+1. **`DENSITY_ISO = 2` in Rust** (`forest_mass.rs`) — authority. wgpu stops feeding TS iso into
+   `forest_mass` (today `useWgpuForestMass.ts` imports `DENSITY_ISO` from `forestMass.ts` — wrong).
 2. Hide fill + outline + landcover when tree glyph band active (`zoom ≥ 0`).
 3. wgpu landcover visibility refresh on zoom.
-4. Deck parity for the same gates.
+4. Thin Deck TS mirror only for Class R / Deck mount until T-151.9.
 5. Verify log; tag **T-151.5.1**.
 
 ## Do not
@@ -32,6 +33,7 @@ now; export rebuild / T-149 smoothing later.
 - Rebuild Path B / TBDD assets.
 - Edit docs/registry.
 - Touch T-151.6 slots.
+- Make TypeScript the source of truth for iso / march policy.
 - Leave iso=1 “for parity with old goldens” — update tests instead.
 
 ## Key files

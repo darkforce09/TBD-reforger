@@ -28,13 +28,17 @@ mega-hulls; per-cell rings). Glyphs made it diagnosable; do not blame the atlas.
 
 ## Goal
 
-1. **`DENSITY_ISO` 1 → 2** in TS + Rust (align mass with Path B region floor; drop sparse bleed).
+1. **`DENSITY_ISO` 1 → 2 in Rust** (`forest_mass.rs`) — **source of truth**. wgpu must **not**
+   pass a TS iso into `forest_mass`; use the Rust default (or a wasm-exported const). Align mass
+   with Path B region floor; drop sparse bleed.
 2. **LOD when glyphs visible:** at `deckZoom ≥ TREE_GLYPH_MIN_ZOOM` (0), hide **forest fill** and
-   **forest outline** (glyphs carry detail); keep readable mass at coarse zoom (&lt; 0).
+   **forest outline** (glyphs carry detail); keep readable mass at coarse zoom (&lt; 0). Prefer
+   Rust `lod_gates` / residency compose gates where the wgpu path already owns them.
 3. **Landcover:** hide or strongly soften when glyphs visible; **re-push visibility on zoom** in
    wgpu (`landcoverPushed` one-shot bug — refresh like forest mass).
-4. **Deck parity:** same iso + LOD changes in `forestMass.ts` / `lodGates.ts` / `forestMassLayer.ts`
-   so `?engine=` off matches.
+4. **Deck oracle (thin TS only):** if Deck still marches in JS, mirror iso=2 in `forestMass.ts`
+   **only** so `forest.parity` stays Class R — do **not** invent a second policy in TS. Long-term
+   Deck retires at T-151.9.
 5. **Parity tests:** forest.parity + LOD scan stay green; update any iso=1 golden expectations.
 6. **Document** residual 32 m cell look + mega-region as **T-149 / export follow-up** (finer grid /
    Chaikin / split `forest-everon-001`) — out of scope here.
@@ -51,12 +55,12 @@ mega-hulls; per-cell rings). Glyphs made it diagnosable; do not blame the atlas.
 
 | # | Decision | Rationale |
 |---|---|---|
-| L1 | `DENSITY_ISO = 2` in `forestMass.ts` + `forest_mass.rs` (+ any wgpu hardcode) | Match region export threshold; reduce gap-bridging |
+| L1 | **`DENSITY_ISO = 2` in Rust only** (`forest_mass.rs`). wgpu stops passing TS `DENSITY_ISO` into wasm — Rust default wins | Match region export threshold; Rust owns geometry |
 | L2 | When `classVisible('tree', zoom)` **or** `zoom ≥ TREE_GLYPH_MIN_ZOOM`: **no** forest fill upload/draw | Glyphs are the detail layer |
 | L3 | Same gate for **forest outline** (no leftover cell-edge “grid” when zoomed in) | Operator symptom 4 |
 | L4 | Landcover: not drawn when L2 gate active; wgpu re-evaluates landcover visibility on camera/zoom (fix sticky `landcoverPushed`) | Mega-hull underdraw + wgpu LOD bug |
 | L5 | Coarse zoom (&lt; 0): mass + outline still on (iso=2) for island readability without glyphs | Default editor zoom −2 |
-| L6 | Deck + wgpu both updated — Class R / visual parity | Dual-mount oracle |
+| L6 | Deck TS mirror iso=2 **only** for Class R parity / Deck mount until T-151.9 — no divergent TS policy | Dual-mount oracle |
 | L7 | No export rebuild; verify log lists T-149 / Path B split as follow-ups | Scope control |
 | L8 | W2–W5 regressions green; vitest ≥ **372** | Regression |
 | L9 | Commit `T-151.5.1:` · tag **`T-151.5.1`** · verify log `.ai/artifacts/t151_5_1_verify_log.md` | House convention |
@@ -73,10 +77,11 @@ mega-hulls; per-cell rings). Glyphs made it diagnosable; do not blame the atlas.
 
 ## Tasks
 
-1. Raise iso TS+Rust; update forest.parity / unit tests.
-2. LOD gates / layer builders: suppress fill+outline (+ landcover) when glyphs band active.
+1. Raise Rust `DENSITY_ISO` → 2; wgpu uses Rust default (drop TS iso arg on wasm call); update
+   forest.parity / unit tests; thin Deck TS mirror only if needed for parity.
+2. LOD gates: suppress fill+outline (+ landcover) when glyphs band active (Rust gates preferred).
 3. wgpu: forest mass + landcover visibility refresh on zoom.
-4. Deck: same gates in `useWorldMapLayers` / `forestMassLayer` / landcover.
+4. Deck: same *behavior* via thin TS mirror of Rust policy (until T-151.9).
 5. Manual A/B screenshots; verify log; tag **T-151.5.1**.
 
 ## Verify
@@ -143,24 +148,27 @@ Implement **T-151.5.1** — forest mass / landcover fidelity (tighten green enve
   T-151.4.1 @ 552e68aa — buildings + road joins.
 
 ═══ LOCKED ═══
-  - DENSITY_ISO 1 → 2 (TS + Rust)
+  - DENSITY_ISO 1 → 2 in RUST (forest_mass.rs) — source of truth
+  - wgpu must NOT pass TS DENSITY_ISO into forest_mass; use Rust default / wasm-exported const
+  - Deck TS may mirror iso=2 only for Class R parity until T-151.9 — no second policy
   - zoom ≥ 0 (tree glyph band): hide forest fill + forest outline + landcover
   - zoom < 0: mass/outline still on (iso=2) for coarse context
   - Fix wgpu landcover sticky visibility (re-push on zoom)
-  - Deck + wgpu parity
   - No Path B / TBDD / forest-regions rebuild; document T-149 follow-up
   - Commit T-151.5.1: · tag T-151.5.1 · .ai/artifacts/t151_5_1_verify_log.md
 
 ═══ DO ═══
-  1. Raise DENSITY_ISO to 2 everywhere; update parity/unit tests
+  1. Raise Rust DENSITY_ISO to 2; change useWgpuForestMass to call forest_mass without TS iso
+     (or pass wasm-exported density_iso()); update parity/unit tests
   2. LOD: suppress forestFill + forestOutline (+ landcover) when tree glyph band active
   3. wgpuWorldLoader: refresh landcover visibility on camera/zoom (not one-shot forever)
   4. useWgpuForestMass: honor new gates (no fill/outline upload when suppressed)
-  5. Deck layers same behavior
+  5. Thin Deck TS mirror of iso/LOD only as needed for parity — do not reimplement march in TS
   6. Verify log with S1–S4 notes; commit + tag T-151.5.1
 
 ═══ DO NOT ═══
   - Edit docs/registry/CLAUDE
+  - Treat TypeScript forestMass.ts as the authority for iso (Rust wins)
   - Rebuild forest-regions.json.gz or density bins
   - Change glyph atlas / building / road code except if a shared LOD helper requires it
   - Start T-151.6 slots
