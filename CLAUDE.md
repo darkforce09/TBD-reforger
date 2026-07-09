@@ -114,12 +114,12 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-151**
+**Latest shipped:** **T-145**
 
 **ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
 **Next (by order):**
-- **T-069** — Markers on map (`ready`)
+- **T-069** — Markers on map (`queued`)
 - **T-071** — ORBAT Manager modal (`queued`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
@@ -176,13 +176,16 @@ TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x / W10
 `═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
 Do **not** grow fat `wgpu*Controller` logic in TS.
 
-**Program complete (W0–W9):** Deck runtime retired; Mission Creator is wgpu-only.
+**Program (W0–W9 shipped; W10 audit active):** Deck runtime retired; Mission Creator is
+wgpu-only. **ACTIVE:** **T-151.10** Fable 5 full-program audit.
 
-**Next (W10):** **T-069** markers on map — `ready` · spec
+**Next after audit:** **T-069** markers (`queued`) · spec
 [`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
-· handoff [`.ai/artifacts/t069_claude_code_handoff.md`](.ai/artifacts/t069_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.10 **Fable 5 program audit (W10)** — `ready` · spec
+  [`t151_10_fable_program_audit.md`](docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md)
+  · handoff [`.ai/artifacts/t151_10_claude_code_handoff.md`](.ai/artifacts/t151_10_claude_code_handoff.md).
 - T-151.9 **Deck flip + retirement (W9)** @ `c4831451` (tag **T-151.9**; tip `58c8fcc3`).
   Always `WgpuTacticalMap`; Deck runtime deleted; deck.gl+luma → devDependencies; vitest
   **281**; dist Deck-free; bundle ~7.15→6.27 MB. Verify:
@@ -700,16 +703,17 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Next (W10 — unlocked by T-151.9):**
-- **T-069** — markers on map (`ready`) — [`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
+**Next (after T-151.10 audit + remediations):**
+- **T-069** — markers on map (`queued`) — [`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
 - **T-070** — vehicles placeable
 - **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
 **Map / ORBAT lane (parallel):**
+- **T-151** — wgpu engine · **ACTIVE T-151.10** Fable audit — hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
 - **T-090** — Map Engine v2 (ACTIVE T-090.6) — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`.
 - **T-092** — mod compile + spawn Y/yaw — **shipped** @ `a73224f2`
 - **T-071** — ORBAT Manager modal (queued)
-- Ruler/LoS/viewshed — W10 after T-069/T-070 as needed.
+- Ruler/LoS/viewshed — after T-069/T-070 as needed.
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API

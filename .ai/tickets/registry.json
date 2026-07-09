@@ -1325,7 +1325,7 @@
       "id": "T-069",
       "order": 690,
       "program": "eden",
-      "status": "ready",
+      "status": "queued",
       "surfaces": [
         "MAP",
         "MRK"
@@ -1336,9 +1336,10 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "W10 first slice: addMarker + wgpu render/select/move/delete for MapMarker kinds (line/arrow/phase/icon/polygon). Unlocked by T-151.9. Hub W10. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.",
+      "summary": "Post-audit W10 feature: addMarker + wgpu render/select/move/delete for MapMarker kinds. Blocked on T-151.10 Fable audit (+ remediations). Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.",
       "depends_on": [
-        "T-151"
+        "T-151",
+        "T-151.10"
       ],
       "route": "/missions/:id/edit",
       "branch": "t-151-wgpu-spike",
@@ -3746,7 +3747,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program COMPLETE (W0\u2013W9). Deck runtime retired @ c4831451 (tag T-151.9). Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE. W10 = T-069+.",
+      "summary": "wgpu Mission Creator engine (W0\u2013W9 shipped @ c4831451 tag T-151.9). ACTIVE W10 = T-151.10 Fable 5 full-program audit before T-069+. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3754,7 +3755,7 @@
       "impact": [
         "Replace Deck.gl with a wgpu/wasm engine reading the yrs core directly for zero-copy render at scale"
       ],
-      "status": "shipped",
+      "status": "ready",
       "shipped_at": "c4831451",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike",
@@ -3784,7 +3785,8 @@
         "T-151.7.3",
         "T-151.8",
         "T-151.8.1",
-        "T-151.9"
+        "T-151.9",
+        "T-151.10"
       ],
       "slice_plan": {
         "T-151.0": {
@@ -3899,6 +3901,16 @@
           "status": "shipped",
           "shipped_at": "c4831451",
           "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
+        },
+        "T-151.10": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md",
+          "status": "ready",
+          "notes": "Fable 5 full-program audit of W0–W9. Audit report only; no T-069. Handoff: .ai/artifacts/t151_10_claude_code_handoff.md"
         },
         "T-151.4.1": {
           "targets": [

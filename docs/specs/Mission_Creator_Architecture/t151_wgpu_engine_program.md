@@ -1,7 +1,7 @@
-# T-151 — wgpu Mission Creator engine program (W0–W9 complete; W10 = T-069+)
+# T-151 — wgpu Mission Creator engine program (W0–W9 shipped; W10 = T-151.10 audit)
 
 **Status:** program hub · **W0–W9 shipped** (Deck retired @ `c4831451` tag **T-151.9**) ·
-**Next:** **T-069** markers · **Worktree:**
+**Next:** **T-151.10** Fable 5 full-program audit · then T-069 · **Worktree:**
 `tbd-reforger-wgpu-spike/` (absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`)
 — standing worktree; agents do **not** manage branches per slice. · **Spike shipped:** commits
 `152b3a12…94261dd6` (camera parity + render spine + 20M stress + byte-exact self-check, verify log
@@ -158,7 +158,7 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
   **T-151.7.3** collapses the existing TS drift; every later T-151.x prompt must include
   `═══ LANGUAGE GATE ═══` (see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)).
 
-## Slice map (registry `T-151.0` … `T-151.9`; W10 = separate tickets unlocked at the end)
+## Slice map (registry `T-151.0` … `T-151.10`; features after audit = separate tickets)
 
 ### T-151.0 (W0) — wasm packaging merge + engine batch list + editor dual mount
 
@@ -385,12 +385,20 @@ Always `WgpuTacticalMap` (no engine flag / Deck escape hatch). Deck runtime dele
 Deck-free oracles under `_wasm/oracles/`; residency goldens (22 steps). `satelliteUnified`
 parse/pick only (luma upload removed). Six deck/luma pkgs → **devDependencies**. vitest
 **281** (= 393 − 112); `dist/assets` Deck/luma-free; bundle ~7.15 → **6.27 MB**.
-`wgpuSlots.ts` **56** LOC. **T-151 program complete (W0–W9).**
+`wgpuSlots.ts` **56** LOC. **W0–W9 complete;** program stays open through **T-151.10**.
 
-### W10 — post-flip features (separate tickets, unlocked by T-151.9)
+### T-151.10 (W10) — Fable 5 full-program audit
 
-**Next:** **T-069** markers — `ready` · spec [`t069_markers_on_map.md`](t069_markers_on_map.md)
-· handoff [`.ai/artifacts/t069_claude_code_handoff.md`](../../../.ai/artifacts/t069_claude_code_handoff.md).
+**Ready** · spec [`t151_10_fable_program_audit.md`](t151_10_fable_program_audit.md) · handoff
+[`.ai/artifacts/t151_10_claude_code_handoff.md`](../../../.ai/artifacts/t151_10_claude_code_handoff.md).
+
+Independent Fable 5 adversarial audit of W0–W9 (LANGUAGE GATE, Class R/S, Deck retirement
+honesty, silent deferrals). Deliverable: living tracker
+`.ai/artifacts/t151_10_fable_audit_report.md`. **No feature code** under this slice.
+
+### Post-audit features (separate tickets; after T-151.10 + remediations)
+
+**T-069** markers — `queued` · [`t069_markers_on_map.md`](t069_markers_on_map.md).
 
 Then **T-070** vehicles · **Ruler** (camera math, Class R) · **LoS/viewshed** (DEM raymarch
 in Rust; viewshed WebGPU compute with CPU oracle) · **T-071–T-075** UI lane. Named deferred:
@@ -402,7 +410,8 @@ per-chunk anchors beyond Everon-size worlds.
 Packaging (W0) unlocks zero-copy everywhere → basemap (W1) makes every later slice visually
 verifiable in-editor → parser (W2) before residency (W3) → vectors (W4) are cheap wins (data
 already Rust) → atlas (W5) gates slots (W6) which gate interaction (W7) → culling (W8) needs
-real data volumes → flip (W9) last → features (W10) only on the flipped engine.
+real data volumes → flip (W9) last → **audit (W10 / T-151.10)** → features (T-069+) only on
+the audited flipped engine.
 
 ## Risk register (tripwire → response)
 

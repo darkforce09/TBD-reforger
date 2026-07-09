@@ -5,14 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-069 — Markers on map
-
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md`
-- **Branch:** `t-151-wgpu-spike`
-- **Targets:** website
-- **Summary:** W10 first slice: addMarker + wgpu render/select/move/delete for MapMarker kinds (line/arrow/phase/icon/polygon). Unlocked by T-151.9. Hub W10. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.
-
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.6`

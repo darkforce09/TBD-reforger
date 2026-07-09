@@ -8,11 +8,12 @@
 
 ## Ready
 
-- **T-069** (690) — Markers on map [ready] — W10 first slice: addMarker + wgpu render/select/move/delete for MapMarker kinds (line/arrow/phase/icon/polygon). Unlocked by T-151.9. Hub W10. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine (W0–W9 shipped @ c4831451 tag T-151.9). ACTIVE W10 = T-151.10 Fable 5 full-program audit before T-069+. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
 
 ## Next queued (top 10)
 
+- **T-069** (690) — Markers on map [queued] — Post-audit W10 feature: addMarker + wgpu render/select/move/delete for MapMarker kinds. Blocked on T-151.10 Fable audit (+ remediations). Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.
 - **T-071** (710) — ORBAT Manager modal [queued] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.
 - **T-072** (720) — Ctrl multi-place [queued] — Hold Ctrl to place multiple copies without re-selecting asset.
 - **T-073** (730) — Shift + map rotation [queued] — Shift-drag and map rotation widget for placed entities.
@@ -22,7 +23,6 @@
 - **T-115** (1150) — Capture win condition [queued] — Real side victory via capture / hold / elimination objective.
 - **T-116** (1160) — Results POST to backend [queued] — Game server posts match results; visible on event page.
 - **T-117** (1170) — Mission upload + validation UI [queued] — Web UI for mission upload and schema validation (API exists).
-- **T-118** (1180) — Event ORBAT + identity linking UI [queued] — Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today.
 
 ## Dependency graph (scoped)
 

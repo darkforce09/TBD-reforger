@@ -1,10 +1,11 @@
-# T-069 — Markers on map (W10)
+# T-069 — Markers on map (post–T-151.10)
 
-**Status:** **ready** · **Program:** Eden / W10 (unlocked by **T-151.9**) · **Executor:**
-claude-code · **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
-**Baseline:** tag **T-151.9** (`c4831451` ship / tip `58c8fcc3`) · verify
-[`.ai/artifacts/t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md).
+**Status:** **queued** · **Program:** Eden (unlocked after **T-151.10** Fable audit +
+remediations) · **Executor:** claude-code · **Worktree:** `tbd-reforger-wgpu-spike/`
+(absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not**
+touch `main`) · **Baseline:** tag **T-151.9** (`c4831451` ship / tip `58c8fcc3`) · verify
+[`.ai/artifacts/t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md) · **Gate:**
+[`t151_10_fable_program_audit.md`](t151_10_fable_program_audit.md).
 
 ## In one sentence
 
