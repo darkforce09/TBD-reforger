@@ -13,14 +13,14 @@ import { gunzipSync } from 'node:zlib'
 
 import { describe, expect, it } from 'vitest'
 
-import { obbCorners } from '@/features/tactical-map/worldmap/buildingLayer'
-import { extractRoadCenterline } from '@/features/tactical-map/worldmap/roadLayer'
 import {
   buildPrefabMaps,
+  extractRoadCenterline,
   narrowPrefabRows,
+  obbCorners,
   parseChunkOracle,
   RENDER_CLASS_CODES,
-} from '@/features/tactical-map/workers/worldObjectsCore'
+} from '@/features/_wasm/oracles/jsWorldChunkOracle'
 import * as wasm from '@/wasm/pkg/map_engine_wasm'
 
 import { f32BytesEqual, intArrayEqual, ulpDistanceF64 } from './parity'

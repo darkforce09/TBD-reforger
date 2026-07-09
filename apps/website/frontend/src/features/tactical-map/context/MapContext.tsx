@@ -21,7 +21,7 @@ export const MapContextProvider = MapContext.Provider
 export function useMapContext(): MapContextValue {
   const ctx = useContext(MapContext)
   if (!ctx) {
-    throw new Error('useMapContext must be used within a <TacticalMap>')
+    throw new Error('useMapContext must be used within a map mount')
   }
   return ctx
 }

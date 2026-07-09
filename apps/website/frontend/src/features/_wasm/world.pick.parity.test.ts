@@ -20,7 +20,7 @@ import {
   narrowPrefabRows,
   parseChunkOracle,
   RENDER_CLASS_CODES,
-} from '@/features/tactical-map/workers/worldObjectsCore'
+} from '@/features/_wasm/oracles/jsWorldChunkOracle'
 import { createWorldSpatialIndex } from '@/features/tactical-map/state/worldSpatialIndex'
 import * as wasm from '@/wasm/pkg/map_engine_wasm'
 
