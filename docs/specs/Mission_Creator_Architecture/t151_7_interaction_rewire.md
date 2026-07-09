@@ -1,11 +1,15 @@
 # T-151.7 — interaction rewire + parity suite (W7)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `ab6bcb11` (tag **T-151.7**, 2026-07-09) · verify log
+[`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `033ff715` (tag **T-151.6** — verify log
 [`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md)).
+
+**Shipped notes:** ULP-0 `unproject_xy`; `useSelectTool` on wgpu; vitest **391**; wasm
+**4,063,911 B**. Operator follow-ups → **T-151.7.1** (tint / drag FPS / zoom-at-cursor).
 
 ## In one sentence
 

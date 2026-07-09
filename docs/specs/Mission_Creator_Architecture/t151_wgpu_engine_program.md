@@ -24,9 +24,11 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `a98fb421` — forest iso=2 + glyph-band green hide; verify
 [`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **W6 / T-151.6 shipped:**
 @ `033ff715` — slots/selection/drag/clusters; verify
-[`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **Next slice:**
-**T-151.7** (interaction rewire) — `ready`; spec
-[`t151_7_interaction_rewire.md`](t151_7_interaction_rewire.md).
+[`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **W7 / T-151.7 shipped:**
+@ `ab6bcb11` — interaction rewire; verify
+[`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md) · **Next slice:**
+**T-151.7.1** (interaction hotfix) — `ready`; spec
+[`t151_7_1_interaction_hotfix.md`](t151_7_1_interaction_hotfix.md).
 
 ## In one sentence
 
@@ -334,7 +336,11 @@ re-materialized SoA (sampled rows, Class R); criterion-6 re-run at 500k seeded s
 
 ### T-151.7 (W7) — interaction rewire + parity suite
 
-**Next / ready.** Slice spec: [`t151_7_interaction_rewire.md`](t151_7_interaction_rewire.md).
+**Shipped:** @ `ab6bcb11` (tag **T-151.7**, 2026-07-09) — verify
+[`t151_7_verify_log.md`](../../../.ai/artifacts/t151_7_verify_log.md). ULP-0 camera +
+`useSelectTool` on wgpu; vitest **391**; wasm **4,063,911 B**. Operator bugs → **T-151.7.1**.
+
+Slice spec: [`t151_7_interaction_rewire.md`](t151_7_interaction_rewire.md).
 
 Every `view.makeViewport(...)` consumer swaps to the ULP-0 camera (`useSelectTool` pan/drag/
 marquee/pick-radius `r_world = unproject(px+4) − unproject(px)`; cursor rAF channel + DEM z;
@@ -349,6 +355,15 @@ redesigned — only its camera calls change. Picks stay on wasm `SlotIndex` (4 p
 against the Deck mount and the wgpu mount produce **identical selection sets** and
 **identical doc mutations** (`encode_state` bytes equal after each script — Class R); CUR/SEL
 Z equals `sampleElevation` (Class R).
+
+### T-151.7.1 — interaction hotfix (selection tint / drag FPS / zoom-at-cursor)
+
+**Next / ready.** Slice spec: [`t151_7_1_interaction_hotfix.md`](t151_7_1_interaction_hotfix.md).
+
+Corrective after W7 operator pass: (B1) selection tint stale when cluster short-lane +
+full-doc index patch; (B2) drag ~1000 ≈ −40 FPS from per-frame `create_buffer_init` overlay
+upload; (B3) wheel zoom uses canvas rect while pan uses container → zoom-at-cursor drift.
+Fix only — no gesture redesign.
 
 ### T-151.8 (W8) — culling + the density ladder productionized
 

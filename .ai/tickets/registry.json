@@ -3745,7 +3745,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W6 shipped @ 033ff715; T-151.7 interaction rewire ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.",
+      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W7 shipped @ ab6bcb11; T-151.7.1 interaction hotfix ready \u2014 selection tint / drag FPS / zoom-at-cursor). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3777,6 +3777,7 @@
         "T-151.5.1",
         "T-151.6",
         "T-151.7",
+        "T-151.7.1",
         "T-151.8",
         "T-151.9"
       ],
@@ -3858,7 +3859,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "ab6bcb11"
         },
         "T-151.8": {
           "targets": [
@@ -3897,6 +3899,15 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md",
           "status": "shipped",
           "shipped_at": "a98fb421"
+        },
+        "T-151.7.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md",
+          "status": "ready"
         }
       }
     }

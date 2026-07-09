@@ -9,7 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine program (spike SHIPPED; W0–W6 shipped @ 033ff715; T-151.7 interaction rewire ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.
+- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine program (spike SHIPPED; W0–W7 shipped @ ab6bcb11; T-151.7.1 interaction hotfix ready — selection tint / drag FPS / zoom-at-cursor). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.
 
 ## Next queued (top 10)
 

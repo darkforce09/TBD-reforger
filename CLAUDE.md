@@ -171,11 +171,15 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.7** (interaction rewire + parity suite) — `ready` · spec
-[`t151_7_interaction_rewire.md`](docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md)
-· handoff [`.ai/artifacts/t151_7_claude_code_handoff.md`](.ai/artifacts/t151_7_claude_code_handoff.md)
+**Next slice:** **T-151.7.1** (interaction hotfix) — `ready` · spec
+[`t151_7_1_interaction_hotfix.md`](docs/specs/Mission_Creator_Architecture/t151_7_1_interaction_hotfix.md)
+· handoff [`.ai/artifacts/t151_7_1_claude_code_handoff.md`](.ai/artifacts/t151_7_1_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.7 **interaction rewire (W7)** @ `ab6bcb11` (tag **T-151.7**). ULP-0 camera +
+  `useSelectTool` on wgpu; vitest **391**; wasm **4,063,911 B**. Verify:
+  [`.ai/artifacts/t151_7_verify_log.md`](.ai/artifacts/t151_7_verify_log.md). Spec:
+  [`t151_7_interaction_rewire.md`](docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md).
 - T-151.6 **mission entities (W6)** @ `033ff715` (tag **T-151.6**). Ring+disc atlas; SoA→GPU;
   selection tint; T-061 drag delta uniform; T-065 clusters; vitest **379**; wasm **4,063,618 B**.
   Verify: [`.ai/artifacts/t151_6_verify_log.md`](.ai/artifacts/t151_6_verify_log.md). Spec:

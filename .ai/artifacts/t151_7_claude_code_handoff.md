@@ -1,5 +1,9 @@
 # T-151.7 — Claude Code handoff (interaction rewire + parity suite)
 
+**Shipped:** @ `ab6bcb11` (tag **T-151.7**) — verify [`t151_7_verify_log.md`](t151_7_verify_log.md).
+Cursor doc-sync done. **Next:** T-151.7.1 interaction hotfix.
+
+
 **Spec (wins on conflict):**
 [`t151_7_interaction_rewire.md`](../../docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md)
 · **Program hub:**
