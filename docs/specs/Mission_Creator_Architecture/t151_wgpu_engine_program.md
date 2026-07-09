@@ -22,9 +22,11 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `0b7621ed` (tag **T-151.5**) — glyph atlas trees/props/badges; verify
 [`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **T-151.5.1 shipped:**
 @ `a98fb421` — forest iso=2 + glyph-band green hide; verify
-[`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **Next slice:**
-**T-151.6** (mission entities) — `ready`; spec
-[`t151_6_mission_entities.md`](t151_6_mission_entities.md).
+[`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **W6 / T-151.6 shipped:**
+@ `033ff715` — slots/selection/drag/clusters; verify
+[`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **Next slice:**
+**T-151.7** (interaction rewire) — `ready`; spec
+[`t151_7_interaction_rewire.md`](t151_7_interaction_rewire.md).
 
 ## In one sentence
 
@@ -309,7 +311,12 @@ instance accounting exact in `stats()`.
 
 ### T-151.6 (W6) — mission entities zero-copy: slots, selection, drag overlay, clusters
 
-**Next / ready.** Slice spec: [`t151_6_mission_entities.md`](t151_6_mission_entities.md).
+**Shipped:** @ `033ff715` (tag **T-151.6**, 2026-07-09) — verify
+[`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md). Ring+disc atlas;
+SoA→GPU; selection tint; T-061 drag delta uniform (`uniform_bytes_last_frame`=80);
+T-065 clusters; vitest **379**; wasm **4,063,618 B**. Interaction stays **W7**.
+
+Slice spec: [`t151_6_mission_entities.md`](t151_6_mission_entities.md).
 
 `MissionDoc.refresh()` → engine reads `slot_xy_ptr/slot_len` in-memory (D1) into a slot
 instance buffer with **dirty-range uploads** (O(edited) per `_patch*` class: add / bulk-add /
@@ -326,6 +333,8 @@ re-materialized SoA (sampled rows, Class R); criterion-6 re-run at 500k seeded s
 `gpu_frame_ms` recorded).
 
 ### T-151.7 (W7) — interaction rewire + parity suite
+
+**Next / ready.** Slice spec: [`t151_7_interaction_rewire.md`](t151_7_interaction_rewire.md).
 
 Every `view.makeViewport(...)` consumer swaps to the ULP-0 camera (`useSelectTool` pan/drag/
 marquee/pick-radius `r_world = unproject(px+4) − unproject(px)`; cursor rAF channel + DEM z;

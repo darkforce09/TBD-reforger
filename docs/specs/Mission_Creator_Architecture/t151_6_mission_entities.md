@@ -1,11 +1,15 @@
 # T-151.6 — mission entities zero-copy: slots, selection, drag, clusters (W6)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `033ff715` (tag **T-151.6**, 2026-07-09) · verify log
+[`t151_6_verify_log.md`](../../../.ai/artifacts/t151_6_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `a98fb421` (tag **T-151.5.1** — verify log
 [`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md)).
+
+**Shipped notes:** Dedicated ring+disc atlas; SoA→GPU; selection tint; T-061 drag delta
+uniform; T-065 clusters; vitest **379**; wasm **4,063,618 B**. Interaction = **T-151.7**.
 
 ## In one sentence
 

@@ -171,11 +171,15 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.6** (mission entities zero-copy) — `ready` · spec
-[`t151_6_mission_entities.md`](docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md)
-· handoff [`.ai/artifacts/t151_6_claude_code_handoff.md`](.ai/artifacts/t151_6_claude_code_handoff.md)
+**Next slice:** **T-151.7** (interaction rewire + parity suite) — `ready` · spec
+[`t151_7_interaction_rewire.md`](docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md)
+· handoff [`.ai/artifacts/t151_7_claude_code_handoff.md`](.ai/artifacts/t151_7_claude_code_handoff.md)
 
 **Done (program slices):**
+- T-151.6 **mission entities (W6)** @ `033ff715` (tag **T-151.6**). Ring+disc atlas; SoA→GPU;
+  selection tint; T-061 drag delta uniform; T-065 clusters; vitest **379**; wasm **4,063,618 B**.
+  Verify: [`.ai/artifacts/t151_6_verify_log.md`](.ai/artifacts/t151_6_verify_log.md). Spec:
+  [`t151_6_mission_entities.md`](docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md).
 - T-151.5.1 **forest mass fidelity** @ `a98fb421` (tag **T-151.5.1**). Rust `DENSITY_ISO=2` SoT;
   `density_iso()` wasm export; fill/outline/landcover off at zoom ≥ 0; sticky landcover LOD fixed;
   vitest **374**; wasm **4,055,075 B**. Path B / 32 m → **T-149** (Fable 5). Verify:

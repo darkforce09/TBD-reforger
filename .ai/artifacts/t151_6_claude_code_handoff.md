@@ -1,5 +1,9 @@
 # T-151.6 — Claude Code handoff (mission entities: slots / selection / drag / clusters)
 
+**Shipped:** @ `033ff715` (tag **T-151.6**) — verify [`t151_6_verify_log.md`](t151_6_verify_log.md).
+Cursor doc-sync done. **Next:** T-151.7 interaction rewire.
+
+
 **Spec (wins on conflict):**
 [`t151_6_mission_entities.md`](../../docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md)
 · **Program hub:**

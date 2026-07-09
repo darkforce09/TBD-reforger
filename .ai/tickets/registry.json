@@ -3745,7 +3745,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W5 + T-151.5.1 shipped @ a98fb421; T-151.6 mission entities ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.",
+      "summary": "wgpu Mission Creator engine program (spike SHIPPED; W0\u2013W6 shipped @ 033ff715; T-151.7 interaction rewire ready). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3848,7 +3848,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_6_mission_entities.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "033ff715"
         },
         "T-151.7": {
           "targets": [
@@ -3856,8 +3857,8 @@
             "website"
           ],
           "executor": "claude-code",
-          "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
-          "status": "queued"
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_7_interaction_rewire.md",
+          "status": "ready"
         },
         "T-151.8": {
           "targets": [
