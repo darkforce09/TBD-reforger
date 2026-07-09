@@ -132,8 +132,12 @@ fn fs_building(in: BuildingVsOut) -> @location(0) vec4<f32> {
 // group(2): atlas texture + sampler + UV table (28 × vec4 = minUV.xy + maxUV.zw) — separate
 // from basemap group(1) so the WGSL binding space stays unique.
 // Size is already meters (min-px clamped on CPU). Yaw is screen-CCW degrees via snorm.
+// W6: UV[28] + drag_delta + px_to_m (world glyphs: px_to_m=1, drag=0; slots: px size).
 struct IconUniforms {
     uv: array<vec4<f32>, 28>,
+    drag_delta: vec2<f32>,
+    px_to_m: f32,
+    _pad: f32,
 };
 
 @group(2) @binding(0) var icon_tex: texture_2d<f32>;
@@ -162,10 +166,11 @@ fn vs_icon(in: IconVsIn) -> IconVsOut {
     let rad = deg * 3.14159265358979323846 / 180.0;
     let c = cos(rad);
     let s = sin(rad);
-    // unit {0,1}² → local centered square of side `size`
-    let local = (in.unit - vec2<f32>(0.5, 0.5)) * in.size;
-    // CCW rotation in world XY (x east, y north)
-    let world = in.pos + vec2<f32>(local.x * c - local.y * s, local.x * s + local.y * c);
+    // size × px_to_m → world meters (glyphs: px_to_m=1; slots: 2^(-zoom))
+    let size_m = in.size * icon_u.px_to_m;
+    let local = (in.unit - vec2<f32>(0.5, 0.5)) * size_m;
+    // CCW rotation + optional drag_delta (SlotDrag lane only)
+    let world = in.pos + icon_u.drag_delta + vec2<f32>(local.x * c - local.y * s, local.x * s + local.y * c);
     let gi = min(in.glyph, 27u);
     let rect = icon_u.uv[gi];
     var out: IconVsOut;

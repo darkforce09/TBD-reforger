@@ -256,6 +256,7 @@ export default function MissionCreatorPage() {
             className="absolute inset-0 z-0 bg-background"
             onBasemapDegraded={onBasemapDegraded}
             onBasemapProgress={onBasemapProgress}
+            missionDoc={md}
           />
         </Suspense>
       ) : (

@@ -18,6 +18,8 @@ pub mod doc;
 pub mod geometry;
 #[cfg(feature = "mission")]
 pub mod mission;
+/// T-151.6 W6 — slot/cluster GPU pack + cluster gates (always available).
+pub mod slots_gpu;
 pub mod spatial;
 #[cfg(feature = "world")]
 pub mod world;

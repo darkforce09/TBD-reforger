@@ -2,8 +2,7 @@
 // (satellite unified / pyramid + hillshade + grid) to parity with the Deck `TacticalMap`, selected
 // by `MissionCreatorPage` behind the engine flag (`VITE_MC_ENGINE=wgpu` or `?engine=wgpu`). The
 // T-151.0 calibration scene is hidden (`hide_calibration`); it survives only on the /_spike/wgpu
-// page. World objects + slots + interaction are T-151.2+ (the `onReady`/`onCursorMove`/… props stay
-// no-ops until W7).
+// page. T-151.6 adds mission slots / selection / drag / clusters; gesture rewire stays W7.
 //
 // Wasm memory lifecycle invariants I2–I7 are reused VERBATIM from WgpuCanvas.tsx (the spike page):
 //   I2 the engine handle is EFFECT-LOCAL — never useMemo/useState-persisted; `.free()` is NOT
@@ -28,17 +27,24 @@ import {
   WgpuForestMassController,
   useWgpuForestMass,
 } from './wgpu/useWgpuForestMass'
+import { WgpuSlotsController } from './wgpu/wgpuSlots'
+import { useWgpuSlots } from './wgpu/useWgpuSlots'
 import { useMapStore } from './state/useMapStore'
 import { useClassToggles } from './state/worldLayerPrefs'
 import { getTerrain } from './coords/terrains'
 import type { TacticalMapProps } from './types'
+import type { WasmMissionDoc } from './state/wasmDoc'
 
 const HUD_INTERVAL_MS = 250
 
+export type WgpuTacticalMapProps = TacticalMapProps & {
+  /** Live mission doc shell — SoA source for W6 slot lanes. */
+  missionDoc?: WasmMissionDoc | null
+}
+
 /**
- * The wgpu engine mount for the editor (T-151.1). Honors `terrain` / `showGrid` / `showHillshade` /
- * `hillshadeOpacity` / `onBasemapDegraded` / `onBasemapProgress` and reads `mapStyle` via the
- * basemap hook. Interaction + selection callbacks remain no-ops until W7.
+ * The wgpu engine mount for the editor (T-151.1 + T-151.6 slots). Honors `terrain` / basemap props
+ * and `missionDoc` for slot/cluster GPU lanes. Interaction + pick remain no-ops until W7.
  */
 export default function WgpuTacticalMap({
   terrain = 'everon',
@@ -48,13 +54,15 @@ export default function WgpuTacticalMap({
   hillshadeOpacity = 0.4,
   onBasemapDegraded,
   onBasemapProgress,
-}: TacticalMapProps) {
+  missionDoc = null,
+}: WgpuTacticalMapProps) {
   const terrainDef = getTerrain(terrain)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const controllerRef = useRef<WgpuBasemapController | null>(null)
   const worldControllerRef = useRef<WgpuWorldController | null>(null)
   const forestControllerRef = useRef<WgpuForestMassController | null>(null)
+  const slotsControllerRef = useRef<WgpuSlotsController | null>(null)
   const engineRef = useRef<RenderEngine | null>(null)
   const [canvasKey, setCanvasKey] = useState(0)
   const [forceWebgl, setForceWebgl] = useState(false)
@@ -88,6 +96,8 @@ export default function WgpuTacticalMap({
   useWgpuDemVectors(engineRef, ready, { terrain: terrainDef })
   // W4 forest mass (TBDD viewport stream).
   useWgpuForestMass(forestControllerRef, ready)
+  // W6 mission slots / selection / drag / clusters.
+  useWgpuSlots(slotsControllerRef, ready, missionDoc)
   // W5 glyph prefs (trees/props/buildings→badges).
   useEffect(() => {
     if (!ready) return
@@ -158,7 +168,8 @@ export default function WgpuTacticalMap({
         })
         worldControllerRef.current = new WgpuWorldController(created, terrainDef)
         forestControllerRef.current = new WgpuForestMassController(created, terrainDef)
-        setReady(true) // fires the basemap + world hook effects
+        slotsControllerRef.current = new WgpuSlotsController(created)
+        setReady(true) // fires the basemap + world + slots hook effects
         const loop = (now: number) => {
           if (disposed || !engine) return // I5
           if (window.devicePixelRatio !== lastDpr) applySize()
@@ -210,6 +221,7 @@ export default function WgpuTacticalMap({
       controllerRef.current?.onCameraMoved() // pyramid LOD follows the pan (debounced)
       worldControllerRef.current?.onCameraMoved() // world chunk residency follows the pan
       forestControllerRef.current?.onCameraMoved()
+      slotsControllerRef.current?.onCameraMoved()
     }
     const onPointerUp = (ev: PointerEvent) => {
       dragging = false
@@ -223,6 +235,7 @@ export default function WgpuTacticalMap({
       controllerRef.current?.onCameraMoved()
       worldControllerRef.current?.onCameraMoved()
       forestControllerRef.current?.onCameraMoved()
+      slotsControllerRef.current?.onCameraMoved()
     }
     canvas.addEventListener('pointerdown', onPointerDown)
     canvas.addEventListener('pointermove', onPointerMove)
@@ -245,6 +258,8 @@ export default function WgpuTacticalMap({
       worldControllerRef.current = null
       forestControllerRef.current?.dispose()
       forestControllerRef.current = null
+      slotsControllerRef.current?.dispose()
+      slotsControllerRef.current = null
       engineRef.current = null
       setReady(false)
       engine?.free() // I4 — exactly once
@@ -267,7 +282,7 @@ export default function WgpuTacticalMap({
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
       />
       <div style={PANEL}>
-        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.5 · wgpu glyphs</div>
+        <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.6 · wgpu slots</div>
         <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
           {fps} FPS · {backend}
         </div>

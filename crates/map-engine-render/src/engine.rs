@@ -155,12 +155,18 @@ enum LaneRole {
     WorldProps,
     /// W5 building badges.
     WorldBadges,
+    /// W6 mission slot rings.
+    Slots,
+    /// W6 drag-preview overlay (T-061).
+    SlotDrag,
+    /// W6 cluster discs (T-065).
+    Clusters,
     Grid,
     /// Optional selection marquee (on top of grid).
     Marquee,
 }
 
-/// Draw-order key (T-151.5 L8): … forest* → trees → props → badges → grid → marquee.
+/// Draw-order key (T-151.6 L2): … badges → slots → slot-drag → clusters → grid → marquee.
 /// Spike batches sort first, never interleaved.
 fn lane_order(role: LaneRole) -> u8 {
     match role {
@@ -179,8 +185,11 @@ fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldTrees => 12,
         LaneRole::WorldProps => 13,
         LaneRole::WorldBadges => 14,
-        LaneRole::Grid => 15,
-        LaneRole::Marquee => 16,
+        LaneRole::Slots => 15,
+        LaneRole::SlotDrag => 16,
+        LaneRole::Clusters => 17,
+        LaneRole::Grid => 18,
+        LaneRole::Marquee => 19,
     }
 }
 
@@ -229,11 +238,29 @@ struct PolyLane {
     item_count: u32,
 }
 
-/// Shared glyph atlas GPU state (T-151.5): one texture + UV uniform + bind group for all icon lanes.
+/// Icon uniform buffer size: 28×vec4 UV (448) + drag_delta/px_to_m/pad (16) = 464 B.
+const ICON_UNIFORM_BYTES: u64 = 464;
+
+/// Shared glyph atlas GPU state (T-151.5 / T-151.6): texture + uniform (UV + params) + bind group.
 struct GlyphAtlasGpu {
     texture: wgpu::Texture,
+    /// Writable uniform: UV[28] + drag_delta.xy + px_to_m + pad.
+    uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     bytes: u64,
+}
+
+/// Slot atlas (T-151.6): ring+disc texture with separate base/drag bind groups so drag_delta
+/// does not move the base slot lane (write-before-pass; illegal mid-pass).
+struct SlotAtlasGpu {
+    texture: wgpu::Texture,
+    base_uniform_buf: wgpu::Buffer,
+    drag_uniform_buf: wgpu::Buffer,
+    base_bind_group: wgpu::BindGroup,
+    drag_bind_group: wgpu::BindGroup,
+    bytes: u64,
+    px_to_m: f32,
+    drag_delta: [f32; 2],
 }
 
 /// A texture being assembled between `tex_layer_begin` and `tex_layer_commit` — blocks/tiles are
@@ -692,7 +719,9 @@ fn draw_batches<'a>(
     building_pipeline: &'a wgpu::RenderPipeline,
     polygon_pipeline: &'a wgpu::RenderPipeline,
     icon_pipeline: &'a wgpu::RenderPipeline,
-    icon_atlas_bind: Option<&'a wgpu::BindGroup>,
+    glyph_atlas_bind: Option<&'a wgpu::BindGroup>,
+    slot_base_bind: Option<&'a wgpu::BindGroup>,
+    slot_drag_bind: Option<&'a wgpu::BindGroup>,
 ) {
     // group 0 (camera mvp) is set after each `set_pipeline` — its layout is identical across all
     // pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always-valid
@@ -738,7 +767,12 @@ fn draw_batches<'a>(
                 pass.draw_indexed(0..l.index_count, 0, 0..1);
             }
             BatchPayload::IconInstanced { instances, count } => {
-                let Some(atlas_bg) = icon_atlas_bind else {
+                let atlas_bg = match batch.role {
+                    LaneRole::SlotDrag => slot_drag_bind,
+                    LaneRole::Slots | LaneRole::Clusters => slot_base_bind,
+                    _ => glyph_atlas_bind,
+                };
+                let Some(atlas_bg) = atlas_bg else {
                     continue;
                 };
                 pass.set_pipeline(icon_pipeline);
@@ -790,6 +824,8 @@ pub struct RenderEngine {
     camera: OrthoCamera,
     /// Shared glyph atlas (None until `upload_glyph_atlas`).
     glyph_atlas: Option<GlyphAtlasGpu>,
+    /// Dedicated slot/cluster atlas (None until `upload_slot_atlas`).
+    slot_atlas: Option<SlotAtlasGpu>,
     /// Ordered draw list (T-151.0 L7 → T-151.1 L1): editor lanes (basemap → hillshade → grid,
     /// `lane_order`) or the spike batches (stress chunks then the calibration batch last).
     batches: Vec<Batch>,
@@ -987,8 +1023,8 @@ impl RenderEngine {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            // 28 × vec4 = 448 B
-                            min_binding_size: wgpu::BufferSize::new(448),
+                            // 28 × vec4 UV + drag_delta/px_to_m/pad = 464 B (T-151.6)
+                            min_binding_size: wgpu::BufferSize::new(ICON_UNIFORM_BYTES),
                         },
                         count: None,
                     },
@@ -1110,6 +1146,7 @@ impl RenderEngine {
             calibration_buf,
             camera,
             glyph_atlas: None,
+            slot_atlas: None,
             batches: vec![calibration_batch],
             pending: [None, None],
             clear_color: CLEAR_COLOR,
@@ -1198,7 +1235,13 @@ impl RenderEngine {
         let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
         self.queue
             .write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(&mvp));
-        self.uniform_bytes_last_frame = 64;
+        // Steady-state: 64 B mvp. During T-061 drag the SlotDrag lane is live → +16 B delta uniform
+        // (written by `set_slot_drag_delta`; counted here so stats survive the frame).
+        let drag_live = self
+            .batches
+            .iter()
+            .any(|b| b.role == LaneRole::SlotDrag && b.visible);
+        self.uniform_bytes_last_frame = if drag_live { 64 + 16 } else { 64 };
 
         use wgpu::CurrentSurfaceTexture as Cst;
         let frame = match self.surface.get_current_texture() {
@@ -1255,7 +1298,9 @@ impl RenderEngine {
             // Iterate the ordered draw list (T-151.1 L1): editor lanes basemap → hillshade → grid
             // (calibration hidden), or the spike's stress pool then calibration (on top). Group 0
             // is bound once inside `draw_batches`; the pipeline is switched per payload.
-            let atlas_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
+            let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
+            let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
+            let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -1267,7 +1312,9 @@ impl RenderEngine {
                 &self.building_pipeline,
                 &self.polygon_pipeline,
                 &self.icon_pipeline,
-                atlas_bg,
+                glyph_bg,
+                slot_base,
+                slot_drag,
             );
         }
         if take_timing && let Some(t) = &self.timer {
@@ -1463,7 +1510,36 @@ impl RenderEngine {
                 _ => 0,
             })
             .sum();
-        let atlas_bytes = self.glyph_atlas.as_ref().map_or(0, |a| a.bytes);
+        let atlas_bytes = self.glyph_atlas.as_ref().map_or(0, |a| a.bytes)
+            + self.slot_atlas.as_ref().map_or(0, |a| a.bytes);
+        // W6 additive slot stats — prior keys untouched.
+        let slot_instances: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::Slots)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
+        let slot_drag_instances: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::SlotDrag)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
+        let cluster_instances: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::Clusters)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
         format!(
             concat!(
                 "{{\"backend\":\"{}\",\"instances\":{},\"chunks\":{},\"gpu_bytes\":{},",
@@ -1474,7 +1550,8 @@ impl RenderEngine {
                 "\"world_chunks_drawn\":{},",
                 "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
-                "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{}}}"
+                "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{},",
+                "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1501,6 +1578,9 @@ impl RenderEngine {
             prop_glyphs,
             badge_glyphs,
             atlas_bytes,
+            slot_instances,
+            slot_drag_instances,
+            cluster_instances,
         )
     }
 }
@@ -1711,7 +1791,9 @@ impl RenderEngine {
                 occlusion_query_set: None,
                 multiview_mask: None,
             });
-            let atlas_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
+            let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
+            let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
+            let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -1723,7 +1805,9 @@ impl RenderEngine {
                 building,
                 polygon,
                 icon,
-                atlas_bg,
+                glyph_bg,
+                slot_base,
+                slot_drag,
             );
         }
         encoder.copy_texture_to_buffer(
@@ -2193,20 +2277,22 @@ impl RenderEngine {
                 depth_or_array_layers: 1,
             },
         );
-        // Pad UV table to 448 B (28 × 16).
-        let mut uv_bytes = vec![0u8; 448];
+        // UV[28] (448 B) + drag_delta=0, px_to_m=1, pad (16 B) = 464 B.
+        let mut u_bytes = vec![0u8; ICON_UNIFORM_BYTES as usize];
         for (i, v) in uv.iter().enumerate() {
             let off = i * 4;
-            if off + 4 <= uv_bytes.len() {
-                uv_bytes[off..off + 4].copy_from_slice(&v.to_le_bytes());
+            if off + 4 <= 448 {
+                u_bytes[off..off + 4].copy_from_slice(&v.to_le_bytes());
             }
         }
-        let uv_buf = self
+        // px_to_m = 1.0 at offset 456 (after drag_delta at 448)
+        u_bytes[456..460].copy_from_slice(&1.0_f32.to_le_bytes());
+        let uniform_buf = self
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("glyph-uv-table"),
-                contents: &uv_bytes,
-                usage: wgpu::BufferUsages::UNIFORM,
+                label: Some("glyph-icon-uniforms"),
+                contents: &u_bytes,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             });
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
         let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -2223,15 +2309,17 @@ impl RenderEngine {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: uv_buf.as_entire_binding(),
+                    resource: uniform_buf.as_entire_binding(),
                 },
             ],
         });
         if let Some(old) = self.glyph_atlas.take() {
             old.texture.destroy();
+            old.uniform_buf.destroy();
         }
         self.glyph_atlas = Some(GlyphAtlasGpu {
             texture,
+            uniform_buf,
             bind_group,
             bytes: expected as u64,
         });
@@ -2296,6 +2384,289 @@ impl RenderEngine {
         self.remove_lane(LaneRole::WorldTrees);
         self.remove_lane(LaneRole::WorldProps);
         self.remove_lane(LaneRole::WorldBadges);
+    }
+
+    // ── W6 mission slot / cluster icon lanes ─────────────────────────────────────────────────
+
+    /// Build IconUniforms bytes: UV floats + drag_delta + px_to_m + pad.
+    fn pack_icon_uniforms(uv: &[f32], drag_dx: f32, drag_dy: f32, px_to_m: f32) -> Vec<u8> {
+        let mut u_bytes = vec![0u8; ICON_UNIFORM_BYTES as usize];
+        for (i, v) in uv.iter().enumerate() {
+            let off = i * 4;
+            if off + 4 <= 448 {
+                u_bytes[off..off + 4].copy_from_slice(&v.to_le_bytes());
+            }
+        }
+        u_bytes[448..452].copy_from_slice(&drag_dx.to_le_bytes());
+        u_bytes[452..456].copy_from_slice(&drag_dy.to_le_bytes());
+        u_bytes[456..460].copy_from_slice(&px_to_m.to_le_bytes());
+        u_bytes
+    }
+
+    /// Convert world-meter icon instances (20 B) to anchor-relative in place.
+    fn convert_icon_world_to_anchor(bytes: &mut [u8]) {
+        const STRIDE: usize = 20;
+        for chunk in bytes.chunks_exact_mut(STRIDE) {
+            let x = f32::from_le_bytes(chunk[0..4].try_into().unwrap());
+            let y = f32::from_le_bytes(chunk[4..8].try_into().unwrap());
+            let ax = (f64::from(x) - ANCHOR[0]) as f32;
+            let ay = (f64::from(y) - ANCHOR[1]) as f32;
+            chunk[0..4].copy_from_slice(&ax.to_le_bytes());
+            chunk[4..8].copy_from_slice(&ay.to_le_bytes());
+        }
+    }
+
+    /// Upload dedicated slot/cluster atlas (ring + disc). `uv` is 2..28 glyphs × 4 floats
+    /// (minU,minV,maxU,maxV); padded to 28. Does **not** touch the world-glyphs atlas.
+    pub fn upload_slot_atlas(
+        &mut self,
+        rgba: &[u8],
+        width: u32,
+        height: u32,
+        uv: &[f32],
+    ) -> Result<(), JsError> {
+        let expected = (width as usize)
+            .checked_mul(height as usize)
+            .and_then(|n| n.checked_mul(4))
+            .unwrap_or(0);
+        if rgba.len() != expected {
+            return Err(JsError::new("slot-atlas-rgba-size"));
+        }
+        use wgpu::util::DeviceExt;
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("slot-atlas"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        // Default open zoom −2 → px_to_m = 4
+        let px_to_m = 4.0_f32;
+        let base_bytes = Self::pack_icon_uniforms(uv, 0.0, 0.0, px_to_m);
+        let drag_bytes = Self::pack_icon_uniforms(uv, 0.0, 0.0, px_to_m);
+        let base_uniform_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("slot-atlas-base-u"),
+                contents: &base_bytes,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+        let drag_uniform_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("slot-atlas-drag-u"),
+                contents: &drag_bytes,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let base_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("slot-atlas-base"),
+            layout: &self.icon_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.icon_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: base_uniform_buf.as_entire_binding(),
+                },
+            ],
+        });
+        let drag_bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("slot-atlas-drag"),
+            layout: &self.icon_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.icon_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: drag_uniform_buf.as_entire_binding(),
+                },
+            ],
+        });
+        if let Some(old) = self.slot_atlas.take() {
+            old.texture.destroy();
+            old.base_uniform_buf.destroy();
+            old.drag_uniform_buf.destroy();
+        }
+        self.slot_atlas = Some(SlotAtlasGpu {
+            texture,
+            base_uniform_buf,
+            drag_uniform_buf,
+            base_bind_group,
+            drag_bind_group,
+            bytes: expected as u64,
+            px_to_m,
+            drag_delta: [0.0, 0.0],
+        });
+        Ok(())
+    }
+
+    /// Update slot atlas `px_to_m = 2^(-zoom)` on both base + drag uniforms (no instance re-upload).
+    pub fn set_slot_px_to_m(&mut self, px_to_m: f32) {
+        let Some(atlas) = self.slot_atlas.as_mut() else {
+            return;
+        };
+        if (atlas.px_to_m - px_to_m).abs() < 1e-9 {
+            return;
+        }
+        atlas.px_to_m = px_to_m;
+        // Write only the px_to_m word at offset 456 (4 B) — counted in uniform_bytes_last_frame
+        // only when paired with drag writes; zoom updates are free-ish.
+        let bytes = px_to_m.to_le_bytes();
+        self.queue
+            .write_buffer(&atlas.base_uniform_buf, 456, &bytes);
+        self.queue
+            .write_buffer(&atlas.drag_uniform_buf, 456, &bytes);
+    }
+
+    /// Set SlotDrag drag delta (world meters). Writes 8 B drag_delta + leaves px_to_m.
+    /// Gate: during drag, `uniform_bytes_last_frame` becomes 64 + 16 (mvp + delta params).
+    pub fn set_slot_drag_delta(&mut self, dx: f32, dy: f32) {
+        let Some(atlas) = self.slot_atlas.as_mut() else {
+            return;
+        };
+        atlas.drag_delta = [dx, dy];
+        let mut bytes = [0u8; 16];
+        bytes[0..4].copy_from_slice(&dx.to_le_bytes());
+        bytes[4..8].copy_from_slice(&dy.to_le_bytes());
+        bytes[8..12].copy_from_slice(&atlas.px_to_m.to_le_bytes());
+        // pad remains 0
+        self.queue
+            .write_buffer(&atlas.drag_uniform_buf, 448, &bytes);
+        // Account for drag uniform write on next frame's stats (render resets to 64 first).
+        self.uniform_bytes_last_frame = 64 + 16;
+    }
+
+    /// Full upload of slot ring instances (20 B each, world meters). `VERTEX|COPY_DST`.
+    pub fn upload_slot_lane(&mut self, bytes: &[u8], visible: bool) {
+        self.upload_slot_role_lane(LaneRole::Slots, bytes, visible);
+    }
+
+    /// Dirty-range patch into the Slots lane buffer (byte offset must be 20-aligned).
+    pub fn patch_slot_lane(&mut self, byte_offset: u32, bytes: &[u8]) {
+        if bytes.is_empty() {
+            return;
+        }
+        let Some(batch) = self.batches.iter().find(|b| b.role == LaneRole::Slots) else {
+            return;
+        };
+        let BatchPayload::IconInstanced { instances, count } = &batch.payload else {
+            return;
+        };
+        let end = byte_offset as u64 + bytes.len() as u64;
+        if end > u64::from(*count) * 20 {
+            return;
+        }
+        // Convert world→anchor if this looks like a full instance or pos prefix.
+        // Callers pass already-anchor-relative for size/tint-only patches at offset+8.
+        // For full 20 B rows starting at stride boundaries with world coords, convert.
+        let mut converted = bytes.to_vec();
+        if byte_offset.is_multiple_of(20) && converted.len().is_multiple_of(20) {
+            // Heuristic: if |pos| > 6400 something could be world — always convert full rows
+            // as world meters (SoA contract). Size/tint-only patches use non-zero offset within row.
+            Self::convert_icon_world_to_anchor(&mut converted);
+        }
+        self.queue
+            .write_buffer(instances, u64::from(byte_offset), &converted);
+    }
+
+    /// Upload SlotDrag overlay instances (world meters). Empty → drop lane.
+    pub fn upload_slot_drag_lane(&mut self, bytes: &[u8], visible: bool) {
+        self.upload_slot_role_lane(LaneRole::SlotDrag, bytes, visible);
+    }
+
+    /// Clear the drag overlay lane.
+    pub fn clear_slot_drag_lane(&mut self) {
+        self.remove_lane(LaneRole::SlotDrag);
+        if let Some(atlas) = self.slot_atlas.as_mut() {
+            atlas.drag_delta = [0.0, 0.0];
+            let mut bytes = [0u8; 16];
+            bytes[8..12].copy_from_slice(&atlas.px_to_m.to_le_bytes());
+            self.queue
+                .write_buffer(&atlas.drag_uniform_buf, 448, &bytes);
+        }
+    }
+
+    /// Upload cluster disc instances (world meters). Empty → drop lane.
+    pub fn upload_cluster_lane(&mut self, bytes: &[u8], visible: bool) {
+        self.upload_slot_role_lane(LaneRole::Clusters, bytes, visible);
+    }
+
+    /// Drop slots + drag + cluster lanes.
+    pub fn clear_slot_lanes(&mut self) {
+        self.remove_lane(LaneRole::Slots);
+        self.remove_lane(LaneRole::SlotDrag);
+        self.remove_lane(LaneRole::Clusters);
+    }
+
+    fn upload_slot_role_lane(&mut self, role: LaneRole, bytes: &[u8], visible: bool) {
+        const STRIDE: usize = 20;
+        if bytes.is_empty() {
+            if !visible {
+                self.remove_lane(role);
+            }
+            return;
+        }
+        if !bytes.len().is_multiple_of(STRIDE) {
+            self.remove_lane(role);
+            return;
+        }
+        let mut converted = bytes.to_vec();
+        Self::convert_icon_world_to_anchor(&mut converted);
+        use wgpu::util::DeviceExt;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("slot-icon-lane"),
+                contents: &converted,
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let count = (converted.len() / STRIDE) as u32;
+        self.upsert_lane(
+            role,
+            Batch {
+                role,
+                visible,
+                payload: BatchPayload::IconInstanced {
+                    instances: buf,
+                    count,
+                },
+            },
+        );
     }
 
     // ── W4 vector lane uploads ────────────────────────────────────────────────────────────────
@@ -3384,14 +3755,15 @@ impl RenderEngine {
                     depth_or_array_layers: 1,
                 },
             );
-            let mut uv_bytes = vec![0u8; 448];
-            // uv[0] = (0,0,1,1)
+            let mut u_bytes = vec![0u8; ICON_UNIFORM_BYTES as usize];
+            // uv[0] = (0,0,1,1); px_to_m = 1.0 at offset 456
             for (i, v) in [0.0f32, 0.0, 1.0, 1.0].iter().enumerate() {
-                uv_bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
+                u_bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
             }
+            u_bytes[456..460].copy_from_slice(&1.0_f32.to_le_bytes());
             let uv_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("tree-glyph-self-check-uv"),
-                contents: &uv_bytes,
+                contents: &u_bytes,
                 usage: wgpu::BufferUsages::UNIFORM,
             });
             let samp = device.create_sampler(&wgpu::SamplerDescriptor {
