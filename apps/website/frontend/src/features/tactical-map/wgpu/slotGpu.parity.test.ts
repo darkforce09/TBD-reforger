@@ -16,7 +16,7 @@ import {
   SLOT_SELECTED_PX,
   SLOT_SELECTED_RGBA,
 } from './slotAtlas'
-import { clusterMode } from './wgpuSlots'
+import { classifyDragTransition, clusterMode } from './wgpuSlots'
 
 describe('T-151.6 slot GPU pack + gates', () => {
   it('cluster_mode matches constants.ts gates', () => {
@@ -63,5 +63,16 @@ describe('T-151.6 slot GPU pack + gates', () => {
     const dy = -1.25
     expect(base.x + dx).toBeCloseTo(103.5, 12)
     expect(base.y + dy).toBeCloseTo(198.75, 12)
+  })
+})
+
+describe('T-151.7.1 drag GPU phase classification', () => {
+  it('maps store transitions to start / delta / end / restart', () => {
+    expect(classifyDragTransition(null, ['a'], true, false)).toBe('start')
+    expect(classifyDragTransition(['a'], ['a'], false, true)).toBe('delta')
+    expect(classifyDragTransition(['a'], null, true, true)).toBe('end')
+    expect(classifyDragTransition(['a'], ['a', 'b'], true, false)).toBe('restart')
+    expect(classifyDragTransition(['a'], ['a'], false, false)).toBe('idle')
+    expect(classifyDragTransition(null, null, false, true)).toBe('idle')
   })
 })

@@ -1,5 +1,6 @@
 // T-151.6 W6 — mission slot / selection / drag / cluster GPU bridge for WgpuTacticalMap.
 // Positions from MissionDoc SoA (refresh → slot_xy_ptr / slot_len); never slotsById as SoT.
+// T-151.7.1: selection tint (cluster short-lane), drag start-vs-delta, no per-frame buffer recreate.
 
 import * as wasmBg from '@/wasm/pkg/map_engine_wasm_bg.wasm'
 import type { WasmMissionDoc } from '../state/wasmDoc'
@@ -32,6 +33,27 @@ export function clusterMode(slotLen: number, deckZoom: number): boolean {
 }
 
 /**
+ * Pure helper (T-151.7.1): classify a drag store transition for the GPU bridge.
+ * - `start` / `restart` → one overlay upload; `delta` → set_slot_drag_delta only; `end` → clear.
+ */
+export type DragGpuPhase = 'idle' | 'start' | 'delta' | 'restart' | 'end'
+
+export function classifyDragTransition(
+  prevIds: string[] | null | undefined,
+  nextIds: string[] | null | undefined,
+  idsChanged: boolean,
+  deltaChanged: boolean,
+): DragGpuPhase {
+  const had = Boolean(prevIds?.length)
+  const has = Boolean(nextIds?.length)
+  if (!had && has) return 'start'
+  if (had && !has) return 'end'
+  if (had && has && idsChanged) return 'restart'
+  if (had && has && deltaChanged) return 'delta'
+  return 'idle'
+}
+
+/**
  * Controller: atlas once + doc subscribe → refresh → dirty/full upload; selection; T-061 drag;
  * T-065 clusters.
  */
@@ -50,6 +72,11 @@ export class WgpuSlotsController {
   private lastZoomBucket = Number.NaN
   private dragActive = false
   private hiddenRows = new Set<number>()
+  /**
+   * True when the Slots GPU lane holds only the k selected instances (cluster detail=false path).
+   * Full-doc row patches must not run against this lane (T-151.7.1 B1).
+   */
+  private slotsLaneIsSelectionOnly = false
 
   constructor(engine: RenderEngine) {
     this.engine = engine
@@ -63,7 +90,7 @@ export class WgpuSlotsController {
     this.syncZoomUniform()
     this.pushFromDoc(true)
     this.syncSelection()
-    this.syncDrag()
+    this.syncDragFromStore()
     this.syncClusters()
     this.publishDebug()
   }
@@ -77,6 +104,7 @@ export class WgpuSlotsController {
       this.engine.clear_slot_lanes()
       this.lastIds = []
       this.lastLen = 0
+      this.slotsLaneIsSelectionOnly = false
       return
     }
     this.unsubDoc = md.subscribe(() => {
@@ -84,15 +112,21 @@ export class WgpuSlotsController {
       this.syncClusters()
       this.publishDebug()
     })
-    // Zustand selection / drag / zoom (gesture may be scripted until W7).
+    // Zustand selection / drag / zoom
     this.unsubStore?.()
     this.unsubStore = useMapStore.subscribe((s, prev) => {
       if (s.selection !== prev.selection) this.syncSelection()
-      if (
-        s.dragPreviewIds !== prev.dragPreviewIds ||
-        s.dragPreviewDelta !== prev.dragPreviewDelta
-      ) {
-        this.syncDrag()
+      // T-151.7.1 B2: split id-change (upload once) vs delta-only (uniform only).
+      const idsChanged = s.dragPreviewIds !== prev.dragPreviewIds
+      const deltaChanged = s.dragPreviewDelta !== prev.dragPreviewDelta
+      if (idsChanged || deltaChanged) {
+        const phase = classifyDragTransition(
+          prev.dragPreviewIds,
+          s.dragPreviewIds,
+          idsChanged,
+          deltaChanged,
+        )
+        this.applyDragPhase(phase, s.dragPreviewIds, s.dragPreviewDelta)
       }
       if (s.deckZoom !== prev.deckZoom) {
         this.onCameraMoved()
@@ -101,7 +135,7 @@ export class WgpuSlotsController {
     if (this.atlasReady) {
       this.pushFromDoc(true)
       this.syncSelection()
-      this.syncDrag()
+      this.syncDragFromStore()
       this.syncClusters()
     }
   }
@@ -144,6 +178,7 @@ export class WgpuSlotsController {
       this.engine.clear_slot_lanes()
       this.lastIds = []
       this.lastLen = 0
+      this.slotsLaneIsSelectionOnly = false
       return
     }
     handle.refresh()
@@ -165,24 +200,25 @@ export class WgpuSlotsController {
       ids.length === this.lastIds.length &&
       ids.every((id, i) => id === this.lastIds[i])
 
-    if (!orderStable) {
-      const zoom = this.engine.zoom
-      const cm = clusterMode(n, zoom)
-      this.lastClusterMode = cm
-      // In cluster mode base shows selection-only (Deck detail=false); still upload full buffer
-      // and toggle visibility so zoom-in is instant.
-      this.engine.upload_slot_lane(bytes, !cm)
-      if (cm) this.applySelectionOnlyVisible(ids, xyCopy, sel)
+    const zoom = this.engine.zoom
+    const cm = clusterMode(n, zoom)
+    this.lastClusterMode = cm
+
+    if (cm) {
+      // Cluster: short selection-only lane (never full-n under clusters).
+      this.applySelectionOnlyVisible(ids, xyCopy, sel)
+    } else if (!orderStable) {
+      this.engine.upload_slot_lane(bytes, true)
+      this.slotsLaneIsSelectionOnly = false
     } else {
-      // Order stable — could patch dirty ranges; still full-upload for simplicity when anything
-      // changed (caller notified). Selection/drag use dedicated paths.
-      this.engine.upload_slot_lane(bytes, !clusterMode(n, this.engine.zoom))
+      this.engine.upload_slot_lane(bytes, true)
+      this.slotsLaneIsSelectionOnly = false
     }
 
     this.lastIds = ids
     this.lastLen = n
     // Drag exclude rows may be stale after structural change.
-    if (this.dragActive) this.syncDrag()
+    if (this.dragActive) this.restartDragOverlay()
   }
 
   private selectedMask(ids: string[]): boolean[] {
@@ -195,14 +231,16 @@ export class WgpuSlotsController {
   private syncSelection(): void {
     if (this.disposed || !this.atlasReady || !this.lastIds.length) return
     if (this.dragActive) return // drag overlay owns tint for those ids
+    // T-151.7.1 B1: never patch full-doc indices into a short cluster lane.
+    if (this.lastClusterMode || this.slotsLaneIsSelectionOnly) {
+      this.reuploadSelectionOnlyFromDoc()
+      return
+    }
     const sel = useMapStore.getState().selection
     const set =
       sel.kind !== 'none' && sel.ids.length ? new Set(sel.ids) : new Set<string>()
     const primary = packRgbaU32(SLOT_PRIMARY_RGBA)
     const yellow = packRgbaU32(SLOT_SELECTED_RGBA)
-    // O(selection) + O(prev) — patch size+tint for changed rows. For simplicity patch all
-    // selected + unselected that were in previous selection only needs full scan of lastIds
-    // for selected flags; k = n is fine at small n, at large n scan once:
     for (let i = 0; i < this.lastIds.length; i++) {
       if (this.hiddenRows.has(i)) continue
       const id = this.lastIds[i]
@@ -219,18 +257,36 @@ export class WgpuSlotsController {
       dv.setUint32(8, tint >>> 0, true)
       this.engine.patch_slot_lane(i * SLOT_ICON_STRIDE + 8, patch)
     }
-    // Cluster mode: also refresh selection-only overlay path
-    if (this.lastClusterMode) {
-      this.pushFromDoc(true)
+  }
+
+  /** Cluster / short-lane path: re-upload k selected instances (no index patch). */
+  private reuploadSelectionOnlyFromDoc(): void {
+    const handle = this.md?.wasm
+    if (!handle) {
+      this.engine.upload_slot_lane(new Uint8Array(0), false)
+      this.slotsLaneIsSelectionOnly = true
+      return
     }
+    handle.refresh()
+    const n = handle.slot_len
+    const ids = handle.slot_ids() as string[]
+    const xy = new Float32Array(wasmBg.memory.buffer, handle.slot_xy_ptr, n * 2)
+    this.lastIds = ids
+    this.lastLen = n
+    this.applySelectionOnlyVisible(ids, new Float32Array(xy), this.selectedMask(ids))
   }
 
   private clearDragOverlay(): void {
-    if (!this.dragActive) return
+    if (!this.dragActive && this.hiddenRows.size === 0) {
+      this.engine.clear_slot_drag_lane()
+      return
+    }
     this.dragActive = false
     this.hiddenRows.clear()
     this.engine.clear_slot_drag_lane()
+    // Restore base lane + selection tint (detail full-n or cluster short lane).
     this.pushFromDoc(true)
+    this.syncSelection()
   }
 
   /** Pack drag overlay + hide base rows (alpha 0). Returns instance count. */
@@ -250,23 +306,70 @@ export class WgpuSlotsController {
       const x = xy[row * 2] ?? 0
       const y = xy[row * 2 + 1] ?? 0
       packIconInstance(overlay, k * SLOT_ICON_STRIDE, x, y, SLOT_SELECTED_PX, 0, yellow)
-      // Hide base row: alpha 0 tint
-      const hide = new Uint8Array(12)
-      const dv = new DataView(hide.buffer)
-      dv.setFloat32(0, SLOT_SELECTED_PX, true)
-      dv.setInt16(4, 0, true)
-      dv.setUint16(6, 0, true)
-      dv.setUint32(8, 0, true)
-      this.engine.patch_slot_lane(row * SLOT_ICON_STRIDE + 8, hide)
+      // Hide base row: alpha 0 tint (only safe on full-n detail lane).
+      if (!this.slotsLaneIsSelectionOnly) {
+        const hide = new Uint8Array(12)
+        const dv = new DataView(hide.buffer)
+        dv.setFloat32(0, SLOT_SELECTED_PX, true)
+        dv.setInt16(4, 0, true)
+        dv.setUint16(6, 0, true)
+        dv.setUint32(8, 0, true)
+        this.engine.patch_slot_lane(row * SLOT_ICON_STRIDE + 8, hide)
+      }
       k++
     }
     return { overlay: overlay.subarray(0, k * SLOT_ICON_STRIDE), count: k }
   }
 
-  private syncDrag(): void {
+  private applyDragPhase(
+    phase: DragGpuPhase,
+    dragIds: string[] | null | undefined,
+    delta: { dx: number; dy: number } | null | undefined,
+  ): void {
     if (this.disposed || !this.atlasReady) return
+    switch (phase) {
+      case 'idle':
+        return
+      case 'end':
+        this.clearDragOverlay()
+        return
+      case 'delta':
+        // T-151.7.1 B2: per-frame = 16 B delta uniform only.
+        if (this.dragActive) {
+          this.engine.set_slot_drag_delta(delta?.dx ?? 0, delta?.dy ?? 0)
+        }
+        return
+      case 'start':
+      case 'restart':
+        this.startDragOverlay(dragIds ?? [], delta)
+        return
+    }
+  }
+
+  private syncDragFromStore(): void {
     const { dragPreviewIds, dragPreviewDelta } = useMapStore.getState()
     if (!dragPreviewIds?.length) {
+      this.clearDragOverlay()
+      return
+    }
+    this.startDragOverlay(dragPreviewIds, dragPreviewDelta)
+  }
+
+  private restartDragOverlay(): void {
+    const { dragPreviewIds, dragPreviewDelta } = useMapStore.getState()
+    if (!dragPreviewIds?.length) {
+      this.clearDragOverlay()
+      return
+    }
+    this.startDragOverlay(dragPreviewIds, dragPreviewDelta)
+  }
+
+  /** One-shot overlay upload (drag start / id-set change). */
+  private startDragOverlay(
+    dragIds: string[],
+    delta: { dx: number; dy: number } | null | undefined,
+  ): void {
+    if (!dragIds.length) {
       this.clearDragOverlay()
       return
     }
@@ -282,9 +385,9 @@ export class WgpuSlotsController {
     this.lastIds = ids
     this.lastLen = n
     const idToRow = new Map(ids.map((id, i) => [id, i]))
-    const { overlay, count } = this.buildDragOverlay(dragPreviewIds, xyCopy, idToRow)
+    const { overlay, count } = this.buildDragOverlay(dragIds, xyCopy, idToRow)
     this.engine.upload_slot_drag_lane(overlay, count > 0)
-    this.engine.set_slot_drag_delta(dragPreviewDelta?.dx ?? 0, dragPreviewDelta?.dy ?? 0)
+    this.engine.set_slot_drag_delta(delta?.dx ?? 0, delta?.dy ?? 0)
   }
 
   private syncClusters(): void {
@@ -307,13 +410,9 @@ export class WgpuSlotsController {
 
     if (!cm) {
       this.engine.upload_cluster_lane(new Uint8Array(0), false)
-      // Show detail slots
-      this.engine.upload_slot_lane(
-        // re-push if we had hidden the lane — cheaper: empty visible true sticky doesn't restore.
-        // Full re-push from doc.
-        this.repackCurrent(),
-        true,
-      )
+      // Show detail slots (full-n with selection baked in)
+      this.engine.upload_slot_lane(this.repackCurrent(), true)
+      this.slotsLaneIsSelectionOnly = false
       return
     }
 
@@ -323,20 +422,8 @@ export class WgpuSlotsController {
     const counts = markers.map((m) => m.count)
     const bytes = packClusterInstances(xs, ys, counts)
     this.engine.upload_cluster_lane(bytes, bytes.length > 0)
-    // Hide full detail lane; selection-only drawn via repack of selected
-    const handle = this.md?.wasm
-    if (handle) {
-      handle.refresh()
-      const ids = handle.slot_ids() as string[]
-      const xy = new Float32Array(
-        wasmBg.memory.buffer,
-        handle.slot_xy_ptr,
-        handle.slot_len * 2,
-      )
-      this.applySelectionOnlyVisible(ids, new Float32Array(xy), this.selectedMask(ids))
-    } else {
-      this.engine.upload_slot_lane(new Uint8Array(0), false)
-    }
+    // Hide full detail lane; selection-only rings over clusters
+    this.reuploadSelectionOnlyFromDoc()
   }
 
   private applyClusterVisibility(cm: boolean): void {
@@ -358,6 +445,7 @@ export class WgpuSlotsController {
     for (let i = 0; i < selected.length; i++) if (selected[i]) selIdx.push(i)
     if (!selIdx.length) {
       this.engine.upload_slot_lane(new Uint8Array(0), false)
+      this.slotsLaneIsSelectionOnly = true
       return
     }
     const out = new Uint8Array(selIdx.length * SLOT_ICON_STRIDE)
@@ -376,6 +464,7 @@ export class WgpuSlotsController {
       )
     }
     this.engine.upload_slot_lane(out, true)
+    this.slotsLaneIsSelectionOnly = true
   }
 
   private repackCurrent(): Uint8Array {
@@ -406,6 +495,8 @@ export class WgpuSlotsController {
       slot_drag_instances: stats.slot_drag_instances ?? 0,
       cluster_instances: stats.cluster_instances ?? 0,
       cluster_mode: this.lastClusterMode,
+      slots_lane_selection_only: this.slotsLaneIsSelectionOnly,
+      drag_active: this.dragActive,
       atlas_ready: this.atlasReady,
       uniform_bytes_last_frame: stats.uniform_bytes_last_frame ?? 0,
       zoom: this.engine.zoom,

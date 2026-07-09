@@ -459,23 +459,25 @@ export default function WgpuTacticalMap({
     ro.observe(container)
 
     // Wheel zoom only (LMB pan removed — useSelectTool owns middle/right pan + left select).
+    // T-151.7.1 B3: use container CSS rect (same origin as pan/cursor/drop), not canvas.
     const onWheel = (ev: WheelEvent) => {
       if (!engine || disposed) return
       ev.preventDefault()
-      const rect = canvas.getBoundingClientRect()
+      const rect = container.getBoundingClientRect()
       engine.zoom_at(-ev.deltaY * WHEEL_ZOOM_PER_PX, ev.clientX - rect.left, ev.clientY - rect.top)
       // Sync React viewState from engine so cluster mode + select-tool pan stay coherent.
       const next = clampViewState(viewStateFromEngine(engine))
       setViewState(next)
       notifyCameraMoved()
     }
-    canvas.addEventListener('wheel', onWheel, { passive: false })
+    // Listen on container so wheel + pan share one hit target / coordinate origin.
+    container.addEventListener('wheel', onWheel, { passive: false })
 
     return () => {
       disposed = true // I4
       cancelAnimationFrame(raf) // I5 — before free
       ro.disconnect()
-      canvas.removeEventListener('wheel', onWheel)
+      container.removeEventListener('wheel', onWheel)
       controllerRef.current?.dispose()
       controllerRef.current = null
       worldControllerRef.current?.dispose() // frees the WorldResidency wasm handle (once)
@@ -503,6 +505,8 @@ export default function WgpuTacticalMap({
       <div
         ref={containerRef}
         className={className}
+        // Host supplies position (e.g. absolute inset-0). Canvas is absolute inset:0 against
+        // that positioned box — wheel/pan/pick all use container.getBoundingClientRect() (B3).
         style={{ background: '#0b0f14', cursor: 'crosshair' }}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -519,7 +523,7 @@ export default function WgpuTacticalMap({
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
         <div style={PANEL}>
-          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7 · wgpu interaction</div>
+          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.7.1 · wgpu interaction</div>
           <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
             {fps} FPS · {backend}
           </div>
