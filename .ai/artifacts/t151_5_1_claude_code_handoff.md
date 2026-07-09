@@ -1,10 +1,13 @@
 # T-151.5.1 — Claude Code handoff (forest mass / landcover fidelity)
 
+**Shipped:** @ `a98fb421` (tag **T-151.5.1**) — verify [`t151_5_1_verify_log.md`](t151_5_1_verify_log.md).
+Cursor doc-sync done. **Next:** T-151.6 mission entities.
+
 **Spec (wins on conflict):**
 [`t151_5_1_forest_fidelity.md`](../../docs/specs/Mission_Creator_Architecture/t151_5_1_forest_fidelity.md)
 · **Program hub:**
 [`t151_wgpu_engine_program.md`](../../docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
-· **Working tree:** `tbd-reforger-wgpu-spike/` @ `0b7621ed` (tag **T-151.5**) — **never `main`**.
+· **Working tree:** `tbd-reforger-wgpu-spike/` @ `a98fb421` (tag **T-151.5.1**) — **never `main`**.
 
 ## Operator report
 

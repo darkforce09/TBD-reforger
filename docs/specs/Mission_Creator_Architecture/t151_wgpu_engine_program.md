@@ -20,9 +20,11 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `552e68aa` — building wipe + road joins; verify
 [`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md) · **W5 / T-151.5 shipped:**
 @ `0b7621ed` (tag **T-151.5**) — glyph atlas trees/props/badges; verify
-[`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **Next slice:**
-**T-151.5.1** (forest fidelity) — `ready`; spec
-[`t151_5_1_forest_fidelity.md`](t151_5_1_forest_fidelity.md) · then **T-151.6** — `queued`.
+[`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md) · **T-151.5.1 shipped:**
+@ `a98fb421` — forest iso=2 + glyph-band green hide; verify
+[`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **Next slice:**
+**T-151.6** (mission entities) — `ready`; spec
+[`t151_6_mission_entities.md`](t151_6_mission_entities.md).
 
 ## In one sentence
 
@@ -288,7 +290,9 @@ dual-mount screenshot diffs.
 
 Slice spec: [`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md).
 
-**Corrective next:** [`t151_5_1_forest_fidelity.md`](t151_5_1_forest_fidelity.md) — iso=2 + hide fill/outline/landcover when glyphs on.
+**Corrective shipped:** [`t151_5_1_forest_fidelity.md`](t151_5_1_forest_fidelity.md) @
+`a98fb421` — Rust `DENSITY_ISO=2` SoT; hide fill/outline/landcover when glyphs on; Path B /
+32 m cell polish deferred (**T-149**, Fable 5).
 
 Atlas `world-glyphs.webp` + JSON (28 glyphs) uploaded once; **production icon instance layout
 pinned** (≤ 20 B: pos 2×f32 = 8, size 4, rotation snorm16 = 2, glyph u16 = 2, tint u32 = 4 —
@@ -304,6 +308,8 @@ tree types; tree glyph readback (nonzero alpha at projected center + tint class 
 instance accounting exact in `stats()`.
 
 ### T-151.6 (W6) — mission entities zero-copy: slots, selection, drag overlay, clusters
+
+**Next / ready.** Slice spec: [`t151_6_mission_entities.md`](t151_6_mission_entities.md).
 
 `MissionDoc.refresh()` → engine reads `slot_xy_ptr/slot_len` in-memory (D1) into a slot
 instance buffer with **dirty-range uploads** (O(edited) per `_patch*` class: add / bulk-add /

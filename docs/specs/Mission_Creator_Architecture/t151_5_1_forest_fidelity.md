@@ -1,11 +1,16 @@
 # T-151.5.1 — forest mass / landcover fidelity (W5 corrective)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `a98fb421` (tag **T-151.5.1**, 2026-07-09) · verify log
+[`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `0b7621ed` (tag **T-151.5** — verify log
 [`t151_5_verify_log.md`](../../../.ai/artifacts/t151_5_verify_log.md)).
+
+**Shipped notes:** Rust `DENSITY_ISO=2` SoT + `density_iso()` wasm export; wgpu no longer passes
+TS iso; forest fill/outline/landcover off at zoom ≥ 0; sticky landcover LOD fixed; vitest
+**374**; wasm **4,055,075 B**. Path B / 32 m cell → **T-149** (deferred until Fable 5).
 
 ## In one sentence
 
