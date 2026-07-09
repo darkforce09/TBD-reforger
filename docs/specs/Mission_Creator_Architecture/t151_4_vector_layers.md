@@ -1,11 +1,17 @@
 # T-151.4 — vector layers: sea, contours, roads, forest, landcover, marquee (W4)
 
-**Status:** **ready** (executor queue) · **Program:**
+**Status:** **shipped** @ `723490a0` (tag **T-151.4**, 2026-07-09) · verify log
+[`t151_4_verify_log.md`](../../../.ai/artifacts/t151_4_verify_log.md) · **Corrective:**
+**T-151.4.1** @ `552e68aa` (building wipe + road joins) · **Program:**
 [`t151_wgpu_engine_program.md`](t151_wgpu_engine_program.md) (W4) · **Executor:** claude-code ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
 **Baseline:** `32bf5ac5` (tag **T-151.3** — verify log
 [`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md)).
+
+**Shipped notes:** PolygonFill + roads/landcover/sea/contours/forest mass on wgpu; vitest **371**;
+wasm **4,005,415 B**. Follow-up **T-151.4.1** fixed building lane wipe + road miter/caps. Forest
+mass overdraw deferred until **T-151.5** tree glyphs.
 
 ## In one sentence
 

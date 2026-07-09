@@ -1,5 +1,8 @@
 # T-151.4 — Claude Code handoff (vector layers: sea, contours, roads, forest, landcover)
 
+**Shipped:** @ `723490a0` (tag **T-151.4**) — verify [`t151_4_verify_log.md`](t151_4_verify_log.md).
+**Corrective shipped:** **T-151.4.1** @ `552e68aa`. **Next:** T-151.5 glyphs.
+
 **Spec (wins on conflict):**
 [`t151_4_vector_layers.md`](../../docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md)
 · **Program hub:**

@@ -14,9 +14,13 @@ branches per slice. · **Spike shipped:** commits `152b3a12…94261dd6`
 @ `a51e9dcb` (tag **T-151.2**) — world parser in Rust, 275-chunk Class R/S parity; verify log
 [`t151_2_verify_log.md`](../../../.ai/artifacts/t151_2_verify_log.md) · **W3 / T-151.3 shipped:**
 @ `32bf5ac5` (tag **T-151.3**) — residency + building GPU on wgpu; verify log
-[`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **Next slice:**
-**T-151.4** (W4 vector layers: sea, contours, roads, forest, landcover) — `ready`; slice spec
-[`t151_4_vector_layers.md`](t151_4_vector_layers.md).
+[`t151_3_verify_log.md`](../../../.ai/artifacts/t151_3_verify_log.md) · **W4 / T-151.4 shipped:**
+@ `723490a0` (tag **T-151.4**) — vector layers; verify
+[`t151_4_verify_log.md`](../../../.ai/artifacts/t151_4_verify_log.md) · **T-151.4.1 shipped:**
+@ `552e68aa` — building wipe + road joins; verify
+[`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md) · **Next slice:**
+**T-151.5** (W5 glyph atlas: trees, props, badges) — `ready`; slice spec
+[`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md).
 
 ## In one sentence
 
@@ -253,6 +257,12 @@ color, byte-exact).
 
 ### T-151.4 (W4) — vector layers: sea, contours, roads, forest, landcover, marquee
 
+**Shipped:** @ `723490a0` (tag **T-151.4**) — verify
+[`t151_4_verify_log.md`](../../../.ai/artifacts/t151_4_verify_log.md). **T-151.4.1** @ `552e68aa`
+(building wipe race + road miter/caps) — verify
+[`t151_4_1_verify_log.md`](../../../.ai/artifacts/t151_4_1_verify_log.md). Forest mass overdraw =
+known Deck-parity data debt; analyze after **T-151.5** glyphs.
+
 Slice spec: [`t151_4_vector_layers.md`](t151_4_vector_layers.md) (authority for L1–L16 + prompt).
 
 Rust geometry (already produced: `sea_band`, `contours`, `forest_mass`, TBDD) feeds engine
@@ -270,11 +280,14 @@ dual-mount screenshot diffs.
 
 ### T-151.5 (W5) — glyph atlas + LOD gates: trees, props, badges, slot ring, cluster discs
 
+**Next / ready:** slice spec [`t151_5_glyph_atlas.md`](t151_5_glyph_atlas.md) (trees/props/badges
+on wgpu; slot ring/clusters stay **W6**). Operator priority: tree icons before forest-mass retune.
+
 Atlas `world-glyphs.webp` + JSON (28 glyphs) uploaded once; **production icon instance layout
 pinned** (≤ 20 B: pos 2×f32 = 8, size 4, rotation snorm16 = 2, glyph u16 = 2, tint u32 = 4 —
 the §20M budget from the spike plan); per-instance UV via a 28-entry uniform table
-(WebGL2-safe, asserted at init). Slot ring, cluster disc, and 3 building badges join the
-atlas. Size math Class R: `baseSizePx × treeSizeMultiplier(heightM) / 2^REF_ZOOM` (REF_ZOOM=3),
+(WebGL2-safe, asserted at init). Building badges join the atlas this slice; slot ring / cluster
+discs deferred to W6. Size math Class R: `baseSizePx × treeSizeMultiplier(heightM) / 2^REF_ZOOM` (REF_ZOOM=3),
 `sizeMinPixels`, badge 10 px min 8. LOD gate table ported to Rust consts with per-class user
 toggles (`worldLayerPrefs` bridge).
 **Gates:** exhaustive LOD equality scan — Rust `class_visible(class, zoom)` ==

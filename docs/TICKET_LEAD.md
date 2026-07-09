@@ -9,7 +9,7 @@
 ## Ready
 
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
-- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6; W0/T-151.0 @ f019512d; W1/T-151.1 @ 3ab81587; W2/T-151.2 @ a51e9dcb; W3/T-151.3 @ 32bf5ac5 — residency + building GPU on wgpu; verify .ai/artifacts/t151_3_verify_log.md). Slices W4-W9 wire vector layers and editor interaction onto the engine; Deck stays the oracle until T-151.9. Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts; no per-slice branches or ticket run.
+- **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine program (spike SHIPPED @ 94261dd6; W0–W3 shipped; W4/T-151.4 @ 723490a0 vector layers; W4.1/T-151.4.1 @ 552e68aa building wipe + road joins; verify .ai/artifacts/t151_4_verify_log.md + t151_4_1_verify_log.md). Next W5/T-151.5 glyph atlas (trees/props). Hub: t151_wgpu_engine_program.md. Execution: standing worktree tbd-reforger-wgpu-spike/ only; manual Claude prompts; no per-slice branches or ticket run.
 
 ## Next queued (top 10)
 

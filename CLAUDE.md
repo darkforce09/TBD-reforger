@@ -171,10 +171,19 @@ Plan @ `a222a146` · [implementation plan](.ai/artifacts/t090_10_map_engine_v2_i
 Hub: [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md) · worktree
 `tbd-reforger-wgpu-spike/` only (manual Claude prompts; no per-slice branches or `./scripts/ticket run`).
 
-**Next slice:** **T-151.4** (W4 vector layers: sea, contours, roads, forest, landcover) — `ready` ·
-spec [`t151_4_vector_layers.md`](docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md)
+**Next slice:** **T-151.5** (W5 glyph atlas: trees, props, badges) — `ready` · spec
+[`t151_5_glyph_atlas.md`](docs/specs/Mission_Creator_Architecture/t151_5_glyph_atlas.md)
 
 **Done (program slices):**
+- T-151.4.1 **building wipe + road joins** @ `552e68aa` (tag **T-151.4.1**). Empty mid-flight
+  upload no longer clears building lane; inflight abort fixed; polyline miter joins + round caps.
+  Forest overdraw deferred to post-glyph analysis. Verify:
+  [`.ai/artifacts/t151_4_1_verify_log.md`](.ai/artifacts/t151_4_1_verify_log.md). Spec:
+  [`t151_4_1_building_road_hotfix.md`](docs/specs/Mission_Creator_Architecture/t151_4_1_building_road_hotfix.md).
+- T-151.4 **vector layers (W4)** @ `723490a0` (tag **T-151.4**). PolygonFill + sea/landcover/
+  contours/roads/forest mass on wgpu; vitest **371**; wasm **4,005,415 B**. Verify:
+  [`.ai/artifacts/t151_4_verify_log.md`](.ai/artifacts/t151_4_verify_log.md). Spec:
+  [`t151_4_vector_layers.md`](docs/specs/Mission_Creator_Architecture/t151_4_vector_layers.md).
 - T-151.3 **chunk residency + first world GPU instances (W3)** @ `32bf5ac5` (tag **T-151.3**).
   `WorldResidency` + chunk-keyed pick index; building OBB fill/outline on `WgpuTacticalMap`; vitest
   **371** (+28); merged wasm **3,946,734 B** (+88,143). P1–P14 proof ledger PASS; GPU-R building
