@@ -289,11 +289,11 @@ export default function WgpuTacticalMap({
     clusterMode,
     onClusterDrill: drillIntoCluster,
   })
-  // Wheel lives in the engine effect (stable listener); keep abortPan current via ref.
-  const abortPanRef = useRef(selectTool.abortPan)
+  // Wheel lives in the engine effect (stable listener); keep rebasePan current via ref.
+  const rebasePanRef = useRef(selectTool.rebasePan)
   useEffect(() => {
-    abortPanRef.current = selectTool.abortPan
-  }, [selectTool.abortPan])
+    rebasePanRef.current = selectTool.rebasePan
+  }, [selectTool.rebasePan])
 
   // Cursor rAF channel (T-057) + DEM z (T-091.2) — same contract as Deck TacticalMap.
   const cursorRaf = useRef(0)
@@ -529,11 +529,6 @@ export default function WgpuTacticalMap({
       const eng = engineRef.current
       if (!eng) return
       ev.preventDefault()
-      try {
-        abortPanRef.current?.()
-      } catch {
-        /* ignore */
-      }
       const rect = container.getBoundingClientRect()
       // CSS origin = container (same as pan/cursor). No resize here — ResizeObserver owns size.
       eng.zoom_at(
@@ -552,6 +547,14 @@ export default function WgpuTacticalMap({
       }
       viewStateRef.current = next
       setViewState(next)
+      // T-151.11.6: an in-flight RMB-pan is RE-ANCHORED to the post-zoom camera (frozen
+      // viewport + start target + start px all refreshed) so zooming mid-pan keeps panning.
+      // The predecessor here aborted the gesture, forcing a re-press (operator bug).
+      try {
+        rebasePanRef.current?.([ev.clientX - rect.left, ev.clientY - rect.top])
+      } catch {
+        /* ignore */
+      }
       controllerRef.current?.onCameraMoved()
       worldControllerRef.current?.onCameraMoved()
       forestControllerRef.current?.onCameraMoved()

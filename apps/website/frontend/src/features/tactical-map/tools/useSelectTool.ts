@@ -60,10 +60,13 @@ export interface SelectToolHandlers {
   onPointerUp: (e: React.PointerEvent) => void
   onContextMenu: (e: React.MouseEvent) => void
   /**
-   * Drop an in-flight pan freeze (T-151.7.2). Call before external camera changes
-   * (wheel zoom) so a frozen pan target/viewport cannot overwrite zoom_at.
+   * Re-anchor an in-flight pan against the CURRENT camera (T-151.11.6). Call AFTER an
+   * external camera change (wheel zoom) with the pointer's container px: the pan gesture
+   * survives — new frozen viewport, new start target, new start px — so RMB-pan + wheel
+   * keeps panning. (The T-151.7.2 predecessor `abortPan` killed the gesture instead, which
+   * forced a re-press after every mid-pan zoom — operator-reported bug.) No-op unless panning.
    */
-  abortPan: () => void
+  rebasePan: (px: [number, number]) => void
 }
 
 export function useSelectTool({
@@ -355,12 +358,28 @@ export function useSelectTool({
 
   const onContextMenu = useCallback((e: React.MouseEvent) => e.preventDefault(), [])
 
-  const abortPan = useCallback(() => {
-    if (gesture.current?.type === 'pan') {
-      gesture.current = null
+  const rebasePan = useCallback(
+    (px: Pt) => {
+      if (gesture.current?.type !== 'pan') return
+      // Drop any queued rAF flush computed against the pre-zoom freeze, then re-freeze the
+      // gesture at the post-zoom camera: deltas from here on are (new vp unprojects − new
+      // startPx) applied to the new startTarget — seamless continuation, correct math.
       cancelPan()
-    }
-  }, [cancelPan])
+      const vp = getViewport()
+      if (!vp) {
+        gesture.current = null
+        return
+      }
+      const vs = liveView()
+      gesture.current = {
+        type: 'pan',
+        startTarget: [vs.target[0], vs.target[1]],
+        startPx: px,
+        vp,
+      }
+    },
+    [cancelPan, getViewport, liveView],
+  )
 
-  return { onPointerDown, onPointerMove, onPointerUp, onContextMenu, abortPan }
+  return { onPointerDown, onPointerMove, onPointerUp, onContextMenu, rebasePan }
 }

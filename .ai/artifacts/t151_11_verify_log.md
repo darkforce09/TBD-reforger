@@ -82,3 +82,13 @@ quantization edges by construction).
 - Cursor doc-sync queue in the tracker (registry rows, hub heading/citations/links/decisions).
 - CI runtime proof lands on the first push of this branch (jobs added; branch has no remote).
 - Named deferral: slot-lane cull threshold (matrix row 43) → T-069 scale prerequisite.
+
+## T-151.11.6 — operator-reported hotfix: wheel-zoom mid-pan killed the pan
+
+Live-test finding (operator, 2026-07-10): RMB-pan + wheel → pan dies until re-press. Cause:
+the wheel handler called `abortPan()` (T-151.7.2's blunt guard against a stale frozen-pan
+viewport clobbering `zoom_at`). Fix: `rebasePan(px)` — the in-flight pan is re-anchored to the
+post-zoom camera (fresh frozen viewport + start target + start px, queued rAF flush cancelled)
+inside the same synchronous wheel handler, so the gesture survives with exact math and the
+T-151.7.2 clobber cannot recur. `abortPan` removed (sole caller was the wheel handler).
+Verify: vitest 285/285, build+lint clean; operator live retest = the acceptance gate.
