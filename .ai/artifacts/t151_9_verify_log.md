@@ -1,6 +1,6 @@
 # T-151.9 verify log — Deck flip + retirement
 
-**Tag:** `T-151.9` (`c87d74fa`)  
+**Tag:** `T-151.9` (tag tip `58c8fcc3` — this clarify commit itself; log first recorded `c87d74fa`) <!-- T-151.10 honesty fix -->  
 **Ship SHA:** `c4831451`  
 **Baseline:** T-151.8.1 (`ec59d10e`) · docs sync @ `c52d1fc8`  
 **Worktree:** `tbd-reforger-wgpu-spike/`  

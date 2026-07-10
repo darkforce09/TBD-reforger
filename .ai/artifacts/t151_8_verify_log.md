@@ -83,7 +83,7 @@ Engine: `RenderEngine::render` early-outs when `!dirty && !continuous` (`submitt
 | New cull/ladder math in TS | 0 | PASS (wasm getters + `upload_density_grid` only) |
 | Vitest | 393/393 | PASS |
 | Entry isolation | no `map_engine_wasm_bg` in `dist/assets/index-*.js` | PASS |
-| wasm | `map_engine_wasm_bg.wasm` ~4.09 MB | built |
+| wasm | `map_engine_wasm_bg.wasm` ~4.12 MB (**4,123,261 B** measured @ T-151.10 audit; pre-8.1 row said ~4.09) | built |
 
 ---
 
