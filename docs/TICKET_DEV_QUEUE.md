@@ -5,6 +5,22 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
+## T-068 — Virtual Arsenal (registry + loadout export)
+
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
+- **Branch:** `ticket/T-068`
+- **Targets:** website, shared, root, mod
+- **Summary:** Phase 1 shipped. Data lane resumed via **T-150** (universal items+compat export). Phase 2 UI/player equip after T-150 + T-068.9. Hub: t068_virtual_arsenal_program.md.
+
+## T-150 — Universal Enfusion registry + compat export
+
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md`
+- **Branch:** `main`
+- **Targets:** mod, shared
+- **Summary:** Mod-agnostic Workbench scanner: items + compat edges for all loaded addons (no curated GUID lists). Vehicles/turrets/ammo + infantry gear. Supersedes T-068.1 allowlist; implements T-068.8 export. Spec: t150_universal_registry_export.md. Feeds T-068.9 / T-146 / T-070.
+
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.6`

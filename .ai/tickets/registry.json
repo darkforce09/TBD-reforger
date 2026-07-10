@@ -1152,7 +1152,7 @@
       "id": "T-068",
       "order": 680,
       "program": "eden",
-      "status": "deferred",
+      "status": "ready",
       "surfaces": [
         "RIGHT",
         "ATTR",
@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 shipped. Phase 2 **deferred** \u2014 operator **map-first lane** until **T-090** program ships (then T-071.2 + T-068.13). Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Phase 1 shipped. Data lane resumed via **T-150** (universal items+compat export). Phase 2 UI/player equip after T-150 + T-068.9. Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1279,7 +1279,8 @@
             "mod",
             "shared"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "notes": "Implemented by T-150 universal export (compat envelope). Mark shipped when T-150 tags."
         },
         "T-068.9": {
           "targets": [
@@ -1325,7 +1326,7 @@
       "id": "T-069",
       "order": 690,
       "program": "eden",
-      "status": "queued",
+      "status": "deferred",
       "surfaces": [
         "MAP",
         "MRK"
@@ -1336,12 +1337,12 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "Post-audit markers: addMarker + wgpu render/select/move/delete. Audit+remediations shipped (T-151.10…T-151.11.6). Still queued pending operator sign-off and/or polish slice. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.",
+      "summary": "Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
       "depends_on": [
         "T-151"
       ],
       "route": "/missions/:id/edit",
-      "branch": "t-151-wgpu-spike",
+      "branch": "main",
       "stream": "mission-creator",
       "targets": [
         "website"
@@ -3687,11 +3688,37 @@
     },
     {
       "id": "T-150",
-      "order": 1460,
-      "status": "queued",
+      "order": 685,
+      "status": "ready",
       "program": "eden",
-      "title": "Enfusion Asset Data Exporter Plugin",
-      "summary": "Extract vehicles, weapons, uniforms, and ammo to JSON. Critical: Must parse vehicle turrets to trace compatible magazine/ammo types so the web UI knows exactly what fits. Skip static objects (sandbags, fences)."
+      "title": "Universal Enfusion registry + compat export",
+      "summary": "Mod-agnostic Workbench scanner: items + compat edges for all loaded addons (no curated GUID lists). Vehicles/turrets/ammo + infantry gear. Supersedes T-068.1 allowlist; implements T-068.8 export. Spec: t150_universal_registry_export.md. Feeds T-068.9 / T-146 / T-070.",
+      "surfaces": [
+        "MOD",
+        "REG",
+        "ARS"
+      ],
+      "impact": [
+        "schema",
+        "mod",
+        "data"
+      ],
+      "depends_on": [
+        "T-068"
+      ],
+      "unblocks": [
+        "T-068.9",
+        "T-146",
+        "T-070"
+      ],
+      "targets": [
+        "mod",
+        "shared"
+      ],
+      "executor": "claude-code",
+      "branch": "main",
+      "stream": "mission-creator",
+      "spec": "docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md"
     },
     {
       "id": "T-146",
@@ -3699,7 +3726,22 @@
       "status": "queued",
       "program": "eden",
       "title": "Asset Browser Data Wiring",
-      "summary": "Hook up the exported Enfusion JSON to the frontend Asset Browser so categorized vehicles and crates are draggable onto the map."
+      "summary": "Hook up the exported Enfusion JSON to the frontend Asset Browser so categorized vehicles and crates are draggable onto the map. Blocked on T-150 universal export.",
+      "surfaces": [
+        "RIGHT",
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "data"
+      ],
+      "depends_on": [
+        "T-150"
+      ],
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     },
     {
       "id": "T-147",

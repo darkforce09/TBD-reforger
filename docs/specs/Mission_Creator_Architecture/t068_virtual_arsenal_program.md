@@ -1,7 +1,9 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **Phase 1 shipped** @ 2026-06-27. **Phase 2 paused @ T-068.7** — resume after **map verify (T-090–T-092) + T-071.2 + T-068.13**.  
-**Map gate:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) · [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md)  
+**Status:** **Phase 1 shipped** @ 2026-06-27. **Data lane ACTIVE via T-150** (universal
+items + compat export). Phase 2 UI / player equip still after **T-150 → T-068.9**.  
+**Map gate:** largely cleared (T-091/T-092/T-151). ORBAT (**T-071**) not required to start
+**T-150**. Hub resume: [`t150_universal_registry_export.md`](t150_universal_registry_export.md).  
 **Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` · **T-068.3** @ `da78452` · **T-068.4** @ `a85f16b` · **T-068.5** @ `21ec91e` · **T-068.5.1** @ `b233b11`. Full ticket ships @ **T-068.14** (Phase 2 E2E); Phase 1 gate was **T-068.6**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
@@ -9,23 +11,24 @@
 
 ---
 
-## Resume here (2026-06-28)
+## Resume here (2026-07-10)
 
-**Phase 1 is done.** **Phase 2 paused** — no active T-068 slice until gates clear.
+**Phase 1 is done.** **Next code:** **T-150** — mod-agnostic registry + compat Workbench
+export (replaces T-068.1 curated list; implements T-068.8 substance).
 
 ```text
-T-090 / T-091 / T-092 (map + mod compile)
-  → T-071.0–.2 (web ORBAT)
-  → T-068.13 (production LOBBY slot picker)
-  → T-068.7–.14 (loadout Phase 2)
+T-150 (universal items + compat export)   ← ACTIVE
+  → T-068.9 (ingest + worker canEquip)
+  → T-146 / T-070 (browser + vehicles) · T-068.10 Forge
+  → T-071 ORBAT · T-068.12–.14 player path
 ```
 
 | Gate | Ticket | Spec |
 |------|--------|------|
-| Map + spawn verify | **T-090–T-092** | [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) |
-| Web ORBAT baseline | **T-071.0–.2** | [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| Universal export | **T-150** | [`t150_universal_registry_export.md`](t150_universal_registry_export.md) |
+| Ingest + worker | **T-068.9** | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) |
+| Smart Forge UI | **T-068.10** | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) |
 | Mod slot picker | **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
-| Loadout Phase 2 | **T-068.7–.14** | slice table below |
 
 **Do not** `./scripts/ticket done T-068` until **T-068.14** (Phase 2 E2E — **human player** loadout + slot picker). **Player spawn loadout** = **T-068.11** + **T-068.12**. **Production LOBBY slot picker** = **T-068.13**; roster sync = **T-114** (after **T-068.13** + **T-118**).
 
@@ -100,7 +103,9 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.13 | claude-code | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) | §S1–S5 + slot picker screenshot |
 | T-068.14 | human | [`t068_14_phase2_e2e_gate.md`](t068_14_phase2_e2e_gate.md) | P1–P8 sign-off → `ticket done T-068` |
 
-**Active slice:** **None** — Phase 2 paused until **T-090–T-092** + **T-071.2** + **T-068.13** gates clear. Next doc slice when activated: **T-068.7** compat matrix.
+**Active slice:** **T-150** (universal registry + compat export) — then **T-068.9**.
+T-068.7 docs taxonomy is absorbed into the T-150 locked decisions; T-068.8 export =
+T-150.
 
 **Shipped slices (Phase 1):**
 

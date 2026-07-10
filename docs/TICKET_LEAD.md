@@ -8,12 +8,13 @@
 
 ## Ready
 
+- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Data lane resumed via **T-150** (universal items+compat export). Phase 2 UI/player equip after T-150 + T-068.9. Hub: t068_virtual_arsenal_program.md.
+- **T-150** (685) — Universal Enfusion registry + compat export [ready] — Mod-agnostic Workbench scanner: items + compat edges for all loaded addons (no curated GUID lists). Vehicles/turrets/ammo + infantry gear. Supersedes T-068.1 allowlist; implements T-068.8 export. Spec: t150_universal_registry_export.md. Feeds T-068.9 / T-146 / T-070.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
 
 ## Next queued (top 10)
 
-- **T-069** (690) — Markers on map [queued] — Post-audit markers: addMarker + wgpu render/select/move/delete. Audit+remediations shipped (T-151.10…T-151.11.6). Still queued pending operator sign-off and/or polish slice. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.
 - **T-071** (710) — ORBAT Manager modal [queued] — ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.
 - **T-072** (720) — Ctrl multi-place [queued] — Hold Ctrl to place multiple copies without re-selecting asset.
 - **T-073** (730) — Shift + map rotation [queued] — Shift-drag and map rotation widget for placed entities.
@@ -23,11 +24,13 @@
 - **T-115** (1150) — Capture win condition [queued] — Real side victory via capture / hold / elimination objective.
 - **T-116** (1160) — Results POST to backend [queued] — Game server posts match results; visible on event page.
 - **T-117** (1170) — Mission upload + validation UI [queued] — Web UI for mission upload and schema validation (API exists).
+- **T-118** (1180) — Event ORBAT + identity linking UI [queued] — Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today.
 
 ## Dependency graph (scoped)
 
 ```mermaid
 flowchart LR
-  T151[T-151] --> T069[T-069]
+  T067[T-067] --> T068[T-068]
   T092[T-092] --> T071[T-071]
+  T068[T-068] --> T150[T-150]
 ```
