@@ -1,12 +1,28 @@
 // Virtual Arsenal registry catalog (T-068). Types only — the palette wiring lands in T-068.3.
 
 /**
- * The kind of a registry item (character or one of the four gear slots).
+ * The kind of a registry item (T-150 v2 vocabulary; the Phase 1 kinds are the
+ * first five). Mirrors registry-items.schema.json#/$defs/item kind enum.
  *
  * @model models.RegistryItem
  */
 export type RegistryItemKind =
-  'character' | 'gear_primary' | 'gear_uniform' | 'gear_vest' | 'gear_helmet'
+  | 'character'
+  | 'gear_primary'
+  | 'gear_handgun'
+  | 'gear_launcher'
+  | 'gear_uniform'
+  | 'gear_vest'
+  | 'gear_helmet'
+  | 'gear_backpack'
+  | 'magazine'
+  | 'ammo'
+  | 'optic'
+  | 'attachment'
+  | 'vehicle'
+  | 'vehicle_weapon'
+  | 'crate'
+  | 'other'
 
 /**
  * One Virtual Arsenal catalog item, identified by its full Enfusion resource_name.

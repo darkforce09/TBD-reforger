@@ -6,16 +6,38 @@
  */
 
 /**
- * Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build).
+ * Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build). v2 (T-150): kind vocabulary expanded for the universal mod-agnostic scanner; optional addons[] records the Workbench scan set.
  */
 export interface TBDRegistryItems {
   registryItemsVersion: string
   modpackId: string
   generatedAt?: string
   /**
+   * Workbench addons loaded during the export (the scan set). Optional for v1 envelopes; the universal exporter (T-150) always writes it.
+   */
+  addons?: Addon[]
+  /**
    * @minItems 1
    */
   items: [Item, ...Item[]]
+}
+export interface Addon {
+  /**
+   * Addon GUID from GameProject.GetLoadedAddons.
+   */
+  guid: string
+  /**
+   * Addon ID (GameProject.GetAddonID), e.g. ArmaReforger.
+   */
+  name: string
+  /**
+   * Human title (GameProject.GetAddonTitle).
+   */
+  title?: string
+  /**
+   * GameProject.IsVanillaAddon.
+   */
+  vanilla?: boolean
 }
 export interface Item {
   /**
@@ -28,5 +50,24 @@ export interface Item {
    */
   category: string
   icon_url?: string
-  kind: 'character' | 'gear_primary' | 'gear_uniform' | 'gear_vest' | 'gear_helmet'
+  /**
+   * v2 (T-150) classification. Phase 1 kinds (character, gear_primary, gear_uniform, gear_vest, gear_helmet) remain valid; 'other' is the escape hatch and its count must be reported in export verify logs.
+   */
+  kind:
+    | 'character'
+    | 'gear_primary'
+    | 'gear_handgun'
+    | 'gear_launcher'
+    | 'gear_uniform'
+    | 'gear_vest'
+    | 'gear_helmet'
+    | 'gear_backpack'
+    | 'magazine'
+    | 'ammo'
+    | 'optic'
+    | 'attachment'
+    | 'vehicle'
+    | 'vehicle_weapon'
+    | 'crate'
+    | 'other'
 }

@@ -1,0 +1,59 @@
+{
+  "registryCompatVersion": "1",
+  "modpackId": "00000000-0000-4000-a000-000000000001",
+  "generatedAt": "2026-07-10T00:00:00Z",
+  "addons": [
+    { "guid": "5EB744C5F42E0800", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true },
+    { "guid": "AAAABBBBCCCCDDDD", "name": "TBD_Framework", "title": "TBD Framework", "vanilla": false }
+  ],
+  "edges": [
+    {
+      "from_node": "{9A1B2C3D4E5F607A}Prefabs/Weapons/Magazines/TBD_Magazine_556x45_30rnd.et",
+      "to_node": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+      "edge_type": "mag_in_weapon",
+      "evidence": "MagazineWellStanag556"
+    },
+    {
+      "from_node": "{AA1B2C3D4E5F607B}Prefabs/Weapons/Ammo/TBD_Ammo_556x45_Ball.et",
+      "to_node": "{9A1B2C3D4E5F607A}Prefabs/Weapons/Magazines/TBD_Magazine_556x45_30rnd.et",
+      "edge_type": "ammo_in_mag",
+      "evidence": "AmmoTemplate"
+    },
+    {
+      "from_node": "{BA1B2C3D4E5F607C}Prefabs/Weapons/Attachments/Optics/TBD_Optic_M150.et",
+      "to_node": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+      "edge_type": "optic_on_weapon",
+      "evidence": "AttachmentOpticsRIS1913"
+    },
+    {
+      "from_node": "{CA1B2C3D4E5F607D}Prefabs/Weapons/Attachments/Underbarrel/TBD_UGL_M203.et",
+      "to_node": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+      "edge_type": "attachment_on_weapon",
+      "evidence": "AttachmentUnderBarrel"
+    },
+    {
+      "from_node": "{9A1B2C3D4E5F607A}Prefabs/Weapons/Magazines/TBD_Magazine_556x45_30rnd.et",
+      "to_node": "{EA1B2C3D4E5F607F}Prefabs/Vehicles/Wheeled/TBD_M1025_M2_Turret_W.et",
+      "edge_type": "mag_in_vehicle_weapon",
+      "evidence": "MagazineWell127x99"
+    },
+    {
+      "from_node": "{AA1B2C3D4E5F607B}Prefabs/Weapons/Ammo/TBD_Ammo_556x45_Ball.et",
+      "to_node": "{EA1B2C3D4E5F607F}Prefabs/Vehicles/Wheeled/TBD_M1025_M2_Turret_W.et",
+      "edge_type": "ammo_in_vehicle_weapon",
+      "evidence": "MagazineTemplate"
+    },
+    {
+      "from_node": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+      "to_node": "{0A1B2C3D4E5F6071}Prefabs/Characters/TBD_US_Rifleman.et",
+      "edge_type": "character_default_loadout",
+      "evidence": "LoadoutSlotInfo"
+    },
+    {
+      "from_node": "{2A1B2C3D4E5F6073}Prefabs/Clothing/TBD_BDU_Woodland.et",
+      "to_node": "{0A1B2C3D4E5F6071}Prefabs/Characters/TBD_US_Rifleman.et",
+      "edge_type": "character_default_loadout",
+      "evidence": "LoadoutSlotInfo"
+    }
+  ]
+}

@@ -17,6 +17,7 @@ addFormats(ajv);
 const missionSchema = readJSON(join(root, "schema", "mission.schema.json"));
 const registrySchema = readJSON(join(root, "schema", "registry.schema.json"));
 const registryItemsSchema = readJSON(join(root, "schema", "registry-items.schema.json"));
+const registryCompatSchema = readJSON(join(root, "schema", "registry-compat.schema.json"));
 const loadoutExportSchema = readJSON(join(root, "schema", "loadout-export.schema.json"));
 const bridgeSchema = readJSON(join(root, "bridge", "bridge-messages.schema.json"));
 const terrainManifestSchema = readJSON(join(root, "schema", "terrain-manifest.schema.json"));
@@ -28,6 +29,7 @@ const repoRoot = resolve(root, "..", "..");
 const validateMission = ajv.compile(missionSchema);
 const validateRegistry = ajv.compile(registrySchema);
 const validateRegistryItems = ajv.compile(registryItemsSchema);
+const validateRegistryCompat = ajv.compile(registryCompatSchema);
 const validateLoadoutExport = ajv.compile(loadoutExportSchema);
 const validateBridge = ajv.compile(bridgeSchema);
 const validateTerrainManifest = ajv.compile(terrainManifestSchema);
@@ -85,6 +87,34 @@ check("registry.vanilla-poc.json", validateRegistry, readJSON(join(root, "regist
 console.log("Registry items:");
 check("registry-items.sample.json", validateRegistryItems, readJSON(join(root, "registry", "registry-items.sample.json")));
 check("registry-items.workbench.json", validateRegistryItems, readJSON(join(root, "registry", "registry-items.workbench.json")));
+
+// T-150: compat edges must validate AND reference only resource_names present in the paired
+// items envelope (edges are derived from the item map in the exporter, so a dangling endpoint
+// is an exporter bug and would break registry_compat FK ingest in T-068.9).
+const checkEdgeRefs = (label, itemsJson, compatJson) => {
+  const known = new Set(itemsJson.items.map((it) => it.resource_name));
+  const dangling = [];
+  for (const edge of compatJson.edges) {
+    if (!known.has(edge.from_node)) dangling.push(`${edge.edge_type} from_node ${edge.from_node}`);
+    if (!known.has(edge.to_node)) dangling.push(`${edge.edge_type} to_node ${edge.to_node}`);
+  }
+  if (dangling.length === 0) {
+    console.log(`  PASS  ${label} (referential integrity, ${compatJson.edges.length} edges)`);
+  } else {
+    failures += 1;
+    console.log(`  FAIL  ${label} (referential integrity)`);
+    for (const miss of dangling.slice(0, 10)) console.log(`        dangling ${miss}`);
+    if (dangling.length > 10) console.log(`        ... ${dangling.length - 10} more`);
+  }
+};
+
+console.log("Registry compat:");
+{
+  const itemsSample = readJSON(join(root, "registry", "registry-items.sample.json"));
+  const compatSample = readJSON(join(root, "registry", "registry-compat.sample.json"));
+  check("registry-compat.sample.json", validateRegistryCompat, compatSample);
+  checkEdgeRefs("registry-compat.sample.json vs registry-items.sample.json", itemsSample, compatSample);
+}
 
 console.log("Loadout export:");
 check("loadout-export.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.sample.json")));

@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/registry-compat/v1.json",
+  "title": "TBD Registry Compat",
+  "description": "Engine-derived compatibility edge graph between registry items (T-150). Nodes are full Enfusion ResourceNames and must exist in the paired registry-items envelope; edges are read from prefab container data (magazine wells, attachment slot types, vehicle weapon slots, character loadout slots) — never hand-authored. Drives canEquip/canAttach (T-068.9 ingest, T-068.10 smart Forge).",
+  "type": "object",
+  "required": ["registryCompatVersion", "modpackId", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "registryCompatVersion": { "type": "string" },
+    "modpackId": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "addons": {
+      "type": "array",
+      "description": "Workbench addons loaded during the export (the scan set).",
+      "items": { "$ref": "#/$defs/addon" }
+    },
+    "edges": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/edge" }
+    }
+  },
+  "$defs": {
+    "addon": {
+      "type": "object",
+      "required": ["guid", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "guid": { "type": "string", "description": "Addon GUID from GameProject.GetLoadedAddons." },
+        "name": { "type": "string", "description": "Addon ID (GameProject.GetAddonID), e.g. ArmaReforger." },
+        "title": { "type": "string", "description": "Human title (GameProject.GetAddonTitle)." },
+        "vanilla": { "type": "boolean", "description": "GameProject.IsVanillaAddon." }
+      }
+    },
+    "resourceName": {
+      "type": "string",
+      "description": "Enfusion ResourceName ({GUID}Prefabs/.../File.et).",
+      "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
+    },
+    "edge": {
+      "type": "object",
+      "description": "Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character.",
+      "required": ["from_node", "to_node", "edge_type"],
+      "additionalProperties": false,
+      "properties": {
+        "from_node": { "$ref": "#/$defs/resourceName" },
+        "to_node": { "$ref": "#/$defs/resourceName" },
+        "edge_type": {
+          "type": "string",
+          "enum": [
+            "mag_in_weapon",
+            "ammo_in_mag",
+            "optic_on_weapon",
+            "attachment_on_weapon",
+            "mag_in_vehicle_weapon",
+            "ammo_in_vehicle_weapon",
+            "character_default_loadout"
+          ]
+        },
+        "evidence": {
+          "type": "string",
+          "description": "Engine class or container var that proved the edge, e.g. MagazineWellStanag556 (well-class match), AttachmentOpticsRIS1913 (slot type match), MagazineTemplate (direct prefab ref), LoadoutSlotInfo (character slot)."
+        }
+      }
+    }
+  }
+}

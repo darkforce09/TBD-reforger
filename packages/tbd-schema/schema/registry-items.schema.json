@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/registry-items/v1.json",
   "title": "TBD Registry Items",
-  "description": "Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build).",
+  "description": "Flat catalog of placeable/equipable engine items exported from the TBD-Content Workbench. Items are identified by their full Enfusion ResourceName (resource_name). This is a separate layer from the alias spawn registry (registry.schema.json): the alias registry maps mission aliases to GUIDs for spawn, this catalog drives the web Virtual Arsenal (browse, seed/import, loadout build). v2 (T-150): kind vocabulary expanded for the universal mod-agnostic scanner; optional addons[] records the Workbench scan set.",
   "type": "object",
   "required": ["registryItemsVersion", "modpackId", "items"],
   "additionalProperties": false,
@@ -10,6 +10,11 @@
     "registryItemsVersion": { "type": "string" },
     "modpackId": { "type": "string" },
     "generatedAt": { "type": "string", "format": "date-time" },
+    "addons": {
+      "type": "array",
+      "description": "Workbench addons loaded during the export (the scan set). Optional for v1 envelopes; the universal exporter (T-150) always writes it.",
+      "items": { "$ref": "#/$defs/addon" }
+    },
     "items": {
       "type": "array",
       "minItems": 1,
@@ -17,6 +22,17 @@
     }
   },
   "$defs": {
+    "addon": {
+      "type": "object",
+      "required": ["guid", "name"],
+      "additionalProperties": false,
+      "properties": {
+        "guid": { "type": "string", "description": "Addon GUID from GameProject.GetLoadedAddons." },
+        "name": { "type": "string", "description": "Addon ID (GameProject.GetAddonID), e.g. ArmaReforger." },
+        "title": { "type": "string", "description": "Human title (GameProject.GetAddonTitle)." },
+        "vanilla": { "type": "boolean", "description": "GameProject.IsVanillaAddon." }
+      }
+    },
     "item": {
       "type": "object",
       "required": ["resource_name", "display_name", "category", "kind"],
@@ -25,7 +41,7 @@
         "resource_name": {
           "type": "string",
           "description": "Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.",
-          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\-]+$"
+          "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$"
         },
         "display_name": { "type": "string", "minLength": 1 },
         "category": {
@@ -36,12 +52,24 @@
         "icon_url": { "type": "string" },
         "kind": {
           "type": "string",
+          "description": "v2 (T-150) classification. Phase 1 kinds (character, gear_primary, gear_uniform, gear_vest, gear_helmet) remain valid; 'other' is the escape hatch and its count must be reported in export verify logs.",
           "enum": [
             "character",
             "gear_primary",
+            "gear_handgun",
+            "gear_launcher",
             "gear_uniform",
             "gear_vest",
-            "gear_helmet"
+            "gear_helmet",
+            "gear_backpack",
+            "magazine",
+            "ammo",
+            "optic",
+            "attachment",
+            "vehicle",
+            "vehicle_weapon",
+            "crate",
+            "other"
           ]
         }
       }
