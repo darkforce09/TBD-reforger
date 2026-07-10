@@ -27,8 +27,8 @@ const ROLE_ROADS = 4
 
 /** Concurrent chunk fetches (mirror `worldObjectsCore` `DEFAULT_FETCH_CONCURRENCY`). */
 const FETCH_CONCURRENCY = 12
-/** Per-frame ingest budget, ms (mirror `chunkStore` `APPLY_BUDGET_MS`; enforced JS-side). */
-const APPLY_BUDGET_MS = 4
+// T-151.11.3 (audit B-04): the ≤ 4 ms/frame ingest budget is OWNED BY RUST
+// (`residency.rs::APPLY_BUDGET_MS` + begin/exhausted/end frame API) — no TS budget constant.
 /** Debounce camera-move → residency recompute (matches the basemap LOD debounce). */
 const MOVE_DEBOUNCE_MS = 120
 
@@ -117,12 +117,15 @@ export class WgpuWorldController {
     this.runViewport()
   }
 
-  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings). */
+  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings).
+   *  T-151.11.3 (P-04): buildings toggle now empties/rebuilds the footprint buffers in Rust,
+   *  so push the WHOLE lane set (fills + outlines + glyphs) — not just glyphs — or a toggle
+   *  wouldn't take effect until the next camera move. */
   syncGlyphToggles(): void {
     if (!this.residency || this.disposed) return
     const t = getClassToggles()
     this.residency.set_glyph_toggles(t.trees, t.props, t.buildings)
-    if (this.ready) this.pushGlyphsToEngine()
+    if (this.ready) this.pushToEngine()
   }
 
   /** Decode world-glyphs.webp + JSON → GPU atlas + UV table + key map (T-151.5 L1–L3). */
@@ -379,12 +382,14 @@ export class WgpuWorldController {
     this.drain()
   }
 
-  /** Ingest queued chunks under the per-frame budget, deferring the rest to the next frame. */
+  /** Ingest queued chunks under the CORE-owned per-frame budget (T-151.11.3 / B-04): the
+   *  loop shape stays here (rAF scheduling is UI domain) but Rust decides when the frame is
+   *  spent and records the stats. */
   private drain(): void {
     if (this.disposed || !this.residency) return
-    const start = performance.now()
+    this.residency.begin_ingest_frame()
     let applied = 0
-    while (this.pending.length > 0 && performance.now() - start < APPLY_BUDGET_MS) {
+    while (this.pending.length > 0 && !this.residency.frame_budget_exhausted()) {
       const next = this.pending.shift()
       if (!next) break
       if (next.bytes) {
@@ -399,7 +404,7 @@ export class WgpuWorldController {
       applied++
     }
     if (applied > 0) {
-      this.residency.end_apply_frame(performance.now() - start)
+      this.residency.end_ingest_frame()
       this.pushToEngine()
     }
     if (this.pending.length > 0) this.scheduleDrain()
@@ -446,8 +451,12 @@ export class WgpuWorldController {
       this.publishDebug(rstats, 0)
       return
     }
-    this.engine.upload_world_buildings(fill, rstats.chunks_pinned, true)
-    this.engine.upload_world_building_outlines(outline, true)
+    // T-151.11.3 (P-04): visibility = residency policy (user toggle ∧ zoom gate). Toggle-off
+    // arrives as empty buffers + visible=false, which REMOVES the lanes (the empty+visible
+    // sticky rule only guards mid-hydration wipes).
+    const bVis = this.residency.buildings_visible()
+    this.engine.upload_world_buildings(fill, rstats.chunks_pinned, bVis)
+    this.engine.upload_world_building_outlines(outline, bVis)
     this.pushGlyphsToEngine()
     const engStats = JSON.parse(this.engine.stats()) as {
       world_building_instances: number

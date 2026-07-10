@@ -1,11 +1,17 @@
-// T-151.4 — Forest mass for wgpu: TBDD viewport stream (mirror forestMassStore, no LRU).
-// Session cache of density chunks; composite grows with exploration (N11 P2b).
+// T-151.4 — Forest mass for wgpu: TBDD viewport stream.
+// T-151.11.3: policy fns (chunk ids, fill alpha) come from the wasm exports (audit B-02/B-03);
+// the session cache is LRU-capped (audit E-05) instead of growing with exploration forever.
 
 import { useEffect } from 'react'
 import type { RefObject } from 'react'
-import { decode_tbdd, forest_mass, density_iso, class_visible } from '@/wasm/pkg/map_engine_wasm'
-import { chunkIdsForViewport, type Bbox } from '../worldmap/chunkMath'
-import { forestFillAlpha } from '../worldmap/forestMass'
+import {
+  decode_tbdd,
+  forest_mass,
+  density_iso,
+  class_visible,
+  forest_fill_alpha,
+  chunk_ids_for_viewport,
+} from '@/wasm/pkg/map_engine_wasm'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -14,6 +20,9 @@ const ROLE_FOREST_OUTLINE = 6
 const FETCH_CONCURRENCY = 12
 const MOVE_DEBOUNCE_MS = 120
 const CHUNK_SIZE_M = 512
+/** Cache-eviction floor — mirrors `residency.rs` `LRU_MIN_CHUNKS` / 3×pinned (loader-IO
+ *  domain: the eviction POLICY constant is documented against the Rust residency SoT). */
+const LRU_MIN_CHUNKS = 64
 
 interface ComposedChunk {
   fillPositions: Float32Array
@@ -76,15 +85,21 @@ export class WgpuForestMassController {
     if (this.disposed || !this.ready) return
     const b = this.engine.visible_bounds()
     const zoom = this.engine.zoom
-    const bbox: Bbox = [b[0], b[1], b[2], b[3]]
-    const ids = chunkIdsForViewport(
-      bbox,
-      { width: this.terrain.width, height: this.terrain.height },
-      { chunkSizeM: CHUNK_SIZE_M },
+    // T-151.11.3 (B-03): chunk-id derivation is the Rust chunk_math SoT (parity-pinned).
+    const ids = chunk_ids_for_viewport(
+      b[0],
+      b[1],
+      b[2],
+      b[3],
+      this.terrain.width,
+      this.terrain.height,
+      CHUNK_SIZE_M,
+      0,
     )
     const key = ids.join(',')
     if (key !== this.lastKey) {
       this.lastKey = key
+      this.touchAndEvict(ids)
       const missing = ids.filter((id) => !this.cache.has(id))
       if (missing.length > 0) {
         void this.fetchMissing(missing, zoom)
@@ -92,6 +107,27 @@ export class WgpuForestMassController {
       }
     }
     this.pushComposite(zoom)
+  }
+
+  /** T-151.11.3 (E-05): LRU over the composed-chunk cache — re-insert viewport ids for
+   *  recency (Map iteration order = insertion order), then evict oldest entries beyond
+   *  `max(LRU_MIN_CHUNKS, 3 × viewport)`; current-viewport ids are never evicted. */
+  private touchAndEvict(viewportIds: string[]): void {
+    for (const id of viewportIds) {
+      const hit = this.cache.get(id)
+      if (hit !== undefined) {
+        this.cache.delete(id)
+        this.cache.set(id, hit)
+      }
+    }
+    const cap = Math.max(LRU_MIN_CHUNKS, 3 * viewportIds.length)
+    if (this.cache.size <= cap) return
+    const pinned = new Set(viewportIds)
+    for (const key of this.cache.keys()) {
+      if (this.cache.size <= cap) break
+      if (pinned.has(key)) continue
+      this.cache.delete(key)
+    }
   }
 
   private async fetchMissing(ids: string[], zoom: number): Promise<void> {
@@ -164,10 +200,10 @@ export class WgpuForestMassController {
 
   private pushComposite(zoom: number): void {
     if (this.disposed) return
-    // Prefer Rust lod_gates via wasm (T-151.5.1 L2/L3).
+    // Rust lod_gates + fade ladder via wasm (T-151.5.1 L2/L3; T-151.11.3 B-02).
     const fillVis = class_visible('forestFill', zoom)
     const outVis = class_visible('forestOutline', zoom)
-    const alpha = forestFillAlpha(zoom)
+    const alpha = forest_fill_alpha(zoom)
     const chunks = this.loadedChunks()
     if (chunks.length === 0) {
       this.engine.clear_vector_lane(ROLE_FOREST_FILL)

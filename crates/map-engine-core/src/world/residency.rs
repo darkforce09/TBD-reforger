@@ -139,6 +139,10 @@ pub struct WorldResidency {
     fill_buf: Vec<f32>,
     outline_buf: Vec<f32>,
 
+    /// T-151.11.3 (audit B-04): ingest-frame start stamp — the ≤ APPLY_BUDGET_MS/frame policy
+    /// lives HERE (pure; the wasm wrapper feeds `Date.now`), not in the JS loader.
+    ingest_frame_start_ms: Option<f64>,
+
     /// Last viewport zoom (for glyph LOD + min-px clamp).
     deck_zoom: f64,
     /// User prefs (`worldLayerPrefs.classToggles`).
@@ -206,6 +210,7 @@ impl Default for WorldResidency {
             apply_budget_ms_last: 0.0,
             fill_buf: Vec::new(),
             outline_buf: Vec::new(),
+            ingest_frame_start_ms: None,
             deck_zoom: -2.0,
             toggle_trees: true,
             toggle_props: false,
@@ -254,7 +259,18 @@ impl WorldResidency {
         self.toggle_trees = trees;
         self.toggle_props = props;
         self.toggle_buildings = buildings;
-        self.refresh_draw_set_and_glyphs();
+        // T-151.11.3 (P-04): the buildings toggle hides the WHOLE lane (fills + outlines +
+        // badges — Deck semantics), so the footprint buffers must rebuild too, not just glyphs.
+        self.rebuild_buffers();
+    }
+
+    /// Whether the building fill/outline lanes should draw: user toggle ∧ zoom gate
+    /// (T-151.11.3 / P-04). The loader passes this as the upload `visible` flag so a toggle-off
+    /// removes the lanes (bypassing the empty+visible sticky anti-wipe rule, which only guards
+    /// mid-hydration wipes).
+    #[must_use]
+    pub fn buildings_visible(&self) -> bool {
+        self.toggle_buildings && building_visible(self.deck_zoom)
     }
 
     fn rebuild_glyph_lookup_from_prefabs(&mut self) {
@@ -494,6 +510,31 @@ impl WorldResidency {
         self.chunks_applied += 1;
     }
 
+    /// T-151.11.3 (B-04): start an ingest frame at `now_ms`. The per-frame budget policy
+    /// (`APPLY_BUDGET_MS`) is owned by this type; callers loop
+    /// `while !ingest_budget_exhausted_at(now)` and close with [`Self::end_ingest_frame_at`].
+    pub fn begin_ingest_frame_at(&mut self, now_ms: f64) {
+        self.ingest_frame_start_ms = Some(now_ms);
+    }
+
+    /// True once the current ingest frame has consumed the apply budget. `false` when no frame
+    /// is open (callers may ingest at least one chunk per frame regardless — the JS loop shape).
+    #[must_use]
+    pub fn ingest_budget_exhausted_at(&self, now_ms: f64) -> bool {
+        match self.ingest_frame_start_ms {
+            Some(start) => now_ms - start >= APPLY_BUDGET_MS,
+            None => false,
+        }
+    }
+
+    /// Close the ingest frame at `now_ms`: records stats + evicts + rebuilds via
+    /// [`Self::end_apply_frame`]. No-op when no frame is open.
+    pub fn end_ingest_frame_at(&mut self, now_ms: f64) {
+        if let Some(start) = self.ingest_frame_start_ms.take() {
+            self.end_apply_frame(now_ms - start);
+        }
+    }
+
     /// `drainFrame` tail — record the frame's apply stats, then evict + rebuild once. `elapsed_ms`
     /// is the wall time the caller measured for this frame's ingest loop.
     pub fn end_apply_frame(&mut self, elapsed_ms: f64) {
@@ -547,6 +588,13 @@ impl WorldResidency {
     /// Recompose the building fill + outline GPU buffers from the pinned chunks, in **string-sorted
     /// id order** (matching the JS composite `[...pinned].sort()`).
     fn rebuild_buffers(&mut self) {
+        // T-151.11.3 (P-04): toggle off ⇒ compose nothing (Deck hid the whole building lane).
+        if !self.toggle_buildings {
+            self.fill_buf.clear();
+            self.outline_buf.clear();
+            self.refresh_draw_set_and_glyphs();
+            return;
+        }
         let building_code = class_code("building");
         let outline_norm = norm(OUTLINE_COLOR);
         let mut fill: Vec<f32> = Vec::new();
@@ -1288,5 +1336,90 @@ mod tests {
             stats["chunks_draw"].as_u64().unwrap(),
             r.draw_ids().len() as u64
         );
+    }
+}
+
+/// T-151.11.3 tests — ingest-frame budget policy (B-04) + buildings-toggle lane hide (P-04).
+#[cfg(test)]
+mod t151_11_3_tests {
+    use super::*;
+    use flate2::Compression;
+    use flate2::write::GzEncoder;
+    use std::io::Write;
+
+    fn gzip(text: &str) -> Vec<u8> {
+        let mut enc = GzEncoder::new(Vec::new(), Compression::default());
+        enc.write_all(text.as_bytes()).unwrap();
+        enc.finish().unwrap()
+    }
+
+    fn residency_with_one_building() -> WorldResidency {
+        let mut r = WorldResidency::new();
+        r.load_manifest_json(
+            r#"{ "worldBounds": [0,0,12800,12800], "objects": { "prefabsPath": "p", "chunksPath": "c", "chunkSizeM": 512 } }"#,
+        )
+        .unwrap();
+        r.load_prefabs_gz(
+            br#"{ "prefabs": [ { "prefabId": 9, "kind": "building", "class": "residential", "spatial": { "halfExtentsM": { "x": 5, "y": 5, "z": 4 } } } ] }"#,
+        )
+        .unwrap();
+        let missing = r.set_viewport(0.0, 0.0, 600.0, 600.0, -2.0);
+        assert!(!missing.is_empty());
+        for id in &missing {
+            r.ingest_chunk_gz(id, &gzip(r#"{"instances":[[9,100.5,200.25,10,45]]}"#))
+                .unwrap();
+        }
+        r.end_apply_frame(0.0);
+        r
+    }
+
+    #[test]
+    fn ingest_budget_policy_is_core_owned() {
+        let mut r = WorldResidency::new();
+        // No open frame → never exhausted (callers may always ingest ≥ 1 chunk).
+        assert!(!r.ingest_budget_exhausted_at(1_000.0));
+        r.begin_ingest_frame_at(1_000.0);
+        assert!(!r.ingest_budget_exhausted_at(1_000.0 + APPLY_BUDGET_MS - 0.1));
+        assert!(r.ingest_budget_exhausted_at(1_000.0 + APPLY_BUDGET_MS));
+        // Closing records the elapsed into the frame stats (over-budget counter increments).
+        let before = r.frames_over_budget();
+        r.end_ingest_frame_at(1_000.0 + APPLY_BUDGET_MS + 2.0);
+        assert_eq!(r.frames_over_budget(), before + 1);
+        // Frame closed → not exhausted again until reopened.
+        assert!(!r.ingest_budget_exhausted_at(10_000.0));
+    }
+
+    #[test]
+    fn buildings_toggle_hides_and_restores_whole_lane() {
+        let mut r = residency_with_one_building();
+        assert!(!r.world_building_fill().is_empty());
+        assert!(!r.world_building_outline().is_empty());
+        assert!(r.buildings_visible());
+
+        r.set_glyph_toggles(true, false, false); // buildings OFF
+        assert!(
+            r.world_building_fill().is_empty(),
+            "fill must empty on toggle-off (P-04)"
+        );
+        assert!(
+            r.world_building_outline().is_empty(),
+            "outline must empty on toggle-off"
+        );
+        assert!(!r.buildings_visible());
+
+        r.set_glyph_toggles(true, false, true); // buildings back ON
+        assert!(
+            !r.world_building_fill().is_empty(),
+            "fill must repopulate on toggle-on"
+        );
+        assert!(r.buildings_visible());
+    }
+
+    #[test]
+    fn buildings_visible_respects_zoom_gate() {
+        let mut r = residency_with_one_building();
+        assert!(r.buildings_visible()); // zoom −2 ≥ −2.5 gate
+        let _ = r.set_viewport(0.0, 0.0, 600.0, 600.0, -3.0); // below BUILDING_MIN_ZOOM
+        assert!(!r.buildings_visible());
     }
 }

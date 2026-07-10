@@ -1,3 +1,5 @@
+// ORACLE-ONLY (T-151.11.3, audit B-03): the live paths call wasm `chunk_ids_for_viewport`
+// / `WorldResidency.set_viewport`; this file feeds parity/unit tests only.
 // T-090.5.1 — Export-chunk math for Map Engine v2 streaming (implementation plan §6). Pure:
 // no React/Deck/fetch, node-testable; the worker (T-090.5.3) and chunkStore consume it.
 //

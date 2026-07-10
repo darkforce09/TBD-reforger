@@ -60,11 +60,12 @@ let cachedSuperZoom: number | null = null
 let markersDirty = true
 let markersVersion = 0
 
-/** Map the continuous Deck zoom (band [-6, 6]) to an integer supercluster zoom level. Cluster mode
- *  is only active at/below ZOOM_CLUSTER_MAX (-4), so the live range is [-6, -4] → scz [2, 4]. */
+/** Map the continuous Deck zoom (band [-6, 6]) to an integer supercluster zoom level — the
+ *  Rust `spatial/cluster.rs` SoT via wasm (T-151.11.3, audit B-05 residual: this was the last
+ *  duplicated cluster-policy math in TS). Cluster mode is only active at/below
+ *  ZOOM_CLUSTER_MAX (-4), so the live range is [-6, -4] → scz [2, 4]. */
 export function deckZoomToSuperZoom(deckZoom: number): number {
-  const z = Math.round(deckZoom + 8)
-  return z < 0 ? 0 : z > 16 ? 16 : z
+  return wasm.deck_zoom_to_super_zoom(deckZoom)
 }
 
 /** Capture the active terrain so the wasm normalization matches it (called on terrain change). Marks

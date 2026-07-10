@@ -16,8 +16,10 @@ use map_engine_core::geometry::{
 use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
 use map_engine_core::world::{
-    WorldError, WorldResidency as CoreWorldResidency, WorldSpatialIndex as CoreWorldSpatialIndex,
-    WorldStore as CoreWorldStore, class_visible as core_class_visible,
+    TerrainSizeM, WorldError, WorldResidency as CoreWorldResidency,
+    WorldSpatialIndex as CoreWorldSpatialIndex, WorldStore as CoreWorldStore,
+    chunk_ids_for_viewport as core_chunk_ids_for_viewport, class_visible as core_class_visible,
+    contour_interval_for_zoom as core_contour_interval_for_zoom,
 };
 use wasm_bindgen::prelude::*;
 
@@ -2023,4 +2025,95 @@ pub fn world_chunk_ids_for_viewport(
         chunk_size_m,
         i64::from(extra_ring),
     )
+}
+
+// ── T-151.11.3 (audits B-01…B-05) — policy exports so no live TS twin remains ────────────────
+
+/// Sea fill fade ladder (`sea_band.rs` SoT; replaces the live `worldmap/seaBand.ts` twin).
+#[wasm_bindgen]
+#[must_use]
+pub fn sea_fill_alpha(deck_zoom: f64) -> f64 {
+    sea_band::sea_fill_alpha(deck_zoom)
+}
+
+/// Forest fill fade ladder (`forest_mass.rs` SoT; replaces the live `worldmap/forestMass.ts` twin).
+#[wasm_bindgen]
+#[must_use]
+pub fn forest_fill_alpha(deck_zoom: f64) -> f64 {
+    forest_mass::forest_fill_alpha(deck_zoom)
+}
+
+/// Contour interval ladder (`lod_gates.rs` SoT; replaces the live `worldmap/lodGates.ts` twin).
+#[wasm_bindgen]
+#[must_use]
+pub fn contour_interval_for_zoom(deck_zoom: f64) -> f64 {
+    core_contour_interval_for_zoom(deck_zoom)
+}
+
+/// Deck-zoom → supercluster-zoom bucket (`spatial/cluster.rs` SoT; replaces the
+/// `slotClusterIndex.ts` local copy used for cache invalidation).
+#[wasm_bindgen]
+#[must_use]
+pub fn deck_zoom_to_super_zoom(deck_zoom: f64) -> i32 {
+    cluster::deck_zoom_to_super_zoom(deck_zoom)
+}
+
+/// DEM vector-grid downsample factor (`dem/downsample.rs` SoT; replaces the
+/// `worldmap/demGrid.ts` constant on the live path).
+#[wasm_bindgen]
+#[must_use]
+pub fn dem_vector_grid_factor() -> u32 {
+    downsample::DEM_VECTOR_GRID_FACTOR as u32
+}
+
+/// Viewport → chunk-id set (512 m grid + preload margin + optional oversized ring) —
+/// `chunk_math.rs` SoT; replaces the live `worldmap/chunkMath.ts` call in the forest lane.
+#[wasm_bindgen]
+#[allow(clippy::too_many_arguments)]
+#[must_use]
+pub fn chunk_ids_for_viewport(
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+    terrain_w: f64,
+    terrain_h: f64,
+    chunk_size_m: f64,
+    extra_ring: i32,
+) -> Vec<String> {
+    core_chunk_ids_for_viewport(
+        [min_x, min_y, max_x, max_y],
+        TerrainSizeM {
+            width: terrain_w,
+            height: terrain_h,
+        },
+        chunk_size_m,
+        i64::from(extra_ring),
+    )
+}
+
+#[wasm_bindgen]
+impl WorldResidency {
+    /// T-151.11.3 (B-04): open an ingest frame — the ≤ 4 ms/frame budget policy lives in core
+    /// (`APPLY_BUDGET_MS`); this wrapper only supplies the clock.
+    pub fn begin_ingest_frame(&mut self) {
+        self.inner.begin_ingest_frame_at(js_sys::Date::now());
+    }
+
+    /// True once the open ingest frame has consumed the core apply budget.
+    #[must_use]
+    pub fn frame_budget_exhausted(&self) -> bool {
+        self.inner.ingest_budget_exhausted_at(js_sys::Date::now())
+    }
+
+    /// Close the ingest frame (records stats + evicts + rebuilds via `end_apply_frame`).
+    pub fn end_ingest_frame(&mut self) {
+        self.inner.end_ingest_frame_at(js_sys::Date::now());
+    }
+
+    /// Building fill/outline lanes should draw (user toggle ∧ zoom gate) — T-151.11.3 / P-04.
+    #[must_use]
+    pub fn buildings_visible(&self) -> bool {
+        self.inner.buildings_visible()
+    }
 }

@@ -18,3 +18,5 @@ map-engine-core = { path = "../map-engine-core", features = ["png", "mission", "
 # crate's heavy GPU/web stack is `cfg(wasm32)`-gated, so native `cargo build --workspace` stays lean.
 map-engine-render = { path = "../map-engine-render" }
 wasm-bindgen = "0.2"
+# T-151.11.3 (B-04): Date.now clock for the core-owned ingest-frame budget.
+js-sys = "0.3"

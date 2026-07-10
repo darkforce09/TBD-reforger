@@ -2006,6 +2006,7 @@ dependencies = [
 name = "map-engine-wasm"
 version = "0.1.0"
 dependencies = [
+ "js-sys",
  "map-engine-core",
  "map-engine-render",
  "wasm-bindgen",

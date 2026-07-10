@@ -1,3 +1,5 @@
+// ORACLE-ONLY (T-151.11.3, audit B-01): the live path calls wasm `sea_fill_alpha`;
+// this file feeds parity/unit tests only.
 // T-090.5.4 — Sea-band geometry (A3 DrawSea analogue): nested hypsometric fills over the
 // downsampled DEM grid (demGrid.ts). Pure + worker-safe (no deck.gl/DOM); the world-objects
 // worker runs it and ships transferable typed arrays. Layer styling lives in seaBandLayer.ts;

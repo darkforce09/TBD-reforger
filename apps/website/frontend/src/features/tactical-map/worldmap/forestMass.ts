@@ -1,3 +1,5 @@
+// ORACLE-ONLY (T-151.11.3, audit B-02): the live path calls wasm `forest_fill_alpha`;
+// this file feeds parity/unit tests only.
 // T-090.8.1 — Forest mass geometry: TBDD density decode + per-cell marching squares
 // (A3 DrawForestsNew model, uiMap.cpp:2390 analogue — T-144.1). Pure + worker-safe: no
 // deck.gl/React/DOM; worldObjectsCore runs this off the main thread and ships typed arrays

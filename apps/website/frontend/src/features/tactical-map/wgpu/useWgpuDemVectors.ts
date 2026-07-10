@@ -4,19 +4,24 @@
 
 import { useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
+// T-151.11.3 (audit B-01): every policy call below is the wasm export — the old live imports
+// from worldmap/{lodGates,seaBand,demGrid}.ts were TS twins of existing Rust fns; those files
+// are oracle-only now.
 import {
   DemGrid,
   contour_levels,
   compose_contours_hairline,
+  class_visible,
+  contour_interval_for_zoom,
+  contour_grid_reductions,
+  sea_fill_alpha,
+  dem_vector_grid_factor,
 } from '@/wasm/pkg/map_engine_wasm'
 import {
   loadDemForTerrain,
   getDemRasterForOverlay,
   subscribeDem,
 } from '../dem/DemController'
-import { DEM_VECTOR_GRID_FACTOR } from '../worldmap/demGrid'
-import { classVisible, contourIntervalForZoom } from '../worldmap/lodGates'
-import { seaFillAlpha } from '../worldmap/seaBand'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -64,7 +69,7 @@ export class WgpuDemVectorController {
         raster.metersCache as Float32Array,
         raster.width,
         raster.height,
-        DEM_VECTOR_GRID_FACTOR,
+        dem_vector_grid_factor(),
         worldW,
         worldH,
       )
@@ -79,8 +84,8 @@ export class WgpuDemVectorController {
 
   private pushSea(engine: RenderEngine, deckZoom: number): void {
     if (!this.grid) return
-    const seaVis = classVisible('sea', deckZoom)
-    const alpha = seaFillAlpha(deckZoom)
+    const seaVis = class_visible('sea', deckZoom)
+    const alpha = sea_fill_alpha(deckZoom)
     if (!seaVis || alpha <= 0) {
       engine.clear_vector_lane(ROLE_SEA)
       this.lastSeaAlpha = -1
@@ -109,8 +114,8 @@ export class WgpuDemVectorController {
 
   private pushContours(engine: RenderEngine, deckZoom: number): void {
     if (!this.grid) return
-    const contVis = classVisible('contour', deckZoom)
-    const interval = contourIntervalForZoom(deckZoom)
+    const contVis = class_visible('contour', deckZoom)
+    const interval = contour_interval_for_zoom(deckZoom)
     if (!contVis) {
       engine.clear_vector_lane(ROLE_CONTOURS)
       this.lastInterval = 0
@@ -119,8 +124,8 @@ export class WgpuDemVectorController {
     if (interval === this.lastInterval) return
     try {
       let g: DemGrid = this.grid
-      // Coarser intervals use 2× reductions (mirror demVectorStore / contour_grid_reductions).
-      const reductions = interval >= 100 ? 2 : interval >= 50 ? 1 : 0
+      // Coarser intervals use 2× reductions — Rust SoT (was an inline TS ladder; B-01).
+      const reductions = contour_grid_reductions(interval)
       const owned: DemGrid[] = []
       for (let i = 0; i < reductions; i++) {
         const next = g.reduce()

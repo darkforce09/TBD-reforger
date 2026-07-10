@@ -1,3 +1,5 @@
+// ORACLE-ONLY (T-151.11.3, audit B-01): the live path calls the wasm exports
+// (`class_visible`, `contour_interval_for_zoom`); this file feeds parity/unit tests only.
 // T-090.5.1 — World-object LOD gates. Data-form of the canonical N2/N3 tables in
 // docs/specs/Mission_Creator_Architecture/t090_render_lod_contract.md (v2) — that doc is the
 // authority; any threshold change lands there first. Pure decision module: no React/Deck,
