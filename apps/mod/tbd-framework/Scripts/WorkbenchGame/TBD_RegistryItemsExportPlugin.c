@@ -1,179 +1,252 @@
 /**
- * TBD_RegistryItemsExportPlugin.c - T-068.1 Virtual Arsenal flat ResourceName export.
+ * TBD_RegistryItemsExportPlugin.c - T-150 universal mod-agnostic registry + compat export.
  *
- * Workbench plugin: resolves a curated list of vanilla Arma Reforger character +
- * Phase 1 gear prefabs to their canonical Enfusion ResourceName ({GUID}Prefabs/.../File.et)
- * via Resource.Load + BaseContainer.GetResourceName(), and writes a registry-items
- * envelope (packages/tbd-schema/schema/registry-items.schema.json) to
- *   $profile:TBD_RegistryItems.json
+ * Workbench plugin: scans EVERY loaded addon's Prefabs tree (GameProject.GetLoadedAddons +
+ * Workbench.SearchResources — no curated path/GUID lists; T-068.1's BuildCuratedRows()
+ * allowlist is retired), classifies prefabs into registry-items v2 kinds by component
+ * introspection (TBD_RegistryScan.c), derives engine-only compat edges (magazine wells,
+ * attachment slot types, vehicle weapon slot chains, character loadout slots), and writes:
+ *   $profile:TBD_RegistryItems.json   (registry-items.schema.json, envelope v2)
+ *   $profile:TBD_RegistryCompat.json  (registry-compat.schema.json, envelope v1)
+ * Compat is written last and doubles as the run-complete sentinel.
  *
- * The curated path list is seeded from enfusion-mcp discovery (asset_search /
- * game_read) against the base game pak set. The plugin re-resolves every entry through
- * the engine so the committed JSON carries engine-canonical GUIDs (never hand-typed).
+ * Adding a Workshop mod to the Workbench project and re-running this plugin includes that
+ * mod's items/edges with zero code changes — the export is a function of the loaded addons.
  *
- * Run: Workbench > Plugins > "Export TBD Registry Items"
- *   (or NetAPI: wb_execute_action menuPath "Plugins,Export TBD Registry Items").
- * Then copy $profile:TBD_RegistryItems.json to
+ * Run: Workbench > Plugins > TBD > "Export TBD Registry Items"
+ *   (or NetAPI: wb_execute_action menuPath "Plugins,TBD,Export TBD Registry Items").
+ * Then copy the two $profile: files to
  *   packages/tbd-schema/registry/registry-items.workbench.json
+ *   packages/tbd-schema/registry/registry-compat.workbench.json
  *
  * @contract registry-items.schema.json#/
+ * @contract registry-compat.schema.json#/
  */
 
-//! Internal export row (camelCase); the writer emits snake_case keys per the schema item.
-//! @contract registry-items.schema.json#/$defs/item
-class TBD_RegistryItemRow
-{
-	string path;          // pak-relative prefab path (no GUID) OR full ResourceName
-	string displayName;
-	string category;      // slash-delimited browse path
-	string kind;          // character | gear_primary | gear_uniform | gear_vest | gear_helmet
-}
-
-[WorkbenchPluginAttribute(name: "Export TBD Registry Items", description: "Resolve curated vanilla prefabs to canonical ResourceNames and write registry-items JSON.", category: "TBD")]
+[WorkbenchPluginAttribute(name: "Export TBD Registry Items", description: "Scan all loaded addons and write registry-items + registry-compat JSON (T-150 universal export).", category: "TBD")]
 class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 {
-	protected static const string OUT_PATH = "$profile:TBD_RegistryItems.json";
+	protected static const string OUT_ITEMS = "$profile:TBD_RegistryItems.json";
+	protected static const string OUT_COMPAT = "$profile:TBD_RegistryCompat.json";
 	protected static const string MODPACK_ID = "00000000-0000-4000-a000-000000000001";
-	protected static const string ITEMS_VERSION = "1";
+	protected static const string ITEMS_VERSION = "2";
+	protected static const string COMPAT_VERSION = "1";
+	protected static const string TAG = "[TBD][RegistryExport]";
+	protected static const int FLUSH = 8000;
 
-	//------------------------------------------------------------------------------------------------
-	//! Curated source list. Paths discovered via enfusion-mcp asset_search / game_read.
-	protected ref array<ref TBD_RegistryItemRow> BuildCuratedRows()
-	{
-		array<ref TBD_RegistryItemRow> rows = {};
-
-		// ---- Characters (US Army, BLUFOR) -------------------------------------------------
-		// Full canonical ResourceNames (GUID via Workbench "Copy Resource Name" / vanilla POC).
-		AddRow(rows, "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et", "US Rifleman",           "NATO/US_Army/Rifleman",          "character");
-		AddRow(rows, "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et",       "US Grenadier",          "NATO/US_Army/Grenadier",         "character");
-		AddRow(rows, "{C9E4FEAF5AAC8D8C}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et",    "US Medic",              "NATO/US_Army/Medic",             "character");
-		AddRow(rows, "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et",       "US Automatic Rifleman", "NATO/US_Army/AutomaticRifleman", "character");
-		AddRow(rows, "{1623EA3AEFACA0E4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_MG.et",       "US Machine Gunner",     "NATO/US_Army/MachineGunner",     "character");
-		AddRow(rows, "{0B3167BB0FB68110}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_PL.et",       "US Platoon Leader",     "NATO/US_Army/Leadership",        "character");
-		AddRow(rows, "{27BF1FF235DD6036}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_LAT.et",      "US Light Anti-Tank",    "NATO/US_Army/AntiTank",          "character");
-		AddRow(rows, "{36CCDB4556ECDA06}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Engineer.et", "US Engineer",           "NATO/US_Army/Engineer",          "character");
-
-		// ---- Gear: primary weapons --------------------------------------------------------
-		AddRow(rows, "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",        "M16A2",        "NATO/Weapons/Primary", "gear_primary");
-		AddRow(rows, "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et",   "M16A2 + M203", "NATO/Weapons/Primary", "gear_primary");
-		AddRow(rows, "{D2B48DEBEF38D7D7}Prefabs/Weapons/MachineGuns/M249/MG_M249.et",      "M249 SAW",     "NATO/Weapons/Primary", "gear_primary");
-		AddRow(rows, "{D182DCDD72BF7E34}Prefabs/Weapons/MachineGuns/M60/MG_M60.et",        "M60",          "NATO/Weapons/Primary", "gear_primary");
-
-		// ---- Gear: uniforms ---------------------------------------------------------------
-		AddRow(rows, "{C7861F11D5334C0E}Prefabs/Characters/Uniforms/Jacket_US_BDU.et",          "BDU Jacket (Woodland)", "NATO/Uniform", "gear_uniform");
-		AddRow(rows, "{3CCA7A9BB4FD3197}Prefabs/Characters/Uniforms/Jacket_US_BDU_rolledup.et", "BDU Jacket (Rolled)",   "NATO/Uniform", "gear_uniform");
-		AddRow(rows, "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",           "BDU Pants (Woodland)",  "NATO/Uniform", "gear_uniform");
-
-		// ---- Gear: vests ------------------------------------------------------------------
-		AddRow(rows, "{4B57C11AA5161760}Prefabs/Characters/Vests/Vest_PASGT/Vest_PASGT.et",                   "PASGT Vest",            "NATO/Vest", "gear_vest");
-		AddRow(rows, "{2835A0EA3B79E63E}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_rifleman.et", "ALICE Vest (Rifleman)", "NATO/Vest", "gear_vest");
-		AddRow(rows, "{156DC7109CEE6F69}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_AR.et",       "ALICE Vest (Automatic Rifleman)", "NATO/Vest", "gear_vest");
-		AddRow(rows, "{725C5E1C75CADAF4}Prefabs/Characters/Vests/Vest_M69/Vest_M69_M81woodland.et",           "M69 Vest (M81 Woodland)", "NATO/Vest", "gear_vest");
-
-		// ---- Gear: helmets ----------------------------------------------------------------
-		AddRow(rows, "{FE5C49069C2499D9}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover.et",           "PASGT Helmet (Cover)",          "NATO/Helmet", "gear_helmet");
-		AddRow(rows, "{E685A8D337D36204}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover_w_goggles.et", "PASGT Helmet (Cover + Goggles)", "NATO/Helmet", "gear_helmet");
-
-		return rows;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected void AddRow(array<ref TBD_RegistryItemRow> rows, string path, string displayName, string category, string kind)
-	{
-		TBD_RegistryItemRow row = new TBD_RegistryItemRow();
-		row.path = path;
-		row.displayName = displayName;
-		row.category = category;
-		row.kind = kind;
-		rows.Insert(row);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Resolve a pak-relative path (or ResourceName) to canonical {GUID}path via the engine.
-	protected ResourceName ResolveCanonical(string pathOrName)
-	{
-		Resource res = Resource.Load(pathOrName);
-		if (!res || !res.IsValid())
-			return string.Empty;
-
-		BaseResourceObject obj = res.GetResource();
-		if (!obj)
-			return string.Empty;
-
-		BaseContainer ctr = obj.ToBaseContainer();
-		if (!ctr)
-			return string.Empty;
-
-		return ctr.GetResourceName();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected string JsonEscape(string s)
-	{
-		return TBD_ExportJson.Escape(s);
-	}
+	// ref: a weak FileHandle member is collected right after Open() returns (locals hold
+	// strong refs implicitly; members do not) — first Write then fails with wrote=0.
+	protected ref FileHandle m_Handle;
+	protected string m_sBuffer;
+	protected bool m_bWriteOk;
 
 	//------------------------------------------------------------------------------------------------
 	override void Run()
 	{
-		array<ref TBD_RegistryItemRow> rows = BuildCuratedRows();
+		int startMs = System.GetTickCount();
 
-		string body;
-		int written = 0;
-
-		foreach (TBD_RegistryItemRow row : rows)
+		TBD_RegistryScanner scanner = new TBD_RegistryScanner(TAG);
+		if (!scanner.ScanLoadedAddons())
 		{
-			ResourceName canonical = ResolveCanonical(row.path);
-			if (canonical.IsEmpty())
-			{
-				Print("[TBD][RegistryExport] FAILED to resolve " + row.path, LogLevel.ERROR);
-				continue;
-			}
+			Print(TAG + " FAIL: prefab enumeration returned nothing — no files written (check Workbench.SearchResources / loaded addons).", LogLevel.ERROR);
+			return;
+		}
 
-			Print(string.Format("[TBD][RegistryExport] %1  ->  %2", row.kind, canonical));
+		if (scanner.m_Items.IsEmpty())
+		{
+			Print(TAG + " FAIL: zero items classified — refusing to write an empty registry (schema minItems 1).", LogLevel.ERROR);
+			return;
+		}
 
+		scanner.DeriveEdges();
+
+		// Kind histogram AFTER DeriveEdges — it reclassifies turret-referenced weapons to
+		// vehicle_weapon ('other' count is a mandatory verify-log stat).
+		map<string, int> kindCounts = new map<string, int>();
+		foreach (TBD_RegistryScanItem it : scanner.m_Items)
+		{
+			int c;
+			if (!kindCounts.Find(it.kind, c))
+				c = 0;
+			kindCounts.Set(it.kind, c + 1);
+		}
+
+		if (!WriteItems(scanner))
+			return;
+
+		if (scanner.m_Edges.IsEmpty())
+		{
+			Print(TAG + " ERROR: zero compat edges derived — compat file NOT written (schema minItems 1). Check magazine wells / attachment types / vehicle weapon chains in the loaded set.", LogLevel.ERROR);
+		}
+		else if (!WriteCompat(scanner))
+		{
+			return;
+		}
+
+		int elapsed = System.GetTickCount() - startMs;
+		foreach (string kind, int kc : kindCounts)
+			Print(string.Format("%1 kind %2 = %3", TAG, kind, kc));
+		foreach (string et, int ec : scanner.m_EdgeHistogram)
+			Print(string.Format("%1 edge %2 = %3", TAG, et, ec));
+		Print(string.Format("%1 scan stats: seen=%2 skippedDeny=%3 noSignal=%4 failedLoad=%5 droppedEndpoints=%6",
+			TAG, scanner.m_iSeen, scanner.m_iSkippedDeny, scanner.m_iSkippedNoSignal, scanner.m_iFailedLoad, scanner.m_iDroppedEndpoints));
+		Print(string.Format("%1 DONE items=%2 edges=%3 addons=%4 elapsedMs=%5",
+			TAG, scanner.m_Items.Count(), scanner.m_Edges.Count(), scanner.m_Addons.Count(), elapsed));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool WriteItems(TBD_RegistryScanner scanner)
+	{
+		if (!Open(OUT_ITEMS))
+			return false;
+
+		Emit("{\n");
+		Emit("  \"registryItemsVersion\": \"" + ITEMS_VERSION + "\",\n");
+		Emit("  \"modpackId\": \"" + MODPACK_ID + "\",\n");
+		Emit("  \"generatedAt\": \"" + IsoNowUtc() + "\",\n");
+		EmitAddons(scanner);
+		Emit("  \"items\": [\n");
+
+		int written = 0;
+		foreach (TBD_RegistryScanItem it : scanner.m_Items)
+		{
 			if (written > 0)
-				body += ",\n";
-
-			body += "    {\n";
-			body += "      \"resource_name\": \"" + JsonEscape(canonical) + "\",\n";
-			body += "      \"display_name\": \"" + JsonEscape(row.displayName) + "\",\n";
-			body += "      \"category\": \"" + JsonEscape(row.category) + "\",\n";
-			body += "      \"kind\": \"" + JsonEscape(row.kind) + "\"\n";
-			body += "    }";
-
+				Emit(",\n");
+			Emit("    {\n");
+			Emit("      \"resource_name\": \"" + TBD_ExportJson.Escape(it.resourceName) + "\",\n");
+			Emit("      \"display_name\": \"" + TBD_ExportJson.Escape(it.displayName) + "\",\n");
+			Emit("      \"category\": \"" + TBD_ExportJson.Escape(it.category) + "\",\n");
+			Emit("      \"kind\": \"" + TBD_ExportJson.Escape(it.kind) + "\"\n");
+			Emit("    }");
 			written++;
 		}
 
-		// registry-items.schema.json requires items minItems 1 — an all-failed resolve run
-		// must fail loudly, not write a schema-invalid `"items": []` (T-130.4 F1-19).
-		if (written == 0)
+		Emit("\n  ]\n}\n");
+		if (!Close(OUT_ITEMS))
+			return false;
+
+		Print(string.Format("%1 Wrote %2 items to %3", TAG, written, OUT_ITEMS));
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected bool WriteCompat(TBD_RegistryScanner scanner)
+	{
+		if (!Open(OUT_COMPAT))
+			return false;
+
+		Emit("{\n");
+		Emit("  \"registryCompatVersion\": \"" + COMPAT_VERSION + "\",\n");
+		Emit("  \"modpackId\": \"" + MODPACK_ID + "\",\n");
+		Emit("  \"generatedAt\": \"" + IsoNowUtc() + "\",\n");
+		EmitAddons(scanner);
+		Emit("  \"edges\": [\n");
+
+		int written = 0;
+		foreach (TBD_RegistryEdge edge : scanner.m_Edges)
 		{
-			Print("[TBD][RegistryExport] FAIL: zero items resolved — refusing to write an empty registry (schema minItems 1). Check the pak set / curated paths.", LogLevel.ERROR);
-			return;
+			if (written > 0)
+				Emit(",\n");
+			Emit("    {\n");
+			Emit("      \"from_node\": \"" + TBD_ExportJson.Escape(edge.fromNode) + "\",\n");
+			Emit("      \"to_node\": \"" + TBD_ExportJson.Escape(edge.toNode) + "\",\n");
+			Emit("      \"edge_type\": \"" + TBD_ExportJson.Escape(edge.edgeType) + "\",\n");
+			Emit("      \"evidence\": \"" + TBD_ExportJson.Escape(edge.evidence) + "\"\n");
+			Emit("    }");
+			written++;
 		}
 
-		string json;
-		json += "{\n";
-		json += "  \"registryItemsVersion\": \"" + ITEMS_VERSION + "\",\n";
-		json += "  \"modpackId\": \"" + MODPACK_ID + "\",\n";
-		json += "  \"items\": [\n";
-		json += body + "\n";
-		json += "  ]\n";
-		json += "}\n";
+		Emit("\n  ]\n}\n");
+		if (!Close(OUT_COMPAT))
+			return false;
 
-		FileHandle handle = FileIO.OpenFile(OUT_PATH, FileMode.WRITE);
-		if (!handle)
+		Print(string.Format("%1 Wrote %2 edges to %3", TAG, written, OUT_COMPAT));
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void EmitAddons(TBD_RegistryScanner scanner)
+	{
+		Emit("  \"addons\": [\n");
+		int written = 0;
+		foreach (TBD_RegistryAddonInfo addon : scanner.m_Addons)
 		{
-			Print("[TBD][RegistryExport] Could not open " + OUT_PATH + " for write", LogLevel.ERROR);
-			return;
+			if (written > 0)
+				Emit(",\n");
+			string vanillaStr = "false";
+			if (addon.isVanilla)
+				vanillaStr = "true";
+			Emit("    { \"guid\": \"" + TBD_ExportJson.Escape(addon.guid)
+				+ "\", \"name\": \"" + TBD_ExportJson.Escape(addon.id)
+				+ "\", \"title\": \"" + TBD_ExportJson.Escape(addon.title)
+				+ "\", \"vanilla\": " + vanillaStr + " }");
+			written++;
 		}
+		Emit("\n  ],\n");
+	}
 
-		bool ok = TBD_ExportJson.Write(handle, json, "[TBD][RegistryExport]");
-		handle.Close();
-		if (!ok)
+	//------------------------------------------------------------------------------------------------
+	protected bool Open(string path)
+	{
+		m_sBuffer = string.Empty;
+		m_bWriteOk = true;
+		m_Handle = FileIO.OpenFile(path, FileMode.WRITE);
+		if (!m_Handle)
+		{
+			Print(TAG + " Could not open " + path + " for write", LogLevel.ERROR);
+			return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void Emit(string chunk)
+	{
+		if (!m_bWriteOk)
 			return;
+		m_sBuffer += chunk;
+		if (m_sBuffer.Length() >= FLUSH)
+		{
+			if (!TBD_ExportJson.Write(m_Handle, m_sBuffer, TAG))
+				m_bWriteOk = false;
+			m_sBuffer = string.Empty;
+		}
+	}
 
-		Print(string.Format("[TBD][RegistryExport] Wrote %1 items to %2", written, OUT_PATH));
+	//------------------------------------------------------------------------------------------------
+	protected bool Close(string path)
+	{
+		if (m_bWriteOk && !m_sBuffer.IsEmpty())
+		{
+			if (!TBD_ExportJson.Write(m_Handle, m_sBuffer, TAG))
+				m_bWriteOk = false;
+		}
+		m_sBuffer = string.Empty;
+		m_Handle.Close();
+
+		if (!m_bWriteOk)
+		{
+			FileIO.DeleteFile(path);
+			Print(TAG + " write failed — deleted partial " + path, LogLevel.ERROR);
+			return false;
+		}
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected string IsoNowUtc()
+	{
+		int y, mo, d, h, mi, s;
+		System.GetYearMonthDayUTC(y, mo, d);
+		System.GetHourMinuteSecondUTC(h, mi, s);
+		return string.Format("%1-%2-%3T%4:%5:%6Z", y, Pad2(mo), Pad2(d), Pad2(h), Pad2(mi), Pad2(s));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected string Pad2(int v)
+	{
+		if (v < 10)
+			return "0" + v.ToString();
+		return v.ToString();
 	}
 }

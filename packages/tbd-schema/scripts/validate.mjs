@@ -114,6 +114,11 @@ console.log("Registry compat:");
   const compatSample = readJSON(join(root, "registry", "registry-compat.sample.json"));
   check("registry-compat.sample.json", validateRegistryCompat, compatSample);
   checkEdgeRefs("registry-compat.sample.json vs registry-items.sample.json", itemsSample, compatSample);
+
+  const itemsWb = readJSON(join(root, "registry", "registry-items.workbench.json"));
+  const compatWb = readJSON(join(root, "registry", "registry-compat.workbench.json"));
+  check("registry-compat.workbench.json", validateRegistryCompat, compatWb);
+  checkEdgeRefs("registry-compat.workbench.json vs registry-items.workbench.json", itemsWb, compatWb);
 }
 
 console.log("Loadout export:");
