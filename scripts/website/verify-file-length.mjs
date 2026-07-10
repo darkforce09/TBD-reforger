@@ -33,11 +33,16 @@ function* walk(dir) {
   }
 }
 
+// Generated wasm-bindgen output (gitignored, rebuilt by `make wasm`) — SIZE gates
+// target hand-written code only.
+const GENERATED_PREFIXES = ["apps/website/frontend/src/wasm/pkg/"];
+
 let warns = 0;
 let fails = 0;
 for (const f of walk(join(root, "apps/website"))) {
   const rel = f.slice(root.length + 1);
   if (isSize2(rel)) continue;
+  if (GENERATED_PREFIXES.some((p) => rel.startsWith(p))) continue;
   const n = readFileSync(f, "utf8").split("\n").length;
   if (n > 1000) {
     if (!isSize3(rel)) { console.error(`SIZE-3: ${rel} is ${n} lines (>1000, not allowlisted)`); fails++; }

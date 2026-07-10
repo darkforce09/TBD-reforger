@@ -145,6 +145,12 @@ function parseWiredRoutes() {
 function checkGoRoutes() {
   const routeProblems = [];
   let checked = 0;
+  // The Go tree was retired at the T-145 Rust cutover; when it is absent, GO-7 has
+  // nothing to check (Rust @route tags are documentation-only — axum wires routes
+  // through typed handler fns, so a rename is a compile error, not doc rot).
+  if (!existsSync(join(HANDLERS_DIR, "handlers.go"))) {
+    return { routeProblems, checked, skipped: true };
+  }
   const wired = parseWiredRoutes();
   const tagRe = new RegExp(`@route\\s+(${HTTP_METHODS})\\s+(\\S+)`);
   for (const entry of readdirSync(HANDLERS_DIR)) {
@@ -211,8 +217,9 @@ if (tagProblems.length > 0) {
 }
 
 // GO-7: @route presence + method/path match against Register().
-const { routeProblems, checked: routesChecked } = checkGoRoutes();
-console.log(`Checked ${routesChecked} handler(s) against Register() routes (GO-7).`);
+const { routeProblems, checked: routesChecked, skipped } = checkGoRoutes();
+if (skipped) console.log("GO-7 skipped: Go handlers retired at the T-145 Rust cutover.");
+else console.log(`Checked ${routesChecked} handler(s) against Register() routes (GO-7).`);
 if (routeProblems.length > 0) {
   console.error(`\n${routeProblems.length} @route problem(s):`);
   for (const p of routeProblems) console.error(`  ${p}`);
