@@ -91,4 +91,4 @@ viewport clobbering `zoom_at`). Fix: `rebasePan(px)` — the in-flight pan is re
 post-zoom camera (fresh frozen viewport + start target + start px, queued rAF flush cancelled)
 inside the same synchronous wheel handler, so the gesture survives with exact math and the
 T-151.7.2 clobber cannot recur. `abortPan` removed (sole caller was the wheel handler).
-Verify: vitest 285/285, build+lint clean; operator live retest = the acceptance gate.
+Verify: vitest 285/285, build+lint clean. **Operator live retest 2026-07-10: PASS** ("works great") — wheel-zoom mid-pan continues panning; gate closed at ship time.
