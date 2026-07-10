@@ -13,13 +13,6 @@
       "branch": "ticket/T-068"
     },
     {
-      "id": "T-150",
-      "title": "Universal Enfusion registry + compat export",
-      "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md",
-      "branch": "main"
-    },
-    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",

@@ -60,8 +60,8 @@
 | T-065 | 650 | shipped | scale | Cluster LOD at extreme zoom | Supercluster index with pan-stable cache for 367k missions. |
 | T-066 | 660 | shipped | scale | Worker compile offload | Save/Export compile in Comlink worker via pickMapSnapshot. |
 | T-067 | 670 | shipped | scale | Spatial chunks | Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on. |
-| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1 shipped. Data lane resumed via **T-150** (universal items+compat export). Phase 2 UI/player equip after T-150 + T-068.9. Hub: t068_virtual_arsenal_program.md. |
-| T-150 | 685 | ready | eden | Universal Enfusion registry + compat export | Mod-agnostic Workbench scanner: items + compat edges for all loaded addons (no curated GUID lists). Vehicles/turrets/ammo + infantry gear. Supersedes T-068.1 allowlist; implements T-068.8 export. Spec: t150_universal_registry_export.md. Feeds T-068.9 / T-146 / T-070. |
+| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1 shipped. T-150 export shipped @ 9107bf4e. ACTIVE slice T-068.9 ingest+worker. Hub: t068_virtual_arsenal_program.md. |
+| T-150 | 685 | shipped | eden | Universal Enfusion registry + compat export | SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest. |
 | T-069 | 690 | deferred | eden | Markers on map | Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md. |
 | T-070 | 700 | idea | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
 | T-071 | 710 | queued | eden | ORBAT Manager modal | ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md. |
@@ -110,7 +110,7 @@
 | T-129 | 1290 | idea | infra | Building floor selector | Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.) |
 | T-130 | 1300 | shipped | platform | Fable audit — remainder (OPEN + PARTIAL) | Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md. |
 | T-144 | 1440 | shipped | infra | Arma 3 map architecture study | A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md. |
-| T-146 | 1470 | queued | eden | Asset Browser Data Wiring | Hook up the exported Enfusion JSON to the frontend Asset Browser so categorized vehicles and crates are draggable onto the map. Blocked on T-150 universal export. |
+| T-146 | 1470 | queued | eden | Asset Browser Data Wiring | Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred. |
 | T-147 | 1480 | queued | eden | Simplified Squad Connections | Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data. |
 | T-148 | 1490 | queued | eden | Shift+Drag Rotation Tool | Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction. |
 | T-149 | 1490 | idea | eden | Forest Mass Polygon Smoothing | Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography. |

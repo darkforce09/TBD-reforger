@@ -120,7 +120,6 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
-- **T-150** — Universal Enfusion registry + compat export (`ready`)
 - **T-071** — ORBAT Manager modal (`queued`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
@@ -129,6 +128,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 - **T-090** — Map visualization program (`ready`)
 - **T-114** — Slot roster enforcement + production slot picker (`queued`)
 - **T-115** — Capture win condition (`queued`)
+- **T-116** — Results POST to backend (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
@@ -264,11 +264,13 @@ list (next slice when filed).
   operator-pending. Verify: [`.ai/artifacts/t151_0_verify_log.md`](.ai/artifacts/t151_0_verify_log.md).
   Spec: [`t151_0_wasm_merge_dual_mount.md`](docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md).
 
-### T-068 — Virtual Arsenal (data lane ACTIVE via T-150)
+### T-068 — Virtual Arsenal (ACTIVE T-068.9)
 
 See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
-· **ACTIVE:** **T-150** universal registry + compat export — [`t150_universal_registry_export.md`](docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md)
-· handoff [`.ai/artifacts/t150_claude_code_handoff.md`](.ai/artifacts/t150_claude_code_handoff.md).
+· **T-150 shipped** @ `9107bf4e` (1,880 items / 4,012 edges) · verify
+[`.ai/artifacts/t150_verify_log.md`](.ai/artifacts/t150_verify_log.md).
+**ACTIVE:** **T-068.9** ingest + worker — [`t068_9_registry_worker_ingest.md`](docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md)
+· handoff [`.ai/artifacts/t068_9_claude_code_handoff.md`](.ai/artifacts/t068_9_claude_code_handoff.md).
 Markers (**T-069**) deferred.
 
 **Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). **Boundary:** web loadout-export → profile JSON → mod dresses a **non-player test NPC** @ game-mode spawn — **not** the joining human player until **T-068.12** (compiler data @ **T-068.11**).
@@ -712,12 +714,12 @@ Markers (**T-069**) deferred.
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Next (after T-151 operator sign-off / polish):**
-- **T-150** — universal registry + compat export (`ready`) — [`t150_universal_registry_export.md`](docs/specs/Mission_Creator_Architecture/t150_universal_registry_export.md)
-- **T-068.9+** — ingest / Forge / player loadout
-- **T-070** — vehicles placeable (after T-150 data)
-- **T-069** — markers (`deferred` — not critical path)
-- **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
+**Next (arsenal / editor data):**
+- **T-068.9** — registry ingest + worker (`ready`) — [`t068_9_registry_worker_ingest.md`](docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md)
+- **T-146** — Asset Browser wiring (queued; unblocked by T-150)
+- **T-070** — vehicles placeable
+- **T-069** — markers (`deferred`)
+- **T-110** — terrain base + sparse deltas ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
 **Map / ORBAT lane (parallel):**
 - **T-151** — wgpu engine · W0–W11 remediations complete · residual operator sign-off — hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)

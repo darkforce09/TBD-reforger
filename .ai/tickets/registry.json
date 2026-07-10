@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 shipped. Data lane resumed via **T-150** (universal items+compat export). Phase 2 UI/player equip after T-150 + T-068.9. Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Phase 1 shipped. T-150 export shipped @ 9107bf4e. ACTIVE slice T-068.9 ingest+worker. Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1280,13 +1280,18 @@
             "shared"
           ],
           "executor": "claude-code",
-          "notes": "Implemented by T-150 universal export (compat envelope). Mark shipped when T-150 tags."
+          "status": "shipped",
+          "shipped_at": "9107bf4e",
+          "notes": "Superseded/implemented by T-150 universal export (compat envelope + items). Tag T-150."
         },
         "T-068.9": {
           "targets": [
             "website"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md",
+          "notes": "Ingest T-150 envelopes + registry worker canEquip/canAttach. Handoff: .ai/artifacts/t068_9_claude_code_handoff.md"
         },
         "T-068.10": {
           "targets": [
@@ -3689,10 +3694,11 @@
     {
       "id": "T-150",
       "order": 685,
-      "status": "ready",
+      "status": "shipped",
+      "shipped_at": "9107bf4e",
       "program": "eden",
       "title": "Universal Enfusion registry + compat export",
-      "summary": "Mod-agnostic Workbench scanner: items + compat edges for all loaded addons (no curated GUID lists). Vehicles/turrets/ammo + infantry gear. Supersedes T-068.1 allowlist; implements T-068.8 export. Spec: t150_universal_registry_export.md. Feeds T-068.9 / T-146 / T-070.",
+      "summary": "SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest.",
       "surfaces": [
         "MOD",
         "REG",
@@ -3726,7 +3732,7 @@
       "status": "queued",
       "program": "eden",
       "title": "Asset Browser Data Wiring",
-      "summary": "Hook up the exported Enfusion JSON to the frontend Asset Browser so categorized vehicles and crates are draggable onto the map. Blocked on T-150 universal export.",
+      "summary": "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
       "surfaces": [
         "RIGHT",
         "MAP"

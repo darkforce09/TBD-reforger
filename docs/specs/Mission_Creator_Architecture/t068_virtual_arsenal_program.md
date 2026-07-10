@@ -1,10 +1,9 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **Phase 1 shipped** @ 2026-06-27. **Data lane ACTIVE via T-150** (universal
-items + compat export). Phase 2 UI / player equip still after **T-150 → T-068.9**.  
-**Map gate:** largely cleared (T-091/T-092/T-151). ORBAT (**T-071**) not required to start
-**T-150**. Hub resume: [`t150_universal_registry_export.md`](t150_universal_registry_export.md).  
-**Git tags:** **T-068** (program BUILD) · **T-068.2** @ `4c609fe` · **T-068.3** @ `da78452` · **T-068.4** @ `a85f16b` · **T-068.5** @ `21ec91e` · **T-068.5.1** @ `b233b11`. Full ticket ships @ **T-068.14** (Phase 2 E2E); Phase 1 gate was **T-068.6**.  
+**Status:** **Phase 1 shipped** @ 2026-06-27. **T-150 shipped** @ `9107bf4e` (1,880 items /
+4,012 edges). **ACTIVE:** **T-068.9** ingest + registry worker.  
+**Map gate:** largely cleared (T-091/T-092/T-151).  
+**Git tags:** **T-068** · **T-068.2**…**T-068.5.1** · **T-150** @ `9107bf4e`. Full ticket ships @ **T-068.14**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
@@ -13,22 +12,25 @@ items + compat export). Phase 2 UI / player equip still after **T-150 → T-068.
 
 ## Resume here (2026-07-10)
 
-**Phase 1 is done.** **Next code:** **T-150** — mod-agnostic registry + compat Workbench
-export (replaces T-068.1 curated list; implements T-068.8 substance).
+**T-150 done.** **Next code:** **T-068.9** — Postgres ingest of items+compat + Comlink worker
+(`canEquip` / `canAttach`).
 
 ```text
-T-150 (universal items + compat export)   ← ACTIVE
-  → T-068.9 (ingest + worker canEquip)
+T-150 (universal items + compat export)   ✓ @ 9107bf4e
+  → T-068.9 (ingest + worker canEquip)   ← ACTIVE
   → T-146 / T-070 (browser + vehicles) · T-068.10 Forge
   → T-071 ORBAT · T-068.12–.14 player path
 ```
 
 | Gate | Ticket | Spec |
 |------|--------|------|
-| Universal export | **T-150** | [`t150_universal_registry_export.md`](t150_universal_registry_export.md) |
+| Universal export | **T-150** ✓ | [`t150_universal_registry_export.md`](t150_universal_registry_export.md) |
 | Ingest + worker | **T-068.9** | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) |
 | Smart Forge UI | **T-068.10** | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) |
 | Mod slot picker | **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
+
+**T-150 OPEN (named):** `ammo_in_mag` (AmmoConfig `.conf`, not prefab); vehicle shell
+`ammo_in_vehicle_weapon` unused on vanilla (boxes covered by `mag_in_vehicle_weapon`).
 
 **Do not** `./scripts/ticket done T-068` until **T-068.14** (Phase 2 E2E — **human player** loadout + slot picker). **Player spawn loadout** = **T-068.11** + **T-068.12**. **Production LOBBY slot picker** = **T-068.13**; roster sync = **T-114** (after **T-068.13** + **T-118**).
 
@@ -103,9 +105,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.13 | claude-code | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) | §S1–S5 + slot picker screenshot |
 | T-068.14 | human | [`t068_14_phase2_e2e_gate.md`](t068_14_phase2_e2e_gate.md) | P1–P8 sign-off → `ticket done T-068` |
 
-**Active slice:** **T-150** (universal registry + compat export) — then **T-068.9**.
-T-068.7 docs taxonomy is absorbed into the T-150 locked decisions; T-068.8 export =
-T-150.
+**Active slice:** **T-068.9** (ingest + worker). **T-150** / **T-068.8** shipped @ `9107bf4e`.
 
 **Shipped slices (Phase 1):**
 

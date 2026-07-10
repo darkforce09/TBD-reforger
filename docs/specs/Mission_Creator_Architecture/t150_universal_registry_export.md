@@ -1,10 +1,9 @@
 # T-150 — Universal Enfusion registry + compat export (mod-agnostic)
 
-**Status:** **ready** · **Program:** Eden / Virtual Arsenal data lane · **Executor:** claude-code
-(enfusion-mcp **required**) · **Worktree:** repo root `main` (absolute:
-`/var/home/Samuel/Projects/TBD-Reforger`) · **Baseline:** `main` @ tip after T-151 merge ·
-**Supersedes curated path:** T-068.1 `TBD_RegistryItemsExportPlugin.c` hardcoded row list ·
-**Feeds:** T-068.9 ingest · T-146 Asset Browser · T-068.10 smart Forge · T-070 vehicles.
+**Status:** **shipped** @ `9107bf4e` (tag **T-150**; schema commit `e358777a`) · **Program:**
+Eden / Virtual Arsenal data lane · **Executor:** claude-code · **Verify:**
+[`.ai/artifacts/t150_verify_log.md`](../../../.ai/artifacts/t150_verify_log.md) · **Next:**
+**T-068.9** ingest + worker.
 
 ## In one sentence
 

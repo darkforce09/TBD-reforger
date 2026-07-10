@@ -8,8 +8,7 @@
 
 ## Ready
 
-- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. Data lane resumed via **T-150** (universal items+compat export). Phase 2 UI/player equip after T-150 + T-068.9. Hub: t068_virtual_arsenal_program.md.
-- **T-150** (685) — Universal Enfusion registry + compat export [ready] — Mod-agnostic Workbench scanner: items + compat edges for all loaded addons (no curated GUID lists). Vehicles/turrets/ammo + infantry gear. Supersedes T-068.1 allowlist; implements T-068.8 export. Spec: t150_universal_registry_export.md. Feeds T-068.9 / T-146 / T-070.
+- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Phase 1 shipped. T-150 export shipped @ 9107bf4e. ACTIVE slice T-068.9 ingest+worker. Hub: t068_virtual_arsenal_program.md.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
 
@@ -32,5 +31,4 @@
 flowchart LR
   T067[T-067] --> T068[T-068]
   T092[T-092] --> T071[T-071]
-  T068[T-068] --> T150[T-150]
 ```
