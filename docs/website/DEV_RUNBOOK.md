@@ -84,22 +84,33 @@ make db-up && make seed
 
 Dev data is reseedable; mock missions are optional (see below).
 
-## Registry catalog (T-068)
+## Registry catalog (T-068 / T-150 / T-068.9)
 
-`make seed` applies `internal/db/seeds/registry_dev.sql` (21 vanilla rows, modpack
-`00000000-0000-4000-a000-000000000001`). After a Workbench export, upsert the flat JSON:
+**Dev seed** (`make seed` → `registry_dev.sql`) is the thin 21-row smoke set.
+
+**Full catalog** (Workbench universal export): **1,880 items** + **4,012 compat edges**.
 
 ```bash
-cd apps/website
-export PATH="$HOME/.local/go/bin:$PATH"
-go run ./cmd/import-registry-items \
-  --file ../../packages/tbd-schema/registry/registry-items.workbench.json
+# From repo root — upserts both committed envelopes into the dev DB (idempotent)
+make registry-import
+
+# Or explicit paths / prune:
+# cargo run --bin import-registry -- \
+#   --items packages/tbd-schema/registry/registry-items.workbench.json \
+#   --compat packages/tbd-schema/registry/registry-compat.workbench.json \
+#   [--modpack <uuid>] [--prune]
 ```
 
-Run from `apps/website` (module root). Paths to `packages/` are relative to that cwd.
 Restart `make api` after handler changes — `go run` does not hot-reload.
 
-`GET /api/v1/registry` requires mission_maker+ JWT; supports weak ETag + `If-None-Match` → 304.
+| Route | Auth | Notes |
+|-------|------|--------|
+| `GET /api/v1/registry` | mission_maker+ JWT | Items; weak ETag / 304 |
+| `GET /api/v1/registry/compat` | mission_maker+ JWT | Edges; `?edge_type=` filter; ETag |
+
+Frontend worker (T-068.9): `initRegistryCompat` / `canAttach` / `canEquip` / `itemsFor` in
+`apps/website/frontend/src/features/mission-creator/registry/registryCompatClient.ts`
+(IDB-cached). Smart Arsenal UI = **T-068.10**.
 
 **Mod compiled mission (T-092.2 @ `a73224f2`):** game server fetches the mod-native document (not the export wrapper):
 

@@ -264,13 +264,13 @@ list (next slice when filed).
   operator-pending. Verify: [`.ai/artifacts/t151_0_verify_log.md`](.ai/artifacts/t151_0_verify_log.md).
   Spec: [`t151_0_wasm_merge_dual_mount.md`](docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md).
 
-### T-068 — Virtual Arsenal (ACTIVE T-068.9)
+### T-068 — Virtual Arsenal (ACTIVE T-068.10)
 
 See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
-· **T-150 shipped** @ `9107bf4e` (1,880 items / 4,012 edges) · verify
-[`.ai/artifacts/t150_verify_log.md`](.ai/artifacts/t150_verify_log.md).
-**ACTIVE:** **T-068.9** ingest + worker — [`t068_9_registry_worker_ingest.md`](docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md)
-· handoff [`.ai/artifacts/t068_9_claude_code_handoff.md`](.ai/artifacts/t068_9_claude_code_handoff.md).
+· **T-150** @ `9107bf4e` · **T-068.9** @ `d41418e5` (`make registry-import` → 1,880 / 4,012) ·
+verify [`.ai/artifacts/t068_9_verify_log.md`](.ai/artifacts/t068_9_verify_log.md).
+**ACTIVE:** **T-068.10** Smart Forge — [`t068_10_smart_forge_ui.md`](docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md)
+· handoff [`.ai/artifacts/t068_10_claude_code_handoff.md`](.ai/artifacts/t068_10_claude_code_handoff.md).
 Markers (**T-069**) deferred.
 
 **Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). **Boundary:** web loadout-export → profile JSON → mod dresses a **non-player test NPC** @ game-mode spawn — **not** the joining human player until **T-068.12** (compiler data @ **T-068.11**).
@@ -715,8 +715,8 @@ Markers (**T-069**) deferred.
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
 **Next (arsenal / editor data):**
-- **T-068.9** — registry ingest + worker (`ready`) — [`t068_9_registry_worker_ingest.md`](docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md)
-- **T-146** — Asset Browser wiring (queued; unblocked by T-150)
+- **T-068.10** — Smart Forge UI (`ready`) — [`t068_10_smart_forge_ui.md`](docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md)
+- **T-146** — Asset Browser wiring (queued; full catalog via T-068.9 API)
 - **T-070** — vehicles placeable
 - **T-069** — markers (`deferred`)
 - **T-110** — terrain base + sparse deltas ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))

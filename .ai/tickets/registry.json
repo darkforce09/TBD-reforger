@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 shipped. T-150 export shipped @ 9107bf4e. ACTIVE slice T-068.9 ingest+worker. Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Phase 1 + T-150 + T-068.9 shipped (d41418e5). ACTIVE T-068.10 Smart Forge UI. Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1289,15 +1289,19 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "d41418e5",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_9_registry_worker_ingest.md",
-          "notes": "Ingest T-150 envelopes + registry worker canEquip/canAttach. Handoff: .ai/artifacts/t068_9_claude_code_handoff.md"
+          "notes": "1,880 items / 4,012 edges in DB; GET /registry/compat; worker canEquip/canAttach. make registry-import. Verify: .ai/artifacts/t068_9_verify_log.md"
         },
         "T-068.10": {
           "targets": [
             "website"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md",
+          "notes": "Wire Arsenal to registryCompatClient. Handoff: .ai/artifacts/t068_10_claude_code_handoff.md"
         },
         "T-068.11": {
           "targets": [

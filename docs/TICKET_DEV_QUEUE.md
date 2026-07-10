@@ -11,7 +11,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
 - **Branch:** `ticket/T-068`
 - **Targets:** website, shared, root, mod
-- **Summary:** Phase 1 shipped. T-150 export shipped @ 9107bf4e. ACTIVE slice T-068.9 ingest+worker. Hub: t068_virtual_arsenal_program.md.
+- **Summary:** Phase 1 + T-150 + T-068.9 shipped (d41418e5). ACTIVE T-068.10 Smart Forge UI. Hub: t068_virtual_arsenal_program.md.
 
 ## T-090 — Map visualization program
 
