@@ -55,3 +55,51 @@ export interface RegistryResponse {
   modpack_id: string
   modpack_version: string
 }
+
+/**
+ * A compat edge family (T-150 v1 vocabulary). The graph code treats edge types
+ * as plain strings so future families flow through untouched; this union is
+ * the current schema enum for call-site safety.
+ *
+ * @contract registry-compat.schema.json#/$defs/edge/properties/edge_type
+ */
+export type RegistryCompatEdgeType =
+  | 'mag_in_weapon'
+  | 'ammo_in_mag'
+  | 'optic_on_weapon'
+  | 'attachment_on_weapon'
+  | 'mag_in_vehicle_weapon'
+  | 'ammo_in_vehicle_weapon'
+  | 'character_default_loadout'
+
+/**
+ * One directed compatibility edge: `from_node` goes in/on `to_node`.
+ * `evidence` is omitted by the API when empty (NULL ≡ '' ≡ absent).
+ *
+ * @model models.RegistryCompatEdge
+ * @contract registry-compat.schema.json#/$defs/edge
+ */
+export interface RegistryCompatEdge {
+  id: string
+  modpack_id: string
+  from_node: string
+  to_node: string
+  edge_type: RegistryCompatEdgeType
+  evidence?: string | null
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * The compat graph response: edge rows plus the modpack id/version and a weak
+ * ETag (`?edge_type=` filtered responses carry a distinct ETag).
+ *
+ * @contract registry-compat.schema.json#/
+ * @route GET /api/v1/registry/compat
+ */
+export interface RegistryCompatResponse {
+  data: RegistryCompatEdge[]
+  etag: string
+  modpack_id: string
+  modpack_version: string
+}
