@@ -14,6 +14,7 @@
 pub mod compute_cull;
 pub mod damage;
 pub mod density_heat;
+pub mod draw_order;
 pub mod lanes;
 pub mod scene;
 

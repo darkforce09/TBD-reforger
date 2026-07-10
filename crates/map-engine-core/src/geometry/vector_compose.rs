@@ -237,45 +237,14 @@ pub fn compose_forest_mesh(
     (fill, outline)
 }
 
-/// Axis-aligned marquee rect → one quad (two tris).
-#[must_use]
-pub fn compose_marquee_mesh(min_x: f64, min_y: f64, max_x: f64, max_y: f64) -> PolyMeshGpu {
-    // Aegis selection tint (semi-transparent primary).
-    let c = u8_rgba_to_f32([173, 198, 255, 60], 1.0);
-    let positions = [
-        min_x as f32,
-        min_y as f32,
-        max_x as f32,
-        min_y as f32,
-        max_x as f32,
-        max_y as f32,
-        min_x as f32,
-        max_y as f32,
-    ];
-    let mut colors = Vec::with_capacity(16);
-    for _ in 0..4 {
-        colors.extend_from_slice(&c);
-    }
-    PolyMeshGpu {
-        positions: positions.to_vec(),
-        colors,
-        indices: vec![0, 1, 2, 0, 2, 3],
-        polygon_count: 1,
-    }
-}
+// T-151.11.1 (audit X-04): `compose_marquee_mesh` deleted — it was a dead twin of the
+// engine's `upload_marquee` (the single owner of marquee geometry + the Deck oracle colors).
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::dem::DemVectorGrid;
     use crate::geometry::sea_band::build_sea_band_geometry;
-
-    #[test]
-    fn marquee_is_two_tris() {
-        let m = compose_marquee_mesh(0.0, 0.0, 10.0, 20.0);
-        assert_eq!(m.indices.len(), 6);
-        assert_eq!(m.polygon_count, 1);
-    }
 
     #[test]
     fn roads_gated_by_zoom() {

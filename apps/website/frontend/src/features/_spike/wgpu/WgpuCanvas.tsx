@@ -90,6 +90,7 @@ export default function WgpuCanvas() {
           worldBuilding: () => created.world_building_self_check() as Promise<string>,
           seaBand: () => created.sea_band_self_check() as Promise<string>,
           roadCenterline: () => created.road_centerline_self_check() as Promise<string>,
+          marquee: () => created.marquee_self_check() as Promise<string>, // T-151.11.1 P-02
         }
         setBackend(created.backend())
         applySize()

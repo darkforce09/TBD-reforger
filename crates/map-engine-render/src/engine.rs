@@ -146,89 +146,10 @@ impl BasemapMode {
     }
 }
 
-/// A batch's role — governs the fixed W1 draw order (basemap → hillshade → grid) via
-/// [`lane_order`] and lets the editor find/replace a lane in place on LOD / opacity change.
-/// `Stress`/`Calibration` are the T-151.0 spike batches (never mixed with the editor lanes).
-#[derive(Clone, Copy, PartialEq)]
-enum LaneRole {
-    Stress,
-    Calibration,
-    Satellite,
-    /// W4 sea underlay (after basemap, before hillshade).
-    Sea,
-    Hillshade,
-    /// W4 land-cover hulls.
-    Landcover,
-    Contours,
-    RoadsCasing,
-    Roads,
-    /// W3 world-building OBB fills (`world-buildings`).
-    WorldBuildings,
-    /// W3 world-building outline casing (`world-buildings-outline`).
-    WorldBuildingsOutline,
-    ForestFill,
-    ForestOutline,
-    /// T-151.8 exact-count density heatmap (tree ladder over-budget rung).
-    DensityHeat,
-    /// W5 tree + vegetation glyphs.
-    WorldTrees,
-    /// W5 prop + rockLarge glyphs.
-    WorldProps,
-    /// W5 building badges.
-    WorldBadges,
-    /// W6 mission slot rings.
-    Slots,
-    /// W6 drag-preview overlay (T-061).
-    SlotDrag,
-    /// W6 cluster discs (T-065).
-    Clusters,
-    Grid,
-    /// Optional selection marquee (on top of grid).
-    Marquee,
-}
-
-/// Draw-order key (T-151.6 L2): … badges → slots → slot-drag → clusters → grid → marquee.
-/// Spike batches sort first, never interleaved.
-fn lane_order(role: LaneRole) -> u8 {
-    match role {
-        LaneRole::Stress | LaneRole::Calibration => 0,
-        LaneRole::Satellite => 1,
-        LaneRole::Sea => 2,
-        LaneRole::Hillshade => 3,
-        LaneRole::Landcover => 4,
-        LaneRole::Contours => 5,
-        LaneRole::RoadsCasing => 6,
-        LaneRole::Roads => 7,
-        LaneRole::WorldBuildings => 8,
-        LaneRole::WorldBuildingsOutline => 9,
-        LaneRole::ForestFill => 10,
-        LaneRole::ForestOutline => 11,
-        LaneRole::DensityHeat => 12,
-        LaneRole::WorldTrees => 13,
-        LaneRole::WorldProps => 14,
-        LaneRole::WorldBadges => 15,
-        LaneRole::Slots => 16,
-        LaneRole::SlotDrag => 17,
-        LaneRole::Clusters => 18,
-        LaneRole::Grid => 19,
-        LaneRole::Marquee => 20,
-    }
-}
-
-/// Map a public role u32 (upload API) → [`LaneRole`]. Returns `None` for unknown ids.
-fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
-    Some(match role {
-        0 => LaneRole::Sea,
-        1 => LaneRole::Landcover,
-        2 => LaneRole::Contours,
-        3 => LaneRole::RoadsCasing,
-        4 => LaneRole::Roads,
-        5 => LaneRole::ForestFill,
-        6 => LaneRole::ForestOutline,
-        7 => LaneRole::Marquee,
-        _ => return None,
-    })
-}
+// T-151.11.1: `LaneRole` / `lane_order` / `lane_role_from_u32` moved to the pure
+// `crate::draw_order` module so the ordering contract is natively unit-tested
+// (this module is wasm32-gated — see lib.rs).
+use crate::draw_order::{LaneRole, lane_order, lane_role_from_u32};
 
 /// A textured-quad lane (basemap or hillshade): one GPU texture (mip chain for unified, single
 /// level for pyramid/hillshade) sampled trilinearly over a 1-instance world-rect quad; `color`
@@ -799,10 +720,21 @@ pub(crate) fn create_building_pipeline(
     })
 }
 
+/// Compute-culled tree draw handles for **in-order** emission inside [`draw_batches`]
+/// (T-151.11.1 / audit X-01): the `draw_indirect` fires at the `WorldTrees` order slot, not
+/// after the whole list — trees must never paint over slots/grid/marquee.
+struct IndirectTrees<'a> {
+    pipeline: &'a wgpu::RenderPipeline,
+    atlas_bind: &'a wgpu::BindGroup,
+    instances: &'a wgpu::Buffer,
+    indirect: &'a wgpu::Buffer,
+}
+
 /// Draw the ordered batch list into `pass` (shared by the live `render()` and the offscreen
 /// readback path — T-151.1 L1/L10). Group 0 (the camera mvp) is compatible across all pipeline
 /// layouts, so it is bound once. The pipelines are passed in because the live path uses the
 /// surface-format pipelines and the readback path rebuilds them at `Rgba8Unorm`.
+/// `indirect_trees` (WebGPU compute-cull path) is emitted exactly once, in `WorldTrees` order.
 #[allow(clippy::too_many_arguments)]
 fn draw_batches<'a>(
     batches: &'a [Batch],
@@ -818,11 +750,32 @@ fn draw_batches<'a>(
     glyph_atlas_bind: Option<&'a wgpu::BindGroup>,
     slot_base_bind: Option<&'a wgpu::BindGroup>,
     slot_drag_bind: Option<&'a wgpu::BindGroup>,
+    indirect_trees: Option<IndirectTrees<'a>>,
 ) {
+    let mut trees_emitted = false;
+    let emit_trees = |pass: &mut wgpu::RenderPass<'a>, emitted: &mut bool| {
+        if *emitted {
+            return;
+        }
+        *emitted = true;
+        if let Some(t) = &indirect_trees {
+            pass.set_pipeline(t.pipeline);
+            pass.set_bind_group(0, bind_group, &[]);
+            pass.set_bind_group(2, t.atlas_bind, &[]);
+            pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+            pass.set_vertex_buffer(1, t.instances.slice(..));
+            pass.draw_indirect(t.indirect, 0);
+        }
+    };
     // group 0 (camera mvp) is set after each `set_pipeline` — its layout is identical across all
     // pipelines, but binding it per-batch (pipeline → groups → buffers → draw) is the always-valid
     // order on both the WebGPU and WebGL2 backends.
     for batch in batches {
+        // The compute-culled tree lane has no Batch entry (upload removes it on the compute
+        // path); slot its indirect draw in the moment we pass the WorldTrees order position.
+        if lane_order(batch.role) > lane_order(LaneRole::WorldTrees) {
+            emit_trees(pass, &mut trees_emitted);
+        }
         if !batch.visible {
             continue;
         }
@@ -880,6 +833,8 @@ fn draw_batches<'a>(
             }
         }
     }
+    // No batch ordered after WorldTrees (or an empty list): emit the culled trees at the tail.
+    emit_trees(pass, &mut trees_emitted);
 }
 
 /// The render engine — owns the GPU device, the canvas surface, the camera, and the
@@ -1534,6 +1489,27 @@ impl RenderEngine {
             let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
             let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
             let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
+            // T-151.11.1 (audit X-01): the compute-culled tree draw is emitted INSIDE
+            // draw_batches at the WorldTrees order slot — never on top of slots/grid/marquee.
+            let indirect_trees = if do_compute_trees {
+                match (
+                    self.icon_cull.as_ref(),
+                    self.icon_pipeline_storage32.as_ref(),
+                    self.glyph_atlas.as_ref(),
+                ) {
+                    (Some(cull), Some(pipe32), Some(atlas)) => {
+                        cull.dst_buf.as_ref().map(|dst| IndirectTrees {
+                            pipeline: pipe32,
+                            atlas_bind: &atlas.bind_group,
+                            instances: dst,
+                            indirect: &cull.indirect_buf,
+                        })
+                    }
+                    _ => None,
+                }
+            } else {
+                None
+            };
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -1548,24 +1524,8 @@ impl RenderEngine {
                 glyph_bg,
                 slot_base,
                 slot_drag,
+                indirect_trees,
             );
-            // T-151.8.1: draw_indirect compacted trees (after forest, before props — same order
-            // as LaneRole::WorldTrees would have occupied in the batch list).
-            if do_compute_trees
-                && let (Some(cull), Some(pipe32), Some(atlas)) = (
-                    self.icon_cull.as_ref(),
-                    self.icon_pipeline_storage32.as_ref(),
-                    self.glyph_atlas.as_ref(),
-                )
-                && let Some(dst) = cull.dst_buf.as_ref()
-            {
-                pass.set_pipeline(pipe32);
-                pass.set_bind_group(0, &self.bind_group, &[]);
-                pass.set_bind_group(2, &atlas.bind_group, &[]);
-                pass.set_vertex_buffer(0, self.unit_quad_buf.slice(..));
-                pass.set_vertex_buffer(1, dst.slice(..));
-                pass.draw_indirect(&cull.indirect_buf, 0);
-            }
         }
         if take_timing && let Some(t) = &self.timer {
             encoder.resolve_query_set(&t.query_set, 0..2, &t.resolve_buf, 0);
@@ -2070,6 +2030,8 @@ impl RenderEngine {
             let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
             let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
             let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
+            // Readback path runs no compute encode; culled trees are absent here on WebGPU
+            // (pre-11.1 behavior, unchanged) — probes never assert the tree lane.
             draw_batches(
                 &self.batches,
                 &mut pass,
@@ -2084,6 +2046,7 @@ impl RenderEngine {
                 glyph_bg,
                 slot_base,
                 slot_drag,
+                None,
             );
         }
         encoder.copy_texture_to_buffer(
@@ -3504,7 +3467,9 @@ impl RenderEngine {
         );
     }
 
-    /// Upload a world-meter axis-aligned marquee rect (T-151.4 L12).
+    /// Upload a world-meter axis-aligned marquee rect (T-151.4 L12; T-151.11.1 Deck parity —
+    /// fill `[173,198,255,40]` + 1 px border `[173,198,255,200]`, the exact
+    /// `useSelectionLayer.ts` oracle values; audit P-02).
     pub fn upload_marquee(
         &mut self,
         min_x: f64,
@@ -3515,10 +3480,11 @@ impl RenderEngine {
     ) {
         if !visible || min_x >= max_x || min_y >= max_y {
             self.remove_lane(LaneRole::Marquee);
+            self.remove_lane(LaneRole::MarqueeOutline);
             return;
         }
-        // Aegis primary tint α≈0.24
-        let c = [173.0 / 255.0, 198.0 / 255.0, 1.0, 60.0 / 255.0];
+        // Deck FILL: Aegis primary at α 40/255.
+        let c = [173.0 / 255.0, 198.0 / 255.0, 1.0, 40.0 / 255.0];
         let corners = [
             [min_x, min_y],
             [max_x, min_y],
@@ -3561,12 +3527,55 @@ impl RenderEngine {
                 }),
             },
         );
+        // Deck LINE: 1 px hairline ring, α 200/255 (T-151.11.1 / P-02).
+        let oc = [173.0 / 255.0, 198.0 / 255.0, 1.0, 200.0 / 255.0];
+        let ring = [
+            [min_x, min_y],
+            [max_x, min_y],
+            [max_x, max_y],
+            [min_x, max_y],
+        ];
+        let mut outline = Vec::with_capacity(8);
+        for e in 0..4 {
+            let a = ring[e];
+            let b = ring[(e + 1) % 4];
+            outline.push(lanes::LineVertex {
+                pos: [(a[0] - ANCHOR[0]) as f32, (a[1] - ANCHOR[1]) as f32],
+                color: oc,
+            });
+            outline.push(lanes::LineVertex {
+                pos: [(b[0] - ANCHOR[0]) as f32, (b[1] - ANCHOR[1]) as f32],
+                color: oc,
+            });
+        }
+        let obuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marquee-outline"),
+                contents: bytemuck::cast_slice(&outline),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        self.upsert_lane(
+            LaneRole::MarqueeOutline,
+            Batch {
+                role: LaneRole::MarqueeOutline,
+                visible: true,
+                payload: BatchPayload::Lines(LineLane {
+                    verts: obuf,
+                    count: 8,
+                }),
+            },
+        );
     }
 
-    /// Drop a W4 vector lane by role id (see `upload_polygon_mesh`).
+    /// Drop a W4 vector lane by role id (see `upload_polygon_mesh`). Role 7 (marquee) drops the
+    /// border lane with the fill.
     pub fn clear_vector_lane(&mut self, role: u32) {
         if let Some(r) = lane_role_from_u32(role) {
             self.remove_lane(r);
+            if r == LaneRole::Marquee {
+                self.remove_lane(LaneRole::MarqueeOutline);
+            }
             self.set_vector_stat(r, 0);
         }
     }
@@ -4551,6 +4560,266 @@ impl RenderEngine {
                     got[0], got[1], got[2], got[3], pass, label,
                 ));
             }
+            Ok(JsValue::from_str(&format!(
+                "{{\"backend\":\"{}\",\"probes\":[{}],\"pass\":{}}}",
+                backend,
+                json.join(","),
+                all_pass,
+            )))
+        })
+    }
+}
+
+#[wasm_bindgen]
+impl RenderEngine {
+    /// GPU-R-adv marquee probe (T-151.11.1 / audit P-02): draws the Deck-parity marquee
+    /// (fill `[173,198,255,40]` + 1 px border `[173,198,255,200]`) over `CLEAR_COLOR` at the
+    /// fixed 800×600 probe camera with rect rel `[-100,-100]…[100,100]` (pixel edges x∈[300,500],
+    /// y∈[200,400] — integer-aligned like the calibration scene) and reads back:
+    /// - **(400,300)** interior = `blend(fill, clear)`,
+    /// - **(300,300)** or **(299,300)** border column = `blend(border, blend(fill, clear))`
+    ///   (either pixel accepted — a native 1 px line centered on an integer column may rasterize
+    ///   to the left or right pixel; both are checked),
+    /// - **(600,300)** exterior = `CLEAR_COLOR` byte-exact.
+    ///
+    /// Non-α-1 blends round through the GPU's float pipeline, so interior/border assert
+    /// **±1 per channel** against the f64-computed expectation (documented GPU-R-adv, unlike the
+    /// α=1 byte-exact checks). Resolves to JSON.
+    pub fn marquee_self_check(&self) -> js_sys::Promise {
+        const PW: u32 = 800;
+        const PH: u32 = 600;
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        let shader = self.shader.clone();
+        let layout = self.pipeline_layout.clone();
+        let cam_bgl = self.bind_group_layout.clone();
+        let backend = self.backend_kind.clone();
+
+        wasm_bindgen_futures::future_to_promise(async move {
+            use wgpu::util::DeviceExt;
+            let fmt = wgpu::TextureFormat::Rgba8Unorm;
+            let camera = OrthoCamera::new(f64::from(PW), f64::from(PH), ANCHOR[0], ANCHOR[1], 0.0);
+            let mvp = camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+            let uniform = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("marquee-self-check-mvp"),
+                size: 64,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            queue.write_buffer(&uniform, 0, bytemuck::cast_slice(&mvp));
+            let cam_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("marquee-self-check-mvp"),
+                layout: &cam_bgl,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: uniform.as_entire_binding(),
+                }],
+            });
+
+            // Geometry: the exact upload_marquee construction, anchor-relative.
+            let fill_c = [173.0_f32 / 255.0, 198.0 / 255.0, 1.0, 40.0 / 255.0];
+            let line_c = [173.0_f32 / 255.0, 198.0 / 255.0, 1.0, 200.0 / 255.0];
+            let (x0, y0, x1, y1) = (-100.0_f32, -100.0, 100.0, 100.0);
+            let fill_verts = [
+                lanes::LineVertex {
+                    pos: [x0, y0],
+                    color: fill_c,
+                },
+                lanes::LineVertex {
+                    pos: [x1, y0],
+                    color: fill_c,
+                },
+                lanes::LineVertex {
+                    pos: [x1, y1],
+                    color: fill_c,
+                },
+                lanes::LineVertex {
+                    pos: [x0, y1],
+                    color: fill_c,
+                },
+            ];
+            let fill_idx: [u32; 6] = [0, 1, 2, 0, 2, 3];
+            let ring = [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
+            let mut line_verts = Vec::with_capacity(8);
+            for e in 0..4 {
+                let a = ring[e];
+                let b = ring[(e + 1) % 4];
+                line_verts.push(lanes::LineVertex {
+                    pos: a,
+                    color: line_c,
+                });
+                line_verts.push(lanes::LineVertex {
+                    pos: b,
+                    color: line_c,
+                });
+            }
+            let vbuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marquee-self-check-fill"),
+                contents: bytemuck::cast_slice(&fill_verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let ibuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marquee-self-check-idx"),
+                contents: bytemuck::cast_slice(&fill_idx),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+            let lbuf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("marquee-self-check-line"),
+                contents: bytemuck::cast_slice(&line_verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+            let polygon = create_polygon_pipeline(&device, &layout, &shader, fmt);
+            let line = create_line_pipeline(&device, &layout, &shader, fmt);
+
+            let target = device.create_texture(&wgpu::TextureDescriptor {
+                label: Some("marquee-self-check-target"),
+                size: wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+                mip_level_count: 1,
+                sample_count: 1,
+                dimension: wgpu::TextureDimension::D2,
+                format: fmt,
+                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+                view_formats: &[],
+            });
+            let tview = target.create_view(&wgpu::TextureViewDescriptor::default());
+            let padded = padded_bytes_per_row(PW);
+            let read_buf = device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("marquee-self-check-read"),
+                size: u64::from(padded) * u64::from(PH),
+                usage: wgpu::BufferUsages::MAP_READ | wgpu::BufferUsages::COPY_DST,
+                mapped_at_creation: false,
+            });
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("marquee-self-check"),
+            });
+            {
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some("marquee-self-check"),
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &tview,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(CLEAR_COLOR),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                    multiview_mask: None,
+                });
+                pass.set_pipeline(&polygon);
+                pass.set_bind_group(0, &cam_bind, &[]);
+                pass.set_vertex_buffer(0, vbuf.slice(..));
+                pass.set_index_buffer(ibuf.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..6, 0, 0..1);
+                pass.set_pipeline(&line);
+                pass.set_bind_group(0, &cam_bind, &[]);
+                pass.set_vertex_buffer(0, lbuf.slice(..));
+                pass.draw(0..8, 0..1);
+            }
+            encoder.copy_texture_to_buffer(
+                target.as_image_copy(),
+                wgpu::TexelCopyBufferInfo {
+                    buffer: &read_buf,
+                    layout: wgpu::TexelCopyBufferLayout {
+                        offset: 0,
+                        bytes_per_row: Some(padded),
+                        rows_per_image: Some(PH),
+                    },
+                },
+                wgpu::Extent3d {
+                    width: PW,
+                    height: PH,
+                    depth_or_array_layers: 1,
+                },
+            );
+            queue.submit(Some(encoder.finish()));
+
+            // f64 expectations through the exact blend chain (src·α + dst·(1−α), unorm8 round).
+            let clear = [51.0_f64, 68.0, 85.0];
+            let blend = |src: [f64; 3], alpha: f64, dst: [f64; 3]| -> [f64; 3] {
+                [
+                    src[0] * alpha + dst[0] * (1.0 - alpha),
+                    src[1] * alpha + dst[1] * (1.0 - alpha),
+                    src[2] * alpha + dst[2] * (1.0 - alpha),
+                ]
+            };
+            let prim = [173.0_f64, 198.0, 255.0];
+            let interior_f = blend(prim, 40.0 / 255.0, clear);
+            let border_f = blend(prim, 200.0 / 255.0, interior_f);
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let to_u8 = |v: [f64; 3]| -> [u8; 3] {
+                [
+                    v[0].round().clamp(0.0, 255.0) as u8,
+                    v[1].round().clamp(0.0, 255.0) as u8,
+                    v[2].round().clamp(0.0, 255.0) as u8,
+                ]
+            };
+            let interior_e = to_u8(interior_f);
+            let border_e = to_u8(border_f);
+            let within = |got: [u8; 4], expect: [u8; 3]| -> bool {
+                (0..3).all(|i| got[i].abs_diff(expect[i]) <= 1)
+            };
+
+            let read = |px: u32, py: u32| {
+                let offset = u64::from(py * padded + px * 4);
+                (px, py, offset)
+            };
+            let mut json = Vec::new();
+            let mut all_pass = true;
+
+            // Interior ±1.
+            let (px, py, off) = read(400, 300);
+            let got = map_read_4(&device, &read_buf, off)
+                .await
+                .map_err(|e| JsValue::from_str(&e))?;
+            let pass = within(got, interior_e);
+            all_pass &= pass;
+            json.push(format!(
+                "{{\"px\":{px},\"py\":{py},\"expect\":[{},{},{}],\"got\":[{},{},{},{}],\"tol\":1,\"pass\":{pass},\"label\":\"fill interior (adv ±1)\"}}",
+                interior_e[0], interior_e[1], interior_e[2], got[0], got[1], got[2], got[3],
+            ));
+
+            // Border column: accept pixel 300 or 299 (1 px line on an integer column).
+            let mut border_pass = false;
+            let mut border_got = [0u8; 4];
+            for bx in [300u32, 299] {
+                let (_, _, off) = read(bx, 300);
+                let got = map_read_4(&device, &read_buf, off)
+                    .await
+                    .map_err(|e| JsValue::from_str(&e))?;
+                if within(got, border_e) {
+                    border_pass = true;
+                    border_got = got;
+                    break;
+                }
+                border_got = got;
+            }
+            all_pass &= border_pass;
+            json.push(format!(
+                "{{\"px\":\"300|299\",\"py\":300,\"expect\":[{},{},{}],\"got\":[{},{},{},{}],\"tol\":1,\"pass\":{border_pass},\"label\":\"border column (adv ±1)\"}}",
+                border_e[0], border_e[1], border_e[2],
+                border_got[0], border_got[1], border_got[2], border_got[3],
+            ));
+
+            // Exterior byte-exact clear.
+            let (px, py, off) = read(600, 300);
+            let got = map_read_4(&device, &read_buf, off)
+                .await
+                .map_err(|e| JsValue::from_str(&e))?;
+            let pass = got == [51, 68, 85, 255];
+            all_pass &= pass;
+            json.push(format!(
+                "{{\"px\":{px},\"py\":{py},\"expect\":[51,68,85,255],\"got\":[{},{},{},{}],\"pass\":{pass},\"label\":\"exterior = CLEAR_COLOR (byte-exact)\"}}",
+                got[0], got[1], got[2], got[3],
+            ));
+
             Ok(JsValue::from_str(&format!(
                 "{{\"backend\":\"{}\",\"probes\":[{}],\"pass\":{}}}",
                 backend,
