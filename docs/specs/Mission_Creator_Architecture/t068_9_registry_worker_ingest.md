@@ -1,10 +1,10 @@
 # T-068.9 — Registry worker + compat ingest
 
 **Ticket:** T-068 · **Slice:** T-068.9  
-**Status:** **ready** · **Executor:** claude-code · **Baseline:** tag **T-150** @ `9107bf4e`
-(schema `e358777a`) · **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
-· **Upstream:** [`t150_universal_registry_export.md`](t150_universal_registry_export.md) · verify
-[`.ai/artifacts/t150_verify_log.md`](../../../.ai/artifacts/t150_verify_log.md)
+**Status:** **shipped** @ `d41418e5` (tag **T-068.9**) · **Executor:** claude-code ·
+**Verify:** [`.ai/artifacts/t068_9_verify_log.md`](../../../.ai/artifacts/t068_9_verify_log.md) ·
+**Next:** **T-068.10** · **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
+· **Upstream:** [`t150_universal_registry_export.md`](t150_universal_registry_export.md)
 
 ---
 
