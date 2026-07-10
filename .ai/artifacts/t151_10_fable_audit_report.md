@@ -937,3 +937,70 @@ proof; every DIVERGED/MISSING row has a finding ID above. **No Deck-era feature 
 | 8 | P-06 | Decide: damage-driven render in editor (drop continuous; drive HUD fps from a timer) or write the trade-off into the hub |
 | 9 | 43 | Note slot-lane cull threshold as a T-069+ scale prerequisite |
 
+
+---
+
+# Remediation round — T-151.11 program [2026-07-10]
+
+Five slices fixed every code-fixable finding from both audit rounds. Commits/tags:
+**T-151.11.1** `b81317c5` · **T-151.11.2** `b78205c0` · **T-151.11.3** `c7bb5bd0` ·
+**T-151.11.4** `2c3237fd` · **T-151.11.5** (this tracker update). Program verify log:
+[`t151_11_verify_log.md`](t151_11_verify_log.md). Operator decisions locked before execution:
+outline stays near-black (final); buildings toggle restores Deck full-lane hide; satellite
+preview via HTTP-Range from the existing bundle; damage-driven render in prod / continuous DEV.
+
+## Accounting — every OPEN/PARTIAL from rounds 1+2 → disposition (0 unaccounted)
+
+| ID | Was | Now | Where / proof |
+|----|-----|-----|---------------|
+| A-07 stale engine-flag comments | OPEN | **RESOLVED** (11.2) | headers rewritten, `WgpuTacticalMap.tsx` + `wgpuWorldLoader.ts` |
+| A-08 D1–D4/D1–D9 numbering | OPEN | **CURSOR** | hub heading + spec range (doc-lane) |
+| A-10 spike surface in prod | OPEN | **RESOLVED** (11.2) | DEV-gated route + hooks; WgpuCanvas chunk + route string proven absent from `dist` |
+| B-01 DEM-vectors TS twins | OPEN | **RESOLVED** (11.3) | wasm `class_visible`/`contour_interval_for_zoom`/`sea_fill_alpha`/`contour_grid_reductions`/`dem_vector_grid_factor` live; importer graph zero |
+| B-02 forest alpha twin | OPEN | **RESOLVED** (11.3) | wasm `forest_fill_alpha` live |
+| B-03 chunk-id split-brain | PARTIAL | **RESOLVED** (11.3) | wasm `chunk_ids_for_viewport` live in the forest lane |
+| B-04 ingest budget JS-side | PARTIAL | **RESOLVED** (11.3) | `begin/exhausted/end_ingest_frame` core API + native truth-table test; TS constant deleted |
+| B-05 supercluster in TS | PARTIAL | **CORRECTED + RESOLVED** (11.3) | audit overstated: the index was already wasm `ClusterIndex`; the last duplicated math (`deckZoomToSuperZoom`) now delegates to the Rust SoT |
+| B-06 worldSpatialIndex dead | OPEN | **CORRECTED** (11.2) | not dead — it is the Class S oracle for `world.pick.parity.test.ts`; ORACLE-ONLY banner + stale worker comment fixed |
+| C-3-02 outline color divergence | OPEN | **RESOLVED (decision)** | operator: near-black `[30,30,34,255]` is FINAL (Deck grey + lighthouse stroke not restored); Cursor writes the hub note |
+| C-4-02 optional vector parity test | OPEN | **CLOSED (superseded)** | the native L8/L9 gates + now-EXECUTED sea/road GPU checks cover the math; the optional TS test is redundant — recorded decision, not a silent skip |
+| C-5-02 tree gate never executable | OPEN | **RESOLVED** (11.4) | registered + EXECUTED: harness `tree` PASS |
+| C-ALL-01 zero operator gates closed | OPEN | **HANDED OFF** | [`t151_operator_signoff.md`](t151_operator_signoff.md) — one consolidated session |
+| C-8-01 S4 band table empty | PARTIAL | **HANDED OFF** | band-table template in the sign-off checklist |
+| D-06 GPU harness uncommitted | OPEN | **RESOLVED** (11.4) | `scripts/website/verify-wgpu-gpu.mjs` + `make verify-wgpu-gpu`; run: 8/8 `allPass:true` |
+| E-05 forest cache unbounded | OPEN | **RESOLVED** (11.3) | LRU cap `max(64, 3×viewport)` with pinned immunity |
+| F-04 W8 wasm size stale | PARTIAL | RESOLVED (round 1 fix) | honesty edit + exact bytes recorded |
+| F-05 docs-tag convention break | PARTIAL | **CURSOR** | retag or write the convention note |
+| F-06 hub link gap (5.1 log) | PARTIAL | **CURSOR** | one hub link |
+| F-09 T-151 gates never in CI | OPEN | **RESOLVED** (11.4) | `map-engine` job + frontend wasm build step in `ci.yml`; runtime proof lands on first push (branch has no remote — unchanged) |
+| D-05 hub stale citations | PARTIAL | **CURSOR** | 3 pinned-inventory rows (zoom band / instance budget / apply budget now `mapCamera.ts:14-15` / `lod_gates.rs:26` / `residency.rs::APPLY_BUDGET_MS`) + road-classes wording |
+| X-01 WebGPU trees over everything | OPEN | **RESOLVED** (11.1) | indirect draw emitted at the WorldTrees order slot inside `draw_batches`; `first_role_after_trees_is_props` pin; WebGPU visual spot-check listed in the sign-off (headless WebGPU unavailable here) |
+| P-01 grid over unit markers | OPEN | **RESOLVED** (11.1) | `lane_order` Grid=16 < Slots=17; 4 native pin tests |
+| P-02 marquee border missing | OPEN | **RESOLVED** (11.1) | fill α 40 + 1 px border lane (Deck oracle values); `marquee` GPU probe EXECUTED PASS |
+| P-03 preview mode dropped | OPEN | **RESOLVED** (11.4) | Range-fetch coarse mip from the bundle (the Deck-era `full.webp` never existed — product now strictly better than Deck) |
+| P-04 buildings toggle narrowed | OPEN | **RESOLVED** (11.3) | full-lane hide in `residency.rs` + immediate push; 2 native tests |
+| P-05 debug HUD in prod | OPEN | **RESOLVED** (11.2) | DEV-only panel, stale label gone; error banner always-on |
+| P-06 damage-render disabled | PARTIAL | **RESOLVED (decision)** (11.2) | prod damage-driven, DEV continuous |
+| X-02 engine bounds Everon-only | PARTIAL | **RESOLVED** (11.2) | `set_camera_bounds` exported + mount call; TS clamp kept as documented backstop |
+| X-03 GPU count never read back | OPEN | **RESOLVED** (11.4) | f32-aligned rule + real async readback + `compute_cull_gpu_sampled` + `compute_cull_self_check` (cpu==gpu) |
+| X-04 marquee dead twin | OPEN | **RESOLVED** (11.1) | `compose_marquee_mesh` deleted |
+| X-05 dead engine/FE surface | OPEN | **RESOLVED + CORRECTED** (11.2) | `viewportFromEngine`/`unproject_xy` deleted; `pan` proven LIVE by the compiler (spike pointer pan) and kept with a caller note; `mark_dirty`/`submitted_last_frame` kept as documented API; `clear_*` retained (P-04 wiring exercises the remove path) |
+| X-06 patch heuristic fragile | PARTIAL | **RESOLVED** (11.2) | sub-row-only contract + debug_assert; heuristic deleted |
+| Matrix row 43 slot-lane cull | DIVERGED-minor | **DEFERRED (named)** | T-069+ scale prerequisite — no defect at current mission sizes |
+
+## Cursor doc-sync queue (unchanged items + new notes)
+
+1. Registry: T-151.10 / T-151.10.1 / T-151.11.1–.5 rows; T-151 program status.
+2. Hub: D1–D5 heading fix (A-08); 3 stale pinned-inventory citations + road-classes wording
+   (D-05); link `t151_5_1_verify_log.md` (F-06); tag-convention note (F-05); decision notes —
+   outline near-black FINAL (C-3-02), buildings toggle full-lane (P-04), prod damage-driven
+   (P-06), Range-preview replaces the never-shipped `full.webp` (P-03).
+3. Spec `t151_10_fable_program_audit.md`: "D1–D9" → "D1–D5" (A-08).
+
+## Verification-status note
+
+Every Class S command green at `2c3237fd` (core **147**, render **25**, vitest **285**, wasm
+**4,150,664 B**, dist deck-free, `wgpuSlots.ts` **56**); committed GPU harness **8/8
+`allPass:true`** including the first-ever `tree` execution and the new `marquee` probe;
+`computeCull` self-skips on WebGL2 and proves CPU==GPU wherever a WebGPU adapter exists
+(operator sign-off runs it on real hardware).
