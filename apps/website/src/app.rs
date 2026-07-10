@@ -69,6 +69,10 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             get(handlers::leaderboards::stream_server_status),
         )
         .route("/registry", get(handlers::registry::list_registry))
+        .route(
+            "/registry/compat",
+            get(handlers::registry::list_registry_compat),
+        )
         .route("/dashboard", get(handlers::dashboard::get_dashboard))
         .route(
             "/leaderboards",

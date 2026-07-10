@@ -5,6 +5,7 @@ pub mod discord;
 pub mod http_retry;
 pub mod mission_compile;
 pub mod mortar;
+pub mod registry_import;
 pub mod role_sync;
 pub mod text;
 pub mod token_purge;
@@ -18,6 +19,7 @@ pub use map_engine_core::mission::orbat::{
     OrbatSlotTemplate, OrbatSquadTemplate, parse_orbat_template,
 };
 pub use mortar::{FireSolution, solve_fire_mission};
+pub use registry_import::{ImportCounts, ImportError, ensure_modpack, import_compat, import_items};
 pub use role_sync::resync_all_roles;
 pub use text::{sanitize_html, snippet};
 pub use token_purge::{PurgeHandle, purge_expired_refresh_tokens, start_refresh_token_purge};

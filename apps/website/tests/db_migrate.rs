@@ -17,7 +17,8 @@ async fn migrate_creates_full_schema() {
     let pool = db::connect(&url).await.expect("connect");
     db::migrate(&pool).await.expect("migrate");
 
-    // 29 base tables + the sqlx `_sqlx_migrations` bookkeeping table.
+    // 30 base tables (29 Go-parity + registry_compat, T-068.9) + the sqlx
+    // `_sqlx_migrations` bookkeeping table.
     let tables: i64 = sqlx::query_scalar(
         "SELECT count(*) FROM information_schema.tables \
          WHERE table_schema = 'public' AND table_type = 'BASE TABLE'",
@@ -25,7 +26,7 @@ async fn migrate_creates_full_schema() {
     .fetch_one(&pool)
     .await
     .expect("count tables");
-    assert!(tables >= 29, "expected >= 29 base tables, got {tables}");
+    assert!(tables >= 30, "expected >= 30 base tables, got {tables}");
 
     // 12 Postgres enum types.
     let enums: i64 = sqlx::query_scalar(

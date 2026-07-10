@@ -18,6 +18,10 @@ const EDITOR_SCHEMA: &str =
     include_str!("../../../../packages/tbd-schema/schema/mission-editor-payload.schema.json");
 const MISSION_SCHEMA: &str =
     include_str!("../../../../packages/tbd-schema/schema/mission.schema.json");
+const REGISTRY_ITEMS_SCHEMA: &str =
+    include_str!("../../../../packages/tbd-schema/schema/registry-items.schema.json");
+const REGISTRY_COMPAT_SCHEMA: &str =
+    include_str!("../../../../packages/tbd-schema/schema/registry-compat.schema.json");
 
 /// Internal schema-compile failure (never returned for merely-invalid input).
 #[derive(Debug, thiserror::Error)]
@@ -73,6 +77,29 @@ pub fn validate_mission_editor_payload(raw: &[u8]) -> Result<Vec<String>, Contra
 pub fn validate_mission_document(raw: &[u8]) -> Result<Vec<String>, ContractError> {
     static V: OnceLock<Result<Validator, String>> = OnceLock::new();
     run(&V, MISSION_SCHEMA, raw, "document is not valid JSON")
+}
+
+/// Validate a raw T-150 items envelope against `registry-items.schema.json`
+/// (the Workbench export ingested by `import-registry`, T-068.9).
+///
+/// @contract registry-items.schema.json#/
+pub fn validate_registry_items_envelope(raw: &[u8]) -> Result<Vec<String>, ContractError> {
+    static V: OnceLock<Result<Validator, String>> = OnceLock::new();
+    run(&V, REGISTRY_ITEMS_SCHEMA, raw, "envelope is not valid JSON")
+}
+
+/// Validate a raw T-150 compat envelope against `registry-compat.schema.json`
+/// (the Workbench edge export ingested by `import-registry`, T-068.9).
+///
+/// @contract registry-compat.schema.json#/
+pub fn validate_registry_compat_envelope(raw: &[u8]) -> Result<Vec<String>, ContractError> {
+    static V: OnceLock<Result<Validator, String>> = OnceLock::new();
+    run(
+        &V,
+        REGISTRY_COMPAT_SCHEMA,
+        raw,
+        "envelope is not valid JSON",
+    )
 }
 
 #[cfg(test)]

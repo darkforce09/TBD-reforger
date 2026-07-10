@@ -7,7 +7,7 @@ description = "TBD Reforger platform backend — Rust port of the Go API (T-145)
 license = "UNLICENSED"
 publish = false
 
-# One library crate holds every module; the three binaries mirror cmd/{api,seed,import-registry-items}.
+# One library crate holds every module; binaries: api (server) + import-registry (T-150 envelope ingest).
 [lib]
 name = "reforger_backend"
 path = "src/lib.rs"
@@ -15,6 +15,10 @@ path = "src/lib.rs"
 [[bin]]
 name = "api"
 path = "src/bin/api.rs"
+
+[[bin]]
+name = "import-registry"
+path = "src/bin/import_registry.rs"
 
 [dependencies]
 ammonia = "4.1.3"
