@@ -11,7 +11,13 @@
 //   • grid — engine.set_grid (Rust lanes::grid_lines, the useBaseMapLayer.ts mirror).
 // The engine never parses TBDS bytes (L2). All math lives in the tested pure helpers.
 
-import { parseTbdSat, pickBaseLevel } from '../layers/satelliteUnified'
+import {
+  parseTbdSat,
+  pickBaseLevel,
+  fetchTbdSatIndexHead,
+  fetchMipLevelBlocks,
+  pickPreviewLevel,
+} from '../layers/satelliteUnified'
 import {
   computeLod,
   resolveBasemapMode,
@@ -152,7 +158,56 @@ export class WgpuBasemapController {
     await this.loadPyramidOrSingle(r, opacity, signal)
   }
 
+  /** T-151.11.4 (audit P-03): instant coarse preview out of the SAME bundle via HTTP Range —
+   *  index head + one ≤1024 px mip (a few hundred KB) commit as a single-texture lane within
+   *  ~100 ms, then the full unified stream replaces it (same role upsert). Best-effort: any
+   *  Range/parse failure skips silently; aborts ride the caller's signal. */
+  private async tryUnifiedPreview(
+    url: string,
+    opacity: number,
+    signal: AbortSignal,
+  ): Promise<void> {
+    try {
+      const index = await fetchTbdSatIndexHead(url, signal)
+      if (!index || signal.aborted || this.disposed) return
+      const mip = pickPreviewLevel(index)
+      const blocks = await fetchMipLevelBlocks(url, mip, signal)
+      if (!blocks || signal.aborted || this.disposed) return
+      const bitmaps = await Promise.all(
+        blocks.map((b) =>
+          createImageBitmap(new Blob([b.bytes], { type: 'image/webp' }), {
+            colorSpaceConversion: 'none',
+          }),
+        ),
+      )
+      if (signal.aborted || this.disposed) {
+        bitmaps.forEach((b) => b.close())
+        return
+      }
+      this.engine.tex_layer_begin(
+        ROLE_BASEMAP,
+        0,
+        0,
+        this.terrain.width,
+        this.terrain.height,
+        mip.width,
+        mip.height,
+        1,
+        MODE.single,
+      )
+      blocks.forEach((b, i) => {
+        this.uploadBlock(ROLE_BASEMAP, 0, b.tile.x, b.tile.y, bitmaps[i])
+        bitmaps[i].close()
+      })
+      this.engine.tex_layer_commit(ROLE_BASEMAP, opacity, true)
+      this.cb.onProgress?.(0.02)
+    } catch {
+      /* preview is best-effort — the full loader path below is authoritative */
+    }
+  }
+
   private async loadUnified(url: string, opacity: number, signal: AbortSignal): Promise<void> {
+    await this.tryUnifiedPreview(url, opacity, signal)
     const buf = await this.fetchStreaming(url, signal)
     if (signal.aborted) throw new DOMException('aborted', 'AbortError')
     const index = parseTbdSat(buf)

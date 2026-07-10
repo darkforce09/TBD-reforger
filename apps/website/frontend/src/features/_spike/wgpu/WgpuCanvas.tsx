@@ -93,6 +93,8 @@ export default function WgpuCanvas() {
             seaBand: () => created.sea_band_self_check() as Promise<string>,
             roadCenterline: () => created.road_centerline_self_check() as Promise<string>,
             marquee: () => created.marquee_self_check() as Promise<string>, // T-151.11.1 P-02
+            tree: () => created.tree_glyph_self_check() as Promise<string>, // T-151.11.4 C-5-02
+            computeCull: () => created.compute_cull_self_check() as Promise<string>, // T-151.11.4 X-03
           }
         }
         setBackend(created.backend())

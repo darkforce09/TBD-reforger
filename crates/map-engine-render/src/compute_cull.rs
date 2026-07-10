@@ -27,17 +27,26 @@ pub struct IconCullSample {
 }
 
 /// True when the icon's AABB intersects `[min_x,min_y,max_x,max_y]` (inclusive edges).
+///
+/// T-151.11.4 (audit X-03): the comparison runs entirely in **f32** — the frustum is quantized
+/// exactly like the GPU uniform (`params` are `f32` in `encode_cull` / the WGSL shader), so the
+/// CPU oracle and the GPU kernel share one arithmetic domain and their counts are equal by
+/// construction, not merely "close". (Previously the CPU widened to f64 while the GPU ran f32 —
+/// an icon exactly on a quantization-shifted edge could disagree.)
 #[must_use]
 pub fn icon_intersects_frustum(pos_x: f32, pos_y: f32, size: f32, frustum: Frustum) -> bool {
     let half = (size * 0.5).max(0.0);
-    let imin_x = f64::from(pos_x) - f64::from(half);
-    let imax_x = f64::from(pos_x) + f64::from(half);
-    let imin_y = f64::from(pos_y) - f64::from(half);
-    let imax_y = f64::from(pos_y) + f64::from(half);
-    let fmin_x = frustum[0].min(frustum[2]);
-    let fmax_x = frustum[0].max(frustum[2]);
-    let fmin_y = frustum[1].min(frustum[3]);
-    let fmax_y = frustum[1].max(frustum[3]);
+    let imin_x = pos_x - half;
+    let imax_x = pos_x + half;
+    let imin_y = pos_y - half;
+    let imax_y = pos_y + half;
+    #[allow(clippy::cast_possible_truncation)]
+    let (fmin_x, fmax_x, fmin_y, fmax_y) = (
+        frustum[0].min(frustum[2]) as f32,
+        frustum[0].max(frustum[2]) as f32,
+        frustum[1].min(frustum[3]) as f32,
+        frustum[1].max(frustum[3]) as f32,
+    );
     imax_x >= fmin_x && imin_x <= fmax_x && imax_y >= fmin_y && imin_y <= fmax_y
 }
 

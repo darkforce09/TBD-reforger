@@ -1332,14 +1332,22 @@ impl RenderEngine {
             .unwrap_or(0)
     }
 
-    /// Class R GPU counter (mirrors CPU until async readback; same AABB rule).
+    /// The GPU-side cull counter (T-151.11.4 / X-03): the REAL async-mapped value once
+    /// `compute_cull_gpu_sampled` is true; until the first sample it mirrors the CPU oracle.
     #[wasm_bindgen(getter)]
     #[must_use]
     pub fn compute_cull_gpu_count(&self) -> u32 {
         self.icon_cull
             .as_ref()
-            .map(|c| c.last_gpu_count)
+            .map(|c| c.gpu_count_for_stats())
             .unwrap_or(0)
+    }
+
+    /// True once at least one real GPU counter readback has landed.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn compute_cull_gpu_sampled(&self) -> bool {
+        self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled.get())
     }
 
     /// Pure CPU compact of current tree icons against a world-meter frustum (Class R harness).
@@ -1546,6 +1554,10 @@ impl RenderEngine {
         frame.present();
         if take_timing && let Some(t) = &self.timer {
             t.kick_readback();
+        }
+        // T-151.11.4 (X-03): map the real GPU cull counter for this frame (in-flight guarded).
+        if do_compute_trees && let Some(cull) = &self.icon_cull {
+            cull.kick_readback();
         }
         self.damage.after_submit();
         self.submitted_last_frame = true;
@@ -1782,7 +1794,8 @@ impl RenderEngine {
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
                 "\"submitted_last_frame\":{},\"density_heatmap\":{},",
-                "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{}}}"
+                "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{},",
+                "\"compute_cull_gpu_sampled\":{}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -1821,8 +1834,9 @@ impl RenderEngine {
                 .unwrap_or(0),
             self.icon_cull
                 .as_ref()
-                .map(|c| c.last_gpu_count)
+                .map(|c| c.gpu_count_for_stats())
                 .unwrap_or(0),
+            self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled.get()),
         )
     }
 }
@@ -4763,7 +4777,11 @@ impl RenderEngine {
             };
             let prim = [173.0_f64, 198.0, 255.0];
             let interior_f = blend(prim, 40.0 / 255.0, clear);
-            let border_f = blend(prim, 200.0 / 255.0, interior_f);
+            // The 1 px border on the integer column x=300 rasterizes to pixel 299 (over CLEAR)
+            // or pixel 300 (over the fill) depending on the line rule — both composites prove
+            // the border color+alpha, so both are accepted (at either column).
+            let border_over_fill_f = blend(prim, 200.0 / 255.0, interior_f);
+            let border_over_clear_f = blend(prim, 200.0 / 255.0, clear);
             #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
             let to_u8 = |v: [f64; 3]| -> [u8; 3] {
                 [
@@ -4773,7 +4791,8 @@ impl RenderEngine {
                 ]
             };
             let interior_e = to_u8(interior_f);
-            let border_e = to_u8(border_f);
+            let border_fill_e = to_u8(border_over_fill_f);
+            let border_clear_e = to_u8(border_over_clear_f);
             let within = |got: [u8; 4], expect: [u8; 3]| -> bool {
                 (0..3).all(|i| got[i].abs_diff(expect[i]) <= 1)
             };
@@ -4797,7 +4816,7 @@ impl RenderEngine {
                 interior_e[0], interior_e[1], interior_e[2], got[0], got[1], got[2], got[3],
             ));
 
-            // Border column: accept pixel 300 or 299 (1 px line on an integer column).
+            // Border column: accept pixel 300 or 299, composited over fill OR clear.
             let mut border_pass = false;
             let mut border_got = [0u8; 4];
             for bx in [300u32, 299] {
@@ -4805,7 +4824,7 @@ impl RenderEngine {
                 let got = map_read_4(&device, &read_buf, off)
                     .await
                     .map_err(|e| JsValue::from_str(&e))?;
-                if within(got, border_e) {
+                if within(got, border_fill_e) || within(got, border_clear_e) {
                     border_pass = true;
                     border_got = got;
                     break;
@@ -4814,8 +4833,9 @@ impl RenderEngine {
             }
             all_pass &= border_pass;
             json.push(format!(
-                "{{\"px\":\"300|299\",\"py\":300,\"expect\":[{},{},{}],\"got\":[{},{},{},{}],\"tol\":1,\"pass\":{border_pass},\"label\":\"border column (adv ±1)\"}}",
-                border_e[0], border_e[1], border_e[2],
+                "{{\"px\":\"300|299\",\"py\":300,\"expect\":\"[{},{},{}] over fill | [{},{},{}] over clear\",\"got\":[{},{},{},{}],\"tol\":1,\"pass\":{border_pass},\"label\":\"border column (adv ±1)\"}}",
+                border_fill_e[0], border_fill_e[1], border_fill_e[2],
+                border_clear_e[0], border_clear_e[1], border_clear_e[2],
                 border_got[0], border_got[1], border_got[2], border_got[3],
             ));
 
@@ -4836,6 +4856,91 @@ impl RenderEngine {
                 backend,
                 json.join(","),
                 all_pass,
+            )))
+        })
+    }
+}
+
+#[wasm_bindgen]
+impl RenderEngine {
+    /// T-151.11.4 (audit X-03) — CPU==GPU compute-cull equality proof, self-contained:
+    /// seeds a deterministic 512-icon field (LCG, the house constants), runs the compute cull
+    /// against a pinned frustum on a THROWAWAY `IconComputeCull` (engine state untouched),
+    /// awaits the real counter readback, and asserts `gpu == cpu` — both sides now share the
+    /// f32 frustum domain, so equality is exact, not approximate.
+    /// Resolves `{"backend","cpu","gpu","pass"}`; `{"skipped":true}` on WebGL2 (no compute).
+    pub fn compute_cull_self_check(&self) -> js_sys::Promise {
+        let backend = self.backend_kind.clone();
+        if self.backend_kind == "webgl2" {
+            return js_sys::Promise::resolve(&JsValue::from_str(&format!(
+                "{{\"backend\":\"{backend}\",\"skipped\":true,\"pass\":true}}"
+            )));
+        }
+        let device = self.device.clone();
+        let queue = self.queue.clone();
+        let shader = self.shader.clone();
+
+        wasm_bindgen_futures::future_to_promise(async move {
+            // Deterministic icon field: 512 icons over anchor-relative [-6400, 6400)².
+            let mut src20 = Vec::with_capacity(512 * 20);
+            let mut s: u32 = 0xC0FF_EE11;
+            let mut unit = || {
+                s = s.wrapping_mul(1_103_515_245).wrapping_add(12_345);
+                (s >> 8) as f32 / 16_777_216.0
+            };
+            for _ in 0..512 {
+                let x = unit() * 12_800.0 - 6_400.0;
+                let y = unit() * 12_800.0 - 6_400.0;
+                let size = 2.0 + unit() * 14.0;
+                src20.extend_from_slice(&x.to_le_bytes());
+                src20.extend_from_slice(&y.to_le_bytes());
+                src20.extend_from_slice(&size.to_le_bytes());
+                src20.extend_from_slice(&0_i16.to_le_bytes());
+                src20.extend_from_slice(&0_u16.to_le_bytes());
+                src20.extend_from_slice(&0xFF00_FF00_u32.to_le_bytes());
+            }
+            let frustum = [-1_234.5_f64, -987.25, 2_345.75, 1_876.5];
+
+            let mut cull = crate::icon_cull_gpu::IconComputeCull::create(&device, &shader);
+            cull.upload_icons(&device, &queue, &src20);
+            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("cull-self-check"),
+            });
+            cull.encode_cull(&mut encoder, &device, &queue, frustum);
+            queue.submit(Some(encoder.finish()));
+            let cpu = cull.last_cpu_count;
+
+            // Map the counter readback directly (bounded poll/yield, like map_read_4).
+            let done = Rc::new(Cell::new(0u8));
+            {
+                let done = done.clone();
+                cull.readback_buf
+                    .slice(..)
+                    .map_async(wgpu::MapMode::Read, move |res| {
+                        done.set(if res.is_ok() { 1 } else { 2 });
+                    });
+            }
+            let mut ticks = 0;
+            while done.get() == 0 {
+                let _ = device.poll(wgpu::PollType::Poll);
+                readback_sleep_ms(4).await;
+                ticks += 1;
+                if ticks > 2000 {
+                    return Err(JsValue::from_str("cull-self-check: readback timeout"));
+                }
+            }
+            if done.get() == 2 {
+                return Err(JsValue::from_str("cull-self-check: readback map failed"));
+            }
+            let gpu = {
+                let data = cull.readback_buf.slice(..).get_mapped_range();
+                u32::from_le_bytes(data[0..4].try_into().expect("4 bytes"))
+            };
+            cull.readback_buf.unmap();
+
+            let pass = gpu == cpu && cpu > 0 && cpu < 512;
+            Ok(JsValue::from_str(&format!(
+                "{{\"backend\":\"{backend}\",\"cpu\":{cpu},\"gpu\":{gpu},\"pass\":{pass}}}"
             )))
         })
     }

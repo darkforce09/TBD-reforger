@@ -6,6 +6,8 @@
 //! Class R gate: GPU counter readback == [`crate::compute_cull::count_icons_in_frustum`].
 
 use crate::compute_cull::{ICON_STRIDE, count_icons_in_frustum, pack_icon_storage32};
+use std::cell::Cell;
+use std::rc::Rc;
 
 /// Indirect draw args: vertex_count=4, instance_count=atomic, first_vertex=0, first_instance=0.
 pub const INDIRECT_STRIDE: u64 = 16;
@@ -23,7 +25,12 @@ pub struct IconComputeCull {
     pub dst_buf: Option<wgpu::Buffer>,
     pub dst_capacity: u32,
     pub last_cpu_count: u32,
-    pub last_gpu_count: u32,
+    /// T-151.11.4 (audit X-03): the REAL GPU counter, async-mapped from `readback_buf` after
+    /// each culled frame's submit. Until the first sample lands (`gpu_sampled == false`) the
+    /// getter mirrors the CPU oracle — and `stats()` says so via `compute_cull_gpu_sampled`.
+    pub last_gpu_count: Rc<Cell<u32>>,
+    pub gpu_sampled: Rc<Cell<bool>>,
+    readback_in_flight: Rc<Cell<bool>>,
     /// Packed 20 B copy of last upload (CPU oracle input).
     pub last_icons_20: Vec<u8>,
 }
@@ -129,9 +136,50 @@ impl IconComputeCull {
             dst_buf: None,
             dst_capacity: 0,
             last_cpu_count: 0,
-            last_gpu_count: 0,
+            last_gpu_count: Rc::new(Cell::new(0)),
+            gpu_sampled: Rc::new(Cell::new(false)),
+            readback_in_flight: Rc::new(Cell::new(false)),
             last_icons_20: Vec::new(),
         }
+    }
+
+    /// The GPU counter value for stats: the real sampled count once available, else the CPU
+    /// oracle mirror (flagged by [`Self::gpu_sampled`]).
+    #[must_use]
+    pub fn gpu_count_for_stats(&self) -> u32 {
+        if self.gpu_sampled.get() {
+            self.last_gpu_count.get()
+        } else {
+            self.last_cpu_count
+        }
+    }
+
+    /// T-151.11.4 (X-03): async-map the 4-byte counter readback after a submit that encoded a
+    /// cull. In-flight guarded like `GpuTimer` so mappings never overlap; the callback stores
+    /// the real GPU count + sets `gpu_sampled`.
+    pub fn kick_readback(&self) {
+        if self.readback_in_flight.get() || self.src_count == 0 {
+            return;
+        }
+        self.readback_in_flight.set(true);
+        let buf = self.readback_buf.clone();
+        let count = self.last_gpu_count.clone();
+        let sampled = self.gpu_sampled.clone();
+        let flag = self.readback_in_flight.clone();
+        self.readback_buf
+            .slice(..)
+            .map_async(wgpu::MapMode::Read, move |res| {
+                if res.is_ok() {
+                    {
+                        let data = buf.slice(..).get_mapped_range();
+                        let n = u32::from_le_bytes(data[0..4].try_into().expect("4 bytes"));
+                        count.set(n);
+                        sampled.set(true);
+                    }
+                    buf.unmap();
+                }
+                flag.set(false);
+            });
     }
 
     pub fn upload_icons(&mut self, device: &wgpu::Device, queue: &wgpu::Queue, icons_20: &[u8]) {
@@ -180,7 +228,8 @@ impl IconComputeCull {
         if self.src_count == 0 {
             let args: [u32; 4] = [4, 0, 0, 0];
             queue.write_buffer(&self.indirect_buf, 0, bytemuck::cast_slice(&args));
-            self.last_gpu_count = 0;
+            self.last_gpu_count.set(0);
+            self.gpu_sampled.set(true); // empty is exact
             return;
         }
         let Some(src) = &self.src_buf else {
@@ -241,10 +290,11 @@ impl IconComputeCull {
         let seed: [u32; 4] = [4, 0, 0, 0];
         queue.write_buffer(&self.indirect_buf, 0, bytemuck::cast_slice(&seed));
         encoder.copy_buffer_to_buffer(&self.counter_buf, 0, &self.indirect_buf, 4, 4);
-        // Staging for optional Class R readback (verify API).
-        encoder.copy_buffer_to_buffer(&self.counter_buf, 0, &self.readback_buf, 0, 4);
-        // Until async map completes, stats use CPU oracle (exact Class R match by construction
-        // of the shared AABB rule); verify API maps readback for GPU equality proof.
-        self.last_gpu_count = self.last_cpu_count;
+        // Counter staging for the real readback — the render loop calls `kick_readback` after
+        // this encoder's submit (T-151.11.4 / X-03; the old code never mapped this buffer and
+        // mirrored the CPU count into the "GPU" stat).
+        if !self.readback_in_flight.get() {
+            encoder.copy_buffer_to_buffer(&self.counter_buf, 0, &self.readback_buf, 0, 4);
+        }
     }
 }

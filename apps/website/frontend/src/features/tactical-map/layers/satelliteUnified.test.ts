@@ -3,7 +3,13 @@
 // violation must throw (the basemap hook catches → pyramid fallback). Decode/GPU upload is
 // browser-only and covered by the manual U1–U4 pass.
 import { describe, it, expect } from 'vitest'
-import { parseTbdSat, pickBaseLevel, type TbdSatIndex } from './satelliteUnified'
+import {
+  parseTbdSat,
+  pickBaseLevel,
+  parseTbdSatIndexOnly,
+  pickPreviewLevel,
+  type TbdSatIndex,
+} from './satelliteUnified'
 
 /** Serialize an index into a container, appending `payload` bytes after the JSON. */
 function makeBundle(index: unknown, payloadLength: number, magic = 'TBDS', version = 1): ArrayBuffer {
@@ -142,5 +148,52 @@ describe('pickBaseLevel', () => {
 
   it('degenerate limit → coarsest level still returned', () => {
     expect(pickBaseLevel(chain, 1)).toBe(chain.mipCount - 1)
+  })
+})
+
+// T-151.11.4 (audit P-03) — Range-preview pure helpers.
+describe('parseTbdSatIndexOnly (Range head)', () => {
+  it('parses an index from a head buffer, validating block ranges against the FULL file size', () => {
+    const index = validIndex()
+    const whole = makeBundle(index, payloadBytes(index))
+    // Head = header + JSON only (no payload) — exactly what the Range fetch returns.
+    const headLen = 12 + new TextEncoder().encode(JSON.stringify(index)).length
+    const head = whole.slice(0, headLen)
+    const parsed = parseTbdSatIndexOnly(head, whole.byteLength)
+    expect(parsed.mipCount).toBe(index.mipCount)
+    expect(parsed.mips[0].tiles[0].offset).toBe(index.mips[0].tiles[0].offset)
+  })
+
+  it('throws when a block range exceeds the reported file size', () => {
+    const index = validIndex()
+    const whole = makeBundle(index, payloadBytes(index))
+    const headLen = 12 + new TextEncoder().encode(JSON.stringify(index)).length
+    const head = whole.slice(0, headLen)
+    expect(() => parseTbdSatIndexOnly(head, whole.byteLength - 1)).toThrow(/out of file range/)
+  })
+})
+
+describe('pickPreviewLevel', () => {
+  it('returns the first (largest) level whose long edge fits the cap — Everon-shaped chain', () => {
+    // 12800-shaped synthetic chain metadata (tiles irrelevant for the pick).
+    const mips = []
+    let w = 12800
+    for (let level = 0; w >= 1; level++) {
+      mips.push({ level, width: w, height: w, tiles: [] })
+      if (w === 1) break
+      w = Math.max(1, Math.floor(w / 2))
+    }
+    const index = { mips, mipCount: mips.length } as unknown as TbdSatIndex
+    expect(pickPreviewLevel(index, 1024).width).toBe(800) // level 4: 12800/2^4
+    expect(pickPreviewLevel(index, 800).width).toBe(800) // inclusive fit
+    expect(pickPreviewLevel(index, 799).width).toBe(400)
+  })
+
+  it('falls back to the 1×1 tail when nothing fits', () => {
+    const index = {
+      mips: [{ level: 0, width: 4, height: 4, tiles: [] }, { level: 1, width: 2, height: 2, tiles: [] }, { level: 2, width: 1, height: 1, tiles: [] }],
+      mipCount: 3,
+    } as unknown as TbdSatIndex
+    expect(pickPreviewLevel(index, 0).width).toBe(1)
   })
 })

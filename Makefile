@@ -224,3 +224,6 @@ ci-local-frontend: wasm ## CI gate: wasm core + npm ci + format:check (FMT-3) + 
 ci-local-schema: ## CI gate: schema validate (TEST-3) + @contract citation verify
 	$(MAKE) schema-validate
 	$(MAKE) verify-citations
+
+verify-wgpu-gpu: ## Headless GPU-R self-checks (all __selfChecks incl. marquee/tree/computeCull) — T-151.11.4
+	node scripts/website/verify-wgpu-gpu.mjs

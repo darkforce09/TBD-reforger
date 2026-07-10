@@ -111,3 +111,101 @@ export function pickBaseLevel(index: TbdSatIndex, maxTextureDimension2D: number)
   }
   return index.mipCount - 1
 }
+
+// ── T-151.11.4 (audit P-03) — instant preview via HTTP Range over the SAME bundle ────────────
+// Deck-era code expected a `tiles/satellite/full.webp` preview asset that was never generated,
+// so the map sat blank for the whole 153 MB unified fetch. Instead of minting a new asset, the
+// preview Range-fetches the container index + one coarse mip's blocks (a few hundred KB) out of
+// the existing `.tbd-sat`. Everything here is best-effort: any non-206 / parse failure returns
+// null and the caller silently skips the preview (the full loader path is untouched).
+
+/** Header/index parsed from a Range-fetched head; tile byte ranges validated against the FULL
+ *  file size (from Content-Range), since the local buffer only holds the head. */
+export function parseTbdSatIndexOnly(buf: ArrayBuffer, fileSize: number): TbdSatIndex {
+  const { index, payloadStart } = parseHeader(buf)
+  if (index.formatVersion !== 1) bail(`index formatVersion ${index.formatVersion} !== 1`)
+  if (!Array.isArray(index.mips) || index.mips.length !== index.mipCount || index.mipCount < 1)
+    bail('mips[] does not match mipCount')
+  for (const mip of index.mips) {
+    for (const t of mip.tiles) {
+      if (t.offset < payloadStart || t.offset + t.length > fileSize)
+        bail(`level ${mip.level} block out of file range`)
+    }
+  }
+  return index
+}
+
+/** The coarsest-usable preview mip: the FIRST level (walking base→1×1) whose long edge fits
+ *  `maxEdgePx` — e.g. Everon 12800² @ 1024 → level 4 (800²). */
+export function pickPreviewLevel(index: TbdSatIndex, maxEdgePx = 1024): TbdSatMip {
+  for (const mip of index.mips) {
+    if (Math.max(mip.width, mip.height) <= maxEdgePx) return mip
+  }
+  return index.mips[index.mips.length - 1]
+}
+
+async function fetchRange(
+  url: string,
+  start: number,
+  endInclusive: number,
+  signal: AbortSignal,
+): Promise<{ buf: ArrayBuffer; total: number } | null> {
+  const res = await fetch(url, {
+    signal,
+    headers: { Range: `bytes=${start}-${endInclusive}` },
+  })
+  // 206 or nothing: a 200 means the server ignored Range — reading the body would download the
+  // whole bundle, defeating the point. Cancel and bail out.
+  if (res.status !== 206) {
+    try {
+      await res.body?.cancel()
+    } catch {
+      /* already closed */
+    }
+    return null
+  }
+  const contentRange = res.headers.get('content-range') ?? ''
+  const total = Number(contentRange.split('/')[1] ?? 0)
+  if (!Number.isFinite(total) || total <= 0) return null
+  return { buf: await res.arrayBuffer(), total }
+}
+
+/** Range-fetch and parse just the TBDS index (two small requests: 12 B header, then the JSON). */
+export async function fetchTbdSatIndexHead(
+  url: string,
+  signal: AbortSignal,
+): Promise<TbdSatIndex | null> {
+  try {
+    const head = await fetchRange(url, 0, 11, signal)
+    if (!head || head.buf.byteLength < 12) return null
+    const dv = new DataView(head.buf)
+    if (dv.getUint32(0, true) !== MAGIC || dv.getUint32(4, true) !== 1) return null
+    const jsonLen = dv.getUint32(8, true)
+    if (jsonLen <= 0 || jsonLen > 16 * 1024 * 1024) return null
+    const full = await fetchRange(url, 0, 11 + jsonLen, signal)
+    if (!full) return null
+    return parseTbdSatIndexOnly(full.buf, full.total)
+  } catch {
+    return null
+  }
+}
+
+/** Range-fetch one mip's VP8L blocks (parallel; each block is its own small request). */
+export async function fetchMipLevelBlocks(
+  url: string,
+  mip: TbdSatMip,
+  signal: AbortSignal,
+): Promise<{ tile: TbdSatTile; bytes: ArrayBuffer }[] | null> {
+  try {
+    const out = await Promise.all(
+      mip.tiles.map(async (tile) => {
+        const r = await fetchRange(url, tile.offset, tile.offset + tile.length - 1, signal)
+        if (!r || r.buf.byteLength !== tile.length) throw new Error('short range read')
+        return { tile, bytes: r.buf }
+      }),
+    )
+    return out
+  } catch {
+    return null
+  }
+}

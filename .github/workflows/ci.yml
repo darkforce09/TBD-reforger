@@ -68,13 +68,30 @@ jobs:
           SQLX_OFFLINE: "true"
         run: cargo test
 
+  # --- map-engine: the T-151 crate gates (fmt + clippy native/wasm32 + native tests) ---
+  # T-151.11.4 (audit F-09): these gates previously ran only locally (`make wasm-ci`).
+  map-engine:
+    name: map-engine (wasm-ci)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - run: make wasm-ci
+
   # --- frontend: Node 26 — npm ci + format:check (FMT-3) + lint + build + unit tests (TEST-2) ---
   # No map-assets symlink step: vitest resolves `map-assets` via vitest.config.ts, and
   # `vite build` has no map-assets module import (vite.config.ts has no such alias).
+  # T-151.11.4 (audit F-09): `src/wasm/pkg` is gitignored and imported by build+tests, so the
+  # job builds it first (`make wasm` — rust toolchain + wasm-pack required).
   frontend:
     name: frontend (Node 26)
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: apps/website/frontend
@@ -85,6 +102,16 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "26"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-pack
+      - name: build wasm pkg (make wasm)
+        working-directory: .
+        run: make wasm
       - run: npm ci
       - run: npm run format:check
       - run: npm run lint
