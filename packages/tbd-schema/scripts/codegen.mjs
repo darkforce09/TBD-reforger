@@ -22,6 +22,7 @@ const rustRoot = join(repoRoot, "apps", "website", "src", "contract", "generated
 // Schemas with a cross-boundary TS + Rust projection.
 const targets = [
   { schema: "registry-items.schema.json", ts: "registryItems.ts", rust: "registry_items" },
+  { schema: "registry-compat.schema.json", ts: "registryCompat.ts", rust: "registry_compat" },
   { schema: "loadout-export.schema.json", ts: "loadoutExport.ts", rust: "loadout" },
   { schema: "mission-editor-payload.schema.json", ts: "missionEditorPayload.ts", rust: "mission_editor" },
 ];

@@ -8,4 +8,6 @@ pub mod loadout;
 #[allow(clippy::all, dead_code)]
 pub mod mission_editor;
 #[allow(clippy::all, dead_code)]
+pub mod registry_compat;
+#[allow(clippy::all, dead_code)]
 pub mod registry_items;
