@@ -6,9 +6,10 @@
 // T-151.5 W5: also loads the world glyph atlas once and pushes tree/prop/badge icon lanes from
 // the same residency (replace-not-accumulate, INSTANCE_BUDGET, LOD + prefs).
 //
-// D2 framing (t145 kickoff): JS fetches, Rust parses. No per-frame JS consumer, so no
-// SharedArrayBuffer. Deck's worker/chunkStore/rbush path is untouched — this only drives the
-// `?engine=wgpu` mount.
+// D2 framing (t145 kickoff): JS fetches, Rust parses (gunzip via flate2 inside
+// `WorldResidency.ingest_chunk_gz`). No per-frame JS consumer, so no SharedArrayBuffer.
+// Since T-151.9 this drives the ONLY Mission Creator map engine — the Deck
+// worker/chunkStore/rbush path was deleted at the flip (T-151.11.2 comment refresh, audit A-07).
 //
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.

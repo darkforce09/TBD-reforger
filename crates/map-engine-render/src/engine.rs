@@ -1165,7 +1165,9 @@ impl RenderEngine {
         });
 
         // Camera starts at the editor defaults; JS calls resize() with CSS dims right after
-        // create (device dims are a placeholder until then).
+        // create (device dims are a placeholder until then). Bounds default to Everon so the
+        // spike page clamps sensibly with zero calls; the editor MUST call `set_camera_bounds`
+        // with its terrain dims right after create (T-151.11.2 / audit X-02 — Arland is 4096²).
         let mut camera = OrthoCamera::new(
             f64::from(device_w),
             f64::from(device_h),
@@ -1273,9 +1275,21 @@ impl RenderEngine {
         self.damage.mark();
     }
 
-    /// Drag-pan by CSS-pixel deltas (content follows cursor).
+    /// Drag-pan by CSS-pixel deltas (content follows cursor). Live caller: the spike page's
+    /// pointer pan (`WgpuCanvas.tsx`); the editor pans via `set_view` (audit X-05 corrected —
+    /// this is not dead code).
     pub fn pan(&mut self, dx_px: f64, dy_px: f64) {
         self.camera.pan(dx_px, dy_px);
+        self.damage.mark();
+    }
+
+    /// Set the camera's target clamp rect to the mounted terrain (T-151.11.2 / audit X-02).
+    /// The editor calls this with `[0, 0, terrain.width, terrain.height]` right after create —
+    /// the create-time default is Everon 12,800² and is WRONG for Arland (4,096²). The TS
+    /// `clampViewState` mirror stays as the synchronous backstop; this keeps the engine-side
+    /// clamp (the SoT for `set_view`/`zoom_at`) truthful on every terrain.
+    pub fn set_camera_bounds(&mut self, min_x: f64, min_y: f64, max_x: f64, max_y: f64) {
+        self.camera.set_bounds(min_x, min_y, max_x, max_y);
         self.damage.mark();
     }
 
@@ -1378,12 +1392,9 @@ impl RenderEngine {
         self.camera.visible_world_rect().to_vec()
     }
 
-    /// Screen CSS px → world meters on the z=0 plane (`viewport.unproject` / ULP-0 OrthoCamera).
-    /// T-151.7: `useSelectTool` pick radius, cursor, drop, and dbl-click on the wgpu mount.
-    #[must_use]
-    pub fn unproject_xy(&self, px: f64, py: f64) -> Vec<f64> {
-        self.camera.unproject_xy(px, py).to_vec()
-    }
+    // T-151.11.2 (audit X-05): `unproject_xy` deleted — the FE unprojects through frozen
+    // `OrthoCameraJs` snapshots (gesture semantics require a camera frozen at gesture start;
+    // a live engine unproject would feedback-loop during pan). `viewportFromEngine` deleted too.
 
     /// Render one frame to the canvas. Steady-state CPU→GPU traffic is exactly the 64-byte
     /// mvp uniform (the navigation invariant); instance data is static in GPU memory.
@@ -3188,11 +3199,20 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::Slots, bytes, visible);
     }
 
-    /// Dirty-range patch into the Slots lane buffer (byte offset must be 20-aligned).
+    /// Sub-row dirty patch into the Slots lane buffer (T-151.11.2 / audit X-06).
+    /// Contract: patches never start on a 20 B stride boundary — the only caller is the drag
+    /// hide-patch at `row·20 + 8` (12 B of size/yaw/glyph/tint; positions are untouched, so no
+    /// world→anchor conversion applies). The old full-row conversion heuristic was unreachable
+    /// and is deleted; full-row updates go through `upload_slot_lane` (rematerialize).
     fn patch_slot_lane(&mut self, byte_offset: u32, bytes: &[u8]) {
         if bytes.is_empty() {
             return;
         }
+        debug_assert!(
+            !byte_offset.is_multiple_of(20),
+            "patch_slot_lane is sub-row only (offset {byte_offset} is a stride boundary); \
+             use upload_slot_lane for full rows"
+        );
         let Some(batch) = self.batches.iter().find(|b| b.role == LaneRole::Slots) else {
             return;
         };
@@ -3203,17 +3223,8 @@ impl RenderEngine {
         if end > u64::from(*count) * 20 {
             return;
         }
-        // Convert world→anchor if this looks like a full instance or pos prefix.
-        // Callers pass already-anchor-relative for size/tint-only patches at offset+8.
-        // For full 20 B rows starting at stride boundaries with world coords, convert.
-        let mut converted = bytes.to_vec();
-        if byte_offset.is_multiple_of(20) && converted.len().is_multiple_of(20) {
-            // Heuristic: if |pos| > 6400 something could be world — always convert full rows
-            // as world meters (SoA contract). Size/tint-only patches use non-zero offset within row.
-            Self::convert_icon_world_to_anchor(&mut converted);
-        }
         self.queue
-            .write_buffer(instances, u64::from(byte_offset), &converted);
+            .write_buffer(instances, u64::from(byte_offset), bytes);
     }
 
     /// Upload SlotDrag overlay instances (world meters). Empty → drop lane.

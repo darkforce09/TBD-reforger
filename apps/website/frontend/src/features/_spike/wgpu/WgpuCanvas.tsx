@@ -82,15 +82,18 @@ export default function WgpuCanvas() {
         // Dev-only headless hooks (GPU-R): CDP awaits these for the byte-exact self-check JSON
         // (same mechanism T-151.1 used). `worldBuilding` is the T-151.3 S4 gate; `calibration`
         // (T-151.0) + `texture` (T-151.1) are the regression re-runs.
-        ;(
-          window as unknown as { __selfChecks?: Record<string, () => Promise<string>> }
-        ).__selfChecks = {
-          calibration: () => created.self_check() as Promise<string>,
-          texture: () => created.texture_self_check() as Promise<string>,
-          worldBuilding: () => created.world_building_self_check() as Promise<string>,
-          seaBand: () => created.sea_band_self_check() as Promise<string>,
-          roadCenterline: () => created.road_centerline_self_check() as Promise<string>,
-          marquee: () => created.marquee_self_check() as Promise<string>, // T-151.11.1 P-02
+        // T-151.11.2 (A-10): registration is DEV-gated (the route already is; belt-and-braces).
+        if (import.meta.env.DEV) {
+          ;(
+            window as unknown as { __selfChecks?: Record<string, () => Promise<string>> }
+          ).__selfChecks = {
+            calibration: () => created.self_check() as Promise<string>,
+            texture: () => created.texture_self_check() as Promise<string>,
+            worldBuilding: () => created.world_building_self_check() as Promise<string>,
+            seaBand: () => created.sea_band_self_check() as Promise<string>,
+            roadCenterline: () => created.road_centerline_self_check() as Promise<string>,
+            marquee: () => created.marquee_self_check() as Promise<string>, // T-151.11.1 P-02
+          }
         }
         setBackend(created.backend())
         applySize()

@@ -1,9 +1,9 @@
-// T-090.5.3 — Spatial index for WORLD objects (terrain buildings/piers/trees), the rbush that
-// answers pickNearest/pickRect inside the world-objects worker (W2). Mirrors the query
-// semantics of slotSpatialIndex.ts but is deliberately NOT that module: the slot index is a
-// single-mounted-doc main-thread singleton owned by authored slots; the world index is a
-// factory (one instance per worker core) over a different, much larger, chunk-evictable
-// dataset (GAP-H3 / W3 — no shared singleton).
+// ORACLE-ONLY (T-151.11.2, audit B-06 corrected): the rbush world-object spatial index.
+// The worker that ran this live was deleted at the T-151.9 flip — the live pick engine is the
+// Rust chunk-keyed `WorldSpatialIndex` (`map-engine-core::world::index`). This file survives
+// solely as the Class S oracle for `_wasm/world.pick.parity.test.ts` (≥10k probes) and its own
+// unit test; nothing in the app imports it. Mirrors the query semantics of slotSpatialIndex.ts
+// but is deliberately NOT that module (factory over a chunk-evictable dataset — GAP-H3 / W3).
 //
 // Differences from the slot index, by design:
 //  - createWorldSpatialIndex() factory — instantiated inside the worker; nothing module-level.

@@ -24,7 +24,7 @@ export function clampMapZoom(zoom: number): number {
  * Frozen viewport from a view-state snapshot (flipY:false orthographic).
  *
  * Uses OrthoCameraJs so unproject is ULP-0 vs Deck at integer zooms (same core as
- * RenderEngine.unproject_xy). The camera is retained on the returned object and freed
+ * the engine camera math). The camera is retained on the returned object and freed
  * via `dispose()` when the gesture ends — useSelectTool drops the ref on pointer-up
  * and finalizers reclaim if dispose is skipped.
  */
@@ -43,18 +43,6 @@ export function viewportFromViewState(
   return {
     unproject: (xy: number[]) => {
       const r = cam.unproject_xy(xy[0], xy[1])
-      return [r[0], r[1]]
-    },
-  }
-}
-
-/** Live engine camera unproject (RenderEngine.unproject_xy after T-151.7). */
-export function viewportFromEngine(engine: {
-  unproject_xy: (px: number, py: number) => ArrayLike<number>
-}): MapViewport {
-  return {
-    unproject: (xy: number[]) => {
-      const r = engine.unproject_xy(xy[0], xy[1])
       return [r[0], r[1]]
     },
   }

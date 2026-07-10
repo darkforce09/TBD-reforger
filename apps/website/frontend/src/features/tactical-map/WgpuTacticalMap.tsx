@@ -1,9 +1,10 @@
-// T-151.1 W1 basemap lane — the wgpu `RenderEngine` editor mount now renders the basemap stack
-// (satellite unified / pyramid + hillshade + grid) to parity with the Deck `TacticalMap`, selected
-// by `MissionCreatorPage` behind the engine flag (`VITE_MC_ENGINE=wgpu` or `?engine=wgpu`). The
-// T-151.0 calibration scene is hidden (`hide_calibration`); it survives only on the /_spike/wgpu
-// page. T-151.6 adds mission slots / selection / drag / clusters.
-// T-151.7 wires useSelectTool + page callbacks on ULP-0 OrthoCamera (no LMB pan steal).
+// The wgpu `RenderEngine` editor mount — since T-151.9 this is the ONLY Mission Creator map
+// engine (the Deck runtime is deleted; `MissionCreatorPage` mounts this unconditionally).
+// Renders the full stack: basemap (satellite unified / pyramid + hillshade + grid), world lanes
+// (buildings/roads/landcover/forest/glyphs), and mission lanes (slots/selection/drag/clusters/
+// marquee). The T-151.0 calibration scene is hidden (`hide_calibration`); it survives only on
+// the DEV-only /_spike/wgpu page. Interaction: useSelectTool + page callbacks on the ULP-0
+// engine camera (T-151.7; no LMB pan steal).
 //
 // Wasm memory lifecycle invariants I2–I7 are reused VERBATIM from WgpuCanvas.tsx (the spike page):
 //   I2 the engine handle is EFFECT-LOCAL — never useMemo/useState-persisted; `.free()` is NOT
@@ -256,7 +257,10 @@ export default function WgpuTacticalMap({
     [flyToInternal],
   )
 
-  /** Snapshot the LIVE engine camera when ready so pick/pan match GPU (T-151.7.2 B3). */
+  /** Snapshot the LIVE engine camera when ready so pick/pan match GPU (T-151.7.2 B3).
+   *  Deliberately a FROZEN snapshot (`viewportFromViewState`), not a live engine viewport —
+   *  gestures (pan/move/marquee) freeze the camera at gesture start; a live unproject would
+   *  feedback-loop as the pan itself moves the target (T-151.11.2 review note). */
   const getViewport = useCallback(() => {
     const el = containerRef.current
     if (!el) return null
@@ -443,11 +447,15 @@ export default function WgpuTacticalMap({
         engineRef.current = created
         setBackend(created.backend())
         applySize()
+        // T-151.11.2 (X-02): engine-side clamp must match the mounted terrain (create-time
+        // default is Everon); TS clampViewState stays as the synchronous mirror/backstop.
+        created.set_camera_bounds(0, 0, terrainDef.width, terrainDef.height)
         const vs = viewStateRef.current
         created.set_view(vs.target[0], vs.target[1], vs.zoom)
         created.hide_calibration() // W1: no calibration scene in the editor (L1)
-        // T-151.8: HUD fps needs continuous submits; idle skip is still Class R when continuous=false.
-        created.set_continuous_render(true)
+        // T-151.11.2 (P-06): prod runs damage-driven (idle frames skip acquire/encode/submit —
+        // the T-151.8 contract); DEV keeps continuous submits so the fps HUD stays truthful.
+        created.set_continuous_render(import.meta.env.DEV)
         controllerRef.current = new WgpuBasemapController(created, terrainDef, {
           onProgress: (f) => onProgressRef.current?.(f),
           onDegraded: (v) => onDegradedRef.current?.(v),
@@ -467,7 +475,8 @@ export default function WgpuTacticalMap({
             return
           }
           frames += 1
-          if (now - lastHud > HUD_INTERVAL_MS) {
+          // T-151.11.2 (P-05): HUD state churn is DEV-only — prod renders no debug panel.
+          if (import.meta.env.DEV && now - lastHud > HUD_INTERVAL_MS) {
             if (lastHud > 0) setFps(Math.round((frames * 1000) / (now - lastHud)))
             lastHud = now
             frames = 0
@@ -583,23 +592,27 @@ export default function WgpuTacticalMap({
           ref={canvasRef}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
         />
-        <div style={PANEL}>
-          <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151.8 · cull + density</div>
-          <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
-            {fps} FPS · {backend}
-          </div>
-          <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, opacity: 0.9 }}>
-            basemap: {basemapMode}
-          </div>
-          {error !== null && (
-            <div style={{ marginTop: 8 }}>
-              <div style={{ color: '#ff9c9c', maxWidth: 420, whiteSpace: 'pre-wrap' }}>{error}</div>
-              <button onClick={retryWebgl} style={BTN}>
-                Retry with WebGL2 (fresh canvas)
-              </button>
+        {/* T-151.11.2 (P-05): debug readouts are DEV-only; the error banner is its own
+            always-rendered element — init failures must surface in production (I6). */}
+        {import.meta.env.DEV && (
+          <div style={PANEL}>
+            <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>wgpu · {backend}</div>
+            <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 18, margin: '2px 0 4px' }}>
+              {fps} FPS
             </div>
-          )}
-        </div>
+            <div style={{ fontVariantNumeric: 'tabular-nums', fontSize: 12, opacity: 0.9 }}>
+              basemap: {basemapMode}
+            </div>
+          </div>
+        )}
+        {error !== null && (
+          <div style={{ ...PANEL, top: import.meta.env.DEV ? 132 : 60 }}>
+            <div style={{ color: '#ff9c9c', maxWidth: 420, whiteSpace: 'pre-wrap' }}>{error}</div>
+            <button onClick={retryWebgl} style={BTN}>
+              Retry with WebGL2 (fresh canvas)
+            </button>
+          </div>
+        )}
       </div>
     </MapContextProvider>
   )

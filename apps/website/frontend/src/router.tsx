@@ -1,7 +1,13 @@
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
-import { WgpuSpikePage } from '@/features/_spike/routes'
+
+// T-151.11.2 (audit A-10): DEV-only spike harness. The lazy import sits inside the DEV arm of
+// a constant ternary so production builds tree-shake the WgpuCanvas chunk entirely; the
+// component identity is module-stable (a lazy() created per-render would remount the engine).
+const WgpuSpikePage = import.meta.env.DEV
+  ? lazy(() => import('@/features/_spike/wgpu/WgpuCanvas'))
+  : () => null
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { MissionEditorPage } from '@/features/mission-creator/routes'
 import {
@@ -47,15 +53,20 @@ export const router = createBrowserRouter([
     path: '/auth/callback',
     element: <AuthCallbackPage />,
   },
-  {
-    // wgpu render-engine spike harness (T-151) — no auth, no app chrome.
-    path: '/_spike/wgpu',
-    element: (
-      <Suspense fallback={<div style={{ padding: 24 }}>Loading spike…</div>}>
-        <WgpuSpikePage />
-      </Suspense>
-    ),
-  },
+  // T-151.11.2 (audit A-10): the wgpu spike route registers only in DEV.
+  ...(import.meta.env.DEV
+    ? [
+        {
+          // wgpu render-engine spike harness (T-151) — no auth, no app chrome.
+          path: '/_spike/wgpu',
+          element: (
+            <Suspense fallback={<div style={{ padding: 24 }}>Loading spike…</div>}>
+              <WgpuSpikePage />
+            </Suspense>
+          ),
+        },
+      ]
+    : []),
   {
     path: '/',
     element: <AppLayout />,
