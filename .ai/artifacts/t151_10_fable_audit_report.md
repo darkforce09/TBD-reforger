@@ -774,3 +774,166 @@ dispositions assigned by rule against the findings above (proofs live at the ref
 | 250 | program | bytes | Merged wasm byte trajectory claimed: 931,424 (pre-merge) → 3,658,383 (.0) → 3,723,192 (.1) → 3,858,591 (.2) → 3,946,734 (.3) → 4,005,415 (.4) → 4,009, (.ai/artifacts/t151_0_verify_log.md:29-33 + per-slice verify logs (t151_1:36, t151_2:78-83, t151_3:24, t151_4:24, t151_4_1:67, t151_5:46, t151_5_1:33, t151_6:54, t151_7:34, t151_7_3:59, t151_8:85)) | **PARTIAL** — F-04 — W8 exact bytes never recorded; audit pins 4,123,261 B |
 
 **Tally:** PASS 179 · PARTIAL 12 · NOT RE-VERIFIED 45 · OPEN 14 — 250/250 dispositioned.
+
+---
+
+# Round 2 — code-level completeness audit (T-151.10.1) [2026-07-10]
+
+**Trigger:** operator challenge — "did you actually analyse the code, or just the documentation?" —
+plus the report that the product is missing things. The challenge was correct in substance:
+
+**Honest characterization of Round 1 depth.** Round 1 re-ran every automated gate, re-derived
+every documented number, reconciled docs against git, and line-read ~7 FE hot files plus surface
+greps of Rust. It did **not** read the engine or the mount line-by-line, and it audited recorded
+promises — so divergences that no test asserts and no document mentions were invisible to it.
+Round 2 closes that: a feature-parity matrix against the deleted Deck implementation
+(`git show c4831451^:…` as ground truth for "meant to have") and a line-by-line read of the
+render/interaction code. Coverage of this round is itemized in the verify log §Round 2.
+
+**Round-2 verdict in one paragraph.** The port is substantially faithful: 12/12 props consumed,
+the gesture machine is behavior-exact, every Deck color/width/alpha/gate table re-appears in Rust
+with pinned tests (grid palettes, road styles + dash + class gates, building class fills, sea
+hypsometric bands, forest ladders, slot ring/cluster constants), and the wasm lifecycle
+(I2–I7) is sound. Against that baseline the audit found **2 real rendering defects**
+(draw-order: grid over unit markers everywhere; compute-culled trees over everything on WebGPU),
+**3 dropped/changed behaviors** (basemap preview mode gone, marquee border gone, buildings-toggle
+semantics narrowed), **1 misleading stats field** (GPU cull count never read back), and a small
+set of dead code and prod-hygiene issues. Verdicts below; matrix after.
+
+## New findings index (Round 2)
+
+| ID | Sev | Finding (short) | Status |
+|----|-----|-----------------|--------|
+| X-01 | R | Compute-culled trees draw after the ENTIRE batch list on WebGPU — on top of slots, clusters, grid, marquee; comment claims "after forest, before props"; WebGL2 draws them at the correct order-13 slot → per-backend visual divergence | OPEN |
+| P-01 | R | Grid z-order diverges from Deck: `lane_order` Grid=19 above Slots=16/SlotDrag=17/Clusters=18 — grid lines overprint unit markers; Deck drew grid below icons | OPEN |
+| P-02 | M | Marquee border dropped: engine builds a fill-only quad (α 60/255); Deck drew fill α 40/255 + 1 px `[173,198,255,200]` outline | OPEN |
+| P-03 | M | Basemap `preview` render mode dropped: Deck showed a capped `full.webp` under the unified-satellite load; wgpu shows nothing until the 153 MB texture commits (toast only) | OPEN |
+| P-04 | M | `buildings` layer toggle narrowed: gates badge glyphs only (OBB fills always on); Deck's toggle hid the whole building lane | OPEN |
+| P-05 | M | Un-gated debug HUD ships in the production editor, labeled with a stale slice id ("T-151.8 · cull + density") | OPEN |
+| P-06 | T | Damage-driven render (T-151.8 headline) is disabled in the editor: mount forces `set_continuous_render(true)`; idle-skip benefits only the spike page. Deliberate (code comment; spec S3 "HUD continuous OK") but the product never gets the feature | PARTIAL |
+| X-02 | T | Engine camera bounds hard-coded to Everon 12,800² at create; `set_bounds` not wasm-exported; the REAL terrain clamp lives in TS (`clampViewState` + wheel corrective) — functional on all terrains, but the engine-side clamp is wrong for Arland and camera-clamp policy resides in TS (D5 tension) | PARTIAL |
+| X-03 | T | `compute_cull_gpu_count` never actually read back: `readback_buf` is copied every frame and mapped nowhere; `last_gpu_count = last_cpu_count` — the stats field is a CPU mirror presented as GPU proof; the f64→f32 frustum truncation on the GPU path is therefore unverified at runtime | OPEN |
+| X-04 | M | Marquee geometry exists twice: engine-inline (`upload_marquee`) and `compose_marquee_mesh` in core — the core fn has zero callers outside its own test (dead twin) | OPEN |
+| X-05 | M | Dead engine/FE surface: `pan`, `unproject_xy` (+ `viewportFromEngine` never called), `mark_dirty`, `clear_world_buildings`, `clear_icon_lanes`, `tree_glyph_self_check` (also C-5-02) | OPEN |
+| X-06 | T | `patch_slot_lane` full-row world→anchor conversion rests on a comment-documented heuristic ("if it looks like a full instance"); only sub-row patches exist today, so the fragile branch is currently unreachable | PARTIAL |
+| X-07 | — | Verified-sound list: wasm lifecycle I2–I7 (incl. StrictMode create-race serialization), surface Lost/Outdated self-heal, GpuTimer in-flight guard, loader abort/inflight discipline, drag phase machine truth table, deviceSize↔resize bit-parity, anchor-relative f32 precision argument | PASS |
+
+### Evidence (file:line, both sides where parity)
+
+- **X-01:** `crates/map-engine-render/src/engine.rs:1552-1568` — indirect tree draw encoded after
+  `draw_batches` returns (inside the same pass, after Marquee order-20 has drawn); comment at
+  `:1552-1553` states the opposite intent. Trees enter this path whenever
+  `compute_cull_trees && icon_cull && atlas && !tree_icons_20.is_empty()` — i.e. **always on
+  WebGPU** (`compute_cull_trees = !is_gl`, `:1294`); `upload_icon_lane` removes the ordered
+  WorldTrees batch on this path (`:2645-2652`), so there is no double-draw, only wrong order.
+  WebGL2 keeps the ordered batch (`:2655-2675`). Fix shape: draw the indirect batch when the
+  iteration reaches the WorldTrees order slot (or give the compacted buffer its own ordered batch).
+- **P-01:** `engine.rs:192-215` (`Grid => 19` vs `Slots => 16`) vs Deck order
+  `c4831451^:apps/website/frontend/src/features/tactical-map/TacticalMap.tsx:382-395`
+  (`…worldMapLayers → baseMap(grid) → clusterLayers → iconLayer → dragIconLayer → selectionLayer`).
+  Deck's marquee was topmost; wgpu keeps marquee topmost (20) correctly — only the grid moved
+  above the mission lanes.
+- **P-02:** `engine.rs:3516-3564` (fill quad, `[173/255,198/255,1.0,60/255]`, indices 2 tris, no
+  line lane) vs `c4831451^:…/layers/useSelectionLayer.ts:11-39` (`FILL=[173,198,255,40]`,
+  `LINE=[173,198,255,200]`, `getLineWidth:1`).
+- **P-03:** `wgpuBasemap.ts` mode surface = unified/pyramid/single/none (`:118-129,215-237`; no
+  preview branch) vs `c4831451^:…/layers/useTerrainBasemapLayer.ts:201-212` (`preview` BitmapLayer
+  under the unified load).
+- **P-04:** `WgpuTacticalMap.tsx:150-153` routes the toggles to `syncGlyphToggles` only;
+  `residency.rs:661-671` consumes `toggle_buildings` for `badge_want` only; `rebuild_buffers`
+  (`:549-616`) has no toggle input. Deck: `c4831451^:…/worldmap/useWorldMapLayers.ts:186-244`
+  gated every building layer.
+- **P-05 / P-06:** `WgpuTacticalMap.tsx:586-602` (always-rendered PANEL) and `:449-450`
+  (`set_continuous_render(true)` + comment).
+- **X-02:** `engine.rs:58-60,1214-1226` (Everon-hard-coded `set_bounds` at create; only call
+  site) + `camera/ortho.rs:156` (the setter; not exported in `map-engine-wasm/src/lib.rs`);
+  functional clamp: `WgpuTacticalMap.tsx:191-206` (`clampViewState` to `terrainDef.width/height`)
+  + `:536-543` (wheel corrective `set_view` when the engine's own clamp disagrees).
+- **X-03:** `icon_cull_gpu.rs:244-248` (`readback_buf` copy + `last_gpu_count = last_cpu_count`);
+  `rg readback_buf` → no map_async anywhere; `engine.rs:1366-1374` exposes the mirrored value as
+  `compute_cull_gpu_count`. Frustum f32 truncation at `:196-204`.
+- **X-04:** `vector_compose.rs:242-275` (`compose_marquee_mesh` + its only caller = own test) vs
+  `engine.rs:3508-3564`.
+- **X-05:** callers verified absent by grep over `apps/website/frontend/src` (non-test):
+  `pan` (`engine.rs:1322`), `unproject_xy` (`:1429`) + `viewportFromEngine` (`mapCamera.ts:52`),
+  `mark_dirty` (`:1334`), `clear_world_buildings` (`:2492`), `clear_icon_lanes` (`:2679`),
+  `tree_glyph_self_check` (`:4346`).
+
+## Feature-parity matrix (Deck-era ground truth @ `c4831451^` vs HEAD)
+
+Verdicts: **MATCH** (behavior + constants equal, evidence both sides) · **DIVERGED** ·
+**MISSING** · **IMPROVED** · **DORMANT** (present, no live consumer — was also unused in Deck).
+
+| # | Feature | Deck evidence (`c4831451^:`) | wgpu evidence (HEAD) | Verdict |
+|---|---------|------------------------------|----------------------|---------|
+| 1 | Props contract (12 props) | `types.ts:33-72` (byte-identical file at HEAD) | all 12 destructured + consumed `WgpuTacticalMap.tsx:79-93` | MATCH |
+| 2 | `TacticalMapApi.flyTo` + Space centering | `TacticalMap.tsx:308-312,349` | `:369-374` + page Space handler | MATCH |
+| 3 | Satellite unified basemap (one mip-chained texture) | `useTerrainBasemapLayer.ts:190-199` | `wgpuBasemap.ts:155-208` + engine tex lanes | MATCH |
+| 4 | Basemap **preview** mode during unified load | `useTerrainBasemapLayer.ts:201-212` | absent (`wgpuBasemap.ts:118-129`) | **MISSING** (P-03) |
+| 5 | Pyramid fallback ≤64 tiles, south-first Y | `:227-247` + `tileUrl.ts` | `wgpuBasemap.ts:240-289` (pack mirror `lanes::pack_offset`, tested) | MATCH |
+| 6 | Single-bitmap + none degrade + degraded toast | `:216-225`, page toasts | `wgpuBasemap.ts:210-237` + `onDegraded` refs | MATCH |
+| 7 | Unified load progress (0→0.8 fetch, →1 decode) | `:130-166` | `wgpuBasemap.ts:172-207,395-427` | MATCH |
+| 8 | Hillshade overlay + 0.1 % opacity re-tint w/o rebuild | `useDemLayer.ts:90-120` | `wgpuBasemap.ts:317-354` + `set_lane_opacity` | MATCH |
+| 9 | Procedural 1 km grid, 6-palette (normal/_HS) | `useBaseMapLayer.ts:11-21,44-69` | `lanes.rs:27-110` (pinned tests `:170-205`) | MATCH (colors) |
+| 10 | Grid **z-position** (below mission icons) | `TacticalMap.tsx:382-395` | `engine.rs:213` Grid=19 above Slots/Clusters | **DIVERGED** (P-01) |
+| 11 | Sea band hypsometric colors + fade ladder | `seaBand.ts:31-44` | `sea_band.rs` (tests pin 1.0/0.6 @ 0/1.5) | MATCH |
+| 12 | Contours color/1 px + interval ladder 100/50/20/10 | `contourLayer.ts:12-40`, `lodGates.ts:97-102` | `CONTOUR_RGBA` + `contour_interval_for_zoom` (`lod_gates.rs:73`) | MATCH (values) — live TS twin = B-01 |
+| 13 | Land-cover per-kind tints | `landCoverRegions.ts:39-43` | `vector_compose.rs landcover_fill` | MATCH |
+| 14 | Road casing (×1.4, near-black) + per-class color/width/dash + class min-zoom gates | `roadLayer.ts:39-52,127-166`, `lodGates.ts:68-73` | `polyline_strip.rs:317-380` + `expand_dashed_polyline_strip:264-310` + `compose_roads_mesh` | MATCH |
+| 15 | Building OBB fills per-class + default | `buildingLayer.ts:126-139` | `residency.rs:72-87` (verbatim table) | MATCH |
+| 16 | Building outline color | `buildingLayer.ts:140` `[150,150,158,204]` | `residency.rs:68` `[30,30,34,255]` | DIVERGED (known C-3-02; also lighthouse red stroke dropped) |
+| 17 | Building badges (military/tower/bunker, 10 px base, min 8) | `buildingLayer.ts:170-198` | `glyph_math.rs:6-10,127-136` + residency badge pack | MATCH |
+| 18 | Forest fill α ladder + outline hairline | `forestMass.ts:227-231`, layer `:44-82` | `forest_mass.rs:241` (tests 0.45/0.35/0.12/0) + compose | MATCH (values) — live TS twin = B-02 |
+| 19 | Tree/veg/prop/rock glyphs: size mult [1,1.5], REF_ZOOM 3, min-px 4, tint hex parse | `treePropLayer.ts:45-138` | `glyph_math.rs` (full test suite) | MATCH |
+| 20 | LOD gate table (all classes) | `lodGates.ts:11-36` | `lod_gates.rs:5-73` + 121-zoom parity scan | MATCH |
+| 21 | Slot ring 20/28 px, primary/yellow | `useIconLayer.ts:15-17,96-119` | `slots_gpu.rs:17-24` | MATCH |
+| 22 | Cluster gate >500 ∧ ≤−4, disc `22+min(26,log10·12)`, α 235 | `useClusterIconLayer.ts:23-95`, `constants.ts` | `slots_gpu.rs:26-54` (truth-table tests) | MATCH |
+| 23 | Cluster count display (size-encoded disc, no numerals) | `useClusterIconLayer.ts:60-62` (no TextLayer) | disc size only | MATCH (Deck had no numerals either) |
+| 24 | Drag preview dual-lane + delta uniform | `useIconLayer.ts:126-152` | engine SlotDrag lane + 16 B delta uniform | MATCH (IMPROVED: no per-frame re-upload) |
+| 25 | Marquee visual | `useSelectionLayer.ts:11-39` fill+line | `engine.rs:3508-3564` fill only, α 60 vs 40 | **DIVERGED** (P-02) |
+| 26 | Marquee topmost | selectionLayer last | Marquee=20 top | MATCH |
+| 27 | Click select / Ctrl-toggle / empty-click rules (T-053) | old `useSelectTool.ts:266-296` | `useSelectTool.ts:300-333` | MATCH |
+| 28 | Marquee select ≥1×1 guard, frozen-vp unproject | `:239-255` | `:281-296` | MATCH |
+| 29 | Drag-move: threshold 4 px, exclude/patch/restore, zero-delta skip, one txn | `:187-232` | `:191-233,258-278` | MATCH |
+| 30 | Pan middle/right, rAF-coalesced, frozen vp | `:120-169` | `:140-152,177-187,245-253` | MATCH |
+| 31 | Wheel zoom-at-cursor clamped | Deck controller + `useOrthographicView` | `zoom_at` (ULP-0) + corrective clamp `WgpuTacticalMap.tsx:519-549` | MATCH |
+| 32 | Dbl-click → Attributes (≤1 sel guard page-side); cluster dbl-click drills | `TacticalMap.tsx:216-234` | `WgpuTacticalMap.tsx:351-367` | MATCH |
+| 33 | Cluster click drill-in +1 zoom; press never grabs hidden slot | old tool `:150-156,275-282` | `useSelectTool.ts:159-164,307-315` + `drillIntoCluster` | MATCH |
+| 34 | Asset drag-drop (MIME gate, copy effect, unproject) | `TacticalMap.tsx:314-347` | `WgpuTacticalMap.tsx:376-400` | MATCH |
+| 35 | Cursor channel rAF X/Y/Z + DEM z + demVersion re-emit + leave→null | `:245-296` | `:294-349` | MATCH |
+| 36 | Keyboard: Space/Delete/Ctrl+C/V (cap 500)/undo-redo (page-owned) | `MissionCreatorPage` | unchanged page handlers | MATCH |
+| 37 | Viewport clamp to terrain + zoom band ±6 | `useOrthographicView.ts:12-13,37-50` | TS `clampViewState` + Rust MIN/MAX consts | MATCH (policy split noted X-02) |
+| 38 | Terrain-switch remount (`key={terrainId}`) | page `:270` | page `:235` + full engine rebuild | MATCH |
+| 39 | worldLayerPrefs toggles | `useWorldMapLayers.ts:186-244` (whole lanes) | trees/props MATCH; buildings→badges only | **DIVERGED** (P-04) |
+| 40 | Style modes satellite/hybrid/map, satOpacity 1/0.55/0, paper tint | `styleModes.ts:30-45` (file survives) | `setSatOpacity` + `set_clear_color(PAPER_TINT)` | MATCH |
+| 41 | FpsCounter DEV-gated + Ctrl+Alt+D stream debug | page `:308`, `FpsCounter.tsx` | page DEV FpsCounter kept; **plus** un-gated in-map panel | DIVERGED (P-05) |
+| 42 | Idle GPU behavior | Deck: rAF renders continuously (deck default) | damage-skip exists but continuous forced in editor | PARTIAL (P-06; parity with Deck is technically MATCH — Deck also drew every frame — the regression is vs T-151.8's own claim) |
+| 43 | Detail-band viewport cull (`CHUNK_CULL_THRESHOLD` 50k) | `useIconLayer` chunk cull | slot lane draws full SoA (no threshold cull); W8 draw-set culls WORLD lanes; slot counts ≤ ~10k per mission today | DIVERGED-minor (T; note for T-069+ scale work) |
+| 44 | World-object pick (12 px, worker rbush) | worker-only, no editor UI consumer | Rust `pick_nearest/pick_rect` exposed, no editor consumer | DORMANT (both eras) |
+| 45 | Load/conflict/restore overlays, invalid-id gate | page-owned | page unchanged | MATCH |
+| 46 | Basemap unified texture freed on unmount/terrain switch | `useTerrainBasemapLayer.ts:153-162` | engine free on remount (`tex_layer_clear` + engine.free) | MATCH |
+| 47 | `onBasemapProgress` sonner contract (`sat-unified` toast id) | page `:93-98` | unchanged page + controller emits same fractions | MATCH |
+| 48 | Slot pick radius 4 px nearest-in-box; pick engine | `slotSpatialIndex` rbush→ | same facade, wasm `SlotIndex.pick_rect` | MATCH (IMPROVED: wasm grid) |
+| 49 | Icon min sizes (`sizeMinPixels` 4/8) | layers | `size_with_min_px` at pack time | MATCH |
+| 50 | Background color behind map | page dark field | `#0b0f14` container + engine clear | MATCH |
+
+Rows 1–50 + the Round-1 §B ownership matrix rows (16 subsystems) constitute the completeness
+proof; every DIVERGED/MISSING row has a finding ID above. **No Deck-era feature beyond rows
+4/10/16/25/39/41 lost function or fidelity**, and rows 24/48 are strictly better than Deck.
+
+## Round-2 remediation additions (ranked into the Cursor queue)
+
+| Priority (merged) | Finding | One-line remediation |
+|---|---------|----------------------|
+| 2a (product visual) | X-01 | Draw the compute-culled tree batch at the WorldTrees order slot (encode indirect draw inside the ordered loop), or fall back to ordered batch when mission lanes active |
+| 2b (product visual) | P-01 | `Grid` order 19 → between DensityHeat (12) and WorldTrees (13) — one-line `lane_order` change + probe |
+| 3a | P-02 | Add a 4-segment hairline ring to `upload_marquee` (engine-side, colors from Deck oracle) |
+| 3b | P-03 | Reintroduce preview: `tex_layer_begin/commit` a capped `full.webp` before the unified fetch |
+| 3c | P-04 | Either gate OBB fills on `toggle_buildings` in `rebuild_buffers` or document the narrowed toggle in the hub |
+| 4 | P-05 | Gate the panel on `import.meta.env.DEV` (and drop the stale label) — pairs with Round-1 A-10 |
+| 5 | X-03 | Map `readback_buf` on a cadence (or in the verify API) and surface a real `compute_cull_gpu_count`; assert CPU==GPU in the headless gate |
+| 6 | X-02 | Export `set_bounds`; call with terrain dims at mount; keep TS clamp as backstop |
+| 7 | X-04/X-05 | Delete dead twins/fns (compose_marquee_mesh or switch engine to it; pan/unproject_xy/viewportFromEngine/mark_dirty/clear_* / register tree_glyph_self_check per C-5-02) |
+| 8 | P-06 | Decide: damage-driven render in editor (drop continuous; drive HUD fps from a timer) or write the trade-off into the hub |
+| 9 | 43 | Note slot-lane cull threshold as a T-069+ scale prerequisite |
+

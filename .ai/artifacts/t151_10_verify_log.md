@@ -173,3 +173,77 @@ probes byte-exact on WebGL2/SwiftShader; WebGPU not reproducible in this environ
 (`tree_glyph_self_check`) unexecutable because it was never wired. Findings, per-slice verdicts,
 LANGUAGE GATE census, and the claims register live in
 [`t151_10_fable_audit_report.md`](t151_10_fable_audit_report.md).
+
+---
+
+# Round 2 — code-level completeness audit (T-151.10.1) [2026-07-10]
+
+**Method:** feature-parity matrix vs the deleted Deck implementation (ground truth extracted
+with `git show c4831451^:<path>` by a read-only explorer) + line-by-line main-thread code read.
+No commands mutated the tree; no app code changed. Findings: report §Round 2.
+
+## Code actually read this round (line-by-line unless noted)
+
+**Rust — render crate (100 % of 5,964 LOC):**
+`engine.rs` (4,562 — full, four passes), `lanes.rs` (207), `scene.rs` (301), `damage.rs` (106),
+`compute_cull.rs` (206), `icon_cull_gpu.rs` (251), `density_heat.rs` (53), `probe.rs` (skimmed —
+T-151.0 probe path, exercised by the executed calibration self-check).
+
+**Rust — core crate (read):** `camera/ortho.rs` (364 — full), `slots_gpu.rs` (378 — full),
+`world/residency.rs` (1,292 — full), `world/roads.rs` (225 — full), `world/glyph_math.rs` (206 —
+full), `geometry/polyline_strip.rs` (style/dash/compose sections), `geometry/vector_compose.rs`
+(compose fns). **Skimmed with unit-test-verified contracts** (all their tests ran in battery row
+4): `point_index`, `spatial/cluster`, `chunk_math`, `chunk`, `prefab`, `obb`, `store`, `index`,
+`manifest`, `regions`, `classify`, `density_ladder`, `tbdd`, `contours`, `sea_band`,
+`forest_mass` (alpha ladders read via their pinned tests), `triangulate`, `dem/*`, `doc/*`
+(T-145 doc core; map-facing surface read via `lib.rs`).
+
+**wasm shim:** `lib.rs` public API enumerated + targeted reads (exports, `bind_mission_doc`,
+`OrthoCameraJs`, absence of `set_bounds`/alpha-fn exports).
+
+**TypeScript (full):** `WgpuTacticalMap.tsx` (637), `tools/useSelectTool.ts` (367),
+`tools/mapCamera.ts` (100), `wgpu/wgpuSlots.ts` (56), `wgpu/useWgpuSlots.ts` (27),
+`wgpu/wasmRender.ts` (46), `wgpu/slotAtlas.ts` (head + contract), `wgpu/wgpuWorldLoader.ts`
+(527, Round 1), `wgpu/wgpuBasemap.ts` (439, Round 1), `wgpu/useWgpuForestMass.ts` (257, Round 1),
+`wgpu/useWgpuDemVectors.ts` (190, Round 1), `_spike/wgpu/WgpuCanvas.tsx` (hook region).
+Targeted greps: `useMapStore.ts` (deckZoom), `slotSpatialIndex.ts`, `slotClusterIndex.ts`,
+`slotIconCache.ts` call sites.
+
+## Mechanical evidence recorded this round
+
+- `git show c4831451 --name-status --format= | grep -c '^D'` → 35 (flip deletion set, re-cited).
+- `rg readback_buf crates/` → allocation + 2 copies, **zero `map_async`** → X-03.
+- `rg "set_bounds" crates apps/…/src` → `ortho.rs:156` + single call `engine.rs:1221` → X-02.
+- `rg compose_marquee_mesh` → definition + own test only → X-04.
+- Dead-fn caller greps (non-test, editor scope) for `pan`/`unproject_xy`/`viewportFromEngine`/
+  `mark_dirty`/`clear_world_buildings`/`clear_icon_lanes`/`tree_glyph_self_check` → zero hits → X-05.
+- `useMapStore` deckZoom mirror verified live: `wgpuSlots.ts:36` (`setDeckZoom(this.e.zoom)` on
+  every `onCameraMoved`) — an earlier staleness suspicion was checked and **retracted**.
+
+## Round-2 dynamic verification disposition
+
+No new headless probes were run this round, with reasons per item:
+- Grid z-order (P-01) and tree draw order (X-01) are deterministic consequences of `lane_order`
+  and the encode sequence — static code evidence is exact; a screenshot adds no information.
+  X-01 additionally **cannot** be exercised in this environment (WebGPU headless unavailable —
+  Round 1 §GPU; the WebGL2 path does not take the compute branch, `engine.rs:1294`).
+- Marquee visual (P-02): geometry construction read directly (`engine.rs:3516-3564`) — fill-only
+  is a structural fact.
+- The Round-1 WebGL2 17/17 byte-exact probe run already covers the executable GPU surface at HEAD.
+
+## Coverage honesty
+
+Not line-read anywhere in this program's audits: the WGSL shader bodies (`shader.wgsl` — verified
+only through the executed byte-exact self-checks and pipeline layouts), `probe.rs` internals,
+the T-145 doc core (`doc/store.rs`, 1,382 LOC — out of program scope; its map-facing SoA surface
+is exercised by `slotGpu.parity.test.ts` + `mission.parity.test.ts`), and the non-map FE
+(mission-creator panels, compiler worker). Everything else engine-related has now been read.
+
+## Verdict (Round 2)
+
+Two rendering defects (X-01 WebGPU tree order, P-01 grid-over-markers), one dropped loading
+behavior (P-03), one visual downgrade (P-02), one semantics change (P-04), one misleading stats
+field (X-03), prod-hygiene (P-05/P-06) and dead-code (X-04/X-05) findings — full details and
+remediation ranking in the report §Round 2. The automated gates stay green because none of these
+are asserted by any existing test; the matrix rows above them (44 MATCH / 2 IMPROVED) confirm the
+port is otherwise faithful to the byte level.
