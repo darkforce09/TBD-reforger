@@ -1,10 +1,12 @@
 # T-151.10 — Fable 5 full-program audit (W10)
 
-**Status:** **ready** · **Program:** T-151 W10 · **Executor:** claude-code (Fable 5) ·
+**Status:** **shipped** @ `6adbd4bf` (tag **T-151.10**) · round-2 **T-151.10.1** @ `40def01a` ·
+remediations **T-151.11.1–.6** · **Program:** T-151 W10 · **Executor:** claude-code (Fable 5) ·
 **Worktree:** `tbd-reforger-wgpu-spike/` (absolute:
 `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`; do **not** touch `main`) ·
-**Baseline:** tag **T-151.9** ship `c4831451` / tip `58c8fcc3`+ · docs sync `a7a93368`+ ·
-verify [`.ai/artifacts/t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md).
+**Baseline:** tag **T-151.9** ship `c4831451` / tip `58c8fcc3`+ ·
+verify [`.ai/artifacts/t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md) ·
+**Tracker:** [`.ai/artifacts/t151_10_fable_audit_report.md`](../../../.ai/artifacts/t151_10_fable_audit_report.md).
 
 ## In one sentence
 
@@ -28,7 +30,7 @@ defects.
    — living tracker in the style of
    [`.ai/artifacts/fable_5_omni_audit_report.md`](../../../.ai/artifacts/fable_5_omni_audit_report.md).
 2. Cover **every** T-151.x slice (0…9 + hotfixes 4.1 / 5.1 / 7.1–7.3 / 8.1) against hub
-   locked decisions D1–D9 and LANGUAGE GATE D5.
+   locked decisions **D1–D5** and LANGUAGE GATE D5.
 3. Classify each finding: **PASS / PARTIAL / OPEN** + severity **S/R/T/M/D** (security /
    reliability / tech-debt / maintainability / docs).
 4. Re-run or cite **Class R** (oracle/golden) and **Class S** (ship) evidence; call out any
@@ -54,14 +56,15 @@ defects.
 | W10 meaning | **T-151.10 = program audit**, not markers. Markers stay **T-069** (queued until audit closes). |
 | Deliverable | Living markdown tracker under `.ai/artifacts/t151_10_fable_audit_report.md` |
 | Code changes | **None** in this slice (except verify-log typo/honesty if found). Fixes → follow-up slices. |
-| Model | Fable 5; prefer **max / UltraCode** effort for thoroughness |
+| Model | Fable 5 at **high** (max OK) — **never UltraCode** |
+| Agent budget | ≤ **2** concurrent subagents total; default sequential main-thread |
 | Worktree | Spike only; never `main` |
 | Authority | Hub + each slice spec + verify logs + live tree; **code wins** over stale docs |
 
 ## Audit checklist (must cover)
 
 ### A — Program integrity
-- Hub D1–D9 still true in code (always wgpu; no Deck escape hatch; flip+delete same tag era).
+- Hub **D1–D5** still true in code (always wgpu; no Deck escape hatch; flip+delete same tag era).
 - `MissionCreatorPage` mounts only `WgpuTacticalMap`; no Deck import path in app runtime.
 - `package.json`: deck/luma only in `devDependencies`; production `dist` Deck/luma-free.
 - Vitest count / oracle story matches T-151.9 claims (`N = 281` baseline unless tree moved).

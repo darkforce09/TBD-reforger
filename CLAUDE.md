@@ -176,16 +176,22 @@ TypeScript = dumb UI only (React, pointer, thin wasm calls). Every T-151.x / W10
 `═══ LANGUAGE GATE ═══` — see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md).
 Do **not** grow fat `wgpu*Controller` logic in TS.
 
-**Program (W0–W9 shipped; W10 audit active):** Deck runtime retired; Mission Creator is
-wgpu-only. **ACTIVE:** **T-151.10** Fable 5 full-program audit.
+**Program (W0–W11):** Deck runtime retired; Mission Creator is wgpu-only. **W10 audit + W11
+remediations shipped** (tip `8237cda6`). **Residual:** operator sign-off
+([`.ai/artifacts/t151_operator_signoff.md`](.ai/artifacts/t151_operator_signoff.md)) · polish
+list (next slice when filed).
 
-**Next after audit:** **T-069** markers (`queued`) · spec
+**Next after sign-off/polish:** **T-069** markers (`queued`) · spec
 [`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
 
 **Done (program slices):**
-- T-151.10 **Fable 5 program audit (W10)** — `ready` · spec
-  [`t151_10_fable_program_audit.md`](docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md)
-  · handoff [`.ai/artifacts/t151_10_claude_code_handoff.md`](.ai/artifacts/t151_10_claude_code_handoff.md).
+- T-151.11.1–.6 **audit remediations (W11)** — tags **T-151.11.1**…**T-151.11.6**; tip
+  `8237cda6`. Draw order, marquee, bounds, D5 collapse, GPU harness, Range preview,
+  wheel-zoom mid-pan. Verify:
+  [`.ai/artifacts/t151_11_verify_log.md`](.ai/artifacts/t151_11_verify_log.md). Tracker:
+  [`.ai/artifacts/t151_10_fable_audit_report.md`](.ai/artifacts/t151_10_fable_audit_report.md).
+- T-151.10 / T-151.10.1 **Fable 5 program audit (W10)** @ `6adbd4bf` / `40def01a`. Spec:
+  [`t151_10_fable_program_audit.md`](docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md).
 - T-151.9 **Deck flip + retirement (W9)** @ `c4831451` (tag **T-151.9**; tip `58c8fcc3`).
   Always `WgpuTacticalMap`; Deck runtime deleted; deck.gl+luma → devDependencies; vitest
   **281**; dist Deck-free; bundle ~7.15→6.27 MB. Verify:
@@ -703,13 +709,13 @@ See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/
     an invalid-mission-id banner (T-039); the `/missions/create` wizard now sends `max_players`,
     uses the real weather enums, and navigates to `/missions/:id/edit` (T-040).
 
-**Next (after T-151.10 audit + remediations):**
+**Next (after T-151 operator sign-off / polish):**
 - **T-069** — markers on map (`queued`) — [`t069_markers_on_map.md`](docs/specs/Mission_Creator_Architecture/t069_markers_on_map.md)
 - **T-070** — vehicles placeable
 - **T-110** — terrain base + sparse deltas for millions of map props ([`t110_terrain_base_mission_layers.md`](docs/specs/Mission_Creator_Architecture/t110_terrain_base_mission_layers.md))
 
 **Map / ORBAT lane (parallel):**
-- **T-151** — wgpu engine · **ACTIVE T-151.10** Fable audit — hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
+- **T-151** — wgpu engine · W0–W11 remediations complete · residual operator sign-off — hub [`t151_wgpu_engine_program.md`](docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md)
 - **T-090** — Map Engine v2 (ACTIVE T-090.6) — hub [`t090_091_map_terrain_program.md`](docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md). **T-091 shipped** @ `dde589e`.
 - **T-092** — mod compile + spawn Y/yaw — **shipped** @ `a73224f2`
 - **T-071** — ORBAT Manager modal (queued)

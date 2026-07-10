@@ -1,14 +1,19 @@
-# T-151 — wgpu Mission Creator engine program (W0–W9 shipped; W10 = T-151.10 audit)
+# T-151 — wgpu Mission Creator engine program (W0–W11 remediations complete)
 
 **Status:** program hub · **W0–W9 shipped** (Deck retired @ `c4831451` tag **T-151.9**) ·
-**Next:** **T-151.10** Fable 5 full-program audit · then T-069 · **Worktree:**
+**W10 audit shipped** (T-151.10 `6adbd4bf` · T-151.10.1 `40def01a`) · **W11 remediations
+shipped** (T-151.11.1–.6; tip `8237cda6`) · **Next:** operator sign-off
+([`t151_operator_signoff.md`](../../../.ai/artifacts/t151_operator_signoff.md)) · polish list
+(next slice when filed) · then **T-069** · **Worktree:**
 `tbd-reforger-wgpu-spike/` (absolute: `/var/home/Samuel/Projects/TBD-Reforger/tbd-reforger-wgpu-spike`)
 — standing worktree; agents do **not** manage branches per slice. · **Spike shipped:** commits
 `152b3a12…94261dd6` (camera parity + render spine + 20M stress + byte-exact self-check, verify log
 [`t151_wgpu_spike_verify_log.md`](../../../.ai/artifacts/t151_wgpu_spike_verify_log.md)) ·
 **W0–W8.1** shipped through tag **T-151.8.1** (`ec59d10e`) · **W9 / T-151.9 shipped:** @
 `c4831451` (tag **T-151.9**) — verify
-[`t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md).
+[`t151_9_verify_log.md`](../../../.ai/artifacts/t151_9_verify_log.md) · **Audit tracker:**
+[`t151_10_fable_audit_report.md`](../../../.ai/artifacts/t151_10_fable_audit_report.md) ·
+**W11 verify:** [`t151_11_verify_log.md`](../../../.ai/artifacts/t151_11_verify_log.md).
 
 ## In one sentence
 
@@ -104,20 +109,20 @@ never claimed as verified.
 |---|---|---|
 | Prefabs | **391** | `manifest.json` `objects.prefabCount` |
 | World object instances | **508,291** | `objects.instanceCount` |
-| Chunk files | **275** (512 m grid, `floor(x/512)`) | `objects/chunks/`, `chunkMath.ts` |
-| Road segments | **888** (6 classes incl. runway) | `roads.json.gz` |
+| Chunk files | **275** (512 m grid, `floor(x/512)`) | `objects/chunks/`, Rust `chunk_math.rs` (`chunk_ids_for_viewport`) |
+| Road segments | **888** (**5** classes in Everon data: highway_paved / road_paved / road_dirt / track / runway; style enum also defines unused `path`) | `roads.json.gz` · `polyline_strip.rs::road_style` |
 | Forest regions | **36** | `forest-regions.json.gz` |
 | TBDD density grids | **625** × 1,172 B (17×17 u16 corners, 32 m cells, 2 channels) | `objects/density/`, `tbdd.rs` |
 | World glyph atlas | **28** glyphs | `glyphs/atlas/world-glyphs.json` |
 | TBDS satellite | 12800² base, **14** mips, **152,713,114 B** | `manifest.json` `tiles.satellite.unified` |
 | DEM | 6400² u16, **−204.78 … 375.53 m**, no axis flip | `manifest.json` `dem` |
-| Zoom band | **−6 … +6**, default **−2** | `useOrthographicView.ts:12–13,33` |
+| Zoom band | **−6 … +6**, default **−2** | `tools/mapCamera.ts` `MAP_MIN/MAX_ZOOM` · Rust `OrthoCamera` `MIN/MAX_ZOOM` |
 | Slot pick radius / drag threshold | **4 px** / **4 px** | `slotSpatialIndex.ts:123`, `useSelectTool.ts:21` |
-| Cluster gates | > **500** slots AND zoom ≤ **−4**; pick **48 px**; super-zoom `round(z+8)` clamp 0–16 | `constants.ts`, `slotClusterIndex.ts` |
+| Cluster gates | > **500** slots AND zoom ≤ **−4**; pick **48 px**; super-zoom `round(z+8)` clamp 0–16 | `constants.ts`, wasm `ClusterIndex` |
 | World pick radius | **12 px** | `t090_render_lod_contract.md` §N2 |
-| Instance budget (legacy Deck cap, to be lifted) | **150,000** | `worldObjectsCore.ts` |
-| Chunk apply budget | ≤ **4 ms**/frame | `chunkStore.ts` `APPLY_BUDGET_MS` |
-| Chunk LRU | `max(64, 3 × pinned)` | `chunkStore.ts`, `worldObjectsCore.ts:658–676` |
+| Instance budget (legacy Deck cap, to be lifted) | **150,000** | Rust `lod_gates.rs::INSTANCE_BUDGET` |
+| Chunk apply budget | ≤ **4 ms**/frame | Rust `residency.rs::APPLY_BUDGET_MS` (+ `begin/exhausted/end_ingest_frame`) |
+| Chunk LRU | `max(64, 3 × pinned)` | Rust `residency.rs` (golden-locked) |
 | Spike constants | engine chunk pool 2,097,152 × 32 B = 64 MiB; scene anchor (6400, 6400); nav invariant 64 B/frame | `crates/map-engine-render/src/scene.rs` |
 | Measured GPU constant | ≈ **0.69 ms per 1M instances** (32 B layout, operator hardware, `gpu_frame_ms` 13.9–14.4 @ 20M) | spike verify log |
 
@@ -126,7 +131,7 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
 `BUILDING_BADGE_MIN_ZOOM=+1`, `VEGETATION_MIN_ZOOM=+1.5`, `PROP_MIN_ZOOM=+3`, forest fill max
 +1, contour ladder 100/50/20/10 m, road class gates).
 
-## Locked architecture decisions (D1–D4)
+## Locked architecture decisions (D1–D5)
 
 - **D1 — One wasm module, one memory.** `map-engine-render` becomes a dependency of
   `map-engine-wasm` (bundler target, existing `make wasm` output). `MissionDoc.slot_xy_ptr`,
@@ -134,19 +139,18 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
   doc→GPU and world→GPU uploads are `queue.write_buffer` over in-memory slices, zero JS
   copies. The `--target web` spike pkg is retired (T-151.0). Editor-route code-splitting keeps
   the merged wasm out of the entry chunk (machine-gated).
-- **D2 — The world-object worker is retired, not ported.** Chunks are fetched + gunzipped by a
-  thin JS async loader (`DecompressionStream`), parsed **once** in Rust under the ≤ 4 ms/frame
-  amortized budget, uploaded **once** to per-chunk GPU buffers, CPU copy reduced to pick
-  columns. There is no per-frame JS consumer left, so the SharedArrayBuffer question from the
-  zero-copy kickoff is moot. Tripwire: if parse hitching is measured above budget in `stats()`,
-  the worker path is the documented fallback (D2 is reversible; the Rust parser is
-  thread-agnostic).
-- **D3 — Dual-mount migration, Deck as oracle.** `MissionCreatorPage` renders the Deck
-  `TacticalMap` or the new `WgpuTacticalMap` behind `VITE_MC_ENGINE=wgpu` + a `?engine=wgpu`
-  runtime override, both implementing the **same props contract** (the `TacticalMapProps` of
-  `tactical-map/TacticalMap.tsx`: `onEntitiesMove`, `onEntityActivate`, `onAssetDrop`,
-  `onClusterDrill`, terrain, `TacticalMapApi.flyTo`, cursor channel). Deck code is deleted only
-  at T-151.9 after the interaction-parity suite passes.
+- **D2 — The world-object worker is retired, not ported.** Chunks are fetched by a thin JS
+  async loader and **gunzipped + parsed in Rust** (`flate2` / world parser) under the ≤ 4
+  ms/frame amortized ingest budget (`APPLY_BUDGET_MS` + `begin/exhausted/end_ingest_frame`),
+  uploaded **once** to per-chunk GPU buffers, CPU copy reduced to pick columns. (Hub historically
+  said `DecompressionStream` — that is **not** the shipped path.) There is no per-frame JS
+  consumer left, so the SharedArrayBuffer question from the zero-copy kickoff is moot.
+  Tripwire: if parse hitching is measured above budget in `stats()`, the worker path is the
+  documented fallback (D2 is reversible; the Rust parser is thread-agnostic).
+- **D3 — Dual-mount migration, Deck as oracle (superseded at W9).** Through W8 the editor
+  mounted Deck `TacticalMap` or `WgpuTacticalMap` behind `VITE_MC_ENGINE` / `?engine=`. **At
+  T-151.9** the Deck runtime was deleted; Mission Creator always mounts `WgpuTacticalMap`.
+  deck.gl remains a **devDependency** camera/interaction oracle only.
 - **D4 — Current asset wire only.** All ingestion reads the existing formats (JSON-gz chunks,
   TBDD, TBDS, roads/regions JSON-gz, DEM PNG). A Rust-native binary chunk wire requires a human
   Workbench re-export (executor gate) and is a named deferred slice, not part of W0–W9.
@@ -155,10 +159,21 @@ LOD gate authority: [`t090_render_lod_contract.md`](t090_render_lod_contract.md)
   and shaders live in **Rust** (`crates/map-engine-*`). TypeScript may only: call wasm, handle
   React/DOM/pointer, hold Zustand UI state, generate canvas atlas *pixels* if needed, and keep
   the Deck oracle until T-151.9. Do **not** grow fat `wgpu*Controller` business logic in TS.
-  **T-151.7.3** collapses the existing TS drift; every later T-151.x prompt must include
+  **T-151.7.3** + **T-151.11.3** collapse TS policy twins; every later T-151.x prompt must include
   `═══ LANGUAGE GATE ═══` (see [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](../../../.ai/tickets/CLAUDE_CODE_PROMPT.md)).
 
-## Slice map (registry `T-151.0` … `T-151.10`; features after audit = separate tickets)
+### Post-audit locked product decisions (T-151.11)
+
+| ID | Decision |
+|----|----------|
+| **C-3-02** | Building outline color **near-black** `[30,30,34,255]` is **FINAL** (Deck grey stroke not restored). |
+| **P-04** | Buildings layer toggle hides **footprints + outlines + badges** together (full lane). |
+| **P-06** | **Prod** = damage-driven render; **DEV** = continuous (HUD fps). |
+| **P-03** | Coarse satellite **preview** via HTTP Range from the TBDS bundle (Deck-era `full.webp` never shipped). |
+| **F-05** | Git tags are `T-151.x` on the ship commit; optional `T-151.x-docs` / `*-docs-sync` tags may trail — tip ≠ ship SHA is OK when documented in the verify log. |
+| Matrix 43 | Slot-lane cull threshold → **named deferral** for T-069+ scale (not a current defect). |
+
+## Slice map (registry `T-151.0` … `T-151.11.6`; features after sign-off = separate tickets)
 
 ### T-151.0 (W0) — wasm packaging merge + engine batch list + editor dual mount
 
@@ -385,33 +400,50 @@ Always `WgpuTacticalMap` (no engine flag / Deck escape hatch). Deck runtime dele
 Deck-free oracles under `_wasm/oracles/`; residency goldens (22 steps). `satelliteUnified`
 parse/pick only (luma upload removed). Six deck/luma pkgs → **devDependencies**. vitest
 **281** (= 393 − 112); `dist/assets` Deck/luma-free; bundle ~7.15 → **6.27 MB**.
-`wgpuSlots.ts` **56** LOC. **W0–W9 complete;** program stays open through **T-151.10**.
+`wgpuSlots.ts` **56** LOC. **W0–W9 complete.**
 
-### T-151.10 (W10) — Fable 5 full-program audit
+### T-151.10 / T-151.10.1 (W10) — Fable 5 full-program audit
 
-**Ready** · spec [`t151_10_fable_program_audit.md`](t151_10_fable_program_audit.md) · handoff
-[`.ai/artifacts/t151_10_claude_code_handoff.md`](../../../.ai/artifacts/t151_10_claude_code_handoff.md).
+**Shipped** · T-151.10 @ `6adbd4bf` · T-151.10.1 @ `40def01a` · spec
+[`t151_10_fable_program_audit.md`](t151_10_fable_program_audit.md) · tracker
+[`.ai/artifacts/t151_10_fable_audit_report.md`](../../../.ai/artifacts/t151_10_fable_audit_report.md)
+· verify [`.ai/artifacts/t151_10_verify_log.md`](../../../.ai/artifacts/t151_10_verify_log.md).
 
 Independent Fable 5 adversarial audit of W0–W9 (LANGUAGE GATE, Class R/S, Deck retirement
-honesty, silent deferrals). Deliverable: living tracker
-`.ai/artifacts/t151_10_fable_audit_report.md`. **No feature code** under this slice.
+honesty, silent deferrals) + round-2 completeness (X/P findings).
 
-### Post-audit features (separate tickets; after T-151.10 + remediations)
+### T-151.11.1–.6 (W11) — audit remediations
+
+**Shipped** · tags **T-151.11.1**…**T-151.11.6** · tip `8237cda6` · verify
+[`.ai/artifacts/t151_11_verify_log.md`](../../../.ai/artifacts/t151_11_verify_log.md).
+
+Every code-fixable OPEN/PARTIAL from both audit rounds fixed / corrected / handed off /
+explicitly deferred. Highlights: draw-order + marquee parity; camera bounds + prod hygiene;
+D5 wasm policy exports + buildings full-lane toggle + forest LRU; committed GPU harness
+(`make verify-wgpu-gpu`, 8/8) + CI jobs + Range satellite preview; tracker + operator
+sign-off checklist; wheel-zoom mid-pan rebase (operator PASS).
+
+Also: [`t151_5_1_verify_log.md`](../../../.ai/artifacts/t151_5_1_verify_log.md) (forest fidelity).
+
+### Residual (not code) + post-program features
+
+**Operator:** fill [`t151_operator_signoff.md`](../../../.ai/artifacts/t151_operator_signoff.md)
+(closes C-ALL-01 + C-8-01). **Polish list** → next Cursor/Claude slice when filed.
 
 **T-069** markers — `queued` · [`t069_markers_on_map.md`](t069_markers_on_map.md).
 
 Then **T-070** vehicles · **Ruler** (camera math, Class R) · **LoS/viewshed** (DEM raymarch
 in Rust; viewshed WebGPU compute with CPU oracle) · **T-071–T-075** UI lane. Named deferred:
 binary chunk wire (Workbench), T-110 terrain deltas, T-111 lazy doc residency, T-143 water,
-per-chunk anchors beyond Everon-size worlds.
+per-chunk anchors beyond Everon-size worlds · slot-lane cull threshold (matrix 43 → T-069+).
 
 ## Sequencing rationale
 
 Packaging (W0) unlocks zero-copy everywhere → basemap (W1) makes every later slice visually
 verifiable in-editor → parser (W2) before residency (W3) → vectors (W4) are cheap wins (data
 already Rust) → atlas (W5) gates slots (W6) which gate interaction (W7) → culling (W8) needs
-real data volumes → flip (W9) last → **audit (W10 / T-151.10)** → features (T-069+) only on
-the audited flipped engine.
+real data volumes → flip (W9) last → **audit (W10)** → **remediations (W11)** → operator
+sign-off / polish → features (T-069+) on the audited flipped engine.
 
 ## Risk register (tripwire → response)
 

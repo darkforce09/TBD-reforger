@@ -997,6 +997,10 @@ preview via HTTP-Range from the existing bundle; damage-driven render in prod / 
    (P-06), Range-preview replaces the never-shipped `full.webp` (P-03).
 3. Spec `t151_10_fable_program_audit.md`: "D1–D9" → "D1–D5" (A-08).
 
+**Cursor doc-sync (2026-07-10):** registry rows T-151.10 / .10.1 / .11.1–.6 shipped; hub
+D1–D5 + inventory citations + decision notes + F-05/F-06; spec D1–D5; CLAUDE/ROADMAP/T-069
+updated. **Still open for operator:** sign-off checklist · polish list → next slice.
+
 ## Verification-status note
 
 Every Class S command green at `2c3237fd` (core **147**, render **25**, vitest **285**, wasm

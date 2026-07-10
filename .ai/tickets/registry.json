@@ -1336,10 +1336,9 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "Post-audit W10 feature: addMarker + wgpu render/select/move/delete for MapMarker kinds. Blocked on T-151.10 Fable audit (+ remediations). Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.",
+      "summary": "Post-audit markers: addMarker + wgpu render/select/move/delete. Audit+remediations shipped (T-151.10…T-151.11.6). Still queued pending operator sign-off and/or polish slice. Spec: t069_markers_on_map.md. Worktree tbd-reforger-wgpu-spike/.",
       "depends_on": [
-        "T-151",
-        "T-151.10"
+        "T-151"
       ],
       "route": "/missions/:id/edit",
       "branch": "t-151-wgpu-spike",
@@ -3747,7 +3746,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine (W0\u2013W9 shipped @ c4831451 tag T-151.9). ACTIVE W10 = T-151.10 Fable 5 full-program audit before T-069+. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
+      "summary": "wgpu Mission Creator engine: W0\u2013W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1\u2013.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -3786,7 +3785,14 @@
         "T-151.8",
         "T-151.8.1",
         "T-151.9",
-        "T-151.10"
+        "T-151.10",
+        "T-151.10.1",
+        "T-151.11.1",
+        "T-151.11.2",
+        "T-151.11.3",
+        "T-151.11.4",
+        "T-151.11.5",
+        "T-151.11.6"
       ],
       "slice_plan": {
         "T-151.0": {
@@ -3909,8 +3915,80 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md",
-          "status": "ready",
-          "notes": "Fable 5 full-program audit of W0–W9. Audit report only; no T-069. Handoff: .ai/artifacts/t151_10_claude_code_handoff.md"
+          "status": "shipped",
+          "shipped_at": "6adbd4bf",
+          "notes": "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
+        },
+        "T-151.10.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md",
+          "status": "shipped",
+          "shipped_at": "40def01a",
+          "notes": "Round-2 code-level completeness audit (X/P findings). Same tracker."
+        },
+        "T-151.11.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "b81317c5",
+          "notes": "Draw order (grid + compute-culled trees) + marquee fill/border parity. Verify: .ai/artifacts/t151_11_verify_log.md"
+        },
+        "T-151.11.2": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "b78205c0",
+          "notes": "Camera bounds, prod hygiene (DEV HUD/spike), dead-code sweep + corrections"
+        },
+        "T-151.11.3": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "c7bb5bd0",
+          "notes": "D5 collapse (wasm policy exports), buildings full-lane toggle, forest LRU"
+        },
+        "T-151.11.4": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "2c3237fd",
+          "notes": "GPU harness + CI + tree gate + compute cull readback + Range satellite preview"
+        },
+        "T-151.11.5": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "b5b94c12",
+          "notes": "Tracker accounting + operator sign-off checklist + program verify log"
+        },
+        "T-151.11.6": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "dd9a98d5",
+          "notes": "Wheel-zoom mid-pan rebase (operator hotfix). Tip acceptance 8237cda6. Verify: .ai/artifacts/t151_11_verify_log.md"
         },
         "T-151.4.1": {
           "targets": [

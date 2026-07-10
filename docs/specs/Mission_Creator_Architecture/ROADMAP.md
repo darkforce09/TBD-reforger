@@ -418,7 +418,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 | Ticket | Requirement | Status |
 |--------|-------------|--------|
 | **T-068** | Virtual Arsenal — Phase 1 shipped; Phase 2 paused | **Phase 2 paused** — resume after **T-090–T-092 + T-071.2 + T-068.13** — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
-| **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** (after **T-151.10** audit) — [`t069_markers_on_map.md`](t069_markers_on_map.md) |
+| **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Queued** (after T-151 W11; sign-off/polish first OK) — [`t069_markers_on_map.md`](t069_markers_on_map.md) |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
 | **T-071** | ORBAT Manager modal — squad names, numbering, membership, slotting order, logos, arsenal | **Queued — blocked on T-092** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | **T-072** | Ctrl multi-place | **Queued** |
