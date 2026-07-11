@@ -1,10 +1,9 @@
 // Attributes modal (Ultra Plan §5.2) — opened by double-clicking a unit (Eden paradigm).
 // Phase 3.5: editable Transform/Identity/States/Arsenal tabs, replacing the old right-panel
-// SlotInspector (the Asset Palette now stays docked). T-068.4: Arsenal tab is now a working
-// dumb loadout picker (four gear dropdowns + JSON download); the smart Forge / paper-doll is T-068.10.
+// SlotInspector (the Asset Palette now stays docked). T-068.10: the Arsenal tab is the smart
+// Forge (compat-validated pickers persisted on the slot) in ../loadout/ArsenalTab.
 
-import { memo, useMemo, useState } from 'react'
-import { Download } from 'lucide-react'
+import { memo, useState } from 'react'
 import {
   updateSlot,
   updateSlotPosition,
@@ -14,11 +13,8 @@ import {
 } from '@/features/tactical-map'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { useRegistry } from '@/hooks/queries'
-import type { RegistryItemKind } from '@/types/models/registry'
-import { buildLoadoutExport, downloadLoadoutJson, type LoadoutGear } from '../loadout/loadoutExport'
+import { ArsenalTab } from '../loadout/ArsenalTab'
 import {
-  Field,
   NumberField,
   ReadonlyField,
   SelectField,
@@ -77,7 +73,7 @@ function AttributesModalInner({
             {tab === 'Transform' && <TransformTab md={md} slot={slot} />}
             {tab === 'Identity' && <IdentityTab md={md} slot={slot} squadName={squadName} />}
             {tab === 'States' && <StatesTab />}
-            {tab === 'Arsenal' && <ArsenalTab slot={slot} />}
+            {tab === 'Arsenal' && <ArsenalTab md={md} slot={slot} />}
           </div>
         )}
       </DialogContent>
@@ -164,90 +160,6 @@ function StatesTab() {
           /* noop: trait is wired to the compiler in a later phase */
         }}
       />
-    </div>
-  )
-}
-
-// Dumb loadout picker (T-068.4): four gear dropdowns from the registry + JSON download.
-// Character slots only — props/vehicles get an empty state. '' = empty pick → null on export.
-const GEAR_ROWS: { key: keyof LoadoutGear; label: string; kind: RegistryItemKind }[] = [
-  { key: 'primary', label: 'Primary', kind: 'gear_primary' },
-  { key: 'uniform', label: 'Uniform', kind: 'gear_uniform' },
-  { key: 'vest', label: 'Vest', kind: 'gear_vest' },
-  { key: 'helmet', label: 'Helmet', kind: 'gear_helmet' },
-]
-
-function ArsenalTab({ slot }: { slot: Slot }) {
-  const { data } = useRegistry()
-  const [gear, setGear] = useState<Record<keyof LoadoutGear, string>>({
-    primary: '',
-    uniform: '',
-    vest: '',
-    helmet: '',
-  })
-
-  const isCharacter = useMemo(() => {
-    if (!data || !slot.assetId) return false
-    return data.data.some((i) => i.resource_name === slot.assetId && i.kind === 'character')
-  }, [data, slot.assetId])
-
-  const optionsByKind = useMemo(() => {
-    const map = {} as Record<RegistryItemKind, { value: string; label: string }[]>
-    for (const row of GEAR_ROWS) {
-      const items = (data?.data ?? []).filter((i) => i.kind === row.kind)
-      map[row.kind] = [
-        { value: '', label: '— None —' },
-        ...items.map((i) => ({ value: i.resource_name, label: i.display_name })),
-      ]
-    }
-    return map
-  }, [data])
-
-  if (!isCharacter) {
-    return (
-      <div className="flex flex-col gap-3">
-        <p className="text-label-sm normal-case text-outline">
-          Loadout applies to placed characters.
-        </p>
-      </div>
-    )
-  }
-
-  const onDownload = () => {
-    const norm = (v: string): string | null => (v === '' ? null : v)
-    const payload = buildLoadoutExport(
-      {
-        primary: norm(gear.primary),
-        uniform: norm(gear.uniform),
-        vest: norm(gear.vest),
-        helmet: norm(gear.helmet),
-      },
-      data?.modpack_id ?? '',
-    )
-    downloadLoadoutJson(payload)
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {GEAR_ROWS.map((row) => (
-        <SelectField
-          key={row.key}
-          label={row.label}
-          value={gear[row.key]}
-          options={optionsByKind[row.kind]}
-          onChange={(v) => setGear((g) => ({ ...g, [row.key]: v }))}
-        />
-      ))}
-      <Field label="Export">
-        <button
-          type="button"
-          onClick={onDownload}
-          className="inline-flex items-center justify-center gap-2 rounded-lg border border-primary/40 bg-primary/15 px-3 py-2 text-label-md text-primary transition-colors hover:bg-primary/25"
-        >
-          <Download className="size-4" />
-          Download loadout JSON
-        </button>
-      </Field>
     </div>
   )
 }

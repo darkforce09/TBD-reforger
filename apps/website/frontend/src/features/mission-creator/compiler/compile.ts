@@ -83,7 +83,7 @@ export function compileMission(s: MapSnapshot): MissionPayload {
           .sort((a, b) => a.index - b.index)
           .map((slot) => ({
             role: slot.role,
-            loadout: '', // resolved loadout name lands with the Arsenal (Phase 6)
+            loadout: slot.loadout?.summary ?? '', // Smart Forge display summary (T-068.10)
             tag: slot.tag ?? '',
           })),
       })),
@@ -127,7 +127,11 @@ export async function compileMissionWithProgress(
           faction: faction.key,
           callsign: squad.callsign ?? '',
           squad: squad.name,
-          slots: slots.map((slot) => ({ role: slot.role, loadout: '', tag: slot.tag ?? '' })),
+          slots: slots.map((slot) => ({
+            role: slot.role,
+            loadout: slot.loadout?.summary ?? '', // Smart Forge display summary (T-068.10)
+            tag: slot.tag ?? '',
+          })),
         })
       }
       processed += slots.length

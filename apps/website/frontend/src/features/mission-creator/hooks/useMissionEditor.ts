@@ -39,6 +39,7 @@ import {
   terminateCompiler,
 } from '../compiler/compilerClient'
 import { toMissionExport } from '../compiler/exportSchema'
+import { terminateRegistryWorker } from '../registry/registryCompatClient'
 import {
   estimateCompiledBytes,
   formatBytes,
@@ -312,10 +313,16 @@ export function useMissionEditor(missionId: string | undefined): MissionEditorHa
     }
   }, [missionId])
 
-  // Tear down the compiler Web Worker on mission unmount (T-066). The worker is spawned lazily on
-  // the first save/export, so a StrictMode dev double-mount or a route leave before any save is a
-  // safe no-op; getCompiler respawns the singleton on the next save/export.
-  useEffect(() => () => terminateCompiler(), [])
+  // Tear down the compiler + registry compat Web Workers on mission unmount (T-066 / T-068.10).
+  // Both are spawned lazily (first save/export; first Arsenal open), so a StrictMode dev
+  // double-mount or a route leave before use is a safe no-op; each singleton respawns on demand.
+  useEffect(
+    () => () => {
+      terminateCompiler()
+      terminateRegistryWorker()
+    },
+    [],
+  )
 
   const invalidMissionId = !!missionId && !UUID_RE.test(missionId)
 

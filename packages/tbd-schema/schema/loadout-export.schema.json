@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/loadout-export/v1.json",
   "title": "TBD Loadout Export",
-  "description": "Dumb loadout download: a fixed set of gear slots, each holding a resource_name (from registry-items) or null when empty. Consumed by the mod equip test and the web download.",
+  "description": "Loadout download: a fixed set of gear slots, each holding a resource_name (from registry-items) or null when empty. Consumed by the mod equip test and the web download. optic/magazine are optional Smart Forge slots (T-068.10) — absent in Phase 1 payloads, ignored by the v1 mod reader.",
   "type": "object",
   "required": ["loadoutVersion", "modpackId", "gear"],
   "additionalProperties": false,
@@ -17,7 +17,9 @@
         "primary": { "$ref": "#/$defs/slot" },
         "uniform": { "$ref": "#/$defs/slot" },
         "vest": { "$ref": "#/$defs/slot" },
-        "helmet": { "$ref": "#/$defs/slot" }
+        "helmet": { "$ref": "#/$defs/slot" },
+        "optic": { "$ref": "#/$defs/slot" },
+        "magazine": { "$ref": "#/$defs/slot" }
       }
     }
   },

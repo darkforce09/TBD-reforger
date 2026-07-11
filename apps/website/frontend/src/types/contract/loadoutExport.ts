@@ -11,7 +11,7 @@
 export type Slot = string | null
 
 /**
- * Dumb loadout download: a fixed set of gear slots, each holding a resource_name (from registry-items) or null when empty. Consumed by the mod equip test and the web download.
+ * Loadout download: a fixed set of gear slots, each holding a resource_name (from registry-items) or null when empty. Consumed by the mod equip test and the web download. optic/magazine are optional Smart Forge slots (T-068.10) — absent in Phase 1 payloads, ignored by the v1 mod reader.
  */
 export interface TBDLoadoutExport {
   loadoutVersion: '1'
@@ -21,5 +21,7 @@ export interface TBDLoadoutExport {
     uniform: Slot
     vest: Slot
     helmet: Slot
+    optic?: Slot
+    magazine?: Slot
   }
 }
