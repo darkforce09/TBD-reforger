@@ -394,6 +394,24 @@ impl MissionDocCore {
         }
     }
 
+    /// Set or clear a slot's embedded `loadout` (Smart Forge picks — T-068.10). `Some(json)` parses
+    /// through the same JSON→`Any` machinery as `hydrate` rows, so the object stays opaque to the
+    /// core; `None`/empty clears the key. One transaction = one undo step. The pre-existing
+    /// `loadoutId` (shared-template ref, unused) is deliberately untouched.
+    pub fn update_slot_loadout(&self, id: &str, loadout_json: Option<String>) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+            match loadout_json.filter(|s| !s.is_empty()) {
+                Some(json) => {
+                    slot.insert(&mut txn, "loadout", json_str_to_any(&json));
+                }
+                None => {
+                    slot.remove(&mut txn, "loadout");
+                }
+            }
+        }
+    }
+
     /// Edit a slot's transform (Attributes Transform tab). `x`/`y` clamp to `[0,width]×[0,height]`,
     /// `rotation` normalizes to `[0,360)`, and the z-policy matches `ydoc.updateSlotPosition` (manual
     /// z sticks; an x/y edit terrain-follows → 0 here, DEM sampled JS-side). `None` = leave the axis.
@@ -486,6 +504,7 @@ impl MissionDocCore {
         tags: Vec<String>,
         asset_ids: Vec<String>,
         stances: Vec<String>,
+        loadouts: Vec<String>,
         anchor_x: Option<f64>,
         anchor_y: Option<f64>,
         width: f64,
@@ -535,6 +554,10 @@ impl MissionDocCore {
             slot.insert(&mut txn, "position", position_any(px, py, z, src_rot[i]));
             slot.insert(&mut txn, "stance", stances[i].as_str());
             slot.insert(&mut txn, "loadoutId", Any::Null);
+            // `""` = source slot had no loadout (same omit convention as tag/assetId above).
+            if let Some(lj) = loadouts.get(i).filter(|s| !s.is_empty()) {
+                slot.insert(&mut txn, "loadout", json_str_to_any(lj));
+            }
             if let Some(arr) = squad_slot_ids.get_mut(squad_id) {
                 arr.push(Any::String(id.into()));
             }
@@ -1356,6 +1379,70 @@ mod tests {
         assert!(json.contains("\"s1\""), "{json}");
         assert!(json.contains("Rifleman"), "{json}");
         assert!(json.contains("100.5"), "{json}"); // exact f64 position (not the f32 SoA)
+    }
+
+    #[test]
+    fn update_slot_loadout_roundtrips_and_clears() {
+        let mut doc = MissionDocCore::new();
+        doc.add_slot(
+            "s1", "sq1", "lyr", 0, "Rifleman", None, None, 1.0, 2.0, 0.0, 0.0,
+        );
+        let json = r#"{"primary":"{AAA}Rifle_M16A2.et","uniform":null,"vest":null,"helmet":null,"optic":"{BBB}Optic_Acog.et","magazine":null,"summary":"M16A2 · ACOG"}"#;
+        doc.update_slot_loadout("s1", Some(json.to_string()));
+
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
+        let lo = &v["s1"]["loadout"];
+        assert_eq!(lo["primary"], "{AAA}Rifle_M16A2.et");
+        assert_eq!(lo["optic"], "{BBB}Optic_Acog.et");
+        assert_eq!(lo["summary"], "M16A2 · ACOG");
+        assert!(lo["uniform"].is_null(), "explicit null survives: {lo}");
+
+        // One LOCAL transaction = one undo step: undo removes only the loadout.
+        assert!(doc.undo());
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
+        assert!(v["s1"].get("loadout").is_none(), "undo cleared loadout");
+        assert_eq!(v["s1"]["role"], "Rifleman", "slot itself survives");
+
+        // Explicit clear path (None removes the key), and a missing slot is a no-op.
+        doc.update_slot_loadout("s1", Some(json.to_string()));
+        doc.update_slot_loadout("s1", None);
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
+        assert!(v["s1"].get("loadout").is_none(), "None clears the key");
+        doc.update_slot_loadout("missing", Some(json.to_string()));
+    }
+
+    #[test]
+    fn paste_slots_copies_loadout() {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("lyr", "Default", None);
+        doc.paste_slots(
+            vec!["p1".into(), "p2".into()],
+            vec!["sq1".into(), "sq1".into()],
+            vec!["lyr".into(), "lyr".into()],
+            vec![10.0, 20.0],
+            vec![10.0, 20.0],
+            vec![0.0, 0.0],
+            vec![0.0, 0.0],
+            vec!["Rifleman".into(), "Medic".into()],
+            vec![String::new(), "MED".into()],
+            vec![String::new(), String::new()],
+            vec!["stand".into(), "prone".into()],
+            vec![
+                r#"{"primary":"{AAA}Rifle_M16A2.et","optic":null}"#.into(),
+                String::new(),
+            ],
+            Some(100.0),
+            Some(100.0),
+            12800.0,
+            12800.0,
+        );
+        let v: serde_json::Value = serde_json::from_str(&doc.slots_json()).expect("valid json");
+        assert_eq!(v["p1"]["loadout"]["primary"], "{AAA}Rifle_M16A2.et");
+        assert!(v["p1"]["loadout"]["optic"].is_null());
+        assert!(
+            v["p2"].get("loadout").is_none(),
+            "empty string = no loadout copied"
+        );
     }
 
     #[test]

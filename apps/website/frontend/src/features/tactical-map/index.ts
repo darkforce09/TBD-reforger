@@ -35,6 +35,7 @@ export {
   setTitle,
   updateEnvironment,
   updateSlot,
+  updateSlotLoadout,
   updateSlotPosition,
   applyMissionRowMeta,
   addFaction,
@@ -58,6 +59,7 @@ export type { SlotIcon } from './state/selectors'
 export type {
   ID,
   Slot,
+  SlotLoadout,
   ClipboardSlot,
   Squad,
   Faction,

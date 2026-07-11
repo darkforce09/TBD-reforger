@@ -13,7 +13,15 @@
 // `'init'` (untracked, not dirty). This mirrors the pre-flip LOCAL_ORIGIN / INIT_ORIGIN split.
 
 import { ENTITY_MAPS } from './schema'
-import type { ClipboardSlot, EditorLayer, ID, MissionMeta, Slot, Squad } from './schema'
+import type {
+  ClipboardSlot,
+  EditorLayer,
+  ID,
+  MissionMeta,
+  Slot,
+  SlotLoadout,
+  Squad,
+} from './schema'
 import { getTerrain } from '../coords/terrains'
 import type { TerrainId } from '../coords/terrains'
 import { sampleElevation, isDemReady } from '../dem'
@@ -47,10 +55,10 @@ function commit(md: MissionDoc, origin: 'local' | 'init'): void {
   md.notifyChange(origin)
 }
 
-/** Build a Slot matching the wasm `slots_json` shape exactly — `tag`/`assetId` omitted when empty,
- *  `loadoutId` null. The O(k) fast paths (F3.1) construct slots JS-side; this keeps the store mirror
- *  byte-identical to `snapshotFromShadow(md.wasm)` so the compiler (which reads the store) never
- *  diverges from the authoritative wasm doc. Guarded by `ydoc.okPatch.test.ts`. */
+/** Build a Slot matching the wasm `slots_json` shape exactly — `tag`/`assetId`/`loadout` omitted
+ *  when empty, `loadoutId` null. The O(k) fast paths (F3.1) construct slots JS-side; this keeps the
+ *  store mirror byte-identical to `snapshotFromShadow(md.wasm)` so the compiler (which reads the
+ *  store) never diverges from the authoritative wasm doc. Guarded by `ydoc.okPatch.test.ts`. */
 function buildSlot(
   id: ID,
   squadId: ID,
@@ -63,6 +71,7 @@ function buildSlot(
   z: number,
   rotation: number,
   stance: Slot['stance'],
+  loadout?: SlotLoadout,
 ): Slot {
   return {
     id,
@@ -74,6 +83,7 @@ function buildSlot(
     position: { x, y, z, rotation },
     stance,
     loadoutId: null,
+    ...(loadout ? { loadout } : {}),
   }
 }
 
@@ -227,6 +237,7 @@ export function pasteSlots(
   const tags: string[] = []
   const assetIds: string[] = []
   const stances: string[] = []
+  const loadouts: string[] = [] // JSON per slot, '' = source had no loadout (Rust omit convention)
   for (const c of clip) {
     ids.push(newId())
     squadIds.push(resolveSquad(c.squadId))
@@ -245,6 +256,7 @@ export function pasteSlots(
     tags.push(c.tag ?? '')
     assetIds.push(c.assetId ?? '')
     stances.push(c.stance)
+    loadouts.push(c.loadout ? JSON.stringify(c.loadout) : '')
   }
   md.wasm.paste_slots(
     ids,
@@ -258,6 +270,7 @@ export function pasteSlots(
     tags,
     assetIds,
     stances,
+    loadouts,
     anchor ? anchor.x : undefined,
     anchor ? anchor.y : undefined,
     terrain.width,
@@ -295,6 +308,7 @@ export function pasteSlots(
         zs[i],
         srcRot[i],
         stances[i] as Slot['stance'],
+        clip[i].loadout,
       ),
     )
     sArr.push(ids[i])
@@ -585,6 +599,22 @@ export function updateSlot(
   if (patch.role !== undefined) next.role = patch.role
   if (patch.stance !== undefined) next.stance = patch.stance as Slot['stance']
   if (patch.tag !== undefined) next.tag = patch.tag
+  useMapStore.getState()._patchSlots({ [id]: next })
+  md.notifyChange('local')
+}
+
+/** Set or clear a slot's Smart Forge loadout (T-068.10). One call = one Rust transaction = one
+ *  undo step. `null` removes the key (matching the wasm shape, where a never-forged slot has no
+ *  `loadout` field at all). The legacy `loadoutId` template ref is untouched. */
+export function updateSlotLoadout(md: MissionDoc, id: ID, loadout: SlotLoadout | null): void {
+  if (!md.wasm) return
+  const slot = useMapStore.getState().slotsById[id]
+  if (!slot) return
+  md.wasm.update_slot_loadout(id, loadout ? JSON.stringify(loadout) : undefined)
+  // O(k): mirror the wasm write — replace the whole loadout object, or drop the key on clear.
+  const next = { ...slot }
+  if (loadout) next.loadout = loadout
+  else delete next.loadout
   useMapStore.getState()._patchSlots({ [id]: next })
   md.notifyChange('local')
 }

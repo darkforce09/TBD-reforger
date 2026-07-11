@@ -49,6 +49,21 @@ export interface Squad {
   slotIds: ID[]
 }
 
+// Per-slot Smart Forge picks (T-068.10) — each value a registry resource_name or null when the
+// gear slot is empty. Persisted verbatim in the doc, so it rides Save Version (`editor.slots`),
+// mission Export, IDB, and copy/paste. Distinct from the legacy `Slot.loadoutId` template ref.
+export interface SlotLoadout {
+  primary: string | null
+  uniform: string | null
+  vest: string | null
+  helmet: string | null
+  optic: string | null // attaches to primary via optic_on_weapon
+  magazine: string | null // loads into primary via mag_in_weapon
+  // Display summary from registry display_names ("M16A2 · ACOG"), built at pick time —
+  // feeds the compiled orbat[].slots[].loadout string (T-068.11 alignment).
+  summary?: string
+}
+
 export interface Slot {
   id: ID
   squadId: ID
@@ -61,6 +76,7 @@ export interface Slot {
   position: { x: number; y: number; z: number; rotation: number } // x/y meters, z from DEM
   stance: 'stand' | 'crouch' | 'prone'
   loadoutId: ID | null
+  loadout?: SlotLoadout // Smart Forge picks (T-068.10); omitted until first forged
 }
 
 // A slot snapshot held on the editor clipboard (Ctrl+C, T-056). Plain/serializable —
@@ -75,6 +91,7 @@ export interface ClipboardSlot {
   stance: Slot['stance']
   position: { x: number; y: number; z: number; rotation: number }
   squadId: ID // source squad, re-attached on paste if it still exists
+  loadout?: SlotLoadout // Smart Forge picks travel with the copy (T-068.10)
 }
 
 export interface Loadout {

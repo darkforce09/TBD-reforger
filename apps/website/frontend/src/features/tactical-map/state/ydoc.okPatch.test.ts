@@ -44,6 +44,7 @@ function toClip(id: ID): ClipboardSlot {
     stance: s.stance,
     position: s.position,
     squadId: s.squadId,
+    loadout: s.loadout,
   }
 }
 
@@ -129,6 +130,27 @@ describe('F3.1 O(k) store patches stay byte-identical to the wasm doc', () => {
     ydoc.updateSlot(md, s2, { role: 'Grenadier', tag: 'AR', stance: 'prone' })
     expectStoreMatchesWasm(md)
     ydoc.updateSlot(md, s1, { tag: '' }) // clear the CMD tag → must be omitted like wasm
+    expectStoreMatchesWasm(md)
+    md.detach()
+  })
+
+  it('updateSlotLoadout — set / paste-copies / clear (T-068.10)', () => {
+    const { md, l2, s1, s2 } = seeded()
+    ydoc.updateSlotLoadout(md, s1, {
+      primary: '{AAA}Rifle_M16A2.et',
+      uniform: null,
+      vest: null,
+      helmet: '{CCC}Helmet_PASGT.et',
+      optic: '{BBB}Optic_Acog.et',
+      magazine: null,
+      summary: 'M16A2 · ACOG',
+    })
+    expectStoreMatchesWasm(md)
+    // Paste carries the loadout (s1 forged, s2 not) — both shapes must match wasm.
+    ydoc.pasteSlots(md, [s1, s2].map(toClip), { anchorAt: { x: 5000, y: 6000 }, layerId: l2 })
+    expectStoreMatchesWasm(md)
+    // Clear removes the key entirely (never-forged shape), matching wasm slots_json.
+    ydoc.updateSlotLoadout(md, s1, null)
     expectStoreMatchesWasm(md)
     md.detach()
   })

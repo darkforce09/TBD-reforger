@@ -157,6 +157,7 @@ export default function MissionCreatorPage() {
             stance: s.stance,
             position: { ...s.position },
             squadId: s.squadId,
+            ...(s.loadout ? { loadout: { ...s.loadout } } : {}), // Smart Forge picks (T-068.10)
           }))
         if (!clip.length) return
         clipboardRef.current = clip

@@ -970,6 +970,7 @@ impl MissionDoc {
         tags: Vec<String>,
         asset_ids: Vec<String>,
         stances: Vec<String>,
+        loadouts: Vec<String>,
         anchor_x: Option<f64>,
         anchor_y: Option<f64>,
         width: f64,
@@ -977,7 +978,7 @@ impl MissionDoc {
     ) {
         self.inner.paste_slots(
             ids, squad_ids, layer_ids, src_x, src_y, src_rot, zs, roles, tags, asset_ids, stances,
-            anchor_x, anchor_y, width, height,
+            loadouts, anchor_x, anchor_y, width, height,
         );
     }
 
@@ -1020,6 +1021,11 @@ impl MissionDoc {
     /// Bulk-seed `n` random slots in one transaction — the browser-harness generator (criterion 6).
     pub fn seed_random(&self, n: u32, w: f64, h: f64, seed: f64) {
         self.inner.seed_random(n, w, h, seed as u64);
+    }
+
+    /// Set or clear a slot's embedded Smart Forge `loadout` (T-068.10); JSON string or undefined.
+    pub fn update_slot_loadout(&self, id: &str, loadout_json: Option<String>) {
+        self.inner.update_slot_loadout(id, loadout_json);
     }
 
     // Batch-1 slot-lifecycle mutators (full-fidelity ports of ydoc.ts; ids passed in from JS).
