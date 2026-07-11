@@ -38,12 +38,8 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   )
 
   const picks = useMemo(() => loadoutToPicks(slot.loadout), [slot.loadout])
-  const { status, sets } = useArsenalValidation(
-    isCharacter ? slot.assetId : undefined,
-    data?.modpack_id,
-    picks,
-  )
-  const validation = useMemo(() => validateLoadout(picks, sets, catalog), [picks, sets, catalog])
+  const { status, sets } = useArsenalValidation(isCharacter, data?.modpack_id, picks)
+  const validation = useMemo(() => validateLoadout(picks, sets), [picks, sets])
 
   if (!isCharacter) {
     return (
@@ -76,20 +72,16 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
     downloadLoadoutJson(buildLoadoutExport(slotLoadoutToGear(slot.loadout), data?.modpack_id ?? ''))
   }
 
-  // Degrade tiers (documented in the T-068.10 verify log): worker down → Phase 1 pickers,
-  // no edge rows; worker up but zero equip edges for this character → full kind lists.
+  // Degrade (documented in the T-068.10 verify log): worker down → Phase 1 pickers, no edge
+  // rows. Clothing rows are always the full catalog — compat constrains weapon families only.
   const rows = smart ? LOADOUT_ROWS : LOADOUT_ROWS.filter((r) => r.source.type === 'kind')
-  const degradeSets: CompatSets = { equipSet: null, edgeItems: {} }
+  const degradeSets: CompatSets = { edgeItems: {} }
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
         {smart ? (
-          sets.equipSet ? (
-            <Badge variant="success">Compat active</Badge>
-          ) : (
-            <Badge variant="warning">No compat data for this character</Badge>
-          )
+          <Badge variant="success">Compat active</Badge>
         ) : (
           <Badge variant="warning">Compat unavailable — full catalog</Badge>
         )}

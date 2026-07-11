@@ -187,6 +187,26 @@ artifacts (screenshots `m1-blocked.png`, `m2-restored.png`, `m-degrade.png`, dow
 - Vitest remains node-env pure-module testing (no jsdom/@testing-library in the repo) — the
   React surfaces are covered by the 19 headless browser gates instead.
 
+## Addendum — T-068.10.1 (operator UX direction, post-ship same session)
+
+Operator, testing the shipped tab: *"Anyone should be able to have any uniform, so I should be
+able to mix and match as I please. The compatibility is only really for the guns and stuff, so
+that we don't give someone a gun with the wrong ammo."*
+
+Change: **clothing rows (Primary/Uniform/Vest/Helmet kind rows) are never compat-constrained**
+— full catalog, no canEquip filtering, no validation errors. Compatibility now constrains the
+**weapon families only** (optic `optic_on_weapon`, magazine `mag_in_weapon` via `itemsFor`).
+This supersedes decisions 3 (per-kind degrade — moot, kind rows are simply unfiltered) and 5
+(canEquip caveat — `canEquip`/`character_default_loadout` no longer consumed by the Arsenal;
+the worker API keeps exposing it for future consumers). `CompatSets` reduced to `edgeItems`;
+`useArsenalValidation` no longer fetches the character equip set (hook takes `enabled` instead
+of `characterId`); status chips reduced to `Compat active` / `Compat unavailable`.
+
+Re-verified: vitest **316 passed** (rules tests updated: mix-and-match case replaces the
+equip-filter cases); FE build clean; lint = pre-existing router.tsx only; **19/19 browser
+gates** re-PASS with updated expectations (`M1-uniform-full`: 101 options = full catalog;
+weapon-feed, block, export, persistence, degrade gates unchanged).
+
 ## Ready for Cursor
 
 - Doc-sync: CLAUDE §Status bullet, arsenal hub row (T-068.10 shipped), ticket registry

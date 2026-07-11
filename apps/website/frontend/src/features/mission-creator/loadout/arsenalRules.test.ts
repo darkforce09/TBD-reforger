@@ -56,7 +56,7 @@ const uniformRow = LOADOUT_ROWS.find((r) => r.key === 'uniform') as LoadoutRow
 const opticRow = LOADOUT_ROWS.find((r) => r.key === 'optic') as LoadoutRow
 const magRow = LOADOUT_ROWS.find((r) => r.key === 'magazine') as LoadoutRow
 
-const NO_COMPAT: CompatSets = { equipSet: null, edgeItems: {} }
+const NO_COMPAT: CompatSets = { edgeItems: {} }
 
 describe('buildRowOptions', () => {
   it('kind row without compat data lists the whole kind (None first)', () => {
@@ -66,22 +66,14 @@ describe('buildRowOptions', () => {
     expect(opts[1].label).toBe('M16A2')
   })
 
-  it('kind row filters to the canEquip set when one exists', () => {
-    const sets: CompatSets = { equipSet: new Set([RIFLE, BDU]), edgeItems: {} }
-    expect(buildRowOptions(primaryRow, '', sets, CATALOG, BY_NAME).map((o) => o.value)).toEqual([
-      '',
-      RIFLE,
-    ])
+  it('kind rows are never compat-constrained — full mix-and-match (T-068.10.1)', () => {
+    // Any character wears any clothing; the graph only constrains weapon families.
+    const sets: CompatSets = { edgeItems: { optic: [ACOG] } }
     expect(buildRowOptions(uniformRow, '', sets, CATALOG, BY_NAME).map((o) => o.value)).toEqual([
       '',
       BDU,
+      GORKA,
     ])
-  })
-
-  it('kind row with no compat candidates degrades to the full kind (T-150 exports clothing equips only)', () => {
-    // The character's equip set has uniforms but no primaries — the primary row must NOT
-    // collapse to "None"; the graph simply has no opinion on that kind.
-    const sets: CompatSets = { equipSet: new Set([BDU]), edgeItems: {} }
     expect(buildRowOptions(primaryRow, '', sets, CATALOG, BY_NAME).map((o) => o.value)).toEqual([
       '',
       RIFLE,
@@ -89,23 +81,23 @@ describe('buildRowOptions', () => {
     ])
   })
 
-  it('retains a stranded current value with an incompatible suffix', () => {
-    const sets: CompatSets = { equipSet: new Set([RIFLE]), edgeItems: {} }
-    const opts = buildRowOptions(primaryRow, RIFLE_AK, sets, CATALOG, BY_NAME)
+  it('retains a stranded current value with an incompatible suffix (kind row)', () => {
+    // A pick that is no longer in the catalog kind (e.g. registry changed) stays listed.
+    const opts = buildRowOptions(primaryRow, ACOG, NO_COMPAT, CATALOG, BY_NAME)
     const stranded = opts.at(-1)
-    expect(stranded?.value).toBe(RIFLE_AK)
-    expect(stranded?.label).toBe('AK-74 — incompatible')
+    expect(stranded?.value).toBe(ACOG)
+    expect(stranded?.label).toBe('ACOG — incompatible')
   })
 
   it('edge row lists the compat feed with display names, raw resource_name fallback', () => {
     const unknown = '{ZZZ}Prefabs/Attachments/Optic_Unknown.et'
-    const sets: CompatSets = { equipSet: null, edgeItems: { optic: [ACOG, unknown] } }
+    const sets: CompatSets = { edgeItems: { optic: [ACOG, unknown] } }
     const opts = buildRowOptions(opticRow, '', sets, CATALOG, BY_NAME)
     expect(opts.map((o) => o.label)).toEqual(['— None —', 'ACOG', unknown])
   })
 
   it('edge row retains a stranded pick after the weapon changed', () => {
-    const sets: CompatSets = { equipSet: null, edgeItems: { optic: [KOBRA] } }
+    const sets: CompatSets = { edgeItems: { optic: [KOBRA] } }
     const opts = buildRowOptions(opticRow, ACOG, sets, CATALOG, BY_NAME)
     expect(opts.at(-1)).toEqual({ value: ACOG, label: 'ACOG — incompatible' })
   })
@@ -113,41 +105,40 @@ describe('buildRowOptions', () => {
 
 describe('validateLoadout', () => {
   const READY: CompatSets = {
-    equipSet: new Set([RIFLE, BDU]),
     edgeItems: { optic: [ACOG], magazine: [STANAG] },
   }
 
   it('all-empty picks are valid', () => {
-    expect(validateLoadout({ ...EMPTY_PICKS }, READY, CATALOG)).toEqual({ valid: true, errors: {} })
+    expect(validateLoadout({ ...EMPTY_PICKS }, READY)).toEqual({ valid: true, errors: {} })
   })
 
   it('a full compatible kit is valid', () => {
     const picks = { ...EMPTY_PICKS, primary: RIFLE, uniform: BDU, optic: ACOG, magazine: STANAG }
-    expect(validateLoadout(picks, READY, CATALOG).valid).toBe(true)
+    expect(validateLoadout(picks, READY).valid).toBe(true)
   })
 
-  it('kind pick outside the canEquip set is invalid; without a set it passes', () => {
-    const picks = { ...EMPTY_PICKS, uniform: GORKA }
-    expect(validateLoadout(picks, READY, CATALOG).errors.uniform).toMatch(/compatible gear/)
-    expect(validateLoadout(picks, NO_COMPAT, CATALOG).valid).toBe(true)
+  it('clothing is never invalid — any uniform on any character (T-068.10.1)', () => {
+    const picks = { ...EMPTY_PICKS, uniform: GORKA, vest: ACOG, helmet: RIFLE }
+    expect(validateLoadout(picks, READY).valid).toBe(true)
+    expect(validateLoadout(picks, NO_COMPAT).valid).toBe(true)
   })
 
   it('edge pick without its dependency is invalid', () => {
     const picks = { ...EMPTY_PICKS, optic: ACOG }
-    expect(validateLoadout(picks, READY, CATALOG).errors.optic).toMatch(/Requires a primary/)
+    expect(validateLoadout(picks, READY).errors.optic).toMatch(/Requires a primary/)
   })
 
   it('edge pick the compat feed rejects is invalid (stale optic after weapon swap)', () => {
     const swapped: CompatSets = { ...READY, edgeItems: { optic: [KOBRA], magazine: [] } }
     const picks = { ...EMPTY_PICKS, primary: RIFLE, optic: ACOG }
-    const v = validateLoadout(picks, swapped, CATALOG)
+    const v = validateLoadout(picks, swapped)
     expect(v.valid).toBe(false)
     expect(v.errors.optic).toMatch(/Not compatible with the selected primary/)
   })
 
   it('is data-driven off LOADOUT_ROWS (magazine follows the same edge rule)', () => {
     const picks = { ...EMPTY_PICKS, primary: RIFLE, magazine: ACOG }
-    expect(validateLoadout(picks, READY, CATALOG).errors.magazine).toMatch(/Not compatible/)
+    expect(validateLoadout(picks, READY).errors.magazine).toMatch(/Not compatible/)
     expect(magRow.source.type).toBe('edge')
   })
 })

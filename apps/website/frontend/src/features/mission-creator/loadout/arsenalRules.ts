@@ -16,10 +16,10 @@ export type LoadoutKey = keyof Omit<SlotLoadout, 'summary'>
 
 /**
  * Where a row's options come from:
- * - `kind`: the flat registry catalog filtered by item kind, constrained to the character's
- *   canEquip set (`character_default_loadout` family) when compat data exists.
+ * - `kind`: the flat registry catalog filtered by item kind — never compat-constrained
+ *   (clothing mix-and-match is a feature; T-068.10.1 operator call).
  * - `edge`: the compat graph via `itemsFor(picks[dependsOn], edge)` — empty until the
- *   dependency is picked.
+ *   dependency is picked. Compatibility only constrains the weapon families.
  */
 export type LoadoutRowSource =
   | { type: 'kind'; kind: RegistryItemKind }
@@ -59,10 +59,9 @@ export const EMPTY_PICKS: Record<LoadoutKey, string> = {
   magazine: '',
 }
 
-/** Compat context for option building + validation. `equipSet: null` = no per-character
- *  compat data (degrade: kind rows show the full catalog). Edge sets are keyed by row key. */
+/** Compat context for option building + validation: the edge feeds (`itemsFor` results),
+ *  keyed by row key. Kind rows are never compat-constrained. */
 export interface CompatSets {
-  equipSet: Set<string> | null
   edgeItems: Partial<Record<LoadoutKey, readonly string[]>>
 }
 
@@ -86,33 +85,19 @@ function displayName(
 
 /**
  * The compat verdict for one row: the set of allowed values, or `null` when the graph has no
- * opinion (per-kind degrade → full catalog, no validation). Kind rows: the row's kind items ∩
- * the character's canEquip set — `null` when there is no equip set at all OR the intersection is
- * empty (the T-150 export links clothing kinds only, so e.g. `gear_primary` has no equip edges
- * for any character; a hard filter would brick the row to "None"). Edge rows: exactly the
- * dependency's `itemsFor` feed — never null; an empty feed means the host truly accepts nothing.
+ * opinion (→ full catalog, no validation). Kind rows are always `null` — any character wears
+ * any clothing (mix-and-match is a feature). Edge rows: exactly the dependency's `itemsFor`
+ * feed — never null; an empty feed means the host truly accepts nothing.
  */
-export function resolveRowAllowed(
-  row: LoadoutRow,
-  sets: CompatSets,
-  catalog: readonly RegistryItem[],
-): Set<string> | null {
+export function resolveRowAllowed(row: LoadoutRow, sets: CompatSets): Set<string> | null {
   if (row.source.type === 'edge') return new Set(sets.edgeItems[row.key] ?? [])
-  const equip = sets.equipSet
-  if (!equip) return null
-  const kind = row.source.kind
-  const allowed = new Set(
-    catalog
-      .filter((i) => i.kind === kind && equip.has(i.resource_name))
-      .map((i) => i.resource_name),
-  )
-  return allowed.size ? allowed : null
+  return null
 }
 
 /**
- * Options for one row. Allowed set (see resolveRowAllowed) when the graph has an opinion, else
- * the full kind catalog. Retains a stranded non-empty `current` at the end, suffixed
- * incompatible, so a native <select> never silently blanks.
+ * Options for one row. Kind rows: the full kind catalog. Edge rows: the compat feed. Retains a
+ * stranded non-empty `current` at the end, suffixed incompatible, so a native <select> never
+ * silently blanks.
  */
 export function buildRowOptions(
   row: LoadoutRow,
@@ -121,16 +106,11 @@ export function buildRowOptions(
   catalog: readonly RegistryItem[],
   catalogByName: ReadonlyMap<string, RegistryItem>,
 ): PickOption[] {
-  const allowed = resolveRowAllowed(row, sets, catalog)
-  let values: string[]
-  if (row.source.type === 'kind') {
-    const kind = row.source.kind
-    values = catalog
-      .filter((i) => i.kind === kind && (!allowed || allowed.has(i.resource_name)))
-      .map((i) => i.resource_name)
-  } else {
-    values = [...(sets.edgeItems[row.key] ?? [])]
-  }
+  const src = row.source
+  const values =
+    src.type === 'kind'
+      ? catalog.filter((i) => i.kind === src.kind).map((i) => i.resource_name)
+      : [...(sets.edgeItems[row.key] ?? [])]
   const options = [
     NONE_OPTION,
     ...values.map((v) => ({ value: v, label: displayName(v, catalogByName) })),
@@ -149,29 +129,25 @@ export interface LoadoutValidation {
 
 /**
  * Validate the pick set against the compat context, data-driven off LOADOUT_ROWS. Empty picks
- * are always valid. Kind picks fail when the row's allowed set (resolveRowAllowed — includes the
- * per-kind degrade) exists and rejects them; edge picks additionally fail when their dependency
- * is empty.
+ * are always valid; kind picks (clothing) are never invalid. Edge picks fail when their
+ * dependency is empty or the compat feed rejects them.
  */
 export function validateLoadout(
   picks: Record<LoadoutKey, string>,
   sets: CompatSets,
-  catalog: readonly RegistryItem[],
 ): LoadoutValidation {
   const errors: Partial<Record<LoadoutKey, string>> = {}
   for (const row of LOADOUT_ROWS) {
     const value = picks[row.key]
     if (!value) continue
-    if (row.source.type === 'edge' && !picks[row.source.dependsOn]) {
+    if (row.source.type !== 'edge') continue
+    if (!picks[row.source.dependsOn]) {
       errors[row.key] = `Requires a ${row.source.dependsOn} pick`
       continue
     }
-    const allowed = resolveRowAllowed(row, sets, catalog)
+    const allowed = resolveRowAllowed(row, sets)
     if (allowed && !allowed.has(value)) {
-      errors[row.key] =
-        row.source.type === 'kind'
-          ? 'Not in this character’s compatible gear'
-          : `Not compatible with the selected ${row.source.dependsOn}`
+      errors[row.key] = `Not compatible with the selected ${row.source.dependsOn}`
     }
   }
   return { valid: Object.keys(errors).length === 0, errors }
