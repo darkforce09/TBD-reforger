@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Phase 1 + T-150 + T-068.9 shipped (d41418e5). ACTIVE T-068.10 Smart Forge UI. Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1299,15 +1299,20 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "3bc0bd24",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md",
-          "notes": "Wire Arsenal to registryCompatClient. Handoff: .ai/artifacts/t068_10_claude_code_handoff.md"
+          "notes": "Smart Forge + per-slot loadout in editor doc/Save/Export. Verify: .ai/artifacts/t068_10_verify_log.md. Mission-embed pulled forward from T-068.11."
         },
         "T-068.11": {
           "targets": [
-            "website"
+            "website",
+            "shared"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md",
+          "notes": "Re-scoped: compiled mod document loadout gear only (editor embed done in T-068.10). Feeds T-068.12. Handoff: .ai/artifacts/t068_11_claude_code_handoff.md"
         },
         "T-068.12": {
           "targets": [

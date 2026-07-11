@@ -1,21 +1,8 @@
-# T-068.10 — Claude Code handoff (Smart Arsenal / Forge)
+# T-068.10 — Claude Code handoff — CLOSED
 
-**Spec:** [`t068_10_smart_forge_ui.md`](../../docs/specs/Mission_Creator_Architecture/t068_10_smart_forge_ui.md)
-· **Baseline:** T-068.9 @ `d41418e5` · **CWD:** repo root `main`.
+**Shipped** @ `3bc0bd24` (tag **T-068.10**). Verify: [`t068_10_verify_log.md`](t068_10_verify_log.md).
 
-## Simple version
+Smart Forge + per-slot loadout in the **editor** mission doc (Save/Export/IDB/undo).
 
-Make the Arsenal tab ask the worker “does this fit?” before allowing the pick / export.
-
-## APIs to use
-
-`initRegistryCompat` · `canAttach` · `canEquip` · `itemsFor` —
-`features/mission-creator/registry/registryCompatClient.ts`
-
-## Do not
-
-Docs/registry · compiler · map browser · invent edges.
-
-## Return
-
-SHA + tag **T-068.10** · verify log.
+**Next:** [`t068_11_claude_code_handoff.md`](t068_11_claude_code_handoff.md) — compiled mod
+document loadout block only.

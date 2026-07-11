@@ -1,39 +1,50 @@
-# T-068.11 — Compiler loadout export + ticket ship
+# T-068.11 — Compiled mod document loadout block
 
 **Ticket:** T-068 · **Slice:** T-068.11  
-**Status:** Spec ready — **paused** (after **T-068.10**; map gate **T-090–T-092** + **T-071.2** first)  
-**Executor:** claude-code  
-**Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
+**Status:** **ready** · **Executor:** claude-code · **Baseline:** tag **T-068.10** @ `3bc0bd24` ·
+**Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) ·
+**Feeds:** **T-068.12** (mod player equip on spawn)
 
 ---
 
 ## In one sentence
 
-Embed resolved loadouts in mission `json_payload` / compiled export superset so the **mod** can dress **human players** on spawn (**T-068.12**).
+Put each slot’s Smart Forge **gear ResourceNames** onto the **compiled mod mission document**
+(`GET /missions/:id/compiled` / `flattenEditorToModDocument`) so the mod can dress **human
+players** in **T-068.12**.
 
 ---
 
 ## Problem
 
-Mission save/export does not carry loadout gear for game/mod consumption beyond manual profile file. **Phase 1** only proved equip on a **dev test NPC**. **Player spawn + slot picker verification** requires structured loadout data in compiled mission JSON (**this slice**) then mod equip (**T-068.12**) and slotting UI (**T-068.13**).
+**T-068.10** already persists per-slot `loadout` in the **editor** doc (Save Version,
+mission Export `editor.slots[].loadout`, ORBAT display summary, IDB, undo). The **mod-native
+compiled** document (`flattenEditorToModDocument` / Go flatten) still emits slots with only
+`kit` alias + transform — **no structured gear block**. T-068.12 cannot equip players from
+compiled JSON until that block exists.
 
 ---
 
 ## Goal
 
-1. Extend `compiler/compile.ts` — optional `loadouts` / per-slot gear block in editor superset (snake_case API, camelCase export envelope per existing rules).
-2. Hydrate on load via `hydrateMissionDoc` if present.
-3. Align with backend ORBAT `loadout` string fields where applicable (display summary only; ResourceNames in structured block).
-4. FE build/lint + `make test-it` if compiler tests exist.
-
-After human merge: **`./scripts/ticket done T-068`** + git tag **T-068**.
+1. Extend mod mission / slot schema (packages/tbd-schema) with optional per-slot loadout gear
+   (ResourceName strings: primary, optic, magazine, uniform, vest, helmet — align with
+   `loadout-export` / T-068.10 slot loadout shape).
+2. **TS** `flattenEditorToModDocument` — copy slot loadout into compiled `slots[]`.
+3. **Go** `FlattenToModDocument` (or equivalent) — same shape; keep TS↔Go parity tests.
+4. Hydrate path already has editor loadout (T-068.10) — do **not** re-litigate editor embed.
+5. Golden / unit tests: slot with loadout → compiled JSON contains gear; empty loadout → omit
+   or null per locked decision.
+6. Tag **T-068.11**. Cursor advances to **T-068.12**.
 
 ---
 
 ## Out of scope
 
-- New API routes
-- Map/topo
+- Mod player equip (**T-068.12**)
+- Slot picker UI (**T-068.13**)
+- Re-doing Arsenal / editor.slots loadout (done in **T-068.10**)
+- Inventing `ammo_in_mag` edges
 
 ---
 
@@ -41,79 +52,95 @@ After human merge: **`./scripts/ticket done T-068`** + git tag **T-068**.
 
 | Decision | Choice |
 |----------|--------|
-| Identity | ResourceName strings in compiled per-slot loadout block |
-| Mod equip | **T-068.12** — player wear; this slice is **website/compiler data only** |
-| Ship gate | **T-068.14** human Phase 2 E2E before `./scripts/ticket done T-068` |
+| Editor embed | **Already shipped** (T-068.10) — out of scope here |
+| Compiled identity | Full Enfusion `resource_name` strings in gear fields |
+| Empty gear | Omit empty/null fields (or explicit nulls — pick one, document, keep TS/Go identical) |
+| Kit alias | Keep existing `kit` field; loadout **layers** on top (T-068.12) |
+| Docs/registry | Claude does **not** edit (verify log OK) |
 
 ---
 
 ## Tasks
 
-1. `compiler/compile.ts` + `exportSchema.ts` updates
-2. `hydrateMissionDoc` / types in tactical-map schema
-3. Manual save version round-trip test
+1. Schema bump for mod compiled slot loadout (codegen if required).
+2. TS flatten + tests.
+3. Go flatten + IT / parity.
+4. `.ai/artifacts/t068_11_verify_log.md` + tag **T-068.11**.
 
 ---
 
 ## Verify
 
 ```bash
-cd apps/website/frontend && npm run build && npm run lint
-PATH="$HOME/.local/go/bin:$PATH" make test-it
+cd packages/tbd-schema && npm run validate
+cd apps/website/frontend && npm test && npm run build && npm run lint
+make test-it
+# Optional: curl compiled mission after Save — slots include loadout gear when set
 ```
 
 ---
 
-## Verification gate (mandatory)
+## Acceptance
 
-**Website slice — after PASS, advance to T-068.12 (mod player equip). Ticket ships @ T-068.14.**
-
-### Automated (exit 0)
-
-```bash
-cd apps/website/frontend && npm run build && npm run lint
-PATH="$HOME/.local/go/bin:$PATH" make test-it
-```
-
-### Round-trip manual
-
-| ID | Step | Pass condition |
-|----|------|----------------|
-| R1 | Save Version | POST 201; no compile error |
-| R2 | Export JSON | Downloaded mission export contains loadout/editor block per spec |
-| R3 | Reload | Reload mission URL → Arsenal/loadout state restored |
-| R4 | Diff | Paste `jq` path proof: export contains `resource_name` gear keys |
-
-### Acceptance criteria
-
-| ID | Check | Pass condition |
-|----|-------|----------------|
-| A1 | Tests | `make test-it` green |
-| A2 | Build | FE build/lint clean |
-| A3 | Round-trip | R1–R4 all PASS |
-| A4 | Advance | A1–A3 PASS → advance-slice to **T-068.12** (not `ticket done` yet) |
+- [ ] Compiled mod document includes per-slot gear when editor loadout is set.
+- [ ] TS and Go flatten agree.
+- [ ] Empty loadout does not invent gear.
+- [ ] Tag **T-068.11**.
 
 ---
 
-## Depends on / Unblocks
+## Claude Code prompt — T-068.11 (copy-paste)
 
-- **Depends on:** T-068.10
-- **Unblocks:** T-068.12, T-068.13, T-068.14; T-069+ after full T-068 ship
-
----
-
-## Documentation sync (Cursor)
-
-Full [`AGENT_COMMIT_CHECKLIST.md`](../../website/AGENT_COMMIT_CHECKLIST.md): registry shipped, CLAUDE §Status, MC ROADMAP, feature_inventory, gap_analysis, agent_execution ACTIVE → T-069.
-
----
-
-## Claude Code prompt — T-068.11
+Authority: this spec + handoff. **Do not edit docs/registry/CLAUDE** (verify log OK).
 
 ```
-Read CLAUDE.md §Status. Active slice: T-068.11.
-Implement ONLY docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md
-Do not edit documentation. Branch: ticket/T-068
-Verify: make test-it; FE build/lint; R1–R4 round-trip with jq proof
-Return: Verify paste A1–A4 + export JSON snippet (gear block only).
+Read CLAUDE.md first. Work on main at repo root.
+
+Implement **T-068.11** — Compiled mod document loadout block (for T-068.12).
+
+═══ PREFLIGHT ═══
+  cd /var/home/Samuel/Projects/TBD-Reforger
+  test "$(git rev-parse --show-toplevel)" = "$(pwd)"
+  git status --porcelain
+  git pull && git lfs pull
+  git rev-parse T-068.10   # expect 3bc0bd24
+
+═══ READ (in order — spec wins on conflict) ═══
+  1. .ai/artifacts/t068_11_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md
+  3. .ai/artifacts/t068_10_verify_log.md  (editor embed already done — do not redo)
+  4. apps/website/frontend/src/features/mission-creator/compiler/flattenModDocument.ts
+  5. Go FlattenToModDocument / compiled mission handlers (T-092.2)
+  6. packages/tbd-schema schema for mod/compiled mission
+  7. .cursor/rules/no-silent-deferrals.mdc
+
+═══ PROBLEM ═══
+  Editor slots carry loadout (T-068.10) but the mod-native compiled document still has no
+  structured gear — T-068.12 cannot equip players from /compiled.
+
+═══ SHIPPED (do not reopen) ═══
+  T-068.10 — Arsenal + per-slot loadout in editor doc / Save / Export / ORBAT summary.
+  T-092.2 — compiled flatten + GET /missions/:id/compiled.
+
+═══ DO ═══
+  - Schema: optional per-slot loadout gear on compiled mod slots
+  - TS + Go flatten emit gear from editor slot.loadout
+  - Parity tests + verify log
+  - Tag T-068.11
+
+═══ DO NOT ═══
+  - Re-implement editor embed / Arsenal UI
+  - Mod player equip (T-068.12)
+  - Edit registry / CLAUDE / hub (Cursor)
+  - Invent ammo edges
+
+═══ VERIFY ═══
+  cd packages/tbd-schema && npm run validate
+  cd apps/website/frontend && npm test && npm run build && npm run lint
+  make test-it
+
+═══ RETURN ═══
+  SHA + tag T-068.11
+  Example compiled slot JSON snippet with gear
+  Ready for Cursor: T-068.12
 ```

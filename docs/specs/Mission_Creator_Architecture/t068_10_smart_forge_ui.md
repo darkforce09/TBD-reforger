@@ -1,17 +1,19 @@
 # T-068.10 — Smart Loadout Forge UI
 
 **Ticket:** T-068 · **Slice:** T-068.10  
-**Status:** **ready** · **Executor:** claude-code · **Baseline:** tag **T-068.9** @ `d41418e5` ·
-**Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) ·
-**Worker API:** `initRegistryCompat` / `canAttach` / `canEquip` / `itemsFor` in
-`apps/website/frontend/src/features/mission-creator/registry/registryCompatClient.ts`
+**Status:** **shipped** @ `3bc0bd24` (tag **T-068.10**) · **Executor:** claude-code ·
+**Verify:** [`.ai/artifacts/t068_10_verify_log.md`](../../../.ai/artifacts/t068_10_verify_log.md) ·
+**Next:** **T-068.11** (compiled mod loadout) · **Authority:**
+[`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) · **Worker:**
+`registryCompatClient.ts` (`initRegistryCompat` / `canAttach` / `canEquip` / `itemsFor`)
 
 ---
 
 ## In one sentence
 
 Wire the Attributes **Arsenal** tab to the T-068.9 registry worker so invalid weapon/optic/mag
-(and related) combos are **blocked in the UI** before `loadout-export.json` download.
+(and related) combos are **blocked in the UI** before `loadout-export.json` download — and
+persist per-slot loadout in the mission document (operator scope expansion).
 
 ---
 

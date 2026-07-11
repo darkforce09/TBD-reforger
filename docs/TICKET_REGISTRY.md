@@ -60,7 +60,7 @@
 | T-065 | 650 | shipped | scale | Cluster LOD at extreme zoom | Supercluster index with pan-stable cache for 367k missions. |
 | T-066 | 660 | shipped | scale | Worker compile offload | Save/Export compile in Comlink worker via pickMapSnapshot. |
 | T-067 | 670 | shipped | scale | Spatial chunks | Bulk-paste slot-add-bulk patch; chunk bucket scaffolding; CPU viewport cull deferred (T-067.0.1 revert). Lazy RAM + GPU cull follow-on. |
-| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Phase 1 + T-150 + T-068.9 shipped (d41418e5). ACTIVE T-068.10 Smart Forge UI. Hub: t068_virtual_arsenal_program.md. |
+| T-068 | 680 | ready | eden | Virtual Arsenal (registry + loadout export) | Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md. |
 | T-150 | 685 | shipped | eden | Universal Enfusion registry + compat export | SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest. |
 | T-069 | 690 | deferred | eden | Markers on map | Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md. |
 | T-070 | 700 | idea | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |

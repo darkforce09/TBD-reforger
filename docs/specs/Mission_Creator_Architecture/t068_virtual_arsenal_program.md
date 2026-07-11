@@ -1,35 +1,42 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
-**Status:** **Phase 1 shipped** @ 2026-06-27. **T-150** @ `9107bf4e` · **T-068.9** @
-`d41418e5` (1,880 items / 4,012 edges in DB + worker). **ACTIVE:** **T-068.10** Smart Forge UI.  
-**Git tags:** **T-068** · **T-150** · **T-068.9** @ `d41418e5`. Full ticket ships @ **T-068.14**.  
-**Authority:** [MC ROADMAP](ROADMAP.md) · [agent_execution.md](agent_execution.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
+**Status:** **Phase 1 shipped**. **T-150** @ `9107bf4e` · **T-068.9** @ `d41418e5` ·
+**T-068.10** @ `3bc0bd24` (Smart Forge + per-slot loadout in **editor** doc). **ACTIVE:**
+**T-068.11** — compiled mod document loadout block (feeds **T-068.12**).  
+**Git tags:** **T-068.10** @ `3bc0bd24`. Full ticket ships @ **T-068.14**.  
+**Authority:** [MC ROADMAP](ROADMAP.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
 
 ---
 
-## Resume here (2026-07-10)
+## Resume here (2026-07-11)
 
-**T-068.9 done.** **Next code:** **T-068.10** — wire Arsenal tab to `initRegistryCompat` /
-`canAttach` / `itemsFor`.
+**T-068.10 done** (editor loadout + Arsenal). **Next:** **T-068.11** — emit gear on
+**compiled** `/missions/:id/compiled` slots for mod spawn equip.
 
 ```text
-T-150 (universal export)     ✓ @ 9107bf4e
-T-068.9 (ingest + worker)    ✓ @ d41418e5
-  → T-068.10 (Smart Forge UI)  ← ACTIVE
-  → T-146 / T-070 · T-068.11 compiler · T-068.12–.14 player path
+T-150 export                 ✓
+T-068.9 ingest + worker      ✓ @ d41418e5
+T-068.10 Forge + editor loadout ✓ @ 3bc0bd24
+  → T-068.11 compiled mod loadout block  ← ACTIVE
+  → T-068.12 mod player equip
+  → T-068.13 LOBBY picker · T-068.14 E2E
 ```
 
 | Gate | Ticket | Spec |
 |------|--------|------|
 | Universal export | **T-150** ✓ | [`t150_universal_registry_export.md`](t150_universal_registry_export.md) |
 | Ingest + worker | **T-068.9** ✓ | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) |
-| Smart Forge UI | **T-068.10** | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) |
+| Smart Forge + editor loadout | **T-068.10** ✓ | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) |
+| Compiled mod loadout | **T-068.11** | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) |
+| Player equip on spawn | **T-068.12** | [`t068_12_mod_player_loadout_equip.md`](t068_12_mod_player_loadout_equip.md) |
 | Mod slot picker | **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
 
-**Ops:** `make registry-import` · `GET /api/v1/registry` + `/registry/compat` · see
-[`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Registry.
+**Ops:** `make registry-import` · see [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Registry.
+
+**T-068.10 note:** Primary dropdown uses per-kind degrade when `character_default_loadout`
+has no weapon edges (T-150 data reality); optic/mag feeds stay strict.
 
 **Do not** `./scripts/ticket done T-068` until **T-068.14** (Phase 2 E2E — **human player** loadout + slot picker). **Player spawn loadout** = **T-068.11** + **T-068.12**. **Production LOBBY slot picker** = **T-068.13**; roster sync = **T-114** (after **T-068.13** + **T-118**).
 
@@ -104,7 +111,7 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.13 | claude-code | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) | §S1–S5 + slot picker screenshot |
 | T-068.14 | human | [`t068_14_phase2_e2e_gate.md`](t068_14_phase2_e2e_gate.md) | P1–P8 sign-off → `ticket done T-068` |
 
-**Active slice:** **T-068.10** (Smart Forge). **T-068.9** shipped @ `d41418e5`.
+**Active slice:** **T-068.11** (compiled mod loadout). **T-068.10** shipped @ `3bc0bd24`.
 
 **Shipped slices (Phase 1):**
 
