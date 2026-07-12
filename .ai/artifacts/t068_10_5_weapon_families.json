@@ -1,0 +1,1098 @@
+{
+ "total": 71,
+ "variants": 38,
+ "keep": 33,
+ "rows": [
+  {
+   "resource_name": "{B5B2CD276A3BDB08}Prefabs/Weapons/MachineGuns/UK59/MG_UK59_4x8.et",
+   "display_name": "MG UK59 4x8",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/UK59",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellUK59",
+   "mesh": "Assets/Weapons/MachineGuns/UK59/UK59_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailUK59"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{BFF3186D2A9CEFB7}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_AP2k.et",
+   "display_name": "Rifle M16A2 carbine AP2k",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{135044000CA7BF85}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_M203_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 carbine M203 OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine M203; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{F7571A26F55AD8EF}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{36218D5F0C7095E6}Prefabs/Weapons/Flares/Flare_RSP30_red.et",
+   "display_name": "Flare RSP30 red",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Flares",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Flares/RSP30/Flare_RSP30.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+   "display_name": "Rifle M16A2",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{D2B48DEBEF38D7D7}Prefabs/Weapons/MachineGuns/M249/MG_M249.et",
+   "display_name": "MG M249",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/M249",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellM249",
+   "mesh": "Assets/Weapons/MachineGuns/M249/M249_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{877128FBE22FF2C9}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_suppressor_AP2K_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 carbine suppressor AP2K OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{D182DCDD72BF7E34}Prefabs/Weapons/MachineGuns/M60/MG_M60.et",
+   "display_name": "MG M60",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/M60",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellM60",
+   "mesh": "Assets/Weapons/MachineGuns/M60/M60_Body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{29DD901C0664FC61}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_suppressor_4x20_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 suppressor 4x20 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{7C45EC94C698246B}Prefabs/Weapons/Launchers/RPG75/Launcher_RPG75.et",
+   "display_name": "Launcher RPG75",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Launchers/RPG75",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Launchers/RPG75/RPG75_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{B036BA26CCFE9E5D}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "display_name": "Rifle M16A2 carbine",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=True; mesh_eq=False; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{80CBC9A8D95A8A7B}Prefabs/Weapons/MachineGuns/PKM/MG_PKMN.et",
+   "display_name": "MG PKMN",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/PKM",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellPKM",
+   "mesh": "Assets/Weapons/MachineGuns/PKM/PKM_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailAK"
+   ],
+   "evidence": "parent=MG PKM; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{EB404DC9E1BCB750}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N_1P29.et",
+   "display_name": "Rifle AK74N 1P29",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "VARIANT",
+   "variant_of": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74N; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{1B332B99C72DAF8B}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4_1P29.et",
+   "display_name": "Rifle AK74N PBS4 1P29",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "VARIANT",
+   "variant_of": "{43D001A8797EA5C9}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74N PBS4; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{135C974EBDA312D9}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_Tutorial.et",
+   "display_name": "Rifle M16A2 Tutorial",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et",
+   "display_name": "Rifle M16A2 carbine M203",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{756231FF84F158A4}Prefabs/Weapons/Flares/FlareStarParachute_M126A1_red.et",
+   "display_name": "FlareStarParachute M126A1 red",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Flares",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Flares/M126A1/FlareStarParachute_M126A1_red.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{A016D4D3B9D40A58}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_4x20_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 carbine 4x20 OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{E57DBDA5C50F07FF}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_4x20.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine 4x20; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et",
+   "display_name": "Rifle M16A2 M203",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{BC6C9476FB3219A7}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N_GP25.et",
+   "display_name": "Rifle AK74N GP25",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "VARIANT",
+   "variant_of": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74N; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{B31929F65F0D0279}Prefabs/Weapons/Rifles/M14/Rifle_M21.et",
+   "display_name": "Rifle M21",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M14",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellM14",
+   "mesh": "Assets/Weapons/Rifles/M14/M21_body.xob",
+   "slot_types": [
+    "AttachmentOpticsM21"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{4C1FF226DDA3017C}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4_GP25.et",
+   "display_name": "Rifle AK74N PBS4 GP25",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "VARIANT",
+   "variant_of": "{43D001A8797EA5C9}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74N PBS4; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{22529BCDC9439FCD}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_M203_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 M203 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2 M203; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{C7BE039743FA7D2D}Prefabs/Weapons/MachineGuns/PKM/MG_PKMN_1P29.et",
+   "display_name": "MG PKMN 1P29",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/PKM",
+   "verdict": "VARIANT",
+   "variant_of": "{80CBC9A8D95A8A7B}Prefabs/Weapons/MachineGuns/PKM/MG_PKMN.et",
+   "magwell": "MagazineWellPKM",
+   "mesh": "Assets/Weapons/MachineGuns/PKM/PKM_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailAK"
+   ],
+   "evidence": "parent=MG PKMN; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{5D29FA916AB8E593}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_AP2k_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 carbine AP2k OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{BFF3186D2A9CEFB7}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_AP2k.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine AP2k; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{43D001A8797EA5C9}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4.et",
+   "display_name": "Rifle AK74N PBS4",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "VARIANT",
+   "variant_of": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74N; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{C0F7DD85A86B2900}Prefabs/Weapons/Handguns/PM/Handgun_PM.et",
+   "display_name": "Handgun PM",
+   "kind": "gear_handgun",
+   "family_dir": "Prefabs/Weapons/Handguns/PM",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellMakarovPM",
+   "mesh": "Assets/Weapons/Handguns/PM/PM_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{FA5C25BF66A53DCF}Prefabs/Weapons/Rifles/AK74/Rifle_AK74.et",
+   "display_name": "Rifle AK74",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{5F365605E36597FB}Prefabs/Weapons/MachineGuns/RPK74/MG_RPK74N.et",
+   "display_name": "MG RPK74N",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/RPK74",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/MachineGuns/RPK74/RPK74_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailAK"
+   ],
+   "evidence": "parent=MG RPK74; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et",
+   "display_name": "Rifle AK74N",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{A89BC9D55FFB4CD8}Prefabs/Weapons/MachineGuns/PKM/MG_PKM.et",
+   "display_name": "MG PKM",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/PKM",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellPKM",
+   "mesh": "Assets/Weapons/MachineGuns/PKM/PKM_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{327103CB218E7CA1}Prefabs/Weapons/Flares/Flare_RSP30_white.et",
+   "display_name": "Flare RSP30 white",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Flares",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Flares/RSP30/Flare_RSP30.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{FA0E25CE35EE945F}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74UN.et",
+   "display_name": "Rifle AKS74UN",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AKS74U",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AKS74U/AKS74U_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AKS74U; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{722CE6FEC39EE896}Prefabs/Weapons/Launchers/RPG22/Launcher_RPG22.et",
+   "display_name": "Launcher RPG22",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Launchers/RPG22",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Launchers/RPG22/RPG22_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et",
+   "display_name": "Launcher M72A3",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Launchers/M72",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Launchers/M72/M72_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{6415B7923DE28C1B}Prefabs/Weapons/Rifles/SVD/Rifle_SVD_PSO.et",
+   "display_name": "Rifle SVD PSO",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/SVD",
+   "verdict": "VARIANT",
+   "variant_of": "{3EB02CDAD5F23C82}Prefabs/Weapons/Rifles/SVD/Rifle_SVD.et",
+   "magwell": "MagazineWellSVD",
+   "mesh": "Assets/Weapons/Rifles/SVD/SVD_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailSVD"
+   ],
+   "evidence": "parent=Rifle SVD; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{E57DBDA5C50F07FF}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_4x20.et",
+   "display_name": "Rifle M16A2 carbine 4x20",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{8D6553BEAF8640D1}Prefabs/Weapons/Rifles/M14/Rifle_M21_OliveGreen_Sand_Stripes_Wrapped.et",
+   "display_name": "Rifle M21 OliveGreen Sand Stripes Wrapped",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M14",
+   "verdict": "VARIANT",
+   "variant_of": "{6EDAE05DF7CC8E78}Prefabs/Weapons/Rifles/M14/Rifle_M21_OliveGreen_Sand_Stripes.et",
+   "magwell": "MagazineWellM14",
+   "mesh": "Assets/Weapons/Rifles/M14/M21_body.xob",
+   "slot_types": [
+    "AttachmentOpticsM21"
+   ],
+   "evidence": "parent=Rifle M21 OliveGreen Sand Stripes; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{7A82FE978603F137}Prefabs/Weapons/Launchers/RPG7/Launcher_RPG7.et",
+   "display_name": "Launcher RPG7",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Launchers/RPG7",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellRPG7",
+   "mesh": "Assets/Weapons/Launchers/RPG7/RPG7_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailRPG7"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{E8A55396050E1762}Prefabs/Weapons/Launchers/RPG7/Launcher_RPG7_PGO7.et",
+   "display_name": "Launcher RPG7 PGO7",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Launchers/RPG7",
+   "verdict": "VARIANT",
+   "variant_of": "{7A82FE978603F137}Prefabs/Weapons/Launchers/RPG7/Launcher_RPG7.et",
+   "magwell": "MagazineWellRPG7",
+   "mesh": "Assets/Weapons/Launchers/RPG7/RPG7_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailRPG7"
+   ],
+   "evidence": "parent=Launcher RPG7; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{0B0C4F7940C1CE26}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_4x20_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 4x20 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{B1482FB64E3D2D45}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_4x20.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 4x20; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{6EDAE05DF7CC8E78}Prefabs/Weapons/Rifles/M14/Rifle_M21_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M21 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M14",
+   "verdict": "VARIANT",
+   "variant_of": "{B31929F65F0D0279}Prefabs/Weapons/Rifles/M14/Rifle_M21.et",
+   "magwell": "MagazineWellM14",
+   "mesh": "Assets/Weapons/Rifles/M14/M21_body.xob",
+   "slot_types": [
+    "AttachmentOpticsM21"
+   ],
+   "evidence": "parent=Rifle M21; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{B1482FB64E3D2D45}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_4x20.et",
+   "display_name": "Rifle M16A2 4x20",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{FAED8801F4AAE136}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203_Tutorial.et",
+   "display_name": "Rifle M16A2 carbine M203 Tutorial",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine M203; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{81EB948E6414BD6F}Prefabs/Weapons/Rifles/M14/Rifle_M21_ARTII.et",
+   "display_name": "Rifle M21 ARTII",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M14",
+   "verdict": "VARIANT",
+   "variant_of": "{B31929F65F0D0279}Prefabs/Weapons/Rifles/M14/Rifle_M21.et",
+   "magwell": "MagazineWellM14",
+   "mesh": "Assets/Weapons/Rifles/M14/M21_body.xob",
+   "slot_types": [
+    "AttachmentOpticsM21"
+   ],
+   "evidence": "parent=Rifle M21; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{F765DED3699B6B4C}Prefabs/Weapons/Rifles/M14/Rifle_M21_ARTII_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M21 ARTII OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M14",
+   "verdict": "VARIANT",
+   "variant_of": "{81EB948E6414BD6F}Prefabs/Weapons/Rifles/M14/Rifle_M21_ARTII.et",
+   "magwell": "MagazineWellM14",
+   "mesh": "Assets/Weapons/Rifles/M14/M21_body.xob",
+   "slot_types": [
+    "AttachmentOpticsM21"
+   ],
+   "evidence": "parent=Rifle M21 ARTII; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{51D9E3AEC8476BA4}Prefabs/Weapons/Flares/FlareStarParachute_M195_green.et",
+   "display_name": "FlareStarParachute M195 green",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Flares",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Flares/M195/FlareStarParachute_M195_green.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{D3F274F6E2A5A924}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_M203_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 M203 OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2 M203; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{C417FBA57578B2E1}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_M203_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 carbine M203 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine M203; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{63E8322E2ADD4AA7}Prefabs/Weapons/Rifles/AK74/Rifle_AK74_GP25.et",
+   "display_name": "Rifle AK74 GP25",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AK74",
+   "verdict": "VARIANT",
+   "variant_of": "{FA5C25BF66A53DCF}Prefabs/Weapons/Rifles/AK74/Rifle_AK74.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AK74/AK74_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AK74; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{D7690D6BB82B50D7}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 carbine OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{EC9BDA3D9DDD8795}Prefabs/Weapons/Flares/FlareStarParachute_M127A1_white.et",
+   "display_name": "FlareStarParachute M127A1 white",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Flares",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Flares/M127A1/FlareStarParachute_M127A1_white.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{3EB02CDAD5F23C82}Prefabs/Weapons/Rifles/SVD/Rifle_SVD.et",
+   "display_name": "Rifle SVD",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/SVD",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellSVD",
+   "mesh": "Assets/Weapons/Rifles/SVD/SVD_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailSVD"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{BFEA719491610A45}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74U.et",
+   "display_name": "Rifle AKS74U",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AKS74U",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AKS74U/AKS74U_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{9B4DF9A9F1BD2A1C}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74UN_1P29.et",
+   "display_name": "Rifle AKS74UN 1P29",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AKS74U",
+   "verdict": "VARIANT",
+   "variant_of": "{FA0E25CE35EE945F}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74UN.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AKS74U/AKS74U_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AKS74UN; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{9C948630078D154D}Prefabs/Weapons/Rifles/VZ58/Rifle_VZ58P.et",
+   "display_name": "Rifle VZ58P",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/VZ58",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellVZ58_762",
+   "mesh": "Assets/Weapons/Rifles/VZ58/VZ58_body.xob",
+   "slot_types": [
+    "AttachmentBayonetVz58",
+    "AttachmentMuzzle762_39",
+    "AttachmentStockVz58"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et",
+   "display_name": "Handgun M9",
+   "kind": "gear_handgun",
+   "family_dir": "Prefabs/Weapons/Handguns/M9",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellM9Beretta",
+   "mesh": "Assets/Weapons/Handguns/M9/M9_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{443CEFF17E040B11}Prefabs/Weapons/Rifles/VZ58/Rifle_VZ58V.et",
+   "display_name": "Rifle VZ58V",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/VZ58",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellVZ58_762",
+   "mesh": "Assets/Weapons/Rifles/VZ58/VZ58_body.xob",
+   "slot_types": [
+    "AttachmentBayonetVz58",
+    "AttachmentMuzzle762_39",
+    "AttachmentStockVz58"
+   ],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{BBF706D5B2B11FF0}Prefabs/Weapons/MachineGuns/RPK74/MG_RPK74N_1P29.et",
+   "display_name": "MG RPK74N 1P29",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/RPK74",
+   "verdict": "VARIANT",
+   "variant_of": "{5F365605E36597FB}Prefabs/Weapons/MachineGuns/RPK74/MG_RPK74N.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/MachineGuns/RPK74/RPK74_body.xob",
+   "slot_types": [
+    "AttachmentOpticsDovetailAK"
+   ],
+   "evidence": "parent=MG RPK74N; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{60B4E42557D61CF9}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_4x20_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 4x20 OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{B1482FB64E3D2D45}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_4x20.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 4x20; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{EDE7F2CE157306AD}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_AP2k_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 carbine AP2k OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{BFF3186D2A9CEFB7}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_AP2k.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine AP2k; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{5F3661399CE6BEE6}Prefabs/Weapons/Rifles/AKS74U/Variants/Rifle_AKS74UN_PBS4.et",
+   "display_name": "Rifle AKS74UN PBS4",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/AKS74U",
+   "verdict": "VARIANT",
+   "variant_of": "{FA0E25CE35EE945F}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74UN.et",
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/Rifles/AKS74U/AKS74U_body.xob",
+   "slot_types": [
+    "AttachmentBayonet6Kh4",
+    "AttachmentMuzzle545_39",
+    "AttachmentOpticsDovetailAK",
+    "AttachmentUnderBarrelGP25"
+   ],
+   "evidence": "parent=Rifle AKS74UN; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{ED492F11FCFAE30A}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_4x20_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 carbine 4x20 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{E57DBDA5C50F07FF}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_4x20.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine 4x20; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{C29B073E2E583220}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_suppressor_M203_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 suppressor M203 OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle",
+    "AttachmentUnderBarrelM203"
+   ],
+   "evidence": "parent=Rifle M16A2; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{92A0764C4EDF7C14}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_OliveGreen_Solid.et",
+   "display_name": "Rifle M16A2 carbine OliveGreen Solid",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{83CE659F2C763F28}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_suppressor_OliveGreen_Sand_Stripes.et",
+   "display_name": "Rifle M16A2 carbine suppressor OliveGreen Sand Stripes",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M16",
+   "verdict": "VARIANT",
+   "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et",
+   "magwell": "MagazineWellStanag556",
+   "mesh": "Assets/Weapons/Rifles/M16A2/M16A2_carbine_body.xob",
+   "slot_types": [
+    "AttachmentBayonetM9",
+    "AttachmentHandGuardM16",
+    "AttachmentMuzzle556_45",
+    "AttachmentOpticsCarryHandle"
+   ],
+   "evidence": "parent=Rifle M16A2 carbine; magwell_eq=True; slots_eq=True; mesh_eq=True"
+  },
+  {
+   "resource_name": "{A7AF84C6C58BA3E8}Prefabs/Weapons/MachineGuns/RPK74/MG_RPK74.et",
+   "display_name": "MG RPK74",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/MachineGuns/RPK74",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellAK545",
+   "mesh": "Assets/Weapons/MachineGuns/RPK74/RPK74_body.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  },
+  {
+   "resource_name": "{DD17D4BC320A94C8}Prefabs/Weapons/Rifles/M14/Rifle_M21_ARTII_OliveGreen_Sand_Stripes_Wrapped.et",
+   "display_name": "Rifle M21 ARTII OliveGreen Sand Stripes Wrapped",
+   "kind": "gear_primary",
+   "family_dir": "Prefabs/Weapons/Rifles/M14",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": "MagazineWellM14",
+   "mesh": "Assets/Weapons/Rifles/M14/M21_body.xob",
+   "slot_types": [
+    "AttachmentCamouflage",
+    "AttachmentOpticsM21"
+   ],
+   "evidence": "parent=Rifle M21 ARTII OliveGreen Sand Stripes; magwell_eq=True; slots_eq=False; mesh_eq=True; KEEP: evidence differs (fail-safe)"
+  },
+  {
+   "resource_name": "{FC79F6BDEB7F1BC2}Prefabs/Weapons/Flares/Flare_RSP30_green.et",
+   "display_name": "Flare RSP30 green",
+   "kind": "gear_launcher",
+   "family_dir": "Prefabs/Weapons/Flares",
+   "verdict": "KEEP",
+   "variant_of": null,
+   "magwell": null,
+   "mesh": "Assets/Weapons/Flares/RSP30/Flare_RSP30.xob",
+   "slot_types": [],
+   "evidence": "no prefix parent in family dir"
+  }
+ ]
+}

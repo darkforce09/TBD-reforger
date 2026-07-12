@@ -66,6 +66,10 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 
 		scanner.DeriveEdges();
 
+		// T-068.10.5: variant pass AFTER DeriveEdges (final kinds — turret-referenced weapons
+		// have been reclassified vehicle_weapon and never enter the family search).
+		scanner.ComputeWeaponVariants();
+
 		// Kind histogram AFTER DeriveEdges — it reclassifies turret-referenced weapons to
 		// vehicle_weapon ('other' count is a mandatory verify-log stat).
 		map<string, int> kindCounts = new map<string, int>();
@@ -102,8 +106,8 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 		// (tierA component/ancestor + tierB catalog-refined + tierC path-convention + other == items).
 		Print(string.Format("%1 tiers: A=%2 B=%3 C=%4 other=%5 (sum must equal items)",
 			TAG, scanner.m_iTierA, scanner.m_iTierB, scanner.m_iTierC, scanner.m_iOtherKind));
-		Print(string.Format("%1 quality: weaponUnsplit=%2 unknownArea=%3 catalogEntries=%4 catalogHits=%5",
-			TAG, scanner.m_iWeaponUnsplit, scanner.m_iUnknownArea, scanner.m_iCatalogEntries, scanner.m_iCatalogHits));
+		Print(string.Format("%1 quality: weaponUnsplit=%2 unknownArea=%3 catalogEntries=%4 catalogHits=%5 variants=%6",
+			TAG, scanner.m_iWeaponUnsplit, scanner.m_iUnknownArea, scanner.m_iCatalogEntries, scanner.m_iCatalogHits, scanner.m_iVariants));
 		Print(string.Format("%1 DONE items=%2 edges=%3 addons=%4 elapsedMs=%5",
 			TAG, scanner.m_Items.Count(), scanner.m_Edges.Count(), scanner.m_Addons.Count(), elapsed));
 	}
@@ -146,6 +150,8 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 				Emit(",\n      \"max_volume_cm3\": " + it.maxVolumeCm3.ToString());
 			if (!it.addonId.IsEmpty())
 				Emit(",\n      \"addon\": \"" + TBD_ExportJson.Escape(it.addonId) + "\"");
+			if (!it.variantOf.IsEmpty())
+				Emit(",\n      \"variant_of\": \"" + TBD_ExportJson.Escape(it.variantOf) + "\"");
 			Emit("\n    }");
 			written++;
 		}

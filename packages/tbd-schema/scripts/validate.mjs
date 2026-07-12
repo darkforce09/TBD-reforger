@@ -132,6 +132,29 @@ const checkAddonRefs = (label, itemsJson) => {
 checkAddonRefs("registry-items.sample.json", readJSON(join(root, "registry", "registry-items.sample.json")));
 checkAddonRefs("registry-items.workbench.json", readJSON(join(root, "registry", "registry-items.workbench.json")));
 
+// T-068.10.5: variant_of must reference an item in the same envelope (a dangling parent
+// would break the picker back-link and the T-068.12 variant-equip resolution).
+const checkVariantRefs = (label, itemsJson) => {
+  const known = new Set(itemsJson.items.map((it) => it.resource_name));
+  const bad = [];
+  let variants = 0;
+  for (const it of itemsJson.items) {
+    if (it.variant_of === undefined) continue;
+    variants += 1;
+    if (!known.has(it.variant_of)) bad.push(`${it.resource_name} variant_of ${it.variant_of}`);
+    if (it.variant_of === it.resource_name) bad.push(`${it.resource_name} is its own variant`);
+  }
+  if (bad.length === 0) {
+    console.log(`  PASS  ${label} (variant_of integrity, ${variants} variants)`);
+  } else {
+    failures += 1;
+    console.log(`  FAIL  ${label} (variant_of integrity)`);
+    for (const miss of bad.slice(0, 10)) console.log(`        ${miss}`);
+  }
+};
+checkVariantRefs("registry-items.sample.json", readJSON(join(root, "registry", "registry-items.sample.json")));
+checkVariantRefs("registry-items.workbench.json", readJSON(join(root, "registry", "registry-items.workbench.json")));
+
 console.log("Registry compat:");
 {
   const itemsSample = readJSON(join(root, "registry", "registry-items.sample.json"));

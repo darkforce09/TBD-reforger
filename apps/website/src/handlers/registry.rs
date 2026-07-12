@@ -83,7 +83,7 @@ pub async fn list_registry(
         "SELECT id, modpack_id, resource_name, display_name, category, \
          COALESCE(icon_url, '') AS icon_url, kind, \
          \"abstract\", arsenal_type, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, addon, \
-         sort_order, \
+         variant_of, sort_order, \
          COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
          COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
          FROM registry_items WHERE modpack_id = $1 \

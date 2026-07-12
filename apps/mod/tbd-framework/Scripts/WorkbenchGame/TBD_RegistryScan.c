@@ -40,6 +40,8 @@ class TBD_RegistryScanItem
 	float maxWeightKg = -1;    // container storage m_fMaxWeight (kg)
 	float maxVolumeCm3 = -1;   // container storage MaxCumulativeVolume (cm3)
 	string ruleId;         // census rule that classified this item (tier counters + verify log)
+	string variantOf;      // T-068.10.5: immediate base weapon when this is a factory config
+	string meshRef;        // leaf-most MeshObject.Object (variant rule: camo = materials only)
 
 	// Weapon-side facts (hand weapons and vehicle weapons alike).
 	ref array<string> muzzleWells = {};      // MuzzleComponent.MagazineWell class names
@@ -637,6 +639,12 @@ class TBD_RegistryScanner
 			CollectObjectVarClasses(comps, "MuzzleComponent", "MagazineWell", item.muzzleWells);
 			CollectResourceVarValues(comps, "MuzzleComponent", "MagazineTemplate", item.magTemplates);
 			CollectObjectVarClasses(comps, "AttachmentSlotComponent", "AttachmentType", item.slotAttachTypes);
+			// T-068.10.5 variant rule input: leaf-most mesh (buckets are most-derived-first,
+			// so the first MeshObject.Object is the leaf override when one exists).
+			array<string> meshes = {};
+			CollectResourceVarValues(comps, "MeshObject", "Object", meshes);
+			if (!meshes.IsEmpty())
+				item.meshRef = meshes[0];
 
 			// R7a — vanilla weapon-family ancestry (before R6 so abstract Core templates,
 			// which have no phys attrs by design, keep their family kind).
@@ -1246,6 +1254,117 @@ class TBD_RegistryScanner
 				it.ruleId = "R1";
 			}
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	// ---- T-068.10.5: weapon variant pass -------------------------------------------------------
+	// A factory CONFIGURATION (pre-mounted attachments / camo materials) of a base weapon gets
+	// variant_of = its immediate prefix-parent. Census-locked rule: same family dir (Variants/
+	// folds up) + longest strict filename-stem prefix parent + equal magazine wells + equal
+	// attachment-slot-type set + equal base mesh. Any differing/unresolvable evidence => not a
+	// variant (fail-safe keep). Contract artifact: .ai/artifacts/t068_10_5_weapon_families.md.
+
+	int m_iVariants;
+
+	protected static string StripGuid(string rn)
+	{
+		int close = rn.IndexOf("}");
+		if (close >= 0)
+			return rn.Substring(close + 1, rn.Length() - close - 1);
+		return rn;
+	}
+
+	//! Directory key with a trailing /Variants folded into the parent dir.
+	protected static string FamilyDir(string rn)
+	{
+		string p = StripGuid(rn);
+		int slash = p.LastIndexOf("/");
+		if (slash < 0)
+			return p;
+		string dir = p.Substring(0, slash);
+		if (dir.EndsWith("/Variants"))
+			dir = dir.Substring(0, dir.Length() - 9);
+		return dir;
+	}
+
+	//! Lower-cased filename stem (no dir, no .et).
+	protected static string FileStem(string rn)
+	{
+		string p = StripGuid(rn);
+		int slash = p.LastIndexOf("/");
+		if (slash >= 0)
+			p = p.Substring(slash + 1, p.Length() - slash - 1);
+		if (p.EndsWith(".et"))
+			p = p.Substring(0, p.Length() - 3);
+		p.ToLower();
+		return p;
+	}
+
+	protected static string JoinSorted(array<string> values)
+	{
+		array<string> copy = {};
+		foreach (string v : values)
+			copy.Insert(v);
+		copy.Sort();
+		string joined = "";
+		foreach (string c : copy)
+			joined = joined + c + "|";
+		return joined;
+	}
+
+	void ComputeWeaponVariants()
+	{
+		m_iVariants = 0;
+		array<int> weaponIdx = {};
+		for (int i = 0, n = m_Items.Count(); i < n; i++)
+		{
+			TBD_RegistryScanItem it = m_Items[i];
+			if (it.isAbstract)
+				continue;
+			if (it.kind == "gear_primary" || it.kind == "gear_launcher" || it.kind == "gear_handgun")
+				weaponIdx.Insert(i);
+		}
+
+		foreach (int wi : weaponIdx)
+		{
+			TBD_RegistryScanItem w = m_Items[wi];
+			string wDir = FamilyDir(w.resourceName);
+			string wStem = FileStem(w.resourceName);
+
+			TBD_RegistryScanItem parent = null;
+			int bestLen = -1;
+			foreach (int ci : weaponIdx)
+			{
+				if (ci == wi)
+					continue;
+				TBD_RegistryScanItem c = m_Items[ci];
+				if (FamilyDir(c.resourceName) != wDir)
+					continue;
+				string cStem = FileStem(c.resourceName);
+				int cLen = cStem.Length();
+				if (cLen >= wStem.Length())
+					continue;
+				if (wStem.Substring(0, cLen) != cStem)
+					continue;
+				if (cLen > bestLen)
+				{
+					bestLen = cLen;
+					parent = c;
+				}
+			}
+			if (!parent)
+				continue;
+
+			bool wellsEq = JoinSorted(w.muzzleWells) == JoinSorted(parent.muzzleWells);
+			bool slotsEq = JoinSorted(w.slotAttachTypes) == JoinSorted(parent.slotAttachTypes);
+			bool meshEq = !w.meshRef.IsEmpty() && w.meshRef == parent.meshRef;
+			if (wellsEq && slotsEq && meshEq)
+			{
+				w.variantOf = parent.resourceName;
+				m_iVariants++;
+			}
+		}
+		Print(string.Format("%1 weapon variants: %2 flagged (variant_of set)", m_sLogTag, m_iVariants));
 	}
 
 	//------------------------------------------------------------------------------------------------

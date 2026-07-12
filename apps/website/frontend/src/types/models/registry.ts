@@ -64,6 +64,9 @@ export interface RegistryItem {
   max_volume_cm3?: number | null
   /** Addon ID the prefab was scanned from (joins the envelope addons[] scan set). */
   addon?: string | null
+  /** Base weapon this row is a factory attachment/camo configuration of (T-068.10.5);
+   *  pickers hide variant rows like abstracts. */
+  variant_of?: string | null
   sort_order: number
   created_at: string
   updated_at: string

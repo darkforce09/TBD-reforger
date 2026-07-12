@@ -193,7 +193,10 @@ function rowValues(
       : [...(sets.edgeItems[row.key] ?? [])]
   const q = query.trim().toLowerCase()
   const values = raw.filter((v) => {
-    if (catalogByName.get(v)?.abstract === true) return v === current
+    const item = catalogByName.get(v)
+    // Abstract templates AND factory variants (T-068.10.5: variant_of set — attachment/camo
+    // configurations of a base weapon) hide from pickers; a live pick never blanks.
+    if (item?.abstract === true || item?.variant_of) return v === current
     if (q && v !== current && !displayName(v, catalogByName).toLowerCase().includes(q))
       return false
     return true

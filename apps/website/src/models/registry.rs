@@ -44,6 +44,10 @@ pub struct RegistryItem {
     /// Addon ID this prefab was scanned from (joins the envelope addons[] scan set).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub addon: Option<String>,
+    /// Base weapon this row is a factory attachment/camo configuration of (T-068.10.5).
+    /// Pickers hide variant rows; NULL for base weapons and non-weapons.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub variant_of: Option<String>,
     pub sort_order: i64,
     #[serde(with = "go_time")]
     pub created_at: DateTime<Utc>,

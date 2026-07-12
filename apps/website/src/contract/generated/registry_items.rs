@@ -97,6 +97,14 @@ pub struct ItemElement {
     /// Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.
     pub resource_name: String,
 
+    /// T-068.10.5: set on factory attachment/camo CONFIGURATIONS of a base weapon (same family
+    /// prefix, magwell, attachment-slot-type set and mesh — only pre-mounted
+    /// attachments/materials differ, e.g. 'Rifle AK74N 1P29' → 'Rifle AK74N'). Points at the
+    /// immediate parent item (must exist in the envelope — strict check in validate.mjs).
+    /// Pickers hide variant rows like abstracts; the census artifact
+    /// t068_10_5_weapon_families.md carries the per-weapon evidence.
+    pub variant_of: Option<String>,
+
     /// ItemPhysicalAttributes.ItemVolume in cubic centimetres (API-documented unit), read from
     /// the prefab ancestry chain. Absent when the value is an engine class default not
     /// serialized in the prefab — never guessed.

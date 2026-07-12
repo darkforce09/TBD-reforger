@@ -190,6 +190,13 @@
       "category": "NATO/Weapons/Primary",
       "kind": "gear_primary",
       "abstract": true
+    },
+    {
+      "resource_name": "{CB1B2C3D4E5F608D}Prefabs/Weapons/Rifles/Variants/TBD_M16A2_4x20.et",
+      "display_name": "M16A2 4x20",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary",
+      "variant_of": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et"
     }
   ]
 }

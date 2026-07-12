@@ -1,7 +1,7 @@
 {
   "registryItemsVersion": "2",
   "modpackId": "00000000-0000-4000-a000-000000000001",
-  "generatedAt": "2026-07-12T19:13:25Z",
+  "generatedAt": "2026-07-12T23:22:39Z",
   "addons": [
     { "guid": "5614BBCCBB55ED1C", "name": "core", "title": "Enfusion core data", "vanilla": true },
     { "guid": "58D0FB3206B6F859", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true },
@@ -206,7 +206,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et"
     },
     {
       "resource_name": "{B7132459C07777CA}Prefabs/Weapons/Handguns/PM/Handgun_PM_base.et",
@@ -1251,7 +1252,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et"
     },
     {
       "resource_name": "{43C4AF1EEBD001CE}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_ambulance.et",
@@ -1358,7 +1360,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et"
     },
     {
       "resource_name": "{C65A53E8FCF6E57A}Prefabs/Characters/Uniforms/Pants_TAZ83/Pants_TAZ83_01_base.et",
@@ -1741,7 +1744,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et"
     },
     {
       "resource_name": "{A2E8114A16D3F822}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_orange.et",
@@ -2566,7 +2570,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et"
     },
     {
       "resource_name": "{AE2B7341B5A82545}Prefabs/Items/PersonalBelongings/PersonalBelongings_FIA.et",
@@ -3209,7 +3214,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et"
     },
     {
       "resource_name": "{924FB4A21503BBA2}Prefabs/Weapons/Ammo/Ammo_Flare_40mm_StarParachute_Red.et",
@@ -3697,7 +3703,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AK74",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et"
     },
     {
       "resource_name": "{26A2973BA8F03438}Prefabs/Characters/Factions/BLUFOR/US_Army/KS/KS_Bird.et",
@@ -3813,7 +3820,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AK74/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{43D001A8797EA5C9}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4.et"
     },
     {
       "resource_name": "{5FFD91CF507BFFFB}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Ammunition_US.et",
@@ -4006,7 +4014,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et"
     },
     {
       "resource_name": "{BDFB2377B6B4ABBB}Prefabs/Vehicles/Wheeled/UAZ469/UAZ469_covered_CIV_PTS.et",
@@ -4828,7 +4837,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{E57DBDA5C50F07FF}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_4x20.et"
     },
     {
       "resource_name": "{E5E9DBBF3BFB88C6}Prefabs/Weapons/Attachments/Optics/Optic_PGO7/Optic_PGO7V3.et",
@@ -5188,7 +5198,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AK74",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et"
     },
     {
       "resource_name": "{9F19BA2C3ACA4551}Prefabs/Weapons/MachineGuns/M60/Deployable_MG_M60_Mounted.et",
@@ -5321,7 +5332,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AK74/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{43D001A8797EA5C9}Prefabs/Weapons/Rifles/AK74/Variants/Rifle_AK74N_PBS4.et"
     },
     {
       "resource_name": "{A003493D32140960}Prefabs/Vehicles/Wheeled/UAZ452/UAZ452_cargo_CIV_base.et",
@@ -5339,7 +5351,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et"
     },
     {
       "resource_name": "{6113990D163E5249}Prefabs/Items/Equipment/BallisticTable/BallisticTable_US.et",
@@ -5487,7 +5500,8 @@
       "category": "ArmaReforger/Weapons/MachineGuns/PKM",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{80CBC9A8D95A8A7B}Prefabs/Weapons/MachineGuns/PKM/MG_PKMN.et"
     },
     {
       "resource_name": "{F1FBD0972FA5FE09}Prefabs/Vehicles/Wheeled/M923A1/M923A1_transport.et",
@@ -5659,7 +5673,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{BFF3186D2A9CEFB7}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_AP2k.et"
     },
     {
       "resource_name": "{77D7BFD355620806}Prefabs/Characters/Factions/OPFOR/USSR_Army/KLMK/Character_USSR_Ammo_KLMK.et",
@@ -6095,7 +6110,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AK74/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{96DFD2E7E63B3386}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N.et"
     },
     {
       "resource_name": "{AD8AB93729348C3E}Prefabs/Weapons/Magazines/Box_762x51_M60_100rnd_Tracer.et",
@@ -9498,7 +9514,8 @@
       "category": "ArmaReforger/Weapons/Rifles/SVD",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{3EB02CDAD5F23C82}Prefabs/Weapons/Rifles/SVD/Rifle_SVD.et"
     },
     {
       "resource_name": "{4181B1C8B5E56392}Prefabs/Items/Equipment/Radios/Radio_R107M_FIA.et",
@@ -9702,7 +9719,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et"
     },
     {
       "resource_name": "{279B4FEECCA799BD}Prefabs/Weapons/Ammo/Ammo_762x54r_Tracer_7T2.et",
@@ -9763,7 +9781,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M14",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{6EDAE05DF7CC8E78}Prefabs/Weapons/Rifles/M14/Rifle_M21_OliveGreen_Sand_Stripes.et"
     },
     {
       "resource_name": "{09DEA8153A0C312D}Prefabs/Characters/Core/EquipmentPart_Base.et",
@@ -9861,7 +9880,8 @@
       "category": "ArmaReforger/Weapons/Launchers/RPG7",
       "kind": "gear_launcher",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{7A82FE978603F137}Prefabs/Weapons/Launchers/RPG7/Launcher_RPG7.et"
     },
     {
       "resource_name": "{03AE76776BBEA98E}Prefabs/Vehicles/Wheeled/BTR70/VehParts/Turret/PeriscopeDummy_base.et",
@@ -10043,7 +10063,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{B1482FB64E3D2D45}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_4x20.et"
     },
     {
       "resource_name": "{8C9F39278B899AE6}Prefabs/Items/Equipment/Accessories/Pouch_Soviet_30rnd_AK74/Pouch_Soviet_30rnd_AK74.et",
@@ -10069,7 +10090,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M14",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{B31929F65F0D0279}Prefabs/Weapons/Rifles/M14/Rifle_M21.et"
     },
     {
       "resource_name": "{8C966363D98C3D2F}Prefabs/Characters/Factions/OPFOR/USSR_Army/Naval_Infantry/Character_USSR_NI_Sapper.et",
@@ -10171,7 +10193,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et"
     },
     {
       "resource_name": "{49C909AFD66E90A1}Prefabs/Vehicles/Wheeled/S1203/S1203_transport_randomized.et",
@@ -10358,7 +10381,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et"
     },
     {
       "resource_name": "{983B57B8E95C1F52}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded_FIA.et",
@@ -10712,7 +10736,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M14",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{B31929F65F0D0279}Prefabs/Weapons/Rifles/M14/Rifle_M21.et"
     },
     {
       "resource_name": "{428B2BC55F1628E0}Prefabs/Vehicles/Wheeled/Conflict_Variants/M1025_armed_M2HB_Conflict.et",
@@ -10979,7 +11004,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M14",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{81EB948E6414BD6F}Prefabs/Weapons/Rifles/M14/Rifle_M21_ARTII.et"
     },
     {
       "resource_name": "{0A84AA5A3884176F}Prefabs/Weapons/Magazines/Magazine_545x39_AK_30rnd_Last_5Tracer.et",
@@ -11268,7 +11294,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{5A987A8A13763769}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_M203.et"
     },
     {
       "resource_name": "{5346CF7E39A65A6B}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Base.et",
@@ -11433,7 +11460,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{EF73725A81669E2C}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_M203.et"
     },
     {
       "resource_name": "{8DD24C2736DCB16D}Prefabs/Vehicles/Wheeled/S1203/VehParts/S1203_rear_seats.et",
@@ -11854,7 +11882,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AK74",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{FA5C25BF66A53DCF}Prefabs/Weapons/Rifles/AK74/Rifle_AK74.et"
     },
     {
       "resource_name": "{19600CCA33279D20}Prefabs/Weapons/Magazines/Magazine_762x54_SVD_10rnd_7BZ3API.et",
@@ -11914,7 +11943,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et"
     },
     {
       "resource_name": "{47D94E1193A88497}Prefabs/Vehicles/Wheeled/M151A2/M151A2_transport.et",
@@ -13362,7 +13392,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AKS74U",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{FA0E25CE35EE945F}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74UN.et"
     },
     {
       "resource_name": "{55789E34C8CEE473}Prefabs/Props/Military/Arsenal/AmmoBoxes/US/AmmoBoxArsenal_Equipment_HQ_US.et",
@@ -13698,7 +13729,8 @@
       "category": "ArmaReforger/Weapons/MachineGuns/RPK74",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{5F365605E36597FB}Prefabs/Weapons/MachineGuns/RPK74/MG_RPK74N.et"
     },
     {
       "resource_name": "{AA865FD8AB5DA589}Prefabs/Weapons/Ammo/Ammo_25x137/Casing_25x137.et",
@@ -14317,7 +14349,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{B1482FB64E3D2D45}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_4x20.et"
     },
     {
       "resource_name": "{9B34796F40125F85}Prefabs/Weapons/Magazines/Magazine_M240_Coax/Box_762x51_M240_coax_200rnd_Tracer.et",
@@ -14568,7 +14601,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{BFF3186D2A9CEFB7}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_AP2k.et"
     },
     {
       "resource_name": "{26A0525B57F9AEF8}Prefabs/Items/Equipment/Binoculars/Binoculars_B12/Binoculars_B12_base.et",
@@ -15105,7 +15139,8 @@
       "category": "ArmaReforger/Weapons/Rifles/AKS74U/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{FA0E25CE35EE945F}Prefabs/Weapons/Rifles/AKS74U/Rifle_AKS74UN.et"
     },
     {
       "resource_name": "{ED492F11FCFAE30A}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_carbine_4x20_OliveGreen_Sand_Stripes.et",
@@ -15113,7 +15148,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{E57DBDA5C50F07FF}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine_4x20.et"
     },
     {
       "resource_name": "{C29B073E2E583220}Prefabs/Weapons/Rifles/M16/Variants/Rifle_M16A2_suppressor_M203_OliveGreen_Sand_Stripes.et",
@@ -15246,7 +15282,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et"
     },
     {
       "resource_name": "{CE0AF733722B3978}Prefabs/Items/Equipment/Detonators/BlastingMachine_M34/BlastingMachine_M34.et",
@@ -15282,7 +15319,8 @@
       "category": "ArmaReforger/Weapons/Rifles/M16/Variants",
       "kind": "gear_primary",
       "max_volume_cm3": 1000,
-      "addon": "ArmaReforger"
+      "addon": "ArmaReforger",
+      "variant_of": "{F97A4AC994231900}Prefabs/Weapons/Rifles/M16/Rifle_M16A2_carbine.et"
     },
     {
       "resource_name": "{47665331979536BC}Prefabs/Weapons/Ammo/Ammo_Flare_40mm_StarParachute_White.et",

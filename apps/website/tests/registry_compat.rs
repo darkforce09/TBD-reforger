@@ -228,20 +228,25 @@ async fn registry_compat_ingest_api_worker_gates() {
     let cc = import_compat(&pool, &compat_raw, Some(mp), false)
         .await
         .expect("compat");
+    // T-068.10.2 census-gated envelope (see .ai/artifacts/t068_10_2_census.md):
+    // 1,857 items (23 predicted drops from the 1,880 T-150 set) / 4,685 edges
+    // (+character_default_weapon family; 16 mag edges moved to the vehicle family
+    // with the statics reclassification).
     assert_eq!(
         (ci.total, ci.unique, ci.inserted, ci.updated),
-        (1880, 1880, 1880, 0)
+        (1857, 1857, 1857, 0)
     );
     assert_eq!(
         (cc.total, cc.unique, cc.inserted, cc.updated),
-        (4012, 4012, 4012, 0)
+        (4685, 4685, 4685, 0)
     );
 
     // G10 — importer histograms equal envelope histograms.
     assert_eq!(ci.histogram, histogram(&items_env, "items", "kind"));
     assert_eq!(cc.histogram, histogram(&compat_env, "edges", "edge_type"));
-    assert_eq!(cc.histogram["mag_in_weapon"], 545);
-    assert_eq!(cc.histogram["mag_in_vehicle_weapon"], 118);
+    assert_eq!(cc.histogram["mag_in_weapon"], 529);
+    assert_eq!(cc.histogram["mag_in_vehicle_weapon"], 134);
+    assert_eq!(cc.histogram["character_default_weapon"], 673);
 
     // G1 — ingest bijection: DB row-set ≡ envelope set (items + edges).
     assert_eq!(db_items(&pool, mp).await, envelope_items(&items_env));
@@ -266,7 +271,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     let (st, body) = get(&app, &compat_uri, &maker, None).await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(body["modpack_id"], TEST_MP);
-    assert_eq!(body["data"].as_array().unwrap().len(), 4012);
+    assert_eq!(body["data"].as_array().unwrap().len(), 4685);
     assert_eq!(
         api_edge_set(&body),
         envelope_edges(&compat_env),
@@ -307,7 +312,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     let filt_uri = format!("{compat_uri}&edge_type=mag_in_weapon");
     let (st, filt) = get(&app, &filt_uri, &maker, None).await;
     assert_eq!(st, StatusCode::OK);
-    assert_eq!(filt["data"].as_array().unwrap().len(), 545);
+    assert_eq!(filt["data"].as_array().unwrap().len(), 529);
     let oracle: BTreeSet<EdgeKey> = envelope_edges(&compat_env)
         .into_iter()
         .filter(|(_, _, ty, _)| ty == "mag_in_weapon")
@@ -337,7 +342,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     )
     .await;
     assert_eq!(st, StatusCode::OK);
-    assert_eq!(items_body["data"].as_array().unwrap().len(), 1880);
+    assert_eq!(items_body["data"].as_array().unwrap().len(), 1857);
 
     // ── G2 — idempotency: re-run touches nothing ─────────────────────────────
     let snap = db_edge_snapshot(&pool, mp).await;
@@ -516,7 +521,7 @@ async fn registry_compat_ingest_api_worker_gates() {
         etag,
         "G9: MP1 ETag unchanged"
     );
-    assert_eq!(body3["data"].as_array().unwrap().len(), 4012);
+    assert_eq!(body3["data"].as_array().unwrap().len(), 4685);
 
     // Invalid envelope is rejected before SQL (schema gate).
     let bad = json!({"registryCompatVersion": "1", "modpackId": TEST_MP2, "edges": [

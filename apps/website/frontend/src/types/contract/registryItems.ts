@@ -108,4 +108,8 @@ export interface Item {
    * Container volume capacity (storage component MaxCumulativeVolume, cm³) for items that ARE containers. Absent when the prefab relies on the engine class default — never guessed. Feeds the later cargo-budget slice.
    */
   max_volume_cm3?: number
+  /**
+   * T-068.10.5: set on factory attachment/camo CONFIGURATIONS of a base weapon (same family prefix, magwell, attachment-slot-type set and mesh — only pre-mounted attachments/materials differ, e.g. 'Rifle AK74N 1P29' → 'Rifle AK74N'). Points at the immediate parent item (must exist in the envelope — strict check in validate.mjs). Pickers hide variant rows like abstracts; the census artifact t068_10_5_weapon_families.md carries the per-weapon evidence.
+   */
+  variant_of?: string
 }

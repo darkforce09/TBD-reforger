@@ -168,31 +168,34 @@ pub async fn import_items(
         let max_weights: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.max_weight_kg).collect();
         let max_volumes: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.max_volume_cm3).collect();
         let addons: Vec<Option<String>> = chunk.iter().map(|(_, it)| it.addon.clone()).collect();
+        let variant_ofs: Vec<Option<String>> =
+            chunk.iter().map(|(_, it)| it.variant_of.clone()).collect();
         affected += sqlx::query(
             "INSERT INTO registry_items \
                (modpack_id, resource_name, display_name, category, kind, icon_url, sort_order, \
                 \"abstract\", arsenal_type, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, addon, \
-                created_at, updated_at) \
+                variant_of, created_at, updated_at) \
              SELECT $1, u.rn, u.dn, u.cat, u.kind, u.icon, u.ord, \
-                    u.abs, u.aty, u.wkg, u.vcm, u.mwkg, u.mvcm, u.addon, now(), now() \
+                    u.abs, u.aty, u.wkg, u.vcm, u.mwkg, u.mvcm, u.addon, u.varof, now(), now() \
              FROM UNNEST($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::bigint[], \
-                         $8::boolean[], $9::text[], $10::float8[], $11::float8[], $12::float8[], $13::float8[], $14::text[]) \
-               AS u(rn, dn, cat, kind, icon, ord, abs, aty, wkg, vcm, mwkg, mvcm, addon) \
+                         $8::boolean[], $9::text[], $10::float8[], $11::float8[], $12::float8[], $13::float8[], $14::text[], \
+                         $15::text[]) \
+               AS u(rn, dn, cat, kind, icon, ord, abs, aty, wkg, vcm, mwkg, mvcm, addon, varof) \
              ON CONFLICT (modpack_id, resource_name) DO UPDATE SET \
                display_name = EXCLUDED.display_name, category = EXCLUDED.category, \
                kind = EXCLUDED.kind, sort_order = EXCLUDED.sort_order, \
                \"abstract\" = EXCLUDED.\"abstract\", arsenal_type = EXCLUDED.arsenal_type, \
                weight_kg = EXCLUDED.weight_kg, volume_cm3 = EXCLUDED.volume_cm3, \
                max_weight_kg = EXCLUDED.max_weight_kg, max_volume_cm3 = EXCLUDED.max_volume_cm3, \
-               addon = EXCLUDED.addon, updated_at = now() \
+               addon = EXCLUDED.addon, variant_of = EXCLUDED.variant_of, updated_at = now() \
              WHERE (registry_items.display_name, registry_items.category, registry_items.kind, \
                     registry_items.sort_order, registry_items.\"abstract\", registry_items.arsenal_type, \
                     registry_items.weight_kg, registry_items.volume_cm3, registry_items.max_weight_kg, \
-                    registry_items.max_volume_cm3, registry_items.addon) \
+                    registry_items.max_volume_cm3, registry_items.addon, registry_items.variant_of) \
                IS DISTINCT FROM \
                    (EXCLUDED.display_name, EXCLUDED.category, EXCLUDED.kind, EXCLUDED.sort_order, \
                     EXCLUDED.\"abstract\", EXCLUDED.arsenal_type, EXCLUDED.weight_kg, EXCLUDED.volume_cm3, \
-                    EXCLUDED.max_weight_kg, EXCLUDED.max_volume_cm3, EXCLUDED.addon)",
+                    EXCLUDED.max_weight_kg, EXCLUDED.max_volume_cm3, EXCLUDED.addon, EXCLUDED.variant_of)",
         )
         .bind(modpack)
         .bind(&rns)
@@ -208,6 +211,7 @@ pub async fn import_items(
         .bind(&max_weights)
         .bind(&max_volumes)
         .bind(&addons)
+        .bind(&variant_ofs)
         .execute(&mut *tx)
         .await?
         .rows_affected();

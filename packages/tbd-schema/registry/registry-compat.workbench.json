@@ -1,7 +1,7 @@
 {
   "registryCompatVersion": "1",
   "modpackId": "00000000-0000-4000-a000-000000000001",
-  "generatedAt": "2026-07-12T19:13:25Z",
+  "generatedAt": "2026-07-12T23:22:39Z",
   "addons": [
     { "guid": "5614BBCCBB55ED1C", "name": "core", "title": "Enfusion core data", "vanilla": true },
     { "guid": "58D0FB3206B6F859", "name": "ArmaReforger", "title": "Arma Reforger", "vanilla": true },

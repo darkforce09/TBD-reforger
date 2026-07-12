@@ -218,19 +218,26 @@ describe('F-gates against the committed registry envelope (T-068.10.3)', () => {
     ...item(raw.resource_name, raw.kind, raw.display_name),
     category: raw.category,
     abstract: raw.abstract,
+    variant_of: raw.variant_of,
     sort_order: idx,
   }))
   const byName = new Map(catalog.map((i) => [i.resource_name, i]))
 
-  it('F1: per-row option counts equal the envelope non-abstract kind counts', () => {
+  it('F1: per-row option counts equal the envelope non-abstract, non-variant kind counts', () => {
     const visible = (kind: string) =>
-      catalog.filter((i) => i.kind === kind && i.abstract !== true).length
-    expect(visible('gear_primary')).toBe(58)
+      catalog.filter((i) => i.kind === kind && i.abstract !== true && !i.variant_of).length
+    // Weapon rows collapsed by variant_of (T-068.10.5 family census keep-list).
+    expect(visible('gear_primary')).toBe(21)
+    expect(visible('gear_launcher')).toBe(10)
+    expect(visible('gear_handgun')).toBe(2)
     expect(visible('gear_jacket')).toBe(46)
     expect(visible('gear_vest')).toBe(28)
     expect(visible('gear_helmet')).toBe(68)
     for (const [key, kind, count] of [
-      ['primary', 'gear_primary', 58],
+      ['primary', 'gear_primary', 21],
+      ['launcher', 'gear_launcher', 10],
+      ['handgun', 'gear_handgun', 2],
+      ['throwable', 'gear_throwable', 10],
       ['jacket', 'gear_jacket', 46],
       ['vest', 'gear_vest', 28],
       ['headCover', 'gear_helmet', 68],
@@ -239,6 +246,28 @@ describe('F-gates against the committed registry envelope (T-068.10.3)', () => {
       const opts = buildRowOptions(row, '', NO_COMPAT, catalog, byName)
       expect(opts, `${kind} row`).toHaveLength(count + 1) // + None
     }
+  })
+
+  it('F5 (T-068.10.5): factory configurations hide behind their base weapon', () => {
+    const base = catalog.find((i) => i.display_name === 'Rifle AK74N')
+    const cfg = catalog.find((i) => i.display_name === 'Rifle AK74N 1P29')
+    expect(base?.variant_of ?? null).toBeNull()
+    expect(cfg?.variant_of).toBe(base?.resource_name)
+    const opts = buildRowOptions(primaryRow, '', NO_COMPAT, catalog, byName)
+    expect(opts.some((o) => o.value === base?.resource_name)).toBe(true)
+    expect(opts.some((o) => o.value === cfg?.resource_name)).toBe(false)
+    // PGO-7 is an optic config of the RPG-7 (operator call, census-verified)
+    const rpg = catalog.find((i) => i.display_name === 'Launcher RPG7 PGO7')
+    expect(rpg?.variant_of).toBeTruthy()
+    // a live variant pick never blanks
+    const withCurrent = buildRowOptions(
+      primaryRow,
+      cfg?.resource_name ?? '',
+      NO_COMPAT,
+      catalog,
+      byName,
+    )
+    expect(withCurrent.some((o) => o.value === cfg?.resource_name)).toBe(true)
   })
 
   it('F2: options are locale-sorted (sorted copy equality)', () => {
