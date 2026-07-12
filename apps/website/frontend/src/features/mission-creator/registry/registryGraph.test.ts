@@ -49,15 +49,18 @@ const GUARD_CHAR =
   '{F6A45EA59BA3C2E8}Prefabs/Characters/Factions/BLUFOR/US_Army/Guard/Character_US_GL_Guard.et'
 
 describe('registryGraph on the committed T-150 envelope', () => {
-  it('loads the expected graph (4,012 edges, 5 families)', () => {
+  it('loads the expected graph (4,685 edges, 6 families — T-068.10.2 census-gated export)', () => {
     const s = stats(ix)
-    expect(s.total).toBe(4012)
+    expect(s.total).toBe(4685)
     expect(s.byType).toEqual({
       character_default_loadout: 2746,
-      mag_in_weapon: 545,
+      character_default_weapon: 673,
+      // 16 mag edges moved family in T-068.10.2: statics (NSV/mortars/cannons) reclassified
+      // vehicle_weapon, so their well-matches emit as mag_in_vehicle_weapon now.
+      mag_in_weapon: 529,
       optic_on_weapon: 362,
       attachment_on_weapon: 241,
-      mag_in_vehicle_weapon: 118,
+      mag_in_vehicle_weapon: 134,
     })
   })
 

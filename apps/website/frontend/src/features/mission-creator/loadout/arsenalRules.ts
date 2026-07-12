@@ -31,7 +31,16 @@ export interface LoadoutRow {
   source: LoadoutRowSource
 }
 
-/** The Forge rows, in render order. No ammo row — `ammo_in_mag` ships no edges (T-150 OPEN). */
+/**
+ * The Forge rows, in render order. No ammo row — `ammo_in_mag` ships no edges (T-150 OPEN).
+ *
+ * T-068.10.3: rows are limited to what SlotLoadout v1 can PERSIST. The v3 kinds split
+ * Reforger wear areas (jacket/pants/boots, vest vs armored vest, gloves, …) but the doc
+ * still has ACE-shaped fields — so the `uniform` field is fed by `gear_jacket` (the v1→v2
+ * migration maps uniform→wear.jacket) and `vest` by `gear_vest` (chest rigs). Rows for
+ * pants/boots/armored vest/backpack/launcher/handgun/throwable/equipment land in
+ * T-068.10.4 together with the SlotLoadout v2 fields that can store them.
+ */
 export const LOADOUT_ROWS: readonly LoadoutRow[] = [
   { key: 'primary', label: 'Primary', source: { type: 'kind', kind: 'gear_primary' } },
   {
@@ -44,9 +53,24 @@ export const LOADOUT_ROWS: readonly LoadoutRow[] = [
     label: 'Magazine',
     source: { type: 'edge', edge: 'mag_in_weapon', dependsOn: 'primary' },
   },
-  { key: 'uniform', label: 'Uniform', source: { type: 'kind', kind: 'gear_uniform' } },
+  { key: 'uniform', label: 'Jacket', source: { type: 'kind', kind: 'gear_jacket' } },
   { key: 'vest', label: 'Vest', source: { type: 'kind', kind: 'gear_vest' } },
   { key: 'helmet', label: 'Helmet', source: { type: 'kind', kind: 'gear_helmet' } },
+] as const
+
+/** v3 kinds whose Forge rows wait on SlotLoadout v2 fields (shown as a hint in the tab). */
+export const PENDING_V2_KINDS: readonly RegistryItemKind[] = [
+  'gear_pants',
+  'gear_boots',
+  'gear_armored_vest',
+  'gear_backpack',
+  'gear_launcher',
+  'gear_handgun',
+  'gear_throwable',
+  'gear_glasses',
+  'gear_gloves',
+  'gear_binoculars',
+  'gear_item',
 ] as const
 
 /** The all-empty pick set (a slot that has never been forged). */
@@ -95,9 +119,41 @@ export function resolveRowAllowed(row: LoadoutRow, sets: CompatSets): Set<string
 }
 
 /**
- * Options for one row. Kind rows: the full kind catalog. Edge rows: the compat feed. Retains a
- * stranded non-empty `current` at the end, suffixed incompatible, so a native <select> never
- * silently blanks.
+ * The pickable resource_names for a row (T-068.10.3 semantics): kind rows are the kind
+ * catalog with `abstract` template prefabs excluded; edge rows are the compat feed, also
+ * abstract-filtered (magazine feeds contain `* Base` templates). Locale-alpha sorted by
+ * display name. `query` narrows by case-insensitive display-name substring — but never
+ * removes the currently selected value (a filter must not blank a live pick).
+ */
+function rowValues(
+  row: LoadoutRow,
+  current: string,
+  sets: CompatSets,
+  catalog: readonly RegistryItem[],
+  catalogByName: ReadonlyMap<string, RegistryItem>,
+  query = '',
+): string[] {
+  const src = row.source
+  const raw =
+    src.type === 'kind'
+      ? catalog.filter((i) => i.kind === src.kind).map((i) => i.resource_name)
+      : [...(sets.edgeItems[row.key] ?? [])]
+  const q = query.trim().toLowerCase()
+  const values = raw.filter((v) => {
+    if (catalogByName.get(v)?.abstract === true) return v === current
+    if (q && v !== current && !displayName(v, catalogByName).toLowerCase().includes(q))
+      return false
+    return true
+  })
+  return values.sort((a, b) =>
+    displayName(a, catalogByName).localeCompare(displayName(b, catalogByName)),
+  )
+}
+
+/**
+ * Options for one row. Kind rows: the abstract-filtered kind catalog. Edge rows: the compat
+ * feed. Locale-sorted; retains a stranded non-empty `current` at the end, suffixed
+ * incompatible, so a native <select> never silently blanks.
  */
 export function buildRowOptions(
   row: LoadoutRow,
@@ -105,12 +161,9 @@ export function buildRowOptions(
   sets: CompatSets,
   catalog: readonly RegistryItem[],
   catalogByName: ReadonlyMap<string, RegistryItem>,
+  query = '',
 ): PickOption[] {
-  const src = row.source
-  const values =
-    src.type === 'kind'
-      ? catalog.filter((i) => i.kind === src.kind).map((i) => i.resource_name)
-      : [...(sets.edgeItems[row.key] ?? [])]
+  const values = rowValues(row, current, sets, catalog, catalogByName, query)
   const options = [
     NONE_OPTION,
     ...values.map((v) => ({ value: v, label: displayName(v, catalogByName) })),
@@ -119,6 +172,52 @@ export function buildRowOptions(
     options.push({ value: current, label: displayName(current, catalogByName) + INCOMPAT_SUFFIX })
   }
   return options
+}
+
+export interface PickOptionGroup {
+  label: string
+  options: PickOption[]
+}
+
+/** Optgroup label from a browse category: drop the addon segment, keep the next two
+ *  ("ArmaReforger/Weapons/Rifles/M16" → "Weapons/Rifles"). */
+function groupLabel(item: RegistryItem | undefined): string {
+  if (!item) return 'Other'
+  const segs = item.category.split('/')
+  return segs.slice(1, 3).join('/') || segs[0] || 'Other'
+}
+
+/**
+ * Grouped options for the native <select> (T-068.10.3): options bucketed by category-derived
+ * optgroups, groups and options both locale-sorted. Collapses to a single unlabeled group
+ * when everything shares one bucket (no pointless optgroup chrome). The leading None option
+ * and any stranded current pick are returned separately (rendered outside the groups).
+ */
+export function buildGroupedRowOptions(
+  row: LoadoutRow,
+  current: string,
+  sets: CompatSets,
+  catalog: readonly RegistryItem[],
+  catalogByName: ReadonlyMap<string, RegistryItem>,
+  query = '',
+): { none: PickOption; groups: PickOptionGroup[]; stranded: PickOption | null } {
+  const values = rowValues(row, current, sets, catalog, catalogByName, query)
+  const buckets = new Map<string, PickOption[]>()
+  for (const v of values) {
+    const label = groupLabel(catalogByName.get(v))
+    const bucket = buckets.get(label) ?? []
+    bucket.push({ value: v, label: displayName(v, catalogByName) })
+    buckets.set(label, bucket)
+  }
+  let groups = [...buckets.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, options]) => ({ label, options }))
+  if (groups.length === 1) groups = [{ label: '', options: groups[0].options }]
+  const stranded =
+    current && !values.includes(current)
+      ? { value: current, label: displayName(current, catalogByName) + INCOMPAT_SUFFIX }
+      : null
+  return { none: NONE_OPTION, groups, stranded }
 }
 
 export interface LoadoutValidation {

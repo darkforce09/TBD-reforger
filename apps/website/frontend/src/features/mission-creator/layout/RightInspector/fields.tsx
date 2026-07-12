@@ -101,11 +101,15 @@ export function SelectField({
   label,
   value,
   options,
+  groups,
   onChange,
 }: {
   label: string
   value: string
   options: { value: string; label: string }[]
+  /** Optional optgroup buckets rendered after `options` (T-068.10.3 grouped pickers). A
+   *  group with an empty label renders its options flat (single-bucket collapse). */
+  groups?: { label: string; options: { value: string; label: string }[] }[]
   onChange: (v: string) => void
 }) {
   return (
@@ -116,6 +120,23 @@ export function SelectField({
             {o.label}
           </option>
         ))}
+        {groups?.map((g) =>
+          g.label ? (
+            <optgroup key={g.label} label={g.label}>
+              {g.options.map((o) => (
+                <option key={o.value} value={o.value} className="bg-surface-container">
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
+          ) : (
+            g.options.map((o) => (
+              <option key={o.value} value={o.value} className="bg-surface-container">
+                {o.label}
+              </option>
+            ))
+          ),
+        )}
       </select>
     </Field>
   )

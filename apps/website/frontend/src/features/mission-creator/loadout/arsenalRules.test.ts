@@ -1,11 +1,16 @@
-// Smart Forge rules (T-068.10) — pure-module tests: option building (filter / stranded-retain),
-// data-driven validation, pick↔loadout mapping, and the display summary.
+// Smart Forge rules (T-068.10; picker UX T-068.10.3) — pure-module tests: option building
+// (abstract filter / sort / search / grouping / stranded-retain), data-driven validation,
+// pick↔loadout mapping, the display summary, and the F-gates against the committed
+// registry envelope (counts inline from the T-068.10.2 census-gated export).
 
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { RegistryItem } from '@/types/models/registry'
 import {
   EMPTY_PICKS,
   LOADOUT_ROWS,
+  buildGroupedRowOptions,
   buildLoadoutSummary,
   buildRowOptions,
   loadoutToPicks,
@@ -41,13 +46,16 @@ function item(
   }
 }
 
+const RIFLE_BASE = '{AA9}Prefabs/Weapons/Rifle_M16A2_base.et'
+
 const CATALOG: RegistryItem[] = [
   item(RIFLE, 'gear_primary', 'M16A2'),
   item(RIFLE_AK, 'gear_primary', 'AK-74'),
+  { ...item(RIFLE_BASE, 'gear_primary', 'Rifle M16A2 base'), abstract: true },
   item(ACOG, 'optic', 'ACOG'),
   item(STANAG, 'magazine', '30rnd STANAG'),
-  item(BDU, 'gear_uniform', 'BDU Woodland'),
-  item(GORKA, 'gear_uniform', 'Gorka'),
+  item(BDU, 'gear_jacket', 'BDU Woodland'),
+  item(GORKA, 'gear_jacket', 'Gorka'),
 ]
 const BY_NAME = new Map(CATALOG.map((i) => [i.resource_name, i]))
 
@@ -59,11 +67,11 @@ const magRow = LOADOUT_ROWS.find((r) => r.key === 'magazine') as LoadoutRow
 const NO_COMPAT: CompatSets = { edgeItems: {} }
 
 describe('buildRowOptions', () => {
-  it('kind row without compat data lists the whole kind (None first)', () => {
+  it('kind row lists the kind locale-sorted, None first, abstracts excluded', () => {
     const opts = buildRowOptions(primaryRow, '', NO_COMPAT, CATALOG, BY_NAME)
-    expect(opts.map((o) => o.value)).toEqual(['', RIFLE, RIFLE_AK])
+    expect(opts.map((o) => o.value)).toEqual(['', RIFLE_AK, RIFLE]) // AK-74 < M16A2
     expect(opts[0].label).toBe('— None —')
-    expect(opts[1].label).toBe('M16A2')
+    expect(opts.some((o) => o.value === RIFLE_BASE)).toBe(false) // abstract template hidden
   })
 
   it('kind rows are never compat-constrained — full mix-and-match (T-068.10.1)', () => {
@@ -76,9 +84,21 @@ describe('buildRowOptions', () => {
     ])
     expect(buildRowOptions(primaryRow, '', sets, CATALOG, BY_NAME).map((o) => o.value)).toEqual([
       '',
-      RIFLE,
       RIFLE_AK,
+      RIFLE,
     ])
+  })
+
+  it('an abstract pick already on the slot stays selectable (never silently blanks)', () => {
+    const opts = buildRowOptions(primaryRow, RIFLE_BASE, NO_COMPAT, CATALOG, BY_NAME)
+    expect(opts.some((o) => o.value === RIFLE_BASE)).toBe(true)
+  })
+
+  it('query filters by display-name substring but never removes the current pick', () => {
+    const opts = buildRowOptions(primaryRow, RIFLE_AK, NO_COMPAT, CATALOG, BY_NAME, 'm16')
+    expect(opts.map((o) => o.value)).toEqual(['', RIFLE_AK, RIFLE])
+    const none = buildRowOptions(primaryRow, '', NO_COMPAT, CATALOG, BY_NAME, 'zzz')
+    expect(none.map((o) => o.value)).toEqual([''])
   })
 
   it('retains a stranded current value with an incompatible suffix (kind row)', () => {
@@ -92,8 +112,12 @@ describe('buildRowOptions', () => {
   it('edge row lists the compat feed with display names, raw resource_name fallback', () => {
     const unknown = '{ZZZ}Prefabs/Attachments/Optic_Unknown.et'
     const sets: CompatSets = { edgeItems: { optic: [ACOG, unknown] } }
-    const opts = buildRowOptions(opticRow, '', sets, CATALOG, BY_NAME)
-    expect(opts.map((o) => o.label)).toEqual(['— None —', 'ACOG', unknown])
+    const labels = buildRowOptions(opticRow, '', sets, CATALOG, BY_NAME).map((o) => o.label)
+    expect(labels[0]).toBe('— None —')
+    expect(labels.slice(1).sort((a, b) => a.localeCompare(b))).toEqual(
+      ['ACOG', unknown].sort((a, b) => a.localeCompare(b)),
+    )
+    expect(labels.slice(1)).toEqual([...labels.slice(1)].sort((a, b) => a.localeCompare(b)))
   })
 
   it('edge row retains a stranded pick after the weapon changed', () => {
@@ -140,6 +164,108 @@ describe('validateLoadout', () => {
     const picks = { ...EMPTY_PICKS, primary: RIFLE, magazine: ACOG }
     expect(validateLoadout(picks, READY).errors.magazine).toMatch(/Not compatible/)
     expect(magRow.source.type).toBe('edge')
+  })
+})
+
+describe('buildGroupedRowOptions', () => {
+  const GROUPED: RegistryItem[] = [
+    { ...item(RIFLE, 'gear_primary', 'M16A2'), category: 'ArmaReforger/Weapons/Rifles/M16' },
+    { ...item(RIFLE_AK, 'gear_primary', 'AK-74'), category: 'ArmaReforger/Weapons/Rifles/AK74' },
+    {
+      ...item('{MG1}Prefabs/Weapons/MG_M60.et', 'gear_primary', 'M60'),
+      category: 'ArmaReforger/Weapons/MachineGuns/M60',
+    },
+  ]
+  const G_BY_NAME = new Map(GROUPED.map((i) => [i.resource_name, i]))
+
+  it('buckets by category (addon segment dropped), groups and options locale-sorted', () => {
+    const g = buildGroupedRowOptions(primaryRow, '', NO_COMPAT, GROUPED, G_BY_NAME)
+    expect(g.groups.map((x) => x.label)).toEqual(['Weapons/MachineGuns', 'Weapons/Rifles'])
+    expect(g.groups[1].options.map((o) => o.label)).toEqual(['AK-74', 'M16A2'])
+    expect(g.none.label).toBe('— None —')
+    expect(g.stranded).toBeNull()
+  })
+
+  it('collapses to a single unlabeled group when every option shares a bucket', () => {
+    const rifles = GROUPED.filter((i) => i.category.includes('Rifles'))
+    const g = buildGroupedRowOptions(
+      primaryRow,
+      '',
+      NO_COMPAT,
+      rifles,
+      new Map(rifles.map((i) => [i.resource_name, i])),
+    )
+    expect(g.groups).toHaveLength(1)
+    expect(g.groups[0].label).toBe('')
+  })
+
+  it('reports a stranded current pick separately', () => {
+    const g = buildGroupedRowOptions(primaryRow, ACOG, NO_COMPAT, GROUPED, G_BY_NAME)
+    expect(g.stranded?.value).toBe(ACOG)
+    expect(g.stranded?.label).toMatch(/incompatible$/)
+  })
+})
+
+describe('F-gates against the committed registry envelope (T-068.10.3)', () => {
+  // The census-gated T-068.10.2 export — counts here are the frozen row-freeze numbers.
+  const envelope = JSON.parse(
+    readFileSync(
+      resolve(__dirname, '../../../../../../../packages/tbd-schema/registry/registry-items.workbench.json'),
+      'utf-8',
+    ),
+  ) as { items: (RegistryItem & { abstract?: boolean })[] }
+  const catalog = envelope.items.map((raw, idx) => ({
+    ...item(raw.resource_name, raw.kind, raw.display_name),
+    category: raw.category,
+    abstract: raw.abstract,
+    sort_order: idx,
+  }))
+  const byName = new Map(catalog.map((i) => [i.resource_name, i]))
+
+  it('F1: per-row option counts equal the envelope non-abstract kind counts', () => {
+    const visible = (kind: string) =>
+      catalog.filter((i) => i.kind === kind && i.abstract !== true).length
+    expect(visible('gear_primary')).toBe(58)
+    expect(visible('gear_jacket')).toBe(46)
+    expect(visible('gear_vest')).toBe(28)
+    expect(visible('gear_helmet')).toBe(68)
+    for (const [key, kind, count] of [
+      ['primary', 'gear_primary', 58],
+      ['uniform', 'gear_jacket', 46],
+      ['vest', 'gear_vest', 28],
+      ['helmet', 'gear_helmet', 68],
+    ] as const) {
+      const row = LOADOUT_ROWS.find((r) => r.key === key) as LoadoutRow
+      const opts = buildRowOptions(row, '', NO_COMPAT, catalog, byName)
+      expect(opts, `${kind} row`).toHaveLength(count + 1) // + None
+    }
+  })
+
+  it('F2: options are locale-sorted (sorted copy equality)', () => {
+    const opts = buildRowOptions(primaryRow, '', NO_COMPAT, catalog, byName).slice(1)
+    const labels = opts.map((o) => o.label)
+    expect(labels).toEqual([...labels].sort((a, b) => a.localeCompare(b)))
+  })
+
+  it('F3: abstract templates are excluded (named example + exact count)', () => {
+    const opts = buildRowOptions(primaryRow, '', NO_COMPAT, catalog, byName)
+    expect(opts.some((o) => o.label.endsWith(' base') || o.label.endsWith(' Base'))).toBe(false)
+    const abstractPrimaries = catalog.filter(
+      (i) => i.kind === 'gear_primary' && i.abstract === true,
+    )
+    expect(abstractPrimaries.length).toBe(26)
+    expect(abstractPrimaries.some((i) => i.display_name === 'Rifle M16A2 base')).toBe(true)
+  })
+
+  it('F4: grenades and smokes are gear_throwable, absent from the primary row', () => {
+    const rgd5 = catalog.find((i) => i.display_name === 'Grenade RGD5')
+    const m18 = catalog.find((i) => i.display_name === 'Smoke M18 Red')
+    expect(rgd5?.kind).toBe('gear_throwable')
+    expect(m18?.kind).toBe('gear_throwable')
+    const primaries = buildRowOptions(primaryRow, '', NO_COMPAT, catalog, byName)
+    expect(primaries.some((o) => o.value === rgd5?.resource_name)).toBe(false)
+    expect(primaries.some((o) => o.value === m18?.resource_name)).toBe(false)
+    expect(primaries.some((o) => /smoke|grenade|pod |mortar|cannon/i.test(o.label))).toBe(false)
   })
 })
 
