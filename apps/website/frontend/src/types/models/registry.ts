@@ -1,8 +1,10 @@
 // Virtual Arsenal registry catalog (T-068). Types only — the palette wiring lands in T-068.3.
 
 /**
- * The kind of a registry item (T-150 v2 vocabulary; the Phase 1 kinds are the
- * first five). Mirrors registry-items.schema.json#/$defs/item kind enum.
+ * The kind of a registry item (T-068.10.2 v3 vocabulary; Phase 1 kinds remain
+ * valid and gear_uniform is retired to 0 rows but still accepted). Mirrors
+ * registry-items.schema.json#/$defs/item kind enum; taxonomy map:
+ * .ai/artifacts/ace_arsenal_taxonomy_map.md.
  *
  * @model models.RegistryItem
  */
@@ -11,10 +13,20 @@ export type RegistryItemKind =
   | 'gear_primary'
   | 'gear_handgun'
   | 'gear_launcher'
+  | 'gear_throwable'
+  | 'gear_explosive'
   | 'gear_uniform'
+  | 'gear_jacket'
+  | 'gear_pants'
+  | 'gear_boots'
   | 'gear_vest'
+  | 'gear_armored_vest'
   | 'gear_helmet'
   | 'gear_backpack'
+  | 'gear_glasses'
+  | 'gear_gloves'
+  | 'gear_binoculars'
+  | 'gear_item'
   | 'magazine'
   | 'ammo'
   | 'optic'
@@ -38,6 +50,20 @@ export interface RegistryItem {
   category: string
   icon_url?: string | null
   kind: RegistryItemKind
+  /** Non-placeable template prefab (`*_base.et` / `* Base`) — hidden from pickers. */
+  abstract?: boolean | null
+  /** SCR_EArsenalItemType flag name when a faction EntityCatalog entry exists. */
+  arsenal_type?: string | null
+  /** ItemPhysicalAttributes.Weight in kg; null = engine class default. */
+  weight_kg?: number | null
+  /** ItemPhysicalAttributes.ItemVolume in cm³; null = engine class default. */
+  volume_cm3?: number | null
+  /** Container carry capacity (kg) when the item is itself a container. */
+  max_weight_kg?: number | null
+  /** Container volume capacity (cm³) when the item is itself a container. */
+  max_volume_cm3?: number | null
+  /** Addon ID the prefab was scanned from (joins the envelope addons[] scan set). */
+  addon?: string | null
   sort_order: number
   created_at: string
   updated_at: string
@@ -71,6 +97,7 @@ export type RegistryCompatEdgeType =
   | 'mag_in_vehicle_weapon'
   | 'ammo_in_vehicle_weapon'
   | 'character_default_loadout'
+  | 'character_default_weapon'
 
 /**
  * One directed compatibility edge: `from_node` goes in/on `to_node`.

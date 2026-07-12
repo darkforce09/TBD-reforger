@@ -81,7 +81,9 @@ pub async fn list_registry(
     // created_at + updated_at NULL, which a bare `SELECT *` can't decode into the model.
     let items: Vec<RegistryItem> = sqlx::query_as(
         "SELECT id, modpack_id, resource_name, display_name, category, \
-         COALESCE(icon_url, '') AS icon_url, kind, sort_order, \
+         COALESCE(icon_url, '') AS icon_url, kind, \
+         \"abstract\", arsenal_type, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, addon, \
+         sort_order, \
          COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
          COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
          FROM registry_items WHERE modpack_id = $1 \

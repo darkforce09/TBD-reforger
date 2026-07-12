@@ -58,6 +58,7 @@ export interface Edge {
     | 'mag_in_vehicle_weapon'
     | 'ammo_in_vehicle_weapon'
     | 'character_default_loadout'
+    | 'character_default_weapon'
   /**
    * Engine class or container var that proved the edge, e.g. MagazineWellStanag556 (well-class match), AttachmentOpticsRIS1913 (slot type match), MagazineTemplate (direct prefab ref), LoadoutSlotInfo (character slot).
    */

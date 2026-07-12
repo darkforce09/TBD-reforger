@@ -10,7 +10,8 @@ use crate::models::serde_helpers::go_time;
 
 /// One placeable/equipable engine item in a modpack's flat catalog. Unique per
 /// `(modpack_id, resource_name)`; `kind` holds the registry-items schema kind
-/// vocabulary (v2, T-150) as plain text — new kinds need no model/DDL change.
+/// vocabulary (v3, T-068.10.2) as plain text — new kinds need no model/DDL change.
+/// v3 metadata columns are nullable: v2 envelopes leave them NULL.
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct RegistryItem {
     pub id: Uuid,
@@ -21,6 +22,28 @@ pub struct RegistryItem {
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub icon_url: String,
     pub kind: String,
+    /// Non-placeable template prefab (`*_base.et` / `* Base`) — hidden from pickers.
+    #[serde(rename = "abstract", skip_serializing_if = "Option::is_none", default)]
+    #[sqlx(rename = "abstract")]
+    pub abstract_: Option<bool>,
+    /// SCR_EArsenalItemType flag name when the item has a faction EntityCatalog entry.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub arsenal_type: Option<String>,
+    /// ItemPhysicalAttributes.Weight (kg); NULL = engine class default (not serialized).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub weight_kg: Option<f64>,
+    /// ItemPhysicalAttributes.ItemVolume (cm³); NULL = engine class default.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub volume_cm3: Option<f64>,
+    /// Container carry capacity (m_fMaxWeight, kg) when the item is itself a container.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub max_weight_kg: Option<f64>,
+    /// Container volume capacity (MaxCumulativeVolume, cm³) when the item is a container.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub max_volume_cm3: Option<f64>,
+    /// Addon ID this prefab was scanned from (joins the envelope addons[] scan set).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub addon: Option<String>,
     pub sort_order: i64,
     #[serde(with = "go_time")]
     pub created_at: DateTime<Utc>,

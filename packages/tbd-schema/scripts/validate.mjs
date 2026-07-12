@@ -108,6 +108,30 @@ const checkEdgeRefs = (label, itemsJson, compatJson) => {
   }
 };
 
+// T-068.10.2: per-item addon provenance must reference the envelope's addons[] scan set
+// (vanilla-ness derives from addons[].vanilla — a dangling addon id breaks that join).
+// Items without an addon field are legal (v2 envelopes); the v3 exporter always writes it.
+const checkAddonRefs = (label, itemsJson) => {
+  const known = new Set((itemsJson.addons ?? []).map((a) => a.name));
+  const bad = [];
+  let withAddon = 0;
+  for (const it of itemsJson.items) {
+    if (it.addon === undefined) continue;
+    withAddon += 1;
+    if (!known.has(it.addon)) bad.push(`${it.resource_name} addon ${it.addon}`);
+  }
+  if (bad.length === 0) {
+    console.log(`  PASS  ${label} (addon provenance, ${withAddon}/${itemsJson.items.length} items carry addon)`);
+  } else {
+    failures += 1;
+    console.log(`  FAIL  ${label} (addon provenance)`);
+    for (const miss of bad.slice(0, 10)) console.log(`        dangling ${miss}`);
+    if (bad.length > 10) console.log(`        ... ${bad.length - 10} more`);
+  }
+};
+checkAddonRefs("registry-items.sample.json", readJSON(join(root, "registry", "registry-items.sample.json")));
+checkAddonRefs("registry-items.workbench.json", readJSON(join(root, "registry", "registry-items.workbench.json")));
+
 console.log("Registry compat:");
 {
   const itemsSample = readJSON(join(root, "registry", "registry-items.sample.json"));

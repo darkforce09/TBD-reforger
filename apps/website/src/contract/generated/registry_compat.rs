@@ -86,6 +86,9 @@ pub enum EdgeType {
     #[serde(rename = "character_default_loadout")]
     CharacterDefaultLoadout,
 
+    #[serde(rename = "character_default_weapon")]
+    CharacterDefaultWeapon,
+
     #[serde(rename = "mag_in_vehicle_weapon")]
     MagInVehicleWeapon,
 

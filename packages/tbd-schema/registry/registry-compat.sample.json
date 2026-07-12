@@ -54,6 +54,12 @@
       "to_node": "{0A1B2C3D4E5F6071}Prefabs/Characters/TBD_US_Rifleman.et",
       "edge_type": "character_default_loadout",
       "evidence": "LoadoutSlotInfo"
+    },
+    {
+      "from_node": "{1A1B2C3D4E5F6072}Prefabs/Weapons/TBD_M16A2.et",
+      "to_node": "{0A1B2C3D4E5F6071}Prefabs/Characters/TBD_US_Rifleman.et",
+      "edge_type": "character_default_weapon",
+      "evidence": "CharacterWeaponSlotComponent.WeaponTemplate slot 0 primary"
     }
   ]
 }

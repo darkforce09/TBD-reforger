@@ -51,17 +51,27 @@ export interface Item {
   category: string
   icon_url?: string
   /**
-   * v2 (T-150) classification. Phase 1 kinds (character, gear_primary, gear_uniform, gear_vest, gear_helmet) remain valid; 'other' is the escape hatch and its count must be reported in export verify logs.
+   * v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0 rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the escape hatch and its count must be reported in export verify logs. Taxonomy: .ai/artifacts/ace_arsenal_taxonomy_map.md.
    */
   kind:
     | 'character'
     | 'gear_primary'
     | 'gear_handgun'
     | 'gear_launcher'
+    | 'gear_throwable'
+    | 'gear_explosive'
     | 'gear_uniform'
+    | 'gear_jacket'
+    | 'gear_pants'
+    | 'gear_boots'
     | 'gear_vest'
+    | 'gear_armored_vest'
     | 'gear_helmet'
     | 'gear_backpack'
+    | 'gear_glasses'
+    | 'gear_gloves'
+    | 'gear_binoculars'
+    | 'gear_item'
     | 'magazine'
     | 'ammo'
     | 'optic'
@@ -70,4 +80,32 @@ export interface Item {
     | 'vehicle_weapon'
     | 'crate'
     | 'other'
+  /**
+   * True for non-placeable template prefabs (filename *_base.et / display '* Base'). Kept in the catalog (bases carry classification signals for descendants) but hidden from loadout pickers.
+   */
+  abstract?: boolean
+  /**
+   * SCR_EArsenalItemType flag name (e.g. RIFLE, NON_LETHAL_THROWABLE) when the item appears in a faction EntityCatalog SCR_ArsenalItem entry (Tier-B classification metadata). Absent when no catalog entry exists.
+   */
+  arsenal_type?: string
+  /**
+   * ItemPhysicalAttributes.Weight in kilograms (API-documented unit), read from the prefab ancestry chain. Absent when the value is an engine class default not serialized in the prefab — never guessed.
+   */
+  weight_kg?: number
+  /**
+   * ItemPhysicalAttributes.ItemVolume in cubic centimetres (API-documented unit), read from the prefab ancestry chain. Absent when the value is an engine class default not serialized in the prefab — never guessed.
+   */
+  volume_cm3?: number
+  /**
+   * Per-item mod provenance: the addon ID this prefab was scanned from. Must match an addons[].name entry (strict check in validate.mjs); vanilla-ness derives from addons[].vanilla — no separate flag to drift.
+   */
+  addon?: string
+  /**
+   * Container carry capacity (storage component m_fMaxWeight, kg) for items that ARE containers (vests/backpacks/jackets). Absent when the prefab relies on the engine class default — never guessed. Feeds the later cargo-budget slice.
+   */
+  max_weight_kg?: number
+  /**
+   * Container volume capacity (storage component MaxCumulativeVolume, cm³) for items that ARE containers. Absent when the prefab relies on the engine class default — never guessed. Feeds the later cargo-budget slice.
+   */
+  max_volume_cm3?: number
 }

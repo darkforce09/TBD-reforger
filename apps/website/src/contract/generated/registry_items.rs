@@ -55,6 +55,22 @@ pub struct AddonElement {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ItemElement {
+    /// True for non-placeable template prefabs (filename *_base.et / display '* Base'). Kept in
+    /// the catalog (bases carry classification signals for descendants) but hidden from loadout
+    /// pickers.
+    #[serde(rename = "abstract")]
+    pub registry_items_schema_abstract: Option<bool>,
+
+    /// Per-item mod provenance: the addon ID this prefab was scanned from. Must match an
+    /// addons[].name entry (strict check in validate.mjs); vanilla-ness derives from
+    /// addons[].vanilla — no separate flag to drift.
+    pub addon: Option<String>,
+
+    /// SCR_EArsenalItemType flag name (e.g. RIFLE, NON_LETHAL_THROWABLE) when the item appears
+    /// in a faction EntityCatalog SCR_ArsenalItem entry (Tier-B classification metadata). Absent
+    /// when no catalog entry exists.
+    pub arsenal_type: Option<String>,
+
     /// Slash-delimited browse path, e.g. NATO/Rifleman.
     pub category: String,
 
@@ -62,18 +78,40 @@ pub struct ItemElement {
 
     pub icon_url: Option<String>,
 
-    /// v2 (T-150) classification. Phase 1 kinds (character, gear_primary, gear_uniform,
-    /// gear_vest, gear_helmet) remain valid; 'other' is the escape hatch and its count must be
-    /// reported in export verify logs.
+    /// v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0
+    /// rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the
+    /// escape hatch and its count must be reported in export verify logs. Taxonomy:
+    /// .ai/artifacts/ace_arsenal_taxonomy_map.md.
     pub kind: Kind,
+
+    /// Container volume capacity (storage component MaxCumulativeVolume, cm³) for items that ARE
+    /// containers. Absent when the prefab relies on the engine class default — never guessed.
+    /// Feeds the later cargo-budget slice.
+    pub max_volume_cm3: Option<f64>,
+
+    /// Container carry capacity (storage component m_fMaxWeight, kg) for items that ARE
+    /// containers (vests/backpacks/jackets). Absent when the prefab relies on the engine class
+    /// default — never guessed. Feeds the later cargo-budget slice.
+    pub max_weight_kg: Option<f64>,
 
     /// Enfusion ResourceName ({GUID}Prefabs/.../File.et) used by Resource.Load.
     pub resource_name: String,
+
+    /// ItemPhysicalAttributes.ItemVolume in cubic centimetres (API-documented unit), read from
+    /// the prefab ancestry chain. Absent when the value is an engine class default not
+    /// serialized in the prefab — never guessed.
+    pub volume_cm3: Option<f64>,
+
+    /// ItemPhysicalAttributes.Weight in kilograms (API-documented unit), read from the prefab
+    /// ancestry chain. Absent when the value is an engine class default not serialized in the
+    /// prefab — never guessed.
+    pub weight_kg: Option<f64>,
 }
 
-/// v2 (T-150) classification. Phase 1 kinds (character, gear_primary, gear_uniform,
-/// gear_vest, gear_helmet) remain valid; 'other' is the escape hatch and its count must be
-/// reported in export verify logs.
+/// v3 (T-068.10.2) classification. Phase 1 kinds remain valid; gear_uniform is retired (0
+/// rows — split into gear_jacket/gear_pants/gear_boots) but still accepted; 'other' is the
+/// escape hatch and its count must be reported in export verify logs. Taxonomy:
+/// .ai/artifacts/ace_arsenal_taxonomy_map.md.
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Kind {
@@ -85,8 +123,26 @@ pub enum Kind {
 
     Crate,
 
+    #[serde(rename = "gear_armored_vest")]
+    GearArmoredVest,
+
     #[serde(rename = "gear_backpack")]
     GearBackpack,
+
+    #[serde(rename = "gear_binoculars")]
+    GearBinoculars,
+
+    #[serde(rename = "gear_boots")]
+    GearBoots,
+
+    #[serde(rename = "gear_explosive")]
+    GearExplosive,
+
+    #[serde(rename = "gear_glasses")]
+    GearGlasses,
+
+    #[serde(rename = "gear_gloves")]
+    GearGloves,
 
     #[serde(rename = "gear_handgun")]
     GearHandgun,
@@ -94,11 +150,23 @@ pub enum Kind {
     #[serde(rename = "gear_helmet")]
     GearHelmet,
 
+    #[serde(rename = "gear_item")]
+    GearItem,
+
+    #[serde(rename = "gear_jacket")]
+    GearJacket,
+
     #[serde(rename = "gear_launcher")]
     GearLauncher,
 
+    #[serde(rename = "gear_pants")]
+    GearPants,
+
     #[serde(rename = "gear_primary")]
     GearPrimary,
+
+    #[serde(rename = "gear_throwable")]
+    GearThrowable,
 
     #[serde(rename = "gear_uniform")]
     GearUniform,

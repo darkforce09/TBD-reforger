@@ -55,7 +55,8 @@
             "attachment_on_weapon",
             "mag_in_vehicle_weapon",
             "ammo_in_vehicle_weapon",
-            "character_default_loadout"
+            "character_default_loadout",
+            "character_default_weapon"
           ]
         },
         "evidence": {

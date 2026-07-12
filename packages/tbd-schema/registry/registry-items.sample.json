@@ -110,6 +110,86 @@
       "display_name": "Field Dressing",
       "category": "NATO/Items",
       "kind": "other"
+    },
+    {
+      "resource_name": "{1B1B2C3D4E5F6082}Prefabs/Weapons/Grenades/TBD_M67.et",
+      "display_name": "M67 Frag",
+      "category": "NATO/Weapons/Grenades",
+      "kind": "gear_throwable",
+      "addon": "TBD_Framework",
+      "arsenal_type": "LETHAL_THROWABLE",
+      "weight_kg": 0.4,
+      "volume_cm3": 120
+    },
+    {
+      "resource_name": "{2B1B2C3D4E5F6083}Prefabs/Weapons/Explosives/TBD_M112.et",
+      "display_name": "M112 Demo Block",
+      "category": "NATO/Weapons/Explosives",
+      "kind": "gear_explosive",
+      "arsenal_type": "EXPLOSIVES"
+    },
+    {
+      "resource_name": "{3B1B2C3D4E5F6084}Prefabs/Characters/Jackets/TBD_BDU_Jacket.et",
+      "display_name": "BDU Jacket (Woodland)",
+      "category": "NATO/Jackets",
+      "kind": "gear_jacket",
+      "addon": "ArmaReforger",
+      "weight_kg": 1.1,
+      "volume_cm3": 3000,
+      "max_weight_kg": 10,
+      "max_volume_cm3": 1400
+    },
+    {
+      "resource_name": "{4B1B2C3D4E5F6085}Prefabs/Characters/Pants/TBD_BDU_Pants.et",
+      "display_name": "BDU Pants (Woodland)",
+      "category": "NATO/Pants",
+      "kind": "gear_pants"
+    },
+    {
+      "resource_name": "{5B1B2C3D4E5F6086}Prefabs/Characters/Boots/TBD_Combat_Boots.et",
+      "display_name": "Combat Boots",
+      "category": "NATO/Boots",
+      "kind": "gear_boots"
+    },
+    {
+      "resource_name": "{6B1B2C3D4E5F6087}Prefabs/Characters/Vests/TBD_PASGT_Vest.et",
+      "display_name": "PASGT Armored Vest",
+      "category": "NATO/Vests",
+      "kind": "gear_armored_vest",
+      "weight_kg": 4.1,
+      "volume_cm3": 5000
+    },
+    {
+      "resource_name": "{7B1B2C3D4E5F6088}Prefabs/Characters/Glasses/TBD_Sunglasses.et",
+      "display_name": "Sunglasses",
+      "category": "NATO/Glasses",
+      "kind": "gear_glasses"
+    },
+    {
+      "resource_name": "{8B1B2C3D4E5F6089}Prefabs/Characters/Handwear/TBD_Leather_Gloves.et",
+      "display_name": "Leather Gloves",
+      "category": "NATO/Handwear",
+      "kind": "gear_gloves"
+    },
+    {
+      "resource_name": "{9B1B2C3D4E5F608A}Prefabs/Items/Equipment/TBD_M22_Binoculars.et",
+      "display_name": "M22 Binoculars",
+      "category": "NATO/Equipment",
+      "kind": "gear_binoculars"
+    },
+    {
+      "resource_name": "{AB1B2C3D4E5F608B}Prefabs/Items/Equipment/TBD_ANPRC68.et",
+      "display_name": "AN/PRC-68 Radio",
+      "category": "NATO/Equipment",
+      "kind": "gear_item",
+      "arsenal_type": "EQUIPMENT"
+    },
+    {
+      "resource_name": "{BB1B2C3D4E5F608C}Prefabs/Weapons/Rifles/TBD_M16A2_base.et",
+      "display_name": "Rifle M16A2 base",
+      "category": "NATO/Weapons/Primary",
+      "kind": "gear_primary",
+      "abstract": true
     }
   ]
 }
