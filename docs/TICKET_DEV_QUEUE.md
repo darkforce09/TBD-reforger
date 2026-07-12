@@ -7,8 +7,8 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-068 — Virtual Arsenal (registry + loadout export)
 
-- **Active slice:** `T-068.10.3`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t068_10_3_forge_picker_ux.md`
+- **Active slice:** `T-068.10.4`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
 - **Branch:** `ticket/T-068`
 - **Targets:** website, shared, root, mod

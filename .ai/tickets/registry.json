@@ -1354,9 +1354,10 @@
           "targets": [
             "website"
           ],
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_3_forge_picker_ux.md",
-          "notes": "Arsenal polish B: Forge picker rows on v3 kinds - grouped/sorted/searchable, abstracts hidden. Row counts must equal DB counts (vitest)."
+          "notes": "Arsenal polish B: Forge picker rows on v3 kinds - grouped/sorted/searchable, abstracts hidden. Row counts must equal DB counts (vitest). SHIPPED @ e6f8a9bb (tag T-068.10.3): F1-F5 PASS, vitest 325/325; F6 operator visual at pause. Jacket row = gear_jacket into v1 uniform field; remaining kind rows arrive with .10.4 fields.",
+          "shipped_at": "e6f8a9bb"
         },
         "T-068.10.4": {
           "executor": "claude-code",
@@ -1364,12 +1365,12 @@
             "website",
             "shared"
           ],
-          "status": "queued",
+          "status": "ready",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md",
           "notes": "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11."
         }
       },
-      "active_slice": "T-068.10.3"
+      "active_slice": "T-068.10.4"
     },
     {
       "id": "T-069",
