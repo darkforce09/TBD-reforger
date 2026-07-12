@@ -4,6 +4,8 @@
 //! Lints are suppressed since these mirror the JSON wire shapes verbatim.
 
 #[allow(clippy::all, dead_code)]
+pub mod faction_library;
+#[allow(clippy::all, dead_code)]
 pub mod loadout;
 #[allow(clippy::all, dead_code)]
 pub mod mission_editor;

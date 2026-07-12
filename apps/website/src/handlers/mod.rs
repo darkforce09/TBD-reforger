@@ -11,6 +11,7 @@ pub mod dashboard;
 pub mod deployments;
 pub mod dev;
 pub mod events;
+pub mod factions;
 pub mod field_tools;
 pub mod leaderboards;
 pub mod me;

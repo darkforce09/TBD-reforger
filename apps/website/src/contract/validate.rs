@@ -22,6 +22,8 @@ const REGISTRY_ITEMS_SCHEMA: &str =
     include_str!("../../../../packages/tbd-schema/schema/registry-items.schema.json");
 const REGISTRY_COMPAT_SCHEMA: &str =
     include_str!("../../../../packages/tbd-schema/schema/registry-compat.schema.json");
+const FACTION_LIBRARY_SCHEMA: &str =
+    include_str!("../../../../packages/tbd-schema/schema/faction-library.schema.json");
 
 /// Internal schema-compile failure (never returned for merely-invalid input).
 #[derive(Debug, thiserror::Error)]
@@ -86,6 +88,15 @@ pub fn validate_mission_document(raw: &[u8]) -> Result<Vec<String>, ContractErro
 pub fn validate_registry_items_envelope(raw: &[u8]) -> Result<Vec<String>, ContractError> {
     static V: OnceLock<Result<Validator, String>> = OnceLock::new();
     run(&V, REGISTRY_ITEMS_SCHEMA, raw, "envelope is not valid JSON")
+}
+
+/// Validate a faction-library document against `faction-library.schema.json`
+/// (the jsonb doc of a user_factions row, T-152).
+///
+/// @contract faction-library.schema.json#/
+pub fn validate_faction_library_doc(raw: &[u8]) -> Result<Vec<String>, ContractError> {
+    static V: OnceLock<Result<Validator, String>> = OnceLock::new();
+    run(&V, FACTION_LIBRARY_SCHEMA, raw, "doc is not valid JSON")
 }
 
 /// Validate a raw T-150 compat envelope against `registry-compat.schema.json`

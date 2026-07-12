@@ -8,6 +8,7 @@ pub mod validate;
 // `crate::contract::…` callers (mission_compile) are unchanged.
 pub use map_engine_core::mission::kit::{KitAliases, load_kit_aliases};
 pub use validate::{
-    ContractError, validate_mission_document, validate_mission_editor_payload,
-    validate_registry_compat_envelope, validate_registry_items_envelope,
+    ContractError, validate_faction_library_doc, validate_mission_document,
+    validate_mission_editor_payload, validate_registry_compat_envelope,
+    validate_registry_items_envelope,
 };

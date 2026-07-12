@@ -25,6 +25,7 @@ const targets = [
   { schema: "registry-compat.schema.json", ts: "registryCompat.ts", rust: "registry_compat" },
   { schema: "loadout-export.schema.json", ts: "loadoutExport.ts", rust: "loadout" },
   { schema: "mission-editor-payload.schema.json", ts: "missionEditorPayload.ts", rust: "mission_editor" },
+  { schema: "faction-library.schema.json", ts: "factionLibrary.ts", rust: "faction_library" },
 ];
 
 const tsBanner = (s) => `/* eslint-disable */

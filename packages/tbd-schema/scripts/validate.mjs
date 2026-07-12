@@ -168,6 +168,13 @@ console.log("Registry compat:");
   checkEdgeRefs("registry-compat.workbench.json vs registry-items.workbench.json", itemsWb, compatWb);
 }
 
+console.log("Faction library:");
+{
+  const factionSchema = readJSON(join(root, "schema", "faction-library.schema.json"));
+  const validateFaction = ajv.compile(factionSchema);
+  check("faction-library.sample.json", validateFaction, readJSON(join(root, "registry", "faction-library.sample.json")));
+}
+
 console.log("Loadout export:");
 check("loadout-export.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.sample.json")));
 check("loadout-export.v2.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.v2.sample.json")));

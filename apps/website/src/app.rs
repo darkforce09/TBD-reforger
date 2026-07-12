@@ -73,6 +73,16 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             "/registry/compat",
             get(handlers::registry::list_registry_compat),
         )
+        .route(
+            "/factions",
+            get(handlers::factions::list_factions).post(handlers::factions::create_faction),
+        )
+        .route(
+            "/factions/{id}",
+            get(handlers::factions::get_faction)
+                .put(handlers::factions::update_faction)
+                .delete(handlers::factions::delete_faction),
+        )
         .route("/dashboard", get(handlers::dashboard::get_dashboard))
         .route(
             "/leaderboards",

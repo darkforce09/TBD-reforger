@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/faction-library/v1.json",
+  "title": "TBD Faction Library Entry",
+  "description": "One operator-authored reusable faction (T-152): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).",
+  "type": "object",
+  "required": ["side", "name", "roles", "vehicles"],
+  "additionalProperties": false,
+  "properties": {
+    "side": {
+      "type": "string",
+      "enum": ["BLUFOR", "OPFOR", "INDFOR", "CIV"],
+      "description": "Export-side key (mirrors the mission doc Faction.key vocabulary)."
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80,
+      "description": "Display name, e.g. 'US Army 1980s'."
+    },
+    "emblem": {
+      "type": "string",
+      "description": "Optional emblem asset path/URL (UI later)."
+    },
+    "roles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/role" },
+      "description": "ORBAT role templates in authored order — the palette's draggable leaves."
+    },
+    "vehicles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/vehicle" },
+      "description": "Vehicle pool (listed in the palette; map placement lands with T-070)."
+    }
+  },
+  "$defs": {
+    "resourceName": {
+      "type": "string",
+      "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$",
+      "description": "Full Enfusion ResourceName ({GUID}Prefabs/.../File.et)."
+    },
+    "slot": { "type": ["string", "null"] },
+    "role": {
+      "type": "object",
+      "required": ["role", "character"],
+      "additionalProperties": false,
+      "properties": {
+        "role": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "tag": { "type": "string", "maxLength": 12 },
+        "character": {
+          "$ref": "#/$defs/resourceName",
+          "description": "Registry character (kind === character) this role wraps — vanilla bodies are fine here; the palette hides them, roles don't."
+        },
+        "loadout": { "$ref": "#/$defs/loadoutV2" }
+      }
+    },
+    "vehicle": {
+      "type": "object",
+      "required": ["vehicle"],
+      "additionalProperties": false,
+      "properties": {
+        "vehicle": { "$ref": "#/$defs/resourceName" },
+        "label": { "type": "string", "maxLength": 60 }
+      }
+    },
+    "loadoutV2": {
+      "type": "object",
+      "description": "SlotLoadout v2 (mirrors loadout-export.schema.json v2 doc shapes).",
+      "required": ["version", "wear", "weapons"],
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 2,
+          "description": "SlotLoadout v2 marker (const 2 — expressed as bounds for the quicktype Rust emitter)."
+        },
+        "wear": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/slot" }
+          },
+          "additionalProperties": false
+        },
+        "weapons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["slotIndex", "slotType", "weapon"],
+            "additionalProperties": false,
+            "properties": {
+              "slotIndex": { "type": "integer", "minimum": 0 },
+              "slotType": { "type": "string", "minLength": 1 },
+              "weapon": { "type": "string", "minLength": 1 },
+              "optic": { "$ref": "#/$defs/slot" },
+              "magazine": { "$ref": "#/$defs/slot" },
+              "attachments": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "equipment": {
+          "type": "object",
+          "patternProperties": {
+            "^[a-zA-Z][a-zA-Z0-9_]{0,63}$": { "$ref": "#/$defs/slot" }
+          },
+          "additionalProperties": false
+        },
+        "cargo": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["container", "item", "qty"],
+            "additionalProperties": false,
+            "properties": {
+              "container": { "type": "string", "minLength": 1 },
+              "item": { "type": "string", "minLength": 1 },
+              "qty": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "summary": { "type": "string" }
+      }
+    }
+  }
+}
