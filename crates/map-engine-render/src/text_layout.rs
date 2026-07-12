@@ -1,0 +1,142 @@
+//! Procedural text layout helpers (T-152.1) — pack label strings into world-space glyph quads.
+//! Pure data; GPU upload lives in `map-engine-render` (wasm32).
+
+use map_engine_core::label::{LabelSpec, declutter};
+
+/// One textured glyph instance in world meters (center of character cell).
+#[derive(Clone, Debug)]
+pub struct TextGlyphInstance {
+    pub x: f32,
+    pub y: f32,
+    /// Cell half-extent (meters).
+    pub half_m: f32,
+    /// Atlas cell index 0..95 for printable ASCII 32..126.
+    pub glyph: u16,
+}
+
+/// Pack decluttered labels into monospaced glyph instances.
+///
+/// `char_m` = world meters per character cell at current zoom (caller scales).
+#[must_use]
+pub fn pack_label_glyphs(
+    labels: &[LabelSpec],
+    deck_zoom: f64,
+    char_m: f32,
+) -> Vec<TextGlyphInstance> {
+    let drawn = declutter(labels, deck_zoom);
+    let mut out = Vec::new();
+    let half = char_m * 0.5;
+    for lab in drawn {
+        let chars: Vec<char> = lab.text.chars().collect();
+        let n = chars.len() as f32;
+        let origin_x = lab.x as f32 - (n * char_m) * 0.5;
+        let y = lab.y as f32;
+        for (i, ch) in chars.into_iter().enumerate() {
+            let code = ch as u32;
+            if !(32..127).contains(&code) {
+                continue;
+            }
+            let glyph = (code - 32) as u16;
+            out.push(TextGlyphInstance {
+                x: origin_x + (i as f32) * char_m + half,
+                y,
+                half_m: half,
+                glyph,
+            });
+        }
+    }
+    out
+}
+
+/// Build a 16×6 cell (96 glyphs) 8×8 px RGBA atlas for printable ASCII — baked bitmap font.
+/// Image size 128×48 (16*8 × 6*8).
+#[must_use]
+pub fn bake_ascii_atlas_rgba() -> (Vec<u8>, u32, u32) {
+    const CELL: u32 = 8;
+    const COLS: u32 = 16;
+    const ROWS: u32 = 6;
+    let w = COLS * CELL;
+    let h = ROWS * CELL;
+    let mut px = vec![0u8; (w * h * 4) as usize];
+    for gi in 0..96u32 {
+        let col = gi % COLS;
+        let row = gi / COLS;
+        let ox = col * CELL;
+        let oy = row * CELL;
+        // Very simple 5×7 stroke pattern from character code — enough for height numerals.
+        let ch = (gi + 32) as u8;
+        for dy in 1..7 {
+            for dx in 1..7 {
+                let on = glyph_pixel(ch, dx - 1, dy - 1);
+                if on {
+                    let x = ox + dx;
+                    let y = oy + dy;
+                    let i = ((y * w + x) * 4) as usize;
+                    px[i] = 240;
+                    px[i + 1] = 240;
+                    px[i + 2] = 230;
+                    px[i + 3] = 255;
+                }
+            }
+        }
+    }
+    (px, w, h)
+}
+
+/// Tiny patterns for digits — 5×7 bitfields packed in u64 (35 bits used).
+fn glyph_pixel(ch: u8, x: u32, y: u32) -> bool {
+    if x >= 5 || y >= 7 {
+        return false;
+    }
+    let bits: u64 = match ch {
+        b'0' => 0b0_01110_10001_10011_10101_11001_10001_01110,
+        b'1' => 0b0_00100_01100_00100_00100_00100_00100_01110,
+        b'2' => 0b0_01110_10001_00001_00010_00100_01000_11111,
+        b'3' => 0b0_01110_10001_00001_00110_00001_10001_01110,
+        b'4' => 0b0_00010_00110_01010_10010_11111_00010_00010,
+        b'5' => 0b0_11111_10000_11110_00001_00001_10001_01110,
+        b'6' => 0b0_00110_01000_10000_11110_10001_10001_01110,
+        b'7' => 0b0_11111_00001_00010_00100_01000_01000_01000,
+        b'8' => 0b0_01110_10001_10001_01110_10001_10001_01110,
+        b'9' => 0b0_01110_10001_10001_01111_00001_00010_01100,
+        b'm' | b'M' => 0b0_10001_11011_10101_10101_10001_10001_10001,
+        b' ' => 0,
+        _ => 0b0_01110_10001_10001_10001_10001_10001_01110,
+    };
+    let bit = 34u32.saturating_sub(y * 5 + x);
+    ((bits >> bit) & 1) == 1
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use map_engine_core::label::LabelSpec;
+
+    #[test]
+    fn pack_empty() {
+        assert!(pack_label_glyphs(&[], 0.0, 10.0).is_empty());
+    }
+
+    #[test]
+    fn pack_three_digits() {
+        let labels = [LabelSpec {
+            id: 1,
+            x: 100,
+            y: 200,
+            importance: 10,
+            text: "170".into(),
+        }];
+        let g = pack_label_glyphs(&labels, 0.0, 10.0);
+        assert_eq!(g.len(), 3);
+        assert_eq!(g[0].glyph, (b'1' - 32) as u16);
+    }
+
+    #[test]
+    fn atlas_size() {
+        let (px, w, h) = bake_ascii_atlas_rgba();
+        assert_eq!(w, 128);
+        assert_eq!(h, 48);
+        assert_eq!(px.len(), (w * h * 4) as usize);
+        assert!(px.iter().any(|&c| c > 0));
+    }
+}

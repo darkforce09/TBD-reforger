@@ -286,6 +286,7 @@ Automated sign-off @ T-091.0: Claude Code completes **A1–A11** in [`t091_0_dem
 
 ## Related
 
+- [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md) — **T-152** cartographic fidelity (icons, labels, airfield, fence/pier/bridge) on worktree `TBD-T-152`
 - [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
 - [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md)
 - [`engineering_plan.md`](engineering_plan.md) §4.2–§4.3

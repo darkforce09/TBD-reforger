@@ -2009,6 +2009,8 @@ dependencies = [
  "js-sys",
  "map-engine-core",
  "map-engine-render",
+ "serde",
+ "serde_json",
  "wasm-bindgen",
 ]
 

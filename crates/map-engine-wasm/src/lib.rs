@@ -2123,3 +2123,85 @@ impl WorldResidency {
         self.inner.buildings_visible()
     }
 }
+
+// ---------------------------------------------------------------------------------------------
+// T-152.1 — cartographic text labels (declutter in core; GPU upload later via RenderEngine)
+// ---------------------------------------------------------------------------------------------
+
+use map_engine_core::label::{LabelSpec, declutter};
+
+/// Handle holding the current label set after declutter (T-152.1).
+#[wasm_bindgen]
+pub struct TextLabelStore {
+    drawn: Vec<LabelSpec>,
+    deck_zoom: f64,
+}
+
+#[wasm_bindgen]
+impl TextLabelStore {
+    #[wasm_bindgen(constructor)]
+    #[must_use]
+    pub fn new() -> TextLabelStore {
+        TextLabelStore {
+            drawn: Vec::new(),
+            deck_zoom: 0.0,
+        }
+    }
+
+    /// Replace labels. `flat` is `[id, x, y, importance, …]` interleaved with UTF-16 text
+    /// lengths — simpler API: pass JSON array of `{id,x,y,importance,text}`.
+    pub fn set_labels_json(&mut self, json: &str, deck_zoom: f64) {
+        self.deck_zoom = deck_zoom;
+        let parsed: Vec<LabelJson> = serde_json::from_str(json).unwrap_or_default();
+        let specs: Vec<LabelSpec> = parsed
+            .into_iter()
+            .map(|j| LabelSpec {
+                id: j.id,
+                x: j.x,
+                y: j.y,
+                importance: j.importance,
+                text: j.text,
+            })
+            .collect();
+        self.drawn = declutter(&specs, deck_zoom);
+    }
+
+    /// Number of labels that survive declutter (G5: empty → 0).
+    #[wasm_bindgen(js_name = text_label_count)]
+    #[must_use]
+    pub fn text_label_count(&self) -> u32 {
+        self.drawn.len() as u32
+    }
+
+    /// Drawn set as JSON (debug / M1 inject).
+    #[must_use]
+    pub fn drawn_json(&self) -> String {
+        let v: Vec<LabelJson> = self
+            .drawn
+            .iter()
+            .map(|l| LabelJson {
+                id: l.id,
+                x: l.x,
+                y: l.y,
+                importance: l.importance,
+                text: l.text.clone(),
+            })
+            .collect();
+        serde_json::to_string(&v).unwrap_or_else(|_| "[]".into())
+    }
+}
+
+impl Default for TextLabelStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(serde::Deserialize, serde::Serialize)]
+struct LabelJson {
+    id: u32,
+    x: i32,
+    y: i32,
+    importance: u16,
+    text: String,
+}

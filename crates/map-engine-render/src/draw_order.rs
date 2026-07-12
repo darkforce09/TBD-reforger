@@ -32,6 +32,8 @@ pub enum LaneRole {
     WorldProps,
     /// W5 building badges.
     WorldBadges,
+    /// T-152.1 cartographic text labels (after badges, before grid).
+    WorldLabels,
     /// W6 mission slot rings.
     Slots,
     /// W6 drag-preview overlay (T-061).
@@ -68,12 +70,13 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldTrees => 13,
         LaneRole::WorldProps => 14,
         LaneRole::WorldBadges => 15,
-        LaneRole::Grid => 16,
-        LaneRole::Slots => 17,
-        LaneRole::SlotDrag => 18,
-        LaneRole::Clusters => 19,
-        LaneRole::Marquee => 20,
-        LaneRole::MarqueeOutline => 21,
+        LaneRole::WorldLabels => 16,
+        LaneRole::Grid => 17,
+        LaneRole::Slots => 18,
+        LaneRole::SlotDrag => 19,
+        LaneRole::Clusters => 20,
+        LaneRole::Marquee => 21,
+        LaneRole::MarqueeOutline => 22,
     }
 }
 
@@ -99,8 +102,15 @@ mod lane_order_pins {
     use super::{LaneRole as L, lane_order};
 
     #[test]
+    fn labels_sit_between_badges_and_grid() {
+        assert!(lane_order(L::WorldLabels) > lane_order(L::WorldBadges));
+        assert!(lane_order(L::WorldLabels) < lane_order(L::Grid));
+    }
+
+    #[test]
     fn grid_sits_between_world_glyphs_and_mission_lanes() {
         assert!(lane_order(L::Grid) > lane_order(L::WorldBadges));
+        assert!(lane_order(L::Grid) > lane_order(L::WorldLabels));
         assert!(lane_order(L::Grid) > lane_order(L::WorldTrees));
         assert!(lane_order(L::Grid) > lane_order(L::WorldProps));
         assert!(lane_order(L::Grid) < lane_order(L::Slots));
@@ -126,6 +136,7 @@ mod lane_order_pins {
             L::WorldTrees,
             L::WorldProps,
             L::WorldBadges,
+            L::WorldLabels,
             L::Grid,
             L::Slots,
             L::SlotDrag,

@@ -25,6 +25,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
+    },
+    {
+      "id": "T-152",
+      "title": "Map cartographic fidelity (glyphs, text, labels)",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t152_2_reforger_icon_art.md",
+      "branch": "ticket/T-152"
     }
   ]
 }

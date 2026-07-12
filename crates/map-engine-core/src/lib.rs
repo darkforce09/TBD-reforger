@@ -16,6 +16,8 @@ pub mod dem;
 #[cfg(feature = "doc")]
 pub mod doc;
 pub mod geometry;
+/// T-152.1 — map labels + importance-distance declutter.
+pub mod label;
 #[cfg(feature = "mission")]
 pub mod mission;
 /// T-151.6 W6 — slot/cluster GPU pack + cluster gates (always available).

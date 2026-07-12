@@ -27,6 +27,8 @@
 
 **Map-verify gate:** Ship **T-090 / T-091 / T-092** (aligned tiles, DEM, mod-native compile + spawn Y/yaw) **before** T-071 ORBAT baseline and T-068 Phase 2 loadout. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
+**Cartographic fidelity (parallel worktree):** **T-152** — Reforger-familiar icons, fence/pier/bridge, airfield, height/town/road labels. Hub: [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md) · worktree `TBD-T-152` / `ticket/T-152` (Grok 4.5 code; parallel with T-068 on `main`).
+
 | Active now | Blocked until map gate |
 |------------|-------------------------|
 | **T-090.3.0** Workbench export spike (active) → **T-090.1** basemap | **T-071** ORBAT Manager |

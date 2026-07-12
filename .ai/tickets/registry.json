@@ -1,5 +1,5 @@
 {
-  "next_id": 146,
+  "next_id": 153,
   "tickets": [
     {
       "id": "T-001",
@@ -3824,7 +3824,13 @@
       "status": "queued",
       "program": "eden",
       "title": "Simplified Squad Connections",
-      "summary": "Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data."
+      "summary": "Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data.",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui"
+      ]
     },
     {
       "id": "T-148",
@@ -3832,7 +3838,13 @@
       "status": "queued",
       "program": "eden",
       "title": "Shift+Drag Rotation Tool",
-      "summary": "Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction."
+      "summary": "Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction.",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui"
+      ]
     },
     {
       "id": "T-149",
@@ -3840,7 +3852,13 @@
       "status": "idea",
       "program": "eden",
       "title": "Forest Mass Polygon Smoothing",
-      "summary": "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography."
+      "summary": "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui"
+      ]
     },
     {
       "id": "T-145",
@@ -4159,6 +4177,158 @@
           "shipped_at": "804f779a"
         }
       }
+    },
+    {
+      "id": "T-152",
+      "order": 1520,
+      "title": "Map cartographic fidelity (glyphs, text, labels)",
+      "summary": "Map cartographic fidelity. Active: T-152.2 Reforger icon art. T-152.0 docs + T-152.1 text lane shipped. Hub: t152_map_cartographic_fidelity_program.md.",
+      "program": "infra",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "schema"
+      ],
+      "status": "ready",
+      "active_slice": "T-152.2",
+      "spec": "docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md",
+      "branch": "ticket/T-152",
+      "stream": "infra",
+      "targets": [
+        "root",
+        "website",
+        "shared"
+      ],
+      "executor": "cursor-docs",
+      "depends_on": [
+        "T-090",
+        "T-091",
+        "T-144",
+        "T-151"
+      ],
+      "slices": [
+        "T-152.0",
+        "T-152.1",
+        "T-152.2",
+        "T-152.3",
+        "T-152.4",
+        "T-152.5",
+        "T-152.6",
+        "T-152.7",
+        "T-152.8",
+        "T-152.9",
+        "T-152.10"
+      ],
+      "slice_plan": {
+        "T-152.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_0_program_hub_lock.md",
+          "status": "shipped"
+        },
+        "T-152.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_1_wgpu_text_lane.md",
+          "status": "shipped",
+          "notes": "Implementing agent: Grok 4.5 in Cursor (not ./scripts/ticket run)."
+        },
+        "T-152.2": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_2_reforger_icon_art.md",
+          "status": "ready",
+          "notes": "Workbench MCP icon discovery spike + LANDMARK_SET atlas rebuild."
+        },
+        "T-152.3": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_3_wire_landmark_glyphs.md",
+          "status": "queued"
+        },
+        "T-152.4": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_4_fence_pier_bridge.md",
+          "status": "queued",
+          "notes": "Spec file authored by Cursor when T-152.3 ships."
+        },
+        "T-152.5": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_5_airfield_symbology.md",
+          "status": "queued"
+        },
+        "T-152.6": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_6_locations_export.md",
+          "status": "queued",
+          "notes": "Town names discovery spike."
+        },
+        "T-152.7": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_7_height_markers.md",
+          "status": "queued"
+        },
+        "T-152.8": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_8_town_labels.md",
+          "status": "queued",
+          "notes": "T-144 G8 importance-distance precompute."
+        },
+        "T-152.9": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_9_road_names.md",
+          "status": "queued",
+          "notes": "Road names discovery spike."
+        },
+        "T-152.10": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "human",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md",
+          "status": "queued",
+          "notes": "Road names wire + program E2E gate; operator sign-off."
+        }
+      },
+      "route": "/missions/:id/edit"
     }
   ]
 }

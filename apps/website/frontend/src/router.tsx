@@ -2,12 +2,14 @@ import { Suspense, lazy } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
 import { AppLayout } from '@/components/layout/AppLayout'
 
+/* eslint-disable react-refresh/only-export-components -- router module exports route tree, not components */
 // T-151.11.2 (audit A-10): DEV-only spike harness. The lazy import sits inside the DEV arm of
 // a constant ternary so production builds tree-shake the WgpuCanvas chunk entirely; the
 // component identity is module-stable (a lazy() created per-render would remount the engine).
 const WgpuSpikePage = import.meta.env.DEV
   ? lazy(() => import('@/features/_spike/wgpu/WgpuCanvas'))
   : () => null
+/* eslint-enable react-refresh/only-export-components */
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { MissionEditorPage } from '@/features/mission-creator/routes'
 import {
