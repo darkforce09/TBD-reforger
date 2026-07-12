@@ -1197,6 +1197,8 @@
         "T-068.10.2",
         "T-068.10.3",
         "T-068.10.4",
+        "T-068.10.5",
+        "T-068.10.6",
         "T-068.11",
         "T-068.12",
         "T-068.13",
@@ -1369,9 +1371,30 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md",
           "notes": "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11. SHIPPED @ 338593b8 (tag T-068.10.4): L1-L5 PASS, vitest 334/334; 14 Arsenal rows; v2 export keeps derived legacy gear (U6). Arsenal polish program A+B+C complete - T-068.11 unpark = operator decision.",
           "shipped_at": "338593b8"
+        },
+        "T-068.10.5": {
+          "executor": "claude-code",
+          "targets": [
+            "mod",
+            "shared",
+            "website"
+          ],
+          "status": "shipped",
+          "shipped_at": "c27c438a",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_5_weapon_variants.md",
+          "notes": "Mode C slice A: variant_of collapse (38 variants / 33 keep, census-gated, 21 real primaries). SHIPPED @ c27c438a (tag T-068.10.5). Census artifact t068_10_5_weapon_families.md is the operator review table."
+        },
+        "T-068.10.6": {
+          "executor": "claude-code",
+          "targets": [
+            "website"
+          ],
+          "status": "queued",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_6_arsenal_expanded_modal.md",
+          "notes": "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right)."
         }
       },
-      "active_slice": "T-068.11"
+      "active_slice": "T-068.10.5"
     },
     {
       "id": "T-069",
