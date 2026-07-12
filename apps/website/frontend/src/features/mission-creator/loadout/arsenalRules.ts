@@ -4,15 +4,42 @@
 // slot later (backpack, handgun, launcher) is one config row + one SlotLoadout field — no new
 // component or validation code.
 
-import type { SlotLoadout } from '@/features/tactical-map'
+import type { LoadoutWeapon, SlotLoadoutV2 } from '@/features/tactical-map'
 import type {
   RegistryCompatEdgeType,
   RegistryItem,
   RegistryItemKind,
 } from '@/types/models/registry'
 
-/** The pickable SlotLoadout fields (everything but the derived `summary`). */
-export type LoadoutKey = keyof Omit<SlotLoadout, 'summary'>
+/**
+ * The pickable Forge fields (T-068.10.4, SlotLoadout v2): four weapon slots (mirroring
+ * Character_Base.et — two untyped primaries, a secondary, a grenade slot), weapons[0]'s
+ * optic/magazine, and the canonical wear areas. Callers migrate v1 docs via migrateLoadout
+ * before mapping to picks.
+ */
+export type LoadoutKey =
+  | 'primary'
+  | 'launcher'
+  | 'handgun'
+  | 'throwable'
+  | 'optic'
+  | 'magazine'
+  | 'headCover'
+  | 'jacket'
+  | 'pants'
+  | 'boots'
+  | 'vest'
+  | 'armoredVest'
+  | 'backpack'
+  | 'handwear'
+
+/** Pick key → weapons[] slot identity (engine slot indexes/types on Character_Base.et). */
+export const WEAPON_SLOTS: readonly { key: LoadoutKey; slotIndex: number; slotType: string }[] = [
+  { key: 'primary', slotIndex: 0, slotType: 'primary' },
+  { key: 'launcher', slotIndex: 1, slotType: 'primary' }, // 2nd untyped primary slot
+  { key: 'handgun', slotIndex: 2, slotType: 'secondary' },
+  { key: 'throwable', slotIndex: 3, slotType: 'grenade' },
+] as const
 
 /**
  * Where a row's options come from:
@@ -32,14 +59,11 @@ export interface LoadoutRow {
 }
 
 /**
- * The Forge rows, in render order. No ammo row — `ammo_in_mag` ships no edges (T-150 OPEN).
- *
- * T-068.10.3: rows are limited to what SlotLoadout v1 can PERSIST. The v3 kinds split
- * Reforger wear areas (jacket/pants/boots, vest vs armored vest, gloves, …) but the doc
- * still has ACE-shaped fields — so the `uniform` field is fed by `gear_jacket` (the v1→v2
- * migration maps uniform→wear.jacket) and `vest` by `gear_vest` (chest rigs). Rows for
- * pants/boots/armored vest/backpack/launcher/handgun/throwable/equipment land in
- * T-068.10.4 together with the SlotLoadout v2 fields that can store them.
+ * The Forge rows, in render order (T-068.10.4, SlotLoadout v2). Weapons first — four engine
+ * slots incl. the 2nd untyped primary ("Launcher / 2nd rifle": Character_USSR_LAT.et carries
+ * AK74 + RPG22 in the two primary slots) — then the wear areas, incl. BOTH simultaneous vest
+ * slots. No ammo row — `ammo_in_mag` ships no edges (engine `.conf` linkage, T-150 OPEN).
+ * optic/magazine stay bound to weapons[0] until the attachments slice.
  */
 export const LOADOUT_ROWS: readonly LoadoutRow[] = [
   { key: 'primary', label: 'Primary', source: { type: 'kind', kind: 'gear_primary' } },
@@ -53,22 +77,31 @@ export const LOADOUT_ROWS: readonly LoadoutRow[] = [
     label: 'Magazine',
     source: { type: 'edge', edge: 'mag_in_weapon', dependsOn: 'primary' },
   },
-  { key: 'uniform', label: 'Jacket', source: { type: 'kind', kind: 'gear_jacket' } },
-  { key: 'vest', label: 'Vest', source: { type: 'kind', kind: 'gear_vest' } },
-  { key: 'helmet', label: 'Helmet', source: { type: 'kind', kind: 'gear_helmet' } },
+  {
+    key: 'launcher',
+    label: 'Launcher / 2nd rifle',
+    source: { type: 'kind', kind: 'gear_launcher' },
+  },
+  { key: 'handgun', label: 'Handgun', source: { type: 'kind', kind: 'gear_handgun' } },
+  { key: 'throwable', label: 'Throwable', source: { type: 'kind', kind: 'gear_throwable' } },
+  { key: 'headCover', label: 'Helmet', source: { type: 'kind', kind: 'gear_helmet' } },
+  { key: 'jacket', label: 'Jacket', source: { type: 'kind', kind: 'gear_jacket' } },
+  { key: 'pants', label: 'Pants', source: { type: 'kind', kind: 'gear_pants' } },
+  { key: 'boots', label: 'Boots', source: { type: 'kind', kind: 'gear_boots' } },
+  { key: 'vest', label: 'Vest (chest rig)', source: { type: 'kind', kind: 'gear_vest' } },
+  {
+    key: 'armoredVest',
+    label: 'Armored vest',
+    source: { type: 'kind', kind: 'gear_armored_vest' },
+  },
+  { key: 'backpack', label: 'Backpack', source: { type: 'kind', kind: 'gear_backpack' } },
+  { key: 'handwear', label: 'Gloves', source: { type: 'kind', kind: 'gear_gloves' } },
 ] as const
 
-/** v3 kinds whose Forge rows wait on SlotLoadout v2 fields (shown as a hint in the tab). */
+/** v3 kinds still waiting on their own slice (equipment micro-slots / cargo / unknown engine
+ *  slot name for glasses) — surfaced as a hint in the tab. */
 export const PENDING_V2_KINDS: readonly RegistryItemKind[] = [
-  'gear_pants',
-  'gear_boots',
-  'gear_armored_vest',
-  'gear_backpack',
-  'gear_launcher',
-  'gear_handgun',
-  'gear_throwable',
   'gear_glasses',
-  'gear_gloves',
   'gear_binoculars',
   'gear_item',
 ] as const
@@ -76,12 +109,32 @@ export const PENDING_V2_KINDS: readonly RegistryItemKind[] = [
 /** The all-empty pick set (a slot that has never been forged). */
 export const EMPTY_PICKS: Record<LoadoutKey, string> = {
   primary: '',
-  uniform: '',
-  vest: '',
-  helmet: '',
+  launcher: '',
+  handgun: '',
+  throwable: '',
   optic: '',
   magazine: '',
+  headCover: '',
+  jacket: '',
+  pants: '',
+  boots: '',
+  vest: '',
+  armoredVest: '',
+  backpack: '',
+  handwear: '',
 }
+
+/** The wear-map key for each wear row (pick key == canonical LoadoutSlotInfo name). */
+const WEAR_PICK_KEYS: readonly LoadoutKey[] = [
+  'headCover',
+  'jacket',
+  'pants',
+  'boots',
+  'vest',
+  'armoredVest',
+  'backpack',
+  'handwear',
+] as const
 
 /** Compat context for option building + validation: the edge feeds (`itemsFor` results),
  *  keyed by row key. Kind rows are never compat-constrained. */
@@ -252,43 +305,67 @@ export function validateLoadout(
   return { valid: Object.keys(errors).length === 0, errors }
 }
 
-/** Picks → SlotLoadout ('' → null) + display summary. What updateSlotLoadout persists. */
+/** Picks → SlotLoadout v2 ('' → null/absent) + display summary. What updateSlotLoadout
+ *  persists — the editor writes v2 only (v1 docs are migrated on read). */
 export function picksToLoadout(
   picks: Record<LoadoutKey, string>,
   catalogByName: ReadonlyMap<string, RegistryItem>,
-): SlotLoadout | null {
+): SlotLoadoutV2 | null {
   if (LOADOUT_ROWS.every((r) => !picks[r.key])) return null // all-empty = clear the doc field
+
+  const weapons: LoadoutWeapon[] = []
+  for (const slot of WEAPON_SLOTS) {
+    const weapon = picks[slot.key]
+    if (!weapon) continue
+    weapons.push({
+      slotIndex: slot.slotIndex,
+      slotType: slot.slotType,
+      weapon,
+      // optic/magazine bind to weapons[0] until the attachments slice
+      ...(slot.key === 'primary'
+        ? { optic: picks.optic || null, magazine: picks.magazine || null, attachments: [] }
+        : {}),
+    })
+  }
+
+  const wear: Record<string, string | null> = {}
+  for (const key of WEAR_PICK_KEYS) wear[key] = picks[key] || null
+
   const summary = buildLoadoutSummary(picks, catalogByName)
   return {
-    primary: picks.primary || null,
-    uniform: picks.uniform || null,
-    vest: picks.vest || null,
-    helmet: picks.helmet || null,
-    optic: picks.optic || null,
-    magazine: picks.magazine || null,
+    version: 2,
+    wear,
+    weapons,
     ...(summary ? { summary } : {}),
   }
 }
 
-/** SlotLoadout → picks (the render/edit shape; null → ''). */
-export function loadoutToPicks(loadout: SlotLoadout | undefined): Record<LoadoutKey, string> {
-  if (!loadout) return { ...EMPTY_PICKS }
-  return {
-    primary: loadout.primary ?? '',
-    uniform: loadout.uniform ?? '',
-    vest: loadout.vest ?? '',
-    helmet: loadout.helmet ?? '',
-    optic: loadout.optic ?? '',
-    magazine: loadout.magazine ?? '',
+/** SlotLoadout v2 → picks (the render/edit shape; callers migrate v1 docs first). */
+export function loadoutToPicks(loadout: SlotLoadoutV2 | undefined): Record<LoadoutKey, string> {
+  const picks = { ...EMPTY_PICKS }
+  if (!loadout) return picks
+  for (const slot of WEAPON_SLOTS) {
+    const w = loadout.weapons.find(
+      (x) => x.slotIndex === slot.slotIndex && x.slotType === slot.slotType,
+    )
+    if (!w) continue
+    picks[slot.key] = w.weapon
+    if (slot.key === 'primary') {
+      picks.optic = w.optic ?? ''
+      picks.magazine = w.magazine ?? ''
+    }
   }
+  for (const key of WEAR_PICK_KEYS) picks[key] = loadout.wear[key] ?? ''
+  return picks
 }
 
-/** Weapon-line display summary ("M16A2 · ACOG · 30rnd STANAG") for the orbat loadout string. */
+/** Weapon-line display summary ("M16A2 · ACOG · 30rnd STANAG · M72 LAW") for the orbat
+ *  loadout string — primary chain plus the second weapon slot when filled. */
 export function buildLoadoutSummary(
   picks: Record<LoadoutKey, string>,
   catalogByName: ReadonlyMap<string, RegistryItem>,
 ): string {
-  return (['primary', 'optic', 'magazine'] as const)
+  return (['primary', 'optic', 'magazine', 'launcher'] as const)
     .map((k) => picks[k])
     .filter(Boolean)
     .map((v) => displayName(v, catalogByName))

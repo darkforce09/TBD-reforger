@@ -1,0 +1,42 @@
+{
+  "loadoutVersion": "2",
+  "modpackId": "00000000-0000-4000-a000-000000000001",
+  "wear": {
+    "headCover": null,
+    "jacket": "{9F546CCA2582D16F}Prefabs/Characters/Uniforms/Jacket_M88.et",
+    "pants": "{DCF980831E880F6A}Prefabs/Characters/Uniforms/Pants_M88.et",
+    "boots": null,
+    "vest": "{9713FE6DDCC9510D}Prefabs/Characters/Vests/Vest_Lifchik/Vest_Lifchik.et",
+    "armoredVest": "{ADE19B33DCBB9005}Prefabs/Characters/Vests/Vest_6B2/Vest_6B2.et",
+    "backpack": null,
+    "handwear": null
+  },
+  "weapons": [
+    {
+      "slotIndex": 0,
+      "slotType": "primary",
+      "weapon": "{FA5C25BF66A53DCF}Prefabs/Weapons/Rifles/AK74/Rifle_AK74.et",
+      "optic": null,
+      "magazine": null,
+      "attachments": []
+    },
+    {
+      "slotIndex": 3,
+      "slotType": "grenade",
+      "weapon": "{645C73791ECA1698}Prefabs/Weapons/Grenades/Grenade_RGD5.et"
+    }
+  ],
+  "equipment": {
+    "binoculars": null,
+    "wristwatch": null
+  },
+  "cargo": [],
+  "gear": {
+    "primary": "{FA5C25BF66A53DCF}Prefabs/Weapons/Rifles/AK74/Rifle_AK74.et",
+    "uniform": "{9F546CCA2582D16F}Prefabs/Characters/Uniforms/Jacket_M88.et",
+    "vest": "{ADE19B33DCBB9005}Prefabs/Characters/Vests/Vest_6B2/Vest_6B2.et",
+    "helmet": null,
+    "optic": null,
+    "magazine": null
+  }
+}

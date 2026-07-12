@@ -147,6 +147,7 @@ console.log("Registry compat:");
 
 console.log("Loadout export:");
 check("loadout-export.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.sample.json")));
+check("loadout-export.v2.sample.json", validateLoadoutExport, readJSON(join(root, "registry", "loadout-export.v2.sample.json")));
 
 console.log("Mission editor payload:");
 check(

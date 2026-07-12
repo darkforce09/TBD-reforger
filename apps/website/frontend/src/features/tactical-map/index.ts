@@ -56,10 +56,14 @@ export { snapshotFromShadow } from './state/docShadow'
 export { yieldToUi } from './state/yieldToUi'
 export { selectDragOverlayIcons } from './state/selectors'
 export type { SlotIcon } from './state/selectors'
+export { isLoadoutV2 } from './state/schema'
 export type {
   ID,
   Slot,
   SlotLoadout,
+  SlotLoadoutV1,
+  SlotLoadoutV2,
+  LoadoutWeapon,
   ClipboardSlot,
   Squad,
   Faction,

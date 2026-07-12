@@ -21,7 +21,8 @@ import {
   type CompatSets,
   type LoadoutKey,
 } from './arsenalRules'
-import { buildLoadoutExport, downloadLoadoutJson, slotLoadoutToGear } from './loadoutExport'
+import { buildLoadoutExport, downloadLoadoutJson } from './loadoutExport'
+import { migrateLoadout } from './migrateLoadout'
 import { useArsenalValidation } from './useArsenalValidation'
 import { Field, SelectField } from '../layout/RightInspector/fields'
 
@@ -39,7 +40,12 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
     [catalogByName, slot.assetId],
   )
 
-  const picks = useMemo(() => loadoutToPicks(slot.loadout), [slot.loadout])
+  // v1 docs migrate on read (AreaType-aware vest routing); the editor writes v2 only.
+  const loadoutV2 = useMemo(
+    () => migrateLoadout(slot.loadout, catalogByName),
+    [slot.loadout, catalogByName],
+  )
+  const picks = useMemo(() => loadoutToPicks(loadoutV2), [loadoutV2])
   const { status, sets } = useArsenalValidation(isCharacter, data?.modpack_id, picks)
   const validation = useMemo(() => validateLoadout(picks, sets), [picks, sets])
 
@@ -71,7 +77,7 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
       toast.error('Loadout has incompatible picks — fix the flagged slots first.')
       return
     }
-    downloadLoadoutJson(buildLoadoutExport(slotLoadoutToGear(slot.loadout), data?.modpack_id ?? ''))
+    downloadLoadoutJson(buildLoadoutExport(loadoutV2, data?.modpack_id ?? ''))
   }
 
   // Degrade (documented in the T-068.10 verify log): worker down → Phase 1 pickers, no edge
@@ -157,9 +163,8 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
 
       {pendingKindsWithData.length > 0 && (
         <p className="text-label-sm normal-case text-outline">
-          {pendingKindsWithData.length} more gear kinds (pants, boots, armored vest, backpack,
-          launcher, throwables, …) are classified in the registry and get their rows with the
-          loadout document v2 (T-068.10.4).
+          Equipment items (binoculars, radios, medical, glasses) get their rows with the
+          equipment/cargo slices — the registry already classifies them.
         </p>
       )}
 

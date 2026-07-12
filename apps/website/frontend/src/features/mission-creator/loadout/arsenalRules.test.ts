@@ -60,7 +60,7 @@ const CATALOG: RegistryItem[] = [
 const BY_NAME = new Map(CATALOG.map((i) => [i.resource_name, i]))
 
 const primaryRow = LOADOUT_ROWS.find((r) => r.key === 'primary') as LoadoutRow
-const uniformRow = LOADOUT_ROWS.find((r) => r.key === 'uniform') as LoadoutRow
+const uniformRow = LOADOUT_ROWS.find((r) => r.key === 'jacket') as LoadoutRow
 const opticRow = LOADOUT_ROWS.find((r) => r.key === 'optic') as LoadoutRow
 const magRow = LOADOUT_ROWS.find((r) => r.key === 'magazine') as LoadoutRow
 
@@ -231,9 +231,9 @@ describe('F-gates against the committed registry envelope (T-068.10.3)', () => {
     expect(visible('gear_helmet')).toBe(68)
     for (const [key, kind, count] of [
       ['primary', 'gear_primary', 58],
-      ['uniform', 'gear_jacket', 46],
+      ['jacket', 'gear_jacket', 46],
       ['vest', 'gear_vest', 28],
-      ['helmet', 'gear_helmet', 68],
+      ['headCover', 'gear_helmet', 68],
     ] as const) {
       const row = LOADOUT_ROWS.find((r) => r.key === key) as LoadoutRow
       const opts = buildRowOptions(row, '', NO_COMPAT, catalog, byName)
@@ -269,23 +269,53 @@ describe('F-gates against the committed registry envelope (T-068.10.3)', () => {
   })
 })
 
-describe('picks ↔ loadout mapping', () => {
+describe('picks ↔ loadout mapping (SlotLoadout v2)', () => {
   it('all-empty picks map to null (clears the doc field)', () => {
     expect(picksToLoadout({ ...EMPTY_PICKS }, BY_NAME)).toBeNull()
   })
 
-  it('round-trips picks through SlotLoadout with a display summary', () => {
-    const picks = { ...EMPTY_PICKS, primary: RIFLE, optic: ACOG, magazine: STANAG, uniform: BDU }
+  it('round-trips picks through SlotLoadout v2 with a display summary', () => {
+    const picks = { ...EMPTY_PICKS, primary: RIFLE, optic: ACOG, magazine: STANAG, jacket: BDU }
     const loadout = picksToLoadout(picks, BY_NAME)
     expect(loadout).toEqual({
-      primary: RIFLE,
-      uniform: BDU,
-      vest: null,
-      helmet: null,
-      optic: ACOG,
-      magazine: STANAG,
+      version: 2,
+      wear: {
+        headCover: null,
+        jacket: BDU,
+        pants: null,
+        boots: null,
+        vest: null,
+        armoredVest: null,
+        backpack: null,
+        handwear: null,
+      },
+      weapons: [
+        {
+          slotIndex: 0,
+          slotType: 'primary',
+          weapon: RIFLE,
+          optic: ACOG,
+          magazine: STANAG,
+          attachments: [],
+        },
+      ],
       summary: 'M16A2 · ACOG · 30rnd STANAG',
     })
+    expect(loadoutToPicks(loadout ?? undefined)).toEqual(picks)
+  })
+
+  it('weapon slots are slot-indexed: launcher = 2nd primary, handgun = secondary, throwable = grenade', () => {
+    const LAW = '{LLL}Prefabs/Weapons/Launchers/M72.et'
+    const PM = '{PPP}Prefabs/Weapons/Handguns/PM.et'
+    const RGD = '{GGG}Prefabs/Weapons/Grenades/RGD5.et'
+    const picks = { ...EMPTY_PICKS, primary: RIFLE, launcher: LAW, handgun: PM, throwable: RGD }
+    const loadout = picksToLoadout(picks, BY_NAME)
+    expect(loadout?.weapons).toEqual([
+      { slotIndex: 0, slotType: 'primary', weapon: RIFLE, optic: null, magazine: null, attachments: [] },
+      { slotIndex: 1, slotType: 'primary', weapon: LAW },
+      { slotIndex: 2, slotType: 'secondary', weapon: PM },
+      { slotIndex: 3, slotType: 'grenade', weapon: RGD },
+    ])
     expect(loadoutToPicks(loadout ?? undefined)).toEqual(picks)
   })
 
@@ -293,8 +323,11 @@ describe('picks ↔ loadout mapping', () => {
     expect(loadoutToPicks(undefined)).toEqual(EMPTY_PICKS)
   })
 
-  it('summary omits empty attach slots and is empty without a primary', () => {
+  it('summary omits empty slots and appends the 2nd weapon', () => {
     expect(buildLoadoutSummary({ ...EMPTY_PICKS, primary: RIFLE }, BY_NAME)).toBe('M16A2')
+    expect(
+      buildLoadoutSummary({ ...EMPTY_PICKS, primary: RIFLE, launcher: RIFLE_AK }, BY_NAME),
+    ).toBe('M16A2 · AK-74')
     expect(buildLoadoutSummary({ ...EMPTY_PICKS }, BY_NAME)).toBe('')
   })
 })

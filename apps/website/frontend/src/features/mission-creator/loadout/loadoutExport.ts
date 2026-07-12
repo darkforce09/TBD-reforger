@@ -1,17 +1,21 @@
-// Loadout export (T-068.4, smart slots T-068.10) — per-slot Forge picks → loadout-export.json.
-// Shape mirrors packages/tbd-schema/schema/loadout-export.schema.json. optic/magazine are the
-// Smart Forge attach slots (validated against the T-068.9 compat graph before download); the
-// v1 mod reader (TBD_LoadoutEquipComponent) ignores them until T-068.12.
+// Loadout export (T-068.4; smart slots T-068.10; v2 doc T-068.10.4) — per-slot Forge picks →
+// loadout-export.json. Shape mirrors packages/tbd-schema/schema/loadout-export.schema.json v2:
+// wear (open map keyed by engine LoadoutSlotInfo name), slot-indexed weapons, equipment/cargo
+// skeletons, PLUS a derived legacy `gear` block — the v1 mod reader (TBD_LoadoutEquipComponent,
+// JsonLoadContext ignores unknown fields — U6) keeps dressing the Phase-1 test NPC until
+// T-068.12 reads the v2 fields natively.
 
-import type { SlotLoadout } from '@/features/tactical-map'
+import type { LoadoutWeapon, SlotLoadoutV2 } from '@/features/tactical-map'
 
 export type GearSlot = string | null
 
 /**
- * The exported gear slots (each a registry resource_name or null). optic/magazine are
- * schema-optional but always emitted by the web download (null when empty).
+ * The legacy v1 gear slots (each a registry resource_name or null). In v2 exports this block
+ * is DERIVED: jacket→uniform, armoredVest (else vest)→vest, headCover→helmet, weapons slot 0
+ * →primary/optic/magazine. The armored vest wins the single legacy vest field because it is
+ * the visually dominant one on the dressed NPC.
  *
- * @contract loadout-export.schema.json#/properties/gear
+ * @contract loadout-export.schema.json#/$defs/gear
  */
 export interface LoadoutGear {
   primary: GearSlot
@@ -23,32 +27,49 @@ export interface LoadoutGear {
 }
 
 /**
- * The flat loadout handoff written as loadout-export.json (Phase 1 file handoff to the mod,
- * read by TBD_LoadoutEquipComponent).
+ * The v2 loadout handoff written as loadout-export.json.
  *
  * @contract loadout-export.schema.json#/
  */
 export interface LoadoutExport {
-  loadoutVersion: '1'
+  loadoutVersion: '2'
   modpackId: string
+  wear: Record<string, GearSlot>
+  weapons: LoadoutWeapon[]
+  equipment: Record<string, GearSlot>
+  cargo: { container: string; item: string; qty: number }[]
   gear: LoadoutGear
 }
 
-/** Project the doc's per-slot loadout onto the export gear shape (drops the display summary). */
-export function slotLoadoutToGear(loadout: SlotLoadout | undefined): LoadoutGear {
+/** Derive the legacy v1 gear block from a v2 loadout (mod back-compat until T-068.12). */
+export function slotLoadoutToGear(loadout: SlotLoadoutV2 | undefined): LoadoutGear {
+  const wear = loadout?.wear ?? {}
+  const w0 = loadout?.weapons.find((w) => w.slotIndex === 0 && w.slotType === 'primary')
+  const pick = (v: string | null | undefined): GearSlot => v ?? null
   return {
-    primary: loadout?.primary ?? null,
-    uniform: loadout?.uniform ?? null,
-    vest: loadout?.vest ?? null,
-    helmet: loadout?.helmet ?? null,
-    optic: loadout?.optic ?? null,
-    magazine: loadout?.magazine ?? null,
+    primary: pick(w0?.weapon),
+    uniform: pick(wear.jacket),
+    vest: pick(wear.armoredVest ?? wear.vest),
+    helmet: pick(wear.headCover),
+    optic: pick(w0?.optic),
+    magazine: pick(w0?.magazine),
   }
 }
 
-/** Build the export object. Each gear value is a registry resource_name or null. */
-export function buildLoadoutExport(gear: LoadoutGear, modpackId: string): LoadoutExport {
-  return { loadoutVersion: '1', modpackId, gear }
+/** Build the v2 export object from the doc's (already migrated) v2 loadout. */
+export function buildLoadoutExport(
+  loadout: SlotLoadoutV2 | undefined,
+  modpackId: string,
+): LoadoutExport {
+  return {
+    loadoutVersion: '2',
+    modpackId,
+    wear: { ...(loadout?.wear ?? {}) },
+    weapons: loadout?.weapons ?? [],
+    equipment: { ...(loadout?.equipment ?? {}) },
+    cargo: [...(loadout?.cargo ?? [])],
+    gear: slotLoadoutToGear(loadout),
+  }
 }
 
 /** Trigger a browser download of loadout-export.json for the given payload. */

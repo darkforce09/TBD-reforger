@@ -49,10 +49,11 @@ export interface Squad {
   slotIds: ID[]
 }
 
-// Per-slot Smart Forge picks (T-068.10) — each value a registry resource_name or null when the
-// gear slot is empty. Persisted verbatim in the doc, so it rides Save Version (`editor.slots`),
-// mission Export, IDB, and copy/paste. Distinct from the legacy `Slot.loadoutId` template ref.
-export interface SlotLoadout {
+// Per-slot Smart Forge picks — v1 (T-068.10): ACE-shaped fixed fields. Persisted verbatim in
+// the doc, so it rides Save Version (`editor.slots`), mission Export, IDB, and copy/paste.
+// Distinct from the legacy `Slot.loadoutId` template ref. Existing docs keep v1 shapes; the
+// editor migrates to v2 on read (migrateLoadout) and writes v2 only.
+export interface SlotLoadoutV1 {
   primary: string | null
   uniform: string | null
   vest: string | null
@@ -62,6 +63,41 @@ export interface SlotLoadout {
   // Display summary from registry display_names ("M16A2 · ACOG"), built at pick time —
   // feeds the compiled orbat[].slots[].loadout string (T-068.11 alignment).
   summary?: string
+}
+
+// One slot-indexed weapon (T-068.10.4). Vanilla characters carry two UNTYPED "primary"
+// slots (two rifles legal; a launcher is just a weapon in the second one), a "secondary"
+// pistol slot and grenade/throwable slots — Character_Base.et evidence in the T-068.10.2
+// census. T-068.12 must equip via slot-indexed SetWeapon, not blind EquipWeapon.
+export interface LoadoutWeapon {
+  slotIndex: number
+  slotType: string // "primary" | "secondary" | "grenade" | "throwable" (engine strings)
+  weapon: string
+  optic?: string | null // optic_on_weapon-validated (weapons[0] only until the attachments slice)
+  magazine?: string | null // mag_in_weapon-validated (weapons[0] only until the attachments slice)
+  attachments?: string[]
+}
+
+// v2 (T-068.10.4): Reforger-shaped loadout. `wear` is an OPEN map keyed by engine
+// LoadoutSlotInfo name — canonical keys headCover/jacket/pants/boots/vest/armoredVest/
+// backpack/handwear (both vests are separate simultaneous slots!); mod-added areas are
+// representable without a schema change. equipment/cargo are forward skeletons (their UI
+// lands in later slices). Mirrors loadout-export.schema.json v2.
+export interface SlotLoadoutV2 {
+  version: 2
+  wear: Record<string, string | null>
+  weapons: LoadoutWeapon[]
+  equipment?: Record<string, string | null>
+  cargo?: { container: string; item: string; qty: number }[]
+  summary?: string
+}
+
+// The doc field holds either shape (old missions load untouched); pickers and export always
+// go through migrateLoadout → v2.
+export type SlotLoadout = SlotLoadoutV1 | SlotLoadoutV2
+
+export function isLoadoutV2(l: SlotLoadout | undefined): l is SlotLoadoutV2 {
+  return !!l && (l as SlotLoadoutV2).version === 2
 }
 
 export interface Slot {

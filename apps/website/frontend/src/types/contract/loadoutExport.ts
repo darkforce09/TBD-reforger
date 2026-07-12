@@ -6,22 +6,70 @@
  */
 
 /**
+ * Loadout download consumed by the mod equip path. v1: ACE-shaped fixed gear slots. v2 (T-068.10.4): Reforger-shaped — wear is an open map keyed by engine LoadoutSlotInfo name (canonical keys documented; mod-added areas allowed), weapons are slot-indexed (two untyped primary slots + secondary + grenade/throwable per Character_Base.et), equipment/cargo are forward skeletons. v2 keeps a derived legacy gear block so the v1 mod reader (TBD_LoadoutEquipComponent, JsonLoadContext ignores unknown fields — U6) keeps working until T-068.12 reads v2 natively.
+ */
+export type TBDLoadoutExport =
+  | {
+      loadoutVersion: '1'
+      modpackId: string
+      gear: Gear
+    }
+  | {
+      loadoutVersion: '2'
+      modpackId: string
+      /**
+       * Wear areas keyed by engine LoadoutSlotInfo name. Canonical keys: headCover, jacket, pants, boots, vest, armoredVest, backpack, handwear (Character_Base.et); pattern-open so mod-added LoadoutAreaType subclasses are representable without a schema change.
+       */
+      wear: {
+        [k: string]: Slot
+      }
+      /**
+       * Slot-indexed weapons. Vanilla characters: slotIndex 0/1 slotType 'primary' (two untyped long slots — two rifles legal), 2 'secondary' (pistol), 3 'grenade', 4 'throwable'. T-068.12 must equip via slot-indexed SetWeapon, not blind EquipWeapon.
+       */
+      weapons: Weapon[]
+      /**
+       * Equipment micro-slots (SCR_EquipmentStorageComponent): binoculars, wristwatch, … Skeleton in v2 — UI lands with the equipment slice.
+       */
+      equipment?: {
+        [k: string]: Slot
+      }
+      /**
+       * Container cargo (volume/weight budget model — no grid cells). Skeleton in v2 — UI and budget validation land with the cargo slice.
+       */
+      cargo?: {
+        container: string
+        item: string
+        qty: number
+      }[]
+      gear: Gear
+    }
+/**
  * Enfusion ResourceName for the equipped item, or null when the slot is empty.
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-zA-Z][a-zA-Z0-9_]{0,63}$".
+ *
+ * This interface was referenced by `undefined`'s JSON-Schema definition
+ * via the `patternProperty` "^[a-zA-Z][a-zA-Z0-9_]{0,63}$".
  */
 export type Slot = string | null
 
 /**
- * Loadout download: a fixed set of gear slots, each holding a resource_name (from registry-items) or null when empty. Consumed by the mod equip test and the web download. optic/magazine are optional Smart Forge slots (T-068.10) — absent in Phase 1 payloads, ignored by the v1 mod reader.
+ * v1 fixed gear slots. In v2 envelopes this block is DERIVED (jacket→uniform, armoredVest else vest→vest, headCover→helmet, weapons[0]→primary/optic/magazine) for the v1 mod reader; T-068.12 switches to the v2 fields.
  */
-export interface TBDLoadoutExport {
-  loadoutVersion: '1'
-  modpackId: string
-  gear: {
-    primary: Slot
-    uniform: Slot
-    vest: Slot
-    helmet: Slot
-    optic?: Slot
-    magazine?: Slot
-  }
+export interface Gear {
+  primary: Slot
+  uniform: Slot
+  vest: Slot
+  helmet: Slot
+  optic?: Slot
+  magazine?: Slot
+}
+export interface Weapon {
+  slotIndex: number
+  slotType: string
+  weapon: string
+  optic?: Slot
+  magazine?: Slot
+  attachments?: string[]
 }
