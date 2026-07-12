@@ -1,34 +1,32 @@
-// Attributes → Arsenal tab (T-068.4; smart Forge T-068.10). A dumb render loop over
-// LOADOUT_ROWS: options + validation come from arsenalRules (pure) fed by useArsenalValidation
-// (compat worker bridge); picks live on the slot itself (`Slot.loadout` via updateSlotLoadout —
-// one undo step per pick, persisted through Save Version / Export / IDB / copy-paste).
-// Character slots only; compat-unavailable degrades to the Phase 1 full-catalog pickers.
+// Attributes → Arsenal tab (T-068.4; smart Forge T-068.10; picks panel extracted T-152).
+// Thin Slot-doc adapter over ArsenalPicksPanel: migrates v1 docs on read, persists v2 picks
+// via updateSlotLoadout (one undo step per pick), validates against the compat worker, and
+// downloads the v2 loadout-export (with the derived legacy gear block). Character slots
+// only; worker-down degrades to kind-only rows.
 
-import { useMemo, useState } from 'react'
-import { Download, Loader2, Search, X } from 'lucide-react'
+import { useMemo } from 'react'
+import { Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateSlotLoadout, type MissionDoc, type Slot } from '@/features/tactical-map'
 import { Badge } from '@/components/ui/badge'
 import { useRegistry } from '@/hooks/queries'
 import type { RegistryItem } from '@/types/models/registry'
 import {
-  LOADOUT_ROWS,
   PENDING_V2_KINDS,
-  buildGroupedRowOptions,
   loadoutToPicks,
   picksToLoadout,
   validateLoadout,
   type CompatSets,
   type LoadoutKey,
 } from './arsenalRules'
+import { ArsenalPicksPanel } from './ArsenalPicksPanel'
 import { buildLoadoutExport, downloadLoadoutJson } from './loadoutExport'
 import { migrateLoadout } from './migrateLoadout'
 import { useArsenalValidation } from './useArsenalValidation'
-import { Field, SelectField } from '../layout/RightInspector/fields'
+import { Field } from '../layout/RightInspector/fields'
 
 export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   const { data } = useRegistry()
-  const [query, setQuery] = useState('')
   const catalog = useMemo(() => data?.data ?? [], [data])
   const catalogByName = useMemo(
     () => new Map<string, RegistryItem>(catalog.map((i) => [i.resource_name, i])),
@@ -69,6 +67,7 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   }
 
   const smart = status === 'ready'
+  const degradeSets: CompatSets = { edgeItems: {} }
   const onPick = (key: LoadoutKey, value: string) => {
     updateSlotLoadout(md, slot.id, picksToLoadout({ ...picks, [key]: value }, catalogByName))
   }
@@ -79,11 +78,6 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
     }
     downloadLoadoutJson(buildLoadoutExport(loadoutV2, data?.modpack_id ?? ''))
   }
-
-  // Degrade (documented in the T-068.10 verify log): worker down → Phase 1 pickers, no edge
-  // rows. Clothing rows are always the full catalog — compat constrains weapon families only.
-  const rows = smart ? LOADOUT_ROWS : LOADOUT_ROWS.filter((r) => r.source.type === 'kind')
-  const degradeSets: CompatSets = { edgeItems: {} }
 
   const pendingKindsWithData = PENDING_V2_KINDS.filter((k) =>
     catalog.some((i) => i.kind === k && i.abstract !== true),
@@ -99,67 +93,14 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
         )}
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-outline" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Escape') setQuery('')
-          }}
-          placeholder="Filter gear by name…"
-          className="w-full rounded-md border border-outline-variant/30 bg-surface-container-lowest/40 py-1.5 pl-8 pr-8 text-label-md text-on-surface placeholder:text-outline focus:border-primary/50 focus:outline-none"
-        />
-        {query && (
-          <button
-            type="button"
-            onClick={() => setQuery('')}
-            aria-label="Clear gear filter"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface"
-          >
-            <X className="size-3.5" />
-          </button>
-        )}
-      </div>
-
-      {rows.map((row) => {
-        const disabledDep =
-          smart && row.source.type === 'edge' && !picks[row.source.dependsOn]
-            ? row.source.dependsOn
-            : null
-        const error = smart ? validation.errors[row.key] : undefined
-        const grouped = disabledDep
-          ? null
-          : buildGroupedRowOptions(
-              row,
-              picks[row.key],
-              smart ? sets : degradeSets,
-              catalog,
-              catalogByName,
-              query,
-            )
-        return (
-          <div key={row.key} className="flex flex-col gap-1">
-            {disabledDep || !grouped ? (
-              <Field label={row.label}>
-                <div className="rounded-md border border-outline-variant/20 bg-surface-container-lowest/30 px-2.5 py-1.5 text-label-md text-outline">
-                  Pick a {disabledDep} first
-                </div>
-              </Field>
-            ) : (
-              <SelectField
-                label={row.label}
-                value={picks[row.key]}
-                options={[grouped.none, ...(grouped.stranded ? [grouped.stranded] : [])]}
-                groups={grouped.groups}
-                onChange={(v) => onPick(row.key, v)}
-              />
-            )}
-            {error && <Badge variant="error">{error}</Badge>}
-          </div>
-        )
-      })}
+      <ArsenalPicksPanel
+        picks={picks}
+        onPick={onPick}
+        catalog={catalog}
+        catalogByName={catalogByName}
+        sets={smart ? sets : degradeSets}
+        smart={smart}
+      />
 
       {pendingKindsWithData.length > 0 && (
         <p className="text-label-sm normal-case text-outline">

@@ -48,6 +48,8 @@ export {
   ensureDefaultLayer,
   hydrateMissionDoc,
   hydrateMissionDocWithProgress,
+  ensureFaction,
+  ensureSquadFor,
 } from './state/ydoc'
 export type { MissionDoc, EntityMapName } from './state/ydoc'
 export { createUndoManager } from './state/undo'

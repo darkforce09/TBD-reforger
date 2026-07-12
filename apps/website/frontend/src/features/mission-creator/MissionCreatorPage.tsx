@@ -9,12 +9,20 @@ import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import {
   addSlot,
+  ensureFaction,
+  ensureSquadFor,
   moveEntities,
   pasteSlots,
   removeEntities,
+  updateSlotLoadout,
   useMapStore,
 } from '@/features/tactical-map'
-import type { AssetDropPayload, ClipboardSlot, TacticalMapApi } from '@/features/tactical-map'
+import type {
+  AssetDropPayload,
+  ClipboardSlot,
+  SlotLoadout,
+  TacticalMapApi,
+} from '@/features/tactical-map'
 // T-151.9: wgpu is the sole Mission Creator map engine — lazy so the wasm glue stays in its own chunk.
 const WgpuTacticalMap = lazy(() => import('@/features/tactical-map/WgpuTacticalMap'))
 import { Dialog, DialogContent } from '@/components/ui/dialog'
@@ -105,7 +113,24 @@ export default function MissionCreatorPage() {
     (payload: AssetDropPayload, world: { x: number; y: number }) => {
       if (payload.kind !== 'slot') return
       const layerId = useMapStore.getState().activeLayerId ?? undefined
-      const newId = addSlot(md, world, { role: payload.role, layerId, assetId: payload.assetId })
+      // T-152: library-faction drops attach under a doc Faction matching the library
+      // side+name (created on first drop) instead of the implicit default squad.
+      let squadId: string | undefined
+      if (payload.factionRef) {
+        const factionId = ensureFaction(md, payload.factionRef.side, payload.factionRef.name)
+        squadId = ensureSquadFor(md, factionId)
+      }
+      const newId = addSlot(md, world, {
+        role: payload.role,
+        layerId,
+        assetId: payload.assetId,
+        squadId,
+        tag: payload.tag,
+      })
+      // Pre-authored role loadout rides the drop (SlotLoadout v2 from the faction library).
+      if (payload.loadout) {
+        updateSlotLoadout(md, newId, payload.loadout as SlotLoadout)
+      }
       useMapStore.getState().setSelection({ kind: 'slot', ids: [newId] })
     },
     [md],

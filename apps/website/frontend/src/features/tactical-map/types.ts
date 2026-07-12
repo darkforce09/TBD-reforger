@@ -19,15 +19,23 @@ export interface MapViewState {
 /** dataTransfer MIME used to drag an Asset Browser leaf onto the map. */
 export const ASSET_DND_MIME = 'application/x-tbd-asset'
 
-/** Payload carried in dataTransfer when dragging a catalog asset onto the map. */
+/** Payload carried in dataTransfer when dragging a palette leaf onto the map. */
 export interface AssetDropPayload {
   /** Registry `resource_name` — the full Enfusion ResourceName, e.g.
    *  `{GUID}Prefabs/.../File.et` (not a mock id, not a "classname"). */
   assetId: string
-  /** Human role/label (registry `display_name`) → the new slot's `role`. */
+  /** Human role/label → the new slot's `role`. */
   role: string
   /** What entity to materialize. Only 'slot' is wired today. */
   kind: 'slot'
+  /** T-152: role tag from the faction library template (e.g. "AT" | "MED"). */
+  tag?: string
+  /** T-152: pre-authored SlotLoadout v2 carried from the faction role template —
+   *  stored on the slot right after placement. */
+  loadout?: unknown
+  /** T-152: which library faction the drag came from; the drop ensures a matching
+   *  doc Faction (side key + name) and attaches the slot's squad under it. */
+  factionRef?: { side: string; name: string }
 }
 
 export interface TacticalMapProps {

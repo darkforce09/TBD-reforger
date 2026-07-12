@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { FireSolution } from '@/types/api'
+import type { FactionDoc, UserFaction } from '@/types/models/faction'
 
 /**
  * Log out: revoke the refresh token server-side (best-effort) and clear the local session.
@@ -404,5 +405,39 @@ export function useBanUser() {
       return data
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['personnel'] }),
+  })
+}
+
+/**
+ * Create or replace a faction library entry (T-152). Pass `id` to update.
+ *
+ * @route POST /api/v1/factions
+ * @route PUT /api/v1/factions/:id
+ */
+export function useSaveFaction() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, doc }: { id?: string; doc: FactionDoc }) => {
+      const { data } = id
+        ? await api.put<UserFaction>(`/factions/${id}`, doc)
+        : await api.post<UserFaction>('/factions', doc)
+      return data
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['factions'] }),
+  })
+}
+
+/**
+ * Delete a faction library entry (T-152).
+ *
+ * @route DELETE /api/v1/factions/:id
+ */
+export function useDeleteFaction() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/factions/${id}`)
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['factions'] }),
   })
 }

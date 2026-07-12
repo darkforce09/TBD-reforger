@@ -16,6 +16,8 @@ export interface TreeNodeData {
   id: string
   label: string
   icon?: LucideIcon
+  /** Optional accent class for the icon (e.g. faction side colors, T-152). */
+  iconClassName?: string
   badge?: string
   children?: TreeNodeData[]
   defaultExpanded?: boolean
@@ -162,6 +164,7 @@ function TreeNode({
       <TreeRow
         label={node.label}
         icon={node.icon}
+        iconClassName={node.iconClassName}
         badge={node.badge}
         isFolder={isFolder}
         hasChildren={hasChildren}

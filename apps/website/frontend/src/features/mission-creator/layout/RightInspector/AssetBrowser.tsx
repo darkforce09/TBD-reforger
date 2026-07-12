@@ -1,23 +1,22 @@
-// Right-panel default (Ultra Plan §5.2): the Asset Browser as a nested, collapsible
-// Eden-style tree (Faction → Category → Class), NOT flat pills. Leaves are draggable:
-// dragging one onto the <TacticalMap> places a slot at the drop point. The catalog is the
-// registry-backed feed (GET /api/v1/registry via useRegistry → buildCatalogTree, T-068.3).
-// T-055: a search field filters the tree live by asset/folder name.
+// Right-panel Factions palette (T-152): the operator's faction LIBRARY — side folders →
+// authored factions → draggable ORBAT role templates + vehicle pool — replaces the raw
+// vanilla registry character dump entirely (T-074). Role drags carry assetId + tag +
+// pre-authored SlotLoadout v2 + factionRef; vehicle leaves list only (placement = T-070).
+// T-055 search filters the tree live.
 
 import { useMemo, useState } from 'react'
-import { Loader2, Search, X } from 'lucide-react'
+import { Loader2, Search, Settings2, X } from 'lucide-react'
 import { ASSET_DND_MIME } from '@/features/tactical-map'
 import type { AssetDropPayload } from '@/features/tactical-map'
-import { useRegistry } from '@/hooks/queries'
+import { useFactionLibrary } from '@/hooks/queries'
 import { TreeView, type TreeNodeData } from '../tree/TreeView'
-import { buildCatalogTree } from '../../registry/buildCatalogTree'
+import { buildFactionTree } from '../../registry/buildFactionTree'
+import { FactionManagerDialog } from '../../factions/FactionManagerDialog'
 
-// Recursively filter the catalog by a lowercased query. A leaf is kept on a label match;
-// a folder is kept if its own name matches (→ keep its full subtree, so "nato" shows all of
-// NATO) or any descendant matches (→ keep only the matching children). Retained folders are
-// force-expanded so matches are visible (the TreeView is keyed on the query so its mount-time
-// expand pass re-runs over these nodes).
-function filterCatalog(nodes: TreeNodeData[], q: string): TreeNodeData[] {
+// Recursively filter the tree by a lowercased query. A leaf is kept on a label match; a
+// folder on a self or descendant match; retained folders force-expand (TreeView keyed on
+// the query re-runs its mount-time expand pass).
+function filterTree(nodes: TreeNodeData[], q: string): TreeNodeData[] {
   const out: TreeNodeData[] = []
   for (const n of nodes) {
     const selfMatch = n.label.toLowerCase().includes(q)
@@ -25,7 +24,7 @@ function filterCatalog(nodes: TreeNodeData[], q: string): TreeNodeData[] {
       if (selfMatch) {
         out.push({ ...n, defaultExpanded: true })
       } else {
-        const kids = filterCatalog(n.children, q)
+        const kids = filterTree(n.children, q)
         if (kids.length) out.push({ ...n, defaultExpanded: true, children: kids })
       }
     } else if (selfMatch) {
@@ -38,39 +37,61 @@ function filterCatalog(nodes: TreeNodeData[], q: string): TreeNodeData[] {
 export function AssetBrowser() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [managerOpen, setManagerOpen] = useState(false)
 
-  const { data, isLoading, isError, refetch } = useRegistry()
-  const catalog = useMemo(() => buildCatalogTree(data?.data ?? []), [data])
+  const { data, isLoading, isError, refetch } = useFactionLibrary()
+  const { nodes: allNodes, payloadById } = useMemo(
+    () => buildFactionTree(data?.data ?? []),
+    [data],
+  )
 
   const nodes = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return q ? filterCatalog(catalog, q) : catalog
-  }, [query, catalog])
+    return q ? filterTree(allNodes, q) : allNodes
+  }, [query, allNodes])
 
   const onNodeDragStart = (node: TreeNodeData, e: React.DragEvent) => {
-    const payload: AssetDropPayload = { assetId: node.id, role: node.label, kind: 'slot' }
+    const payload: AssetDropPayload | undefined = payloadById.get(node.id)
+    if (!payload) {
+      // Vehicle leaves: listed, not placeable until T-070.
+      e.preventDefault()
+      return
+    }
     e.dataTransfer.setData(ASSET_DND_MIME, JSON.stringify(payload))
     e.dataTransfer.effectAllowed = 'copy'
   }
 
   const header = (
-    <header>
-      <h2 className="text-headline-sm text-on-surface">Asset Browser</h2>
-      <p className="text-label-sm normal-case text-outline">
-        Drag an asset onto the map to place it.
-      </p>
+    <header className="flex items-start justify-between gap-2">
+      <div>
+        <h2 className="text-headline-sm text-on-surface">Factions</h2>
+        <p className="text-label-sm normal-case text-outline">
+          Drag a role onto the map to place its slot.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => setManagerOpen(true)}
+        title="Manage factions"
+        className="inline-flex items-center gap-1.5 rounded-md border border-outline-variant/40 px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+      >
+        <Settings2 className="size-3.5" />
+        Manage
+      </button>
     </header>
   )
 
-  // Loading: spinner only — no search box, no TreeView, no filterCatalog (no empty-tree flash).
+  const manager = <FactionManagerDialog open={managerOpen} onOpenChange={setManagerOpen} />
+
   if (isLoading && !data) {
     return (
       <div className="flex flex-col gap-2">
         {header}
         <div className="flex items-center justify-center gap-2 px-2 py-6 text-label-sm normal-case text-outline">
           <Loader2 className="size-3.5 animate-spin" />
-          Loading assets…
+          Loading factions…
         </div>
+        {manager}
       </div>
     )
   }
@@ -80,7 +101,7 @@ export function AssetBrowser() {
       <div className="flex flex-col gap-2">
         {header}
         <div className="flex flex-col items-center gap-2 px-2 py-6 text-center text-label-sm normal-case text-outline">
-          Could not load assets.
+          Could not load the faction library.
           <button
             type="button"
             onClick={() => refetch()}
@@ -89,17 +110,27 @@ export function AssetBrowser() {
             Retry
           </button>
         </div>
+        {manager}
       </div>
     )
   }
 
-  if (catalog.length === 0) {
+  if (allNodes.length === 0) {
     return (
       <div className="flex flex-col gap-2">
         {header}
-        <p className="px-2 py-6 text-center text-label-sm normal-case text-outline">
-          No assets in this modpack.
-        </p>
+        <div className="flex flex-col items-center gap-2 px-2 py-6 text-center text-label-sm normal-case text-outline">
+          No factions yet — author your first one (side, roles, vehicles) and it shows up
+          here.
+          <button
+            type="button"
+            onClick={() => setManagerOpen(true)}
+            className="rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-label-md text-primary transition-colors hover:bg-primary/20"
+          >
+            Open the Faction Manager
+          </button>
+        </div>
+        {manager}
       </div>
     )
   }
@@ -113,7 +144,7 @@ export function AssetBrowser() {
         <input
           type="text"
           value={query}
-          placeholder="Search assets…"
+          placeholder="Search factions…"
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setQuery('')
@@ -135,7 +166,7 @@ export function AssetBrowser() {
 
       {nodes.length === 0 ? (
         <p className="px-2 py-6 text-center text-label-sm normal-case break-words text-outline">
-          No assets match “{query.trim()}”.
+          Nothing matches “{query.trim()}”.
         </p>
       ) : (
         <TreeView
@@ -146,6 +177,7 @@ export function AssetBrowser() {
           onNodeDragStart={onNodeDragStart}
         />
       )}
+      {manager}
     </div>
   )
 }

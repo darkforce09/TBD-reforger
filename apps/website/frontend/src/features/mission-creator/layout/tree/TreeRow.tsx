@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils'
 export interface TreeRowProps {
   label: string
   icon?: LucideIcon
+  iconClassName?: string
   badge?: string
   isFolder: boolean
   hasChildren: boolean
@@ -41,6 +42,7 @@ export interface TreeRowProps {
 export function TreeRow({
   label,
   icon,
+  iconClassName,
   badge,
   isFolder,
   hasChildren,
@@ -92,7 +94,7 @@ export function TreeRow({
         )}
       />
       {Icon && (
-        <Icon className={cn('size-3.5 shrink-0', isFolder ? 'text-tertiary' : 'text-primary')} />
+        <Icon className={cn('size-3.5 shrink-0', isFolder ? 'text-tertiary' : 'text-primary', iconClassName)} />
       )}
 
       {renaming ? (

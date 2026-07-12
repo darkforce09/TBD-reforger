@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '@/api/client'
 import { useAuthStore } from '@/store/useAuthStore'
+import type { FactionListResponse } from '@/types/models/faction'
 import type {
   Announcement,
   ApprovalRow,
@@ -376,5 +377,21 @@ export function useAuditLogs(params?: { severity?: string; q?: string }) {
     queryKey: ['audit-logs', params],
     queryFn: async () => (await api.get<AuditLogResponse>('/admin/audit-logs', { params })).data,
     enabled: authed && isAdmin,
+  })
+}
+
+/**
+ * The caller's faction library (T-152) - side -> faction -> roles/vehicles for the palette
+ * and the Faction Manager.
+ *
+ * @route GET /api/v1/factions
+ */
+export function useFactionLibrary() {
+  const authed = useAuthed()
+  return useQuery({
+    queryKey: ['factions'],
+    queryFn: async () => (await api.get<FactionListResponse>('/factions')).data,
+    enabled: authed,
+    staleTime: 60_000,
   })
 }

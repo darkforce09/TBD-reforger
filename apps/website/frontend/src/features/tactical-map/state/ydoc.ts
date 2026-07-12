@@ -107,6 +107,27 @@ export function ensureDefaultSquad(md: MissionDoc): ID {
   return squadId
 }
 
+/** Ensure a doc Faction exists for a library faction (T-152): matched by side key + name.
+ *  First real user of Faction.key beyond the hardcoded BLUFOR default. */
+export function ensureFaction(md: MissionDoc, side: string, name: string): ID {
+  const st = useMapStore.getState()
+  const existing = Object.values(st.factionsById).find((f) => f.key === side && f.name === name)
+  if (existing) return existing.id
+  const id = newId()
+  md.wasm?.add_faction(id, side, name)
+  return id
+}
+
+/** Ensure the given faction has a squad; returns the squad id to attach slots to. */
+export function ensureSquadFor(md: MissionDoc, factionId: ID): ID {
+  const st = useMapStore.getState()
+  const existing = Object.values(st.squadsById).find((sq) => sq.factionId === factionId)
+  if (existing) return existing.id
+  const id = newId()
+  md.wasm?.add_squad(id, factionId, '1st Squad', undefined)
+  return id
+}
+
 /** Ensure at least one Outliner folder exists; returns the id to file entities into. */
 export function ensureDefaultLayer(md: MissionDoc): ID {
   const st = useMapStore.getState()
