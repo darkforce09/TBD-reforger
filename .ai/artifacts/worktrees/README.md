@@ -2,7 +2,8 @@
 
 | Worktree | Branch | Ticket | Status |
 |----------|--------|--------|--------|
-| *(repo root)* | `main` | **T-071** or **T-090.1.1.1** | **single lane — pick one** |
+| *(repo root)* | `main` | **T-068** arsenal (parallel) | Active on main |
+| **TBD-T-152** | `ticket/T-152` | **T-152** Map cartographic fidelity | **Active** — docs + Grok code in this worktree |
 
 **Merged / cleaned:** T-127 · T-128 · T-090-2 · **T-092** (`TBD-T-092` removed 2026-07-04).
 
