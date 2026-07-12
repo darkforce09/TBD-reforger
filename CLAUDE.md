@@ -116,7 +116,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-145**
 
-**ACTIVE NOW:** **T-068** — T-068.10.4 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md`.
+**ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)

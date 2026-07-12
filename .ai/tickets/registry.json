@@ -1365,12 +1365,13 @@
             "website",
             "shared"
           ],
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md",
-          "notes": "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11."
+          "notes": "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11. SHIPPED @ 338593b8 (tag T-068.10.4): L1-L5 PASS, vitest 334/334; 14 Arsenal rows; v2 export keeps derived legacy gear (U6). Arsenal polish program A+B+C complete - T-068.11 unpark = operator decision.",
+          "shipped_at": "338593b8"
         }
       },
-      "active_slice": "T-068.10.4"
+      "active_slice": "T-068.11"
     },
     {
       "id": "T-069",

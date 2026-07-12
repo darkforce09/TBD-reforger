@@ -9,7 +9,7 @@
       "id": "T-068",
       "title": "Virtual Arsenal (registry + loadout export)",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md",
       "branch": "ticket/T-068"
     },
     {
