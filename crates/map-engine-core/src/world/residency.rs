@@ -31,9 +31,9 @@ use super::density_ladder::{
     density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32,
 };
 use super::glyph_math::{
-    BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_icon_key, badge_size_meters,
-    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, pack_icon_instance, pack_rgba_u32,
-    size_with_min_px,
+    BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_size_meters,
+    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, landmark_glyph_icon_key,
+    pack_icon_instance, pack_rgba_u32, size_with_min_px,
 };
 use super::index::WorldSpatialIndex;
 use super::lod_gates::{INSTANCE_BUDGET, class_visible};
@@ -46,14 +46,14 @@ use super::store::{WorldError, bytes_to_json};
 /// Referenced by Class S tests / verify log; must stay 0.
 pub const DRAW_CULL_MARGIN_M: f64 = 0.0;
 
-/// Per-prefab glyph render resolved once at prefab load (tree/veg/prop/rockLarge only).
+/// Per-prefab glyph render resolved once at prefab load (tree/veg/prop/rockLarge/building).
 #[derive(Clone, Debug)]
 struct GlyphPrefabInfo {
-    /// Index into the 28-entry atlas UV table (`u16::MAX` = unknown key).
+    /// Index into the atlas UV table (`u16::MAX` = unknown key).
     glyph_idx: u16,
     size_m: f32,
     tint: u32,
-    /// 0 = tree group (tree+vegetation), 1 = prop group (prop+rockLarge).
+    /// 0 = tree group (tree+vegetation), 1 = prop group (prop+rockLarge), 2 = building landmark.
     group: u8,
 }
 
@@ -290,20 +290,33 @@ impl WorldResidency {
                 continue;
             };
             let code = entry.code;
+            let base = entry.row.base_size_px.unwrap_or(DEFAULT_BASE_SIZE_PX);
             let tree_code = class_code("tree");
             let veg_code = class_code("vegetation");
             let prop_code = class_code("prop");
             let rock_code = class_code("rockLarge");
-            let group = if code == tree_code || code == veg_code {
-                0u8
+            let building_code = class_code("building");
+            let (group, size_m, tint) = if code == tree_code || code == veg_code {
+                (
+                    0u8,
+                    glyph_size_meters(base, entry.row.height_m) as f32,
+                    pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref())),
+                )
             } else if code == prop_code || code == rock_code {
-                1u8
+                (
+                    1u8,
+                    glyph_size_meters(base, entry.row.height_m) as f32,
+                    pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref())),
+                )
+            } else if code == building_code {
+                (
+                    2u8,
+                    badge_size_meters() as f32,
+                    pack_rgba_u32([255, 255, 255, 255]),
+                )
             } else {
                 continue;
             };
-            let base = entry.row.base_size_px.unwrap_or(DEFAULT_BASE_SIZE_PX);
-            let size_m = glyph_size_meters(base, entry.row.height_m) as f32;
-            let tint = pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref()));
             self.glyph_by_u16.insert(
                 pid as u16,
                 GlyphPrefabInfo {
@@ -817,7 +830,7 @@ impl WorldResidency {
                     let Some(binfo) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
                         continue;
                     };
-                    let Some(key) = badge_icon_key(&binfo.building_class) else {
+                    let Some(key) = landmark_glyph_icon_key(&binfo.building_class) else {
                         continue;
                     };
                     let Some(&glyph_idx) = self.icon_key_to_idx.get(key) else {
@@ -882,6 +895,23 @@ impl WorldResidency {
     #[must_use]
     pub fn badge_glyph_count(&self) -> u32 {
         (self.badge_glyph_buf.len() / super::glyph_math::ICON_INSTANCE_STRIDE) as u32
+    }
+
+    /// Test/diagnostic: glyph lookup entries for a compose group (0 tree, 1 prop, 2 building).
+    #[cfg(test)]
+    #[must_use]
+    pub fn glyph_lookup_len_for_group(&self, group: u8) -> usize {
+        self.glyph_by_u16
+            .values()
+            .filter(|info| info.group == group)
+            .count()
+    }
+
+    /// Test/diagnostic: atlas index for an icon key (when registered).
+    #[cfg(test)]
+    #[must_use]
+    pub fn glyph_idx_for_key(&self, key: &str) -> Option<u16> {
+        self.icon_key_to_idx.get(key).copied()
     }
 
     /// Sorted draw-set chunk ids (strict visible ∩ pinned ∩ cells).
@@ -1421,5 +1451,271 @@ mod t151_11_3_tests {
         assert!(r.buildings_visible()); // zoom −2 ≥ −2.5 gate
         let _ = r.set_viewport(0.0, 0.0, 600.0, 600.0, -3.0); // below BUILDING_MIN_ZOOM
         assert!(!r.buildings_visible());
+    }
+}
+
+/// T-152.3 — landmark building glyph wiring (Class R vs TS oracle policy).
+#[cfg(test)]
+mod t152_3_tests {
+    use super::super::glyph_math::{BUILDING_CLASSES, landmark_glyph_icon_key};
+    use super::*;
+    use std::collections::{HashMap, HashSet};
+    use std::fs;
+    use std::path::PathBuf;
+
+    const FIXTURE_CHUNK: &str = "2_12";
+    const N_MIN_BUILDING_GLYPH_LOOKUP: usize = 15;
+
+    fn map_assets() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packages/map-assets")
+    }
+
+    fn glyph_keys_from_manifest() -> Vec<String> {
+        let raw =
+            fs::read_to_string(map_assets().join("glyphs/manifest.json")).expect("glyphs manifest");
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        let mut keys: Vec<String> = v["glyphs"]
+            .as_object()
+            .expect("glyphs object")
+            .keys()
+            .cloned()
+            .collect();
+        keys.sort();
+        keys
+    }
+
+    fn load_everon_residency() -> WorldResidency {
+        let everon = map_assets().join("everon");
+        let mut r = WorldResidency::new();
+        r.load_manifest_json(
+            &fs::read_to_string(everon.join("manifest.json")).expect("everon manifest"),
+        )
+        .unwrap();
+        r.load_prefabs_gz(
+            &fs::read(everon.join("objects/prefabs.json.gz")).expect("everon prefabs"),
+        )
+        .unwrap();
+        r.load_chunk_index_json(
+            &fs::read_to_string(everon.join("objects/chunks/manifest.json")).expect("chunk index"),
+        )
+        .unwrap();
+        r.set_glyph_key_map(&glyph_keys_from_manifest());
+        r
+    }
+
+    fn building_class_by_prefab_u16() -> HashMap<u16, String> {
+        let everon = map_assets().join("everon");
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        let mut out = HashMap::new();
+        for row in narrow_prefab_rows(&raw) {
+            if row.kind != "building" {
+                continue;
+            }
+            let pid = row.prefab_id;
+            if (0.0..65536.0).contains(&pid) && pid.fract() == 0.0 {
+                out.insert(pid as u16, row.class);
+            }
+        }
+        out
+    }
+
+    fn drive_fixture_chunk(r: &mut WorldResidency, chunk_id: &str, z: f64) {
+        let mut parts = chunk_id.split('_');
+        let cx: f64 = parts.next().unwrap().parse().unwrap();
+        let cy: f64 = parts.next().unwrap().parse().unwrap();
+        let min_x = cx * 512.0;
+        let min_y = cy * 512.0;
+        let missing = r.set_viewport(min_x, min_y, min_x + 512.0, min_y + 512.0, z);
+        let chunk_path = map_assets()
+            .join("everon/objects/chunks")
+            .join(format!("{chunk_id}.json.gz"));
+        for id in &missing {
+            let bytes = fs::read(&chunk_path).unwrap_or_else(|_| {
+                fs::read(
+                    map_assets()
+                        .join("everon/objects/chunks")
+                        .join(format!("{id}.json.gz")),
+                )
+                .unwrap()
+            });
+            r.ingest_chunk_gz(id, &bytes).unwrap();
+        }
+        if !missing.is_empty() {
+            r.end_apply_frame(0.0);
+        }
+    }
+
+    fn oracle_badge_count(
+        r: &WorldResidency,
+        prefab_class: &HashMap<u16, String>,
+        atlas_keys: &HashSet<String>,
+        z: f64,
+    ) -> usize {
+        if !class_visible("buildingBadge", z) {
+            return 0;
+        }
+        let building_code = class_code("building");
+        let mut n = 0usize;
+        for id in &r.draw_ids {
+            let Some(chunk) = r.chunks.get(id) else {
+                continue;
+            };
+            let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                continue;
+            };
+            for &row in rows {
+                let row = row as usize;
+                let Some(cls) = prefab_class.get(&chunk.prefab_idx[row]) else {
+                    continue;
+                };
+                let Some(key) = landmark_glyph_icon_key(cls) else {
+                    continue;
+                };
+                if atlas_keys.contains(key) {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
+    fn oracle_landmark_glyph_count_for_chunk(
+        r: &WorldResidency,
+        chunk_id: &str,
+        prefab_class: &HashMap<u16, String>,
+        atlas_keys: &HashSet<String>,
+        z: f64,
+    ) -> usize {
+        if !class_visible("buildingBadge", z) {
+            return 0;
+        }
+        let Some(chunk) = r.chunks.get(chunk_id) else {
+            return 0;
+        };
+        let building_code = class_code("building");
+        let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+            return 0;
+        };
+        let landmark = ["lighthouse", "castle", "bridge"];
+        let mut n = 0usize;
+        for &row in rows {
+            let row = row as usize;
+            let Some(cls) = prefab_class.get(&chunk.prefab_idx[row]) else {
+                continue;
+            };
+            if !landmark.contains(&cls.as_str()) {
+                continue;
+            }
+            let Some(key) = landmark_glyph_icon_key(cls) else {
+                continue;
+            };
+            if atlas_keys.contains(key) {
+                n += 1;
+            }
+        }
+        n
+    }
+
+    fn badge_glyph_indices(buf: &[u8]) -> Vec<u16> {
+        let stride = super::super::glyph_math::ICON_INSTANCE_STRIDE;
+        buf.chunks(stride)
+            .map(|chunk| u16::from_le_bytes(chunk[14..16].try_into().unwrap()))
+            .collect()
+    }
+
+    #[test]
+    fn g2_building_glyph_lookup_populated() {
+        let r = load_everon_residency();
+        let n = r.glyph_lookup_len_for_group(2);
+        assert!(
+            n >= N_MIN_BUILDING_GLYPH_LOOKUP,
+            "building glyph lookup {n} < N_min {N_MIN_BUILDING_GLYPH_LOOKUP}"
+        );
+    }
+
+    #[test]
+    fn g3_zoom_gate_badges_off_below_one() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 0.9);
+        assert_eq!(r.badge_glyph_count(), 0);
+        assert_eq!(oracle_badge_count(&r, &prefab_class, &keys, 0.9), 0);
+    }
+
+    #[test]
+    fn g4_class_r_badge_counts_match_oracle() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        for z in [1.0, 2.0, 3.0] {
+            drive_fixture_chunk(&mut r, FIXTURE_CHUNK, z);
+            let rust_count = r.badge_glyph_count() as usize;
+            let oracle = oracle_badge_count(&r, &prefab_class, &keys, z);
+            assert_eq!(
+                rust_count, oracle,
+                "badge count mismatch @ z={z} chunk {FIXTURE_CHUNK}"
+            );
+        }
+    }
+
+    #[test]
+    fn g5_landmark_glyph_count_matches_oracle_at_z2() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
+        let oracle_lm =
+            oracle_landmark_glyph_count_for_chunk(&r, FIXTURE_CHUNK, &prefab_class, &keys, 2.0);
+        assert!(
+            oracle_lm > 0,
+            "fixture chunk must include landmark buildings"
+        );
+        assert_eq!(
+            oracle_lm, 11,
+            "pinned fixture {FIXTURE_CHUNK} landmark oracle"
+        );
+        let lighthouse_idx = r.glyph_idx_for_key("building-lighthouse").unwrap();
+        let castle_idx = r.glyph_idx_for_key("building-castle").unwrap();
+        let bridge_idx = r.glyph_idx_for_key("building-bridge").unwrap();
+        let rust_lm = badge_glyph_indices(&r.world_badge_glyphs())
+            .iter()
+            .filter(|idx| **idx == lighthouse_idx || **idx == castle_idx || **idx == bridge_idx)
+            .count();
+        assert!(
+            rust_lm >= oracle_lm,
+            "composed landmark glyphs {rust_lm} must cover fixture oracle {oracle_lm}"
+        );
+        assert_eq!(
+            r.badge_glyph_count() as usize,
+            oracle_badge_count(&r, &prefab_class, &keys, 2.0)
+        );
+    }
+
+    #[test]
+    fn g6_lighthouse_instances_emit_building_lighthouse_glyph() {
+        let mut r = load_everon_residency();
+        let lighthouse_idx = r
+            .glyph_idx_for_key("building-lighthouse")
+            .expect("building-lighthouse in atlas");
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
+        let indices = badge_glyph_indices(&r.world_badge_glyphs());
+        assert!(
+            indices.contains(&lighthouse_idx),
+            "badge buffer must include building-lighthouse glyph @ z=2"
+        );
+        assert!(r.badge_glyph_count() > 0);
+    }
+
+    #[test]
+    fn g1_building_icon_key_covers_normative_classes() {
+        use super::super::glyph_math::building_icon_key;
+        for &cls in BUILDING_CLASSES {
+            let key = building_icon_key(cls).expect(cls);
+            assert_eq!(key, format!("building-{cls}"));
+        }
     }
 }

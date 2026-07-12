@@ -124,7 +124,55 @@ pub fn pack_icon_instance(
     out.extend_from_slice(&tint.to_le_bytes());
 }
 
-/// Badge icon key for a building class (`military` / `tower` / `bunker` only).
+/// Normative building classes that map to `building-{class}` center glyphs (T-152.3 G1).
+pub const BUILDING_CLASSES: &[&str] = &[
+    "residential",
+    "civic",
+    "agricultural",
+    "industrial",
+    "commercial",
+    "hangar",
+    "bunker",
+    "tower",
+    "military",
+    "bridge",
+    "castle",
+    "lighthouse",
+    "shed",
+    "container",
+    "tent",
+    "ruin",
+    "garage",
+    "generic",
+];
+
+/// Center glyph icon key for a building class (`building-{class}`).
+#[must_use]
+pub fn building_icon_key(building_class: &str) -> Option<&'static str> {
+    match building_class {
+        "residential" => Some("building-residential"),
+        "civic" => Some("building-civic"),
+        "agricultural" => Some("building-agricultural"),
+        "industrial" => Some("building-industrial"),
+        "commercial" => Some("building-commercial"),
+        "hangar" => Some("building-hangar"),
+        "bunker" => Some("building-bunker"),
+        "tower" => Some("building-tower"),
+        "military" => Some("building-military"),
+        "bridge" => Some("building-bridge"),
+        "castle" => Some("building-castle"),
+        "lighthouse" => Some("building-lighthouse"),
+        "shed" => Some("building-shed"),
+        "container" => Some("building-container"),
+        "tent" => Some("building-tent"),
+        "ruin" => Some("building-ruin"),
+        "garage" => Some("building-garage"),
+        "generic" => Some("building-generic"),
+        _ => None,
+    }
+}
+
+/// Badge overlay icon key (`building-badge-*`) for military / tower / bunker.
 #[must_use]
 pub fn badge_icon_key(building_class: &str) -> Option<&'static str> {
     match building_class {
@@ -133,6 +181,12 @@ pub fn badge_icon_key(building_class: &str) -> Option<&'static str> {
         "bunker" => Some("building-badge-bunker"),
         _ => None,
     }
+}
+
+/// Landmark / badge compose key: badge overlay wins for military/tower/bunker, else footprint glyph.
+#[must_use]
+pub fn landmark_glyph_icon_key(building_class: &str) -> Option<&'static str> {
+    badge_icon_key(building_class).or_else(|| building_icon_key(building_class))
 }
 
 #[cfg(test)]
@@ -202,5 +256,27 @@ mod tests {
     fn badge_keys() {
         assert_eq!(badge_icon_key("military"), Some("building-badge-military"));
         assert_eq!(badge_icon_key("residential"), None);
+    }
+
+    #[test]
+    fn building_icon_key_covers_all_building_classes() {
+        for &cls in BUILDING_CLASSES {
+            let key = building_icon_key(cls).expect(cls);
+            assert_eq!(key, format!("building-{cls}"));
+        }
+        assert_eq!(building_icon_key("pier"), None);
+    }
+
+    #[test]
+    fn landmark_glyph_prefers_badge_overlay() {
+        assert_eq!(
+            landmark_glyph_icon_key("military"),
+            Some("building-badge-military")
+        );
+        assert_eq!(
+            landmark_glyph_icon_key("lighthouse"),
+            Some("building-lighthouse")
+        );
+        assert_eq!(landmark_glyph_icon_key("castle"), Some("building-castle"));
     }
 }

@@ -33,10 +33,11 @@ pub use density_ladder::{
     heatmap_trees, pack_density_grid_r32, parse_chunk_xy,
 };
 pub use glyph_math::{
-    BADGE_BASE_SIZE_PX, BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, DEFAULT_GLYPH_RGBA,
-    GLYPH_SIZE_MIN_PX, ICON_INSTANCE_STRIDE, REF_TREE_HEIGHT_M, badge_icon_key, badge_size_meters,
-    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, pack_icon_instance, pack_rgba_u32,
-    size_with_min_px, tree_size_multiplier, yaw_to_snorm16,
+    BADGE_BASE_SIZE_PX, BADGE_SIZE_MIN_PX, BUILDING_CLASSES, DEFAULT_BASE_SIZE_PX,
+    DEFAULT_GLYPH_RGBA, GLYPH_SIZE_MIN_PX, ICON_INSTANCE_STRIDE, REF_TREE_HEIGHT_M, badge_icon_key,
+    badge_size_meters, building_icon_key, deck_angle_for_rotation_deg, glyph_size_meters,
+    hex_to_rgba, landmark_glyph_icon_key, pack_icon_instance, pack_rgba_u32, size_with_min_px,
+    tree_size_multiplier, yaw_to_snorm16,
 };
 pub use index::WorldSpatialIndex;
 pub use lod_gates::{
