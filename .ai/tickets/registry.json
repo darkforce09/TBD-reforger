@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block \u2192 T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1194,6 +1194,9 @@
         "T-068.8",
         "T-068.9",
         "T-068.10",
+        "T-068.10.2",
+        "T-068.10.3",
+        "T-068.10.4",
         "T-068.11",
         "T-068.12",
         "T-068.13",
@@ -1310,9 +1313,9 @@
             "shared"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "deferred",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md",
-          "notes": "Re-scoped: compiled mod document loadout gear only (editor embed done in T-068.10). Feeds T-068.12. Handoff: .ai/artifacts/t068_11_claude_code_handoff.md"
+          "notes": "PARKED by operator until Arsenal \"proper\" (post .10.2-.10.4). Re-scoped: compiled mod document loadout gear only (editor embed done in T-068.10). Feeds T-068.12. Handoff: .ai/artifacts/t068_11_claude_code_handoff.md"
         },
         "T-068.12": {
           "targets": [
@@ -1333,8 +1336,39 @@
             "website"
           ],
           "executor": "human"
+        },
+        "T-068.10.2": {
+          "executor": "claude-code",
+          "targets": [
+            "mod",
+            "shared",
+            "website"
+          ],
+          "status": "ready",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_2_exporter_reclassify.md",
+          "notes": "Arsenal polish A: kind taxonomy v3 + catalog-first auto-classify in T-150 scanner; abstract flag; weight/volume/addon per item; character_default_weapon edges; re-export+import. Census-first: .ai/artifacts/t068_10_2_census.{md,json} freezes H_pred; gate G1 = exact histogram match. Operator: program runs fully in Claude Code chat (docs lane override, 2026-07-12)."
+        },
+        "T-068.10.3": {
+          "executor": "claude-code",
+          "targets": [
+            "website"
+          ],
+          "status": "queued",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_3_forge_picker_ux.md",
+          "notes": "Arsenal polish B: Forge picker rows on v3 kinds - grouped/sorted/searchable, abstracts hidden. Row counts must equal DB counts (vitest)."
+        },
+        "T-068.10.4": {
+          "executor": "claude-code",
+          "targets": [
+            "website",
+            "shared"
+          ],
+          "status": "queued",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_4_loadout_doc_v2.md",
+          "notes": "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11."
         }
-      }
+      },
+      "active_slice": "T-068.10.2"
     },
     {
       "id": "T-069",
@@ -1351,7 +1385,7 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
+      "summary": "Parked \u2014 data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
       "depends_on": [
         "T-151"
       ],
@@ -3741,7 +3775,7 @@
       "status": "queued",
       "program": "eden",
       "title": "Asset Browser Data Wiring",
-      "summary": "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
+      "summary": "Hook up T-150 registry items (vehicles/crates/\u2026) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
       "surfaces": [
         "RIGHT",
         "MAP"
@@ -3963,7 +3997,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md",
           "status": "shipped",
           "shipped_at": "c4831451",
-          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
+          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma \u2192 devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
         },
         "T-151.10": {
           "targets": [
@@ -3974,7 +4008,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md",
           "status": "shipped",
           "shipped_at": "6adbd4bf",
-          "notes": "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
+          "notes": "Fable 5 full-program audit W0\u2013W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
         },
         "T-151.10.1": {
           "targets": [
