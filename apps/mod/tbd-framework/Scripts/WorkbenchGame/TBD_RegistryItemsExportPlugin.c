@@ -58,6 +58,12 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			return;
 		}
 
+		// T-068.10.2 Tier B: EntityCatalog arsenal types (metadata + bounded refinements),
+		// BEFORE DeriveEdges (edge derivation reads kinds).
+		scanner.ScanEntityCatalogs();
+		scanner.ApplyCatalogRefinements();
+		scanner.ComputeTierCounters();
+
 		scanner.DeriveEdges();
 
 		// Kind histogram AFTER DeriveEdges — it reclassifies turret-referenced weapons to
@@ -73,6 +79,8 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 
 		if (!WriteItems(scanner))
 			return;
+
+		WriteRulesSidecar(scanner);
 
 		if (scanner.m_Edges.IsEmpty())
 		{
@@ -90,6 +98,12 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			Print(string.Format("%1 edge %2 = %3", TAG, et, ec));
 		Print(string.Format("%1 scan stats: seen=%2 skippedDeny=%3 noSignal=%4 failedLoad=%5 droppedEndpoints=%6",
 			TAG, scanner.m_iSeen, scanner.m_iSkippedDeny, scanner.m_iSkippedNoSignal, scanner.m_iFailedLoad, scanner.m_iDroppedEndpoints));
+		// v3 tier counters — the universality contract's per-export report
+		// (tierA component/ancestor + tierB catalog-refined + tierC path-convention + other == items).
+		Print(string.Format("%1 tiers: A=%2 B=%3 C=%4 other=%5 (sum must equal items)",
+			TAG, scanner.m_iTierA, scanner.m_iTierB, scanner.m_iTierC, scanner.m_iOtherKind));
+		Print(string.Format("%1 quality: weaponUnsplit=%2 unknownArea=%3 catalogEntries=%4 catalogHits=%5",
+			TAG, scanner.m_iWeaponUnsplit, scanner.m_iUnknownArea, scanner.m_iCatalogEntries, scanner.m_iCatalogHits));
 		Print(string.Format("%1 DONE items=%2 edges=%3 addons=%4 elapsedMs=%5",
 			TAG, scanner.m_Items.Count(), scanner.m_Edges.Count(), scanner.m_Addons.Count(), elapsed));
 	}
@@ -116,8 +130,23 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 			Emit("      \"resource_name\": \"" + TBD_ExportJson.Escape(it.resourceName) + "\",\n");
 			Emit("      \"display_name\": \"" + TBD_ExportJson.Escape(it.displayName) + "\",\n");
 			Emit("      \"category\": \"" + TBD_ExportJson.Escape(it.category) + "\",\n");
-			Emit("      \"kind\": \"" + TBD_ExportJson.Escape(it.kind) + "\"\n");
-			Emit("    }");
+			Emit("      \"kind\": \"" + TBD_ExportJson.Escape(it.kind) + "\"");
+			// v3 optional metadata — absent values are omitted, never guessed.
+			if (it.isAbstract)
+				Emit(",\n      \"abstract\": true");
+			if (!it.arsenalType.IsEmpty())
+				Emit(",\n      \"arsenal_type\": \"" + TBD_ExportJson.Escape(it.arsenalType) + "\"");
+			if (it.weightKg >= 0)
+				Emit(",\n      \"weight_kg\": " + it.weightKg.ToString());
+			if (it.volumeCm3 >= 0)
+				Emit(",\n      \"volume_cm3\": " + it.volumeCm3.ToString());
+			if (it.maxWeightKg >= 0)
+				Emit(",\n      \"max_weight_kg\": " + it.maxWeightKg.ToString());
+			if (it.maxVolumeCm3 >= 0)
+				Emit(",\n      \"max_volume_cm3\": " + it.maxVolumeCm3.ToString());
+			if (!it.addonId.IsEmpty())
+				Emit(",\n      \"addon\": \"" + TBD_ExportJson.Escape(it.addonId) + "\"");
+			Emit("\n    }");
 			written++;
 		}
 
@@ -127,6 +156,18 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 
 		Print(string.Format("%1 Wrote %2 items to %3", TAG, written, OUT_ITEMS));
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Debug sidecar (not schema-governed): one "resource_name;ruleId" line per item so every
+	//! census-vs-export diff is self-evidencing in the verify pipeline.
+	protected void WriteRulesSidecar(TBD_RegistryScanner scanner)
+	{
+		if (!Open("$profile:TBD_RegistryRules.txt"))
+			return;
+		foreach (TBD_RegistryScanItem it : scanner.m_Items)
+			Emit(it.resourceName + ";" + it.ruleId + "\n");
+		Close("$profile:TBD_RegistryRules.txt");
 	}
 
 	//------------------------------------------------------------------------------------------------

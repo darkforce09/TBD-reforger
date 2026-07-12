@@ -1,0 +1,22 @@
+PASS Character_CIV_Businessman_Base.et                       slots=0
+PASS Character_CIV_Turtleneck_1.et                           slots=0
+PASS Campaign_US_Player_Scout_RTO.et                         slots=2
+PASS Campaign_US_Player_SF_Medic.et                          slots=4
+PASS Character_CIV_CottonShirt_5.et                          slots=0
+PASS Campaign_USSR_Player_AR.et                              slots=2
+PASS Campaign_US_Player_Sapper.et                            slots=2
+PASS Character_US_Sniper.et                                  slots=4
+PASS Campaign_US_Player.et                                   slots=2
+PASS Character_US_Medic.et                                   slots=2
+PASS Character_USSR_AR_Guard.et                              slots=2
+PASS FireSupport_Instructor.et                               slots=0
+PASS Character_CIV_Businessman_2.et                          slots=0
+PASS Character_USSR_GL_KLMK.et                               slots=2
+PASS Campaign_US_Player_SF_Rifleman_S.et                     slots=4
+PASS KS_Watkins.et                                           slots=4
+PASS Character_USSR_GL.et                                    slots=2
+PASS Campaign_USSR_Player_MG.et                              slots=3
+PASS Character_USSR_Scout.et                                 slots=2
+PASS Character_US_SF.et                                      slots=3
+
+G5 sample: 20/20 exact (seed 68102)

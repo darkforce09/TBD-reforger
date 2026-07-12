@@ -1,0 +1,49 @@
+PASS  G1 per-item kind resolved vs census+sidecar — 0 unexplained, 25 justified, 14 inheritance-kept (census drop), 23 dropped/denied as predicted, 0 missing, 0 unexpected new
+        KEPT Camouflage_Wrap_ARTII.et: -> other [plugin R9]
+        KEPT Dovetail_AK_base.et: -> other [plugin R9]
+        KEPT Dovetail_NSV_base.et: -> other [plugin R9]
+        KEPT Gloves_Wool_01.et: -> gear_gloves [plugin R2]
+        KEPT Dovetail_AK.et: -> other [plugin R9]
+        KEPT Eyewear_base.et: -> other [plugin R9]
+        KEPT Dovetail_PKM_base.et: -> other [plugin R9]
+        KEPT Camouflage_Wrap_M21_base.et: -> other [plugin R9]
+        KEPT WeaponPart_Base.et: -> other [plugin R9]
+        KEPT Gloves_Pilot_US_01.et: -> gear_gloves [plugin R2]
+        KEPT Camouflage_Wrap_M21.et: -> other [plugin R9]
+        KEPT Dovetail_NSV.et: -> other [plugin R9]
+        KEPT Dovetail_PKM.et: -> other [plugin R9]
+        KEPT Handguard_base.et: -> other [plugin R9]
+        JUSTIFIED ETool_MPL50_FreeRoamBuilding_Gadget.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MedicalKit_01_US.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED COCain_Ammo_MortarBox.et: crate -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RepairKit_01_wrench_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RearmingKit_01_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED ETool_ALICE_FreeRoamBuilding_Gadget.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RearmingKit_01_USSR.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED Jerrycan_01_item.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RepairKit_01_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RearmingKit_01_FIA.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MortarRearmingKit_FIA.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RepairKit_01_wrench.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MedicalKit_01_open_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED AmmoBox_82mm_mortar_3rnd.et: crate -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MortarRearmingKit_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MedicalKit_01_FIA.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MortarRearmingKit_USSR.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MedicalKit_01_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MedicalKit_01_USSR.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED Gauze_02.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MortarRearmingKit_US.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED AmmoBox_81mm_mortar_3rnd.et: crate -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED MedicalKit_01_open.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED Jerrycan_01_item_base.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+        JUSTIFIED RearmingKit_01_US.et: other -> gear_item (gadget-inheritance superset (plugin R3))
+PASS  G1b histogram == per-item expectation — exact
+PASS  G2 gear_primary pollution == 0
+PASS  G3 abstract flags == census per item — export 346 vs census-visible 346; per-item flips 0
+PASS  G4 totals reconcile — 1857 exported + 23 dropped/denied + 0 missing == 1880 census + 0 new
+PASS  G4b edges referential integrity — 0 dangling
+PASS  G5a character_default_weapon edges exist — 673 edges, 274 characters
+PASS  ADDON every item carries valid addon — 0 missing, 0 dangling; per-addon: {"ArmaReforger": 1857}
+REPORT phys: weight 406, volume 406, max_weight 1033, max_volume 1257, arsenal_type 0
+REPORT edge histogram: {"character_default_loadout": 2746, "character_default_weapon": 673, "mag_in_weapon": 529, "optic_on_weapon": 362, "attachment_on_weapon": 241, "mag_in_vehicle_weapon": 134}
