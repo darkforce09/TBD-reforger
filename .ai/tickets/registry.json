@@ -1344,16 +1344,17 @@
             "shared",
             "website"
           ],
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_2_exporter_reclassify.md",
-          "notes": "Arsenal polish A: kind taxonomy v3 + catalog-first auto-classify in T-150 scanner; abstract flag; weight/volume/addon per item; character_default_weapon edges; re-export+import. Census-first: .ai/artifacts/t068_10_2_census.{md,json} freezes H_pred; gate G1 = exact histogram match. Operator: program runs fully in Claude Code chat (docs lane override, 2026-07-12)."
+          "notes": "Arsenal polish A: kind taxonomy v3 + catalog-first auto-classify in T-150 scanner; abstract flag; weight/volume/addon per item; character_default_weapon edges; re-export+import. Census-first: .ai/artifacts/t068_10_2_census.{md,json} freezes H_pred; gate G1 = exact histogram match. Operator: program runs fully in Claude Code chat (docs lane override, 2026-07-12). SHIPPED @ be85a26e (tag T-068.10.2): all gates PASS; 1857 items/4685 edges; EntityCatalog Tier-B parse OPEN (0 refinements, non-blocking) -> optional follow-up slice.",
+          "shipped_at": "be85a26e"
         },
         "T-068.10.3": {
           "executor": "claude-code",
           "targets": [
             "website"
           ],
-          "status": "queued",
+          "status": "ready",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_3_forge_picker_ux.md",
           "notes": "Arsenal polish B: Forge picker rows on v3 kinds - grouped/sorted/searchable, abstracts hidden. Row counts must equal DB counts (vitest)."
         },
@@ -1368,7 +1369,7 @@
           "notes": "Arsenal polish C: SlotLoadout v2 (wear open map keyed by engine area, weapons[] slot-indexed) + loadout-export v2 + AreaType-aware v1->v2 migration. Prereq for unparking T-068.11."
         }
       },
-      "active_slice": "T-068.10.2"
+      "active_slice": "T-068.10.3"
     },
     {
       "id": "T-069",
