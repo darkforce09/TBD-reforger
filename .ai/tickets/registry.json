@@ -1389,12 +1389,13 @@
           "targets": [
             "website"
           ],
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_6_arsenal_expanded_modal.md",
-          "notes": "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right)."
+          "notes": "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right). SHIPPED @ 421a69d4 (tag T-068.10.6). Mode C complete (A variant collapse + B faction library T-153 + C expanded modal); T-068.11 remains PARKED for operator decision.",
+          "shipped_at": "421a69d4"
         }
       },
-      "active_slice": "T-068.10.5"
+      "active_slice": "T-068.11"
     },
     {
       "id": "T-069",
