@@ -32,7 +32,7 @@ use super::chunk_math::{
 };
 use super::classify::class_code;
 use super::density_ladder::{
-    density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32,
+    density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32, visible_tree_count,
 };
 use super::glyph_math::{
     BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_size_meters,
@@ -833,12 +833,12 @@ impl WorldResidency {
     /// Recompute `draw_ids` + density ladder + glyph buffers from `last_viewport`.
     fn refresh_draw_set_and_glyphs(&mut self) {
         self.draw_ids = self.draw_chunk_ids(self.last_viewport);
-        let (gw, gh) = density_grid_dims(self.terrain.width, self.terrain.height, {
-            self.manifest
-                .as_ref()
-                .map(|m| m.chunk_size_m)
-                .unwrap_or(512.0)
-        });
+        let chunk_size_m = self
+            .manifest
+            .as_ref()
+            .map(|m| m.chunk_size_m)
+            .unwrap_or(512.0);
+        let (gw, gh) = density_grid_dims(self.terrain.width, self.terrain.height, chunk_size_m);
         self.density_grid_w = gw;
         self.density_grid_h = gh;
         if gw > 0 && gh > 0 && self.terrain.width > 0.0 {
@@ -846,9 +846,25 @@ impl WorldResidency {
         } else {
             self.density_grid.clear();
         }
+        // Whole-chunk exact stays the stats/density-texel surface (the R32 grid is per-chunk).
         let exact = exact_tree_count(&self.chunks, &self.draw_ids);
         self.exact_tree_count = exact as u32;
-        self.heatmap_trees = heatmap_trees(exact);
+        // T-152.14: the heatmap-vs-glyph swap counts viewport-VISIBLE trees (area-fraction, audit
+        // A2) with hysteresis `[0.85×budget, budget]` — a chunk barely on-screen no longer clears
+        // every glyph, and the rung does not flicker on pan. Enter above budget; stay resident in
+        // the heatmap rung until the visible count drops below 0.85× (127_500 at the locked budget).
+        let visible = visible_tree_count(
+            &self.chunks,
+            &self.draw_ids,
+            self.last_viewport,
+            chunk_size_m,
+        );
+        let reenter = INSTANCE_BUDGET * 85 / 100;
+        self.heatmap_trees = if self.heatmap_trees {
+            visible >= reenter
+        } else {
+            heatmap_trees(visible)
+        };
         self.rebuild_strip_buffers();
         self.rebuild_glyph_buffers();
     }
@@ -1098,6 +1114,21 @@ impl WorldResidency {
         self.heatmap_trees
     }
 
+    /// T-152.14 — effective forest-mass (fill/outline) visibility: the residency handoff that keeps
+    /// the green mass alive until tree glyphs actually pack (audit A3). Below the glyph band
+    /// (`class_visible("forestFill")`, z < 0) mass shows as always. At z ≥ 0 mass is normally off
+    /// (glyphs replace it), but it PERSISTS while the wanted tree lane is not drawing glyphs — i.e.
+    /// the heatmap rung is active or the glyph buffer packed empty — so zooming into dense forest
+    /// never leaves a blank band. Read after `rebuild_glyph_buffers` so `tree_glyph_buf` is final.
+    /// `class_visible("forestFill")` stays the pure-zoom oracle; this is the state-aware decision.
+    #[must_use]
+    pub fn forest_fill_effective(&self) -> bool {
+        if class_visible("forestFill", self.deck_zoom) {
+            return true;
+        }
+        self.toggle_trees && (self.heatmap_trees || self.tree_glyph_buf.is_empty())
+    }
+
     #[must_use]
     pub fn exact_tree_count_draw(&self) -> u32 {
         self.exact_tree_count
@@ -1293,6 +1324,52 @@ mod tests {
         }
     }
 
+    // T-152.14 — synthetic dense-forest fixture (self-contained; no map assets).
+
+    /// Overwrite a resident chunk with `n` tree rows (prefab 0 = the `tree-conifer` glyph below).
+    /// Positions are irrelevant to the area-fraction count (it uses the chunk id → world bbox).
+    fn inject_trees(r: &mut WorldResidency, id: &str, n: usize) {
+        let c = r.chunks.get_mut(id).unwrap();
+        c.count = n as u32;
+        c.positions = vec![0.0; n * 2];
+        c.prefab_idx = vec![0; n];
+        c.rotations = vec![0.0; n];
+        c.z = vec![0.0; n];
+        c.cls_codes = vec![class_code("tree"); n];
+        c.rows_by_class.clear();
+        c.rows_by_class
+            .insert(class_code("tree"), (0..n as u32).collect());
+    }
+
+    /// Everon-sized residency whose one prefab (id 0) is a tree with a real glyph atlas key, so
+    /// injected tree rows actually pack into `tree_glyph_buf` (`tree_glyph_count() > 0`).
+    fn dense_forest_setup() -> WorldResidency {
+        let mut r = WorldResidency::new();
+        r.load_manifest_json(
+            r#"{ "worldBounds": [0,0,12800,12800], "objects": { "prefabsPath": "p", "chunksPath": "c", "chunkSizeM": 512 } }"#,
+        )
+        .unwrap();
+        r.load_prefabs_gz(
+            br##"{ "prefabs": [ { "prefabId": 0, "kind": "tree", "class": "conifer", "spatial": { "halfExtentsM": { "x": 1.2, "y": 1.2, "z": 6 }, "heightM": 12 }, "render": { "iconKey": "tree-conifer", "baseSizePx": 18, "defaultColor": "#2d5a27" } } ] }"##,
+        )
+        .unwrap();
+        let mut cells = String::from("{\"cells\":[");
+        for cy in 0..25 {
+            for cx in 0..25 {
+                if cx != 0 || cy != 0 {
+                    cells.push(',');
+                }
+                cells.push_str(&format!(
+                    "{{\"cx\":{cx},\"cy\":{cy},\"path\":\"objects/chunks/{cx}_{cy}.json.gz\"}}"
+                ));
+            }
+        }
+        cells.push_str("]}");
+        r.load_chunk_index_json(&cells).unwrap();
+        r.set_glyph_key_map(&["tree-conifer".to_string()]);
+        r
+    }
+
     #[test]
     fn requests_exactly_the_chunk_math_set() {
         let mut r = setup();
@@ -1464,7 +1541,10 @@ mod tests {
         }
     }
 
-    /// Class R: heatmap swap clears tree glyphs; under-budget packs every instance.
+    /// Class R (T-152.14 refined): swap counts viewport-VISIBLE trees. Chunk `4_4` sits fully
+    /// inside `[2048,2048,3072,3072]` (area-frac 1), so over-visible-budget still swaps to the
+    /// heatmap rung (the ladder stays reachable for true mega-viewports) and clears tree glyphs;
+    /// under budget the density texel sum still equals the whole-chunk exact.
     #[test]
     fn class_r_heatmap_swap_and_full_pack() {
         let mut r = setup();
@@ -1476,51 +1556,117 @@ mod tests {
 
         let draw = r.draw_chunk_ids(r.last_viewport);
         assert!(!draw.is_empty());
-        // Put 10 trees in first draw chunk — under budget → glyphs == exact.
+        // Put 10 trees in first draw chunk (4_4, fully in view) — under budget.
         let id0 = draw[0].clone();
-        {
-            let c = r.chunks.get_mut(&id0).unwrap();
-            let n = 10usize;
-            c.count = n as u32;
-            c.positions = vec![0.0; n * 2];
-            c.prefab_idx = vec![0; n];
-            c.rotations = vec![0.0; n];
-            c.z = vec![0.0; n];
-            c.cls_codes = vec![class_code("tree"); n];
-            c.rows_by_class.clear();
-            c.rows_by_class
-                .insert(class_code("tree"), (0..n as u32).collect());
-        }
-        // Prefab 0 must resolve as tree glyph — without atlas map, pack skips; force heatmap path
-        // via exact count alone for R4, and for R5 use exact_tree_count without glyph lookup.
+        inject_trees(&mut r, &id0, 10);
         r.refresh_draw_set_and_glyphs();
         let exact = exact_tree_count(&r.chunks, &r.draw_ids);
         assert_eq!(exact, 10);
         assert!(!r.heatmap_trees_active());
-        // Texel sum Class R.
+        // Texel sum Class R (grid stays whole-chunk exact).
         let sum = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
         assert_eq!(sum, exact as u64);
 
-        // Force over-budget: inflate one chunk's tree rows to INSTANCE_BUDGET + 1.
-        {
-            let c = r.chunks.get_mut(&id0).unwrap();
-            let n = INSTANCE_BUDGET + 1;
-            c.count = n as u32;
-            c.positions = vec![0.0; n * 2];
-            c.prefab_idx = vec![0; n];
-            c.rotations = vec![0.0; n];
-            c.z = vec![0.0; n];
-            c.cls_codes = vec![class_code("tree"); n];
-            c.rows_by_class.clear();
-            c.rows_by_class
-                .insert(class_code("tree"), (0..n as u32).collect());
-        }
+        // Force over-budget: inflate the fully-visible chunk to INSTANCE_BUDGET + 1 (area-frac 1).
+        inject_trees(&mut r, &id0, INSTANCE_BUDGET + 1);
         r.refresh_draw_set_and_glyphs();
         assert!(r.heatmap_trees_active());
         assert_eq!(r.tree_glyph_count(), 0);
         assert_eq!(r.exact_tree_count_draw() as usize, INSTANCE_BUDGET + 1);
         let sum2 = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
         assert_eq!(sum2, (INSTANCE_BUDGET + 1) as u64);
+        // A3 handoff: glyphs are heatmap-cleared at z ≥ 0, so forest mass persists — not blank.
+        assert!(r.forest_fill_effective());
+    }
+
+    /// T-152.14 (A2): a chunk barely on-screen no longer drags the swap over budget. Chunk `4_4`
+    /// holds `INSTANCE_BUDGET + 1` trees but only ~10 % is visible → refined count ≈ 15 k → glyphs,
+    /// not heatmap. (This is the whole-chunk-count blank-band bug, now fixed.)
+    #[test]
+    fn class_r_partial_coverage_no_swap() {
+        let mut r = setup();
+        drive(&mut r, [2048.0, 2048.0, 2560.0, 2560.0]); // pin chunk 4_4 (+ neighbours)
+        inject_trees(&mut r, "4_4", INSTANCE_BUDGET + 1);
+        r.deck_zoom = 0.0;
+        r.toggle_trees = true;
+        // Sliver viewport: x 2048..2099.2 of chunk 4_4's [2048,2560] = 51.2/512 ≈ 0.1 area-frac.
+        r.last_viewport = [2048.0, 2048.0, 2099.2, 2560.0];
+        r.refresh_draw_set_and_glyphs();
+        let visible = visible_tree_count(&r.chunks, &r.draw_ids, r.last_viewport, 512.0);
+        assert!(visible <= INSTANCE_BUDGET, "sliver visible = {visible}");
+        assert!(!r.heatmap_trees_active());
+        // Whole-chunk exact is still the full census (grid parity unchanged).
+        assert_eq!(r.exact_tree_count_draw() as usize, INSTANCE_BUDGET + 1);
+    }
+
+    /// T-152.14 (G2): swap hysteresis over `[0.85×budget, budget]` kills boundary flicker. Chunk
+    /// `4_4` is fully in view (area-frac 1) so `visible == injected count`; drive budget+1 (enter)
+    /// → budget−1 (stay) → 0.85×budget−1 (exit).
+    #[test]
+    fn class_r_heatmap_hysteresis() {
+        let mut r = setup();
+        drive(&mut r, [2048.0, 2048.0, 2560.0, 2560.0]);
+        r.deck_zoom = 0.0;
+        r.toggle_trees = true;
+        r.last_viewport = [2048.0, 2048.0, 2560.0, 2560.0]; // fully contains chunk 4_4
+        let reenter = INSTANCE_BUDGET * 85 / 100;
+
+        inject_trees(&mut r, "4_4", INSTANCE_BUDGET + 1);
+        r.refresh_draw_set_and_glyphs();
+        assert!(r.heatmap_trees_active(), "enter above budget");
+
+        inject_trees(&mut r, "4_4", INSTANCE_BUDGET - 1); // in the band → stays
+        r.refresh_draw_set_and_glyphs();
+        assert!(
+            r.heatmap_trees_active(),
+            "stay in heatmap inside the hysteresis band"
+        );
+
+        inject_trees(&mut r, "4_4", reenter - 1); // below 0.85× → exit
+        r.refresh_draw_set_and_glyphs();
+        assert!(!r.heatmap_trees_active(), "exit below 0.85×budget");
+    }
+
+    /// T-152.14 (G3/G4): never-blank property gate over the full detail-zoom ladder. On a dense
+    /// forest fixture, for every z ∈ {0, 0.5, …, 6} at least one of {tree glyphs, forest mass,
+    /// heatmap+grid} is present — under budget glyphs pack and mass is off (handoff), over budget
+    /// the heatmap owns the rung and mass persists.
+    #[test]
+    fn property_never_blank_zoom_ladder() {
+        let vp = [2048.0, 2048.0, 3072.0, 3072.0]; // 9 draw chunks; 4 fully covered (4-5 × 4-5)
+        // 50/chunk → 200 visible (glyphs); 40 000/chunk → 160 000 visible (heatmap + handoff).
+        for &per_chunk in &[50usize, 40_000usize] {
+            let mut r = dense_forest_setup();
+            drive(&mut r, vp);
+            for id in r.draw_chunk_ids(vp) {
+                inject_trees(&mut r, &id, per_chunk);
+            }
+            r.toggle_trees = true;
+            for step in 0..=12u32 {
+                let z = f64::from(step) * 0.5; // 0.0 … 6.0
+                r.deck_zoom = z;
+                r.last_viewport = vp;
+                r.refresh_draw_set_and_glyphs();
+
+                let glyphs = r.tree_glyph_count() > 0;
+                let fill = r.forest_fill_effective();
+                let heat = r.heatmap_trees_active();
+                let grid_nonzero = r.density_grid.iter().any(|&v| v > 0);
+                assert!(
+                    glyphs || fill || (heat && grid_nonzero),
+                    "blank band @ z={z}, per_chunk={per_chunk}"
+                );
+
+                let visible = visible_tree_count(&r.chunks, &r.draw_ids, vp, 512.0);
+                if visible <= INSTANCE_BUDGET {
+                    assert!(glyphs, "glyphs empty under budget @ z={z}");
+                    assert!(!fill, "mass must be off when glyphs pack @ z={z}"); // G4
+                } else {
+                    assert!(heat, "heatmap must own the rung over budget @ z={z}");
+                    assert!(fill, "mass must persist under heatmap @ z={z}"); // G4 / A3
+                }
+            }
+        }
     }
 
     #[test]

@@ -1890,6 +1890,15 @@ impl WorldResidency {
         self.inner.heatmap_trees_active()
     }
 
+    /// T-152.14 — effective forest-mass visibility (residency handoff): at z ≥ 0 the green mass
+    /// persists while tree glyphs are heatmap-swapped or the lane packs empty, so zooming into
+    /// dense forest never leaves a blank band. Consumed by the land-cover LOD in `wgpuWorldLoader`.
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn forest_fill_effective(&self) -> bool {
+        self.inner.forest_fill_effective()
+    }
+
     /// T-151.8 — exact tree+veg count over draw_ids.
     #[wasm_bindgen(getter)]
     #[must_use]

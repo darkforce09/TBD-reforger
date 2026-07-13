@@ -14,7 +14,7 @@
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.
 
-import { WorldResidency, WorldStore, class_visible, DemGrid, dem_apron_grid_factor } from '@/wasm/pkg/map_engine_wasm'
+import { WorldResidency, WorldStore, DemGrid, dem_apron_grid_factor } from '@/wasm/pkg/map_engine_wasm'
 import { loadWorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { getClassToggles } from '../state/worldLayerPrefs'
 import { getDemRasterForOverlay } from '../dem/DemController'
@@ -247,13 +247,16 @@ export class WgpuWorldController {
   }
 
   /**
-   * Land-cover LOD refresh (T-151.5.1): same exclusive glyph-band hide as forestFill.
-   * Not sticky — re-evaluate on every camera settle so zoom ≥ 0 clears the mega-hull.
+   * Land-cover LOD refresh (T-151.5.1; T-152.14 handoff): visibility follows the residency's
+   * `forest_fill_effective` — the mega-hull hides at zoom ≥ 0 once tree glyphs actually pack, but
+   * persists while they are heatmap-swapped or empty. Not sticky — re-evaluated on every settle.
    */
   private pushLandcover(): void {
-    if (!this.store || !this.landcoverReady) return
-    const zoom = this.engine.zoom
-    const vis = class_visible('forestFill', zoom)
+    if (!this.store || !this.landcoverReady || !this.residency) return
+    // T-152.14: land-cover mass visibility is the residency handoff (`forest_fill_effective`), not
+    // the pure-zoom `forestFill` gate — the green mass persists at z ≥ 0 while tree glyphs are
+    // heatmap-swapped or the lane packs empty, so zooming into dense forest never blanks.
+    const vis = this.residency.forest_fill_effective
     if (vis === this.lastLandcoverVis) return
     this.lastLandcoverVis = vis
     if (!vis) {
