@@ -1199,6 +1199,7 @@
         "T-068.10.4",
         "T-068.10.5",
         "T-068.10.6",
+        "T-068.10.7",
         "T-068.11",
         "T-068.12",
         "T-068.13",
@@ -1393,6 +1394,16 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_6_arsenal_expanded_modal.md",
           "notes": "Mode C slice C: expanded Attributes modal + ACE-style panes (detail left, rows center, container panel right). SHIPPED @ 421a69d4 (tag T-068.10.6). Mode C complete (A variant collapse + B faction library T-153 + C expanded modal); T-068.11 remains PARKED for operator decision.",
           "shipped_at": "421a69d4"
+        },
+        "T-068.10.7": {
+          "executor": "claude-code",
+          "targets": [
+            "website"
+          ],
+          "status": "shipped",
+          "shipped_at": "de1ab7b5",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_7_arsenal_paper_doll.md",
+          "notes": "Mode D: Arsenal paper-doll - ACE layout with clickable SVG soldier silhouette (list left, doll center, context right; optic/magazine sub-hotspots on the rifle; honest weight readout). Replaces the .10.6 dropdown-rows layout inside the Arsenal tab; ArsenalPicksPanel stays for the Faction Manager. SHIPPED @ de1ab7b5 (tag T-068.10.7). T-068.11 remains PARKED for operator decision."
         }
       },
       "active_slice": "T-068.11"
