@@ -4,6 +4,14 @@
 **Spec:** `docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md` ·
 **Baseline:** `1a9a4a59` (T-154.0 docs-sync)
 
+## Status
+
+**PASS — automated AND operator visual** (2026-07-13 screenshot at the Mode D pause:
+light backdrop, MG M249 equipped + tinted, hover tooltip "Armored vest — empty", active
+callout "Primary — MG M249" with leader line, quick-lists honest — the M249 optic feed
+correctly says "Nothing compatible". Operator: "looks good, rotates good". This also
+closes the T-154.0 operator checklist — same screenshot covers S1–S4.)
+
 ## LOC proof (D5)
 
 | file | LOC | delta vs .0 | note |
