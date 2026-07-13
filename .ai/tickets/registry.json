@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block \u2192 T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.",
       "depends_on": [
         "T-067"
       ],
@@ -1411,7 +1411,7 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
+      "summary": "Parked \u2014 data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
       "depends_on": [
         "T-151"
       ],
@@ -1468,7 +1468,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager modal — squad names, numbering, membership, slotting order. **Deferred** — operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.",
+      "summary": "ORBAT Manager modal \u2014 squad names, numbering, membership, slotting order. **Deferred** \u2014 operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -2345,7 +2345,7 @@
         "schema"
       ],
       "title": "DEM + auto Z",
-      "summary": "T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md.",
+      "summary": "T-091 complete @ dde589e \u2014 DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-091.0",
@@ -2412,7 +2412,7 @@
         "compiler"
       ],
       "title": "Spawn transform parity + mod mission compile",
-      "summary": "T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
+      "summary": "T-092 complete @ `a73224f2` \u2014 schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "slices": [
         "T-092.0",
@@ -2580,7 +2580,7 @@
     {
       "id": "T-111",
       "title": "Lazy chunk residency @ 1M",
-      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
       "program": "scale",
       "surfaces": [
         "MAP",
@@ -2647,7 +2647,7 @@
       "impact": [
         "schema"
       ],
-      "title": "Monorepo migration (M0–M3)",
+      "title": "Monorepo migration (M0\u2013M3)",
       "summary": "Merge website + mod into TBD-Reforger; unified ticketing; path rewrites.",
       "milestone": "M1"
     },
@@ -2763,7 +2763,7 @@
         "api"
       ],
       "title": "Event ORBAT + identity linking UI",
-      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today.",
+      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) \u2014 neither is production-complete today.",
       "milestone": "M1"
     },
     {
@@ -2864,7 +2864,7 @@
         "docs"
       ],
       "title": "Codebase audit hotfix (single bundle)",
-      "summary": "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
+      "summary": "Shipped @ f131770 (tag T-122) \u2014 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
       "spec": "docs/platform/audit/t122_codebase_audit_hotfix.md",
       "depends_on": [],
       "unblocks": [],
@@ -2893,7 +2893,7 @@
         "ci"
       ],
       "title": "Documentation standards rollout (full program)",
-      "summary": "Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.",
+      "summary": "Shipped @ 169e47d \u2014 full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0\u2013.6. Hub: t123_documentation_standards_rollout.md.",
       "spec": "docs/platform/t123_documentation_standards_rollout.md",
       "slices": [
         "T-123.0",
@@ -2995,7 +2995,7 @@
         "infra"
       ],
       "title": "Dependency & toolchain upgrade (latest everything)",
-      "summary": "Shipped @ cd11db0 — FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
+      "summary": "Shipped @ cd11db0 \u2014 FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
       "spec": "docs/platform/t124_dependency_upgrade.md",
       "slices": [
         "T-124.1",
@@ -3060,7 +3060,7 @@
         "api"
       ],
       "title": "Coding standards + 11/10 enforcement",
-      "summary": "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0–.6. Hub: t125_coding_standards_enforcement.md.",
+      "summary": "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0\u2013.6. Hub: t125_coding_standards_enforcement.md.",
       "spec": "docs/platform/t125_coding_standards_enforcement.md",
       "slices": [
         "T-125.0",
@@ -3165,8 +3165,8 @@
         "ui",
         "security"
       ],
-      "title": "Fable audit — security + auth follow-up",
-      "summary": "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
+      "title": "Fable audit \u2014 security + auth follow-up",
+      "summary": "Shipped @ 4a47688e (tag T-126): S1\u2013S6 \u2014 export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
       "spec": "docs/platform/t126_audit_security_followup.md",
       "shipped_at": "4a47688e",
       "depends_on": [],
@@ -3193,8 +3193,8 @@
       "impact": [
         "ui"
       ],
-      "title": "Fable audit — Mission Creator UX fixes",
-      "summary": "Shipped @ 0515aabb (tag T-127): U1–U5 MC UX — conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
+      "title": "Fable audit \u2014 Mission Creator UX fixes",
+      "summary": "Shipped @ 0515aabb (tag T-127): U1\u2013U5 MC UX \u2014 conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
       "spec": "docs/platform/t127_mc_ux_audit_fixes.md",
       "shipped_at": "0515aabb",
       "depends_on": [
@@ -3224,8 +3224,8 @@
       "impact": [
         "docs"
       ],
-      "title": "Fable audit — doc link repair + staging honesty",
-      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
+      "title": "Fable audit \u2014 doc link repair + staging honesty",
+      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126\u2192T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
       "spec": "docs/platform/t128_doc_link_repair.md",
       "depends_on": [
         "T-127"
@@ -3259,7 +3259,7 @@
         "security",
         "docs"
       ],
-      "title": "Fable audit — remainder (OPEN + PARTIAL)",
+      "title": "Fable audit \u2014 remainder (OPEN + PARTIAL)",
       "summary": "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md.",
       "spec": "docs/platform/t130_fable_audit_remainder.md",
       "depends_on": [
@@ -3362,7 +3362,7 @@
         "ui"
       ],
       "title": "Building floor selector",
-      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
+      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 \u2014 requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
       "slices": [],
       "depends_on": [
@@ -3375,7 +3375,7 @@
     {
       "id": "T-131",
       "title": "Route planner tool",
-      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.",
+      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap \u2014 promote after T-090.5.",
       "program": "eden",
       "stream": "mission-creator",
       "targets": [
@@ -3506,7 +3506,7 @@
     {
       "id": "T-136",
       "title": "3D AAR / OCAP-style replay",
-      "summary": "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
+      "summary": "Post-event replay: telemetry ingest \u2192 timeline \u2192 map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
       "program": "platform",
       "stream": "web-platform",
       "targets": [
@@ -3558,7 +3558,7 @@
     {
       "id": "T-138",
       "title": "One-command self-host install",
-      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story.",
+      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) \u2014 fork-friendly community install story.",
       "program": "infra",
       "stream": "infra",
       "targets": [
@@ -3583,7 +3583,7 @@
     {
       "id": "T-139",
       "title": "Lobby loadout visual preview",
-      "summary": "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker.",
+      "summary": "In-game lobby: kit preview (icon grid \u2192 2D mannequin \u2192 stretch 3D). After T-068.13 production slot picker.",
       "program": "platform",
       "stream": "mod-framework",
       "targets": [
@@ -3659,7 +3659,7 @@
     {
       "id": "T-142",
       "title": "MC shell layout polish",
-      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity.",
+      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility \u2014 layout UX without full T-082 field parity.",
       "program": "eden",
       "stream": "mission-creator",
       "targets": [
@@ -3681,8 +3681,8 @@
     },
     {
       "id": "T-143",
-      "title": "Perfect water — exact hydrology + water placement guard",
-      "summary": "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested.",
+      "title": "Perfect water \u2014 exact hydrology + water placement guard",
+      "summary": "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads \u2014 full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable \u2014 missions get playtested.",
       "program": "infra",
       "surfaces": [
         "MAP",
@@ -3723,7 +3723,7 @@
         "infra"
       ],
       "title": "Arma 3 map architecture study",
-      "summary": "A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
+      "summary": "A3 2D Arcade map architecture study @ `b1949182` \u2014 live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
       "slices": [
         "T-144.0",
@@ -3801,7 +3801,7 @@
       "status": "queued",
       "program": "eden",
       "title": "Asset Browser Data Wiring",
-      "summary": "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
+      "summary": "Hook up T-150 registry items (vehicles/crates/\u2026) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
       "surfaces": [
         "RIGHT",
         "MAP"
@@ -3881,7 +3881,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
+      "summary": "wgpu Mission Creator engine: W0\u2013W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1\u2013.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
       "program": "Platform",
       "surfaces": [
         "Mission Creator map render"
@@ -4041,7 +4041,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md",
           "status": "shipped",
           "shipped_at": "c4831451",
-          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
+          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma \u2192 devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
         },
         "T-151.10": {
           "targets": [
@@ -4052,7 +4052,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md",
           "status": "shipped",
           "shipped_at": "6adbd4bf",
-          "notes": "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
+          "notes": "Fable 5 full-program audit W0\u2013W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
         },
         "T-151.10.1": {
           "targets": [
@@ -4182,7 +4182,7 @@
       "id": "T-152",
       "order": 1520,
       "title": "Map cartographic fidelity (glyphs, text, labels)",
-      "summary": "Map cartographic fidelity — T-152.0–.11 shipped (audit @ a8a7a22c); remediation ladder T-152.12–.22 active (text lane → trees → fences/piers → labels → extract → re-gate). Hub: t152_map_cartographic_fidelity_program.md.",
+      "summary": "Map cartographic fidelity \u2014 remediation ladder: T-152.15 shipped (fences/piers/bridges); active T-152.16 height markers visible. Hub: t152_map_cartographic_fidelity_program.md.",
       "program": "infra",
       "surfaces": [
         "MAP"
@@ -4192,7 +4192,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-152.13",
+      "active_slice": "T-152.16",
       "spec": "docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md",
       "branch": "ticket/T-152",
       "stream": "infra",
@@ -4337,7 +4337,7 @@
           "executor": "human",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md",
           "status": "shipped",
-          "notes": "Automated G1–G7/G9–G10 PASS @ T-152.10; operator O1–O12 PENDING; merge readiness doc shipped."
+          "notes": "Automated G1\u2013G7/G9\u2013G10 PASS @ T-152.10; operator O1\u2013O12 PENDING; merge readiness doc shipped."
         },
         "T-152.11": {
           "targets": [
@@ -4346,7 +4346,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md",
           "status": "shipped",
-          "notes": "Audit report @ a8a7a22c (tag T-152.11); D1–D13 ledger zero DONE; fix matrix → remediation ladder T-152.12–.22."
+          "notes": "Audit report @ a8a7a22c (tag T-152.11); D1\u2013D13 ledger zero DONE; fix matrix \u2192 remediation ladder T-152.12\u2013.22."
         },
         "T-152.12": {
           "targets": [
@@ -4363,8 +4363,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md",
-          "status": "queued",
-          "notes": "Readable baked font ≥ 16 px cell, lowercase + punctuation; no-blob gate over committed label charset."
+          "status": "shipped",
+          "notes": "Shipped @ 2240148d (tag T-152.13) + T-152.13.1 @ fe81b676 (halo + 20px floor). Verify 494b0838 \u2014 M1/M2 operator PASS. Spleen 16\u00d732 in 32px cells; render 40/40; wasm +4 KiB."
         },
         "T-152.14": {
           "targets": [
@@ -4372,8 +4372,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_14_tree_zoom_guarantee.md",
-          "status": "queued",
-          "notes": "Frustum-refined heatmap budget + hysteresis + mass-until-glyphs; never-blank property gate z 0–6 (operator S7)."
+          "status": "shipped",
+          "notes": "Shipped @ 9cc13714 (tag T-152.14) area-fraction budget + hysteresis + forest_fill_effective. Hotfix T-152.14.1 @ 75ccf5b1: ATLAS_GLYPH_COUNT 28\u219232 + CI guards A\u2013D \u2014 icon lanes dark since T-152.10 (29th glyph vs hardcoded 28). Verify t152_14_verify_log.md; M1/M2 operator pending on .14 core."
         },
         "T-152.15": {
           "targets": [
@@ -4381,8 +4381,8 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_15_fence_pier_bridge_visibility.md",
-          "status": "queued",
-          "notes": "Fence gate z≥1.5 + px clamp; all 2,299 piers draw (decoupled lanes); yaw parity gate; railings implement-or-delete; anti-vacuous census."
+          "status": "shipped",
+          "notes": "Shipped @ 9518680e (tag T-152.15). Fence z\u22651.5 + STRIP_MIN_PX; yaw from obb_corners; 2,299/2,299 pier strips; Path A synthetic rails (288); strips_visible() TS gate. Verify t152_15_verify_log.md; M1\u2013M3 operator pending."
         },
         "T-152.16": {
           "targets": [
@@ -4391,7 +4391,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.md",
-          "status": "queued",
+          "status": "ready",
           "notes": "Height label zoom band + named peaks/hills merge from locations.json + 80 m floor; contour decision with fresh operator quote. Depends .12/.13."
         },
         "T-152.17": {
@@ -4413,7 +4413,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_18_icon_extract_retry.md",
           "status": "queued",
-          "notes": "OPERATOR-IN-LOOP: Workbench warm required; hard MCP liveness gate — dead daemon = blocked, never silent redraw. Extract LANDMARK_SET; redraw only per-key with operator approval (D2 WRONG_PATH remedy)."
+          "notes": "OPERATOR-IN-LOOP: Workbench warm required; hard MCP liveness gate \u2014 dead daemon = blocked, never silent redraw. Extract LANDMARK_SET; redraw only per-key with operator approval (D2 WRONG_PATH remedy)."
         },
         "T-152.19": {
           "targets": [
@@ -4433,7 +4433,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_20_settings_completeness.md",
           "status": "queued",
-          "notes": "Expose all 12 world-layer toggles (7 missing: roads/buildings/forest/trees/props/contours/sea) — dumb UI only; makes O10 executable."
+          "notes": "Expose all 12 world-layer toggles (7 missing: roads/buildings/forest/trees/props/contours/sea) \u2014 dumb UI only; makes O10 executable."
         },
         "T-152.21": {
           "targets": [
@@ -4442,7 +4442,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_21_landmark_early_visibility.md",
           "status": "queued",
-          "notes": "Wire importanceZoom prefab override (parsed, never read) — landmarks visible at default zoom −2 (P1–P3 closure)."
+          "notes": "Wire importanceZoom prefab override (parsed, never read) \u2014 landmarks visible at default zoom \u22122 (P1\u2013P3 closure)."
         },
         "T-152.22": {
           "targets": [
@@ -4452,7 +4452,7 @@
           "executor": "human",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md",
           "status": "queued",
-          "notes": "De-vacuoused E2E re-gate + operator signs O1–O12 with screenshots; FAILs file T-152.2x hotfix slices. Program close-out — merge decision after."
+          "notes": "De-vacuoused E2E re-gate + operator signs O1\u2013O12 with screenshots; FAILs file T-152.2x hotfix slices. Program close-out \u2014 merge decision after."
         }
       },
       "route": "/missions/:id/edit"

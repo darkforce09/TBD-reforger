@@ -1,7 +1,7 @@
 # T-152.14 — Tree glyph zoom-in guarantee (budget + handoff fix)
 
 **Ticket:** T-152 · **Slice:** T-152.14 (remediation ladder #3)
-**Status:** `queued`
+**Status:** `shipped` · **Tag:** `T-152.14` (+ hotfix `T-152.14.1` @ `75ccf5b1`)
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.1 (S7, A2, A3, D13) · T-151.5/.8 contracts
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.14`**

@@ -30,7 +30,7 @@
       "id": "T-152",
       "title": "Map cartographic fidelity (glyphs, text, labels)",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.md",
       "branch": "ticket/T-152"
     }
   ]

@@ -25,9 +25,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-152 — Map cartographic fidelity (glyphs, text, labels)
 
-- **Active slice:** `T-152.13`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md`
+- **Active slice:** `T-152.16`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md`
 - **Branch:** `ticket/T-152`
 - **Targets:** root, website, shared
-- **Summary:** Map cartographic fidelity — T-152.0–.11 shipped (audit @ a8a7a22c); remediation ladder T-152.12–.22 active (text lane → trees → fences/piers → labels → extract → re-gate). Hub: t152_map_cartographic_fidelity_program.md.
+- **Summary:** Map cartographic fidelity — remediation ladder: T-152.15 shipped (fences/piers/bridges); active T-152.16 height markers visible. Hub: t152_map_cartographic_fidelity_program.md.

@@ -1,7 +1,7 @@
 # T-152.15 — Fence / pier / bridge visibility + orientation remediation
 
 **Ticket:** T-152 · **Slice:** T-152.15 (remediation ladder #4)
-**Status:** `queued`
+**Status:** `shipped` · **Tag:** `T-152.15` @ `9518680e`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §5, §6.2 (S1, S2, A1, A13, D4–D6)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.15`**
