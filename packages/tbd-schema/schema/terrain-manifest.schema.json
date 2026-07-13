@@ -209,6 +209,16 @@
         "atlasJsonPath": { "type": "string" }
       }
     },
+    "locations": {
+      "type": "object",
+      "description": "Named settlements / peaks for cartographic labels (T-152.6).",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "type": "string" },
+        "exportedAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "anchors": {
       "type": "array",
       "items": {

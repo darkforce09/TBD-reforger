@@ -108,5 +108,9 @@
     "storageDecimals": 3,
     "demNativeMetersPerPixel": 2,
     "spawnAuthority": "mod-get-surface-y"
+  },
+  "locations": {
+    "path": "locations.json",
+    "exportedAt": "2026-07-13T00:29:00Z"
   }
 }
