@@ -4182,7 +4182,7 @@
       "id": "T-152",
       "order": 1520,
       "title": "Map cartographic fidelity (glyphs, text, labels)",
-      "summary": "Map cartographic fidelity. Active: T-152.2 Reforger icon art. T-152.0 docs + T-152.1 text lane shipped. Hub: t152_map_cartographic_fidelity_program.md.",
+      "summary": "Map cartographic fidelity — T-152.0–.9 shipped; T-152.10 automated E2E gate PASS; operator O1–O12 pending before program done. Hub: t152_map_cartographic_fidelity_program.md.",
       "program": "infra",
       "surfaces": [
         "MAP"
@@ -4192,7 +4192,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-152.2",
+      "active_slice": "T-152.10",
       "spec": "docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md",
       "branch": "ticket/T-152",
       "stream": "infra",
@@ -4247,7 +4247,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_2_reforger_icon_art.md",
-          "status": "ready",
+          "status": "shipped",
           "notes": "Workbench MCP icon discovery spike + LANDMARK_SET atlas rebuild."
         },
         "T-152.3": {
@@ -4257,7 +4257,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_3_wire_landmark_glyphs.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-152.4": {
           "targets": [
@@ -4266,7 +4266,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_4_fence_pier_bridge.md",
-          "status": "queued",
+          "status": "shipped",
           "notes": "Spec file authored by Cursor when T-152.3 ships."
         },
         "T-152.5": {
@@ -4276,7 +4276,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_5_airfield_symbology.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-152.6": {
           "targets": [
@@ -4285,7 +4285,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_6_locations_export.md",
-          "status": "queued",
+          "status": "shipped",
           "notes": "Town names discovery spike."
         },
         "T-152.7": {
@@ -4295,7 +4295,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_7_height_markers.md",
-          "status": "queued"
+          "status": "shipped"
         },
         "T-152.8": {
           "targets": [
@@ -4304,7 +4304,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_8_town_labels.md",
-          "status": "queued",
+          "status": "shipped",
           "notes": "T-144 G8 importance-distance precompute."
         },
         "T-152.9": {
@@ -4314,7 +4314,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_9_road_names.md",
-          "status": "queued",
+          "status": "shipped",
           "notes": "Road names discovery spike."
         },
         "T-152.10": {
@@ -4324,8 +4324,8 @@
           ],
           "executor": "human",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md",
-          "status": "queued",
-          "notes": "Road names wire + program E2E gate; operator sign-off."
+          "status": "shipped",
+          "notes": "Automated G1–G7/G9–G10 PASS @ T-152.10; operator O1–O12 PENDING; merge readiness doc shipped."
         }
       },
       "route": "/missions/:id/edit"

@@ -1,6 +1,6 @@
 # T-152 — Map cartographic fidelity program
 
-**Status:** **ready** · **Active slice:** **T-152.0** (program hub lock — docs pass)  
+**Status:** **ready for merge** · **Active slice:** **T-152.10** (E2E gate — automated PASS; operator O1–O12 pending)  
 **Ticket:** T-152 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Worktree:** `.ai/artifacts/worktrees/TBD-T-152` (absolute: `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`) · **Branch:** `ticket/T-152`  
 **Parallel lane:** runs **in parallel** with **T-068** arsenal work on `main` — no file overlap with arsenal compile until merge.
@@ -147,7 +147,7 @@ cd apps/website/frontend && npm test && npm run build && npm run lint
 ./scripts/ticket check
 ```
 
-Per-slice **Gn** matrices live in each slice spec. Verify logs: `.ai/artifacts/t152_{n}_verify_log.md`.
+Per-slice **Gn** matrices live in each slice spec. Verify logs: `.ai/artifacts/t152_{n}_verify_log.md`. Program close-out: [`.ai/artifacts/t152_10_verify_log.md`](../../../.ai/artifacts/t152_10_verify_log.md) · merge: [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md).
 
 ---
 
@@ -170,6 +170,8 @@ Per-slice **Gn** matrices live in each slice spec. Verify logs: `.ai/artifacts/t
 | [`t090_render_lod_contract.md`](t090_render_lod_contract.md) | Zoom bands |
 | [`t144_arma3_map_architecture_study.md`](t144_arma3_map_architecture_study.md) | G8 declutter |
 | [`ROADMAP.md`](ROADMAP.md) | MC planning view |
+| [`.ai/artifacts/t152_10_verify_log.md`](../../../.ai/artifacts/t152_10_verify_log.md) | E2E gate (T-152.10) |
+| [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md) | Merge promotion |
 
 ---
 
