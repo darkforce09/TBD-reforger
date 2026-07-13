@@ -125,6 +125,10 @@ pub struct WorldResidency {
     /// that are integers in `[0, 65536)` are inserted (JS finds a building iff `prefabId ===` the
     /// stored u16, i.e. `prefabId < 65536`).
     building_by_u16: HashMap<u16, BuildingPrefabInfo>,
+    /// T-152.21 — smallest `importanceZoom` across resident building prefabs (`None` when none carry
+    /// the override). Cheap outer guard: the badge lane may skip its whole loop when `deck_zoom` is
+    /// below every override, preserving the non-landmark fast path.
+    min_importance_zoom: Option<f64>,
     /// Fence prop half-extents keyed by prefab u16 id (T-152.4).
     fence_by_u16: HashMap<u16, FencePrefabInfo>,
     /// Tree/veg/prop/rockLarge glyph lookup keyed by prefab u16 id.
@@ -216,6 +220,7 @@ impl Default for WorldResidency {
             prefab_by_id: HashMap::new(),
             has_oversized: false,
             building_by_u16: HashMap::new(),
+            min_importance_zoom: None,
             fence_by_u16: HashMap::new(),
             glyph_by_u16: HashMap::new(),
             icon_key_to_idx: HashMap::new(),
@@ -461,6 +466,12 @@ impl WorldResidency {
                 self.building_by_u16.insert(pid as u16, info);
             }
         }
+        // T-152.21 — cache the smallest importanceZoom so the badge lane's outer guard is O(1).
+        self.min_importance_zoom = self
+            .building_by_u16
+            .values()
+            .filter_map(|b| b.importance_zoom)
+            .fold(None, |acc, v| Some(acc.map_or(v, |a: f64| a.min(v))));
         self.fence_by_u16 = fence_prefab_lookup(&raw);
         self.rebuild_glyph_lookup_from_prefabs();
         Ok(self.prefab_by_id.len())
@@ -492,10 +503,17 @@ impl WorldResidency {
         max_y: f64,
         deck_zoom: f64,
     ) -> Vec<String> {
-        let zoom_changed = (self.deck_zoom - deck_zoom).abs() > f64::EPSILON;
+        let prev_zoom = self.deck_zoom;
+        let zoom_changed = (prev_zoom - deck_zoom).abs() > f64::EPSILON;
         self.deck_zoom = deck_zoom;
         self.last_viewport = [min_x, min_y, max_x, max_y];
-        if !building_visible(deck_zoom) {
+        // T-152.21 — keep world chunks resident below the footprint gate when a landmark's
+        // importanceZoom override could still draw its badge (deck_zoom ≥ min override). Fills
+        // themselves stay gated at BUILDING_MIN_ZOOM inside `rebuild_buffers`; only the badge lane
+        // draws in the [min_importance, BUILDING_MIN_ZOOM) band.
+        let world_want =
+            building_visible(deck_zoom) || self.min_importance_zoom.is_some_and(|m| deck_zoom >= m);
+        if !world_want {
             if !self.pinned_ids.is_empty() {
                 self.pinned_ids.clear();
                 self.pinned_set.clear();
@@ -526,7 +544,14 @@ impl WorldResidency {
         if key == self.pinned_key {
             // Zoom change with same chunks still needs glyph recompose (LOD / min-px).
             // Draw-set always refreshes from last_viewport (strict rect may differ from pin).
-            self.refresh_draw_set_and_glyphs();
+            // T-152.21: a pure zoom change can also flip landmark fill de-emphasis (badge band /
+            // importance boundary) — recompose fills when that band changed (rebuild_buffers also
+            // refreshes the draw set + glyphs), else just refresh glyphs.
+            if self.fill_band_changed(prev_zoom, deck_zoom) {
+                self.rebuild_buffers();
+            } else {
+                self.refresh_draw_set_and_glyphs();
+            }
             // T-151.4.1: same pin key usually means "nothing new". But an aborted fetch can leave
             // the pin unsettled with empty inflight — re-request those undelivered ids.
             if self.pin_settled() || !self.inflight.is_empty() {
@@ -693,11 +718,57 @@ impl WorldResidency {
         }
     }
 
+    /// T-152.21 — does a landmark's early badge glyph actually draw at the current zoom? True only
+    /// below the badge band (`buildingBadge` class gate off) when the prefab's `importanceZoom`
+    /// override fires (`deck_zoom >= importanceZoom`) **and** the atlas carries its landmark glyph.
+    /// State-conditioned handoff (G4): a missing glyph → `false` → the bright class fill is kept, so
+    /// a landmark is never left both rectangle-dimmed and glyph-less. At/above the badge band the
+    /// class gate already composes the badge over the normal fill, so no de-emphasis applies.
+    /// (The only bright-filled classes this de-emphasizes — lighthouse/castle/military — are not
+    /// airfield-gated; `tower`/`hangar` already use the neutral default fill, so the airfield badge
+    /// gate can't strand a de-emphasized-but-glyphless landmark.)
+    fn early_landmark_glyph_active(&self, cls: &str, importance_zoom: Option<f64>) -> bool {
+        let z = self.deck_zoom;
+        if class_visible("buildingBadge", z) {
+            return false;
+        }
+        let Some(iz) = importance_zoom else {
+            return false;
+        };
+        if z < iz {
+            return false;
+        }
+        landmark_glyph_icon_key(cls)
+            .and_then(|k| self.icon_key_to_idx.get(k))
+            .is_some()
+    }
+
+    /// T-152.21 — could a pure zoom change (`prev` → `next`) flip any landmark's fill de-emphasis,
+    /// so the fill buffer must recompose (not just the glyph LOD)? The state flips only when the
+    /// `buildingBadge` class gate toggles or the zoom crosses the importanceZoom boundary. NB: this
+    /// assumes a single importanceZoom magnitude across resident prefabs (tracked as
+    /// `min_importance_zoom`, today −4 everywhere); adding distinct values would need the full set.
+    fn fill_band_changed(&self, prev: f64, next: f64) -> bool {
+        // Footprint gate: fills/outlines appear/vanish at BUILDING_MIN_ZOOM (landmark badges can
+        // persist below it — see `rebuild_buffers` + `set_viewport` residency guard).
+        if building_visible(prev) != building_visible(next) {
+            return true;
+        }
+        if class_visible("buildingBadge", prev) != class_visible("buildingBadge", next) {
+            return true;
+        }
+        self.min_importance_zoom
+            .is_some_and(|m| (prev >= m) != (next >= m))
+    }
+
     /// Recompose the building fill + outline GPU buffers from the pinned chunks, in **string-sorted
     /// id order** (matching the JS composite `[...pinned].sort()`).
     fn rebuild_buffers(&mut self) {
         // T-151.11.3 (P-04): toggle off ⇒ compose nothing (Deck hid the whole building lane).
-        if !self.toggle_buildings {
+        // T-152.21: below the footprint gate (BUILDING_MIN_ZOOM) draw no rectangles either, but
+        // still refresh glyphs so importanceZoom landmark badges persist in that coarse band
+        // ("landmark badges persist, ordinary buildings gone").
+        if !self.toggle_buildings || !building_visible(self.deck_zoom) {
             self.fill_buf.clear();
             self.outline_buf.clear();
             self.rebuild_strip_buffers();
@@ -763,7 +834,16 @@ impl WorldResidency {
                         deck[3],
                     ]);
                 } else {
-                    let c = norm(fill_color(cls));
+                    // T-152.21 (G4): when the early landmark glyph draws (importanceZoom override
+                    // below the badge band), hand the coarse-zoom face to the glyph — drop the bright
+                    // class tint to the neutral footprint fill so the icon isn't shouted over by a
+                    // white/tinted rectangle. Glyph unavailable ⇒ predicate false ⇒ bright fill kept.
+                    let fill_rgba = if self.early_landmark_glyph_active(cls, info.importance_zoom) {
+                        FILL_DEFAULT
+                    } else {
+                        fill_color(cls)
+                    };
+                    let c = norm(fill_rgba);
                     fill.extend_from_slice(&[
                         x as f32,
                         y as f32,
@@ -981,7 +1061,12 @@ impl WorldResidency {
             self.toggle_trees && (class_visible("tree", z) || class_visible("vegetation", z));
         let prop_want =
             self.toggle_props && (class_visible("prop", z) || class_visible("rockLarge", z));
-        let badge_want = self.toggle_buildings && class_visible("buildingBadge", z);
+        // T-152.21 — landmarks with an importanceZoom override draw their badge below the class
+        // gate (deck_zoom ≥ importanceZoom). `badge_gate` = the class LOD gate; the loop runs when
+        // it OR any resident override is active, and each instance re-checks per-prefab below.
+        let badge_gate = class_visible("buildingBadge", z);
+        let badge_want = self.toggle_buildings
+            && (badge_gate || self.min_importance_zoom.is_some_and(|m| z >= m));
 
         if !tree_want && !prop_want && !badge_want {
             return;
@@ -1082,6 +1167,12 @@ impl WorldResidency {
                     let Some(binfo) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
                         continue;
                     };
+                    // T-152.21 — per-prefab importanceZoom override: below the class badge band a
+                    // landmark still emits when deck_zoom ≥ its importanceZoom; ordinary buildings
+                    // (no override) fall back to the class gate. At/above the gate this is a no-op.
+                    if !badge_gate && !binfo.importance_zoom.is_some_and(|iz| z >= iz) {
+                        continue;
+                    }
                     let cls = binfo.building_class.as_str();
                     if is_airfield_structure_class(cls) {
                         if !self.airfield_visible() {
@@ -1944,6 +2035,31 @@ mod t152_3_tests {
         out
     }
 
+    /// T-152.21 — u16 prefab id → `render.importanceZoom` (only building prefabs that carry it).
+    /// Independent oracle for the badge override: read straight from the compiled fixture, mirroring
+    /// how `narrow_prefab_rows` feeds `BuildingPrefabInfo.importance_zoom` in the live path.
+    fn building_importance_by_prefab_u16() -> HashMap<u16, f64> {
+        let everon = map_assets().join("everon");
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        let mut out = HashMap::new();
+        for row in narrow_prefab_rows(&raw) {
+            if row.kind != "building" {
+                continue;
+            }
+            let pid = row.prefab_id;
+            if !(0.0..65536.0).contains(&pid) || pid.fract() != 0.0 {
+                continue;
+            }
+            if let Some(iz) = row.importance_zoom {
+                out.insert(pid as u16, iz);
+            }
+        }
+        out
+    }
+
     fn drive_fixture_chunk(r: &mut WorldResidency, chunk_id: &str, z: f64) {
         let mut parts = chunk_id.split('_');
         let cx: f64 = parts.next().unwrap().parse().unwrap();
@@ -1973,12 +2089,15 @@ mod t152_3_tests {
     fn oracle_badge_count(
         r: &WorldResidency,
         prefab_class: &HashMap<u16, String>,
+        prefab_importance: &HashMap<u16, f64>,
         atlas_keys: &HashSet<String>,
         z: f64,
     ) -> usize {
-        if !class_visible("buildingBadge", z) {
-            return 0;
-        }
+        // T-152.21 — a building emits a badge when the class LOD gate is on OR its per-prefab
+        // importanceZoom override fires (deck_zoom ≥ importanceZoom). Below the gate only the
+        // tagged landmarks count. (Airfield gating is inert on FIXTURE_CHUNK — no hangar/tower
+        // there — so this oracle need not model it; g4 pins that equality at z ≥ 1.)
+        let badge_gate = class_visible("buildingBadge", z);
         let building_code = class_code("building");
         let mut n = 0usize;
         for id in &r.draw_ids {
@@ -1990,9 +2109,14 @@ mod t152_3_tests {
             };
             for &row in rows {
                 let row = row as usize;
-                let Some(cls) = prefab_class.get(&chunk.prefab_idx[row]) else {
+                let u16k = chunk.prefab_idx[row];
+                let Some(cls) = prefab_class.get(&u16k) else {
                     continue;
                 };
+                let importance_ok = prefab_importance.get(&u16k).is_some_and(|iz| z >= *iz);
+                if !badge_gate && !importance_ok {
+                    continue;
+                }
                 let Some(key) = landmark_glyph_icon_key(cls) else {
                     continue;
                 };
@@ -2138,14 +2262,29 @@ mod t152_3_tests {
         }
     }
 
+    /// T-152.21 — below the badge band (`buildingBadge` gate at z ≥ 1) only importanceZoom-tagged
+    /// landmarks emit; ordinary buildings stay dark. (Was: ALL badges off below 1 — the pre-fix
+    /// behavior that left lighthouses as rectangles at the operator's default zoom.)
     #[test]
-    fn g3_zoom_gate_badges_off_below_one() {
+    fn g3_zoom_gate_below_one_only_importance_landmarks() {
         let mut r = load_everon_residency();
         let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
         let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
         drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 0.9);
-        assert_eq!(r.badge_glyph_count(), 0);
-        assert_eq!(oracle_badge_count(&r, &prefab_class, &keys, 0.9), 0);
+        let rust = r.badge_glyph_count() as usize;
+        let oracle = oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, 0.9);
+        assert_eq!(
+            rust, oracle,
+            "@ z=0.9 Rust badge count must equal the importance-aware oracle"
+        );
+        // The fix: importanceZoom landmarks (lighthouse/castle) surface below z=1. Equality above
+        // already proves ordinary (non-importance) buildings are excluded here — the oracle counts
+        // only tagged prefabs when the class gate is off.
+        assert!(
+            rust > 0,
+            "importanceZoom landmarks must emit below the badge band"
+        );
     }
 
     #[test]
@@ -2153,10 +2292,11 @@ mod t152_3_tests {
         let mut r = load_everon_residency();
         let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
         let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
         for z in [1.0, 2.0, 3.0] {
             drive_fixture_chunk(&mut r, FIXTURE_CHUNK, z);
             let rust_count = r.badge_glyph_count() as usize;
-            let oracle = oracle_badge_count(&r, &prefab_class, &keys, z);
+            let oracle = oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, z);
             assert_eq!(
                 rust_count, oracle,
                 "badge count mismatch @ z={z} chunk {FIXTURE_CHUNK}"
@@ -2169,6 +2309,7 @@ mod t152_3_tests {
         let mut r = load_everon_residency();
         let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
         let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
         drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
         let oracle_lm =
             oracle_landmark_glyph_count_for_chunk(&r, FIXTURE_CHUNK, &prefab_class, &keys, 2.0);
@@ -2193,7 +2334,7 @@ mod t152_3_tests {
         );
         assert_eq!(
             r.badge_glyph_count() as usize,
-            oracle_badge_count(&r, &prefab_class, &keys, 2.0)
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, 2.0)
         );
     }
 
@@ -2210,6 +2351,87 @@ mod t152_3_tests {
             "badge buffer must include building-lighthouse glyph @ z=2"
         );
         assert!(r.badge_glyph_count() > 0);
+    }
+
+    /// T-152.21 G2 + G1 — importanceZoom landmarks surface at the default editor zoom (−2) and down
+    /// to the override boundary (−4), and vanish just past it. Closes the P1 "white rectangles at
+    /// default zoom" complaint: lighthouses/castles read as badges where the operator lives (z=−2).
+    #[test]
+    fn t152_21_landmark_early_visibility() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
+        let lighthouse_idx = r.glyph_idx_for_key("building-lighthouse").unwrap();
+
+        // G2 — default editor zoom (−2): the lighthouse chunk emits landmark badges.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -2.0);
+        let n_default = r.badge_glyph_count() as usize;
+        assert!(
+            n_default > 0,
+            "landmarks must emit badges at default zoom −2"
+        );
+        assert_eq!(
+            n_default,
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, -2.0),
+            "z=−2 badge count must equal the importance-aware oracle"
+        );
+        assert!(
+            badge_glyph_indices(&r.world_badge_glyphs()).contains(&lighthouse_idx),
+            "building-lighthouse glyph present at z=−2"
+        );
+
+        // G1 — the override boundary is −4 (classify data): visible AT −4.0, gone at −4.1.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -4.0);
+        assert!(
+            r.badge_glyph_count() > 0,
+            "landmarks visible at the importanceZoom boundary −4.0"
+        );
+        assert_eq!(
+            r.badge_glyph_count() as usize,
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, -4.0)
+        );
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -4.1);
+        assert_eq!(
+            r.badge_glyph_count(),
+            0,
+            "no badges past the −4 override boundary"
+        );
+        assert_eq!(
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, -4.1),
+            0
+        );
+    }
+
+    /// T-152.21 G4 — fill de-emphasis handoff: while the early landmark glyph draws (below the badge
+    /// band) the lighthouse's bright white OBB fill (`[235,235,235,220]`, the literal P1 face) drops
+    /// to the neutral footprint fill so the glyph is the coarse-zoom face; at/above the badge band
+    /// the bright fill is restored (the badge composes over the normal fill, as before).
+    #[test]
+    fn t152_21_fill_deemphasis_handoff() {
+        let mut r = load_everon_residency();
+        let white = 235.0_f32 / 255.0;
+        // A fill instance carrying the lighthouse bright-white RGB (stride 10:
+        // [x, y, hx, hy, cos, sin, r, g, b, a]). No other class uses this color.
+        let has_white_fill = |buf: &[f32]| -> bool {
+            buf.chunks_exact(10).any(|c| {
+                (c[6] - white).abs() < 1e-3
+                    && (c[7] - white).abs() < 1e-3
+                    && (c[8] - white).abs() < 1e-3
+            })
+        };
+        // z=−2 (early glyph active): lighthouse fill de-emphasized — no white square.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -2.0);
+        assert!(
+            !has_white_fill(&r.world_building_fill()),
+            "lighthouse white fill must be de-emphasized at z=−2 (glyph is the face)"
+        );
+        // z=2 (class gate on): bright lighthouse fill restored under the badge overlay.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
+        assert!(
+            has_white_fill(&r.world_building_fill()),
+            "lighthouse bright fill present at z≥1 (no de-emphasis above the badge band)"
+        );
     }
 
     #[test]

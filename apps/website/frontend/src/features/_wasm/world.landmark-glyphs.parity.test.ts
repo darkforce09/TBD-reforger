@@ -28,7 +28,7 @@ function chunkBbox(chunkId: string): [number, number, number, number] {
 }
 
 describe('world.landmark-glyphs.parity — wasm smoke (T-152.3)', () => {
-  it('fixture 2_12: badges off @ z=0.9, landmark badges on @ z=2', () => {
+  it('fixture 2_12: importanceZoom landmarks on @ z=0.9, all badges @ z=2 (T-152.21)', () => {
     const residency = new wasm.WorldResidency()
     residency.load_manifest_json(readFileSync(`${EVERON}/manifest.json`, 'utf8'))
     residency.load_prefabs_gz(bytes(`${OBJECTS}/prefabs.json.gz`))
@@ -39,6 +39,9 @@ describe('world.landmark-glyphs.parity — wasm smoke (T-152.3)', () => {
 
     const bbox = chunkBbox(FIXTURE_CHUNK)
 
+    // z=0.9 — below BUILDING_BADGE_MIN_ZOOM: T-152.21 wires `render.importanceZoom` (−4), so the
+    // importance landmarks (lighthouse/castle) surface early while ordinary buildings stay off
+    // (was: ALL badges off — the P1 "white rectangles at default zoom" behavior).
     const missingLow = Array.from(
       residency.set_viewport(bbox[0], bbox[1], bbox[2], bbox[3], 0.9),
     )
@@ -46,8 +49,10 @@ describe('world.landmark-glyphs.parity — wasm smoke (T-152.3)', () => {
       residency.ingest_chunk_gz(id, bytes(`${OBJECTS}/chunks/${id}.json.gz`))
     }
     residency.end_apply_frame(0)
-    expect(residency.badge_glyph_count).toBe(0)
+    const lowBadges = residency.badge_glyph_count
+    expect(lowBadges).toBeGreaterThan(0)
 
+    // z=2 — class gate open: every building emits its badge / footprint glyph.
     const missingHigh = Array.from(
       residency.set_viewport(bbox[0], bbox[1], bbox[2], bbox[3], 2.0),
     )
@@ -56,6 +61,8 @@ describe('world.landmark-glyphs.parity — wasm smoke (T-152.3)', () => {
     }
     residency.end_apply_frame(0)
     expect(residency.badge_glyph_count).toBeGreaterThanOrEqual(69)
+    // The class gate at z≥1 adds the ordinary buildings that are correctly dark at z=0.9.
+    expect(residency.badge_glyph_count).toBeGreaterThan(lowBadges)
     expect(residency.chunks_draw).toBeGreaterThan(0)
   })
 })

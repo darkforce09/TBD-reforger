@@ -32,6 +32,10 @@ pub struct BuildingPrefabInfo {
     pub building_class: String,
     pub half_x: f64,
     pub half_y: f64,
+    /// T-152.21 — per-prefab `render.importanceZoom` override (contract §N2): the badge / landmark
+    /// glyph is visible when `deck_zoom >= importance_zoom` even below `BUILDING_BADGE_MIN_ZOOM`.
+    /// `None` ⇒ the class LOD gate alone decides (default when the rule omits the field).
+    pub importance_zoom: Option<f64>,
 }
 
 /// Footprint info for a fence prop (`kind=prop`, `class=fence`).
@@ -102,12 +106,19 @@ pub fn building_prefab_lookup(raw: &Value) -> HashMap<u64, BuildingPrefabInfo> {
         let he = row.get("spatial").and_then(|s| s.get("halfExtentsM"));
         let hx = he.and_then(|h| h.get("x")).and_then(Value::as_f64);
         let hy = he.and_then(|h| h.get("y")).and_then(Value::as_f64);
+        // T-152.21 — carry the render.importanceZoom override onto the footprint info the badge +
+        // fill lanes read (`residency.rs`). Absent ⇒ `None` (class gate only).
+        let importance_zoom = row
+            .get("render")
+            .and_then(|r| r.get("importanceZoom"))
+            .and_then(Value::as_f64);
         lookup.insert(
             prefab_id.to_bits(),
             BuildingPrefabInfo {
                 building_class: cls.to_string(),
                 half_x: hx.filter(|&v| v > 0.0).unwrap_or(2.0),
                 half_y: hy.filter(|&v| v > 0.0).unwrap_or(2.0),
+                importance_zoom,
             },
         );
     }
@@ -178,7 +189,8 @@ mod tests {
             Some(&BuildingPrefabInfo {
                 building_class: "residential".into(),
                 half_x: 5.0,
-                half_y: 5.0
+                half_y: 5.0,
+                importance_zoom: None
             })
         );
         assert_eq!(
@@ -186,7 +198,8 @@ mod tests {
             Some(&BuildingPrefabInfo {
                 building_class: "pier".into(),
                 half_x: 10.0,
-                half_y: 1.5
+                half_y: 1.5,
+                importance_zoom: None
             })
         );
         assert!(!lu.contains_key(&331.0_f64.to_bits())); // tree
@@ -205,8 +218,26 @@ mod tests {
             Some(&BuildingPrefabInfo {
                 building_class: "hut".into(),
                 half_x: 2.0,
-                half_y: 2.0
+                half_y: 2.0,
+                importance_zoom: None
             })
         );
+    }
+
+    /// T-152.21 — `render.importanceZoom` is parsed onto the footprint info (absent ⇒ `None`).
+    #[test]
+    fn lookup_parses_importance_zoom() {
+        let raw = json!({ "prefabs": [
+            { "prefabId": 12, "kind": "building", "class": "lighthouse",
+              "render": { "iconKey": "building-lighthouse", "importanceZoom": -4 } },
+            { "prefabId": 13, "kind": "building", "class": "residential",
+              "render": { "iconKey": "building-residential" } }
+        ]});
+        let lu = building_prefab_lookup(&raw);
+        assert_eq!(
+            lu.get(&12.0_f64.to_bits()).unwrap().importance_zoom,
+            Some(-4.0)
+        );
+        assert_eq!(lu.get(&13.0_f64.to_bits()).unwrap().importance_zoom, None);
     }
 }

@@ -59,7 +59,8 @@
     },
     "castle": {
       "prefabTypes": 14,
-      "instances": 104
+      "instances": 104,
+      "importanceZoom": -4
     },
     "civic": {
       "prefabTypes": 27,
@@ -91,11 +92,13 @@
     },
     "lighthouse": {
       "prefabTypes": 3,
-      "instances": 21
+      "instances": 21,
+      "importanceZoom": -4
     },
     "military": {
       "prefabTypes": 10,
-      "instances": 48
+      "instances": 48,
+      "importanceZoom": -4
     },
     "residential": {
       "prefabTypes": 40,
@@ -115,7 +118,8 @@
     },
     "tower": {
       "prefabTypes": 9,
-      "instances": 124
+      "instances": 124,
+      "importanceZoom": -4
     }
   },
   "byRoadClass": {},
