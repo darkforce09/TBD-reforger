@@ -2332,7 +2332,7 @@ struct LabelJson {
 // ---------------------------------------------------------------------------------------------
 
 use map_engine_core::dem::peaks::{
-    HeightLabel, HeightLabelKind, declutter_height_labels, find_peaks,
+    HeightLabel, HeightLabelKind, PEAK_MIN_VALUE_M, declutter_height_labels, find_peaks,
     height_label_min_sep_m as core_height_label_min_sep_m,
 };
 
@@ -2342,6 +2342,10 @@ struct HeightLabelJson {
     y: f64,
     value_m: i32,
     kind: String,
+    // T-152.16: optional toponym for named peaks/hills. Absent on anonymous DEM peaks
+    // (skipped on serialize so 4-field sidecar rows stay byte-identical).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    name: Option<String>,
 }
 
 fn label_from_json(j: HeightLabelJson) -> HeightLabel {
@@ -2355,6 +2359,7 @@ fn label_from_json(j: HeightLabelJson) -> HeightLabel {
         y: j.y,
         value_m: j.value_m,
         kind,
+        name: j.name,
     }
 }
 
@@ -2367,6 +2372,7 @@ fn label_to_json(l: &HeightLabel) -> HeightLabelJson {
             HeightLabelKind::Peak => "peak".into(),
             HeightLabelKind::Contour => "contour".into(),
         },
+        name: l.name.clone(),
     }
 }
 
@@ -2401,6 +2407,52 @@ pub fn find_peaks_from_meters(
         .unwrap_or_else(|_| "[]".into())
 }
 
+/// Batch-sample DEM elevations (m ASL) at world `(x, y)` points — T-152.16 named-peak merge.
+/// Inverse projection + bilinear sampling stay in Rust (LANGUAGE GATE); the exporter is dumb
+/// plumbing. Returns `f64::NAN` for any point outside the raster (caller treats as "no sample").
+#[wasm_bindgen]
+#[allow(clippy::too_many_arguments)] // wasm API surface (T-152.16)
+pub fn sample_dem_elevations(
+    meters: &[f32],
+    width: u32,
+    height: u32,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+    flip_x: bool,
+    flip_z: bool,
+    xs: &[f64],
+    ys: &[f64],
+) -> Vec<f64> {
+    let m = sample::DemManifest {
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+        width_px: width as usize,
+        height_px: height as usize,
+        flip_x,
+        flip_z,
+        height_min_m: 0.0,
+        height_max_m: 0.0,
+    };
+    let n = xs.len().min(ys.len());
+    let mut out = Vec::with_capacity(n);
+    for i in 0..n {
+        let e = sample::sample_elevation_from_meters_cache(
+            xs[i],
+            ys[i],
+            &m,
+            meters,
+            width as usize,
+            height as usize,
+        );
+        out.push(e.unwrap_or(f64::NAN));
+    }
+    out
+}
+
 /// Declutter height labels at `deck_zoom`; returns JSON array.
 #[wasm_bindgen]
 pub fn declutter_height_labels_json(json: &str, deck_zoom: f64) -> String {
@@ -2427,6 +2479,15 @@ pub fn pack_height_label_bytes(json: &str, deck_zoom: f64) -> Vec<u8> {
 #[must_use]
 pub fn height_label_min_sep_m(deck_zoom: f64) -> f64 {
     core_height_label_min_sep_m(deck_zoom)
+}
+
+/// Minimum elevation floor (m ASL) for a height-label row (T-152.16). Single source of the
+/// `PEAK_MIN_VALUE_M` const so the Node exporter floors named peaks/hills with the same value
+/// it applies to anonymous DEM peaks (one floor rule, operator decision T-152.16).
+#[wasm_bindgen]
+#[must_use]
+pub fn peak_min_value_m() -> i32 {
+    PEAK_MIN_VALUE_M
 }
 
 /// Verify G2/G3 gates on a label JSON array; returns error JSON or `"[]"`.
@@ -2466,6 +2527,7 @@ pub fn verify_height_labels_json(
             y: l.y,
             value_m: l.value_m,
             kind: l.kind.clone(),
+            name: l.name.clone(),
         });
         if let Some(elev) = sample::sample_elevation_from_meters_cache(
             label.x,

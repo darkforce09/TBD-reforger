@@ -11,6 +11,14 @@ pub const PEAK_PROMINENCE_M: f64 = 15.0;
 pub const PEAK_LABEL_MAX: usize = 48;
 /// Declutter base separation at `deck_zoom = 0` (m) — spec L4.
 pub const HEIGHT_LABEL_MIN_SEP_M: f64 = 80.0;
+/// Minimum elevation (m ASL) for an **unnamed** DEM peak to qualify (T-152.16 L2).
+/// Kills the ≤55 m knolls; named peaks/hills bypass this floor (added by the exporter).
+pub const PEAK_MIN_VALUE_M: i32 = 80;
+/// Height-label zoom band (T-152.16 L1): draw only when `deck_zoom ∈ [MIN, MAX]`.
+/// Zoomed-out island views (z &lt; MIN) and extreme zoom-in (z &gt; MAX) hide the labels.
+pub const HEIGHT_LABEL_MIN_ZOOM: f64 = -2.0;
+/// See [`HEIGHT_LABEL_MIN_ZOOM`].
+pub const HEIGHT_LABEL_MAX_ZOOM: f64 = 3.0;
 
 /// Height label kind (peak vs optional contour index).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -26,12 +34,22 @@ pub struct HeightLabel {
     pub y: f64,
     pub value_m: i32,
     pub kind: HeightLabelKind,
+    /// Optional toponym (T-152.16). `Some` for named peaks/hills merged from
+    /// `locations.json`; `None` for anonymous DEM-prominence peaks. When present the
+    /// label renders as `"{name} · {value_m} m"`, otherwise the bare elevation.
+    pub name: Option<String>,
 }
 
 /// `LABEL_MIN_SEP_M(z) = 80 · 2^(−z)` world meters.
 #[must_use]
 pub fn height_label_min_sep_m(deck_zoom: f64) -> f64 {
     HEIGHT_LABEL_MIN_SEP_M * 2f64.powf(-deck_zoom)
+}
+
+/// Height-label zoom band gate (T-152.16 G1): `true` iff `deck_zoom ∈ [MIN, MAX]`.
+#[must_use]
+pub fn should_draw_height_label(deck_zoom: f64) -> bool {
+    (HEIGHT_LABEL_MIN_ZOOM..=HEIGHT_LABEL_MAX_ZOOM).contains(&deck_zoom)
 }
 
 /// Pixel center → world (x, z) meters.
@@ -57,7 +75,11 @@ fn elev_at(meters: &[f32], width: usize, px: usize, py: usize) -> f64 {
 }
 
 /// Find local maxima on a row-major `f32` meters raster. Skips cells where elevation ≤ 0 (sea).
-/// Always includes the global maximum cell (L7 / G6) even when prominence on a summit plateau is low.
+/// Anonymous DEM peaks must clear both the prominence gate (`PEAK_PROMINENCE_M`) and the value
+/// floor (`PEAK_MIN_VALUE_M`, T-152.16 L2). The global-max cell is force-included when it clears
+/// the floor: on Everon the true ~375 m summit sits on a plateau and fails the local prominence
+/// test, so without this the max detected peak drops below the G6 350 m bar. The exporter's 200 m
+/// named-merge dedupe then replaces this anonymous summit with its toponym in the shipped sidecar.
 #[must_use]
 pub fn find_peaks(
     meters: &[f32],
@@ -110,19 +132,27 @@ pub fn find_peaks(
             if center - win_min < PEAK_PROMINENCE_M {
                 continue;
             }
-            let (x, y) = pixel_to_world(px, py, m);
             let value_m = center.round() as i32;
+            // T-152.16 L2: anonymous DEM peaks below the value floor are dropped (kills the knolls).
+            if value_m < PEAK_MIN_VALUE_M {
+                continue;
+            }
+            let (x, y) = pixel_to_world(px, py, m);
             out.push(HeightLabel {
                 x,
                 y,
                 value_m,
                 kind: HeightLabelKind::Peak,
+                name: None,
             });
         }
     }
-    if global_e > 0.0 {
+    // T-152.16: force-include the global-max cell when it clears the floor, even if its summit
+    // plateau fails the local prominence test — keeps G6 (≥350 m) honest for `find_peaks` alone.
+    // The exporter dedupes this against the named merge, so the shipped sidecar shows the toponym.
+    let g_val = global_e.round() as i32;
+    if global_e > 0.0 && g_val >= PEAK_MIN_VALUE_M {
         let (gx, gy) = pixel_to_world(global_px, global_py, m);
-        let g_val = global_e.round() as i32;
         let already = out
             .iter()
             .any(|p| (p.x - gx).abs() < 1.0 && (p.y - gy).abs() < 1.0 && p.value_m == g_val);
@@ -132,6 +162,7 @@ pub fn find_peaks(
                 y: gy,
                 value_m: g_val,
                 kind: HeightLabelKind::Peak,
+                name: None,
             });
         }
     }
@@ -145,8 +176,15 @@ fn dist_m(a: &HeightLabel, b: &HeightLabel) -> f64 {
 }
 
 /// Importance-distance greedy declutter: sort by `value_m` desc; keep iff dist ≥ sep to all kept.
+///
+/// T-152.16 L1/G1: gated by the zoom band — out of `[HEIGHT_LABEL_MIN_ZOOM, HEIGHT_LABEL_MAX_ZOOM]`
+/// this returns empty. `pack_height_label_glyphs` calls through here, so the band hides labels on
+/// both the FE declutter call and the GPU pack path with no TypeScript policy.
 #[must_use]
 pub fn declutter_height_labels(labels: &[HeightLabel], deck_zoom: f64) -> Vec<HeightLabel> {
+    if !should_draw_height_label(deck_zoom) {
+        return Vec::new();
+    }
     let sep = height_label_min_sep_m(deck_zoom);
     let mut candidates: Vec<HeightLabel> = labels.to_vec();
     candidates.sort_by_key(|c| std::cmp::Reverse(c.value_m));
@@ -177,6 +215,9 @@ pub fn declutter_invariant_holds(labels: &[HeightLabel], deck_zoom: f64) -> bool
 }
 
 /// Convert height labels to `LabelSpec` for the text lane (importance = elevation).
+///
+/// T-152.16 L5: named peaks/hills render as `"{name} · {value_m} m"`; anonymous DEM peaks stay
+/// the bare elevation numeral. Text composition lives here (Rust), never in TypeScript.
 #[must_use]
 pub fn height_labels_to_specs(labels: &[HeightLabel]) -> Vec<crate::label::LabelSpec> {
     labels
@@ -187,7 +228,10 @@ pub fn height_labels_to_specs(labels: &[HeightLabel]) -> Vec<crate::label::Label
             x: l.x.round() as i32,
             y: l.y.round() as i32,
             importance: l.value_m.clamp(0, i32::from(u16::MAX)) as u16,
-            text: l.value_m.to_string(),
+            text: match &l.name {
+                Some(n) => format!("{n} · {} m", l.value_m),
+                None => l.value_m.to_string(),
+            },
         })
         .collect()
 }
@@ -243,6 +287,7 @@ mod tests {
                 y: 0.0,
                 value_m: 300 - i,
                 kind: HeightLabelKind::Peak,
+                name: None,
             })
             .collect();
         let z = 0.0;
@@ -256,6 +301,66 @@ mod tests {
     fn min_sep_scales_with_zoom() {
         assert!((height_label_min_sep_m(0.0) - 80.0).abs() < 1e-9);
         assert!((height_label_min_sep_m(-1.0) - 160.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn zoom_band_gates_height_labels() {
+        // G1: band edges [-2.0, +3.0] inclusive; just outside → hidden.
+        assert!(should_draw_height_label(HEIGHT_LABEL_MIN_ZOOM));
+        assert!(should_draw_height_label(HEIGHT_LABEL_MAX_ZOOM));
+        assert!(should_draw_height_label(0.0));
+        assert!(!should_draw_height_label(HEIGHT_LABEL_MIN_ZOOM - 0.01));
+        assert!(!should_draw_height_label(HEIGHT_LABEL_MAX_ZOOM + 0.01));
+        // declutter returns empty out of band, the full set in band.
+        let labels = vec![HeightLabel {
+            x: 0.0,
+            y: 0.0,
+            value_m: 300,
+            kind: HeightLabelKind::Peak,
+            name: None,
+        }];
+        assert!(declutter_height_labels(&labels, -6.0).is_empty());
+        assert!(declutter_height_labels(&labels, 4.0).is_empty());
+        assert_eq!(declutter_height_labels(&labels, 0.0).len(), 1);
+    }
+
+    #[test]
+    fn value_floor_drops_sub_80_knolls() {
+        // G2: an unnamed 90 m peak survives; a 55 m knoll is floored out.
+        let w = 41;
+        let h = 41;
+        let mut m = vec![30.0f32; w * h];
+        m[10 * w + 10] = 90.0;
+        m[30 * w + 30] = 55.0;
+        let peaks = find_peaks(&m, w, h, &flat_manifest(w, h));
+        assert_eq!(peaks.len(), 1, "only the ≥80 peak survives the value floor");
+        assert_eq!(peaks[0].value_m, 90);
+        assert!(peaks.iter().all(|p| p.value_m >= PEAK_MIN_VALUE_M));
+        assert!(peaks.iter().all(|p| p.name.is_none()));
+    }
+
+    #[test]
+    fn named_label_packs_name_and_value() {
+        // G3/L5: named peaks render "{name} · {value} m"; anonymous stay bare numerals.
+        let labels = vec![
+            HeightLabel {
+                x: 100.0,
+                y: 200.0,
+                value_m: 372,
+                kind: HeightLabelKind::Peak,
+                name: Some("Highstone".to_string()),
+            },
+            HeightLabel {
+                x: 300.0,
+                y: 400.0,
+                value_m: 210,
+                kind: HeightLabelKind::Peak,
+                name: None,
+            },
+        ];
+        let specs = height_labels_to_specs(&labels);
+        assert_eq!(specs[0].text, "Highstone · 372 m");
+        assert_eq!(specs[1].text, "210");
     }
 
     #[cfg(feature = "png")]

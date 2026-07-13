@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schema.tbdevent.eu/height-labels/v1.json",
+  "title": "TBD Map Height Labels",
+  "description": "Elevation markers for a terrain (T-152.16): named peaks/hills merged from locations.json plus anonymous DEM-prominence peaks. Post-floor set (unnamed peaks are ≥ PEAK_MIN_VALUE_M). Coordinates: x east, y north, world meters (same frame as manifest worldBounds).",
+  "type": "array",
+  "minItems": 1,
+  "items": { "$ref": "#/$defs/heightLabel" },
+  "$defs": {
+    "heightLabel": {
+      "type": "object",
+      "required": ["x", "y", "value_m", "kind"],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "type": "number",
+          "description": "East meters (manifest worldBounds frame)."
+        },
+        "y": {
+          "type": "number",
+          "description": "North meters (Reforger world Z → export Y)."
+        },
+        "value_m": {
+          "type": "integer",
+          "description": "Elevation in metres ASL (label text)."
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["peak", "contour"],
+          "description": "Height-marker taxonomy (mirrors Rust HeightLabelKind). Named hills are exported as 'peak'."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 2,
+          "description": "Optional toponym for named peaks/hills (T-152.16). Absent on anonymous DEM peaks. Rendered as '{name} · {value_m} m'."
+        }
+      }
+    }
+  }
+}

@@ -24,6 +24,7 @@ const terrainManifestSchema = readJSON(join(root, "schema", "terrain-manifest.sc
 const terrainAnchorsSchema = readJSON(join(root, "schema", "terrain-anchors.schema.json"));
 const missionEditorPayloadSchema = readJSON(join(root, "schema", "mission-editor-payload.schema.json"));
 const locationsSchema = readJSON(join(root, "schema", "locations.schema.json"));
+const heightLabelsSchema = readJSON(join(root, "schema", "height-labels.schema.json"));
 
 const repoRoot = resolve(root, "..", "..");
 
@@ -37,6 +38,7 @@ const validateTerrainManifest = ajv.compile(terrainManifestSchema);
 const validateTerrainAnchors = ajv.compile(terrainAnchorsSchema);
 const validateMissionEditorPayload = ajv.compile(missionEditorPayloadSchema);
 const validateLocations = ajv.compile(locationsSchema);
+const validateHeightLabels = ajv.compile(heightLabelsSchema);
 
 // T-090.2 map-object contracts. Register every schema by $id first so the cross-file $refs
 // (enums single-source + catalog/resolved bundles) resolve, then pull compiled validators.
@@ -203,6 +205,12 @@ check(
 const everonLocPath = join(repoRoot, "packages", "map-assets", "everon", "locations.json");
 if (existsSync(everonLocPath)) {
   check("map-assets/everon/locations.json", validateLocations, readJSON(everonLocPath));
+}
+
+console.log("Height labels (T-152.16):");
+const everonHeightLabelsPath = join(repoRoot, "packages", "map-assets", "everon", "height-labels.json");
+if (existsSync(everonHeightLabelsPath)) {
+  check("map-assets/everon/height-labels.json", validateHeightLabels, readJSON(everonHeightLabelsPath));
 }
 
 console.log("Terrain anchors example:");

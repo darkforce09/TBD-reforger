@@ -12,6 +12,9 @@ export type HeightLabelRow = {
   y: number
   value_m: number
   kind: 'peak' | 'contour'
+  // T-152.16: optional toponym for named peaks/hills. The label text ("{name} · {N} m") is
+  // composed in Rust; TS only carries the field through declutter/pack round-trips.
+  name?: string
 }
 
 /** Detect peaks from a DEM meters cache + manifest bounds. */
