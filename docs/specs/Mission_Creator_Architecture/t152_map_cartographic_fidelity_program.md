@@ -1,6 +1,6 @@
 # T-152 — Map cartographic fidelity program
 
-**Status:** **ready for merge** · **Active slice:** **T-152.10** (E2E gate — automated PASS; operator O1–O12 pending)  
+**Status:** **ready** · **Active slice:** **T-152.12** (remediation ladder — text lane resurrection) · Audit **T-152.11** shipped @ `a8a7a22c` ([report](../../../.ai/artifacts/t152_11_fidelity_audit_report.md)); ladder **.12–.22** then O1–O12 before merge  
 **Ticket:** T-152 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Worktree:** `.ai/artifacts/worktrees/TBD-T-152` (absolute: `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`) · **Branch:** `ticket/T-152`  
 **Parallel lane:** runs **in parallel** with **T-068** arsenal work on `main` — no file overlap with arsenal compile until merge.
@@ -33,12 +33,15 @@ Close the **cartographic readability gap** after T-090 export + T-151 wgpu: **Re
 ```text
 T-152.0 → T-152.1 → T-152.2 → T-152.3 → T-152.4 → T-152.5
        → T-152.6 → T-152.7 → T-152.8 → T-152.9 → T-152.10
+       → T-152.11 (audit) → T-152.12 → T-152.13 → T-152.14 → T-152.15
+       → T-152.16 → T-152.17 → T-152.18 → T-152.19 → T-152.20 → T-152.21 → T-152.22
 ```
 
 1. **No code slice starts** until prior verify log records **every Gn = PASS**.
-2. Operator manual rows (Mn) may be `PENDING` only when the slice marks them operator-only **and** all automated Gn are PASS — **T-152.10** requires all Mn PASS.
-3. Cursor doc sync after each shipped slice.
-4. **Merge to `main`** only after **T-152.10** PASS.
+2. Operator manual rows (Mn) may be `PENDING` only when the slice marks them operator-only **and** all automated Gn are PASS — **T-152.22** requires all Mn/On PASS.
+3. Doc sync after each shipped slice.
+4. **Merge to `main`** only after **T-152.22** (de-vacuoused re-gate + operator O1–O12) PASS — supersedes the old T-152.10 merge line; .10's automated PASS was audited as insufficient (vacuous/waived gates, dead text lane — see audit §6.5).
+5. Remediation exceptions: **T-152.14/.15/.20/.21** are dependency-independent of the text lane and may run out of ladder order if the operator directs; **.16/.17 require .12/.13**; **.18/.19 require operator presence** (Workbench warm) and block on nothing else.
 
 ---
 
@@ -115,6 +118,27 @@ Sibling pattern: same as [`t092_spawn_transform_program.md`](t092_spawn_transfor
 | **T-152.10** | [`t152_10_e2e_cartographic_gate.md`](t152_10_e2e_cartographic_gate.md) | human + Grok | E2E gate + merge readiness |
 
 All eleven slice specs are **authored in the T-152.0 docs pass** (not deferred).
+
+---
+
+## Remediation ladder (.11–.22) — AUDIT AUTHORITATIVE
+
+Filed from the T-152.11 operator fidelity audit ([report](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §11 fix matrix / §12 ladder). **Implementing agent = Claude Code** (registry `executor: claude-code`; every spec ends with **§Claude Code prompt**, extractable by `./scripts/ticket prompt`). Operator-in-loop slices marked.
+
+| Slice | Spec | Executor | Delivers |
+|-------|------|----------|----------|
+| **T-152.11** | [`t152_11_operator_fidelity_audit.md`](t152_11_operator_fidelity_audit.md) | claude-code | Fidelity audit report (shipped @ `a8a7a22c`) |
+| **T-152.12** | [`t152_12_text_lane_orientation.md`](t152_12_text_lane_orientation.md) | claude-code | Text lane alive (16 B uniform) + upright (V-flip) + GPU gates |
+| **T-152.13** | [`t152_13_text_atlas_fidelity.md`](t152_13_text_atlas_fidelity.md) | claude-code | Readable font (≥16 px, lowercase, punctuation) |
+| **T-152.14** | [`t152_14_tree_zoom_guarantee.md`](t152_14_tree_zoom_guarantee.md) | claude-code | Trees never vanish on zoom-in (refined budget + handoff) |
+| **T-152.15** | [`t152_15_fence_pier_bridge_visibility.md`](t152_15_fence_pier_bridge_visibility.md) | claude-code | Fences @ z≥1.5 correct yaw; all piers draw; railings decision |
+| **T-152.16** | [`t152_16_height_markers_visible.md`](t152_16_height_markers_visible.md) | claude-code | Credible named height markers + zoom band + contour decision |
+| **T-152.17** | [`t152_17_town_label_correctness.md`](t152_17_town_label_correctness.md) | claude-code | Settlement-only town lane + kind hygiene + fade |
+| **T-152.18** | [`t152_18_icon_extract_retry.md`](t152_18_icon_extract_retry.md) | claude-code (**operator-in-loop**) | Reforger icon EXTRACT (no silent redraw — D2 remedy) |
+| **T-152.19** | [`t152_19_workbench_one_button_export.md`](t152_19_workbench_one_button_export.md) | claude-code (**operator-in-loop**) | Path A one-button label export + name/taxiway verdict |
+| **T-152.20** | [`t152_20_settings_completeness.md`](t152_20_settings_completeness.md) | claude-code | All 12 world-layer toggles (O10 executable) |
+| **T-152.21** | [`t152_21_landmark_early_visibility.md`](t152_21_landmark_early_visibility.md) | claude-code | `importanceZoom` wired — landmarks at default zoom |
+| **T-152.22** | [`t152_22_e2e_regate_operator.md`](t152_22_e2e_regate_operator.md) | **human** + claude-code | De-vacuoused re-gate + operator O1–O12 + screenshots |
 
 ---
 

@@ -22,3 +22,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-152 — Map cartographic fidelity (glyphs, text, labels)
+
+- **Active slice:** `T-152.12`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t152_12_text_lane_orientation.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md`
+- **Branch:** `ticket/T-152`
+- **Targets:** root, website, shared
+- **Summary:** Map cartographic fidelity — T-152.0–.11 shipped (audit @ a8a7a22c); remediation ladder T-152.12–.22 active (text lane → trees → fences/piers → labels → extract → re-gate). Hub: t152_map_cartographic_fidelity_program.md.

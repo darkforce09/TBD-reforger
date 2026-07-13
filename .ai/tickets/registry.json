@@ -4182,7 +4182,7 @@
       "id": "T-152",
       "order": 1520,
       "title": "Map cartographic fidelity (glyphs, text, labels)",
-      "summary": "Map cartographic fidelity — T-152.0–.9 shipped; T-152.10 automated E2E gate PASS; operator O1–O12 pending before program done. Hub: t152_map_cartographic_fidelity_program.md.",
+      "summary": "Map cartographic fidelity \u2014 T-152.0\u2013.11 shipped (audit @ a8a7a22c); remediation ladder T-152.12\u2013.22 active (text lane \u2192 trees \u2192 fences/piers \u2192 labels \u2192 extract \u2192 re-gate). Hub: t152_map_cartographic_fidelity_program.md.",
       "program": "infra",
       "surfaces": [
         "MAP"
@@ -4192,7 +4192,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-152.10",
+      "active_slice": "T-152.12",
       "spec": "docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md",
       "branch": "ticket/T-152",
       "stream": "infra",
@@ -4219,7 +4219,19 @@
         "T-152.7",
         "T-152.8",
         "T-152.9",
-        "T-152.10"
+        "T-152.10",
+        "T-152.11",
+        "T-152.12",
+        "T-152.13",
+        "T-152.14",
+        "T-152.15",
+        "T-152.16",
+        "T-152.17",
+        "T-152.18",
+        "T-152.19",
+        "T-152.20",
+        "T-152.21",
+        "T-152.22"
       ],
       "slice_plan": {
         "T-152.0": {
@@ -4325,7 +4337,122 @@
           "executor": "human",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md",
           "status": "shipped",
-          "notes": "Automated G1–G7/G9–G10 PASS @ T-152.10; operator O1–O12 PENDING; merge readiness doc shipped."
+          "notes": "Automated G1\u2013G7/G9\u2013G10 PASS @ T-152.10; operator O1\u2013O12 PENDING; merge readiness doc shipped."
+        },
+        "T-152.11": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md",
+          "status": "shipped",
+          "notes": "Audit report @ a8a7a22c (tag T-152.11); D1\u2013D13 ledger zero DONE; fix matrix \u2192 remediation ladder T-152.12\u2013.22."
+        },
+        "T-152.12": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_12_text_lane_orientation.md",
+          "status": "ready",
+          "notes": "Text lane resurrection: land 16 B TextUniforms hotfix + vs_text V-flip; GPU upright gates both backends. Unblocks .13/.16/.17."
+        },
+        "T-152.13": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md",
+          "status": "queued",
+          "notes": "Readable baked font \u2265 16 px cell, lowercase + punctuation; no-blob gate over committed label charset."
+        },
+        "T-152.14": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_14_tree_zoom_guarantee.md",
+          "status": "queued",
+          "notes": "Frustum-refined heatmap budget + hysteresis + mass-until-glyphs; never-blank property gate z 0\u20136 (operator S7)."
+        },
+        "T-152.15": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_15_fence_pier_bridge_visibility.md",
+          "status": "queued",
+          "notes": "Fence gate z\u22651.5 + px clamp; all 2,299 piers draw (decoupled lanes); yaw parity gate; railings implement-or-delete; anti-vacuous census."
+        },
+        "T-152.16": {
+          "targets": [
+            "root",
+            "shared"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.md",
+          "status": "queued",
+          "notes": "Height label zoom band + named peaks/hills merge from locations.json + 80 m floor; contour decision with fresh operator quote. Depends .12/.13."
+        },
+        "T-152.17": {
+          "targets": [
+            "root",
+            "shared"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_17_town_label_correctness.md",
+          "status": "queued",
+          "notes": "Settlement-only town lane; sub-feature kind fixes (locality); fade-or-hide above z=+2 (operator M-row). Depends .12/.13."
+        },
+        "T-152.18": {
+          "targets": [
+            "root",
+            "shared",
+            "mod"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_18_icon_extract_retry.md",
+          "status": "queued",
+          "notes": "OPERATOR-IN-LOOP: Workbench warm required; hard MCP liveness gate \u2014 dead daemon = blocked, never silent redraw. Extract LANDMARK_SET; redraw only per-key with operator approval (D2 WRONG_PATH remedy)."
+        },
+        "T-152.19": {
+          "targets": [
+            "root",
+            "mod",
+            "shared"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_19_workbench_one_button_export.md",
+          "status": "queued",
+          "notes": "OPERATOR-IN-LOOP: Path A locations plugin fixed (importance hardcode) + run E2E; road-name/taxiway verdict with logged queries; make map-labels-everon one-button. Depends .17 kind vocabulary."
+        },
+        "T-152.20": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_20_settings_completeness.md",
+          "status": "queued",
+          "notes": "Expose all 12 world-layer toggles (7 missing: roads/buildings/forest/trees/props/contours/sea) \u2014 dumb UI only; makes O10 executable."
+        },
+        "T-152.21": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_21_landmark_early_visibility.md",
+          "status": "queued",
+          "notes": "Wire importanceZoom prefab override (parsed, never read) \u2014 landmarks visible at default zoom \u22122 (P1\u2013P3 closure)."
+        },
+        "T-152.22": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "human",
+          "spec": "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md",
+          "status": "queued",
+          "notes": "De-vacuoused E2E re-gate + operator signs O1\u2013O12 with screenshots; FAILs file T-152.2x hotfix slices. Program close-out \u2014 merge decision after."
         }
       },
       "route": "/missions/:id/edit"
