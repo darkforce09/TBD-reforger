@@ -66,6 +66,37 @@ if (emptyDrawn.length === 0) {
   fail(`G5 empty source drew ${emptyDrawn.length}`);
 }
 
+// G1 (T-152.17) kind hygiene: the town lane draws settlements only.
+const ALLOWED_KINDS = new Set(["town", "village", "airport", "locality"]);
+const EXCLUDED_KINDS = new Set(["peak", "hill", "natural"]);
+const kindOf = (l) => l.kind ?? "town";
+const unknownKind = drawn.filter((l) => !ALLOWED_KINDS.has(kindOf(l)));
+const excludedDrawn = drawn.filter((l) => EXCLUDED_KINDS.has(kindOf(l)));
+if (unknownKind.length === 0 && excludedDrawn.length === 0) {
+  pass(`G1 kind hygiene: ${drawn.length} drawn ⊆ {town,village,airport,locality}; 0 peak/hill/natural @ z=${deckZoom}`);
+} else {
+  const offenders = [...excludedDrawn, ...unknownKind].slice(0, 6).map((l) => `${l.name}:${kindOf(l)}`);
+  fail(`G1 kind hygiene: ${excludedDrawn.length} excluded + ${unknownKind.length} unknown kind drawn [${offenders.join(", ")}]`);
+}
+
+// G4 (T-152.17) fade band: alpha 1.0 → 0.5 → 0.0 over z ∈ [2.0, 3.0].
+const approx = (a, b) => Math.abs(a - b) < 1e-6;
+const fa = (z) => wasm.town_label_fade_alpha(z);
+if (approx(fa(2.0), 1.0) && approx(fa(2.5), 0.5) && approx(fa(3.0), 0.0)) {
+  pass(`G4 fade α: 2.0→${fa(2.0)} 2.5→${fa(2.5)} 3.0→${fa(3.0)}`);
+} else {
+  fail(`G4 fade endpoints wrong: α(2.0)=${fa(2.0)} α(2.5)=${fa(2.5)} α(3.0)=${fa(3.0)}`);
+}
+
+// G4 band edges: nothing drawn above the fade ceiling or below the widened floor.
+const aboveCeil = JSON.parse(wasm.declutter_town_labels_json(JSON.stringify(sourceRaw), 3.1));
+const belowFloor = JSON.parse(wasm.declutter_town_labels_json(JSON.stringify(sourceRaw), -4.6));
+if (aboveCeil.length === 0 && belowFloor.length === 0) {
+  pass("G4 band edges: |drawn|=0 @ z=3.1 (above ceiling) and z=−4.6 (below floor)");
+} else {
+  fail(`G4 band edges: ${aboveCeil.length} drawn @ z=3.1, ${belowFloor.length} drawn @ z=−4.6`);
+}
+
 const bytes = wasm.pack_town_label_bytes(JSON.stringify(drawn), deckZoom);
 if (drawn.length === 0 && bytes.length === 0) {
   pass("pack bytes empty when no labels");

@@ -2564,6 +2564,7 @@ pub fn height_contour_labels_waived() -> bool {
 
 use map_engine_core::world::{
     LocationLabel, declutter_town_labels, parse_locations_json, town_declutter_invariant_holds,
+    town_label_fade_alpha as core_town_label_fade_alpha,
 };
 
 /// Parse `locations.json` array; returns JSON or `"[]"` on failure.
@@ -2588,6 +2589,13 @@ pub fn declutter_town_labels_json(json: &str, deck_zoom: f64) -> String {
 pub fn pack_town_label_bytes(json: &str, deck_zoom: f64) -> Vec<u8> {
     let parsed: Vec<LocationLabel> = serde_json::from_str(json).unwrap_or_default();
     map_engine_render::text_layout::pack_town_label_bytes(&parsed, deck_zoom)
+}
+
+/// Town-label lane alpha multiplier at `deck_zoom` (T-152.17 fade oracle for `verify-town-labels`).
+#[wasm_bindgen]
+#[must_use]
+pub fn town_label_fade_alpha(deck_zoom: f64) -> f64 {
+    core_town_label_fade_alpha(deck_zoom)
 }
 
 /// G3 oracle: every drawn row satisfies the A3 predicate at `deck_zoom`.

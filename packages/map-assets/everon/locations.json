@@ -172,8 +172,8 @@
     "name": "Le Moule Sawmill 01",
     "x": 3069.22,
     "y": 5195.23,
-    "importance": 0.55,
-    "kind": "town"
+    "importance": 0.4,
+    "kind": "locality"
   },
   {
     "id": "everon-levie",
@@ -212,16 +212,16 @@
     "name": "Montignac Farm 01",
     "x": 5133.96,
     "y": 7043.8,
-    "importance": 0.55,
-    "kind": "town"
+    "importance": 0.4,
+    "kind": "locality"
   },
   {
     "id": "everon-montignac-sawmil-01",
     "name": "Montignac Sawmil 01",
     "x": 4537.88,
     "y": 6844.21,
-    "importance": 0.55,
-    "kind": "town"
+    "importance": 0.4,
+    "kind": "locality"
   },
   {
     "id": "everon-morton",
@@ -404,8 +404,8 @@
     "name": "North East Farm 01",
     "x": 4961.01,
     "y": 9994.38,
-    "importance": 0.55,
-    "kind": "town"
+    "importance": 0.4,
+    "kind": "locality"
   },
   {
     "id": "everon-provins",
@@ -421,7 +421,7 @@
     "x": 1280,
     "y": 6400,
     "importance": 0.52,
-    "kind": "natural"
+    "kind": "village"
   },
   {
     "id": "everon-regina",

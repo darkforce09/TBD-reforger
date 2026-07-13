@@ -5,6 +5,7 @@ use map_engine_core::dem::peaks::{HeightLabel, declutter_height_labels, height_l
 use map_engine_core::label::LabelSpec;
 use map_engine_core::world::{
     LocationLabel, RoadLabelPlacement, declutter_town_labels, locations_to_label_specs,
+    town_label_fade_alpha,
 };
 use map_engine_core::world::{REF_ZOOM, pack_icon_instance, pack_rgba_u32, size_with_min_px};
 
@@ -136,9 +137,9 @@ fn declutter_specs_by_width(specs: &[LabelSpec], char_m: f32) -> Vec<LabelSpec> 
         let half_w = s.text.chars().count() as f32 * advance * 0.5;
         let sx = s.x as f32;
         let sy = s.y as f32;
-        let overlaps = kept
-            .iter()
-            .any(|&(kx, ky, kw)| (sx - kx).abs() < half_w + kw + advance && (sy - ky).abs() < half_h);
+        let overlaps = kept.iter().any(|&(kx, ky, kw)| {
+            (sx - kx).abs() < half_w + kw + advance && (sy - ky).abs() < half_h
+        });
         if !overlaps {
             kept.push((sx, sy, half_w));
             out.push(s.clone());
@@ -206,12 +207,16 @@ fn glyphs_from_specs(specs: &[LabelSpec], char_m: f32, _tint: u32) -> Vec<TextGl
     out
 }
 
-/// Town label GPU bytes with cartographic tint.
+/// Town label GPU bytes with cartographic tint `#e8e4dc` @ α0.92, faded on zoom-in
+/// (T-152.17: base alpha scaled by [`town_label_fade_alpha`] so names dissolve over z∈[2, 3]).
 #[must_use]
 pub fn pack_town_label_bytes(locations: &[LocationLabel], deck_zoom: f64) -> Vec<u8> {
+    const BASE_ALPHA: f64 = 234.0;
     let char_m = text_char_meters(deck_zoom);
     let glyphs = pack_town_label_glyphs(locations, deck_zoom, char_m);
-    pack_text_icon_bytes_tint(&glyphs, deck_zoom, pack_rgba_u32([232, 228, 220, 234]))
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let alpha = (BASE_ALPHA * town_label_fade_alpha(deck_zoom)).round() as u8;
+    pack_text_icon_bytes_tint(&glyphs, deck_zoom, pack_rgba_u32([232, 228, 220, alpha]))
 }
 
 /// Pack glyph instances into 20 B icon instances for the text atlas lane (WORLD coords).
@@ -384,9 +389,15 @@ mod tests {
         };
         let kept = declutter_specs_by_width(&[a.clone(), b.clone()], 10.0);
         assert_eq!(kept.len(), 1, "overlapping long names collapse to one");
-        assert_eq!(kept[0].text, a.text, "higher-priority (first) label survives");
+        assert_eq!(
+            kept[0].text, a.text,
+            "higher-priority (first) label survives"
+        );
         // Far apart in x → both kept.
-        let far = LabelSpec { x: 2000, ..b.clone() };
+        let far = LabelSpec {
+            x: 2000,
+            ..b.clone()
+        };
         assert_eq!(declutter_specs_by_width(&[a.clone(), far], 10.0).len(), 2);
         // Different rows (large dy) → both kept even at the same x.
         let below = LabelSpec { y: 500, ..b };

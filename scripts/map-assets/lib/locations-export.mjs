@@ -7,10 +7,12 @@ import { readFileSync } from "node:fs";
 
 /** @typedef {{ id: string, name: string, x: number, y: number, importance?: number, kind?: string }} LocationRow */
 
+// T-152.17: Highstone dropped from the required set (operator decision) — it is a named `peak`
+// on the T-152.16 heights lane, not a town-lane settlement. Raccoon Rock stays (reclassified to
+// `village` below so it draws at z=−2).
 export const REQUIRED_EVERON_TOWNS = [
   "Morton",
   "Gorey",
-  "Highstone",
   "Raccoon Rock",
   "Saint Philippe",
   "Levie",
@@ -47,6 +49,16 @@ const KIND_BY_BASENAME = {
 };
 
 /**
+ * T-152.17 — sub-features (sawmills, farms, quarries) are map-real but not towns. A direct
+ * `World/Locations/Eden/*.et` prefab whose name matches this is classified `locality` (drawn small
+ * at z ≥ 0 only) instead of `town`. Reclassifies Le Moule Sawmill 01, Montignac Farm 01,
+ * Montignac Sawmil 01 [sic], North East Farm 01.
+ */
+const SUBFEATURE_RE = /\b(sawmill|sawmil|farm|quarry|mine)\b/i;
+/** Locality importance — small; must stay ≤ 0.45 (verifyLocationsGates enforces). */
+export const LOCALITY_IMPORTANCE = 0.4;
+
+/**
  * Towns present in CfgWorlds Names / cartographic labels but absent as top-level
  * `World/Locations/Eden/{Name}.et` composition prefabs in the full-world export.
  * Coordinates cross-validated: EnfusionMapMaker (APL-SA), operator grid refs, map_export_everon.json.
@@ -69,11 +81,13 @@ export const CFGWORLD_NAME_SUPPLEMENT = [
     source: "Operator grid 049,085 (SteamAH GM guide) + nearest prop @ 2 m",
   },
   {
+    // T-152.17: required settlement — reclassified natural→village so it draws on the town lane
+    // at z=−2 (not in the T-152.16 heights sidecar, so no `.16` collision).
     id: "everon-raccoon-rock",
     name: "Raccoon Rock",
     x: 1280,
     y: 6400,
-    kind: "natural",
+    kind: "village",
     source: "map_export_everon.json subregionCellCentreM + nearest cliff @ 4 m",
   },
   {
@@ -138,13 +152,15 @@ export function exportLocationsFromJsonl(jsonlPath, opts = {}) {
       const name = displayNameFromBasename(base);
       if (rejectName(name)) continue;
       const id = slug(terrainId, name);
+      const baseKind = KIND_BY_BASENAME[base] ?? (base === "Airport" ? "airport" : "town");
+      const isSubFeature = baseKind === "town" && (SUBFEATURE_RE.test(base) || SUBFEATURE_RE.test(name));
       byId.set(id, {
         id,
         name,
         x: round3(r.x),
         y: round3(r.z),
-        importance: defaultImportance(name),
-        kind: KIND_BY_BASENAME[base] ?? (base === "Airport" ? "airport" : "town"),
+        importance: isSubFeature ? LOCALITY_IMPORTANCE : defaultImportance(name),
+        kind: isSubFeature ? "locality" : baseKind,
       });
       continue;
     }
@@ -216,6 +232,11 @@ export function verifyLocationsGates(locs) {
     if (loc.name.length < 2) errors.push(`G5: name too short id=${loc.id}`);
     if (!Number.isFinite(loc.x) || !Number.isFinite(loc.y)) errors.push(`G5: non-finite coords id=${loc.id}`);
     if (/location composition/i.test(loc.name)) errors.push(`G6: placeholder name id=${loc.id}`);
+    // T-152.17 kind hygiene: sub-features must be locality, not town.
+    if (loc.kind === "town" && SUBFEATURE_RE.test(loc.name))
+      errors.push(`G7: sub-feature tagged "town" id=${loc.id} ("${loc.name}") — expected "locality"`);
+    if (loc.kind === "locality" && (loc.importance ?? 0.5) > 0.45)
+      errors.push(`G7: locality importance ${loc.importance} > 0.45 id=${loc.id}`);
   }
 
   return errors;

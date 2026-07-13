@@ -40,8 +40,8 @@
         },
         "kind": {
           "type": "string",
-          "enum": ["town", "village", "peak", "hill", "harbor", "airport", "bay", "farm", "industrial", "natural"],
-          "description": "Optional taxonomy for render/filter (defaults to town when omitted)."
+          "enum": ["town", "village", "locality", "peak", "hill", "harbor", "airport", "bay", "farm", "industrial", "natural"],
+          "description": "Optional taxonomy for render/filter (defaults to town when omitted). Town lane draws town/village/airport, plus locality at z≥0 (T-152.17)."
         }
       }
     }

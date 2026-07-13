@@ -2988,10 +2988,11 @@ impl RenderEngine {
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
         if bytes.is_empty() || !visible {
+            // T-152.17: drop the resident Batch whenever there is nothing to draw. `draw_batches`
+            // emits from the Batch's `count`, so zeroing the scalar alone left stale glyphs on
+            // screen when the draw set emptied on zoom-in (hill label stuck at z=4.48).
             self.town_labels_drawn = 0;
-            if !visible {
-                self.remove_lane(LaneRole::WorldTownLabels);
-            }
+            self.remove_lane(LaneRole::WorldTownLabels);
             return;
         }
         if !bytes.len().is_multiple_of(STRIDE) {

@@ -56,9 +56,11 @@ pub use glyph_math::{
     tree_size_multiplier, yaw_to_snorm16,
 };
 pub use importance_declutter::{
-    IMPORTANCE_SCALE, LocationLabel, TOWN_BASE_SIZE_M, TOWN_LABEL_MAX_ZOOM, TOWN_LABEL_MIN_ZOOM,
-    declutter_town_labels, nearest_more_important_m, should_draw_town_label, size_land_m,
-    town_declutter_invariant_holds, town_declutter_threshold_m,
+    IMPORTANCE_SCALE, LocationLabel, TOWN_BASE_SIZE_M, TOWN_LABEL_FADE_ENABLED,
+    TOWN_LABEL_FADE_END, TOWN_LABEL_MAX_ZOOM, TOWN_LABEL_MIN_ZOOM, TOWN_LABEL_WIDE_MIN_IMPORTANCE,
+    TOWN_LABEL_WIDE_ZOOM, declutter_town_labels, nearest_more_important_m, should_draw_town_label,
+    size_land_m, town_declutter_invariant_holds, town_declutter_threshold_m, town_label_fade_alpha,
+    town_label_zoom_ceiling, town_lane_kind_ok,
 };
 pub use index::WorldSpatialIndex;
 pub use locations::{locations_to_label_specs, parse_locations_json};

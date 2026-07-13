@@ -22,5 +22,13 @@
     "y": 8550,
     "importance": 0.48,
     "kind": "peak"
+  },
+  {
+    "id": "everon-montignac-sawmil-01",
+    "name": "Montignac Sawmil 01",
+    "x": 4537.88,
+    "y": 6844.21,
+    "importance": 0.4,
+    "kind": "locality"
   }
 ]
