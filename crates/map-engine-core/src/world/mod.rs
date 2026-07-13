@@ -11,7 +11,9 @@ mod chunk_math;
 mod classify;
 mod density_ladder;
 mod glyph_math;
+mod importance_declutter;
 mod index;
+mod locations;
 mod lod_gates;
 mod manifest;
 mod obb;
@@ -51,7 +53,13 @@ pub use glyph_math::{
     hex_to_rgba, landmark_glyph_icon_key, pack_icon_instance, pack_rgba_u32, size_with_min_px,
     tree_size_multiplier, yaw_to_snorm16,
 };
+pub use importance_declutter::{
+    declutter_town_labels, nearest_more_important_m, should_draw_town_label, size_land_m,
+    town_declutter_invariant_holds, town_declutter_threshold_m, LocationLabel, IMPORTANCE_SCALE,
+    TOWN_BASE_SIZE_M, TOWN_LABEL_MAX_ZOOM, TOWN_LABEL_MIN_ZOOM,
+};
 pub use index::WorldSpatialIndex;
+pub use locations::{locations_to_label_specs, parse_locations_json};
 pub use lod_gates::{
     BUILDING_BADGE_MIN_ZOOM, BUILDING_FOOTPRINT_MIN_ZOOM, FOREST_FILL_MAX_ZOOM,
     FOREST_OUTLINE_MIN_ZOOM, INSTANCE_BUDGET, PROP_MIN_ZOOM, REF_ZOOM, ROCK_LARGE_MIN_ZOOM,

@@ -41,6 +41,7 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
       contours: true,
       sea: true,
       heights: true,
+      townLabels: true,
     })
   })
 

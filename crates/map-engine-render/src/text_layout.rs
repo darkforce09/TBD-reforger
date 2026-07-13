@@ -2,7 +2,10 @@
 //! Pure data; GPU upload lives in `map-engine-render` (wasm32).
 
 use map_engine_core::dem::peaks::{declutter_height_labels, height_label_min_sep_m, HeightLabel};
-use map_engine_core::label::{declutter, LabelSpec};
+use map_engine_core::label::LabelSpec;
+use map_engine_core::world::{
+    declutter_town_labels, locations_to_label_specs, LocationLabel,
+};
 use map_engine_core::world::{pack_icon_instance, pack_rgba_u32, size_with_min_px, REF_ZOOM};
 
 /// One textured glyph instance in world meters (center of character cell).
@@ -32,8 +35,8 @@ pub fn pack_label_glyphs(
     deck_zoom: f64,
     char_m: f32,
 ) -> Vec<TextGlyphInstance> {
-    let drawn = declutter(labels, deck_zoom);
-    glyphs_from_specs(&drawn, char_m)
+    let drawn = map_engine_core::label::declutter(labels, deck_zoom);
+    glyphs_from_specs(&drawn, char_m, pack_rgba_u32([220, 220, 215, 230]))
 }
 
 /// T-152.7 — height labels with 80 m declutter (not the 48 px town-label curve).
@@ -45,10 +48,22 @@ pub fn pack_height_label_glyphs(
 ) -> Vec<TextGlyphInstance> {
     let drawn = declutter_height_labels(labels, deck_zoom);
     let specs: Vec<LabelSpec> = map_engine_core::dem::peaks::height_labels_to_specs(&drawn);
-    glyphs_from_specs(&specs, char_m)
+    glyphs_from_specs(&specs, char_m, pack_rgba_u32([220, 220, 215, 230]))
 }
 
-fn glyphs_from_specs(specs: &[LabelSpec], char_m: f32) -> Vec<TextGlyphInstance> {
+/// T-152.8 — town names with A3 importance declutter + cartographic tint `#e8e4dc` @ α0.92.
+#[must_use]
+pub fn pack_town_label_glyphs(
+    locations: &[LocationLabel],
+    deck_zoom: f64,
+    char_m: f32,
+) -> Vec<TextGlyphInstance> {
+    let drawn = declutter_town_labels(locations, deck_zoom);
+    let specs = locations_to_label_specs(&drawn);
+    glyphs_from_specs(&specs, char_m, pack_rgba_u32([232, 228, 220, 234]))
+}
+
+fn glyphs_from_specs(specs: &[LabelSpec], char_m: f32, _tint: u32) -> Vec<TextGlyphInstance> {
     let mut out = Vec::new();
     let half = char_m * 0.5;
     for lab in specs {
@@ -73,11 +88,24 @@ fn glyphs_from_specs(specs: &[LabelSpec], char_m: f32) -> Vec<TextGlyphInstance>
     out
 }
 
+/// Town label GPU bytes with cartographic tint.
+#[must_use]
+pub fn pack_town_label_bytes(locations: &[LocationLabel], deck_zoom: f64) -> Vec<u8> {
+    let char_m = text_char_meters(deck_zoom);
+    let glyphs = pack_town_label_glyphs(locations, deck_zoom, char_m);
+    pack_text_icon_bytes_tint(&glyphs, deck_zoom, pack_rgba_u32([232, 228, 220, 234]))
+}
+
 /// Pack glyph instances into 20 B icon instances for the text atlas lane (WORLD coords).
 #[must_use]
 pub fn pack_text_icon_bytes(glyphs: &[TextGlyphInstance], deck_zoom: f64) -> Vec<u8> {
+    pack_text_icon_bytes_tint(glyphs, deck_zoom, pack_rgba_u32([220, 220, 215, 230]))
+}
+
+/// Height labels use the default tint; town labels pass cartographic `#e8e4dc` @ α0.92.
+#[must_use]
+pub fn pack_text_icon_bytes_tint(glyphs: &[TextGlyphInstance], deck_zoom: f64, tint: u32) -> Vec<u8> {
     let char_m = text_char_meters(deck_zoom);
-    let tint = pack_rgba_u32([220, 220, 215, 230]);
     let mut out = Vec::with_capacity(glyphs.len() * 20);
     for g in glyphs {
         let size = g.half_m * 2.0;
@@ -136,11 +164,16 @@ pub fn bake_ascii_atlas_rgba() -> (Vec<u8>, u32, u32) {
     (px, w, h)
 }
 
-/// Tiny patterns for digits — 5×7 bitfields packed in u64 (35 bits used).
+/// Tiny patterns for digits + A–Z — 5×7 bitfields packed in u64 (35 bits used).
 fn glyph_pixel(ch: u8, x: u32, y: u32) -> bool {
     if x >= 5 || y >= 7 {
         return false;
     }
+    let ch = if ch.is_ascii_lowercase() {
+        ch.to_ascii_uppercase()
+    } else {
+        ch
+    };
     let bits: u64 = match ch {
         b'0' => 0b0_01110_10001_10011_10101_11001_10001_01110,
         b'1' => 0b0_00100_01100_00100_00100_00100_00100_01110,
@@ -154,10 +187,45 @@ fn glyph_pixel(ch: u8, x: u32, y: u32) -> bool {
         b'9' => 0b0_01110_10001_10001_01111_00001_00010_01100,
         b'm' | b'M' => 0b0_10001_11011_10101_10101_10001_10001_10001,
         b' ' => 0,
+        b'A'..=b'Z' => letter_glyph_bits(ch),
         _ => 0b0_01110_10001_10001_10001_10001_10001_01110,
     };
     let bit = 34u32.saturating_sub(y * 5 + x);
     ((bits >> bit) & 1) == 1
+}
+
+/// Public-domain 5×7 uppercase alphabet (tom-thumb style).
+fn letter_glyph_bits(ch: u8) -> u64 {
+    const GLYPHS: [u64; 26] = [
+        0b0_01110_10001_10001_11111_10001_10001_10001, // A
+        0b0_11110_10001_10001_11110_10001_10001_11110, // B
+        0b0_01110_10001_10000_10000_10001_10001_01110, // C
+        0b0_11110_10001_10001_10001_10001_10001_11110, // D
+        0b0_11111_10000_11110_10000_10000_10000_11111, // E
+        0b0_11111_10000_11110_10000_10000_10000_10000, // F
+        0b0_01110_10001_10000_10111_10001_10001_01110, // G
+        0b0_10001_10001_10001_11111_10001_10001_10001, // H
+        0b0_01110_00100_00100_00100_00100_00100_01110, // I
+        0b0_00111_00010_00010_00010_10010_10010_01100, // J
+        0b0_10001_10010_10100_11000_10100_10010_10001, // K
+        0b0_10000_10000_10000_10000_10000_10000_11111, // L
+        0b0_10001_11011_10101_10101_10001_10001_10001, // M
+        0b0_10001_11001_10101_10011_10001_10001_10001, // N
+        0b0_01110_10001_10001_10001_10001_10001_01110, // O
+        0b0_11110_10001_10001_11110_10000_10000_10000, // P
+        0b0_01110_10001_10001_10001_10101_10010_01101, // Q
+        0b0_11110_10001_10001_11110_10100_10010_10001, // R
+        0b0_01110_10001_10000_01110_00001_10001_01110, // S
+        0b0_11111_00100_00100_00100_00100_00100_00100, // T
+        0b0_10001_10001_10001_10001_10001_10001_01110, // U
+        0b0_10001_10001_10001_10001_10001_01010_00100, // V
+        0b0_10001_10001_10001_10101_10101_10101_01010, // W
+        0b0_10001_10001_01010_00100_01010_10001_10001, // X
+        0b0_10001_10001_10001_01010_00100_00100_00100, // Y
+        0b0_11111_00001_00010_00100_01000_10000_11111, // Z
+    ];
+    let idx = (ch - b'A') as usize;
+    GLYPHS.get(idx).copied().unwrap_or(0)
 }
 
 #[cfg(test)]

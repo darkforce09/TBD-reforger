@@ -902,7 +902,7 @@ fn draw_batches<'a>(
                 pass.draw_indexed(0..l.index_count, 0, 0..1);
             }
             BatchPayload::IconInstanced { instances, count } => {
-                if batch.role == LaneRole::WorldLabels {
+                if batch.role == LaneRole::WorldLabels || batch.role == LaneRole::WorldTownLabels {
                     let Some(text_bg) = text_atlas_bind else {
                         continue;
                     };
@@ -984,6 +984,8 @@ pub struct RenderEngine {
     text_atlas: Option<TextAtlasGpu>,
     /// Height labels drawn last frame (stats).
     text_labels_drawn: u32,
+    /// T-152.8 town name labels drawn last frame.
+    town_labels_drawn: u32,
     /// Dedicated slot/cluster atlas (None until `upload_slot_atlas` / `ensure_slot_atlas`).
     slot_atlas: Option<SlotAtlasGpu>,
     /// T-151.7.3 slot GPU policy (selection/drag/cluster) — TS is dumb UI only.
@@ -1379,6 +1381,7 @@ impl RenderEngine {
             glyph_atlas: None,
             text_atlas: None,
             text_labels_drawn: 0,
+            town_labels_drawn: 0,
             slot_atlas: None,
             slot_bridge: SlotGpuBridge::default(),
             batches: vec![calibration_batch],
@@ -2942,6 +2945,46 @@ impl RenderEngine {
             LaneRole::WorldLabels,
             Batch {
                 role: LaneRole::WorldLabels,
+                visible: true,
+                payload: BatchPayload::IconInstanced {
+                    instances: buf,
+                    count,
+                },
+            },
+        );
+    }
+
+    /// Upload town name labels (20 B instances, `WorldTownLabels` lane — above height labels).
+    pub fn upload_town_labels(&mut self, bytes: &[u8], visible: bool) {
+        use wgpu::util::DeviceExt;
+        const STRIDE: usize = 20;
+        if bytes.is_empty() || !visible {
+            self.town_labels_drawn = 0;
+            if !visible {
+                self.remove_lane(LaneRole::WorldTownLabels);
+            }
+            return;
+        }
+        if !bytes.len().is_multiple_of(STRIDE) {
+            self.remove_lane(LaneRole::WorldTownLabels);
+            return;
+        }
+        let _ = self.ensure_text_atlas();
+        let mut converted = bytes.to_vec();
+        Self::convert_icon_world_to_anchor(&mut converted);
+        let count = (converted.len() / STRIDE) as u32;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("town-labels"),
+                contents: &converted,
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        self.town_labels_drawn = count;
+        self.upsert_lane(
+            LaneRole::WorldTownLabels,
+            Batch {
+                role: LaneRole::WorldTownLabels,
                 visible: true,
                 payload: BatchPayload::IconInstanced {
                     instances: buf,

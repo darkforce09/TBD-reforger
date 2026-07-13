@@ -31,6 +31,8 @@ export interface WorldClassToggles {
   sea: boolean
   /** T-152.7 DEM peak ASL height labels (default on). */
   heights: boolean
+  /** T-152.8 town name labels from locations.json (default on). */
+  townLabels: boolean
 }
 
 const DEFAULT_TOGGLES: WorldClassToggles = {
@@ -44,6 +46,7 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
   contours: true,
   sea: true,
   heights: true,
+  townLabels: true,
 }
 
 interface WorldLayerPrefs {

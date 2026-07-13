@@ -36,8 +36,10 @@ pub enum LaneRole {
     WorldProps,
     /// W5 building badges.
     WorldBadges,
-    /// T-152.1 cartographic text labels (after badges, before grid).
+    /// T-152.7 height / ASL text labels (after badges).
     WorldLabels,
+    /// T-152.8 town name labels (above height labels, below grid).
+    WorldTownLabels,
     /// W6 mission slot rings.
     Slots,
     /// W6 drag-preview overlay (T-061).
@@ -77,12 +79,13 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldProps => 16,
         LaneRole::WorldBadges => 17,
         LaneRole::WorldLabels => 18,
-        LaneRole::Grid => 19,
-        LaneRole::Slots => 20,
-        LaneRole::SlotDrag => 21,
-        LaneRole::Clusters => 22,
-        LaneRole::Marquee => 23,
-        LaneRole::MarqueeOutline => 24,
+        LaneRole::WorldTownLabels => 19,
+        LaneRole::Grid => 20,
+        LaneRole::Slots => 21,
+        LaneRole::SlotDrag => 22,
+        LaneRole::Clusters => 23,
+        LaneRole::Marquee => 24,
+        LaneRole::MarqueeOutline => 25,
     }
 }
 
@@ -125,13 +128,15 @@ mod lane_order_pins {
     #[test]
     fn labels_sit_between_badges_and_grid() {
         assert!(lane_order(L::WorldLabels) > lane_order(L::WorldBadges));
-        assert!(lane_order(L::WorldLabels) < lane_order(L::Grid));
+        assert!(lane_order(L::WorldTownLabels) > lane_order(L::WorldLabels));
+        assert!(lane_order(L::WorldTownLabels) < lane_order(L::Grid));
     }
 
     #[test]
     fn grid_sits_between_world_glyphs_and_mission_lanes() {
         assert!(lane_order(L::Grid) > lane_order(L::WorldBadges));
         assert!(lane_order(L::Grid) > lane_order(L::WorldLabels));
+        assert!(lane_order(L::Grid) > lane_order(L::WorldTownLabels));
         assert!(lane_order(L::Grid) > lane_order(L::WorldTrees));
         assert!(lane_order(L::Grid) > lane_order(L::WorldProps));
         assert!(lane_order(L::Grid) < lane_order(L::Slots));
@@ -159,6 +164,7 @@ mod lane_order_pins {
             L::WorldProps,
             L::WorldBadges,
             L::WorldLabels,
+            L::WorldTownLabels,
             L::Grid,
             L::Slots,
             L::SlotDrag,

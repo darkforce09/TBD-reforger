@@ -2454,3 +2454,89 @@ pub fn verify_height_labels_json(
 pub fn height_contour_labels_waived() -> bool {
     true
 }
+
+// ---------------------------------------------------------------------------------------------
+// T-152.8 — town name labels (locations.json + A3 importance declutter)
+// ---------------------------------------------------------------------------------------------
+
+use map_engine_core::world::{
+    declutter_town_labels, parse_locations_json, town_declutter_invariant_holds, LocationLabel,
+};
+
+/// Parse `locations.json` array; returns JSON or `"[]"` on failure.
+#[wasm_bindgen]
+pub fn parse_locations_json_wasm(json: &str) -> String {
+    match parse_locations_json(json) {
+        Ok(rows) => serde_json::to_string(&rows).unwrap_or_else(|_| "[]".into()),
+        Err(_) => "[]".into(),
+    }
+}
+
+/// Declutter town labels at `deck_zoom`; returns JSON array of drawn rows.
+#[wasm_bindgen]
+pub fn declutter_town_labels_json(json: &str, deck_zoom: f64) -> String {
+    let parsed: Vec<LocationLabel> = serde_json::from_str(json).unwrap_or_default();
+    let out = declutter_town_labels(&parsed, deck_zoom);
+    serde_json::to_string(&out).unwrap_or_else(|_| "[]".into())
+}
+
+/// Pack town labels into 20 B icon instances for `upload_town_labels`.
+#[wasm_bindgen]
+pub fn pack_town_label_bytes(json: &str, deck_zoom: f64) -> Vec<u8> {
+    let parsed: Vec<LocationLabel> = serde_json::from_str(json).unwrap_or_default();
+    map_engine_render::text_layout::pack_town_label_bytes(&parsed, deck_zoom)
+}
+
+/// G3 oracle: every drawn row satisfies the A3 predicate at `deck_zoom`.
+#[wasm_bindgen]
+#[must_use]
+pub fn town_declutter_invariant_holds_json(json: &str, deck_zoom: f64) -> bool {
+    let all: Vec<LocationLabel> = serde_json::from_str(json).unwrap_or_default();
+    let drawn = declutter_town_labels(&all, deck_zoom);
+    town_declutter_invariant_holds(&drawn, &all, deck_zoom)
+}
+
+/// Verify G2/G4 on locations + drawn set; returns error JSON or `"[]"`.
+#[wasm_bindgen]
+pub fn verify_town_labels_json(
+    source_json: &str,
+    drawn_json: &str,
+    deck_zoom: f64,
+    required_json: &str,
+) -> String {
+    let source: Vec<LocationLabel> = serde_json::from_str(source_json).unwrap_or_default();
+    let drawn: Vec<LocationLabel> = serde_json::from_str(drawn_json).unwrap_or_default();
+    let required: Vec<String> = serde_json::from_str(required_json).unwrap_or_default();
+    let mut errors: Vec<String> = Vec::new();
+
+    if !town_declutter_invariant_holds(&drawn, &source, deck_zoom) {
+        errors.push("G3: declutter invariant failed".into());
+    }
+
+    let norm = |s: &str| s.to_lowercase().replace(' ', "");
+    let drawn_names: Vec<String> = drawn.iter().map(|l| norm(&l.name)).collect();
+    for town in &required {
+        let k = norm(town);
+        let ok = drawn_names.iter().any(|n| n == &k || n.contains(&k[..k.len().min(6)]));
+        if !ok {
+            errors.push(format!("G2: missing required town \"{town}\""));
+        }
+    }
+
+    let by_id: std::collections::HashMap<_, _> =
+        source.iter().map(|l| (l.id.as_str(), l.name.trim())).collect();
+    for d in &drawn {
+        if let Some(src_name) = by_id.get(d.id.as_str()) {
+            if d.name.trim() != *src_name {
+                errors.push(format!(
+                    "G4: name mismatch id={} drawn=\"{}\" source=\"{}\"",
+                    d.id, d.name, src_name
+                ));
+            }
+        } else {
+            errors.push(format!("G4: unknown id {}", d.id));
+        }
+    }
+
+    serde_json::to_string(&errors).unwrap_or_else(|_| "[]".into())
+}

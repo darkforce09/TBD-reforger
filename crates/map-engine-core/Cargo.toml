@@ -27,7 +27,7 @@ doc = ["dep:yrs", "dep:serde_json"]
 # flip an `as f32` store and fail the Class R `f32BytesEqual` gate over 508k instances. The
 # `"serde_json/float_roundtrip"` form activates the optional dep AND its feature, scoped to
 # `world`-enabled builds (the wasm shim) — the backend's `mission`-only build is untouched.
-world = ["dep:thiserror", "dep:flate2", "serde_json/float_roundtrip"]
+world = ["dep:thiserror", "dep:flate2", "dep:serde", "serde_json/float_roundtrip"]
 
 [dependencies]
 png = { version = "0.17", optional = true }
