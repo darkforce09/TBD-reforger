@@ -18,6 +18,11 @@ pub const BUILDING_BADGE_MIN_ZOOM: f64 = 1.0;
 pub const VEGETATION_MIN_ZOOM: f64 = 1.5;
 /// deckZoom ≥ +3 → prop/small-rock glyphs.
 pub const PROP_MIN_ZOOM: f64 = 3.0;
+/// T-152.15 L1 — deckZoom ≥ +1.5 → cartographic fence strips (dedicated class; no longer the
+/// `prop` band, which stays z ≥ 3 for real props).
+pub const FENCE_MIN_ZOOM: f64 = 1.5;
+/// T-152.15 L1 — deckZoom ≥ −1.0 → pier/dock quay strips (decoupled from the fence gate).
+pub const PIER_MIN_ZOOM: f64 = -1.0;
 /// deckZoom ≥ +1 → large rock landmark glyphs.
 pub const ROCK_LARGE_MIN_ZOOM: f64 = 1.0;
 /// deckZoom ≤ +3 → sea band fill visible.
@@ -55,6 +60,10 @@ pub fn class_visible(cls: &str, deck_zoom: f64) -> bool {
         "tree" => deck_zoom >= TREE_GLYPH_MIN_ZOOM,
         "vegetation" => deck_zoom >= VEGETATION_MIN_ZOOM,
         "prop" => deck_zoom >= PROP_MIN_ZOOM,
+        // T-152.15 L1 — fence/pier are cartographic strip lanes, not glyph props. NB these keys are
+        // intentionally NOT in `WORLD_RENDER_CLASSES` (that array feeds the TS oracle-parity scan).
+        "fence" => deck_zoom >= FENCE_MIN_ZOOM,
+        "pier" => deck_zoom >= PIER_MIN_ZOOM,
         "rockLarge" => deck_zoom >= ROCK_LARGE_MIN_ZOOM,
         "building" => deck_zoom >= BUILDING_FOOTPRINT_MIN_ZOOM,
         "buildingBadge" => deck_zoom >= BUILDING_BADGE_MIN_ZOOM,
@@ -105,6 +114,21 @@ mod tests {
         assert!(class_visible("forestOutline", -1.5));
         assert!(!class_visible("forestOutline", -1.6));
         assert!(!class_visible("forestOutline", 0.0));
+    }
+
+    /// T-152.15 G1 — new fence/pier gate boundaries; prop band unchanged (z ≥ 3).
+    #[test]
+    fn fence_pier_gate_boundaries() {
+        assert!(class_visible("fence", 1.5));
+        assert!(!class_visible("fence", 1.49));
+        assert!(class_visible("pier", -1.0));
+        assert!(!class_visible("pier", -1.01));
+        // prop band untouched for real props.
+        assert!(class_visible("prop", 3.0));
+        assert!(!class_visible("prop", 2.99));
+        // fence/pier are strip lanes, not in the render-class table (TS-parity scan invariant).
+        assert!(!WORLD_RENDER_CLASSES.contains(&"fence"));
+        assert!(!WORLD_RENDER_CLASSES.contains(&"pier"));
     }
 
     /// Exhaustive Class R pin table for glyph-relevant classes (TS parity is also vitest-scanned).

@@ -2219,10 +2219,29 @@ impl WorldResidency {
         self.inner.buildings_visible()
     }
 
-    /// T-152.4 fence/pier strip lane visibility (fences toggle ∧ prop LOD gate).
+    /// T-152.15 fence strip lane visibility (Fences toggle ∧ fence LOD gate, z ≥ 1.5).
     #[must_use]
     pub fn fences_visible(&self) -> bool {
         self.inner.fences_visible()
+    }
+
+    /// T-152.15 pier quay lane visibility (Buildings toggle ∧ pier LOD gate, z ≥ −1.0).
+    #[must_use]
+    pub fn piers_visible(&self) -> bool {
+        self.inner.piers_visible()
+    }
+
+    /// T-152.15 shared strip-lane upload flag (fences OR piers OR buildings) — stable on
+    /// toggle+zoom so piers/rails don't re-couple to the Fences toggle at the render boundary.
+    #[must_use]
+    pub fn strips_visible(&self) -> bool {
+        self.inner.strips_visible()
+    }
+
+    /// T-152.15 exact pier/dock quay strip count (census gate G3).
+    #[must_use]
+    pub fn pier_strip_segment_count(&self) -> u32 {
+        self.inner.pier_strip_segment_count()
     }
 }
 

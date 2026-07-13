@@ -24,7 +24,7 @@ use serde_json::Value;
 
 use super::airfield::{compute_airfield_bbox, is_airfield_structure_class, point_in_bbox};
 use super::cartographic_strip::{
-    compose_fence_strip, compose_pier_strip, pack_cartographic_strips,
+    compose_bridge_rail_strips, compose_fence_strip, compose_pier_strip, pack_cartographic_strips,
 };
 use super::chunk::{WorldChunk, parse_chunk};
 use super::chunk_math::{
@@ -75,12 +75,20 @@ const OUTLINE_COLOR: [u8; 4] = [30, 30, 34, 255];
 /// Solid-dark default footprint fill (`buildingLayer.ts` `FILL_DEFAULT`).
 const FILL_DEFAULT: [u8; 4] = [38, 38, 44, 184];
 
+/// T-152.15 Q6 — bridge deck tint (warm stone), distinct from the gray building fill.
+const BRIDGE_DECK_RGBA: [u8; 4] = [120, 116, 110, 215];
+/// T-152.15 Q6 — dark casing rim drawn under the deck (a bridge reads as a bridge, not a building).
+const BRIDGE_CASING_RGBA: [u8; 4] = [40, 40, 46, 220];
+/// T-152.15 Q6 — casing widen (m) along the crossing (long) axis, past the deck ends.
+const BRIDGE_CASING_MARGIN_M: f64 = 0.8;
+
 /// `FILL_BY_CLASS[class] ?? FILL_DEFAULT` (`buildingLayer.ts:127-139`), verbatim.
 #[must_use]
 fn fill_color(class: &str) -> [u8; 4] {
     match class {
         "military" => [0x7a, 0x5c, 0x3d, 184],
-        "bridge" => [90, 90, 100, 200],
+        // T-152.15 Q6 — `bridge` is handled directly in `rebuild_buffers` (deck + casing), so it is
+        // intentionally not in this table (one bridge codepath).
         "pier" | "dock" => [110, 95, 75, 190],
         "ruin" => [58, 56, 60, 110],
         "castle" => [70, 58, 48, 190],
@@ -148,6 +156,10 @@ pub struct WorldResidency {
     outline_buf: Vec<f32>,
     /// T-152.4 fence + pier thin strips (packed `[x,y,r,g,b,a]…` triangle list).
     strip_buf: Vec<f32>,
+    /// T-152.15 — exact per-class strip instance counts (census gates G3/G5, decoupling G6).
+    fence_strip_count: u32,
+    pier_strip_count: u32,
+    bridge_rail_count: u32,
 
     /// T-151.11.3 (audit B-04): ingest-frame start stamp — the ≤ APPLY_BUDGET_MS/frame policy
     /// lives HERE (pure; the wasm wrapper feeds `Date.now`), not in the JS loader.
@@ -228,6 +240,9 @@ impl Default for WorldResidency {
             fill_buf: Vec::new(),
             outline_buf: Vec::new(),
             strip_buf: Vec::new(),
+            fence_strip_count: 0,
+            pier_strip_count: 0,
+            bridge_rail_count: 0,
             ingest_frame_start_ms: None,
             deck_zoom: -2.0,
             toggle_trees: true,
@@ -320,10 +335,18 @@ impl WorldResidency {
         self.airfield_bbox
     }
 
-    /// Whether fence/pier strip lanes should draw: user toggle ∧ prop LOD gate.
+    /// Whether the fence strip lane should draw: Fences toggle ∧ fence LOD gate (T-152.15 —
+    /// dedicated `fence` class at z ≥ 1.5, decoupled from piers).
     #[must_use]
     pub fn fences_visible(&self) -> bool {
-        self.toggle_fences && class_visible("prop", self.deck_zoom)
+        self.toggle_fences && class_visible("fence", self.deck_zoom)
+    }
+
+    /// Whether the pier/dock quay lane should draw: Buildings toggle ∧ pier LOD gate (T-152.15 —
+    /// dedicated `pier` class at z ≥ −1.0, decoupled from the Fences toggle).
+    #[must_use]
+    pub fn piers_visible(&self) -> bool {
+        self.toggle_buildings && class_visible("pier", self.deck_zoom)
     }
 
     /// Whether the building fill/outline lanes should draw: user toggle ∧ zoom gate
@@ -333,6 +356,15 @@ impl WorldResidency {
     #[must_use]
     pub fn buildings_visible(&self) -> bool {
         self.toggle_buildings && building_visible(self.deck_zoom)
+    }
+
+    /// Whether the shared strip render lane (fences + piers + bridge rails) may draw at all —
+    /// stable on toggle+zoom only (fences OR piers OR buildings). The loader passes this as the
+    /// upload `visible` flag; keeping it independent of buffer contents preserves the
+    /// empty+visible mid-hydration anti-wipe guard while the three sub-lanes gate independently.
+    #[must_use]
+    pub fn strips_visible(&self) -> bool {
+        self.fences_visible() || self.piers_visible() || self.buildings_visible()
     }
 
     fn rebuild_glyph_lookup_from_prefabs(&mut self) {
@@ -694,7 +726,8 @@ impl WorldResidency {
                 let y = f64::from(chunk.positions[2 * r + 1]);
                 let rot = f64::from(chunk.rotations[r]);
                 let cls = info.building_class.as_str();
-                // T-152.4: pier/dock → thin strip when aspect ≥ PIER_ASPECT_MIN; skip fat square.
+                // T-152.4/T-152.15: pier/dock render as thin quay strips (rebuild_strip_buffers),
+                // never a fat square — skip the fill.
                 if cls == "pier" || cls == "dock" {
                     continue;
                 }
@@ -703,19 +736,47 @@ impl WorldResidency {
                 let rad = (rot * std::f64::consts::PI) / 180.0;
                 let cos = rad.cos() as f32;
                 let sin = rad.sin() as f32;
-                let c = norm(fill_color(&info.building_class));
-                fill.extend_from_slice(&[
-                    x as f32,
-                    y as f32,
-                    info.half_x as f32,
-                    info.half_y as f32,
-                    cos,
-                    sin,
-                    c[0],
-                    c[1],
-                    c[2],
-                    c[3],
-                ]);
+                if cls == "bridge" {
+                    // T-152.15 Q6 — dark casing rim widened along the crossing (long) axis, pushed
+                    // FIRST, then the warm deck on top → reads as a bridge, not a gray building.
+                    let (chx, chy) = if info.half_x >= info.half_y {
+                        (info.half_x + BRIDGE_CASING_MARGIN_M, info.half_y)
+                    } else {
+                        (info.half_x, info.half_y + BRIDGE_CASING_MARGIN_M)
+                    };
+                    let casing = norm(BRIDGE_CASING_RGBA);
+                    fill.extend_from_slice(&[
+                        x as f32, y as f32, chx as f32, chy as f32, cos, sin, casing[0], casing[1],
+                        casing[2], casing[3],
+                    ]);
+                    let deck = norm(BRIDGE_DECK_RGBA);
+                    fill.extend_from_slice(&[
+                        x as f32,
+                        y as f32,
+                        info.half_x as f32,
+                        info.half_y as f32,
+                        cos,
+                        sin,
+                        deck[0],
+                        deck[1],
+                        deck[2],
+                        deck[3],
+                    ]);
+                } else {
+                    let c = norm(fill_color(cls));
+                    fill.extend_from_slice(&[
+                        x as f32,
+                        y as f32,
+                        info.half_x as f32,
+                        info.half_y as f32,
+                        cos,
+                        sin,
+                        c[0],
+                        c[1],
+                        c[2],
+                        c[3],
+                    ]);
+                }
                 // Outline: closed LineList ring (world coords), 8 vertices, near-black.
                 let ring = obb_corners(x, y, info.half_x, info.half_y, rot);
                 for e in 0..4 {
@@ -746,20 +807,30 @@ impl WorldResidency {
         self.refresh_draw_set_and_glyphs();
     }
 
-    /// T-152.4 — compose pier/dock + fence prop thin strips over pinned chunks.
+    /// T-152.15 — compose pier quays, bridge rails, and fence strips over pinned chunks. Each lane
+    /// gates independently (piers ← Buildings toggle + pier LOD; rails ← Buildings toggle; fences ←
+    /// Fences toggle + fence LOD), with an exact instance count (gates G3/G5/G6). The three sub-vecs
+    /// concatenate into one packed `strip_buf` → one render lane (WorldFences); order pier → rail →
+    /// fence is cosmetic (piers/rails under fences).
     fn rebuild_strip_buffers(&mut self) {
         self.strip_buf.clear();
-        if !self.fences_visible() {
-            return;
-        }
+        self.fence_strip_count = 0;
+        self.pier_strip_count = 0;
+        self.bridge_rail_count = 0;
         let prop_code = class_code("prop");
         let building_code = class_code("building");
+        let z = self.deck_zoom;
         let mut ids = self.pinned_ids.clone();
         ids.sort();
-        let mut verts_acc: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+        let mut pier_v: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+        let mut rail_v: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+        let mut fence_v: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
 
-        // Pier/dock strips (building class, thin quay).
-        if self.toggle_buildings && building_visible(self.deck_zoom) {
+        // Building-row lane: pier/dock quays (pier gate) + bridge rails (building gate). Both keyed
+        // to the Buildings toggle only — never the Fences toggle.
+        let piers_on = self.piers_visible();
+        let rails_on = self.buildings_visible();
+        if piers_on || rails_on {
             for id in &ids {
                 let Some(chunk) = self.chunks.get(id) else {
                     continue;
@@ -773,42 +844,71 @@ impl WorldResidency {
                         continue;
                     };
                     let cls = info.building_class.as_str();
-                    if cls != "pier" && cls != "dock" {
-                        continue;
-                    }
                     let x = f64::from(chunk.positions[2 * r]);
                     let y = f64::from(chunk.positions[2 * r + 1]);
                     let rot = f64::from(chunk.rotations[r]);
-                    if let Some(strip) =
-                        compose_pier_strip(x, y, info.half_x, info.half_y, rot, fill_color(cls))
-                    {
-                        verts_acc.extend(strip);
+                    if piers_on && (cls == "pier" || cls == "dock") {
+                        // T-152.15 L3 — every pier/dock emits exactly one quay strip.
+                        pier_v.extend(compose_pier_strip(
+                            x,
+                            y,
+                            info.half_x,
+                            info.half_y,
+                            rot,
+                            fill_color(cls),
+                            z,
+                        ));
+                        self.pier_strip_count += 1;
+                    } else if rails_on && cls == "bridge" {
+                        // T-152.15 Path A — 2 synthetic deck-edge rails per bridge (gate G5).
+                        rail_v.extend(compose_bridge_rail_strips(
+                            x,
+                            y,
+                            info.half_x,
+                            info.half_y,
+                            rot,
+                            z,
+                        ));
+                        self.bridge_rail_count += 2;
                     }
                 }
             }
         }
 
-        // Fence prop strips (G-railing-path A: railings are fence props near bridges).
-        for id in &ids {
-            let Some(chunk) = self.chunks.get(id) else {
-                continue;
-            };
-            let Some(rows) = chunk.rows_by_class.get(&prop_code) else {
-                continue;
-            };
-            for &r in rows {
-                let r = r as usize;
-                let Some(finfo) = self.fence_by_u16.get(&chunk.prefab_idx[r]) else {
+        // Fence prop strips — Fences toggle + fence LOD gate only (decoupled from piers/rails).
+        if self.fences_visible() {
+            for id in &ids {
+                let Some(chunk) = self.chunks.get(id) else {
                     continue;
                 };
-                let x = f64::from(chunk.positions[2 * r]);
-                let y = f64::from(chunk.positions[2 * r + 1]);
-                let rot = f64::from(chunk.rotations[r]);
-                verts_acc.extend(compose_fence_strip(x, y, finfo.half_x, finfo.half_y, rot));
+                let Some(rows) = chunk.rows_by_class.get(&prop_code) else {
+                    continue;
+                };
+                for &r in rows {
+                    let r = r as usize;
+                    let Some(finfo) = self.fence_by_u16.get(&chunk.prefab_idx[r]) else {
+                        continue;
+                    };
+                    let x = f64::from(chunk.positions[2 * r]);
+                    let y = f64::from(chunk.positions[2 * r + 1]);
+                    let rot = f64::from(chunk.rotations[r]);
+                    fence_v.extend(compose_fence_strip(
+                        x,
+                        y,
+                        finfo.half_x,
+                        finfo.half_y,
+                        rot,
+                        z,
+                    ));
+                    self.fence_strip_count += 1;
+                }
             }
         }
 
-        self.strip_buf = pack_cartographic_strips(&verts_acc);
+        let mut acc = pier_v;
+        acc.extend(rail_v);
+        acc.extend(fence_v);
+        self.strip_buf = pack_cartographic_strips(&acc);
     }
 
     /// Strict visible rect → chunk ids ∩ pinned ∩ cells (Class S draw-set). No preload expand.
@@ -1036,15 +1136,22 @@ impl WorldResidency {
         self.strip_buf.clone()
     }
 
-    /// Strip segment count (each fence/pier OBB → one strip item).
+    /// T-152.15 — exact fence strip instance count (one per fence prop OBB, gate G6).
     #[must_use]
     pub fn fence_strip_segment_count(&self) -> u32 {
-        // Approximate: non-empty buffer implies ≥1 strip; engine uses item_count for stats.
-        if self.strip_buf.is_empty() {
-            0
-        } else {
-            (self.strip_buf.len() / 6 / 3).max(1) as u32
-        }
+        self.fence_strip_count
+    }
+
+    /// T-152.15 — exact pier/dock quay strip count (census gate G3; one per pier/dock instance).
+    #[must_use]
+    pub fn pier_strip_segment_count(&self) -> u32 {
+        self.pier_strip_count
+    }
+
+    /// T-152.15 — bridge rail strip count (gate G5; 2 per bridge instance, Path A synthetic).
+    #[must_use]
+    pub fn bridge_rail_strip_count(&self) -> u32 {
+        self.bridge_rail_count
     }
 
     /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).
@@ -2112,5 +2219,194 @@ mod t152_3_tests {
             let key = building_icon_key(cls).expect(cls);
             assert_eq!(key, format!("building-{cls}"));
         }
+    }
+
+    // ---- T-152.15 fence/pier/bridge remediation gates (G2/G3/G5/G6 + bridge casing) ----
+
+    const EVERON_TERRAIN_M: f64 = 12800.0;
+    const PIER_CENSUS: u32 = 2299;
+    const BRIDGE_CENSUS: usize = 144;
+
+    /// Pin + ingest every real chunk of the island once (each cell's OWN file — unlike
+    /// `drive_fixture_chunk`, which replicates one fixture). No per-chunk sum ⇒ no LRU/extra-ring
+    /// double-count: one residency holds the whole island, so the strip counts are exact.
+    fn drive_full_island(r: &mut WorldResidency, z: f64) {
+        let missing = r.set_viewport(0.0, 0.0, EVERON_TERRAIN_M, EVERON_TERRAIN_M, z);
+        let dir = map_assets().join("everon/objects/chunks");
+        for id in &missing {
+            match fs::read(dir.join(format!("{id}.json.gz"))) {
+                Ok(bytes) => {
+                    r.ingest_chunk_gz(id, &bytes).unwrap();
+                }
+                Err(_) => r.note_undelivered(id),
+            }
+        }
+        r.end_apply_frame(0.0);
+    }
+
+    /// Bridge instance count over the pinned island — independent of the rail-compose path
+    /// (different code) so the G5 `rails == 2 × bridges` check is not tautological.
+    fn island_bridge_count(r: &WorldResidency) -> usize {
+        let building_code = class_code("building");
+        let mut ids = r.pinned_ids.clone();
+        ids.sort();
+        let mut n = 0usize;
+        for id in &ids {
+            let Some(chunk) = r.chunks.get(id) else {
+                continue;
+            };
+            let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                continue;
+            };
+            for &row in rows {
+                let row = row as usize;
+                if let Some(info) = r.building_by_u16.get(&chunk.prefab_idx[row])
+                    && info.building_class == "bridge"
+                {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
+    /// Count building-fill instances (10 f32 each) whose RGBA equals `rgba`.
+    fn fill_instances_with_color(fill: &[f32], rgba: [u8; 4]) -> usize {
+        let want = norm(rgba);
+        fill.chunks_exact(10)
+            .filter(|inst| {
+                (inst[6] - want[0]).abs() < 1e-6
+                    && (inst[7] - want[1]).abs() < 1e-6
+                    && (inst[8] - want[2]).abs() < 1e-6
+                    && (inst[9] - want[3]).abs() < 1e-6
+            })
+            .count()
+    }
+
+    /// G2 — strip long axis ≡ fill OBB long axis within 0.5° over EVERY real fence + pier/dock
+    /// prefab × sample yaws {0,37,90,123}. Anti-vacuous: asserts ≥ 255 fence prefabs × 4 yaws.
+    #[test]
+    fn t152_15_g2_orientation_parity_all_prefabs() {
+        let everon = map_assets().join("everon");
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        let fences = fence_prefab_lookup(&raw);
+        let buildings = building_prefab_lookup(&raw);
+        let mut samples: Vec<(f64, f64)> = fences.values().map(|f| (f.half_x, f.half_y)).collect();
+        let fence_n = samples.len();
+        for info in buildings.values() {
+            if info.building_class == "pier" || info.building_class == "dock" {
+                samples.push((info.half_x, info.half_y));
+            }
+        }
+        let mut checked = 0usize;
+        let mut worst = 0.0f64;
+        for (hx, hy) in &samples {
+            for yaw in [0.0f64, 37.0, 90.0, 123.0] {
+                let [p0, p1] = super::super::obb_long_axis_endpoints(0.0, 0.0, *hx, *hy, yaw);
+                let strip_ang = (p1[1] - p0[1]).atan2(p1[0] - p0[0]).to_degrees();
+                let c = obb_corners(0.0, 0.0, *hx, *hy, yaw);
+                let (e0x, e0y) = (c[1][0] - c[0][0], c[1][1] - c[0][1]); // len 2·hx
+                let (e1x, e1y) = (c[2][0] - c[1][0], c[2][1] - c[1][1]); // len 2·hy
+                let (fx, fy) = if e0x.hypot(e0y) >= e1x.hypot(e1y) {
+                    (e0x, e0y)
+                } else {
+                    (e1x, e1y)
+                };
+                let fill_ang = fy.atan2(fx).to_degrees();
+                let d = {
+                    let x = (strip_ang - fill_ang).abs() % 180.0;
+                    x.min(180.0 - x)
+                };
+                assert!(d <= 0.5, "parity {d}° for hx={hx} hy={hy} yaw={yaw}");
+                worst = worst.max(d);
+                checked += 1;
+            }
+        }
+        assert!(fence_n >= 255, "expected ≥255 fence prefabs, got {fence_n}");
+        assert!(
+            checked >= 255 * 4,
+            "parity gate must be non-vacuous, only {checked} checks"
+        );
+        assert!(worst <= 0.5, "worst-case parity {worst}° exceeds 0.5°");
+    }
+
+    /// G3 (pier census) + G5 (bridge rails) + bridge casing + G6 (toggle decoupling), one island.
+    #[test]
+    fn t152_15_pier_census_rails_casing_and_decoupling() {
+        let mut r = load_everon_residency();
+        drive_full_island(&mut r, 1.5); // z ≥ fence(1.5), pier(−1.0), building(−2.5): all lanes on
+
+        // G3 — every pier/dock draws (compose emits unconditionally). Anti-vacuous: > 0.
+        let piers = r.pier_strip_segment_count();
+        assert!(piers > 0, "G3 anti-vacuous: pier census must be > 0");
+        assert!(
+            piers >= (f64::from(PIER_CENSUS) * 0.99).ceil() as u32,
+            "G3: pier census {piers} < 0.99 × {PIER_CENSUS}"
+        );
+        assert_eq!(piers, PIER_CENSUS, "G3: exact pier census");
+
+        // G5 — 2 synthetic rails per bridge instance (Path A), by construction.
+        let bridges = island_bridge_count(&r);
+        assert!(bridges > 0, "G5 anti-vacuous: island must have bridges");
+        assert_eq!(bridges, BRIDGE_CENSUS, "bridge instance census");
+        assert_eq!(
+            r.bridge_rail_strip_count(),
+            2 * bridges as u32,
+            "G5: every bridge emits exactly 2 rail strips"
+        );
+
+        // Bridge casing (Q6) — each bridge contributes one deck fill + one casing fill.
+        let fill = r.world_building_fill();
+        assert_eq!(
+            fill_instances_with_color(&fill, BRIDGE_DECK_RGBA),
+            bridges,
+            "one warm-deck fill per bridge"
+        );
+        assert_eq!(
+            fill_instances_with_color(&fill, BRIDGE_CASING_RGBA),
+            bridges,
+            "one casing rim per bridge"
+        );
+
+        // Fences on at z=1.5.
+        let fences_on = r.fence_strip_segment_count();
+        assert!(fences_on > 0, "fences must draw at z=1.5");
+
+        // G6 — Fences OFF ⇒ 0 fence strips; piers + rails unaffected.
+        r.set_fences_toggle(false);
+        assert_eq!(r.fence_strip_segment_count(), 0, "G6: fences off ⇒ 0 fence");
+        assert_eq!(
+            r.pier_strip_segment_count(),
+            piers,
+            "G6: piers unaffected by fences"
+        );
+        assert_eq!(
+            r.bridge_rail_strip_count(),
+            2 * bridges as u32,
+            "G6: rails unaffected by fences"
+        );
+        r.set_fences_toggle(true);
+        assert_eq!(r.fence_strip_segment_count(), fences_on, "fences restored");
+
+        // G6 — Buildings OFF ⇒ 0 pier strips + 0 rails; fences unaffected.
+        r.set_glyph_toggles(true, false, false);
+        assert_eq!(
+            r.pier_strip_segment_count(),
+            0,
+            "G6: buildings off ⇒ 0 pier"
+        );
+        assert_eq!(
+            r.bridge_rail_strip_count(),
+            0,
+            "G6: buildings off ⇒ 0 rails"
+        );
+        assert_eq!(
+            r.fence_strip_segment_count(),
+            fences_on,
+            "G6: fences unaffected by buildings toggle"
+        );
     }
 }

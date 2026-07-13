@@ -532,8 +532,11 @@ export class WgpuWorldController {
     this.engine.upload_world_buildings(fill, rstats.chunks_pinned, bVis)
     this.engine.upload_world_building_outlines(outline, bVis)
     const strips = this.residency.world_fence_strips()
-    const fVis = this.residency.fences_visible()
-    this.engine.upload_world_fence_strips(strips, strips.length > 0 ? 1 : 0, fVis)
+    // T-152.15 — the shared strip lane carries fences + piers + bridge rails; gate the upload on
+    // strips_visible() (fences OR piers OR buildings) so piers don't vanish when Fences is toggled
+    // off. Per-class gating already happened in Rust when the buffer was composed.
+    const stripsVis = this.residency.strips_visible()
+    this.engine.upload_world_fence_strips(strips, strips.length > 0 ? 1 : 0, stripsVis)
     this.pushGlyphsToEngine()
     const engStats = JSON.parse(this.engine.stats()) as {
       world_building_instances: number

@@ -31,9 +31,10 @@ pub use airfield::{
     polygon_area_m2,
 };
 pub use cartographic_strip::{
-    BRIDGE_RAILING_RADIUS_M, FENCE_STRIP_RGBA, FENCE_STRIP_WIDTH_M, PIER_ASPECT_MIN,
-    compose_fence_strip, compose_pier_strip, obb_aspect_ratio, obb_long_axis_endpoints,
-    pack_cartographic_strips, strip_world_width_at_midpoint,
+    BRIDGE_RAILING_RADIUS_M, FENCE_STRIP_RGBA, FENCE_STRIP_WIDTH_M, PIER_STRIP_MAX_WIDTH_M,
+    STRIP_MIN_PX, clamp_strip_width_m, compose_bridge_rail_strips, compose_fence_strip,
+    compose_pier_strip, obb_long_axis_endpoints, pack_cartographic_strips,
+    strip_world_width_at_midpoint,
 };
 pub use chunk_math::{
     Bbox, ChunkRect, TerrainSizeM, chunk_id, chunk_ids_for_rect, chunk_ids_for_viewport,
@@ -62,10 +63,10 @@ pub use importance_declutter::{
 pub use index::WorldSpatialIndex;
 pub use locations::{locations_to_label_specs, parse_locations_json};
 pub use lod_gates::{
-    BUILDING_BADGE_MIN_ZOOM, BUILDING_FOOTPRINT_MIN_ZOOM, FOREST_FILL_MAX_ZOOM,
-    FOREST_OUTLINE_MIN_ZOOM, INSTANCE_BUDGET, PROP_MIN_ZOOM, REF_ZOOM, ROCK_LARGE_MIN_ZOOM,
-    SEA_FILL_MAX_ZOOM, TREE_GLYPH_MIN_ZOOM, VEGETATION_MIN_ZOOM, WORLD_RENDER_CLASSES,
-    class_visible, contour_interval_for_zoom,
+    BUILDING_BADGE_MIN_ZOOM, BUILDING_FOOTPRINT_MIN_ZOOM, FENCE_MIN_ZOOM, FOREST_FILL_MAX_ZOOM,
+    FOREST_OUTLINE_MIN_ZOOM, INSTANCE_BUDGET, PIER_MIN_ZOOM, PROP_MIN_ZOOM, REF_ZOOM,
+    ROCK_LARGE_MIN_ZOOM, SEA_FILL_MAX_ZOOM, TREE_GLYPH_MIN_ZOOM, VEGETATION_MIN_ZOOM,
+    WORLD_RENDER_CLASSES, class_visible, contour_interval_for_zoom,
 };
 pub use manifest::{
     ChunkCell, DEFAULT_CHUNK_SIZE_M, ObjectsManifest, narrow_cells, parse_objects_manifest,
