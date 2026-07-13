@@ -1,4 +1,4 @@
-// Faction palette tree (T-152) — replaces the raw vanilla registry dump: side folders
+// Faction palette tree (T-153) — replaces the raw vanilla registry dump: side folders
 // (BLUFOR/OPFOR/INDFOR/CIV) → operator-authored library factions → Roles (draggable ORBAT
 // templates carrying assetId + tag + pre-authored SlotLoadout v2 + factionRef) and
 // Vehicles (listed; map placement lands with T-070, so vehicle leaves carry no payload).

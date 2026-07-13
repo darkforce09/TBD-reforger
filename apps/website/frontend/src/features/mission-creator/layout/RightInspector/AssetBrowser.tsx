@@ -1,4 +1,4 @@
-// Right-panel Factions palette (T-152): the operator's faction LIBRARY — side folders →
+// Right-panel Factions palette (T-153): the operator's faction LIBRARY — side folders →
 // authored factions → draggable ORBAT role templates + vehicle pool — replaces the raw
 // vanilla registry character dump entirely (T-074). Role drags carry assetId + tag +
 // pre-authored SlotLoadout v2 + factionRef; vehicle leaves list only (placement = T-070).

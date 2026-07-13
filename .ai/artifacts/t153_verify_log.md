@@ -1,7 +1,7 @@
-# T-152 verify log — Faction Library
+# T-153 verify log — Faction Library
 
 **Date:** 2026-07-13 · **Executor:** Claude Code (Mode C session) ·
-**Spec:** `docs/specs/Mission_Creator_Architecture/t152_faction_library.md`
+**Spec:** `docs/specs/Mission_Creator_Architecture/t153_faction_library.md`
 
 ## Status
 

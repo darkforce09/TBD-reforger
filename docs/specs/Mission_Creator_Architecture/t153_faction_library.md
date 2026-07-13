@@ -1,8 +1,8 @@
-# T-152 — Faction Library (reusable factions + palette swap)
+# T-153 — Faction Library (reusable factions + palette swap)
 
-**Status:** **shipped** (backend + frontend; tags **T-152.0**/**T-152.1** on the two
+**Status:** **shipped** (backend + frontend; tags **T-153.0**/**T-153.1** on the two
 commits) · **Executor:** claude-code (operator-approved Mode C session, docs lane
-included) · **Verify:** [`.ai/artifacts/t152_verify_log.md`](../../../.ai/artifacts/t152_verify_log.md) ·
+included) · **Verify:** [`.ai/artifacts/t153_verify_log.md`](../../../.ai/artifacts/t152_verify_log.md) ·
 **Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) (Mode C)
 
 ## In one sentence

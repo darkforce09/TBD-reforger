@@ -1,4 +1,4 @@
-// Faction library (T-152) — operator-authored reusable factions consumed by the Mission
+// Faction library (T-153) — operator-authored reusable factions consumed by the Mission
 // Creator palette (side → faction → roles/vehicles) and authored in the Faction Manager.
 
 import type { SlotLoadoutV2 } from '@/features/tactical-map'

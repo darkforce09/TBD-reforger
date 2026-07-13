@@ -28,12 +28,12 @@ export interface AssetDropPayload {
   role: string
   /** What entity to materialize. Only 'slot' is wired today. */
   kind: 'slot'
-  /** T-152: role tag from the faction library template (e.g. "AT" | "MED"). */
+  /** T-153: role tag from the faction library template (e.g. "AT" | "MED"). */
   tag?: string
-  /** T-152: pre-authored SlotLoadout v2 carried from the faction role template —
+  /** T-153: pre-authored SlotLoadout v2 carried from the faction role template —
    *  stored on the slot right after placement. */
   loadout?: unknown
-  /** T-152: which library faction the drag came from; the drop ensures a matching
+  /** T-153: which library faction the drag came from; the drop ensures a matching
    *  doc Faction (side key + name) and attaches the slot's squad under it. */
   factionRef?: { side: string; name: string }
 }

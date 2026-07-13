@@ -113,7 +113,7 @@ export default function MissionCreatorPage() {
     (payload: AssetDropPayload, world: { x: number; y: number }) => {
       if (payload.kind !== 'slot') return
       const layerId = useMapStore.getState().activeLayerId ?? undefined
-      // T-152: library-faction drops attach under a doc Faction matching the library
+      // T-153: library-faction drops attach under a doc Faction matching the library
       // side+name (created on first drop) instead of the implicit default squad.
       let squadId: string | undefined
       if (payload.factionRef) {

@@ -409,7 +409,7 @@ export function useBanUser() {
 }
 
 /**
- * Create or replace a faction library entry (T-152). Pass `id` to update.
+ * Create or replace a faction library entry (T-153). Pass `id` to update.
  *
  * @route POST /api/v1/factions
  * @route PUT /api/v1/factions/:id
@@ -428,7 +428,7 @@ export function useSaveFaction() {
 }
 
 /**
- * Delete a faction library entry (T-152).
+ * Delete a faction library entry (T-153).
  *
  * @route DELETE /api/v1/factions/:id
  */

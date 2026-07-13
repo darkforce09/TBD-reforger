@@ -107,7 +107,7 @@ export function ensureDefaultSquad(md: MissionDoc): ID {
   return squadId
 }
 
-/** Ensure a doc Faction exists for a library faction (T-152): matched by side key + name.
+/** Ensure a doc Faction exists for a library faction (T-153): matched by side key + name.
  *  First real user of Faction.key beyond the hardcoded BLUFOR default. */
 export function ensureFaction(md: MissionDoc, side: string, name: string): ID {
   const st = useMapStore.getState()

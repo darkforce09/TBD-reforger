@@ -1,4 +1,4 @@
--- T-152: operator-authored reusable faction library. One row per faction; the full
+-- T-153: operator-authored reusable faction library. One row per faction; the full
 -- faction document (side, name, role templates with optional SlotLoadout v2, vehicle
 -- pool) lives in `doc` jsonb validated against faction-library.schema.json on write.
 -- side/name are projected into columns for listing/uniqueness; owner_id = discord_id

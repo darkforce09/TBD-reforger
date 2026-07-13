@@ -19,7 +19,7 @@ export type Slot = string | null
 export type ResourceName = string
 
 /**
- * One operator-authored reusable faction (T-152): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).
+ * One operator-authored reusable faction (T-153): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).
  */
 export interface TBDFactionLibraryEntry {
   /**

@@ -1,4 +1,4 @@
-//! Faction library model (T-152) — operator-authored reusable factions consumed by the
+//! Faction library model (T-153) — operator-authored reusable factions consumed by the
 //! Mission Creator palette (side → faction → roles/vehicles).
 //!
 //! @contract faction-library.schema.json#/

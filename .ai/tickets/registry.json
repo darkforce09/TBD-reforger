@@ -4159,6 +4159,69 @@
           "shipped_at": "804f779a"
         }
       }
+    },
+    {
+      "id": "T-153",
+      "order": 1510,
+      "program": "eden",
+      "status": "shipped",
+      "surfaces": [
+        "EDITOR",
+        "ARS",
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "schema",
+        "frontend"
+      ],
+      "title": "Faction Library (reusable factions + palette swap)",
+      "summary": "Operator-authored reusable factions (side -> faction -> ORBAT role templates with SlotLoadout v2 + vehicle pool) stored in user_factions and rendered by the Mission Creator Factions palette instead of the raw vanilla registry dump (closes the T-074 intent). NOTE: commit messages e2aec2de/c4ccb9c3 say T-152 - renumbered to T-153 post-commit after discovering the legacy cartographic T-152.x tag namespace; git tags T-153.0/T-153.1 are authoritative.",
+      "depends_on": [
+        "T-068"
+      ],
+      "unblocks": [
+        "T-070",
+        "T-071"
+      ],
+      "implements": null,
+      "route": null,
+      "branch": "main",
+      "spec": "docs/specs/Mission_Creator_Architecture/t153_faction_library.md",
+      "slices": [
+        "T-153.0",
+        "T-153.1"
+      ],
+      "stream": "mission-creator",
+      "targets": [
+        "website",
+        "shared"
+      ],
+      "executor": "claude-code",
+      "parallel_ok": null,
+      "slice_plan": {
+        "T-153.0": {
+          "executor": "claude-code",
+          "targets": [
+            "website",
+            "shared"
+          ],
+          "status": "shipped",
+          "shipped_at": "e2aec2de",
+          "spec": "docs/specs/Mission_Creator_Architecture/t153_faction_library.md",
+          "notes": "Backend: faction-library.schema.json + goldens/codegen; migration 0006 user_factions; /api/v1/factions CRUD (owner-scoped, contract-validated); tests T1-T8."
+        },
+        "T-153.1": {
+          "executor": "claude-code",
+          "targets": [
+            "website"
+          ],
+          "status": "shipped",
+          "shipped_at": "c4ccb9c3",
+          "spec": "docs/specs/Mission_Creator_Architecture/t153_faction_library.md",
+          "notes": "Frontend: FactionManagerDialog (+ArsenalPicksPanel extraction), buildFactionTree palette (vanilla dump deleted), drop path ensureFaction/ensureSquadFor + role loadout on slot. Vehicles listed, placement = T-070."
+        }
+      }
     }
   ]
 }

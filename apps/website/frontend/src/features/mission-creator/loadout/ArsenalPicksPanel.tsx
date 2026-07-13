@@ -1,4 +1,4 @@
-// Pure Arsenal picks panel (T-152 extraction): the search box + the 14 grouped/sorted/
+// Pure Arsenal picks panel (T-153 extraction): the search box + the 14 grouped/sorted/
 // abstract-and-variant-filtered picker rows over a picks record. No doc, no slot, no
 // worker — callers own the state: ArsenalTab adapts it onto Slot.loadout (compat worker
 // live), the Faction Manager onto a role template's draft loadout (kind-only degrade sets).

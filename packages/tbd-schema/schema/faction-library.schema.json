@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schema.tbdevent.eu/faction-library/v1.json",
   "title": "TBD Faction Library Entry",
-  "description": "One operator-authored reusable faction (T-152): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).",
+  "description": "One operator-authored reusable faction (T-153): a side + display name plus its ORBAT role templates (each wrapping a registry character with an optional SlotLoadout v2) and its vehicle pool. Stored as the jsonb doc of a user_factions row; the Mission Creator palette renders side → faction → roles/vehicles from these instead of the raw vanilla registry dump. Role loadouts reuse the loadout-export v2 shapes (wear open map keyed by engine LoadoutSlotInfo name; slot-indexed weapons).",
   "type": "object",
   "required": ["side", "name", "roles", "vehicles"],
   "additionalProperties": false,

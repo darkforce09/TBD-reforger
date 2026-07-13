@@ -16,7 +16,7 @@ export interface TreeNodeData {
   id: string
   label: string
   icon?: LucideIcon
-  /** Optional accent class for the icon (e.g. faction side colors, T-152). */
+  /** Optional accent class for the icon (e.g. faction side colors, T-153). */
   iconClassName?: string
   badge?: string
   children?: TreeNodeData[]

@@ -1,4 +1,4 @@
-//! Faction library CRUD (T-152) — operator-authored reusable factions for the Mission
+//! Faction library CRUD (T-153) — operator-authored reusable factions for the Mission
 //! Creator palette. Owner-scoped (mission_maker+): every route reads/writes only the
 //! caller's rows. The full faction document lives in `doc` jsonb and is validated
 //! against faction-library.schema.json on every write; `side`/`name` are projected out

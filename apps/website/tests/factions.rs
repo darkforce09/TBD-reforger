@@ -1,4 +1,4 @@
-//! T-152 faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
+//! T-153 faction library CRUD gates: schema-validated writes, owner scoping, uniqueness,
 //! role tier. Skips unless `TEST_DATABASE_URL` points at a migrated DB (make db-up).
 
 use axum::Router;

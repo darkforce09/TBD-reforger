@@ -1,4 +1,4 @@
-// T-152 palette tree gates: side ordering + accents, role drag payloads (assetId + tag +
+// T-153 palette tree gates: side ordering + accents, role drag payloads (assetId + tag +
 // loadout + factionRef), vehicle leaves listed but payload-less (T-070), and the
 // structural vanilla-purge guarantee — the tree is a pure function of the LIBRARY, so no
 // registry character can appear in it.

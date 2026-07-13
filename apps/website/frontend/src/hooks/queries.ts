@@ -381,7 +381,7 @@ export function useAuditLogs(params?: { severity?: string; q?: string }) {
 }
 
 /**
- * The caller's faction library (T-152) - side -> faction -> roles/vehicles for the palette
+ * The caller's faction library (T-153) - side -> faction -> roles/vehicles for the palette
  * and the Faction Manager.
  *
  * @route GET /api/v1/factions

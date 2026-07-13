@@ -1,4 +1,4 @@
-// Attributes → Arsenal tab (T-068.4; smart Forge T-068.10; picks panel extracted T-152).
+// Attributes → Arsenal tab (T-068.4; smart Forge T-068.10; picks panel extracted T-153).
 // Thin Slot-doc adapter over ArsenalPicksPanel: migrates v1 docs on read, persists v2 picks
 // via updateSlotLoadout (one undo step per pick), validates against the compat worker, and
 // downloads the v2 loadout-export (with the derived legacy gear block). Character slots

@@ -1,4 +1,4 @@
-// Faction Manager (T-152): author the reusable faction library the palette renders —
+// Faction Manager (T-153): author the reusable faction library the palette renders —
 // side + name, ORBAT role templates (registry character + optional SlotLoadout v2 via the
 // shared ArsenalPicksPanel in kind-only mode), and the vehicle pool. CRUD against
 // /api/v1/factions (owner-scoped; docs schema-validated server-side).

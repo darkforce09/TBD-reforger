@@ -91,7 +91,7 @@ pub fn validate_registry_items_envelope(raw: &[u8]) -> Result<Vec<String>, Contr
 }
 
 /// Validate a faction-library document against `faction-library.schema.json`
-/// (the jsonb doc of a user_factions row, T-152).
+/// (the jsonb doc of a user_factions row, T-153).
 ///
 /// @contract faction-library.schema.json#/
 pub fn validate_faction_library_doc(raw: &[u8]) -> Result<Vec<String>, ContractError> {
