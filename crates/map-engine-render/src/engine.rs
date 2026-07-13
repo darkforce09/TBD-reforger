@@ -183,11 +183,21 @@ struct PolyLane {
 
 /// Icon uniform buffer size: 28×vec4 UV (448) + drag_delta/px_to_m/pad (16) = 464 B.
 const ICON_UNIFORM_BYTES: u64 = 464;
+/// T-152.7 text atlas uniform: px_to_m + pad = 16 B.
+const TEXT_UNIFORM_BYTES: u64 = 16;
 
 /// Shared glyph atlas GPU state (T-151.5 / T-151.6): texture + uniform (UV + params) + bind group.
 struct GlyphAtlasGpu {
     texture: wgpu::Texture,
     /// Writable uniform: UV[28] + drag_delta.xy + px_to_m + pad.
+    uniform_buf: wgpu::Buffer,
+    bind_group: wgpu::BindGroup,
+    bytes: u64,
+}
+
+/// T-152.7 ASCII text atlas (16×6 grid, UV computed in `vs_text`).
+struct TextAtlasGpu {
+    texture: wgpu::Texture,
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     bytes: u64,
@@ -478,6 +488,80 @@ pub(crate) fn create_line_pipeline(
     })
 }
 
+/// T-152.7 ASCII text pipeline — same instance layout as icons, `vs_text`/`fs_text`.
+pub(crate) fn create_text_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("text-instanced"),
+        layout: Some(layout),
+        vertex: wgpu::VertexState {
+            module: shader,
+            entry_point: Some("vs_text"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            buffers: &[
+                wgpu::VertexBufferLayout {
+                    array_stride: 8,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2],
+                },
+                wgpu::VertexBufferLayout {
+                    array_stride: 20,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &[
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32x2,
+                            offset: 0,
+                            shader_location: 1,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Float32,
+                            offset: 8,
+                            shader_location: 2,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Sint16,
+                            offset: 12,
+                            shader_location: 3,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Uint16,
+                            offset: 14,
+                            shader_location: 4,
+                        },
+                        wgpu::VertexAttribute {
+                            format: wgpu::VertexFormat::Uint32,
+                            offset: 16,
+                            shader_location: 5,
+                        },
+                    ],
+                },
+            ],
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: shader,
+            entry_point: Some("fs_text"),
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+            targets: &[Some(wgpu::ColorTargetState {
+                format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleStrip,
+            ..wgpu::PrimitiveState::default()
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState::default(),
+        multiview_mask: None,
+        cache: None,
+    })
+}
+
 /// W5 icon-instanced pipeline — unit quad + 20 B `IconInstance`, samples group-2 atlas.
 pub(crate) fn create_icon_pipeline(
     device: &wgpu::Device,
@@ -747,7 +831,9 @@ fn draw_batches<'a>(
     building_pipeline: &'a wgpu::RenderPipeline,
     polygon_pipeline: &'a wgpu::RenderPipeline,
     icon_pipeline: &'a wgpu::RenderPipeline,
+    text_pipeline: &'a wgpu::RenderPipeline,
     glyph_atlas_bind: Option<&'a wgpu::BindGroup>,
+    text_atlas_bind: Option<&'a wgpu::BindGroup>,
     slot_base_bind: Option<&'a wgpu::BindGroup>,
     slot_drag_bind: Option<&'a wgpu::BindGroup>,
     indirect_trees: Option<IndirectTrees<'a>>,
@@ -816,6 +902,18 @@ fn draw_batches<'a>(
                 pass.draw_indexed(0..l.index_count, 0, 0..1);
             }
             BatchPayload::IconInstanced { instances, count } => {
+                if batch.role == LaneRole::WorldLabels {
+                    let Some(text_bg) = text_atlas_bind else {
+                        continue;
+                    };
+                    pass.set_pipeline(text_pipeline);
+                    pass.set_bind_group(0, bind_group, &[]);
+                    pass.set_bind_group(2, text_bg, &[]);
+                    pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
+                    pass.set_vertex_buffer(1, instances.slice(..));
+                    pass.draw(0..4, 0..*count);
+                    continue;
+                }
                 let atlas_bg = match batch.role {
                     LaneRole::SlotDrag => slot_drag_bind,
                     LaneRole::Slots | LaneRole::Clusters => slot_base_bind,
@@ -863,10 +961,15 @@ pub struct RenderEngine {
     polygon_pipeline: wgpu::RenderPipeline,
     /// W5 icon-instanced pipeline (atlas group 2).
     icon_pipeline: wgpu::RenderPipeline,
+    /// T-152.7 ASCII text pipeline (`vs_text` / 16×6 atlas).
+    text_pipeline: wgpu::RenderPipeline,
     /// T-151.8.1: 32 B storage-stride icon pipeline for compute-culled draw_indirect (WebGPU).
     icon_pipeline_storage32: Option<wgpu::RenderPipeline>,
     icon_bind_group_layout: wgpu::BindGroupLayout,
+    /// T-152.7 text atlas bind group layout (texture + sampler + px_to_m uniform).
+    text_bind_group_layout: wgpu::BindGroupLayout,
     icon_pipeline_layout: wgpu::PipelineLayout,
+    text_pipeline_layout: wgpu::PipelineLayout,
     sampler: wgpu::Sampler,
     /// Nearest sampler for crisp glyph atlas pixels.
     icon_sampler: wgpu::Sampler,
@@ -877,6 +980,10 @@ pub struct RenderEngine {
     camera: OrthoCamera,
     /// Shared glyph atlas (None until `upload_glyph_atlas`).
     glyph_atlas: Option<GlyphAtlasGpu>,
+    /// T-152.7 ASCII text atlas (None until `ensure_text_atlas`).
+    text_atlas: Option<TextAtlasGpu>,
+    /// Height labels drawn last frame (stats).
+    text_labels_drawn: u32,
     /// Dedicated slot/cluster atlas (None until `upload_slot_atlas` / `ensure_slot_atlas`).
     slot_atlas: Option<SlotAtlasGpu>,
     /// T-151.7.3 slot GPU policy (selection/drag/cluster) — TS is dumb UI only.
@@ -1107,6 +1214,49 @@ impl RenderEngine {
             immediate_size: 0,
         });
         let icon_pipeline = create_icon_pipeline(&device, &icon_pipeline_layout, &shader, format);
+        let text_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                label: Some("text-atlas"),
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            multisampled: false,
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 2,
+                        visibility: wgpu::ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: wgpu::BufferSize::new(TEXT_UNIFORM_BYTES),
+                        },
+                        count: None,
+                    },
+                ],
+            });
+        let text_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: Some("text-instanced"),
+            bind_group_layouts: &[
+                Some(&bind_group_layout),
+                None,
+                Some(&text_bind_group_layout),
+            ],
+            immediate_size: 0,
+        });
+        let text_pipeline =
+            create_text_pipeline(&device, &text_pipeline_layout, &shader, format);
         let (icon_pipeline_storage32, icon_cull) = if !is_gl {
             let p32 =
                 create_icon_pipeline_storage32(&device, &icon_pipeline_layout, &shader, format);
@@ -1213,9 +1363,12 @@ impl RenderEngine {
             building_pipeline,
             polygon_pipeline,
             icon_pipeline,
+            text_pipeline,
             icon_pipeline_storage32,
             icon_bind_group_layout,
+            text_bind_group_layout,
             icon_pipeline_layout,
+            text_pipeline_layout,
             sampler,
             icon_sampler,
             uniform_buf,
@@ -1224,6 +1377,8 @@ impl RenderEngine {
             calibration_buf,
             camera,
             glyph_atlas: None,
+            text_atlas: None,
+            text_labels_drawn: 0,
             slot_atlas: None,
             slot_bridge: SlotGpuBridge::default(),
             batches: vec![calibration_batch],
@@ -1506,6 +1661,7 @@ impl RenderEngine {
             // (calibration hidden), or the spike's stress pool then calibration (on top). Group 0
             // is bound once inside `draw_batches`; the pipeline is switched per payload.
             let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
+            let text_bg = self.text_atlas.as_ref().map(|a| &a.bind_group);
             let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
             let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
             // T-151.11.1 (audit X-01): the compute-culled tree draw is emitted INSIDE
@@ -1540,7 +1696,9 @@ impl RenderEngine {
                 &self.building_pipeline,
                 &self.polygon_pipeline,
                 &self.icon_pipeline,
+                &self.text_pipeline,
                 glyph_bg,
+                text_bg,
                 slot_base,
                 slot_drag,
                 indirect_trees,
@@ -1791,7 +1949,7 @@ impl RenderEngine {
                 "\"world_chunks_drawn\":{},",
                 "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
-                "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"atlas_bytes\":{},",
+                "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"text_labels_drawn\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
                 "\"submitted_last_frame\":{},\"density_heatmap\":{},",
                 "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{},",
@@ -1821,6 +1979,7 @@ impl RenderEngine {
             tree_glyphs,
             prop_glyphs,
             badge_glyphs,
+            self.text_labels_drawn,
             atlas_bytes,
             slot_instances,
             slot_drag_instances,
@@ -1978,6 +2137,8 @@ impl RenderEngine {
 
         let icon =
             create_icon_pipeline(&self.device, &self.icon_pipeline_layout, &self.shader, fmt);
+        let text =
+            create_text_pipeline(&self.device, &self.text_pipeline_layout, &self.shader, fmt);
         let (read_buf, _view, _texture) = self.render_target_readback(
             w,
             h,
@@ -1989,6 +2150,7 @@ impl RenderEngine {
             &building,
             &polygon,
             &icon,
+            &text,
         );
         read_buf
     }
@@ -2008,6 +2170,7 @@ impl RenderEngine {
         building: &wgpu::RenderPipeline,
         polygon: &wgpu::RenderPipeline,
         icon: &wgpu::RenderPipeline,
+        text: &wgpu::RenderPipeline,
     ) -> (wgpu::Buffer, wgpu::TextureView, wgpu::Texture) {
         let texture = self.device.create_texture(&wgpu::TextureDescriptor {
             label: Some("readback-target"),
@@ -2053,6 +2216,7 @@ impl RenderEngine {
                 multiview_mask: None,
             });
             let glyph_bg = self.glyph_atlas.as_ref().map(|a| &a.bind_group);
+            let text_bg = self.text_atlas.as_ref().map(|a| &a.bind_group);
             let slot_base = self.slot_atlas.as_ref().map(|a| &a.base_bind_group);
             let slot_drag = self.slot_atlas.as_ref().map(|a| &a.drag_bind_group);
             // Readback path runs no compute encode; culled trees are absent here on WebGPU
@@ -2068,7 +2232,9 @@ impl RenderEngine {
                 building,
                 polygon,
                 icon,
+                text,
                 glyph_bg,
+                text_bg,
                 slot_base,
                 slot_drag,
                 None,
@@ -2647,6 +2813,142 @@ impl RenderEngine {
             bytes: expected as u64,
         });
         Ok(())
+    }
+
+    /// Bake + upload the T-152.7 ASCII text atlas (idempotent).
+    pub fn ensure_text_atlas(&mut self) -> Result<(), JsError> {
+        if self.text_atlas.is_some() {
+            return Ok(());
+        }
+        let (rgba, w, h) = crate::text_layout::bake_ascii_atlas_rgba();
+        self.upload_text_atlas(&rgba, w, h)
+    }
+
+    /// Upload the 16×6 ASCII atlas (`bake_ascii_atlas_rgba` output).
+    ///
+    /// # Errors
+    /// Returns `JsError` when rgba length ≠ w·h·4.
+    pub fn upload_text_atlas(
+        &mut self,
+        rgba: &[u8],
+        width: u32,
+        height: u32,
+    ) -> Result<(), JsError> {
+        let expected = (width as usize)
+            .checked_mul(height as usize)
+            .and_then(|n| n.checked_mul(4))
+            .unwrap_or(0);
+        if rgba.len() != expected {
+            return Err(JsError::new("text-atlas-rgba-size"));
+        }
+        use wgpu::util::DeviceExt;
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("text-atlas"),
+            size: wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(width * 4),
+                rows_per_image: Some(height),
+            },
+            wgpu::Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+        );
+        let mut u_bytes = vec![0u8; TEXT_UNIFORM_BYTES as usize];
+        u_bytes[0..4].copy_from_slice(&1.0_f32.to_le_bytes());
+        let uniform_buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("text-uniforms"),
+                contents: &u_bytes,
+                usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+            });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("text-atlas"),
+            layout: &self.text_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.icon_sampler),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: uniform_buf.as_entire_binding(),
+                },
+            ],
+        });
+        if let Some(old) = self.text_atlas.take() {
+            old.texture.destroy();
+            old.uniform_buf.destroy();
+        }
+        self.text_atlas = Some(TextAtlasGpu {
+            texture,
+            uniform_buf,
+            bind_group,
+            bytes: expected as u64,
+        });
+        Ok(())
+    }
+
+    /// Upload height / cartographic text labels (20 B instances, `WorldLabels` lane).
+    pub fn upload_text_labels(&mut self, bytes: &[u8], visible: bool) {
+        use wgpu::util::DeviceExt;
+        const STRIDE: usize = 20;
+        if bytes.is_empty() || !visible {
+            self.text_labels_drawn = 0;
+            if !visible {
+                self.remove_lane(LaneRole::WorldLabels);
+            }
+            return;
+        }
+        if !bytes.len().is_multiple_of(STRIDE) {
+            self.remove_lane(LaneRole::WorldLabels);
+            return;
+        }
+        let _ = self.ensure_text_atlas();
+        let mut converted = bytes.to_vec();
+        Self::convert_icon_world_to_anchor(&mut converted);
+        let count = (converted.len() / STRIDE) as u32;
+        let buf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("text-labels"),
+                contents: &converted,
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        self.text_labels_drawn = count;
+        self.upsert_lane(
+            LaneRole::WorldLabels,
+            Batch {
+                role: LaneRole::WorldLabels,
+                visible: true,
+                payload: BatchPayload::IconInstanced {
+                    instances: buf,
+                    count,
+                },
+            },
+        );
     }
 
     /// Upload packed 20 B icon instances for trees (0), props (1), or badges (2).

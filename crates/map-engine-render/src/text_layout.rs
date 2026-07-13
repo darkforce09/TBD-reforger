@@ -1,7 +1,9 @@
-//! Procedural text layout helpers (T-152.1) — pack label strings into world-space glyph quads.
+//! Procedural text layout helpers (T-152.1 / T-152.7) — pack label strings into world-space glyph quads.
 //! Pure data; GPU upload lives in `map-engine-render` (wasm32).
 
-use map_engine_core::label::{LabelSpec, declutter};
+use map_engine_core::dem::peaks::{declutter_height_labels, height_label_min_sep_m, HeightLabel};
+use map_engine_core::label::{declutter, LabelSpec};
+use map_engine_core::world::{pack_icon_instance, pack_rgba_u32, size_with_min_px, REF_ZOOM};
 
 /// One textured glyph instance in world meters (center of character cell).
 #[derive(Clone, Debug)]
@@ -14,6 +16,13 @@ pub struct TextGlyphInstance {
     pub glyph: u16,
 }
 
+/// World meters per character cell at `deck_zoom` (12 px @ REF_ZOOM, min 6 px).
+#[must_use]
+pub fn text_char_meters(deck_zoom: f64) -> f32 {
+    let base = 12.0 / 2.0_f64.powf(REF_ZOOM);
+    size_with_min_px(base, 6.0, deck_zoom) as f32
+}
+
 /// Pack decluttered labels into monospaced glyph instances.
 ///
 /// `char_m` = world meters per character cell at current zoom (caller scales).
@@ -24,9 +33,25 @@ pub fn pack_label_glyphs(
     char_m: f32,
 ) -> Vec<TextGlyphInstance> {
     let drawn = declutter(labels, deck_zoom);
+    glyphs_from_specs(&drawn, char_m)
+}
+
+/// T-152.7 — height labels with 80 m declutter (not the 48 px town-label curve).
+#[must_use]
+pub fn pack_height_label_glyphs(
+    labels: &[HeightLabel],
+    deck_zoom: f64,
+    char_m: f32,
+) -> Vec<TextGlyphInstance> {
+    let drawn = declutter_height_labels(labels, deck_zoom);
+    let specs: Vec<LabelSpec> = map_engine_core::dem::peaks::height_labels_to_specs(&drawn);
+    glyphs_from_specs(&specs, char_m)
+}
+
+fn glyphs_from_specs(specs: &[LabelSpec], char_m: f32) -> Vec<TextGlyphInstance> {
     let mut out = Vec::new();
     let half = char_m * 0.5;
-    for lab in drawn {
+    for lab in specs {
         let chars: Vec<char> = lab.text.chars().collect();
         let n = chars.len() as f32;
         let origin_x = lab.x as f32 - (n * char_m) * 0.5;
@@ -46,6 +71,34 @@ pub fn pack_label_glyphs(
         }
     }
     out
+}
+
+/// Pack glyph instances into 20 B icon instances for the text atlas lane (WORLD coords).
+#[must_use]
+pub fn pack_text_icon_bytes(glyphs: &[TextGlyphInstance], deck_zoom: f64) -> Vec<u8> {
+    let char_m = text_char_meters(deck_zoom);
+    let tint = pack_rgba_u32([220, 220, 215, 230]);
+    let mut out = Vec::with_capacity(glyphs.len() * 20);
+    for g in glyphs {
+        let size = g.half_m * 2.0;
+        pack_icon_instance(
+            &mut out,
+            g.x,
+            g.y,
+            size,
+            0.0,
+            g.glyph,
+            tint,
+        );
+    }
+    let _ = char_m; // size already baked into glyph half_m
+    out
+}
+
+/// G4 oracle for height labels (re-export for tests).
+#[must_use]
+pub fn height_label_sep_m(deck_zoom: f64) -> f64 {
+    height_label_min_sep_m(deck_zoom)
 }
 
 /// Build a 16×6 cell (96 glyphs) 8×8 px RGBA atlas for printable ASCII — baked bitmap font.

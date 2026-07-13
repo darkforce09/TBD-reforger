@@ -2287,3 +2287,170 @@ struct LabelJson {
     importance: u16,
     text: String,
 }
+
+// ---------------------------------------------------------------------------------------------
+// T-152.7 — height markers (DEM peaks + ASL labels)
+// ---------------------------------------------------------------------------------------------
+
+use map_engine_core::dem::peaks::{
+    declutter_height_labels, find_peaks, height_label_min_sep_m as core_height_label_min_sep_m,
+    HeightLabel, HeightLabelKind,
+};
+
+#[derive(serde::Deserialize, serde::Serialize)]
+struct HeightLabelJson {
+    x: f64,
+    y: f64,
+    value_m: i32,
+    kind: String,
+}
+
+fn label_from_json(j: HeightLabelJson) -> HeightLabel {
+    let kind = if j.kind == "contour" {
+        HeightLabelKind::Contour
+    } else {
+        HeightLabelKind::Peak
+    };
+    HeightLabel {
+        x: j.x,
+        y: j.y,
+        value_m: j.value_m,
+        kind,
+    }
+}
+
+fn label_to_json(l: &HeightLabel) -> HeightLabelJson {
+    HeightLabelJson {
+        x: l.x,
+        y: l.y,
+        value_m: l.value_m,
+        kind: match l.kind {
+            HeightLabelKind::Peak => "peak".into(),
+            HeightLabelKind::Contour => "contour".into(),
+        },
+    }
+}
+
+/// Find DEM peaks on a meters cache raster (world manifest bounds).
+#[wasm_bindgen]
+pub fn find_peaks_from_meters(
+    meters: &[f32],
+    width: u32,
+    height: u32,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+    flip_x: bool,
+    flip_z: bool,
+) -> String {
+    let m = sample::DemManifest {
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+        width_px: width as usize,
+        height_px: height as usize,
+        flip_x,
+        flip_z,
+        height_min_m: 0.0,
+        height_max_m: 0.0,
+    };
+    let labels = find_peaks(meters, width as usize, height as usize, &m);
+    serde_json::to_string(&labels.iter().map(label_to_json).collect::<Vec<_>>())
+        .unwrap_or_else(|_| "[]".into())
+}
+
+/// Declutter height labels at `deck_zoom`; returns JSON array.
+#[wasm_bindgen]
+pub fn declutter_height_labels_json(json: &str, deck_zoom: f64) -> String {
+    let parsed: Vec<HeightLabelJson> = serde_json::from_str(json).unwrap_or_default();
+    let labels: Vec<HeightLabel> = parsed.into_iter().map(label_from_json).collect();
+    let out = declutter_height_labels(&labels, deck_zoom);
+    serde_json::to_string(&out.iter().map(label_to_json).collect::<Vec<_>>())
+        .unwrap_or_else(|_| "[]".into())
+}
+
+/// Pack height labels into 20 B icon instances for `upload_text_labels`.
+#[wasm_bindgen]
+pub fn pack_height_label_bytes(json: &str, deck_zoom: f64) -> Vec<u8> {
+    let parsed: Vec<HeightLabelJson> = serde_json::from_str(json).unwrap_or_default();
+    let labels: Vec<HeightLabel> = parsed.into_iter().map(label_from_json).collect();
+    let char_m = map_engine_render::text_layout::text_char_meters(deck_zoom);
+    let glyphs =
+        map_engine_render::text_layout::pack_height_label_glyphs(&labels, deck_zoom, char_m);
+    map_engine_render::text_layout::pack_text_icon_bytes(&glyphs, deck_zoom)
+}
+
+/// G4 sep oracle (meters).
+#[wasm_bindgen]
+#[must_use]
+pub fn height_label_min_sep_m(deck_zoom: f64) -> f64 {
+    core_height_label_min_sep_m(deck_zoom)
+}
+
+/// Verify G2/G3 gates on a label JSON array; returns error JSON or `"[]"`.
+#[wasm_bindgen]
+pub fn verify_height_labels_json(
+    json: &str,
+    meters: &[f32],
+    width: u32,
+    height: u32,
+    min_x: f64,
+    min_y: f64,
+    max_x: f64,
+    max_y: f64,
+    flip_x: bool,
+    flip_z: bool,
+    height_min_m: f64,
+    height_max_m: f64,
+) -> String {
+    let parsed: Vec<HeightLabelJson> = serde_json::from_str(json).unwrap_or_default();
+    let m = sample::DemManifest {
+        min_x,
+        min_y,
+        max_x,
+        max_y,
+        width_px: width as usize,
+        height_px: height as usize,
+        flip_x,
+        flip_z,
+        height_min_m,
+        height_max_m,
+    };
+    let mut errors: Vec<String> = Vec::new();
+    for l in &parsed {
+        let label = label_from_json(HeightLabelJson {
+            x: l.x,
+            y: l.y,
+            value_m: l.value_m,
+            kind: l.kind.clone(),
+        });
+        if let Some(elev) = sample::sample_elevation_from_meters_cache(
+            label.x,
+            label.y,
+            &m,
+            meters,
+            width as usize,
+            height as usize,
+        ) {
+            if elev <= 0.0 {
+                errors.push(format!("G3 sea: ({},{}) elev={elev}", label.x, label.y));
+            }
+            if (f64::from(label.value_m) - elev).abs() > 0.5 {
+                errors.push(format!(
+                    "G2 ASL: ({},{}) label={} sample={elev}",
+                    label.x, label.y, label.value_m
+                ));
+            }
+        }
+    }
+    serde_json::to_string(&errors).unwrap_or_else(|_| "[]".into())
+}
+
+/// G-contour optional: operator waived — contour index labels not shipped in T-152.7.
+#[wasm_bindgen]
+#[must_use]
+pub fn height_contour_labels_waived() -> bool {
+    true
+}

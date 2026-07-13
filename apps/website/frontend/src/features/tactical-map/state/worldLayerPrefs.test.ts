@@ -40,6 +40,7 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
       airfield: true,
       contours: true,
       sea: true,
+      heights: true,
     })
   })
 

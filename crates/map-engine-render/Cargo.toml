@@ -16,7 +16,7 @@ crate-type = ["rlib"]
 # Plain dependencies compile natively too: the pure `scene` data module (instance structs +
 # builders, no wgpu types) is byte-level-tested under plain `cargo test` (plan §S4b).
 [dependencies]
-map-engine-core = { path = "../map-engine-core" }
+map-engine-core = { path = "../map-engine-core", features = ["world"] }
 bytemuck = { version = "1", features = ["derive"] }
 
 # The heavy GPU/web stack never touches native builds (workspace CI stays fast) — wasm32 only.

@@ -29,6 +29,8 @@ export interface WorldClassToggles {
   airfield: boolean
   contours: boolean
   sea: boolean
+  /** T-152.7 DEM peak ASL height labels (default on). */
+  heights: boolean
 }
 
 const DEFAULT_TOGGLES: WorldClassToggles = {
@@ -41,6 +43,7 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
   airfield: true,
   contours: true,
   sea: true,
+  heights: true,
 }
 
 interface WorldLayerPrefs {
