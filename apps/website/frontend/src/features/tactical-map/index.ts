@@ -16,7 +16,13 @@ export { useBasemapView, getBasemapView, setBasemapView } from './state/basemapV
 export type { BasemapView } from './state/basemapView'
 
 // Map Engine v2 style + world-layer prefs (T-090.5.1) — per-user, localStorage-backed.
-export { useMapStyle, getMapStyle, setMapStyle } from './state/worldLayerPrefs'
+export {
+  useMapStyle,
+  getMapStyle,
+  setMapStyle,
+  useClassToggles,
+  setClassToggle,
+} from './state/worldLayerPrefs'
 export type { WorldClassToggles } from './state/worldLayerPrefs'
 export type { MapStyle } from './worldmap/styleModes'
 

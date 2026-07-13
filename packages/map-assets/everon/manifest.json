@@ -71,15 +71,18 @@
     "format": "catalog-v1",
     "typeInventoryPath": "objects/type-inventory.json",
     "prefabsPath": "objects/prefabs.json.gz",
-    "prefabCount": 391,
-    "instanceCount": 508291,
+    "prefabCount": 1623,
+    "instanceCount": 1216109,
     "chunksPath": "objects/chunks",
     "chunkSizeM": 512,
     "roadsPath": "objects/roads.json.gz",
-    "importPhaseMax": "P2_trees",
+    "importPhaseMax": "P5_props",
     "importPhaseShipped": [
       "P1_buildings",
-      "P2_trees"
+      "P2_trees",
+      "P3_vegetation",
+      "P4_rocks",
+      "P5_props"
     ],
     "exportedAt": "2026-07-04T23:43:38.437Z",
     "regionsPath": "objects/forest-regions.json.gz",

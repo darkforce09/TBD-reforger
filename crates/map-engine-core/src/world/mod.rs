@@ -4,6 +4,7 @@
 //! corners + road centerline are **Class T** (≤ 1 ULP). Pure compute — no `wasm-bindgen`, no
 //! deck.gl; the JS boundary is the `map-engine-wasm` `WorldStore` handle.
 
+mod cartographic_strip;
 mod chunk;
 mod chunk_math;
 mod classify;
@@ -19,7 +20,11 @@ mod residency;
 mod roads;
 mod store;
 
-pub use chunk::{WorldChunk, parse_chunk};
+pub use cartographic_strip::{
+    BRIDGE_RAILING_RADIUS_M, FENCE_STRIP_RGBA, FENCE_STRIP_WIDTH_M, PIER_ASPECT_MIN,
+    compose_fence_strip, compose_pier_strip, obb_aspect_ratio, obb_long_axis_endpoints,
+    pack_cartographic_strips, strip_world_width_at_midpoint,
+};
 pub use chunk_math::{
     Bbox, ChunkRect, TerrainSizeM, chunk_id, chunk_ids_for_rect, chunk_ids_for_viewport,
     chunk_rect_for_bbox, expand_bbox, expand_chunk_rect, preload_margin_m,
@@ -49,7 +54,9 @@ pub use lod_gates::{
 pub use manifest::{
     ChunkCell, DEFAULT_CHUNK_SIZE_M, ObjectsManifest, narrow_cells, parse_objects_manifest,
 };
-pub use obb::{BuildingPrefabInfo, building_prefab_lookup, obb_corners};
+pub use obb::{
+    BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
+};
 pub use prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
 pub use regions::{LandCoverRegion, parse_regions_payload};
 pub use residency::{APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, LRU_MIN_CHUNKS, WorldResidency};

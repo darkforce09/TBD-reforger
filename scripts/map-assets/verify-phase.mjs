@@ -55,7 +55,13 @@ if (!terrain || !phase) {
   console.error("verify-phase: --terrain <id> --phase <Pn> required");
   process.exit(1);
 }
-const PHASE_KINDS = { P1_buildings: ["building"], P2_trees: ["building", "tree", "water"] };
+const PHASE_KINDS = {
+  P1_buildings: ["building"],
+  P2_trees: ["building", "tree", "water"],
+  P3_vegetation: ["building", "tree", "water", "vegetation"],
+  P4_rocks: ["building", "tree", "water", "vegetation", "rock"],
+  P5_props: ["building", "tree", "water", "vegetation", "rock", "prop"],
+};
 if (!PHASE_KINDS[phase]) {
   console.error(`verify-phase: phase '${phase}' not implemented (have: ${Object.keys(PHASE_KINDS).join(", ")})`);
   process.exit(1);
@@ -143,8 +149,11 @@ await streamRawEntities(rawPath, (row) => {
   const x = round2(row.x);
   const y = round2(row.z);
   const inBounds = x >= 0 && x <= worldSizeM && y >= 0 && y <= worldSizeM;
-  if (densityPhase && cls.kind === "rock" && inBounds) rawRockRows.push({ x, y });
+  if (densityPhase && cls.kind === "rock" && inBounds && !phaseKinds.has("rock")) rawRockRows.push({ x, y });
   if (!phaseKinds.has(cls.kind)) return;
+  // Match build-world-objects P5 predicate (composition / non-GUID resourceName excluded).
+  if (cls.class === "composition" || cls.class === "buildingpart") return;
+  if (!/^\{[0-9A-F]{16}\}/.test(rn)) return;
   if (!inBounds) return;
   rawPhaseCount++;
   rawKindCounts.set(cls.kind, (rawKindCounts.get(cls.kind) ?? 0) + 1);
@@ -507,6 +516,22 @@ if (densityPhase) {
     if (s.points.length < 2) errs.push(`segment ${i} ${s.id}: < 2 points`);
   }
   gate("R-P1", "roads present (segments > 0, polylines >= 2 points)", errs);
+}
+
+// ---- T-152.4 P5_props — fence census (G1/G2) ---------------------------------------------------------
+if (phase === "P5_props") {
+  const fencePrefabs = prefabs.filter((p) => p.kind === "prop" && p.class === "fence");
+  const fenceIds = new Set(fencePrefabs.map((p) => p.prefabId));
+  let fenceInst = 0;
+  for (const rows of rowsByKey.values()) {
+    for (const row of rows) {
+      if (fenceIds.has(row[0])) fenceInst++;
+    }
+  }
+  const errs = [];
+  if (fencePrefabs.length === 0) errs.push("no fence prefabs (G1)");
+  if (fenceInst === 0) errs.push("no fence instances (G2)");
+  gate("P5-1", "fence prefabs > 0 and fence instances > 0 (T-152.4 G1/G2)", errs);
 }
 
 // ---- size guard ----------------------------------------------------------------------------------------

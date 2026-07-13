@@ -22,6 +22,8 @@ pub enum LaneRole {
     WorldBuildings,
     /// W3 world-building outline casing (`world-buildings-outline`).
     WorldBuildingsOutline,
+    /// T-152.4 fence + pier thin strips (`world-fences`).
+    WorldFences,
     ForestFill,
     ForestOutline,
     /// T-151.8 exact-count density heatmap (tree ladder over-budget rung).
@@ -64,19 +66,20 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::Roads => 7,
         LaneRole::WorldBuildings => 8,
         LaneRole::WorldBuildingsOutline => 9,
-        LaneRole::ForestFill => 10,
-        LaneRole::ForestOutline => 11,
-        LaneRole::DensityHeat => 12,
-        LaneRole::WorldTrees => 13,
-        LaneRole::WorldProps => 14,
-        LaneRole::WorldBadges => 15,
-        LaneRole::WorldLabels => 16,
-        LaneRole::Grid => 17,
-        LaneRole::Slots => 18,
-        LaneRole::SlotDrag => 19,
-        LaneRole::Clusters => 20,
-        LaneRole::Marquee => 21,
-        LaneRole::MarqueeOutline => 22,
+        LaneRole::WorldFences => 10,
+        LaneRole::ForestFill => 11,
+        LaneRole::ForestOutline => 12,
+        LaneRole::DensityHeat => 13,
+        LaneRole::WorldTrees => 14,
+        LaneRole::WorldProps => 15,
+        LaneRole::WorldBadges => 16,
+        LaneRole::WorldLabels => 17,
+        LaneRole::Grid => 18,
+        LaneRole::Slots => 19,
+        LaneRole::SlotDrag => 20,
+        LaneRole::Clusters => 21,
+        LaneRole::Marquee => 22,
+        LaneRole::MarqueeOutline => 23,
     }
 }
 
@@ -100,6 +103,13 @@ pub fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
 #[cfg(test)]
 mod lane_order_pins {
     use super::{LaneRole as L, lane_order};
+
+    #[test]
+    fn fences_sit_between_building_outline_and_forest() {
+        assert!(lane_order(L::WorldFences) > lane_order(L::WorldBuildingsOutline));
+        assert!(lane_order(L::WorldFences) < lane_order(L::WorldBadges));
+        assert!(lane_order(L::WorldFences) < lane_order(L::WorldTrees));
+    }
 
     #[test]
     fn labels_sit_between_badges_and_grid() {
@@ -130,6 +140,7 @@ mod lane_order_pins {
             L::Roads,
             L::WorldBuildings,
             L::WorldBuildingsOutline,
+            L::WorldFences,
             L::ForestFill,
             L::ForestOutline,
             L::DensityHeat,
@@ -163,6 +174,7 @@ mod lane_order_pins {
             L::Roads,
             L::WorldBuildings,
             L::WorldBuildingsOutline,
+            L::WorldFences,
             L::ForestFill,
             L::ForestOutline,
             L::DensityHeat,
@@ -180,8 +192,7 @@ mod lane_order_pins {
         }
     }
 
-    /// The compute-cull indirect emission keys on `> lane_order(WorldTrees)`; the first ordered
-    /// role after trees must therefore be WorldProps — pin it so the emission point is stable.
+    /// T-152.4: first role after trees is still WorldProps — compute-cull pin unchanged.
     #[test]
     fn first_role_after_trees_is_props() {
         assert_eq!(lane_order(L::WorldProps), lane_order(L::WorldTrees) + 1);

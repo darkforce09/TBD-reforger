@@ -36,6 +36,7 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
       forest: true,
       trees: true,
       props: false,
+      fences: true,
       contours: true,
       sea: true,
     })

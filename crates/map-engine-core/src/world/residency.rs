@@ -22,6 +22,9 @@ use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
+use super::cartographic_strip::{
+    compose_fence_strip, compose_pier_strip, pack_cartographic_strips,
+};
 use super::chunk::{WorldChunk, parse_chunk};
 use super::chunk_math::{
     Bbox, TerrainSizeM, chunk_ids_for_rect, chunk_ids_for_viewport, chunk_rect_for_bbox,
@@ -38,7 +41,9 @@ use super::glyph_math::{
 use super::index::WorldSpatialIndex;
 use super::lod_gates::{INSTANCE_BUDGET, class_visible};
 use super::manifest::{ObjectsManifest, narrow_cells, parse_objects_manifest};
-use super::obb::{BuildingPrefabInfo, building_prefab_lookup, obb_corners};
+use super::obb::{
+    BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
+};
 use super::prefab::{PrefabEntry, build_prefab_maps, narrow_prefab_rows};
 use super::store::{WorldError, bytes_to_json};
 
@@ -111,6 +116,8 @@ pub struct WorldResidency {
     /// that are integers in `[0, 65536)` are inserted (JS finds a building iff `prefabId ===` the
     /// stored u16, i.e. `prefabId < 65536`).
     building_by_u16: HashMap<u16, BuildingPrefabInfo>,
+    /// Fence prop half-extents keyed by prefab u16 id (T-152.4).
+    fence_by_u16: HashMap<u16, FencePrefabInfo>,
     /// Tree/veg/prop/rockLarge glyph lookup keyed by prefab u16 id.
     glyph_by_u16: HashMap<u16, GlyphPrefabInfo>,
     /// Atlas iconKey → UV-table index (set by [`Self::set_glyph_key_map`]).
@@ -138,6 +145,8 @@ pub struct WorldResidency {
 
     fill_buf: Vec<f32>,
     outline_buf: Vec<f32>,
+    /// T-152.4 fence + pier thin strips (packed `[x,y,r,g,b,a]…` triangle list).
+    strip_buf: Vec<f32>,
 
     /// T-151.11.3 (audit B-04): ingest-frame start stamp — the ≤ APPLY_BUDGET_MS/frame policy
     /// lives HERE (pure; the wasm wrapper feeds `Date.now`), not in the JS loader.
@@ -149,6 +158,8 @@ pub struct WorldResidency {
     toggle_trees: bool,
     toggle_props: bool,
     toggle_buildings: bool,
+    /// T-152.4 cartographic fence/railing strips (default on).
+    toggle_fences: bool,
 
     /// Packed 20 B icon instances (WORLD coords) — replace-not-accumulate.
     tree_glyph_buf: Vec<u8>,
@@ -188,6 +199,7 @@ impl Default for WorldResidency {
             prefab_by_id: HashMap::new(),
             has_oversized: false,
             building_by_u16: HashMap::new(),
+            fence_by_u16: HashMap::new(),
             glyph_by_u16: HashMap::new(),
             icon_key_to_idx: HashMap::new(),
             cell_ids: None,
@@ -210,11 +222,13 @@ impl Default for WorldResidency {
             apply_budget_ms_last: 0.0,
             fill_buf: Vec::new(),
             outline_buf: Vec::new(),
+            strip_buf: Vec::new(),
             ingest_frame_start_ms: None,
             deck_zoom: -2.0,
             toggle_trees: true,
             toggle_props: false,
             toggle_buildings: true,
+            toggle_fences: true,
             tree_glyph_buf: Vec::new(),
             prop_glyph_buf: Vec::new(),
             badge_glyph_buf: Vec::new(),
@@ -262,6 +276,21 @@ impl WorldResidency {
         // T-151.11.3 (P-04): the buildings toggle hides the WHOLE lane (fills + outlines +
         // badges — Deck semantics), so the footprint buffers must rebuild too, not just glyphs.
         self.rebuild_buffers();
+    }
+
+    /// T-152.4 — cartographic fence/railing strip toggle (`worldLayerPrefs.fences`).
+    pub fn set_fences_toggle(&mut self, fences: bool) {
+        if self.toggle_fences == fences {
+            return;
+        }
+        self.toggle_fences = fences;
+        self.rebuild_strip_buffers();
+    }
+
+    /// Whether fence/pier strip lanes should draw: user toggle ∧ prop LOD gate.
+    #[must_use]
+    pub fn fences_visible(&self) -> bool {
+        self.toggle_fences && class_visible("prop", self.deck_zoom)
     }
 
     /// Whether the building fill/outline lanes should draw: user toggle ∧ zoom gate
@@ -367,6 +396,7 @@ impl WorldResidency {
                 self.building_by_u16.insert(pid as u16, info);
             }
         }
+        self.fence_by_u16 = fence_prefab_lookup(&raw);
         self.rebuild_glyph_lookup_from_prefabs();
         Ok(self.prefab_by_id.len())
     }
@@ -605,6 +635,7 @@ impl WorldResidency {
         if !self.toggle_buildings {
             self.fill_buf.clear();
             self.outline_buf.clear();
+            self.rebuild_strip_buffers();
             self.refresh_draw_set_and_glyphs();
             return;
         }
@@ -629,6 +660,11 @@ impl WorldResidency {
                 let x = f64::from(chunk.positions[2 * r]);
                 let y = f64::from(chunk.positions[2 * r + 1]);
                 let rot = f64::from(chunk.rotations[r]);
+                let cls = info.building_class.as_str();
+                // T-152.4: pier/dock → thin strip when aspect ≥ PIER_ASPECT_MIN; skip fat square.
+                if cls == "pier" || cls == "dock" {
+                    continue;
+                }
                 // Fill instance (WORLD coords): [x, y, hx, hy, cos, sin, r,g,b,a]. `(cos,sin)` use
                 // the same `rad = deg·PI/180` as `obb_corners`, so fill and outline coincide.
                 let rad = (rot * std::f64::consts::PI) / 180.0;
@@ -673,7 +709,73 @@ impl WorldResidency {
         }
         self.fill_buf = fill;
         self.outline_buf = outline;
+        self.rebuild_strip_buffers();
         self.refresh_draw_set_and_glyphs();
+    }
+
+    /// T-152.4 — compose pier/dock + fence prop thin strips over pinned chunks.
+    fn rebuild_strip_buffers(&mut self) {
+        self.strip_buf.clear();
+        if !self.fences_visible() {
+            return;
+        }
+        let prop_code = class_code("prop");
+        let building_code = class_code("building");
+        let mut ids = self.pinned_ids.clone();
+        ids.sort();
+        let mut verts_acc: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+
+        // Pier/dock strips (building class, thin quay).
+        if self.toggle_buildings && building_visible(self.deck_zoom) {
+            for id in &ids {
+                let Some(chunk) = self.chunks.get(id) else {
+                    continue;
+                };
+                let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                    continue;
+                };
+                for &r in rows {
+                    let r = r as usize;
+                    let Some(info) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
+                        continue;
+                    };
+                    let cls = info.building_class.as_str();
+                    if cls != "pier" && cls != "dock" {
+                        continue;
+                    }
+                    let x = f64::from(chunk.positions[2 * r]);
+                    let y = f64::from(chunk.positions[2 * r + 1]);
+                    let rot = f64::from(chunk.rotations[r]);
+                    if let Some(strip) =
+                        compose_pier_strip(x, y, info.half_x, info.half_y, rot, fill_color(cls))
+                    {
+                        verts_acc.extend(strip);
+                    }
+                }
+            }
+        }
+
+        // Fence prop strips (G-railing-path A: railings are fence props near bridges).
+        for id in &ids {
+            let Some(chunk) = self.chunks.get(id) else {
+                continue;
+            };
+            let Some(rows) = chunk.rows_by_class.get(&prop_code) else {
+                continue;
+            };
+            for &r in rows {
+                let r = r as usize;
+                let Some(finfo) = self.fence_by_u16.get(&chunk.prefab_idx[r]) else {
+                    continue;
+                };
+                let x = f64::from(chunk.positions[2 * r]);
+                let y = f64::from(chunk.positions[2 * r + 1]);
+                let rot = f64::from(chunk.rotations[r]);
+                verts_acc.extend(compose_fence_strip(x, y, finfo.half_x, finfo.half_y, rot));
+            }
+        }
+
+        self.strip_buf = pack_cartographic_strips(&verts_acc);
     }
 
     /// Strict visible rect → chunk ids ∩ pinned ∩ cells (Class S draw-set). No preload expand.
@@ -714,6 +816,7 @@ impl WorldResidency {
         let exact = exact_tree_count(&self.chunks, &self.draw_ids);
         self.exact_tree_count = exact as u32;
         self.heatmap_trees = heatmap_trees(exact);
+        self.rebuild_strip_buffers();
         self.rebuild_glyph_buffers();
     }
 
@@ -862,6 +965,23 @@ impl WorldResidency {
     #[must_use]
     pub fn world_building_outline(&self) -> Vec<f32> {
         self.outline_buf.clone()
+    }
+
+    /// T-152.4 fence + pier strip triangle-list verts (WORLD coords): 6 f32/vert.
+    #[must_use]
+    pub fn world_fence_strips(&self) -> Vec<f32> {
+        self.strip_buf.clone()
+    }
+
+    /// Strip segment count (each fence/pier OBB → one strip item).
+    #[must_use]
+    pub fn fence_strip_segment_count(&self) -> u32 {
+        // Approximate: non-empty buffer implies ≥1 strip; engine uses item_count for stats.
+        if self.strip_buf.is_empty() {
+            0
+        } else {
+            (self.strip_buf.len() / 6 / 3).max(1) as u32
+        }
     }
 
     /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).

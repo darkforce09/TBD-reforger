@@ -2476,10 +2476,69 @@ impl RenderEngine {
         );
     }
 
+    /// Replace the `world-fences` strip lane (T-152.4). `packed` is flat `[x,y,r,g,b,a]…` triangle-list
+    /// verts in WORLD meters (same layout as road strips).
+    pub fn upload_world_fence_strips(&mut self, packed: &[f32], item_count: u32, visible: bool) {
+        const STRIDE: usize = 6;
+        if packed.is_empty() {
+            if !visible {
+                self.remove_lane(LaneRole::WorldFences);
+            }
+            return;
+        }
+        if !packed.len().is_multiple_of(STRIDE) {
+            self.remove_lane(LaneRole::WorldFences);
+            return;
+        }
+        let n_verts = packed.len() / STRIDE;
+        let mut verts = Vec::with_capacity(n_verts);
+        for c in packed.chunks_exact(STRIDE) {
+            verts.push(lanes::LineVertex {
+                pos: [
+                    (f64::from(c[0]) - ANCHOR[0]) as f32,
+                    (f64::from(c[1]) - ANCHOR[1]) as f32,
+                ],
+                color: [c[2], c[3], c[4], c[5]],
+            });
+        }
+        let indices: Vec<u32> = (0..n_verts as u32).collect();
+        use wgpu::util::DeviceExt;
+        let vbuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("world-fences"),
+                contents: bytemuck::cast_slice(&verts),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
+        let ibuf = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("world-fences-indices"),
+                contents: bytemuck::cast_slice(&indices),
+                usage: wgpu::BufferUsages::INDEX,
+            });
+        #[allow(clippy::cast_possible_truncation)]
+        let index_count = indices.len() as u32;
+        self.upsert_lane(
+            LaneRole::WorldFences,
+            Batch {
+                role: LaneRole::WorldFences,
+                visible,
+                payload: BatchPayload::Polygon(PolyLane {
+                    verts: vbuf,
+                    indices: ibuf,
+                    index_count,
+                    item_count,
+                }),
+            },
+        );
+    }
+
     /// Drop both world-building lanes (gate closed below the building band, or terrain switch).
     pub fn clear_world_buildings(&mut self) {
         self.remove_lane(LaneRole::WorldBuildings);
         self.remove_lane(LaneRole::WorldBuildingsOutline);
+        self.remove_lane(LaneRole::WorldFences);
         self.world_chunks_drawn = 0;
     }
 

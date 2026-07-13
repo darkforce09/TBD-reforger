@@ -153,7 +153,7 @@ export default function WgpuTacticalMap({
   useEffect(() => {
     if (!ready) return
     worldControllerRef.current?.syncGlyphToggles()
-  }, [ready, classToggles.trees, classToggles.props, classToggles.buildings])
+  }, [ready, classToggles.trees, classToggles.props, classToggles.buildings, classToggles.fences])
 
   // Keep cluster index + icon cache terrain aligned (same as Deck TacticalMap).
   useEffect(() => {

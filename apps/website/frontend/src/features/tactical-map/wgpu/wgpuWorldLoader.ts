@@ -117,14 +117,15 @@ export class WgpuWorldController {
     this.runViewport()
   }
 
-  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings).
+  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings/fences).
    *  T-151.11.3 (P-04): buildings toggle now empties/rebuilds the footprint buffers in Rust,
-   *  so push the WHOLE lane set (fills + outlines + glyphs) — not just glyphs — or a toggle
-   *  wouldn't take effect until the next camera move. */
+   *  so push the WHOLE lane set (fills + outlines + glyphs + fence strips) — not just glyphs —
+   *  or a toggle wouldn't take effect until the next camera move. */
   syncGlyphToggles(): void {
     if (!this.residency || this.disposed) return
     const t = getClassToggles()
     this.residency.set_glyph_toggles(t.trees, t.props, t.buildings)
+    this.residency.set_fences_toggle(t.fences)
     if (this.ready) this.pushToEngine()
   }
 
@@ -457,6 +458,9 @@ export class WgpuWorldController {
     const bVis = this.residency.buildings_visible()
     this.engine.upload_world_buildings(fill, rstats.chunks_pinned, bVis)
     this.engine.upload_world_building_outlines(outline, bVis)
+    const strips = this.residency.world_fence_strips()
+    const fVis = this.residency.fences_visible()
+    this.engine.upload_world_fence_strips(strips, strips.length > 0 ? 1 : 0, fVis)
     this.pushGlyphsToEngine()
     const engStats = JSON.parse(this.engine.stats()) as {
       world_building_instances: number

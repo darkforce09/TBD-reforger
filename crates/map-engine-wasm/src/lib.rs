@@ -1761,6 +1761,12 @@ impl WorldResidency {
         self.inner.world_building_outline()
     }
 
+    /// T-152.4 fence + pier strip triangle-list verts (WORLD coords): 6 f32/vert.
+    #[must_use]
+    pub fn world_fence_strips(&self) -> Vec<f32> {
+        self.inner.world_fence_strips()
+    }
+
     /// Register atlas icon keys in UV-table order (must match `upload_glyph_atlas` UV order).
     pub fn set_glyph_key_map(&mut self, keys: Vec<String>) {
         self.inner.set_glyph_key_map(&keys);
@@ -1769,6 +1775,11 @@ impl WorldResidency {
     /// User layer toggles (trees / props / buildings-for-badges).
     pub fn set_glyph_toggles(&mut self, trees: bool, props: bool, buildings: bool) {
         self.inner.set_glyph_toggles(trees, props, buildings);
+    }
+
+    /// T-152.4 cartographic fence/railing strip toggle.
+    pub fn set_fences_toggle(&mut self, fences: bool) {
+        self.inner.set_fences_toggle(fences);
     }
 
     /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).
@@ -2121,6 +2132,12 @@ impl WorldResidency {
     #[must_use]
     pub fn buildings_visible(&self) -> bool {
         self.inner.buildings_visible()
+    }
+
+    /// T-152.4 fence/pier strip lane visibility (fences toggle ∧ prop LOD gate).
+    #[must_use]
+    pub fn fences_visible(&self) -> bool {
+        self.inner.fences_visible()
     }
 }
 

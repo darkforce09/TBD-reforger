@@ -23,6 +23,8 @@ export interface WorldClassToggles {
   forest: boolean
   trees: boolean
   props: boolean
+  /** T-152.4 cartographic fence/railing strips (default on). */
+  fences: boolean
   contours: boolean
   sea: boolean
 }
@@ -33,6 +35,7 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
   forest: true,
   trees: true,
   props: false,
+  fences: true,
   contours: true,
   sea: true,
 }

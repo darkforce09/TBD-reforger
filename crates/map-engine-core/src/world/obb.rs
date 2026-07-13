@@ -34,6 +34,49 @@ pub struct BuildingPrefabInfo {
     pub half_y: f64,
 }
 
+/// Footprint info for a fence prop (`kind=prop`, `class=fence`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct FencePrefabInfo {
+    pub half_x: f64,
+    pub half_y: f64,
+}
+
+/// `fencePrefabLookup` — keeps prefabs with `kind=prop` and `class=fence`.
+#[must_use]
+pub fn fence_prefab_lookup(raw: &Value) -> HashMap<u16, FencePrefabInfo> {
+    let mut lookup = HashMap::new();
+    let Some(rows) = raw.get("prefabs").and_then(Value::as_array) else {
+        return lookup;
+    };
+    for row in rows {
+        let Some(prefab_id) = row.get("prefabId").and_then(Value::as_f64) else {
+            continue;
+        };
+        let kind = row.get("kind").and_then(Value::as_str).unwrap_or("");
+        let cls = row
+            .get("class")
+            .and_then(Value::as_str)
+            .unwrap_or("unknown");
+        if kind != "prop" || cls != "fence" {
+            continue;
+        }
+        let he = row.get("spatial").and_then(|s| s.get("halfExtentsM"));
+        let hx = he.and_then(|h| h.get("x")).and_then(Value::as_f64);
+        let hy = he.and_then(|h| h.get("y")).and_then(Value::as_f64);
+        if !(0.0..65536.0).contains(&prefab_id) || prefab_id.fract() != 0.0 {
+            continue;
+        }
+        lookup.insert(
+            prefab_id as u16,
+            FencePrefabInfo {
+                half_x: hx.filter(|&v| v > 0.0).unwrap_or(1.0),
+                half_y: hy.filter(|&v| v > 0.0).unwrap_or(0.25),
+            },
+        );
+    }
+    lookup
+}
+
 /// `buildingPrefabLookup(raw)` (`:69`). Keeps a prefab iff it has a numeric `prefabId` **and**
 /// is a `building`, or a `water` pier/dock. `halfX`/`halfY` fall back to `2.0` when absent or
 /// `≤ 0`. Keyed by `prefabId.to_bits()` (matches the JS `Map<number,…>`).

@@ -7,6 +7,8 @@ import {
   useMapStore,
   useMapStyle,
   setMapStyle,
+  useClassToggles,
+  setClassToggle,
   type MapStyle,
   type MissionDoc,
   type MissionMeta,
@@ -76,6 +78,7 @@ export function MissionSettingsDialog({
   // Map style is a per-user pref (localStorage), not mission meta — it travels with the
   // user, not the mission (N8). Hybrid = dimmed satellite under (future) full vectors.
   const mapStyle = useMapStyle()
+  const classToggles = useClassToggles()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,6 +143,16 @@ export function MissionSettingsDialog({
               updateEnvironment(md, { hillshadeOpacity: Math.round(pct * 10) / 1000 })
             }
           />
+
+          <Field label="World layers">
+            <div className="flex flex-col gap-2">
+              <ToggleField
+                label="Fences"
+                checked={classToggles.fences}
+                onChange={(on) => setClassToggle('fences', on)}
+              />
+            </div>
+          </Field>
         </div>
       </DialogContent>
     </Dialog>
