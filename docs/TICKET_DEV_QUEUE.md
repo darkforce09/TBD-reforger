@@ -25,8 +25,8 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-152 — Map cartographic fidelity (glyphs, text, labels)
 
-- **Active slice:** `T-152.12`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t152_12_text_lane_orientation.md`
+- **Active slice:** `T-152.13`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md`
 - **Branch:** `ticket/T-152`
 - **Targets:** root, website, shared
