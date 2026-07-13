@@ -4303,6 +4303,56 @@
     },
     {
       "id": "T-155",
+      "title": "Cross-tab refresh-token mutex (single-use rotation double-spend)",
+      "summary": "Found 2026-07-13 via api access log during the T-154.1 pause: two editor tabs share the single-use refresh token; tab A rotates it, tab B later POSTs the stale one -> /auth/refresh 401 -> the whole browser session dies (log: 12:13 local, registry+compat 401 -> refresh 401 -> all subsequent 401). The single-flight helper (apps/website/frontend/src/api/refresh.ts) serializes refreshes WITHIN a tab only. Fix: cross-tab mutex around refresh (Web Locks API, BroadcastChannel fallback) + adopt the rotated pair from the winning tab (storage event), so N tabs spend one rotation. Repro: open the editor in two tabs, wait out the access TTL, act in the stale tab.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "DATA"
+      ],
+      "impact": [
+        "api",
+        "ui",
+        "security"
+      ],
+      "status": "idea",
+      "depends_on": [],
+      "route": null,
+      "branch": "ticket/T-155",
+      "spec": "docs/website/DEV_RUNBOOK.md",
+      "slices": [],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-156",
+      "title": "Session-expired UX - 401s must not masquerade as empty data",
+      "summary": "Sibling of T-155 (same 2026-07-13 incident): when auth dies, GET /registry and GET /factions fail and the UI silently degrades - the Arsenal shows the non-character guard (\"Loadout applies to placed characters\") because the catalog is empty, and the Factions palette shows the \"No factions yet\" author-CTA. Operator read it as data loss. Fix: distinguish query-error (esp. 401 after failed refresh) from genuinely-empty responses; surface one clear \"session expired - log in again\" banner/toast with a dev-login shortcut in dev, and make useRegistry/useFactionLibrary consumers render an error state, never the empty-state copy, on failure.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "DATA"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "idea",
+      "depends_on": [],
+      "route": null,
+      "branch": "ticket/T-156",
+      "spec": "docs/website/DEV_RUNBOOK.md",
+      "slices": [],
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-155",
       "title": "Mission Create visual overhaul",
       "summary": "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu.",
       "program": "platform",
