@@ -114,6 +114,29 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
     expect(stored.classToggles).toMatchObject({ airfield: false, roads: true })
   })
 
+  // T-152.20 — the 7 world/map toggles newly exposed in Mission Settings must round-trip through
+  // setClassToggle → getClassToggles() → localStorage and survive a reload (operator gate O10). Each
+  // key flips to its NON-default value so setClassToggle's equality early-return can't no-op it.
+  it.each([
+    ['roads', false],
+    ['buildings', false],
+    ['forest', false],
+    ['trees', false],
+    ['props', true],
+    ['contours', false],
+    ['sea', false],
+  ] as const)('setClassToggle persists %s across reload (T-152.20)', async (key, val) => {
+    const store = stubStorage()
+    const first = await importFresh()
+    first.setClassToggle(key, val)
+    expect(first.getClassToggles()[key]).toBe(val)
+    const stored = JSON.parse(store.get(KEY) ?? '{}') as { classToggles?: Record<string, unknown> }
+    expect(stored.classToggles).toMatchObject({ [key]: val })
+    // Reload: re-import against the same stubbed storage re-runs read() → the value survives.
+    const reloaded = await importFresh()
+    expect(reloaded.getClassToggles()[key]).toBe(val)
+  })
+
   it('partial stored toggles merge over defaults', async () => {
     stubStorage({ [KEY]: JSON.stringify({ mapStyle: 'satellite', classToggles: { sea: false } }) })
     const mod = await importFresh()

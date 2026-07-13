@@ -22,6 +22,7 @@ import {
   TextField,
   ToggleField,
 } from './RightInspector/fields'
+import { WORLD_LAYER_TOGGLE_LABELS } from './worldLayerFields'
 
 type Weather = MissionMeta['environment']['weather']
 
@@ -146,6 +147,41 @@ export function MissionSettingsDialog({
 
           <Field label="World layers">
             <div className="flex flex-col gap-2">
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.roads}
+                checked={classToggles.roads}
+                onChange={(on) => setClassToggle('roads', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.buildings}
+                checked={classToggles.buildings}
+                onChange={(on) => setClassToggle('buildings', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.forest}
+                checked={classToggles.forest}
+                onChange={(on) => setClassToggle('forest', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.trees}
+                checked={classToggles.trees}
+                onChange={(on) => setClassToggle('trees', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.props}
+                checked={classToggles.props}
+                onChange={(on) => setClassToggle('props', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.contours}
+                checked={classToggles.contours}
+                onChange={(on) => setClassToggle('contours', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.sea}
+                checked={classToggles.sea}
+                onChange={(on) => setClassToggle('sea', on)}
+              />
               <ToggleField
                 label="Fences"
                 checked={classToggles.fences}
