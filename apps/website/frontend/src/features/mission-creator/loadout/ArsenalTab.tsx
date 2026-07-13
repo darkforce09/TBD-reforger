@@ -299,6 +299,7 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
                 activeKey={activeKey}
                 onSelect={onSelectRegion}
                 onUnavailable={() => setDollUnavailable(true)}
+                catalogByName={catalogByName}
               />
             )}
           </div>

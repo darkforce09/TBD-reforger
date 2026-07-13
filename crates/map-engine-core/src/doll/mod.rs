@@ -219,14 +219,25 @@ pub fn instances() -> Vec<DollInstance> {
 }
 
 /// State → opaque RGBA (no blending; "empty" is a dim opaque tone, not translucent —
-/// translucency with a depth buffer would need sorted draws for nothing).
+/// translucency with a depth buffer would need sorted draws for nothing). `hovered` lifts
+/// the tone (T-154.1 hover highlight) — every base value is unorm8 tie-safe both plain and
+/// lifted (×1.22, clamped).
 #[must_use]
-pub fn state_color(state: u8) -> [f32; 4] {
-    match state {
+pub fn state_color(state: u8, hovered: bool) -> [f32; 4] {
+    let base = match state {
         STATE_ACTIVE => [0.678, 0.776, 1.0, 1.0], // Aegis primary, full
         STATE_EQUIPPED => [0.40, 0.51, 0.74, 1.0], // primary-tinted (0.51: unorm8 tie-safe)
         _ => [0.165, 0.185, 0.235, 1.0],          // dim slate (empty)
+    };
+    if !hovered {
+        return base;
     }
+    [
+        (base[0] * 1.22).min(1.0),
+        (base[1] * 1.22).min(1.0),
+        (base[2] * 1.22).min(1.0),
+        1.0,
+    ]
 }
 
 /// Body-decor color (head/neck) — darker than any state so gear reads on top.
@@ -235,8 +246,9 @@ pub fn decor_color() -> [f32; 4] {
     [0.125, 0.14, 0.175, 1.0]
 }
 
-/// Doll backdrop clear color (Aegis dark surface).
-pub const CLEAR_COLOR: [f64; 4] = [0.055, 0.062, 0.078, 1.0];
+/// Doll backdrop clear color — mid-light grey-blue (T-154.1: the dark gear must read
+/// dark-on-light; operator called the original dark-on-dark unreadable).
+pub const CLEAR_COLOR: [f64; 4] = [0.52, 0.56, 0.63, 1.0];
 
 // ── camera ────────────────────────────────────────────────────────────────────
 
@@ -278,6 +290,38 @@ pub fn view_proj_gl(yaw: f64, w_px: f64, h_px: f64) -> [f64; 16] {
 pub fn view_proj_wgpu(yaw: f64, w_px: f64, h_px: f64) -> [f32; 16] {
     let m = multiply(&Z01, &view_proj_gl(yaw, w_px, h_px));
     core::array::from_fn(|i| m[i] as f32)
+}
+
+// ── anchors (T-154.1 callout) ────────────────────────────────────────────────
+
+/// Representative world point for a region's callout: the first instance's model
+/// translation (the part's center).
+#[must_use]
+pub fn anchor_world(region: i32) -> Option<[f64; 3]> {
+    instances()
+        .into_iter()
+        .find(|i| i.region == region)
+        .map(|i| [i.model[12], i.model[13], i.model[14]])
+}
+
+/// The region anchor projected to CSS pixels, or `None` when the region is unknown or the
+/// point sits behind the camera (w ≤ 0) — the callout hides then.
+#[must_use]
+pub fn anchor_px(yaw: f64, w_px: f64, h_px: f64, region: i32) -> Option<(f64, f64)> {
+    if w_px <= 0.0 || h_px <= 0.0 {
+        return None;
+    }
+    let p = anchor_world(region)?;
+    let m = view_proj_gl(yaw, w_px, h_px);
+    let cx = m[0] * p[0] + m[4] * p[1] + m[8] * p[2] + m[12];
+    let cy = m[1] * p[0] + m[5] * p[1] + m[9] * p[2] + m[13];
+    let cw = m[3] * p[0] + m[7] * p[1] + m[11] * p[2] + m[15];
+    if cw <= 0.0 {
+        return None;
+    }
+    let ndc_x = cx / cw;
+    let ndc_y = cy / cw;
+    Some((((ndc_x + 1.0) / 2.0) * w_px, ((1.0 - ndc_y) / 2.0) * h_px))
 }
 
 // ── picking ──────────────────────────────────────────────────────────────────
@@ -572,15 +616,50 @@ mod tests {
     }
 
     #[test]
-    fn state_colors_distinct() {
-        let e = state_color(STATE_EMPTY);
-        let q = state_color(STATE_EQUIPPED);
-        let a = state_color(STATE_ACTIVE);
+    fn state_colors_distinct_and_hover_lifts() {
+        let e = state_color(STATE_EMPTY, false);
+        let q = state_color(STATE_EQUIPPED, false);
+        let a = state_color(STATE_ACTIVE, false);
         assert_ne!(e, q);
         assert_ne!(q, a);
         assert_ne!(e, a);
+        for s in [STATE_EMPTY, STATE_EQUIPPED, STATE_ACTIVE] {
+            let base = state_color(s, false);
+            let hover = state_color(s, true);
+            assert_ne!(base, hover, "hover must lift state {s}");
+            assert_eq!(hover[3], 1.0);
+            assert!(hover.iter().all(|c| *c <= 1.0));
+        }
         for c in [e, q, a] {
             assert_eq!(c[3], 1.0, "opaque pipeline — no alpha");
         }
+    }
+
+    #[test]
+    fn anchors_every_region_projects_inside_the_viewport() {
+        let (w, h) = (800.0, 600.0);
+        for (i, key) in REGION_KEYS.iter().enumerate() {
+            let idx = i32::try_from(i).unwrap();
+            let (x, y) = anchor_px(0.0, w, h, idx).unwrap_or_else(|| panic!("{key} anchor"));
+            assert!(x > 0.0 && x < w, "{key} x={x}");
+            assert!(y > 0.0 && y < h, "{key} y={y}");
+        }
+        assert!(anchor_px(0.0, w, h, 99).is_none(), "unknown region hides");
+    }
+
+    #[test]
+    fn anchor_matches_transform_vector_projection() {
+        // Same point through the pick-path unproject convention (transform_vector) — the
+        // two expressions differ only in the w-divide form; agree to ~1e-9 px.
+        let (w, h) = (800.0, 600.0);
+        let helmet =
+            i32::try_from(REGION_KEYS.iter().position(|k| *k == "headCover").unwrap()).unwrap();
+        let p = anchor_world(helmet).unwrap();
+        let vp = view_proj_gl(0.0, w, h);
+        let ndc = transform_vector(&vp, [p[0], p[1], p[2], 1.0]);
+        let expect = (((ndc[0] + 1.0) / 2.0) * w, ((1.0 - ndc[1]) / 2.0) * h);
+        let got = anchor_px(0.0, w, h, helmet).unwrap();
+        assert!((got.0 - expect.0).abs() < 1e-9);
+        assert!((got.1 - expect.1).abs() < 1e-9);
     }
 }

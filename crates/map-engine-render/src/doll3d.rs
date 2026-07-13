@@ -125,6 +125,7 @@ pub struct DollEngine {
     css_h: f64,
     yaw: f64,
     states: [u8; 14],
+    hover: i32,
     dirty: bool,
     continuous: bool,
 }
@@ -257,7 +258,7 @@ impl DollEngine {
         let (cyl_vbuf, cyl_ibuf, cyl_index_count) = make_mesh("doll-cyl", &cyl_v, &cyl_i);
 
         let states = [doll::STATE_EMPTY; 14];
-        let streams = pack_instances(&states);
+        let streams = pack_instances(&states, -1);
         let inst_buf = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("doll-instances"),
             size: streams.bytes.len() as u64,
@@ -294,6 +295,7 @@ impl DollEngine {
             css_h: f64::from(device_h),
             yaw: 0.0,
             states,
+            hover: -1,
             dirty: true,
             continuous: false,
         })
@@ -317,10 +319,30 @@ impl DollEngine {
         self.dirty = true;
     }
 
-    /// Orbit the doll: horizontal drag delta in CSS px → yaw.
+    /// Turn the CHARACTER with the drag (drag left → soldier turns left; T-154.1
+    /// operator call — the camera-orbit sign felt inverted).
     pub fn rotate(&mut self, dx_px: f64) {
-        self.yaw += dx_px * 0.012;
+        self.yaw -= dx_px * 0.012;
         self.dirty = true;
+    }
+
+    /// Hover highlight: region index or -1. No-op when unchanged; repacks the tiny
+    /// instance buffer through the lifted palette.
+    pub fn set_hover(&mut self, region: i32) {
+        if region == self.hover {
+            return;
+        }
+        self.hover = region;
+        let streams = pack_instances(&self.states, self.hover);
+        self.queue.write_buffer(&self.inst_buf, 0, &streams.bytes);
+        self.dirty = true;
+    }
+
+    /// The region's callout anchor in CSS px, `[x, y]` — empty when hidden/behind.
+    #[must_use]
+    pub fn anchor_px(&self, region: i32) -> Vec<f64> {
+        doll::anchor_px(self.yaw, self.css_w, self.css_h, region)
+            .map_or_else(Vec::new, |(x, y)| vec![x, y])
     }
 
     /// Push the 14 region states (RAIL order; values 0=empty, 1=equipped, 2=active).
@@ -329,7 +351,7 @@ impl DollEngine {
             return Err(JsError::new("set_states expects exactly 14 region bytes"));
         }
         self.states.copy_from_slice(states);
-        let streams = pack_instances(&self.states);
+        let streams = pack_instances(&self.states, self.hover);
         self.queue.write_buffer(&self.inst_buf, 0, &streams.bytes);
         self.dirty = true;
         Ok(())
@@ -588,9 +610,9 @@ async fn run_doll_self_check(
     backend: &str,
 ) -> Result<String, String> {
     let states = self_check_states();
-    let active = unorm8(doll::state_color(doll::STATE_ACTIVE));
-    let equipped = unorm8(doll::state_color(doll::STATE_EQUIPPED));
-    let empty = unorm8(doll::state_color(doll::STATE_EMPTY));
+    let active = unorm8(doll::state_color(doll::STATE_ACTIVE, false));
+    let equipped = unorm8(doll::state_color(doll::STATE_EQUIPPED, false));
+    let empty = unorm8(doll::state_color(doll::STATE_EMPTY, false));
     let clear = unorm8(core::array::from_fn(|i| doll::CLEAR_COLOR[i] as f32));
 
     // (world point or screen px, expected bytes, label)
@@ -640,7 +662,7 @@ async fn run_doll_self_check(
         }],
     });
 
-    let streams = pack_instances(&states);
+    let streams = pack_instances(&states, -1);
     let inst_buf = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("doll-probe-instances"),
         size: streams.bytes.len() as u64,

@@ -14,14 +14,17 @@ pub struct InstanceStreams {
 }
 
 #[must_use]
-pub fn pack_instances(states: &[u8; 14]) -> InstanceStreams {
+pub fn pack_instances(states: &[u8; 14], hover: i32) -> InstanceStreams {
     let all = doll::instances();
     let color_of = |inst: &doll::DollInstance| -> [f32; 4] {
         if inst.region < 0 {
             doll::decor_color()
         } else {
             let idx = usize::try_from(inst.region).unwrap_or(0);
-            doll::state_color(states.get(idx).copied().unwrap_or(doll::STATE_EMPTY))
+            doll::state_color(
+                states.get(idx).copied().unwrap_or(doll::STATE_EMPTY),
+                inst.region == hover,
+            )
         }
     };
     let mut bytes: Vec<u8> = Vec::with_capacity(all.len() * INSTANCE_STRIDE);
@@ -60,7 +63,7 @@ mod tests {
 
     #[test]
     fn byte_layout_golden() {
-        let s = pack_instances(&[doll::STATE_EMPTY; 14]);
+        let s = pack_instances(&[doll::STATE_EMPTY; 14], -1);
         let total = doll::instances().len();
         assert_eq!(s.bytes.len(), total * INSTANCE_STRIDE);
         assert_eq!((s.n_cube + s.n_cyl) as usize, total);
@@ -84,14 +87,14 @@ mod tests {
 
     #[test]
     fn state_flip_rewrites_exactly_the_region_colors() {
-        let empty = pack_instances(&[doll::STATE_EMPTY; 14]);
+        let empty = pack_instances(&[doll::STATE_EMPTY; 14], -1);
         let mut states = [doll::STATE_EMPTY; 14];
         let helmet = doll::REGION_KEYS
             .iter()
             .position(|k| *k == "headCover")
             .unwrap();
         states[helmet] = doll::STATE_ACTIVE;
-        let flipped = pack_instances(&states);
+        let flipped = pack_instances(&states, -1);
 
         // Instance order is deterministic; find helmet's packed slot by scanning regions
         // in the same cube-then-cylinder order the packer uses.
@@ -113,7 +116,27 @@ mod tests {
             .unwrap();
         assert_eq!(
             color_at(&flipped, helmet_slot),
-            doll::state_color(doll::STATE_ACTIVE)
+            doll::state_color(doll::STATE_ACTIVE, false)
         );
+    }
+
+    #[test]
+    fn hover_flip_rewrites_exactly_the_hovered_region() {
+        let states = [doll::STATE_EMPTY; 14];
+        let plain = pack_instances(&states, -1);
+        let vest = doll::REGION_KEYS.iter().position(|k| *k == "vest").unwrap();
+        let hovered = pack_instances(&states, i32::try_from(vest).unwrap());
+        let all = doll::instances();
+        let ordered: Vec<i32> = all
+            .iter()
+            .filter(|i| i.mesh == doll::MeshKind::Cube)
+            .chain(all.iter().filter(|i| i.mesh == doll::MeshKind::Cylinder))
+            .map(|i| i.region)
+            .collect();
+        for (slot, region) in ordered.iter().enumerate() {
+            let expect_change = *region == i32::try_from(vest).unwrap();
+            let changed = color_at(&plain, slot) != color_at(&hovered, slot);
+            assert_eq!(changed, expect_change, "instance {slot} (region {region})");
+        }
     }
 }
