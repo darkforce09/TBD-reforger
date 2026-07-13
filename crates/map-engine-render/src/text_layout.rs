@@ -23,6 +23,12 @@ pub const TEXT_CELL_PX: u32 = 32;
 pub const TEXT_GLYPH_ADVANCE_RATIO: f32 = 0.5;
 /// Fallback cell — a visually-obvious `□`; committed label data must never hit it (G3).
 pub const TOFU_GLYPH: u16 = 95;
+/// Halo (outline) radius baked around every glyph, in atlas pixels (T-152.13.1).
+pub const TEXT_HALO_PX: u32 = 2;
+/// Glyph ink color (warm off-white; lanes modulate via instance tint).
+pub const TEXT_INK_RGBA: [u8; 4] = [240, 240, 230, 255];
+/// Halo color — near-black blue-grey so labels read over any terrain.
+pub const TEXT_HALO_RGBA: [u8; 4] = [16, 21, 29, 255];
 
 /// One textured glyph instance in world meters (center of character cell).
 #[derive(Clone, Debug)]
@@ -35,12 +41,16 @@ pub struct TextGlyphInstance {
     pub glyph: u16,
 }
 
-/// World meters per character cell at `deck_zoom` (16 px @ REF_ZOOM, min 14 px — T-152.13
-/// readability floor; the old 6 px clamp rendered microscopic strokes at editor zooms).
+/// World meters per character cell at `deck_zoom` (24 px @ REF_ZOOM, min 20 px).
+///
+/// T-152.13.1 floor rationale: Spleen's cap height is ~20 of the 32 px cell, so a 20 px cell
+/// floor keeps rendered capitals ≥ 12 px (the spec's readability bar). The first 14 px floor
+/// left ~8.75 px capitals with sub-pixel strokes — operator: still very hard to read
+/// (2026-07-13). The old 6 px clamp was the original S4 microscopic-text bug.
 #[must_use]
 pub fn text_char_meters(deck_zoom: f64) -> f32 {
-    let base = 16.0 / 2.0_f64.powf(REF_ZOOM);
-    size_with_min_px(base, 14.0, deck_zoom) as f32
+    let base = 24.0 / 2.0_f64.powf(REF_ZOOM);
+    size_with_min_px(base, 20.0, deck_zoom) as f32
 }
 
 /// Map a character to its atlas cell: printable ASCII directly, anything else through the
@@ -225,45 +235,74 @@ pub fn glyph_cell_uv(glyph: u16, unit_x: f32, unit_y: f32) -> (f32, f32) {
 }
 
 /// Build the 16×6-cell (96 glyph) RGBA text atlas — 32×32 px cells, Spleen 16×32 ink
-/// x-centered in each cell (T-152.13), tofu `□` painted procedurally in cell 95.
+/// x-centered in each cell (T-152.13), tofu `□` painted procedurally in cell 95, and a
+/// 2 px dark halo dilated around every glyph (T-152.13.1 — labels sit on busy terrain;
+/// ink without an outline washes out under linear minification, operator 2026-07-13).
 /// Image size 512×192 (16·32 × 6·32).
 #[must_use]
 pub fn bake_ascii_atlas_rgba() -> (Vec<u8>, u32, u32) {
     const CELL: u32 = TEXT_CELL_PX;
     const COLS: u32 = TEXT_ATLAS_COLS;
     const ROWS: u32 = TEXT_ATLAS_ROWS;
+    const HALO: i32 = TEXT_HALO_PX as i32;
     let w = COLS * CELL;
     let h = ROWS * CELL;
     let ink_x0 = (CELL - FONT_GLYPH_W) / 2;
     let mut px = vec![0u8; (w * h * 4) as usize];
-    let mut set = |x: u32, y: u32| {
-        let i = ((y * w + x) * 4) as usize;
-        px[i] = 240;
-        px[i + 1] = 240;
-        px[i + 2] = 230;
-        px[i + 3] = 255;
-    };
     for gi in 0..96u32 {
         let ox = (gi % COLS) * CELL;
         let oy = (gi / COLS) * CELL;
+        // Cell-local ink mask, one u32 bit-row per pixel row (bit x = cell column x).
+        let mut ink = [0u32; CELL as usize];
         if gi == u32::from(TOFU_GLYPH) {
             // Hollow □ over the ink box (2 px stroke) — unmapped chars must be obvious, not blobs.
             for y in 4..28u32 {
                 for x in 10..22u32 {
-                    let edge = !(12..20).contains(&x) || !(6..26).contains(&y);
-                    if edge {
-                        set(ox + x, oy + y);
+                    if !(12..20).contains(&x) || !(6..26).contains(&y) {
+                        ink[y as usize] |= 1 << x;
                     }
                 }
             }
-            continue;
-        }
-        let rows = &FONT_16X32[gi as usize];
-        for (dy, bits) in rows.iter().enumerate() {
-            for dx in 0..FONT_GLYPH_W {
-                if (bits >> (15 - dx)) & 1 == 1 {
-                    set(ox + ink_x0 + dx, oy + dy as u32);
+        } else {
+            let rows = &FONT_16X32[gi as usize];
+            for (dy, bits) in rows.iter().enumerate() {
+                for dx in 0..FONT_GLYPH_W {
+                    if (bits >> (15 - dx)) & 1 == 1 {
+                        ink[dy] |= 1 << (ink_x0 + dx);
+                    }
                 }
+            }
+        }
+        // Chebyshev-dilate the ink by TEXT_HALO_PX (ink stays ≥ 6 px from the cell's x edges,
+        // so the horizontal shifts cannot leak into neighbour columns; y is clamped in-cell).
+        let mut dilated = [0u32; CELL as usize];
+        for y in 0..CELL as i32 {
+            let r = ink[y as usize];
+            let mut spread = r;
+            for s in 1..=TEXT_HALO_PX {
+                spread |= r << s | r >> s;
+            }
+            for dy in -HALO..=HALO {
+                let ty = y + dy;
+                if (0..CELL as i32).contains(&ty) {
+                    dilated[ty as usize] |= spread;
+                }
+            }
+        }
+        for y in 0..CELL {
+            for x in 0..CELL {
+                let on_ink = (ink[y as usize] >> x) & 1 == 1;
+                let on_halo = !on_ink && (dilated[y as usize] >> x) & 1 == 1;
+                if !(on_ink || on_halo) {
+                    continue;
+                }
+                let rgba = if on_ink {
+                    TEXT_INK_RGBA
+                } else {
+                    TEXT_HALO_RGBA
+                };
+                let i = (((oy + y) * w + ox + x) * 4) as usize;
+                px[i..i + 4].copy_from_slice(&rgba);
             }
         }
     }
@@ -391,33 +430,42 @@ mod tests {
         assert!((u - 7.0 / cols).abs() < eps, "glyph 23 = col 7 left edge");
     }
 
-    /// Alpha at (dx, dy) inside glyph `gi`'s atlas cell.
-    fn cell_lit(px: &[u8], w: u32, gi: u32, dx: u32, dy: u32) -> bool {
+    /// RGBA at (dx, dy) inside glyph `gi`'s atlas cell.
+    fn cell_px(px: &[u8], w: u32, gi: u32, dx: u32, dy: u32) -> [u8; 4] {
         let cell = TEXT_CELL_PX;
         let (col, row) = (gi % TEXT_ATLAS_COLS, gi / TEXT_ATLAS_COLS);
         let x = col * cell + dx;
         let y = row * cell + dy;
-        px[((y * w + x) * 4 + 3) as usize] > 0
+        let i = ((y * w + x) * 4) as usize;
+        [px[i], px[i + 1], px[i + 2], px[i + 3]]
     }
 
     #[test]
     fn g2_seven_is_top_heavy_in_atlas() {
         // Cross-check the probe geometry used by `text_self_check` against the Spleen '7'
         // (glyph 23): ink is 16 px wide at cell x-offset 8. Row dy=6 carries the top bar
-        // (ink cols 2..=13); rows dy≥18 only the descender at ink cols 6..=7.
+        // (ink cols 2..=13); rows dy≥18 only the descender at ink cols 6..=7. With the
+        // T-152.13.1 halo, texels within 2 px (Chebyshev) of ink are TEXT_HALO_RGBA.
         let (px, w, _h) = bake_ascii_atlas_rgba();
-        assert!(cell_lit(&px, w, 23, 11, 6), "top bar lit (ink col 3, dy=6)");
-        assert!(
-            cell_lit(&px, w, 23, 14, 18),
-            "descender lit (ink col 6, dy=18)"
+        assert_eq!(
+            cell_px(&px, w, 23, 11, 6),
+            TEXT_INK_RGBA,
+            "top bar ink (ink col 3, dy=6)"
         );
-        assert!(
-            !cell_lit(&px, w, 23, 17, 18),
-            "U-mirror trap: cell x=17 (ink col 9) empty at dy=18"
+        assert_eq!(
+            cell_px(&px, w, 23, 14, 18),
+            TEXT_INK_RGBA,
+            "descender ink (ink col 6, dy=18)"
         );
-        assert!(
-            !cell_lit(&px, w, 23, 11, 25),
-            "V-flip trap: dy=25 empty at ink col 3 (flip would land the top bar here)"
+        assert_eq!(
+            cell_px(&px, w, 23, 17, 18),
+            TEXT_HALO_RGBA,
+            "U-mirror trap: cell x=17 at dy=18 is halo upright — a mirrored '7' puts ink here"
+        );
+        assert_eq!(
+            cell_px(&px, w, 23, 11, 25),
+            [0, 0, 0, 0],
+            "V-flip trap: (11,25) is ≥3 px from all ink — a flip lands the top bar here"
         );
     }
 
@@ -454,9 +502,21 @@ mod tests {
     fn g2_tofu_cell_is_painted_box() {
         let (px, w, _h) = bake_ascii_atlas_rgba();
         let gi = u32::from(TOFU_GLYPH);
-        assert!(cell_lit(&px, w, gi, 10, 4), "tofu top-left stroke");
-        assert!(cell_lit(&px, w, gi, 21, 27), "tofu bottom-right stroke");
-        assert!(!cell_lit(&px, w, gi, 16, 16), "tofu interior hollow");
+        assert_eq!(
+            cell_px(&px, w, gi, 10, 4),
+            TEXT_INK_RGBA,
+            "tofu top-left stroke"
+        );
+        assert_eq!(
+            cell_px(&px, w, gi, 21, 27),
+            TEXT_INK_RGBA,
+            "tofu bottom-right stroke"
+        );
+        assert_eq!(
+            cell_px(&px, w, gi, 16, 16),
+            [0, 0, 0, 0],
+            "tofu interior hollow (≥3 px from strokes — outside the halo)"
+        );
     }
 
     // ── T-152.13 G3 — no-blob gate over committed label data ────────────────────────────────

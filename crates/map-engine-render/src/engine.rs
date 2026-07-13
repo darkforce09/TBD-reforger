@@ -5071,10 +5071,12 @@ impl RenderEngine {
     /// x∈[320,480], y∈[220,380], **5 px per atlas texel**, nearest sampling; screen px =
     /// (320 + 5·tx + 2, 220 + 5·ty + 2) for cell texel (tx,ty); Spleen '7' ink sits at cell
     /// x-offset 8, top bar on rows 6–7, descender at ink cols 6–7 from row 18 down):
-    /// - **(377,252)** top bar (tx=11,ty=6) = glyph color `[240,240,230,255]` — lane draws,
-    /// - **(392,312)** descender (tx=14,ty=18) = glyph color,
-    /// - **(407,312)** (tx=17,ty=18 — the U-mirror of tx=14) = `CLEAR_COLOR` — kills a U-mirror,
-    /// - **(377,347)** (tx=11,ty=25 — empty upright; V-flip lands the top bar here) = `CLEAR_COLOR`,
+    /// - **(377,252)** top bar (tx=11,ty=6) = glyph ink `[240,240,230,255]` — lane draws,
+    /// - **(392,312)** descender (tx=14,ty=18) = glyph ink,
+    /// - **(407,312)** (tx=17,ty=18 — the U-mirror of tx=14) = **halo** `[16,21,29,255]`
+    ///   (T-152.13.1 baked outline; a mirrored '7' puts ink here instead),
+    /// - **(377,347)** (tx=11,ty=25 — ≥3 texels from ink, outside the 2 px halo; V-flip lands
+    ///   the top bar here) = `CLEAR_COLOR`,
     /// - **(400,50)** far exterior = `CLEAR_COLOR`.
     /// Oracle for the ink coords: `text_layout` test `g2_seven_is_top_heavy_in_atlas` probes the
     /// same four cell texels against the baked RGBA. Resolves to JSON like the other self-checks.
@@ -5279,8 +5281,8 @@ impl RenderEngine {
                 (
                     407,
                     312,
-                    [51, 68, 85, 255],
-                    "upright-empty (tx=17,ty=18) = CLEAR (U-mirror trap)",
+                    [16, 21, 29, 255],
+                    "halo (tx=17,ty=18) = TEXT_HALO_RGBA (U-mirror trap: mirrored ink lands here)",
                 ),
                 (
                     377,

@@ -90,3 +90,33 @@ cd apps/website/frontend && npm test && npm run build && npm run lint # → 0 (v
 - **M2** (height numerals crisp at z=0; road names legible along curves): **operator-pending**.
 
 Automated proxies shipped: hyphen + full lowercase mapped and gate-locked (G2/G3); upright + real-pipeline draw proven by `text_self_check` 5/5 on GPU readback.
+
+---
+
+## T-152.13.1 — readability hotfix (baked halo + floor raise)
+
+**Operator (2026-07-13, post-.13 screenshot @ z=−2.91):** "better, but the font is still very hard
+to read." Diagnosis: (a) at the 14 px cell floor, Spleen's ~20/32 cap height leaves ~8.75 px
+capitals whose 2 px strokes land sub-pixel under the production **Linear** sampler
+(`icon_sampler`, `engine.rs:1302` — confirmed Linear, so washout not dropout); (b) zero contrast
+treatment — off-white hairlines directly over busy terrain/roads.
+
+**Fix (Rust-only, atlas + one constant):**
+1. **Baked cartographic halo** — every glyph (tofu included) gets a 2 px Chebyshev-dilated
+   outline `TEXT_HALO_RGBA = [16,21,29,255]` behind `TEXT_INK_RGBA` ink, baked in
+   `bake_ascii_atlas_rgba` via cell-local bit-row masks. Lanes inherit it with zero
+   shader/instance changes (`fs_text` tint multiply keeps the halo dark under any lane tint).
+2. **Floor raise** — `text_char_meters`: base 16→**24 px**, min 14→**20 px** cell ⇒ rendered
+   capitals ≥ 12.5 px with ~1.25 px strokes + ~1.25 px halo at the floor. Town band (≤ +2)
+   renders at a constant 20 px cell; base takes over above z≈2.74.
+
+**Gate deltas:**
+- `g2_seven_is_top_heavy_in_atlas` now asserts exact classes: ink / **halo** (U-mirror trap texel
+  (17,18) — mirrored ink would land there) / true-clear (V-flip trap (11,25), ≥3 px from ink).
+- `text_self_check` probe (407,312) expects **halo bytes [16,21,29,255]**; V-flip + exterior
+  probes stay `CLEAR_COLOR`. GPU readback headless: **allPass:true, 5/5**.
+- Full suite re-run green: fmt ✓ · clippy native+wasm32 `-D warnings` ✓ · render **40/40** ·
+  core 85 · `make wasm` → **4,347,812 B** (cumulative **+4,014 B** over the .12 baseline
+  4,343,798 — ceiling +262,144) · vitest 355/355 · FE build/lint ✓.
+
+**M1/M2: operator-pending** (re-check with halo + 20 px floor).
