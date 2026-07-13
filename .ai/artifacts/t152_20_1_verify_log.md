@@ -47,3 +47,7 @@ Settings → World layers — flip each of `roads`, `forest`, `contours`, `sea`:
 layer must show/hide, and (roads/forest) update without needing a pan; prefs survive reload. The
 other 8 keys already reacted (T-152.20). This closes the O10 caveat for T-152.22 — all 12 classes
 now operator-controllable end-to-end.
+
+**M1 operator PASS — 2026-07-13.** All 12 world-layer toggles verified on real GPU: each layer
+shows/hides on flip (incl. the newly-wired roads/forest/contours/sea), roads + forest update
+without a pan, prefs survive reload. O10 controllability confirmed end-to-end for every class.
