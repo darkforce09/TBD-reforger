@@ -133,9 +133,13 @@ export class WgpuWorldController {
     this.residency.set_airfield_toggle(t.airfield)
     this.lastRoadZoomBand = ''
     this.lastAirfieldApronKey = ''
+    // T-152.20 — the Roads + Forest mass toggles gate their lanes in pushRoads/pushLandcover; force
+    // both to recompose (null the landcover memo, cleared road band above) so a flip takes effect now.
+    this.lastLandcoverVis = null
     if (this.ready) {
       this.pushRoads()
       this.pushAirfieldApron()
+      this.pushLandcover()
       this.pushToEngine()
     }
   }
@@ -260,7 +264,9 @@ export class WgpuWorldController {
     // T-152.14: land-cover mass visibility is the residency handoff (`forest_fill_effective`), not
     // the pure-zoom `forestFill` gate — the green mass persists at z ≥ 0 while tree glyphs are
     // heatmap-swapped or the lane packs empty, so zooming into dense forest never blanks.
-    const vis = this.residency.forest_fill_effective
+    // T-152.20: AND the user Forest-mass toggle — the landcover hulls are the low-zoom half of the
+    // same green forest as useWgpuForestMass (fill/outline), so `forest` off hides both.
+    const vis = this.residency.forest_fill_effective && getClassToggles().forest
     if (vis === this.lastLandcoverVis) return
     this.lastLandcoverVis = vis
     if (!vis) {
@@ -287,26 +293,20 @@ export class WgpuWorldController {
   private pushRoads(): void {
     if (!this.store || !this.roadsLoaded) return
     const zoom = this.engine.zoom
+    // T-152.20 — the Roads toggle gates both road lanes (centerline + casing). Fold it into the
+    // band key so a flip recomposes, and into the per-lane `visible` flag so off hides them.
+    const roadsOn = getClassToggles().roads
     const airfieldPolish = getClassToggles().airfield
     // Band: integer zoom steps of 0.5 so continuous pan doesn't recompose.
     const band = Math.round(zoom * 2)
-    const bandKey = `${band}:${airfieldPolish ? 1 : 0}`
+    const bandKey = `${band}:${airfieldPolish ? 1 : 0}:${roadsOn ? 1 : 0}`
     if (bandKey === this.lastRoadZoomBand) return
     this.lastRoadZoomBand = bandKey
     try {
       const roads = this.store.compose_roads(zoom, airfieldPolish)
-      this.engine.upload_strip_tris(
-        ROLE_ROADS_CASING,
-        roads.casing,
-        roads.segment_count,
-        roads.segment_count > 0,
-      )
-      this.engine.upload_strip_tris(
-        ROLE_ROADS,
-        roads.centerline,
-        roads.segment_count,
-        roads.segment_count > 0,
-      )
+      const roadsVisible = roadsOn && roads.segment_count > 0
+      this.engine.upload_strip_tris(ROLE_ROADS_CASING, roads.casing, roads.segment_count, roadsVisible)
+      this.engine.upload_strip_tris(ROLE_ROADS, roads.centerline, roads.segment_count, roadsVisible)
       roads.free()
     } catch (err) {
       console.warn('[wgpu-world] roads compose failed', err)

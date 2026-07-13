@@ -155,11 +155,25 @@ export default function WgpuTacticalMap({
   useWgpuForestMass(forestControllerRef, ready)
   // W6 mission slots / selection / drag / clusters.
   useWgpuSlots(slotsControllerRef, ready, missionDoc)
-  // W5 glyph prefs (trees/props/buildings→badges).
+  // W5 glyph prefs (trees/props/buildings→badges) + T-152.20 world-layer toggles (roads/forest/
+  // airfield). syncGlyphToggles re-pushes roads + landcover; the forest-mass lane resyncs alongside
+  // (the landcover hulls + forest mass are the two halves of the Forest-mass toggle). airfield was
+  // missing from the deps (T-152.15 set_airfield_toggle wouldn't take effect until a camera move).
+  // Sea + Contours are owned by useWgpuDemVectors (its own prefs subscription), so not listed here.
   useEffect(() => {
     if (!ready) return
     worldControllerRef.current?.syncGlyphToggles()
-  }, [ready, classToggles.trees, classToggles.props, classToggles.buildings, classToggles.fences])
+    forestControllerRef.current?.resync()
+  }, [
+    ready,
+    classToggles.trees,
+    classToggles.props,
+    classToggles.buildings,
+    classToggles.fences,
+    classToggles.airfield,
+    classToggles.roads,
+    classToggles.forest,
+  ])
 
   // Keep cluster index + icon cache terrain aligned (same as Deck TacticalMap).
   useEffect(() => {
