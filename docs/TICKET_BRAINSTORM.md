@@ -5,6 +5,10 @@
 
 `idea` + `deferred` only.
 
+## Platform
+
+- **T-154** (idea) — Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike) [ARS, EDITOR] — Operator call 2026-07-13 at the T-068.10.8 pause: the Arsenal doll's next fidelity step is a basic rotatable 3D soldier, implemented in Rust/wgpu - NOT three.js (one GPU stack; D5 language gate: Rust owns engine policy, TS stays dumb UI). Extend map_engine_wasm with a 3D perspective pipeline (WGSL, depth buffer, basic lighting), primitive soldier mesh gen, ray picking for region select, and a second-canvas surface lifecycle for the Attributes modal (create/destroy on open/close). Replaces the SVG SoldierSilhouette; the region/state contract to build against is already pure in arsenalDollModel.ts (DOLL_REGIONS / RAIL_REGIONS / empty-equipped-active semantics). Decision context: docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md #Out of scope.
+
 ## backend
 
 - **T-095** (deferred) — Per-handler API reference doc [DATA] — Complete docs/backend/api.md per-handler reference.

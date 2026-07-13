@@ -1200,6 +1200,7 @@
         "T-068.10.5",
         "T-068.10.6",
         "T-068.10.7",
+        "T-068.10.8",
         "T-068.11",
         "T-068.12",
         "T-068.13",
@@ -1404,6 +1405,16 @@
           "shipped_at": "de1ab7b5",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_7_arsenal_paper_doll.md",
           "notes": "Mode D: Arsenal paper-doll - ACE layout with clickable SVG soldier silhouette (list left, doll center, context right; optic/magazine sub-hotspots on the rifle; honest weight readout). Replaces the .10.6 dropdown-rows layout inside the Arsenal tab; ArsenalPicksPanel stays for the Faction Manager. SHIPPED @ de1ab7b5 (tag T-068.10.7). T-068.11 remains PARKED for operator decision."
+        },
+        "T-068.10.8": {
+          "executor": "claude-code",
+          "targets": [
+            "website"
+          ],
+          "status": "shipped",
+          "shipped_at": "574fc63d",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md",
+          "notes": "Mode D pass 2 after operator screenshot review: Arsenal opens with zero scrolling (modal pinned h-[85vh], flex chain, panes scroll internally); A3-style vertical slot rail (RAIL_REGIONS, 14 keys, completeness-gated) shares activeKey with the doll; doll is text-free (labels moved to rail/list/context/caption). 3D doll deferred to T-154 (Rust/wgpu, operator call - no three.js). SHIPPED @ 574fc63d (tag T-068.10.8). T-068.11 remains PARKED."
         }
       },
       "active_slice": "T-068.11"
@@ -4234,6 +4245,33 @@
           "notes": "Frontend: FactionManagerDialog (+ArsenalPicksPanel extraction), buildFactionTree palette (vanilla dump deleted), drop path ensureFaction/ensureSquadFor + role loadout on slot. Vehicles listed, placement = T-070."
         }
       }
+    },
+    {
+      "id": "T-154",
+      "title": "Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)",
+      "summary": "Operator call 2026-07-13 at the T-068.10.8 pause: the Arsenal doll's next fidelity step is a basic rotatable 3D soldier, implemented in Rust/wgpu - NOT three.js (one GPU stack; D5 language gate: Rust owns engine policy, TS stays dumb UI). Extend map_engine_wasm with a 3D perspective pipeline (WGSL, depth buffer, basic lighting), primitive soldier mesh gen, ray picking for region select, and a second-canvas surface lifecycle for the Attributes modal (create/destroy on open/close). Replaces the SVG SoldierSilhouette; the region/state contract to build against is already pure in arsenalDollModel.ts (DOLL_REGIONS / RAIL_REGIONS / empty-equipped-active semantics). Decision context: docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md #Out of scope.",
+      "program": "Platform",
+      "surfaces": [
+        "ARS",
+        "EDITOR"
+      ],
+      "impact": [
+        "ui",
+        "infra"
+      ],
+      "status": "idea",
+      "depends_on": [
+        "T-151"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "ticket/T-154",
+      "spec": "docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md",
+      "slices": [],
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
     }
   ]
 }
