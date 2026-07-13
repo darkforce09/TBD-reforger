@@ -63,3 +63,30 @@ Authority: audit `t152_11_fidelity_audit_report.md` §6.3 (S8, D9, A6) · spec `
 - **M1** z=0 ridge pan: named summits read `"{Name} · {N} m"`, upright + legible.
 - **M2** z=−4 island: no height-label clutter (band hides labels at z=−4).
 - **M3** contour decision signed: paste the fresh waiver quote above.
+
+---
+
+## T-152.16.1 hotfix — overlapping / tofu label text
+
+Operator M1 (2026-07-13, screenshot @ z0.28) showed named labels **garbled**: similarly-named nearby
+summits (e.g. Mountains West Ridge 01+02, Hill 02+03) interleaved into glyph mush, and the `·`
+separator rendered as tofu `□`. Two fixes:
+
+1. **Width-aware declutter** (`crates/map-engine-render/src/text_layout.rs`
+   `declutter_specs_by_width`, used by `pack_height_label_glyphs`). The core `declutter_height_labels`
+   separates by **anchor distance** only (`80 m · 2^−z` ≈ 66 m at z0.28) — width-blind. A 31-char name
+   label spans hundreds of world-metres at that zoom, so anchors 66 m apart overlap completely. The new
+   pass rejects any spec whose rendered text box (x-extent = `chars · advance`, y-extent = `char_m`)
+   overlaps a higher-priority kept box; input is value-desc so the taller summit wins. Runs after the
+   core band/anchor/cap declutter (which it keeps as the coarse pre-filter). O(k²), k ≤ 48.
+2. **Separator `·` → `-`** (`height_labels_to_specs`). The Spleen text atlas is a full 96-cell ASCII
+   grid (16×6, cells 0–94 = U+0020–U+007E, 95 = tofu) with no cell for U+00B7, so `·` was tofu. The
+   hyphen is in-atlas and the same 3-char `" x "` width as the spec's `" · "`. **Deviation from the
+   locked `"{Name} · {N} m"` format**; adding `·` to the atlas is T-152.13 font work, out of scope here.
+
+**Gates (all exit 0):** `cargo test -p map-engine-render` 13 (new `width_declutter_drops_overlapping_long_names`)
++ `-p map-engine-core` peaks 7 (`named_label_packs_name_and_value` now asserts `"Highstone - 372 m"`);
+clippy render + core clean; `make wasm`; `verify-height-labels` 7 gates PASS (sidecar data unchanged —
+text is composed at pack time, not stored); FE `npm test` 356 / build / lint. No sidecar/schema change.
+
+**Still operator-pending:** M1 re-check (labels non-overlapping + legible), M2 band, M3 fresh contour waiver.

@@ -108,6 +108,7 @@ pub fn pack_label_glyphs(
 }
 
 /// T-152.7 — height labels with 80 m declutter (not the 48 px town-label curve).
+/// T-152.16.1 — plus a width-aware pass so long name labels don't interleave.
 #[must_use]
 pub fn pack_height_label_glyphs(
     labels: &[HeightLabel],
@@ -116,7 +117,34 @@ pub fn pack_height_label_glyphs(
 ) -> Vec<TextGlyphInstance> {
     let drawn = declutter_height_labels(labels, deck_zoom);
     let specs: Vec<LabelSpec> = map_engine_core::dem::peaks::height_labels_to_specs(&drawn);
-    glyphs_from_specs(&specs, char_m, pack_rgba_u32([220, 220, 215, 230]))
+    let kept = declutter_specs_by_width(&specs, char_m);
+    glyphs_from_specs(&kept, char_m, pack_rgba_u32([220, 220, 215, 230]))
+}
+
+/// T-152.16.1 — width-aware declutter. The core `declutter_height_labels` separates by anchor
+/// distance only (`80 m · 2^−z`), which is width-blind: a long name label like
+/// `"Mountains West Ridge 02 - 332 m"` spans ~30 char cells, so two nearby summits interleave into
+/// glyph mush. This pass rejects any spec whose rendered text box overlaps a higher-priority kept
+/// box. Input arrives value-desc from the core declutter, so greedy keeps the taller summit.
+/// O(k²), `k ≤ PEAK_LABEL_MAX` (48).
+fn declutter_specs_by_width(specs: &[LabelSpec], char_m: f32) -> Vec<LabelSpec> {
+    let advance = char_m * TEXT_GLYPH_ADVANCE_RATIO;
+    let half_h = char_m; // ~one cell of vertical clearance so different rows never collide
+    let mut kept: Vec<(f32, f32, f32)> = Vec::new(); // (x, y, half_width) of accepted boxes
+    let mut out = Vec::new();
+    for s in specs {
+        let half_w = s.text.chars().count() as f32 * advance * 0.5;
+        let sx = s.x as f32;
+        let sy = s.y as f32;
+        let overlaps = kept
+            .iter()
+            .any(|&(kx, ky, kw)| (sx - kx).abs() < half_w + kw + advance && (sy - ky).abs() < half_h);
+        if !overlaps {
+            kept.push((sx, sy, half_w));
+            out.push(s.clone());
+        }
+    }
+    out
 }
 
 /// T-152.8 — town names with A3 importance declutter + cartographic tint `#e8e4dc` @ α0.92.
@@ -335,6 +363,34 @@ mod tests {
         let advance = 10.0 * TEXT_GLYPH_ADVANCE_RATIO;
         assert!((g[1].x - 100.0).abs() < 1e-4);
         assert!((g[2].x - g[1].x - advance).abs() < 1e-4);
+    }
+
+    #[test]
+    fn width_declutter_drops_overlapping_long_names() {
+        // T-152.16.1: two ~31-char labels 100 m apart (char_m=10 → half-width ~77 m each) overlap.
+        let a = LabelSpec {
+            id: 0,
+            x: 0,
+            y: 0,
+            importance: 332,
+            text: "Mountains West Ridge 02 - 332 m".into(),
+        };
+        let b = LabelSpec {
+            id: 1,
+            x: 100,
+            y: 0,
+            importance: 130,
+            text: "Mountains West Ridge 01 - 130 m".into(),
+        };
+        let kept = declutter_specs_by_width(&[a.clone(), b.clone()], 10.0);
+        assert_eq!(kept.len(), 1, "overlapping long names collapse to one");
+        assert_eq!(kept[0].text, a.text, "higher-priority (first) label survives");
+        // Far apart in x → both kept.
+        let far = LabelSpec { x: 2000, ..b.clone() };
+        assert_eq!(declutter_specs_by_width(&[a.clone(), far], 10.0).len(), 2);
+        // Different rows (large dy) → both kept even at the same x.
+        let below = LabelSpec { y: 500, ..b };
+        assert_eq!(declutter_specs_by_width(&[a, below], 10.0).len(), 2);
     }
 
     #[test]

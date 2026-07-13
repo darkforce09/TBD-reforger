@@ -216,8 +216,11 @@ pub fn declutter_invariant_holds(labels: &[HeightLabel], deck_zoom: f64) -> bool
 
 /// Convert height labels to `LabelSpec` for the text lane (importance = elevation).
 ///
-/// T-152.16 L5: named peaks/hills render as `"{name} · {value_m} m"`; anonymous DEM peaks stay
+/// T-152.16 L5: named peaks/hills render as `"{name} - {value_m} m"`; anonymous DEM peaks stay
 /// the bare elevation numeral. Text composition lives here (Rust), never in TypeScript.
+///
+/// T-152.16.1: the separator is an ASCII hyphen, not the `·` middle-dot the spec suggested — the
+/// Spleen text atlas is a full 96-cell ASCII grid with no cell for U+00B7, so `·` rendered as tofu.
 #[must_use]
 pub fn height_labels_to_specs(labels: &[HeightLabel]) -> Vec<crate::label::LabelSpec> {
     labels
@@ -229,7 +232,7 @@ pub fn height_labels_to_specs(labels: &[HeightLabel]) -> Vec<crate::label::Label
             y: l.y.round() as i32,
             importance: l.value_m.clamp(0, i32::from(u16::MAX)) as u16,
             text: match &l.name {
-                Some(n) => format!("{n} · {} m", l.value_m),
+                Some(n) => format!("{n} - {} m", l.value_m),
                 None => l.value_m.to_string(),
             },
         })
@@ -359,7 +362,7 @@ mod tests {
             },
         ];
         let specs = height_labels_to_specs(&labels);
-        assert_eq!(specs[0].text, "Highstone · 372 m");
+        assert_eq!(specs[0].text, "Highstone - 372 m");
         assert_eq!(specs[1].text, "210");
     }
 
