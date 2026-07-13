@@ -4,7 +4,7 @@
 // downloads the v2 loadout-export (with the derived legacy gear block). Character slots
 // only; worker-down degrades to kind-only rows.
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Download, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { updateSlotLoadout, type MissionDoc, type Slot } from '@/features/tactical-map'
@@ -21,6 +21,8 @@ import {
 } from './arsenalRules'
 import { ArsenalPicksPanel } from './ArsenalPicksPanel'
 import { buildLoadoutExport, downloadLoadoutJson } from './loadoutExport'
+import { itemDetail } from './itemDetail'
+import { ContainerPanel, ItemDetailPane } from './ItemDetailPane'
 import { migrateLoadout } from './migrateLoadout'
 import { useArsenalValidation } from './useArsenalValidation'
 import { Field } from '../layout/RightInspector/fields'
@@ -44,6 +46,13 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
     [slot.loadout, catalogByName],
   )
   const picks = useMemo(() => loadoutToPicks(loadoutV2), [loadoutV2])
+  // T-068.10.6 inspection: last-picked item, seeded from the first non-empty pick.
+  const [inspected, setInspected] = useState<string>('')
+  const inspectedRn = inspected || Object.values(picks).find(Boolean) || ''
+  const detail = useMemo(
+    () => (inspectedRn ? itemDetail(inspectedRn, catalog, catalogByName) : null),
+    [inspectedRn, catalog, catalogByName],
+  )
   const { status, sets } = useArsenalValidation(isCharacter, data?.modpack_id, picks)
   const validation = useMemo(() => validateLoadout(picks, sets), [picks, sets])
 
@@ -69,6 +78,7 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   const smart = status === 'ready'
   const degradeSets: CompatSets = { edgeItems: {} }
   const onPick = (key: LoadoutKey, value: string) => {
+    if (value) setInspected(value) // ACE model: picking an item shows it in the detail pane
     updateSlotLoadout(md, slot.id, picksToLoadout({ ...picks, [key]: value }, catalogByName))
   }
   const onDownload = () => {
@@ -83,6 +93,8 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
     catalog.some((i) => i.kind === k && i.abstract !== true),
   )
 
+  const showContainer = detail?.isContainer === true
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -93,14 +105,27 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
         )}
       </div>
 
-      <ArsenalPicksPanel
-        picks={picks}
-        onPick={onPick}
-        catalog={catalog}
-        catalogByName={catalogByName}
-        sets={smart ? sets : degradeSets}
-        smart={smart}
-      />
+      {/* ACE panes (T-068.10.6): detail left, pickers center, container right. */}
+      <div
+        className={
+          showContainer
+            ? 'grid max-h-[58vh] grid-cols-[230px_1fr_210px] gap-3'
+            : 'grid max-h-[58vh] grid-cols-[230px_1fr] gap-3'
+        }
+      >
+        <ItemDetailPane detail={detail} onInspect={setInspected} />
+        <div className="min-h-0 overflow-y-auto pr-1">
+          <ArsenalPicksPanel
+            picks={picks}
+            onPick={onPick}
+            catalog={catalog}
+            catalogByName={catalogByName}
+            sets={smart ? sets : degradeSets}
+            smart={smart}
+          />
+        </div>
+        {showContainer && detail && <ContainerPanel detail={detail} />}
+      </div>
 
       {pendingKindsWithData.length > 0 && (
         <p className="text-label-sm normal-case text-outline">
