@@ -4249,7 +4249,7 @@
     {
       "id": "T-154",
       "title": "Rust/wgpu 3D arsenal doll (T-151-adjacent 3D pipeline spike)",
-      "summary": "Operator call 2026-07-13 at the T-068.10.8 pause: the Arsenal doll's next fidelity step is a basic rotatable 3D soldier, implemented in Rust/wgpu - NOT three.js (one GPU stack; D5 language gate: Rust owns engine policy, TS stays dumb UI). Extend map_engine_wasm with a 3D perspective pipeline (WGSL, depth buffer, basic lighting), primitive soldier mesh gen, ray picking for region select, and a second-canvas surface lifecycle for the Attributes modal (create/destroy on open/close). Replaces the SVG SoldierSilhouette; the region/state contract to build against is already pure in arsenalDollModel.ts (DOLL_REGIONS / RAIL_REGIONS / empty-equipped-active semantics). Decision context: docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md #Out of scope.",
+      "summary": "SHIPPED @ a65529b3 (tag T-154.0): the arsenal doll is a rotatable 3D primitive soldier on a second wgpu engine instance (DollEngine) - the engine's first 3D pipeline (perspective, depth, instancing, Rust picking). Operator call 2026-07-13: one GPU stack, no three.js; D5 holds (TS mount 163 LOC). Original idea text: extend map_engine_wasm with a 3D pipeline replacing the SVG SoldierSilhouette; contract pure in arsenalDollModel.ts.",
       "program": "Platform",
       "surfaces": [
         "ARS",
@@ -4259,19 +4259,35 @@
         "ui",
         "infra"
       ],
-      "status": "idea",
+      "status": "shipped",
       "depends_on": [
         "T-151"
       ],
       "route": "/missions/:id/edit",
       "branch": "ticket/T-154",
-      "spec": "docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md",
-      "slices": [],
+      "spec": "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md",
+      "slices": [
+        "T-154.0"
+      ],
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "active_slice": "T-154.0",
+      "slice_plan": {
+        "T-154.0": {
+          "executor": "claude-code",
+          "targets": [
+            "website",
+            "root"
+          ],
+          "status": "shipped",
+          "shipped_at": "a65529b3",
+          "spec": "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md",
+          "notes": "DollEngine: first 3D pass in the wgpu engine (perspective camera via glmat4 perspective_no, Depth32Float, instanced cube/cylinder soldier, Rust ray picking, damage-driven render, byte-exact doll self-check w/ depth kill-shot). SoldierModel3D replaces the SVG doll in ArsenalTab (SVG = engine-create fallback). Contract: core REGION_KEYS == frontend RAIL_REGIONS (vitest+cargo pinned). SHIPPED @ a65529b3 (tag T-154.0). GPU harness 9/9 incl. doll on SwiftShader."
+        }
+      }
     }
   ]
 }
