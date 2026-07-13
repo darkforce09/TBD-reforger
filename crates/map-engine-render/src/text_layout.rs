@@ -1,12 +1,12 @@
 //! Procedural text layout helpers (T-152.1 / T-152.7) — pack label strings into world-space glyph quads.
 //! Pure data; GPU upload lives in `map-engine-render` (wasm32).
 
-use map_engine_core::dem::peaks::{declutter_height_labels, height_label_min_sep_m, HeightLabel};
+use map_engine_core::dem::peaks::{HeightLabel, declutter_height_labels, height_label_min_sep_m};
 use map_engine_core::label::LabelSpec;
 use map_engine_core::world::{
-    declutter_town_labels, locations_to_label_specs, LocationLabel, RoadLabelPlacement,
+    LocationLabel, RoadLabelPlacement, declutter_town_labels, locations_to_label_specs,
 };
-use map_engine_core::world::{pack_icon_instance, pack_rgba_u32, size_with_min_px, REF_ZOOM};
+use map_engine_core::world::{REF_ZOOM, pack_icon_instance, pack_rgba_u32, size_with_min_px};
 
 /// One textured glyph instance in world meters (center of character cell).
 #[derive(Clone, Debug)]
@@ -136,20 +136,16 @@ pub fn pack_text_icon_bytes(glyphs: &[TextGlyphInstance], deck_zoom: f64) -> Vec
 
 /// Height labels use the default tint; town labels pass cartographic `#e8e4dc` @ α0.92.
 #[must_use]
-pub fn pack_text_icon_bytes_tint(glyphs: &[TextGlyphInstance], deck_zoom: f64, tint: u32) -> Vec<u8> {
+pub fn pack_text_icon_bytes_tint(
+    glyphs: &[TextGlyphInstance],
+    deck_zoom: f64,
+    tint: u32,
+) -> Vec<u8> {
     let char_m = text_char_meters(deck_zoom);
     let mut out = Vec::with_capacity(glyphs.len() * 20);
     for g in glyphs {
         let size = g.half_m * 2.0;
-        pack_icon_instance(
-            &mut out,
-            g.x,
-            g.y,
-            size,
-            0.0,
-            g.glyph,
-            tint,
-        );
+        pack_icon_instance(&mut out, g.x, g.y, size, 0.0, g.glyph, tint);
     }
     let _ = char_m; // size already baked into glyph half_m
     out
@@ -159,6 +155,23 @@ pub fn pack_text_icon_bytes_tint(glyphs: &[TextGlyphInstance], deck_zoom: f64, t
 #[must_use]
 pub fn height_label_sep_m(deck_zoom: f64) -> f64 {
     height_label_min_sep_m(deck_zoom)
+}
+
+/// T-152.12 — CPU oracle for the `vs_text` UV mapping (Class R vs the WGSL source).
+///
+/// The atlas is authored y-down (`bake_ascii_atlas_rgba` paints cell row 0 at the texture top),
+/// while quad `unit.y = 1` is the world/screen **top** of the glyph. Correct sampling therefore
+/// flips V: `uv = mix((u0,v0), (u1,v1), (unit_x, 1 − unit_y))` — the same convention as
+/// `vs_textured` ("North-up: unit.y=1 → v=0 (texture top)").
+#[must_use]
+pub fn glyph_cell_uv(glyph: u16, unit_x: f32, unit_y: f32) -> (f32, f32) {
+    let col = f32::from(glyph % 16);
+    let row = f32::from(glyph / 16);
+    let u0 = col / 16.0;
+    let v0 = row / 6.0;
+    let u1 = (col + 1.0) / 16.0;
+    let v1 = (row + 1.0) / 6.0;
+    (u0 + (u1 - u0) * unit_x, v0 + (v1 - v0) * (1.0 - unit_y))
 }
 
 /// Build a 16×6 cell (96 glyphs) 8×8 px RGBA atlas for printable ASCII — baked bitmap font.
@@ -291,5 +304,85 @@ mod tests {
         assert_eq!(h, 48);
         assert_eq!(px.len(), (w * h * 4) as usize);
         assert!(px.iter().any(|&c| c > 0));
+    }
+
+    // ── T-152.12 G1 — WGSL source guards ─────────────────────────────────────────────────────
+    // The vec3-padded TextUniforms (32 B vs the 16 B binding) killed the whole text pipeline at
+    // tags T-152.7–.10; the missing V-flip drew every glyph upside-down. Lock both in source.
+
+    const SHADER_SRC: &str = include_str!("shader.wgsl");
+
+    fn text_uniforms_block() -> &'static str {
+        let start = SHADER_SRC
+            .find("struct TextUniforms")
+            .expect("TextUniforms struct present");
+        let end = SHADER_SRC[start..].find('}').expect("struct closes") + start;
+        &SHADER_SRC[start..end]
+    }
+
+    #[test]
+    fn g1_text_uniforms_is_16_bytes_no_vec3() {
+        let block = text_uniforms_block();
+        assert!(
+            !block.contains("vec3"),
+            "TextUniforms must not use vec3 padding (align-16 makes the struct 32 B \
+             against the 16 B min_binding_size — dead text pipeline)"
+        );
+        // Exactly four scalar f32 fields = 16 B.
+        assert_eq!(
+            block.matches(": f32").count(),
+            4,
+            "TextUniforms must stay exactly 4×f32 (16 B contract)"
+        );
+    }
+
+    #[test]
+    fn g1_vs_text_has_v_flip() {
+        let start = SHADER_SRC.find("fn vs_text").expect("vs_text present");
+        let end = SHADER_SRC[start..]
+            .find("fn fs_text")
+            .expect("fs_text follows vs_text")
+            + start;
+        let body = &SHADER_SRC[start..end];
+        assert!(
+            body.contains("1.0 - in.unit.y"),
+            "vs_text must flip V (world-top → atlas cell top) like vs_textured"
+        );
+    }
+
+    // ── T-152.12 G2 — UV corner proof against the y-down atlas ──────────────────────────────
+    #[test]
+    fn g2_glyph_cell_uv_corners_upright() {
+        // Glyph 0 → cell (col 0, row 0): u ∈ [0, 1/16], v ∈ [0, 1/6].
+        let eps = 1e-6;
+        // World-top-left (unit 0,1) → atlas cell top-left (u0, v0).
+        let (u, v) = glyph_cell_uv(0, 0.0, 1.0);
+        assert!((u - 0.0).abs() < eps && (v - 0.0).abs() < eps);
+        // World-bottom-left (unit 0,0) → atlas cell bottom-left (u0, v1).
+        let (u, v) = glyph_cell_uv(0, 0.0, 0.0);
+        assert!((u - 0.0).abs() < eps && (v - 1.0 / 6.0).abs() < eps);
+        // World-top-right (unit 1,1) → atlas cell top-right (u1, v0).
+        let (u, v) = glyph_cell_uv(0, 1.0, 1.0);
+        assert!((u - 1.0 / 16.0).abs() < eps && (v - 0.0).abs() < eps);
+        // U is NOT mirrored: unit_x=0 stays at the cell's left edge for any glyph.
+        let (u, _) = glyph_cell_uv(23, 0.0, 0.5);
+        assert!((u - 7.0 / 16.0).abs() < eps, "glyph 23 = col 7 left edge");
+    }
+
+    #[test]
+    fn g2_seven_is_top_heavy_in_atlas() {
+        // Cross-check the probe geometry used by `text_self_check`: for '7' (glyph 23) the
+        // atlas cell's row dy=1 is the full-width top bar and row dy=6 is lit only at dx=2.
+        let (px, w, _h) = bake_ascii_atlas_rgba();
+        let cell = 8u32;
+        let (col, row) = (23u32 % 16, 23u32 / 16);
+        let lit = |dx: u32, dy: u32| -> bool {
+            let x = col * cell + dx;
+            let y = row * cell + dy;
+            px[((y * w + x) * 4 + 3) as usize] > 0
+        };
+        assert!(lit(1, 1) && lit(3, 1) && lit(5, 1), "top bar row lit");
+        assert!(lit(2, 6), "bottom stroke at dx=2");
+        assert!(!lit(4, 6), "bottom row dx=4 empty (upright probe target)");
     }
 }

@@ -55,9 +55,9 @@ pub use glyph_math::{
     tree_size_multiplier, yaw_to_snorm16,
 };
 pub use importance_declutter::{
+    IMPORTANCE_SCALE, LocationLabel, TOWN_BASE_SIZE_M, TOWN_LABEL_MAX_ZOOM, TOWN_LABEL_MIN_ZOOM,
     declutter_town_labels, nearest_more_important_m, should_draw_town_label, size_land_m,
-    town_declutter_invariant_holds, town_declutter_threshold_m, LocationLabel, IMPORTANCE_SCALE,
-    TOWN_BASE_SIZE_M, TOWN_LABEL_MAX_ZOOM, TOWN_LABEL_MIN_ZOOM,
+    town_declutter_invariant_holds, town_declutter_threshold_m,
 };
 pub use index::WorldSpatialIndex;
 pub use locations::{locations_to_label_specs, parse_locations_json};
@@ -77,14 +77,14 @@ pub use prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
 pub use regions::{LandCoverRegion, parse_regions_payload};
 pub use residency::{APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, LRU_MIN_CHUNKS, WorldResidency};
 pub use road_labels::{
+    ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,
+    ROAD_NAME_MIN_ZOOM_HIGHWAY, ROAD_NAME_MIN_ZOOM_SECONDARY, ROAD_NAME_OFFSET_M,
+    ROAD_NAME_PERP_TOL_M, RoadLabelPlacement, RoadNameEntry, RoadNamesFile,
     build_road_label_draw_set, declutter_road_labels, major_roads_covered, parse_road_names_json,
     perpendicular_dist_to_polyline, place_road_labels, placement_fractions, point_tangent_at_frac,
     polyline_length, road_class_priority, road_declutter_invariant_holds,
     road_declutter_min_dist_m, road_name_schema_holds, road_name_visible_for_class,
-    road_placement_geometry_holds, upright_angle_deg, RoadLabelPlacement, RoadNameEntry,
-    RoadNamesFile, ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,
-    ROAD_NAME_MIN_ZOOM_HIGHWAY, ROAD_NAME_MIN_ZOOM_SECONDARY, ROAD_NAME_OFFSET_M,
-    ROAD_NAME_PERP_TOL_M,
+    road_placement_geometry_holds, upright_angle_deg,
 };
 pub use roads::{
     CENTERLINE_DEDUPE_M, RoadSegment, extract_road_centerline, parse_roads_payload,

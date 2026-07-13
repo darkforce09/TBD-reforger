@@ -2293,8 +2293,8 @@ struct LabelJson {
 // ---------------------------------------------------------------------------------------------
 
 use map_engine_core::dem::peaks::{
-    declutter_height_labels, find_peaks, height_label_min_sep_m as core_height_label_min_sep_m,
-    HeightLabel, HeightLabelKind,
+    HeightLabel, HeightLabelKind, declutter_height_labels, find_peaks,
+    height_label_min_sep_m as core_height_label_min_sep_m,
 };
 
 #[derive(serde::Deserialize, serde::Serialize)]
@@ -2333,6 +2333,7 @@ fn label_to_json(l: &HeightLabel) -> HeightLabelJson {
 
 /// Find DEM peaks on a meters cache raster (world manifest bounds).
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)] // wasm API surface (T-152.7) — rust 1.95 lint drift
 pub fn find_peaks_from_meters(
     meters: &[f32],
     width: u32,
@@ -2391,6 +2392,7 @@ pub fn height_label_min_sep_m(deck_zoom: f64) -> f64 {
 
 /// Verify G2/G3 gates on a label JSON array; returns error JSON or `"[]"`.
 #[wasm_bindgen]
+#[allow(clippy::too_many_arguments)] // wasm API surface (T-152.7) — rust 1.95 lint drift
 pub fn verify_height_labels_json(
     json: &str,
     meters: &[f32],
@@ -2460,7 +2462,7 @@ pub fn height_contour_labels_waived() -> bool {
 // ---------------------------------------------------------------------------------------------
 
 use map_engine_core::world::{
-    declutter_town_labels, parse_locations_json, town_declutter_invariant_holds, LocationLabel,
+    LocationLabel, declutter_town_labels, parse_locations_json, town_declutter_invariant_holds,
 };
 
 /// Parse `locations.json` array; returns JSON or `"[]"` on failure.
@@ -2517,14 +2519,18 @@ pub fn verify_town_labels_json(
     let drawn_names: Vec<String> = drawn.iter().map(|l| norm(&l.name)).collect();
     for town in &required {
         let k = norm(town);
-        let ok = drawn_names.iter().any(|n| n == &k || n.contains(&k[..k.len().min(6)]));
+        let ok = drawn_names
+            .iter()
+            .any(|n| n == &k || n.contains(&k[..k.len().min(6)]));
         if !ok {
             errors.push(format!("G2: missing required town \"{town}\""));
         }
     }
 
-    let by_id: std::collections::HashMap<_, _> =
-        source.iter().map(|l| (l.id.as_str(), l.name.trim())).collect();
+    let by_id: std::collections::HashMap<_, _> = source
+        .iter()
+        .map(|l| (l.id.as_str(), l.name.trim()))
+        .collect();
     for d in &drawn {
         if let Some(src_name) = by_id.get(d.id.as_str()) {
             if d.name.trim() != *src_name {
@@ -2546,9 +2552,9 @@ pub fn verify_town_labels_json(
 // ---------------------------------------------------------------------------------------------
 
 use map_engine_core::world::{
-    build_road_label_draw_set, major_roads_covered, parse_road_names_json,
-    parse_roads_payload, road_declutter_invariant_holds, road_name_schema_holds,
-    road_placement_geometry_holds, RoadLabelPlacement, RoadNamesFile,
+    RoadLabelPlacement, RoadNamesFile, build_road_label_draw_set, major_roads_covered,
+    parse_road_names_json, parse_roads_payload, road_declutter_invariant_holds,
+    road_name_schema_holds, road_placement_geometry_holds,
 };
 use serde_json::Value;
 

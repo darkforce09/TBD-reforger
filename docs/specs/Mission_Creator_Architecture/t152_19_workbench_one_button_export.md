@@ -17,6 +17,8 @@ Close the "press the button tomorrow" gap: fix and actually run the Path A `TBD_
 
 Audit §9 scorecard. Towns 2/5: the Path A plugin is authored but has **never produced an artifact** (no `$profile:TBD_LocationsExport.json` anywhere; spike `status:"blocked-ci"`), and it hardcodes `"importance":0.55` for every row (`TBD_LocationsExportPlugin.c:172`) — running it today would *regress* the curated importance ranking. Roads 0/5: no engine-side name source found (888 segments, `namedSegments 0`); the 6 shipped names are a hand list. Taxiways: absent in every checked export surface. Known constraint: new/changed WorkbenchPlugin classes need an **operator Script Editor compile** — `wb_reload` is not enough (deceptively keeps old actions).
 
+**Operator evidence (2026-07-13) — the extraction target provably exists.** Reforger's own in-game map (World Editor play mode, `MapMenu` widgets) renders a rich name layer our export never captured: **"HORNBEAM VALLEY"** (area/valley name), **"Ramtop Meadows"**, **"Raccoon Rock"**, plus grid-anchored town names — screenshot `.ai/artifacts/t152_12_operator/workbench_ingame_map_names_reference.png`. These come from engine map descriptors (SCR_MapDescriptorComponent / MapWidget layer) — a concrete hunt target for this slice's discovery sweep: dump map-descriptor entities/components rather than only `World/Locations/*.et` compositions. Area/valley names would also enrich the locations kind vocabulary (`region`?) beyond towns/hills.
+
 ---
 
 ## Goal

@@ -192,9 +192,12 @@ fn fs_icon(in: IconVsOut) -> @location(0) vec4<f32> {
 }
 
 // ── T-152.7 ASCII text atlas (16×6 grid, UV from glyph index) ───────────────────────────────────
+// Four f32s = 16 B (matches TEXT_UNIFORM_BYTES). Do NOT use vec3 pad — align-16 makes the struct 32 B.
 struct TextUniforms {
     px_to_m: f32,
-    _pad: vec3<f32>,
+    _pad0: f32,
+    _pad1: f32,
+    _pad2: f32,
 };
 
 @group(2) @binding(0) var text_tex: texture_2d<f32>;
@@ -218,7 +221,9 @@ fn vs_text(in: IconVsIn) -> IconVsOut {
     let v1 = f32(row + 1u) / 6.0;
     var out: IconVsOut;
     out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
-    out.uv = mix(vec2<f32>(u0, v0), vec2<f32>(u1, v1), in.unit);
+    // T-152.12: atlas is authored y-down — world-top (unit.y=1) must sample the cell top (v0),
+    // same convention as `vs_textured`. Oracle: `text_layout::glyph_cell_uv`.
+    out.uv = mix(vec2<f32>(u0, v0), vec2<f32>(u1, v1), vec2<f32>(in.unit.x, 1.0 - in.unit.y));
     let tr = f32(in.tint & 0xffu) / 255.0;
     let tg = f32((in.tint >> 8u) & 0xffu) / 255.0;
     let tb = f32((in.tint >> 16u) & 0xffu) / 255.0;

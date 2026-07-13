@@ -17,6 +17,10 @@ Make the town lane draw settlements only — correct the polluted `kind` data (s
 
 Audit A8/A12: `locations.json` = 60 rows (**town 23 · peak 17 · hill 16 · village 2 · natural 1 · airport 1**) and **all 60** draw on the town-label lane (`t152_8_verify_log.md:16` "60/60 drawn") — a third of "town names" are hills. At least four `kind:"town"` rows are sub-features (`everon-le-moule-sawmill-01`, `everon-montignac-farm-01`, `everon-montignac-sawmil-01` [sic], `everon-north-east-farm-01`) from the heuristic in `lib/locations-export.mjs:147`. The .6 verify log's prose contradicts its own data (Morton "village" vs `town`). And `TOWN_LABEL_MAX_ZOOM = 2.0` hides every name past z=+2 (`importance_declutter.rs:12-13`, `should_draw_town_label:69`) — "names vanish when I zoom in".
 
+**Operator evidence (2026-07-13, post-.12) — two new requirements for this slice:**
+1. **Band misses island view entirely.** At island-fit zoom (z≈−3.68 on a 1080p viewport) the map shows **zero** town names (`.ai/artifacts/t152_12_operator/island_z-3.68_no_labels.png`) because `TOWN_LABEL_MIN_ZOOM = −3.0`. Reforger's own in-game map shows names at wide zoom. Widen the min bound (propose **−4.5**, importance-gated so only high-importance towns draw at the widest band) — lock the value in-slice with the operator.
+2. **Band not enforced live on zoom-in.** A location label ("MOUNTAINS WEST HILL …", a `hill` row) is visible at **z=4.48** (`upright_z4.48_font_quality.png`) — above `TOWN_LABEL_MAX_ZOOM = 2.0`. Suspect the town lane uploads once and is not re-decluttered/re-uploaded on zoom change (check `useWgpuTownLabels` subscription + wasm `declutter_town_labels_json` call site). Diagnose and fix as part of the band work; add a gate asserting drawn-count at z=3 is 0 (or fade-band behavior per L4).
+
 ---
 
 ## Goal

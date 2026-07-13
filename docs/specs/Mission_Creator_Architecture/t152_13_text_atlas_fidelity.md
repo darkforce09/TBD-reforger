@@ -18,6 +18,8 @@ Replace the procedural 8×8 px numerals-first bitmap font with a readable baked 
 
 Audit §7.3: `bake_ascii_atlas_rgba` builds a 16×6-cell, **8×8 px** atlas (128×48 total) of 5×7 stroke patterns — "enough for height numerals" (`crates/map-engine-render/src/text_layout.rs:164-179`). Lowercase is folded to uppercase (`:204-208`); only `0-9`, `A-Z`, space, and `m` have real glyphs (`:209-222`); **every other character renders an O-shaped blob** (`:223`). Town names like "Saint-Philippe" (hyphen) or any punctuation are unreadable regardless of orientation — operator S4's "hard to read even if orientation were correct".
 
+**Operator evidence (2026-07-13, post-.12):** with the lane alive + upright, labels are still "unreadable zoomed out (you have to be really zoomed in to read the text) … the font also looks like shit" — screenshots `.ai/artifacts/t152_12_operator/{fields_z-0.32_microscopic_text.png,upright_z4.48_font_quality.png}`. Two compounding causes: (a) the atlas above; (b) the **size policy** — `text_char_meters` is 12 px @ REF_ZOOM 3 with a **6 px min clamp** (`text_layout.rs:24-27`), so at editor zooms labels render ≈6 px of 5×7 strokes. At z≈4.5 (33 px) letters still garble (N→II-like). This slice therefore owns a **size floor** too: min label char size ≥ **12 px** (propose 14), base retuned so town/height labels read at their visible zoom bands.
+
 ---
 
 ## Goal

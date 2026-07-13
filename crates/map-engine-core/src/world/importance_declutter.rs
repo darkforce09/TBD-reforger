@@ -66,7 +66,7 @@ pub fn nearest_more_important_m(loc: &LocationLabel, all: &[LocationLabel]) -> f
 /// Whether `loc` passes the A3 predicate at `deck_zoom` (zoom band + declutter).
 #[must_use]
 pub fn should_draw_town_label(loc: &LocationLabel, all: &[LocationLabel], deck_zoom: f64) -> bool {
-    if deck_zoom < TOWN_LABEL_MIN_ZOOM || deck_zoom > TOWN_LABEL_MAX_ZOOM {
+    if !(TOWN_LABEL_MIN_ZOOM..=TOWN_LABEL_MAX_ZOOM).contains(&deck_zoom) {
         return false;
     }
     let name = loc.name.trim();
@@ -90,8 +90,14 @@ pub fn declutter_town_labels(locations: &[LocationLabel], deck_zoom: f64) -> Vec
 
 /// G3: every drawn label satisfies the per-label A3 predicate.
 #[must_use]
-pub fn town_declutter_invariant_holds(drawn: &[LocationLabel], all: &[LocationLabel], deck_zoom: f64) -> bool {
-    drawn.iter().all(|l| should_draw_town_label(l, all, deck_zoom))
+pub fn town_declutter_invariant_holds(
+    drawn: &[LocationLabel],
+    all: &[LocationLabel],
+    deck_zoom: f64,
+) -> bool {
+    drawn
+        .iter()
+        .all(|l| should_draw_town_label(l, all, deck_zoom))
 }
 
 #[cfg(test)]

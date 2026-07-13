@@ -285,7 +285,10 @@ fn dist_m(a: &RoadLabelPlacement, b: &RoadLabelPlacement) -> f64 {
 
 /// Declutter + cap at `deck_zoom`.
 #[must_use]
-pub fn declutter_road_labels(candidates: &[RoadLabelPlacement], deck_zoom: f64) -> Vec<RoadLabelPlacement> {
+pub fn declutter_road_labels(
+    candidates: &[RoadLabelPlacement],
+    deck_zoom: f64,
+) -> Vec<RoadLabelPlacement> {
     let d_min = road_declutter_min_dist_m(deck_zoom);
     let mut sorted: Vec<RoadLabelPlacement> = candidates.to_vec();
     sorted.sort_by(|a, b| {
@@ -343,7 +346,9 @@ pub fn road_placement_geometry_holds(
     drawn.iter().all(|lab| {
         by_id
             .get(lab.segment_id.as_str())
-            .map(|seg| perpendicular_dist_to_polyline(&seg.points, lab.x, lab.y) <= ROAD_NAME_PERP_TOL_M)
+            .map(|seg| {
+                perpendicular_dist_to_polyline(&seg.points, lab.x, lab.y) <= ROAD_NAME_PERP_TOL_M
+            })
             .unwrap_or(false)
     })
 }
@@ -361,7 +366,9 @@ pub fn major_roads_covered(drawn: &[RoadLabelPlacement], required: &[&str]) -> b
     let drawn_norm: Vec<String> = drawn.iter().map(|l| norm(&l.name)).collect();
     required.iter().all(|req| {
         let k = norm(req);
-        drawn_norm.iter().any(|n| n == &k || n.contains(&k) || k.contains(n))
+        drawn_norm
+            .iter()
+            .any(|n| n == &k || n.contains(&k) || k.contains(n))
     })
 }
 
@@ -416,7 +423,7 @@ mod tests {
                 min_deck_zoom: None,
             }],
         };
-        let drawn = build_road_label_draw_set(&names, &[s.clone()], 0.0);
+        let drawn = build_road_label_draw_set(&names, std::slice::from_ref(&s), 0.0);
         assert_eq!(drawn.len(), 1);
         assert!(road_placement_geometry_holds(&drawn, &[s]));
     }

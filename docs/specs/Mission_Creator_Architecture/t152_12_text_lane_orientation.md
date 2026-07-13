@@ -52,7 +52,7 @@ No automated gate in .7–.10 ever exercised the GPU text path — all label gat
 | L3 | GPU gate uses the existing headless harness pattern (cached Chromium: SwiftShader WebGL2 + lavapipe WebGPU via CDP, T-151 self_check infra) | Byte-level proof without operator |
 | L4 | Upright assertion = pixel-mass asymmetry of glyph **"7"** (top bar heavy): lit-pixel count in top half > bottom half of glyph bbox, both backends | Robust to AA/filtering; no golden image needed |
 | L5 | WGSL source guard test lives in `map-engine-render` unit tests (parse `shader.wgsl` string, assert `TextUniforms` block has no `vec3`) | Locks the exact bug class that killed .7–.10 |
-| L6 | No TS files modified; vitest + FE build must still pass untouched | LANGUAGE GATE |
+| L6 | No TS logic changes; the **only** permitted `apps/**` diff is the one-line `text:` self-check registration in the DEV spike page (`WgpuCanvas.tsx` `__selfChecks` map — thin wasm call, same pattern as the 8 existing checks); vitest + FE build must still pass | LANGUAGE GATE |
 | L7 | Commit `T-152.12:` · tag `T-152.12` · verify log | House convention |
 
 ---
@@ -88,7 +88,7 @@ No automated gate in .7–.10 ever exercised the GPU text path — all label gat
 | **G4** | Glyph "7" readback: `lit(top half) > lit(bottom half)` of glyph bbox on **both** backends | GPU-R upright |
 | **G5** | All three label lanes accept an upload + draw ≥1 instance in harness without error | Lane smoke |
 | **G6** | `cargo fmt --check`, `clippy -D warnings` (native + wasm target), `cargo test -p map-engine-core -p map-engine-render`, `make wasm` exit 0 | Regression |
-| **G7** | FE untouched: `git diff --stat` shows no `apps/**` change; `npm test` + `npm run build` + `npm run lint` exit 0 | LANGUAGE GATE |
+| **G7** | FE diff = exactly the one-line spike-page `text:` check registration (no other `apps/**` change); `npm test` + `npm run build` + `npm run lint` exit 0 | LANGUAGE GATE |
 
 ---
 

@@ -59,7 +59,12 @@ fn elev_at(meters: &[f32], width: usize, px: usize, py: usize) -> f64 {
 /// Find local maxima on a row-major `f32` meters raster. Skips cells where elevation ≤ 0 (sea).
 /// Always includes the global maximum cell (L7 / G6) even when prominence on a summit plateau is low.
 #[must_use]
-pub fn find_peaks(meters: &[f32], width: usize, height: usize, m: &DemManifest) -> Vec<HeightLabel> {
+pub fn find_peaks(
+    meters: &[f32],
+    width: usize,
+    height: usize,
+    m: &DemManifest,
+) -> Vec<HeightLabel> {
     if width == 0 || height == 0 || meters.len() < width * height {
         return Vec::new();
     }
@@ -94,10 +99,8 @@ pub fn find_peaks(meters: &[f32], width: usize, height: usize, m: &DemManifest) 
                     if e < win_min {
                         win_min = e;
                     }
-                    if dx != r || dy != r {
-                        if e > center {
-                            is_max = false;
-                        }
+                    if (dx != r || dy != r) && e > center {
+                        is_max = false;
                     }
                 }
             }
@@ -120,9 +123,9 @@ pub fn find_peaks(meters: &[f32], width: usize, height: usize, m: &DemManifest) 
     if global_e > 0.0 {
         let (gx, gy) = pixel_to_world(global_px, global_py, m);
         let g_val = global_e.round() as i32;
-        let already = out.iter().any(|p| {
-            (p.x - gx).abs() < 1.0 && (p.y - gy).abs() < 1.0 && p.value_m == g_val
-        });
+        let already = out
+            .iter()
+            .any(|p| (p.x - gx).abs() < 1.0 && (p.y - gy).abs() < 1.0 && p.value_m == g_val);
         if !already {
             out.push(HeightLabel {
                 x: gx,
@@ -146,7 +149,7 @@ fn dist_m(a: &HeightLabel, b: &HeightLabel) -> f64 {
 pub fn declutter_height_labels(labels: &[HeightLabel], deck_zoom: f64) -> Vec<HeightLabel> {
     let sep = height_label_min_sep_m(deck_zoom);
     let mut candidates: Vec<HeightLabel> = labels.to_vec();
-    candidates.sort_by(|a, b| b.value_m.cmp(&a.value_m));
+    candidates.sort_by_key(|c| std::cmp::Reverse(c.value_m));
     let mut keep: Vec<HeightLabel> = Vec::new();
     for cand in candidates {
         if keep.len() >= PEAK_LABEL_MAX {
