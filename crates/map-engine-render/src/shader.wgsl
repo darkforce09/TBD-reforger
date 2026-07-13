@@ -191,13 +191,15 @@ fn fs_icon(in: IconVsOut) -> @location(0) vec4<f32> {
     return vec4<f32>(s.rgb * in.tint.rgb, s.a * in.tint.a);
 }
 
-// ── T-152.7 ASCII text atlas (16×6 grid, UV from glyph index) ───────────────────────────────────
+// ── T-152.7 ASCII text atlas (UV from glyph index; grid dims via uniform — T-152.13) ────────────
 // Four f32s = 16 B (matches TEXT_UNIFORM_BYTES). Do NOT use vec3 pad — align-16 makes the struct 32 B.
+// grid_cols/grid_rows are written at atlas upload from text_layout::TEXT_ATLAS_{COLS,ROWS} so the
+// bake and this shader can never disagree on the cell grid.
 struct TextUniforms {
     px_to_m: f32,
+    grid_cols: f32,
+    grid_rows: f32,
     _pad0: f32,
-    _pad1: f32,
-    _pad2: f32,
 };
 
 @group(2) @binding(0) var text_tex: texture_2d<f32>;
@@ -213,12 +215,13 @@ fn vs_text(in: IconVsIn) -> IconVsOut {
     let size_m = in.size * text_u.px_to_m;
     let local = (in.unit - vec2<f32>(0.5, 0.5)) * size_m;
     let world = in.pos + vec2<f32>(local.x * c - local.y * s, local.x * s + local.y * c);
-    let col = in.glyph % 16u;
-    let row = in.glyph / 16u;
-    let u0 = f32(col) / 16.0;
-    let v0 = f32(row) / 6.0;
-    let u1 = f32(col + 1u) / 16.0;
-    let v1 = f32(row + 1u) / 6.0;
+    let cols = u32(text_u.grid_cols);
+    let col = in.glyph % cols;
+    let row = in.glyph / cols;
+    let u0 = f32(col) / text_u.grid_cols;
+    let v0 = f32(row) / text_u.grid_rows;
+    let u1 = f32(col + 1u) / text_u.grid_cols;
+    let v1 = f32(row + 1u) / text_u.grid_rows;
     var out: IconVsOut;
     out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
     // T-152.12: atlas is authored y-down — world-top (unit.y=1) must sample the cell top (v0),

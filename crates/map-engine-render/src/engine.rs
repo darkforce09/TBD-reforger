@@ -183,8 +183,25 @@ struct PolyLane {
 
 /// Icon uniform buffer size: 28×vec4 UV (448) + drag_delta/px_to_m/pad (16) = 464 B.
 const ICON_UNIFORM_BYTES: u64 = 464;
-/// T-152.7 text atlas uniform: px_to_m + 3×f32 pad = 16 B (WGSL must not use vec3 pad).
+/// T-152.7 text atlas uniform: px_to_m + grid_cols + grid_rows + f32 pad = 16 B
+/// (WGSL must not use vec3 pad).
 const TEXT_UNIFORM_BYTES: u64 = 16;
+
+/// Build the 16 B `TextUniforms` payload: `px_to_m = 1.0` (glyph size arrives in world meters)
+/// plus the atlas grid dims from `text_layout` — the single source `vs_text` divides by, so the
+/// bake and the shader can never disagree (T-152.13 L2).
+fn text_uniform_bytes() -> [u8; TEXT_UNIFORM_BYTES as usize] {
+    let mut u_bytes = [0u8; TEXT_UNIFORM_BYTES as usize];
+    u_bytes[0..4].copy_from_slice(&1.0_f32.to_le_bytes());
+    #[allow(clippy::cast_precision_loss)] // grid dims are tiny (16/6) — exact in f32
+    let (cols, rows) = (
+        crate::text_layout::TEXT_ATLAS_COLS as f32,
+        crate::text_layout::TEXT_ATLAS_ROWS as f32,
+    );
+    u_bytes[4..8].copy_from_slice(&cols.to_le_bytes());
+    u_bytes[8..12].copy_from_slice(&rows.to_le_bytes());
+    u_bytes
+}
 
 /// Shared glyph atlas GPU state (T-151.5 / T-151.6): texture + uniform (UV + params) + bind group.
 struct GlyphAtlasGpu {
@@ -2824,7 +2841,7 @@ impl RenderEngine {
         Ok(())
     }
 
-    /// Bake + upload the T-152.7 ASCII text atlas (idempotent).
+    /// Bake + upload the T-152.7/.13 ASCII text atlas (idempotent).
     pub fn ensure_text_atlas(&mut self) -> Result<(), JsError> {
         if self.text_atlas.is_some() {
             return Ok(());
@@ -2833,7 +2850,8 @@ impl RenderEngine {
         self.upload_text_atlas(&rgba, w, h)
     }
 
-    /// Upload the 16×6 ASCII atlas (`bake_ascii_atlas_rgba` output).
+    /// Upload the baked ASCII atlas (`bake_ascii_atlas_rgba` output — grid dims travel in the
+    /// `TextUniforms`, see [`text_uniform_bytes`]).
     ///
     /// # Errors
     /// Returns `JsError` when rgba length ≠ w·h·4.
@@ -2879,8 +2897,7 @@ impl RenderEngine {
                 depth_or_array_layers: 1,
             },
         );
-        let mut u_bytes = vec![0u8; TEXT_UNIFORM_BYTES as usize];
-        u_bytes[0..4].copy_from_slice(&1.0_f32.to_le_bytes());
+        let u_bytes = text_uniform_bytes();
         let uniform_buf = self
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -5047,17 +5064,20 @@ impl RenderEngine {
 
 #[wasm_bindgen]
 impl RenderEngine {
-    /// T-152.12 GPU-R text-lane probe: creates the **real** text pipeline (`vs_text`/`fs_text`
+    /// T-152.12/.13 GPU-R text-lane probe: creates the **real** text pipeline (`vs_text`/`fs_text`
     /// against the 16 B `TextUniforms` binding — a vec3-padded 32 B struct fails right here),
-    /// bakes the production ASCII atlas, draws one 160 m glyph `'7'` (index 23) at the anchor,
-    /// and reads back four probes at zoom 0 (glyph box x∈[320,480], y∈[220,380], 20 px per
-    /// atlas texel, nearest sampling):
-    /// - **(400,250)** top-bar row (cell dy=1) = glyph color `[240,240,230,255]` — lane draws,
-    /// - **(370,350)** bottom stroke (dy=6, dx=2) = glyph color — kills a U-mirror,
-    /// - **(400,350)** (dy=6, dx=4 — empty when upright) = `CLEAR_COLOR` — a V-flip regression
-    ///   puts the top bar here and fails byte-exact,
+    /// bakes the production ASCII atlas (Spleen 16×32 ink in 32×32 cells), draws one 160 m glyph
+    /// `'7'` (index 23) at the anchor, and reads back five probes at zoom 0 (glyph box
+    /// x∈[320,480], y∈[220,380], **5 px per atlas texel**, nearest sampling; screen px =
+    /// (320 + 5·tx + 2, 220 + 5·ty + 2) for cell texel (tx,ty); Spleen '7' ink sits at cell
+    /// x-offset 8, top bar on rows 6–7, descender at ink cols 6–7 from row 18 down):
+    /// - **(377,252)** top bar (tx=11,ty=6) = glyph color `[240,240,230,255]` — lane draws,
+    /// - **(392,312)** descender (tx=14,ty=18) = glyph color,
+    /// - **(407,312)** (tx=17,ty=18 — the U-mirror of tx=14) = `CLEAR_COLOR` — kills a U-mirror,
+    /// - **(377,347)** (tx=11,ty=25 — empty upright; V-flip lands the top bar here) = `CLEAR_COLOR`,
     /// - **(400,50)** far exterior = `CLEAR_COLOR`.
-    /// Resolves to JSON like the other self-checks.
+    /// Oracle for the ink coords: `text_layout` test `g2_seven_is_top_heavy_in_atlas` probes the
+    /// same four cell texels against the baked RGBA. Resolves to JSON like the other self-checks.
     pub fn text_self_check(&self) -> js_sys::Promise {
         const PW: u32 = 800;
         const PH: u32 = 600;
@@ -5090,7 +5110,7 @@ impl RenderEngine {
                 }],
             });
 
-            // Production atlas + the 16 B TextUniforms contract (px_to_m = 1.0, 3×f32 pad).
+            // Production atlas + the 16 B TextUniforms contract (px_to_m = 1.0 + grid dims).
             let (rgba, aw, ah) = crate::text_layout::bake_ascii_atlas_rgba();
             let tex = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("text-self-check-atlas"),
@@ -5120,8 +5140,7 @@ impl RenderEngine {
                     depth_or_array_layers: 1,
                 },
             );
-            let mut u_bytes = vec![0u8; TEXT_UNIFORM_BYTES as usize];
-            u_bytes[0..4].copy_from_slice(&1.0_f32.to_le_bytes());
+            let u_bytes = text_uniform_bytes();
             let text_uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("text-self-check-uniform"),
                 contents: &u_bytes,
@@ -5242,24 +5261,32 @@ impl RenderEngine {
             queue.submit(Some(encoder.finish()));
 
             // Glyph pixels are α=1 → byte-exact over CLEAR_COLOR (51,68,85,255).
+            // Cell texel (tx,ty) → screen (320 + 5·tx + 2, 220 + 5·ty + 2); see the doc comment
+            // for the Spleen '7' ink map. CPU oracle: g2_seven_is_top_heavy_in_atlas.
             let probes: &[(u32, u32, [u8; 4], &str)] = &[
                 (
-                    400,
-                    250,
+                    377,
+                    252,
                     [240, 240, 230, 255],
-                    "top bar (dy=1) = glyph color",
+                    "top bar (tx=11,ty=6) = glyph color",
                 ),
                 (
-                    370,
-                    350,
+                    392,
+                    312,
                     [240, 240, 230, 255],
-                    "bottom stroke (dy=6,dx=2) = glyph color",
+                    "descender (tx=14,ty=18) = glyph color",
                 ),
                 (
-                    400,
-                    350,
+                    407,
+                    312,
                     [51, 68, 85, 255],
-                    "upright-empty (dy=6,dx=4) = CLEAR (V-flip trap)",
+                    "upright-empty (tx=17,ty=18) = CLEAR (U-mirror trap)",
+                ),
+                (
+                    377,
+                    347,
+                    [51, 68, 85, 255],
+                    "upright-empty (tx=11,ty=25) = CLEAR (V-flip trap)",
                 ),
                 (400, 50, [51, 68, 85, 255], "far exterior = CLEAR_COLOR"),
             ];

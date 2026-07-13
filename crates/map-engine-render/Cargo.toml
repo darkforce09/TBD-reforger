@@ -29,3 +29,7 @@ wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
 web-sys = { version = "0.3", features = ["HtmlCanvasElement", "Window", "ImageBitmap"] }
 console_error_panic_hook = "0.1"
+
+# Native-only test deps: the T-152.13 G3 no-blob gate parses committed label JSON.
+[dev-dependencies]
+serde_json = "1"
