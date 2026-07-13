@@ -10,6 +10,7 @@ import type { RegistryItem } from '@/types/models/registry'
 import {
   DOLL_REGIONS,
   PRIMARY_SUB_REGIONS,
+  RAIL_REGIONS,
   formatLoadoutWeight,
   loadoutWeight,
 } from './arsenalDollModel'
@@ -38,6 +39,12 @@ describe('DOLL_REGIONS', () => {
     const covered = [...DOLL_REGIONS.map((r) => r.key), ...PRIMARY_SUB_REGIONS]
     expect(new Set(covered).size).toBe(covered.length)
     expect([...covered].sort()).toEqual(Object.keys(EMPTY_PICKS).sort())
+  })
+
+  it('RAIL_REGIONS (A3 slot rail) covers every pickable key exactly once', () => {
+    const keys = RAIL_REGIONS.map((r) => r.key)
+    expect(new Set(keys).size).toBe(keys.length)
+    expect([...keys].sort()).toEqual(Object.keys(EMPTY_PICKS).sort())
   })
 
   it('models optic/magazine as rifle sub-hotspots, not standalone regions', () => {

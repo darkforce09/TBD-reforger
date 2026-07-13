@@ -22,12 +22,13 @@ import {
   type CompatSets,
   type LoadoutKey,
 } from './arsenalRules'
-import { formatLoadoutWeight, loadoutWeight } from './arsenalDollModel'
+import { RAIL_REGIONS, formatLoadoutWeight, loadoutWeight } from './arsenalDollModel'
 import { buildLoadoutExport, downloadLoadoutJson } from './loadoutExport'
 import { itemDetail } from './itemDetail'
 import { ContainerPanel, ItemDetailPane } from './ItemDetailPane'
 import { migrateLoadout } from './migrateLoadout'
 import { SlotItemList } from './SlotItemList'
+import { SlotRail } from './SlotRail'
 import { SoldierSilhouette } from './SoldierSilhouette'
 import { useArsenalValidation } from './useArsenalValidation'
 
@@ -137,6 +138,26 @@ function ContextColumn({
   return <ItemDetailPane detail={detail} onInspect={onInspect} />
 }
 
+/** One-line readout under the doll — the doll itself carries no text (T-068.10.8). */
+function DollCaption({
+  activeKey,
+  picks,
+  catalogByName,
+}: {
+  activeKey: LoadoutKey
+  picks: Record<LoadoutKey, string>
+  catalogByName: ReadonlyMap<string, RegistryItem>
+}) {
+  const label = RAIL_REGIONS.find((r) => r.key === activeKey)?.label ?? activeKey
+  const rn = picks[activeKey]
+  return (
+    <p className="pt-1 text-center text-label-sm normal-case text-on-surface-variant">
+      <span className="text-outline">{label} — </span>
+      {rn ? (catalogByName.get(rn)?.display_name ?? rn) : 'empty'}
+    </p>
+  )
+}
+
 function ValidationBadge({ valid, errorCount }: { valid: boolean; errorCount: number }) {
   if (valid) return <Badge variant="success">Loadout valid</Badge>
   return (
@@ -225,7 +246,7 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   const errorCount = Object.keys(validation.errors).length
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         {smart ? (
           <Badge variant="success">Compat active</Badge>
@@ -238,8 +259,15 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
         </span>
       </div>
 
-      {/* ACE paper-doll (T-068.10.7): list left, soldier center, context right. */}
-      <div className="grid h-[72vh] grid-cols-[270px_1fr_240px] gap-3">
+      {/* ACE paper-doll (T-068.10.8): slot rail | list | soldier | context. */}
+      <div className="grid min-h-0 flex-1 grid-cols-[44px_260px_1fr_240px] gap-3">
+        <SlotRail
+          picks={picks}
+          activeKey={activeKey}
+          onSelect={onSelectRegion}
+          catalogByName={catalogByName}
+        />
+
         <div className="min-h-0 rounded-lg border border-outline-variant/20 bg-surface-container-lowest/30 p-2">
           <SlotItemList
             key={activeKey}
@@ -253,13 +281,16 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
           />
         </div>
 
-        <div className="min-h-0">
-          <SoldierSilhouette
-            picks={picks}
-            activeKey={activeKey}
-            onSelect={onSelectRegion}
-            catalogByName={catalogByName}
-          />
+        <div className="flex min-h-0 flex-col">
+          <div className="min-h-0 flex-1">
+            <SoldierSilhouette
+              picks={picks}
+              activeKey={activeKey}
+              onSelect={onSelectRegion}
+              catalogByName={catalogByName}
+            />
+          </div>
+          <DollCaption activeKey={activeKey} picks={picks} catalogByName={catalogByName} />
         </div>
 
         <div className="min-h-0 overflow-y-auto">

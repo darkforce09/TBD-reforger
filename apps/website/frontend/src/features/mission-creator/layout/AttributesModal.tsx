@@ -49,12 +49,13 @@ function AttributesModalInner({
       <DialogContent
         title="Attributes"
         description={slot ? `${slot.role || 'Slot'} · slot #${slot.index + 1}` : 'Entity'}
-        // T-068.10.7: the Arsenal tab expands the modal (same menu, bigger surface) so
-        // the paper-doll three-column layout fits; other tabs keep the compact width.
-        className={tab === 'Arsenal' ? 'max-w-7xl' : undefined}
+        // T-068.10.8: the Arsenal tab expands the modal (same menu, bigger surface) AND
+        // pins its height to the popup max — the paper-doll layout must open with zero
+        // scrolling (panes scroll internally); other tabs keep the compact width.
+        className={tab === 'Arsenal' ? 'h-[85vh] max-w-7xl' : undefined}
       >
         {slot && (
-          <div className="flex flex-col gap-4">
+          <div className={cn('flex flex-col gap-4', tab === 'Arsenal' && 'h-full min-h-0')}>
             <div className="flex gap-1 rounded-lg bg-surface-container-lowest/50 p-1">
               {TABS.map((t) => (
                 <button

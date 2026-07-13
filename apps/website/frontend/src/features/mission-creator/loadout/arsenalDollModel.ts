@@ -35,6 +35,28 @@ export const DOLL_REGIONS: readonly DollRegion[] = [
 /** The rifle's sub-hotspots — weapons[0] attachment picks (the arsenalRules edge rows). */
 export const PRIMARY_SUB_REGIONS: readonly LoadoutKey[] = ['optic', 'magazine'] as const
 
+/**
+ * The A3-style slot rail (T-068.10.8): every pickable key as a flat ordered list —
+ * weapons + rifle attachments first (the Arma 3 Arsenal order), then wear head-to-toe.
+ * Covers EMPTY_PICKS exactly once (vitest-asserted, same bar as DOLL_REGIONS).
+ */
+export const RAIL_REGIONS: readonly { key: LoadoutKey; label: string }[] = [
+  { key: 'primary', label: 'Primary' },
+  { key: 'optic', label: 'Optic' },
+  { key: 'magazine', label: 'Magazine' },
+  { key: 'launcher', label: 'Launcher' },
+  { key: 'handgun', label: 'Handgun' },
+  { key: 'throwable', label: 'Throwable' },
+  { key: 'headCover', label: 'Helmet' },
+  { key: 'jacket', label: 'Jacket' },
+  { key: 'vest', label: 'Vest' },
+  { key: 'armoredVest', label: 'Armored vest' },
+  { key: 'backpack', label: 'Backpack' },
+  { key: 'handwear', label: 'Gloves' },
+  { key: 'pants', label: 'Pants' },
+  { key: 'boots', label: 'Boots' },
+] as const
+
 export interface LoadoutWeight {
   /** Sum of the equipped items' serialized weight_kg. */
   knownKg: number
