@@ -24,6 +24,7 @@
 - **T-083** (deferred) — Top menu bar [TOP] — Eden-style top menu bar with file/edit/view stubs.
 - **T-084** (deferred) — Classname / mod prefix search [RIGHT] — Classname-prefix search in asset browser.
 - **T-149** (idea) — Forest Mass Polygon Smoothing [] — Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.
+- **T-156** (idea) — Editor shell UX consolidation [SHELL, TOP] — Consolidate Settings buttons, wire up top bar, remove redundant Assets tab.
 - **T-131** (idea) — Route planner tool [MAP, UI] — MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.
 - **T-132** (idea) — Multiplayer MC + visual git [DATA, CONN] — Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap.
 - **T-141** (idea) — Procedural slot naming [ORBAT, UI] — Adjective/nickname word packs for auto slot display names; manual override wins. After T-071 ORBAT numbering.
@@ -45,6 +46,7 @@
 - **T-087** (deferred) — CMS rich text editor [SHELL] — Rich text editor for announcements and CMS content.
 - **T-088** (deferred) — Multi-server picker [SHELL] — Select among multiple game servers in intel views.
 - **T-089** (deferred) — Mission title PATCH sync [TOP, DATA] — PATCH mission title to server on edit (absorbs former T-051 scope).
+- **T-155** (idea) — Mission Create visual overhaul [SHELL] — Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-134** (idea) — In-game marker system (mod) [MAP, UI] — Runtime Enfusion markers: readable styles, briefing sync, admin placement. Distinct from T-069 editor markers on 2D map.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.

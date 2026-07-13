@@ -1,5 +1,5 @@
 {
-  "next_id": 146,
+  "next_id": 157,
   "tickets": [
     {
       "id": "T-001",
@@ -4267,14 +4267,15 @@
       "branch": "ticket/T-154",
       "spec": "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md",
       "slices": [
-        "T-154.0"
+        "T-154.0",
+        "T-154.1"
       ],
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
       "executor": "claude-code",
-      "active_slice": "T-154.0",
+      "active_slice": "T-154.1",
       "slice_plan": {
         "T-154.0": {
           "executor": "claude-code",
@@ -4286,8 +4287,58 @@
           "shipped_at": "a65529b3",
           "spec": "docs/specs/Mission_Creator_Architecture/t154_0_wgpu_doll_engine.md",
           "notes": "DollEngine: first 3D pass in the wgpu engine (perspective camera via glmat4 perspective_no, Depth32Float, instanced cube/cylinder soldier, Rust ray picking, damage-driven render, byte-exact doll self-check w/ depth kill-shot). SoldierModel3D replaces the SVG doll in ArsenalTab (SVG = engine-create fallback). Contract: core REGION_KEYS == frontend RAIL_REGIONS (vitest+cargo pinned). SHIPPED @ a65529b3 (tag T-154.0). GPU harness 9/9 incl. doll on SwiftShader."
+        },
+        "T-154.1": {
+          "executor": "claude-code",
+          "targets": [
+            "website",
+            "root"
+          ],
+          "status": "shipped",
+          "shipped_at": "3b3e4d16",
+          "spec": "docs/specs/Mission_Creator_Architecture/t154_1_doll_polish.md",
+          "notes": "Operator-review polish: mid-light backdrop (dark-on-dark unreadable), drag turns the character (yaw sign), hover highlight (Rust palette lift + cursor name chip), active-part callout chip + leader line tracked from Rust-projected anchors. Pitch/zoom declined; mesh fidelity deferred. SHIPPED @ 3b3e4d16 (tag T-154.1). GPU harness 36/36 allPass."
         }
       }
+    },
+    {
+      "id": "T-155",
+      "title": "Mission Create visual overhaul",
+      "summary": "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "idea",
+      "order": 1550,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
+    },
+    {
+      "id": "T-156",
+      "title": "Editor shell UX consolidation",
+      "summary": "Consolidate Settings buttons, wire up top bar, remove redundant Assets tab.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL",
+        "TOP"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "idea",
+      "order": 1560,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "cursor-docs"
     }
   ]
 }
