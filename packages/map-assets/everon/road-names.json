@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "terrainId": "everon",
+  "roads": [
+    {
+      "id": "main-highway",
+      "name": "Main Highway",
+      "segmentIds": ["road-everon-0010"]
+    },
+    {
+      "id": "north-south-highway",
+      "name": "North-South Highway",
+      "segmentIds": ["road-everon-0007"]
+    },
+    {
+      "id": "coastal-road",
+      "name": "Coastal Road",
+      "segmentIds": ["road-everon-0014", "road-everon-0109"]
+    },
+    {
+      "id": "airfield-access",
+      "name": "Airfield Access",
+      "segmentIds": ["road-everon-0069"],
+      "minDeckZoom": 0
+    },
+    {
+      "id": "gorey-road",
+      "name": "Gorey Road",
+      "segmentIds": ["road-everon-0032"],
+      "minDeckZoom": 0
+    },
+    {
+      "id": "morton-road",
+      "name": "Morton Road",
+      "segmentIds": ["road-everon-0075", "road-everon-0074"],
+      "minDeckZoom": 0
+    }
+  ]
+}

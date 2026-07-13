@@ -38,7 +38,9 @@ pub enum LaneRole {
     WorldBadges,
     /// T-152.7 height / ASL text labels (after badges).
     WorldLabels,
-    /// T-152.8 town name labels (above height labels, below grid).
+    /// T-152.9 road name labels (above roads stroke, below town labels).
+    WorldRoadLabels,
+    /// T-152.8 town name labels (above road + height labels, below grid).
     WorldTownLabels,
     /// W6 mission slot rings.
     Slots,
@@ -79,13 +81,14 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldProps => 16,
         LaneRole::WorldBadges => 17,
         LaneRole::WorldLabels => 18,
-        LaneRole::WorldTownLabels => 19,
-        LaneRole::Grid => 20,
-        LaneRole::Slots => 21,
-        LaneRole::SlotDrag => 22,
-        LaneRole::Clusters => 23,
-        LaneRole::Marquee => 24,
-        LaneRole::MarqueeOutline => 25,
+        LaneRole::WorldRoadLabels => 19,
+        LaneRole::WorldTownLabels => 20,
+        LaneRole::Grid => 21,
+        LaneRole::Slots => 22,
+        LaneRole::SlotDrag => 23,
+        LaneRole::Clusters => 24,
+        LaneRole::Marquee => 25,
+        LaneRole::MarqueeOutline => 26,
     }
 }
 
@@ -128,7 +131,9 @@ mod lane_order_pins {
     #[test]
     fn labels_sit_between_badges_and_grid() {
         assert!(lane_order(L::WorldLabels) > lane_order(L::WorldBadges));
-        assert!(lane_order(L::WorldTownLabels) > lane_order(L::WorldLabels));
+        assert!(lane_order(L::WorldRoadLabels) > lane_order(L::WorldLabels));
+        assert!(lane_order(L::WorldRoadLabels) > lane_order(L::Roads));
+        assert!(lane_order(L::WorldTownLabels) > lane_order(L::WorldRoadLabels));
         assert!(lane_order(L::WorldTownLabels) < lane_order(L::Grid));
     }
 
@@ -136,6 +141,7 @@ mod lane_order_pins {
     fn grid_sits_between_world_glyphs_and_mission_lanes() {
         assert!(lane_order(L::Grid) > lane_order(L::WorldBadges));
         assert!(lane_order(L::Grid) > lane_order(L::WorldLabels));
+        assert!(lane_order(L::Grid) > lane_order(L::WorldRoadLabels));
         assert!(lane_order(L::Grid) > lane_order(L::WorldTownLabels));
         assert!(lane_order(L::Grid) > lane_order(L::WorldTrees));
         assert!(lane_order(L::Grid) > lane_order(L::WorldProps));
@@ -164,6 +170,7 @@ mod lane_order_pins {
             L::WorldProps,
             L::WorldBadges,
             L::WorldLabels,
+            L::WorldRoadLabels,
             L::WorldTownLabels,
             L::Grid,
             L::Slots,

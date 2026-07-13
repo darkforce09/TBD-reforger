@@ -42,6 +42,7 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
       sea: true,
       heights: true,
       townLabels: true,
+      roadNames: true,
     })
   })
 

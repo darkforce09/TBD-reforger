@@ -35,6 +35,7 @@ import { useWgpuWorldResidency } from './wgpu/useWgpuWorldResidency'
 import { useWgpuDemVectors } from './wgpu/useWgpuDemVectors'
 import { useWgpuHeightLabels } from './wgpu/useWgpuHeightLabels'
 import { useWgpuTownLabels } from './wgpu/useWgpuTownLabels'
+import { useWgpuRoadLabels } from './wgpu/useWgpuRoadLabels'
 import {
   WgpuForestMassController,
   useWgpuForestMass,
@@ -149,6 +150,7 @@ export default function WgpuTacticalMap({
   useWgpuDemVectors(engineRef, ready, { terrain: terrainDef })
   useWgpuHeightLabels(engineRef, ready, { terrain: terrainDef })
   useWgpuTownLabels(engineRef, ready, { terrain: terrainDef })
+  useWgpuRoadLabels(engineRef, ready, { terrain: terrainDef })
   // W4 forest mass (TBDD viewport stream).
   useWgpuForestMass(forestControllerRef, ready)
   // W6 mission slots / selection / drag / clusters.

@@ -2540,3 +2540,96 @@ pub fn verify_town_labels_json(
 
     serde_json::to_string(&errors).unwrap_or_else(|_| "[]".into())
 }
+
+// ---------------------------------------------------------------------------------------------
+// T-152.9 — road name labels (road-names.json + polyline placement)
+// ---------------------------------------------------------------------------------------------
+
+use map_engine_core::world::{
+    build_road_label_draw_set, major_roads_covered, parse_road_names_json,
+    parse_roads_payload, road_declutter_invariant_holds, road_name_schema_holds,
+    road_placement_geometry_holds, RoadLabelPlacement, RoadNamesFile,
+};
+use serde_json::Value;
+
+/// Parse `road-names.json`.
+#[wasm_bindgen]
+pub fn parse_road_names_json_wasm(json: &str) -> String {
+    match parse_road_names_json(json) {
+        Ok(file) => serde_json::to_string(&file).unwrap_or_else(|_| "{}".into()),
+        Err(_) => "{}".into(),
+    }
+}
+
+/// Build draw set at `deck_zoom` from road-names JSON + roads payload JSON.
+#[wasm_bindgen]
+pub fn build_road_labels_json(road_names_json: &str, roads_json: &str, deck_zoom: f64) -> String {
+    let names: RoadNamesFile = serde_json::from_str(road_names_json).unwrap_or(RoadNamesFile {
+        schema_version: "0".into(),
+        terrain_id: String::new(),
+        roads: vec![],
+    });
+    let roads_val: Value = serde_json::from_str(roads_json).unwrap_or(Value::Null);
+    let segments = parse_roads_payload(&roads_val);
+    let drawn = build_road_label_draw_set(&names, &segments, deck_zoom);
+    serde_json::to_string(&drawn).unwrap_or_else(|_| "[]".into())
+}
+
+/// Pack road labels into 20 B icon instances for `upload_road_labels`.
+#[wasm_bindgen]
+pub fn pack_road_label_bytes(json: &str, deck_zoom: f64) -> Vec<u8> {
+    let parsed: Vec<RoadLabelPlacement> = serde_json::from_str(json).unwrap_or_default();
+    map_engine_render::text_layout::pack_road_label_bytes(&parsed, deck_zoom)
+}
+
+/// G6 oracle.
+#[wasm_bindgen]
+#[must_use]
+pub fn road_declutter_invariant_holds_json(json: &str, deck_zoom: f64) -> bool {
+    let drawn: Vec<RoadLabelPlacement> = serde_json::from_str(json).unwrap_or_default();
+    road_declutter_invariant_holds(&drawn, deck_zoom)
+}
+
+/// Verify G3–G7; returns error JSON or `"[]"`.
+#[wasm_bindgen]
+pub fn verify_road_labels_json(
+    road_names_json: &str,
+    roads_json: &str,
+    drawn_json: &str,
+    deck_zoom: f64,
+    required_json: &str,
+) -> String {
+    let _names: RoadNamesFile = serde_json::from_str(road_names_json).unwrap_or(RoadNamesFile {
+        schema_version: "0".into(),
+        terrain_id: String::new(),
+        roads: vec![],
+    });
+    let roads_val: Value = serde_json::from_str(roads_json).unwrap_or(Value::Null);
+    let segments = parse_roads_payload(&roads_val);
+    let drawn: Vec<RoadLabelPlacement> = serde_json::from_str(drawn_json).unwrap_or_default();
+    let required: Vec<String> = serde_json::from_str(required_json).unwrap_or_default();
+    let req_refs: Vec<&str> = required.iter().map(String::as_str).collect();
+    let mut errors: Vec<String> = Vec::new();
+
+    if !major_roads_covered(&drawn, &req_refs) {
+        errors.push("G3: MAJOR_EVERON_ROADS not all covered".into());
+    }
+    if !road_name_schema_holds(&drawn) {
+        errors.push("G4: name.length < 2".into());
+    }
+    if !road_placement_geometry_holds(&drawn, &segments) {
+        errors.push("G5: label > 12 m from polyline".into());
+    }
+    if !road_declutter_invariant_holds(&drawn, deck_zoom) {
+        errors.push("G6: declutter invariant failed".into());
+    }
+    if drawn.len() > map_engine_core::world::ROAD_NAME_MAX_ON_SCREEN {
+        errors.push(format!(
+            "G7: |drawn|={} > {}",
+            drawn.len(),
+            map_engine_core::world::ROAD_NAME_MAX_ON_SCREEN
+        ));
+    }
+
+    serde_json::to_string(&errors).unwrap_or_else(|_| "[]".into())
+}

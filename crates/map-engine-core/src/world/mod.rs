@@ -20,6 +20,7 @@ mod obb;
 mod prefab;
 mod regions;
 mod residency;
+mod road_labels;
 mod roads;
 mod store;
 
@@ -75,6 +76,16 @@ pub use obb::{
 pub use prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
 pub use regions::{LandCoverRegion, parse_regions_payload};
 pub use residency::{APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, LRU_MIN_CHUNKS, WorldResidency};
+pub use road_labels::{
+    build_road_label_draw_set, declutter_road_labels, major_roads_covered, parse_road_names_json,
+    perpendicular_dist_to_polyline, place_road_labels, placement_fractions, point_tangent_at_frac,
+    polyline_length, road_class_priority, road_declutter_invariant_holds,
+    road_declutter_min_dist_m, road_name_schema_holds, road_name_visible_for_class,
+    road_placement_geometry_holds, upright_angle_deg, RoadLabelPlacement, RoadNameEntry,
+    RoadNamesFile, ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,
+    ROAD_NAME_MIN_ZOOM_HIGHWAY, ROAD_NAME_MIN_ZOOM_SECONDARY, ROAD_NAME_OFFSET_M,
+    ROAD_NAME_PERP_TOL_M,
+};
 pub use roads::{
     CENTERLINE_DEDUPE_M, RoadSegment, extract_road_centerline, parse_roads_payload,
     road_style_width,

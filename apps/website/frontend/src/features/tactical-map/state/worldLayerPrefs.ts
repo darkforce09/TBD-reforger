@@ -33,6 +33,8 @@ export interface WorldClassToggles {
   heights: boolean
   /** T-152.8 town name labels from locations.json (default on). */
   townLabels: boolean
+  /** T-152.9 road name labels from road-names.json (default on). */
+  roadNames: boolean
 }
 
 const DEFAULT_TOGGLES: WorldClassToggles = {
@@ -47,6 +49,7 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
   sea: true,
   heights: true,
   townLabels: true,
+  roadNames: true,
 }
 
 interface WorldLayerPrefs {

@@ -4,7 +4,7 @@
 use map_engine_core::dem::peaks::{declutter_height_labels, height_label_min_sep_m, HeightLabel};
 use map_engine_core::label::LabelSpec;
 use map_engine_core::world::{
-    declutter_town_labels, locations_to_label_specs, LocationLabel,
+    declutter_town_labels, locations_to_label_specs, LocationLabel, RoadLabelPlacement,
 };
 use map_engine_core::world::{pack_icon_instance, pack_rgba_u32, size_with_min_px, REF_ZOOM};
 
@@ -61,6 +61,38 @@ pub fn pack_town_label_glyphs(
     let drawn = declutter_town_labels(locations, deck_zoom);
     let specs = locations_to_label_specs(&drawn);
     glyphs_from_specs(&specs, char_m, pack_rgba_u32([232, 228, 220, 234]))
+}
+
+/// T-152.9 — road names tangent-aligned along polylines; tint `#d8d4cc` @ α0.88.
+#[must_use]
+pub fn pack_road_label_bytes(placements: &[RoadLabelPlacement], deck_zoom: f64) -> Vec<u8> {
+    let char_m = text_char_meters(deck_zoom);
+    let half = char_m * 0.5;
+    let tint = pack_rgba_u32([216, 212, 204, 224]);
+    let mut out = Vec::new();
+    for lab in placements {
+        let chars: Vec<char> = lab.name.chars().collect();
+        let n = chars.len() as f32;
+        let rad = lab.angle_deg.to_radians();
+        let cos_a = rad.cos() as f32;
+        let sin_a = rad.sin() as f32;
+        let cx = lab.x as f32;
+        let cy = lab.y as f32;
+        let start = -((n - 1.0) * char_m) * 0.5;
+        for (i, ch) in chars.into_iter().enumerate() {
+            let code = ch as u32;
+            if !(32..127).contains(&code) {
+                continue;
+            }
+            let along = start + (i as f32) * char_m;
+            let gx = cx + along * cos_a;
+            let gy = cy + along * sin_a;
+            let glyph = (code - 32) as u16;
+            pack_icon_instance(&mut out, gx, gy, char_m, lab.angle_deg, glyph, tint);
+        }
+        let _ = half; // size baked via char_m
+    }
+    out
 }
 
 fn glyphs_from_specs(specs: &[LabelSpec], char_m: f32, _tint: u32) -> Vec<TextGlyphInstance> {
