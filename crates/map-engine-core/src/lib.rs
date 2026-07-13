@@ -15,6 +15,8 @@ pub mod camera;
 pub mod dem;
 #[cfg(feature = "doc")]
 pub mod doc;
+/// T-154 - arsenal doll scene/camera/pick policy (pure; GPU lives in map-engine-render).
+pub mod doll;
 pub mod geometry;
 #[cfg(feature = "mission")]
 pub mod mission;

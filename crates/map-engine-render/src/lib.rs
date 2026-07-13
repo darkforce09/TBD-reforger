@@ -14,10 +14,13 @@
 pub mod compute_cull;
 pub mod damage;
 pub mod density_heat;
+pub mod doll_pack;
 pub mod draw_order;
 pub mod lanes;
 pub mod scene;
 
+#[cfg(target_arch = "wasm32")]
+mod doll3d;
 #[cfg(target_arch = "wasm32")]
 mod engine;
 #[cfg(target_arch = "wasm32")]
@@ -25,5 +28,7 @@ mod icon_cull_gpu;
 #[cfg(target_arch = "wasm32")]
 mod probe;
 
+#[cfg(target_arch = "wasm32")]
+pub use doll3d::DollEngine;
 #[cfg(target_arch = "wasm32")]
 pub use engine::RenderEngine;

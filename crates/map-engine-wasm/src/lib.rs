@@ -64,6 +64,35 @@ pub fn class_visible_scan_json() -> String {
 #[cfg(target_arch = "wasm32")]
 pub use map_engine_render::RenderEngine;
 
+// T-154 - the arsenal doll's own engine (second engine instance beside the map; same
+// single-pkg reasoning as RenderEngine above).
+#[cfg(target_arch = "wasm32")]
+pub use map_engine_render::DollEngine;
+
+/// T-154 - the doll's clickable region keys, RAIL order, as a JSON array. Vitest parity
+/// asserts this against the frontend `RAIL_REGIONS` (the census-style contract).
+#[wasm_bindgen]
+#[must_use]
+pub fn doll_region_keys() -> String {
+    let mut out = String::from("[");
+    for (i, k) in map_engine_core::doll::REGION_KEYS.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(&format!("\"{k}\""));
+    }
+    out.push(']');
+    out
+}
+
+/// T-154 - pure CPU pick (same math `DollEngine.pick_region` runs): region index or -1.
+/// GPU-free so vitest can golden-test picking from node.
+#[wasm_bindgen]
+#[must_use]
+pub fn doll_pick_cpu(yaw: f64, w_px: f64, h_px: f64, x_px: f64, y_px: f64) -> i32 {
+    map_engine_core::doll::pick(yaw, w_px, h_px, x_px, y_px)
+}
+
 // ---------------------------------------------------------------------------------------------
 // T-151.7.3 — pure slot GPU helpers (FE smoke / parity; SoT is map-engine-core::slots_gpu)
 // ---------------------------------------------------------------------------------------------

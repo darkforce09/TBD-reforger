@@ -81,7 +81,7 @@ fn js_round(x: f64) -> f64 {
 /// it). Without this, `create_surface` on the WebGL2 fallback fails with
 /// `MissingDisplayHandle` (found empirically in V8a; wgpu 29 display-handle rework).
 #[derive(Debug)]
-struct WebDisplay;
+pub(crate) struct WebDisplay;
 
 impl wgpu::rwh::HasDisplayHandle for WebDisplay {
     fn display_handle(&self) -> Result<wgpu::rwh::DisplayHandle<'_>, wgpu::rwh::HandleError> {
@@ -89,7 +89,7 @@ impl wgpu::rwh::HasDisplayHandle for WebDisplay {
     }
 }
 
-fn instance_descriptor(backends: wgpu::Backends) -> wgpu::InstanceDescriptor {
+pub(crate) fn instance_descriptor(backends: wgpu::Backends) -> wgpu::InstanceDescriptor {
     let mut desc = wgpu::InstanceDescriptor::new_with_display_handle(Box::new(WebDisplay));
     desc.backends = backends;
     desc

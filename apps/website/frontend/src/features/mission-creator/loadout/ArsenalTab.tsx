@@ -29,6 +29,7 @@ import { ContainerPanel, ItemDetailPane } from './ItemDetailPane'
 import { migrateLoadout } from './migrateLoadout'
 import { SlotItemList } from './SlotItemList'
 import { SlotRail } from './SlotRail'
+import { SoldierModel3D } from './SoldierModel3D'
 import { SoldierSilhouette } from './SoldierSilhouette'
 import { useArsenalValidation } from './useArsenalValidation'
 
@@ -191,6 +192,8 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
   const [activeKey, setActiveKey] = useState<LoadoutKey>('primary')
   // Variant-link hops inside the detail pane override the derived detail target.
   const [inspected, setInspected] = useState<string>('')
+  // T-154: wgpu doll is primary; engine-create failure falls back to the SVG silhouette.
+  const [dollUnavailable, setDollUnavailable] = useState(false)
 
   const { status, sets } = useArsenalValidation(isCharacter, data?.modpack_id, picks)
   const validation = useMemo(() => validateLoadout(picks, sets), [picks, sets])
@@ -283,12 +286,21 @@ export function ArsenalTab({ md, slot }: { md: MissionDoc; slot: Slot }) {
 
         <div className="flex min-h-0 flex-col">
           <div className="min-h-0 flex-1">
-            <SoldierSilhouette
-              picks={picks}
-              activeKey={activeKey}
-              onSelect={onSelectRegion}
-              catalogByName={catalogByName}
-            />
+            {dollUnavailable ? (
+              <SoldierSilhouette
+                picks={picks}
+                activeKey={activeKey}
+                onSelect={onSelectRegion}
+                catalogByName={catalogByName}
+              />
+            ) : (
+              <SoldierModel3D
+                picks={picks}
+                activeKey={activeKey}
+                onSelect={onSelectRegion}
+                onUnavailable={() => setDollUnavailable(true)}
+              />
+            )}
           </div>
           <DollCaption activeKey={activeKey} picks={picks} catalogByName={catalogByName} />
         </div>

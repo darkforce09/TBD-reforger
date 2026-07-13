@@ -20,6 +20,10 @@ import {
   deviceSize,
   type RenderEngine,
 } from '@/features/tactical-map/wgpu/wasmRender'
+import {
+  createDollEngine,
+  type DollEngine,
+} from '@/features/mission-creator/loadout/dollEngine'
 
 const STRESS_COUNTS = [100_000, 1_000_000, 5_000_000, 20_000_000] as const
 const STRESS_SEED = 0x12345678
@@ -28,6 +32,8 @@ const HUD_INTERVAL_MS = 250
 export default function WgpuCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  // T-154: hidden fixed-size canvas for the doll engine's self-check.
+  const dollCanvasRef = useRef<HTMLCanvasElement | null>(null)
   // For button handlers only — ownership stays with the effect (I2).
   const engineRef = useRef<RenderEngine | null>(null)
   const [canvasKey, setCanvasKey] = useState(0)
@@ -48,6 +54,7 @@ export default function WgpuCanvas() {
     if (!container || !canvas) return
 
     let engine: RenderEngine | null = null // I2
+    let dollEngine: DollEngine | null = null // T-154, same I2/I4 rules
     let disposed = false // I4
     let raf = 0
     let lastDpr = window.devicePixelRatio
@@ -84,6 +91,29 @@ export default function WgpuCanvas() {
         // (T-151.0) + `texture` (T-151.1) are the regression re-runs.
         // T-151.11.2 (A-10): registration is DEV-gated (the route already is; belt-and-braces).
         if (import.meta.env.DEV) {
+          // T-154: the doll engine runs its self-check on its own hidden canvas. The key is
+          // registered immediately (harness reads the key set once); the promise resolves
+          // when the doll engine is up — a create failure REJECTS the check (loud, not
+          // silently skipped).
+          const dollCanvas = dollCanvasRef.current
+          const dollPromise = dollCanvas
+            ? createDollEngine(dollCanvas, forceWebgl)
+            : Promise.reject(new Error('doll canvas missing'))
+          dollPromise.then(
+            (d) => {
+              if (disposed) {
+                d.free()
+                return
+              }
+              dollEngine = d
+              try {
+                d.render() // one visible frame in the thumbnail (self-check is offscreen)
+              } catch {
+                /* thumbnail only */
+              }
+            },
+            () => undefined, // handled per-check below
+          )
           ;(
             window as unknown as { __selfChecks?: Record<string, () => Promise<string>> }
           ).__selfChecks = {
@@ -95,6 +125,7 @@ export default function WgpuCanvas() {
             marquee: () => created.marquee_self_check() as Promise<string>, // T-151.11.1 P-02
             tree: () => created.tree_glyph_self_check() as Promise<string>, // T-151.11.4 C-5-02
             computeCull: () => created.compute_cull_self_check() as Promise<string>, // T-151.11.4 X-03
+            doll: () => dollPromise.then((d) => d.doll_self_check() as Promise<string>), // T-154
           }
         }
         setBackend(created.backend())
@@ -173,6 +204,8 @@ export default function WgpuCanvas() {
       engineRef.current = null
       engine?.free() // I4 — exactly once
       engine = null
+      dollEngine?.free() // T-154 — same exactly-once rule
+      dollEngine = null
     }
   }, [forceWebgl, canvasKey])
 
@@ -251,6 +284,14 @@ export default function WgpuCanvas() {
         key={canvasKey}
         ref={canvasRef}
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}
+      />
+      {/* T-154: fixed-size doll-engine canvas (self-check target; bottom-left thumbnail). */}
+      <canvas
+        key={`doll-${canvasKey}`}
+        ref={dollCanvasRef}
+        width={128}
+        height={128}
+        style={{ position: 'absolute', left: 8, bottom: 8, width: 128, height: 128 }}
       />
       <div style={PANEL}>
         <div style={{ fontWeight: 600, letterSpacing: 0.3 }}>T-151 · wgpu render spike</div>

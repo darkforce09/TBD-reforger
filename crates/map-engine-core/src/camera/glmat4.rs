@@ -131,6 +131,28 @@ pub fn ortho_no(left: f64, right: f64, bottom: f64, top: f64, near: f64, far: f6
     out
 }
 
+/// `mat4.perspectiveNO(out, fovy, aspect, near, far)` — mat4.js:1411 (`mat4.perspective`
+/// alias; GL clip convention, NDC z ∈ [-1, 1]), including the finite-far / infinite-far
+/// branch. First perspective consumer is the T-154 doll engine (the map stays orthographic).
+#[must_use]
+pub fn perspective_no(fovy: f64, aspect: f64, near: f64, far: f64) -> [f64; 16] {
+    let f = 1.0 / (fovy / 2.0).tan();
+    let mut out = [0.0; 16];
+    out[0] = f / aspect;
+    out[5] = f;
+    out[11] = -1.0;
+    // gl-matrix: `if (far != null && far !== Infinity)`.
+    if far.is_finite() {
+        let nf = 1.0 / (near - far);
+        out[10] = (far + near) * nf;
+        out[14] = 2.0 * far * near * nf;
+    } else {
+        out[10] = -1.0;
+        out[14] = -2.0 * near;
+    }
+    out
+}
+
 /// `mat4.lookAt(out, eye, center, up)` — mat4.js:1628, including the `glMatrix.EPSILON`
 /// identity short-circuit and the zero-length cross-product guards.
 #[must_use]
