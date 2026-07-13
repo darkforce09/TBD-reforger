@@ -58,8 +58,14 @@ pub struct BuildingInstance {
     pub color: [f32; 4],
 }
 
-/// Atlas glyph count (world-glyphs.json).
-pub const ATLAS_GLYPH_COUNT: usize = 28;
+/// Icon-uniform UV-table capacity — the max glyphs the atlas may hold. Headroom above the current
+/// `world-glyphs.json` count (29) so the atlas can grow without a coordinated engine/shader change.
+/// **Single source of truth:** the shader UV array size (`shader.wgsl` `array<vec4<f32>, 32>`), the
+/// icon uniform byte layout (`engine.rs` `ICON_UV_BYTES`/`ICON_UNIFORM_BYTES`/offsets), the TS loader
+/// (`atlas_glyph_count()` wasm export), and the CI guards all key off this constant. If you change it,
+/// the `map-engine-render` shader-const test and the `map-engine-core` atlas-count test enforce that
+/// the shader literal and the atlas stay in sync (they fail loudly otherwise).
+pub const ATLAS_GLYPH_COUNT: usize = 32;
 
 /// One icon glyph instance (T-151.5 W5). Production layout ≤ 20 B:
 /// pos 2×f32 + size f32 + yaw snorm16 + glyph u16 + tint u32.
@@ -296,5 +302,28 @@ mod tests {
         };
         assert_eq!(c0, expect_c0);
         assert_eq!(c1, expect_c1);
+    }
+
+    /// Guard C (glyph-atlas fix) — the WGSL shader's icon UV-table size and glyph clamp are literals
+    /// that MUST equal `ATLAS_GLYPH_COUNT` (WGSL cannot import the Rust const). If the constant is
+    /// bumped without updating `shader.wgsl` (or vice-versa), the Rust icon-uniform byte size
+    /// (`ICON_UNIFORM_BYTES`, itself derived from this constant) and the shader's `IconUniforms`
+    /// struct size disagree, and `create_render_pipeline` fails at runtime. Pinning the coupling here
+    /// turns that into a loud CI failure instead of the silent 28-vs-29 regression that dark-glyphed
+    /// the whole icon lane. (The Rust-side offsets are compile-time derived from the constant, so
+    /// they can't drift; only this cross-language shader literal needs a runtime guard.)
+    #[test]
+    fn shader_uv_table_tracks_atlas_glyph_count() {
+        let src = include_str!("shader.wgsl");
+        let arr = format!("array<vec4<f32>, {ATLAS_GLYPH_COUNT}>");
+        assert!(
+            src.contains(&arr),
+            "shader.wgsl must declare the icon UV table as `{arr}`"
+        );
+        let clamp = format!("min(in.glyph, {}u)", ATLAS_GLYPH_COUNT - 1);
+        assert!(
+            src.contains(&clamp),
+            "shader.wgsl must clamp the glyph index with `{clamp}`"
+        );
     }
 }

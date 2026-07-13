@@ -181,8 +181,17 @@ struct PolyLane {
     item_count: u32,
 }
 
-/// Icon uniform buffer size: 28×vec4 UV (448) + drag_delta/px_to_m/pad (16) = 464 B.
-const ICON_UNIFORM_BYTES: u64 = 464;
+// Icon uniform (`IconUniforms` in shader.wgsl) — every offset derived from the single source of
+// truth `scene::ATLAS_GLYPH_COUNT`, so the atlas count, UV-table size, and trailing scalar offsets
+// can never silently drift: UV[N] (N×16 B) + drag_delta.xy (8) + px_to_m (4) + _pad (4). N=32 → 528 B.
+/// UV-table byte size = `ATLAS_GLYPH_COUNT × sizeof(vec4<f32>)`.
+const ICON_UV_BYTES: usize = scene::ATLAS_GLYPH_COUNT * 16;
+/// Total icon uniform buffer size (matches the WGSL `IconUniforms` struct size).
+const ICON_UNIFORM_BYTES: u64 = (ICON_UV_BYTES + 16) as u64;
+/// Byte offset of `drag_delta.xy` (immediately after the UV table).
+const ICON_DRAG_OFF: usize = ICON_UV_BYTES;
+/// Byte offset of `px_to_m` (after `drag_delta.xy`).
+const ICON_PXM_OFF: usize = ICON_UV_BYTES + 8;
 /// T-152.7 text atlas uniform: px_to_m + grid_cols + grid_rows + f32 pad = 16 B
 /// (WGSL must not use vec3 pad).
 const TEXT_UNIFORM_BYTES: u64 = 16;
@@ -206,7 +215,7 @@ fn text_uniform_bytes() -> [u8; TEXT_UNIFORM_BYTES as usize] {
 /// Shared glyph atlas GPU state (T-151.5 / T-151.6): texture + uniform (UV + params) + bind group.
 struct GlyphAtlasGpu {
     texture: wgpu::Texture,
-    /// Writable uniform: UV[28] + drag_delta.xy + px_to_m + pad.
+    /// Writable uniform: UV[ATLAS_GLYPH_COUNT] + drag_delta.xy + px_to_m + pad.
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     bytes: u64,
@@ -1221,7 +1230,7 @@ impl RenderEngine {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
-                            // 28 × vec4 UV + drag_delta/px_to_m/pad = 464 B (T-151.6)
+                            // ATLAS_GLYPH_COUNT × vec4 UV + drag_delta/px_to_m/pad = ICON_UNIFORM_BYTES (T-151.6)
                             min_binding_size: wgpu::BufferSize::new(ICON_UNIFORM_BYTES),
                         },
                         count: None,
@@ -2737,10 +2746,11 @@ impl RenderEngine {
     // ── W5 glyph atlas + icon lanes ───────────────────────────────────────────────────────────
 
     /// Upload the world glyph atlas once (T-151.5 L1–L3).
-    /// `rgba` = packed RGBA8 top-row-first; `uv` = 28×4 f32 (u0,v0,u1,v1) in key order.
+    /// `rgba` = packed RGBA8 top-row-first; `uv` = (≤ `ATLAS_GLYPH_COUNT`)×4 f32 (u0,v0,u1,v1) in
+    /// key order; unused UV slots are zero-padded.
     ///
     /// # Errors
-    /// Returns `JsError` when UV count ≠ 28 or rgba length ≠ w·h·4.
+    /// Returns `JsError` when UV count exceeds `ATLAS_GLYPH_COUNT`×4 or rgba length ≠ w·h·4.
     pub fn upload_glyph_atlas(
         &mut self,
         rgba: &[u8],
@@ -2749,9 +2759,12 @@ impl RenderEngine {
         uv: &[f32],
     ) -> Result<(), JsError> {
         use scene::ATLAS_GLYPH_COUNT;
-        if uv.len() != ATLAS_GLYPH_COUNT * 4 {
+        // Accept any atlas up to capacity; `pack_icon_uniforms` zero-pads the unused UV slots. Only
+        // an atlas LARGER than the UV table is rejected (would silently drop glyphs) — this is the
+        // guard that used to be a brittle exact `!= 28`, now capacity-bounded off the shared constant.
+        if uv.len() > ATLAS_GLYPH_COUNT * 4 {
             return Err(JsError::new(&format!(
-                "glyph-atlas-uv-count: expected {}, got {}",
+                "glyph-atlas-uv-count: capacity {}, got {}",
                 ATLAS_GLYPH_COUNT * 4,
                 uv.len()
             )));
@@ -2792,16 +2805,9 @@ impl RenderEngine {
                 depth_or_array_layers: 1,
             },
         );
-        // UV[28] (448 B) + drag_delta=0, px_to_m=1, pad (16 B) = 464 B.
-        let mut u_bytes = vec![0u8; ICON_UNIFORM_BYTES as usize];
-        for (i, v) in uv.iter().enumerate() {
-            let off = i * 4;
-            if off + 4 <= 448 {
-                u_bytes[off..off + 4].copy_from_slice(&v.to_le_bytes());
-            }
-        }
-        // px_to_m = 1.0 at offset 456 (after drag_delta at 448)
-        u_bytes[456..460].copy_from_slice(&1.0_f32.to_le_bytes());
+        // World glyphs: drag_delta = 0, px_to_m = 1. Shared packer derives all offsets from
+        // `ICON_UV_BYTES` and zero-pads the unused UV slots (atlas ≤ ATLAS_GLYPH_COUNT).
+        let u_bytes = Self::pack_icon_uniforms(uv, 0.0, 0.0, 1.0);
         let uniform_buf = self
             .device
             .create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -3242,18 +3248,19 @@ impl RenderEngine {
 
     // ── W6 mission slot / cluster icon lanes ─────────────────────────────────────────────────
 
-    /// Build IconUniforms bytes: UV floats + drag_delta + px_to_m + pad.
+    /// Build IconUniforms bytes: UV floats (≤ `ATLAS_GLYPH_COUNT`) + drag_delta + px_to_m + pad.
+    /// All offsets derive from `ICON_UV_BYTES`, so the layout tracks `scene::ATLAS_GLYPH_COUNT`.
     fn pack_icon_uniforms(uv: &[f32], drag_dx: f32, drag_dy: f32, px_to_m: f32) -> Vec<u8> {
         let mut u_bytes = vec![0u8; ICON_UNIFORM_BYTES as usize];
         for (i, v) in uv.iter().enumerate() {
             let off = i * 4;
-            if off + 4 <= 448 {
+            if off + 4 <= ICON_UV_BYTES {
                 u_bytes[off..off + 4].copy_from_slice(&v.to_le_bytes());
             }
         }
-        u_bytes[448..452].copy_from_slice(&drag_dx.to_le_bytes());
-        u_bytes[452..456].copy_from_slice(&drag_dy.to_le_bytes());
-        u_bytes[456..460].copy_from_slice(&px_to_m.to_le_bytes());
+        u_bytes[ICON_DRAG_OFF..ICON_DRAG_OFF + 4].copy_from_slice(&drag_dx.to_le_bytes());
+        u_bytes[ICON_DRAG_OFF + 4..ICON_DRAG_OFF + 8].copy_from_slice(&drag_dy.to_le_bytes());
+        u_bytes[ICON_PXM_OFF..ICON_PXM_OFF + 4].copy_from_slice(&px_to_m.to_le_bytes());
         u_bytes
     }
 
@@ -3459,8 +3466,8 @@ impl RenderEngine {
 
     // ── Internal slot lane helpers (not wasm-exported) ───────────────────────────────────────
 
-    /// Upload dedicated slot/cluster atlas (ring + disc). `uv` is 2..28 glyphs × 4 floats
-    /// (minU,minV,maxU,maxV); padded to 28. Does **not** touch the world-glyphs atlas.
+    /// Upload dedicated slot/cluster atlas (ring + disc). `uv` is 2..`ATLAS_GLYPH_COUNT` glyphs × 4
+    /// floats (minU,minV,maxU,maxV); zero-padded to capacity. Does **not** touch the world-glyphs atlas.
     fn upload_slot_atlas(
         &mut self,
         rgba: &[u8],
@@ -3648,13 +3655,13 @@ impl RenderEngine {
             return;
         }
         atlas.px_to_m = px_to_m;
-        // Write only the px_to_m word at offset 456 (4 B) — counted in uniform_bytes_last_frame
-        // only when paired with drag writes; zoom updates are free-ish.
+        // Write only the px_to_m word (4 B) at its derived offset — counted in
+        // uniform_bytes_last_frame only when paired with drag writes; zoom updates are free-ish.
         let bytes = px_to_m.to_le_bytes();
         self.queue
-            .write_buffer(&atlas.base_uniform_buf, 456, &bytes);
+            .write_buffer(&atlas.base_uniform_buf, ICON_PXM_OFF as u64, &bytes);
         self.queue
-            .write_buffer(&atlas.drag_uniform_buf, 456, &bytes);
+            .write_buffer(&atlas.drag_uniform_buf, ICON_PXM_OFF as u64, &bytes);
     }
 
     /// Set SlotDrag drag delta (world meters). Writes 8 B drag_delta + leaves px_to_m.
@@ -3668,9 +3675,9 @@ impl RenderEngine {
         bytes[0..4].copy_from_slice(&dx.to_le_bytes());
         bytes[4..8].copy_from_slice(&dy.to_le_bytes());
         bytes[8..12].copy_from_slice(&atlas.px_to_m.to_le_bytes());
-        // pad remains 0
+        // pad remains 0. Writes drag_delta.xy + px_to_m (16 B) at the derived drag offset.
         self.queue
-            .write_buffer(&atlas.drag_uniform_buf, 448, &bytes);
+            .write_buffer(&atlas.drag_uniform_buf, ICON_DRAG_OFF as u64, &bytes);
         // Account for drag uniform write on next frame's stats (render resets to 64 first).
         self.uniform_bytes_last_frame = 64 + 16;
     }
@@ -3721,7 +3728,7 @@ impl RenderEngine {
             let mut bytes = [0u8; 16];
             bytes[8..12].copy_from_slice(&atlas.px_to_m.to_le_bytes());
             self.queue
-                .write_buffer(&atlas.drag_uniform_buf, 448, &bytes);
+                .write_buffer(&atlas.drag_uniform_buf, ICON_DRAG_OFF as u64, &bytes);
         }
     }
 
@@ -4906,12 +4913,8 @@ impl RenderEngine {
                     depth_or_array_layers: 1,
                 },
             );
-            let mut u_bytes = vec![0u8; ICON_UNIFORM_BYTES as usize];
-            // uv[0] = (0,0,1,1); px_to_m = 1.0 at offset 456
-            for (i, v) in [0.0f32, 0.0, 1.0, 1.0].iter().enumerate() {
-                u_bytes[i * 4..i * 4 + 4].copy_from_slice(&v.to_le_bytes());
-            }
-            u_bytes[456..460].copy_from_slice(&1.0_f32.to_le_bytes());
+            // uv[0] = (0,0,1,1); drag=0, px_to_m=1 — shared packer derives the layout from the count.
+            let u_bytes = RenderEngine::pack_icon_uniforms(&[0.0f32, 0.0, 1.0, 1.0], 0.0, 0.0, 1.0);
             let uv_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
                 label: Some("tree-glyph-self-check-uv"),
                 contents: &u_bytes,

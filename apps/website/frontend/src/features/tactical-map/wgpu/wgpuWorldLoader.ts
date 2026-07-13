@@ -14,7 +14,7 @@
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.
 
-import { WorldResidency, WorldStore, DemGrid, dem_apron_grid_factor } from '@/wasm/pkg/map_engine_wasm'
+import { WorldResidency, WorldStore, DemGrid, dem_apron_grid_factor, atlas_glyph_count } from '@/wasm/pkg/map_engine_wasm'
 import { loadWorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { getClassToggles } from '../state/worldLayerPrefs'
 import { getDemRasterForOverlay } from '../dem/DemController'
@@ -147,8 +147,12 @@ export class WgpuWorldController {
       const atlas = await loadWorldGlyphAtlas()
       if (!atlas || this.disposed || !this.residency) return
       const keys = Object.keys(atlas.iconMapping).sort()
-      if (keys.length !== 28) {
-        console.warn(`[wgpu-world] glyph atlas key count ${keys.length} ≠ 28 — glyphs off`)
+      // Capacity check against the engine's UV-table size (Rust single source of truth), NOT a
+      // hardcoded literal — the atlas may hold up to `atlas_glyph_count()` keys. Bail only when it
+      // genuinely exceeds engine capacity (would drop glyphs); the count guard test enforces ≤.
+      const capacity = atlas_glyph_count()
+      if (keys.length > capacity) {
+        console.warn(`[wgpu-world] glyph atlas key count ${keys.length} > capacity ${capacity} — glyphs off`)
         return
       }
       const meta = await fetch(atlas.atlasUrl)
@@ -167,7 +171,7 @@ export class WgpuWorldController {
       bmp.close()
       const imageData = ctx.getImageData(0, 0, w, h)
       const rgba = new Uint8Array(imageData.data.buffer)
-      const uv = new Float32Array(28 * 4)
+      const uv = new Float32Array(keys.length * 4)
       for (let i = 0; i < keys.length; i++) {
         const r = atlas.iconMapping[keys[i]]
         uv[i * 4 + 0] = r.x / w

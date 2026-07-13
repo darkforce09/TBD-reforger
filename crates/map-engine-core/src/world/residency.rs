@@ -1770,7 +1770,9 @@ mod t151_11_3_tests {
 /// T-152.3 — landmark building glyph wiring (Class R vs TS oracle policy).
 #[cfg(test)]
 mod t152_3_tests {
-    use super::super::glyph_math::{BUILDING_CLASSES, landmark_glyph_icon_key};
+    use super::super::glyph_math::{
+        BUILDING_CLASSES, badge_icon_key, building_icon_key, landmark_glyph_icon_key,
+    };
     use super::*;
     use std::collections::{HashMap, HashSet};
     use std::fs;
@@ -1947,6 +1949,86 @@ mod t152_3_tests {
             n >= N_MIN_BUILDING_GLYPH_LOOKUP,
             "building glyph lookup {n} < N_min {N_MIN_BUILDING_GLYPH_LOOKUP}"
         );
+    }
+
+    /// Guard B (glyph-atlas fix) — the tree lane was never tested on real data (only badges were),
+    /// which is how the 28-vs-29 atlas-count bug shipped unseen. Proves the Rust core maps every
+    /// real tree prefab to a group-0 glyph and packs a dense forest chunk once keys are registered —
+    /// so the "no tree glyphs" defect is provably downstream (the browser atlas-count guard), not core.
+    #[test]
+    fn tree_glyphs_pack_from_real_everon_data() {
+        let mut r = load_everon_residency();
+        // Every real Everon tree prefab (iconKey tree-conifer/tree-deciduous) registers as group 0.
+        assert_eq!(
+            r.glyph_lookup_len_for_group(0),
+            51,
+            "all real tree prefabs must map to group-0 glyphs"
+        );
+        // A dense-forest chunk at detail zoom (z=0, tree glyphs on) packs its whole tree census.
+        // `drive_fixture_chunk` replicates 16_2's data (6500 trees) into every strict-draw chunk;
+        // the z=0 viewport [8192,1024,8704,1536] spans to chunk edges → 4 draw chunks (16_2,17_2,
+        // 16_3,17_3) → 4 × 6500 = 26000. Completeness: every visible tree instance packs (none dropped).
+        drive_fixture_chunk(&mut r, "16_2", 0.0);
+        let packed = r.tree_glyph_count();
+        assert!(packed > 0, "forest chunk must pack tree glyphs");
+        assert_eq!(
+            packed,
+            r.exact_tree_count_draw(),
+            "every visible tree instance must pack (no silent drops)"
+        );
+        assert_eq!(
+            packed, 26000,
+            "4 strict-draw chunks × 6500 replicated fixture trees"
+        );
+    }
+
+    fn world_glyphs_atlas_keys() -> HashSet<String> {
+        let raw = fs::read_to_string(map_assets().join("glyphs/atlas/world-glyphs.json"))
+            .expect("world-glyphs.json");
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        v["icons"]
+            .as_object()
+            .expect("icons object")
+            .keys()
+            .cloned()
+            .collect()
+    }
+
+    /// Guard A (glyph-atlas fix) — the two atlas key sources agree, and EVERY glyph key any render
+    /// path can request resolves in the browser atlas: every prefab `iconKey` (data path) plus every
+    /// `building_icon_key`/`badge_icon_key` classify output. A missing key = a silently-dark glyph
+    /// type — the exact class of defect that shipped `29 ≠ 28` unseen. This fails CI loudly instead.
+    #[test]
+    fn glyph_atlas_covers_every_requested_key_and_sources_agree() {
+        let atlas = world_glyphs_atlas_keys();
+        // Source parity: the browser atlas (world-glyphs.json) and the manifest source cannot drift.
+        let manifest: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        assert_eq!(
+            atlas, manifest,
+            "world-glyphs.json vs manifest.json glyph keys diverged"
+        );
+        // Data path: every prefab iconKey resolves.
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(map_assets().join("everon/objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        for row in narrow_prefab_rows(&raw) {
+            if let Some(k) = row.icon_key.as_deref() {
+                assert!(atlas.contains(k), "prefab iconKey '{k}' missing from atlas");
+            }
+        }
+        // Classify path: every building footprint + badge overlay key resolves.
+        for &cls in BUILDING_CLASSES {
+            for key in [building_icon_key(cls), badge_icon_key(cls)]
+                .into_iter()
+                .flatten()
+            {
+                assert!(
+                    atlas.contains(key),
+                    "classify key '{key}' (class '{cls}') missing from atlas"
+                );
+            }
+        }
     }
 
     #[test]

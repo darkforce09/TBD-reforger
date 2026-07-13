@@ -65,6 +65,17 @@ pub fn class_visible_scan_json() -> String {
 #[cfg(target_arch = "wasm32")]
 pub use map_engine_render::RenderEngine;
 
+/// Icon-atlas UV-table capacity (`scene::ATLAS_GLYPH_COUNT`) — the max glyph keys the engine can
+/// hold in its icon uniform. The wgpu world loader reads this to size its UV upload and to bail only
+/// on a genuinely over-capacity atlas, so the count lives in exactly one place (Rust) instead of a
+/// stale hardcoded TS literal (the T-152.10 `29 ≠ 28` regression). Single source of truth.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+#[must_use]
+pub fn atlas_glyph_count() -> u32 {
+    map_engine_render::scene::ATLAS_GLYPH_COUNT as u32
+}
+
 // ---------------------------------------------------------------------------------------------
 // T-151.7.3 — pure slot GPU helpers (FE smoke / parity; SoT is map-engine-core::slots_gpu)
 // ---------------------------------------------------------------------------------------------
