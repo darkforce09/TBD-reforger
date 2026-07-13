@@ -119,4 +119,8 @@ treatment — off-white hairlines directly over busy terrain/roads.
   core 85 · `make wasm` → **4,347,812 B** (cumulative **+4,014 B** over the .12 baseline
   4,343,798 — ceiling +262,144) · vitest 355/355 · FE build/lint ✓.
 
-**M1/M2: operator-pending** (re-check with halo + 20 px floor).
+**M1/M2: operator PASS (2026-07-13)** — "looks great." Real-hardware WebGPU (`wgpu·webgl2`, 165 FPS)
+at z=−3.37 (island) and z=−2.00 (region): town names (Highstone, Gravette, Villeneuve, Durras,
+Regina, Vernon …), the "Mountains West/East …" cluster, road names, and height numerals
+(236, 15, 29, 213, 150, 159) all read crisply — the dark halo separates every label from the
+green terrain / roads. Hyphen + lowercase render correctly. **M1/M2 closed.**
