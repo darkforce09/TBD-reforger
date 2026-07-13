@@ -49,9 +49,9 @@ function AttributesModalInner({
       <DialogContent
         title="Attributes"
         description={slot ? `${slot.role || 'Slot'} · slot #${slot.index + 1}` : 'Entity'}
-        // T-068.10.6: the Arsenal tab expands the modal (same menu, bigger surface) so
-        // the ACE panes fit; other tabs keep the compact width.
-        className={tab === 'Arsenal' ? 'max-w-6xl' : undefined}
+        // T-068.10.7: the Arsenal tab expands the modal (same menu, bigger surface) so
+        // the paper-doll three-column layout fits; other tabs keep the compact width.
+        className={tab === 'Arsenal' ? 'max-w-7xl' : undefined}
       >
         {slot && (
           <div className="flex flex-col gap-4">
