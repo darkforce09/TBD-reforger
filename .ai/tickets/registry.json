@@ -4352,7 +4352,7 @@
       "executor": "claude-code"
     },
     {
-      "id": "T-155",
+      "id": "T-157",
       "title": "Mission Create visual overhaul",
       "summary": "Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu.",
       "program": "platform",
@@ -4371,7 +4371,7 @@
       "executor": "cursor-docs"
     },
     {
-      "id": "T-156",
+      "id": "T-158",
       "title": "Editor shell UX consolidation",
       "summary": "Consolidate Settings buttons, wire up top bar, remove redundant Assets tab.",
       "program": "eden",
