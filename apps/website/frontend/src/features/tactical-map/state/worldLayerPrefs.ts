@@ -25,6 +25,8 @@ export interface WorldClassToggles {
   props: boolean
   /** T-152.4 cartographic fence/railing strips (default on). */
   fences: boolean
+  /** T-152.5 airfield apron + runway polish + hangar/tower icons (default on). */
+  airfield: boolean
   contours: boolean
   sea: boolean
 }
@@ -36,6 +38,7 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
   trees: true,
   props: false,
   fences: true,
+  airfield: true,
   contours: true,
   sea: true,
 }

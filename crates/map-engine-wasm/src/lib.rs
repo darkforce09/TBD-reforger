@@ -15,6 +15,7 @@ use map_engine_core::geometry::{
 };
 use map_engine_core::spatial::cluster;
 use map_engine_core::spatial::point_index::PointIndex;
+use map_engine_core::world::build_airfield_apron_mesh;
 use map_engine_core::world::{
     TerrainSizeM, WorldError, WorldResidency as CoreWorldResidency,
     WorldSpatialIndex as CoreWorldSpatialIndex, WorldStore as CoreWorldStore,
@@ -342,6 +343,31 @@ impl DemGrid {
     #[must_use]
     pub fn contours(&self, levels: &[f64]) -> Vec<f32> {
         contours::contour_segments(&self.inner, levels)
+    }
+
+    /// T-152.5 DEM-flat airfield apron mesh for `bbox` `[minX,minY,maxX,maxY]`.
+    #[must_use]
+    pub fn compose_airfield_apron(&self, bbox: &[f64]) -> PolyMeshResult {
+        let b = if bbox.len() == 4 {
+            [bbox[0], bbox[1], bbox[2], bbox[3]]
+        } else {
+            [0.0, 0.0, 0.0, 0.0]
+        };
+        PolyMeshResult {
+            inner: build_airfield_apron_mesh(&self.inner, b),
+        }
+    }
+
+    /// Apron qualifying cell area m² (G2 gate oracle).
+    #[must_use]
+    pub fn apron_qualifying_area_m2(&self, bbox: &[f64]) -> f64 {
+        use map_engine_core::world::apron_qualifying_area_m2;
+        let b = if bbox.len() == 4 {
+            [bbox[0], bbox[1], bbox[2], bbox[3]]
+        } else {
+            return 0.0;
+        };
+        apron_qualifying_area_m2(&self.inner, b)
     }
 }
 
@@ -1600,8 +1626,9 @@ impl WorldStore {
     }
 
     /// Compose LOD-filtered road casing + centerline strips at `deck_zoom` (T-151.4 L5).
+    /// `airfield_polish`: T-152.5 cartographic runway styling when true.
     #[must_use]
-    pub fn compose_roads(&self, deck_zoom: f64) -> RoadComposeResult {
+    pub fn compose_roads(&self, deck_zoom: f64, airfield_polish: bool) -> RoadComposeResult {
         let inputs: Vec<RoadInput<'_>> = self
             .inner
             .roads
@@ -1612,8 +1639,28 @@ impl WorldStore {
                 width_m: r.width_m,
             })
             .collect();
-        let m = compose_roads_mesh(&inputs, deck_zoom);
+        let m = compose_roads_mesh(&inputs, deck_zoom, airfield_polish);
         RoadComposeResult { inner: m }
+    }
+
+    /// Runway segment count (G1 census).
+    #[wasm_bindgen(getter)]
+    #[must_use]
+    pub fn runway_segment_count(&self) -> u32 {
+        self.inner
+            .roads
+            .iter()
+            .filter(|r| r.road_class == "runway")
+            .count() as u32
+    }
+
+    /// Airfield bbox `[minX, minY, maxX, maxY]` or empty when unknown.
+    #[must_use]
+    pub fn airfield_bbox(&self) -> Vec<f64> {
+        self.inner
+            .airfield_bbox()
+            .map(|b| b.to_vec())
+            .unwrap_or_default()
     }
 
     /// Compose all land-cover regions into one polygon mesh (T-151.4 L6).
@@ -1780,6 +1827,17 @@ impl WorldResidency {
     /// T-152.4 cartographic fence/railing strip toggle.
     pub fn set_fences_toggle(&mut self, fences: bool) {
         self.inner.set_fences_toggle(fences);
+    }
+
+    /// T-152.5 airfield apron / runway polish / hangar-tower icon toggle.
+    pub fn set_airfield_toggle(&mut self, on: bool) {
+        self.inner.set_airfield_toggle(on);
+    }
+
+    /// Set airfield bbox from loaded WorldStore roads (after `load_roads_gz`).
+    pub fn set_airfield_bbox_from_store(&mut self, store: &WorldStore) {
+        self.inner
+            .set_airfield_bbox_from_runways(store.inner.roads.as_slice());
     }
 
     /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).
@@ -2081,6 +2139,13 @@ pub fn deck_zoom_to_super_zoom(deck_zoom: f64) -> i32 {
 #[must_use]
 pub fn dem_vector_grid_factor() -> u32 {
     downsample::DEM_VECTOR_GRID_FACTOR as u32
+}
+
+/// Airfield apron DEM downsample factor (T-152.5 G2 — coarser σ gate grid).
+#[wasm_bindgen]
+#[must_use]
+pub fn dem_apron_grid_factor() -> u32 {
+    downsample::APRON_DEM_DOWNSAMPLE_FACTOR as u32
 }
 
 /// Viewport → chunk-id set (512 m grid + preload margin + optional oversized ring) —

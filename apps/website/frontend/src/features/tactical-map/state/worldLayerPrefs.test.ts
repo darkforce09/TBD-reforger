@@ -37,6 +37,7 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
       trees: true,
       props: false,
       fences: true,
+      airfield: true,
       contours: true,
       sea: true,
     })
@@ -98,6 +99,16 @@ describe('worldLayerPrefs (N8 + legacy migration)', () => {
     expect(mod.getClassToggles().roads).toBe(true)
     const stored = JSON.parse(store.get(KEY) ?? '{}') as { classToggles?: unknown }
     expect(stored.classToggles).toMatchObject({ props: true, roads: true })
+  })
+
+  it('setClassToggle persists airfield toggle (T-152.5 G6 UI)', async () => {
+    const store = stubStorage()
+    const mod = await importFresh()
+    mod.setClassToggle('airfield', false)
+    expect(mod.getClassToggles().airfield).toBe(false)
+    expect(mod.getClassToggles().roads).toBe(true)
+    const stored = JSON.parse(store.get(KEY) ?? '{}') as { classToggles?: unknown }
+    expect(stored.classToggles).toMatchObject({ airfield: false, roads: true })
   })
 
   it('partial stored toggles merge over defaults', async () => {

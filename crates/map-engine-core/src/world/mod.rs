@@ -4,6 +4,7 @@
 //! corners + road centerline are **Class T** (≤ 1 ULP). Pure compute — no `wasm-bindgen`, no
 //! deck.gl; the JS boundary is the `map-engine-wasm` `WorldStore` handle.
 
+mod airfield;
 mod cartographic_strip;
 mod chunk;
 mod chunk_math;
@@ -20,6 +21,12 @@ mod residency;
 mod roads;
 mod store;
 
+pub use airfield::{
+    AIRFIELD_BBOX_MARGIN_M, APRON_AREA_MIN_M2, APRON_ELEV_TOLERANCE_M, APRON_FILL_RGBA,
+    APRON_FLATNESS_SIGMA_M, RUNWAY_POLISH_WIDTH_M, apron_qualifying_area_m2,
+    build_airfield_apron_mesh, compute_airfield_bbox, is_airfield_structure_class, point_in_bbox,
+    polygon_area_m2,
+};
 pub use cartographic_strip::{
     BRIDGE_RAILING_RADIUS_M, FENCE_STRIP_RGBA, FENCE_STRIP_WIDTH_M, PIER_ASPECT_MIN,
     compose_fence_strip, compose_pier_strip, obb_aspect_ratio, obb_long_axis_endpoints,

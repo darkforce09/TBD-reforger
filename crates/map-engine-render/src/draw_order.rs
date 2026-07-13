@@ -16,6 +16,8 @@ pub enum LaneRole {
     /// W4 land-cover hulls.
     Landcover,
     Contours,
+    /// T-152.5 NW Everon airfield DEM-flat apron (`world-airfield-apron`).
+    WorldAirfieldApron,
     RoadsCasing,
     Roads,
     /// W3 world-building OBB fills (`world-buildings`).
@@ -62,24 +64,25 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::Hillshade => 3,
         LaneRole::Landcover => 4,
         LaneRole::Contours => 5,
-        LaneRole::RoadsCasing => 6,
-        LaneRole::Roads => 7,
-        LaneRole::WorldBuildings => 8,
-        LaneRole::WorldBuildingsOutline => 9,
-        LaneRole::WorldFences => 10,
-        LaneRole::ForestFill => 11,
-        LaneRole::ForestOutline => 12,
-        LaneRole::DensityHeat => 13,
-        LaneRole::WorldTrees => 14,
-        LaneRole::WorldProps => 15,
-        LaneRole::WorldBadges => 16,
-        LaneRole::WorldLabels => 17,
-        LaneRole::Grid => 18,
-        LaneRole::Slots => 19,
-        LaneRole::SlotDrag => 20,
-        LaneRole::Clusters => 21,
-        LaneRole::Marquee => 22,
-        LaneRole::MarqueeOutline => 23,
+        LaneRole::WorldAirfieldApron => 6,
+        LaneRole::RoadsCasing => 7,
+        LaneRole::Roads => 8,
+        LaneRole::WorldBuildings => 9,
+        LaneRole::WorldBuildingsOutline => 10,
+        LaneRole::WorldFences => 11,
+        LaneRole::ForestFill => 12,
+        LaneRole::ForestOutline => 13,
+        LaneRole::DensityHeat => 14,
+        LaneRole::WorldTrees => 15,
+        LaneRole::WorldProps => 16,
+        LaneRole::WorldBadges => 17,
+        LaneRole::WorldLabels => 18,
+        LaneRole::Grid => 19,
+        LaneRole::Slots => 20,
+        LaneRole::SlotDrag => 21,
+        LaneRole::Clusters => 22,
+        LaneRole::Marquee => 23,
+        LaneRole::MarqueeOutline => 24,
     }
 }
 
@@ -89,6 +92,7 @@ pub fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
         0 => LaneRole::Sea,
         1 => LaneRole::Landcover,
         2 => LaneRole::Contours,
+        8 => LaneRole::WorldAirfieldApron,
         3 => LaneRole::RoadsCasing,
         4 => LaneRole::Roads,
         5 => LaneRole::ForestFill,
@@ -103,6 +107,13 @@ pub fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
 #[cfg(test)]
 mod lane_order_pins {
     use super::{LaneRole as L, lane_order};
+
+    #[test]
+    fn airfield_apron_sits_between_contours_and_roads() {
+        assert!(lane_order(L::WorldAirfieldApron) > lane_order(L::Contours));
+        assert!(lane_order(L::WorldAirfieldApron) < lane_order(L::RoadsCasing));
+        assert!(lane_order(L::RoadsCasing) < lane_order(L::Roads));
+    }
 
     #[test]
     fn fences_sit_between_building_outline_and_forest() {
@@ -170,6 +181,7 @@ mod lane_order_pins {
             L::Hillshade,
             L::Landcover,
             L::Contours,
+            L::WorldAirfieldApron,
             L::RoadsCasing,
             L::Roads,
             L::WorldBuildings,

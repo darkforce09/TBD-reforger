@@ -46,7 +46,7 @@ fn u8_rgba_to_f32(c: [u8; 4], layer_alpha: f32) -> [f32; 4] {
     ]
 }
 
-fn mesh_from_tri(mesh: TriMesh, colors_u8: &[u8], layer_alpha: f32) -> PolyMeshGpu {
+pub(crate) fn mesh_from_tri(mesh: TriMesh, colors_u8: &[u8], layer_alpha: f32) -> PolyMeshGpu {
     if mesh.indices.is_empty() {
         return PolyMeshGpu::default();
     }
@@ -186,8 +186,13 @@ pub struct RoadInput<'a> {
 }
 
 /// Compose visible road casing + centerline strips at `deck_zoom`.
+/// `airfield_polish`: when true, `runway` segments use T-152.5 cartographic styling.
 #[must_use]
-pub fn compose_roads_mesh(roads: &[RoadInput<'_>], deck_zoom: f64) -> RoadMeshGpu {
+pub fn compose_roads_mesh(
+    roads: &[RoadInput<'_>],
+    deck_zoom: f64,
+    airfield_polish: bool,
+) -> RoadMeshGpu {
     let mut casing_v: Vec<StripVertex> = Vec::new();
     let mut center_v: Vec<StripVertex> = Vec::new();
     let mut segment_count = 0_u32;
@@ -195,7 +200,8 @@ pub fn compose_roads_mesh(roads: &[RoadInput<'_>], deck_zoom: f64) -> RoadMeshGp
         if !road_class_visible(r.road_class, deck_zoom) {
             continue;
         }
-        let (c, n) = compose_road_segment(r.points, r.width_m, r.road_class);
+        let polish = airfield_polish && r.road_class == "runway";
+        let (c, n) = compose_road_segment(r.points, r.width_m, r.road_class, polish);
         if c.is_empty() && n.is_empty() {
             continue;
         }
@@ -254,9 +260,9 @@ mod tests {
             points: &pts,
             width_m: 1.0,
         }];
-        let hidden = compose_roads_mesh(&roads, 3.0);
+        let hidden = compose_roads_mesh(&roads, 3.0, false);
         assert_eq!(hidden.segment_count, 0);
-        let shown = compose_roads_mesh(&roads, 4.0);
+        let shown = compose_roads_mesh(&roads, 4.0, false);
         assert_eq!(shown.segment_count, 1);
         assert!(!shown.centerline.is_empty());
     }

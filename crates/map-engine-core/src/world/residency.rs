@@ -22,6 +22,7 @@ use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
+use super::airfield::{compute_airfield_bbox, is_airfield_structure_class, point_in_bbox};
 use super::cartographic_strip::{
     compose_fence_strip, compose_pier_strip, pack_cartographic_strips,
 };
@@ -160,6 +161,10 @@ pub struct WorldResidency {
     toggle_buildings: bool,
     /// T-152.4 cartographic fence/railing strips (default on).
     toggle_fences: bool,
+    /// T-152.5 airfield apron + runway polish + hangar/tower icons (default on).
+    toggle_airfield: bool,
+    /// NW Everon airfield bbox from runway union + margin; set after roads load.
+    airfield_bbox: Option<Bbox>,
 
     /// Packed 20 B icon instances (WORLD coords) — replace-not-accumulate.
     tree_glyph_buf: Vec<u8>,
@@ -229,6 +234,8 @@ impl Default for WorldResidency {
             toggle_props: false,
             toggle_buildings: true,
             toggle_fences: true,
+            toggle_airfield: true,
+            airfield_bbox: None,
             tree_glyph_buf: Vec::new(),
             prop_glyph_buf: Vec::new(),
             badge_glyph_buf: Vec::new(),
@@ -285,6 +292,32 @@ impl WorldResidency {
         }
         self.toggle_fences = fences;
         self.rebuild_strip_buffers();
+    }
+
+    /// T-152.5 — airfield apron / runway polish / hangar-tower icon toggle.
+    pub fn set_airfield_toggle(&mut self, on: bool) {
+        if self.toggle_airfield == on {
+            return;
+        }
+        self.toggle_airfield = on;
+        self.rebuild_glyph_buffers();
+    }
+
+    /// Set airfield bbox from runway segments (call after roads load).
+    pub fn set_airfield_bbox_from_runways(&mut self, runways: &[super::roads::RoadSegment]) {
+        self.airfield_bbox = compute_airfield_bbox(runways);
+        self.rebuild_glyph_buffers();
+    }
+
+    /// Whether airfield-specific icons draw (user toggle ∧ bbox known).
+    #[must_use]
+    pub fn airfield_visible(&self) -> bool {
+        self.toggle_airfield && self.airfield_bbox.is_some()
+    }
+
+    #[must_use]
+    pub fn airfield_bbox(&self) -> Option<Bbox> {
+        self.airfield_bbox
     }
 
     /// Whether fence/pier strip lanes should draw: user toggle ∧ prop LOD gate.
@@ -933,7 +966,21 @@ impl WorldResidency {
                     let Some(binfo) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
                         continue;
                     };
-                    let Some(key) = landmark_glyph_icon_key(&binfo.building_class) else {
+                    let cls = binfo.building_class.as_str();
+                    if is_airfield_structure_class(cls) {
+                        if !self.airfield_visible() {
+                            continue;
+                        }
+                        let px = f64::from(chunk.positions[2 * r]);
+                        let py = f64::from(chunk.positions[2 * r + 1]);
+                        let Some(bbox) = self.airfield_bbox else {
+                            continue;
+                        };
+                        if !point_in_bbox(px, py, bbox) {
+                            continue;
+                        }
+                    }
+                    let Some(key) = landmark_glyph_icon_key(cls) else {
                         continue;
                     };
                     let Some(&glyph_idx) = self.icon_key_to_idx.get(key) else {

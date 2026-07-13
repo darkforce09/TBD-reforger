@@ -151,6 +151,11 @@ export function MissionSettingsDialog({
                 checked={classToggles.fences}
                 onChange={(on) => setClassToggle('fences', on)}
               />
+              <ToggleField
+                label="Airfield"
+                checked={classToggles.airfield}
+                onChange={(on) => setClassToggle('airfield', on)}
+              />
             </div>
           </Field>
         </div>

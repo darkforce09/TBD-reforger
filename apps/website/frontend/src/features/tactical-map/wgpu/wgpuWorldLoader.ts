@@ -14,9 +14,10 @@
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.
 
-import { WorldResidency, WorldStore, class_visible } from '@/wasm/pkg/map_engine_wasm'
+import { WorldResidency, WorldStore, class_visible, DemGrid, dem_apron_grid_factor } from '@/wasm/pkg/map_engine_wasm'
 import { loadWorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { getClassToggles } from '../state/worldLayerPrefs'
+import { getDemRasterForOverlay } from '../dem/DemController'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -24,6 +25,8 @@ import type { RenderEngine } from './wasmRender'
 const ROLE_LANDCOVER = 1
 const ROLE_ROADS_CASING = 3
 const ROLE_ROADS = 4
+/** T-152.5 airfield apron polygon (`LaneRole::WorldAirfieldApron`). */
+const ROLE_AIRFIELD_APRON = 8
 
 /** Concurrent chunk fetches (mirror `worldObjectsCore` `DEFAULT_FETCH_CONCURRENCY`). */
 const FETCH_CONCURRENCY = 12
@@ -80,7 +83,8 @@ export class WgpuWorldController {
   private landcoverReady = false
   /** Last landcover visibility decision; skip recompose when unchanged. */
   private lastLandcoverVis: boolean | null = null
-  private lastRoadZoomBand = Number.NaN
+  private lastRoadZoomBand = ''
+  private lastAirfieldApronKey = ''
   private atlasReady = false
 
   private fetchAc: AbortController | null = null
@@ -126,7 +130,14 @@ export class WgpuWorldController {
     const t = getClassToggles()
     this.residency.set_glyph_toggles(t.trees, t.props, t.buildings)
     this.residency.set_fences_toggle(t.fences)
-    if (this.ready) this.pushToEngine()
+    this.residency.set_airfield_toggle(t.airfield)
+    this.lastRoadZoomBand = ''
+    this.lastAirfieldApronKey = ''
+    if (this.ready) {
+      this.pushRoads()
+      this.pushAirfieldApron()
+      this.pushToEngine()
+    }
   }
 
   /** Decode world-glyphs.webp + JSON → GPU atlas + UV table + key map (T-151.5 L1–L3). */
@@ -210,6 +221,10 @@ export class WgpuWorldController {
         try {
           this.store.load_roads_gz(bytes)
           this.roadsLoaded = true
+          if (this.residency) {
+            this.residency.set_airfield_bbox_from_store(this.store)
+          }
+          this.pushAirfieldApron()
         } catch (err) {
           console.warn('[wgpu-world] roads load failed', err)
         }
@@ -265,12 +280,14 @@ export class WgpuWorldController {
   private pushRoads(): void {
     if (!this.store || !this.roadsLoaded) return
     const zoom = this.engine.zoom
+    const airfieldPolish = getClassToggles().airfield
     // Band: integer zoom steps of 0.5 so continuous pan doesn't recompose.
     const band = Math.round(zoom * 2)
-    if (band === this.lastRoadZoomBand) return
-    this.lastRoadZoomBand = band
+    const bandKey = `${band}:${airfieldPolish ? 1 : 0}`
+    if (bandKey === this.lastRoadZoomBand) return
+    this.lastRoadZoomBand = bandKey
     try {
-      const roads = this.store.compose_roads(zoom)
+      const roads = this.store.compose_roads(zoom, airfieldPolish)
       this.engine.upload_strip_tris(
         ROLE_ROADS_CASING,
         roads.casing,
@@ -286,6 +303,54 @@ export class WgpuWorldController {
       roads.free()
     } catch (err) {
       console.warn('[wgpu-world] roads compose failed', err)
+    }
+  }
+
+  /** T-152.5 DEM-flat apron polygon at NW Everon airfield. */
+  private pushAirfieldApron(): void {
+    if (!this.store || !this.roadsLoaded) return
+    const enabled = getClassToggles().airfield
+    const bbox = this.store.airfield_bbox()
+    const key = `${enabled ? 1 : 0}:${bbox.join(',')}`
+    if (key === this.lastAirfieldApronKey) return
+    this.lastAirfieldApronKey = key
+    if (!enabled || bbox.length !== 4) {
+      this.engine.clear_vector_lane(ROLE_AIRFIELD_APRON)
+      return
+    }
+    const raster = getDemRasterForOverlay()
+    if (!raster?.metersCache) {
+      this.engine.clear_vector_lane(ROLE_AIRFIELD_APRON)
+      return
+    }
+    let grid: DemGrid | null = null
+    try {
+      const worldW = raster.width > 0 ? raster.width * 2 : 12_800
+      const worldH = raster.height > 0 ? raster.height * 2 : 12_800
+      grid = DemGrid.downsample(
+        raster.metersCache as Float32Array,
+        raster.width,
+        raster.height,
+        dem_apron_grid_factor(),
+        worldW,
+        worldH,
+      )
+      const mesh = grid.compose_airfield_apron(bbox)
+      this.engine.upload_polygon_mesh(
+        ROLE_AIRFIELD_APRON,
+        mesh.positions,
+        mesh.colors,
+        mesh.indices,
+        mesh.polygon_count,
+        true,
+      )
+      mesh.free()
+    } catch (err) {
+      console.warn('[wgpu-world] airfield apron compose failed', err)
+      this.engine.clear_vector_lane(ROLE_AIRFIELD_APRON)
+      this.lastAirfieldApronKey = ''
+    } finally {
+      grid?.free()
     }
   }
 
@@ -328,8 +393,9 @@ export class WgpuWorldController {
 
   private runViewport(): void {
     if (this.disposed || !this.ready || !this.residency) return
-    // W4 roads recompose on LOD band change (debounced with camera).
+    // W4 roads + airfield apron recompose on LOD/toggle change (debounced with camera).
     this.pushRoads()
+    this.pushAirfieldApron()
     // T-151.5.1: landcover visibility tracks forestFill gate on zoom (not one-shot forever).
     this.pushLandcover()
     const b = this.engine.visible_bounds()

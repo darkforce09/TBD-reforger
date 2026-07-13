@@ -24,6 +24,8 @@ pub struct DemVectorGrid {
 
 /// Downsample factor for the base vector grid: 6400² @ 2 m/px → 1600² @ 8 m cells (`demGrid.ts:29`).
 pub const DEM_VECTOR_GRID_FACTOR: usize = 4;
+/// Coarser grid for NW airfield apron flatness (σ gate on engine-flattened pad; T-152.5 G2).
+pub const APRON_DEM_DOWNSAMPLE_FACTOR: usize = 16;
 
 /// Output dims for a source raster + factor. Mirror of `demGridDims` (`demGrid.ts:32`).
 #[must_use]

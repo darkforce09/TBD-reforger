@@ -8,7 +8,9 @@ use std::io::Read;
 
 use serde_json::Value;
 
+use super::airfield::compute_airfield_bbox;
 use super::chunk::{WorldChunk, parse_chunk};
+use super::chunk_math::Bbox;
 use super::manifest::{ObjectsManifest, parse_objects_manifest};
 use super::prefab::{PrefabEntry, build_prefab_maps, narrow_prefab_rows};
 use super::regions::{LandCoverRegion, parse_regions_payload};
@@ -127,6 +129,22 @@ impl WorldStore {
             .as_ref()
             .and_then(|m| m.instance_count)
             .unwrap_or(0.0)
+    }
+
+    /// Runway segments only (T-152.5 census / bbox).
+    #[must_use]
+    pub fn runway_segments(&self) -> Vec<&RoadSegment> {
+        self.roads
+            .iter()
+            .filter(|r| r.road_class == "runway")
+            .collect()
+    }
+
+    /// NW airfield bbox from runway union + 30 m margin.
+    #[must_use]
+    pub fn airfield_bbox(&self) -> Option<Bbox> {
+        let runways: Vec<&RoadSegment> = self.runway_segments();
+        compute_airfield_bbox(&runways.into_iter().cloned().collect::<Vec<RoadSegment>>())
     }
 }
 

@@ -315,8 +315,12 @@ pub fn expand_dashed_polyline_strip(
 
 /// Road casing color (near-black) — `roadLayer.ts` casing underlay.
 pub const ROAD_CASING_RGBA: [u8; 4] = [30, 30, 34, 255];
+/// T-152.5 runway cartographic casing `#6a706e`.
+pub const RUNWAY_CASING_RGBA: [u8; 4] = [0x6a, 0x70, 0x6e, 255];
 /// Casing width factor over measured centerline width — `roadLayer.ts` × 1.4.
 pub const ROAD_CASING_FACTOR: f64 = 1.4;
+/// T-152.5 polished runway width (m).
+pub const RUNWAY_POLISH_WIDTH_M: f64 = 20.0;
 
 /// Style table entry (mirror `ROAD_STYLES`).
 #[derive(Clone, Copy, Debug)]
@@ -357,7 +361,7 @@ pub fn road_style(road_class: &str) -> Option<RoadStyle> {
         },
         "runway" => RoadStyle {
             color: [0xff, 0xff, 0xff],
-            fallback_width_m: 6.0,
+            fallback_width_m: RUNWAY_POLISH_WIDTH_M,
             dashed: false,
         },
         _ => return None,
@@ -377,13 +381,18 @@ pub fn road_class_visible(road_class: &str, deck_zoom: f64) -> bool {
 }
 
 /// Compose casing + centerline strip vertices for one road segment.
+/// When `runway_polish` is true and class is `runway`, uses cartographic 20 m styling (T-152.5).
 /// Returns `(casing_verts, centerline_verts)`.
 #[must_use]
 pub fn compose_road_segment(
     points: &[[f64; 2]],
     width_m: f64,
     road_class: &str,
+    runway_polish: bool,
 ) -> (Vec<StripVertex>, Vec<StripVertex>) {
+    if runway_polish && road_class == "runway" {
+        return compose_runway_polish_segment(points, width_m);
+    }
     let Some(style) = road_style(road_class) else {
         return (Vec::new(), Vec::new());
     };
@@ -400,6 +409,20 @@ pub fn compose_road_segment(
     } else {
         expand_polyline_strip(points, w, center_color)
     };
+    (casing, center)
+}
+
+/// T-152.5 cartographic runway: 20 m, fill `#b8bdb8`, casing `#6a706e`, round caps.
+#[must_use]
+pub fn compose_runway_polish_segment(
+    points: &[[f64; 2]],
+    _width_m: f64,
+) -> (Vec<StripVertex>, Vec<StripVertex>) {
+    let w = RUNWAY_POLISH_WIDTH_M;
+    let center_color = norm_rgba([0xb8, 0xbd, 0xb8, 255]);
+    let casing_color = norm_rgba(RUNWAY_CASING_RGBA);
+    let casing = expand_polyline_strip(points, w * ROAD_CASING_FACTOR, casing_color);
+    let center = expand_polyline_strip(points, w, center_color);
     (casing, center)
 }
 
@@ -455,7 +478,7 @@ mod tests {
     #[test]
     fn casing_is_wider_by_factor() {
         let pts = [[0.0, 0.0], [50.0, 0.0]];
-        let (casing, center) = compose_road_segment(&pts, 2.0, "road_paved");
+        let (casing, center) = compose_road_segment(&pts, 2.0, "road_paved", false);
         assert!(!casing.is_empty() && !center.is_empty());
         let c_w = (f64::from(casing[0].pos[1]) - f64::from(casing[1].pos[1])).abs();
         let n_w = (f64::from(center[0].pos[1]) - f64::from(center[1].pos[1])).abs();
@@ -479,6 +502,24 @@ mod tests {
         assert!(!road_class_visible("road_dirt", -2.1));
         assert!(!road_class_visible("path", 3.9));
         assert!(road_class_visible("path", 4.0));
+    }
+
+    /// T-152.5 G5: runway polish width = 20 m world at deckZoom=0.
+    #[test]
+    fn runway_polish_width_at_zoom_zero() {
+        let pts = [[0.0, 0.0], [200.0, 0.0]];
+        let (_, center) = compose_runway_polish_segment(&pts, 4.0);
+        assert!(!center.is_empty());
+        let left = center[0].pos;
+        let right = center[1].pos;
+        let world_width = (f64::from(left[0]) - f64::from(right[0]))
+            .hypot(f64::from(left[1]) - f64::from(right[1]));
+        assert!(
+            (world_width - RUNWAY_POLISH_WIDTH_M).abs() < 0.05,
+            "runway width {world_width} != {RUNWAY_POLISH_WIDTH_M}"
+        );
+        let screen_px = world_width * 2.0_f64.powf(0.0);
+        assert!((screen_px - 20.0).abs() < 0.05);
     }
 
     /// T-151.4.1: 90° corner produces geometry that covers the outer miter region (no tear).
