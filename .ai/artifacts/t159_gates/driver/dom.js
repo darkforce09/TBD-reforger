@@ -15,7 +15,7 @@
 //   - skipped: script/style/noscript/link/meta/template + the harness's own freeze <style>
 
 export const DOM_SERIALIZER_SRC = /* js */ `
-window.__t159SerializeDom = function () {
+window.__t159SerializeDom = function (selector) {
   const STYLE_PROPS = [
     'display', 'position', 'visibility', 'opacity',
     'color', 'background-color',
@@ -30,6 +30,10 @@ window.__t159SerializeDom = function () {
     'list', 'form', 'popovertarget',
   ]);
   const SKIP = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'LINK', 'META', 'TEMPLATE']);
+  // Provably non-visual framework artifacts stripped from BOTH sides — no CSS targets them, no
+  // layout/paint effect. data-discover is React Router v7's prefetch hint; carrying it into the
+  // Leptos DOM would be dead cruft. Equality is defined modulo these.
+  const SKIP_ATTRS = new Set(['data-discover']);
 
   // Positional id map (document order) → '#0', '#1', …
   const ids = [];
@@ -44,6 +48,7 @@ window.__t159SerializeDom = function () {
     for (const p of STYLE_PROPS) style[p] = cs.getPropertyValue(p);
     const attrs = {};
     for (const a of [...el.attributes].sort((x, y) => x.name.localeCompare(y.name))) {
+      if (SKIP_ATTRS.has(a.name)) continue;
       attrs[a.name] = a.name === 'id' ? idx(a.value) : ID_REF_ATTRS.has(a.name) ? rewriteRefs(a.value) : a.value;
     }
     const children = [];
@@ -58,6 +63,7 @@ window.__t159SerializeDom = function () {
     }
     return { tag: el.tagName.toLowerCase(), attrs, style, children };
   }
-  return JSON.stringify(walk(document.body));
+  var root = selector ? document.querySelector(selector) : document.body;
+  return JSON.stringify(root ? walk(root) : null);
 };
 `
