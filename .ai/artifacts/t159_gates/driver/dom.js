@@ -15,7 +15,7 @@
 //   - skipped: script/style/noscript/link/meta/template + the harness's own freeze <style>
 
 export const DOM_SERIALIZER_SRC = /* js */ `
-window.__t159SerializeDom = function (selector) {
+window.__t159SerializeDom = function (selector, exclude) {
   const STYLE_PROPS = [
     'display', 'position', 'visibility', 'opacity',
     'color', 'background-color',
@@ -52,13 +52,17 @@ window.__t159SerializeDom = function (selector) {
       attrs[a.name] = a.name === 'id' ? idx(a.value) : ID_REF_ATTRS.has(a.name) ? rewriteRefs(a.value) : a.value;
     }
     const children = [];
-    for (const node of el.childNodes) {
-      if (node.nodeType === 3) {
-        const t = node.textContent.replace(/\\s+/g, ' ').trim();
-        if (t) children.push(t);
-      } else if (node.nodeType === 1) {
-        const c = walk(node);
-        if (c) children.push(c);
+    // An excluded element is serialized as a leaf (tag/attrs/style kept, subtree opaque) — used to
+    // compare the chrome skeleton while a not-yet-ported page region inside <main> is ignored.
+    if (!(exclude && el.matches(exclude))) {
+      for (const node of el.childNodes) {
+        if (node.nodeType === 3) {
+          const t = node.textContent.replace(/\\s+/g, ' ').trim();
+          if (t) children.push(t);
+        } else if (node.nodeType === 1) {
+          const c = walk(node);
+          if (c) children.push(c);
+        }
       }
     }
     return { tag: el.tagName.toLowerCase(), attrs, style, children };

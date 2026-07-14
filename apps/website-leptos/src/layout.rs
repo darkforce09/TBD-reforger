@@ -1,20 +1,80 @@
-//! Platform shell — ported from components/layout/{AppLayout,Sidebar}.tsx. The DOM structure and
-//! class strings are matched 1:1 to the React output (V-shell gate). TopNav + mobile toggle land
-//! next; auth (role) and the active route are stubbed to guest / "/" until T-159.3 / T-159.4.
+//! Platform shell — ported from components/layout/{AppLayout,Sidebar,TopNav}.tsx. DOM structure +
+//! class strings matched 1:1 to the React output (V-shell gate, byte-equal). Auth (role, user
+//! menu, breadcrumb source) and routing are stubbed to the guest "/" render until T-159.3 / .4.
 use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
 use crate::ui::{cn, MaterialIcon};
 use leptos::prelude::*;
 
 #[component]
 pub fn AppLayout() -> impl IntoView {
+    // The "/" route: guest, non-chromeless, fullBleed → <main> is overflow-hidden.
     view! {
         <div class="flex h-screen overflow-hidden bg-background">
+            <SidebarMobileToggle />
             <Sidebar />
             <div class="flex min-w-0 flex-1 flex-col">
-                // TopNav + padded/full-bleed <main> land in the next shell slice.
-                <main class="min-h-0 flex-1 overflow-hidden bg-background"></main>
+                <TopNav />
+                <main class="min-h-0 flex-1 bg-background overflow-hidden"></main>
             </div>
         </div>
+    }
+}
+
+#[component]
+fn TopNav() -> impl IntoView {
+    // Stubs until T-159.3 (auth) / T-159.4 (router): the guest state + the "/" breadcrumb.
+    let breadcrumb: Option<(&str, &str)> = Some(("Command Center", "Dashboard"));
+    let is_authenticated = false;
+    view! {
+        <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">
+            <div class="flex h-full min-w-0 items-center gap-2 pl-12 lg:pl-0">
+                {match breadcrumb {
+                    Some((parent, current)) => view! {
+                        <>
+                            <span class="text-label-md text-on-surface-variant">{parent}</span>
+                            <span class="text-outline">"/"</span>
+                            <span class="text-label-md font-semibold text-on-surface">{current}</span>
+                        </>
+                    }
+                        .into_any(),
+                    None => view! {
+                        <span class="text-label-md font-semibold text-on-surface">"TBD Reforger"</span>
+                    }
+                        .into_any(),
+                }}
+            </div>
+            <div class="relative flex h-full items-center gap-4">
+                {if !is_authenticated {
+                    view! {
+                        <a
+                            href="/login"
+                            class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
+                        >
+                            "Sign in with Discord"
+                        </a>
+                    }
+                        .into_any()
+                } else {
+                    // Authed: StatusPill + avatar menu — ported with the auth store (T-159.3).
+                    ().into_any()
+                }}
+            </div>
+        </header>
+    }
+}
+
+#[component]
+fn SidebarMobileToggle() -> impl IntoView {
+    // Closed by default (mobileOpen = false): just the toggle button (hidden ≥lg via lg:hidden).
+    // The slide-over overlay is interactive state for a later slice.
+    view! {
+        <button
+            type="button"
+            class="fixed top-3 left-3 z-50 rounded-md bg-surface-container p-2 lg:hidden"
+            aria-label="Open menu"
+        >
+            <MaterialIcon name="menu" />
+        </button>
     }
 }
 
@@ -73,11 +133,10 @@ fn SidebarNav() -> impl IntoView {
                                     .into_iter()
                                     .map(|item| {
                                         let active = item.path == current;
-                                        // React's cn (tailwind-merge) DROPS `text-label-md` here:
-                                        // it collides with the trailing text-{color} and twMerge
-                                        // keeps the last, so the rendered link inherits 16px. We
-                                        // omit it to match that exact output byte-for-byte (a
-                                        // general Rust tw_merge is a separate migration-wide task).
+                                        // React's cn (tailwind-merge) DROPS `text-label-md` here: it
+                                        // collides with the trailing text-{color} and twMerge keeps
+                                        // the last, so the rendered link inherits 16px. We omit it to
+                                        // match byte-for-byte (a general Rust tw_merge is a follow-up).
                                         let a_class = cn(&[
                                             "flex items-center gap-3 rounded-md px-3 py-2.5 font-medium transition-colors",
                                             if active {

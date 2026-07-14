@@ -25,6 +25,7 @@ const oracleDir = arg('--oracle-dir')
 const leptosDir = arg('--leptos-dir')
 const path = arg('--path', '/')
 const selector = arg('--selector', '')
+const exclude = arg('--exclude', '')
 const label = arg('--label', selector || 'body')
 if (!oracleDir || !leptosDir) {
   console.error('usage: node gate_v.mjs --oracle-dir <dist> --leptos-dir <dist> [--path /] [--selector aside]')
@@ -43,7 +44,9 @@ async function capture(browser, dir, port, debugPort) {
   if (!ok) throw new Error(`selector ${sel} never appeared at ${dir}${path}`)
   await page.evaluate(SETTLE, true)
   await sleep(150)
-  const dom = await page.evaluate(`__t159SerializeDom(${selector ? JSON.stringify(selector) : ''})`)
+  const dom = await page.evaluate(
+    `__t159SerializeDom(${JSON.stringify(selector || null)}, ${JSON.stringify(exclude || null)})`,
+  )
   await page.close()
   srv.close()
   return dom
