@@ -18,6 +18,8 @@ pub mod doc;
 /// T-154 - arsenal doll scene/camera/pick policy (pure; GPU lives in map-engine-render).
 pub mod doll;
 pub mod geometry;
+/// T-152.1 — map labels + importance-distance declutter.
+pub mod label;
 #[cfg(feature = "mission")]
 pub mod mission;
 /// T-151.6 W6 — slot/cluster GPU pack + cluster gates (always available).

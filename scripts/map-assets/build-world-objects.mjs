@@ -70,6 +70,10 @@ const PHASE_KINDS = {
   // T-090.3.3: water (piers/docks — walkable hard structures) imports alongside P2; props/utility
   // stay out until their own phases.
   P2_trees: ["building", "tree", "water"],
+  P3_vegetation: ["building", "tree", "water", "vegetation"],
+  P4_rocks: ["building", "tree", "water", "vegetation", "rock"],
+  // T-152.4: fence props (kind=prop, class=fence) for cartographic strip lane.
+  P5_props: ["building", "tree", "water", "vegetation", "rock", "prop"],
 };
 const PHASE_ORDER = Object.keys(PHASE_KINDS);
 
@@ -151,14 +155,17 @@ const { lineCount } = await streamRawEntities(rawPath, (row) => {
   if (c) c.count++;
   else rawCensus.set(rn, { count: 1, kind: cls.kind, class: cls.class, matched: cls.matched });
 
-  if (densityPhase && cls.kind === "rock") {
+  if (densityPhase && cls.kind === "rock" && !phaseKinds.has("rock")) {
     const rx = round2(row.x);
     const ry = round2(row.z);
     if (rx < 0 || rx > worldSizeM || ry < 0 || ry > worldSizeM) rockOutOfBounds++;
     else rockRows.push({ x: rx, y: ry });
-    return; // rock is not a phase kind before P4 — never reaches kept
+    return; // rock density channel only before P4 — instances once kind=rock is in phase
   }
   if (!phaseKinds.has(cls.kind)) return;
+  // P5: skip composition/FX props without Enfusion resource GUIDs (schema G1).
+  if (cls.class === "composition" || cls.class === "buildingpart") return;
+  if (!/^\{[0-9A-F]{16}\}/.test(rn)) return;
   // S6 label-swap compat: the T-090.3.0 spike JSONL carries the real heading in "pitchDeg"
   // (GetAngles()[1]); the T-090.3.1 plugin emits it as "headingDeg". Prefer the fixed name.
   const heading = row.headingDeg ?? row.pitchDeg ?? 0;

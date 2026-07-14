@@ -27,11 +27,15 @@ import {
   type CSSProperties,
 } from 'react'
 import { WHEEL_ZOOM_PER_PX, createEngine, deviceSize, type RenderEngine } from './wgpu/wasmRender'
+import { createTextLabelStore, type TextLabelStore } from './wgpu/wgpuTextLane'
 import { WgpuBasemapController } from './wgpu/wgpuBasemap'
 import { useWgpuBasemap } from './wgpu/useWgpuBasemap'
 import { WgpuWorldController } from './wgpu/wgpuWorldLoader'
 import { useWgpuWorldResidency } from './wgpu/useWgpuWorldResidency'
 import { useWgpuDemVectors } from './wgpu/useWgpuDemVectors'
+import { useWgpuHeightLabels } from './wgpu/useWgpuHeightLabels'
+import { useWgpuTownLabels } from './wgpu/useWgpuTownLabels'
+import { useWgpuRoadLabels } from './wgpu/useWgpuRoadLabels'
 import {
   WgpuForestMassController,
   useWgpuForestMass,
@@ -100,6 +104,7 @@ export default function WgpuTacticalMap({
   const forestControllerRef = useRef<WgpuForestMassController | null>(null)
   const slotsControllerRef = useRef<WgpuSlotsController | null>(null)
   const engineRef = useRef<RenderEngine | null>(null)
+  const textLabelStoreRef = useRef<TextLabelStore | null>(null)
   const [canvasKey, setCanvasKey] = useState(0)
   const [forceWebgl, setForceWebgl] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -143,15 +148,32 @@ export default function WgpuTacticalMap({
   useWgpuWorldResidency(worldControllerRef, ready, { terrainId })
   // W4 DEM vectors (sea + contours).
   useWgpuDemVectors(engineRef, ready, { terrain: terrainDef })
+  useWgpuHeightLabels(engineRef, ready, { terrain: terrainDef })
+  useWgpuTownLabels(engineRef, ready, { terrain: terrainDef })
+  useWgpuRoadLabels(engineRef, ready, { terrain: terrainDef })
   // W4 forest mass (TBDD viewport stream).
   useWgpuForestMass(forestControllerRef, ready)
   // W6 mission slots / selection / drag / clusters.
   useWgpuSlots(slotsControllerRef, ready, missionDoc)
-  // W5 glyph prefs (trees/props/buildings→badges).
+  // W5 glyph prefs (trees/props/buildings→badges) + T-152.20 world-layer toggles (roads/forest/
+  // airfield). syncGlyphToggles re-pushes roads + landcover; the forest-mass lane resyncs alongside
+  // (the landcover hulls + forest mass are the two halves of the Forest-mass toggle). airfield was
+  // missing from the deps (T-152.15 set_airfield_toggle wouldn't take effect until a camera move).
+  // Sea + Contours are owned by useWgpuDemVectors (its own prefs subscription), so not listed here.
   useEffect(() => {
     if (!ready) return
     worldControllerRef.current?.syncGlyphToggles()
-  }, [ready, classToggles.trees, classToggles.props, classToggles.buildings])
+    forestControllerRef.current?.resync()
+  }, [
+    ready,
+    classToggles.trees,
+    classToggles.props,
+    classToggles.buildings,
+    classToggles.fences,
+    classToggles.airfield,
+    classToggles.roads,
+    classToggles.forest,
+  ])
 
   // Keep cluster index + icon cache terrain aligned (same as Deck TacticalMap).
   useEffect(() => {
@@ -463,6 +485,9 @@ export default function WgpuTacticalMap({
         worldControllerRef.current = new WgpuWorldController(created, terrainDef)
         forestControllerRef.current = new WgpuForestMassController(created, terrainDef)
         slotsControllerRef.current = new WgpuSlotsController(created)
+        // T-152.1: cartographic text store (declutter in Rust; empty until .7+ feed labels).
+        textLabelStoreRef.current?.free()
+        textLabelStoreRef.current = createTextLabelStore()
         setReady(true) // fires the basemap + world + slots hook effects
         notifyCameraMoved()
         const loop = (now: number) => {
@@ -511,6 +536,8 @@ export default function WgpuTacticalMap({
       forestControllerRef.current = null
       slotsControllerRef.current?.dispose()
       slotsControllerRef.current = null
+      textLabelStoreRef.current?.free()
+      textLabelStoreRef.current = null
       engineRef.current = null
       setReady(false)
       engine?.free() // I4 — exactly once

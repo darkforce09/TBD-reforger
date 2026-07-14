@@ -129,12 +129,14 @@ fn fs_building(in: BuildingVsOut) -> @location(0) vec4<f32> {
 
 // ── Icon instanced (W5 glyph atlas) ─────────────────────────────────────────────────────────────
 // Stream 0 = unit quad; stream 1 = IconInstance {pos, size, yaw_snorm16, glyph_u16, tint_u32}.
-// group(2): atlas texture + sampler + UV table (28 × vec4 = minUV.xy + maxUV.zw) — separate
+// group(2): atlas texture + sampler + UV table (N × vec4 = minUV.xy + maxUV.zw) — separate
 // from basemap group(1) so the WGSL binding space stays unique.
 // Size is already meters (min-px clamped on CPU). Yaw is screen-CCW degrees via snorm.
-// W6: UV[28] + drag_delta + px_to_m (world glyphs: px_to_m=1, drag=0; slots: px size).
+// W6: UV[N] + drag_delta + px_to_m (world glyphs: px_to_m=1, drag=0; slots: px size).
+// N MUST equal Rust `scene::ATLAS_GLYPH_COUNT` (32); the map-engine-render shader-const test asserts
+// this literal + the `min(in.glyph, 31u)` clamp below stay in sync with the constant.
 struct IconUniforms {
-    uv: array<vec4<f32>, 28>,
+    uv: array<vec4<f32>, 32>,
     drag_delta: vec2<f32>,
     px_to_m: f32,
     _pad: f32,
@@ -171,7 +173,7 @@ fn vs_icon(in: IconVsIn) -> IconVsOut {
     let local = (in.unit - vec2<f32>(0.5, 0.5)) * size_m;
     // CCW rotation + optional drag_delta (SlotDrag lane only)
     let world = in.pos + icon_u.drag_delta + vec2<f32>(local.x * c - local.y * s, local.x * s + local.y * c);
-    let gi = min(in.glyph, 27u);
+    let gi = min(in.glyph, 31u); // clamp to ATLAS_GLYPH_COUNT-1 (see IconUniforms note)
     let rect = icon_u.uv[gi];
     var out: IconVsOut;
     out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
@@ -188,6 +190,56 @@ fn vs_icon(in: IconVsIn) -> IconVsOut {
 fn fs_icon(in: IconVsOut) -> @location(0) vec4<f32> {
     let s = textureSample(icon_tex, icon_samp, in.uv);
     // Mask path: atlas alpha × tint (tintable glyphs are white-on-alpha).
+    return vec4<f32>(s.rgb * in.tint.rgb, s.a * in.tint.a);
+}
+
+// ── T-152.7 ASCII text atlas (UV from glyph index; grid dims via uniform — T-152.13) ────────────
+// Four f32s = 16 B (matches TEXT_UNIFORM_BYTES). Do NOT use vec3 pad — align-16 makes the struct 32 B.
+// grid_cols/grid_rows are written at atlas upload from text_layout::TEXT_ATLAS_{COLS,ROWS} so the
+// bake and this shader can never disagree on the cell grid.
+struct TextUniforms {
+    px_to_m: f32,
+    grid_cols: f32,
+    grid_rows: f32,
+    _pad0: f32,
+};
+
+@group(2) @binding(0) var text_tex: texture_2d<f32>;
+@group(2) @binding(1) var text_samp: sampler;
+@group(2) @binding(2) var<uniform> text_u: TextUniforms;
+
+@vertex
+fn vs_text(in: IconVsIn) -> IconVsOut {
+    let deg = f32(in.yaw) / 32767.0 * 180.0;
+    let rad = deg * 3.14159265358979323846 / 180.0;
+    let c = cos(rad);
+    let s = sin(rad);
+    let size_m = in.size * text_u.px_to_m;
+    let local = (in.unit - vec2<f32>(0.5, 0.5)) * size_m;
+    let world = in.pos + vec2<f32>(local.x * c - local.y * s, local.x * s + local.y * c);
+    let cols = u32(text_u.grid_cols);
+    let col = in.glyph % cols;
+    let row = in.glyph / cols;
+    let u0 = f32(col) / text_u.grid_cols;
+    let v0 = f32(row) / text_u.grid_rows;
+    let u1 = f32(col + 1u) / text_u.grid_cols;
+    let v1 = f32(row + 1u) / text_u.grid_rows;
+    var out: IconVsOut;
+    out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
+    // T-152.12: atlas is authored y-down — world-top (unit.y=1) must sample the cell top (v0),
+    // same convention as `vs_textured`. Oracle: `text_layout::glyph_cell_uv`.
+    out.uv = mix(vec2<f32>(u0, v0), vec2<f32>(u1, v1), vec2<f32>(in.unit.x, 1.0 - in.unit.y));
+    let tr = f32(in.tint & 0xffu) / 255.0;
+    let tg = f32((in.tint >> 8u) & 0xffu) / 255.0;
+    let tb = f32((in.tint >> 16u) & 0xffu) / 255.0;
+    let ta = f32((in.tint >> 24u) & 0xffu) / 255.0;
+    out.tint = vec4<f32>(tr, tg, tb, ta);
+    return out;
+}
+
+@fragment
+fn fs_text(in: IconVsOut) -> @location(0) vec4<f32> {
+    let s = textureSample(text_tex, text_samp, in.uv);
     return vec4<f32>(s.rgb * in.tint.rgb, s.a * in.tint.a);
 }
 

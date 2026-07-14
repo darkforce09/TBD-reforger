@@ -12,6 +12,7 @@ import {
   forest_fill_alpha,
   chunk_ids_for_viewport,
 } from '@/wasm/pkg/map_engine_wasm'
+import { getClassToggles } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -73,6 +74,13 @@ export class WgpuForestMassController {
     if (this.disposed || !this.ready) return
     if (this.moveTimer) clearTimeout(this.moveTimer)
     this.moveTimer = setTimeout(() => this.runViewport(), MOVE_DEBOUNCE_MS)
+  }
+
+  /** T-152.20 — re-evaluate visibility (e.g. the Forest mass toggle flipped) with no camera move.
+   *  Cheap: recomposes the already-cached chunks, no fetch. */
+  resync(): void {
+    if (this.disposed || !this.ready) return
+    this.pushComposite(this.engine.zoom)
   }
 
   dispose(): void {
@@ -201,8 +209,10 @@ export class WgpuForestMassController {
   private pushComposite(zoom: number): void {
     if (this.disposed) return
     // Rust lod_gates + fade ladder via wasm (T-151.5.1 L2/L3; T-151.11.3 B-02).
-    const fillVis = class_visible('forestFill', zoom)
-    const outVis = class_visible('forestOutline', zoom)
+    // T-152.20 — AND the user Forest-mass toggle; off clears both fill + outline lanes.
+    const forestOn = getClassToggles().forest
+    const fillVis = class_visible('forestFill', zoom) && forestOn
+    const outVis = class_visible('forestOutline', zoom) && forestOn
     const alpha = forest_fill_alpha(zoom)
     const chunks = this.loadedChunks()
     if (chunks.length === 0) {

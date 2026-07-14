@@ -126,6 +126,7 @@ export default function WgpuCanvas() {
             tree: () => created.tree_glyph_self_check() as Promise<string>, // T-151.11.4 C-5-02
             computeCull: () => created.compute_cull_self_check() as Promise<string>, // T-151.11.4 X-03
             doll: () => dollPromise.then((d) => d.doll_self_check() as Promise<string>), // T-154
+            text: () => created.text_self_check() as Promise<string>, // T-152.12 upright text lane
           }
         }
         setBackend(created.backend())

@@ -7,6 +7,8 @@ import {
   useMapStore,
   useMapStyle,
   setMapStyle,
+  useClassToggles,
+  setClassToggle,
   type MapStyle,
   type MissionDoc,
   type MissionMeta,
@@ -20,6 +22,7 @@ import {
   TextField,
   ToggleField,
 } from './RightInspector/fields'
+import { WORLD_LAYER_TOGGLE_LABELS } from './worldLayerFields'
 
 type Weather = MissionMeta['environment']['weather']
 
@@ -76,6 +79,7 @@ export function MissionSettingsDialog({
   // Map style is a per-user pref (localStorage), not mission meta — it travels with the
   // user, not the mission (N8). Hybrid = dimmed satellite under (future) full vectors.
   const mapStyle = useMapStyle()
+  const classToggles = useClassToggles()
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,6 +144,71 @@ export function MissionSettingsDialog({
               updateEnvironment(md, { hillshadeOpacity: Math.round(pct * 10) / 1000 })
             }
           />
+
+          <Field label="World layers">
+            <div className="flex flex-col gap-2">
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.roads}
+                checked={classToggles.roads}
+                onChange={(on) => setClassToggle('roads', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.buildings}
+                checked={classToggles.buildings}
+                onChange={(on) => setClassToggle('buildings', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.forest}
+                checked={classToggles.forest}
+                onChange={(on) => setClassToggle('forest', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.trees}
+                checked={classToggles.trees}
+                onChange={(on) => setClassToggle('trees', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.props}
+                checked={classToggles.props}
+                onChange={(on) => setClassToggle('props', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.contours}
+                checked={classToggles.contours}
+                onChange={(on) => setClassToggle('contours', on)}
+              />
+              <ToggleField
+                label={WORLD_LAYER_TOGGLE_LABELS.sea}
+                checked={classToggles.sea}
+                onChange={(on) => setClassToggle('sea', on)}
+              />
+              <ToggleField
+                label="Fences"
+                checked={classToggles.fences}
+                onChange={(on) => setClassToggle('fences', on)}
+              />
+              <ToggleField
+                label="Airfield"
+                checked={classToggles.airfield}
+                onChange={(on) => setClassToggle('airfield', on)}
+              />
+              <ToggleField
+                label="Height labels"
+                checked={classToggles.heights}
+                onChange={(on) => setClassToggle('heights', on)}
+              />
+              <ToggleField
+                label="Town labels"
+                checked={classToggles.townLabels}
+                onChange={(on) => setClassToggle('townLabels', on)}
+              />
+              <ToggleField
+                label="Road names"
+                checked={classToggles.roadNames}
+                onChange={(on) => setClassToggle('roadNames', on)}
+              />
+            </div>
+          </Field>
         </div>
       </DialogContent>
     </Dialog>

@@ -1,0 +1,42 @@
+{
+  "slice": "T-152.9",
+  "path": "B",
+  "summary": "Road display names absent from export pipeline; .topo attrs are sparse numeric IDs (13/761 segments) with no decodable name strings. Curated road-names.json ships for Everon major routes.",
+  "spikeDate": "2026-07-13",
+  "sources": [
+    {
+      "id": "roads-json-gz",
+      "method": "packages/map-assets/everon/objects/roads.json.gz (888 segments, T-090.3.3)",
+      "result": "roadClass + geometry only — no name field on any segment",
+      "segments": 888,
+      "namedSegments": 0
+    },
+    {
+      "id": "topo-attrs",
+      "method": "scripts/map-assets/decode-topo.mjs — Eden.topo section-1 road records (types 3/5)",
+      "result": "761 road polylines; 13 carry u32 attr blobs (e.g. 44, 200, 48) — geometry/class only, no UTF-8 name",
+      "withAttrs": 13
+    },
+    {
+      "id": "roadentity-mcp",
+      "method": "Workbench MCP RoadEntity / SCR_Road attribute search (docs/mod/MCP_TOOLING.md)",
+      "result": "No name string attribute surfaced in offline spike; Path A export extension deferred",
+      "status": "no-name-attr"
+    },
+    {
+      "id": "eden-wiki",
+      "method": "Arma Reforger Everon map literacy + operator MAJOR_EVERON_ROADS list (spec L1)",
+      "result": "Six named highways curated in packages/map-assets/everon/road-names.json",
+      "roads": [
+        "Main Highway",
+        "North-South Highway",
+        "Coastal Road",
+        "Airfield Access",
+        "Gorey Road",
+        "Morton Road"
+      ]
+    }
+  ],
+  "dataArtifact": "packages/map-assets/everon/road-names.json",
+  "acceptance": "G2 path B with evidence — curated JSON IN SCOPE per spec L2"
+}

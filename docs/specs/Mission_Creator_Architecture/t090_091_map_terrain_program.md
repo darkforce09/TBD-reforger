@@ -1,6 +1,6 @@
 # T-090 / T-091 — Map & terrain program (hub)
 
-**Status:** **T-090.5.4 shipped** @ `bd481cf1` · **Active:** **T-090.5.5** (tree/veg/prop glyphs). Single lane.  
+**Status:** **T-090.5.5 shipped** @ `2b1a0dda` · **Active:** **T-090.6** (geometry placement audit). Single lane.  
 **Plan:** [`.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md`](../../../.ai/artifacts/t090_10_map_engine_v2_implementation_plan.md) · **LOD v2:** [`t090_render_lod_contract.md`](t090_render_lod_contract.md)  
 **Tickets:** T-090 · T-091 · **Route:** `/missions/:id/edit`  
 **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
@@ -286,6 +286,7 @@ Automated sign-off @ T-091.0: Claude Code completes **A1–A11** in [`t091_0_dem
 
 ## Related
 
+- [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md) — **T-152** cartographic fidelity (icons, labels, airfield, fence/pier/bridge) on worktree `TBD-T-152`
 - [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
 - [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md)
 - [`engineering_plan.md`](engineering_plan.md) §4.2–§4.3

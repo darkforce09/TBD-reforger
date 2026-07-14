@@ -18,6 +18,10 @@ pub mod doll_pack;
 pub mod draw_order;
 pub mod lanes;
 pub mod scene;
+/// T-152.13 — generated Spleen 16×32 glyph rasters (`scripts/website/gen-text-font-table.mjs`).
+pub mod text_font_table;
+/// T-152.1 — pure text pack + baked ASCII atlas (GPU upload is wasm32 engine).
+pub mod text_layout;
 
 #[cfg(target_arch = "wasm32")]
 mod doll3d;

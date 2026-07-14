@@ -1,0 +1,482 @@
+[
+  {
+    "id": "everon-airport",
+    "name": "Airport",
+    "x": 4900.95,
+    "y": 11787.4,
+    "importance": 0.55,
+    "kind": "airport"
+  },
+  {
+    "id": "everon-center-north-hill-01",
+    "name": "Center North Hill 01",
+    "x": 5014.1,
+    "y": 8474.51,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-center-north-hill-02",
+    "name": "Center North Hill 02",
+    "x": 5602.72,
+    "y": 9149.56,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-center-south-hill-01",
+    "name": "Center South hill 01",
+    "x": 3854.08,
+    "y": 4344.24,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-center-south-hill-02",
+    "name": "Center South Hill 02",
+    "x": 2253.98,
+    "y": 5558.06,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-center-west-hill-06",
+    "name": "Center West Hill 06",
+    "x": 2453.3,
+    "y": 7187.76,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-chotain",
+    "name": "Chotain",
+    "x": 7086.13,
+    "y": 6012.35,
+    "importance": 0.72,
+    "kind": "town"
+  },
+  {
+    "id": "everon-durras",
+    "name": "Durras",
+    "x": 8826.85,
+    "y": 2745.83,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-entre-deux",
+    "name": "Entre Deux",
+    "x": 5766.79,
+    "y": 7035.57,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-entre-deux-hill-01",
+    "name": "Entre Deux Hill 01",
+    "x": 5825.45,
+    "y": 7346.18,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-entredeux-ridge-01",
+    "name": "EntreDeux Ridge 01",
+    "x": 6221.42,
+    "y": 7285.5,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-erquy",
+    "name": "Erquy",
+    "x": 10918.7,
+    "y": 11706.2,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-figari",
+    "name": "Figari",
+    "x": 5250.76,
+    "y": 5337.82,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-gorey",
+    "name": "Gorey",
+    "x": 4844.906,
+    "y": 8088.995,
+    "importance": 0.62,
+    "kind": "village"
+  },
+  {
+    "id": "everon-gravette",
+    "name": "Gravette",
+    "x": 4120.76,
+    "y": 7796.2,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-highstone",
+    "name": "Highstone",
+    "x": 4950,
+    "y": 8550,
+    "importance": 0.48,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-kermovan",
+    "name": "Kermovan",
+    "x": 6359.376,
+    "y": 9668.684,
+    "importance": 0.58,
+    "kind": "village"
+  },
+  {
+    "id": "everon-lamentin",
+    "name": "Lamentin",
+    "x": 1279.67,
+    "y": 5940.5,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-laruns",
+    "name": "Laruns",
+    "x": 7558.34,
+    "y": 5540.85,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-laruns-hill-01",
+    "name": "Laruns Hill 01",
+    "x": 7266.1,
+    "y": 5637.44,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-le-moule",
+    "name": "Le Moule",
+    "x": 2615.96,
+    "y": 5378.78,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-le-moule-sawmill-01",
+    "name": "Le Moule Sawmill 01",
+    "x": 3069.22,
+    "y": 5195.23,
+    "importance": 0.4,
+    "kind": "locality"
+  },
+  {
+    "id": "everon-levie",
+    "name": "Levie",
+    "x": 7464.44,
+    "y": 4738.91,
+    "importance": 0.74,
+    "kind": "town"
+  },
+  {
+    "id": "everon-ma-aa-hill-01",
+    "name": "MA AA Hill 01",
+    "x": 3506.9,
+    "y": 5815.68,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-meaux",
+    "name": "Meaux",
+    "x": 4520.45,
+    "y": 9467.98,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-montignac",
+    "name": "Montignac",
+    "x": 4773.46,
+    "y": 7094.57,
+    "importance": 0.85,
+    "kind": "town"
+  },
+  {
+    "id": "everon-montignac-farm-01",
+    "name": "Montignac Farm 01",
+    "x": 5133.96,
+    "y": 7043.8,
+    "importance": 0.4,
+    "kind": "locality"
+  },
+  {
+    "id": "everon-montignac-sawmil-01",
+    "name": "Montignac Sawmil 01",
+    "x": 4537.88,
+    "y": 6844.21,
+    "importance": 0.4,
+    "kind": "locality"
+  },
+  {
+    "id": "everon-morton",
+    "name": "Morton",
+    "x": 5135.24,
+    "y": 4011.78,
+    "importance": 0.7,
+    "kind": "town"
+  },
+  {
+    "id": "everon-morton-hill-01",
+    "name": "Morton Hill 01",
+    "x": 5355.78,
+    "y": 4598.75,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-mountains-east-coast-01",
+    "name": "Mountains East coast 01",
+    "x": 8248.33,
+    "y": 2816.39,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-east-coast-11",
+    "name": "Mountains East Coast 11",
+    "x": 11719.1,
+    "y": 1393.77,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-east-peninsula-01",
+    "name": "Mountains East Peninsula 01",
+    "x": 11940.2,
+    "y": 1880.36,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-east-ridge-01",
+    "name": "Mountains East Ridge 01",
+    "x": 9374.66,
+    "y": 4436.46,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-east-ridge-02",
+    "name": "Mountains East Ridge 02",
+    "x": 10740.8,
+    "y": 2515.2,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-west-ridge-01",
+    "name": "Mountains West Ridge 01",
+    "x": 8574.57,
+    "y": 1837.88,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-west-ridge-02",
+    "name": "Mountains West Ridge 02",
+    "x": 7743.85,
+    "y": 3341.01,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-mountains-west-valley-01",
+    "name": "Mountains West Valley 01",
+    "x": 8642.07,
+    "y": 3544.94,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-moutains-east-beach-01",
+    "name": "Moutains East beach 01",
+    "x": 10743.4,
+    "y": 2790.35,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-moutains-east-hill-01",
+    "name": "Moutains East Hill 01",
+    "x": 9467.48,
+    "y": 3906.61,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-moutains-east-hill-02",
+    "name": "Moutains East hill 02",
+    "x": 8736.41,
+    "y": 4299.08,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-moutains-east-hill-03",
+    "name": "Moutains East Hill 03",
+    "x": 9953.31,
+    "y": 2297.45,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-moutains-east-pass-01",
+    "name": "Moutains East pass 01",
+    "x": 8020.89,
+    "y": 4217,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-moutains-west-beach-01",
+    "name": "Moutains West beach 01",
+    "x": 8955.66,
+    "y": 557.794,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-moutains-west-headland-01",
+    "name": "Moutains West headland 01",
+    "x": 8419.34,
+    "y": 791.855,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-moutains-west-hill-01",
+    "name": "Moutains West Hill 01",
+    "x": 8087.4,
+    "y": 2752.02,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-moutains-west-hill-02",
+    "name": "Moutains West Hill 02",
+    "x": 8725.43,
+    "y": 1750.16,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-moutains-west-hill-03",
+    "name": "Moutains West Hill 03",
+    "x": 8499.25,
+    "y": 2303.09,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-moutains-west-lighthouse-01",
+    "name": "Moutains West Lighthouse 01",
+    "x": 10410.4,
+    "y": 342.846,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-moutains-west-pass-01",
+    "name": "Moutains West Pass 01",
+    "x": 8330.6,
+    "y": 2415.11,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-north-east-farm-01",
+    "name": "North East Farm 01",
+    "x": 4961.01,
+    "y": 9994.38,
+    "importance": 0.4,
+    "kind": "locality"
+  },
+  {
+    "id": "everon-provins",
+    "name": "Provins",
+    "x": 5486.49,
+    "y": 6087.4,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-raccoon-rock",
+    "name": "Raccoon Rock",
+    "x": 1280,
+    "y": 6400,
+    "importance": 0.52,
+    "kind": "village"
+  },
+  {
+    "id": "everon-regina",
+    "name": "Regina",
+    "x": 7205.02,
+    "y": 2324.23,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-saint-philippe",
+    "name": "Saint Philippe",
+    "x": 4502.76,
+    "y": 10772,
+    "importance": 0.78,
+    "kind": "town"
+  },
+  {
+    "id": "everon-st-philippe-hill-01",
+    "name": "St Philippe Hill 01",
+    "x": 5029.67,
+    "y": 9477.44,
+    "importance": 0.35,
+    "kind": "hill"
+  },
+  {
+    "id": "everon-tyrone",
+    "name": "Tyrone",
+    "x": 4927.98,
+    "y": 9092.89,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-tyrone-ridge-01",
+    "name": "Tyrone Ridge 01",
+    "x": 4930.85,
+    "y": 8758.91,
+    "importance": 0.35,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-vernon",
+    "name": "Vernon",
+    "x": 9243.44,
+    "y": 2077.24,
+    "importance": 0.55,
+    "kind": "town"
+  },
+  {
+    "id": "everon-villeneuve",
+    "name": "Villeneuve",
+    "x": 2838.69,
+    "y": 6339.8,
+    "importance": 0.55,
+    "kind": "town"
+  }
+]

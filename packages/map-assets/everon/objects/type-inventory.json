@@ -3,11 +3,11 @@
   "terrainId": "everon",
   "censusStatus": "partial",
   "generatedAt": "2026-07-04T23:43:38.437Z",
-  "importPhaseMax": "P2_trees",
+  "importPhaseMax": "P5_props",
   "sourceExportPath": "staging/export/raw-entities.jsonl",
   "levels": {
-    "uniquePrefabs": 391,
-    "totalInstances": 508291
+    "uniquePrefabs": 1623,
+    "totalInstances": 1216109
   },
   "byKind": {
     "building": {
@@ -23,12 +23,12 @@
       "instances": 0
     },
     "rock": {
-      "prefabTypes": 0,
-      "instances": 0
+      "prefabTypes": 53,
+      "instances": 307431
     },
     "prop": {
-      "prefabTypes": 0,
-      "instances": 0
+      "prefabTypes": 1179,
+      "instances": 400387
     },
     "utility": {
       "prefabTypes": 0,
@@ -59,7 +59,8 @@
     },
     "castle": {
       "prefabTypes": 14,
-      "instances": 104
+      "instances": 104,
+      "importanceZoom": -4
     },
     "civic": {
       "prefabTypes": 27,
@@ -91,11 +92,13 @@
     },
     "lighthouse": {
       "prefabTypes": 3,
-      "instances": 21
+      "instances": 21,
+      "importanceZoom": -4
     },
     "military": {
       "prefabTypes": 10,
-      "instances": 48
+      "instances": 48,
+      "importanceZoom": -4
     },
     "residential": {
       "prefabTypes": 40,
@@ -115,7 +118,8 @@
     },
     "tower": {
       "prefabTypes": 9,
-      "instances": 124
+      "instances": 124,
+      "importanceZoom": -4
     }
   },
   "byRoadClass": {},
@@ -135,2297 +139,2297 @@
       {
         "resourceName": "{AF4BFBE29028A9FD}Prefabs/Vegetation/Bush/b_corylus_avellana_1l.et",
         "instanceCount": 54312,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C98A6C1C2372354E}Prefabs/Vegetation/Bush/b_corylus_avellana_1.et",
         "instanceCount": 46391,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{23C0BE9D80929DBD}Prefabs/Vegetation/Bush/b_salix_cinerea_1w.et",
         "instanceCount": 38930,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A5DE58FC9FB6BA60}Prefabs/Vegetation/Bush/b_corylus_avellana_2.et",
         "instanceCount": 24413,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0CA0547EB03759E1}Prefabs/Vegetation/Bush/b_rubus_idaeus_1s.et",
         "instanceCount": 13221,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7BAA3CF64495B691}Prefabs/Vegetation/Bush/b_rubus_idaeus_0s.et",
         "instanceCount": 11893,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{798965560B99FE61}Prefabs/Vegetation/Plant/p_fucus_fesiculosus_02.et",
         "instanceCount": 10836,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{124518D13290A687}Prefabs/Vegetation/Bush/b_salix_cinerea_0.et",
         "instanceCount": 10740,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A43BE7E364B5CD67}Prefabs/Vegetation/Bush/b_juniperus_communis_2w.et",
         "instanceCount": 10194,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D9DF1D13919F19A0}Prefabs/Vegetation/Bush/b_rosa_canina_0s.et",
         "instanceCount": 9386,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D6EC31A48403A52A}Prefabs/Vegetation/Bush/b_sambucus_nigra_1.et",
         "instanceCount": 8443,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AED5759B653DF6D0}Prefabs/Vegetation/Bush/b_rosa_canina_1s.et",
         "instanceCount": 7629,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{938E2F2C01769971}Prefabs/Vegetation/Bush/b_phragmites_australis_1b.et",
         "instanceCount": 6614,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BAB8054438C72A04}Prefabs/Vegetation/Bush/b_sambucus_nigra_2.et",
         "instanceCount": 6223,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BA785041AC632123}Prefabs/Vegetation/Bush/b_salix_cinerea_1.et",
         "instanceCount": 5696,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3042375F6C45AF68}Prefabs/Vegetation/Plant/p_urtica_dioica_0s.et",
         "instanceCount": 4930,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{09E03E65489EEC39}Prefabs/Vegetation/Bush/b_phragmites_australis_1.et",
         "instanceCount": 4631,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{15DD51B6B75D714F}Prefabs/Vegetation/Plant/p_fucus_fesiculosus_01.et",
         "instanceCount": 2727,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{613763D114E7CD1C}Prefabs/WEGenerators/Powerline/Powerline.et",
         "instanceCount": 2257,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{81EE8FAE7539DAA1}Prefabs/Vegetation/Bush/b_juniperus_communis_0.et",
         "instanceCount": 1365,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F8A57337BD45B783}Prefabs/Vegetation/Vegetables/TomatoCrop_01.et",
         "instanceCount": 1028,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B3B8F051A298B68E}Prefabs/Vegetation/Plant/p_carduus_acanthoides_0s.et",
         "instanceCount": 749,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9453357AF589DBE4}Prefabs/Vegetation/Vegetables/PotatoCrop_01_Shortline.et",
         "instanceCount": 709,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{014BBD51756DB620}Prefabs/Vegetation/Vegetables/CabbageCrop_01.et",
         "instanceCount": 707,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E917C0F068623E43}Prefabs/Vegetation/Plant/Arctium_Lappa/p_arctium_lappa_0s.et",
         "instanceCount": 704,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{ACAEDB73441F87DB}Prefabs/Decals/Dirt/Decal_Dirt_Patch_04.et",
         "instanceCount": 677,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4FE3B631FA363978}Prefabs/Vegetation/Vegetables/CapsicumCrop_01.et",
         "instanceCount": 647,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1F3B020E02FF1DAB}Prefabs/Vegetation/Vegetables/PotatoCrop_01_Longline.et",
         "instanceCount": 606,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CA75EC62F90F5614}Prefabs/Vegetation/Plant/p_artemisia_vulgaris_0s.et",
         "instanceCount": 513,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6C454FA2B0FAFAEE}Prefabs/Vegetation/Bush/b_juniperus_communis_1s.et",
         "instanceCount": 428,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1112756E8A13445B}Prefabs/Props/Industrial/Pallets/Pallet_01_Pile.et",
         "instanceCount": 349,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5E99DD1E8377D27F}Prefabs/Props/Garbage/Bins/TrashBin_02.et",
         "instanceCount": 343,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{24DE47095BD6BE7B}Prefabs/Props/Agriculture/Farm/HayBale_01_square_big.et",
         "instanceCount": 338,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C8A5C92E74ABB5EA}Prefabs/Props/Civilian/PicnicTable/PicnicTable_01.et",
         "instanceCount": 294,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AA3D2C0BB0D2B56B}Prefabs/Props/Crates/Crate_01_green.et",
         "instanceCount": 269,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CC86FA58287C61C8}Prefabs/Vegetation/Vegetables/PumpkinCrop_01_Line.et",
         "instanceCount": 268,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D0ADBF5A3B6783C0}Prefabs/Decals/Dirt/Decal_Dirt_Crossroad_01.et",
         "instanceCount": 238,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D5247F493225CA91}Prefabs/Props/Civilian/WateringCan_01.et",
         "instanceCount": 236,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AE28D47CF26E91EA}Prefabs/Props/Military/Fortification/CzechHedgehog_01_rusty.et",
         "instanceCount": 234,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D7F69BF7D2DCA0A8}Prefabs/Props/Industrial/Pallets/Pallet_01.et",
         "instanceCount": 226,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BCE07A58672955B9}Prefabs/Props/Civilian/Bucket_01.et",
         "instanceCount": 225,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8D01E253FD83E46F}Prefabs/Props/Furniture/ChairRecreation_01/ChairRecreation_01_white.et",
         "instanceCount": 217,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F55BF63BAD1DCB7E}Prefabs/Vegetation/Bush/b_juniperus_communis_2s.et",
         "instanceCount": 213,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C58BDB4D22E0A5A7}Prefabs/Props/Garbage/Generic/Litter_01_large.et",
         "instanceCount": 205,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{ECAF8FE9FFC28643}Prefabs/Props/Agriculture/Farm/HaystackDryer_01.et",
         "instanceCount": 204,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{21412366D258AC4C}Prefabs/Props/Forest/WoodPile/WoodPile_02_B.et",
         "instanceCount": 203,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6105032F794BA64B}Prefabs/Props/Civilian/LogChopping_01.et",
         "instanceCount": 201,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CEA239D9E1899899}Prefabs/Props/Garbage/Tires/TirePile_01_small.et",
         "instanceCount": 193,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2AE32F7E8BCF68EE}Prefabs/Props/Forest/WoodPile/WoodPile_01_End_A.et",
         "instanceCount": 190,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B3283803059E2750}Prefabs/Props/Crates/CrateWooden_01_plain.et",
         "instanceCount": 184,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{51B08BDA20AF8FF7}Prefabs/Props/Industrial/Pallets/WoodenPalletBox_01.et",
         "instanceCount": 183,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{71B834B133AA3DB3}Prefabs/Props/Naval/FishingNet_01.et",
         "instanceCount": 173,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{93737DC0B2AB7E62}Prefabs/Props/Naval/LobsterTrapWooden_01.et",
         "instanceCount": 173,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{06473ABB81176587}Prefabs/Props/Forest/WoodPile/WoodPile_02_end_B.et",
         "instanceCount": 171,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CB033C658E372CED}Prefabs/Props/Construction/PlankPile/PlankPile_01_Large.et",
         "instanceCount": 170,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{32CDE9FE3FB35D51}Prefabs/Props/Garbage/Bins/BinStreet_01.et",
         "instanceCount": 165,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C089F66C325FC87C}Prefabs/Props/Construction/BrickPile/BrickPile_01_Large.et",
         "instanceCount": 165,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0BE3BDE3910436F2}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_red.et",
         "instanceCount": 161,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FC56FA6166DEE7B7}Prefabs/Decals/Dirt/Decal_Dirt_Footprints_01.et",
         "instanceCount": 161,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6DD0648BB7A52420}Prefabs/Props/Civilian/Wheelbarrow_01.et",
         "instanceCount": 159,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{795552B887CD50E7}Prefabs/Props/Industrial/ConcretePanel_01_stack.et",
         "instanceCount": 159,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3F0D0593590519DA}Prefabs/Props/Garbage/Tires/TirePile_01_medium.et",
         "instanceCount": 153,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B586AF3F2B0B500E}Prefabs/Props/Agriculture/Farm/HaystackDryer_01_folded.et",
         "instanceCount": 149,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F4CA533A99B20DAE}Prefabs/Props/Civilian/SackUniversal_01.et",
         "instanceCount": 145,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6BEDCCDEE119AC7C}Prefabs/Props/Agriculture/Farm/HaystackSmall_01.et",
         "instanceCount": 139,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1D1BBD7F52F71839}Prefabs/Props/Forest/WoodPile/WoodPile_02_scattered.et",
         "instanceCount": 138,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BBAD313E424466CF}Prefabs/Props/Forest/WoodPile/WoodLog_01_C.et",
         "instanceCount": 136,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0879933F4FDD2C2B}Prefabs/Props/Civilian/SackUniversal_01_Pile.et",
         "instanceCount": 135,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{67B5336A6D63CCA4}Prefabs/Props/Construction/PlankPile/PlankPile_01_Medium.et",
         "instanceCount": 133,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{754BF6213A318556}Prefabs/Props/Industrial/ConcretePanel_01_D.et",
         "instanceCount": 130,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{985C3871D40C7F7B}Prefabs/Props/Garbage/Generic/Litter_01_small.et",
         "instanceCount": 129,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2887E99075B9C928}Prefabs/Props/Garbage/Generic/Litter_01_long.et",
         "instanceCount": 126,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{46B71B9E370BE7C0}Prefabs/Props/Forest/WoodPile/WoodPile_01_End_B.et",
         "instanceCount": 126,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{84D41925E6153AAF}Prefabs/Vegetation/Vegetables/PumpkinCrop_01.et",
         "instanceCount": 126,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D9842C11742C00CF}Prefabs/Props/Civilian/Fireplace_01.et",
         "instanceCount": 126,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4D1517866E9C2362}Prefabs/Props/Forest/WoodPile/WoodPile_02_A.et",
         "instanceCount": 125,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6720CD0D5B7B7768}Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Long.et",
         "instanceCount": 124,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{530705FBB61026D2}Prefabs/Props/Garbage/Cardboard/Cardboard_Pile_03.et",
         "instanceCount": 122,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A240B5FCD17D5686}Prefabs/Props/Construction/GarbageStack_01/GarbageStack_01_Medium.et",
         "instanceCount": 117,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D0E01CBC080D4F84}Prefabs/Props/Furniture/ChairRecreation_01/ChairRecreation_01_red.et",
         "instanceCount": 117,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6E6CBE3556D6E381}Prefabs/Props/Industrial/Pallets/MarsBox_01_Base.et",
         "instanceCount": 113,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D5062960B7211EB4}Prefabs/Props/Construction/GarbageStack_01/GarbageStack_01_Long.et",
         "instanceCount": 113,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5E317DC74EA1F1A4}Prefabs/Props/Forest/WoodPile/WoodLog_01_B.et",
         "instanceCount": 112,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{261F10BDC068BB35}Prefabs/Props/Furniture/ChairOld_01.et",
         "instanceCount": 111,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{32654927F2657E8A}Prefabs/Props/Forest/WoodPile/WoodLog_01_A.et",
         "instanceCount": 111,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B6B2AD00E71AD0B5}Prefabs/Props/Industrial/BarrelMetal_01_Base.et",
         "instanceCount": 111,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "ent_0002",
         "instanceCount": 110,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DF3EF41CE4D441DE}Prefabs/Props/Industrial/BarrelMetal_01_rust.et",
         "instanceCount": 109,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{487FD3194F5D0C61}Prefabs/Props/Industrial/ConcretePanel_01_C.et",
         "instanceCount": 107,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C959D3CF939EBBB3}Prefabs/Props/Agriculture/Farm/HayBale_01_square_small.et",
         "instanceCount": 107,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BCF98BBA87A30CEE}Prefabs/Decals/Dirt/Decal_Dirt_Crossroad_02.et",
         "instanceCount": 106,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7D52C517720EF2F6}Prefabs/Props/Industrial/BarrelMetal_01_grey.et",
         "instanceCount": 105,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B808D460E33CDFAF}Prefabs/Props/Construction/BrickPile/BrickPile_01_Medium.et",
         "instanceCount": 105,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BA8BCF7C77F24A56}Prefabs/Props/Civilian/WoodKindling_01.et",
         "instanceCount": 105,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BB9DFC7232860128}Prefabs/Props/Construction/BrickPile/BrickPileOld_01_Large.et",
         "instanceCount": 105,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{13FD3EC5D111AD6D}Prefabs/Props/Forest/WoodPile/WoodPile_01_A.et",
         "instanceCount": 104,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{33D5102FA67E1B46}Prefabs/Props/Naval/FishingRope_01.et",
         "instanceCount": 104,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DE658AC78172D02E}Prefabs/Props/Construction/GarbageStack_01/GarbageStack_01_Short.et",
         "instanceCount": 98,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{869914063728EFF8}Prefabs/Props/Forest/WoodPile/WoodLog_01_D.et",
         "instanceCount": 85,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2B1D0128ED660BE9}Prefabs/Props/Crates/BoxWooden_01.et",
         "instanceCount": 84,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4923E218F59644B9}Prefabs/Props/Wrecks/BoatWreck_01/BoatWreck_01.et",
         "instanceCount": 84,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D5C3CF5996B43A27}Prefabs/Props/Civilian/BasketWicker_01.et",
         "instanceCount": 84,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7FA90A256DD52243}Prefabs/Props/Forest/WoodPile/WoodPile_01_B.et",
         "instanceCount": 82,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5152F05C17652ADB}Prefabs/Props/Civilian/PaintCan_01.et",
         "instanceCount": 81,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2BF58454BEAB913D}Prefabs/Props/Industrial/Pallets/WoodenPalletBox_01_Wood.et",
         "instanceCount": 79,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6A130E5B3DD3EAA9}Prefabs/Props/Forest/WoodPile/WoodPile_02_end_A.et",
         "instanceCount": 79,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C5446990F6E7ACC1}Prefabs/Props/Naval/FishingNet_03.et",
         "instanceCount": 79,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D0B44EB8DBEDDA97}Prefabs/Props/Civilian/Bucket_02.et",
         "instanceCount": 77,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{342E852E9A1847EA}Prefabs/Props/Industrial/Repair/VehicleGarbage_01_pile_medium.et",
         "instanceCount": 75,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C7BE6D1395342D32}Prefabs/Props/Agriculture/WaterTank_01_v1.et",
         "instanceCount": 73,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CC66836BF4E211F9}Prefabs/Props/Military/Camps/Duckboard_01.et",
         "instanceCount": 73,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FBC61238A0B3B56F}Prefabs/Props/Industrial/ConcretePanel_01_Base.et",
         "instanceCount": 73,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2DAC8D663D5F3E2E}Prefabs/Props/Commercial/MarketStand_01_Umbrella.et",
         "instanceCount": 72,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5E249786B7A6896D}Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Large.et",
         "instanceCount": 72,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E641FDA9C7D9AA72}Prefabs/Props/Construction/WoodHolder_01.et",
         "instanceCount": 72,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{026714237FB820CB}Prefabs/Props/Garbage/Cardboard/Cardboard_Pile_07.et",
         "instanceCount": 71,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8937AFC38700A6BA}Prefabs/Props/Construction/BrickPile/BrickPileOld_01_Medium.et",
         "instanceCount": 71,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{13B4C532861B9DE2}Prefabs/Props/Commercial/BeerKegMetal_01.et",
         "instanceCount": 70,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3AB2B7156B3A0F3D}Prefabs/Props/Agriculture/MilkCan_01.et",
         "instanceCount": 69,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DB17133F11B2B8C5}Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Short.et",
         "instanceCount": 69,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DE59CB05202006E8}Prefabs/Props/Agriculture/CultivatorWreck_01.et",
         "instanceCount": 68,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EDEF11FBC42A08F4}Prefabs/Props/Naval/FishingBuoy_01.et",
         "instanceCount": 68,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B47EB5AC921214EE}Prefabs/Props/Construction/CableReel/CableReelMetal_01.et",
         "instanceCount": 67,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B6C04EAD987A66B8}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Stack_D.et",
         "instanceCount": 67,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D1E82351C859A747}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Group_A.et",
         "instanceCount": 67,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5216BDD8E91B9EF5}Prefabs/Props/Civilian/BasketWicker_01_wood.et",
         "instanceCount": 66,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9C231B6AC1BD0A26}Prefabs/Props/Civilian/Broom_01.et",
         "instanceCount": 63,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A419F4547954DA05}Prefabs/Props/Construction/CableReel/CableReelWooden_01.et",
         "instanceCount": 63,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{30A496094B91F0C3}Prefabs/Props/Civilian/Hutch_01.et",
         "instanceCount": 62,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E7117284012B39A4}Prefabs/Props/Garbage/Bins/TrashBin_02_patched.et",
         "instanceCount": 61,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EB66EE2298D16D18}Prefabs/Props/Civilian/SackTruck_01.et",
         "instanceCount": 61,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F5BFC5E30035C5D1}Prefabs/Props/Furniture/TableRecreation_01/TableRecreation_01_red.et",
         "instanceCount": 61,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A208248B503EF831}Prefabs/Props/Civilian/Cart_01.et",
         "instanceCount": 60,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E4136E2E0BD66FC6}Prefabs/Props/Construction/HookMetal_01.et",
         "instanceCount": 60,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FEC4DAC172001095}Prefabs/Props/Naval/LifeBuoy_01_set.et",
         "instanceCount": 59,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{49E2D1A3DE5ED007}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_stack.et",
         "instanceCount": 58,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{986F38072A8DD563}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_planks.et",
         "instanceCount": 58,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AFFB24010001435C}Prefabs/Props/Forest/FeedRack/FeedRack_01.et",
         "instanceCount": 57,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BDBC17B1749D2869}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Group_B.et",
         "instanceCount": 57,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C76C3AF337109066}Prefabs/Props/Crates/CardboardBoxStack_01.et",
         "instanceCount": 57,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{080E381B512E1B01}Prefabs/Props/Crates/CrateWooden_02/CrateWooden_02_1x15x3.et",
         "instanceCount": 56,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9C7477A3F066F74F}Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_forest_straight.et",
         "instanceCount": 56,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6FC9E85153AE41B1}Prefabs/Props/Civilian/WoodKindling_Crate_01.et",
         "instanceCount": 54,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DACF7DE206313E97}Prefabs/Props/Garbage/Cardboard/Cardboard_Pile_01.et",
         "instanceCount": 54,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5CF0A2E9F7557FED}Prefabs/Props/Civilian/Hutch_02.et",
         "instanceCount": 53,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{62B2ADC4243454F9}Prefabs/Props/Civilian/Jerrycan_01.et",
         "instanceCount": 53,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7F5B851062D38849}Prefabs/Decals/Markings/Decal_CrossWalk_01.et",
         "instanceCount": 53,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{ADE39FE043B89B0A}Prefabs/Props/Industrial/ConcretePanel_01_B.et",
         "instanceCount": 52,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8393B4106B8D45A0}Prefabs/Props/Decorations/Flowerpots/FlowerpotFlowers_01/FlowerpotFlowers_01_begonia_red.et",
         "instanceCount": 51,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8FB2845D48F4E02A}Prefabs/Props/Furniture/TableOld_01/TableOld_01_white.et",
         "instanceCount": 50,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0133284E3BDEAEC4}Prefabs/Props/Civilian/Ashtray_01_Full_yellow.et",
         "instanceCount": 49,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C8C36ADC9DFC5FBB}Prefabs/Props/Crates/Crate_01_red.et",
         "instanceCount": 49,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4A34979DC19CA9ED}Prefabs/Props/Construction/ConcreteMixer_01.et",
         "instanceCount": 48,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6095B175AA9804DC}Prefabs/Props/VehicleParts/Tires/Tire_UAZ469.et",
         "instanceCount": 46,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D349CAB0A6544C59}Prefabs/Props/Furniture/TableWorkshop_01_short.et",
         "instanceCount": 46,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D2DE0352ED00F315}Prefabs/Decals/Infrastructure/Decal_DrainChannel_01.et",
         "instanceCount": 45,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{96A3F39C918787E5}Prefabs/Props/Agriculture/Farm/HayBale_01_square_big_bottom.et",
         "instanceCount": 44,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E56F1B739B9792C4}Prefabs/Props/Civilian/Ashtray_01_Full_green.et",
         "instanceCount": 44,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E64A1F4EC46ADBF4}Prefabs/Props/Construction/BrickPile/BrickPileOld_01_Small.et",
         "instanceCount": 44,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{47E258BBC8968F11}Prefabs/Props/Industrial/GasTank_01_rusty.et",
         "instanceCount": 43,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A98BA618430E9BAA}Prefabs/Props/Agriculture/PlowWreck_01.et",
         "instanceCount": 43,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{04EEF67CFC8BAD4D}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_small_yellow.et",
         "instanceCount": 42,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{06ABA7878E8CC278}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia_red.et",
         "instanceCount": 42,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B71E3749C87F3473}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_Tagetes_orange.et",
         "instanceCount": 42,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D8AF9F8C7035D7F9}Prefabs/Props/Civilian/TableSaw_01.et",
         "instanceCount": 42,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{46A95C6081A28586}Prefabs/Props/Industrial/Pallets/MarsBox_01_white.et",
         "instanceCount": 41,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B8BBA7227B4433B6}Prefabs/Props/Furniture/TableWorkshop_01.et",
         "instanceCount": 41,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C8806310DC354E8B}Prefabs/Props/VehicleParts/Tires/Tire_BTR70.et",
         "instanceCount": 41,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{086E85DB687EA38F}Prefabs/Props/Construction/GravelPile_01/GravelPile_01_medium.et",
         "instanceCount": 40,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{15B364C10D53C789}Prefabs/Props/Furniture/TableRecreation_01/TableRecreation_01_redyellow.et",
         "instanceCount": 39,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{94382B87F09261BE}Prefabs/Props/Civilian/LawnMower_01.et",
         "instanceCount": 38,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{22E2462FA3AE0849}Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Long_Pile.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{234AEC851DFF1B8C}Prefabs/Props/Decorations/Flowerpots/FlowerpotFlowers_01/FlowerpotFlowers_01_begonia_pink.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4932978A48FA10B0}Prefabs/Decals/Dirt/Decal_Dirt_Patch_05.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4BE33BD4C315C615}Prefabs/Props/Civilian/Ashtray_01_Full_base.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5182D2E81189AC44}Prefabs/Props/Furniture/TableRecreation_01/TableRecreation_01.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{ABA40158860E5B6B}Prefabs/Props/Crates/Crate_01_brown.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D8B83A318AE3611E}Prefabs/Props/Commercial/MarketStand_01.et",
         "instanceCount": 37,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2DB729170DBCE7BE}Prefabs/Props/Furniture/TableOld_01/TableOld_01.et",
         "instanceCount": 36,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{74D1DB7828061BD7}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_pile_small.et",
         "instanceCount": 36,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C38AC4E709E1F475}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Stack.et",
         "instanceCount": 36,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CA8AB522F7C90A28}Prefabs/Decals/Miscellaneous/CigarButts_01.et",
         "instanceCount": 36,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{881558ACD5FC31C0}Prefabs/Props/Crates/CrateWooden_02/CrateWooden_02_1x1x2.et",
         "instanceCount": 35,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C2C1A49E6EACAA64}Prefabs/Props/Civilian/Ashtray_01_clear.et",
         "instanceCount": 35,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F8704CA8838B25F6}Prefabs/Props/Naval/FishingNet_02.et",
         "instanceCount": 35,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FF2749200E6FF14C}Prefabs/Props/Naval/LobsterTrapWooden_02.et",
         "instanceCount": 35,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{33CDDFBCB4876D5F}Prefabs/Props/Decorations/Flowerpots/FlowerpotFlowers_01/FlowerpotFlowers_01_tagetes_yellow.et",
         "instanceCount": 34,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{07D5C7C755C719BE}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_pile_medium.et",
         "instanceCount": 33,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0712799E7E8A0D56}Prefabs/Props/Industrial/GasTank_02_rusty.et",
         "instanceCount": 32,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1EDBE01AAD5EE137}Prefabs/Props/Industrial/GasTank_02_blue.et",
         "instanceCount": 32,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9E939BD958DD48D1}Prefabs/Props/Decorations/Flowerpots/FlowerpotFlowers_01/FlowerpotFlowers_01_begonia_white.et",
         "instanceCount": 32,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A446CB3C732A360D}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_pile_long.et",
         "instanceCount": 32,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A8F7CB83AA7FE99B}Prefabs/Decals/Dirt/Decal_Dirt_Footprints_02.et",
         "instanceCount": 32,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F5E5CC339EC89B66}Prefabs/Props/Naval/LifeBuoy_01_stand.et",
         "instanceCount": 31,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1A1CE09F7BCA6650}Prefabs/Props/Wrecks/S105_wreck/S105_wreck_static.et",
         "instanceCount": 30,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F7E3B5AB8E8D8B48}Prefabs/Props/Furniture/DeckChair_01/DeckChair_01_ochre.et",
         "instanceCount": 30,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{37E1D83754A9B58D}Prefabs/Props/Garbage/Cardboard/Cardboard_03.et",
         "instanceCount": 29,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4BF528DF7A469909}Prefabs/Props/Construction/PalletJack_01.et",
         "instanceCount": 29,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7A63E9272B714EC7}Prefabs/Props/Civilian/AshtrayStreet_01.et",
         "instanceCount": 29,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7D52C517720EF2F5}Prefabs/Props/Industrial/BarrelMetal_01_blue.et",
         "instanceCount": 29,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A8D8015D0E2B600A}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_mattress.et",
         "instanceCount": 29,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EECACC5F25A31B0F}Prefabs/Props/Civilian/LadderWooden_01_Long.et",
         "instanceCount": 29,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0B0479E79F7D60D5}Prefabs/Props/Industrial/Pallets/MarsBox_01_blue.et",
         "instanceCount": 28,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B724309521EEFC42}Prefabs/Props/Agriculture/WaterTank_01_v2.et",
         "instanceCount": 27,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8751F77B1038FC72}Prefabs/Props/Industrial/Repair/VehicleGarbage_01_pile_large.et",
         "instanceCount": 26,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CC8D07933AD0B07E}Prefabs/Props/Industrial/GasTank_01_red.et",
         "instanceCount": 26,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EE58596A0C85394E}Prefabs/Decals/Fluids/Decal_OilStain_01_small.et",
         "instanceCount": 26,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FB5F6A6C2BC10787}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_begonia_red.et",
         "instanceCount": 26,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2B07A2B8170DF481}Prefabs/Props/Agriculture/CultivatorWreck_01_Damaged.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2F8BA23B88A4FB07}Prefabs/Props/Furniture/Sunshade_01/Sunshade_01.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{57237781CE749464}Prefabs/Props/Agriculture/Farm/Trough_01.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5DAC571CF23FE3C4}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_red.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{95274C6C9B84E104}Prefabs/Props/Naval/MooringBuoy_01.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E660190EC6E26D0D}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia_pink.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FBC8A28A5C908D2F}Prefabs/Props/Agriculture/Cartwheel_01.et",
         "instanceCount": 25,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2566A36AF43E9F9E}Prefabs/Decals/Dirt/Decal_Dirt_Patch_06.et",
         "instanceCount": 24,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C359A5EEE6D0F558}Prefabs/Vegetation/Plant/CurbsideWeeds_01_8m.et",
         "instanceCount": 24,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "ent_0001",
         "instanceCount": 23,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{19A3C48FC2665A3F}Prefabs/Props/Construction/GravelPile_01/GravelPile_01_large.et",
         "instanceCount": 23,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{630C2872BB87F44F}Prefabs/Props/Construction/ConcretePipe/ConcretePipe_01_Short_Pile.et",
         "instanceCount": 23,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{935A7079755D467F}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia_white.et",
         "instanceCount": 23,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C745AAC46663F0D5}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_pink_v2.et",
         "instanceCount": 23,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DA861447E6D426AE}Prefabs/Props/Industrial/Repair/VehicleGarbage_01_pile_small.et",
         "instanceCount": 23,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0174739265ED5155}Prefabs/Props/Crates/Crate_01_orange.et",
         "instanceCount": 22,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{89534EF0A1EEE176}Prefabs/Props/Naval/LifeBuoy_01.et",
         "instanceCount": 22,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8ED9082B6DDF1815}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_yellow.et",
         "instanceCount": 22,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B61A08FB644D2050}Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_01_exterior.et",
         "instanceCount": 22,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{136C49CE60B4F26E}Prefabs/Props/Civilian/Ashtray_01_green.et",
         "instanceCount": 21,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{27ED4B326F336CFD}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Pair_A.et",
         "instanceCount": 21,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A46D45922F8CAD6C}Prefabs/Props/Military/Fortification/CzechHedgehog_01_painted.et",
         "instanceCount": 21,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C0FAEF93F8DB08F5}Prefabs/Decals/Dirt/Decal_Dirt_Patch_07.et",
         "instanceCount": 21,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E537DCDB9B3F2278}Prefabs/Props/Agriculture/Farm/HayPile_01.et",
         "instanceCount": 21,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{064D5299BF1C64C2}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_small_green.et",
         "instanceCount": 20,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6E84387991C01C6D}Prefabs/Props/Military/Training/Obstacles/ObstacleClimb_01.et",
         "instanceCount": 20,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1C28D0470C93423F}Prefabs/Props/Naval/Buoy_01_green.et",
         "instanceCount": 19,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3AC9CDFE7E068E5E}Prefabs/Props/Services/Post/Mailbox_02.et",
         "instanceCount": 19,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4A8A604A721D481F}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_small_red.et",
         "instanceCount": 19,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A7BF5BFDD21FD360}Prefabs/Props/Crates/Crate_01_ivory.et",
         "instanceCount": 19,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C7F83FA024C7BEB1}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_Tagetes_orange.et",
         "instanceCount": 19,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{09070D8EB9398742}Prefabs/Props/Military/Training/Obstacles/ObstacleVault_01.et",
         "instanceCount": 18,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{67D13407B9B9D626}Prefabs/Props/Industrial/Pallets/MarsBox_01_wood.et",
         "instanceCount": 18,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E3A2574E3BC3935C}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_blue.et",
         "instanceCount": 18,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "ent_0006",
         "instanceCount": 17,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{18982CB5D0D29247}Prefabs/Props/Civilian/BeerBottle_01_empty_brown.et",
         "instanceCount": 17,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7BB30759D09C70B5}Prefabs/Props/Civilian/StepladderWooden_01.et",
         "instanceCount": 17,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7E5A4578657283E6}Prefabs/Props/Industrial/GasTank_02_red.et",
         "instanceCount": 17,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B59DC4F2344F332D}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_Tagetes_yellow.et",
         "instanceCount": 17,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EAD5A53F3695CB5F}Prefabs/Props/Civilian/Scythe_01.et",
         "instanceCount": 17,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{480B5EF263545EEE}Prefabs/Props/Civilian/Ashtray_01_yellow.et",
         "instanceCount": 16,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AC76F47F96377547}Prefabs/Props/Agriculture/WeighingScale_01_base.et",
         "instanceCount": 16,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AE300E34EA8FF40C}Prefabs/Props/Wrecks/Ural4320_wreck/Ural4320_wreck_static.et",
         "instanceCount": 16,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0DB0D75A16764A2C}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_begonia_pink.et",
         "instanceCount": 15,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{10C5A45290A9EEED}Prefabs/Props/Industrial/GasTank_01_blue.et",
         "instanceCount": 15,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{45A92A053A884954}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_A.et",
         "instanceCount": 15,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{862432FB57C1C1B3}Prefabs/Props/Civilian/LampKerosene_01/LampKerosene_01_green.et",
         "instanceCount": 15,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{29063844DEEAC10B}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_pile_large.et",
         "instanceCount": 14,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B91F4F73100EF36C}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_B.et",
         "instanceCount": 14,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "ent_0003",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2D8A3D487DF57AD9}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_small_blue.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{397B34254E55F7B6}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_white.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4BB97FD2D3F7E3D3}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_Pair_B.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5564DA2B07C100EA}Prefabs/Props/Naval/Buoy_01_red.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5C6CDA125FB8EC67}Prefabs/Props/Agriculture/Beehive_01/Beehive_01_green.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5FA05CC09D57A6CF}Prefabs/Props/Naval/NetHanger_01_long.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9545DA837C6C4E3F}Prefabs/Props/Crates/Crate_01_yellow.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A7FC76ADAD067235}Prefabs/Props/Decorations/Flowerpots/FlowerpotFlowers_01/FlowerpotFlowers_01_tagetes_orange.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B38FBA56FA69E392}Prefabs/Decals/Fluids/Decal_OilStain_01_large.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BC1F6A91A8756582}Prefabs/Props/Furniture/DeckChair_01/DeckChair_01_turquoise.et",
         "instanceCount": 13,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "ent_0005",
         "instanceCount": 12,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{52F4C6F1D59655CA}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_bathtub.et",
         "instanceCount": 12,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{61B726B26987ED30}Prefabs/Props/Infrastructure/SnowBreakers/SnowBreaker_E_01_D.et",
         "instanceCount": 12,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7E08585422278B0A}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_red_v2.et",
         "instanceCount": 12,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FE47006C7C7869FE}Prefabs/Props/Civilian/LadderWooden_01.et",
         "instanceCount": 12,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{15749F6DEE797FC5}Prefabs/Decals/Fluids/Decal_PetrolStain_01_V4.et",
         "instanceCount": 11,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{814C842990C8569A}Prefabs/Props/Civilian/StepladderWooden_01_Open.et",
         "instanceCount": 11,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B16FF595DD1EE501}Prefabs/Props/Services/Post/PostOfficeBox_01_Stand.et",
         "instanceCount": 11,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DEB57429CD49782D}Prefabs/Props/Construction/GravelPile_01/SandPile_01.et",
         "instanceCount": 11,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E4416C4C6938BEEE}Prefabs/Props/Crates/CrateWooden_02/CrateWooden_02_1x1x1.et",
         "instanceCount": 11,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{479B9FFED0E47362}Prefabs/Props/Commercial/SignPub_01_V3.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{50A752B7D5E679A2}Prefabs/Props/Industrial/Repair/GasWelder_01.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{996DC070C5A96B7B}Prefabs/Props/Naval/NetHanger_01_short.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B3B2276014D9454C}Prefabs/Props/Commercial/SignPub_01_Eden_FoodMarket_V1.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B73423FE52121937}Prefabs/Props/Furniture/DeckChair_01/DeckChair_01_greenstripe.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BE5D837410B95C7A}Prefabs/Props/Commercial/SignPub_01_V1.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F401D58CD490C872}Prefabs/Props/Civilian/BeerBottle_01_slava.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F666DC35B15CBB48}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_begonia_white.et",
         "instanceCount": 10,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "ent_0004",
         "instanceCount": 9,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2ACD219E71A51B54}Prefabs/Decals/Fluids/Decal_PetrolStain_01_V1.et",
         "instanceCount": 9,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B8185BFEEFD58533}Prefabs/Props/Infrastructure/ConeTraffic/ConeTraffic_01_stack.et",
         "instanceCount": 9,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B92E4F98231937C0}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_carpet.et",
         "instanceCount": 9,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D53741D03AB3A652}Prefabs/Decals/Fluids/Decal_OilStain_01_extralarge.et",
         "instanceCount": 9,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F429E4F1B21A5054}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_pink.et",
         "instanceCount": 9,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{091747817467C504}Prefabs/Decals/Fluids/Decal_OilStain_01_medium.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{190101E6E60E7C47}Prefabs/Props/Civilian/BeerBottle_01_empty_green.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3386EAA823BE462E}Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck_static.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{388B774519BD6294}Prefabs/Props/Wrecks/T62_wreck/T62_wreck.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{557A010795C5F817}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_begonia_pink.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6435D97D7A23D208}Prefabs/Props/Crates/Crate_01_white.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8E0E14882ED3DCBD}Prefabs/Props/Forest/FeedRack/FeedRack_02.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A3DD2610DD5451B6}Prefabs/Props/Naval/NetHanger_01_stick_A.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BE7B5BAFE1A16A50}Prefabs/Props/Military/Fortification/BarbedTape_Coil.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D2202531C662255C}Prefabs/Props/Naval/Buoy_01_white.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FE8A959BA3E4CD10}Prefabs/Props/Services/Fire/FireExtinguisherBox_01.et",
         "instanceCount": 8,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{618BDE854B335713}Prefabs/Props/Naval/HarborWinch_01.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{65E047A8D0FF0CB3}Prefabs/Props/Naval/Buoy_01_grounded.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6BE5C753730DBFED}Prefabs/Props/Wrecks/M923A1_wreck/M923A1_wreck_static.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8CAC93B6377EC1D4}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_Base.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CDDCF6AC97F06199}Prefabs/Decals/Fluids/Decal_PetrolStain_01_V2.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EC645B2E2123131F}Prefabs/Props/Civilian/LampKerosene_01/LampKerosene_01_blue.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F4BB6B6A0486F797}Prefabs/Props/Industrial/BarrelMetal_01_military.et",
         "instanceCount": 7,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{25B265F3E7CBDFC8}Prefabs/Props/Wrecks/BMP1_wreck/BMP1_wreck.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{34DE29A80B16FA24}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Tagetes_orange.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{383FC69DFD96BB6F}Prefabs/Props/Furniture/Sunshade_01/Sunshade_01_yellow.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{47AE94F99DF6445F}Prefabs/Props/Recreation/Beach/BlanketBeach_01/BlanketBeach_01_brown.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{627F29E940C7A12A}Prefabs/Props/Civilian/CarrierFood_01/CarrierFood_01.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{654B33C808C4D93E}Prefabs/Props/Wrecks/M151A2_wreck/M151A2_wreck_static.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A9D9DDBB0BE09BD3}Prefabs/Props/Agriculture/Scarecrow_01/Scarecrow_01.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B1ACEA3D8B451436}Prefabs/Props/Decorations/Flowerpots/FlowerpotPelargonia_01_white_v2.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BAA55688399B3545}Prefabs/Decals/Dirt/Decal_Dirt_Patch_01.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E47DD94A7A3AACDE}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_begonia_red.et",
         "instanceCount": 6,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1426D212F6B8618B}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_weight_redwhite.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{25C8B889A777399D}Prefabs/Props/Infrastructure/ConeTraffic/ConeTraffic_01_red.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2996ABC9B8D758BF}Prefabs/Props/Recreation/Beach/AirMattress_01/AirMattress_01_RedStripes.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3E048B32C66C4E59}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_Empty.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3F23DA7ACAC0ED90}Prefabs/Props/Civilian/GlassBeer_01/GlassBeer_01.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4637B9AAAB2AAA5F}Prefabs/Props/Recreation/Beach/BlanketBeach_01/BlanketBeach_01_green.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{683F021171DBC274}Prefabs/Props/Furniture/Sunshade_01/Sunshade_01_rainbow.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A207D307DC01E409}Prefabs/Props/Commercial/SignPub_01_V2.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B90E5414AB7C325B}Prefabs/Props/Wrecks/BTR70_Wreck/BTR70_wreck_static.et",
         "instanceCount": 5,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{24D791DCBDAE9148}Prefabs/Props/Recreation/Beach/Lounger_01/Lounger_01_stripes.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2840BA559B15F6F2}Prefabs/Decals/Fluids/Decal_PetrolStain_01_V3.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3D9B780ABF8DEE7C}Prefabs/Props/Recreation/Beach/Caravan_03/Caravan_03.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5DF6D3B2EC2198ED}Prefabs/Props/Recreation/Beach/AirMattress_01/AirMattress_01_red.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6EB3EE4FE50E0319}Prefabs/Props/Recreation/Beach/BlanketBeach_01/BlanketBeach_01_red.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7A93743E525734C5}Prefabs/Props/Recreation/Beach/BlanketFolded_01/BlanketFolded_01_green.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7E8CF7366D10C7C4}Prefabs/Props/Recreation/Beach/Lounger_01/Lounger_01_blue.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{913D8EF8E32E2367}Prefabs/Props/Garbage/Bins/BinInterior_01_base.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A4068A65FAD1778F}Prefabs/Props/Military/Training/Obstacles/ObstacleRunAround_01.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A423D53D3513B56A}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_weight_red.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{A69BB7C6843357BA}Prefabs/Props/Recreation/Beach/Paddle_01/Paddle_01.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B557358F8F64AE31}Prefabs/Props/Industrial/Repair/HydraulicCarJack_01.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B657FAF316AAC342}Prefabs/Props/Commercial/Posters/PosterSet_02.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C4444C5766E5387C}Prefabs/Props/Civilian/Birdhouse_01/Birdhouse_01.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C74D4D40987089AB}Prefabs/Props/Furniture/Sunshade_01/Sunshade_01_blue.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E4B5C357EF215746}Prefabs/Props/Military/Training/Obstacles/ObstacleCrawl_01.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E5EED95AE7D32F58}Prefabs/Props/Recreation/Beach/BlanketFolded_01/BlanketFolded_01_orange.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F513D99A28A5E5E3}Prefabs/Props/Recreation/Beach/PedalBoat_01/PedalBoat_01_blue.et",
         "instanceCount": 4,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2B24356C351A2538}Prefabs/Props/Wrecks/M113_wreck/M113_wreck.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3E4497B965824BD3}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_Base.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4911553FA8356302}Prefabs/Props/Garbage/Generic/Junk_01/Junk_01_single_bricks.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5726FEB3D7266124}Prefabs/Props/Recreation/Beach/Lounger_01/Lounger_01_red.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5C2E29ECFAD48807}Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_turnin.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{64AA69F7469EB347}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_standing_RGBY.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7699E66077068406}Prefabs/World/Game/ForestSyncManager.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8FE6D62204173656}Prefabs/Props/Civilian/BeerBottle_01_group.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{948DFC7259B5F490}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_octa_Tagetes_yellow.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B69B4902BAF5B1B9}Prefabs/Props/Garbage/Cardboard/Cardboard_Pile_02.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CF8912F06190DE98}Prefabs/Props/Naval/NetHanger_01_stick_B.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F4123D86F860B5E1}Prefabs/Props/Garbage/Medical/GarbageMedicalUSSR_02.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F6CF869062E6EDB0}Prefabs/Props/Furniture/Rack_01_Long.et",
         "instanceCount": 3,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{061EFBBB385DAF01}Prefabs/Props/VehicleParts/Tires/Tire_UAZ469_pile.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1368898FEE915552}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_standing_redwhite.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1F2254A7C9C8AA57}Prefabs/WEGenerators/Water/Lake/LG_Lake_01.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{28DBB1C4928B9FB6}Prefabs/Decals/Dirt/Decal_Dirt_Tracks_03.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2CB0AA2A87842C18}Prefabs/Props/Civilian/LampKerosene_01/LampKerosene_01_military_USSR.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2CF6244D6C76F560}Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_straight.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{45F7BDF237E75478}Prefabs/Props/Civilian/Birdhouse_01/Birdhouse_01_pole.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{5377EE9A760462BE}Prefabs/Props/Civilian/GlassBeer_01/GlassBeer_02.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{58718D0A83FF5628}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_RGBY.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6F0064DD846893A3}Prefabs/Props/Military/Training/Obstacles/ObstacleWindow_01.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{71ADC9C9161F818C}Prefabs/Props/Recreation/Beach/PedalBoat_01/PedalBoat_01_red.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{84BC93D7A303F53B}Prefabs/Props/Civilian/SodaBottle_01.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{88FAE04EF7115814}Prefabs/Props/Civilian/BeerBottle_01_green.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{90299A76FC1AE10F}Prefabs/Props/Wrecks/T62_wreck/T62_wreck_turret.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{910424AC5CABE800}Prefabs/Props/Garbage/Bins/BinInterior_01_red.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9528D6738641F8F0}Prefabs/Props/Civilian/Chock_01/Chock_01_red.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9EE74738BD9E8CDB}Prefabs/Decals/Dirt/Decal_Dirt_Tracks_02.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{AC98FF880BD0F2C2}Prefabs/Props/Furniture/Chair_01/Chair_01_base.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B5D06FC85B2C3873}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Tagetes_yellow.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B7B923DFE6B4F9B9}Prefabs/WEGenerators/Water/River/R_RiverMedium_01.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B926F95025B8BA5C}Prefabs/Props/Recreation/Beach/AirMattress_01/AirMattress_01_OrangeBlue.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CEA849CDC759ED4B}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_Empty.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D93A7286584E122C}Prefabs/Props/Construction/GravelPile_01/GravelPile_01_base.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DB166ED7FC9F713A}Prefabs/Props/Commercial/Posters/PosterSet_02_V1.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DFE61380A81DCA62}Prefabs/Props/Commercial/SignPub_01_Eden_FoodMarket_V2.et",
         "instanceCount": 2,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "GodRays",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "HBAO",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "HDR",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "HeightmapAO",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "PPAA",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "PP_Noise",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "RainEffect",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "SSDO",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "UnderWater",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{094DA750D7E9A807}Prefabs/Props/Military/Training/Obstacles/ObstacleLadder_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0B5B9AF5B743171E}Prefabs/Props/Commercial/Posters/PosterSingle_A3_Alcohol_V2.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0BB4B21E4F560431}Prefabs/Props/Furniture/Chest_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{0C4584B341B2AFA7}Prefabs/Props/Commercial/SignPub_01_EasterEgg_V1.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{12EE37D664E6FD36}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_begonia_white.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1690284142FB70B9}Prefabs/Props/Agriculture/WeighingScale_01_green.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{19968B13AD8B3115}Prefabs/Props/Naval/FishingGear_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1BE2B6FF4806EB3E}Prefabs/Props/Civilian/Guitar_01/Guitar_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1C2722B8ED601466}Prefabs/Props/Civilian/Ashtray_01_base.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{1C571A35EF9F2217}Prefabs/Props/Furniture/BarTap_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{253303C6EAC3B510}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_long_begonia_base.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{284EEB32BE47DCB2}Prefabs/Props/Wrecks/BMP1_wreck/BMP1_turret.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2A4F8F868370FD59}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_begonia_base.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2AE9E409DA28ED19}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_red.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{2F2BBFDA3A2C73D4}Prefabs/Props/Civilian/RadioSmall_01_black.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{33F9FD881E3700CC}Prefabs/World/Game/SCR_CameraManager.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{34C2F623958FCACE}Prefabs/Props/Civilian/Ashtray_01_Full_clear.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{34F74A7DBAD46974}Prefabs/Props/Furniture/LightWall_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{37C80A42FBF1E9EF}Prefabs/Props/Commercial/Posters/PosterSingle_A3_Library_V2.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{3AFFB0B0EC055284}Prefabs/World/DefaultWorld/GenericWorldPP_Default.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{434AFBBE90F2B078}Prefabs/Sounds/Environment/AmbientSounds_Everon.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{43E4EEB4CDBBFE34}Prefabs/Props/Commercial/Posters/PosterSingle_27x41_01_RadioEveron.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4874E9AA832787F3}Prefabs/Props/Recreation/Beach/SunshadeClosed_01/SunshadeClosed_01_redwhite.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{4A188E44289B9A50}Prefabs/MP/Managers/Factions/FactionManager_Editor.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{528AB2322A646026}Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_forest_wave.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{53CF78A46139AA55}Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_dirt_wave.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{62D829E05A3EF9E0}Prefabs/Compositions/Misc/SubCompositions/DirtPile_Cluttered_US_02.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{63F249E0AA3E7856}Prefabs/World/Game/Eden/Lighting_Eden.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{66B93BC296E2F977}Prefabs/Systems/Radio/RadioBroadcastManager_Everon.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6BDDFE9FA1D4B2F0}Prefabs/Props/Wrecks/UAZ469_wreck/UAZ469_wreck.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6D54F44158ECC25D}Prefabs/World/Game/Eden/FogHaze_Eden.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{6D66A35ABDA08197}Prefabs/Props/Garbage/Military/Ammo/GarbageAmmunition_USSR_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{70CCCF16487C927F}Prefabs/AI/SCR_AIWorld_Eden.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{77CAE2EDD210D7F2}Prefabs/Props/Commercial/Posters/PostersGround_01_Eden_Single.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{7A5B8572ECC15707}Prefabs/Systems/TBD_GameMode.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{809272F7F0B65FCB}Prefabs/Props/VehicleParts/Tires/Tire_Ural4320.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8792D3CCB7359A71}Prefabs/Sounds/Sources/SoundSource_WaterFall_Large.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8A8604E158704937}Prefabs/Sounds/SoundWorld/SoundWorld_Eden.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8AD76C341BFCF8C5}Prefabs/Props/Commercial/Posters/PostersGround_01_Eden_V1.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{8FF50E5D4B417196}Prefabs/Props/Furniture/LampFluorescent/LampFluorescent_01_glass.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{91E4D4CBB097A9C1}Prefabs/Props/Forest/DeerSkull_01/DeerSkull_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{975B4AB9CF32FDBA}Prefabs/Props/Civilian/Fan_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{98DD643927F87912}Prefabs/Props/Commercial/BeerKegMetal_01_lines.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9BB369F2803C6F71}Prefabs/MP/MPDestructionManager.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{9D9312AA9984A5CE}Prefabs/Props/Garbage/Cardboard/Cardboard_Pile_08.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B54D08AEA74A5354}Prefabs/MP/Managers/Loadouts/LoadoutManager_Editor.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{B898D2A1F45058F6}Prefabs/Props/Garbage/Military/Food/GarbageFoodMilitaryUSSR_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BC77A0CE72611DC3}Prefabs/Props/Furniture/Stool_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{BE7BD882A7E3E5C9}Prefabs/Props/Civilian/Chock_02/Chock_02_yellow.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{C599195C442D7125}Prefabs/Compositions/Misc/CustomEntities/CompositionDecals/CompositionDecal_CigarButts_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CD31DC9E2D700D33}Prefabs/Props/Services/Post/PostOfficeBox_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{CEEBCF612761AF3E}Prefabs/World/Game/Eden/EnvProbe_Eden.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D3B9D1746BA699D5}Prefabs/World/Game/Eden/TimeAndWeatherManager_Eden.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{D99955DFCF7D3962}Prefabs/Props/Wrecks/CannonWreck_01/CannonWreck_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{DC22AFC5AB59E001}Prefabs/Props/Decorations/Flowerpots/FlowerpotStreet_01/FlowerpotStreet_01_rect_short_Empty.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E1B88C66BF6CA1F9}Prefabs/World/Game/Eden/MapEntity_Everon.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E50AFEC43730924A}Prefabs/Props/Commercial/SignPub_01_Eden_Castle_V1.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E5B570B5F32A7BAE}Prefabs/Systems/Destruction/DestructionManager.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{E87BCD612EEDAC6D}Prefabs/Terrain/Erosion/ErodedEmbankment_01/ErodedEmbankment_01_forest_turnin.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{EB084C400AABD1D3}Prefabs/Props/Wrecks/M151A2_wreck/M151A2_wreck.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F1C5AA461DC6ECCE}Prefabs/Props/Civilian/PotOld_01.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F6D1E024E82511F9}Prefabs/Props/Crates/Crate_01_base.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F70A3289977E44EA}Prefabs/Sounds/Sources/SoundSource_WaterFall_Medium.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{F9B96527E16549AB}Prefabs/Props/Wrecks/M998_wreck/M998_wreck_static.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       },
       {
         "resourceName": "{FA75C3DBECE46A72}Prefabs/Vegetation/Plant/CurbsideWeeds_02.et",
         "instanceCount": 1,
-        "reason": "unclassified (fallback prop/unknown) — excluded from P2_trees catalog"
+        "reason": "unclassified (fallback prop/unknown) — excluded from P5_props catalog"
       }
     ]
   },

@@ -3,6 +3,7 @@
 
 pub mod downsample;
 pub mod hillshade;
+pub mod peaks;
 #[cfg(feature = "png")]
 pub mod png_decode;
 pub mod sample;

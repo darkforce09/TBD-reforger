@@ -1,0 +1,28 @@
+{
+  "slice": "T-152.5",
+  "path": "B",
+  "summary": "No taxiway linework in Everon export — .topo type-0 is runway-only (5 records). RoadEntity / Workbench MCP attribute spike found no taxiway polylines to render.",
+  "spikeDate": "2026-07-13",
+  "sources": [
+    {
+      "id": "topo-type-0",
+      "method": "analyze-water-sources.mjs census",
+      "result": "5 airfield/runway records (TOPO_TYPES.AIRFIELD → roadClass=runway)",
+      "taxiwayRecords": 0
+    },
+    {
+      "id": "roads-json-gz",
+      "method": "packages/map-assets/everon/objects/roads.json.gz",
+      "result": "runway segments only; no roadClass=taxiway or paved apron linework",
+      "taxiwaySegments": 0
+    },
+    {
+      "id": "roadentity-mcp",
+      "method": "scripts/map-assets grep RoadEntity/taxiway — no export path",
+      "result": "No taxiway attribute mapping in build-roads-from-topo.mjs",
+      "taxiwaySegments": 0
+    }
+  ],
+  "acceptance": "G-taxiway-path B — runway + DEM apron + hangar/tower icons only (A3-like read)",
+  "operatorNote": "Taxiway-less NW airfield read acceptable per spec M4 when path B."
+}

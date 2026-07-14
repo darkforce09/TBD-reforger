@@ -23,8 +23,18 @@ export interface WorldClassToggles {
   forest: boolean
   trees: boolean
   props: boolean
+  /** T-152.4 cartographic fence/railing strips (default on). */
+  fences: boolean
+  /** T-152.5 airfield apron + runway polish + hangar/tower icons (default on). */
+  airfield: boolean
   contours: boolean
   sea: boolean
+  /** T-152.7 DEM peak ASL height labels (default on). */
+  heights: boolean
+  /** T-152.8 town name labels from locations.json (default on). */
+  townLabels: boolean
+  /** T-152.9 road name labels from road-names.json (default on). */
+  roadNames: boolean
 }
 
 const DEFAULT_TOGGLES: WorldClassToggles = {
@@ -33,8 +43,13 @@ const DEFAULT_TOGGLES: WorldClassToggles = {
   forest: true,
   trees: true,
   props: false,
+  fences: true,
+  airfield: true,
   contours: true,
   sea: true,
+  heights: true,
+  townLabels: true,
+  roadNames: true,
 }
 
 interface WorldLayerPrefs {

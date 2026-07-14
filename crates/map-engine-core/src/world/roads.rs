@@ -18,7 +18,7 @@ pub fn road_style_width(road_class: &str) -> Option<f64> {
         "road_dirt" => 2.0,
         "track" => 1.5,
         "path" => 1.0,
-        "runway" => 6.0,
+        "runway" => 20.0,
         _ => return None,
     })
 }

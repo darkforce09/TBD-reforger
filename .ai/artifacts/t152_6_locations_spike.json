@@ -1,0 +1,29 @@
+{
+  "slice": "T-152.6",
+  "path": "B",
+  "summary": "Locations export from staged full-world raw-entities.jsonl (World/Locations/* composition prefabs) + CfgWorlds Names crosswalk for four towns without dedicated Eden/{Name}.et anchors.",
+  "spikeDate": "2026-07-13",
+  "sources": [
+    {
+      "id": "raw-entities-jsonl",
+      "method": "packages/map-assets/everon/staging/export/raw-entities.jsonl (TBD_TerrainWorldExportPlugin full-world, 1.41M rows)",
+      "result": "170 World/Locations composition rows; 19 top-level Eden/{Town}.et anchors + StPhilippe_StPhilippe_01",
+      "locationRows": 170
+    },
+    {
+      "id": "path-a-mcp",
+      "method": "scripts/mod/mcp-call.sh wb_state (operator Workbench)",
+      "result": "MCP unavailable in CI/agent sandbox — Path A plugin authored (TBD_LocationsExportPlugin.c) for operator re-export",
+      "status": "blocked-ci"
+    },
+    {
+      "id": "cfgworlds-crosswalk",
+      "method": "Gorey/Highstone/Raccoon Rock/Kermovan absent as Location .et — coords from EnfusionMapMaker APL-SA + operator grid 049,085 + map_export_everon.json subregionCellCentreM",
+      "result": "4 supplemental rows merged in scripts/map-assets/lib/locations-export.mjs CFGWORLD_NAME_SUPPLEMENT",
+      "towns": ["Gorey", "Highstone", "Raccoon Rock", "Kermovan"]
+    }
+  ],
+  "exportCommand": "node scripts/map-assets/export-locations.mjs --terrain everon",
+  "artifact": "packages/map-assets/everon/locations.json",
+  "acceptance": "G7 path B with evidence — not Path C (no operator-only curated seed without A/B attempt)"
+}

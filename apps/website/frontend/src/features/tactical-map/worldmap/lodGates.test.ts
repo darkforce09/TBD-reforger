@@ -4,12 +4,7 @@
 // forests as polygons, trees hidden.
 import { describe, it, expect } from 'vitest'
 import * as gates from './lodGates'
-import {
-  classVisible,
-  contourIntervalForZoom,
-  instanceBudgetCheck,
-  visibleWithImportance,
-} from './lodGates'
+import { classVisible, contourIntervalForZoom, instanceBudgetCheck } from './lodGates'
 
 describe('lodGates N2 constants (LOD4)', () => {
   it('exports the v2 contract values verbatim', () => {
@@ -113,18 +108,6 @@ describe('contourIntervalForZoom ladder (N3, T-090.5.4)', () => {
     expect(contourIntervalForZoom(1)).toBe(10) // edge to finer
     expect(contourIntervalForZoom(3)).toBe(10)
     expect(contourIntervalForZoom(6)).toBe(10)
-  })
-})
-
-describe('visibleWithImportance (N2 per-prefab override)', () => {
-  it('landmark importanceZoom −4 surfaces a prop-class prefab at whole-island zoom', () => {
-    expect(visibleWithImportance('prop', -4, -4)).toBe(true)
-    expect(visibleWithImportance('prop', -4.5, -4)).toBe(false)
-    expect(visibleWithImportance('prop', -4, undefined)).toBe(false)
-  })
-
-  it('never hides below the class gate', () => {
-    expect(visibleWithImportance('building', -2, 5)).toBe(true) // class gate already open
   })
 })
 

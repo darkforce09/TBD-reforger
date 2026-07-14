@@ -124,6 +124,24 @@ where
     Some(uint16_to_meters(u16v, m.height_min_m, m.height_max_m))
 }
 
+/// Bilinear sample on the **f32 meters cache** (runtime DEM). Mirror of `bilinearSample` on the
+/// meters `Float32Array` — no second `uint16_to_meters` pass (that path is for raw u16 rasters).
+#[must_use]
+pub fn sample_elevation_from_meters_cache(
+    x: f64,
+    z: f64,
+    m: &DemManifest,
+    meters: &[f32],
+    width: usize,
+    height: usize,
+) -> Option<f64> {
+    let pc = world_to_pixel(x, z, m);
+    if pc.px < 0.0 || pc.py < 0.0 || pc.px > width as f64 - 1.0 || pc.py > height as f64 - 1.0 {
+        return None;
+    }
+    Some(bilinear_sample(meters, width, height, pc.px, pc.py))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

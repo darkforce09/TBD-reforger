@@ -11,6 +11,7 @@
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
+- **T-152** (1520) — Map cartographic fidelity (glyphs, text, labels) [ready] — Map cartographic fidelity — complete pending merge. .12–.21 shipped; .18/.19 deferred; T-152.22 operator GO 2026-07-14. Hub: t152_map_cartographic_fidelity_program.md · merge: t152_merge_readiness.md.
 
 ## Next queued (top 10)
 
@@ -31,4 +32,10 @@
 flowchart LR
   T067[T-067] --> T068[T-068]
   T092[T-092] --> T071[T-071]
+  T090[T-090] --> T091[T-091]
+  T091[T-091] --> T092[T-092]
+  T090[T-090] --> T152[T-152]
+  T091[T-091] --> T152[T-152]
+  T144[T-144] --> T152[T-152]
+  T151[T-151] --> T152[T-152]
 ```

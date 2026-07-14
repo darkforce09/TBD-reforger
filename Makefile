@@ -112,8 +112,8 @@ rust-ci: ## Rust CI gate locally — fmt + clippy + build + test-it (mirrors the
 	$(MAKE) wasm-ci
 	$(MAKE) rust-test-it
 
-schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency)
-	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-object-golden && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10
+schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency) + T-152.16 height labels
+	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-object-golden && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10 && node ../../scripts/map-assets/verify-height-labels.mjs
 
 schema-codegen: ## Regenerate TS + Rust contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
 	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs

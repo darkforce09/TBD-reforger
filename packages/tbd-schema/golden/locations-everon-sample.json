@@ -1,0 +1,34 @@
+[
+  {
+    "id": "everon-morton",
+    "name": "Morton",
+    "x": 5135.24,
+    "y": 4011.78,
+    "importance": 0.72,
+    "kind": "village"
+  },
+  {
+    "id": "everon-montignac",
+    "name": "Montignac",
+    "x": 4773.46,
+    "y": 7094.57,
+    "importance": 0.85,
+    "kind": "town"
+  },
+  {
+    "id": "everon-highstone",
+    "name": "Highstone",
+    "x": 4950,
+    "y": 8550,
+    "importance": 0.48,
+    "kind": "peak"
+  },
+  {
+    "id": "everon-montignac-sawmil-01",
+    "name": "Montignac Sawmil 01",
+    "x": 4537.88,
+    "y": 6844.21,
+    "importance": 0.4,
+    "kind": "locality"
+  }
+]

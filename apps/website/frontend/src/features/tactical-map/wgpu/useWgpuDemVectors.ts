@@ -22,6 +22,7 @@ import {
   getDemRasterForOverlay,
   subscribeDem,
 } from '../dem/DemController'
+import { getClassToggles, subscribeWorldLayerPrefs } from '../state/worldLayerPrefs'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -84,7 +85,8 @@ export class WgpuDemVectorController {
 
   private pushSea(engine: RenderEngine, deckZoom: number): void {
     if (!this.grid) return
-    const seaVis = class_visible('sea', deckZoom)
+    // T-152.20 — AND the user Sea toggle onto the zoom-LOD gate; off clears the sea band.
+    const seaVis = class_visible('sea', deckZoom) && getClassToggles().sea
     const alpha = sea_fill_alpha(deckZoom)
     if (!seaVis || alpha <= 0) {
       engine.clear_vector_lane(ROLE_SEA)
@@ -114,7 +116,8 @@ export class WgpuDemVectorController {
 
   private pushContours(engine: RenderEngine, deckZoom: number): void {
     if (!this.grid) return
-    const contVis = class_visible('contour', deckZoom)
+    // T-152.20 — AND the user Contours toggle onto the zoom-LOD gate; off clears the contour lane.
+    const contVis = class_visible('contour', deckZoom) && getClassToggles().contours
     const interval = contour_interval_for_zoom(deckZoom)
     if (!contVis) {
       engine.clear_vector_lane(ROLE_CONTOURS)
@@ -163,11 +166,18 @@ export function useWgpuDemVectors(
       const eng = engineRef.current
       if (eng) ctrl.sync(eng, zoomRef.current)
     })
+    // T-152.20 — Sea + Contours toggles live in worldLayerPrefs; re-sync on any pref change so a
+    // flip takes effect at once (the zoom-poll effect only re-syncs on a zoom delta).
+    const unsubPrefs = subscribeWorldLayerPrefs(() => {
+      const eng = engineRef.current
+      if (eng) ctrl.sync(eng, zoomRef.current)
+    })
     // Initial sync once DEM may already be cached.
     const eng = engineRef.current
     if (eng) ctrl.sync(eng, zoomRef.current)
     return () => {
       unsub()
+      unsubPrefs()
       ctrl.dispose()
       ctrlRef.current = null
     }

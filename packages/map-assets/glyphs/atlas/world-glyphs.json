@@ -205,7 +205,7 @@
       "anchorY": 128,
       "mask": false
     },
-    "rock-boulder": {
+    "prop-unknown": {
       "x": 768,
       "y": 256,
       "width": 128,
@@ -214,16 +214,16 @@
       "anchorY": 64,
       "mask": false
     },
-    "tree-conifer": {
+    "rock-boulder": {
       "x": 896,
       "y": 256,
       "width": 128,
       "height": 128,
       "anchorX": 64,
-      "anchorY": 128,
-      "mask": true
+      "anchorY": 64,
+      "mask": false
     },
-    "tree-deciduous": {
+    "tree-conifer": {
       "x": 0,
       "y": 384,
       "width": 128,
@@ -232,7 +232,7 @@
       "anchorY": 128,
       "mask": true
     },
-    "tree-palm": {
+    "tree-deciduous": {
       "x": 128,
       "y": 384,
       "width": 128,
@@ -241,8 +241,17 @@
       "anchorY": 128,
       "mask": true
     },
-    "utility-powerline": {
+    "tree-palm": {
       "x": 256,
+      "y": 384,
+      "width": 128,
+      "height": 128,
+      "anchorX": 64,
+      "anchorY": 128,
+      "mask": true
+    },
+    "utility-powerline": {
+      "x": 384,
       "y": 384,
       "width": 128,
       "height": 128,
@@ -251,7 +260,7 @@
       "mask": false
     },
     "vegetation-bush": {
-      "x": 384,
+      "x": 512,
       "y": 384,
       "width": 128,
       "height": 128,

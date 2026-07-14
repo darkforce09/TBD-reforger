@@ -75,8 +75,9 @@ const MIN_ZOOM_GATES: Record<
   runway: -6,
 }
 
-/** Is a class drawn (and pickable — N4) at this deckZoom? Class gates only; per-prefab
- *  importance overrides go through visibleWithImportance.
+/** Is a class drawn (and pickable — N4) at this deckZoom? Class gates only; the per-prefab
+ *  `render.importanceZoom` override (contract N2) lives in the Rust engine (`world/residency.rs`,
+ *  T-152.21) — TypeScript is not on the world render path.
  *  T-151.5.1: forest fill + outline hide when tree glyphs are on (zoom ≥ TREE_GLYPH_MIN_ZOOM). */
 export function classVisible(cls: WorldRenderClass, deckZoom: number): boolean {
   if (cls === 'forestFill') return deckZoom < TREE_GLYPH_MIN_ZOOM
@@ -101,18 +102,6 @@ export function contourIntervalForZoom(deckZoom: number): number {
   if (deckZoom < -2.5) return 50
   if (deckZoom < 1) return 20
   return 10
-}
-
-/** Per-prefab `render.importanceZoom` override (contract N2): an instance is visible when
- *  deckZoom ≥ importanceZoom even if its class gate is higher — landmarks (lighthouse,
- *  transmitter, watertower, military) surface early. Undefined → class gate only. */
-export function visibleWithImportance(
-  cls: WorldRenderClass,
-  deckZoom: number,
-  importanceZoom?: number,
-): boolean {
-  if (classVisible(cls, deckZoom)) return true
-  return importanceZoom !== undefined && deckZoom >= importanceZoom
 }
 
 /** Budget gate: total would-be-drawn instances across visible classes fits INSTANCE_BUDGET.

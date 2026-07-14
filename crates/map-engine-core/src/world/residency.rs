@@ -22,23 +22,29 @@ use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
+use super::airfield::{compute_airfield_bbox, is_airfield_structure_class, point_in_bbox};
+use super::cartographic_strip::{
+    compose_bridge_rail_strips, compose_fence_strip, compose_pier_strip, pack_cartographic_strips,
+};
 use super::chunk::{WorldChunk, parse_chunk};
 use super::chunk_math::{
     Bbox, TerrainSizeM, chunk_ids_for_rect, chunk_ids_for_viewport, chunk_rect_for_bbox,
 };
 use super::classify::class_code;
 use super::density_ladder::{
-    density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32,
+    density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32, visible_tree_count,
 };
 use super::glyph_math::{
-    BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_icon_key, badge_size_meters,
-    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, pack_icon_instance, pack_rgba_u32,
-    size_with_min_px,
+    BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_size_meters,
+    deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, landmark_glyph_icon_key,
+    pack_icon_instance, pack_rgba_u32, size_with_min_px,
 };
 use super::index::WorldSpatialIndex;
 use super::lod_gates::{INSTANCE_BUDGET, class_visible};
 use super::manifest::{ObjectsManifest, narrow_cells, parse_objects_manifest};
-use super::obb::{BuildingPrefabInfo, building_prefab_lookup, obb_corners};
+use super::obb::{
+    BuildingPrefabInfo, FencePrefabInfo, building_prefab_lookup, fence_prefab_lookup, obb_corners,
+};
 use super::prefab::{PrefabEntry, build_prefab_maps, narrow_prefab_rows};
 use super::store::{WorldError, bytes_to_json};
 
@@ -46,14 +52,14 @@ use super::store::{WorldError, bytes_to_json};
 /// Referenced by Class S tests / verify log; must stay 0.
 pub const DRAW_CULL_MARGIN_M: f64 = 0.0;
 
-/// Per-prefab glyph render resolved once at prefab load (tree/veg/prop/rockLarge only).
+/// Per-prefab glyph render resolved once at prefab load (tree/veg/prop/rockLarge/building).
 #[derive(Clone, Debug)]
 struct GlyphPrefabInfo {
-    /// Index into the 28-entry atlas UV table (`u16::MAX` = unknown key).
+    /// Index into the atlas UV table (`u16::MAX` = unknown key).
     glyph_idx: u16,
     size_m: f32,
     tint: u32,
-    /// 0 = tree group (tree+vegetation), 1 = prop group (prop+rockLarge).
+    /// 0 = tree group (tree+vegetation), 1 = prop group (prop+rockLarge), 2 = building landmark.
     group: u8,
 }
 
@@ -69,12 +75,20 @@ const OUTLINE_COLOR: [u8; 4] = [30, 30, 34, 255];
 /// Solid-dark default footprint fill (`buildingLayer.ts` `FILL_DEFAULT`).
 const FILL_DEFAULT: [u8; 4] = [38, 38, 44, 184];
 
+/// T-152.15 Q6 — bridge deck tint (warm stone), distinct from the gray building fill.
+const BRIDGE_DECK_RGBA: [u8; 4] = [120, 116, 110, 215];
+/// T-152.15 Q6 — dark casing rim drawn under the deck (a bridge reads as a bridge, not a building).
+const BRIDGE_CASING_RGBA: [u8; 4] = [40, 40, 46, 220];
+/// T-152.15 Q6 — casing widen (m) along the crossing (long) axis, past the deck ends.
+const BRIDGE_CASING_MARGIN_M: f64 = 0.8;
+
 /// `FILL_BY_CLASS[class] ?? FILL_DEFAULT` (`buildingLayer.ts:127-139`), verbatim.
 #[must_use]
 fn fill_color(class: &str) -> [u8; 4] {
     match class {
         "military" => [0x7a, 0x5c, 0x3d, 184],
-        "bridge" => [90, 90, 100, 200],
+        // T-152.15 Q6 — `bridge` is handled directly in `rebuild_buffers` (deck + casing), so it is
+        // intentionally not in this table (one bridge codepath).
         "pier" | "dock" => [110, 95, 75, 190],
         "ruin" => [58, 56, 60, 110],
         "castle" => [70, 58, 48, 190],
@@ -111,6 +125,12 @@ pub struct WorldResidency {
     /// that are integers in `[0, 65536)` are inserted (JS finds a building iff `prefabId ===` the
     /// stored u16, i.e. `prefabId < 65536`).
     building_by_u16: HashMap<u16, BuildingPrefabInfo>,
+    /// T-152.21 — smallest `importanceZoom` across resident building prefabs (`None` when none carry
+    /// the override). Cheap outer guard: the badge lane may skip its whole loop when `deck_zoom` is
+    /// below every override, preserving the non-landmark fast path.
+    min_importance_zoom: Option<f64>,
+    /// Fence prop half-extents keyed by prefab u16 id (T-152.4).
+    fence_by_u16: HashMap<u16, FencePrefabInfo>,
     /// Tree/veg/prop/rockLarge glyph lookup keyed by prefab u16 id.
     glyph_by_u16: HashMap<u16, GlyphPrefabInfo>,
     /// Atlas iconKey → UV-table index (set by [`Self::set_glyph_key_map`]).
@@ -138,6 +158,12 @@ pub struct WorldResidency {
 
     fill_buf: Vec<f32>,
     outline_buf: Vec<f32>,
+    /// T-152.4 fence + pier thin strips (packed `[x,y,r,g,b,a]…` triangle list).
+    strip_buf: Vec<f32>,
+    /// T-152.15 — exact per-class strip instance counts (census gates G3/G5, decoupling G6).
+    fence_strip_count: u32,
+    pier_strip_count: u32,
+    bridge_rail_count: u32,
 
     /// T-151.11.3 (audit B-04): ingest-frame start stamp — the ≤ APPLY_BUDGET_MS/frame policy
     /// lives HERE (pure; the wasm wrapper feeds `Date.now`), not in the JS loader.
@@ -149,6 +175,12 @@ pub struct WorldResidency {
     toggle_trees: bool,
     toggle_props: bool,
     toggle_buildings: bool,
+    /// T-152.4 cartographic fence/railing strips (default on).
+    toggle_fences: bool,
+    /// T-152.5 airfield apron + runway polish + hangar/tower icons (default on).
+    toggle_airfield: bool,
+    /// NW Everon airfield bbox from runway union + margin; set after roads load.
+    airfield_bbox: Option<Bbox>,
 
     /// Packed 20 B icon instances (WORLD coords) — replace-not-accumulate.
     tree_glyph_buf: Vec<u8>,
@@ -188,6 +220,8 @@ impl Default for WorldResidency {
             prefab_by_id: HashMap::new(),
             has_oversized: false,
             building_by_u16: HashMap::new(),
+            min_importance_zoom: None,
+            fence_by_u16: HashMap::new(),
             glyph_by_u16: HashMap::new(),
             icon_key_to_idx: HashMap::new(),
             cell_ids: None,
@@ -210,11 +244,18 @@ impl Default for WorldResidency {
             apply_budget_ms_last: 0.0,
             fill_buf: Vec::new(),
             outline_buf: Vec::new(),
+            strip_buf: Vec::new(),
+            fence_strip_count: 0,
+            pier_strip_count: 0,
+            bridge_rail_count: 0,
             ingest_frame_start_ms: None,
             deck_zoom: -2.0,
             toggle_trees: true,
             toggle_props: false,
             toggle_buildings: true,
+            toggle_fences: true,
+            toggle_airfield: true,
+            airfield_bbox: None,
             tree_glyph_buf: Vec::new(),
             prop_glyph_buf: Vec::new(),
             badge_glyph_buf: Vec::new(),
@@ -264,6 +305,55 @@ impl WorldResidency {
         self.rebuild_buffers();
     }
 
+    /// T-152.4 — cartographic fence/railing strip toggle (`worldLayerPrefs.fences`).
+    pub fn set_fences_toggle(&mut self, fences: bool) {
+        if self.toggle_fences == fences {
+            return;
+        }
+        self.toggle_fences = fences;
+        self.rebuild_strip_buffers();
+    }
+
+    /// T-152.5 — airfield apron / runway polish / hangar-tower icon toggle.
+    pub fn set_airfield_toggle(&mut self, on: bool) {
+        if self.toggle_airfield == on {
+            return;
+        }
+        self.toggle_airfield = on;
+        self.rebuild_glyph_buffers();
+    }
+
+    /// Set airfield bbox from runway segments (call after roads load).
+    pub fn set_airfield_bbox_from_runways(&mut self, runways: &[super::roads::RoadSegment]) {
+        self.airfield_bbox = compute_airfield_bbox(runways);
+        self.rebuild_glyph_buffers();
+    }
+
+    /// Whether airfield-specific icons draw (user toggle ∧ bbox known).
+    #[must_use]
+    pub fn airfield_visible(&self) -> bool {
+        self.toggle_airfield && self.airfield_bbox.is_some()
+    }
+
+    #[must_use]
+    pub fn airfield_bbox(&self) -> Option<Bbox> {
+        self.airfield_bbox
+    }
+
+    /// Whether the fence strip lane should draw: Fences toggle ∧ fence LOD gate (T-152.15 —
+    /// dedicated `fence` class at z ≥ 1.5, decoupled from piers).
+    #[must_use]
+    pub fn fences_visible(&self) -> bool {
+        self.toggle_fences && class_visible("fence", self.deck_zoom)
+    }
+
+    /// Whether the pier/dock quay lane should draw: Buildings toggle ∧ pier LOD gate (T-152.15 —
+    /// dedicated `pier` class at z ≥ −1.0, decoupled from the Fences toggle).
+    #[must_use]
+    pub fn piers_visible(&self) -> bool {
+        self.toggle_buildings && class_visible("pier", self.deck_zoom)
+    }
+
     /// Whether the building fill/outline lanes should draw: user toggle ∧ zoom gate
     /// (T-151.11.3 / P-04). The loader passes this as the upload `visible` flag so a toggle-off
     /// removes the lanes (bypassing the empty+visible sticky anti-wipe rule, which only guards
@@ -271,6 +361,15 @@ impl WorldResidency {
     #[must_use]
     pub fn buildings_visible(&self) -> bool {
         self.toggle_buildings && building_visible(self.deck_zoom)
+    }
+
+    /// Whether the shared strip render lane (fences + piers + bridge rails) may draw at all —
+    /// stable on toggle+zoom only (fences OR piers OR buildings). The loader passes this as the
+    /// upload `visible` flag; keeping it independent of buffer contents preserves the
+    /// empty+visible mid-hydration anti-wipe guard while the three sub-lanes gate independently.
+    #[must_use]
+    pub fn strips_visible(&self) -> bool {
+        self.fences_visible() || self.piers_visible() || self.buildings_visible()
     }
 
     fn rebuild_glyph_lookup_from_prefabs(&mut self) {
@@ -290,20 +389,33 @@ impl WorldResidency {
                 continue;
             };
             let code = entry.code;
+            let base = entry.row.base_size_px.unwrap_or(DEFAULT_BASE_SIZE_PX);
             let tree_code = class_code("tree");
             let veg_code = class_code("vegetation");
             let prop_code = class_code("prop");
             let rock_code = class_code("rockLarge");
-            let group = if code == tree_code || code == veg_code {
-                0u8
+            let building_code = class_code("building");
+            let (group, size_m, tint) = if code == tree_code || code == veg_code {
+                (
+                    0u8,
+                    glyph_size_meters(base, entry.row.height_m) as f32,
+                    pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref())),
+                )
             } else if code == prop_code || code == rock_code {
-                1u8
+                (
+                    1u8,
+                    glyph_size_meters(base, entry.row.height_m) as f32,
+                    pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref())),
+                )
+            } else if code == building_code {
+                (
+                    2u8,
+                    badge_size_meters() as f32,
+                    pack_rgba_u32([255, 255, 255, 255]),
+                )
             } else {
                 continue;
             };
-            let base = entry.row.base_size_px.unwrap_or(DEFAULT_BASE_SIZE_PX);
-            let size_m = glyph_size_meters(base, entry.row.height_m) as f32;
-            let tint = pack_rgba_u32(hex_to_rgba(entry.row.default_color.as_deref()));
             self.glyph_by_u16.insert(
                 pid as u16,
                 GlyphPrefabInfo {
@@ -354,6 +466,13 @@ impl WorldResidency {
                 self.building_by_u16.insert(pid as u16, info);
             }
         }
+        // T-152.21 — cache the smallest importanceZoom so the badge lane's outer guard is O(1).
+        self.min_importance_zoom = self
+            .building_by_u16
+            .values()
+            .filter_map(|b| b.importance_zoom)
+            .fold(None, |acc, v| Some(acc.map_or(v, |a: f64| a.min(v))));
+        self.fence_by_u16 = fence_prefab_lookup(&raw);
         self.rebuild_glyph_lookup_from_prefabs();
         Ok(self.prefab_by_id.len())
     }
@@ -384,10 +503,17 @@ impl WorldResidency {
         max_y: f64,
         deck_zoom: f64,
     ) -> Vec<String> {
-        let zoom_changed = (self.deck_zoom - deck_zoom).abs() > f64::EPSILON;
+        let prev_zoom = self.deck_zoom;
+        let zoom_changed = (prev_zoom - deck_zoom).abs() > f64::EPSILON;
         self.deck_zoom = deck_zoom;
         self.last_viewport = [min_x, min_y, max_x, max_y];
-        if !building_visible(deck_zoom) {
+        // T-152.21 — keep world chunks resident below the footprint gate when a landmark's
+        // importanceZoom override could still draw its badge (deck_zoom ≥ min override). Fills
+        // themselves stay gated at BUILDING_MIN_ZOOM inside `rebuild_buffers`; only the badge lane
+        // draws in the [min_importance, BUILDING_MIN_ZOOM) band.
+        let world_want =
+            building_visible(deck_zoom) || self.min_importance_zoom.is_some_and(|m| deck_zoom >= m);
+        if !world_want {
             if !self.pinned_ids.is_empty() {
                 self.pinned_ids.clear();
                 self.pinned_set.clear();
@@ -418,7 +544,14 @@ impl WorldResidency {
         if key == self.pinned_key {
             // Zoom change with same chunks still needs glyph recompose (LOD / min-px).
             // Draw-set always refreshes from last_viewport (strict rect may differ from pin).
-            self.refresh_draw_set_and_glyphs();
+            // T-152.21: a pure zoom change can also flip landmark fill de-emphasis (badge band /
+            // importance boundary) — recompose fills when that band changed (rebuild_buffers also
+            // refreshes the draw set + glyphs), else just refresh glyphs.
+            if self.fill_band_changed(prev_zoom, deck_zoom) {
+                self.rebuild_buffers();
+            } else {
+                self.refresh_draw_set_and_glyphs();
+            }
             // T-151.4.1: same pin key usually means "nothing new". But an aborted fetch can leave
             // the pin unsettled with empty inflight — re-request those undelivered ids.
             if self.pin_settled() || !self.inflight.is_empty() {
@@ -585,13 +718,60 @@ impl WorldResidency {
         }
     }
 
+    /// T-152.21 — does a landmark's early badge glyph actually draw at the current zoom? True only
+    /// below the badge band (`buildingBadge` class gate off) when the prefab's `importanceZoom`
+    /// override fires (`deck_zoom >= importanceZoom`) **and** the atlas carries its landmark glyph.
+    /// State-conditioned handoff (G4): a missing glyph → `false` → the bright class fill is kept, so
+    /// a landmark is never left both rectangle-dimmed and glyph-less. At/above the badge band the
+    /// class gate already composes the badge over the normal fill, so no de-emphasis applies.
+    /// (The only bright-filled classes this de-emphasizes — lighthouse/castle/military — are not
+    /// airfield-gated; `tower`/`hangar` already use the neutral default fill, so the airfield badge
+    /// gate can't strand a de-emphasized-but-glyphless landmark.)
+    fn early_landmark_glyph_active(&self, cls: &str, importance_zoom: Option<f64>) -> bool {
+        let z = self.deck_zoom;
+        if class_visible("buildingBadge", z) {
+            return false;
+        }
+        let Some(iz) = importance_zoom else {
+            return false;
+        };
+        if z < iz {
+            return false;
+        }
+        landmark_glyph_icon_key(cls)
+            .and_then(|k| self.icon_key_to_idx.get(k))
+            .is_some()
+    }
+
+    /// T-152.21 — could a pure zoom change (`prev` → `next`) flip any landmark's fill de-emphasis,
+    /// so the fill buffer must recompose (not just the glyph LOD)? The state flips only when the
+    /// `buildingBadge` class gate toggles or the zoom crosses the importanceZoom boundary. NB: this
+    /// assumes a single importanceZoom magnitude across resident prefabs (tracked as
+    /// `min_importance_zoom`, today −4 everywhere); adding distinct values would need the full set.
+    fn fill_band_changed(&self, prev: f64, next: f64) -> bool {
+        // Footprint gate: fills/outlines appear/vanish at BUILDING_MIN_ZOOM (landmark badges can
+        // persist below it — see `rebuild_buffers` + `set_viewport` residency guard).
+        if building_visible(prev) != building_visible(next) {
+            return true;
+        }
+        if class_visible("buildingBadge", prev) != class_visible("buildingBadge", next) {
+            return true;
+        }
+        self.min_importance_zoom
+            .is_some_and(|m| (prev >= m) != (next >= m))
+    }
+
     /// Recompose the building fill + outline GPU buffers from the pinned chunks, in **string-sorted
     /// id order** (matching the JS composite `[...pinned].sort()`).
     fn rebuild_buffers(&mut self) {
         // T-151.11.3 (P-04): toggle off ⇒ compose nothing (Deck hid the whole building lane).
-        if !self.toggle_buildings {
+        // T-152.21: below the footprint gate (BUILDING_MIN_ZOOM) draw no rectangles either, but
+        // still refresh glyphs so importanceZoom landmark badges persist in that coarse band
+        // ("landmark badges persist, ordinary buildings gone").
+        if !self.toggle_buildings || !building_visible(self.deck_zoom) {
             self.fill_buf.clear();
             self.outline_buf.clear();
+            self.rebuild_strip_buffers();
             self.refresh_draw_set_and_glyphs();
             return;
         }
@@ -616,24 +796,67 @@ impl WorldResidency {
                 let x = f64::from(chunk.positions[2 * r]);
                 let y = f64::from(chunk.positions[2 * r + 1]);
                 let rot = f64::from(chunk.rotations[r]);
+                let cls = info.building_class.as_str();
+                // T-152.4/T-152.15: pier/dock render as thin quay strips (rebuild_strip_buffers),
+                // never a fat square — skip the fill.
+                if cls == "pier" || cls == "dock" {
+                    continue;
+                }
                 // Fill instance (WORLD coords): [x, y, hx, hy, cos, sin, r,g,b,a]. `(cos,sin)` use
                 // the same `rad = deg·PI/180` as `obb_corners`, so fill and outline coincide.
                 let rad = (rot * std::f64::consts::PI) / 180.0;
                 let cos = rad.cos() as f32;
                 let sin = rad.sin() as f32;
-                let c = norm(fill_color(&info.building_class));
-                fill.extend_from_slice(&[
-                    x as f32,
-                    y as f32,
-                    info.half_x as f32,
-                    info.half_y as f32,
-                    cos,
-                    sin,
-                    c[0],
-                    c[1],
-                    c[2],
-                    c[3],
-                ]);
+                if cls == "bridge" {
+                    // T-152.15 Q6 — dark casing rim widened along the crossing (long) axis, pushed
+                    // FIRST, then the warm deck on top → reads as a bridge, not a gray building.
+                    let (chx, chy) = if info.half_x >= info.half_y {
+                        (info.half_x + BRIDGE_CASING_MARGIN_M, info.half_y)
+                    } else {
+                        (info.half_x, info.half_y + BRIDGE_CASING_MARGIN_M)
+                    };
+                    let casing = norm(BRIDGE_CASING_RGBA);
+                    fill.extend_from_slice(&[
+                        x as f32, y as f32, chx as f32, chy as f32, cos, sin, casing[0], casing[1],
+                        casing[2], casing[3],
+                    ]);
+                    let deck = norm(BRIDGE_DECK_RGBA);
+                    fill.extend_from_slice(&[
+                        x as f32,
+                        y as f32,
+                        info.half_x as f32,
+                        info.half_y as f32,
+                        cos,
+                        sin,
+                        deck[0],
+                        deck[1],
+                        deck[2],
+                        deck[3],
+                    ]);
+                } else {
+                    // T-152.21 (G4): when the early landmark glyph draws (importanceZoom override
+                    // below the badge band), hand the coarse-zoom face to the glyph — drop the bright
+                    // class tint to the neutral footprint fill so the icon isn't shouted over by a
+                    // white/tinted rectangle. Glyph unavailable ⇒ predicate false ⇒ bright fill kept.
+                    let fill_rgba = if self.early_landmark_glyph_active(cls, info.importance_zoom) {
+                        FILL_DEFAULT
+                    } else {
+                        fill_color(cls)
+                    };
+                    let c = norm(fill_rgba);
+                    fill.extend_from_slice(&[
+                        x as f32,
+                        y as f32,
+                        info.half_x as f32,
+                        info.half_y as f32,
+                        cos,
+                        sin,
+                        c[0],
+                        c[1],
+                        c[2],
+                        c[3],
+                    ]);
+                }
                 // Outline: closed LineList ring (world coords), 8 vertices, near-black.
                 let ring = obb_corners(x, y, info.half_x, info.half_y, rot);
                 for e in 0..4 {
@@ -660,7 +883,112 @@ impl WorldResidency {
         }
         self.fill_buf = fill;
         self.outline_buf = outline;
+        self.rebuild_strip_buffers();
         self.refresh_draw_set_and_glyphs();
+    }
+
+    /// T-152.15 — compose pier quays, bridge rails, and fence strips over pinned chunks. Each lane
+    /// gates independently (piers ← Buildings toggle + pier LOD; rails ← Buildings toggle; fences ←
+    /// Fences toggle + fence LOD), with an exact instance count (gates G3/G5/G6). The three sub-vecs
+    /// concatenate into one packed `strip_buf` → one render lane (WorldFences); order pier → rail →
+    /// fence is cosmetic (piers/rails under fences).
+    fn rebuild_strip_buffers(&mut self) {
+        self.strip_buf.clear();
+        self.fence_strip_count = 0;
+        self.pier_strip_count = 0;
+        self.bridge_rail_count = 0;
+        let prop_code = class_code("prop");
+        let building_code = class_code("building");
+        let z = self.deck_zoom;
+        let mut ids = self.pinned_ids.clone();
+        ids.sort();
+        let mut pier_v: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+        let mut rail_v: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+        let mut fence_v: Vec<crate::geometry::polyline_strip::StripVertex> = Vec::new();
+
+        // Building-row lane: pier/dock quays (pier gate) + bridge rails (building gate). Both keyed
+        // to the Buildings toggle only — never the Fences toggle.
+        let piers_on = self.piers_visible();
+        let rails_on = self.buildings_visible();
+        if piers_on || rails_on {
+            for id in &ids {
+                let Some(chunk) = self.chunks.get(id) else {
+                    continue;
+                };
+                let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                    continue;
+                };
+                for &r in rows {
+                    let r = r as usize;
+                    let Some(info) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
+                        continue;
+                    };
+                    let cls = info.building_class.as_str();
+                    let x = f64::from(chunk.positions[2 * r]);
+                    let y = f64::from(chunk.positions[2 * r + 1]);
+                    let rot = f64::from(chunk.rotations[r]);
+                    if piers_on && (cls == "pier" || cls == "dock") {
+                        // T-152.15 L3 — every pier/dock emits exactly one quay strip.
+                        pier_v.extend(compose_pier_strip(
+                            x,
+                            y,
+                            info.half_x,
+                            info.half_y,
+                            rot,
+                            fill_color(cls),
+                            z,
+                        ));
+                        self.pier_strip_count += 1;
+                    } else if rails_on && cls == "bridge" {
+                        // T-152.15 Path A — 2 synthetic deck-edge rails per bridge (gate G5).
+                        rail_v.extend(compose_bridge_rail_strips(
+                            x,
+                            y,
+                            info.half_x,
+                            info.half_y,
+                            rot,
+                            z,
+                        ));
+                        self.bridge_rail_count += 2;
+                    }
+                }
+            }
+        }
+
+        // Fence prop strips — Fences toggle + fence LOD gate only (decoupled from piers/rails).
+        if self.fences_visible() {
+            for id in &ids {
+                let Some(chunk) = self.chunks.get(id) else {
+                    continue;
+                };
+                let Some(rows) = chunk.rows_by_class.get(&prop_code) else {
+                    continue;
+                };
+                for &r in rows {
+                    let r = r as usize;
+                    let Some(finfo) = self.fence_by_u16.get(&chunk.prefab_idx[r]) else {
+                        continue;
+                    };
+                    let x = f64::from(chunk.positions[2 * r]);
+                    let y = f64::from(chunk.positions[2 * r + 1]);
+                    let rot = f64::from(chunk.rotations[r]);
+                    fence_v.extend(compose_fence_strip(
+                        x,
+                        y,
+                        finfo.half_x,
+                        finfo.half_y,
+                        rot,
+                        z,
+                    ));
+                    self.fence_strip_count += 1;
+                }
+            }
+        }
+
+        let mut acc = pier_v;
+        acc.extend(rail_v);
+        acc.extend(fence_v);
+        self.strip_buf = pack_cartographic_strips(&acc);
     }
 
     /// Strict visible rect → chunk ids ∩ pinned ∩ cells (Class S draw-set). No preload expand.
@@ -685,12 +1013,12 @@ impl WorldResidency {
     /// Recompute `draw_ids` + density ladder + glyph buffers from `last_viewport`.
     fn refresh_draw_set_and_glyphs(&mut self) {
         self.draw_ids = self.draw_chunk_ids(self.last_viewport);
-        let (gw, gh) = density_grid_dims(self.terrain.width, self.terrain.height, {
-            self.manifest
-                .as_ref()
-                .map(|m| m.chunk_size_m)
-                .unwrap_or(512.0)
-        });
+        let chunk_size_m = self
+            .manifest
+            .as_ref()
+            .map(|m| m.chunk_size_m)
+            .unwrap_or(512.0);
+        let (gw, gh) = density_grid_dims(self.terrain.width, self.terrain.height, chunk_size_m);
         self.density_grid_w = gw;
         self.density_grid_h = gh;
         if gw > 0 && gh > 0 && self.terrain.width > 0.0 {
@@ -698,9 +1026,26 @@ impl WorldResidency {
         } else {
             self.density_grid.clear();
         }
+        // Whole-chunk exact stays the stats/density-texel surface (the R32 grid is per-chunk).
         let exact = exact_tree_count(&self.chunks, &self.draw_ids);
         self.exact_tree_count = exact as u32;
-        self.heatmap_trees = heatmap_trees(exact);
+        // T-152.14: the heatmap-vs-glyph swap counts viewport-VISIBLE trees (area-fraction, audit
+        // A2) with hysteresis `[0.85×budget, budget]` — a chunk barely on-screen no longer clears
+        // every glyph, and the rung does not flicker on pan. Enter above budget; stay resident in
+        // the heatmap rung until the visible count drops below 0.85× (127_500 at the locked budget).
+        let visible = visible_tree_count(
+            &self.chunks,
+            &self.draw_ids,
+            self.last_viewport,
+            chunk_size_m,
+        );
+        let reenter = INSTANCE_BUDGET * 85 / 100;
+        self.heatmap_trees = if self.heatmap_trees {
+            visible >= reenter
+        } else {
+            heatmap_trees(visible)
+        };
+        self.rebuild_strip_buffers();
         self.rebuild_glyph_buffers();
     }
 
@@ -716,7 +1061,12 @@ impl WorldResidency {
             self.toggle_trees && (class_visible("tree", z) || class_visible("vegetation", z));
         let prop_want =
             self.toggle_props && (class_visible("prop", z) || class_visible("rockLarge", z));
-        let badge_want = self.toggle_buildings && class_visible("buildingBadge", z);
+        // T-152.21 — landmarks with an importanceZoom override draw their badge below the class
+        // gate (deck_zoom ≥ importanceZoom). `badge_gate` = the class LOD gate; the loop runs when
+        // it OR any resident override is active, and each instance re-checks per-prefab below.
+        let badge_gate = class_visible("buildingBadge", z);
+        let badge_want = self.toggle_buildings
+            && (badge_gate || self.min_importance_zoom.is_some_and(|m| z >= m));
 
         if !tree_want && !prop_want && !badge_want {
             return;
@@ -817,7 +1167,27 @@ impl WorldResidency {
                     let Some(binfo) = self.building_by_u16.get(&chunk.prefab_idx[r]) else {
                         continue;
                     };
-                    let Some(key) = badge_icon_key(&binfo.building_class) else {
+                    // T-152.21 — per-prefab importanceZoom override: below the class badge band a
+                    // landmark still emits when deck_zoom ≥ its importanceZoom; ordinary buildings
+                    // (no override) fall back to the class gate. At/above the gate this is a no-op.
+                    if !badge_gate && !binfo.importance_zoom.is_some_and(|iz| z >= iz) {
+                        continue;
+                    }
+                    let cls = binfo.building_class.as_str();
+                    if is_airfield_structure_class(cls) {
+                        if !self.airfield_visible() {
+                            continue;
+                        }
+                        let px = f64::from(chunk.positions[2 * r]);
+                        let py = f64::from(chunk.positions[2 * r + 1]);
+                        let Some(bbox) = self.airfield_bbox else {
+                            continue;
+                        };
+                        if !point_in_bbox(px, py, bbox) {
+                            continue;
+                        }
+                    }
+                    let Some(key) = landmark_glyph_icon_key(cls) else {
                         continue;
                     };
                     let Some(&glyph_idx) = self.icon_key_to_idx.get(key) else {
@@ -849,6 +1219,30 @@ impl WorldResidency {
     #[must_use]
     pub fn world_building_outline(&self) -> Vec<f32> {
         self.outline_buf.clone()
+    }
+
+    /// T-152.4 fence + pier strip triangle-list verts (WORLD coords): 6 f32/vert.
+    #[must_use]
+    pub fn world_fence_strips(&self) -> Vec<f32> {
+        self.strip_buf.clone()
+    }
+
+    /// T-152.15 — exact fence strip instance count (one per fence prop OBB, gate G6).
+    #[must_use]
+    pub fn fence_strip_segment_count(&self) -> u32 {
+        self.fence_strip_count
+    }
+
+    /// T-152.15 — exact pier/dock quay strip count (census gate G3; one per pier/dock instance).
+    #[must_use]
+    pub fn pier_strip_segment_count(&self) -> u32 {
+        self.pier_strip_count
+    }
+
+    /// T-152.15 — bridge rail strip count (gate G5; 2 per bridge instance, Path A synthetic).
+    #[must_use]
+    pub fn bridge_rail_strip_count(&self) -> u32 {
+        self.bridge_rail_count
     }
 
     /// Packed tree+vegetation icon instances (WORLD coords, 20 B each).
@@ -884,6 +1278,23 @@ impl WorldResidency {
         (self.badge_glyph_buf.len() / super::glyph_math::ICON_INSTANCE_STRIDE) as u32
     }
 
+    /// Test/diagnostic: glyph lookup entries for a compose group (0 tree, 1 prop, 2 building).
+    #[cfg(test)]
+    #[must_use]
+    pub fn glyph_lookup_len_for_group(&self, group: u8) -> usize {
+        self.glyph_by_u16
+            .values()
+            .filter(|info| info.group == group)
+            .count()
+    }
+
+    /// Test/diagnostic: atlas index for an icon key (when registered).
+    #[cfg(test)]
+    #[must_use]
+    pub fn glyph_idx_for_key(&self, key: &str) -> Option<u16> {
+        self.icon_key_to_idx.get(key).copied()
+    }
+
     /// Sorted draw-set chunk ids (strict visible ∩ pinned ∩ cells).
     #[must_use]
     pub fn draw_ids(&self) -> &[String] {
@@ -899,6 +1310,21 @@ impl WorldResidency {
     #[must_use]
     pub fn heatmap_trees_active(&self) -> bool {
         self.heatmap_trees
+    }
+
+    /// T-152.14 — effective forest-mass (fill/outline) visibility: the residency handoff that keeps
+    /// the green mass alive until tree glyphs actually pack (audit A3). Below the glyph band
+    /// (`class_visible("forestFill")`, z < 0) mass shows as always. At z ≥ 0 mass is normally off
+    /// (glyphs replace it), but it PERSISTS while the wanted tree lane is not drawing glyphs — i.e.
+    /// the heatmap rung is active or the glyph buffer packed empty — so zooming into dense forest
+    /// never leaves a blank band. Read after `rebuild_glyph_buffers` so `tree_glyph_buf` is final.
+    /// `class_visible("forestFill")` stays the pure-zoom oracle; this is the state-aware decision.
+    #[must_use]
+    pub fn forest_fill_effective(&self) -> bool {
+        if class_visible("forestFill", self.deck_zoom) {
+            return true;
+        }
+        self.toggle_trees && (self.heatmap_trees || self.tree_glyph_buf.is_empty())
     }
 
     #[must_use]
@@ -1096,6 +1522,52 @@ mod tests {
         }
     }
 
+    // T-152.14 — synthetic dense-forest fixture (self-contained; no map assets).
+
+    /// Overwrite a resident chunk with `n` tree rows (prefab 0 = the `tree-conifer` glyph below).
+    /// Positions are irrelevant to the area-fraction count (it uses the chunk id → world bbox).
+    fn inject_trees(r: &mut WorldResidency, id: &str, n: usize) {
+        let c = r.chunks.get_mut(id).unwrap();
+        c.count = n as u32;
+        c.positions = vec![0.0; n * 2];
+        c.prefab_idx = vec![0; n];
+        c.rotations = vec![0.0; n];
+        c.z = vec![0.0; n];
+        c.cls_codes = vec![class_code("tree"); n];
+        c.rows_by_class.clear();
+        c.rows_by_class
+            .insert(class_code("tree"), (0..n as u32).collect());
+    }
+
+    /// Everon-sized residency whose one prefab (id 0) is a tree with a real glyph atlas key, so
+    /// injected tree rows actually pack into `tree_glyph_buf` (`tree_glyph_count() > 0`).
+    fn dense_forest_setup() -> WorldResidency {
+        let mut r = WorldResidency::new();
+        r.load_manifest_json(
+            r#"{ "worldBounds": [0,0,12800,12800], "objects": { "prefabsPath": "p", "chunksPath": "c", "chunkSizeM": 512 } }"#,
+        )
+        .unwrap();
+        r.load_prefabs_gz(
+            br##"{ "prefabs": [ { "prefabId": 0, "kind": "tree", "class": "conifer", "spatial": { "halfExtentsM": { "x": 1.2, "y": 1.2, "z": 6 }, "heightM": 12 }, "render": { "iconKey": "tree-conifer", "baseSizePx": 18, "defaultColor": "#2d5a27" } } ] }"##,
+        )
+        .unwrap();
+        let mut cells = String::from("{\"cells\":[");
+        for cy in 0..25 {
+            for cx in 0..25 {
+                if cx != 0 || cy != 0 {
+                    cells.push(',');
+                }
+                cells.push_str(&format!(
+                    "{{\"cx\":{cx},\"cy\":{cy},\"path\":\"objects/chunks/{cx}_{cy}.json.gz\"}}"
+                ));
+            }
+        }
+        cells.push_str("]}");
+        r.load_chunk_index_json(&cells).unwrap();
+        r.set_glyph_key_map(&["tree-conifer".to_string()]);
+        r
+    }
+
     #[test]
     fn requests_exactly_the_chunk_math_set() {
         let mut r = setup();
@@ -1267,7 +1739,10 @@ mod tests {
         }
     }
 
-    /// Class R: heatmap swap clears tree glyphs; under-budget packs every instance.
+    /// Class R (T-152.14 refined): swap counts viewport-VISIBLE trees. Chunk `4_4` sits fully
+    /// inside `[2048,2048,3072,3072]` (area-frac 1), so over-visible-budget still swaps to the
+    /// heatmap rung (the ladder stays reachable for true mega-viewports) and clears tree glyphs;
+    /// under budget the density texel sum still equals the whole-chunk exact.
     #[test]
     fn class_r_heatmap_swap_and_full_pack() {
         let mut r = setup();
@@ -1279,51 +1754,117 @@ mod tests {
 
         let draw = r.draw_chunk_ids(r.last_viewport);
         assert!(!draw.is_empty());
-        // Put 10 trees in first draw chunk — under budget → glyphs == exact.
+        // Put 10 trees in first draw chunk (4_4, fully in view) — under budget.
         let id0 = draw[0].clone();
-        {
-            let c = r.chunks.get_mut(&id0).unwrap();
-            let n = 10usize;
-            c.count = n as u32;
-            c.positions = vec![0.0; n * 2];
-            c.prefab_idx = vec![0; n];
-            c.rotations = vec![0.0; n];
-            c.z = vec![0.0; n];
-            c.cls_codes = vec![class_code("tree"); n];
-            c.rows_by_class.clear();
-            c.rows_by_class
-                .insert(class_code("tree"), (0..n as u32).collect());
-        }
-        // Prefab 0 must resolve as tree glyph — without atlas map, pack skips; force heatmap path
-        // via exact count alone for R4, and for R5 use exact_tree_count without glyph lookup.
+        inject_trees(&mut r, &id0, 10);
         r.refresh_draw_set_and_glyphs();
         let exact = exact_tree_count(&r.chunks, &r.draw_ids);
         assert_eq!(exact, 10);
         assert!(!r.heatmap_trees_active());
-        // Texel sum Class R.
+        // Texel sum Class R (grid stays whole-chunk exact).
         let sum = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
         assert_eq!(sum, exact as u64);
 
-        // Force over-budget: inflate one chunk's tree rows to INSTANCE_BUDGET + 1.
-        {
-            let c = r.chunks.get_mut(&id0).unwrap();
-            let n = INSTANCE_BUDGET + 1;
-            c.count = n as u32;
-            c.positions = vec![0.0; n * 2];
-            c.prefab_idx = vec![0; n];
-            c.rotations = vec![0.0; n];
-            c.z = vec![0.0; n];
-            c.cls_codes = vec![class_code("tree"); n];
-            c.rows_by_class.clear();
-            c.rows_by_class
-                .insert(class_code("tree"), (0..n as u32).collect());
-        }
+        // Force over-budget: inflate the fully-visible chunk to INSTANCE_BUDGET + 1 (area-frac 1).
+        inject_trees(&mut r, &id0, INSTANCE_BUDGET + 1);
         r.refresh_draw_set_and_glyphs();
         assert!(r.heatmap_trees_active());
         assert_eq!(r.tree_glyph_count(), 0);
         assert_eq!(r.exact_tree_count_draw() as usize, INSTANCE_BUDGET + 1);
         let sum2 = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
         assert_eq!(sum2, (INSTANCE_BUDGET + 1) as u64);
+        // A3 handoff: glyphs are heatmap-cleared at z ≥ 0, so forest mass persists — not blank.
+        assert!(r.forest_fill_effective());
+    }
+
+    /// T-152.14 (A2): a chunk barely on-screen no longer drags the swap over budget. Chunk `4_4`
+    /// holds `INSTANCE_BUDGET + 1` trees but only ~10 % is visible → refined count ≈ 15 k → glyphs,
+    /// not heatmap. (This is the whole-chunk-count blank-band bug, now fixed.)
+    #[test]
+    fn class_r_partial_coverage_no_swap() {
+        let mut r = setup();
+        drive(&mut r, [2048.0, 2048.0, 2560.0, 2560.0]); // pin chunk 4_4 (+ neighbours)
+        inject_trees(&mut r, "4_4", INSTANCE_BUDGET + 1);
+        r.deck_zoom = 0.0;
+        r.toggle_trees = true;
+        // Sliver viewport: x 2048..2099.2 of chunk 4_4's [2048,2560] = 51.2/512 ≈ 0.1 area-frac.
+        r.last_viewport = [2048.0, 2048.0, 2099.2, 2560.0];
+        r.refresh_draw_set_and_glyphs();
+        let visible = visible_tree_count(&r.chunks, &r.draw_ids, r.last_viewport, 512.0);
+        assert!(visible <= INSTANCE_BUDGET, "sliver visible = {visible}");
+        assert!(!r.heatmap_trees_active());
+        // Whole-chunk exact is still the full census (grid parity unchanged).
+        assert_eq!(r.exact_tree_count_draw() as usize, INSTANCE_BUDGET + 1);
+    }
+
+    /// T-152.14 (G2): swap hysteresis over `[0.85×budget, budget]` kills boundary flicker. Chunk
+    /// `4_4` is fully in view (area-frac 1) so `visible == injected count`; drive budget+1 (enter)
+    /// → budget−1 (stay) → 0.85×budget−1 (exit).
+    #[test]
+    fn class_r_heatmap_hysteresis() {
+        let mut r = setup();
+        drive(&mut r, [2048.0, 2048.0, 2560.0, 2560.0]);
+        r.deck_zoom = 0.0;
+        r.toggle_trees = true;
+        r.last_viewport = [2048.0, 2048.0, 2560.0, 2560.0]; // fully contains chunk 4_4
+        let reenter = INSTANCE_BUDGET * 85 / 100;
+
+        inject_trees(&mut r, "4_4", INSTANCE_BUDGET + 1);
+        r.refresh_draw_set_and_glyphs();
+        assert!(r.heatmap_trees_active(), "enter above budget");
+
+        inject_trees(&mut r, "4_4", INSTANCE_BUDGET - 1); // in the band → stays
+        r.refresh_draw_set_and_glyphs();
+        assert!(
+            r.heatmap_trees_active(),
+            "stay in heatmap inside the hysteresis band"
+        );
+
+        inject_trees(&mut r, "4_4", reenter - 1); // below 0.85× → exit
+        r.refresh_draw_set_and_glyphs();
+        assert!(!r.heatmap_trees_active(), "exit below 0.85×budget");
+    }
+
+    /// T-152.14 (G3/G4): never-blank property gate over the full detail-zoom ladder. On a dense
+    /// forest fixture, for every z ∈ {0, 0.5, …, 6} at least one of {tree glyphs, forest mass,
+    /// heatmap+grid} is present — under budget glyphs pack and mass is off (handoff), over budget
+    /// the heatmap owns the rung and mass persists.
+    #[test]
+    fn property_never_blank_zoom_ladder() {
+        let vp = [2048.0, 2048.0, 3072.0, 3072.0]; // 9 draw chunks; 4 fully covered (4-5 × 4-5)
+        // 50/chunk → 200 visible (glyphs); 40 000/chunk → 160 000 visible (heatmap + handoff).
+        for &per_chunk in &[50usize, 40_000usize] {
+            let mut r = dense_forest_setup();
+            drive(&mut r, vp);
+            for id in r.draw_chunk_ids(vp) {
+                inject_trees(&mut r, &id, per_chunk);
+            }
+            r.toggle_trees = true;
+            for step in 0..=12u32 {
+                let z = f64::from(step) * 0.5; // 0.0 … 6.0
+                r.deck_zoom = z;
+                r.last_viewport = vp;
+                r.refresh_draw_set_and_glyphs();
+
+                let glyphs = r.tree_glyph_count() > 0;
+                let fill = r.forest_fill_effective();
+                let heat = r.heatmap_trees_active();
+                let grid_nonzero = r.density_grid.iter().any(|&v| v > 0);
+                assert!(
+                    glyphs || fill || (heat && grid_nonzero),
+                    "blank band @ z={z}, per_chunk={per_chunk}"
+                );
+
+                let visible = visible_tree_count(&r.chunks, &r.draw_ids, vp, 512.0);
+                if visible <= INSTANCE_BUDGET {
+                    assert!(glyphs, "glyphs empty under budget @ z={z}");
+                    assert!(!fill, "mass must be off when glyphs pack @ z={z}"); // G4
+                } else {
+                    assert!(heat, "heatmap must own the rung over budget @ z={z}");
+                    assert!(fill, "mass must persist under heatmap @ z={z}"); // G4 / A3
+                }
+            }
+        }
     }
 
     #[test]
@@ -1421,5 +1962,673 @@ mod t151_11_3_tests {
         assert!(r.buildings_visible()); // zoom −2 ≥ −2.5 gate
         let _ = r.set_viewport(0.0, 0.0, 600.0, 600.0, -3.0); // below BUILDING_MIN_ZOOM
         assert!(!r.buildings_visible());
+    }
+}
+
+/// T-152.3 — landmark building glyph wiring (Class R vs TS oracle policy).
+#[cfg(test)]
+mod t152_3_tests {
+    use super::super::glyph_math::{
+        BUILDING_CLASSES, badge_icon_key, building_icon_key, landmark_glyph_icon_key,
+    };
+    use super::*;
+    use std::collections::{HashMap, HashSet};
+    use std::fs;
+    use std::path::PathBuf;
+
+    const FIXTURE_CHUNK: &str = "2_12";
+    const N_MIN_BUILDING_GLYPH_LOOKUP: usize = 15;
+
+    fn map_assets() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../packages/map-assets")
+    }
+
+    fn glyph_keys_from_manifest() -> Vec<String> {
+        let raw =
+            fs::read_to_string(map_assets().join("glyphs/manifest.json")).expect("glyphs manifest");
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        let mut keys: Vec<String> = v["glyphs"]
+            .as_object()
+            .expect("glyphs object")
+            .keys()
+            .cloned()
+            .collect();
+        keys.sort();
+        keys
+    }
+
+    fn load_everon_residency() -> WorldResidency {
+        let everon = map_assets().join("everon");
+        let mut r = WorldResidency::new();
+        r.load_manifest_json(
+            &fs::read_to_string(everon.join("manifest.json")).expect("everon manifest"),
+        )
+        .unwrap();
+        r.load_prefabs_gz(
+            &fs::read(everon.join("objects/prefabs.json.gz")).expect("everon prefabs"),
+        )
+        .unwrap();
+        r.load_chunk_index_json(
+            &fs::read_to_string(everon.join("objects/chunks/manifest.json")).expect("chunk index"),
+        )
+        .unwrap();
+        r.set_glyph_key_map(&glyph_keys_from_manifest());
+        r
+    }
+
+    fn building_class_by_prefab_u16() -> HashMap<u16, String> {
+        let everon = map_assets().join("everon");
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        let mut out = HashMap::new();
+        for row in narrow_prefab_rows(&raw) {
+            if row.kind != "building" {
+                continue;
+            }
+            let pid = row.prefab_id;
+            if (0.0..65536.0).contains(&pid) && pid.fract() == 0.0 {
+                out.insert(pid as u16, row.class);
+            }
+        }
+        out
+    }
+
+    /// T-152.21 — u16 prefab id → `render.importanceZoom` (only building prefabs that carry it).
+    /// Independent oracle for the badge override: read straight from the compiled fixture, mirroring
+    /// how `narrow_prefab_rows` feeds `BuildingPrefabInfo.importance_zoom` in the live path.
+    fn building_importance_by_prefab_u16() -> HashMap<u16, f64> {
+        let everon = map_assets().join("everon");
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        let mut out = HashMap::new();
+        for row in narrow_prefab_rows(&raw) {
+            if row.kind != "building" {
+                continue;
+            }
+            let pid = row.prefab_id;
+            if !(0.0..65536.0).contains(&pid) || pid.fract() != 0.0 {
+                continue;
+            }
+            if let Some(iz) = row.importance_zoom {
+                out.insert(pid as u16, iz);
+            }
+        }
+        out
+    }
+
+    fn drive_fixture_chunk(r: &mut WorldResidency, chunk_id: &str, z: f64) {
+        let mut parts = chunk_id.split('_');
+        let cx: f64 = parts.next().unwrap().parse().unwrap();
+        let cy: f64 = parts.next().unwrap().parse().unwrap();
+        let min_x = cx * 512.0;
+        let min_y = cy * 512.0;
+        let missing = r.set_viewport(min_x, min_y, min_x + 512.0, min_y + 512.0, z);
+        let chunk_path = map_assets()
+            .join("everon/objects/chunks")
+            .join(format!("{chunk_id}.json.gz"));
+        for id in &missing {
+            let bytes = fs::read(&chunk_path).unwrap_or_else(|_| {
+                fs::read(
+                    map_assets()
+                        .join("everon/objects/chunks")
+                        .join(format!("{id}.json.gz")),
+                )
+                .unwrap()
+            });
+            r.ingest_chunk_gz(id, &bytes).unwrap();
+        }
+        if !missing.is_empty() {
+            r.end_apply_frame(0.0);
+        }
+    }
+
+    fn oracle_badge_count(
+        r: &WorldResidency,
+        prefab_class: &HashMap<u16, String>,
+        prefab_importance: &HashMap<u16, f64>,
+        atlas_keys: &HashSet<String>,
+        z: f64,
+    ) -> usize {
+        // T-152.21 — a building emits a badge when the class LOD gate is on OR its per-prefab
+        // importanceZoom override fires (deck_zoom ≥ importanceZoom). Below the gate only the
+        // tagged landmarks count. (Airfield gating is inert on FIXTURE_CHUNK — no hangar/tower
+        // there — so this oracle need not model it; g4 pins that equality at z ≥ 1.)
+        let badge_gate = class_visible("buildingBadge", z);
+        let building_code = class_code("building");
+        let mut n = 0usize;
+        for id in &r.draw_ids {
+            let Some(chunk) = r.chunks.get(id) else {
+                continue;
+            };
+            let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                continue;
+            };
+            for &row in rows {
+                let row = row as usize;
+                let u16k = chunk.prefab_idx[row];
+                let Some(cls) = prefab_class.get(&u16k) else {
+                    continue;
+                };
+                let importance_ok = prefab_importance.get(&u16k).is_some_and(|iz| z >= *iz);
+                if !badge_gate && !importance_ok {
+                    continue;
+                }
+                let Some(key) = landmark_glyph_icon_key(cls) else {
+                    continue;
+                };
+                if atlas_keys.contains(key) {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
+    fn oracle_landmark_glyph_count_for_chunk(
+        r: &WorldResidency,
+        chunk_id: &str,
+        prefab_class: &HashMap<u16, String>,
+        atlas_keys: &HashSet<String>,
+        z: f64,
+    ) -> usize {
+        if !class_visible("buildingBadge", z) {
+            return 0;
+        }
+        let Some(chunk) = r.chunks.get(chunk_id) else {
+            return 0;
+        };
+        let building_code = class_code("building");
+        let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+            return 0;
+        };
+        let landmark = ["lighthouse", "castle", "bridge"];
+        let mut n = 0usize;
+        for &row in rows {
+            let row = row as usize;
+            let Some(cls) = prefab_class.get(&chunk.prefab_idx[row]) else {
+                continue;
+            };
+            if !landmark.contains(&cls.as_str()) {
+                continue;
+            }
+            let Some(key) = landmark_glyph_icon_key(cls) else {
+                continue;
+            };
+            if atlas_keys.contains(key) {
+                n += 1;
+            }
+        }
+        n
+    }
+
+    fn badge_glyph_indices(buf: &[u8]) -> Vec<u16> {
+        let stride = super::super::glyph_math::ICON_INSTANCE_STRIDE;
+        buf.chunks(stride)
+            .map(|chunk| u16::from_le_bytes(chunk[14..16].try_into().unwrap()))
+            .collect()
+    }
+
+    #[test]
+    fn g2_building_glyph_lookup_populated() {
+        let r = load_everon_residency();
+        let n = r.glyph_lookup_len_for_group(2);
+        assert!(
+            n >= N_MIN_BUILDING_GLYPH_LOOKUP,
+            "building glyph lookup {n} < N_min {N_MIN_BUILDING_GLYPH_LOOKUP}"
+        );
+    }
+
+    /// Guard B (glyph-atlas fix) — the tree lane was never tested on real data (only badges were),
+    /// which is how the 28-vs-29 atlas-count bug shipped unseen. Proves the Rust core maps every
+    /// real tree prefab to a group-0 glyph and packs a dense forest chunk once keys are registered —
+    /// so the "no tree glyphs" defect is provably downstream (the browser atlas-count guard), not core.
+    #[test]
+    fn tree_glyphs_pack_from_real_everon_data() {
+        let mut r = load_everon_residency();
+        // Every real Everon tree prefab (iconKey tree-conifer/tree-deciduous) registers as group 0.
+        assert_eq!(
+            r.glyph_lookup_len_for_group(0),
+            51,
+            "all real tree prefabs must map to group-0 glyphs"
+        );
+        // A dense-forest chunk at detail zoom (z=0, tree glyphs on) packs its whole tree census.
+        // `drive_fixture_chunk` replicates 16_2's data (6500 trees) into every strict-draw chunk;
+        // the z=0 viewport [8192,1024,8704,1536] spans to chunk edges → 4 draw chunks (16_2,17_2,
+        // 16_3,17_3) → 4 × 6500 = 26000. Completeness: every visible tree instance packs (none dropped).
+        drive_fixture_chunk(&mut r, "16_2", 0.0);
+        let packed = r.tree_glyph_count();
+        assert!(packed > 0, "forest chunk must pack tree glyphs");
+        assert_eq!(
+            packed,
+            r.exact_tree_count_draw(),
+            "every visible tree instance must pack (no silent drops)"
+        );
+        assert_eq!(
+            packed, 26000,
+            "4 strict-draw chunks × 6500 replicated fixture trees"
+        );
+    }
+
+    fn world_glyphs_atlas_keys() -> HashSet<String> {
+        let raw = fs::read_to_string(map_assets().join("glyphs/atlas/world-glyphs.json"))
+            .expect("world-glyphs.json");
+        let v: serde_json::Value = serde_json::from_str(&raw).unwrap();
+        v["icons"]
+            .as_object()
+            .expect("icons object")
+            .keys()
+            .cloned()
+            .collect()
+    }
+
+    /// Guard A (glyph-atlas fix) — the two atlas key sources agree, and EVERY glyph key any render
+    /// path can request resolves in the browser atlas: every prefab `iconKey` (data path) plus every
+    /// `building_icon_key`/`badge_icon_key` classify output. A missing key = a silently-dark glyph
+    /// type — the exact class of defect that shipped `29 ≠ 28` unseen. This fails CI loudly instead.
+    #[test]
+    fn glyph_atlas_covers_every_requested_key_and_sources_agree() {
+        let atlas = world_glyphs_atlas_keys();
+        // Source parity: the browser atlas (world-glyphs.json) and the manifest source cannot drift.
+        let manifest: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        assert_eq!(
+            atlas, manifest,
+            "world-glyphs.json vs manifest.json glyph keys diverged"
+        );
+        // Data path: every prefab iconKey resolves.
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(map_assets().join("everon/objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        for row in narrow_prefab_rows(&raw) {
+            if let Some(k) = row.icon_key.as_deref() {
+                assert!(atlas.contains(k), "prefab iconKey '{k}' missing from atlas");
+            }
+        }
+        // Classify path: every building footprint + badge overlay key resolves.
+        for &cls in BUILDING_CLASSES {
+            for key in [building_icon_key(cls), badge_icon_key(cls)]
+                .into_iter()
+                .flatten()
+            {
+                assert!(
+                    atlas.contains(key),
+                    "classify key '{key}' (class '{cls}') missing from atlas"
+                );
+            }
+        }
+    }
+
+    /// T-152.21 — below the badge band (`buildingBadge` gate at z ≥ 1) only importanceZoom-tagged
+    /// landmarks emit; ordinary buildings stay dark. (Was: ALL badges off below 1 — the pre-fix
+    /// behavior that left lighthouses as rectangles at the operator's default zoom.)
+    #[test]
+    fn g3_zoom_gate_below_one_only_importance_landmarks() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 0.9);
+        let rust = r.badge_glyph_count() as usize;
+        let oracle = oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, 0.9);
+        assert_eq!(
+            rust, oracle,
+            "@ z=0.9 Rust badge count must equal the importance-aware oracle"
+        );
+        // The fix: importanceZoom landmarks (lighthouse/castle) surface below z=1. Equality above
+        // already proves ordinary (non-importance) buildings are excluded here — the oracle counts
+        // only tagged prefabs when the class gate is off.
+        assert!(
+            rust > 0,
+            "importanceZoom landmarks must emit below the badge band"
+        );
+    }
+
+    #[test]
+    fn g4_class_r_badge_counts_match_oracle() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
+        for z in [1.0, 2.0, 3.0] {
+            drive_fixture_chunk(&mut r, FIXTURE_CHUNK, z);
+            let rust_count = r.badge_glyph_count() as usize;
+            let oracle = oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, z);
+            assert_eq!(
+                rust_count, oracle,
+                "badge count mismatch @ z={z} chunk {FIXTURE_CHUNK}"
+            );
+        }
+    }
+
+    #[test]
+    fn g5_landmark_glyph_count_matches_oracle_at_z2() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
+        let oracle_lm =
+            oracle_landmark_glyph_count_for_chunk(&r, FIXTURE_CHUNK, &prefab_class, &keys, 2.0);
+        assert!(
+            oracle_lm > 0,
+            "fixture chunk must include landmark buildings"
+        );
+        assert_eq!(
+            oracle_lm, 11,
+            "pinned fixture {FIXTURE_CHUNK} landmark oracle"
+        );
+        let lighthouse_idx = r.glyph_idx_for_key("building-lighthouse").unwrap();
+        let castle_idx = r.glyph_idx_for_key("building-castle").unwrap();
+        let bridge_idx = r.glyph_idx_for_key("building-bridge").unwrap();
+        let rust_lm = badge_glyph_indices(&r.world_badge_glyphs())
+            .iter()
+            .filter(|idx| **idx == lighthouse_idx || **idx == castle_idx || **idx == bridge_idx)
+            .count();
+        assert!(
+            rust_lm >= oracle_lm,
+            "composed landmark glyphs {rust_lm} must cover fixture oracle {oracle_lm}"
+        );
+        assert_eq!(
+            r.badge_glyph_count() as usize,
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, 2.0)
+        );
+    }
+
+    #[test]
+    fn g6_lighthouse_instances_emit_building_lighthouse_glyph() {
+        let mut r = load_everon_residency();
+        let lighthouse_idx = r
+            .glyph_idx_for_key("building-lighthouse")
+            .expect("building-lighthouse in atlas");
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
+        let indices = badge_glyph_indices(&r.world_badge_glyphs());
+        assert!(
+            indices.contains(&lighthouse_idx),
+            "badge buffer must include building-lighthouse glyph @ z=2"
+        );
+        assert!(r.badge_glyph_count() > 0);
+    }
+
+    /// T-152.21 G2 + G1 — importanceZoom landmarks surface at the default editor zoom (−2) and down
+    /// to the override boundary (−4), and vanish just past it. Closes the P1 "white rectangles at
+    /// default zoom" complaint: lighthouses/castles read as badges where the operator lives (z=−2).
+    #[test]
+    fn t152_21_landmark_early_visibility() {
+        let mut r = load_everon_residency();
+        let keys: HashSet<String> = glyph_keys_from_manifest().into_iter().collect();
+        let prefab_class = building_class_by_prefab_u16();
+        let prefab_importance = building_importance_by_prefab_u16();
+        let lighthouse_idx = r.glyph_idx_for_key("building-lighthouse").unwrap();
+
+        // G2 — default editor zoom (−2): the lighthouse chunk emits landmark badges.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -2.0);
+        let n_default = r.badge_glyph_count() as usize;
+        assert!(
+            n_default > 0,
+            "landmarks must emit badges at default zoom −2"
+        );
+        assert_eq!(
+            n_default,
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, -2.0),
+            "z=−2 badge count must equal the importance-aware oracle"
+        );
+        assert!(
+            badge_glyph_indices(&r.world_badge_glyphs()).contains(&lighthouse_idx),
+            "building-lighthouse glyph present at z=−2"
+        );
+
+        // G1 — the override boundary is −4 (classify data): visible AT −4.0, gone at −4.1.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -4.0);
+        assert!(
+            r.badge_glyph_count() > 0,
+            "landmarks visible at the importanceZoom boundary −4.0"
+        );
+        assert_eq!(
+            r.badge_glyph_count() as usize,
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, -4.0)
+        );
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -4.1);
+        assert_eq!(
+            r.badge_glyph_count(),
+            0,
+            "no badges past the −4 override boundary"
+        );
+        assert_eq!(
+            oracle_badge_count(&r, &prefab_class, &prefab_importance, &keys, -4.1),
+            0
+        );
+    }
+
+    /// T-152.21 G4 — fill de-emphasis handoff: while the early landmark glyph draws (below the badge
+    /// band) the lighthouse's bright white OBB fill (`[235,235,235,220]`, the literal P1 face) drops
+    /// to the neutral footprint fill so the glyph is the coarse-zoom face; at/above the badge band
+    /// the bright fill is restored (the badge composes over the normal fill, as before).
+    #[test]
+    fn t152_21_fill_deemphasis_handoff() {
+        let mut r = load_everon_residency();
+        let white = 235.0_f32 / 255.0;
+        // A fill instance carrying the lighthouse bright-white RGB (stride 10:
+        // [x, y, hx, hy, cos, sin, r, g, b, a]). No other class uses this color.
+        let has_white_fill = |buf: &[f32]| -> bool {
+            buf.chunks_exact(10).any(|c| {
+                (c[6] - white).abs() < 1e-3
+                    && (c[7] - white).abs() < 1e-3
+                    && (c[8] - white).abs() < 1e-3
+            })
+        };
+        // z=−2 (early glyph active): lighthouse fill de-emphasized — no white square.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, -2.0);
+        assert!(
+            !has_white_fill(&r.world_building_fill()),
+            "lighthouse white fill must be de-emphasized at z=−2 (glyph is the face)"
+        );
+        // z=2 (class gate on): bright lighthouse fill restored under the badge overlay.
+        drive_fixture_chunk(&mut r, FIXTURE_CHUNK, 2.0);
+        assert!(
+            has_white_fill(&r.world_building_fill()),
+            "lighthouse bright fill present at z≥1 (no de-emphasis above the badge band)"
+        );
+    }
+
+    #[test]
+    fn g1_building_icon_key_covers_normative_classes() {
+        use super::super::glyph_math::building_icon_key;
+        for &cls in BUILDING_CLASSES {
+            let key = building_icon_key(cls).expect(cls);
+            assert_eq!(key, format!("building-{cls}"));
+        }
+    }
+
+    // ---- T-152.15 fence/pier/bridge remediation gates (G2/G3/G5/G6 + bridge casing) ----
+
+    const EVERON_TERRAIN_M: f64 = 12800.0;
+    const PIER_CENSUS: u32 = 2299;
+    const BRIDGE_CENSUS: usize = 144;
+
+    /// Pin + ingest every real chunk of the island once (each cell's OWN file — unlike
+    /// `drive_fixture_chunk`, which replicates one fixture). No per-chunk sum ⇒ no LRU/extra-ring
+    /// double-count: one residency holds the whole island, so the strip counts are exact.
+    fn drive_full_island(r: &mut WorldResidency, z: f64) {
+        let missing = r.set_viewport(0.0, 0.0, EVERON_TERRAIN_M, EVERON_TERRAIN_M, z);
+        let dir = map_assets().join("everon/objects/chunks");
+        for id in &missing {
+            match fs::read(dir.join(format!("{id}.json.gz"))) {
+                Ok(bytes) => {
+                    r.ingest_chunk_gz(id, &bytes).unwrap();
+                }
+                Err(_) => r.note_undelivered(id),
+            }
+        }
+        r.end_apply_frame(0.0);
+    }
+
+    /// Bridge instance count over the pinned island — independent of the rail-compose path
+    /// (different code) so the G5 `rails == 2 × bridges` check is not tautological.
+    fn island_bridge_count(r: &WorldResidency) -> usize {
+        let building_code = class_code("building");
+        let mut ids = r.pinned_ids.clone();
+        ids.sort();
+        let mut n = 0usize;
+        for id in &ids {
+            let Some(chunk) = r.chunks.get(id) else {
+                continue;
+            };
+            let Some(rows) = chunk.rows_by_class.get(&building_code) else {
+                continue;
+            };
+            for &row in rows {
+                let row = row as usize;
+                if let Some(info) = r.building_by_u16.get(&chunk.prefab_idx[row])
+                    && info.building_class == "bridge"
+                {
+                    n += 1;
+                }
+            }
+        }
+        n
+    }
+
+    /// Count building-fill instances (10 f32 each) whose RGBA equals `rgba`.
+    fn fill_instances_with_color(fill: &[f32], rgba: [u8; 4]) -> usize {
+        let want = norm(rgba);
+        fill.chunks_exact(10)
+            .filter(|inst| {
+                (inst[6] - want[0]).abs() < 1e-6
+                    && (inst[7] - want[1]).abs() < 1e-6
+                    && (inst[8] - want[2]).abs() < 1e-6
+                    && (inst[9] - want[3]).abs() < 1e-6
+            })
+            .count()
+    }
+
+    /// G2 — strip long axis ≡ fill OBB long axis within 0.5° over EVERY real fence + pier/dock
+    /// prefab × sample yaws {0,37,90,123}. Anti-vacuous: asserts ≥ 255 fence prefabs × 4 yaws.
+    #[test]
+    fn t152_15_g2_orientation_parity_all_prefabs() {
+        let everon = map_assets().join("everon");
+        let raw = super::super::store::bytes_to_json(
+            &fs::read(everon.join("objects/prefabs.json.gz")).unwrap(),
+        )
+        .unwrap();
+        let fences = fence_prefab_lookup(&raw);
+        let buildings = building_prefab_lookup(&raw);
+        let mut samples: Vec<(f64, f64)> = fences.values().map(|f| (f.half_x, f.half_y)).collect();
+        let fence_n = samples.len();
+        for info in buildings.values() {
+            if info.building_class == "pier" || info.building_class == "dock" {
+                samples.push((info.half_x, info.half_y));
+            }
+        }
+        let mut checked = 0usize;
+        let mut worst = 0.0f64;
+        for (hx, hy) in &samples {
+            for yaw in [0.0f64, 37.0, 90.0, 123.0] {
+                let [p0, p1] = super::super::obb_long_axis_endpoints(0.0, 0.0, *hx, *hy, yaw);
+                let strip_ang = (p1[1] - p0[1]).atan2(p1[0] - p0[0]).to_degrees();
+                let c = obb_corners(0.0, 0.0, *hx, *hy, yaw);
+                let (e0x, e0y) = (c[1][0] - c[0][0], c[1][1] - c[0][1]); // len 2·hx
+                let (e1x, e1y) = (c[2][0] - c[1][0], c[2][1] - c[1][1]); // len 2·hy
+                let (fx, fy) = if e0x.hypot(e0y) >= e1x.hypot(e1y) {
+                    (e0x, e0y)
+                } else {
+                    (e1x, e1y)
+                };
+                let fill_ang = fy.atan2(fx).to_degrees();
+                let d = {
+                    let x = (strip_ang - fill_ang).abs() % 180.0;
+                    x.min(180.0 - x)
+                };
+                assert!(d <= 0.5, "parity {d}° for hx={hx} hy={hy} yaw={yaw}");
+                worst = worst.max(d);
+                checked += 1;
+            }
+        }
+        assert!(fence_n >= 255, "expected ≥255 fence prefabs, got {fence_n}");
+        assert!(
+            checked >= 255 * 4,
+            "parity gate must be non-vacuous, only {checked} checks"
+        );
+        assert!(worst <= 0.5, "worst-case parity {worst}° exceeds 0.5°");
+    }
+
+    /// G3 (pier census) + G5 (bridge rails) + bridge casing + G6 (toggle decoupling), one island.
+    #[test]
+    fn t152_15_pier_census_rails_casing_and_decoupling() {
+        let mut r = load_everon_residency();
+        drive_full_island(&mut r, 1.5); // z ≥ fence(1.5), pier(−1.0), building(−2.5): all lanes on
+
+        // G3 — every pier/dock draws (compose emits unconditionally). Anti-vacuous: > 0.
+        let piers = r.pier_strip_segment_count();
+        assert!(piers > 0, "G3 anti-vacuous: pier census must be > 0");
+        assert!(
+            piers >= (f64::from(PIER_CENSUS) * 0.99).ceil() as u32,
+            "G3: pier census {piers} < 0.99 × {PIER_CENSUS}"
+        );
+        assert_eq!(piers, PIER_CENSUS, "G3: exact pier census");
+
+        // G5 — 2 synthetic rails per bridge instance (Path A), by construction.
+        let bridges = island_bridge_count(&r);
+        assert!(bridges > 0, "G5 anti-vacuous: island must have bridges");
+        assert_eq!(bridges, BRIDGE_CENSUS, "bridge instance census");
+        assert_eq!(
+            r.bridge_rail_strip_count(),
+            2 * bridges as u32,
+            "G5: every bridge emits exactly 2 rail strips"
+        );
+
+        // Bridge casing (Q6) — each bridge contributes one deck fill + one casing fill.
+        let fill = r.world_building_fill();
+        assert_eq!(
+            fill_instances_with_color(&fill, BRIDGE_DECK_RGBA),
+            bridges,
+            "one warm-deck fill per bridge"
+        );
+        assert_eq!(
+            fill_instances_with_color(&fill, BRIDGE_CASING_RGBA),
+            bridges,
+            "one casing rim per bridge"
+        );
+
+        // Fences on at z=1.5.
+        let fences_on = r.fence_strip_segment_count();
+        assert!(fences_on > 0, "fences must draw at z=1.5");
+
+        // G6 — Fences OFF ⇒ 0 fence strips; piers + rails unaffected.
+        r.set_fences_toggle(false);
+        assert_eq!(r.fence_strip_segment_count(), 0, "G6: fences off ⇒ 0 fence");
+        assert_eq!(
+            r.pier_strip_segment_count(),
+            piers,
+            "G6: piers unaffected by fences"
+        );
+        assert_eq!(
+            r.bridge_rail_strip_count(),
+            2 * bridges as u32,
+            "G6: rails unaffected by fences"
+        );
+        r.set_fences_toggle(true);
+        assert_eq!(r.fence_strip_segment_count(), fences_on, "fences restored");
+
+        // G6 — Buildings OFF ⇒ 0 pier strips + 0 rails; fences unaffected.
+        r.set_glyph_toggles(true, false, false);
+        assert_eq!(
+            r.pier_strip_segment_count(),
+            0,
+            "G6: buildings off ⇒ 0 pier"
+        );
+        assert_eq!(
+            r.bridge_rail_strip_count(),
+            0,
+            "G6: buildings off ⇒ 0 rails"
+        );
+        assert_eq!(
+            r.fence_strip_segment_count(),
+            fences_on,
+            "G6: fences unaffected by buildings toggle"
+        );
     }
 }

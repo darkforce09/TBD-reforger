@@ -3,7 +3,7 @@
 //   - Class R: chunk SoA columns byte-identical (`f32BytesEqual` / integer array equality).
 //   - Class S: per-render-class `rowsByClass` index sets equal.
 //   - Class T: OBB corners + road centerline within 1 ULP of the TS.
-// Census totals are asserted against the pinned inventory (391 / 508 291 / 275 / 888 / 36 / 625).
+// Census totals are asserted against the pinned inventory (1623 / 1 216 109 / 315 / 888 / 36 / 625).
 //
 // The JS master arrays are length `instances.length` but only `[0, count)` is valid, so the
 // oracle columns are sliced to `count` before comparison; the wasm columns are already truncated.
@@ -46,16 +46,16 @@ const chunkFiles = readdirSync(`${OBJECTS}/chunks`)
   .sort()
 
 describe('world.parity — Rust WorldStore vs JS worldObjectsCore oracle (T-151.2 W2)', () => {
-  it('prefab table: 391 (wasm == JS oracle == manifest)', () => {
-    expect(wasmPrefabCount).toBe(391)
-    expect(prefabById.size).toBe(391)
+  it('prefab table: 1623 (wasm == JS oracle == manifest)', () => {
+    expect(wasmPrefabCount).toBe(1623)
+    expect(prefabById.size).toBe(1623)
   })
 
-  it('chunk file census: 275', () => {
-    expect(chunkFiles.length).toBe(275)
+  it('chunk file census: 315', () => {
+    expect(chunkFiles.length).toBe(315)
   })
 
-  it('all 275 chunks byte-exact — Class R columns + Class S row sets; ΣInstances = 508 291', () => {
+  it('all 315 chunks byte-exact — Class R columns + Class S row sets; ΣInstances = 1 216 109', () => {
     let totalInstances = 0
     for (const file of chunkFiles) {
       const id = file.replace('.json.gz', '')
@@ -83,7 +83,7 @@ describe('world.parity — Rust WorldStore vs JS worldObjectsCore oracle (T-151.
         expect(intArrayEqual(store.chunk_rows_for_class(code), oracleRows), `${id} rows[${code}]`).toBe(true)
       }
     }
-    expect(totalInstances).toBe(508291)
+    expect(totalInstances).toBe(1216109)
   }, 180_000)
 
   it('roads: 888 centerlined segments', () => {
@@ -115,9 +115,9 @@ describe('world.parity — Rust WorldStore vs JS worldObjectsCore oracle (T-151.
       forest_region_count: number
       has_oversized: boolean
     }
-    expect(s.prefab_count).toBe(391)
-    expect(s.instance_count_total).toBe(508291)
-    expect(s.chunk_count_loaded).toBe(275)
+    expect(s.prefab_count).toBe(1623)
+    expect(s.instance_count_total).toBe(1216109)
+    expect(s.chunk_count_loaded).toBe(315)
     expect(s.road_segment_count).toBe(888)
     expect(s.forest_region_count).toBe(36)
     expect(typeof s.has_oversized).toBe('boolean')

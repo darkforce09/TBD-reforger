@@ -651,6 +651,7 @@
       "render": {
         "iconKey": "building-lighthouse",
         "lodMinZoom": 4,
+        "importanceZoom": -4,
         "baseSizePx": 12,
         "anchor": [
           0.5,
@@ -797,6 +798,7 @@
       "render": {
         "iconKey": "building-castle",
         "lodMinZoom": 4,
+        "importanceZoom": -4,
         "baseSizePx": 12,
         "anchor": [
           0.5,
@@ -1279,6 +1281,7 @@
       "render": {
         "iconKey": "building-badge-tower",
         "lodMinZoom": 4,
+        "importanceZoom": -4,
         "baseSizePx": 10,
         "anchor": [
           0.5,
@@ -1334,6 +1337,7 @@
       "render": {
         "iconKey": "building-badge-military",
         "lodMinZoom": 4,
+        "importanceZoom": -4,
         "baseSizePx": 10,
         "anchor": [
           0.5,

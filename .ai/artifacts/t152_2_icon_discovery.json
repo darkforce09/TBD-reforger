@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.0.0",
+  "slice": "T-152.2",
+  "timestamp": "2026-07-13T01:50:00+02:00",
+  "method": "Workbench MCP api_search + pak path survey",
+  "workbenchStatus": "FAIL",
+  "workbenchFailReason": "MCP daemon not reachable — scripts/mod/mcp-call.sh api_search 'map icon atlas UI' hung >30s with no JSON response (Workbench not warm / operator offline). Proceeding per spec L1 redraw path.",
+  "searches": [
+    {
+      "tool": "mcp-call.sh api_search",
+      "query": "map icon atlas UI",
+      "result": "TIMEOUT",
+      "notes": "No pak paths returned; operator must run bash scripts/mod/tbd-dev-bootstrap.sh for live extraction"
+    }
+  ],
+  "reforgerPakCandidates": [
+    "UI/Textures/Map/Icons/",
+    "UI/layouts/Map/",
+    "Assets/Editor/MapIcons/"
+  ],
+  "landmarkSetSize": 21,
+  "keys": [
+    {
+      "iconKey": "building-residential",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "A3/Eden gabled house with chimney — distinct from civic church silhouette"
+    },
+    {
+      "iconKey": "building-civic",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Church steeple + cross — Reforger map civic/chapel landmark"
+    },
+    {
+      "iconKey": "building-agricultural",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Red barn X-door + silo — Eden farm compound"
+    },
+    {
+      "iconKey": "building-industrial",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Twin smokestacks + sawtooth roof — factory distinct from warehouse"
+    },
+    {
+      "iconKey": "building-commercial",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Striped awning shopfront — retail vs residential roofline"
+    },
+    {
+      "iconKey": "building-hangar",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Quonset arch + tri-fold door — airfield hangar (T-152.5 defers airfield compose)"
+    },
+    {
+      "iconKey": "building-bunker",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Earth berm pillbox with gun slit — military fortification"
+    },
+    {
+      "iconKey": "building-tower",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Lattice radio mast + guy wires — not lighthouse cylinder"
+    },
+    {
+      "iconKey": "building-military",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Barracks parapet + red star insignia + perimeter fence"
+    },
+    {
+      "iconKey": "building-bridge",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Deck bridge with arch truss + water tint — distinct from building footprints"
+    },
+    {
+      "iconKey": "building-castle",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Twin crenellated towers + gate — Everon castle landmarks"
+    },
+    {
+      "iconKey": "building-lighthouse",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Red-white banded tower + beacon rays — coastal nav aid (M1 pin)"
+    },
+    {
+      "iconKey": "building-shed",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Lean-to shed with tool marks — small outbuilding"
+    },
+    {
+      "iconKey": "building-container",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Stacked ISO corrugated containers — port/depot"
+    },
+    {
+      "iconKey": "building-tent",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "GP tent with ridge pole + peg lines — field camp"
+    },
+    {
+      "iconKey": "building-ruin",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Collapsed jagged walls + rubble — damaged structures"
+    },
+    {
+      "iconKey": "building-garage",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Roll-up door bay + vehicle wheel hint"
+    },
+    {
+      "iconKey": "building-generic",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Neutral flat-roof block — fallback when class unknown"
+    },
+    {
+      "iconKey": "building-badge-military",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Compact circle + star badge for center overlay @ BUILDING_BADGE_MIN_ZOOM"
+    },
+    {
+      "iconKey": "building-badge-bunker",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Compact pillbox berm in circle — bunker center badge"
+    },
+    {
+      "iconKey": "building-badge-tower",
+      "source": "redraw",
+      "reforgerRef": null,
+      "redrawRationale": "Compact antenna mast in circle — tower center badge"
+    }
+  ],
+  "gaps": [
+    "No extracted Reforger PNG dimensions — MCP unavailable; all art source:redraw",
+    "Tree/veg/prop glyphs unchanged (out of scope unless discovery marks mismatch)"
+  ],
+  "deviations": [
+    "Palette uses earthy Aegis-adjacent hex fills per t090_world_object_glyphs.md — not 1:1 Reforger UI color match",
+    "24×24 viewBox north-up simple fills — no embedded bitmaps"
+  ]
+}

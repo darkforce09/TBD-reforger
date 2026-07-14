@@ -23,7 +23,7 @@
 - **T-082** (deferred) — Full attribute fields [ATTR] — Complete Attributes modal field parity with Eden.
 - **T-083** (deferred) — Top menu bar [TOP] — Eden-style top menu bar with file/edit/view stubs.
 - **T-084** (deferred) — Classname / mod prefix search [RIGHT] — Classname-prefix search in asset browser.
-- **T-149** (idea) — Forest Mass Polygon Smoothing [] — Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.
+- **T-149** (idea) — Forest Mass Polygon Smoothing [MAP] — Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.
 - **T-158** (idea) — Editor shell UX consolidation [SHELL, TOP] — Consolidate Settings buttons, wire up top bar, remove redundant Assets tab.
 - **T-131** (idea) — Route planner tool [MAP, UI] — MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.
 - **T-132** (idea) — Multiplayer MC + visual git [DATA, CONN] — Co-editing (Yjs sync server) + visual mission diff/review UI. ADR-3 defers multiplayer v1; visual-git mock exists. Large north-star gap.

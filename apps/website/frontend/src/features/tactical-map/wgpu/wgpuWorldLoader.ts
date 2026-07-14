@@ -14,9 +14,10 @@
 // Flow per camera move (debounced): residency.set_viewport(bounds, zoom) → missing ids → 12-way
 // concurrent chunk fetch → budgeted ingest loop (≤ APPLY_BUDGET_MS/frame) → engine building+glyph lanes.
 
-import { WorldResidency, WorldStore, class_visible } from '@/wasm/pkg/map_engine_wasm'
+import { WorldResidency, WorldStore, DemGrid, dem_apron_grid_factor, atlas_glyph_count } from '@/wasm/pkg/map_engine_wasm'
 import { loadWorldGlyphAtlas } from '../layers/worldGlyphAtlas'
 import { getClassToggles } from '../state/worldLayerPrefs'
+import { getDemRasterForOverlay } from '../dem/DemController'
 import type { TerrainDef } from '../coords/terrains'
 import type { RenderEngine } from './wasmRender'
 
@@ -24,6 +25,8 @@ import type { RenderEngine } from './wasmRender'
 const ROLE_LANDCOVER = 1
 const ROLE_ROADS_CASING = 3
 const ROLE_ROADS = 4
+/** T-152.5 airfield apron polygon (`LaneRole::WorldAirfieldApron`). */
+const ROLE_AIRFIELD_APRON = 8
 
 /** Concurrent chunk fetches (mirror `worldObjectsCore` `DEFAULT_FETCH_CONCURRENCY`). */
 const FETCH_CONCURRENCY = 12
@@ -80,7 +83,8 @@ export class WgpuWorldController {
   private landcoverReady = false
   /** Last landcover visibility decision; skip recompose when unchanged. */
   private lastLandcoverVis: boolean | null = null
-  private lastRoadZoomBand = Number.NaN
+  private lastRoadZoomBand = ''
+  private lastAirfieldApronKey = ''
   private atlasReady = false
 
   private fetchAc: AbortController | null = null
@@ -117,15 +121,27 @@ export class WgpuWorldController {
     this.runViewport()
   }
 
-  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings).
+  /** Push current worldLayerPrefs toggles into residency (trees/props/buildings/fences).
    *  T-151.11.3 (P-04): buildings toggle now empties/rebuilds the footprint buffers in Rust,
-   *  so push the WHOLE lane set (fills + outlines + glyphs) — not just glyphs — or a toggle
-   *  wouldn't take effect until the next camera move. */
+   *  so push the WHOLE lane set (fills + outlines + glyphs + fence strips) — not just glyphs —
+   *  or a toggle wouldn't take effect until the next camera move. */
   syncGlyphToggles(): void {
     if (!this.residency || this.disposed) return
     const t = getClassToggles()
     this.residency.set_glyph_toggles(t.trees, t.props, t.buildings)
-    if (this.ready) this.pushToEngine()
+    this.residency.set_fences_toggle(t.fences)
+    this.residency.set_airfield_toggle(t.airfield)
+    this.lastRoadZoomBand = ''
+    this.lastAirfieldApronKey = ''
+    // T-152.20 — the Roads + Forest mass toggles gate their lanes in pushRoads/pushLandcover; force
+    // both to recompose (null the landcover memo, cleared road band above) so a flip takes effect now.
+    this.lastLandcoverVis = null
+    if (this.ready) {
+      this.pushRoads()
+      this.pushAirfieldApron()
+      this.pushLandcover()
+      this.pushToEngine()
+    }
   }
 
   /** Decode world-glyphs.webp + JSON → GPU atlas + UV table + key map (T-151.5 L1–L3). */
@@ -135,8 +151,12 @@ export class WgpuWorldController {
       const atlas = await loadWorldGlyphAtlas()
       if (!atlas || this.disposed || !this.residency) return
       const keys = Object.keys(atlas.iconMapping).sort()
-      if (keys.length !== 28) {
-        console.warn(`[wgpu-world] glyph atlas key count ${keys.length} ≠ 28 — glyphs off`)
+      // Capacity check against the engine's UV-table size (Rust single source of truth), NOT a
+      // hardcoded literal — the atlas may hold up to `atlas_glyph_count()` keys. Bail only when it
+      // genuinely exceeds engine capacity (would drop glyphs); the count guard test enforces ≤.
+      const capacity = atlas_glyph_count()
+      if (keys.length > capacity) {
+        console.warn(`[wgpu-world] glyph atlas key count ${keys.length} > capacity ${capacity} — glyphs off`)
         return
       }
       const meta = await fetch(atlas.atlasUrl)
@@ -155,7 +175,7 @@ export class WgpuWorldController {
       bmp.close()
       const imageData = ctx.getImageData(0, 0, w, h)
       const rgba = new Uint8Array(imageData.data.buffer)
-      const uv = new Float32Array(28 * 4)
+      const uv = new Float32Array(keys.length * 4)
       for (let i = 0; i < keys.length; i++) {
         const r = atlas.iconMapping[keys[i]]
         uv[i * 4 + 0] = r.x / w
@@ -209,6 +229,10 @@ export class WgpuWorldController {
         try {
           this.store.load_roads_gz(bytes)
           this.roadsLoaded = true
+          if (this.residency) {
+            this.residency.set_airfield_bbox_from_store(this.store)
+          }
+          this.pushAirfieldApron()
         } catch (err) {
           console.warn('[wgpu-world] roads load failed', err)
         }
@@ -231,13 +255,18 @@ export class WgpuWorldController {
   }
 
   /**
-   * Land-cover LOD refresh (T-151.5.1): same exclusive glyph-band hide as forestFill.
-   * Not sticky — re-evaluate on every camera settle so zoom ≥ 0 clears the mega-hull.
+   * Land-cover LOD refresh (T-151.5.1; T-152.14 handoff): visibility follows the residency's
+   * `forest_fill_effective` — the mega-hull hides at zoom ≥ 0 once tree glyphs actually pack, but
+   * persists while they are heatmap-swapped or empty. Not sticky — re-evaluated on every settle.
    */
   private pushLandcover(): void {
-    if (!this.store || !this.landcoverReady) return
-    const zoom = this.engine.zoom
-    const vis = class_visible('forestFill', zoom)
+    if (!this.store || !this.landcoverReady || !this.residency) return
+    // T-152.14: land-cover mass visibility is the residency handoff (`forest_fill_effective`), not
+    // the pure-zoom `forestFill` gate — the green mass persists at z ≥ 0 while tree glyphs are
+    // heatmap-swapped or the lane packs empty, so zooming into dense forest never blanks.
+    // T-152.20: AND the user Forest-mass toggle — the landcover hulls are the low-zoom half of the
+    // same green forest as useWgpuForestMass (fill/outline), so `forest` off hides both.
+    const vis = this.residency.forest_fill_effective && getClassToggles().forest
     if (vis === this.lastLandcoverVis) return
     this.lastLandcoverVis = vis
     if (!vis) {
@@ -264,27 +293,71 @@ export class WgpuWorldController {
   private pushRoads(): void {
     if (!this.store || !this.roadsLoaded) return
     const zoom = this.engine.zoom
+    // T-152.20 — the Roads toggle gates both road lanes (centerline + casing). Fold it into the
+    // band key so a flip recomposes, and into the per-lane `visible` flag so off hides them.
+    const roadsOn = getClassToggles().roads
+    const airfieldPolish = getClassToggles().airfield
     // Band: integer zoom steps of 0.5 so continuous pan doesn't recompose.
     const band = Math.round(zoom * 2)
-    if (band === this.lastRoadZoomBand) return
-    this.lastRoadZoomBand = band
+    const bandKey = `${band}:${airfieldPolish ? 1 : 0}:${roadsOn ? 1 : 0}`
+    if (bandKey === this.lastRoadZoomBand) return
+    this.lastRoadZoomBand = bandKey
     try {
-      const roads = this.store.compose_roads(zoom)
-      this.engine.upload_strip_tris(
-        ROLE_ROADS_CASING,
-        roads.casing,
-        roads.segment_count,
-        roads.segment_count > 0,
-      )
-      this.engine.upload_strip_tris(
-        ROLE_ROADS,
-        roads.centerline,
-        roads.segment_count,
-        roads.segment_count > 0,
-      )
+      const roads = this.store.compose_roads(zoom, airfieldPolish)
+      const roadsVisible = roadsOn && roads.segment_count > 0
+      this.engine.upload_strip_tris(ROLE_ROADS_CASING, roads.casing, roads.segment_count, roadsVisible)
+      this.engine.upload_strip_tris(ROLE_ROADS, roads.centerline, roads.segment_count, roadsVisible)
       roads.free()
     } catch (err) {
       console.warn('[wgpu-world] roads compose failed', err)
+    }
+  }
+
+  /** T-152.5 DEM-flat apron polygon at NW Everon airfield. */
+  private pushAirfieldApron(): void {
+    if (!this.store || !this.roadsLoaded) return
+    const enabled = getClassToggles().airfield
+    const bbox = this.store.airfield_bbox()
+    const key = `${enabled ? 1 : 0}:${bbox.join(',')}`
+    if (key === this.lastAirfieldApronKey) return
+    this.lastAirfieldApronKey = key
+    if (!enabled || bbox.length !== 4) {
+      this.engine.clear_vector_lane(ROLE_AIRFIELD_APRON)
+      return
+    }
+    const raster = getDemRasterForOverlay()
+    if (!raster?.metersCache) {
+      this.engine.clear_vector_lane(ROLE_AIRFIELD_APRON)
+      return
+    }
+    let grid: DemGrid | null = null
+    try {
+      const worldW = raster.width > 0 ? raster.width * 2 : 12_800
+      const worldH = raster.height > 0 ? raster.height * 2 : 12_800
+      grid = DemGrid.downsample(
+        raster.metersCache as Float32Array,
+        raster.width,
+        raster.height,
+        dem_apron_grid_factor(),
+        worldW,
+        worldH,
+      )
+      const mesh = grid.compose_airfield_apron(bbox)
+      this.engine.upload_polygon_mesh(
+        ROLE_AIRFIELD_APRON,
+        mesh.positions,
+        mesh.colors,
+        mesh.indices,
+        mesh.polygon_count,
+        true,
+      )
+      mesh.free()
+    } catch (err) {
+      console.warn('[wgpu-world] airfield apron compose failed', err)
+      this.engine.clear_vector_lane(ROLE_AIRFIELD_APRON)
+      this.lastAirfieldApronKey = ''
+    } finally {
+      grid?.free()
     }
   }
 
@@ -327,8 +400,9 @@ export class WgpuWorldController {
 
   private runViewport(): void {
     if (this.disposed || !this.ready || !this.residency) return
-    // W4 roads recompose on LOD band change (debounced with camera).
+    // W4 roads + airfield apron recompose on LOD/toggle change (debounced with camera).
     this.pushRoads()
+    this.pushAirfieldApron()
     // T-151.5.1: landcover visibility tracks forestFill gate on zoom (not one-shot forever).
     this.pushLandcover()
     const b = this.engine.visible_bounds()
@@ -457,6 +531,12 @@ export class WgpuWorldController {
     const bVis = this.residency.buildings_visible()
     this.engine.upload_world_buildings(fill, rstats.chunks_pinned, bVis)
     this.engine.upload_world_building_outlines(outline, bVis)
+    const strips = this.residency.world_fence_strips()
+    // T-152.15 — the shared strip lane carries fences + piers + bridge rails; gate the upload on
+    // strips_visible() (fences OR piers OR buildings) so piers don't vanish when Fences is toggled
+    // off. Per-class gating already happened in Rust when the buffer was composed.
+    const stripsVis = this.residency.strips_visible()
+    this.engine.upload_world_fence_strips(strips, strips.length > 0 ? 1 : 0, stripsVis)
     this.pushGlyphsToEngine()
     const engStats = JSON.parse(this.engine.stats()) as {
       world_building_instances: number

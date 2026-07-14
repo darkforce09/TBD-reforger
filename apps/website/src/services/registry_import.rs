@@ -161,8 +161,10 @@ pub async fn import_items(
             .iter()
             .map(|(_, it)| it.registry_items_schema_abstract)
             .collect();
-        let arsenal_types: Vec<Option<String>> =
-            chunk.iter().map(|(_, it)| it.arsenal_type.clone()).collect();
+        let arsenal_types: Vec<Option<String>> = chunk
+            .iter()
+            .map(|(_, it)| it.arsenal_type.clone())
+            .collect();
         let weights: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.weight_kg).collect();
         let volumes: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.volume_cm3).collect();
         let max_weights: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.max_weight_kg).collect();
