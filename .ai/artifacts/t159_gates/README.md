@@ -52,9 +52,25 @@ Measured baseline (ground truth — supersedes the inventory's estimates):
 The S gate (`gate_s.mjs`, pending) runs both extractors and asserts the two CSVs are row-set and
 column equal. Until the Leptos side exists, `--check` self-verifies the React oracle is reproducible.
 
+## CDP driver (built + verified)
+
+`driver/` — the reusable, zero-dep CDP client (`cdp.mjs`), the determinism payload (`freeze.js`),
+the V-primary normalized-DOM serializer (`dom.js`), and a static SPA server (`serve.mjs`).
+
+```bash
+# Verify the driver against the real React oracle (no backend, no Leptos):
+ORACLE_DIST=…/apps/website/frontend/dist node .ai/artifacts/t159_gates/driver/smoke.mjs
+```
+
+`smoke.mjs` drives `/login` (zero API calls) on two fresh loads and asserts the two normalized-DOM
+captures are **byte-identical** — proving the serializer is deterministic, the property the V gate
+rests on. Verified: identical DOM sha256 across runs; Aegis tokens resolve to computed values
+(`color: rgb(221,226,247)`, `background: rgb(13,19,34)`), `#root` → positional `#0`.
+
 ## Status
 
-- **Built:** S-gate extractor + the 5 committed React-oracle manifests (self-verifying).
-- **Pending:** CDP driver generalization (`cdp/serve/freeze/dom`), the R/V/T gate runners, the fixture
-  corpus, `extract-leptos.mjs`, and the `t159-leptos` + `t159-gates` CI jobs. These come online as the
-  Leptos app (T-159.1+) provides a target to gate against.
+- **Built + verified:** S-gate extractor + 5 React-oracle manifests (self-verifying); CDP driver
+  (`cdp`/`serve`/`freeze`/`dom`) + `smoke.mjs` (deterministic DOM capture proven against real React).
+- **Pending:** the R/V/T gate runners (`gate_{r,v,t}.mjs`), the fixture corpus (`fixtures/`), the
+  Leptos-side `extract-leptos.mjs`, and the `t159-leptos` + `t159-gates` CI jobs — these come online
+  as the Leptos app (T-159.1+) provides a target to gate against.

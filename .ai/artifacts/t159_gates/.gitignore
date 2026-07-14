@@ -1,0 +1,4 @@
+# Gate run artifacts (regenerable). Committed goldens live in manifests/ and, once the V-gate
+# baseline step lands, v/goldens/. Smoke/run captures and per-slice logs are not committed.
+v/
+logs/
