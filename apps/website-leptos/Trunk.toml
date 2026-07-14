@@ -1,0 +1,11 @@
+[build]
+target = "index.html"
+dist = "dist"
+
+[serve]
+address = "127.0.0.1"
+port = 3000
+# Cross-origin isolation (mirrors the React app's Vite plugin) — crossOriginIsolated === true so the
+# SharedArrayBuffer / wasm-GPU path is available from the Mission Creator slices onward. The gate
+# harness serves the built dist via driver/serve.mjs, which sets the same two headers.
+headers = { "Cross-Origin-Opener-Policy" = "same-origin", "Cross-Origin-Embedder-Policy" = "credentialless" }

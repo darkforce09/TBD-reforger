@@ -1,0 +1,15 @@
+# T-159 — Leptos (Rust/wasm) rewrite of the website SPA. Parallel-lane crate; the React app under
+# apps/website/frontend stays the default until the cutover slice (T-159.24). CSR-only for now
+# (L1); links the existing map-engine crates directly from T-159.15 (the wasm-boundary collapse).
+[package]
+name = "website-leptos"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+leptos = { version = "0.8", features = ["csr"] }
+console_error_panic_hook = "0.1"
+
+# [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
+# wasm-opt via the index.html data-wasm-opt attribute.
