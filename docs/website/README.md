@@ -29,7 +29,9 @@ Central index. For backlog and doc links, open **TICKET_LEAD** or the **ROADMAP*
 | [tickets/AI_PLAYBOOK.md](../../.ai/tickets/AI_PLAYBOOK.md) | Registry edit + `./scripts/ticket sync` |
 | [CLAUDE.md](../../CLAUDE.md) | Agent runtime, doc-on-commit rule |
 | [DEV_RUNBOOK.md](DEV_RUNBOOK.md) | Local stack commands |
+| [HOME_SERVER.md](HOME_SERVER.md) | Deploy website on `192.168.0.140` (SSH + Cloudflare, isolate from PrairieLearn) |
 | [Platform docs](../platform/README.md) | Audit, doc standards, monorepo migration |
+| [Staging server (mod)](../mod/STAGING-SERVER.md) | Game dedicated server + LAN API on same host |
 | [CODEBASE_AUDIT_2026.md](../platform/CODEBASE_AUDIT_2026.md) | T-122 audit findings + shipped/deferred log |
 
 ## Role-based entry paths
