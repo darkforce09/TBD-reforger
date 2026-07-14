@@ -1,0 +1,27 @@
+npm_pkg,disposition,replacement
+@base-ui/react,reimplement,hand-rolled Aegis primitives
+@fontsource/inter,keep,copy woff2 into assets
+@fontsource/jetbrains-mono,keep,copy woff2 into assets
+@hookform/resolvers,drop,0 imports
+@tanstack/react-query,reimplement,leptos Resource/Action + invalidation registry
+@tanstack/react-virtual,reimplement,hand-rolled virtual window
+axios,reimplement,gloo-net
+buffer,drop,DEM decode in wasm
+class-variance-authority,reimplement,cn helper
+clsx,reimplement,cn helper
+comlink,reimplement,gloo-worker
+date-fns,reimplement,chrono
+idb,reimplement,web_sys IDB / rexie
+lucide-react,reimplement,leptos-icons
+pngjs,drop,DEM decode in wasm
+rbush,drop,wasm spatial index
+react,reimplement,leptos
+react-dom,reimplement,leptos
+react-hook-form,drop,0 imports
+react-router-dom,reimplement,leptos_router
+shadcn,keep-build,"Tailwind CSS input, folded into aegis.css"
+sonner,reimplement,hand-rolled toast
+tailwind-merge,reimplement,cn helper
+tw-animate-css,keep-build,"Tailwind CSS input, folded into aegis.css"
+zod,drop,unused src/schemas
+zustand,reimplement,signals + provide_context
