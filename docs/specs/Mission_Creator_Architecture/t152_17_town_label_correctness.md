@@ -1,7 +1,7 @@
 # T-152.17 — Town label correctness (settlement-only lane + kind hygiene)
 
 **Ticket:** T-152 · **Slice:** T-152.17 (remediation ladder #6)
-**Status:** `queued`
+**Status:** `shipped` · **Tag:** `T-152.17` @ `45e4d247`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §10 A8/A12 (S4, D10)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.17`**

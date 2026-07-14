@@ -1,7 +1,7 @@
 # T-152.20 — Mission Settings world-layer toggle completeness
 
 **Ticket:** T-152 · **Slice:** T-152.20 (remediation ladder #9)
-**Status:** `queued`
+**Status:** `shipped` · **Tags:** `T-152.20` @ `4ec87d1b` · `T-152.20.1` @ `1a750cdd`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §10 A15 (O10)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.20`**

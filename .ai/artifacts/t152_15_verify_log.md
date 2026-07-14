@@ -80,9 +80,10 @@ npm run lint                                                   # clean
 
 ## Manual acceptance
 
-- **M1** harbor quays @ z=0, **M2** rural fences readable @ z≈1.5 (no 90° combs), **M3** bridge
-  deck + rails distinct — **operator browser pass pending** (GPU render; automated census + parity
-  gates cover the geometry).
+- **M1** harbor quays @ z=0 — **operator PASS (good enough)** 2026-07-13.
+- **M2** rural fences @ z≈1.5 — **operator PASS (good enough)**; orientation follows field edges,
+  no systematic 90° combs. Residual imperfection accepted; perfection deferred to future data pass.
+- **M3** bridge deck + rails distinct — **operator PASS (good enough)** 2026-07-13.
 - **M4** railing decision = **Path A synthetic-always** — recorded (operator-chosen).
 
 ## Notes / risks

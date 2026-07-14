@@ -1,96 +1,58 @@
-# T-152 merge readiness — `ticket/T-152` → `main`
+# T-152 — Merge readiness (program close-out)
 
-**Date:** 2026-07-13  
-**Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`  
-**Branch:** `ticket/T-152`  
-**Gate log:** [`.ai/artifacts/t152_10_verify_log.md`](t152_10_verify_log.md)
+**Branch:** `ticket/T-152` · **Worktree:** `.ai/artifacts/worktrees/TBD-T-152`  
+**Last code tag:** `T-152.21` @ `d5c746df`  
+**Close-out:** **T-152.22** — **GO to merge** (operator 2026-07-14)
 
----
+## Merge gate
 
-## Automated gate status
+| # | Gate | Status |
+|---|------|--------|
+| 1 | Remediation **.12–.21** shipped + tagged | **DONE** |
+| 2 | **T-152.22** automated G1–G4 | **PASS (waived)** — see verify log quotes |
+| 3 | Operator **O1–O12** | **PASS** (bulk "good enough"; screenshot pack waived) |
+| 4 | `t152_22_verify_log.md` + tag **T-152.22** | This close-out commit |
+| 5 | Operator **merge go** (M2) | **GO** 2026-07-14 |
 
-| Gate | Status |
-|------|--------|
-| G1–G7, G9–G10 | **PASS** (see verify log) |
-| G8 operator O1–O12 | **PENDING** — required before `./scripts/ticket done T-152` |
+## Explicitly NOT blocking merge
 
----
+| Slice | Reason |
+|-------|--------|
+| **T-152.18** | Icon Reforger extract — deferred; T-152.2 redraw atlas retained |
+| **T-152.19** | Workbench Path A label/road export — deferred; Path B sidecars retained |
 
-## Pre-merge CI (run on worktree tip)
+## Shipped remediation summary (.12–.21)
+
+| Tag | What |
+|-----|------|
+| T-152.12 | Text lane alive + upright |
+| T-152.13 / .13.1 | Spleen atlas + halo |
+| T-152.14 / .14.1 | Tree budget + glyph atlas fix |
+| T-152.15 | Fences/piers/bridges |
+| T-152.16 | Height markers credible |
+| T-152.17 | Town labels settlement-only |
+| T-152.20 / .20.1 | 12/12 layer toggles wired |
+| T-152.21 | Landmark badges @ default zoom |
+
+## Merge procedure (operator — do now)
 
 ```bash
-cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152
-git lfs pull
-make map-assets-link
-cd packages/tbd-schema && npm ci --silent && cd ../..
-node scripts/map-assets/verify-t152-cartographic.mjs
-make schema-validate
-make map-export-validate
-make wasm
-cargo test -p map-engine-core --all-features
-cargo test -p map-engine-render
-cd apps/website/frontend && npm ci && npm test && npm run build && npm run lint
-./scripts/ticket check
+# From main repo checkout (not necessarily this worktree):
+cd /home/Samuel/Projects/TBD-Reforger
+git fetch origin   # if needed
+git checkout main
+git merge ticket/T-152 -m "Merge ticket/T-152: map cartographic fidelity"
+# optional: make ci-local
+./scripts/ticket done T-152
+# then ask Cursor: post-merge doc sync (hub complete, CLAUDE §Status)
 ```
 
-Optional full replay: `make db-up && nvm use && make ci-local` (T-125 mirror).
+**After merge:** Cursor sets registry `T-152 → shipped`, hub **complete**, `./scripts/ticket sync`.
 
----
+## Known acceptable gaps (good-enough ship)
 
-## LFS / large assets
-
-| Asset class | Path | Notes |
-|-------------|------|-------|
-| Everon DEM | `packages/map-assets/everon/dem/everon-dem-16bit.png` | LFS |
-| Object chunks | `packages/map-assets/everon/objects/chunks/*.json.gz` | LFS; P5_props census |
-| Satellite bundle | `packages/map-assets/everon/satellite/everon-sat.tbd-sat` | LFS (unchanged by T-152) |
-| Glyph atlas | `packages/map-assets/glyphs/atlas/world-glyphs.webp` | Rebuilt @ T-152.10 (+ `prop-unknown`) |
-| Cartographic tiles | `packages/map-assets/everon/tiles/map/` | gitignored locally; manifest points to workbench-cartographic |
-
-Before merge: `git lfs pull` on operator machine; confirm `make map-assets-link` for dev.
-
----
-
-## Promotion steps (human)
-
-1. Complete **O1–O12** in `t152_10_verify_log.md` (browser @ Everon Map view).
-2. From worktree: re-run aggregator + `make schema-validate` on tip.
-3. Merge `ticket/T-152` → `main` (see conflict note below).
-4. Tag merge commit **`T-152`** (program) after operator sign-off.
-5. Cursor doc pass: `./scripts/ticket done T-152` + `./scripts/ticket sync` on `main`.
-
-**Do not** run `./scripts/ticket done T-152` until **G8 PASS**.
-
----
-
-## Known limitations (documented — not blockers)
-
-| Item | Note |
-|------|------|
-| Taxiways | Path B — no taxiway linework (T-152.5 spike); runway + apron + structures only |
-| Pier strips | 0 instances meet aspect ≥ 4.0 on Everon OBBs; pier fat-square fills suppressed |
-| Arland | Out of program scope |
-| `prop-unknown` glyph | Generic 10 px square for unclassified P5 props (444 prefabs) |
-| Operator perf (O11) | Manual ≥55 fps check @ default zoom |
-
----
-
-## Merge conflict watchlist
-
-| File / area | Risk | Mitigation |
-|-------------|------|------------|
-| `.ai/tickets/registry.json` | **HIGH** — parallel **T-068** arsenal lane on `main` edits same file | Merge `main` into `ticket/T-152` first; resolve registry keeping **both** T-068 active slice + T-152 `ready`/shipped rows |
-| `CLAUDE.md` | **MEDIUM** — `<!-- ticket-sync:status -->` block | Accept `main` then re-run `./scripts/ticket sync` on merged tip |
-| `Cargo.lock` | **LOW** | Regenerate if conflict: `cargo build` |
-| `apps/website/frontend/package-lock.json` | **LOW** | Prefer worktree if T-152-only FE changes |
-
-**No expected overlap** with T-068 application paths (`apps/website/internal/`, mission compiler) — T-152 touches map-engine crates, `packages/map-assets/`, wgpu frontend map lane.
-
----
-
-## Post-merge doc sync (Cursor)
-
-- Registry: T-152 program → `shipped`; all child slices shipped
-- Hub [`t152_map_cartographic_fidelity_program.md`](../docs/specs/Mission_Creator_Architecture/t152_map_cartographic_fidelity_program.md) status → shipped
-- `CLAUDE.md` §Status T-152 bullet via `./scripts/ticket sync`
-- Link verify log + this doc from program hub §Related
+- Curated road names (6 majors) — `.19` deferred
+- Redraw landmark icons — `.18` deferred
+- Contour index labels — fresh waiver in `.16` verify log
+- Perfect fence/field continuity — data limitation
+- Formal `.22` screenshot pack + extended master re-suite — waived by operator merge go

@@ -1,7 +1,7 @@
 # T-152.18 — Reforger icon EXTRACT retry (warm Workbench, operator-in-loop)
 
 **Ticket:** T-152 · **Slice:** T-152.18 (remediation ladder #7)
-**Status:** `queued`
+**Status:** `deferred` · **Operator skip:** 2026-07-13 — no extractable icons; slice not run
 **Executor:** **claude-code** (Claude Code) — **OPERATOR-IN-LOOP: do not start headless**
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.4 (S9, A7, D2 WRONG_PATH)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.18`**

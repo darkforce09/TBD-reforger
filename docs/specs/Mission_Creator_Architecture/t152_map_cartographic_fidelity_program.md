@@ -1,9 +1,9 @@
 # T-152 — Map cartographic fidelity program
 
-**Status:** **ready** · **Active slice:** **T-152.16** (height markers visible) · Remediation **.12–.15** shipped; audit **T-152.11** @ `a8a7a22c` ([report](../../../.ai/artifacts/t152_11_fidelity_audit_report.md)); ladder **.16–.22** then O1–O12 before merge  
+**Status:** **complete pending merge** · Remediation **.12–.21 shipped**; **.18/.19 deferred**; **T-152.22** operator **GO** 2026-07-14  
 **Ticket:** T-152 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
-**Worktree:** `.ai/artifacts/worktrees/TBD-T-152` (absolute: `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152`) · **Branch:** `ticket/T-152`  
-**Parallel lane:** runs **in parallel** with **T-068** arsenal work on `main` — no file overlap with arsenal compile until merge.
+**Worktree:** `.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152` → merge to `main`  
+**Merge readiness:** [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md) · verify [`.ai/artifacts/t152_22_verify_log.md`](../../../.ai/artifacts/t152_22_verify_log.md)
 
 **Authority:** approved plan T-152 Map Fidelity · A3 reference [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
 
@@ -132,13 +132,13 @@ Filed from the T-152.11 operator fidelity audit ([report](../../../.ai/artifacts
 | **T-152.13** | [`t152_13_text_atlas_fidelity.md`](t152_13_text_atlas_fidelity.md) | claude-code | Readable font (Spleen atlas + halo) — **shipped** `2240148d` / `.13.1` `fe81b676` |
 | **T-152.14** | [`t152_14_tree_zoom_guarantee.md`](t152_14_tree_zoom_guarantee.md) | claude-code | Trees never vanish on zoom-in — **shipped** `9cc13714`; **.14.1** glyph atlas `75ccf5b1` |
 | **T-152.15** | [`t152_15_fence_pier_bridge_visibility.md`](t152_15_fence_pier_bridge_visibility.md) | claude-code | Fences/piers/bridges — **shipped** `9518680e` (2,299 piers, Path A rails) |
-| **T-152.16** | [`t152_16_height_markers_visible.md`](t152_16_height_markers_visible.md) | claude-code | **ACTIVE** — Height zoom band + named peaks + 80 m floor + contour decision |
-| **T-152.17** | [`t152_17_town_label_correctness.md`](t152_17_town_label_correctness.md) | claude-code | Settlement-only town lane + kind hygiene + fade |
-| **T-152.18** | [`t152_18_icon_extract_retry.md`](t152_18_icon_extract_retry.md) | claude-code (**operator-in-loop**) | Reforger icon EXTRACT (no silent redraw — D2 remedy) |
-| **T-152.19** | [`t152_19_workbench_one_button_export.md`](t152_19_workbench_one_button_export.md) | claude-code (**operator-in-loop**) | Path A one-button label export + name/taxiway verdict |
-| **T-152.20** | [`t152_20_settings_completeness.md`](t152_20_settings_completeness.md) | claude-code | All 12 world-layer toggles (O10 executable) |
-| **T-152.21** | [`t152_21_landmark_early_visibility.md`](t152_21_landmark_early_visibility.md) | claude-code | `importanceZoom` wired — landmarks at default zoom |
-| **T-152.22** | [`t152_22_e2e_regate_operator.md`](t152_22_e2e_regate_operator.md) | **human** + claude-code | De-vacuoused re-gate + operator O1–O12 + screenshots |
+| **T-152.16** | [`t152_16_height_markers_visible.md`](t152_16_height_markers_visible.md) | claude-code | Height markers — **shipped** `2a1c96e5` (26 rows, band, 80 m floor) |
+| **T-152.17** | [`t152_17_town_label_correctness.md`](t152_17_town_label_correctness.md) | claude-code | Town labels — **shipped** `45e4d247` (settlements only, fade, band) |
+| **T-152.18** | [`t152_18_icon_extract_retry.md`](t152_18_icon_extract_retry.md) | claude-code | **DEFERRED** (post-merge) |
+| **T-152.19** | [`t152_19_workbench_one_button_export.md`](t152_19_workbench_one_button_export.md) | claude-code | **DEFERRED** (post-merge) |
+| **T-152.20** | [`t152_20_settings_completeness.md`](t152_20_settings_completeness.md) | claude-code | **shipped** `4ec87d1b` + `.20.1` `1a750cdd` (12/12 toggles, O10 closed) |
+| **T-152.21** | [`t152_21_landmark_early_visibility.md`](t152_21_landmark_early_visibility.md) | claude-code | **shipped** `d5c746df` (44 badges @ z=−2, importanceZoom wired) |
+| **T-152.22** | [`t152_22_e2e_regate_operator.md`](t152_22_e2e_regate_operator.md) | **human** | **shipped** — operator GO 2026-07-14 (bulk O1–O12; screenshot/master re-suite waived) → **merge** |
 
 ---
 
@@ -181,6 +181,15 @@ Per-slice **Gn** matrices live in each slice spec. Verify logs: `.ai/artifacts/t
 - Named summit folklore beyond numeric ASL
 - True mesh footprint polygons (OBB/strips ship)
 - Mission slot icons / ORBAT / arsenal
+
+## Deferred post-merge (operator — not merge blockers)
+
+| Slice | Deferred | Ships instead |
+|-------|----------|---------------|
+| **T-152.18** | Reforger icon extract | T-152.2 redraw atlas |
+| **T-152.19** | Workbench one-button label export | Path B `locations.json` / curated roads |
+
+Operator 2026-07-14: defer indefinitely; merge when **T-152.22** O1–O12 green. See [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md).
 
 ---
 

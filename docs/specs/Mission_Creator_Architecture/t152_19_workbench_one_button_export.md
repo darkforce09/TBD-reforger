@@ -1,7 +1,7 @@
 # T-152.19 — One-button Workbench label export (Path A E2E)
 
 **Ticket:** T-152 · **Slice:** T-152.19 (remediation ladder #8)
-**Status:** `queued`
+**Status:** `deferred` · **Operator defer:** 2026-07-13 — Workbench extract not needed now; revisit future
 **Executor:** **claude-code** (Claude Code) — **OPERATOR-IN-LOOP: Workbench warm + Script Editor compile required**
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §9 (S6, D8, A9, A10)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.19`**

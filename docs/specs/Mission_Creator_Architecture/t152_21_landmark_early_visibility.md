@@ -1,7 +1,7 @@
 # T-152.21 — Landmark early visibility (`importanceZoom` wired)
 
 **Ticket:** T-152 · **Slice:** T-152.21 (remediation ladder #10)
-**Status:** `queued`
+**Status:** `shipped` · **Tag:** `T-152.21` @ `d5c746df`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §10 A4/A5 (P1–P3) · [`t090_render_lod_contract.md`](t090_render_lod_contract.md) (importanceZoom contract)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.21`**

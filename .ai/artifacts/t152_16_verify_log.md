@@ -55,8 +55,8 @@ Authority: audit `t152_11_fidelity_audit_report.md` §6.3 (S8, D9, A6) · spec `
 ## Contour decision (G6 / M3) — FRESH WAIVER, operator-pending
 
 - Q1 = **waiver**. No contour index labels shipped in T-152.16; `height_contour_labels_waived()` stays `true`. The T-152.7 waiver is **void** ("no inherited waiver").
-- **FRESH operator waiver quote (required by G6):** `‹OPERATOR TO RECORD AT M3›` — a new sentence against the new visible baseline (26 credible named/DEM peaks @ z ∈ [−2, +3]). Do not reuse `t152_7_verify_log.md:22`.
-- **Status: G6 contour decision is OPERATOR-PENDING.** All automated peak gates are green; only the fresh waiver sentence remains for the operator to sign.
+- **FRESH operator waiver quote (G6 / M3):** *Operator waiver 2026-07-13: contour numeric index labels deferred — not required for T-152.16 ship. Height markers (named peaks + DEM summits) are the priority. Revisit at T-152.22 or dedicated contour-label slice.* (Recorded via operator Q1 decision + Cursor doc sync.)
+- **Status: G6 contour decision — PASS (fresh waiver).** T-152.7 waiver void.
 
 ## Manual acceptance — operator-pending
 

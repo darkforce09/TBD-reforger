@@ -1,7 +1,7 @@
 # T-152.22 — E2E re-gate (de-vacuoused) + operator O1–O12 sign-off
 
 **Ticket:** T-152 · **Slice:** T-152.22 (remediation ladder #11 — program close-out)
-**Status:** `queued`
+**Status:** `shipped` (operator GO 2026-07-14 — see verify log)
 **Executor:** **human** (operator) — Claude Code assists with the automated half, cannot self-sign
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.5 (A14, A16, D12) · [`t152_10_e2e_cartographic_gate.md`](t152_10_e2e_cartographic_gate.md)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.22`**

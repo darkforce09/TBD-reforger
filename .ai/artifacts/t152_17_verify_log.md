@@ -98,10 +98,10 @@ only) — **0** peak/hill/natural. Pack = 170 glyph instances. Required towns = 
 > The regen source `packages/map-assets/everon/staging/export/raw-entities.jsonl` is a symlink into
 > the main checkout — it resolved, so the artifact was regenerated (not hand-edited).
 
-## Manual acceptance (operator GPU pass — pending)
+## Manual acceptance (operator GPU pass)
 
-- **M1** island view: settlements only (~5 capitals at z≈−3.68); hills carry height labels.
-- **M2** zoom past +2: names fade out by z=3.0 (recorded decision = **fade**). Automated coverage:
+- **M1** island view: settlements only (~5 capitals at z≈−3.68); hills carry height labels — **operator PASS (looks good)** 2026-07-13.
+- **M2** zoom past +2: names fade out by z=3.0 (decision = **fade**). **operator PASS (looks good)** 2026-07-13.
   `town_label_fade_alpha` endpoints + the engine lane-clear (GPU-observable via the headless WebGL2
   harness / operator pass).
 

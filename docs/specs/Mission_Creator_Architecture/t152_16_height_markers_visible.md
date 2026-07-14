@@ -1,7 +1,7 @@
 # T-152.16 — Height markers visible + credible
 
 **Ticket:** T-152 · **Slice:** T-152.16 (remediation ladder #5)
-**Status:** `ready`
+**Status:** `shipped` · **Tag:** `T-152.16` @ `2a1c96e5`
 **Executor:** **claude-code** (Claude Code)
 **Authority:** T-152 program hub · audit [`t152_11_fidelity_audit_report.md`](../../../.ai/artifacts/t152_11_fidelity_audit_report.md) §6.3 (S8, D9, A6)
 **Worktree:** `/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-152` · branch `ticket/T-152` · tag **`T-152.16`**
