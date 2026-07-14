@@ -45,3 +45,7 @@ Operator abbreviated close-out 2026-07-14 — quote: *"Nah, I think it looks goo
 ## Merge decision
 
 **YES** — merge `ticket/T-152` → `main`. Date: **2026-07-14**. Operator: Samuel. Cursor paper trail: this log + [`t152_merge_readiness.md`](t152_merge_readiness.md).
+
+## Merged
+
+`ticket/T-152` → `main` @ `e2929ee6` (2026-07-14).

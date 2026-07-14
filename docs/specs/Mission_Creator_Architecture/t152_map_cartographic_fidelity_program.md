@@ -1,8 +1,8 @@
 # T-152 — Map cartographic fidelity program
 
-**Status:** **complete pending merge** · Remediation **.12–.21 shipped**; **.18/.19 deferred**; **T-152.22** operator **GO** 2026-07-14  
+**Status:** **COMPLETE** (merged to `main` @ e2929ee6) · Remediation **.12–.21 shipped**; **.18/.19 deferred**; **T-152.22** operator **GO** 2026-07-14  
 **Ticket:** T-152 · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
-**Worktree:** `.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152` → merge to `main`  
+**Worktree:** `.ai/artifacts/worktrees/TBD-T-152` · **Branch:** `ticket/T-152` (merged @ e2929ee6)  
 **Merge readiness:** [`.ai/artifacts/t152_merge_readiness.md`](../../../.ai/artifacts/t152_merge_readiness.md) · verify [`.ai/artifacts/t152_22_verify_log.md`](../../../.ai/artifacts/t152_22_verify_log.md)
 
 **Authority:** approved plan T-152 Map Fidelity · A3 reference [`.ai/artifacts/t144_arma3_map_architecture_report.md`](../../../.ai/artifacts/t144_arma3_map_architecture_report.md)
@@ -138,7 +138,7 @@ Filed from the T-152.11 operator fidelity audit ([report](../../../.ai/artifacts
 | **T-152.19** | [`t152_19_workbench_one_button_export.md`](t152_19_workbench_one_button_export.md) | claude-code | **DEFERRED** (post-merge) |
 | **T-152.20** | [`t152_20_settings_completeness.md`](t152_20_settings_completeness.md) | claude-code | **shipped** `4ec87d1b` + `.20.1` `1a750cdd` (12/12 toggles, O10 closed) |
 | **T-152.21** | [`t152_21_landmark_early_visibility.md`](t152_21_landmark_early_visibility.md) | claude-code | **shipped** `d5c746df` (44 badges @ z=−2, importanceZoom wired) |
-| **T-152.22** | [`t152_22_e2e_regate_operator.md`](t152_22_e2e_regate_operator.md) | **human** | **shipped** — operator GO 2026-07-14 (bulk O1–O12; screenshot/master re-suite waived) → **merge** |
+| **T-152.22** | [`t152_22_e2e_regate_operator.md`](t152_22_e2e_regate_operator.md) | **human** | **shipped** — operator GO 2026-07-14; **merged to main** @ `e2929ee6` |
 
 ---
 

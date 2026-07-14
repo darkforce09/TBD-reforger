@@ -1,3 +1,5 @@
+**MERGED to `main`** @ `e2929ee6` (2026-07-14).
+
 # T-152 — Merge readiness (program close-out)
 
 **Branch:** `ticket/T-152` · **Worktree:** `.ai/artifacts/worktrees/TBD-T-152`  
