@@ -11,6 +11,9 @@ directly (the wasm-boundary collapse).
   (`rustup target add wasm32-unknown-unknown`).
 - [Trunk](https://trunkrs.dev) 0.21+ (`cargo install trunk` or a prebuilt binary). Trunk
   auto-downloads the matching `wasm-bindgen` on first build.
+- [tailwindcss](https://tailwindcss.com) v4 standalone binary on PATH — Trunk runs it for the
+  `data-trunk rel="tailwind-css"` link; no npm / node_modules. Aegis tokens live in `style/aegis.css`
+  (`@theme`), ported byte-for-byte from the React `index.css`.
 
 ## Dev run
 

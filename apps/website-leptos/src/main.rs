@@ -6,19 +6,17 @@
 
 use leptos::prelude::*;
 
-/// Root component. Inline styles so it renders before the Tailwind/Aegis CSS lands (T-159.2).
+/// Root component. Uses Aegis token utilities (`bg-background`, `text-headline-lg`, …) resolved by
+/// the Tailwind v4 pipeline (T-159.2a) — the same tokens, byte-for-byte, the React app renders.
 #[component]
 fn App() -> impl IntoView {
     view! {
         <main
             data-t159-scaffold="1"
-            style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;\
-                   background:#0d1322;color:#dde2f7;font-family:system-ui,sans-serif;gap:0.5rem"
+            class="flex min-h-screen flex-col items-center justify-center gap-2 bg-background text-on-surface"
         >
-            <h1 style="font-size:30px;font-weight:700;letter-spacing:-0.02em">
-                "TBD Reforger — Leptos"
-            </h1>
-            <p style="color:#c4c6d0;font-size:14px">"T-159.1 scaffold · CSR · wasm mount OK"</p>
+            <h1 class="text-headline-lg">"TBD Reforger — Leptos"</h1>
+            <p class="text-label-md text-on-surface-variant">"T-159.2a · Aegis CSS pipeline"</p>
         </main>
     }
 }

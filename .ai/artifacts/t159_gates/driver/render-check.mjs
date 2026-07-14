@@ -40,12 +40,24 @@ async function main() {
     await sleep(150)
     const text = (await page.evaluate('document.body.innerText')) || ''
     const html = (await page.evaluate('document.body.innerHTML')) || ''
+    // Optional page-side boolean assertion (e.g. a computed-style check proving a token resolved).
+    const assertJs = arg('--assert-js')
+    const assertOk = assertJs ? Boolean(await page.evaluate(assertJs)) : null
     await page.close()
 
-    const pass = ready && (!expect || text.includes(expect))
+    const pass = ready && (!expect || text.includes(expect)) && (assertJs ? assertOk : true)
     console.log(
       JSON.stringify(
-        { url, ready, expect, found: expect ? text.includes(expect) : null, textPreview: text.slice(0, 200), htmlBytes: html.length },
+        {
+          url,
+          ready,
+          expect,
+          found: expect ? text.includes(expect) : null,
+          assertJs: assertJs ?? null,
+          assertOk,
+          textPreview: text.slice(0, 200),
+          htmlBytes: html.length,
+        },
         null,
         2,
       ),
