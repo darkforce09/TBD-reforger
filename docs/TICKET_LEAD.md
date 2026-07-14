@@ -11,6 +11,7 @@
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
+- **T-159** (1570) — Leptos UI rewrite (React SPA → Rust) [ready] — Standing worktree .ai/artifacts/worktrees/TBD-T-159 @ t-159-leptos-ui. Rework website UI to Leptos; share types with Axum; host existing wasm engines later. ACTIVE T-159.1 scaffold. Hub: docs/platform/t159_leptos_ui_program.md. React stays until cutover.
 
 ## Next queued (top 10)
 

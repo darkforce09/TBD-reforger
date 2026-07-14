@@ -1,5 +1,5 @@
 {
-  "next_id": 157,
+  "next_id": 160,
   "tickets": [
     {
       "id": "T-001",
@@ -4668,6 +4668,83 @@
         "website"
       ],
       "executor": "cursor-docs"
+    },
+    {
+      "id": "T-159",
+      "order": 1570,
+      "title": "Leptos UI rewrite (React SPA → Rust)",
+      "summary": "Standing worktree .ai/artifacts/worktrees/TBD-T-159 @ t-159-leptos-ui. Rework website UI to Leptos; share types with Axum; host existing wasm engines later. ACTIVE T-159.1 scaffold. Hub: docs/platform/t159_leptos_ui_program.md. React stays until cutover.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "DATA"
+      ],
+      "impact": [
+        "ui",
+        "api"
+      ],
+      "status": "ready",
+      "spec": "docs/platform/t159_leptos_ui_program.md",
+      "branch": "t-159-leptos-ui",
+      "stream": "web-platform",
+      "targets": [
+        "root",
+        "website"
+      ],
+      "executor": "cursor-docs",
+      "slices": [
+        "T-159.0",
+        "T-159.1",
+        "T-159.2",
+        "T-159.3",
+        "T-159.4"
+      ],
+      "active_slice": "T-159.1",
+      "slice_plan": {
+        "T-159.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t159_leptos_ui_program.md",
+          "notes": "Hub + registry + standing worktree + T-159.1 handoff."
+        },
+        "T-159.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t159_1_leptos_scaffold.md",
+          "notes": "Scaffold apps/website-leptos. Handoff: .ai/artifacts/t159_1_claude_code_handoff.md"
+        },
+        "T-159.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "App shell + router + Aegis chrome stubs."
+        },
+        "T-159.3": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Auth bootstrap + dev-login parity."
+        },
+        "T-159.4": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Wave-1 page parity (Dashboard or Mission Library)."
+        }
+      }
     }
   ]
 }

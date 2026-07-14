@@ -22,3 +22,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-159 — Leptos UI rewrite (React SPA → Rust)
+
+- **Active slice:** `T-159.1`
+- **Slice spec:** `docs/platform/t159_1_leptos_scaffold.md`
+- **Program hub:** `docs/platform/t159_leptos_ui_program.md`
+- **Branch:** `t-159-leptos-ui`
+- **Targets:** root, website
+- **Summary:** Standing worktree .ai/artifacts/worktrees/TBD-T-159 @ t-159-leptos-ui. Rework website UI to Leptos; share types with Axum; host existing wasm engines later. ACTIVE T-159.1 scaffold. Hub: docs/platform/t159_leptos_ui_program.md. React stays until cutover.
