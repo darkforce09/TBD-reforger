@@ -4673,7 +4673,7 @@
       "id": "T-159",
       "order": 1570,
       "title": "Leptos UI rewrite (React SPA → Rust)",
-      "summary": "Worktree TBD-T-159 tip f2cd6178. 24 pages + T-159.15.x camera + T-159.16 MissionDoc host shipped. ACTIVE T-159.17 yrsPersist/session. Hub: t159_leptos_ui_program.md.",
+      "summary": "Worktree TBD-T-159 tip 60c6e7ea. Through T-159.17 yrsPersist shipped. ACTIVE T-159.18 LMB select/pick. Hub: t159_leptos_ui_program.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4702,9 +4702,10 @@
         "T-159.15.1",
         "T-159.15.2",
         "T-159.16",
-        "T-159.17"
+        "T-159.17",
+        "T-159.18"
       ],
-      "active_slice": "T-159.17",
+      "active_slice": "T-159.18",
       "slice_plan": {
         "T-159.0": {
           "targets": [
@@ -4796,9 +4797,19 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "60c6e7ea",
           "spec": "docs/platform/t159_17_yrs_persist.md",
-          "notes": "IDB tbd-mission-yrs + warm editorSession. Handoff: .ai/artifacts/t159_17_claude_code_handoff.md"
+          "notes": "IDB tbd-mission-yrs + warm session; semantic digest Class R. Verify: .ai/artifacts/t159_17_verify_log.md. Edit-driven persist deferred until mutator hook (.18+)."
+        },
+        "T-159.18": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t159_18_select_tools.md",
+          "notes": "LMB click-select + frozen viewport + PointIndex. Handoff: .ai/artifacts/t159_18_claude_code_handoff.md"
         }
       }
     },
