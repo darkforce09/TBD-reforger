@@ -13,6 +13,7 @@ mod layout;
 mod nav;
 mod router;
 mod server_intel;
+mod settings;
 mod ui;
 
 fn main() {
@@ -24,6 +25,18 @@ fn main() {
         use leptos::prelude::*;
         use leptos_router::components::Router;
         console_error_panic_hook::set_once();
-        leptos::mount::mount_to_body(|| view! { <Router><AppLayout /></Router> });
+        // Mount inside a `<div id="root">` to mirror React's Vite mount node exactly (body > #root >
+        // app). Beyond drop-in structural parity, it keeps the V-gate's positional-id numbering
+        // aligned: dom.js numbers every [id] in document order, so a leading #root on ONE side would
+        // offset every in-content id (e.g. #arma-link) on that side.
+        leptos::mount::mount_to_body(|| {
+            view! {
+                <div id="root">
+                    <Router>
+                        <AppLayout />
+                    </Router>
+                </div>
+            }
+        });
     }
 }

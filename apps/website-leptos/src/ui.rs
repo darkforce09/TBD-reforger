@@ -28,6 +28,18 @@ pub fn MaterialIcon(
     view! { <span class=cn(&["material-symbols-outlined", class]) style=style>{name}</span> }
 }
 
+/// Page title + optional subtitle header. Ported from components/PageHeader.tsx.
+#[component]
+pub fn PageHeader(title: &'static str, #[prop(optional)] subtitle: &'static str) -> impl IntoView {
+    view! {
+        <header class="mb-8">
+            <h1 class="mb-2 text-3xl font-bold text-on-surface">{title}</h1>
+            {(!subtitle.is_empty())
+                .then(|| view! { <p class="max-w-3xl text-on-surface-variant">{subtitle}</p> })}
+        </header>
+    }
+}
+
 /// AuthGate — API-backed pages show a sign-in CTA for guests (and a "Loading session…" state while
 /// bootstrapping), otherwise the children. Ported from components/AuthGate.tsx. Reactive on the
 /// AuthStore so it flips to the content once a session lands.

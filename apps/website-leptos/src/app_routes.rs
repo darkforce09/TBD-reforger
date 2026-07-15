@@ -5,6 +5,7 @@
 //! The path list mirrors router.rs `ROUTES` (the S-routes gate's source of truth).
 use crate::dashboard::DashboardPage;
 use crate::server_intel::ServerIntelPage;
+use crate::settings::SettingsPage;
 use crate::ui::AuthGate;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
@@ -114,7 +115,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/vehicles") view=ApiPage />
             <Route path=path!("/modpacks") view=ApiPage />
             <Route path=path!("/tools/mortar") view=ApiPage />
-            <Route path=path!("/settings") view=ApiPage />
+            <Route path=path!("/settings") view=SettingsPage />
             <Route path=path!("/admin/events") view=ApiPage />
             <Route path=path!("/admin/approvals") view=ApiPage />
             <Route path=path!("/admin/server") view=ApiPage />

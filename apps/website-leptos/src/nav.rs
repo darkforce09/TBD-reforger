@@ -24,6 +24,17 @@ impl Role {
             Role::Admin => 4,
         }
     }
+
+    /// The API/display string (snake_case), matching the serde wire form — what React renders for
+    /// `{user.role}`.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Role::Enlisted => "enlisted",
+            Role::Leader => "leader",
+            Role::MissionMaker => "mission_maker",
+            Role::Admin => "admin",
+        }
+    }
 }
 
 /// Browse mode: unauthenticated users (`None`) see all nav (mirrors lib/roles.ts `hasMinRole`).
