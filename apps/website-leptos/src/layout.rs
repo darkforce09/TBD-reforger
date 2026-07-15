@@ -6,6 +6,17 @@ use crate::auth::AuthStore;
 use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
 use crate::ui::{cn, MaterialIcon};
 use leptos::prelude::*;
+use leptos_router::hooks::use_location;
+
+/// NavLink active matching: Dashboard ("/") is exact (`end`); every other link is active on an
+/// exact match or a sub-path prefix — mirrors react-router's NavLink.
+fn is_active(path: &str, current: &str) -> bool {
+    if path == "/" {
+        current == "/"
+    } else {
+        current == path || current.starts_with(&format!("{path}/"))
+    }
+}
 
 #[component]
 pub fn AppLayout() -> impl IntoView {
@@ -109,9 +120,11 @@ fn SidebarBrand() -> impl IntoView {
 
 #[component]
 fn SidebarNav() -> impl IntoView {
-    // Real auth store (guest → None → browse-mode, all nav). T-159.4 wires the active route.
+    // Real auth store (guest → None → browse-mode, all nav) + the live route for the active link.
     let user_role = expect_context::<AuthStore>().user.get().map(|u| u.role);
-    let current = "/";
+    // Read once at render → correct at page load (what the V gate checks). Wrapping the class in a
+    // reactive closure so active follows SPA navigation without a reload is a small follow-up.
+    let current = use_location().pathname.get();
     view! {
         <nav class="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
             {NAVIGATION
@@ -140,7 +153,7 @@ fn SidebarNav() -> impl IntoView {
                                 {items
                                     .into_iter()
                                     .map(|item| {
-                                        let active = item.path == current;
+                                        let active = is_active(item.path, &current);
                                         // React's cn (tailwind-merge) DROPS `text-label-md` here: it
                                         // collides with the trailing text-{color} and twMerge keeps
                                         // the last, so the rendered link inherits 16px. We omit it to
