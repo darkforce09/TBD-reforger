@@ -4,7 +4,7 @@
 use crate::app_routes::AppRoutes;
 use crate::auth::AuthStore;
 use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
-use crate::ui::{cn, MaterialIcon};
+use crate::ui::{cn, MaterialIcon, DEFAULT_AVATAR};
 use leptos::prelude::*;
 use leptos_router::hooks::use_location;
 
@@ -64,10 +64,9 @@ pub fn AppLayout() -> impl IntoView {
 
 #[component]
 fn TopNav() -> impl IntoView {
-    // Breadcrumb from the live route (exact-match; dynamic-route patterns are a follow-up). Guest
-    // auth state until the gloo-net bootstrap lands.
+    // Breadcrumb from the live route (exact-match; dynamic-route patterns are a follow-up).
     let breadcrumb = crate::router::breadcrumb(&use_location().pathname.get());
-    let is_authenticated = expect_context::<AuthStore>().is_authenticated();
+    let auth = expect_context::<AuthStore>();
     view! {
         <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">
             <div class="flex h-full min-w-0 items-center gap-2 pl-12 lg:pl-0">
@@ -86,20 +85,67 @@ fn TopNav() -> impl IntoView {
                         .into_any(),
                 }}
             </div>
+            // Reactive: guest sign-in CTA until bootstrap lands the session, then StatusPill + the
+            // avatar button (the open user-menu dropdown is interactive state — a follow-up).
             <div class="relative flex h-full items-center gap-4">
-                {if !is_authenticated {
+                {move || {
+                    if !auth.is_authenticated() {
+                        return view! {
+                            <a
+                                href="/login"
+                                class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
+                            >
+                                "Sign in with Discord"
+                            </a>
+                        }
+                            .into_any();
+                    }
+                    let user = auth.user.get();
+                    let username = user.as_ref().map(|u| u.username.clone()).unwrap_or_default();
+                    let avatar = user
+                        .as_ref()
+                        .map(|u| u.avatar_url.clone())
+                        .filter(|s| !s.is_empty())
+                        .unwrap_or_else(|| DEFAULT_AVATAR.to_string());
+                    // StatusPill: linked iff arma_id is present/non-empty.
+                    let arma_id = user.as_ref().and_then(|u| u.arma_id.clone()).filter(|s| !s.is_empty());
+                    let pill = match arma_id {
+                        Some(id) => {
+                            let short: String = id.chars().take(8).collect();
+                            view! {
+                                <div class="rounded-full bg-success-muted px-3 py-1 font-mono text-xs text-success">
+                                    "Linked: "
+                                    {short}
+                                    "..."
+                                </div>
+                            }
+                                .into_any()
+                        }
+                        None => view! {
+                            <div class="rounded-full bg-surface-container-high px-3 py-1 text-xs text-on-surface-variant">
+                                "Unlinked"
+                            </div>
+                        }
+                            .into_any(),
+                    };
                     view! {
-                        <a
-                            href="/login"
-                            class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
-                        >
-                            "Sign in with Discord"
-                        </a>
+                        <>
+                            {pill}
+                            <button
+                                type="button"
+                                class="flex items-center gap-2 rounded-lg p-1 pr-3 transition-colors hover:bg-surface-variant/50"
+                            >
+                                <img
+                                    src=avatar
+                                    alt=""
+                                    class="h-8 w-8 rounded-full border border-outline-variant/50 object-cover"
+                                />
+                                <span class="text-label-md font-medium">{username}</span>
+                                <MaterialIcon name="expand_more" class="text-on-surface-variant" />
+                            </button>
+                        </>
                     }
                         .into_any()
-                } else {
-                    // Authed: StatusPill + avatar menu — ported with the auth store (T-159.3).
-                    ().into_any()
                 }}
             </div>
         </header>
