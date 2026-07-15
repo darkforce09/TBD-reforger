@@ -4,6 +4,7 @@
 //! land in later slices. Every slice is verified in a real headless browser via the gate harness
 //! (S/V/R/T), not just `cargo check`.
 
+mod auth;
 mod layout;
 mod nav;
 mod ui;

@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 leptos = { version = "0.8", features = ["csr"] }
 console_error_panic_hook = "0.1"
+futures = "0.3"
 
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.
