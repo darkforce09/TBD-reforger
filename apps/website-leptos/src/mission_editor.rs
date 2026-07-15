@@ -41,6 +41,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     #[cfg(target_arch = "wasm32")]
     {
         use leptos::task::spawn_local;
+        use std::cell::Cell;
         use std::cell::RefCell;
         use std::rc::Rc;
         use std::sync::atomic::{AtomicBool, Ordering};
@@ -105,6 +106,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             eng.set_continuous_render(false); // damage-driven, matches the prod oracle
                             *engine.borrow_mut() = Some(eng);
                             register_self_checks(engine.clone());
+                            register_editor_cam(engine.clone());
                             start_raf(engine.clone(), disposed.clone());
                         }
                         Err(e) => leptos::logging::error!("RenderEngine::create: {e:?}"),
@@ -112,12 +114,22 @@ pub fn MissionEditorPage() -> impl IntoView {
                 }
             });
 
+            // T-159.15.2 — pan gesture state: `Some((last_client_x, last_client_y))` while an
+            // MMB/RMB drag-pan is in flight, else `None`. The pan feeds INCREMENTAL client-px deltas
+            // to `engine.pan` (the camera does `target -= dΧ/scale` at the LIVE scale — Rust owns the
+            // ortho math; this mirrors the `WgpuCanvas` oracle, NOT the Deck frozen-viewport path
+            // that `useSelectTool` uses and the language gate forbids here). `(f64, f64)` is `Copy`,
+            // so a `Cell` suffices (no `RefCell`); JS is single-threaded, so these pointer handlers
+            // never reenter the rAF loop's `borrow_mut`.
+            let pan_px: Rc<Cell<Option<(f64, f64)>>> = Rc::new(Cell::new(None));
+
             // Wheel → zoom_at (engine self-clamps zoom to [-6, 6]). Capture + non-passive so we can
             // preventDefault and beat any child handler. CSS origin = the container rect (same basis
-            // as the future pan/pick math).
+            // as the pan/pick math).
             let onwheel = Closure::<dyn FnMut(web_sys::WheelEvent)>::new({
                 let engine = engine.clone();
                 let container = container.clone();
+                let pan_px = pan_px.clone();
                 move |ev: web_sys::WheelEvent| {
                     if let Some(e) = engine.borrow_mut().as_mut() {
                         ev.prevent_default();
@@ -127,6 +139,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                             ev.client_x() as f64 - rect.left(),
                             ev.client_y() as f64 - rect.top(),
                         );
+                        // P5 mid-pan rebase (T-151.11.6): keep an in-flight pan alive across a
+                        // mid-pan zoom. Under the single-pointer invariant a `pointermove` precedes
+                        // any `wheel`, so `wheel.client == last_px`; this refresh is a provable no-op
+                        // that also defensively re-syncs the start px. The next incremental
+                        // `engine.pan` then rides the LIVE post-zoom scale, so panning continues
+                        // seamlessly with no re-press. (The incremental model has no frozen zoom to
+                        // go stale — the Deck bug T-151.11.6 fixed does not exist here.)
+                        if pan_px.get().is_some() {
+                            pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
+                        }
                     }
                 }
             });
@@ -137,6 +159,71 @@ pub fn MissionEditorPage() -> impl IntoView {
                 "wheel",
                 onwheel.as_ref().unchecked_ref(),
                 &wheel_opts,
+            );
+
+            // T-159.15.2 — MMB/RMB drag-pan (LMB deferred to the doc host / .16: no marquee / slot
+            // move yet). Pointer capture keeps deltas flowing if the drag leaves the div; the
+            // contextmenu is suppressed so an RMB-drag isn't interrupted by the browser menu (P3).
+            // All five closures leak like the wheel/resize ones above (the engine leaks too;
+            // `on_cleanup` only stops the loop — a `!Send` drop handle is later polish).
+            let onpointerdown = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+                let pan_px = pan_px.clone();
+                let container = container.clone();
+                move |ev: web_sys::PointerEvent| {
+                    // Middle (1) or right (2) button starts a pan; left (0) is left alone this slice.
+                    if ev.button() == 1 || ev.button() == 2 {
+                        ev.prevent_default();
+                        let _ = container.set_pointer_capture(ev.pointer_id());
+                        pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
+                    }
+                }
+            });
+            let onpointermove = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+                let pan_px = pan_px.clone();
+                let engine = engine.clone();
+                move |ev: web_sys::PointerEvent| {
+                    if let Some((lx, ly)) = pan_px.get() {
+                        let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
+                        if let Some(e) = engine.borrow_mut().as_mut() {
+                            e.pan(cx - lx, cy - ly);
+                        }
+                        pan_px.set(Some((cx, cy)));
+                    }
+                }
+            });
+            let onpointerup = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+                let pan_px = pan_px.clone();
+                let container = container.clone();
+                move |ev: web_sys::PointerEvent| {
+                    if pan_px.get().is_some() {
+                        pan_px.set(None);
+                        if container.has_pointer_capture(ev.pointer_id()) {
+                            let _ = container.release_pointer_capture(ev.pointer_id());
+                        }
+                    }
+                }
+            });
+            let oncontextmenu = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(
+                move |ev: web_sys::MouseEvent| ev.prevent_default(),
+            );
+            let _ = container.add_event_listener_with_callback(
+                "pointerdown",
+                onpointerdown.as_ref().unchecked_ref(),
+            );
+            let _ = container.add_event_listener_with_callback(
+                "pointermove",
+                onpointermove.as_ref().unchecked_ref(),
+            );
+            let _ = container
+                .add_event_listener_with_callback("pointerup", onpointerup.as_ref().unchecked_ref());
+            // pointercancel shares the pointerup handler (both end the pan + release capture).
+            let _ = container.add_event_listener_with_callback(
+                "pointercancel",
+                onpointerup.as_ref().unchecked_ref(),
+            );
+            let _ = container.add_event_listener_with_callback(
+                "contextmenu",
+                oncontextmenu.as_ref().unchecked_ref(),
             );
 
             let onresize = Closure::<dyn FnMut()>::new({
@@ -165,6 +252,10 @@ pub fn MissionEditorPage() -> impl IntoView {
             // is a later polish.
             onwheel.forget();
             onresize.forget();
+            onpointerdown.forget();
+            onpointermove.forget();
+            onpointerup.forget();
+            oncontextmenu.forget();
             on_cleanup(move || disposed.store(true, Ordering::Relaxed));
         });
     }
@@ -259,4 +350,38 @@ fn register_self_checks(
     // The harness reads these across the page lifetime; leak them (the engine leaks too).
     calibration.forget();
     texture.forget();
+}
+
+/// Expose the camera view-state on `window.__editorCam()` for the headless pan smoke (T-159.15.2 /
+/// spec P6): a JSON string `{"tx","ty","z","backend"}` read from the `&self` getters `target_x()` /
+/// `target_y()` / `zoom()` / `backend()`. (`#[wasm_bindgen(getter)]` fns are plain method calls from
+/// Rust.) All are `&self` behind a shared `borrow()`, released before return — no contention with the
+/// rAF loop's `borrow_mut` (JS is single-threaded). Registered once the engine is `Some`; the closure
+/// leaks like the self-checks. The smoke drives pan via getter deltas (never `unproject_xy`, X-05).
+#[cfg(target_arch = "wasm32")]
+fn register_editor_cam(
+    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
+) {
+    use wasm_bindgen::prelude::*;
+
+    let cam = Closure::wrap(Box::new(move || -> JsValue {
+        engine
+            .borrow()
+            .as_ref()
+            .map(|e| {
+                JsValue::from_str(&format!(
+                    r#"{{"tx":{},"ty":{},"z":{},"backend":"{}"}}"#,
+                    e.target_x(),
+                    e.target_y(),
+                    e.zoom(),
+                    e.backend()
+                ))
+            })
+            .unwrap_or_else(|| JsValue::from_str("null"))
+    }) as Box<dyn FnMut() -> JsValue>);
+
+    if let Some(win) = web_sys::window() {
+        let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorCam"), cam.as_ref());
+    }
+    cam.forget();
 }

@@ -29,6 +29,12 @@ web-sys = { version = "0.3", features = [
     "Element",
     "DomRect",
     "WheelEvent",
+    # T-159.15.2 Mission Creator pan: MMB/RMB drag (PointerEvent) + contextmenu (MouseEvent).
+    # `PointerEvent = ["Event","MouseEvent","UiEvent"]` transitively enables the inherited
+    # button()/client_x()/prevent_default() accessors; MouseEvent is listed for the standalone
+    # contextmenu handler type. set/has/release_pointer_capture live under the existing `Element`.
+    "PointerEvent",
+    "MouseEvent",
     "EventTarget",
     "AddEventListenerOptions",
 ] }
