@@ -13,6 +13,7 @@ mod deployments;
 mod dto;
 mod layout;
 mod leaderboards;
+mod mortar;
 mod nav;
 mod router;
 mod server_intel;

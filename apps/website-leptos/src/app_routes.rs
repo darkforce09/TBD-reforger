@@ -7,6 +7,7 @@ use crate::announcements::AnnouncementsPage;
 use crate::dashboard::DashboardPage;
 use crate::deployments::DeploymentsPage;
 use crate::leaderboards::LeaderboardsPage;
+use crate::mortar::MortarCalculatorPage;
 use crate::server_intel::ServerIntelPage;
 use crate::settings::SettingsPage;
 use crate::ui::AuthGate;
@@ -117,7 +118,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/wiki/:slug") view=ApiPage />
             <Route path=path!("/vehicles") view=ApiPage />
             <Route path=path!("/modpacks") view=ApiPage />
-            <Route path=path!("/tools/mortar") view=ApiPage />
+            <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
             <Route path=path!("/settings") view=SettingsPage />
             <Route path=path!("/admin/events") view=ApiPage />
             <Route path=path!("/admin/approvals") view=ApiPage />
