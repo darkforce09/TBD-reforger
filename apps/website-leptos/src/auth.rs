@@ -73,7 +73,12 @@ impl<T: Clone + 'static> Default for SingleFlight<T> {
 
 /* ─────────────────────────── session types (models.User / RefreshToken) ─────────────────────────── */
 
-/// Authenticated user identity — models.User. snake_case = the API contract (Go GORM tags).
+/// Authenticated user identity — models.User (backend `apps/website/src/models/user.rs`). snake_case
+/// = the API contract. Field set + serde attrs mirror the backend byte-for-byte so a golden `/me`
+/// (and the persisted user in the tbd-auth blob) round-trips exactly (R-api gate): the three ban
+/// fields + `last_login_at` are omitted when empty/absent (backend `skip_serializing_if`), and
+/// `arma_id` stays present-as-null. Dates are opaque RFC3339 strings here (no chrono on the UI side)
+/// — carried verbatim, so re-serialize is byte-identical.
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct User {
     pub discord_id: String,
@@ -86,8 +91,16 @@ pub struct User {
     pub arma_character: String,
     pub role: Role,
     pub is_banned: bool,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub ban_reason: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub banned_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub banned_at: Option<String>,
     pub total_deployments: i64,
     pub attendance_rate: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_login_at: Option<String>,
     pub created_at: String,
     pub updated_at: String,
 }
@@ -342,8 +355,12 @@ mod tests {
             arma_character: String::new(),
             role: Role::Admin,
             is_banned: false,
+            ban_reason: String::new(),
+            banned_by: None,
+            banned_at: None,
             total_deployments: 5,
             attendance_rate: 0.9,
+            last_login_at: None,
             created_at: "2026-01-01T00:00:00Z".into(),
             updated_at: "2026-01-02T00:00:00Z".into(),
         }

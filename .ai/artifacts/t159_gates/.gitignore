@@ -2,3 +2,5 @@
 # baseline step lands, v/goldens/. Smoke/run captures and per-slice logs are not committed.
 v/
 logs/
+.devtoken
+fixtures/api/.devtoken
