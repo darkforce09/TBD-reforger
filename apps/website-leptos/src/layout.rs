@@ -23,14 +23,20 @@ pub fn AppLayout() -> impl IntoView {
     // The auth store (Zustand replacement) lives at the shell root; children read it via context.
     // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
     provide_context(AuthStore::new());
-    // The "/" route: guest, non-chromeless, fullBleed → <main> is overflow-hidden.
+    // <main> scroll/padding follows the route's fullBleed handle (overflow-hidden vs a padded
+    // scroll container). Read once at load; chromeless routes (login/editor) are a follow-up.
+    let main_class = if crate::router::full_bleed(&use_location().pathname.get()) {
+        "min-h-0 flex-1 bg-background overflow-hidden"
+    } else {
+        "min-h-0 flex-1 bg-background overflow-y-auto p-6"
+    };
     view! {
         <div class="flex h-screen overflow-hidden bg-background">
             <SidebarMobileToggle />
             <Sidebar />
             <div class="flex min-w-0 flex-1 flex-col">
                 <TopNav />
-                <main class="min-h-0 flex-1 bg-background overflow-hidden">
+                <main class=main_class>
                     <AppRoutes />
                 </main>
             </div>

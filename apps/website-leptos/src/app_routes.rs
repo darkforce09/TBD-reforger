@@ -26,6 +26,17 @@ fn DashboardPage() -> impl IntoView {
     }
 }
 
+/// Generic AuthGate-wrapped API page: a guest sees the sign-in CTA (the state the V gate checks);
+/// the real page content + data replace PageStub as each page is ported (T-159.9+).
+#[component]
+fn ApiPage() -> impl IntoView {
+    view! {
+        <AuthGate>
+            <PageStub />
+        </AuthGate>
+    }
+}
+
 #[component]
 pub fn AppRoutes() -> impl IntoView {
     view! {
@@ -33,11 +44,11 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/login") view=PageStub />
             <Route path=path!("/auth/callback") view=PageStub />
             <Route path=path!("/") view=DashboardPage />
-            <Route path=path!("/server-intel") view=PageStub />
-            <Route path=path!("/announcements") view=PageStub />
-            <Route path=path!("/deployments") view=PageStub />
+            <Route path=path!("/server-intel") view=ApiPage />
+            <Route path=path!("/announcements") view=ApiPage />
+            <Route path=path!("/deployments") view=ApiPage />
             <Route path=path!("/leaderboards") view=PageStub />
-            <Route path=path!("/missions") view=PageStub />
+            <Route path=path!("/missions") view=ApiPage />
             <Route path=path!("/missions/:id") view=PageStub />
             <Route path=path!("/missions/:id/edit") view=PageStub />
             <Route path=path!("/events") view=PageStub />
@@ -46,9 +57,9 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/wiki") view=PageStub />
             <Route path=path!("/wiki/:slug") view=PageStub />
             <Route path=path!("/vehicles") view=PageStub />
-            <Route path=path!("/modpacks") view=PageStub />
+            <Route path=path!("/modpacks") view=ApiPage />
             <Route path=path!("/tools/mortar") view=PageStub />
-            <Route path=path!("/settings") view=PageStub />
+            <Route path=path!("/settings") view=ApiPage />
             <Route path=path!("/admin/events") view=PageStub />
             <Route path=path!("/admin/approvals") view=PageStub />
             <Route path=path!("/admin/server") view=PageStub />

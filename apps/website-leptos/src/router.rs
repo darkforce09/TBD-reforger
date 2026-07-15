@@ -227,3 +227,14 @@ pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
         _ => return None,
     })
 }
+
+/// Whether a route is full-bleed (the `<main>` is `overflow-hidden` vs the padded scroll container),
+/// from the route handle. Exact-path match (dynamic routes resolve via patterns in a follow-up);
+/// unmatched defaults to false (padded), matching react-router's no-handle case.
+pub fn full_bleed(path: &str) -> bool {
+    ROUTES
+        .iter()
+        .find(|r| r.path == path)
+        .map(|r| r.full_bleed)
+        .unwrap_or(false)
+}
