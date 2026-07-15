@@ -60,12 +60,12 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/modpacks") view=ApiPage />
             <Route path=path!("/tools/mortar") view=ApiPage />
             <Route path=path!("/settings") view=ApiPage />
-            <Route path=path!("/admin/events") view=PageStub />
-            <Route path=path!("/admin/approvals") view=PageStub />
-            <Route path=path!("/admin/server") view=PageStub />
-            <Route path=path!("/admin/personnel") view=PageStub />
-            <Route path=path!("/admin/content") view=PageStub />
-            <Route path=path!("/admin/audit") view=PageStub />
+            <Route path=path!("/admin/events") view=ApiPage />
+            <Route path=path!("/admin/approvals") view=ApiPage />
+            <Route path=path!("/admin/server") view=ApiPage />
+            <Route path=path!("/admin/personnel") view=ApiPage />
+            <Route path=path!("/admin/content") view=ApiPage />
+            <Route path=path!("/admin/audit") view=ApiPage />
         </Routes>
     }
 }
