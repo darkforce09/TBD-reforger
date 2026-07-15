@@ -3,6 +3,7 @@
 //! catch-all (NotFoundPage) is the `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in
 //! AppLayout OUTSIDE `<Routes>`, so it persists across navigation — `<Routes>` swaps only `<main>`.
 //! The path list mirrors router.rs `ROUTES` (the S-routes gate's source of truth).
+use crate::announcements::AnnouncementsPage;
 use crate::dashboard::DashboardPage;
 use crate::server_intel::ServerIntelPage;
 use crate::settings::SettingsPage;
@@ -101,7 +102,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/auth/callback") view=CallbackPage />
             <Route path=path!("/") view=DashboardPage />
             <Route path=path!("/server-intel") view=ServerIntelPage />
-            <Route path=path!("/announcements") view=ApiPage />
+            <Route path=path!("/announcements") view=AnnouncementsPage />
             <Route path=path!("/deployments") view=ApiPage />
             <Route path=path!("/leaderboards") view=ApiPage />
             <Route path=path!("/missions") view=ApiPage />
