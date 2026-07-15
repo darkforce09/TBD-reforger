@@ -29,6 +29,7 @@ mod settings;
 mod split_pane;
 mod ui;
 mod vehicles;
+mod wiki;
 
 fn main() {
     // Guard the wasm-only mount so a native workspace-root `cargo build` still compiles this member
