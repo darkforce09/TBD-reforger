@@ -40,8 +40,9 @@ pub fn AppLayout() -> impl IntoView {
 
 #[component]
 fn TopNav() -> impl IntoView {
-    // Stubs until T-159.3 (auth) / T-159.4 (router): the guest state + the "/" breadcrumb.
-    let breadcrumb: Option<(&str, &str)> = Some(("Command Center", "Dashboard"));
+    // Breadcrumb from the live route (exact-match; dynamic-route patterns are a follow-up). Guest
+    // auth state until the gloo-net bootstrap lands.
+    let breadcrumb = crate::router::breadcrumb(&use_location().pathname.get());
     let is_authenticated = expect_context::<AuthStore>().is_authenticated();
     view! {
         <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">

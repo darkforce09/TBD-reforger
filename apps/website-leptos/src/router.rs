@@ -200,3 +200,30 @@ pub static ROUTES: &[RouteDef] = &[
         auth: "none",
     },
 ];
+
+/// Breadcrumb (parent, current) for a route path — mirrors the router.tsx route handles. Exact-path
+/// match for now; dynamic routes (/missions/:id → "Mission Overview", /events/:id → "Event Hub", …)
+/// resolve via pattern matching in a follow-up. TopNav falls back to the plain title on `None`.
+pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
+    Some(match path {
+        "/" => ("Command Center", "Dashboard"),
+        "/server-intel" => ("Command Center", "Server Intel"),
+        "/announcements" => ("Command Center", "Announcements"),
+        "/deployments" => ("Operations", "My Deployments"),
+        "/leaderboards" => ("Operations", "Global Leaderboards"),
+        "/missions" => ("Mission Hub", "Mission Library"),
+        "/events" => ("Operations", "Event Schedule"),
+        "/wiki" => ("Doctrine & Info", "SOPs & Manuals"),
+        "/vehicles" => ("Doctrine & Info", "Vehicle Database"),
+        "/modpacks" => ("Doctrine & Info", "Modpacks"),
+        "/tools/mortar" => ("Field Tools", "Mortar Calculator"),
+        "/settings" => ("Account", "Settings"),
+        "/admin/events" => ("Administration", "Event Manager"),
+        "/admin/approvals" => ("Administration", "Mission Approvals"),
+        "/admin/server" => ("Administration", "Server Control"),
+        "/admin/personnel" => ("Administration", "Personnel Roster"),
+        "/admin/content" => ("Administration", "Comms Broadcaster"),
+        "/admin/audit" => ("Administration", "Audit Logs"),
+        _ => return None,
+    })
+}
