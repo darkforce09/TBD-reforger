@@ -25,9 +25,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-159 — Leptos UI rewrite (React SPA → Rust)
 
-- **Active slice:** `T-159.15.2`
-- **Slice spec:** `docs/platform/t159_15_2_camera_pan.md`
+- **Active slice:** `T-159.16`
+- **Slice spec:** `docs/platform/t159_16_mission_doc_host.md`
 - **Program hub:** `docs/platform/t159_leptos_ui_program.md`
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website
-- **Summary:** Worktree TBD-T-159 @ t-159-leptos-ui tip a425936d. 24 page routes byte-identical; T-159.15.0/15.1 MC wgpu loop shipped. NEXT: pan/pick then T-159.16 doc host. Hub: t159_leptos_ui_program.md. Verify: .ai/artifacts/t159_15_1_verify_log.md (GpuTimer disable_frame_timing — not poll/WebGL2).
+- **Summary:** Worktree TBD-T-159 @ t-159-leptos-ui tip ebcabe1d. 24 pages byte-identical; T-159.15.0–.15.2 MC camera shipped (pan Class R). ACTIVE T-159.16 MissionDoc host. Hub: t159_leptos_ui_program.md.

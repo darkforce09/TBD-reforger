@@ -4673,7 +4673,7 @@
       "id": "T-159",
       "order": 1570,
       "title": "Leptos UI rewrite (React SPA → Rust)",
-      "summary": "Worktree TBD-T-159 @ t-159-leptos-ui tip a425936d. 24 page routes byte-identical; T-159.15.0/15.1 MC wgpu loop shipped. NEXT: pan/pick then T-159.16 doc host. Hub: t159_leptos_ui_program.md. Verify: .ai/artifacts/t159_15_1_verify_log.md (GpuTimer disable_frame_timing — not poll/WebGL2).",
+      "summary": "Worktree TBD-T-159 @ t-159-leptos-ui tip ebcabe1d. 24 pages byte-identical; T-159.15.0–.15.2 MC camera shipped (pan Class R). ACTIVE T-159.16 MissionDoc host. Hub: t159_leptos_ui_program.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4703,7 +4703,7 @@
         "T-159.15.2",
         "T-159.16"
       ],
-      "active_slice": "T-159.15.2",
+      "active_slice": "T-159.16",
       "slice_plan": {
         "T-159.0": {
           "targets": [
@@ -4774,17 +4774,20 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "ebcabe1d",
           "spec": "docs/platform/t159_15_2_camera_pan.md",
-          "notes": "MMB/RMB pan + wheel rebase. Handoff: .ai/artifacts/t159_15_2_claude_code_handoff.md. Slot pick deferred to T-159.16."
+          "notes": "MMB/RMB pan + wheel rebase; smoke_pan_editor Class R. Verify: .ai/artifacts/t159_15_2_verify_log.md"
         },
         "T-159.16": {
           "targets": [
-            "website"
+            "website",
+            "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "WasmMissionDoc host in Leptos."
+          "status": "ready",
+          "spec": "docs/platform/t159_16_mission_doc_host.md",
+          "notes": "MissionDoc lifecycle + encode_state Class R. Handoff: .ai/artifacts/t159_16_claude_code_handoff.md"
         }
       }
     },

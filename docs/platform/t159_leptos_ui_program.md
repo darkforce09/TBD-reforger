@@ -1,10 +1,9 @@
 # T-159 — Leptos UI rewrite program
 
-**Status:** program hub · **ACTIVE next:** camera interaction (pan/pick) → **T-159.16** doc
-host · **Latest MC map:** **T-159.15.1** @ `a425936d` (tag **T-159.15.1**) · **Worktree:**
-`.ai/artifacts/worktrees/TBD-T-159/` (absolute:
-`/home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159`) · branch
-`t-159-leptos-ui` · **Authority:** this hub · [`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)
+**Status:** program hub · **ACTIVE:** **T-159.16** (`WasmMissionDoc` host) · **Latest MC map:**
+**T-159.15.2** @ `ebcabe1d` (tag **T-159.15.2**) · **Worktree:**
+`.ai/artifacts/worktrees/TBD-T-159/` · branch `t-159-leptos-ui` · **Authority:** this hub ·
+[`.ai/tickets/registry.json`](../../.ai/tickets/registry.json)
 
 ## In one sentence
 
@@ -12,102 +11,65 @@ Rework the website SPA from React/Vite into **Leptos (Rust)**, sharing types wit
 existing Axum backend and hosting the existing map/mission wasm engines — developed on a
 **standing worktree**, merge to `main` when cutover-ready.
 
-## Why
-
-One-language story for web UI + API + wasm cores: shared Rust types, less TS↔Rust drift,
-heavier client rules (loadout/cargo later) stay in crates. Workbench/Enfusion stay Enforce
-forever. React remains on `main` until an explicit cutover slice.
-
 ## Execution model (worktree-only)
 
-Same discipline as **T-151**:
-
-```mermaid
-flowchart LR
-  operator[Operator pastes prompt]
-  claude[Claude Code in leptos worktree]
-  commits[Linear commits T-159.n]
-  cursor[Cursor doc sync after each slice]
-  operator --> claude --> commits --> cursor
-```
-
-1. **CWD:** `.ai/artifacts/worktrees/TBD-T-159/` (absolute path above).
-2. **No branch churn** per slice — linear commits on `t-159-leptos-ui`, tags `T-159.n`.
-3. **Do not** nest a second worktree via `./scripts/ticket run` while already in TBD-T-159.
-4. **Do not** delete or gut `apps/website/frontend` until the cutover slice.
-5. Preflight: `git rev-parse --show-toplevel` ends with `TBD-T-159`.
+Same discipline as **T-151**: CWD = worktree; linear commits on `t-159-leptos-ui`; tags
+`T-159.n`; no nested `./scripts/ticket run`; React stays until cutover.
 
 ## Locked decisions
 
 | # | Decision |
 |---|----------|
-| L1 | **Leptos** is the UI framework (CSR acceptable for T-159.1; SSR/hydration may follow). |
-| L2 | New workspace member (`apps/website-leptos`) — do not replace Axum crate. |
-| L3 | Talk to existing API on `:8080` (dev-login, JWT cookies/headers as today). |
-| L4 | Reuse Aegis visual language (tokens/CSS); no purple-AI redesign. |
-| L5 | Map engine + `WasmMissionDoc` stay in existing wasm crates; Leptos hosts canvas. |
-| L6 | React app stays buildable on this branch until cutover. |
-| L7 | Shared API/domain types: prefer Rust structs — avoid hand-maintained parallel TS. |
-| L8 | Arsenal / T-068 polish continues on `main` in parallel. |
-| L9 | Page parity = **oracle DOM byte-identical** (V-suite). Map lane = **GPU readback / smoke**, not DOM. |
-| L10 | Dates/calendar via `js_sys::Date` (+ freeze.js) so Leptos matches React’s frozen JS clock. |
+| L1 | **Leptos** UI framework |
+| L2 | Crate `apps/website-leptos` — do not replace Axum |
+| L3 | API on `:8080` |
+| L4 | Aegis tokens/CSS |
+| L5 | Map engine + mission doc cores stay Rust; Leptos hosts |
+| L6 | React buildable until cutover |
+| L7 | Shared Rust API types |
+| L8 | T-068 on `main` parallel OK |
+| L9 | Pages = oracle DOM; map = GPU/smoke Class R |
+| L10 | Dates via `js_sys::Date` + freeze.js |
+| L11 | No `RenderEngine::unproject_xy` (X-05); pan via `engine.pan` |
 
-## Progress (worktree tip `a425936d`)
+## Progress (worktree tip `ebcabe1d`)
 
 | Milestone | Status |
 |-----------|--------|
-| Scaffold + Aegis shell + auth + route table | shipped on branch |
-| **24 page routes** byte-identical (authed V-suite + guest) | shipped — editor excluded |
-| **T-159.15.0** wgpu boundary collapse (one wasm, `RenderEngine` from Rust) | @ `3066f14c` |
-| **T-159.15.1** continuous/damage-driven loop + wheel + resize + GPU self-check | @ `a425936d` tag **T-159.15.1** |
-| Camera pan/pick | **next** |
-| **T-159.16** `WasmMissionDoc` host | next after pan/pick |
-| Eden shell .17–.22 / cutover | queued |
+| 24 page routes byte-identical | shipped |
+| **T-159.15.0** wgpu boundary collapse | `3066f14c` |
+| **T-159.15.1** render loop + wheel + GPU gate | `a425936d` |
+| **T-159.15.2** MMB/RMB pan + mid-pan wheel rebase | `ebcabe1d` tag **T-159.15.2** |
+| **T-159.16** MissionDoc host | **ACTIVE** |
+| .17–.22 Eden shell / cutover | queued |
 
-### T-159.15.1 root cause (authoritative)
+### T-159.15.1 root cause
 
-See [`.ai/artifacts/t159_15_1_verify_log.md`](../../.ai/artifacts/t159_15_1_verify_log.md).
+[`.ai/artifacts/t159_15_1_verify_log.md`](../../.ai/artifacts/t159_15_1_verify_log.md) — Dawn **GpuTimer**
+double-map → `disable_frame_timing()`; `poll()` kept. Follow-up **T-160**.
 
-**Not** “WebGL2 needs `poll()`.” Smoke backend was **WebGPU/Dawn**. Panic = **GpuTimer**
-16-byte readback double-map on 2nd submit. Fix = `disable_frame_timing()` (handoff option 3);
-`poll()` retained for WebGL2-fallback / future cull counters. Self-check uses `?force=webgl`.
+### T-159.15.2
 
-**Open bug (ticket later):** GpuTimer err-path unmaps only on `res.is_ok()` but clears
-`in_flight` unconditionally — latent when HUD/timer returns.
+[`.ai/artifacts/t159_15_2_verify_log.md`](../../.ai/artifacts/t159_15_2_verify_log.md) — incremental
+`engine.pan`; smoke math Class R (7200 after −200px @ z=−2; rebase by construction).
 
-## Full inventory (authority for “what exists”)
-
-[`.ai/artifacts/t159_leptos_full_migration_inventory.md`](../../.ai/artifacts/t159_leptos_full_migration_inventory.md)
-
-**Baseline:** **35,823** LOC / **235** files · **26** prod routes · **46** API hooks.
-
-## Slice index (high level)
+## Slice index
 
 | Slice | Goal | Status |
 |-------|------|--------|
-| **T-159.0** | Hub + worktree | shipped (`f95b01ad` docs on main) |
-| **T-159.1–.14** | Scaffold → shell → auth → types → UI kit → page waves | shipped on `t-159-leptos-ui` (24 routes) |
-| **T-159.15.0** | MC wgpu boundary collapse | shipped `3066f14c` |
-| **T-159.15.1** | Render loop + wheel + GPU gate | shipped `a425936d` |
-| **T-159.15.2** | Pan / mid-pan wheel rebase (no slot pick yet) | **ready** — spec `t159_15_2_camera_pan.md` |
-| **T-159.16–.22** | Doc host → persist → tools → save → outliner → Arsenal | queued |
-| **T-159.23–.25** | Visual sweep → cutover → delete React | queued |
+| **T-159.0–.14** | Scaffold → pages | shipped on branch |
+| **T-159.15.0** | Boundary collapse | shipped `3066f14c` |
+| **T-159.15.1** | Loop + wheel | shipped `a425936d` |
+| **T-159.15.2** | Pan + rebase | shipped `ebcabe1d` |
+| **T-159.16** | MissionDoc host | **ready** — `t159_16_mission_doc_host.md` |
+| **T-159.17–.22** | Persist → tools → save → outliner → Arsenal | queued |
+| **T-159.23–.25** | Sweep → cutover → delete React | queued |
 
-Detailed ladder: inventory §8. Gates live under worktree `.ai/artifacts/t159_gates/`.
-
-## Non-goals (program-wide until named)
-
-- Rewriting Workbench / Enfusion mod
-- Pausing T-068 Arsenal on `main`
-- Reimplementing `map-engine-*` in Leptos (host only)
+Inventory: [`.ai/artifacts/t159_leptos_full_migration_inventory.md`](../../.ai/artifacts/t159_leptos_full_migration_inventory.md)
 
 ## Ops
 
 ```bash
 cd /home/Samuel/Projects/TBD-Reforger/.ai/artifacts/worktrees/TBD-T-159
-# Leptos: trunk build / make target per crate README
-# Editor smoke: .ai/artifacts/t159_gates/driver/smoke_editor.mjs
-# GPU self-check: selfcheck_editor.mjs (?force=webgl)
+# smokes: .ai/artifacts/t159_gates/driver/smoke_editor.mjs | selfcheck_editor.mjs | smoke_pan_editor.mjs
 ```
-
-Merge back to `main` only when operator signs off cutover (later slice).
