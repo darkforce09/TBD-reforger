@@ -11,6 +11,8 @@
 //
 // Exit 0 = byte-equal; 1 = diffs (printed); 3 = driver error.
 
+import { readFileSync, existsSync } from 'node:fs'
+import { join } from 'node:path'
 import { launch, newPage, sleep } from './cdp.mjs'
 import { startServer } from './serve.mjs'
 import { FREEZE_SRC } from './freeze.js'
@@ -27,21 +29,91 @@ const path = arg('--path', '/')
 const selector = arg('--selector', '')
 const exclude = arg('--exclude', '')
 const label = arg('--label', selector || 'body')
+// Authed mode: point at the golden corpus and the gate seeds an authed tbd-auth blob (from the /me
+// golden's user) + Fetch-intercepts every /api/v1/** from that corpus, so both apps bootstrap to the
+// SAME authed session + data with no live backend. `--ready <sel>` waits for a post-bootstrap
+// element (e.g. the page's own content root) before capturing, so we never snapshot the loading state.
+const apiFixtures = arg('--api-fixtures', '')
+const readySel = arg('--ready', '')
 if (!oracleDir || !leptosDir) {
   console.error('usage: node gate_v.mjs --oracle-dir <dist> --leptos-dir <dist> [--path /] [--selector aside]')
+  console.error('  authed: [--api-fixtures <goldenDir>] [--ready <selector>]')
   process.exit(2)
+}
+
+// /api/v1/<path>[?…] → "<goldenDir>/GET__<path with '/'→'__'>.json" (or null if no golden).
+function fixtureFor(url) {
+  const m = url.match(/\/api\/v1\/([^?#]*)/)
+  if (!m) return null
+  const slug = 'GET__' + m[1].replace(/\/+$/, '').replace(/\//g, '__') + '.json'
+  const f = join(apiFixtures, slug)
+  return existsSync(f) ? f : null
+}
+
+// The authed seed: reuse the exact user the /me golden carries so the persisted user matches what
+// bootstrap re-fetches (no divergence). accessToken is intentionally absent (never persisted) — the
+// app mints one via the intercepted /auth/refresh, exactly like production cold-load.
+let SEED = ''
+if (apiFixtures) {
+  const me = JSON.parse(readFileSync(join(apiFixtures, 'GET__me.json'), 'utf8'))
+  const blob = {
+    state: { refreshToken: 'rt-seed', user: me.user, expiresAt: '2026-01-01T00:00:00Z' },
+    version: 0,
+  }
+  SEED = `localStorage.setItem('tbd-auth', ${JSON.stringify(JSON.stringify(blob))});`
 }
 
 const SETTLE = `(async()=>{await document.fonts.ready;await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return true})()`
 
-async function capture(browser, dir, port, debugPort) {
+async function capture(browser, dir, port) {
   const srv = await startServer({ dir, port })
-  const page = await newPage(browser, `http://localhost:${srv.port}${path}`, {
-    initScripts: [FREEZE_SRC, DOM_SERIALIZER_SRC],
-  })
+  const initScripts = [FREEZE_SRC, DOM_SERIALIZER_SRC]
+  if (SEED) initScripts.push(SEED)
+  // Create the page WITHOUT navigating, so the auth seed + Fetch interception are armed first.
+  const page = await newPage(browser, null, { initScripts })
+
+  if (apiFixtures) {
+    await page.send('Fetch.enable', { patterns: [{ urlPattern: '*' }] })
+    page.onEvent('Fetch.requestPaused', (p) => {
+      const u = p.request.url
+      const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64')
+      const fulfill = (code, json) =>
+        page
+          .send('Fetch.fulfillRequest', {
+            requestId: p.requestId,
+            responseCode: code,
+            responseHeaders: [{ name: 'content-type', value: 'application/json' }],
+            body: b64(json),
+          })
+          .catch(() => {})
+      if (u.includes('/api/v1/auth/refresh')) {
+        return fulfill(200, {
+          access_token: 'acc-v',
+          refresh_token: 'rt-v2',
+          expires_at: '2026-01-01T01:00:00Z',
+        })
+      }
+      if (u.includes('/api/v1/auth/logout')) return fulfill(200, {})
+      const f = fixtureFor(u)
+      if (f) return fulfill(200, JSON.parse(readFileSync(f, 'utf8')))
+      if (u.includes('/api/v1/')) return fulfill(200, {}) // unknown API → empty 200 (never a live hit)
+      page.send('Fetch.continueRequest', { requestId: p.requestId }).catch(() => {})
+    })
+  }
+
+  await page.navigate(`http://localhost:${srv.port}${path}`)
   const sel = selector || 'body'
   const ok = await page.waitFor(`!!document.querySelector(${JSON.stringify(sel)})`, { tries: 80 })
   if (!ok) throw new Error(`selector ${sel} never appeared at ${dir}${path}`)
+  // In authed mode wait for the post-bootstrap content root before snapshotting (skip the AuthGate
+  // "Loading session…" / QueryState "Loading…" transient).
+  if (readySel) {
+    const ready = await page.waitFor(`!!document.querySelector(${JSON.stringify(readySel)})`, {
+      tries: 160,
+      interval: 250,
+    })
+    if (!ready) throw new Error(`ready selector ${readySel} never appeared at ${dir}${path}`)
+  }
   await page.evaluate(SETTLE, true)
   await sleep(150)
   const dom = await page.evaluate(

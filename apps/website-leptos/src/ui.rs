@@ -15,10 +15,17 @@ pub fn cn(classes: &[&str]) -> String {
 }
 
 /// Material Symbols icon — a font-glyph span whose text is the ligature name. Ported from
-/// MaterialIcon.tsx (`<span class="material-symbols-outlined …">{name}</span>`).
+/// MaterialIcon.tsx (`<span class="material-symbols-outlined …" style?>{name}</span>`). `filled`
+/// renders the FILL-1 variant; React sets it via CSSOM (`el.style.fontVariationSettings`), which the
+/// browser reflects onto the style attribute as `font-variation-settings: 'FILL' 1;` — matched here.
 #[component]
-pub fn MaterialIcon(name: &'static str, #[prop(optional)] class: &'static str) -> impl IntoView {
-    view! { <span class=cn(&["material-symbols-outlined", class])>{name}</span> }
+pub fn MaterialIcon(
+    name: &'static str,
+    #[prop(optional)] class: &'static str,
+    #[prop(optional)] filled: bool,
+) -> impl IntoView {
+    let style = filled.then_some("font-variation-settings: \"FILL\" 1;");
+    view! { <span class=cn(&["material-symbols-outlined", class]) style=style>{name}</span> }
 }
 
 /// AuthGate — API-backed pages show a sign-in CTA for guests (and a "Loading session…" state while

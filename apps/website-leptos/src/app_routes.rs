@@ -3,6 +3,7 @@
 //! catch-all (NotFoundPage) is the `<Routes fallback>`. The chrome (Sidebar/TopNav) lives in
 //! AppLayout OUTSIDE `<Routes>`, so it persists across navigation — `<Routes>` swaps only `<main>`.
 //! The path list mirrors router.rs `ROUTES` (the S-routes gate's source of truth).
+use crate::dashboard::DashboardPage;
 use crate::ui::AuthGate;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
@@ -15,16 +16,7 @@ fn PageStub() -> impl IntoView {
     view! { <div class="p-6 text-on-surface-variant">"(page)"</div> }
 }
 
-/// Dashboard route. For a guest, AuthGate renders the sign-in CTA (the state the V gate checks now);
-/// the authed hero-bento content + the dashboard DTO/data land at T-159.8.
-#[component]
-fn DashboardPage() -> impl IntoView {
-    view! {
-        <AuthGate>
-            <div>"(dashboard)"</div>
-        </AuthGate>
-    }
-}
+// Dashboard route → crate::dashboard::DashboardPage (AuthGate → /dashboard Resource → hero-bento).
 
 /// Generic AuthGate-wrapped API page: a guest sees the sign-in CTA (the state the V gate checks);
 /// the real page content + data replace PageStub as each page is ported (T-159.9+).

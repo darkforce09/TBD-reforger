@@ -141,7 +141,7 @@ mod wasm_client {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub use wasm_client::bootstrap;
+pub use wasm_client::{api_get, bootstrap};
 
 #[cfg(test)]
 mod tests {
