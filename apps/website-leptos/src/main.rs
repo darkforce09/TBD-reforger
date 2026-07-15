@@ -19,6 +19,7 @@ mod mortar;
 mod nav;
 mod personnel;
 mod router;
+mod server_control;
 mod server_intel;
 mod settings;
 mod split_pane;
