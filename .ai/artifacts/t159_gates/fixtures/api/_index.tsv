@@ -16,3 +16,6 @@
 200	/api/v1/approvals	GET__approvals.json	43B
 200	/api/v1/admin/users	GET__admin__users.json	258B
 200	/api/v1/admin/audit-logs	GET__admin__audit-logs.json	30B
+200	/api/v1/missions/512d8658-7025-4a70-94e9-a1b44a7aa155	GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json	851B
+200	/api/v1/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7	GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json	828B
+200	/api/v1/event-missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/orbat	GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json	19B

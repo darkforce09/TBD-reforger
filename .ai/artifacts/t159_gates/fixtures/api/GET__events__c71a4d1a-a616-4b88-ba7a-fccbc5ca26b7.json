@@ -1,0 +1,25 @@
+{
+    "created_at": "2026-07-15T14:05:44.629713Z",
+    "created_by": "000000000000000001",
+    "id": "c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
+    "max_slots": 0,
+    "missions": [
+        {
+            "armory_by_faction": [],
+            "event_mission_id": "89b1b731-37a8-4926-901a-3c7ff7de5eb3",
+            "factions": [],
+            "filled": 0,
+            "game_mode": "pve_coop",
+            "mission_id": "512d8658-7025-4a70-94e9-a1b44a7aa155",
+            "start_time": "2026-08-01T19:00:00Z",
+            "terrain": "everon",
+            "title": "Operation Byte Parity",
+            "total": 0
+        }
+    ],
+    "name_override": "Operation Byte Parity Night",
+    "registration_locked": false,
+    "start_time": "2026-08-01T19:00:00Z",
+    "status": "scheduled",
+    "updated_at": "2026-07-15T14:05:44.629713Z"
+}
