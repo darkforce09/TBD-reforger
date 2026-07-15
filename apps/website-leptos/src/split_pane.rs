@@ -16,11 +16,9 @@ pub fn SplitPane(
 ) -> impl IntoView {
     let outer = cn(&[
         "flex h-full min-h-0 w-full overflow-hidden",
-        if transparent {
-            ""
-        } else {
-            "bg-topo-map bg-grid-overlay"
-        },
+        // React's cn(…, !transparent && 'bg-topo-map bg-grid-overlay') tailwind-merges the two bg-*
+        // utilities and keeps only the last → `bg-grid-overlay` (bg-topo-map is dropped).
+        if transparent { "" } else { "bg-grid-overlay" },
     ]);
     view! {
         <div class=outer>

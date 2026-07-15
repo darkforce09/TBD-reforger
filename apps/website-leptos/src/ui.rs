@@ -1,5 +1,6 @@
 //! Small UI helpers ported from lib/utils.ts (`cn`) + components/MaterialIcon.tsx + AuthGate.tsx.
 use crate::auth::AuthStore;
+use crate::nav::Role;
 use leptos::prelude::*;
 
 /// Neutral inline avatar (data URI) shown when a user has no Discord avatar — byte-identical to
@@ -76,5 +77,31 @@ pub fn AuthGate(children: ChildrenFn) -> impl IntoView {
         } else {
             children().into_any()
         }
+    }
+}
+
+/// AdminGate — AuthGate + an admin-role check. Ported from components/AdminGate.tsx: authed
+/// non-admins see "Admin access required." instead of the children.
+#[component]
+pub fn AdminGate(children: ChildrenFn) -> impl IntoView {
+    view! {
+        <AuthGate>
+            {
+                let children = children.clone();
+                move || {
+                    let auth = expect_context::<AuthStore>();
+                    if auth.has_min_role(Role::Admin) {
+                        children().into_any()
+                    } else {
+                        view! {
+                            <div class="flex min-h-[40vh] items-center justify-center text-on-surface-variant">
+                                "Admin access required."
+                            </div>
+                        }
+                        .into_any()
+                    }
+                }
+            }
+        </AuthGate>
     }
 }

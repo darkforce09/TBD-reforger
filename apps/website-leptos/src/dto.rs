@@ -117,6 +117,14 @@ pub struct RegistryResponse {
     pub modpack_version: String,
 }
 
+/// Cursor-paginated list — `{data, next_cursor}` (audit logs). Item type ported per page.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct CursorList<T> {
+    pub data: Vec<T>,
+    pub next_cursor: Option<Value>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -272,8 +280,8 @@ mod r_api {
     }
     #[test]
     fn audit_logs_envelope() {
-        // audit logs use a cursor, not offset/total — ride Value until the admin page lands.
-        assert_golden::<Value>(golden!("GET__admin__audit-logs.json"));
+        // audit logs use a cursor envelope, not offset/total.
+        assert_golden::<CursorList<Value>>(golden!("GET__admin__audit-logs.json"));
     }
 
     // ── `{data}` envelopes ──

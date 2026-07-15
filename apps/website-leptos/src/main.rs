@@ -6,6 +6,7 @@
 
 mod announcements;
 mod app_routes;
+mod audit;
 mod auth;
 mod client;
 mod dashboard;
