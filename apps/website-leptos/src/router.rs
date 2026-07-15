@@ -201,19 +201,40 @@ pub static ROUTES: &[RouteDef] = &[
     },
 ];
 
-/// Breadcrumb (parent, current) for a route path — mirrors the router.tsx route handles. Exact-path
-/// match for now; dynamic routes (/missions/:id → "Mission Overview", /events/:id → "Event Hub", …)
-/// resolve via pattern matching in a follow-up. TopNav falls back to the plain title on `None`.
+/// Match a concrete path against the ROUTES table by segment (a `:param` segment is a wildcard),
+/// returning the matched route. Resolves breadcrumb + full_bleed for dynamic routes.
+fn match_route(path: &str) -> Option<&'static RouteDef> {
+    fn seg_match(pattern: &str, path: &str) -> bool {
+        if pattern == "*" {
+            return false; // the catch-all is the <Routes fallback>, not a breadcrumb source
+        }
+        let ps: Vec<&str> = pattern.split('/').filter(|s| !s.is_empty()).collect();
+        let xs: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+        ps.len() == xs.len()
+            && ps
+                .iter()
+                .zip(&xs)
+                .all(|(p, x)| p.starts_with(':') || p == x)
+    }
+    ROUTES.iter().find(|r| seg_match(r.path, path))
+}
+
+/// Breadcrumb (parent, current) for a route — mirrors the router.tsx route handles, keyed on the
+/// matched route pattern so dynamic routes resolve (/missions/abc → "Mission Overview"). TopNav
+/// falls back to the plain title on `None`.
 pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
-    Some(match path {
+    Some(match match_route(path)?.path {
         "/" => ("Command Center", "Dashboard"),
         "/server-intel" => ("Command Center", "Server Intel"),
         "/announcements" => ("Command Center", "Announcements"),
         "/deployments" => ("Operations", "My Deployments"),
         "/leaderboards" => ("Operations", "Global Leaderboards"),
         "/missions" => ("Mission Hub", "Mission Library"),
+        "/missions/:id" => ("Mission Hub", "Mission Overview"),
         "/events" => ("Operations", "Event Schedule"),
-        "/wiki" => ("Doctrine & Info", "SOPs & Manuals"),
+        "/events/:id" => ("Operations", "Event Hub"),
+        "/events/:id/missions/:emid/orbat" => ("Operations", "ORBAT Selection"),
+        "/wiki" | "/wiki/:slug" => ("Doctrine & Info", "SOPs & Manuals"),
         "/vehicles" => ("Doctrine & Info", "Vehicle Database"),
         "/modpacks" => ("Doctrine & Info", "Modpacks"),
         "/tools/mortar" => ("Field Tools", "Mortar Calculator"),
@@ -229,12 +250,8 @@ pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
 }
 
 /// Whether a route is full-bleed (the `<main>` is `overflow-hidden` vs the padded scroll container),
-/// from the route handle. Exact-path match (dynamic routes resolve via patterns in a follow-up);
-/// unmatched defaults to false (padded), matching react-router's no-handle case.
+/// via the matched route pattern (dynamic routes included). Unmatched defaults to false (padded),
+/// matching react-router's no-handle case.
 pub fn full_bleed(path: &str) -> bool {
-    ROUTES
-        .iter()
-        .find(|r| r.path == path)
-        .map(|r| r.full_bleed)
-        .unwrap_or(false)
+    match_route(path).map(|r| r.full_bleed).unwrap_or(false)
 }
