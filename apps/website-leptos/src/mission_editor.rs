@@ -103,6 +103,23 @@ pub fn MissionEditorPage() -> impl IntoView {
             let doc_ver = Rc::new(Cell::new(1u32));
             crate::mission_doc::register_mission_doc(doc.clone(), doc_ver);
 
+            // T-159.18 — LMB select foundation. Selection is app-side state (NOT the Y.Doc — it never
+            // lived in the document, matching React's Zustand), held in the editor's leaked-handle
+            // idiom so the `window.__editorSelection` smoke bridge (peer of __missionDoc) never reads
+            // reactive-owner state a route change could dispose. `lmb` carries the pending-left gesture
+            // (frozen ortho camera + press px) between pointerdown and pointerup. Registered
+            // synchronously (engine still `None` here — `probe()` reads it lazily; `pick_selfcheck()`
+            // needs only the synchronously-seeded doc).
+            let selection: crate::select_tool::SelectionHandle = Rc::new(RefCell::new(Vec::new()));
+            let lmb: Rc<RefCell<Option<crate::select_tool::PendingLeft>>> =
+                Rc::new(RefCell::new(None));
+            crate::select_tool::register_editor_selection(
+                selection.clone(),
+                doc.clone(),
+                engine.clone(),
+                container.clone(),
+            );
+
             // T-159.17 — persistence layer (additive; the SYNCHRONOUS seed above keeps the doc smoke
             // synchronous — `smoke_doc_editor` still sees 8 slots immediately on its own cold origin).
             // The `window.__missionPersist` bridge is installed synchronously (so the gate can wait on
@@ -267,12 +284,35 @@ pub fn MissionEditorPage() -> impl IntoView {
             let onpointerdown = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let pan_px = pan_px.clone();
                 let container = container.clone();
+                let engine = engine.clone();
+                let lmb = lmb.clone();
                 move |ev: web_sys::PointerEvent| {
-                    // Middle (1) or right (2) button starts a pan; left (0) is left alone this slice.
+                    // Middle (1) or right (2) button starts a pan.
                     if ev.button() == 1 || ev.button() == 2 {
                         ev.prevent_default();
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
+                    } else if ev.button() == 0 {
+                        // T-159.18 — LMB pending-left: freeze the ortho camera at press (X-05: the live
+                        // engine unproject is deleted; a live unproject would feedback-loop mid-pan). No
+                        // pointer capture yet — a sub-threshold release is a click; a past-threshold drag
+                        // (move/marquee) is deferred to a later slice. `engine.borrow()` is safe: JS is
+                        // single-threaded, so this never reenters the rAF loop's `borrow_mut`.
+                        if let Some(e) = engine.borrow().as_ref() {
+                            let rect = container.get_bounding_client_rect();
+                            let cam = crate::select_tool::frozen_camera(
+                                rect.width(),
+                                rect.height(),
+                                e.target_x(),
+                                e.target_y(),
+                                e.zoom(),
+                            );
+                            *lmb.borrow_mut() = Some(crate::select_tool::PendingLeft {
+                                start_x: ev.client_x() as f64 - rect.left(),
+                                start_y: ev.client_y() as f64 - rect.top(),
+                                cam,
+                            });
+                        }
                     }
                 }
             });
@@ -292,11 +332,47 @@ pub fn MissionEditorPage() -> impl IntoView {
             let onpointerup = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let pan_px = pan_px.clone();
                 let container = container.clone();
+                let engine = engine.clone();
+                let lmb = lmb.clone();
+                let doc = doc.clone();
+                let selection = selection.clone();
                 move |ev: web_sys::PointerEvent| {
+                    // Pan end (MMB/RMB).
                     if pan_px.get().is_some() {
                         pan_px.set(None);
                         if container.has_pointer_capture(ev.pointer_id()) {
                             let _ = container.release_pointer_capture(ev.pointer_id());
+                        }
+                    }
+                    // T-159.18 — LMB click (pending-left). A release always ends the gesture; a
+                    // sub-threshold (< 4 px) release is a click → pick the nearest slot against the
+                    // FROZEN press camera (X-05) and update the selection. Past-threshold = a drag
+                    // (deferred: no selection change this slice).
+                    if let Some(p) = lmb.borrow_mut().take() {
+                        let rect = container.get_bounding_client_rect();
+                        let up_x = ev.client_x() as f64 - rect.left();
+                        let up_y = ev.client_y() as f64 - rect.top();
+                        let moved = ((up_x - p.start_x).powi(2) + (up_y - p.start_y).powi(2)).sqrt();
+                        if moved < crate::select_tool::DRAG_THRESHOLD_PX {
+                            let additive = ev.ctrl_key() || ev.meta_key();
+                            // Pick against the frozen camera + the current doc SoA (`doc.borrow()` is
+                            // released before the selection/engine borrows below).
+                            let hit = doc.borrow().as_ref().and_then(|c| {
+                                crate::select_tool::pick(
+                                    &p.cam,
+                                    &c.materialize(),
+                                    p.start_x,
+                                    p.start_y,
+                                )
+                            });
+                            {
+                                let mut sel = selection.borrow_mut();
+                                crate::select_tool::apply_click(&mut sel, hit, additive);
+                            }
+                            let ids = selection.borrow().clone();
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.set_selection(ids); // GPU tint lane (no-op until an atlas uploads)
+                            }
                         }
                     }
                 }
@@ -304,6 +380,23 @@ pub fn MissionEditorPage() -> impl IntoView {
             let oncontextmenu = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(
                 move |ev: web_sys::MouseEvent| ev.prevent_default(),
             );
+            // T-159.18 — pointercancel ends BOTH a pan and a pending LMB, but (unlike pointerup) is
+            // NOT a click: it clears the pending gesture without picking. (Previously shared with
+            // onpointerup, which is correct for pan-only but would mis-fire a click for LMB.)
+            let onpointercancel = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+                let pan_px = pan_px.clone();
+                let container = container.clone();
+                let lmb = lmb.clone();
+                move |ev: web_sys::PointerEvent| {
+                    if pan_px.get().is_some() {
+                        pan_px.set(None);
+                        if container.has_pointer_capture(ev.pointer_id()) {
+                            let _ = container.release_pointer_capture(ev.pointer_id());
+                        }
+                    }
+                    lmb.borrow_mut().take();
+                }
+            });
             let _ = container.add_event_listener_with_callback(
                 "pointerdown",
                 onpointerdown.as_ref().unchecked_ref(),
@@ -314,10 +407,10 @@ pub fn MissionEditorPage() -> impl IntoView {
             );
             let _ = container
                 .add_event_listener_with_callback("pointerup", onpointerup.as_ref().unchecked_ref());
-            // pointercancel shares the pointerup handler (both end the pan + release capture).
+            // pointercancel ends the pan + a pending LMB without a click (T-159.18).
             let _ = container.add_event_listener_with_callback(
                 "pointercancel",
-                onpointerup.as_ref().unchecked_ref(),
+                onpointercancel.as_ref().unchecked_ref(),
             );
             let _ = container.add_event_listener_with_callback(
                 "contextmenu",
@@ -353,6 +446,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             onpointerdown.forget();
             onpointermove.forget();
             onpointerup.forget();
+            onpointercancel.forget();
             oncontextmenu.forget();
             on_cleanup(move || disposed.store(true, Ordering::Relaxed));
         });

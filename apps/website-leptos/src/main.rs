@@ -37,6 +37,10 @@ mod nav;
 mod orbat_selection;
 mod personnel;
 mod router;
+// T-159.18 Select / LMB pick foundation — links map-engine-core `camera`+`spatial` and web-sys, so
+// wasm32-only, gated like the doc host + persist modules.
+#[cfg(target_arch = "wasm32")]
+mod select_tool;
 mod server_control;
 mod server_intel;
 mod settings;
