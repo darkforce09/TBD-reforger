@@ -6,6 +6,7 @@
 
 mod app_routes;
 mod auth;
+mod client;
 mod layout;
 mod nav;
 mod router;
