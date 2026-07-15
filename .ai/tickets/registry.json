@@ -1,5 +1,5 @@
 {
-  "next_id": 160,
+  "next_id": 161,
   "tickets": [
     {
       "id": "T-001",
@@ -4673,7 +4673,7 @@
       "id": "T-159",
       "order": 1570,
       "title": "Leptos UI rewrite (React SPA → Rust)",
-      "summary": "Standing worktree .ai/artifacts/worktrees/TBD-T-159 @ t-159-leptos-ui. Rework website UI to Leptos; share types with Axum; host existing wasm engines later. ACTIVE T-159.1 scaffold. Hub: docs/platform/t159_leptos_ui_program.md. React stays until cutover.",
+      "summary": "Worktree TBD-T-159 @ t-159-leptos-ui tip a425936d. 24 page routes byte-identical; T-159.15.0/15.1 MC wgpu loop shipped. NEXT: pan/pick then T-159.16 doc host. Hub: t159_leptos_ui_program.md. Verify: .ai/artifacts/t159_15_1_verify_log.md (GpuTimer disable_frame_timing — not poll/WebGL2).",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4697,9 +4697,13 @@
         "T-159.1",
         "T-159.2",
         "T-159.3",
-        "T-159.4"
+        "T-159.4",
+        "T-159.15.0",
+        "T-159.15.1",
+        "T-159.15.2",
+        "T-159.16"
       ],
-      "active_slice": "T-159.1",
+      "active_slice": "T-159.15.2",
       "slice_plan": {
         "T-159.0": {
           "targets": [
@@ -4707,8 +4711,9 @@
           ],
           "executor": "cursor-docs",
           "status": "shipped",
+          "shipped_at": "f95b01ad",
           "spec": "docs/platform/t159_leptos_ui_program.md",
-          "notes": "Hub + registry + standing worktree + T-159.1 handoff."
+          "notes": "Hub + standing worktree."
         },
         "T-159.1": {
           "targets": [
@@ -4716,35 +4721,94 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/platform/t159_1_leptos_scaffold.md",
-          "notes": "Scaffold apps/website-leptos. Handoff: .ai/artifacts/t159_1_claude_code_handoff.md"
+          "notes": "Scaffold + later page waves through 24 routes on worktree (aggregate)."
         },
         "T-159.2": {
           "targets": [
             "website"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "App shell + router + Aegis chrome stubs."
+          "status": "shipped",
+          "notes": "Aegis shell — absorbed into page-migration arc on branch."
         },
         "T-159.3": {
           "targets": [
             "website"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "Auth bootstrap + dev-login parity."
+          "status": "shipped",
+          "notes": "Auth + refresh — shipped on branch."
         },
         "T-159.4": {
           "targets": [
             "website"
           ],
           "executor": "claude-code",
+          "status": "shipped",
+          "notes": "Route table + page V-suite (24 routes byte-identical)."
+        },
+        "T-159.15.0": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "3066f14c",
+          "notes": "wgpu boundary collapse; RenderEngine in Leptos wasm."
+        },
+        "T-159.15.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "a425936d",
+          "notes": "Damage-driven rAF + wheel + resize. Fix=disable_frame_timing (GpuTimer double-map on Dawn), not poll(). Verify: .ai/artifacts/t159_15_1_verify_log.md"
+        },
+        "T-159.15.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t159_15_2_camera_pan.md",
+          "notes": "MMB/RMB pan + wheel rebase. Handoff: .ai/artifacts/t159_15_2_claude_code_handoff.md. Slot pick deferred to T-159.16."
+        },
+        "T-159.16": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
           "status": "queued",
-          "notes": "Wave-1 page parity (Dashboard or Mission Library)."
+          "notes": "WasmMissionDoc host in Leptos."
         }
       }
+    },
+    {
+      "id": "T-160",
+      "order": 1575,
+      "title": "wgpu GpuTimer readback err-path (unmap / in_flight)",
+      "summary": "Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "status": "idea",
+      "depends_on": [
+        "T-159"
+      ],
+      "stream": "web-platform",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
     }
   ]
 }
