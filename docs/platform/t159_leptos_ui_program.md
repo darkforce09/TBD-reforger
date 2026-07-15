@@ -89,7 +89,7 @@ See [`.ai/artifacts/t159_15_1_verify_log.md`](../../.ai/artifacts/t159_15_1_veri
 | **T-159.1–.14** | Scaffold → shell → auth → types → UI kit → page waves | shipped on `t-159-leptos-ui` (24 routes) |
 | **T-159.15.0** | MC wgpu boundary collapse | shipped `3066f14c` |
 | **T-159.15.1** | Render loop + wheel + GPU gate | shipped `a425936d` |
-| **T-159.15.2+** | Pan / pick / camera interaction | **ready next** |
+| **T-159.15.2** | Pan / mid-pan wheel rebase (no slot pick yet) | **ready** — spec `t159_15_2_camera_pan.md` |
 | **T-159.16–.22** | Doc host → persist → tools → save → outliner → Arsenal | queued |
 | **T-159.23–.25** | Visual sweep → cutover → delete React | queued |
 

@@ -26,7 +26,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 ## T-159 — Leptos UI rewrite (React SPA → Rust)
 
 - **Active slice:** `T-159.15.2`
-- **Slice spec:** `docs/platform/t159_leptos_ui_program.md`
+- **Slice spec:** `docs/platform/t159_15_2_camera_pan.md`
 - **Program hub:** `docs/platform/t159_leptos_ui_program.md`
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website

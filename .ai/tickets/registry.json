@@ -4775,7 +4775,8 @@
           ],
           "executor": "claude-code",
           "status": "ready",
-          "notes": "Camera pan / pick / interaction. Next after 15.1."
+          "spec": "docs/platform/t159_15_2_camera_pan.md",
+          "notes": "MMB/RMB pan + wheel rebase. Handoff: .ai/artifacts/t159_15_2_claude_code_handoff.md. Slot pick deferred to T-159.16."
         },
         "T-159.16": {
           "targets": [
