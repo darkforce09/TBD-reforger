@@ -21,6 +21,10 @@ web-sys = { version = "0.3", features = [
     "Window",
     "Location",
     "Storage",
+    # T-159.17 yrs IDB persist: `window.document()` + `document.hidden()` (Page Visibility) and the
+    # `visibilitychange` flush-on-hide listener. sessionStorage/localStorage stay under `Storage`;
+    # set_timeout/clear_timeout_with_handle live under the existing `Window`.
+    "Document",
     "RequestCredentials",
     "HtmlCanvasElement",
     # T-159.15.1 Mission Creator render loop: container div, its bounding rect, wheel-zoom, and the
@@ -48,6 +52,11 @@ map-engine-render = { path = "../../crates/map-engine-render" }
 # on map-engine-core with the `doc` feature, NOT the map-engine-wasm JS shim). `doc` pulls yrs; its
 # serde_json is already shared with render's `world` feature, so no duplicate dep.
 map-engine-core = { path = "../../crates/map-engine-core", features = ["doc"] }
+# T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
+# `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
+# features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on
+# wasm32-unknown-unknown — so keep default features (dropping them strips the async API).
+idb = "0.6"
 
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.

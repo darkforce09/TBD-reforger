@@ -15,6 +15,10 @@ mod dashboard;
 mod datefmt;
 mod deployments;
 mod dto;
+// T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
+// like the doc host below.
+#[cfg(target_arch = "wasm32")]
+mod editor_session;
 mod event_hub;
 mod event_manager;
 mod events;
@@ -40,6 +44,10 @@ mod split_pane;
 mod ui;
 mod vehicles;
 mod wiki;
+// T-159.17 yrs IDB persist — IndexedDB (`idb` crate) + debounced writer; wasm32-only, gated like the
+// doc host.
+#[cfg(target_arch = "wasm32")]
+mod yrs_persist;
 
 // The wasm entry is a `#[wasm_bindgen(start)]`, not the bin `main`, because linking
 // map-engine-render (T-159.15) pulls in ITS `#[wasm_bindgen(start)]` (the panic hook); wasm-bindgen

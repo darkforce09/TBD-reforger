@@ -48,12 +48,23 @@ pub fn MissionEditorPage() -> impl IntoView {
         use std::sync::Arc;
         use wasm_bindgen::prelude::*;
         use wasm_bindgen::JsCast;
+        // T-159.17 — read the `:id` route param for the persistence key.
+        use leptos_router::hooks::use_params_map;
 
         const TERRAIN_W: f64 = 12_800.0;
         const TERRAIN_H: f64 = 12_800.0;
         const INITIAL_TARGET: (f64, f64) = (6_400.0, 6_400.0);
         const INITIAL_ZOOM: f64 = -2.0;
         const WHEEL_ZOOM_PER_PX: f64 = 1.0 / 500.0;
+
+        // T-159.17 — mission id from the `:id` route param (`/missions/:id/edit`; `smoke` on the gate
+        // route). One-shot untracked read at mount (id is static per route mount). Fallback `draft`
+        // mirrors the React `missionId ?? 'draft'` persistence key.
+        let mission_id = use_params_map()
+            .get_untracked()
+            .get("id")
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "draft".to_string());
 
         canvas_ref.on_load(move |canvas: web_sys::HtmlCanvasElement| {
             let Some(container) = container_ref.get_untracked() else {
@@ -91,6 +102,73 @@ pub fn MissionEditorPage() -> impl IntoView {
             let doc = crate::mission_doc::new_seeded_doc();
             let doc_ver = Rc::new(Cell::new(1u32));
             crate::mission_doc::register_mission_doc(doc.clone(), doc_ver);
+
+            // T-159.17 — persistence layer (additive; the SYNCHRONOUS seed above keeps the doc smoke
+            // synchronous — `smoke_doc_editor` still sees 8 slots immediately on its own cold origin).
+            // The `window.__missionPersist` bridge is installed synchronously (so the gate can wait on
+            // it); the IDB load / initial-persist / warm-mark run async below and flip `ready` last.
+            let persist_ready = Rc::new(Cell::new(false));
+            let persist_loaded = Rc::new(Cell::new(false));
+            crate::yrs_persist::register_mission_persist(
+                doc.clone(),
+                mission_id.clone(),
+                persist_ready.clone(),
+                persist_loaded.clone(),
+            );
+            spawn_local({
+                let doc = doc.clone();
+                let id = mission_id.clone();
+                let ready = persist_ready.clone();
+                let loaded = persist_loaded.clone();
+                async move {
+                    // 1. Restore from IDB if a blob exists — SWAP a fresh core (mirrors React's
+                    //    empty-shell + apply; rests on the tested fresh-peer path + persist_roundtrip_ok,
+                    //    NOT on reapply-idempotence). The swap is a synchronous block: no `borrow`/
+                    //    `borrow_mut` is ever held across an `.await` (the engine task shares this `Rc`).
+                    if let Some(blob) = crate::yrs_persist::load_state(&id).await {
+                        if !blob.is_empty() {
+                            let fresh = map_engine_core::doc::MissionDocCore::new();
+                            fresh.set_origin_init(true);
+                            let ok = fresh.apply_update(&blob).is_ok();
+                            fresh.set_origin_init(false);
+                            if ok {
+                                *doc.borrow_mut() = Some(fresh);
+                                loaded.set(true);
+                            }
+                        }
+                    }
+                    // 2. Initial persist through the debounced writer (get_bytes read at write time;
+                    //    cancel when the doc Option is cleared). No mutator hook exists yet, so this
+                    //    post-seed/post-load encode is the writer's trigger this slice.
+                    {
+                        let doc_get = doc.clone();
+                        let doc_cancel = doc.clone();
+                        crate::yrs_persist::save_state_debounced(
+                            &id,
+                            Box::new(move || {
+                                doc_get
+                                    .borrow()
+                                    .as_ref()
+                                    .map(|c| c.encode_state())
+                                    .unwrap_or_default()
+                            }),
+                            Box::new(move || doc_cancel.borrow().is_none()),
+                            crate::yrs_persist::debounce_ms(),
+                        );
+                    }
+                    // 3. Warm-session marker after the doc is ready.
+                    let n = doc
+                        .borrow()
+                        .as_ref()
+                        .map(|c| c.slot_count() as u32)
+                        .unwrap_or(0);
+                    crate::editor_session::mark_ready(&id, n, None);
+                    // 4. Flush-on-hide listeners (visibilitychange/hidden + pagehide).
+                    crate::yrs_persist::register_flush_on_hide(id.clone());
+                    // 5. Ready LAST — the gate waits on this before asserting.
+                    ready.set(true);
+                }
+            });
 
             spawn_local({
                 let engine = engine.clone();
