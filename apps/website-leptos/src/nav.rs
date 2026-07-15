@@ -2,9 +2,11 @@
 //! Field-for-field identical to the React nav so the Sidebar renders the same items in the same
 //! order (the S-components / V-shell gates check this).
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-// The full four-tier ladder; Leader/MissionMaker aren't referenced by nav filtering yet (guest
-// browse-mode shows all) — they wire in with the real auth store at T-159.3.
+#[derive(Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+// The full four-tier ladder = the API's UserRole ('enlisted' < 'leader' < 'mission_maker' <
+// 'admin'). Leader/MissionMaker aren't referenced by nav filtering yet (guest browse-mode shows
+// all) — they wire in with the real auth store at T-159.3.
 #[allow(dead_code)]
 pub enum Role {
     Enlisted,
