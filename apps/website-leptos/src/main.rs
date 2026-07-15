@@ -13,6 +13,7 @@ mod client;
 mod dashboard;
 mod deployments;
 mod dto;
+mod events;
 mod layout;
 mod leaderboards;
 mod missions;

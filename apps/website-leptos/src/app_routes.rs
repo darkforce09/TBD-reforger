@@ -8,6 +8,7 @@ use crate::approvals::MissionApprovalsPage;
 use crate::audit::AuditLogsPage;
 use crate::dashboard::DashboardPage;
 use crate::deployments::DeploymentsPage;
+use crate::events::EventSchedulePage;
 use crate::leaderboards::LeaderboardsPage;
 use crate::missions::MissionLibraryPage;
 use crate::modpacks::ModpacksPage;
@@ -118,7 +119,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/missions") view=MissionLibraryPage />
             <Route path=path!("/missions/:id") view=ApiPage />
             <Route path=path!("/missions/:id/edit") view=PageStub />
-            <Route path=path!("/events") view=ApiPage />
+            <Route path=path!("/events") view=EventSchedulePage />
             <Route path=path!("/events/:id") view=ApiPage />
             <Route path=path!("/events/:id/missions/:emid/orbat") view=ApiPage />
             <Route path=path!("/wiki") view=ApiPage />
