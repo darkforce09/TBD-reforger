@@ -14,22 +14,26 @@ use leptos::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::cell::RefCell;
 use std::future::Future;
+use std::rc::Rc;
 
 /* ─────────────────────────── single-flight refresh ─────────────────────────── */
 
 /// At most one in-flight future for `T` at a time. Concurrent callers of [`run`](Self::run) await a
 /// clone of the same shared future; the owner clears the cell once it settles.
 // Wired to the gloo-net refresh + 401-retry client in the next auth slice; unit-tested now.
+// Rc-backed so it can live in a `thread_local!` and be cloned out to share across the async refresh
+// (the wasm client can't hold a thread-local borrow across an await).
 #[allow(dead_code)]
+#[derive(Clone)]
 pub struct SingleFlight<T: Clone> {
-    inflight: RefCell<Option<Shared<LocalBoxFuture<'static, T>>>>,
+    inflight: Rc<RefCell<Option<Shared<LocalBoxFuture<'static, T>>>>>,
 }
 
 #[allow(dead_code)]
 impl<T: Clone + 'static> SingleFlight<T> {
     pub fn new() -> Self {
         Self {
-            inflight: RefCell::new(None),
+            inflight: Rc::new(RefCell::new(None)),
         }
     }
 
@@ -149,6 +153,24 @@ pub fn from_persist_json(json: &str) -> Option<PersistState> {
     serde_json::from_str::<PersistedAuth>(json)
         .ok()
         .map(|p| p.state)
+}
+
+/// Write the persist slice to `localStorage["tbd-auth"]` (the wasm side of the Zustand persist).
+#[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
+pub fn persist(state: &PersistState) {
+    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+        let _ = storage.set_item(AUTH_PERSIST_KEY, &to_persist_json(state));
+    }
+}
+
+/// Read the persist slice back from localStorage (cold-load bootstrap).
+#[cfg(target_arch = "wasm32")]
+#[allow(dead_code)]
+pub fn load_persisted() -> Option<PersistState> {
+    let storage = web_sys::window()?.local_storage().ok()??;
+    let json = storage.get_item(AUTH_PERSIST_KEY).ok()??;
+    from_persist_json(&json)
 }
 
 /* ─────────────────────────── AuthStore (signals + context) ─────────────────────────── */

@@ -23,6 +23,9 @@ pub fn AppLayout() -> impl IntoView {
     // The auth store (Zustand replacement) lives at the shell root; children read it via context.
     // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
     provide_context(AuthStore::new());
+    // Cold-load bootstrap: hydrate the session from tbd-auth (no-op for a guest with nothing stored).
+    #[cfg(target_arch = "wasm32")]
+    leptos::task::spawn_local(crate::client::bootstrap(expect_context::<AuthStore>()));
     // Route determines the frame. Read once at load; reactive re-wrap on SPA nav is a follow-up.
     let path = use_location().pathname.get();
     if path == "/login" || path == "/auth/callback" {

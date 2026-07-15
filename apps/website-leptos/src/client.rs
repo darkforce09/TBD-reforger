@@ -35,6 +35,114 @@ pub async fn send_with_refresh<T>(
     }
 }
 
+/* ─────────────────────────── gloo-net client + bootstrap (wasm) ─────────────────────────── */
+
+#[cfg(target_arch = "wasm32")]
+mod wasm_client {
+    use super::{send_with_refresh, Req};
+    use crate::auth::{load_persisted, persist, AuthStore, RefreshResponse, Session, SingleFlight};
+    use crate::dto::MeResponse;
+    use futures::future::FutureExt;
+    use leptos::prelude::*;
+    use serde::de::DeserializeOwned;
+
+    const API_BASE: &str = "/api/v1";
+
+    thread_local! {
+        // Module-level single-flight cell — mirrors refresh.ts's `inflight`.
+        static REFRESH_SF: SingleFlight<Option<RefreshResponse>> = SingleFlight::new();
+    }
+
+    async fn refresh_via_gloo(store: AuthStore) -> Option<RefreshResponse> {
+        let rt = store.refresh_token.get_untracked();
+        let body = serde_json::json!({ "refresh_token": rt });
+        let req = gloo_net::http::Request::post(&format!("{API_BASE}/auth/refresh"))
+            .credentials(web_sys::RequestCredentials::Include)
+            .json(&body)
+            .ok()?;
+        match req.send().await {
+            Ok(resp) if (200..300).contains(&resp.status()) => {
+                resp.json::<RefreshResponse>().await.ok()
+            }
+            _ => None,
+        }
+    }
+
+    /// GET `path` (relative to /api/v1) with the api/client.ts contract: bearer inject + single-flight
+    /// 401 refresh + one retry. Returns the deserialized body or the HTTP status.
+    pub async fn api_get<T: DeserializeOwned + 'static>(
+        store: AuthStore,
+        path: &'static str,
+    ) -> Result<T, u16> {
+        let sf = REFRESH_SF.with(|s| s.clone());
+        let send = move |tok: Option<String>| -> Req<T> {
+            let url = format!("{API_BASE}{path}");
+            async move {
+                let mut req = gloo_net::http::Request::get(&url)
+                    .credentials(web_sys::RequestCredentials::Include);
+                if let Some(t) = tok {
+                    req = req.header("Authorization", &format!("Bearer {t}"));
+                }
+                match req.send().await {
+                    Ok(resp) => {
+                        let status = resp.status();
+                        if (200..300).contains(&status) {
+                            resp.json::<T>().await.map_err(|_| 0u16)
+                        } else {
+                            Err(status)
+                        }
+                    }
+                    Err(_) => Err(0u16),
+                }
+            }
+            .boxed_local()
+        };
+        send_with_refresh(
+            &sf,
+            send,
+            move || store.access_token.get_untracked(),
+            move || refresh_via_gloo(store).boxed_local(),
+            move |r: &RefreshResponse| {
+                store.set_tokens(r.clone());
+                persist(&store.persist_state());
+            },
+        )
+        .await
+    }
+
+    /// Cold-load bootstrap (useAuthBootstrap): hydrate tokens from tbd-auth, then GET /me — which
+    /// self-handles a stale/absent access token via the 401 → single-flight refresh → retry path.
+    /// No-ops (stays guest) when nothing is persisted.
+    pub async fn bootstrap(store: AuthStore) {
+        let Some(p) = load_persisted() else {
+            return;
+        };
+        let Some(rt) = p.refresh_token else {
+            return;
+        };
+        store.refresh_token.set(Some(rt));
+        store.expires_at.set(p.expires_at);
+        if let Some(u) = p.user {
+            store.user.set(Some(u));
+        }
+        store.bootstrapping.set(true);
+        if let Ok(me) = api_get::<MeResponse>(store, "/me").await {
+            store.set_session(Session {
+                access_token: store.access_token.get_untracked().unwrap_or_default(),
+                refresh_token: store.refresh_token.get_untracked().unwrap_or_default(),
+                expires_at: store.expires_at.get_untracked().unwrap_or_default(),
+                user: me.user,
+                arma_linked: me.arma_linked,
+            });
+            persist(&store.persist_state());
+        }
+        store.bootstrapping.set(false);
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+pub use wasm_client::bootstrap;
+
 #[cfg(test)]
 mod tests {
     use super::*;
