@@ -186,6 +186,55 @@ pub struct MissionDetail {
     pub thumbnail_url: Option<String>,
 }
 
+/// One mission dossier nested in `GET /events/:id` (`missions[]`). Optionals the backend omits
+/// (briefing/thumbnail/my_state/my_slot_id) round-trip absent. `armory_by_faction` stays opaque
+/// (`Value`) until a golden with loadouts lands.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventMissionDossier {
+    pub armory_by_faction: Vec<Value>,
+    pub event_mission_id: String,
+    pub factions: Vec<String>,
+    pub filled: i64,
+    pub game_mode: String,
+    pub mission_id: String,
+    pub start_time: String,
+    pub terrain: String,
+    pub title: String,
+    pub total: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub briefing: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbnail_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub my_state: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub my_slot_id: Option<String>,
+}
+
+/// `GET /events/:id` → the Event Hub (backend `eventHub`): the event container + nested mission
+/// dossiers. `created_at`/`created_by`/`updated_at` are on the wire (not in the hand TS type) so they
+/// must be modeled for the R-api round-trip; the empty optionals round-trip absent.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventHub {
+    pub created_at: String,
+    pub created_by: String,
+    pub id: String,
+    pub max_slots: i64,
+    pub missions: Vec<EventMissionDossier>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name_override: Option<String>,
+    pub registration_locked: bool,
+    pub start_time: String,
+    pub status: String,
+    pub updated_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub briefing: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub banner_image_url: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -317,6 +366,18 @@ mod r_api {
     fn mission_detail() {
         assert_golden::<MissionDetail>(golden!(
             "GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json"
+        ));
+    }
+    #[test]
+    fn event_hub() {
+        assert_golden::<EventHub>(golden!(
+            "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
+        ));
+    }
+    #[test]
+    fn orbat_envelope() {
+        assert_golden::<DataEnvelope<Value>>(golden!(
+            "GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json"
         ));
     }
 
