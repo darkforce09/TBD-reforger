@@ -24,6 +24,7 @@ mod server_intel;
 mod settings;
 mod split_pane;
 mod ui;
+mod vehicles;
 
 fn main() {
     // Guard the wasm-only mount so a native workspace-root `cargo build` still compiles this member

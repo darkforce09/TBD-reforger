@@ -15,6 +15,7 @@ use crate::server_control::ServerControlPage;
 use crate::server_intel::ServerIntelPage;
 use crate::settings::SettingsPage;
 use crate::ui::AuthGate;
+use crate::vehicles::VehicleDatabasePage;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
 use leptos_router::path;
@@ -120,7 +121,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/events/:id/missions/:emid/orbat") view=ApiPage />
             <Route path=path!("/wiki") view=ApiPage />
             <Route path=path!("/wiki/:slug") view=ApiPage />
-            <Route path=path!("/vehicles") view=ApiPage />
+            <Route path=path!("/vehicles") view=VehicleDatabasePage />
             <Route path=path!("/modpacks") view=ApiPage />
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
             <Route path=path!("/settings") view=SettingsPage />
