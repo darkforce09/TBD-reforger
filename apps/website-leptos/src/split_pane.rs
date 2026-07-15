@@ -134,8 +134,9 @@ pub fn ListDetailItem(
     } else {
         "truncate font-semibold text-on-surface-variant group-hover:text-on-surface"
     };
+    // cn(): the custom `text-code-md` is twMerge-dropped against the trailing text-{color}.
     let meta_class = cn(&[
-        "font-mono text-code-md",
+        "font-mono",
         if active {
             "text-primary opacity-80"
         } else {

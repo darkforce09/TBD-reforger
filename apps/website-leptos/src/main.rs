@@ -10,6 +10,7 @@ mod approvals;
 mod audit;
 mod auth;
 mod client;
+mod content;
 mod dashboard;
 mod deployments;
 mod dto;

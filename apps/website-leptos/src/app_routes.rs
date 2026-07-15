@@ -6,6 +6,7 @@
 use crate::announcements::AnnouncementsPage;
 use crate::approvals::MissionApprovalsPage;
 use crate::audit::AuditLogsPage;
+use crate::content::ContentManagerPage;
 use crate::dashboard::DashboardPage;
 use crate::deployments::DeploymentsPage;
 use crate::events::EventSchedulePage;
@@ -132,7 +133,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/admin/approvals") view=MissionApprovalsPage />
             <Route path=path!("/admin/server") view=ServerControlPage />
             <Route path=path!("/admin/personnel") view=PersonnelRosterPage />
-            <Route path=path!("/admin/content") view=ApiPage />
+            <Route path=path!("/admin/content") view=ContentManagerPage />
             <Route path=path!("/admin/audit") view=AuditLogsPage />
         </Routes>
     }
