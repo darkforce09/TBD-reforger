@@ -2091,6 +2091,29 @@ async fn map_read_4(
     Ok(out)
 }
 
+// ── Headless readback drain (T-159.15.1) ──────────────────────────────────────────────────────
+impl RenderEngine {
+    /// Drain readback `map_async` callbacks. On headless WebGL2 (SwiftShader) a `map_async`
+    /// callback only fires when the device is polled; the render-submit path never polls, so the
+    /// 16-byte `GpuTimer` / 4-byte icon-cull counter buffers stay mapped and the next frame's
+    /// `kick_readback` double-maps → `wgpu` "Buffer is already mapped". Calling this once per frame
+    /// after `render()` lets those callbacks unmap the buffers first. No-op cost on real-browser
+    /// WebGPU (the event loop already resolves the maps). Mirrors the poll in `map_read_4`.
+    pub fn poll(&self) {
+        let _ = self.device.poll(wgpu::PollType::Poll);
+    }
+
+    /// Drop the per-frame GPU timestamp readback (`GpuTimer`) lane. On headless WebGPU (Dawn) its
+    /// `map_async` readback lifecycle double-maps the 16-byte `read_buf` on the second submit
+    /// (`wgpu` "Buffer is already mapped") — and the editor has no fps/GPU-time HUD to consume it,
+    /// so the whole lane is pure overhead. `render()`'s `take_timing` already treats `timer: None`
+    /// as "skip timing", so this cleanly removes the offending map. Callers that want the HUD
+    /// (the T-151 spike) simply never call this. One-way (re-enable = fresh adapter query on create).
+    pub fn disable_frame_timing(&mut self) {
+        self.timer = None;
+    }
+}
+
 // ── W1 lane management (private helpers) ──────────────────────────────────────────────────────
 impl RenderEngine {
     /// Update the W4 additive stats counter for a vector lane role.
