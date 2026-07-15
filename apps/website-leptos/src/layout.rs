@@ -1,6 +1,7 @@
 //! Platform shell — ported from components/layout/{AppLayout,Sidebar,TopNav}.tsx. DOM structure +
 //! class strings matched 1:1 to the React output (V-shell gate, byte-equal). Auth (role, user
 //! menu, breadcrumb source) and routing are stubbed to the guest "/" render until T-159.3 / .4.
+use crate::app_routes::AppRoutes;
 use crate::auth::AuthStore;
 use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
 use crate::ui::{cn, MaterialIcon};
@@ -18,7 +19,9 @@ pub fn AppLayout() -> impl IntoView {
             <Sidebar />
             <div class="flex min-w-0 flex-1 flex-col">
                 <TopNav />
-                <main class="min-h-0 flex-1 bg-background overflow-hidden"></main>
+                <main class="min-h-0 flex-1 bg-background overflow-hidden">
+                    <AppRoutes />
+                </main>
             </div>
         </div>
     }

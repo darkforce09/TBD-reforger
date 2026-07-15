@@ -9,6 +9,7 @@ publish = false
 
 [dependencies]
 leptos = { version = "0.8", features = ["csr"] }
+leptos_router = "0.8"
 console_error_panic_hook = "0.1"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }

@@ -4,6 +4,7 @@
 //! land in later slices. Every slice is verified in a real headless browser via the gate harness
 //! (S/V/R/T), not just `cargo check`.
 
+mod app_routes;
 mod auth;
 mod layout;
 mod nav;
@@ -17,7 +18,8 @@ fn main() {
     {
         use layout::AppLayout;
         use leptos::prelude::*;
+        use leptos_router::components::Router;
         console_error_panic_hook::set_once();
-        leptos::mount::mount_to_body(|| view! { <AppLayout /> });
+        leptos::mount::mount_to_body(|| view! { <Router><AppLayout /></Router> });
     }
 }
