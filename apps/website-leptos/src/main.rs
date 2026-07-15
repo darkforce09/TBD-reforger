@@ -20,6 +20,7 @@ mod event_manager;
 mod events;
 mod layout;
 mod leaderboards;
+mod mission_editor;
 mod mission_overview;
 mod missions;
 mod modpacks;
@@ -36,27 +37,31 @@ mod ui;
 mod vehicles;
 mod wiki;
 
-fn main() {
-    // Guard the wasm-only mount so a native workspace-root `cargo build` still compiles this member
-    // (trunk always builds wasm32, where this arm is live). The module bodies compile on both.
-    #[cfg(target_arch = "wasm32")]
-    {
-        use layout::AppLayout;
-        use leptos::prelude::*;
-        use leptos_router::components::Router;
-        console_error_panic_hook::set_once();
-        // Mount inside a `<div id="root">` to mirror React's Vite mount node exactly (body > #root >
-        // app). Beyond drop-in structural parity, it keeps the V-gate's positional-id numbering
-        // aligned: dom.js numbers every [id] in document order, so a leading #root on ONE side would
-        // offset every in-content id (e.g. #arma-link) on that side.
-        leptos::mount::mount_to_body(|| {
-            view! {
-                <div id="root">
-                    <Router>
-                        <AppLayout />
-                    </Router>
-                </div>
-            }
-        });
-    }
+// The wasm entry is a `#[wasm_bindgen(start)]`, not the bin `main`, because linking
+// map-engine-render (T-159.15) pulls in ITS `#[wasm_bindgen(start)]` (the panic hook); wasm-bindgen
+// runs every registered start, but a bare bin `main` is NOT one of them, so it would be skipped and
+// the app would never mount. Declaring our mount as a start makes both run.
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen::prelude::wasm_bindgen(start)]
+pub fn start_app() {
+    use layout::AppLayout;
+    use leptos::prelude::*;
+    use leptos_router::components::Router;
+    console_error_panic_hook::set_once();
+    // Mount inside a `<div id="root">` to mirror React's Vite mount node exactly (body > #root >
+    // app). Beyond drop-in structural parity, it keeps the V-gate's positional-id numbering
+    // aligned: dom.js numbers every [id] in document order, so a leading #root on ONE side would
+    // offset every in-content id (e.g. #arma-link) on that side.
+    leptos::mount::mount_to_body(|| {
+        view! {
+            <div id="root">
+                <Router>
+                    <AppLayout />
+                </Router>
+            </div>
+        }
+    });
 }
+
+// The bin still needs a `main`; on wasm the start above drives the mount.
+fn main() {}

@@ -17,7 +17,13 @@ serde_json = "1"
 gloo-net = "0.6"
 js-sys = "0.3"
 wasm-bindgen = "0.2"
-web-sys = { version = "0.3", features = ["Window", "Storage", "RequestCredentials"] }
+web-sys = { version = "0.3", features = ["Window", "Storage", "RequestCredentials", "HtmlCanvasElement"] }
+
+# T-159.15 Mission Creator engine — the wasm-boundary collapse. The Leptos app links the wgpu render
+# engine directly (one wasm module / one linear memory), so it owns `RenderEngine` as plain Rust
+# instead of reaching it through the map-engine-wasm shim. rlib; its wgpu stack is wasm32-gated.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+map-engine-render = { path = "../../crates/map-engine-render" }
 
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.

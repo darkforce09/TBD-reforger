@@ -5213,6 +5213,7 @@ dependencies = [
  "js-sys",
  "leptos",
  "leptos_router",
+ "map-engine-render",
  "serde",
  "serde_json",
  "wasm-bindgen",
