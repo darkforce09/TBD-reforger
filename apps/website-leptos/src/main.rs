@@ -7,6 +7,7 @@
 mod app_routes;
 mod auth;
 mod client;
+mod dto;
 mod layout;
 mod nav;
 mod router;
