@@ -140,6 +140,52 @@ pub struct AdminUserRow {
     pub warnings: i64,
 }
 
+/// The mission version embedded in `GET /missions/:id` (`current_version`). `json_payload` is the
+/// editor superset — kept as an opaque `Value` (rendered pages read only `semver`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct MissionVersionRef {
+    pub created_at: String,
+    pub created_by: String,
+    pub id: String,
+    pub json_payload: Value,
+    pub mission_id: String,
+    pub semver: String,
+}
+
+/// `GET /missions/:id` → the full Mission Overview (backend `missionDetail`): the card fields + the
+/// current version + armory. Optionals the backend omits when empty round-trip absent
+/// (skip_serializing_if) so the R-api gate stays byte-exact.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct MissionDetail {
+    pub armory: Vec<Value>,
+    pub author_avatar: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub bookmarked: bool,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_version: Option<MissionVersionRef>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_version_id: Option<String>,
+    pub game_mode: String,
+    pub id: String,
+    pub max_players: i64,
+    pub status: String,
+    pub terrain: String,
+    pub time_of_day: String,
+    pub title: String,
+    pub updated_at: String,
+    pub weather: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub briefing: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_terrain_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbnail_url: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -266,6 +312,12 @@ mod r_api {
     #[test]
     fn registry_envelope() {
         assert_golden::<RegistryResponse>(golden!("GET__registry.json"));
+    }
+    #[test]
+    fn mission_detail() {
+        assert_golden::<MissionDetail>(golden!(
+            "GET__missions__512d8658-7025-4a70-94e9-a1b44a7aa155.json"
+        ));
     }
 
     // ── paginated `{data,total,limit,offset}` envelopes (item type ported per page) ──

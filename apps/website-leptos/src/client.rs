@@ -72,11 +72,14 @@ mod wasm_client {
     /// 401 refresh + one retry. Returns the deserialized body or the HTTP status.
     pub async fn api_get<T: DeserializeOwned + 'static>(
         store: AuthStore,
-        path: &'static str,
+        path: &str,
     ) -> Result<T, u16> {
         let sf = REFRESH_SF.with(|s| s.clone());
+        // Build the URL once (so `path` need only live for this call, not `'static`) — the retry
+        // closure clones the owned URL per attempt. Param routes (/missions/:id) pass a dynamic path.
+        let url = format!("{API_BASE}{path}");
         let send = move |tok: Option<String>| -> Req<T> {
-            let url = format!("{API_BASE}{path}");
+            let url = url.clone();
             async move {
                 let mut req = gloo_net::http::Request::get(&url)
                     .credentials(web_sys::RequestCredentials::Include);

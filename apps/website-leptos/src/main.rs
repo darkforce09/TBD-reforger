@@ -18,6 +18,7 @@ mod event_manager;
 mod events;
 mod layout;
 mod leaderboards;
+mod mission_overview;
 mod missions;
 mod modpacks;
 mod mortar;
