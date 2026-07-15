@@ -44,6 +44,10 @@ web-sys = { version = "0.3", features = [
 # instead of reaching it through the map-engine-wasm shim. rlib; its wgpu stack is wasm32-gated.
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 map-engine-render = { path = "../../crates/map-engine-render" }
+# T-159.16 MissionDoc host — the `yrs` document core in the SAME wasm module (spec D2: a workspace dep
+# on map-engine-core with the `doc` feature, NOT the map-engine-wasm JS shim). `doc` pulls yrs; its
+# serde_json is already shared with render's `world` feature, so no duplicate dep.
+map-engine-core = { path = "../../crates/map-engine-core", features = ["doc"] }
 
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.

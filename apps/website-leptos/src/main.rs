@@ -20,6 +20,10 @@ mod event_manager;
 mod events;
 mod layout;
 mod leaderboards;
+// T-159.16 MissionDoc host — all content is wasm32-only (links map-engine-core `doc`), so gate the
+// module declaration like the engine block inside `mission_editor`.
+#[cfg(target_arch = "wasm32")]
+mod mission_doc;
 mod mission_editor;
 mod mission_overview;
 mod missions;

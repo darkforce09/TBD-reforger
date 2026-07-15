@@ -83,9 +83,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                 Rc::new(RefCell::new(None));
             let disposed = Arc::new(AtomicBool::new(false));
 
+            // T-159.16 — MissionDoc host. Built + seeded + bridged synchronously (before the async
+            // engine create), so the `window.__missionDoc` Class R gate does not depend on the wgpu
+            // engine coming up. The doc leaks on route-leave like the engine (`!Send` `Rc`, and
+            // `on_cleanup` is `Send`-bound) — no double-free (plain Rust `Drop`). The optional
+            // doc→engine bind (D5) happens below once the engine is `Some`.
+            let doc = crate::mission_doc::new_seeded_doc();
+            let doc_ver = Rc::new(Cell::new(1u32));
+            crate::mission_doc::register_mission_doc(doc.clone(), doc_ver);
+
             spawn_local({
                 let engine = engine.clone();
                 let disposed = disposed.clone();
+                let doc = doc.clone();
                 let canvas = canvas.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
@@ -107,6 +117,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                             *engine.borrow_mut() = Some(eng);
                             register_self_checks(engine.clone());
                             register_editor_cam(engine.clone());
+                            // T-159.16 — optional doc→engine bind (D5). `slots_bind_soa` early-returns
+                            // while the slot atlas is unuploaded (the editor uploads none yet), so this
+                            // is a safe cache write that proves the SoA wire compiles + runs; the tiny
+                            // seeded slot set renders nothing until a later slice uploads the atlas.
+                            let soa = doc.borrow().as_ref().map(|c| c.materialize());
+                            if let (Some(soa), Some(e)) =
+                                (soa.as_ref(), engine.borrow_mut().as_mut())
+                            {
+                                e.slots_bind_soa(soa.ids.clone(), &soa.xy);
+                            }
                             start_raf(engine.clone(), disposed.clone());
                         }
                         Err(e) => leptos::logging::error!("RenderEngine::create: {e:?}"),
