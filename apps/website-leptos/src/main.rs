@@ -6,6 +6,7 @@
 
 mod announcements;
 mod app_routes;
+mod approvals;
 mod audit;
 mod auth;
 mod client;

@@ -4,6 +4,7 @@
 //! AppLayout OUTSIDE `<Routes>`, so it persists across navigation — `<Routes>` swaps only `<main>`.
 //! The path list mirrors router.rs `ROUTES` (the S-routes gate's source of truth).
 use crate::announcements::AnnouncementsPage;
+use crate::approvals::MissionApprovalsPage;
 use crate::audit::AuditLogsPage;
 use crate::dashboard::DashboardPage;
 use crate::deployments::DeploymentsPage;
@@ -123,7 +124,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/tools/mortar") view=MortarCalculatorPage />
             <Route path=path!("/settings") view=SettingsPage />
             <Route path=path!("/admin/events") view=ApiPage />
-            <Route path=path!("/admin/approvals") view=ApiPage />
+            <Route path=path!("/admin/approvals") view=MissionApprovalsPage />
             <Route path=path!("/admin/server") view=ApiPage />
             <Route path=path!("/admin/personnel") view=PersonnelRosterPage />
             <Route path=path!("/admin/content") view=ApiPage />
