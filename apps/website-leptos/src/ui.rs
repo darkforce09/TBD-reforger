@@ -5,7 +5,12 @@ use leptos::prelude::*;
 /// (clsx + tailwind-merge), this does NOT resolve Tailwind conflicts — the V gate proves the
 /// shell's class combos have none; a twMerge-equivalent lands only if a conflicting combo appears.
 pub fn cn(classes: &[&str]) -> String {
-    classes.iter().filter(|c| !c.is_empty()).copied().collect::<Vec<_>>().join(" ")
+    classes
+        .iter()
+        .filter(|c| !c.is_empty())
+        .copied()
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 /// Material Symbols icon — a font-glyph span whose text is the ligature name. Ported from

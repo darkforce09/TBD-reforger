@@ -7,6 +7,7 @@
 mod auth;
 mod layout;
 mod nav;
+mod router;
 mod ui;
 
 fn main() {

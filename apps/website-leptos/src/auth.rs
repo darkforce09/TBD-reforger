@@ -28,7 +28,9 @@ pub struct SingleFlight<T: Clone> {
 #[allow(dead_code)]
 impl<T: Clone + 'static> SingleFlight<T> {
     pub fn new() -> Self {
-        Self { inflight: RefCell::new(None) }
+        Self {
+            inflight: RefCell::new(None),
+        }
     }
 
     /// Run `make` under single-flight. The first caller builds the future and stores it; concurrent
@@ -134,13 +136,19 @@ pub struct PersistedAuth {
 /// this to localStorage). Version 0 = the Zustand default (no `version` option set on the store).
 #[allow(dead_code)]
 pub fn to_persist_json(state: &PersistState) -> String {
-    serde_json::to_string(&PersistedAuth { state: state.clone(), version: 0 }).unwrap_or_default()
+    serde_json::to_string(&PersistedAuth {
+        state: state.clone(),
+        version: 0,
+    })
+    .unwrap_or_default()
 }
 
 /// Parse a tbd-auth blob back to the persist slice (bootstrap / cold-load hydrate).
 #[allow(dead_code)]
 pub fn from_persist_json(json: &str) -> Option<PersistState> {
-    serde_json::from_str::<PersistedAuth>(json).ok().map(|p| p.state)
+    serde_json::from_str::<PersistedAuth>(json)
+        .ok()
+        .map(|p| p.state)
 }
 
 /* ─────────────────────────── AuthStore (signals + context) ─────────────────────────── */
@@ -263,9 +271,22 @@ mod tests {
                 }
             }
         };
-        let out = block_on(join_all(vec![sf.run(mk()), sf.run(mk()), sf.run(mk()), sf.run(mk())]));
-        assert_eq!(calls.get(), 1, "four concurrent callers must trigger exactly one refresh");
-        assert_eq!(out, vec![42, 42, 42, 42], "all callers receive the same rotated result");
+        let out = block_on(join_all(vec![
+            sf.run(mk()),
+            sf.run(mk()),
+            sf.run(mk()),
+            sf.run(mk()),
+        ]));
+        assert_eq!(
+            calls.get(),
+            1,
+            "four concurrent callers must trigger exactly one refresh"
+        );
+        assert_eq!(
+            out,
+            vec![42, 42, 42, 42],
+            "all callers receive the same rotated result"
+        );
     }
 
     // After a refresh settles the cell clears, so a later (non-overlapping) call refreshes again.
@@ -282,7 +303,11 @@ mod tests {
         };
         block_on(sf.run(mk()));
         block_on(sf.run(mk()));
-        assert_eq!(calls.get(), 2, "sequential non-overlapping calls each refresh");
+        assert_eq!(
+            calls.get(),
+            2,
+            "sequential non-overlapping calls each refresh"
+        );
     }
 
     fn sample_user() -> User {
@@ -333,6 +358,9 @@ mod tests {
             expires_at: Some("2026".into()),
         };
         let back = from_persist_json(&to_persist_json(&state)).unwrap();
-        assert!(back == state, "persist → hydrate must round-trip losslessly");
+        assert!(
+            back == state,
+            "persist → hydrate must round-trip losslessly"
+        );
     }
 }
