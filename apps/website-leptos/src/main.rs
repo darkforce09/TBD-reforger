@@ -12,6 +12,7 @@ mod dashboard;
 mod deployments;
 mod dto;
 mod layout;
+mod leaderboards;
 mod nav;
 mod router;
 mod server_intel;

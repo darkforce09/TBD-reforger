@@ -6,6 +6,7 @@
 use crate::announcements::AnnouncementsPage;
 use crate::dashboard::DashboardPage;
 use crate::deployments::DeploymentsPage;
+use crate::leaderboards::LeaderboardsPage;
 use crate::server_intel::ServerIntelPage;
 use crate::settings::SettingsPage;
 use crate::ui::AuthGate;
@@ -105,7 +106,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/server-intel") view=ServerIntelPage />
             <Route path=path!("/announcements") view=AnnouncementsPage />
             <Route path=path!("/deployments") view=DeploymentsPage />
-            <Route path=path!("/leaderboards") view=ApiPage />
+            <Route path=path!("/leaderboards") view=LeaderboardsPage />
             <Route path=path!("/missions") view=ApiPage />
             <Route path=path!("/missions/:id") view=ApiPage />
             <Route path=path!("/missions/:id/edit") view=PageStub />
