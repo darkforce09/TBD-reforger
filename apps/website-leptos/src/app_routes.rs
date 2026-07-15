@@ -47,18 +47,18 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/server-intel") view=ApiPage />
             <Route path=path!("/announcements") view=ApiPage />
             <Route path=path!("/deployments") view=ApiPage />
-            <Route path=path!("/leaderboards") view=PageStub />
+            <Route path=path!("/leaderboards") view=ApiPage />
             <Route path=path!("/missions") view=ApiPage />
             <Route path=path!("/missions/:id") view=PageStub />
             <Route path=path!("/missions/:id/edit") view=PageStub />
-            <Route path=path!("/events") view=PageStub />
+            <Route path=path!("/events") view=ApiPage />
             <Route path=path!("/events/:id") view=PageStub />
             <Route path=path!("/events/:id/missions/:emid/orbat") view=PageStub />
-            <Route path=path!("/wiki") view=PageStub />
+            <Route path=path!("/wiki") view=ApiPage />
             <Route path=path!("/wiki/:slug") view=PageStub />
-            <Route path=path!("/vehicles") view=PageStub />
+            <Route path=path!("/vehicles") view=ApiPage />
             <Route path=path!("/modpacks") view=ApiPage />
-            <Route path=path!("/tools/mortar") view=PageStub />
+            <Route path=path!("/tools/mortar") view=ApiPage />
             <Route path=path!("/settings") view=ApiPage />
             <Route path=path!("/admin/events") view=PageStub />
             <Route path=path!("/admin/approvals") view=PageStub />
