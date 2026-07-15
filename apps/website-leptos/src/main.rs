@@ -12,6 +12,7 @@ mod dto;
 mod layout;
 mod nav;
 mod router;
+mod server_intel;
 mod ui;
 
 fn main() {

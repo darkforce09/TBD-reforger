@@ -4,6 +4,7 @@
 //! AppLayout OUTSIDE `<Routes>`, so it persists across navigation — `<Routes>` swaps only `<main>`.
 //! The path list mirrors router.rs `ROUTES` (the S-routes gate's source of truth).
 use crate::dashboard::DashboardPage;
+use crate::server_intel::ServerIntelPage;
 use crate::ui::AuthGate;
 use leptos::prelude::*;
 use leptos_router::components::{Route, Routes};
@@ -98,7 +99,7 @@ pub fn AppRoutes() -> impl IntoView {
             <Route path=path!("/login") view=LoginPage />
             <Route path=path!("/auth/callback") view=CallbackPage />
             <Route path=path!("/") view=DashboardPage />
-            <Route path=path!("/server-intel") view=ApiPage />
+            <Route path=path!("/server-intel") view=ServerIntelPage />
             <Route path=path!("/announcements") view=ApiPage />
             <Route path=path!("/deployments") view=ApiPage />
             <Route path=path!("/leaderboards") view=ApiPage />
