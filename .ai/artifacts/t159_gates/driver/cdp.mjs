@@ -101,7 +101,8 @@ export async function newPage(browser, url, { initScripts = [], viewport = { wid
 
   let id = 0
   const pending = new Map()
-  const eventWaiters = new Map() // method -> resolver[]
+  const eventWaiters = new Map() // method -> resolver[] (one-shot)
+  const persistentHandlers = new Map() // method -> cb[] (called for EVERY matching event — no race)
   ws.onmessage = (ev) => {
     const m = JSON.parse(ev.data)
     if (m.id && pending.has(m.id)) {
@@ -109,7 +110,10 @@ export async function newPage(browser, url, { initScripts = [], viewport = { wid
       pending.delete(m.id)
       return
     }
-    if (m.method && eventWaiters.has(m.method)) {
+    if (!m.method) return
+    const ph = persistentHandlers.get(m.method)
+    if (ph) for (const cb of ph) cb(m.params)
+    if (eventWaiters.has(m.method)) {
       const arr = eventWaiters.get(m.method)
       eventWaiters.set(m.method, [])
       for (const r of arr) r(m.params)
@@ -158,6 +162,12 @@ export async function newPage(browser, url, { initScripts = [], viewport = { wid
   const page = {
     send,
     evaluate,
+    /** Register a callback fired for EVERY event of `method` (persistent — for Fetch interception). */
+    onEvent: (method, cb) => {
+      const arr = persistentHandlers.get(method) ?? []
+      arr.push(cb)
+      persistentHandlers.set(method, arr)
+    },
     async navigate(to) {
       const loaded = waitEvent('Page.loadEventFired')
       await send('Page.navigate', { url: to })
