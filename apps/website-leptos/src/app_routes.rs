@@ -65,12 +65,46 @@ fn LoginPage() -> impl IntoView {
     }
 }
 
+/// OAuth callback (auth.tsx) — rendered bare. A fresh load with no fragment shows the "no_session"
+/// error card (the guest state the V gate checks); the token/handshake path is a follow-up.
+#[component]
+fn CallbackPage() -> impl IntoView {
+    view! {
+        <div class="flex min-h-screen items-center justify-center bg-background p-6">
+            <div class="max-w-md rounded-xl border border-border-subtle bg-surface-container p-8 text-center">
+                <h1 class="text-xl font-semibold text-error">"Sign-in failed"</h1>
+                <p class="mt-2 text-sm text-on-surface-variant">
+                    "No sign-in details were found. Please start from the login page."
+                </p>
+                <a href="/login" class="mt-4 inline-block text-primary hover:underline">
+                    "Back to login"
+                </a>
+            </div>
+        </div>
+    }
+}
+
+/// 404 (utility.tsx) — renders inside the chrome (the <Routes fallback>).
+#[component]
+fn NotFoundPage() -> impl IntoView {
+    view! {
+        <div class="flex flex-col items-center justify-center py-24 text-center">
+            <span class="text-6xl font-bold text-primary">"404"</span>
+            <h1 class="mt-4 text-2xl font-bold">"Sector Not Found"</h1>
+            <p class="mt-2 text-on-surface-variant">
+                "The requested route does not exist in this AO."
+            </p>
+            <a href="/" class="mt-6 text-primary hover:underline">"Return to Dashboard"</a>
+        </div>
+    }
+}
+
 #[component]
 pub fn AppRoutes() -> impl IntoView {
     view! {
-        <Routes fallback=|| view! { <PageStub /> }>
+        <Routes fallback=|| view! { <NotFoundPage /> }>
             <Route path=path!("/login") view=LoginPage />
-            <Route path=path!("/auth/callback") view=PageStub />
+            <Route path=path!("/auth/callback") view=CallbackPage />
             <Route path=path!("/") view=DashboardPage />
             <Route path=path!("/server-intel") view=ApiPage />
             <Route path=path!("/announcements") view=ApiPage />
