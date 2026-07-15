@@ -37,7 +37,7 @@ so Rust reproduces the Python oracle’s derived outputs and validation.
 |----|----------|
 | **S1** | Python remains the default `./scripts/ticket` path until T-161.4. |
 | **S2** | Parity gate is mandatory: after both syncs, listed derived files must match. |
-| **S3** | Prefer `serde` + a JSON Schema crate; pin versions in workspace `Cargo.toml` if shared. |
+| **S3** | Prefer `serde` / `serde_json`; **no** JSON Schema crate (Python `load_schema` unused). |
 | **S4** | Do not invent a second registry format. |
 
 ## Derived outputs (must match)
@@ -88,7 +88,7 @@ derived files should be clean relative to the post-Python sync state (no spuriou
 | A1 | `xtask` in workspace; `cargo build -p xtask` green |
 | A2 | `cargo xtask ticket sync` regenerates all listed outputs |
 | A3 | Diff vs Python sync is empty for all listed paths |
-| A4 | `cargo xtask ticket check` and `--strict` exit 0 |
+| A4′ | `check` / `--strict` exit + sorted ERROR set match Python (not exit 0) |
 | A5 | Tag **T-161.1** on the worktree branch |
 
 ## Claude Code prompt — T-161.1 (copy-paste)

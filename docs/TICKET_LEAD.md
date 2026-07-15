@@ -12,7 +12,6 @@
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
 - **T-159** (1570) — Leptos UI rewrite (React SPA → Rust) [ready] — Worktree TBD-T-159 tip eb30ebea. Through T-159.18 LMB select shipped. ACTIVE T-159.19 marquee/drag-move. Hub: t159_leptos_ui_program.md.
-- **T-161** (1580) — Ticket CLI: Python → Rust xtask [ready] — Replace scripts/lib/ticket_*.py + bash scripts/ticket with workspace xtask binary (sync/check/brief/prompt/mutators/run). Hub: docs/platform/t161_ticket_xtask_program.md. Worktree TBD-T-161 @ t-161-ticket-xtask. ACTIVE T-161.1 scaffold+sync/check.
 
 ## Next queued (top 10)
 

@@ -110,7 +110,7 @@ hits=$(rg -l 'Projects/TBD_Website' . 2>/dev/null | rg -v 'MONOREPO_MIGRATION|ve
 [[ -f apps/website/CLAUDE.md ]] && grep -q 'Canonical context' apps/website/CLAUDE.md && pass "V22 website stub" || fail "V22 website stub"
 
 # V23 sparse-paths helper
-python3 scripts/lib/ticket_registry.py sparse-paths T-068 >/dev/null && pass "V23 sparse-paths" || fail "V23 sparse-paths"
+./scripts/ticket sparse-paths T-068 >/dev/null && pass "V23 sparse-paths" || fail "V23 sparse-paths"
 
 # V24 advance-slice command exists
 ./scripts/ticket help 2>&1 | grep -q advance-slice && pass "V24 advance-slice" || fail "V24 advance-slice"

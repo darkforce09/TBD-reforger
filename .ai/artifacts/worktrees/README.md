@@ -4,10 +4,9 @@
 |----------|--------|--------|--------|
 | *(repo root)* | `main` | docs / registry | Cursor docs on main |
 | **TBD-T-159** | `t-159-leptos-ui` | **T-159** Leptos UI rewrite | **Active** |
-| **TBD-T-161** | `t-161-ticket-xtask` | **T-161** Ticket CLI → Rust xtask | **Active** — T-161.1 ready |
+| **TBD-T-161** | `t-161-ticket-xtask` | **T-161** Ticket CLI → Rust xtask | **Shipped** — ready to merge |
 
-**Merged / cleaned:** T-127 · T-128 · T-090-2 · **T-092** (`TBD-T-092` removed 2026-07-04).
-README still mentions TBD-T-152 historically; use `git worktree list` for live set.
+**Merged / cleaned:** T-127 · T-128 · T-090-2 · **T-092**.
 
 ---
 
