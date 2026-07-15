@@ -30,7 +30,7 @@
       "id": "T-159",
       "title": "Leptos UI rewrite (React SPA \u2192 Rust)",
       "status": "ready",
-      "spec": "docs/platform/t159_1_leptos_scaffold.md",
+      "spec": "docs/platform/t159_leptos_ui_program.md",
       "branch": "t-159-leptos-ui"
     }
   ]

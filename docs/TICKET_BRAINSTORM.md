@@ -47,6 +47,7 @@
 - **T-088** (deferred) — Multi-server picker [SHELL] — Select among multiple game servers in intel views.
 - **T-089** (deferred) — Mission title PATCH sync [TOP, DATA] — PATCH mission title to server on edit (absorbs former T-051 scope).
 - **T-157** (idea) — Mission Create visual overhaul [SHELL] — Visual map picker with thumbnails, modset selection, remove time/weather/max players from menu.
+- **T-160** (idea) — wgpu GpuTimer readback err-path (unmap / in_flight) [DATA] — Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing.
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-134** (idea) — In-game marker system (mod) [MAP, UI] — Runtime Enfusion markers: readable styles, briefing sync, admin placement. Distinct from T-069 editor markers on 2D map.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.

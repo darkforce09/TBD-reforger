@@ -25,9 +25,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-159 — Leptos UI rewrite (React SPA → Rust)
 
-- **Active slice:** `T-159.1`
-- **Slice spec:** `docs/platform/t159_1_leptos_scaffold.md`
+- **Active slice:** `T-159.15.2`
+- **Slice spec:** `docs/platform/t159_leptos_ui_program.md`
 - **Program hub:** `docs/platform/t159_leptos_ui_program.md`
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website
-- **Summary:** Standing worktree .ai/artifacts/worktrees/TBD-T-159 @ t-159-leptos-ui. Rework website UI to Leptos; share types with Axum; host existing wasm engines later. ACTIVE T-159.1 scaffold. Hub: docs/platform/t159_leptos_ui_program.md. React stays until cutover.
+- **Summary:** Worktree TBD-T-159 @ t-159-leptos-ui tip a425936d. 24 page routes byte-identical; T-159.15.0/15.1 MC wgpu loop shipped. NEXT: pan/pick then T-159.16 doc host. Hub: t159_leptos_ui_program.md. Verify: .ai/artifacts/t159_15_1_verify_log.md (GpuTimer disable_frame_timing — not poll/WebGL2).
