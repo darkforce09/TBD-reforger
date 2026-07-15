@@ -14,6 +14,7 @@ mod content;
 mod dashboard;
 mod deployments;
 mod dto;
+mod event_manager;
 mod events;
 mod layout;
 mod leaderboards;
