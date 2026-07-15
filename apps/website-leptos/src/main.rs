@@ -15,6 +15,7 @@ mod deployments;
 mod dto;
 mod layout;
 mod leaderboards;
+mod missions;
 mod modpacks;
 mod mortar;
 mod nav;
