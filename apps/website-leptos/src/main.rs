@@ -9,6 +9,7 @@ mod app_routes;
 mod auth;
 mod client;
 mod dashboard;
+mod deployments;
 mod dto;
 mod layout;
 mod nav;
