@@ -1,12 +1,16 @@
 //! Platform shell — ported from components/layout/{AppLayout,Sidebar,TopNav}.tsx. DOM structure +
 //! class strings matched 1:1 to the React output (V-shell gate, byte-equal). Auth (role, user
 //! menu, breadcrumb source) and routing are stubbed to the guest "/" render until T-159.3 / .4.
+use crate::auth::AuthStore;
 use crate::nav::{has_min_role, NavItem, Role, NAVIGATION};
 use crate::ui::{cn, MaterialIcon};
 use leptos::prelude::*;
 
 #[component]
 pub fn AppLayout() -> impl IntoView {
+    // The auth store (Zustand replacement) lives at the shell root; children read it via context.
+    // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
+    provide_context(AuthStore::new());
     // The "/" route: guest, non-chromeless, fullBleed → <main> is overflow-hidden.
     view! {
         <div class="flex h-screen overflow-hidden bg-background">
@@ -24,7 +28,7 @@ pub fn AppLayout() -> impl IntoView {
 fn TopNav() -> impl IntoView {
     // Stubs until T-159.3 (auth) / T-159.4 (router): the guest state + the "/" breadcrumb.
     let breadcrumb: Option<(&str, &str)> = Some(("Command Center", "Dashboard"));
-    let is_authenticated = false;
+    let is_authenticated = expect_context::<AuthStore>().is_authenticated();
     view! {
         <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">
             <div class="flex h-full min-w-0 items-center gap-2 pl-12 lg:pl-0">
@@ -102,18 +106,19 @@ fn SidebarBrand() -> impl IntoView {
 
 #[component]
 fn SidebarNav() -> impl IntoView {
-    let user: Option<Role> = None; // T-159.3: wire to the real auth store.
-    let current = "/"; // T-159.4: wire to the real router location.
+    // Real auth store (guest → None → browse-mode, all nav). T-159.4 wires the active route.
+    let user_role = expect_context::<AuthStore>().user.get().map(|u| u.role);
+    let current = "/";
     view! {
         <nav class="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
             {NAVIGATION
                 .iter()
                 .filter_map(move |section| {
-                    if section.admin && !has_min_role(user, Role::Admin) {
+                    if section.admin && !has_min_role(user_role, Role::Admin) {
                         return None;
                     }
                     let items: Vec<&NavItem> =
-                        section.items.iter().filter(|i| has_min_role(user, i.min_role)).collect();
+                        section.items.iter().filter(|i| has_min_role(user_role, i.min_role)).collect();
                     if items.is_empty() {
                         return None;
                     }
