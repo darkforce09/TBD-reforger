@@ -4673,7 +4673,7 @@
       "id": "T-159",
       "order": 1570,
       "title": "Leptos UI rewrite (React SPA → Rust)",
-      "summary": "Worktree TBD-T-159 tip 60c6e7ea. Through T-159.17 yrsPersist shipped. ACTIVE T-159.18 LMB select/pick. Hub: t159_leptos_ui_program.md.",
+      "summary": "Worktree TBD-T-159 tip eb30ebea. Through T-159.18 LMB select shipped. ACTIVE T-159.19 marquee/drag-move. Hub: t159_leptos_ui_program.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4703,9 +4703,10 @@
         "T-159.15.2",
         "T-159.16",
         "T-159.17",
-        "T-159.18"
+        "T-159.18",
+        "T-159.19"
       ],
-      "active_slice": "T-159.18",
+      "active_slice": "T-159.19",
       "slice_plan": {
         "T-159.0": {
           "targets": [
@@ -4807,9 +4808,19 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "eb30ebea",
           "spec": "docs/platform/t159_18_select_tools.md",
-          "notes": "LMB click-select + frozen viewport + PointIndex. Handoff: .ai/artifacts/t159_18_claude_code_handoff.md"
+          "notes": "LMB click-select; frozen cam; PointIndex pick_rect+argmin. Verify: .ai/artifacts/t159_18_verify_log.md. S8 persist notify deferred to mutator (.19)."
+        },
+        "T-159.19": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t159_19_marquee_drag.md",
+          "notes": "Marquee + drag-move + move_entities + persist notify. Handoff: .ai/artifacts/t159_19_claude_code_handoff.md"
         }
       }
     },

@@ -25,9 +25,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-159 — Leptos UI rewrite (React SPA → Rust)
 
-- **Active slice:** `T-159.18`
-- **Slice spec:** `docs/platform/t159_18_select_tools.md`
+- **Active slice:** `T-159.19`
+- **Slice spec:** `docs/platform/t159_19_marquee_drag.md`
 - **Program hub:** `docs/platform/t159_leptos_ui_program.md`
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website
-- **Summary:** Worktree TBD-T-159 tip 60c6e7ea. Through T-159.17 yrsPersist shipped. ACTIVE T-159.18 LMB select/pick. Hub: t159_leptos_ui_program.md.
+- **Summary:** Worktree TBD-T-159 tip eb30ebea. Through T-159.18 LMB select shipped. ACTIVE T-159.19 marquee/drag-move. Hub: t159_leptos_ui_program.md.
