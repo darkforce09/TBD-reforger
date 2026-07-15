@@ -65,7 +65,11 @@ mod tests {
                 let s = s.clone();
                 async move {
                     s.set(s.get() + 1);
-                    if tok.as_deref() == Some("new") { Ok("ok") } else { Err(401u16) }
+                    if tok.as_deref() == Some("new") {
+                        Ok("ok")
+                    } else {
+                        Err(401u16)
+                    }
                 }
                 .boxed_local()
             },

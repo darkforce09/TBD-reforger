@@ -55,7 +55,9 @@ mod tests {
             r#"{"linked":true,"arma_id":"a","arma_character":"Cpl","pending_code":true}"#,
         )
         .unwrap();
-        assert!(full.linked && full.pending_code == Some(true) && full.arma_id.as_deref() == Some("a"));
+        assert!(
+            full.linked && full.pending_code == Some(true) && full.arma_id.as_deref() == Some("a")
+        );
         // The minimal shape (backend omitempty drops the empties)…
         let min: LinkStatus = serde_json::from_str(r#"{"linked":false}"#).unwrap();
         assert!(!min.linked && min.arma_id.is_none() && min.pending_code.is_none());
