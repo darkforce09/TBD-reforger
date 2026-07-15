@@ -255,3 +255,9 @@ pub fn breadcrumb(path: &str) -> Option<(&'static str, &'static str)> {
 pub fn full_bleed(path: &str) -> bool {
     match_route(path).map(|r| r.full_bleed).unwrap_or(false)
 }
+
+/// Whether a route is chromeless (renders full-viewport with no Sidebar/TopNav — the Mission
+/// Creator editor), from the route handle, via the matched route pattern.
+pub fn chromeless(path: &str) -> bool {
+    match_route(path).map(|r| r.chromeless).unwrap_or(false)
+}

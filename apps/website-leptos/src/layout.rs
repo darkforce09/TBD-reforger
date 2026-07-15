@@ -23,24 +23,39 @@ pub fn AppLayout() -> impl IntoView {
     // The auth store (Zustand replacement) lives at the shell root; children read it via context.
     // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
     provide_context(AuthStore::new());
-    // <main> scroll/padding follows the route's fullBleed handle (overflow-hidden vs a padded
-    // scroll container). Read once at load; chromeless routes (login/editor) are a follow-up.
-    let main_class = if crate::router::full_bleed(&use_location().pathname.get()) {
-        "min-h-0 flex-1 bg-background overflow-hidden"
-    } else {
-        "min-h-0 flex-1 bg-background overflow-y-auto p-6"
-    };
-    view! {
-        <div class="flex h-screen overflow-hidden bg-background">
-            <SidebarMobileToggle />
-            <Sidebar />
-            <div class="flex min-w-0 flex-1 flex-col">
-                <TopNav />
-                <main class=main_class>
-                    <AppRoutes />
-                </main>
+    // Route determines the frame. Read once at load; reactive re-wrap on SPA nav is a follow-up.
+    let path = use_location().pathname.get();
+    if path == "/login" || path == "/auth/callback" {
+        // React renders these OUTSIDE AppLayout — bare, no chrome, no wrapper div.
+        view! { <AppRoutes /> }.into_any()
+    } else if crate::router::chromeless(&path) {
+        // The Mission Creator editor: AppLayout's chromeless full-viewport branch.
+        view! {
+            <div class="h-screen w-screen overflow-hidden bg-background">
+                <AppRoutes />
             </div>
-        </div>
+        }
+        .into_any()
+    } else {
+        // Normal chrome: Sidebar + TopNav + the padded/full-bleed <main>.
+        let main_class = if crate::router::full_bleed(&path) {
+            "min-h-0 flex-1 bg-background overflow-hidden"
+        } else {
+            "min-h-0 flex-1 bg-background overflow-y-auto p-6"
+        };
+        view! {
+            <div class="flex h-screen overflow-hidden bg-background">
+                <SidebarMobileToggle />
+                <Sidebar />
+                <div class="flex min-w-0 flex-1 flex-col">
+                    <TopNav />
+                    <main class=main_class>
+                        <AppRoutes />
+                    </main>
+                </div>
+            </div>
+        }
+        .into_any()
     }
 }
 

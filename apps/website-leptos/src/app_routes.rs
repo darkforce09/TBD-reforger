@@ -37,11 +37,39 @@ fn ApiPage() -> impl IntoView {
     }
 }
 
+/// Login page (auth.tsx) — rendered bare (no chrome). A guest sees the sign-in card; the
+/// authed-user redirect to "/" + the Discord OAuth start are follow-ups (need the auth flow).
+#[component]
+fn LoginPage() -> impl IntoView {
+    view! {
+        <div class="flex min-h-screen flex-col items-center justify-center bg-background p-6">
+            <div class="w-full max-w-md rounded-xl border border-border-subtle bg-surface-container p-8 text-center">
+                <h1 class="text-2xl font-bold">
+                    <span class="text-primary">"TBD"</span>
+                    " Reforger"
+                </h1>
+                <p class="mt-2 text-on-surface-variant">
+                    "Sign in to register, deploy, and manage operations."
+                </p>
+                <button
+                    type="button"
+                    class="mt-6 w-full rounded-lg bg-primary py-3 font-medium text-on-primary"
+                >
+                    "Sign in with Discord"
+                </button>
+                <a href="/" class="mt-4 block text-sm text-on-surface-variant hover:text-primary">
+                    "Continue browsing without signing in"
+                </a>
+            </div>
+        </div>
+    }
+}
+
 #[component]
 pub fn AppRoutes() -> impl IntoView {
     view! {
         <Routes fallback=|| view! { <PageStub /> }>
-            <Route path=path!("/login") view=PageStub />
+            <Route path=path!("/login") view=LoginPage />
             <Route path=path!("/auth/callback") view=PageStub />
             <Route path=path!("/") view=DashboardPage />
             <Route path=path!("/server-intel") view=ApiPage />
