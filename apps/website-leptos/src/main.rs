@@ -16,6 +16,7 @@ mod layout;
 mod leaderboards;
 mod mortar;
 mod nav;
+mod personnel;
 mod router;
 mod server_intel;
 mod settings;

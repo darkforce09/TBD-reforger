@@ -125,6 +125,21 @@ pub struct CursorList<T> {
     pub next_cursor: Option<Value>,
 }
 
+/// `GET /admin/users` row — backend `handlers::admin::RosterRow` (a reduced projection, not `User`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct AdminUserRow {
+    pub discord_id: String,
+    pub username: String,
+    pub discord_handle: String,
+    #[serde(default)]
+    pub arma_id: Option<String>,
+    pub arma_character: String,
+    pub role: crate::nav::Role,
+    pub is_banned: bool,
+    pub warnings: i64,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -276,7 +291,7 @@ mod r_api {
     }
     #[test]
     fn admin_users_envelope() {
-        assert_golden::<Paginated<Value>>(golden!("GET__admin__users.json"));
+        assert_golden::<Paginated<AdminUserRow>>(golden!("GET__admin__users.json"));
     }
     #[test]
     fn audit_logs_envelope() {
