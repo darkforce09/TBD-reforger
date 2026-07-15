@@ -31,3 +31,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website
 - **Summary:** Worktree TBD-T-159 tip eb30ebea. Through T-159.18 LMB select shipped. ACTIVE T-159.19 marquee/drag-move. Hub: t159_leptos_ui_program.md.
+
+## T-161 — Ticket CLI: Python → Rust xtask
+
+- **Active slice:** `T-161.1`
+- **Slice spec:** `docs/platform/t161_1_xtask_scaffold_sync.md`
+- **Program hub:** `docs/platform/t161_ticket_xtask_program.md`
+- **Branch:** `t-161-ticket-xtask`
+- **Targets:** root
+- **Summary:** Replace scripts/lib/ticket_*.py + bash scripts/ticket with workspace xtask binary (sync/check/brief/prompt/mutators/run). Hub: docs/platform/t161_ticket_xtask_program.md. Worktree TBD-T-161 @ t-161-ticket-xtask. ACTIVE T-161.1 scaffold+sync/check.

@@ -32,6 +32,13 @@
       "status": "ready",
       "spec": "docs/platform/t159_19_marquee_drag.md",
       "branch": "t-159-leptos-ui"
+    },
+    {
+      "id": "T-161",
+      "title": "Ticket CLI: Python \u2192 Rust xtask",
+      "status": "ready",
+      "spec": "docs/platform/t161_1_xtask_scaffold_sync.md",
+      "branch": "t-161-ticket-xtask"
     }
   ]
 }
