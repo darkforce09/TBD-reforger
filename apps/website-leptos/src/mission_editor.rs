@@ -52,6 +52,16 @@ pub fn MissionEditorPage() -> impl IntoView {
     let sel_count = RwSignal::new(0usize);
     let cursor = RwSignal::new(None::<(f64, f64)>);
 
+    // T-159.22 — dock state. `outliner_nodes` / `selected_ids` are the same kind of pull-mirror as
+    // OBJ/SEL above (pushed by `editor_ops::refresh_docks` from `mission_history::refresh_signals`,
+    // i.e. at every mutation site). `active_layer` is the drop target (React's `activeLayerId`);
+    // `catalog` holds the `/registry` fetch state and never leaves `Loading` on the native shell,
+    // where `api_get` doesn't exist.
+    let outliner_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
+    let selected_ids = RwSignal::new(Vec::<String>::new());
+    let active_layer = RwSignal::new(None::<String>);
+    let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+
     // T-159.17 — mission id from the `:id` route param (`/missions/:id/edit`; `smoke` on the gate
     // route). One-shot untracked read at mount (id is static per route mount). Fallback `draft`
     // mirrors the React `missionId ?? 'draft'` persistence key. Hoisted out of the wasm block in
@@ -83,6 +93,10 @@ pub fn MissionEditorPage() -> impl IntoView {
         const INITIAL_TARGET: (f64, f64) = (6_400.0, 6_400.0);
         const INITIAL_ZOOM: f64 = -2.0;
         const WHEEL_ZOOM_PER_PX: f64 = 1.0 / 500.0;
+        /// T-159.22 — matches the chrome host div in the view below (and thus every panel inside
+        /// it), for the wheel guard's `closest()`. A `data-` attribute, not a class: the class list
+        /// is a styling contract that a Tailwind edit could silently change under the guard.
+        const CHROME_SEL: &str = "[data-eden-chrome]";
 
         // T-159.21 — the id is read once in the page body (the chrome's title binds it too).
         let mission_id = mission_id.clone();
@@ -91,6 +105,20 @@ pub fn MissionEditorPage() -> impl IntoView {
         // owner is live); `on_load` is a non-reactive closure, and `AuthStore` is `Copy` so it moves
         // into it cleanly. Provided by `AppLayout` above `<AppRoutes/>`, so present on this route.
         let auth = expect_context::<crate::auth::AuthStore>();
+
+        // T-159.22 — the Factions palette catalog. Fetched once at mount (not in `on_load`): it is
+        // engine-independent, so the dock fills even if wgpu never comes up. `kind == "character"`
+        // rows only — `build_catalog_tree` is the T-068.3 `buildCatalogTree` port.
+        spawn_local({
+            use crate::asset_catalog::{build_catalog_tree, CatalogState};
+            async move {
+                match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry").await
+                {
+                    Ok(r) => catalog.set(CatalogState::Ready(build_catalog_tree(&r.data))),
+                    Err(_) => catalog.set(CatalogState::Failed),
+                }
+            }
+        });
 
         canvas_ref.on_load(move |canvas: web_sys::HtmlCanvasElement| {
             let Some(container) = container_ref.get_untracked() else {
@@ -170,6 +198,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                 obj_count,
                 sel_count,
             );
+            // T-159.22 — dock commands (outliner select / active layer / palette place). Registered
+            // BEFORE `refresh_hud()` below, because that call funnels into
+            // `editor_ops::refresh_docks` — without the ctx the outliner would render empty until
+            // the first edit.
+            crate::editor_ops::set_ctx(
+                doc.clone(),
+                engine.clone(),
+                selection.clone(),
+                active_layer,
+                outliner_nodes,
+                selected_ids,
+            );
+
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
             crate::mission_history::refresh_hud();
@@ -306,6 +347,20 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let container = container.clone();
                 let pan_px = pan_px.clone();
                 move |ev: web_sys::WheelEvent| {
+                    // T-159.22 — the wheel is capture-phase on the CONTAINER, so it fires before any
+                    // dock could stop it (that is deliberate: it is what lets `prevent_default` beat
+                    // a child, and the panels are descendants). The chrome therefore can't opt out
+                    // by listener order — this handler has to look at the target and decline.
+                    // Returning BEFORE `prevent_default` is the whole point: it leaves the event
+                    // native, so a dock's `overflow-y-auto` scrolls instead of the map zooming
+                    // (T-159.21 deferred item #1). A wheel over the free canvas is untouched.
+                    if ev
+                        .target()
+                        .and_then(|t| t.dyn_into::<web_sys::Element>().ok())
+                        .is_some_and(|el| el.closest(CHROME_SEL).ok().flatten().is_some())
+                    {
+                        return;
+                    }
                     if let Some(e) = engine.borrow_mut().as_mut() {
                         ev.prevent_default();
                         let rect = container.get_bounding_client_rect();
@@ -535,6 +590,48 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // T-159.21 — no `mission_id` capture: the persist tail now runs inside
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
+                    // T-159.22 — palette drag-to-place. FIRST: a place is armed by a `pointerdown`
+                    // on a palette leaf, which the chrome host stops from reaching the map — so
+                    // `left`/`pan_px` are both None here and no gesture branch below would fire.
+                    //
+                    // The host stops `pointerdown` only, so a release over a dock ALSO bubbles here:
+                    // the chrome insets decide. They are the same consts `select_tool`'s probe grid
+                    // insets by, so "not under chrome" means one thing editor-wide.
+                    if crate::editor_ops::has_pending() {
+                        let rect = container.get_bounding_client_rect();
+                        let (px, py) = (
+                            ev.client_x() as f64 - rect.left(),
+                            ev.client_y() as f64 - rect.top(),
+                        );
+                        let on_canvas = px >= crate::eden_chrome::DOCK_LEFT_PX
+                            && px <= rect.width() - crate::eden_chrome::DOCK_RIGHT_PX
+                            && py >= crate::eden_chrome::STRIP_TOP_PX
+                            && py <= rect.height() - crate::eden_chrome::TOOLBELT_BAND_PX;
+                        // Same frozen-camera unproject the pick + CUR use, so the slot lands exactly
+                        // where CUR said it would.
+                        let world = if on_canvas {
+                            let g = engine.borrow();
+                            g.as_ref().map(|e| {
+                                crate::select_tool::frozen_camera(
+                                    rect.width(),
+                                    rect.height(),
+                                    e.target_x(),
+                                    e.target_y(),
+                                    e.zoom(),
+                                )
+                                .unproject_xy(px, py)
+                            })
+                        } else {
+                            None
+                        };
+                        match world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
+                            Some(c) => {
+                                crate::editor_ops::place_at(c[0], c[1]);
+                            }
+                            None => crate::editor_ops::cancel_pending(),
+                        }
+                        return;
+                    }
                     // Pan end (MMB/RMB).
                     if pan_px.get().is_some() {
                         pan_px.set(None);
@@ -662,6 +759,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let left = left.clone();
                 let engine = engine.clone();
                 move |ev: web_sys::PointerEvent| {
+                    // T-159.22 — a cancelled pointer drops an armed place, like every other
+                    // in-flight gesture below (pointercancel is never a commit).
+                    crate::editor_ops::cancel_pending();
                     if pan_px.get().is_some() {
                         pan_px.set(None);
                         if container.has_pointer_capture(ev.pointer_id()) {
@@ -767,7 +867,11 @@ pub fn MissionEditorPage() -> impl IntoView {
             // so without `stop_propagation` a chrome click would bubble into `onpointerdown` and open
             // an LMB map gesture — clicking Undo would also deselect. Its corollary is the
             // chrome-free inset in `select_tool::farthest_empty_px`.
+            // T-159.22 — `data-eden-chrome` marks the whole chrome subtree for the wheel guard's
+            // `closest()` (see CHROME_SEL): a wheel whose target is inside it must scroll the dock,
+            // not zoom the map.
             <div
+                data-eden-chrome
                 class="pointer-events-none absolute inset-0 z-10"
                 on:pointerdown=|ev| ev.stop_propagation()
             >
@@ -781,10 +885,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                     />
                 </div>
                 <div class="absolute bottom-0 left-0 top-12 w-64">
-                    <crate::eden_chrome::DockLeft />
+                    <crate::eden_chrome::DockLeft
+                        nodes=outliner_nodes
+                        selected=selected_ids
+                        active_layer
+                    />
                 </div>
                 <div class="absolute bottom-0 right-0 top-12 w-80">
-                    <crate::eden_chrome::DockRight />
+                    <crate::eden_chrome::DockRight catalog />
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
                     <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count />

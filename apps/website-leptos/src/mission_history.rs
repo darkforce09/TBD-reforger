@@ -190,6 +190,11 @@ fn refresh_signals(ctx: &HistoryCtx, obj: usize) {
     ctx.can_redo.set(cr);
     ctx.obj_count.set(obj);
     ctx.sel_count.set(ctx.selection.borrow().len());
+    // T-159.22 — the dock mirrors (outliner tree + selected ids) are pull-mirrors on the same
+    // footing as OBJ/SEL, so they refresh from the same single point: every mutation site funnels
+    // here (place / drag-move / undo / redo / click / marquee / the IDB restore swap). `editor_ops`
+    // holds its own ctx and borrows its own `Rc`s, so this can't reenter `HISTORY_CTX`.
+    crate::editor_ops::refresh_docks();
 }
 
 /// True when focus is in a text-entry field, where Ctrl+Z means "undo my typing", not "undo the

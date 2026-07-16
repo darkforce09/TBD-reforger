@@ -107,11 +107,59 @@ pub struct Leaderboard {
     pub data: Vec<Value>,
 }
 
-/// `GET /registry` — the asset catalog + its cache identity (weak ETag). Items typed at T-159.22.
+/// One Virtual Arsenal catalog item, identified by its full Enfusion `resource_name`. Mirrors the TS
+/// oracle `types/models/registry.ts` `RegistryItem` (backend `models::RegistryItem`, contract
+/// `registry-items.schema.json#/$defs/item`) field-for-field.
+///
+/// **Every optional is `skip_serializing_if`** — the backend `omitempty`s them, so the committed
+/// golden's rows carry exactly the 9 required fields. Serializing an absent optional as `null` would
+/// add a key the golden lacks and break the R-api canonical byte-equality (the `LinkStatus` /
+/// `MissionDetail` precedent).
+///
+/// `kind` is a **`String`, not an enum**: the vocabulary is versioned and growing (the TS type is on
+/// its "T-068.10.2 v3" revision), and an enum would hard-fail deserialization the day the backend
+/// adds a kind — where a string degrades to "not a `character`", i.e. not placeable.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegistryItem {
+    pub id: String,
+    pub modpack_id: String,
+    pub resource_name: String,
+    pub display_name: String,
+    /// A slash path (`"NATO/US_Army/Rifleman"`) — the palette's folder tree, see `asset_catalog`.
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon_url: Option<String>,
+    pub kind: String,
+    /// Non-placeable template prefab (`*_base.et`). `abstract` is a reserved Rust word.
+    #[serde(rename = "abstract", default, skip_serializing_if = "Option::is_none")]
+    pub r#abstract: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arsenal_type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight_kg: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub volume_cm3: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_weight_kg: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_volume_cm3: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub addon: Option<String>,
+    /// Factory attachment/camo configuration of a base weapon (T-068.10.5).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub variant_of: Option<String>,
+    pub sort_order: i64,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// `GET /registry` — the asset catalog + its cache identity (weak ETag). Items typed at T-159.22, so
+/// `registry_envelope()` now proves the row field-set too, not just the envelope.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct RegistryResponse {
-    pub data: Vec<Value>,
+    pub data: Vec<RegistryItem>,
     pub etag: String,
     pub modpack_id: String,
     pub modpack_version: String,

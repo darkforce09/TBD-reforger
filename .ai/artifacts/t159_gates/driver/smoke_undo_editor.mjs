@@ -127,11 +127,17 @@ try {
       (await page.evaluate(`!!document.querySelector('[aria-label="Undo"]') &&
         !!document.querySelector('[aria-label="Redo"]')`)) === true
     // textContent, NOT innerText: the dock headings are `uppercase`, and innerText returns the
-    // CSS-transformed text ("ORBAT / LAYERS"), which would compare against the source string and fail.
+    // CSS-transformed text ("EDITOR LAYERS"), which would compare against the source string and fail.
+    //
+    // T-159.22 updated the expected strings: this asserted the .21 SCAFFOLD's placeholder headings
+    // ("ORBAT / Layers" / "Assets"), which that slice's own header called out as text the outliner +
+    // palette would replace. The assertion's intent — both docks are mounted — is unchanged; only the
+    // headings it pins moved to the real ones (left: ORBAT stub + the live Editor Layers tree; right:
+    // the Factions palette, matching React's `AssetBrowser` <h2>).
     checks.a6_docksMounted =
       (await page.evaluate(`(() => { const t = [...document.querySelectorAll('aside')]
         .map((e) => e.textContent || '').join('|');
-        return t.includes('ORBAT / Layers') && t.includes('Assets'); })()`)) === true
+        return t.includes('ORBAT') && t.includes('Editor Layers') && t.includes('Factions'); })()`)) === true
 
     d0 = await digest()
     mv = JSON.parse(await page.evaluate(`window.__editorSelection.probe_move()`))

@@ -17,6 +17,8 @@
 #![allow(dead_code)]
 use leptos::prelude::*;
 
+use crate::asset_catalog::{CatalogNode, CatalogState};
+use crate::outliner::{NodeKind, OutlinerNode};
 use crate::ui::MaterialIcon;
 
 // ── Chrome insets (CSS px) ───────────────────────────────────────────────────────────────────────
@@ -168,28 +170,223 @@ pub fn TopCommandStrip(
     }
 }
 
-/// Left dock placeholder — ORBAT + Editor Layers trees land in T-159.22 (spec C4).
+// ── Tree rows (T-159.22) ─────────────────────────────────────────────────────────────────────────
+// Both trees render **fully expanded**: React's `TreeView` seeds an expanded set from
+// `defaultExpanded` and lets rows collapse, but at seed scale the outliner is two shallow folders and
+// the palette is NATO > US_Army > 8 leaves — all visible either way. Expand/collapse is deferred with
+// the rest of the `TreeView` port (spec O6/O7); `CatalogNode::default_expanded` is carried because it
+// is part of the ported `buildCatalogTree` contract, and consumed when collapse lands.
+//
+// Rows are `<button>`s with a real `aria-label` — focusable, activatable, and the gates' DOM handle,
+// the `aria-label="Undo"` precedent above (NOT a test-only attribute).
+
+/// A tree row's shared recipe; `depth` indents like React's `TreeView` padding.
+const ROW: &str = "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
+const ROW_ACTIVE: &str = "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm transition-colors bg-primary/20 text-primary";
+
+fn indent(depth: usize) -> String {
+    format!("padding-left:{}px", depth * 12)
+}
+
+/// Render the outliner recursively. A plain fn returning [`AnyView`], not a `#[component]`: a
+/// component that renders itself recurses in its own return type and never terminates
+/// monomorphization — `.into_any()` erases it (the `announcements.rs` idiom).
+fn outliner_rows(
+    nodes: &[OutlinerNode],
+    depth: usize,
+    selected: RwSignal<Vec<String>>,
+    active_layer: RwSignal<Option<String>>,
+) -> AnyView {
+    nodes
+        .iter()
+        .map(|n| {
+            let kids = outliner_rows(&n.children, depth + 1, selected, active_layer);
+            // Two bindings: `view!`'s `into_render` takes the text by value, so the `aria-label`
+            // attribute needs its own copy.
+            let label = n.label.clone();
+            let aria = n.label.clone();
+            let id = n.id.clone();
+            match n.kind {
+                // The virtual root is not a doc id (see `outliner::UNFILED_ID`) — it can't be the
+                // active layer and it isn't a drop target, so it renders as an inert header.
+                NodeKind::Unfiled => view! {
+                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+                        <MaterialIcon name="inbox" class="block text-sm" />
+                        <span>{label}</span>
+                    </div>
+                    {kids}
+                }
+                .into_any(),
+                NodeKind::Folder => {
+                    let is_active = {
+                        let id = id.clone();
+                        move || active_layer.get().as_deref() == Some(id.as_str())
+                    };
+                    view! {
+                        <button
+                            type="button"
+                            aria-label=aria
+                            title="Make this the drop target"
+                            style=indent(depth)
+                            class=move || if is_active() { ROW_ACTIVE } else { ROW }
+                            on:click=move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                crate::editor_ops::set_active_layer(Some(id.clone()));
+                            }
+                        >
+                            <MaterialIcon name="folder" class="block text-sm" />
+                            <span class="truncate">{label}</span>
+                        </button>
+                        {kids}
+                    }
+                    .into_any()
+                }
+                NodeKind::Slot => {
+                    let is_sel = {
+                        let id = id.clone();
+                        move || selected.get().iter().any(|s| s == &id)
+                    };
+                    view! {
+                        <button
+                            type="button"
+                            aria-label=aria
+                            style=indent(depth)
+                            class=move || if is_sel() { ROW_ACTIVE } else { ROW }
+                            on:click=move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                crate::editor_ops::select_slot(id.clone());
+                            }
+                        >
+                            <MaterialIcon name="person" class="block text-sm" />
+                            <span class="truncate">{label}</span>
+                        </button>
+                    }
+                    .into_any()
+                }
+            }
+        })
+        .collect::<Vec<_>>()
+        .into_any()
+}
+
+/// Render the palette recursively. A leaf (`payload.is_some()`) arms a place on `pointerdown` —
+/// **pointer-drag, not HTML5 DnD**: the gates drive trusted `Input.dispatchMouseEvent`, which
+/// synthesizes real pointer events into these handlers, where DnD would need `Input.setInterceptDrags`.
+/// The chrome host stops `pointerdown` propagation, so this press cannot also open a map gesture; the
+/// release is consumed by the container's `pointerup` (see `mission_editor`).
+fn palette_rows(nodes: &[CatalogNode], depth: usize) -> AnyView {
+    nodes
+        .iter()
+        .map(|n| {
+            let kids = palette_rows(&n.children, depth + 1);
+            let label = n.label.clone();
+            let aria = n.label.clone();
+            match n.payload.clone() {
+                None => view! {
+                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+                        <MaterialIcon name="folder" class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </div>
+                    {kids}
+                }
+                .into_any(),
+                Some(payload) => view! {
+                    <button
+                        type="button"
+                        aria-label=aria
+                        title="Drag onto the map to place"
+                        style=indent(depth)
+                        class=ROW
+                        on:pointerdown=move |_| {
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor_ops::begin_place(payload.clone());
+                            // `editor_ops` is wasm-only, so the native view shell would see an
+                            // unused capture (the `announcements.rs` `let _ = store;` idiom).
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &payload;
+                        }
+                    >
+                        <MaterialIcon name="person" class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </button>
+                }
+                .into_any(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .into_any()
+}
+
+/// Left dock — the live **Editor Layers** outliner (spec O1). Click a folder to make it the drop
+/// target, a slot to select it (no camera move — React parity).
+///
+/// Scope (O7): ORBAT stays a stub header; no reparent DnD, rename, delete, or virtualization.
 #[component]
-pub fn DockLeft() -> impl IntoView {
+pub fn DockLeft(
+    /// The tree, rebuilt from the doc at every mutation (`editor_ops::refresh_docks`).
+    nodes: RwSignal<Vec<OutlinerNode>>,
+    selected: RwSignal<Vec<String>>,
+    active_layer: RwSignal<Option<String>>,
+) -> impl IntoView {
     view! {
         <aside class=DOCK_L>
             <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                "ORBAT / Layers"
+                "ORBAT"
             </h2>
-            <p class="mt-2 text-label-sm text-outline">"Outliner lands in T-159.22."</p>
+            <p class="mt-1 text-label-sm text-outline">"Squad tree lands in a later slice."</p>
+            <h2 class="mt-4 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                "Editor Layers"
+            </h2>
+            <div class="mt-1">
+                {move || {
+                    let n = nodes.get();
+                    if n.is_empty() {
+                        view! {
+                            <p class="text-label-sm text-outline">"No objects placed yet."</p>
+                        }
+                            .into_any()
+                    } else {
+                        outliner_rows(&n, 0, selected, active_layer)
+                    }
+                }}
+            </div>
         </aside>
     }
 }
 
-/// Right dock placeholder — the Asset Palette lands in T-159.22 (spec C4).
+/// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
+/// onto the map to place their slot.
+///
+/// Scope (O7): no search box, no Faction Manager, no Vehicles/Markers/Objectives tabs.
 #[component]
-pub fn DockRight() -> impl IntoView {
+pub fn DockRight(catalog: RwSignal<CatalogState>) -> impl IntoView {
     view! {
         <aside class=DOCK_R>
             <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                "Assets"
+                "Factions"
             </h2>
-            <p class="mt-2 text-label-sm text-outline">"Asset palette lands in T-159.22."</p>
+            <p class="mt-1 text-label-sm normal-case text-outline">
+                "Drag a role onto the map to place its slot."
+            </p>
+            <div class="mt-2">
+                {move || match catalog.get() {
+                    CatalogState::Loading => {
+                        view! { <p class="text-label-sm text-outline">"Loading assets…"</p> }
+                            .into_any()
+                    }
+                    CatalogState::Failed => {
+                        view! {
+                            <p class="text-label-sm text-outline">"Could not load the catalog."</p>
+                        }
+                            .into_any()
+                    }
+                    CatalogState::Ready(nodes) if nodes.is_empty() => {
+                        view! { <p class="text-label-sm text-outline">"No placeable assets."</p> }
+                            .into_any()
+                    }
+                    CatalogState::Ready(nodes) => palette_rows(&nodes, 0),
+                }}
+            </div>
         </aside>
     }
 }
@@ -223,13 +420,16 @@ pub fn BottomToolbelt(
             <span class="mx-1 h-5 w-px bg-white/10"></span>
             <div class="flex items-center gap-2 px-1 font-mono text-code-md text-on-surface-variant">
                 <span class="text-outline" title="Cursor">"CUR"</span>
-                <span>
+                // T-159.22 — `title` (not `aria-label`): these are roleless `<span>`s, where an
+                // `aria-label` is ignored by AT and would be a fake a11y name. `title` is a real
+                // tooltip AND the CUR gate's DOM handle, matching the `title="Cursor"` idiom above.
+                <span title="Cursor X">
                     "X"
                     <span class="ml-1 text-on-surface tabular-nums">
                         {move || fmt_coord(cursor.get().map(|c| c.0))}
                     </span>
                 </span>
-                <span>
+                <span title="Cursor Y">
                     "Y"
                     <span class="ml-1 text-on-surface tabular-nums">
                         {move || fmt_coord(cursor.get().map(|c| c.1))}

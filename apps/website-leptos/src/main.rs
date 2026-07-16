@@ -7,6 +7,9 @@
 mod announcements;
 mod app_routes;
 mod approvals;
+// T-159.22 — flat registry rows → the Factions palette tree (the T-068.3 `buildCatalogTree` port).
+// Pure data, no web-sys: ungated so its unit tests run on the native `cargo test` shell.
+mod asset_catalog;
 mod audit;
 mod auth;
 mod client;
@@ -15,6 +18,10 @@ mod dashboard;
 mod datefmt;
 mod deployments;
 mod dto;
+// T-159.22 dock commands — outliner select / active layer / palette drag-to-place. Drives the hosted
+// MissionDocCore (add_slot / add_editor_layer), so wasm32-only, gated like the doc host.
+#[cfg(target_arch = "wasm32")]
+mod editor_ops;
 // T-159.21 Eden chrome scaffold — the Mission Creator's docked shell (top strip / toolbelt / dock
 // placeholders). Ungated: it holds no wasm-only types (the doc-driving on:click bodies are
 // cfg-gated inside the closures), so the native view shell compiles it too.
@@ -47,6 +54,10 @@ mod modpacks;
 mod mortar;
 mod nav;
 mod orbat_selection;
+// T-159.22 — the left dock's Editor Layers tree (+ the "Unfiled" pseudo-root the seed forces). Owns
+// plain LayerRow/SlotRow rather than `SlotSoa`, because map-engine-core is wasm32-only — so this
+// stays ungated and its unit tests run on the native shell.
+mod outliner;
 mod personnel;
 mod router;
 // T-159.18 Select / LMB pick foundation — links map-engine-core `camera`+`spatial` and web-sys, so
