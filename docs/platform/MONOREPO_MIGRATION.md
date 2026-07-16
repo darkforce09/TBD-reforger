@@ -50,7 +50,9 @@ TBD-Reforger/
 | embedded web tree | `website/` |
 | `../worktrees` | `artifacts/worktrees` |
 
-Scripts: `scripts/rewrite-ticket-paths.py`, `scripts/rewrite-doc-links.py`, `scripts/backfill-registry-monorepo.py`.
+Scripts (one-shot path rewrites used during the migration): **removed in T-162** —
+do not resurrect `rewrite-ticket-paths.py` / `rewrite-doc-links.py` /
+`backfill-registry-monorepo.py`. Use `./scripts/ticket` / `cargo xtask` for registry work.
 
 ## Local-only paths (not in git)
 

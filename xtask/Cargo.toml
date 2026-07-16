@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.95"
 license = "UNLICENSED"
 publish = false
-description = "T-161 ticket CLI (Python → Rust). cargo xtask ticket …"
+description = "T-161 ticket CLI + T-162 MCP/debug/repro helpers. cargo xtask …"
 
 [[bin]]
 name = "xtask"

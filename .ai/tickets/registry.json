@@ -1,5 +1,5 @@
 {
-  "next_id": 162,
+  "next_id": 163,
   "tickets": [
     {
       "id": "T-001",
@@ -4930,6 +4930,83 @@
           "status": "shipped",
           "spec": "docs/platform/t161_ticket_xtask_program.md",
           "notes": "Doc closeout + program shipped."
+        }
+      }
+    },
+    {
+      "id": "T-162",
+      "order": 1590,
+      "title": "Eradicate remaining Python → Rust xtask",
+      "summary": "SHIPPED: eradicate remaining Python → Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: docs/platform/t162_python_eradication.md.",
+      "program": "platform",
+      "surfaces": [
+        "DATA",
+        "SHELL"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "spec": "docs/platform/t162_python_eradication.md",
+      "branch": "t-161-ticket-xtask",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs",
+      "parallel_ok": true,
+      "slices": [
+        "T-162.0",
+        "T-162.1",
+        "T-162.2",
+        "T-162.3",
+        "T-162.4"
+      ],
+      "slice_plan": {
+        "T-162.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "Hub + registry inventory."
+        },
+        "T-162.1": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "MCP consume/socket-send/probe-sock → xtask; flip mcp-call/daemon/selftest."
+        },
+        "T-162.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "Delete seed/rewrite/backfill one-shots."
+        },
+        "T-162.3": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "Replace inline python3 in verify-monorepo/upload-repro/debug-direct-join."
+        },
+        "T-162.4": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "verify-no-python.sh + docs + ship."
         }
       }
     }

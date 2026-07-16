@@ -19,8 +19,8 @@ same derived docs, no Python runtime for everyday ticket ops.
 | **D4′** | `schema.json` documents shape; runtime check = hand-rolled Python rules (**no** JSON Schema crate) |
 | **A4′** | `check` / `--strict` must match Python **exit + sorted ERROR set** (not exit 0 — registry debt T-147/148/149/154) |
 | **D5** | Branch `t-161-ticket-xtask` / worktree `TBD-T-161` |
-| **D6** | One-shot rewrite/backfill/seed scripts not ported |
-| **D7** | Mod MCP Python out of scope |
+| **D6** | ~~One-shot rewrite/backfill/seed scripts not ported~~ → **superseded by T-162** (deleted) |
+| **D7** | ~~Mod MCP Python out of scope~~ → **superseded by T-162** (`xtask mcp …`) |
 
 ## Slice plan (final)
 
@@ -45,5 +45,7 @@ cargo xtask ticket sync   # same binary via alias
 ## Out of scope
 
 - Fixing T-147/148/149/154 registry debt (separate ticket)
-- Map-assets Node / mod MCP Python
+- Map-assets Node / enfusion-mcp Node broker (not Python — see T-162 for MCP Rust)
 - Leptos / map-engine app code
+
+**Follow-on:** [T-162 Python eradication](t162_python_eradication.md) removes remaining `.py` / `python3`.

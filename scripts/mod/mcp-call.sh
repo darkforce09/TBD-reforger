@@ -5,7 +5,7 @@
 # ~Workbench round-trip time instead of re-paying the ~35 s index load. Falls back automatically to a
 # hardened one-shot run (early-exit consumer → returns at response time, never hangs to the timeout) if
 # the daemon is unavailable or MCP_NO_DAEMON=1. Both paths funnel the JSON-RPC id==2 response through
-# scripts/mod/lib/mcp-consume.py, so result text + exit codes are identical.
+# `cargo xtask mcp consume` (T-162), so result text + exit codes are identical.
 #
 # Usage:  mcp-call.sh <tool> '<json-args>'        (args default to {})
 # Env:    MCP_CALL_TIMEOUT (s, 180)  MCP_CALL_RETRIES (1)  MCP_NO_DAEMON=1  MCP_DEBUG=1  ENFUSION_MCP_BIN  MCP_SOCK
@@ -31,7 +31,7 @@ export ENFUSION_GAME_PATH="${ENFUSION_GAME_PATH:-$HOME/.cache/enfusion-mcp-root}
 export ENFUSION_WORKBENCH_PATH="${ENFUSION_WORKBENCH_PATH:-$HOME/.local/share/Steam/steamapps/common/Arma Reforger Tools}"
 export ENFUSION_PROJECT_PATH="${ENFUSION_PROJECT_PATH:-$HOME/Documents/Games/ArmaReforgerWorkbench/addons}"
 
-CONSUME="$SCRIPT_DIR/lib/mcp-consume.py"
+XTASK="$SCRIPT_DIR/lib/xtask-run.sh"
 SOCK="${MCP_SOCK:-${XDG_RUNTIME_DIR:-/tmp}/tbd-mcp-$(id -u).sock}"
 [ "${#SOCK}" -gt 100 ] && SOCK="/tmp/tbd-mcp-$(id -u).sock"
 export MCP_SOCK="$SOCK"
@@ -80,11 +80,11 @@ daemon_try() {
   ensure_daemon || { dbg "daemon unavailable"; return 9; }
   dbg "daemon_try TOOL=[$TOOL] ARGS=[$ARGS]"
   local outf errf; outf="$(mktmp)"; errf="$(mktmp)"
-  python3 "$SCRIPT_DIR/lib/mcp-socket-send.py" "$SOCK" "$TOOL" "$ARGS" 2>"$errf" | python3 "$CONSUME" >"$outf"
-  local send_rc=${PIPESTATUS[0]} py_rc=${PIPESTATUS[1]}
-  dbg "daemon send_rc=$send_rc py_rc=$py_rc"
-  if [ "$send_rc" = 0 ] && [ "$py_rc" = 0 ]; then cat "$outf"; return 0; fi
-  if [ "$send_rc" = 0 ] && [ "$py_rc" = 3 ]; then return 3; fi   # consumer already printed the error JSON
+  "$XTASK" mcp socket-send "$SOCK" "$TOOL" "$ARGS" 2>"$errf" | "$XTASK" mcp consume >"$outf"
+  local send_rc=${PIPESTATUS[0]} consume_rc=${PIPESTATUS[1]}
+  dbg "daemon send_rc=$send_rc consume_rc=$consume_rc"
+  if [ "$send_rc" = 0 ] && [ "$consume_rc" = 0 ]; then cat "$outf"; return 0; fi
+  if [ "$send_rc" = 0 ] && [ "$consume_rc" = 3 ]; then return 3; fi   # consumer already printed the error JSON
   [ "${MCP_DEBUG:-0}" = 1 ] && [ -s "$errf" ] && cat "$errf" >&2
   return 9   # daemon gone / malformed → fall back to one-shot
 }
@@ -99,13 +99,13 @@ oneshot() {
   local attempt=0 code
   while :; do
     local outf errf; outf="$(mktmp)"; errf="$(mktmp)"
-    emit_requests | timeout "$TIMEOUT" "${RUNNER[@]}" 2>"$errf" | python3 "$CONSUME" >"$outf"
-    local to_rc=${PIPESTATUS[1]} py_rc=${PIPESTATUS[2]}
-    dbg "oneshot attempt=$attempt to_rc=$to_rc py_rc=$py_rc"
+    emit_requests | timeout "$TIMEOUT" "${RUNNER[@]}" 2>"$errf" | "$XTASK" mcp consume >"$outf"
+    local to_rc=${PIPESTATUS[1]} consume_rc=${PIPESTATUS[2]}
+    dbg "oneshot attempt=$attempt to_rc=$to_rc consume_rc=$consume_rc"
     if [ "$to_rc" = 124 ]; then code=4
-    elif [ "$py_rc" = 0 ]; then cat "$outf"; return 0
-    elif [ "$py_rc" = 3 ]; then return 3   # consumer already printed the error JSON
-    elif [ "$py_rc" = 2 ]; then code=2
+    elif [ "$consume_rc" = 0 ]; then cat "$outf"; return 0
+    elif [ "$consume_rc" = 3 ]; then return 3   # consumer already printed the error JSON
+    elif [ "$consume_rc" = 2 ]; then code=2
     else code=1
     fi
     attempt=$((attempt + 1))

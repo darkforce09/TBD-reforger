@@ -15,7 +15,8 @@ One contract, three files. Prompts drift when each chat reinvents the send-off �
 | **3. Send-off** | `.ai/artifacts/t0xx_SEND_TO_CLAUDE.md` | **Optional** one-liner for humans — points at `./scripts/ticket prompt` | Cursor |
 
 **Canonical prompt text lives in the spec** under `## Claude Code prompt — {SLICE_ID}` (fenced block).  
-`./scripts/ticket run` and `./scripts/ticket prompt ID` extract that block via `scripts/lib/extract_claude_prompt.py`.
+`./scripts/ticket run` and `./scripts/ticket prompt ID` extract that block via the Rust
+`xtask` ticket prompt command (`cargo xtask ticket prompt …`).
 
 **Do not** put implementation detail only in SEND_TO_CLAUDE — it will rot. SEND_TO_CLAUDE is a bookmark, not a second spec.
 

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Offline self-test for the MCP call path (T-090.0 gates T1-T7). No Workbench / no real enfusion-mcp:
-# drives mcp-consume.py against recorded fixtures and mcp-call.sh against fixtures/stub-runner.mjs.
+# Offline self-test for the MCP call path (T-090.0 gates T1-T7; T-162 Rust consumer).
+# No Workbench / no real enfusion-mcp: drives `xtask mcp consume` against recorded fixtures
+# and mcp-call.sh against fixtures/stub-runner.mjs.
 # Exit 0 iff every gate passes.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-CONSUME="$SCRIPT_DIR/lib/mcp-consume.py"
+XTASK="$SCRIPT_DIR/lib/xtask-run.sh"
 STUB="$SCRIPT_DIR/fixtures/stub-runner.mjs"
 FIX="$SCRIPT_DIR/fixtures"
 SOCK="/tmp/tbd-mcp-selftest-$(id -u).sock"
@@ -19,14 +20,14 @@ trap cleanup EXIT
 cleanup
 
 echo "[T2-T5] consumer fixtures"
-out=$(python3 "$CONSUME" < "$FIX/mcp-wb-state-success.jsonl"); rc=$?
+out=$("$XTASK" mcp consume < "$FIX/mcp-wb-state-success.jsonl"); rc=$?
 { [ "$rc" = 0 ] && [ -n "$out" ]; } && ok "T2 success rc0 non-empty" || no "T2 success (rc=$rc out=[$out])"
-python3 "$CONSUME" < "$FIX/mcp-tool-error.jsonl" 1>/dev/null 2>/tmp/.st_e; rc_is "T3 error (rpc)" 3 $?
+"$XTASK" mcp consume < "$FIX/mcp-tool-error.jsonl" 1>/dev/null 2>/tmp/.st_e; rc_is "T3 error (rpc)" 3 $?
 grep -q '"code"' /tmp/.st_e && ok "T3 error JSON on stderr" || no "T3 error JSON missing"
-python3 "$CONSUME" < "$FIX/mcp-tool-iserror.jsonl" 1>/dev/null 2>/tmp/.st_e; rc_is "T3b error (isError)" 3 $?
+"$XTASK" mcp consume < "$FIX/mcp-tool-iserror.jsonl" 1>/dev/null 2>/tmp/.st_e; rc_is "T3b error (isError)" 3 $?
 grep -q 'MCP error' /tmp/.st_e && ok "T3b isError text on stderr" || no "T3b isError text missing"
-python3 "$CONSUME" < "$FIX/mcp-init-fail.jsonl" >/dev/null 2>&1; rc_is "T4 init-fail" 2 $?
-out=$(python3 "$CONSUME" < "$FIX/mcp-empty.jsonl"); rc=$?
+"$XTASK" mcp consume < "$FIX/mcp-init-fail.jsonl" >/dev/null 2>&1; rc_is "T4 init-fail" 2 $?
+out=$("$XTASK" mcp consume < "$FIX/mcp-empty.jsonl"); rc=$?
 { [ "$rc" = 1 ] && [ -z "$out" ]; } && ok "T5 empty rc1 empty-out" || no "T5 empty (rc=$rc out=[$out])"
 
 echo "[T6] usage error, no spawn"

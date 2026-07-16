@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration verify-no-python map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -205,6 +205,9 @@ ticket-check-strict: ## Full validation including zero legacy planning IDs
 verify-migration: ## Run monorepo migration gate checks (V1–V27)
 	./scripts/verify-monorepo-migration.sh
 
+verify-no-python: ## T-162 hard gate — zero .py files / no Python interpreter in scripts
+	./scripts/verify-no-python.sh
+
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
 # editorconfig (FMT-2) -> backend -> frontend (incl. format:check FMT-3) -> schema; each
 # sub-target is a separate $(MAKE) so a non-zero recipe
@@ -218,6 +221,7 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 # golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
 	$(MAKE) verify-editorconfig
+	$(MAKE) verify-no-python
 	$(MAKE) rust-ci
 	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-frontend

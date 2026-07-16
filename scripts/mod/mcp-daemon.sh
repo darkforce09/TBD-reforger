@@ -21,16 +21,7 @@ resolve_bin() {
 # Live check: the socket must be connectable (not just present on disk).
 is_running() {
   [ -S "$SOCK" ] || return 1
-  python3 - "$SOCK" <<'PY' 2>/dev/null
-import socket, sys
-s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-s.settimeout(2)
-try:
-    s.connect(sys.argv[1])
-except OSError:
-    sys.exit(1)
-s.close()
-PY
+  "$SCRIPT_DIR/lib/xtask-run.sh" mcp probe-sock "$SOCK" >/dev/null 2>&1
 }
 
 start() {

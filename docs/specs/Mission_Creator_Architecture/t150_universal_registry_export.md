@@ -93,7 +93,7 @@ bash scripts/mod/mcp-call.sh mod_validate "{\"modPath\":\"$PWD/apps/mod/tbd-fram
 # After export + copy into packages/tbd-schema/registry/:
 cd packages/tbd-schema && npm run validate
 # Counts (example — record real numbers):
-python3 -c "import json; i=json.load(open('registry/registry-items.workbench.json')); print('items',len(i['items'])); c=json.load(open('registry/registry-compat.workbench.json')); print('edges',len(c.get('edges',c.get('compat',[]))))"
+node -e "const i=require('./registry/registry-items.workbench.json'); const c=require('./registry/registry-compat.workbench.json'); console.log('items',i.items.length); console.log('edges',(c.edges||c.compat||[]).length)"
 ```
 
 Workbench: plugin completes without curated-list code paths; sample edges include at least one
