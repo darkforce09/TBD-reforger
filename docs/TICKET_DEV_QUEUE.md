@@ -25,12 +25,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-159 — Leptos UI rewrite (React SPA → Rust)
 
-- **Active slice:** `T-159.20`
-- **Slice spec:** `docs/platform/t159_20_save_export.md`
+- **Active slice:** `T-159.21`
+- **Slice spec:** `docs/platform/t159_21_eden_chrome_undo.md`
 - **Program hub:** `docs/platform/t159_leptos_ui_program.md`
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website
-- **Summary:** Worktree TBD-T-159 tip f444b878. Through T-159.19 marquee/drag shipped. ACTIVE T-159.20 save/export. Hub: t159_leptos_ui_program.md.
+- **Summary:** Worktree TBD-T-159 tip c0e11d54. Through T-159.20 Save/Export shipped. ACTIVE T-159.21 Eden chrome+undo. Hub: t159_leptos_ui_program.md.
 
 ## T-161 — Ticket CLI: Python → Rust xtask
 

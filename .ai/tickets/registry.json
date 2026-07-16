@@ -4673,7 +4673,7 @@
       "id": "T-159",
       "order": 1570,
       "title": "Leptos UI rewrite (React SPA \u2192 Rust)",
-      "summary": "Worktree TBD-T-159 tip f444b878. Through T-159.19 marquee/drag shipped. ACTIVE T-159.20 save/export. Hub: t159_leptos_ui_program.md.",
+      "summary": "Worktree TBD-T-159 tip c0e11d54. Through T-159.20 Save/Export shipped. ACTIVE T-159.21 Eden chrome+undo. Hub: t159_leptos_ui_program.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4705,9 +4705,10 @@
         "T-159.17",
         "T-159.18",
         "T-159.19",
-        "T-159.20"
+        "T-159.20",
+        "T-159.21"
       ],
-      "active_slice": "T-159.20",
+      "active_slice": "T-159.21",
       "slice_plan": {
         "T-159.0": {
           "targets": [
@@ -4829,9 +4830,19 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "c0e11d54",
           "spec": "docs/platform/t159_20_save_export.md",
-          "notes": "Rust compile + Export download + Save Version POST. Handoff: .ai/artifacts/t159_20_claude_code_handoff.md"
+          "notes": "Rust compile + Export + Save POST live 201/409/400. Verify: .ai/artifacts/t159_20_verify_log.md"
+        },
+        "T-159.21": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t159_21_eden_chrome_undo.md",
+          "notes": "Eden top/bottom/dock scaffold + MissionDoc undo/redo. Handoff: .ai/artifacts/t159_21_claude_code_handoff.md"
         }
       }
     },
