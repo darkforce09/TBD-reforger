@@ -14,6 +14,8 @@ mod audit;
 mod auth;
 mod client;
 mod content;
+// T-159.25 — the Mission Library's transient "New Mission" dialog (CreateMissionDialog.tsx port).
+mod create_mission_dialog;
 mod dashboard;
 mod datefmt;
 mod deployments;
@@ -68,6 +70,8 @@ mod server_control;
 mod server_intel;
 mod settings;
 mod split_pane;
+// T-159.25 — sonner replacement: Toasts context + top-right viewport (renders no DOM while empty).
+mod toast;
 mod ui;
 mod vehicles;
 mod wiki;

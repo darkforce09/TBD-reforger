@@ -9,8 +9,29 @@
 use crate::auth::{RefreshResponse, SingleFlight};
 use futures::future::LocalBoxFuture;
 
-/// A pending request: resolves to `Ok(T)` or `Err(status)`.
-pub type Req<T> = LocalBoxFuture<'static, Result<T, u16>>;
+/// Request failure: HTTP status (0 = network/serde) + the backend's `{"error": …}` body string when
+/// one was sent. Carrying the message is the T-127 U5 parity — ORBAT toasts surface "slot already
+/// taken" vs "squad is reserved by a leader", not one flattened failure line.
+pub type ApiErr = (u16, Option<String>);
+
+/// A pending request: resolves to `Ok(T)` or `Err((status, backend_error))`.
+pub type Req<T> = LocalBoxFuture<'static, Result<T, ApiErr>>;
+
+/// `apiErrorMessage` (pages/events.tsx): the backend's error string, first letter capitalized,
+/// else the caller's fallback.
+#[allow(dead_code)]
+pub fn api_error_message(err: &ApiErr, fallback: &str) -> String {
+    match &err.1 {
+        Some(msg) if !msg.is_empty() => {
+            let mut c = msg.chars();
+            match c.next() {
+                Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+                None => fallback.to_string(),
+            }
+        }
+        _ => fallback.to_string(),
+    }
+}
 
 /// Send `send(token)`; on 401, single-flight `refresh`, apply it via `on_refreshed`, and retry once
 /// with the rotated token. Mirrors the `!original._retry` guard in api/client.ts (exactly one retry).
@@ -22,14 +43,14 @@ pub async fn send_with_refresh<T>(
     token: impl Fn() -> Option<String>,
     refresh: impl FnOnce() -> LocalBoxFuture<'static, Option<RefreshResponse>>,
     on_refreshed: impl FnOnce(&RefreshResponse),
-) -> Result<T, u16> {
+) -> Result<T, ApiErr> {
     match send(token()).await {
-        Err(401) => match sf.run(refresh).await {
+        Err((401, _)) => match sf.run(refresh).await {
             Some(r) => {
                 on_refreshed(&r);
                 send(Some(r.access_token)).await // the single retry
             }
-            None => Err(401),
+            None => Err((401, None)),
         },
         other => other,
     }
@@ -85,7 +106,7 @@ mod wasm_client {
         path: &str,
         body: Option<serde_json::Value>,
         consume: Consume<T>,
-    ) -> Result<T, u16> {
+    ) -> Result<T, super::ApiErr> {
         let sf = REFRESH_SF.with(|s| s.clone());
         // Build the URL once (so `path` need only live for this call, not `'static`) — the retry
         // closure clones the owned URL per attempt. Param routes (/missions/:id) pass a dynamic path.
@@ -109,13 +130,13 @@ mod wasm_client {
                 let req = match body {
                     Some(b) => {
                         let Ok(r) = req.json(&b) else {
-                            return Err(0u16);
+                            return Err((0u16, None));
                         };
                         r
                     }
                     None => {
                         let Ok(r) = req.build() else {
-                            return Err(0u16);
+                            return Err((0u16, None));
                         };
                         r
                     }
@@ -126,13 +147,19 @@ mod wasm_client {
                         if (200..300).contains(&status) {
                             match ignore {
                                 Some(v) => Ok(v),
-                                None => resp.json::<T>().await.map_err(|_| 0u16),
+                                None => resp.json::<T>().await.map_err(|_| (0u16, None)),
                             }
                         } else {
-                            Err(status)
+                            // Surface the backend's `{"error": …}` string (T-127 U5 toasts).
+                            let msg = resp
+                                .json::<serde_json::Value>()
+                                .await
+                                .ok()
+                                .and_then(|v| v.get("error")?.as_str().map(str::to_string));
+                            Err((status, msg))
                         }
                     }
-                    Err(_) => Err(0u16),
+                    Err(_) => Err((0u16, None)),
                 }
             }
             .boxed_local()
@@ -154,7 +181,7 @@ mod wasm_client {
     pub async fn api_get<T: DeserializeOwned + Clone + 'static>(
         store: AuthStore,
         path: &str,
-    ) -> Result<T, u16> {
+    ) -> Result<T, super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::GET,
@@ -171,7 +198,7 @@ mod wasm_client {
         store: AuthStore,
         path: &str,
         body: serde_json::Value,
-    ) -> Result<T, u16> {
+    ) -> Result<T, super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::POST,
@@ -188,7 +215,7 @@ mod wasm_client {
         store: AuthStore,
         path: &str,
         body: serde_json::Value,
-    ) -> Result<T, u16> {
+    ) -> Result<T, super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::PUT,
@@ -205,7 +232,7 @@ mod wasm_client {
         store: AuthStore,
         path: &str,
         body: serde_json::Value,
-    ) -> Result<T, u16> {
+    ) -> Result<T, super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::PATCH,
@@ -219,7 +246,7 @@ mod wasm_client {
     /// DELETE `path`, ignoring any response body (the delete mutations get 204s or discard the
     /// body — axios parity). Ok(()) on 2xx. T-159.24.
     #[allow(dead_code)] // wired by the T-159.25 suite live-wire
-    pub async fn api_delete(store: AuthStore, path: &str) -> Result<(), u16> {
+    pub async fn api_delete(store: AuthStore, path: &str) -> Result<(), super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::DELETE,
@@ -233,7 +260,7 @@ mod wasm_client {
     /// POST `path` with a JSON body, ignoring any response body (register/reserve/release/logout —
     /// React invalidates queries and discards the response). Ok(()) on 2xx. T-159.24.
     #[allow(dead_code)] // wired by the T-159.25 suite live-wire
-    pub async fn api_post_ok(store: AuthStore, path: &str, body: serde_json::Value) -> Result<(), u16> {
+    pub async fn api_post_ok(store: AuthStore, path: &str, body: serde_json::Value) -> Result<(), super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::POST,
@@ -304,7 +331,7 @@ mod tests {
         let sf = SingleFlight::<Option<RefreshResponse>>::new();
         let s = sends.clone();
         let r = refreshes.clone();
-        let out: Result<&str, u16> = block_on(send_with_refresh(
+        let out: Result<&str, ApiErr> = block_on(send_with_refresh(
             &sf,
             move |tok| {
                 let s = s.clone();
@@ -313,7 +340,7 @@ mod tests {
                     if tok.as_deref() == Some("new") {
                         Ok("ok")
                     } else {
-                        Err(401u16)
+                        Err((401u16, None))
                     }
                 }
                 .boxed_local()
@@ -340,13 +367,13 @@ mod tests {
         let sends = Rc::new(Cell::new(0));
         let sf = SingleFlight::<Option<RefreshResponse>>::new();
         let s = sends.clone();
-        let out: Result<&str, u16> = block_on(send_with_refresh(
+        let out: Result<&str, ApiErr> = block_on(send_with_refresh(
             &sf,
             move |_tok| {
                 let s = s.clone();
                 async move {
                     s.set(s.get() + 1);
-                    Err(401u16)
+                    Err((401u16, None))
                 }
                 .boxed_local()
             },
@@ -354,7 +381,7 @@ mod tests {
             || async { Some(rr("new")) }.boxed_local(),
             |_| {},
         ));
-        assert_eq!(out, Err(401));
+        assert_eq!(out, Err((401, None)));
         assert_eq!(sends.get(), 2, "one retry only — no loop");
     }
 
@@ -364,9 +391,9 @@ mod tests {
         let refreshes = Rc::new(Cell::new(0));
         let sf = SingleFlight::<Option<RefreshResponse>>::new();
         let r = refreshes.clone();
-        let out: Result<&str, u16> = block_on(send_with_refresh(
+        let out: Result<&str, ApiErr> = block_on(send_with_refresh(
             &sf,
-            |_tok| async { Err(500u16) }.boxed_local(),
+            |_tok| async { Err((500u16, None)) }.boxed_local(),
             || Some("t".to_string()),
             move || {
                 let r = r.clone();
@@ -378,7 +405,7 @@ mod tests {
             },
             |_| {},
         ));
-        assert_eq!(out, Err(500));
+        assert_eq!(out, Err((500, None)));
         assert_eq!(refreshes.get(), 0, "non-401 never refreshes");
     }
 }

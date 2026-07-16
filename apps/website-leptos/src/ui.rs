@@ -80,6 +80,161 @@ pub fn AuthGate(children: ChildrenFn) -> impl IntoView {
     }
 }
 
+/// Badge variant classes — components/ui/badge.tsx `badgeVariants` (cva) with the base merged in.
+/// (React's twMerge collision quirks don't apply here: no caller passes a conflicting override.)
+#[allow(dead_code)]
+pub fn badge_class(variant: &str) -> String {
+    let v = match variant {
+        "primary" => "border-primary/30 bg-primary/10 text-primary",
+        "tertiary" => "border-tertiary/30 bg-tertiary/10 text-tertiary",
+        "warning" => "border-tactical-yellow/30 bg-tactical-yellow/10 text-tactical-yellow",
+        "success" => "border-success/30 bg-success/15 text-success",
+        "error" => "border-error-alert/30 bg-error-alert/10 text-error-alert",
+        _ => "border-outline-variant/40 bg-surface-variant/40 text-on-surface-variant",
+    };
+    format!("inline-flex items-center gap-1 rounded border px-2 py-0.5 text-label-sm uppercase whitespace-nowrap {v}")
+}
+
+/// Frosted, centered macOS modal — the components/ui/dialog.tsx port (T-159.25). Renders **no DOM
+/// while closed** (transient overlay: V captures of default states are unaffected; base-ui's
+/// enter/exit transition attributes are not replicated). Esc and the backdrop close it.
+#[component]
+#[allow(dead_code)]
+pub fn Dialog(
+    open: RwSignal<bool>,
+    #[prop(optional)] title: &'static str,
+    #[prop(optional)] description: &'static str,
+    /// Extra classes on the popup (React `className`, e.g. `max-w-lg`).
+    #[prop(optional)]
+    class: &'static str,
+    children: ChildrenFn,
+) -> impl IntoView {
+    // Esc closes (base-ui behavior). Window-level like React's focus-trap dismissal.
+    let esc = leptos::prelude::window_event_listener(leptos::ev::keydown, move |ev| {
+        if open.get_untracked() && ev.key() == "Escape" {
+            open.set(false);
+        }
+    });
+    on_cleanup(move || esc.remove());
+    move || {
+        open.get().then(|| {
+            view! {
+                <div
+                    class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+                    on:click=move |_| open.set(false)
+                ></div>
+                <div class=cn(
+                    &[
+                        "glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200",
+                        class,
+                    ],
+                )>
+                    {(!title.is_empty())
+                        .then(|| {
+                            view! {
+                                <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                                    <div class="min-w-0">
+                                        <h2 class="text-headline-sm text-on-surface">{title}</h2>
+                                        {(!description.is_empty())
+                                            .then(|| {
+                                                view! {
+                                                    <p class="mt-1 text-label-md text-on-surface-variant">
+                                                        {description}
+                                                    </p>
+                                                }
+                                            })}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        aria-label="Close"
+                                        on:click=move |_| open.set(false)
+                                        class="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                                    >
+                                        <MaterialIcon name="close" />
+                                    </button>
+                                </div>
+                            }
+                        })}
+                    <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">{children()}</div>
+                </div>
+            }
+        })
+    }
+}
+
+/// macOS slide-over panel — the components/ui/sheet.tsx port (right side; `bleed` = children own
+/// the full layout). Same no-DOM-while-closed / no-transition-attrs notes as `Dialog`.
+#[component]
+#[allow(dead_code)]
+pub fn Sheet(
+    open: RwSignal<bool>,
+    #[prop(optional)] title: &'static str,
+    #[prop(optional)] description: &'static str,
+    #[prop(optional)] class: &'static str,
+    #[prop(optional)] bleed: bool,
+    children: ChildrenFn,
+) -> impl IntoView {
+    let esc = leptos::prelude::window_event_listener(leptos::ev::keydown, move |ev| {
+        if open.get_untracked() && ev.key() == "Escape" {
+            open.set(false);
+        }
+    });
+    on_cleanup(move || esc.remove());
+    move || {
+        open.get().then(|| {
+            view! {
+                <div
+                    class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+                    on:click=move |_| open.set(false)
+                ></div>
+                <div class=cn(
+                    &[
+                        "glass fixed z-50 flex flex-col border-outline-variant/30 shadow-2xl outline-none transition-transform duration-300 ease-out inset-y-0 right-0 h-full w-[92vw] max-w-md border-l",
+                        class,
+                    ],
+                )>
+                    {if bleed {
+                        children().into_any()
+                    } else {
+                        view! {
+                            {(!title.is_empty())
+                                .then(|| {
+                                    view! {
+                                        <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                                            <div class="min-w-0">
+                                                <h2 class="text-headline-sm text-on-surface">{title}</h2>
+                                                {(!description.is_empty())
+                                                    .then(|| {
+                                                        view! {
+                                                            <p class="mt-1 text-label-md text-on-surface-variant">
+                                                                {description}
+                                                            </p>
+                                                        }
+                                                    })}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                aria-label="Close"
+                                                on:click=move |_| open.set(false)
+                                                class="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                                            >
+                                                <MaterialIcon name="close" />
+                                            </button>
+                                        </div>
+                                    }
+                                })}
+                            <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
+                                {children()}
+                            </div>
+                        }
+                            .into_any()
+                    }}
+                </div>
+            }
+        })
+    }
+}
+
 /// AdminGate — AuthGate + an admin-role check. Ported from components/AdminGate.tsx: authed
 /// non-admins see "Admin access required." instead of the children.
 #[component]

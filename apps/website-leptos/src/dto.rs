@@ -52,6 +52,86 @@ pub struct LinkStatus {
     pub pending_code: Option<bool>,
 }
 
+/// One mission library card — mirrors `types/api` `MissionCard` (`GET /missions?scope=…`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct MissionCard {
+    pub id: String,
+    pub title: String,
+    pub author_id: String,
+    pub terrain: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_terrain_name: Option<String>,
+    pub game_mode: String,
+    pub weather: String,
+    pub time_of_day: String,
+    pub max_players: i64,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thumbnail_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub briefing: Option<String>,
+    pub author_name: String,
+    pub author_avatar: String,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
+/// One ORBAT slot row — mirrors `types/api` `OrbatSlot` (backend `orbatSquadDTO` slots).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrbatSlot {
+    pub id: String,
+    pub number: i64,
+    pub role: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub loadout: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    pub slot_index: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_to: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_name: Option<String>,
+}
+
+/// A squad grouping of ORBAT slots — mirrors `types/api` `OrbatSquad`. `GET
+/// /event-missions/:emid/orbat` returns `{data: OrbatSquad[]}` (T-159.25 selector).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct OrbatSquad {
+    pub faction: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub callsign: Option<String>,
+    pub squad: String,
+    pub filled: i64,
+    pub total: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reserved_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reserved_by_name: Option<String>,
+    pub slots: Vec<OrbatSlot>,
+}
+
+/// A slim member row for the leader's assignee picker — `GET /members?q=` `{data: Member[]}`.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct Member {
+    pub discord_id: String,
+    pub username: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar_url: Option<String>,
+}
+
+/// `POST /me/link` → a freshly minted one-time Arma link code (T-159.25 Settings mutations).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct LinkCodeResponse {
+    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+}
+
 /// A modpack row — backend `models::content::Modpack`. `workshop_url` is omitted when empty.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
@@ -234,13 +314,36 @@ pub struct MissionDetail {
     pub thumbnail_url: Option<String>,
 }
 
+/// One armory row inside `armory_by_faction[].items[]` (T-159.25 faction dossiers). The flattened
+/// `extra` map preserves any wire fields beyond the rendered three, so the R-api canonical
+/// round-trip stays byte-exact whatever the backend adds.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ArmoryItem {
+    pub id: String,
+    pub item_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<i64>,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
+/// One faction's armory group in a mission dossier (`armory_by_faction[]`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ArmoryFaction {
+    pub faction: String,
+    pub items: Vec<ArmoryItem>,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
 /// One mission dossier nested in `GET /events/:id` (`missions[]`). Optionals the backend omits
-/// (briefing/thumbnail/my_state/my_slot_id) round-trip absent. `armory_by_faction` stays opaque
-/// (`Value`) until a golden with loadouts lands.
+/// (briefing/thumbnail/my_state/my_slot_id) round-trip absent.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct EventMissionDossier {
-    pub armory_by_faction: Vec<Value>,
+    pub armory_by_faction: Vec<ArmoryFaction>,
     pub event_mission_id: String,
     pub factions: Vec<String>,
     pub filled: i64,

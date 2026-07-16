@@ -101,10 +101,10 @@ pub fn save_now(semver: String, status: RwSignal<String>) {
     spawn_local(async move {
         match crate::client::api_post::<serde_json::Value>(auth, &path, body).await {
             Ok(_) => status.set(format!("Saved v{semver}")),
-            Err(409) => status.set(format!("Version {semver} already exists")),
-            Err(413) => status.set("Payload too large".to_string()),
-            Err(401) => status.set("Sign in to save".to_string()),
-            Err(s) => status.set(format!("Save failed ({s})")),
+            Err((409, _)) => status.set(format!("Version {semver} already exists")),
+            Err((413, _)) => status.set("Payload too large".to_string()),
+            Err((401, _)) => status.set("Sign in to save".to_string()),
+            Err((s, _)) => status.set(format!("Save failed ({s})")),
         }
     });
 }

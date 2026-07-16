@@ -43,6 +43,9 @@ fn OrbatSelectionInner() -> impl IntoView {
             }
         }
     });
+    // Register/withdraw invalidate the event hub in React; here the selector bubbles a refetch so
+    // the my_state-derived header/footer stay live (T-159.25).
+    let on_change = Callback::new(move |()| event.refetch());
     view! {
         <Suspense fallback=move || {
             view! { <p class="text-on-surface-variant">"Loading…"</p> }
@@ -94,7 +97,13 @@ fn OrbatSelectionInner() -> impl IntoView {
                                 </header>
                                 {(!emid.is_empty())
                                     .then(|| {
-                                        view! { <OrbatSelector emid=emid.clone() my_state=my_state /> }
+                                        view! {
+                                            <OrbatSelector
+                                                emid=emid.clone()
+                                                my_state=my_state
+                                                on_change=on_change
+                                            />
+                                        }
                                     })}
                             </div>
                         }

@@ -23,12 +23,14 @@ pub fn AppLayout() -> impl IntoView {
     // The auth store (Zustand replacement) lives at the shell root; children read it via context.
     // Cold-load bootstrap (refresh from tbd-auth) + the gloo-net client populate it next.
     provide_context(AuthStore::new());
+    // Toasts context (sonner parity — React mounts <Toaster/> once in main.tsx). T-159.25.
+    crate::toast::provide_toasts();
     // Cold-load bootstrap: hydrate the session from tbd-auth (no-op for a guest with nothing stored).
     #[cfg(target_arch = "wasm32")]
     leptos::task::spawn_local(crate::client::bootstrap(expect_context::<AuthStore>()));
     // Route determines the frame. Read once at load; reactive re-wrap on SPA nav is a follow-up.
     let path = use_location().pathname.get();
-    if path == "/login" || path == "/auth/callback" {
+    let frame = if path == "/login" || path == "/auth/callback" {
         // React renders these OUTSIDE AppLayout — bare, no chrome, no wrapper div.
         view! { <AppRoutes /> }.into_any()
     } else if crate::router::chromeless(&path) {
@@ -59,6 +61,12 @@ pub fn AppLayout() -> impl IntoView {
             </div>
         }
         .into_any()
+    };
+    // The viewport is a sibling of the frame (like React's root-level <Toaster/>) and renders no
+    // DOM while the toast list is empty, so byte-equal V captures are unaffected.
+    view! {
+        {frame}
+        <crate::toast::ToastViewport />
     }
 }
 

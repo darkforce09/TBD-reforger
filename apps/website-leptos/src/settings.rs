@@ -3,9 +3,10 @@
 //! render: the dev goldens carry a linked Arma identity + a real profile, so every field (username,
 //! handle, role badge, linked status string, deployment + attendance stats) is byte-exact-verified.
 //!
-//! The mutation buttons (Generate Link Code / Unlink) render but their click handlers + the
-//! generated-code / pending-code panels are behavior (T-toast + mutations) — a follow-up; the static
-//! render (buttons present, no pending panel since the golden's pending_code is false) is gated here.
+//! T-159.25: the mutation pair is live — **Generate Link Code** (`POST /me/link` →
+//! `LinkCodeResponse`, shows the mono "Link code: …" panel, toast, link-status refetch) and
+//! **Unlink Arma ID** (`DELETE /me/link`, clears the panel, toast, me + link refetch) — the
+//! useGenerateLinkCode / useUnlinkArma port, invalidations mapped to `LocalResource::refetch`.
 #![allow(dead_code)]
 use crate::dto::{LinkStatus, MeResponse};
 use crate::ui::{AuthGate, MaterialIcon, PageHeader, DEFAULT_AVATAR};
@@ -24,6 +25,15 @@ pub fn SettingsPage() -> impl IntoView {
             <SettingsInner />
         </AuthGate>
     }
+}
+
+/// The mutation-side handles (all `Copy`) threaded into the settled render. Lives above the
+/// Suspense re-render so `pending_code` survives a refetch — the React `useState` parity.
+#[derive(Clone, Copy)]
+struct ArmaLinkCtx {
+    pending_code: RwSignal<Option<String>>,
+    gen_busy: RwSignal<bool>,
+    unlink_busy: RwSignal<bool>,
 }
 
 #[component]
@@ -55,6 +65,65 @@ fn SettingsInner() -> impl IntoView {
             None::<LinkStatus>
         }
     });
+    let ctx = ArmaLinkCtx {
+        pending_code: RwSignal::new(None),
+        gen_busy: RwSignal::new(false),
+        unlink_busy: RwSignal::new(false),
+    };
+
+    // Generate Link Code — useGenerateLinkCode port (POST /me/link → code panel + toast + link
+    // refetch). The handler is a plain fn so both buttons stay in the settled `body()` render.
+    let on_generate = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let toasts = crate::toast::use_toasts();
+            if ctx.gen_busy.get_untracked() {
+                return;
+            }
+            ctx.gen_busy.set(true);
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post::<crate::dto::LinkCodeResponse>(
+                    store,
+                    "/me/link",
+                    serde_json::json!({}),
+                )
+                .await
+                {
+                    Ok(resp) => {
+                        ctx.pending_code.set(Some(resp.code));
+                        toasts.success("Link code generated — enter it in-game");
+                        link.refetch();
+                    }
+                    Err(_) => toasts.error("Failed to generate link code"),
+                }
+                ctx.gen_busy.set(false);
+            });
+        }
+    };
+    // Unlink — useUnlinkArma port (DELETE /me/link → clear panel + toast + me/link refetch).
+    let on_unlink = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let toasts = crate::toast::use_toasts();
+            if ctx.unlink_busy.get_untracked() {
+                return;
+            }
+            ctx.unlink_busy.set(true);
+            leptos::task::spawn_local(async move {
+                match crate::client::api_delete(store, "/me/link").await {
+                    Ok(()) => {
+                        ctx.pending_code.set(None);
+                        toasts.success("Arma identity unlinked");
+                        me.refetch();
+                        link.refetch();
+                    }
+                    Err(_) => toasts.error("Failed to unlink"),
+                }
+                ctx.unlink_busy.set(false);
+            });
+        }
+    };
+
     // Gate on BOTH resources so the settled DOM (linked status resolved) is what renders — matches
     // React's final render after useMe + useLinkStatus both land.
     view! {
@@ -62,7 +131,9 @@ fn SettingsInner() -> impl IntoView {
             view! { <p class="text-on-surface-variant">"Loading…"</p> }
         }>
             {move || match (me.get(), link.get()) {
-                (Some(Some(me)), Some(link_opt)) => body(me, link_opt).into_any(),
+                (Some(Some(me)), Some(link_opt)) => {
+                    body(me, link_opt, ctx, on_generate, on_unlink).into_any()
+                }
                 (Some(None), _) => {
                     view! { <p class="text-error">"Failed to load data."</p> }.into_any()
                 }
@@ -72,7 +143,13 @@ fn SettingsInner() -> impl IntoView {
     }
 }
 
-fn body(me: MeResponse, link: Option<LinkStatus>) -> impl IntoView {
+fn body(
+    me: MeResponse,
+    link: Option<LinkStatus>,
+    ctx: ArmaLinkCtx,
+    on_generate: impl Fn(leptos::ev::MouseEvent) + Copy + 'static,
+    on_unlink: impl Fn(leptos::ev::MouseEvent) + Copy + 'static,
+) -> impl IntoView {
     let user = me.user;
     let avatar = if user.avatar_url.is_empty() {
         DEFAULT_AVATAR.to_string()
@@ -136,18 +213,35 @@ fn body(me: MeResponse, link: Option<LinkStatus>) -> impl IntoView {
                     "Status: "
                     <span class=status_class>{link_label}</span>
                 </p>
-                // pendingCode (mutation result) is null on load; only the pending_code branch can show.
-                {pending
-                    .then(|| {
+                // Settings.tsx panel ladder: a freshly generated code (mono) beats the
+                // server-side pending_code notice; neither shows by default (golden parity).
+                {move || match ctx.pending_code.get() {
+                    Some(code) => {
                         view! {
-                            <p class="mb-4 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm">
-                                "A link code is already pending. Generate a new one to display it, then enter it in-game."
+                            <p class="mb-4 rounded-lg border border-primary/30 bg-primary/10 p-3 font-mono text-sm">
+                                "Link code: "
+                                {code}
                             </p>
                         }
-                    })}
+                            .into_any()
+                    }
+                    None => {
+                        pending
+                            .then(|| {
+                                view! {
+                                    <p class="mb-4 rounded-lg border border-primary/30 bg-primary/10 p-3 text-sm">
+                                        "A link code is already pending. Generate a new one to display it, then enter it in-game."
+                                    </p>
+                                }
+                            })
+                            .into_any()
+                    }
+                }}
                 <div class="flex flex-wrap gap-2">
                     <button
                         type="button"
+                        on:click=on_generate
+                        prop:disabled=move || ctx.gen_busy.get()
                         class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-on-primary disabled:opacity-50"
                     >
                         "Generate Link Code"
@@ -157,6 +251,8 @@ fn body(me: MeResponse, link: Option<LinkStatus>) -> impl IntoView {
                             view! {
                                 <button
                                     type="button"
+                                    on:click=on_unlink
+                                    prop:disabled=move || ctx.unlink_busy.get()
                                     class="rounded-lg border border-border-subtle px-4 py-2 text-sm disabled:opacity-50"
                                 >
                                     "Unlink Arma ID"

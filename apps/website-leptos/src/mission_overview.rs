@@ -9,6 +9,7 @@
 //! loadouts). DTO round-trip is proven by the R-api gate (dto.rs `mission_detail`).
 #![allow(dead_code)]
 use crate::dto::MissionDetail;
+use serde_json::Value;
 use crate::ui::AuthGate;
 use leptos::prelude::*;
 use leptos_router::hooks::use_params_map;
@@ -116,7 +117,10 @@ fn body(m: MissionDetail) -> impl IntoView {
     }
 }
 
-fn dossier_body(m: &MissionDetail) -> impl IntoView {
+/// Shared dossier content — used here and by the library slide-over (missions.rs), like React's
+/// `MissionDossierBody`. T-159.25 adds the interactive Armory faction tabs (rows stay `Value`-read
+/// so the R-api golden shape is untouched).
+pub fn dossier_body(m: &MissionDetail) -> impl IntoView {
     let briefing = m
         .briefing
         .clone()
@@ -126,6 +130,24 @@ fn dossier_body(m: &MissionDetail) -> impl IntoView {
         .current_version
         .as_ref()
         .map(|v| view! { <span class=BADGE_TERTIARY>"v"{v.semver.clone()}</span> });
+    // Armory faction tabs (React `factions = [...new Set(mission.armory.map(a => a.faction))]`).
+    let armory = m.armory.clone();
+    let factions: Vec<String> = {
+        let mut seen = Vec::new();
+        for a in &armory {
+            if let Some(f) = a.get("faction").and_then(|v| v.as_str()) {
+                if !seen.iter().any(|s: &String| s == f) {
+                    seen.push(f.to_string());
+                }
+            }
+        }
+        seen
+    };
+    let faction_sel = RwSignal::new(None::<String>);
+    // StoredValue keeps the resolver closure Copy (used by both the tabs and the rows renders).
+    let default_faction = StoredValue::new(factions.first().cloned());
+    let factions_for_tabs = factions.clone();
+    let active_faction = move || faction_sel.get().or_else(|| default_faction.get_value());
     view! {
         <div class="space-y-8">
             <div class="flex flex-wrap gap-2">
@@ -148,7 +170,78 @@ fn dossier_body(m: &MissionDetail) -> impl IntoView {
                 {detail("Max Players", m.max_players.to_string())}
                 {detail("Status", m.status.clone())}
             </dl>
-        // Armory section: hidden when there are no factions (empty armory) — content-gated.
+
+            {(!factions.is_empty())
+                .then(move || {
+                    let af_tabs = active_faction;
+                    let af_rows = active_faction;
+                    let armory_rows = armory.clone();
+                    view! {
+                        <section>
+                            <h3 class="mb-2 text-label-md text-on-surface-variant uppercase">
+                                "The Armory"
+                            </h3>
+                            <div class="mb-3 flex gap-2">
+                                {factions_for_tabs
+                                    .iter()
+                                    .map(|f| {
+                                        let f_click = f.clone();
+                                        let f_active = f.clone();
+                                        view! {
+                                            <button
+                                                type="button"
+                                                on:click=move |_| faction_sel.set(Some(f_click.clone()))
+                                                class=move || {
+                                                    crate::ui::cn(
+                                                        &[
+                                                            "rounded-lg px-3 py-1.5 text-label-md",
+                                                            if af_tabs().as_deref() == Some(f_active.as_str()) {
+                                                                "bg-primary text-on-primary"
+                                                            } else {
+                                                                "bg-surface-container text-on-surface-variant"
+                                                            },
+                                                        ],
+                                                    )
+                                                }
+                                            >
+                                                {f.clone()}
+                                            </button>
+                                        }
+                                    })
+                                    .collect_view()}
+                            </div>
+                            <div class="grid gap-2">
+                                {move || {
+                                    let af = af_rows();
+                                    armory_rows
+                                        .iter()
+                                        .filter(|a| {
+                                            a.get("faction").and_then(|v| v.as_str())
+                                                == af.as_deref()
+                                        })
+                                        .map(|item| {
+                                            let name = item
+                                                .get("item_name")
+                                                .and_then(|v| v.as_str())
+                                                .unwrap_or_default()
+                                                .to_string();
+                                            let qty = match item.get("quantity") {
+                                                Some(Value::Number(n)) => format!("x{n}"),
+                                                _ => "∞".to_string(),
+                                            };
+                                            view! {
+                                                <div class="flex justify-between rounded-lg border border-outline-variant/30 bg-surface-container p-3 text-label-md">
+                                                    <span class="text-on-surface">{name}</span>
+                                                    <span class="text-on-surface-variant">{qty}</span>
+                                                </div>
+                                            }
+                                        })
+                                        .collect_view()
+                                }}
+                            </div>
+                        </section>
+                    }
+                })}
         </div>
     }
 }
