@@ -39,6 +39,11 @@ web-sys = { version = "0.3", features = [
     # contextmenu handler type. set/has/release_pointer_capture live under the existing `Element`.
     "PointerEvent",
     "MouseEvent",
+    # T-159.21 undo/redo shortcuts: the window `keydown` listener (Ctrl/Cmd+Z, Ctrl+Y). Brings the
+    # inherited code()/ctrl_key()/meta_key()/shift_key()/alt_key() accessors via UiEvent/Event.
+    # The focus guard's `active_element` / `is_content_editable` are already covered by the
+    # existing `Document` / `Element` / `HtmlElement`.
+    "KeyboardEvent",
     "EventTarget",
     "AddEventListenerOptions",
     # T-159.20 Save/Export: the semver <input> (HtmlInputElement) + the Export download dance

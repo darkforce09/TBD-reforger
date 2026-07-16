@@ -15,6 +15,10 @@ mod dashboard;
 mod datefmt;
 mod deployments;
 mod dto;
+// T-159.21 Eden chrome scaffold — the Mission Creator's docked shell (top strip / toolbelt / dock
+// placeholders). Ungated: it holds no wasm-only types (the doc-driving on:click bodies are
+// cfg-gated inside the closures), so the native view shell compiles it too.
+mod eden_chrome;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
 // like the doc host below.
 #[cfg(target_arch = "wasm32")]
@@ -33,6 +37,10 @@ mod mission_doc;
 #[cfg(target_arch = "wasm32")]
 mod mission_commands;
 mod mission_editor;
+// T-159.21 undo/redo — drives the hosted MissionDocCore undo stack (+ the post-change glyph rebind
+// and the `__editorHistory` bridge); wasm32-only, gated like the doc host.
+#[cfg(target_arch = "wasm32")]
+mod mission_history;
 mod mission_overview;
 mod missions;
 mod modpacks;

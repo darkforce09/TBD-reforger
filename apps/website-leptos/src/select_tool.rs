@@ -41,8 +41,9 @@ const TERRAIN_H: f64 = 12_800.0;
 /// leaked bridge closures never touch disposed reactive state — see the module docs.
 pub type SelectionHandle = Rc<RefCell<Vec<String>>>;
 
-/// A leaked `Option<RenderEngine>` handle, exactly the one `mission_editor.rs` owns.
-type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
+/// A leaked `Option<RenderEngine>` handle, exactly the one `mission_editor.rs` owns. `pub` since
+/// T-159.21 so `mission_history` names the same alias instead of redeclaring a twin.
+pub type EngineHandle = Rc<RefCell<Option<RenderEngine>>>;
 
 /// The pending LMB gesture: the press point (CSS px, container-local) + a **frozen** ortho camera
 /// copied at pointer-down. A sub-threshold release unprojects against `cam` (never the live engine).
@@ -342,14 +343,41 @@ fn json_id_array(ids: &[String]) -> String {
 /// A container-local screen px that is farthest from every projected slot — a **guaranteed-empty**
 /// click target for the smoke's clear/deselect assertion (max over a candidate grid of the min
 /// distance to any slot px). With a handful of slots this is comfortably clear of every glyph.
+///
+/// T-159.21 — the candidate grid is inset to the **chrome-free** region. The Eden chrome overlays
+/// this same container and stops `pointerdown` from reaching the map handlers, so a px under the
+/// top strip or a dock would be un-clickable and the deselect gate would hang on a stale selection.
+/// The insets come from `eden_chrome`, which is also what the view's Tailwind utilities are written
+/// from — one contract, two readers.
+///
+/// This **shrinks the search space; it does not weaken the property.** The result is still the
+/// argmax over candidates of the min distance to any projected slot, i.e. still empty — and the
+/// gate needs *an* empty px, not a specific one. Sufficiency is structural rather than incidental:
+/// `pick` hits within `PICK_RADIUS_PX` (4), while grid candidates are tens of px apart, so one slot
+/// can shadow at most one candidate; a handful of slots can never shadow all of them. Slots that
+/// project outside the region still count in the min-distance and only push the winner further out.
 fn farthest_empty_px(w: f64, h: f64, proj: &[(f64, f64)]) -> (f64, f64) {
     let (nx, ny) = (21usize, 13usize);
-    let mut best = (w * 0.5, h * 0.5);
+    // Degenerate viewport (chrome ≥ container) → fall back to the whole rect rather than emit a
+    // NaN/inverted box.
+    let (mut x0, mut x1) = (crate::eden_chrome::DOCK_LEFT_PX, w - crate::eden_chrome::DOCK_RIGHT_PX);
+    let (mut y0, mut y1) = (
+        crate::eden_chrome::STRIP_TOP_PX,
+        h - crate::eden_chrome::TOOLBELT_BAND_PX,
+    );
+    if x1 - x0 < 1.0 || y1 - y0 < 1.0 {
+        x0 = 0.0;
+        x1 = w;
+        y0 = 0.0;
+        y1 = h;
+    }
+    let (rw, rh) = (x1 - x0, y1 - y0);
+    let mut best = (x0 + rw * 0.5, y0 + rh * 0.5);
     let mut best_d = -1.0_f64;
     for iy in 0..ny {
         for ix in 0..nx {
-            let cx = (ix as f64 + 0.5) / nx as f64 * w;
-            let cy = (iy as f64 + 0.5) / ny as f64 * h;
+            let cx = x0 + (ix as f64 + 0.5) / nx as f64 * rw;
+            let cy = y0 + (iy as f64 + 0.5) / ny as f64 * rh;
             let mut mind = f64::INFINITY;
             for &(px, py) in proj {
                 let d = ((px - cx).powi(2) + (py - cy).powi(2)).sqrt();

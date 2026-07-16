@@ -41,6 +41,30 @@ pub fn MissionEditorPage() -> impl IntoView {
     let save_semver = RwSignal::new("0.1.0".to_string());
     let save_status = RwSignal::new(String::new());
 
+    // T-159.21 — Eden chrome state. All four are HUD *mirrors* of non-reactive state (the doc's undo
+    // stack, its slot count, the leaked selection handle): `MissionDocCore` has no change
+    // subscription and the selection is an `Rc<RefCell<…>>`, so `mission_history::refresh_*` pushes
+    // onto these at every mutation site instead. `cursor` is fed by the pointer-move unproject.
+    // Declared on both targets — the view binds them; only the wasm block ever sets them.
+    let can_undo = RwSignal::new(false);
+    let can_redo = RwSignal::new(false);
+    let obj_count = RwSignal::new(0usize);
+    let sel_count = RwSignal::new(0usize);
+    let cursor = RwSignal::new(None::<(f64, f64)>);
+
+    // T-159.17 — mission id from the `:id` route param (`/missions/:id/edit`; `smoke` on the gate
+    // route). One-shot untracked read at mount (id is static per route mount). Fallback `draft`
+    // mirrors the React `missionId ?? 'draft'` persistence key. Hoisted out of the wasm block in
+    // T-159.21: the chrome's title binds it, and the view compiles on the native target too.
+    let mission_id = {
+        use leptos_router::hooks::use_params_map;
+        use_params_map()
+            .get_untracked()
+            .get("id")
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| "draft".to_string())
+    };
+
     // The engine is created + owned on the wasm target only (wgpu is wasm32-gated). Native builds
     // (cargo check) compile the shell without touching the GPU stack.
     #[cfg(target_arch = "wasm32")]
@@ -53,8 +77,6 @@ pub fn MissionEditorPage() -> impl IntoView {
         use std::sync::Arc;
         use wasm_bindgen::prelude::*;
         use wasm_bindgen::JsCast;
-        // T-159.17 — read the `:id` route param for the persistence key.
-        use leptos_router::hooks::use_params_map;
 
         const TERRAIN_W: f64 = 12_800.0;
         const TERRAIN_H: f64 = 12_800.0;
@@ -62,14 +84,8 @@ pub fn MissionEditorPage() -> impl IntoView {
         const INITIAL_ZOOM: f64 = -2.0;
         const WHEEL_ZOOM_PER_PX: f64 = 1.0 / 500.0;
 
-        // T-159.17 — mission id from the `:id` route param (`/missions/:id/edit`; `smoke` on the gate
-        // route). One-shot untracked read at mount (id is static per route mount). Fallback `draft`
-        // mirrors the React `missionId ?? 'draft'` persistence key.
-        let mission_id = use_params_map()
-            .get_untracked()
-            .get("id")
-            .map(|s| s.to_string())
-            .unwrap_or_else(|| "draft".to_string());
+        // T-159.21 — the id is read once in the page body (the chrome's title binds it too).
+        let mission_id = mission_id.clone();
 
         // T-159.20 — auth store for the Save Version POST. Read here in the reactive body (the
         // owner is live); `on_load` is a non-reactive closure, and `AuthStore` is `Copy` so it moves
@@ -111,7 +127,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // doc→engine bind (D5) happens below once the engine is `Some`.
             let doc = crate::mission_doc::new_seeded_doc();
             let doc_ver = Rc::new(Cell::new(1u32));
-            crate::mission_doc::register_mission_doc(doc.clone(), doc_ver);
+            crate::mission_doc::register_mission_doc(doc.clone(), doc_ver.clone());
 
             // T-159.20 — editor commands (Save/Export) context + the `__editorCommands` smoke bridge
             // (peer of `__missionDoc`). `set_ctx` shares the same `Rc` the persistence swap targets,
@@ -136,6 +152,27 @@ pub fn MissionEditorPage() -> impl IntoView {
                 engine.clone(),
                 container.clone(),
             );
+
+            // T-159.21 — undo/redo. The ctx carries every handle a post-change rebind needs (doc +
+            // engine + selection + doc_ver + id) plus the HUD signal mirrors, so the toolbar buttons,
+            // the keyboard shortcuts, and the `__editorHistory` bridge all drive ONE path. Registered
+            // here (after the selection exists, engine still `None` — the rebind reads it lazily).
+            // `refresh_hud` seeds the HUD from the freshly-seeded doc: OBJ = 8, SEL = 0, and
+            // can_undo = false (the seed runs under INIT origin, so it is not an undo step).
+            crate::mission_history::set_ctx(
+                doc.clone(),
+                engine.clone(),
+                selection.clone(),
+                doc_ver.clone(),
+                mission_id.clone(),
+                can_undo,
+                can_redo,
+                obj_count,
+                sel_count,
+            );
+            crate::mission_history::register_editor_history();
+            crate::mission_history::register_key_handler();
+            crate::mission_history::refresh_hud();
 
             // T-159.17 — persistence layer (additive; the SYNCHRONOUS seed above keeps the doc smoke
             // synchronous — `smoke_doc_editor` still sees 8 slots immediately on its own cold origin).
@@ -168,6 +205,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if ok {
                                 *doc.borrow_mut() = Some(fresh);
                                 loaded.set(true);
+                                // T-159.21 — the restored core is a DIFFERENT document: its slot
+                                // count may differ and its undo stack is empty (the replay ran under
+                                // INIT). Re-seed the HUD mirrors off it, or the toolbelt would show
+                                // the pre-restore counts. Not `after_local_edit`: nothing was edited,
+                                // and re-arming the persist writer here would echo the restore back.
+                                crate::mission_history::refresh_hud();
                             }
                         }
                     }
@@ -344,6 +387,32 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let selection = selection.clone();
                 let container = container.clone();
                 move |ev: web_sys::PointerEvent| {
+                    use crate::select_tool::{self as st, LeftGesture as LG};
+                    let rect = container.get_bounding_client_rect();
+                    let (px, py) = (
+                        ev.client_x() as f64 - rect.left(),
+                        ev.client_y() as f64 - rect.top(),
+                    );
+                    // T-159.21 — CUR read-out. FIRST: both the pan branch and the no-gesture case
+                    // below return early, and the cursor must keep tracking through both. Unprojects
+                    // against the same `frozen_camera` the pick uses, so CUR always names the world
+                    // point a click would hit. The borrow is scoped — the pan branch takes
+                    // `borrow_mut` two lines down, and an overlapping borrow would panic.
+                    // Un-throttled by design: React rAF-throttles because its cursor write
+                    // re-rendered the page, whereas this feeds two text nodes through Leptos's
+                    // fine-grained bindings. NaN (singular matrix) reads as off-map.
+                    let world = {
+                        let g = engine.borrow();
+                        g.as_ref().map(|e| {
+                            st::frozen_camera(rect.width(), rect.height(), e.target_x(), e.target_y(), e.zoom())
+                                .unproject_xy(px, py)
+                        })
+                    };
+                    cursor.set(
+                        world
+                            .filter(|c| c[0].is_finite() && c[1].is_finite())
+                            .map(|c| (c[0], c[1])),
+                    );
                     if let Some((lx, ly)) = pan_px.get() {
                         let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
                         if let Some(e) = engine.borrow_mut().as_mut() {
@@ -359,12 +428,6 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // via `engine.set_drag` (drag) / `engine.upload_marquee` (marquee rect).
                     let taken = left.borrow_mut().take();
                     let Some(g0) = taken else { return };
-                    use crate::select_tool::{self as st, LeftGesture as LG};
-                    let rect = container.get_bounding_client_rect();
-                    let (px, py) = (
-                        ev.client_x() as f64 - rect.left(),
-                        ev.client_y() as f64 - rect.top(),
-                    );
                     // Promote a Pending press once it clears the threshold; else keep the active drag.
                     let active = match g0 {
                         LG::Pending(p) => {
@@ -469,7 +532,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let left = left.clone();
                 let doc = doc.clone();
                 let selection = selection.clone();
-                let mission_id = mission_id.clone();
+                // T-159.21 — no `mission_id` capture: the persist tail now runs inside
+                // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
                     // Pan end (MMB/RMB).
                     if pan_px.get().is_some() {
@@ -506,6 +570,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                     e.set_selection(ids); // tint lane (no-op until an atlas uploads)
                                 }
+                                // T-159.21 — SEL readout only: a click changes the selection, not the
+                                // document (no rebind / persist / undo step).
+                                crate::mission_history::refresh_hud();
                             }
                         }
                         // T-159.19 M4/M5 — drag-move commit. Release capture; if it actually moved,
@@ -516,23 +583,21 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 let _ = container.release_pointer_capture(ev.pointer_id());
                             }
                             if dx != 0.0 || dy != 0.0 {
-                                // `move_entities(&self)` (mut txn) then `materialize()` (read txn) are
-                                // sequential — the mut txn drops before the read txn opens. `zs = 0`
-                                // is the DEM-not-ready byte-parity case (React `terrainZ` on flat map).
-                                let soa = {
+                                // `move_entities(&self)` opens a mut txn; the borrow is scoped so it
+                                // drops before `after_local_edit`'s read txn. `zs = 0` is the
+                                // DEM-not-ready byte-parity case (React `terrainZ` on flat map).
+                                {
                                     let guard = doc.borrow();
                                     let Some(core) = guard.as_ref() else {
                                         return;
                                     };
                                     core.move_entities(ids.clone(), dx, dy, vec![0.0; ids.len()]);
-                                    core.materialize()
-                                };
-                                if let Some(e) = engine.borrow_mut().as_mut() {
-                                    e.set_drag(Vec::new(), 0.0, 0.0); // clear the drag overlay
-                                    e.slots_bind_soa(soa.ids.clone(), &soa.xy);
-                                    e.set_selection(ids.clone());
                                 }
-                                crate::yrs_persist::schedule_edit_persist(doc.clone(), &mission_id);
+                                // T-159.21 — the rebind/persist tail moved to `mission_history` so
+                                // undo/redo run the exact same sequence. Equivalent to the inline
+                                // T-159.19 code it replaces: it rebinds from the selection, which at
+                                // a Move commit IS `ids` (see `after_doc_change`'s docs).
+                                crate::mission_history::after_local_edit();
                             } else if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.set_drag(Vec::new(), 0.0, 0.0); // no move → just clear the overlay
                             }
@@ -569,6 +634,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 if let Some(e) = engine.borrow_mut().as_mut() {
                                     e.set_selection(ids);
                                 }
+                                // T-159.21 — SEL readout only (selection change, not a doc edit).
+                                crate::mission_history::refresh_hud();
                             }
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.upload_marquee(0.0, 0.0, 0.0, 0.0, false); // hide
@@ -580,6 +647,12 @@ pub fn MissionEditorPage() -> impl IntoView {
             let oncontextmenu = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(
                 move |ev: web_sys::MouseEvent| ev.prevent_default(),
             );
+            // T-159.21 — pointer off the map ⇒ the CUR read-out shows the em-dash cells (React's
+            // `onPointerLeave → null`). Fires when the pointer enters a chrome panel too, which is
+            // correct: those px are not map coordinates.
+            let onpointerleave = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
+                move |_ev: web_sys::PointerEvent| cursor.set(None)
+            });
             // T-159.18/.19 — pointercancel ends BOTH a pan and any LMB gesture, but (unlike pointerup)
             // is NOT a commit: it drops the gesture without picking / moving / selecting, and clears any
             // live preview (drag overlay / marquee rect) + releases capture.
@@ -637,6 +710,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                 "contextmenu",
                 oncontextmenu.as_ref().unchecked_ref(),
             );
+            let _ = container.add_event_listener_with_callback(
+                "pointerleave",
+                onpointerleave.as_ref().unchecked_ref(),
+            );
 
             let onresize = Closure::<dyn FnMut()>::new({
                 let engine = engine.clone();
@@ -669,6 +746,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             onpointerup.forget();
             onpointercancel.forget();
             oncontextmenu.forget();
+            onpointerleave.forget();
             on_cleanup(move || disposed.store(true, Ordering::Relaxed));
         });
     }
@@ -678,40 +756,39 @@ pub fn MissionEditorPage() -> impl IntoView {
             node_ref=container_ref
             class="relative h-screen w-screen overflow-hidden bg-background"
         >
-            <canvas node_ref=canvas_ref class="absolute inset-0 block h-full w-full"></canvas>
-            // T-159.20 — minimal Save/Export strip (spec E4: not the full TopCommandStrip). Top-left,
-            // clear of the canvas-centre region the pan/select/marquee smokes drive.
-            <div class="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low/80 px-3 py-2 backdrop-blur-xl">
-                <input
-                    type="text"
-                    aria-label="Version"
-                    class="w-20 rounded border border-outline-variant/40 bg-surface-container px-2 py-1 font-mono text-xs text-on-surface"
-                    prop:value=move || save_semver.get()
-                    on:input=move |ev| save_semver.set(event_target_value(&ev))
-                />
-                <button
-                    type="button"
-                    class="rounded bg-primary px-3 py-1 text-xs font-medium text-on-primary"
-                    on:click=move |_| {
-                        #[cfg(target_arch = "wasm32")]
-                        crate::mission_commands::save_now(save_semver.get_untracked(), save_status);
-                    }
-                >
-                    "Save Version"
-                </button>
-                <button
-                    type="button"
-                    class="rounded border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface"
-                    on:click=move |_| {
-                        #[cfg(target_arch = "wasm32")]
-                        crate::mission_commands::export_now(&save_semver.get_untracked());
-                    }
-                >
-                    "Export JSON"
-                </button>
-                <span class="min-w-24 font-mono text-xs text-on-surface-variant">
-                    {move || save_status.get()}
-                </span>
+            <canvas node_ref=canvas_ref class="absolute inset-0 z-0 block h-full w-full"></canvas>
+            // T-159.21 — Eden chrome host (React MissionCreatorPage:272). The container class is
+            // deliberately UNCHANGED and the canvas stays full-bleed underneath: every `select_tool`
+            // probe derives its camera from this container's bounding rect, so shrinking it would
+            // silently invalidate the pan/select/marquee/move gates.
+            //
+            // `pointer-events-none` hands the whole rect to the map; each panel re-enables
+            // `pointer-events-auto` for itself. The panels are DESCENDANTS of the gesture container,
+            // so without `stop_propagation` a chrome click would bubble into `onpointerdown` and open
+            // an LMB map gesture — clicking Undo would also deselect. Its corollary is the
+            // chrome-free inset in `select_tool::farthest_empty_px`.
+            <div
+                class="pointer-events-none absolute inset-0 z-10"
+                on:pointerdown=|ev| ev.stop_propagation()
+            >
+                <div class="absolute inset-x-0 top-0 h-12">
+                    <crate::eden_chrome::TopCommandStrip
+                        title=mission_id.clone()
+                        can_undo
+                        can_redo
+                        save_semver
+                        save_status
+                    />
+                </div>
+                <div class="absolute bottom-0 left-0 top-12 w-64">
+                    <crate::eden_chrome::DockLeft />
+                </div>
+                <div class="absolute bottom-0 right-0 top-12 w-80">
+                    <crate::eden_chrome::DockRight />
+                </div>
+                <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
+                    <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count />
+                </div>
             </div>
         </div>
     }
