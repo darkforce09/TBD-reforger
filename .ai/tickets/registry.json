@@ -4673,7 +4673,7 @@
       "id": "T-159",
       "order": 1570,
       "title": "Leptos UI rewrite (React SPA \u2192 Rust)",
-      "summary": "Worktree TBD-T-159 tip f02fed5a. Through T-159.21 chrome+undo shipped. ACTIVE T-159.22 outliner+palette. Hub: t159_leptos_ui_program.md.",
+      "summary": "Worktree TBD-T-159 tip 0154b4e9. Through T-159.22 outliner+palette shipped. ACTIVE T-159.22.1 undo granularity. Hub: t159_leptos_ui_program.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4707,9 +4707,11 @@
         "T-159.19",
         "T-159.20",
         "T-159.21",
-        "T-159.22"
+        "T-159.22",
+        "T-159.22.1",
+        "T-159.23"
       ],
-      "active_slice": "T-159.22",
+      "active_slice": "T-159.22.1",
       "slice_plan": {
         "T-159.0": {
           "targets": [
@@ -4851,9 +4853,29 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "0154b4e9",
           "spec": "docs/platform/t159_22_outliner_asset_palette.md",
-          "notes": "Editor Layers outliner + Asset palette DnD; wheel-over-dock; CUR Class R. Handoff: .ai/artifacts/t159_22_claude_code_handoff.md"
+          "notes": "Outliner+palette live; wheel+CUR gates. Found undo-merge defect (pre-existing). Verify: .ai/artifacts/t159_22_verify_log.md"
+        },
+        "T-159.22.1": {
+          "targets": [
+            "root",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "spec": "docs/platform/t159_22_1_undo_granularity.md",
+          "notes": "Fix consecutive LOCAL undo merge in map-engine-core; step-boundary unit+smoke. Handoff: .ai/artifacts/t159_22_1_claude_code_handoff.md"
+        },
+        "T-159.23": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t159_23_attributes_modal.md",
+          "notes": "Attributes modal after T-159.22.1. ORBAT tree = T-159.24."
         }
       }
     },
