@@ -30,6 +30,15 @@ pub fn format_local_datetime(iso: &str) -> String {
     )
 }
 
+/// date-fns `format(new Date(iso), 'MMM d')` — e.g. "Jun 12"; "—" when invalid (T-159.25).
+pub fn format_short_date(iso: &str) -> String {
+    let d = parse(iso);
+    if d.get_time().is_nan() {
+        return "—".into();
+    }
+    format!("{} {}", MO[d.get_month() as usize], d.get_date())
+}
+
 /// date-fns 'zzz' offset fallback → "GMT±H[:MM]". `getTimezoneOffset` is minutes *behind* UTC
 /// (negative when ahead), so a +2h zone reports -120 → "GMT+2".
 fn tz_label(offset_min: f64) -> String {

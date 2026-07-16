@@ -52,6 +52,18 @@ pub struct LinkStatus {
     pub pending_code: Option<bool>,
 }
 
+/// One approvals-queue row — mirrors `types/api` `ApprovalRow` (`GET /approvals`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ApprovalRow {
+    pub mission_id: String,
+    pub title: String,
+    pub terrain: String,
+    pub author_id: String,
+    pub author_name: String,
+    pub submitted_at: String,
+}
+
 /// One mission library card — mirrors `types/api` `MissionCard` (`GET /missions?scope=…`).
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
