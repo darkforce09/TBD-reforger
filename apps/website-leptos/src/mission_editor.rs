@@ -106,12 +106,13 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-159.18 — LMB select foundation. Selection is app-side state (NOT the Y.Doc — it never
             // lived in the document, matching React's Zustand), held in the editor's leaked-handle
             // idiom so the `window.__editorSelection` smoke bridge (peer of __missionDoc) never reads
-            // reactive-owner state a route change could dispose. `lmb` carries the pending-left gesture
-            // (frozen ortho camera + press px) between pointerdown and pointerup. Registered
+            // reactive-owner state a route change could dispose. `left` carries the in-flight LMB
+            // gesture (T-159.19 `LeftGesture`: Pending → Move | Marquee — a frozen ortho camera copied
+            // at the press drives every unproject) between pointerdown/move/up. Registered
             // synchronously (engine still `None` here — `probe()` reads it lazily; `pick_selfcheck()`
             // needs only the synchronously-seeded doc).
             let selection: crate::select_tool::SelectionHandle = Rc::new(RefCell::new(Vec::new()));
-            let lmb: Rc<RefCell<Option<crate::select_tool::PendingLeft>>> =
+            let left: Rc<RefCell<Option<crate::select_tool::LeftGesture>>> =
                 Rc::new(RefCell::new(None));
             crate::select_tool::register_editor_selection(
                 selection.clone(),
@@ -285,7 +286,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let pan_px = pan_px.clone();
                 let container = container.clone();
                 let engine = engine.clone();
-                let lmb = lmb.clone();
+                let left = left.clone();
                 move |ev: web_sys::PointerEvent| {
                     // Middle (1) or right (2) button starts a pan.
                     if ev.button() == 1 || ev.button() == 2 {
@@ -293,11 +294,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
                     } else if ev.button() == 0 {
-                        // T-159.18 — LMB pending-left: freeze the ortho camera at press (X-05: the live
-                        // engine unproject is deleted; a live unproject would feedback-loop mid-pan). No
-                        // pointer capture yet — a sub-threshold release is a click; a past-threshold drag
-                        // (move/marquee) is deferred to a later slice. `engine.borrow()` is safe: JS is
-                        // single-threaded, so this never reenters the rAF loop's `borrow_mut`.
+                        // T-159.18/.19 — LMB pending-left: freeze the ortho camera at press (X-05: the
+                        // live engine unproject is deleted; a live unproject would feedback-loop
+                        // mid-pan). No pointer capture yet — a sub-threshold release is a click; the
+                        // first past-threshold `pointermove` (T-159.19) promotes to Move|Marquee and
+                        // captures then. `engine.borrow()` is safe: JS is single-threaded, so this never
+                        // reenters the rAF loop's `borrow_mut`.
                         if let Some(e) = engine.borrow().as_ref() {
                             let rect = container.get_bounding_client_rect();
                             let cam = crate::select_tool::frozen_camera(
@@ -307,11 +309,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 e.target_y(),
                                 e.zoom(),
                             );
-                            *lmb.borrow_mut() = Some(crate::select_tool::PendingLeft {
-                                start_x: ev.client_x() as f64 - rect.left(),
-                                start_y: ev.client_y() as f64 - rect.top(),
-                                cam,
-                            });
+                            *left.borrow_mut() = Some(crate::select_tool::LeftGesture::Pending(
+                                crate::select_tool::PendingLeft {
+                                    start_x: ev.client_x() as f64 - rect.left(),
+                                    start_y: ev.client_y() as f64 - rect.top(),
+                                    cam,
+                                },
+                            ));
                         }
                     }
                 }
@@ -319,6 +323,10 @@ pub fn MissionEditorPage() -> impl IntoView {
             let onpointermove = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let pan_px = pan_px.clone();
                 let engine = engine.clone();
+                let left = left.clone();
+                let doc = doc.clone();
+                let selection = selection.clone();
+                let container = container.clone();
                 move |ev: web_sys::PointerEvent| {
                     if let Some((lx, ly)) = pan_px.get() {
                         let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
@@ -326,16 +334,126 @@ pub fn MissionEditorPage() -> impl IntoView {
                             e.pan(cx - lx, cy - ly);
                         }
                         pan_px.set(Some((cx, cy)));
+                        return;
                     }
+                    // T-159.19 — LMB drag gesture. Own the gesture across the update (take → compute →
+                    // put back) so a Pending→Move/Marquee transition never aliases a `&mut`, and so no
+                    // `left` borrow is held across the inner `left.borrow_mut()` put-back (the `if let`
+                    // temporary-lifetime footgun). Frozen cam (M2/X-05 — no live unproject). Live preview
+                    // via `engine.set_drag` (drag) / `engine.upload_marquee` (marquee rect).
+                    let taken = left.borrow_mut().take();
+                    let Some(g0) = taken else { return };
+                    use crate::select_tool::{self as st, LeftGesture as LG};
+                    let rect = container.get_bounding_client_rect();
+                    let (px, py) = (
+                        ev.client_x() as f64 - rect.left(),
+                        ev.client_y() as f64 - rect.top(),
+                    );
+                    // Promote a Pending press once it clears the threshold; else keep the active drag.
+                    let active = match g0 {
+                        LG::Pending(p) => {
+                            let moved = ((px - p.start_x).powi(2) + (py - p.start_y).powi(2)).sqrt();
+                            if moved < st::DRAG_THRESHOLD_PX {
+                                *left.borrow_mut() = Some(LG::Pending(p));
+                                return;
+                            }
+                            // Real drag now: capture so it survives leaving the canvas (React :200).
+                            let _ = container.set_pointer_capture(ev.pointer_id());
+                            let sw = p.cam.unproject_xy(p.start_x, p.start_y);
+                            let hit = doc.borrow().as_ref().and_then(|c| {
+                                st::pick(&p.cam, &c.materialize(), p.start_x, p.start_y)
+                            });
+                            match hit {
+                                Some(id) => {
+                                    // Drag an already-selected slot → move the whole selection; else
+                                    // replace the selection with the dragged slot (React :204).
+                                    let cur = selection.borrow().clone();
+                                    let ids = st::compute_move_ids(&id, &cur);
+                                    if !cur.iter().any(|s| *s == id) {
+                                        *selection.borrow_mut() = ids.clone();
+                                        if let Some(e) = engine.borrow_mut().as_mut() {
+                                            e.set_selection(ids.clone());
+                                        }
+                                    }
+                                    LG::Move {
+                                        ids,
+                                        start_wx: sw[0],
+                                        start_wy: sw[1],
+                                        cam: p.cam,
+                                        dx: 0.0,
+                                        dy: 0.0,
+                                    }
+                                }
+                                None => LG::Marquee {
+                                    start_x: p.start_x,
+                                    start_y: p.start_y,
+                                    start_wx: sw[0],
+                                    start_wy: sw[1],
+                                    cam: p.cam,
+                                },
+                            }
+                        }
+                        other => other,
+                    };
+                    // Drive the live preview for the (possibly just-promoted) state, coalescing the
+                    // world delta / marquee rect into `active` for the pointerup commit.
+                    let next = match active {
+                        LG::Move {
+                            ids,
+                            start_wx,
+                            start_wy,
+                            cam,
+                            ..
+                        } => {
+                            let (dx, dy) = st::drag_delta(&cam, start_wx, start_wy, px, py);
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.set_drag(ids.clone(), dx as f32, dy as f32);
+                            }
+                            LG::Move {
+                                ids,
+                                start_wx,
+                                start_wy,
+                                cam,
+                                dx,
+                                dy,
+                            }
+                        }
+                        LG::Marquee {
+                            start_x,
+                            start_y,
+                            start_wx,
+                            start_wy,
+                            cam,
+                        } => {
+                            let end = cam.unproject_xy(px, py);
+                            if end[0].is_finite() && end[1].is_finite() {
+                                let (min_x, max_x) = (start_wx.min(end[0]), start_wx.max(end[0]));
+                                let (min_y, max_y) = (start_wy.min(end[1]), start_wy.max(end[1]));
+                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                    e.upload_marquee(min_x, min_y, max_x, max_y, true);
+                                }
+                            }
+                            LG::Marquee {
+                                start_x,
+                                start_y,
+                                start_wx,
+                                start_wy,
+                                cam,
+                            }
+                        }
+                        LG::Pending(p) => LG::Pending(p),
+                    };
+                    *left.borrow_mut() = Some(next);
                 }
             });
             let onpointerup = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let pan_px = pan_px.clone();
                 let container = container.clone();
                 let engine = engine.clone();
-                let lmb = lmb.clone();
+                let left = left.clone();
                 let doc = doc.clone();
                 let selection = selection.clone();
+                let mission_id = mission_id.clone();
                 move |ev: web_sys::PointerEvent| {
                     // Pan end (MMB/RMB).
                     if pan_px.get().is_some() {
@@ -344,34 +462,100 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                     }
-                    // T-159.18 — LMB click (pending-left). A release always ends the gesture; a
-                    // sub-threshold (< 4 px) release is a click → pick the nearest slot against the
-                    // FROZEN press camera (X-05) and update the selection. Past-threshold = a drag
-                    // (deferred: no selection change this slice).
-                    if let Some(p) = lmb.borrow_mut().take() {
-                        let rect = container.get_bounding_client_rect();
-                        let up_x = ev.client_x() as f64 - rect.left();
-                        let up_y = ev.client_y() as f64 - rect.top();
-                        let moved = ((up_x - p.start_x).powi(2) + (up_y - p.start_y).powi(2)).sqrt();
-                        if moved < crate::select_tool::DRAG_THRESHOLD_PX {
-                            let additive = ev.ctrl_key() || ev.meta_key();
-                            // Pick against the frozen camera + the current doc SoA (`doc.borrow()` is
-                            // released before the selection/engine borrows below).
-                            let hit = doc.borrow().as_ref().and_then(|c| {
-                                crate::select_tool::pick(
-                                    &p.cam,
-                                    &c.materialize(),
-                                    p.start_x,
-                                    p.start_y,
-                                )
-                            });
-                            {
-                                let mut sel = selection.borrow_mut();
-                                crate::select_tool::apply_click(&mut sel, hit, additive);
+                    // LMB gesture end. `take()` into a `let` first so the RefMut drops before the
+                    // per-branch re-borrows below (the `if let` temporary-lifetime footgun). If a pan
+                    // just ended, `left` is None ⇒ this returns.
+                    let taken = left.borrow_mut().take();
+                    let Some(g) = taken else { return };
+                    use crate::select_tool::{self as st, LeftGesture as LG};
+                    let rect = container.get_bounding_client_rect();
+                    let up_x = ev.client_x() as f64 - rect.left();
+                    let up_y = ev.client_y() as f64 - rect.top();
+                    match g {
+                        // T-159.18/.53 — sub-threshold press = a click: pick against the FROZEN press
+                        // camera (X-05) and toggle/replace/clear the selection.
+                        LG::Pending(p) => {
+                            let moved =
+                                ((up_x - p.start_x).powi(2) + (up_y - p.start_y).powi(2)).sqrt();
+                            if moved < st::DRAG_THRESHOLD_PX {
+                                let additive = ev.ctrl_key() || ev.meta_key();
+                                let hit = doc.borrow().as_ref().and_then(|c| {
+                                    st::pick(&p.cam, &c.materialize(), p.start_x, p.start_y)
+                                });
+                                {
+                                    let mut sel = selection.borrow_mut();
+                                    st::apply_click(&mut sel, hit, additive);
+                                }
+                                let ids = selection.borrow().clone();
+                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                    e.set_selection(ids); // tint lane (no-op until an atlas uploads)
+                                }
                             }
-                            let ids = selection.borrow().clone();
+                        }
+                        // T-159.19 M4/M5 — drag-move commit. Release capture; if it actually moved,
+                        // commit ONE `move_entities` txn (one undo step), re-bind the moved glyphs, keep
+                        // the moved slots selected, and schedule the first edit-driven persist.
+                        LG::Move { ids, dx, dy, .. } => {
+                            if container.has_pointer_capture(ev.pointer_id()) {
+                                let _ = container.release_pointer_capture(ev.pointer_id());
+                            }
+                            if dx != 0.0 || dy != 0.0 {
+                                // `move_entities(&self)` (mut txn) then `materialize()` (read txn) are
+                                // sequential — the mut txn drops before the read txn opens. `zs = 0`
+                                // is the DEM-not-ready byte-parity case (React `terrainZ` on flat map).
+                                let soa = {
+                                    let guard = doc.borrow();
+                                    let Some(core) = guard.as_ref() else {
+                                        return;
+                                    };
+                                    core.move_entities(ids.clone(), dx, dy, vec![0.0; ids.len()]);
+                                    core.materialize()
+                                };
+                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                    e.set_drag(Vec::new(), 0.0, 0.0); // clear the drag overlay
+                                    e.slots_bind_soa(soa.ids.clone(), &soa.xy);
+                                    e.set_selection(ids.clone());
+                                }
+                                crate::yrs_persist::schedule_edit_persist(doc.clone(), &mission_id);
+                            } else if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.set_drag(Vec::new(), 0.0, 0.0); // no move → just clear the overlay
+                            }
+                        }
+                        // T-159.19 M3 — marquee commit. Release capture; a ≥1×1 px box replaces the
+                        // selection with the enclosed slots (`pick_rect` over the frozen-cam world AABB);
+                        // hide the rect.
+                        LG::Marquee {
+                            start_x,
+                            start_y,
+                            start_wx,
+                            start_wy,
+                            cam,
+                        } => {
+                            if container.has_pointer_capture(ev.pointer_id()) {
+                                let _ = container.release_pointer_capture(ev.pointer_id());
+                            }
+                            if (up_x - start_x).abs() >= 1.0 && (up_y - start_y).abs() >= 1.0 {
+                                let ids = doc
+                                    .borrow()
+                                    .as_ref()
+                                    .map(|c| {
+                                        st::marquee_ids(
+                                            &cam,
+                                            &c.materialize(),
+                                            start_wx,
+                                            start_wy,
+                                            up_x,
+                                            up_y,
+                                        )
+                                    })
+                                    .unwrap_or_default();
+                                *selection.borrow_mut() = ids.clone();
+                                if let Some(e) = engine.borrow_mut().as_mut() {
+                                    e.set_selection(ids);
+                                }
+                            }
                             if let Some(e) = engine.borrow_mut().as_mut() {
-                                e.set_selection(ids); // GPU tint lane (no-op until an atlas uploads)
+                                e.upload_marquee(0.0, 0.0, 0.0, 0.0, false); // hide
                             }
                         }
                     }
@@ -380,13 +564,14 @@ pub fn MissionEditorPage() -> impl IntoView {
             let oncontextmenu = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(
                 move |ev: web_sys::MouseEvent| ev.prevent_default(),
             );
-            // T-159.18 — pointercancel ends BOTH a pan and a pending LMB, but (unlike pointerup) is
-            // NOT a click: it clears the pending gesture without picking. (Previously shared with
-            // onpointerup, which is correct for pan-only but would mis-fire a click for LMB.)
+            // T-159.18/.19 — pointercancel ends BOTH a pan and any LMB gesture, but (unlike pointerup)
+            // is NOT a commit: it drops the gesture without picking / moving / selecting, and clears any
+            // live preview (drag overlay / marquee rect) + releases capture.
             let onpointercancel = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
                 let pan_px = pan_px.clone();
                 let container = container.clone();
-                let lmb = lmb.clone();
+                let left = left.clone();
+                let engine = engine.clone();
                 move |ev: web_sys::PointerEvent| {
                     if pan_px.get().is_some() {
                         pan_px.set(None);
@@ -394,7 +579,27 @@ pub fn MissionEditorPage() -> impl IntoView {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
                     }
-                    lmb.borrow_mut().take();
+                    use crate::select_tool::LeftGesture as LG;
+                    let taken = left.borrow_mut().take();
+                    match taken {
+                        Some(LG::Move { .. }) => {
+                            if container.has_pointer_capture(ev.pointer_id()) {
+                                let _ = container.release_pointer_capture(ev.pointer_id());
+                            }
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.set_drag(Vec::new(), 0.0, 0.0);
+                            }
+                        }
+                        Some(LG::Marquee { .. }) => {
+                            if container.has_pointer_capture(ev.pointer_id()) {
+                                let _ = container.release_pointer_capture(ev.pointer_id());
+                            }
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.upload_marquee(0.0, 0.0, 0.0, 0.0, false);
+                            }
+                        }
+                        _ => {}
+                    }
                 }
             });
             let _ = container.add_event_listener_with_callback(

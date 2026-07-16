@@ -11,14 +11,15 @@
 //!      the React guards: `getBytes` read at write time, `isCancelled()` checked before reading,
 //!      empty-blob skip (never clobber a good record), one write at a time per mission.
 //!   3. `register_mission_persist` — the read-only `window.__missionPersist` smoke bridge
-//!      (ready / loaded_from_storage / warm / persist_roundtrip_ok / flush / clear).
+//!      (ready / loaded_from_storage / warm / slots_digest / flush / clear / edit_persist_count).
 //!
-//! NOT ported (T-159.17 non-goals): server hydrate/conflict GET, the mutator/autosave subscription
-//! (the core has no change hook — the writer is driven by the post-seed/post-load encode), v1/v2 IDB
-//! migration, Save-Version POST. The whole module is `wasm32`-gated in `main.rs`.
+//! T-159.19 adds `schedule_edit_persist` — the first **edit-driven** re-arm of the debounced writer,
+//! called explicitly from the editor's `move_entities` commit (there is still no automatic core
+//! change-hook/subscription; the mutator calls it). NOT ported: server hydrate/conflict GET, v1/v2
+//! IDB migration, Save-Version POST. The whole module is `wasm32`-gated in `main.rs`.
 #![allow(clippy::cast_precision_loss)] // usize slot count → f64 for the JS bridge; tiny.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
 use std::rc::Rc;
 
@@ -114,6 +115,12 @@ thread_local! {
     // Per-mission async lock so writes never interleave (React's promise chain). Uncontended in
     // .17 (no mutators) but required by the contract + correct once mutators land.
     static LOCKS: RefCell<HashMap<String, Rc<futures::lock::Mutex<()>>>> = RefCell::new(HashMap::new());
+    // T-159.19 — how many times a mutator re-armed the debounce via `schedule_edit_persist`. Starts
+    // 0 at boot (the boot persist calls `save_state_debounced` directly, NOT this), so the
+    // `__missionPersist.edit_persist_count()` gate proves the FIRST edit-driven write is scheduled
+    // (a late `flush()` of the boot debounce would encode the moved doc anyway — the counter, not
+    // the blob, is the sound signal that the edit itself re-armed the writer).
+    static EDIT_PERSIST_COUNT: Cell<u32> = const { Cell::new(0) };
 }
 
 fn lock_for(id: &str) -> Rc<futures::lock::Mutex<()>> {
@@ -300,6 +307,35 @@ fn slots_digest(core: &MissionDocCore) -> String {
     rows.join("\n")
 }
 
+/// T-159.19 — schedule an **edit-driven** persist after a mutator (the first real doc change; the
+/// S8 hook .17/.18 deferred). Re-arms the SAME debounced + serialized writer the boot seam uses
+/// (`mission_editor.rs` initial persist): `get_bytes` reads `encode_state()` at write time, the
+/// write is cancelled once the doc `Option` clears (route leave). A burst of edits within
+/// [`debounce_ms`] coalesces into one IDB write. Bumps [`EDIT_PERSIST_COUNT`] for the gate.
+pub fn schedule_edit_persist(doc: DocHandle, id: &str) {
+    EDIT_PERSIST_COUNT.with(|c| c.set(c.get().saturating_add(1)));
+    let get = doc.clone();
+    let cancel = doc;
+    save_state_debounced(
+        id,
+        Box::new(move || {
+            get.borrow()
+                .as_ref()
+                .map(MissionDocCore::encode_state)
+                .unwrap_or_default()
+        }),
+        Box::new(move || cancel.borrow().is_none()),
+        debounce_ms(),
+    );
+}
+
+/// The number of edit-driven persists scheduled this page lifetime (T-159.19). Exposed on the
+/// `__missionPersist` bridge so the gate can prove a move re-armed the writer.
+#[must_use]
+pub fn edit_persist_count() -> u32 {
+    EDIT_PERSIST_COUNT.with(Cell::get)
+}
+
 /// Install `window.__missionPersist` — the read-only Class R gate bridge (mirrors
 /// `register_mission_doc`: a `js_sys::Object` of `.forget()`'d closures). `ready`/`loaded` are shared
 /// `Cell`s the boot task flips; the smoke waits on `ready()` (and `loaded_from_storage()` for the
@@ -362,6 +398,9 @@ pub fn register_mission_persist(
             .into()
         }) as Box<dyn FnMut() -> JsValue>)
     };
+    let edit_count_fn = Closure::wrap(Box::new(move || -> JsValue {
+        JsValue::from_f64(f64::from(edit_persist_count()))
+    }) as Box<dyn FnMut() -> JsValue>);
 
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("ready"), ready_fn.as_ref());
     let _ = js_sys::Reflect::set(
@@ -377,6 +416,11 @@ pub fn register_mission_persist(
     );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("flush"), flush_fn.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("clear"), clear_fn.as_ref());
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("edit_persist_count"),
+        edit_count_fn.as_ref(),
+    );
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__missionPersist"), &obj);
     }
@@ -387,6 +431,7 @@ pub fn register_mission_persist(
     digest_fn.forget();
     flush_fn.forget();
     clear_fn.forget();
+    edit_count_fn.forget();
 }
 
 /// The debounce default, exposed so the boot seam arms the initial persist with the contract delay.

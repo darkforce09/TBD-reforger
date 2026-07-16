@@ -53,6 +53,32 @@ pub struct PendingLeft {
     pub cam: OrthoCamera,
 }
 
+/// T-159.19 — the in-flight LMB gesture, mirroring the React `useSelectTool` union
+/// (`pending-left` → `move` | `marquee`). A `pointerdown` opens `Pending`; the first `pointermove`
+/// past [`DRAG_THRESHOLD_PX`] promotes it to `Move` (a pick hit under the press) or `Marquee` (an
+/// empty press); a `pointerup` commits. Every world unproject in the gesture uses the **frozen**
+/// `cam` copied at the press (M2/X-05 — the live `RenderEngine::unproject_xy` is deleted; a live
+/// one would feedback-loop as pan/zoom mutate mid-gesture). `Move.dx/dy` is the last coalesced
+/// world delta (fed to `engine.set_drag` for the GPU preview + `move_entities` on release).
+pub enum LeftGesture {
+    Pending(PendingLeft),
+    Move {
+        ids: Vec<String>,
+        start_wx: f64,
+        start_wy: f64,
+        cam: OrthoCamera,
+        dx: f64,
+        dy: f64,
+    },
+    Marquee {
+        start_x: f64,
+        start_y: f64,
+        start_wx: f64,
+        start_wy: f64,
+        cam: OrthoCamera,
+    },
+}
+
 /// Build a frozen ortho-camera snapshot from the engine's live view + the container CSS size (S2 —
 /// the "frozen viewport"): copied once at pointer-down so the whole gesture unprojects against a
 /// stable camera. Mirrors the React `viewportFromViewState` adapter (`OrthoCameraJs` there;
@@ -141,6 +167,97 @@ pub fn apply_click(cur: &mut Vec<String>, hit: Option<String>, additive: bool) {
         (None, false) => cur.clear(),
         (None, true) => {}
     }
+}
+
+// ── T-159.19: over-threshold gesture math (pure; verified in-browser via the bridge) ─────────────
+
+/// Which slots a drag-move commits over (React `useSelectTool.ts:204`): dragging an
+/// **already-selected** slot moves the whole selection; dragging an **unselected** slot moves just
+/// it (and the caller replaces the selection with `[hit]`).
+#[must_use]
+pub fn compute_move_ids(hit: &str, selection: &[String]) -> Vec<String> {
+    if selection.iter().any(|s| s == hit) {
+        selection.to_vec()
+    } else {
+        vec![hit.to_string()]
+    }
+}
+
+/// World-meter delta from the frozen-cam unproject of the press corner `(start_wx, start_wy)` to the
+/// live pixel `(px, py)` — the drag-move offset (React `useSelectTool.ts:226` `unproject(px) −
+/// startWorld`). A singular pixel matrix (NaN unproject) yields `(0.0, 0.0)` (no move).
+#[must_use]
+pub fn drag_delta(cam: &OrthoCamera, start_wx: f64, start_wy: f64, px: f64, py: f64) -> (f64, f64) {
+    let c = cam.unproject_xy(px, py);
+    if !c[0].is_finite() || !c[1].is_finite() {
+        return (0.0, 0.0);
+    }
+    (c[0] - start_wx, c[1] - start_wy)
+}
+
+/// Slot ids inside the marquee box, from the two frozen-cam screen corners. The press corner is
+/// already unprojected to `(start_wx, start_wy)`; this unprojects the release px `(end_px, end_py)`,
+/// forms the **ordered** world AABB (the drag can go any direction — `PointIndex::pick_rect` returns
+/// empty on `max < min`), then maps the returned handles to `soa.ids`. Mirrors React
+/// `slotSpatialIndex.pickRect(startWorld, endWorld)` (`useSelectTool.ts:293`). A singular pixel
+/// matrix (NaN unproject on either corner) yields no selection.
+#[must_use]
+pub fn marquee_ids(
+    cam: &OrthoCamera,
+    soa: &SlotSoa,
+    start_wx: f64,
+    start_wy: f64,
+    end_px: f64,
+    end_py: f64,
+) -> Vec<String> {
+    if soa.ids.is_empty() {
+        return Vec::new();
+    }
+    let e = cam.unproject_xy(end_px, end_py);
+    let (ewx, ewy) = (e[0], e[1]);
+    if !ewx.is_finite() || !ewy.is_finite() || !start_wx.is_finite() || !start_wy.is_finite() {
+        return Vec::new();
+    }
+    let (min_x, max_x) = (start_wx.min(ewx), start_wx.max(ewx));
+    let (min_y, max_y) = (start_wy.min(ewy), start_wy.max(ewy));
+    let idx = PointIndex::build(soa.xs.clone(), soa.ys.clone(), GRID_CELL_M);
+    idx.pick_rect(min_x, min_y, max_x, max_y)
+        .into_iter()
+        .map(|h| soa.ids[h as usize].clone())
+        .collect()
+}
+
+/// Class-S self-check for the marquee (S3 parity, peer of [`pick_selfcheck`]): `PointIndex::pick_rect`
+/// must return the SAME id SET as a brute-force box scan over the same seeded SoA, for a battery of
+/// world boxes (each seed ± a spread of half-extents). Set-equality (sorted handle compare), so
+/// grid vs row order is not a false negative. Runs in-browser over the real seeded SoA.
+#[must_use]
+pub fn marquee_selfcheck(soa: &SlotSoa) -> bool {
+    let n = soa.ids.len();
+    if n == 0 {
+        return true;
+    }
+    let idx = PointIndex::build(soa.xs.clone(), soa.ys.clone(), GRID_CELL_M);
+    let halfs = [0.0_f64, 5.0, 64.0, 512.0];
+    for i in 0..n {
+        let (sx, sy) = (f64::from(soa.xs[i]), f64::from(soa.ys[i]));
+        for &h in &halfs {
+            let (min_x, min_y, max_x, max_y) = (sx - h, sy - h, sx + h, sy + h);
+            let mut via_index = idx.pick_rect(min_x, min_y, max_x, max_y);
+            let mut via_brute: Vec<u32> = (0..n as u32)
+                .filter(|&j| {
+                    let (x, y) = (f64::from(soa.xs[j as usize]), f64::from(soa.ys[j as usize]));
+                    x >= min_x && x <= max_x && y >= min_y && y <= max_y
+                })
+                .collect();
+            via_index.sort_unstable();
+            via_brute.sort_unstable();
+            if via_index != via_brute {
+                return false;
+            }
+        }
+    }
+    true
 }
 
 /// Class-S self-check (S3): the `PointIndex` box-nearest used by [`pick`] must agree with a
@@ -291,15 +408,95 @@ fn probe_json(doc: &DocHandle, engine: &EngineHandle, container: &web_sys::HtmlD
     s
 }
 
+/// Compute the `probe_move()` payload (T-159.19): centre seed 0 in the engine view (a **test hook**
+/// — `set_view`, zoom preserved), read back the (possibly clamped) view so `project` is exact, then
+/// return JSON `{"id","from":[px,py],"to":[px,py]}` where `from` projects the centred seed to screen
+/// and `to = from + (40, 0)` (well past [`DRAG_THRESHOLD_PX`]). The smoke drags `from`→`to` and
+/// asserts the slot-position digest changed + the seed is selected + an edit persist fired.
+fn probe_move_json(
+    doc: &DocHandle,
+    engine: &EngineHandle,
+    container: &web_sys::HtmlDivElement,
+) -> String {
+    let null = || String::from(r#"{"id":null,"from":null,"to":null}"#);
+    let soa = match doc.borrow().as_ref().map(|c| c.materialize()) {
+        Some(s) if !s.ids.is_empty() => s,
+        _ => return null(),
+    };
+    let (sx, sy) = (f64::from(soa.xs[0]), f64::from(soa.ys[0]));
+    let (tx, ty, z) = {
+        let mut guard = engine.borrow_mut();
+        let Some(e) = guard.as_mut() else {
+            return null();
+        };
+        e.set_view(sx, sy, e.zoom());
+        (e.target_x(), e.target_y(), e.zoom())
+    };
+    let rect = container.get_bounding_client_rect();
+    let cam = frozen_camera(rect.width(), rect.height(), tx, ty, z);
+    let from = cam.project([sx, sy, 0.0]);
+    let (fx, fy) = (from[0], from[1]);
+    let (tox, toy) = (fx + 40.0, fy);
+
+    let mut s = String::from(r#"{"id":""#);
+    push_json_escaped(&mut s, &soa.ids[0]);
+    s.push_str(&format!(r#"","from":[{fx},{fy}],"to":[{tox},{toy}]}}"#));
+    s
+}
+
+/// Compute the `probe_marquee()` payload (T-159.19): centre seed 0 (test hook; read-back view), then
+/// return JSON `{"rect":[x0,y0,x1,y1],"expect_ids":[…],"expect_count":n}` — a 60×60 px box around the
+/// seed's projection. `expect_*` is computed by the SAME [`marquee_ids`] the pointer handler runs
+/// (start world = `unproject(x0,y0)` at press, end px = `(x1,y1)` at release), so the smoke's CDP drag
+/// over `rect` must reproduce it exactly — an end-to-end parity check on top of Class-S
+/// [`marquee_selfcheck`].
+fn probe_marquee_json(
+    doc: &DocHandle,
+    engine: &EngineHandle,
+    container: &web_sys::HtmlDivElement,
+) -> String {
+    let null = || String::from(r#"{"rect":null,"expect_ids":null,"expect_count":0}"#);
+    let soa = match doc.borrow().as_ref().map(|c| c.materialize()) {
+        Some(s) if !s.ids.is_empty() => s,
+        _ => return null(),
+    };
+    let (sx, sy) = (f64::from(soa.xs[0]), f64::from(soa.ys[0]));
+    let (tx, ty, z) = {
+        let mut guard = engine.borrow_mut();
+        let Some(e) = guard.as_mut() else {
+            return null();
+        };
+        e.set_view(sx, sy, e.zoom());
+        (e.target_x(), e.target_y(), e.zoom())
+    };
+    let rect = container.get_bounding_client_rect();
+    let cam = frozen_camera(rect.width(), rect.height(), tx, ty, z);
+    let p = cam.project([sx, sy, 0.0]);
+    let (x0, y0, x1, y1) = (p[0] - 30.0, p[1] - 30.0, p[0] + 30.0, p[1] + 30.0);
+    // Oracle: the handler freezes the cam + press corner at pointerdown, so start world =
+    // unproject(x0,y0); end px = the release (x1,y1). marquee_ids over exactly those.
+    let start = cam.unproject_xy(x0, y0);
+    let expect = marquee_ids(&cam, &soa, start[0], start[1], x1, y1);
+
+    let mut s = String::from("{\"rect\":[");
+    s.push_str(&format!("{x0},{y0},{x1},{y1}],\"expect_ids\":"));
+    s.push_str(&json_id_array(&expect));
+    s.push_str(&format!(",\"expect_count\":{}}}", expect.len()));
+    s
+}
+
 /// Install `window.__editorSelection` — a thin, read-only smoke bridge (S5) mirroring
 /// `register_mission_doc`/`register_mission_persist` (a `js_sys::Object` of `.forget()`'d closures
 /// returning `JsValue`). Fields:
-///   * `count()`          → current selection length (number)
-///   * `ids()`            → JSON array string of selected ids
-///   * `pick_selfcheck()` → bool (Class-S PointIndex-vs-brute parity over the seeds)
-///   * `probe()`          → JSON `{id,hit,empty}` test hook (centres a seed; see [`probe_json`])
+///   * `count()`             → current selection length (number)
+///   * `ids()`               → JSON array string of selected ids
+///   * `pick_selfcheck()`    → bool (Class-S PointIndex-vs-brute parity for click-pick over the seeds)
+///   * `probe()`             → JSON `{id,hit,empty}` click test hook (centres a seed; see [`probe_json`])
+///   * `marquee_selfcheck()` → bool (Class-S `pick_rect`-vs-brute parity for the marquee; T-159.19)
+///   * `probe_marquee()`     → JSON `{rect,expect_ids,expect_count}` (see [`probe_marquee_json`])
+///   * `probe_move()`        → JSON `{id,from,to}` (see [`probe_move_json`])
 ///
-/// Read-only w.r.t. selection; `probe()` mutates only the camera (`set_view`) for the smoke.
+/// Read-only w.r.t. selection; the `probe*()` hooks mutate only the camera (`set_view`) for the smoke.
 /// Registered synchronously on mount (like `__missionDoc`); the closures leak with the engine.
 pub fn register_editor_selection(
     selection: SelectionHandle,
@@ -339,6 +536,32 @@ pub fn register_editor_selection(
             JsValue::from_str(&probe_json(&doc, &engine, &container))
         }) as Box<dyn FnMut() -> JsValue>)
     };
+    let marquee_selfcheck_fn = {
+        let doc = doc.clone();
+        Closure::wrap(Box::new(move || -> JsValue {
+            let ok = doc
+                .borrow()
+                .as_ref()
+                .is_some_and(|c| marquee_selfcheck(&c.materialize()));
+            JsValue::from_bool(ok)
+        }) as Box<dyn FnMut() -> JsValue>)
+    };
+    let probe_marquee = {
+        let doc = doc.clone();
+        let engine = engine.clone();
+        let container = container.clone();
+        Closure::wrap(Box::new(move || -> JsValue {
+            JsValue::from_str(&probe_marquee_json(&doc, &engine, &container))
+        }) as Box<dyn FnMut() -> JsValue>)
+    };
+    let probe_move = {
+        let doc = doc.clone();
+        let engine = engine.clone();
+        let container = container.clone();
+        Closure::wrap(Box::new(move || -> JsValue {
+            JsValue::from_str(&probe_move_json(&doc, &engine, &container))
+        }) as Box<dyn FnMut() -> JsValue>)
+    };
 
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("count"), count.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("ids"), ids.as_ref());
@@ -348,6 +571,17 @@ pub fn register_editor_selection(
         selfcheck.as_ref(),
     );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("probe"), probe.as_ref());
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("marquee_selfcheck"),
+        marquee_selfcheck_fn.as_ref(),
+    );
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("probe_marquee"),
+        probe_marquee.as_ref(),
+    );
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("probe_move"), probe_move.as_ref());
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorSelection"), &obj);
     }
@@ -356,4 +590,7 @@ pub fn register_editor_selection(
     ids.forget();
     selfcheck.forget();
     probe.forget();
+    marquee_selfcheck_fn.forget();
+    probe_marquee.forget();
+    probe_move.forget();
 }
