@@ -256,6 +256,12 @@ pub fn register_key_handler() {
 /// `__editorSelection`: a `js_sys::Object` of `.forget()`'d closures). Fields:
 ///   * `can_undo()` → bool
 ///   * `can_redo()` → bool
+///   * `undo_depth()` → number — how many steps are stacked (T-159.22.1)
+///
+/// `undo_depth` is the *capture-side* half of the one-txn-one-step invariant: `can_undo` only says
+/// "≥ 1", which is exactly why the T-159.22 granularity defect could hide behind a green gate. It
+/// lets the smoke separate "two gestures pushed one item" (capture) from "one undo consumed two
+/// items" (pop) without a debugger.
 ///
 /// Read-only **by design**: the gate drives undo via the real keyboard shortcut and redo via a real
 /// button click, so it proves the user's paths rather than a bridge-only one.
@@ -282,11 +288,28 @@ pub fn register_editor_history() {
         }))
     }) as Box<dyn FnMut() -> JsValue>);
 
+    let undo_depth_fn = Closure::wrap(Box::new(|| -> JsValue {
+        JsValue::from_f64(HISTORY_CTX.with(|c| {
+            c.borrow().as_ref().map_or(0.0, |ctx| {
+                ctx.doc
+                    .borrow()
+                    .as_ref()
+                    .map_or(0.0, |d| d.undo_depth() as f64)
+            })
+        }))
+    }) as Box<dyn FnMut() -> JsValue>);
+
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("can_undo"), can_undo_fn.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("can_redo"), can_redo_fn.as_ref());
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("undo_depth"),
+        undo_depth_fn.as_ref(),
+    );
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorHistory"), &obj);
     }
     can_undo_fn.forget();
     can_redo_fn.forget();
+    undo_depth_fn.forget();
 }

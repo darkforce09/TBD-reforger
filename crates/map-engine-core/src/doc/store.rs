@@ -73,9 +73,16 @@ impl MissionDocCore {
         let meta = doc.get_or_insert_map("meta");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
-        // stack item only when `now - last_change < capture_timeout_millis` (undo.rs), and `u64 < 0`
-        // is never true — so no same-millisecond merge. This matches driving the JS `Y.UndoManager`
-        // with `{ captureTimeout: 0 }` (Yjs uses the same `<`), the basis for criterion-4 parity.
+        // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
+        // (undo.rs `handle_after_transaction`); `u64 < 0` is never true, and ZeroClock pins
+        // `last_change` to 0 besides — so no same-millisecond merge, on either guard. This matches
+        // driving the JS `Y.UndoManager` with `{ captureTimeout: 0 }` (Yjs uses the same `<`), the
+        // basis for criterion-4 parity.
+        //
+        // T-159.22.1 pinned this empirically after T-159.22 reported it violated: see
+        // `two_local_moves_are_two_undo_steps` / `two_local_places_are_two_undo_steps` below, which
+        // assert `undo_depth()` across a step boundary on native AND (via the editor's undo gate) on
+        // wasm. The report was a gate-driver artifact, not a core defect.
         let opts = UndoOptions::<()> {
             capture_timeout_millis: 0,
             // Track only LOCAL — user gestures are undoable; INIT (seed / hydrate / restore) is not.
@@ -896,6 +903,13 @@ impl MissionDocCore {
         false
     }
 
+    /// How many undo steps are stacked. The capture side of the T-159.22.1 invariant (one LOCAL txn
+    /// = one step) — `can_undo` only says "≥ 1", which is what let the granularity defect hide.
+    #[must_use]
+    pub fn undo_depth(&self) -> usize {
+        self.undo_mgr.undo_stack().len()
+    }
+
     /// Undo the most recent tracked transaction; `true` if anything was undone.
     pub fn undo(&mut self) -> bool {
         self.undo_mgr.undo_blocking()
@@ -1164,6 +1178,103 @@ mod tests {
     /// Row lookup by id — parity is set-equality, not row order.
     fn row_of(soa: &SlotSoa, id: &str) -> usize {
         soa.ids.iter().position(|s| s == id).expect("id present")
+    }
+
+    /// The in-crate twin of the browser gate's `__missionPersist.slots_digest()`: sorted
+    /// `(id, x.to_bits(), y.to_bits())` rows. Byte equality, not tolerance — yrs restores the prior
+    /// values rather than recomputing them, so an undo lands on the exact f32 bits.
+    fn slots_digest(soa: &SlotSoa) -> Vec<(String, u32, u32)> {
+        let mut rows: Vec<(String, u32, u32)> = soa
+            .ids
+            .iter()
+            .enumerate()
+            .map(|(i, id)| {
+                (
+                    id.clone(),
+                    soa.xy[i * 2].to_bits(),
+                    soa.xy[i * 2 + 1].to_bits(),
+                )
+            })
+            .collect();
+        rows.sort();
+        rows
+    }
+
+    /// The browser boot: 8 slots written under `INIT` (untracked), exactly like
+    /// `mission_doc::new_seeded` — so the undo stack starts empty and every step below is a LOCAL
+    /// user gesture.
+    fn seeded_core() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.set_origin_init(true);
+        doc.seed_random(8, 12800.0, 12800.0, 42);
+        doc.set_origin_init(false);
+        assert!(!doc.can_undo(), "the INIT seed must not be an undo step");
+        doc
+    }
+
+    /// T-159.22.1 — **one LOCAL transaction = one undo step**, across a step *boundary*.
+    ///
+    /// The case `undo_redo_sequence` never covered and `smoke_undo_editor` could not see (it made
+    /// exactly one mutation, so it never proved that undoing the 2nd move leaves the 1st standing).
+    /// Two `move_entities` on the same slot must be two stack items: the first undo lands on `d1`,
+    /// not `d0`.
+    ///
+    /// **This test was green the day it was written** — T-159.22 reported the invariant broken, but
+    /// the mechanism was a double-fired Ctrl+Z in the gate driver, not the core (root cause:
+    /// `.ai/artifacts/t159_22_1_verify_log.md`). It is kept as the regression pin the doubt earned:
+    /// `undo_depth()` is asserted, so a future capture-side merge fails here rather than in a browser.
+    #[test]
+    fn two_local_moves_are_two_undo_steps() {
+        let mut doc = seeded_core();
+        let d0 = slots_digest(&doc.materialize());
+
+        doc.move_entities(vec!["s0".to_string()], 10.0, 0.0, vec![0.0]);
+        let d1 = slots_digest(&doc.materialize());
+        doc.move_entities(vec!["s0".to_string()], 10.0, 0.0, vec![0.0]);
+        let d2 = slots_digest(&doc.materialize());
+        assert_ne!(d0, d1, "move 1 changed the doc");
+        assert_ne!(d1, d2, "move 2 changed the doc");
+        assert_eq!(doc.undo_depth(), 2, "two LOCAL txns = two stack items");
+
+        assert!(doc.undo());
+        assert_eq!(
+            slots_digest(&doc.materialize()),
+            d1,
+            "undo 1 reverts ONLY move 2"
+        );
+        assert!(doc.can_undo(), "move 1 is still on the stack");
+
+        assert!(doc.undo());
+        assert_eq!(
+            slots_digest(&doc.materialize()),
+            d0,
+            "undo 2 reverts move 1"
+        );
+        assert!(!doc.can_undo(), "the stack is now empty");
+    }
+
+    /// The same boundary over the place path (`add_slot`), the second shape from the T-159.22 repro
+    /// (two places → one undo removed BOTH slots, 8 → 9 → 10 → 8). Also green on baseline — same
+    /// root cause.
+    #[test]
+    fn two_local_places_are_two_undo_steps() {
+        let mut doc = seeded_core();
+        assert_eq!(doc.materialize().len(), 8);
+
+        doc.add_slot(
+            "p1", "sq", "lyr", 0, "Rifleman", None, None, 100.0, 100.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "p2", "sq", "lyr", 1, "Rifleman", None, None, 200.0, 200.0, 0.0, 0.0,
+        );
+        assert_eq!(doc.materialize().len(), 10);
+
+        assert!(doc.undo());
+        assert_eq!(doc.materialize().len(), 9, "undo 1 removes ONLY p2");
+        assert!(doc.can_undo());
+
+        assert!(doc.undo());
+        assert_eq!(doc.materialize().len(), 8, "undo 2 removes p1");
     }
 
     #[test]
