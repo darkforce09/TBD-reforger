@@ -4,6 +4,7 @@
 //! (serde/serde_json) so the DEM-only wasm/backend builds don't pull it. The mod-document flatten
 //! (`flatten_to_mod_document`) lands here next, once decoupled from the backend `Mission` model.
 
+pub mod compile;
 pub mod flatten;
 pub mod kit;
 pub mod orbat;

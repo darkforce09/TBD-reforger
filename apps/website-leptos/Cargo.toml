@@ -41,6 +41,15 @@ web-sys = { version = "0.3", features = [
     "MouseEvent",
     "EventTarget",
     "AddEventListenerOptions",
+    # T-159.20 Save/Export: the semver <input> (HtmlInputElement) + the Export download dance
+    # (Blob/BlobPropertyBag → Url.createObjectURL → <a download> click → revokeObjectURL). `click()`
+    # lives on HtmlElement; the anchor is created via `document.create_element("a")` → HtmlAnchorElement.
+    "HtmlInputElement",
+    "Blob",
+    "BlobPropertyBag",
+    "Url",
+    "HtmlAnchorElement",
+    "HtmlElement",
 ] }
 
 # T-159.15 Mission Creator engine — the wasm-boundary collapse. The Leptos app links the wgpu render
@@ -51,7 +60,7 @@ map-engine-render = { path = "../../crates/map-engine-render" }
 # T-159.16 MissionDoc host — the `yrs` document core in the SAME wasm module (spec D2: a workspace dep
 # on map-engine-core with the `doc` feature, NOT the map-engine-wasm JS shim). `doc` pulls yrs; its
 # serde_json is already shared with render's `world` feature, so no duplicate dep.
-map-engine-core = { path = "../../crates/map-engine-core", features = ["doc"] }
+map-engine-core = { path = "../../crates/map-engine-core", features = ["doc", "mission"] }
 # T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
 # `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
 # features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on

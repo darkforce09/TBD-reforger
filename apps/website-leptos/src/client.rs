@@ -113,6 +113,56 @@ mod wasm_client {
         .await
     }
 
+    /// POST `path` (relative to /api/v1) with a JSON body — same api/client.ts contract as `api_get`
+    /// (bearer inject + single-flight 401 refresh + one retry). `.json(&body)` sets Content-Type, like
+    /// `refresh_via_gloo`. Returns the deserialized 2xx body or the HTTP status; the caller maps the
+    /// versions route's `409` (dup semver) / `413` (too large). T-159.20 Save Version.
+    pub async fn api_post<T: DeserializeOwned + 'static>(
+        store: AuthStore,
+        path: &str,
+        body: serde_json::Value,
+    ) -> Result<T, u16> {
+        let sf = REFRESH_SF.with(|s| s.clone());
+        let url = format!("{API_BASE}{path}");
+        let send = move |tok: Option<String>| -> Req<T> {
+            let url = url.clone();
+            let body = body.clone();
+            async move {
+                let mut req = gloo_net::http::Request::post(&url)
+                    .credentials(web_sys::RequestCredentials::Include);
+                if let Some(t) = tok {
+                    req = req.header("Authorization", &format!("Bearer {t}"));
+                }
+                let Ok(req) = req.json(&body) else {
+                    return Err(0u16);
+                };
+                match req.send().await {
+                    Ok(resp) => {
+                        let status = resp.status();
+                        if (200..300).contains(&status) {
+                            resp.json::<T>().await.map_err(|_| 0u16)
+                        } else {
+                            Err(status)
+                        }
+                    }
+                    Err(_) => Err(0u16),
+                }
+            }
+            .boxed_local()
+        };
+        send_with_refresh(
+            &sf,
+            send,
+            move || store.access_token.get_untracked(),
+            move || refresh_via_gloo(store).boxed_local(),
+            move |r: &RefreshResponse| {
+                store.set_tokens(r.clone());
+                persist(&store.persist_state());
+            },
+        )
+        .await
+    }
+
     /// Cold-load bootstrap (useAuthBootstrap): hydrate tokens from tbd-auth, then GET /me — which
     /// self-handles a stale/absent access token via the 401 → single-flight refresh → retry path.
     /// No-ops (stays guest) when nothing is persisted.
@@ -144,7 +194,7 @@ mod wasm_client {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub use wasm_client::{api_get, bootstrap};
+pub use wasm_client::{api_get, api_post, bootstrap};
 
 #[cfg(test)]
 mod tests {

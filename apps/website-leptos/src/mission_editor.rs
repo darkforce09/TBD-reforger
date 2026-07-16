@@ -36,6 +36,11 @@ pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
     let canvas_ref = NodeRef::<leptos::html::Canvas>::new();
 
+    // T-159.20 — Save Version + Export controls. The signals live on both targets (the view binds
+    // them); the doc-touching command bodies are wasm-gated (native has no `MissionDocCore`).
+    let save_semver = RwSignal::new("0.1.0".to_string());
+    let save_status = RwSignal::new(String::new());
+
     // The engine is created + owned on the wasm target only (wgpu is wasm32-gated). Native builds
     // (cargo check) compile the shell without touching the GPU stack.
     #[cfg(target_arch = "wasm32")]
@@ -65,6 +70,11 @@ pub fn MissionEditorPage() -> impl IntoView {
             .get("id")
             .map(|s| s.to_string())
             .unwrap_or_else(|| "draft".to_string());
+
+        // T-159.20 — auth store for the Save Version POST. Read here in the reactive body (the
+        // owner is live); `on_load` is a non-reactive closure, and `AuthStore` is `Copy` so it moves
+        // into it cleanly. Provided by `AppLayout` above `<AppRoutes/>`, so present on this route.
+        let auth = expect_context::<crate::auth::AuthStore>();
 
         canvas_ref.on_load(move |canvas: web_sys::HtmlCanvasElement| {
             let Some(container) = container_ref.get_untracked() else {
@@ -102,6 +112,12 @@ pub fn MissionEditorPage() -> impl IntoView {
             let doc = crate::mission_doc::new_seeded_doc();
             let doc_ver = Rc::new(Cell::new(1u32));
             crate::mission_doc::register_mission_doc(doc.clone(), doc_ver);
+
+            // T-159.20 — editor commands (Save/Export) context + the `__editorCommands` smoke bridge
+            // (peer of `__missionDoc`). `set_ctx` shares the same `Rc` the persistence swap targets,
+            // so both the buttons and the bridge see an IDB-restored doc.
+            crate::mission_commands::set_ctx(doc.clone(), auth, mission_id.clone());
+            crate::mission_commands::register_editor_commands(doc.clone());
 
             // T-159.18 — LMB select foundation. Selection is app-side state (NOT the Y.Doc — it never
             // lived in the document, matching React's Zustand), held in the editor's leaked-handle
@@ -663,6 +679,40 @@ pub fn MissionEditorPage() -> impl IntoView {
             class="relative h-screen w-screen overflow-hidden bg-background"
         >
             <canvas node_ref=canvas_ref class="absolute inset-0 block h-full w-full"></canvas>
+            // T-159.20 — minimal Save/Export strip (spec E4: not the full TopCommandStrip). Top-left,
+            // clear of the canvas-centre region the pan/select/marquee smokes drive.
+            <div class="absolute left-3 top-3 z-10 flex items-center gap-2 rounded-lg border border-outline-variant/30 bg-surface-container-low/80 px-3 py-2 backdrop-blur-xl">
+                <input
+                    type="text"
+                    aria-label="Version"
+                    class="w-20 rounded border border-outline-variant/40 bg-surface-container px-2 py-1 font-mono text-xs text-on-surface"
+                    prop:value=move || save_semver.get()
+                    on:input=move |ev| save_semver.set(event_target_value(&ev))
+                />
+                <button
+                    type="button"
+                    class="rounded bg-primary px-3 py-1 text-xs font-medium text-on-primary"
+                    on:click=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::mission_commands::save_now(save_semver.get_untracked(), save_status);
+                    }
+                >
+                    "Save Version"
+                </button>
+                <button
+                    type="button"
+                    class="rounded border border-outline-variant/40 px-3 py-1 text-xs font-medium text-on-surface"
+                    on:click=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::mission_commands::export_now(&save_semver.get_untracked());
+                    }
+                >
+                    "Export JSON"
+                </button>
+                <span class="min-w-24 font-mono text-xs text-on-surface-variant">
+                    {move || save_status.get()}
+                </span>
+            </div>
         </div>
     }
 }

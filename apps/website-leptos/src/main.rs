@@ -28,6 +28,10 @@ mod leaderboards;
 // module declaration like the engine block inside `mission_editor`.
 #[cfg(target_arch = "wasm32")]
 mod mission_doc;
+// T-159.20 Save Version + Export — compile (map-engine-core `mission`) + authed POST + file download;
+// wasm32-only, gated like the doc host.
+#[cfg(target_arch = "wasm32")]
+mod mission_commands;
 mod mission_editor;
 mod mission_overview;
 mod missions;
