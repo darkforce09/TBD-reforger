@@ -68,29 +68,66 @@ mod wasm_client {
         }
     }
 
-    /// GET `path` (relative to /api/v1) with the api/client.ts contract: bearer inject + single-flight
-    /// 401 refresh + one retry. Returns the deserialized body or the HTTP status.
-    pub async fn api_get<T: DeserializeOwned + 'static>(
+    /// How a 2xx response body is consumed.
+    enum Consume<T> {
+        /// Deserialize the JSON body (`resp.json::<T>()`).
+        Json(std::marker::PhantomData<T>),
+        /// Ignore the body — for 204s and mutations whose response the caller discards.
+        Ignore(T),
+    }
+
+    /// One request through the api/client.ts contract: bearer inject + single-flight 401 refresh +
+    /// exactly one retry (`send_with_refresh`). All public verbs below are thin wrappers so the
+    /// contract can never diverge per-verb. `body: Some(v)` sends JSON (sets Content-Type).
+    async fn request<T: DeserializeOwned + Clone + 'static>(
         store: AuthStore,
+        method: gloo_net::http::Method,
         path: &str,
+        body: Option<serde_json::Value>,
+        consume: Consume<T>,
     ) -> Result<T, u16> {
         let sf = REFRESH_SF.with(|s| s.clone());
         // Build the URL once (so `path` need only live for this call, not `'static`) — the retry
         // closure clones the owned URL per attempt. Param routes (/missions/:id) pass a dynamic path.
         let url = format!("{API_BASE}{path}");
+        let ignore = match &consume {
+            Consume::Json(_) => None,
+            Consume::Ignore(v) => Some(v.clone()),
+        };
         let send = move |tok: Option<String>| -> Req<T> {
             let url = url.clone();
+            let method = method.clone();
+            let body = body.clone();
+            let ignore = ignore.clone();
             async move {
-                let mut req = gloo_net::http::Request::get(&url)
+                let mut req = gloo_net::http::RequestBuilder::new(&url)
+                    .method(method)
                     .credentials(web_sys::RequestCredentials::Include);
                 if let Some(t) = tok {
                     req = req.header("Authorization", &format!("Bearer {t}"));
                 }
+                let req = match body {
+                    Some(b) => {
+                        let Ok(r) = req.json(&b) else {
+                            return Err(0u16);
+                        };
+                        r
+                    }
+                    None => {
+                        let Ok(r) = req.build() else {
+                            return Err(0u16);
+                        };
+                        r
+                    }
+                };
                 match req.send().await {
                     Ok(resp) => {
                         let status = resp.status();
                         if (200..300).contains(&status) {
-                            resp.json::<T>().await.map_err(|_| 0u16)
+                            match ignore {
+                                Some(v) => Ok(v),
+                                None => resp.json::<T>().await.map_err(|_| 0u16),
+                            }
                         } else {
                             Err(status)
                         }
@@ -113,52 +150,96 @@ mod wasm_client {
         .await
     }
 
-    /// POST `path` (relative to /api/v1) with a JSON body — same api/client.ts contract as `api_get`
-    /// (bearer inject + single-flight 401 refresh + one retry). `.json(&body)` sets Content-Type, like
-    /// `refresh_via_gloo`. Returns the deserialized 2xx body or the HTTP status; the caller maps the
-    /// versions route's `409` (dup semver) / `413` (too large). T-159.20 Save Version.
-    pub async fn api_post<T: DeserializeOwned + 'static>(
+    /// GET `path` (relative to /api/v1). Returns the deserialized body or the HTTP status.
+    pub async fn api_get<T: DeserializeOwned + Clone + 'static>(
+        store: AuthStore,
+        path: &str,
+    ) -> Result<T, u16> {
+        request(
+            store,
+            gloo_net::http::Method::GET,
+            path,
+            None,
+            Consume::Json(std::marker::PhantomData),
+        )
+        .await
+    }
+
+    /// POST `path` with a JSON body. Returns the deserialized 2xx body or the HTTP status; the
+    /// caller maps route-specific statuses (e.g. the versions route's 409/413). T-159.20.
+    pub async fn api_post<T: DeserializeOwned + Clone + 'static>(
         store: AuthStore,
         path: &str,
         body: serde_json::Value,
     ) -> Result<T, u16> {
-        let sf = REFRESH_SF.with(|s| s.clone());
-        let url = format!("{API_BASE}{path}");
-        let send = move |tok: Option<String>| -> Req<T> {
-            let url = url.clone();
-            let body = body.clone();
-            async move {
-                let mut req = gloo_net::http::Request::post(&url)
-                    .credentials(web_sys::RequestCredentials::Include);
-                if let Some(t) = tok {
-                    req = req.header("Authorization", &format!("Bearer {t}"));
-                }
-                let Ok(req) = req.json(&body) else {
-                    return Err(0u16);
-                };
-                match req.send().await {
-                    Ok(resp) => {
-                        let status = resp.status();
-                        if (200..300).contains(&status) {
-                            resp.json::<T>().await.map_err(|_| 0u16)
-                        } else {
-                            Err(status)
-                        }
-                    }
-                    Err(_) => Err(0u16),
-                }
-            }
-            .boxed_local()
-        };
-        send_with_refresh(
-            &sf,
-            send,
-            move || store.access_token.get_untracked(),
-            move || refresh_via_gloo(store).boxed_local(),
-            move |r: &RefreshResponse| {
-                store.set_tokens(r.clone());
-                persist(&store.persist_state());
-            },
+        request(
+            store,
+            gloo_net::http::Method::POST,
+            path,
+            Some(body),
+            Consume::Json(std::marker::PhantomData),
+        )
+        .await
+    }
+
+    /// PUT `path` with a JSON body (useAssignSlot / useSaveFaction-update). T-159.24.
+    #[allow(dead_code)] // wired by the T-159.25 suite live-wire
+    pub async fn api_put<T: DeserializeOwned + Clone + 'static>(
+        store: AuthStore,
+        path: &str,
+        body: serde_json::Value,
+    ) -> Result<T, u16> {
+        request(
+            store,
+            gloo_net::http::Method::PUT,
+            path,
+            Some(body),
+            Consume::Json(std::marker::PhantomData),
+        )
+        .await
+    }
+
+    /// PATCH `path` with a JSON body (useSetMissionStatus / useUpdateUserRole). T-159.24.
+    #[allow(dead_code)] // wired by the T-159.25 suite live-wire
+    pub async fn api_patch<T: DeserializeOwned + Clone + 'static>(
+        store: AuthStore,
+        path: &str,
+        body: serde_json::Value,
+    ) -> Result<T, u16> {
+        request(
+            store,
+            gloo_net::http::Method::PATCH,
+            path,
+            Some(body),
+            Consume::Json(std::marker::PhantomData),
+        )
+        .await
+    }
+
+    /// DELETE `path`, ignoring any response body (the delete mutations get 204s or discard the
+    /// body — axios parity). Ok(()) on 2xx. T-159.24.
+    #[allow(dead_code)] // wired by the T-159.25 suite live-wire
+    pub async fn api_delete(store: AuthStore, path: &str) -> Result<(), u16> {
+        request(
+            store,
+            gloo_net::http::Method::DELETE,
+            path,
+            None,
+            Consume::Ignore(()),
+        )
+        .await
+    }
+
+    /// POST `path` with a JSON body, ignoring any response body (register/reserve/release/logout —
+    /// React invalidates queries and discards the response). Ok(()) on 2xx. T-159.24.
+    #[allow(dead_code)] // wired by the T-159.25 suite live-wire
+    pub async fn api_post_ok(store: AuthStore, path: &str, body: serde_json::Value) -> Result<(), u16> {
+        request(
+            store,
+            gloo_net::http::Method::POST,
+            path,
+            Some(body),
+            Consume::Ignore(()),
         )
         .await
     }
@@ -194,7 +275,10 @@ mod wasm_client {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub use wasm_client::{api_get, api_post, bootstrap};
+#[allow(unused_imports)] // the T-159.24 verbs are wired by the T-159.25 suite live-wire
+pub use wasm_client::{
+    api_delete, api_get, api_patch, api_post, api_post_ok, api_put, bootstrap,
+};
 
 #[cfg(test)]
 mod tests {

@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api web test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api web leptos leptos-build leptos-gates test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -35,6 +35,16 @@ api: ## Run the API (loads apps/website/.env; migrates on boot)
 
 web: map-assets-link ## Run the Vite dev server
 	cd $(WEB)/frontend && npm run dev
+
+leptos: ## Run the Leptos dev server on :3000 (trunk serve; /api proxies to :8080 — T-159.24)
+	cd apps/website-leptos && trunk serve
+
+leptos-build: ## Release-build the Leptos SPA into apps/website-leptos/dist
+	cd apps/website-leptos && trunk build --release
+
+leptos-gates: leptos-build ## Run every T-159 editor smoke against a fresh release dist
+	@set -e; for s in .ai/artifacts/t159_gates/driver/*_editor.mjs; do \
+		echo "== $$s"; node $$s; done
 
 map-assets-link: ## Symlink packages/map-assets → frontend public/ (T-091.1 DEM fetch)
 	@mkdir -p $(WEB)/frontend/public
