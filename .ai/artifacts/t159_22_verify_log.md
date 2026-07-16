@@ -161,6 +161,11 @@ mounted — is unchanged**; only the pinned headings moved to the real ones (`OR
 
 ## ⚠ Pre-existing defect found (NOT introduced here, NOT fixed here)
 
+> **CORRIGENDUM (T-159.22.1 @ `ce73c5bc`):** the **conclusion** below (a `map-engine-core` merge bug)
+> is **wrong**. Observations were real but caused by the undo smoke’s CDP `keyChord()` double-firing
+> Ctrl+Z. Product undo was always one step per LOCAL txn. See
+> [`.ai/artifacts/t159_22_1_verify_log.md`](t159_22_1_verify_log.md).
+
 **Undo granularity collapses: consecutive local transactions merge into ONE undo step.**
 
 `store.rs:75-78` states "capture_timeout_millis = 0 → every transaction is its own undo step … no

@@ -25,12 +25,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-159 — Leptos UI rewrite (React SPA → Rust)
 
-- **Active slice:** `T-159.22.1`
-- **Slice spec:** `docs/platform/t159_22_1_undo_granularity.md`
+- **Active slice:** `T-159.23`
+- **Slice spec:** `docs/platform/t159_23_attributes_modal.md`
 - **Program hub:** `docs/platform/t159_leptos_ui_program.md`
 - **Branch:** `t-159-leptos-ui`
 - **Targets:** root, website
-- **Summary:** Worktree TBD-T-159 tip 0154b4e9. Through T-159.22 outliner+palette shipped. ACTIVE T-159.22.1 undo granularity. Hub: t159_leptos_ui_program.md.
+- **Summary:** Worktree TBD-T-159 tip ce73c5bc. Through T-159.22.1 (undo gate fix; core OK). ACTIVE T-159.23 Attributes. Hub: t159_leptos_ui_program.md.
 
 ## T-161 — Ticket CLI: Python → Rust xtask
 
