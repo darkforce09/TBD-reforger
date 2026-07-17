@@ -22,3 +22,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-165 — Node/JS eradication: every .mjs tool -> Rust
+
+- **Active slice:** `T-165.1`
+- **Slice spec:** `docs/platform/t165_node_eradication.md`
+- **Program hub:** `docs/platform/t165_node_eradication.md`
+- **Branch:** `ticket/T-165`
+- **Targets:** root
+- **Summary:** ACTIVE: port all repo-authored Node tooling (90 .mjs / 13.8k LOC: schema toolchain, map-asset pipeline, T-159 CDP harness, MCP broker) to Rust; only the third-party enfusion-mcp runtime remains (the floor); zero setup-node in CI at closure. T-165.0 shipped (tools/tbd-tools scaffold + dead-set deletion). Hub: docs/platform/t165_node_eradication.md.

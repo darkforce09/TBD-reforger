@@ -1,0 +1,52 @@
+# T-165 — Node/JS eradication: every .mjs tool → Rust
+
+**Status:** ACTIVE (T-165.0 shipped; next T-165.1) · **Executor:** claude-code (operator-approved
+plan) · **Sequel to:** T-161/T-162 (Python eradication). **Plan of record:** the operator-approved
+T-165 plan (session plan file); this hub tracks slice state + evidence.
+
+## In one sentence
+
+Port all repo-authored Node tooling (90 .mjs, 13.8k LOC — schema toolchain, map-asset pipeline,
+T-159 CDP gate harness, MCP broker, misc verifies) to Rust; the only Node left standing is the
+third-party `enfusion-mcp` runtime for Workbench (the floor), and no CI job needs Node at all.
+
+## Locked decisions
+
+| ID | Decision |
+|----|----------|
+| **N1** | `xtask` stays sync (schema gates, citations, codegen, small verifies); new async crate **`tools/tbd-tools`** owns CDP harness (`gate`), MCP broker (`mcpd`), map/world pipelines. |
+| **N2** | `freeze.js`/`dom.js` are browser-INJECTED payloads — they survive as **verbatim `const &str`** in Rust; never re-implemented natively (frozen V-golden byte-parity by construction). |
+| **N3** | Image policy: no external processes. Pure-Rust encoders everywhere except the **one lossy-WebP leg** (map-view pyramid; `webp` crate = cargo-vendored libwebp C). Lossless legs = `image-webp` (pure Rust). Committed assets untouched (no gate byte-compares WebP). |
+| **N4** | Per-slice `.mjs` deletion is gated on the **reverse-dependency edge list** (createRequire borrowers of tbd-schema node_modules + cross-script path spawns). tbd-schema npm dies at the END of T-165.9 (last pngjs borrower). |
+| **N5** | T-165.8 world artifacts: one-time migration — Rust double-build determinism + **decompressed-content byte-identity** vs committed + exact census (1623/1,216,109/315/888/36/625) → re-commit Rust-encoded artifacts → E6 stays raw-byte thereafter (node-zlib vs flate2 gz bytes differ by construction). |
+| **N6** | mcp lane: broker+stub port only (`xtask mcp` client already Rust); selftest contract frozen — byte-exact stdout + exit codes 0/1/2/3/4, 19/19. |
+| **N7** | quicktype → typify for the 4 tractable schemas; `loadout.rs` becomes hand-maintained (quicktype output provably lossy — empty `Wear{}`/`Equipment{}`; zero consumers) with serde round-trip tests vs fixtures. |
+
+## Slice ladder
+
+| Slice | Scope | Status |
+|-------|-------|--------|
+| **T-165.0** | `tools/tbd-tools` scaffold (workspace member; tokio + tokio-tungstenite pinned to lock-resolved versions) + dead-set deletion | **shipped** |
+| T-165.1 | Text/JSON gates → xtask (citations, t090-specs, n6, n10, enums, type-inventory, terrain-manifest, flatten-orbat) + contracts.yml/ci.yml citation steps | next |
+| T-165.2 | validate.mjs core → Rust (21-schema 2020-12 bundle, FK walkers, ENF-4) | queued |
+| T-165.3 | codegen → typify + loadout hand-freeze; contracts.yml drift job → cargo | queued |
+| T-165.4 | Golden S2–S14 (TBDD encoder promoted; forest-region derivation ported) + terrain/DEM + glyphs + label gates; `make schema-validate` pure cargo; schema.yml + ci.yml schema job → cargo | queued |
+| T-165.5 | CDP harness core (`cdp`/`serve`/`inject`/`diff_node` + `gate v-suite`) — 25/25 byte-count parity vs Node side-by-side | queued |
+| T-165.6 | Smokes suite registry → Rust; Node driver deleted; `make leptos-gates` = cargo | queued |
+| T-165.7 | MCP broker + `--stub` → Rust; runner-resolution fix in mcp-call.sh/mcp-daemon.sh; selftest 19/19 | queued |
+| T-165.8 | World-export pipeline (decode-topo/edds + bcdec_rs; vendor wasm/C deleted) + E6 migration (N5) | queued |
+| T-165.9 | Image pipeline pure Rust (MVG→resvg; image-webp/webp per N3; tile pyramid; seam tools; verifiers); tbd-schema npm deleted | queued |
+| T-165.10 | Bash logic + closure: 0 tracked .mjs; `verify no-node` gate; zero setup-node in CI; doc sync | queued |
+
+## T-165.0 — dead-set deletion evidence (deleted, not ported; ~650 LOC off the port surface)
+
+| File | Evidence it was dead |
+|------|---------------------|
+| `driver/gate_v.mjs` | live-React-oracle V diff — React deleted at T-159.29.3; superseded by the frozen `gate_v_suite.mjs` |
+| `driver/spike_upload_140mb.mjs` | self-labeled transport-spike evidence (T-159.24 verify log records the result); not a suite gate |
+| `manifests/extract-react.mjs` | first read is `apps/website/frontend/src/router.tsx` — tree deleted; the 5 S-manifests are frozen goldens (t159_gates README §Status) |
+| `scripts/website/differential.mjs` + `run-differential.sh` + `differential_seed.sql` | T-145 Go-vs-Rust differential — the Go backend it boots no longer exists |
+| `scripts/website/tools/scrape-eden-wiki.mjs` | one-shot scraper; outputs committed under `.ai/artifacts/eden-wiki/` |
+| `scripts/verify-monorepo-migration.sh` (+ `make verify-migration`) | **already red**: V15 runs `go build ./...` in `apps/website` (zero `.go` files since T-145); migration long complete |
+
+Recovery: all in git history @ tag T-164 and earlier.

@@ -13,4 +13,5 @@ members = [
     "crates/map-engine-render",
     "crates/map-engine-wasm",
     "xtask",
+    "tools/tbd-tools",
 ]

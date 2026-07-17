@@ -1,5 +1,5 @@
 {
-  "next_id": 165,
+  "next_id": 166,
   "tickets": [
     {
       "id": "T-001",
@@ -5134,6 +5134,145 @@
       ],
       "executor": "claude-code",
       "parallel_ok": false
+    },
+    {
+      "id": "T-165",
+      "order": 1620,
+      "title": "Node/JS eradication: every .mjs tool -> Rust",
+      "summary": "ACTIVE: port all repo-authored Node tooling (90 .mjs / 13.8k LOC: schema toolchain, map-asset pipeline, T-159 CDP harness, MCP broker) to Rust; only the third-party enfusion-mcp runtime remains (the floor); zero setup-node in CI at closure. T-165.0 shipped (tools/tbd-tools scaffold + dead-set deletion). Hub: docs/platform/t165_node_eradication.md.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "DATA"
+      ],
+      "impact": [
+        "infra",
+        "ci",
+        "schema"
+      ],
+      "status": "ready",
+      "active_slice": "T-165.1",
+      "spec": "docs/platform/t165_node_eradication.md",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "parallel_ok": false,
+      "slices": [
+        "T-165.0",
+        "T-165.1",
+        "T-165.2",
+        "T-165.3",
+        "T-165.4",
+        "T-165.5",
+        "T-165.6",
+        "T-165.7",
+        "T-165.8",
+        "T-165.9",
+        "T-165.10"
+      ],
+      "slice_plan": {
+        "T-165.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "tools/tbd-tools scaffold + dead-set deletion (~650 LOC)."
+        },
+        "T-165.1": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "Text/JSON gates -> xtask + citations CI steps."
+        },
+        "T-165.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "validate.mjs core -> Rust (21-schema bundle + FK walkers)."
+        },
+        "T-165.3": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "codegen -> typify; loadout.rs hand-frozen; drift job -> cargo."
+        },
+        "T-165.4": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "Golden S2-S14 + terrain/DEM + glyphs; schema-validate pure cargo."
+        },
+        "T-165.5": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "CDP harness core; v-suite 25/25 parity vs Node."
+        },
+        "T-165.6": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "Smokes suite registry -> Rust; Node driver deleted."
+        },
+        "T-165.7": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "MCP broker + stub -> Rust; selftest 19/19 frozen."
+        },
+        "T-165.8": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "World-export pipeline + E6 content-proven re-encode migration."
+        },
+        "T-165.9": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "Image pipeline pure Rust (N3); tbd-schema npm deleted."
+        },
+        "T-165.10": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "spec": "docs/platform/t165_node_eradication.md",
+          "notes": "Bash logic + closure: 0 .mjs, no-node gate, zero setup-node CI."
+        }
+      }
     }
   ]
 }

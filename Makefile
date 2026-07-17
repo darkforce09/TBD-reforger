@@ -6,7 +6,7 @@ WEB := apps/website
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration verify-no-python map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -198,9 +198,6 @@ ticket-check: ## Structural validation of ticket registry + outputs
 
 ticket-check-strict: ## Full validation including zero legacy planning IDs
 	./scripts/ticket check --strict
-
-verify-migration: ## Run monorepo migration gate checks (V1–V27)
-	./scripts/verify-monorepo-migration.sh
 
 verify-no-python: ## T-162 hard gate — zero .py files / no Python interpreter in scripts
 	./scripts/verify-no-python.sh
