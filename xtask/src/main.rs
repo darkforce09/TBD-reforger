@@ -70,6 +70,11 @@ enum TopCmd {
 
 #[derive(Subcommand, Debug)]
 enum SchemaCmd {
+    /// Full contract-validation suite (validate.mjs port — T-165.2)
+    Validate,
+    /// Validate one mission JSON file or stdin (`-`) — validate-file.mjs port
+    #[command(name = "validate-file")]
+    ValidateFile { target: String },
     /// @contract citation integrity (verify-contract-citations)
     Citations,
     /// T-090 spec-consistency gates 1-12 (verify-t090-spec-consistency)
@@ -361,6 +366,8 @@ fn run() -> Result<u8> {
         }
         TopCmd::Schema { cmd } => {
             let code = match cmd {
+                SchemaCmd::Validate => schema_gates::validate_all()?,
+                SchemaCmd::ValidateFile { target } => schema_gates::validate_file(&target)?,
                 SchemaCmd::Citations => schema_gates::citations()?,
                 SchemaCmd::T090Specs => schema_gates::t090_specs()?,
                 SchemaCmd::N6 => schema_gates::n6_sentence()?,

@@ -944,6 +944,20 @@ pub fn t090_specs() -> Result<u8> {
     ] {
         npm_scripts.insert(s.to_string());
     }
+    // Gate scripts retired to `cargo xtask schema …` at T-165.1/.2 — historical specs may still
+    // quote the npm form (archival, not executable).
+    for s in [
+        "validate",
+        "verify-citations",
+        "verify-map-object-enums",
+        "verify-type-inventory",
+        "verify-t090-specs",
+        "verify-n6",
+        "verify-n10",
+        "verify-terrain-manifest",
+    ] {
+        npm_scripts.insert(s.to_string());
+    }
     let make_re = regex::Regex::new(r"\bmake\s+([a-z0-9]+(?:-[a-z0-9]+)+)")?;
     let npm_re = regex::Regex::new(r"\bnpm run ([a-z0-9:_-]+)")?;
     for (name, text) in &corpus {
@@ -1172,5 +1186,582 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
     } else {
         print!("{out}");
     }
+    Ok(0)
+}
+
+/* ─────────────────────────── validate (T-165.2 — the validate.mjs core) ─────────────────────────── */
+
+/// The full contract-validation suite (port of `packages/tbd-schema/scripts/validate.mjs`):
+/// golden missions + registries + compat FK walkers + addon/variant provenance + bridge samples +
+/// terrain manifests/anchors + ENF-4 Enfusion DTO fixtures + the T-090.2 map-object goldens.
+/// Cross-file `$ref`s resolve through a `referencing::Registry` keyed by each schema's `$id`
+/// (the ajv `addSchema` equivalent); ENF-4 pointer validators are built as `{"$ref": "<id>#/$defs/<n>"}`.
+pub fn validate_all() -> Result<u8> {
+    let root = repo_root()?;
+    let sroot = schema_root(&root);
+    let schema = |name: &str| read_json(&sroot.join("schema").join(name));
+    let reg_file = |name: &str| sroot.join("registry").join(name);
+
+    // Register every map-object schema (plus mission for the ENF-4 pointers) by $id.
+    let mut registered: Vec<(String, Value)> = Vec::new();
+    for f in [
+        "map-object-enums.schema.json",
+        "map-object-prefab.schema.json",
+        "map-object-instance.schema.json",
+        "map-object-region.schema.json",
+        "map-object-roads.schema.json",
+        "map-object-catalog.schema.json",
+        "map-object-resolved.schema.json",
+        "map-object-type-inventory.schema.json",
+        "terrain-registry.schema.json",
+        "mission.schema.json",
+    ] {
+        let doc = schema(f)?;
+        let id = doc["$id"]
+            .as_str()
+            .ok_or_else(|| anyhow::anyhow!("{f}: missing $id"))?
+            .to_string();
+        registered.push((id, doc));
+    }
+    let registry = jsonschema::Registry::new()
+        .extend(registered.iter().map(|(id, doc)| {
+            (
+                id.as_str(),
+                jsonschema::Resource::from_contents(doc.clone()),
+            )
+        }))
+        .map_err(|e| anyhow::anyhow!("registry: {e}"))?
+        .prepare()
+        .map_err(|e| anyhow::anyhow!("registry prepare: {e}"))?;
+    let compile = |doc: &Value| -> Result<jsonschema::Validator> {
+        jsonschema::options()
+            .with_registry(&registry)
+            .build(doc)
+            .map_err(|e| anyhow::anyhow!("schema compile: {e}"))
+    };
+    let by_id = |name: &str| -> Result<jsonschema::Validator> {
+        compile(&serde_json::json!({
+            "$ref": format!("https://schema.tbdevent.eu/{name}/v1.json")
+        }))
+    };
+
+    let failures = std::cell::Cell::new(0usize);
+    let check = |label: &str, v: &jsonschema::Validator, data: &Value| {
+        let errs: Vec<String> = v
+            .iter_errors(data)
+            .map(|e| {
+                let p = e.instance_path().to_string();
+                format!(
+                    "        {} {e}",
+                    if p.is_empty() { "/".to_string() } else { p }
+                )
+            })
+            .collect();
+        if errs.is_empty() {
+            println!("  PASS  {label}");
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  {label}");
+            for e in errs {
+                println!("{e}");
+            }
+        }
+    };
+
+    let v_mission = compile(&schema("mission.schema.json")?)?;
+    let v_registry = compile(&schema("registry.schema.json")?)?;
+    let v_items = compile(&schema("registry-items.schema.json")?)?;
+    let v_compat = compile(&schema("registry-compat.schema.json")?)?;
+    let v_loadout = compile(&schema("loadout-export.schema.json")?)?;
+    let v_bridge = compile(&read_json(
+        &sroot.join("bridge/bridge-messages.schema.json"),
+    )?)?;
+    let v_tmanifest = compile(&schema("terrain-manifest.schema.json")?)?;
+    let v_anchors = compile(&schema("terrain-anchors.schema.json")?)?;
+    let v_editor = compile(&schema("mission-editor-payload.schema.json")?)?;
+    let v_locations = compile(&schema("locations.schema.json")?)?;
+    let v_hlabels = compile(&schema("height-labels.schema.json")?)?;
+    let v_faction = compile(&schema("faction-library.schema.json")?)?;
+    let v_mo_prefab = by_id("map-object-prefab")?;
+    let v_mo_instance = by_id("map-object-instance")?;
+    let v_mo_region = by_id("map-object-region")?;
+    let v_mo_roads = by_id("map-object-roads")?;
+    let v_mo_catalog = by_id("map-object-catalog")?;
+    let v_mo_resolved = by_id("map-object-resolved")?;
+    let v_mo_inventory = by_id("map-object-type-inventory")?;
+    let v_tregistry = by_id("terrain-registry")?;
+
+    let sorted_json_files = |dir: &Path| -> Result<Vec<String>> {
+        let mut v: Vec<String> = fs::read_dir(dir)?
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().to_string())
+            .filter(|n| n.ends_with(".json"))
+            .collect();
+        v.sort();
+        Ok(v)
+    };
+
+    println!("Golden missions:");
+    let missions_dir = sroot.join("golden-missions");
+    for f in sorted_json_files(&missions_dir)? {
+        check(&f, &v_mission, &read_json(&missions_dir.join(&f))?);
+    }
+
+    println!("Registry:");
+    check(
+        "registry.example.json",
+        &v_registry,
+        &read_json(&reg_file("registry.example.json"))?,
+    );
+    check(
+        "registry.vanilla-poc.json",
+        &v_registry,
+        &read_json(&reg_file("registry.vanilla-poc.json"))?,
+    );
+
+    println!("Registry items:");
+    let items_sample = read_json(&reg_file("registry-items.sample.json"))?;
+    let items_wb = read_json(&reg_file("registry-items.workbench.json"))?;
+    check("registry-items.sample.json", &v_items, &items_sample);
+    check("registry-items.workbench.json", &v_items, &items_wb);
+
+    // Addon provenance + variant_of integrity (FK walkers).
+    let fk = |label: String, ok: bool, pass_note: String, bad: Vec<String>| {
+        if ok {
+            println!("  PASS  {label} ({pass_note})");
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  {label}");
+            for b in bad.iter().take(10) {
+                println!("        {b}");
+            }
+            if bad.len() > 10 {
+                println!("        ... {} more", bad.len() - 10);
+            }
+        }
+    };
+    let addon_refs = |items: &Value| -> (usize, usize, Vec<String>) {
+        let known: HashSet<&str> = items["addons"]
+            .as_array()
+            .map(|a| a.iter().filter_map(|x| x["name"].as_str()).collect())
+            .unwrap_or_default();
+        let mut with_addon = 0;
+        let mut bad = Vec::new();
+        let total = items["items"].as_array().map(Vec::len).unwrap_or(0);
+        for it in items["items"].as_array().into_iter().flatten() {
+            let Some(addon) = it.get("addon").and_then(Value::as_str) else {
+                continue;
+            };
+            with_addon += 1;
+            if !known.contains(addon) {
+                bad.push(format!(
+                    "dangling {} addon {addon}",
+                    it["resource_name"].as_str().unwrap_or("?")
+                ));
+            }
+        }
+        (with_addon, total, bad)
+    };
+    for (label, items) in [
+        ("registry-items.sample.json", &items_sample),
+        ("registry-items.workbench.json", &items_wb),
+    ] {
+        let (with_addon, total, bad) = addon_refs(items);
+        fk(
+            format!("{label} (addon provenance"),
+            bad.is_empty(),
+            format!("addon provenance, {with_addon}/{total} items carry addon"),
+            bad,
+        );
+    }
+    let variant_refs = |items: &Value| -> (usize, Vec<String>) {
+        let known: HashSet<&str> = items["items"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x["resource_name"].as_str())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut variants = 0;
+        let mut bad = Vec::new();
+        for it in items["items"].as_array().into_iter().flatten() {
+            let Some(vof) = it.get("variant_of").and_then(Value::as_str) else {
+                continue;
+            };
+            variants += 1;
+            let rn = it["resource_name"].as_str().unwrap_or("?");
+            if !known.contains(vof) {
+                bad.push(format!("{rn} variant_of {vof}"));
+            }
+            if vof == rn {
+                bad.push(format!("{rn} is its own variant"));
+            }
+        }
+        (variants, bad)
+    };
+    for (label, items) in [
+        ("registry-items.sample.json", &items_sample),
+        ("registry-items.workbench.json", &items_wb),
+    ] {
+        let (variants, bad) = variant_refs(items);
+        fk(
+            format!("{label} (variant_of integrity"),
+            bad.is_empty(),
+            format!("variant_of integrity, {variants} variants"),
+            bad,
+        );
+    }
+
+    println!("Registry compat:");
+    let edge_refs = |items: &Value, compat: &Value| -> (usize, Vec<String>) {
+        let known: HashSet<&str> = items["items"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|x| x["resource_name"].as_str())
+                    .collect()
+            })
+            .unwrap_or_default();
+        let mut bad = Vec::new();
+        let edges = compat["edges"].as_array().map(Vec::len).unwrap_or(0);
+        for e in compat["edges"].as_array().into_iter().flatten() {
+            let et = e["edge_type"].as_str().unwrap_or("?");
+            for endpoint in ["from_node", "to_node"] {
+                if let Some(n) = e[endpoint].as_str() {
+                    if !known.contains(n) {
+                        bad.push(format!("dangling {et} {endpoint} {n}"));
+                    }
+                }
+            }
+        }
+        (edges, bad)
+    };
+    let compat_sample = read_json(&reg_file("registry-compat.sample.json"))?;
+    check("registry-compat.sample.json", &v_compat, &compat_sample);
+    let (edges, bad) = edge_refs(&items_sample, &compat_sample);
+    fk(
+        "registry-compat.sample.json vs registry-items.sample.json (referential integrity"
+            .to_string(),
+        bad.is_empty(),
+        format!("referential integrity, {edges} edges"),
+        bad,
+    );
+    let compat_wb = read_json(&reg_file("registry-compat.workbench.json"))?;
+    check("registry-compat.workbench.json", &v_compat, &compat_wb);
+    let (edges, bad) = edge_refs(&items_wb, &compat_wb);
+    fk(
+        "registry-compat.workbench.json vs registry-items.workbench.json (referential integrity"
+            .to_string(),
+        bad.is_empty(),
+        format!("referential integrity, {edges} edges"),
+        bad,
+    );
+
+    println!("Faction library:");
+    check(
+        "faction-library.sample.json",
+        &v_faction,
+        &read_json(&reg_file("faction-library.sample.json"))?,
+    );
+
+    println!("Loadout export:");
+    check(
+        "loadout-export.sample.json",
+        &v_loadout,
+        &read_json(&reg_file("loadout-export.sample.json"))?,
+    );
+    check(
+        "loadout-export.v2.sample.json",
+        &v_loadout,
+        &read_json(&reg_file("loadout-export.v2.sample.json"))?,
+    );
+
+    println!("Mission editor payload:");
+    check(
+        "mission-editor-payload.sample.json",
+        &v_editor,
+        &read_json(&reg_file("mission-editor-payload.sample.json"))?,
+    );
+
+    println!("Bridge message samples:");
+    let samples = sroot.join("bridge/samples");
+    for f in sorted_json_files(&samples)? {
+        check(&f, &v_bridge, &read_json(&samples.join(&f))?);
+    }
+
+    println!("Terrain manifest:");
+    check(
+        "everon/manifest.json",
+        &v_tmanifest,
+        &read_json(&root.join("packages/map-assets/everon/manifest.json"))?,
+    );
+
+    println!("Locations (T-152.6):");
+    check(
+        "locations-everon-sample.json",
+        &v_locations,
+        &read_json(&sroot.join("golden/locations-everon-sample.json"))?,
+    );
+    let everon_loc = root.join("packages/map-assets/everon/locations.json");
+    if everon_loc.exists() {
+        check(
+            "map-assets/everon/locations.json",
+            &v_locations,
+            &read_json(&everon_loc)?,
+        );
+    }
+
+    println!("Height labels (T-152.16):");
+    let hl = root.join("packages/map-assets/everon/height-labels.json");
+    if hl.exists() {
+        check(
+            "map-assets/everon/height-labels.json",
+            &v_hlabels,
+            &read_json(&hl)?,
+        );
+    }
+
+    println!("Terrain anchors example:");
+    check(
+        "everon/anchors/verification.example.json",
+        &v_anchors,
+        &read_json(&root.join("packages/map-assets/everon/anchors/verification.example.json"))?,
+    );
+
+    println!("Enfusion DTO fixtures (ENF-4):");
+    let mission_id = registered
+        .iter()
+        .find(|(_, d)| {
+            d["$id"]
+                .as_str()
+                .map(|s| s.contains("mission"))
+                .unwrap_or(false)
+        })
+        .map(|(id, _)| id.clone())
+        .unwrap_or_default();
+    let enf = sroot.join("enfusion");
+    for f in sorted_json_files(&enf)? {
+        if !f.ends_with(".sample.json") {
+            continue;
+        }
+        let base = f.trim_end_matches(".sample.json");
+        let data = read_json(&enf.join(&f))?;
+        if base == "root" {
+            check(&f, &v_mission, &data);
+        } else {
+            match compile(&serde_json::json!({ "$ref": format!("{mission_id}#/$defs/{base}") })) {
+                Ok(v) => check(&f, &v, &data),
+                Err(_) => {
+                    failures.set(failures.get() + 1);
+                    println!("  FAIL  {f} (no schema for #/$defs/{base})");
+                }
+            }
+        }
+    }
+
+    let mo = sroot.join("golden/map-objects");
+    println!("Map object prefabs (S9 — one row per buildingClass):");
+    for (i, row) in read_json(&mo.join("map-object-prefabs-sample.json"))?
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        check(
+            &format!(
+                "prefab[{i}] {}/{}",
+                row["kind"].as_str().unwrap_or("?"),
+                row["class"].as_str().unwrap_or("?")
+            ),
+            &v_mo_prefab,
+            row,
+        );
+    }
+
+    println!("Map object instances:");
+    for (i, row) in read_json(&mo.join("map-object-instances-sample.json"))?
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        check(&format!("instance[{i}]"), &v_mo_instance, row);
+    }
+
+    println!("Map object chunk sample (T-090.3.1 — all-number 5-tuples):");
+    let chunk = read_json(&mo.join("map-object-chunk-sample.json"))?;
+    for (i, row) in chunk["chunk"]["instances"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        check(&format!("chunk-instance[{i}]"), &v_mo_instance, row);
+    }
+
+    println!("Map object regions (forest / field):");
+    for (i, row) in read_json(&mo.join("map-object-regions-everon-sample.json"))?
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        check(
+            &format!("region[{i}] {}", row["kind"].as_str().unwrap_or("?")),
+            &v_mo_region,
+            row,
+        );
+    }
+
+    println!("Map object roads:");
+    check(
+        "map-object-roads-sample.json",
+        &v_mo_roads,
+        &read_json(&mo.join("map-object-roads-sample.json"))?,
+    );
+
+    println!("Map object catalog bundle (validation-only, N12):");
+    check(
+        "map-object-catalog-everon-sample.json",
+        &v_mo_catalog,
+        &read_json(&mo.join("map-object-catalog-everon-sample.json"))?,
+    );
+    check(
+        "phased/P1-buildings.json",
+        &v_mo_catalog,
+        &read_json(&mo.join("phased/P1-buildings.json"))?,
+    );
+
+    println!("ResolvedWorldObject (Eden AI + T-090.7):");
+    for (i, row) in read_json(&mo.join("map-object-resolved-sample.json"))?
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        check(
+            &format!("resolved[{i}] {}", row["kind"].as_str().unwrap_or("?")),
+            &v_mo_resolved,
+            row,
+        );
+    }
+
+    println!("Terrain registry:");
+    check(
+        "golden terrain-registry.sample.json",
+        &v_tregistry,
+        &read_json(&mo.join("terrain-registry.sample.json"))?,
+    );
+    check(
+        "map-assets/terrain-registry.json",
+        &v_tregistry,
+        &read_json(&root.join("packages/map-assets/terrain-registry.json"))?,
+    );
+
+    println!("Dual + legacy terrain manifests (T-090.1/.1.1):");
+    check(
+        "everon-dual-tiles",
+        &v_tmanifest,
+        &read_json(&mo.join("terrain-manifest-everon-dual-tiles.json"))?,
+    );
+    check(
+        "everon-legacy-tiles",
+        &v_tmanifest,
+        &read_json(&mo.join("terrain-manifest-everon-legacy-tiles.json"))?,
+    );
+    check(
+        "everon-unified-satellite",
+        &v_tmanifest,
+        &read_json(&mo.join("terrain-manifest-everon-unified-satellite.json"))?,
+    );
+
+    println!("Map object type inventory (exact counts — pending until export):");
+    check(
+        "type-inventory-pending-everon.json",
+        &v_mo_inventory,
+        &read_json(&mo.join("type-inventory-pending-everon.json"))?,
+    );
+    check(
+        "map-assets/everon/objects/type-inventory.json",
+        &v_mo_inventory,
+        &read_json(&root.join("packages/map-assets/everon/objects/type-inventory.json"))?,
+    );
+
+    if failures.get() > 0 {
+        eprintln!("\n{} validation failure(s).", failures.get());
+        Ok(1)
+    } else {
+        println!("\nAll contracts valid.");
+        Ok(0)
+    }
+}
+
+/// Validate one mission JSON file (or stdin with `-`) — port of `validate-file.mjs`
+/// (schema + the 1.1 ORBAT-count/slot-id checks; the deploy-staging V1 gate).
+pub fn validate_file(target: &str) -> Result<u8> {
+    let raw = if target == "-" {
+        use std::io::Read;
+        let mut s = String::new();
+        std::io::stdin().read_to_string(&mut s)?;
+        s
+    } else {
+        fs::read_to_string(target).with_context(|| target.to_string())?
+    };
+    let Ok(data) = serde_json::from_str::<Value>(&raw) else {
+        eprintln!("invalid JSON");
+        return Ok(1);
+    };
+
+    let root = repo_root()?;
+    let schema = read_json(&schema_root(&root).join("schema/mission.schema.json"))?;
+    let validator =
+        jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
+    let errs: Vec<String> = validator
+        .iter_errors(&data)
+        .map(|e| {
+            let p = e.instance_path().to_string();
+            format!("{} {e}", if p.is_empty() { "/".to_string() } else { p })
+        })
+        .collect();
+    if !errs.is_empty() {
+        for e in errs {
+            eprintln!("{e}");
+        }
+        return Ok(1);
+    }
+
+    if data["schemaVersion"] == "1.1" {
+        let mut expected: i64 = 0;
+        for faction in data["orbat"]
+            .as_object()
+            .map(|m| m.values())
+            .into_iter()
+            .flatten()
+        {
+            for group in faction["groups"].as_array().into_iter().flatten() {
+                for role in group["roles"].as_array().into_iter().flatten() {
+                    expected += role["count"].as_i64().unwrap_or(0);
+                }
+            }
+        }
+        let slots = data["slots"].as_array().cloned().unwrap_or_default();
+        if slots.len() as i64 != expected {
+            eprintln!(
+                "/slots ORBAT instance count mismatch: orbat expects {expected}, slots has {}",
+                slots.len()
+            );
+            return Ok(1);
+        }
+        let mut ids = HashSet::new();
+        for slot in &slots {
+            let id = slot["id"].as_str().unwrap_or_default().to_string();
+            if !ids.insert(id.clone()) {
+                eprintln!("/slots duplicate slot id '{id}'");
+                return Ok(1);
+            }
+        }
+    }
+    println!("ok");
     Ok(0)
 }

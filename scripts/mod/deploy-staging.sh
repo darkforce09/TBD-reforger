@@ -129,8 +129,7 @@ rsync_to_remote() {
 
 echo "==> V1 validate mission JSON"
 if [ "$DRY_RUN" -eq 0 ]; then
-  (cd "$SCHEMA" && [ -d node_modules ] || npm ci --silent)
-  node "$SCHEMA/scripts/validate-file.mjs" \
+  cargo run -q -p xtask -- schema validate-file \
     "$SCHEMA/golden-missions/${TBD_MISSION_ID}.json"
 fi
 

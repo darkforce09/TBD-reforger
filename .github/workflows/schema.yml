@@ -13,13 +13,9 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/tbd-schema
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "26"
-      - run: npm install --no-audit --no-fund
-      - run: npm run validate
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # T-165.2: the validate suite is Rust (xtask) — no Node in this workflow.
+      - run: cargo run -q -p xtask -- schema validate

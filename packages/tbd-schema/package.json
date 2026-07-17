@@ -5,7 +5,6 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "validate": "node scripts/validate.mjs",
     "codegen": "node scripts/codegen.mjs",
     "verify-terrain-alignment": "node scripts/verify-terrain-alignment.mjs",
     "verify-terrain": "node scripts/verify-terrain-alignment.mjs",

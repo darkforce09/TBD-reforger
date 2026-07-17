@@ -110,7 +110,8 @@ rust-ci: ## Rust CI gate locally — fmt + clippy + build + test-it (mirrors the
 	$(MAKE) rust-test-it
 
 schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency) + T-152.16 height labels
-	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-golden && npm run verify-map-glyphs && node ../../scripts/map-assets/verify-height-labels.mjs
+	cargo run -q -p xtask -- schema validate
+	cd packages/tbd-schema && npm ci --silent && npm run verify-map-object-golden && npm run verify-map-glyphs && node ../../scripts/map-assets/verify-height-labels.mjs
 	cargo run -q -p xtask -- schema map-object-enums
 	cargo run -q -p xtask -- schema type-inventory
 	cargo run -q -p xtask -- schema t090-specs
