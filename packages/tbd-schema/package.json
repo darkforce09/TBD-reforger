@@ -7,17 +7,10 @@
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "codegen": "node scripts/codegen.mjs",
-    "verify-citations": "node scripts/verify-contract-citations.mjs",
-    "verify-terrain-manifest": "node scripts/verify-terrain-manifest.mjs",
     "verify-terrain-alignment": "node scripts/verify-terrain-alignment.mjs",
-    "verify-terrain": "node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs",
-    "verify-map-object-enums": "node scripts/verify-map-object-enums.mjs",
+    "verify-terrain": "node scripts/verify-terrain-alignment.mjs",
     "verify-map-object-golden": "node scripts/verify-map-object-golden.mjs",
-    "verify-map-glyphs": "node scripts/verify-map-glyphs-manifest.mjs",
-    "verify-t090-specs": "node scripts/verify-t090-spec-consistency.mjs",
-    "verify-n6": "node scripts/verify-n6-sentence.mjs",
-    "verify-n10": "node scripts/verify-n10-tile-budget.mjs",
-    "verify-type-inventory": "node scripts/verify-type-inventory.mjs"
+    "verify-map-glyphs": "node scripts/verify-map-glyphs-manifest.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {

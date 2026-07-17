@@ -1,0 +1,1176 @@
+//! T-165.1 — the text/JSON schema gates, ported from `packages/tbd-schema/scripts/*.mjs`
+//! (verify-contract-citations, verify-t090-spec-consistency, verify-n6-sentence,
+//! verify-n10-tile-budget, verify-map-object-enums, verify-type-inventory,
+//! verify-terrain-manifest, flatten-orbat-slots). Behavior parity with the Node originals:
+//! same gate semantics, same OK/FAIL verdict lines, same exit codes; stdout formatting is
+//! near-identical but the acceptance contract is verdict-set + exit code (T-165 plan).
+//!
+//! Retirements carried over from the Node era (printed, so the surface change is visible):
+//! - TS-6 front-end export tags — the React contract layer was deleted at T-159.29.3; the
+//!   Leptos contract layer is Rust (`dto.rs`) gated by R-api golden tests.
+//! - GO-7 @route match — the Go handlers were retired at the T-145 Rust cutover; axum wires
+//!   routes through typed fns, so a rename is a compile error, not doc rot.
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use anyhow::{Context, Result};
+use serde_json::Value;
+
+use crate::root::find_repo_root as repo_root;
+
+fn read_json(p: &Path) -> Result<Value> {
+    let raw = fs::read_to_string(p).with_context(|| format!("read {}", p.display()))?;
+    serde_json::from_str(&raw).with_context(|| format!("parse {}", p.display()))
+}
+
+fn schema_root(root: &Path) -> PathBuf {
+    root.join("packages/tbd-schema")
+}
+
+fn spec_dir(root: &Path) -> PathBuf {
+    root.join("docs/specs/Mission_Creator_Architecture")
+}
+
+/// Print a FAIL header + errors and return exit code 1; or the OK line and 0.
+fn verdict(name: &str, ok_line: &str, errors: &[String]) -> u8 {
+    if errors.is_empty() {
+        if ok_line.is_empty() {
+            println!("{name}: OK");
+        } else {
+            println!("{name}: OK {ok_line}");
+        }
+        0
+    } else {
+        eprintln!("{name}: FAIL ({})", errors.len());
+        for e in errors {
+            eprintln!("  {e}");
+        }
+        1
+    }
+}
+
+/* ─────────────────────────── citations ─────────────────────────── */
+
+/// RFC-6901 pointer resolution ("", "#", "#/" = root) — mirror of `pointerResolves`.
+fn pointer_resolves(doc: &Value, pointer: &str) -> bool {
+    if pointer.is_empty() || pointer == "#" || pointer == "#/" {
+        return true;
+    }
+    let path = pointer.strip_prefix('#').unwrap_or(pointer);
+    if !path.starts_with('/') {
+        return false;
+    }
+    let mut cur = doc;
+    for raw in path.split('/').skip(1) {
+        let key = raw.replace("~1", "/").replace("~0", "~");
+        match cur {
+            Value::Object(m) => match m.get(&key) {
+                Some(v) => cur = v,
+                None => return false,
+            },
+            Value::Array(a) => match key.parse::<usize>().ok().and_then(|i| a.get(i)) {
+                Some(v) => cur = v,
+                None => return false,
+            },
+            _ => return false,
+        }
+    }
+    true
+}
+
+const CODE_EXTS: [&str; 6] = ["go", "ts", "tsx", "c", "mjs", "js"];
+const IGNORE_DIRS: [&str; 6] = [
+    "node_modules",
+    "dist",
+    ".git",
+    "build",
+    "coverage",
+    "vendor",
+];
+
+pub fn citations() -> Result<u8> {
+    let root = repo_root()?;
+    let schema_dir = schema_root(&root).join("schema");
+    let tag_re = regex::Regex::new(r#"@contract\s+([A-Za-z0-9_.\-]+\.schema\.json)(#[^\s)"']*)?"#)?;
+
+    let mut schema_cache: HashMap<String, Option<Value>> = HashMap::new();
+    let mut citations = 0usize;
+    let mut problems: Vec<String> = Vec::new();
+
+    for scan in ["apps", "packages"] {
+        let base = root.join(scan);
+        if !base.exists() {
+            continue;
+        }
+        for entry in walkdir::WalkDir::new(&base)
+            .into_iter()
+            .filter_entry(|e| {
+                !(e.file_type().is_dir()
+                    && IGNORE_DIRS.contains(&e.file_name().to_string_lossy().as_ref()))
+            })
+            .filter_map(|e| e.ok())
+            .filter(|e| e.file_type().is_file())
+        {
+            let ext = entry
+                .path()
+                .extension()
+                .map(|e| e.to_string_lossy().to_string())
+                .unwrap_or_default();
+            if !CODE_EXTS.contains(&ext.as_str()) {
+                continue;
+            }
+            let Ok(text) = fs::read_to_string(entry.path()) else {
+                continue;
+            };
+            for cap in tag_re.captures_iter(&text) {
+                citations += 1;
+                let name = cap.get(1).unwrap().as_str();
+                let pointer = cap.get(2).map(|m| m.as_str()).unwrap_or("");
+                let rel = entry
+                    .path()
+                    .strip_prefix(&root)
+                    .unwrap_or(entry.path())
+                    .display();
+                let doc = schema_cache
+                    .entry(name.to_string())
+                    .or_insert_with(|| read_json(&schema_dir.join(name)).ok());
+                match doc {
+                    None => problems.push(format!(
+                        "{rel}: @contract {name}{pointer} -> schema/{name} not found"
+                    )),
+                    Some(doc) => {
+                        if !pointer_resolves(doc, pointer) {
+                            problems.push(format!(
+                                "{rel}: @contract {name}{pointer} -> JSON pointer not found in schema"
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    println!("Checked {citations} @contract citation(s) across apps, packages.");
+    if problems.is_empty() {
+        println!("All @contract citations resolve.");
+    } else {
+        eprintln!("\n{} dangling citation(s):", problems.len());
+        for p in &problems {
+            eprintln!("  {p}");
+        }
+    }
+    println!(
+        "TS-6 retired: the React contract layer was deleted at T-159.29.3 (Leptos dto.rs is R-api-golden gated)."
+    );
+    println!(
+        "GO-7 retired: Go handlers removed at the T-145 Rust cutover (axum routes are compile-checked)."
+    );
+    Ok(if problems.is_empty() { 0 } else { 1 })
+}
+
+/* ─────────────────────────── n6 / n10 ─────────────────────────── */
+
+pub fn n6_sentence() -> Result<u8> {
+    let root = repo_root()?;
+    let norm = |s: &str| -> String {
+        let stripped: String = s.chars().filter(|c| *c != '`' && *c != '*').collect();
+        stripped.split_whitespace().collect::<Vec<_>>().join(" ")
+    };
+    let core = norm(
+        "oriented bounding rectangle from spatial.halfExtentsM + rotationDeg. Real footprint polygon rings \
+         are populated only when T-090.3.0 proves Enfusion footprint export; when present, polygons \
+         supersede OBB rectangles for render.",
+    );
+    let spec = spec_dir(&root);
+    let files = [
+        spec.join("t090_2_map_object_taxonomy.md"),
+        spec.join("t090_5_map_object_render_layer.md"),
+        spec.join("t090_6_geometry_placement_audit.md"),
+        spec.join("t090_world_object_glyphs.md"),
+        schema_root(&root).join("schema/map-object-prefab.schema.json"),
+    ];
+    let mut missing = Vec::new();
+    for f in &files {
+        let text = fs::read_to_string(f).with_context(|| format!("read {}", f.display()))?;
+        if !norm(&text).contains(&core) {
+            missing.push(f.strip_prefix(&root).unwrap_or(f).display().to_string());
+        }
+    }
+    if missing.is_empty() {
+        println!(
+            "verify-n6-sentence: OK (N6 sentence identical across {} locations)",
+            files.len()
+        );
+        Ok(0)
+    } else {
+        eprintln!("verify-n6-sentence: FAIL — N6 building-geometry sentence missing/drifted in:");
+        for m in &missing {
+            eprintln!("  {m}");
+        }
+        Ok(1)
+    }
+}
+
+pub fn n10_tile_budget() -> Result<u8> {
+    let root = repo_root()?;
+    let spec = spec_dir(&root);
+    // Dash-agnostic (figure/en/em → hyphen), mirroring the Node normalizer.
+    let norm = |name: &str| -> Result<String> {
+        let raw = fs::read_to_string(spec.join(name)).with_context(|| name.to_string())?;
+        Ok(raw
+            .chars()
+            .map(|c| match c {
+                '\u{2012}'..='\u{2015}' => '-',
+                other => other,
+            })
+            .collect())
+    };
+    let canonical = [
+        "200-400 MB",
+        "400-800 MB",
+        "512 tiles",
+        "Max concurrent tile fetches",
+        "one basemap pyramid",
+    ];
+    let forbidden = ["1.6 GB", "200-800 MB"];
+    let mut errors = Vec::new();
+    for f in [
+        "t090_basemap_dual_view.md",
+        "t090_terrain_export_pipeline.md",
+    ] {
+        let text = norm(f)?;
+        for row in canonical {
+            if !text.contains(row) {
+                errors.push(format!("{f}: N10 row missing \"{row}\""));
+            }
+        }
+    }
+    for entry in fs::read_dir(&spec)? {
+        let name = entry?.file_name().to_string_lossy().to_string();
+        if !(name.starts_with("t090") && name.ends_with(".md")) {
+            continue;
+        }
+        let text = norm(&name)?;
+        for bad in forbidden {
+            if text.contains(bad) {
+                errors.push(format!(
+                    "{name}: restates conflicting tile budget \"{bad}\" (N10 is single source)"
+                ));
+            }
+        }
+    }
+    if errors.is_empty() {
+        println!(
+            "verify-n10-tile-budget: OK (N10 tile-budget single-source across basemap + pipeline)"
+        );
+        Ok(0)
+    } else {
+        eprintln!("verify-n10-tile-budget: FAIL");
+        for e in &errors {
+            eprintln!("  {e}");
+        }
+        Ok(1)
+    }
+}
+
+/* ─────────────────────────── map-object enums ─────────────────────────── */
+
+pub fn map_object_enums() -> Result<u8> {
+    let root = repo_root()?;
+    let sroot = schema_root(&root);
+    let enums = read_json(&sroot.join("schema/map-object-enums.schema.json"))?;
+    let defs = &enums["$defs"];
+    let set = |name: &str| -> HashSet<String> {
+        defs[name]["enum"]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let sets: BTreeMap<&str, HashSet<String>> = BTreeMap::from([
+        ("kind", set("kind")),
+        ("buildingClass", set("buildingClass")),
+        ("roadClass", set("roadClass")),
+        ("speciesClass", set("speciesClass")),
+        ("forestClass", set("forestClass")),
+        ("rockClass", set("rockClass")),
+        ("propClass", set("propClass")),
+        ("utilityClass", set("utilityClass")),
+        ("waterClass", set("waterClass")),
+    ]);
+    let class_enum_for_kind: BTreeMap<&str, &str> = BTreeMap::from([
+        ("building", "buildingClass"),
+        ("road", "roadClass"),
+        ("tree", "speciesClass"),
+        ("vegetation", "speciesClass"),
+        ("rock", "rockClass"),
+        ("prop", "propClass"),
+        ("utility", "utilityClass"),
+        ("water", "waterClass"),
+    ]);
+
+    let mut errors: Vec<String> = Vec::new();
+    let mut check_row = |src: String, kind: Option<&str>, class: Option<&str>| {
+        let Some(kind) = kind else {
+            return;
+        };
+        if !sets["kind"].contains(kind) {
+            errors.push(format!(
+                "{src}: kind '{kind}' not in map-object-enums#/$defs/kind"
+            ));
+            return;
+        }
+        let Some(enum_name) = class_enum_for_kind.get(kind) else {
+            errors.push(format!(
+                "{src}: kind '{kind}' has no class-enum mapping (regions carry no prefab class)"
+            ));
+            return;
+        };
+        if let Some(klass) = class {
+            if !sets[enum_name].contains(klass) {
+                errors.push(format!(
+                    "{src}: class '{klass}' not in {enum_name} (kind={kind})"
+                ));
+            }
+        }
+    };
+
+    let prefabs = read_json(&sroot.join("golden/map-objects/map-object-prefabs-sample.json"))?;
+    let prefab_count = prefabs.as_array().map(Vec::len).unwrap_or(0);
+    for p in prefabs.as_array().into_iter().flatten() {
+        check_row(
+            format!("golden prefab {}", p["prefabId"]),
+            p["kind"].as_str(),
+            p["class"].as_str(),
+        );
+    }
+
+    let classify = read_json(&sroot.join("rules/prefab-classify.json"))?;
+    for (i, r) in classify["rules"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+    {
+        check_row(
+            format!("prefab-classify rule[{i}]"),
+            r["kind"].as_str(),
+            r["class"].as_str(),
+        );
+    }
+    if classify["fallback"].is_object() {
+        check_row(
+            "prefab-classify fallback".to_string(),
+            classify["fallback"]["kind"].as_str(),
+            classify["fallback"]["class"].as_str(),
+        );
+    }
+
+    let regions =
+        read_json(&sroot.join("golden/map-objects/map-object-regions-everon-sample.json"))?;
+    for reg in regions.as_array().into_iter().flatten() {
+        let id = &reg["id"];
+        if let Some(kind) = reg["kind"].as_str() {
+            if !sets["kind"].contains(kind) {
+                errors.push(format!("region {id}: kind '{kind}' not in kind enum"));
+            }
+        }
+        if let Some(d) = reg["dominantSpeciesClass"].as_str() {
+            if !sets["forestClass"].contains(d) {
+                errors.push(format!(
+                    "region {id}: dominantSpeciesClass '{d}' not in forestClass"
+                ));
+            }
+        }
+    }
+
+    let glyphs_doc = read_json(&root.join("packages/map-assets/glyphs/manifest.json"))?;
+    let glyphs = glyphs_doc["glyphs"]
+        .as_object()
+        .cloned()
+        .unwrap_or_default();
+    for key in glyphs.keys() {
+        let kind_tok = key.split('-').next().unwrap_or("");
+        if !sets["kind"].contains(kind_tok) {
+            errors.push(format!(
+                "glyph '{key}': kind prefix '{kind_tok}' not in kind enum"
+            ));
+        }
+    }
+
+    if errors.is_empty() {
+        println!(
+            "verify-map-object-enums: OK ({prefab_count} prefabs, {} glyphs, enums single-source)",
+            glyphs.len()
+        );
+        Ok(0)
+    } else {
+        eprintln!("verify-map-object-enums: FAIL");
+        for e in &errors {
+            eprintln!("  {e}");
+        }
+        Ok(1)
+    }
+}
+
+/* ─────────────────────────── type inventory (I1–I7) ─────────────────────────── */
+
+const INSTANCE_KINDS: [&str; 8] = [
+    "building",
+    "tree",
+    "vegetation",
+    "rock",
+    "prop",
+    "utility",
+    "water",
+    "road",
+];
+
+pub fn type_inventory() -> Result<u8> {
+    let root = repo_root()?;
+    let sroot = schema_root(&root);
+    let schema = read_json(&sroot.join("schema/map-object-type-inventory.schema.json"))?;
+    let validator =
+        jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
+    let enums = read_json(&sroot.join("schema/map-object-enums.schema.json"))?;
+
+    let mut failures: Vec<String> = Vec::new();
+
+    let check = |label: &str, inv: &Value, manifest: Option<&Value>, failures: &mut Vec<String>| {
+        let errs: Vec<String> = validator
+            .iter_errors(inv)
+            .map(|e| {
+                let p = e.instance_path().to_string();
+                format!(
+                    "{label}: schema {} {e}",
+                    if p.is_empty() { "/".to_string() } else { p }
+                )
+            })
+            .collect();
+        if !errs.is_empty() {
+            failures.extend(errs);
+            return;
+        }
+
+        if inv["censusStatus"] == "pending_export" {
+            if !inv["levels"]["totalInstances"].is_null()
+                || !inv["levels"]["uniquePrefabs"].is_null()
+            {
+                failures.push(format!(
+                    "{label}: pending_export requires null levels.* counts"
+                ));
+            }
+            for k in INSTANCE_KINDS {
+                let bucket = &inv["byKind"][k];
+                if !bucket["prefabTypes"].is_null() || !bucket["instances"].is_null() {
+                    failures.push(format!(
+                        "{label}: pending_export requires null byKind.{k} counts"
+                    ));
+                }
+                if k == "road" && !bucket["segments"].is_null() {
+                    failures.push(format!(
+                        "{label}: pending_export requires null byKind.road.segments"
+                    ));
+                }
+            }
+            return;
+        }
+
+        // I1 — Σ byKind.instances = levels.totalInstances.
+        let kind_sum: i64 = INSTANCE_KINDS
+            .iter()
+            .filter_map(|k| inv["byKind"][*k]["instances"].as_i64())
+            .sum();
+        let total = inv["levels"]["totalInstances"].as_i64().unwrap_or(-1);
+        if kind_sum != total {
+            failures.push(format!(
+                "{label}: I1 kind sum {kind_sum} !== levels.totalInstances {total}"
+            ));
+        }
+
+        // I2 — building class sum when populated.
+        if let Some(by_building) = inv["byBuildingClass"].as_object() {
+            if !by_building.is_empty() {
+                let class_sum: i64 = by_building
+                    .values()
+                    .filter_map(|row| row["instances"].as_i64())
+                    .sum();
+                let b = inv["byKind"]["building"]["instances"]
+                    .as_i64()
+                    .unwrap_or(-1);
+                if class_sum != b {
+                    failures.push(format!(
+                        "{label}: I2 byBuildingClass sum {class_sum} !== byKind.building.instances {b}"
+                    ));
+                }
+            }
+        }
+
+        // Forest region tree assignment — exact.
+        if inv["byRegionKind"]["forest"].is_object() {
+            if let Some(tree_total) = inv["byKind"]["tree"]["instances"].as_i64() {
+                let region_trees = inv["byRegionKind"]["forest"]["treeCount"]
+                    .as_i64()
+                    .unwrap_or(0);
+                let unassigned = inv["unassignedTrees"].as_i64().unwrap_or(0);
+                if region_trees + unassigned != tree_total {
+                    failures.push(format!(
+                        "{label}: F-count forest.treeCount ({region_trees}) + unassignedTrees ({unassigned}) !== byKind.tree.instances ({tree_total})"
+                    ));
+                }
+            }
+        }
+
+        // I3 — per-class keys ∈ closed enums.
+        for (bucket, enum_name) in [
+            ("byBuildingClass", "buildingClass"),
+            ("byRoadClass", "roadClass"),
+            ("bySpeciesClass", "speciesClass"),
+        ] {
+            let allowed: HashSet<&str> = enums["$defs"][enum_name]["enum"]
+                .as_array()
+                .map(|a| a.iter().filter_map(Value::as_str).collect())
+                .unwrap_or_default();
+            for cls in inv[bucket]
+                .as_object()
+                .map(|m| m.keys())
+                .into_iter()
+                .flatten()
+            {
+                if !allowed.contains(cls.as_str()) {
+                    failures.push(format!(
+                        "{label}: I3 {bucket} key '{cls}' not in {enum_name} enum"
+                    ));
+                }
+            }
+        }
+
+        // I4 — complete census requires needsReview.prefabTypes = 0.
+        if inv["censusStatus"] == "complete" && inv["needsReview"]["prefabTypes"] != 0 {
+            failures.push(format!(
+                "{label}: I4 complete census requires needsReview.prefabTypes = 0 (got {})",
+                inv["needsReview"]["prefabTypes"]
+            ));
+        }
+
+        // I5 / I7 — manifest.objects cross-check.
+        if let Some(m) = manifest {
+            if let Some(prefab_count) = m["objects"]["prefabCount"].as_i64() {
+                let unique = inv["levels"]["uniquePrefabs"].as_i64().unwrap_or(-1);
+                if prefab_count != unique {
+                    failures.push(format!(
+                        "{label}: I5 manifest.objects.prefabCount {prefab_count} !== levels.uniquePrefabs {unique}"
+                    ));
+                }
+                let mi = m["objects"]["instanceCount"].as_i64().unwrap_or(-1);
+                if mi != total {
+                    failures.push(format!(
+                        "{label}: I7 manifest.objects.instanceCount {mi} !== levels.totalInstances {total}"
+                    ));
+                }
+            }
+        }
+    };
+
+    let registry_path = root.join("packages/map-assets/terrain-registry.json");
+    if registry_path.exists() {
+        let reg = read_json(&registry_path)?;
+        for t in reg["terrains"].as_array().into_iter().flatten() {
+            let terrain_id = t["terrainId"].as_str().unwrap_or_default();
+            let inv_path = root
+                .join("packages/map-assets")
+                .join(terrain_id)
+                .join("objects/type-inventory.json");
+            if !inv_path.exists() {
+                continue;
+            }
+            let manifest_path = root
+                .join("packages/map-assets")
+                .join(t["manifestPath"].as_str().unwrap_or_default());
+            let manifest = manifest_path
+                .exists()
+                .then(|| read_json(&manifest_path))
+                .transpose()?;
+            let inv = read_json(&inv_path)?;
+            check(
+                &format!("{terrain_id}/objects/type-inventory.json"),
+                &inv,
+                manifest.as_ref(),
+                &mut failures,
+            );
+        }
+    }
+
+    let golden = sroot.join("golden/map-objects/type-inventory-pending-everon.json");
+    if golden.exists() {
+        let inv = read_json(&golden)?;
+        check(
+            "golden/type-inventory-pending-everon.json",
+            &inv,
+            None,
+            &mut failures,
+        );
+    }
+
+    for t in ["everon", "arland", "custom"] {
+        let spike = root
+            .join("packages/map-assets")
+            .join(t)
+            .join("staging/spike/type-inventory-spike.json");
+        if spike.exists() {
+            let inv = read_json(&spike)?;
+            check(
+                &format!("{t}/staging/spike/type-inventory-spike.json"),
+                &inv,
+                None,
+                &mut failures,
+            );
+        }
+    }
+
+    Ok(verdict("verify-type-inventory", "", &failures))
+}
+
+/* ─────────────────────────── terrain manifest ─────────────────────────── */
+
+struct TerrainContract {
+    width: f64,
+    height: f64,
+    min_m: f64,
+    max_m: f64,
+}
+
+pub fn terrain_manifest(terrain: &str) -> Result<u8> {
+    let contract = match terrain {
+        "everon" => TerrainContract {
+            width: 12800.0,
+            height: 12800.0,
+            min_m: -204.78,
+            max_m: 375.53,
+        },
+        "arland" => TerrainContract {
+            width: 4096.0,
+            height: 4096.0,
+            min_m: -163.0,
+            max_m: 148.38,
+        },
+        other => {
+            eprintln!("Unknown terrain \"{other}\". Use: everon | arland");
+            return Ok(2);
+        }
+    };
+    let root = repo_root()?;
+    let manifest_path = root.join(format!("packages/map-assets/{terrain}/manifest.json"));
+    let manifest = match read_json(&manifest_path) {
+        Ok(m) => m,
+        Err(e) => {
+            eprintln!("FAIL  Cannot read manifest: {}", manifest_path.display());
+            eprintln!("{e}");
+            return Ok(1);
+        }
+    };
+
+    let schema = read_json(&schema_root(&root).join("schema/terrain-manifest.schema.json"))?;
+    let validator =
+        jsonschema::validator_for(&schema).map_err(|e| anyhow::anyhow!("schema compile: {e}"))?;
+    let schema_errs: Vec<String> = validator
+        .iter_errors(&manifest)
+        .map(|e| {
+            let p = e.instance_path().to_string();
+            format!(
+                "      {} {e}",
+                if p.is_empty() { "/".to_string() } else { p }
+            )
+        })
+        .collect();
+    if !schema_errs.is_empty() {
+        eprintln!("FAIL  Manifest schema validation:");
+        for e in schema_errs {
+            eprintln!("{e}");
+        }
+        return Ok(1);
+    }
+    println!("PASS  Manifest validates against terrain-manifest.schema.json");
+
+    let bounds: Vec<f64> = manifest["worldBounds"]
+        .as_array()
+        .map(|a| a.iter().filter_map(Value::as_f64).collect())
+        .unwrap_or_default();
+    let mut errors = Vec::new();
+    if manifest["terrainId"] != terrain {
+        errors.push("terrainId mismatch".to_string());
+    }
+    if bounds.len() != 4
+        || bounds[0] != 0.0
+        || bounds[1] != 0.0
+        || bounds[2] != contract.width
+        || bounds[3] != contract.height
+    {
+        errors.push(format!(
+            "worldBounds !== [0,0,{},{}]",
+            contract.width, contract.height
+        ));
+    }
+    let min_m = manifest["dem"]["heightRangeMinM"]
+        .as_f64()
+        .unwrap_or(f64::NAN);
+    let max_m = manifest["dem"]["heightRangeMaxM"]
+        .as_f64()
+        .unwrap_or(f64::NAN);
+    if (min_m - contract.min_m).abs() > 0.01 {
+        errors.push("dem.heightRangeMinM !== terrains.ts".to_string());
+    }
+    if (max_m - contract.max_m).abs() > 0.01 {
+        errors.push("dem.heightRangeMaxM !== terrains.ts".to_string());
+    }
+    if manifest["precision"]["storageDecimals"] != 3 {
+        errors.push("storageDecimals must be 3".to_string());
+    }
+    if manifest["precision"]["spawnAuthority"] != "mod-get-surface-y" {
+        errors.push("spawnAuthority must be mod-get-surface-y".to_string());
+    }
+    let wpx = manifest["dem"]["widthPx"].as_f64().unwrap_or(0.0);
+    let hpx = manifest["dem"]["heightPx"].as_f64().unwrap_or(0.0);
+    if wpx == 0.0 || hpx == 0.0 {
+        println!("WARN  Stub manifest (widthPx/heightPx=0) — OK for T-090.0");
+    } else if manifest["dem"]["exportedAt"]
+        .as_str()
+        .unwrap_or("")
+        .is_empty()
+        || manifest["dem"]["workbenchVersion"]
+            .as_str()
+            .unwrap_or("")
+            .is_empty()
+    {
+        errors.push("exportedAt/workbenchVersion required when DEM dims set".to_string());
+    }
+
+    if !errors.is_empty() {
+        eprintln!("FAIL  terrains.ts cross-check:");
+        for e in &errors {
+            eprintln!("      {e}");
+        }
+        return Ok(1);
+    }
+    println!("PASS  Manifest matches terrains.ts for {terrain}");
+    println!("\nverify-terrain-manifest: OK");
+    Ok(0)
+}
+
+/* ─────────────────────────── t090 spec consistency (12 gates) ─────────────────────────── */
+
+pub fn t090_specs() -> Result<u8> {
+    let root = repo_root()?;
+    let spec = spec_dir(&root);
+    let read = |p: PathBuf| -> Result<String> {
+        fs::read_to_string(&p).with_context(|| format!("read {}", p.display()))
+    };
+
+    let mut t090_files: Vec<String> = fs::read_dir(&spec)?
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .filter(|n| n.starts_with("t090") && n.ends_with(".md"))
+        .collect();
+    t090_files.sort();
+    let corpus: Vec<(String, String)> = t090_files
+        .iter()
+        .map(|n| Ok((n.clone(), read(spec.join(n))?)))
+        .collect::<Result<_>>()?;
+
+    let mut failures: Vec<String> = Vec::new();
+    let mut fail = |gate: &str, msg: String| failures.push(format!("[{gate}] {msg}"));
+
+    let window_has = |text: &str, i: usize, radius: usize, re: &regex::Regex| -> bool {
+        let lo = i.saturating_sub(radius);
+        let hi = (i + radius).min(text.len());
+        // Snap to char boundaries.
+        let lo = (lo..=i).find(|&b| text.is_char_boundary(b)).unwrap_or(i);
+        let hi = (hi..text.len())
+            .find(|&b| text.is_char_boundary(b))
+            .unwrap_or(text.len());
+        re.is_match(&text[lo..hi])
+    };
+
+    // Gate 1.
+    let g1 = regex::RegexBuilder::new(r"Pick/select world objects \(future")
+        .case_insensitive(true)
+        .build()?;
+    for (name, text) in &corpus {
+        if g1.is_match(text) {
+            fail(
+                "1",
+                format!("{name}: contains forbidden \"Pick/select world objects (future...\""),
+            );
+        }
+    }
+
+    // Gate 2.
+    let g2a = regex::RegexBuilder::new(r"reuse\s+slotClusterIndex")
+        .case_insensitive(true)
+        .build()?;
+    let g2b = regex::RegexBuilder::new(r"separate\s+world")
+        .case_insensitive(true)
+        .build()?;
+    for (name, text) in &corpus {
+        if g2a.is_match(text) && !g2b.is_match(text) {
+            fail(
+                "2",
+                format!(
+                    "{name}: \"reuse slotClusterIndex\" without \"separate world\" clarification"
+                ),
+            );
+        }
+    }
+
+    // Gate 3 — tile-zoom LOD tokens need deckZoom context within 800 chars.
+    let lod = regex::Regex::new(r"z\s*[≤≥<>]\s*[0-5]|\bz[0-5]\s*[-–]\s*z?[0-5]\b|\bz[0-5]\+")?;
+    let zoom_ctx = regex::RegexBuilder::new(r"deckZoom|Deck orthographic")
+        .case_insensitive(true)
+        .build()?;
+    for (name, text) in &corpus {
+        for m in lod.find_iter(text) {
+            if !window_has(text, m.start(), 800, &zoom_ctx) {
+                fail(
+                    "3",
+                    format!(
+                        "{name}: tile-zoom LOD token \"{}\" without deckZoom/Deck-orthographic context within 800 chars",
+                        m.as_str().trim()
+                    ),
+                );
+            }
+        }
+    }
+
+    // Gate 4 — "Deck pick"/"onHover" need forbidden-context within 220 chars.
+    let pick_ctx =
+        regex::RegexBuilder::new(r"forbidden|removed|never|no\s+deck|not\s+re-?enable|do\s+not")
+            .case_insensitive(true)
+            .build()?;
+    let deck_pick = regex::RegexBuilder::new(r"Deck\s+pick")
+        .case_insensitive(true)
+        .build()?;
+    let on_hover = regex::Regex::new(r"onHover")?;
+    for (name, text) in &corpus {
+        for re in [&deck_pick, &on_hover] {
+            for m in re.find_iter(text) {
+                if !window_has(text, m.start(), 220, &pick_ctx) {
+                    fail(
+                        "4",
+                        format!(
+                            "{name}: \"{}\" without forbidden/removed/never context within 220 chars",
+                            m.as_str()
+                        ),
+                    );
+                }
+            }
+        }
+    }
+
+    // Gate 5.
+    let eng: String = read(spec.join("engineering_plan.md"))?
+        .chars()
+        .filter(|c| *c != '`' && *c != '*')
+        .collect();
+    let g5 = regex::RegexBuilder::new(r"Picking via Deck's onClick/onHover")
+        .case_insensitive(true)
+        .build()?;
+    if g5.is_match(&eng) {
+        fail(
+            "5",
+            "engineering_plan.md: still contains \"Picking via Deck's onClick/onHover\""
+                .to_string(),
+        );
+    }
+
+    // Gate 6.
+    let hub = read(spec.join("t090_091_map_terrain_program.md"))?;
+    let gap_ids = [
+        "GAP-001", "GAP-002", "GAP-003", "GAP-004", "GAP-005", "GAP-H1", "GAP-H2", "GAP-H3",
+        "GAP-H4", "GAP-H5", "GAP-H6", "GAP-H7", "GAP-H8", "GAP-M1", "GAP-M2", "GAP-M3", "GAP-M4",
+        "GAP-M5", "GAP-M6", "GAP-M7",
+    ];
+    for id in gap_ids {
+        if !hub.contains(id) {
+            fail(
+                "6",
+                format!("t090_091_map_terrain_program.md: audit closure missing {id}"),
+            );
+        }
+    }
+    for low in ["L1", "L2", "L3", "L4", "L5"] {
+        let re = regex::Regex::new(&format!(r"\b{low}\b"))?;
+        if !re.is_match(&hub) {
+            fail(
+                "6",
+                format!("t090_091_map_terrain_program.md: audit closure missing {low}"),
+            );
+        }
+    }
+
+    // Gate 7 — every referenced make target / npm script exists (frozen React allowlist).
+    let makefile = read(root.join("Makefile"))?;
+    let target_re = regex::Regex::new(r"(?m)^([A-Za-z0-9_-]+):")?;
+    let mut make_targets: HashSet<String> = target_re
+        .captures_iter(&makefile)
+        .map(|c| c[1].to_string())
+        .collect();
+    for t in [
+        "map-assets-link",
+        "web",
+        "wasm",
+        "verify-wgpu-gpu",
+        "ci-local-frontend",
+        "verify-migration",
+    ] {
+        make_targets.insert(t.to_string());
+    }
+    let pkg = read_json(&schema_root(&root).join("package.json"))?;
+    let mut npm_scripts: HashSet<String> = pkg["scripts"]
+        .as_object()
+        .map(|m| m.keys().cloned().collect())
+        .unwrap_or_default();
+    for s in [
+        "dev",
+        "build",
+        "lint",
+        "preview",
+        "test",
+        "format",
+        "format:check",
+    ] {
+        npm_scripts.insert(s.to_string());
+    }
+    let make_re = regex::Regex::new(r"\bmake\s+([a-z0-9]+(?:-[a-z0-9]+)+)")?;
+    let npm_re = regex::Regex::new(r"\bnpm run ([a-z0-9:_-]+)")?;
+    for (name, text) in &corpus {
+        for c in make_re.captures_iter(text) {
+            if !make_targets.contains(&c[1]) {
+                fail(
+                    "7",
+                    format!(
+                        "{name}: referenced `make {}` not defined in root Makefile",
+                        &c[1]
+                    ),
+                );
+            }
+        }
+        for c in npm_re.captures_iter(text) {
+            if !npm_scripts.contains(&c[1]) {
+                fail(
+                    "7",
+                    format!(
+                        "{name}: referenced `npm run {}` not in packages/tbd-schema or apps/website/frontend package.json scripts",
+                        &c[1]
+                    ),
+                );
+            }
+        }
+    }
+
+    // Gate 8 — no doc claims T-090.1 active.
+    let authority = [
+        root.join("CLAUDE.md"),
+        spec.join("ROADMAP.md"),
+        spec.join("agent_execution.md"),
+        spec.join("engineering_plan.md"),
+        root.join("docs/website/frontend/ROADMAP.md"),
+        root.join("docs/website/frontend/INDEX.md"),
+        root.join("docs/website/frontend/pages/mission-editor.md"),
+        root.join("apps/website/frontend/docs/INDEX.md"),
+        root.join("apps/website/frontend/docs/pages/mission-editor.md"),
+        root.join("docs/mod/CLAUDE-CODE-START.md"),
+    ];
+    let mut gate8: Vec<(String, String)> = corpus.clone();
+    for p in authority {
+        let name = p.strip_prefix(&root).unwrap_or(&p).display().to_string();
+        let text = if p.exists() { read(p)? } else { String::new() };
+        gate8.push((name, text));
+    }
+    let t0901 = regex::Regex::new(r"T-090\.1([^\d.]|\.\D|$)")?;
+    let active = regex::RegexBuilder::new(r"\bactive\b")
+        .case_insensitive(true)
+        .build()?;
+    let ok_ctx = regex::RegexBuilder::new(r"T-090\.3\.0|\bqueued\b|active\s+basemap")
+        .case_insensitive(true)
+        .build()?;
+    for (name, text) in &gate8 {
+        for line in text.lines() {
+            if !t0901.is_match(line) || !active.is_match(line) {
+                continue;
+            }
+            if ok_ctx.is_match(line) {
+                continue;
+            }
+            let trimmed: String = line.trim().chars().take(90).collect();
+            fail(
+                "8",
+                format!("{name}: claims T-090.1 active — \"{trimmed}\""),
+            );
+        }
+    }
+
+    // Gate 9.
+    let eden = read(spec.join("t090_eden_ai_world_object_schema.md"))?;
+    let g9 = regex::RegexBuilder::new(r"move/delete this object")
+        .case_insensitive(true)
+        .build()?;
+    if g9.is_match(&eden) {
+        fail("9", "t090_eden_ai_world_object_schema.md: still says \"move/delete this object\" (mutation is Workbench-only)".to_string());
+    }
+
+    // Gate 10 — hub header names the registry active slice.
+    let mut active_slice = "T-090.1.2.5".to_string();
+    if let Ok(reg) = read_json(&root.join(".ai/tickets/registry.json")) {
+        if let Some(t090) = reg["tickets"]
+            .as_array()
+            .and_then(|a| a.iter().find(|t| t["id"] == "T-090"))
+        {
+            if let Some(s) = t090["active_slice"].as_str() {
+                active_slice = s.to_string();
+            }
+        }
+    }
+    let header: String = hub.chars().take(800).collect();
+    if !header.contains(&active_slice) {
+        fail(
+            "10",
+            format!(
+                "t090_091_map_terrain_program.md: header does not name {active_slice} as the active slice"
+            ),
+        );
+    }
+
+    // Gate 11.
+    let inv_spec = read(spec.join("t090_world_object_type_inventory.md"))?;
+    let range_re =
+        regex::RegexBuilder::new(r"800k|900k|1\.2M|2k–20k|400k–900k|order-of-magnitude \(Everon")
+            .case_insensitive(true)
+            .build()?;
+    let ok11 = regex::RegexBuilder::new(
+        r"\bnever\b|forbidden|not a substitute|PENDING|hard-coded|no hard-",
+    )
+    .case_insensitive(true)
+    .build()?;
+    for line in inv_spec.lines() {
+        if range_re.is_match(line) && !ok11.is_match(line) {
+            let trimmed: String = line.trim().chars().take(90).collect();
+            fail(
+                "11",
+                format!(
+                    "t090_world_object_type_inventory.md: Everon estimate range — \"{trimmed}\""
+                ),
+            );
+        }
+    }
+    if !inv_spec.contains("censusStatus") || !inv_spec.contains("pending_export") {
+        fail("11", "t090_world_object_type_inventory.md: must document censusStatus pending_export baseline".to_string());
+    }
+
+    // Gate 12 — phase-budget rows must cite inventory tokens, not hard-coded counts.
+    let budget = regex::Regex::new(r"~?\d+(\.\d+)?\s*[kM]\b|\d{1,3},\d{3}")?;
+    let inv_tok = regex::Regex::new(r"byKind|levels\.|inventory|derived")?;
+    let p_row = regex::Regex::new(r"^\|\s*P\d+")?;
+    for (name, text) in &corpus {
+        for line in text.lines() {
+            if !p_row.is_match(line) {
+                continue;
+            }
+            if budget.is_match(line) && !inv_tok.is_match(line) {
+                let trimmed: String = line.trim().chars().take(90).collect();
+                fail(
+                    "12",
+                    format!("{name}: phase-budget row hard-codes a count — \"{trimmed}\""),
+                );
+            }
+        }
+    }
+
+    if failures.is_empty() {
+        println!(
+            "verify-t090-specs: OK ({} spec files + authority docs, all 12 gates pass)",
+            t090_files.len()
+        );
+        Ok(0)
+    } else {
+        eprintln!("verify-t090-specs: FAIL ({})", failures.len());
+        for f in &failures {
+            eprintln!("  {f}");
+        }
+        Ok(1)
+    }
+}
+
+/* ─────────────────────────── flatten-orbat-slots ─────────────────────────── */
+
+pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
+    let file = PathBuf::from(path);
+    let mut mission = read_json(&file)?;
+
+    let mut anchors: BTreeMap<String, (f64, f64)> = BTreeMap::new();
+    for zone in mission["zones"].as_array().into_iter().flatten() {
+        if zone["type"] == "spawn" {
+            if let (Some(faction), Some(x), Some(z)) = (
+                zone["faction"].as_str(),
+                zone["shape"]["circle"]["x"].as_f64(),
+                zone["shape"]["circle"]["z"].as_f64(),
+            ) {
+                anchors.insert(faction.to_string(), (x, z));
+            }
+        }
+    }
+    anchors.entry("blufor".into()).or_insert((4831.2, 6620.8));
+    anchors.entry("opfor".into()).or_insert((6010.0, 7211.5));
+
+    let mut slots: Vec<Value> = Vec::new();
+    let mut slot_index = 0usize;
+    let orbat = mission["orbat"].as_object().cloned().unwrap_or_default();
+    for (faction_key, faction_orbat) in &orbat {
+        let anchor = anchors
+            .get(faction_key)
+            .copied()
+            .unwrap_or((6400.0, 6400.0));
+        for group in faction_orbat["groups"].as_array().into_iter().flatten() {
+            let callsign = group["callsign"].as_str().unwrap_or_default();
+            for role in group["roles"].as_array().into_iter().flatten() {
+                let count = role["count"].as_i64().unwrap_or(0);
+                for i in 0..count {
+                    let ring = (slot_index / 8) as f64;
+                    let pos_in_ring = (slot_index % 8) as f64;
+                    let angle = pos_in_ring / 8.0 * std::f64::consts::PI * 2.0;
+                    let radius = 8.0 + ring * 6.0;
+                    let x = anchor.0 + angle.cos() * radius;
+                    let z = anchor.1 + angle.sin() * radius;
+                    let heading =
+                        (((anchor.0 - x).atan2(anchor.1 - z).to_degrees()) + 360.0) % 360.0;
+                    slots.push(serde_json::json!({
+                        "id": format!("{faction_key}:{callsign}:{}:{i}", role["slot"].as_str().unwrap_or_default()),
+                        "faction": faction_key,
+                        "groupCallsign": callsign,
+                        "role": role["slot"],
+                        "kit": role["kit"],
+                        "x": (x * 10.0).round() / 10.0,
+                        "z": (z * 10.0).round() / 10.0,
+                        "headingDeg": heading.round(),
+                    }));
+                    slot_index += 1;
+                }
+            }
+        }
+    }
+
+    mission["schemaVersion"] = Value::String("1.1".into());
+    let n = slots.len();
+    mission["slots"] = Value::Array(slots);
+    let out = serde_json::to_string_pretty(&mission)? + "\n";
+    if in_place {
+        fs::write(&file, out)?;
+        println!("Wrote {n} slots to {}", file.display());
+    } else {
+        print!("{out}");
+    }
+    Ok(0)
+}

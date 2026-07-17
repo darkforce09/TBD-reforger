@@ -12,6 +12,7 @@ mod prompt;
 mod registry;
 mod repro;
 mod root;
+mod schema_gates;
 mod sync;
 
 use anyhow::{Result, bail};
@@ -60,6 +61,43 @@ enum TopCmd {
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
     RegistryGet { field: String },
+    /// Schema/doc gates (T-165.1 ports of packages/tbd-schema/scripts/*.mjs)
+    Schema {
+        #[command(subcommand)]
+        cmd: SchemaCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum SchemaCmd {
+    /// @contract citation integrity (verify-contract-citations)
+    Citations,
+    /// T-090 spec-consistency gates 1-12 (verify-t090-spec-consistency)
+    #[command(name = "t090-specs")]
+    T090Specs,
+    /// N6 building-geometry sentence single-source
+    N6,
+    /// N10 tile-budget single-source
+    N10,
+    /// map-object enum single-source (GAP-M5)
+    #[command(name = "map-object-enums")]
+    MapObjectEnums,
+    /// type-inventory invariants I1-I7
+    #[command(name = "type-inventory")]
+    TypeInventory,
+    /// terrain manifest schema + terrains contract cross-check
+    #[command(name = "terrain-manifest")]
+    TerrainManifest {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+    },
+    /// Flatten mission ORBAT roles into slots[] (tool)
+    #[command(name = "flatten-orbat-slots")]
+    FlattenOrbatSlots {
+        path: String,
+        #[arg(long)]
+        in_place: bool,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -320,6 +358,21 @@ fn run() -> Result<u8> {
                 }
             }
             Ok(0)
+        }
+        TopCmd::Schema { cmd } => {
+            let code = match cmd {
+                SchemaCmd::Citations => schema_gates::citations()?,
+                SchemaCmd::T090Specs => schema_gates::t090_specs()?,
+                SchemaCmd::N6 => schema_gates::n6_sentence()?,
+                SchemaCmd::N10 => schema_gates::n10_tile_budget()?,
+                SchemaCmd::MapObjectEnums => schema_gates::map_object_enums()?,
+                SchemaCmd::TypeInventory => schema_gates::type_inventory()?,
+                SchemaCmd::TerrainManifest { terrain } => schema_gates::terrain_manifest(&terrain)?,
+                SchemaCmd::FlattenOrbatSlots { path, in_place } => {
+                    schema_gates::flatten_orbat_slots(&path, in_place)?
+                }
+            };
+            Ok(code)
         }
         TopCmd::RegistryGet { field } => {
             let root = find_repo_root()?;

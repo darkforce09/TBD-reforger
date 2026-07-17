@@ -110,13 +110,18 @@ rust-ci: ## Rust CI gate locally — fmt + clippy + build + test-it (mirrors the
 	$(MAKE) rust-test-it
 
 schema-validate: ## Validate golden missions + T-090 map-object contracts (enums + glyphs + spec consistency) + T-152.16 height labels
-	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-enums && npm run verify-map-object-golden && npm run verify-map-glyphs && npm run verify-type-inventory && npm run verify-t090-specs && npm run verify-n6 && npm run verify-n10 && node ../../scripts/map-assets/verify-height-labels.mjs
+	cd packages/tbd-schema && npm ci --silent && node scripts/validate.mjs && npm run verify-map-object-golden && npm run verify-map-glyphs && node ../../scripts/map-assets/verify-height-labels.mjs
+	cargo run -q -p xtask -- schema map-object-enums
+	cargo run -q -p xtask -- schema type-inventory
+	cargo run -q -p xtask -- schema t090-specs
+	cargo run -q -p xtask -- schema n6
+	cargo run -q -p xtask -- schema n10
 
 schema-codegen: ## Regenerate TS + Rust contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
 	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
 
-verify-citations: ## Verify @contract citations + GO-7 @route route-match (DOCUMENTATION_STANDARDS §10, CODING_STANDARDS §2)
-	node packages/tbd-schema/scripts/verify-contract-citations.mjs
+verify-citations: ## Verify @contract citations (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port)
+	cargo run -q -p xtask -- schema citations
 
 verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
 	$(MAKE) verify-doc-layout
@@ -134,10 +139,12 @@ verify-editorconfig: ## FMT-2: run editorconfig-checker from repo root (CODING_S
 	editorconfig-checker
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
-	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain
+	cargo run -q -p xtask -- schema terrain-manifest --terrain everon
+	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain-alignment
 
 verify-terrain-strict: ## Full anchor alignment gate (T-091.0 GetSurfaceY DEM + anchors)
-	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-manifest.mjs && node scripts/verify-terrain-alignment.mjs --strict
+	cargo run -q -p xtask -- schema terrain-manifest --terrain everon
+	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-alignment.mjs --strict
 
 # T-090.0.2 — map-object contract verifiers (run inside schema-validate). Real gates.
 .PHONY: map-object-enums-verify map-object-golden-verify map-glyphs-verify t090-spec-verify

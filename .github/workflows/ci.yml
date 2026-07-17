@@ -117,25 +117,26 @@ jobs:
         run: trunk build --release
 
   # --- schema: golden-mission validate (TEST-3) + @contract citation integrity ---
+  # T-165.1: citations run via the Rust xtask port; validate.mjs stays Node until T-165.2.
   schema:
     name: schema + citations
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
         with:
           node-version: "26"
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - name: install schema deps
         working-directory: packages/tbd-schema
         run: npm ci
       - name: validate golden missions (TEST-3)
         working-directory: packages/tbd-schema
         run: npm run validate
-      - name: verify @contract citations
-        # Run from repo root (matches `make verify-citations`); the script resolves repoRoot
-        # from import.meta.url and imports only node: builtins, so cwd is irrelevant.
-        run: node packages/tbd-schema/scripts/verify-contract-citations.mjs
+      - name: verify @contract citations (xtask)
+        run: cargo run -q -p xtask -- schema citations
 
   # --- editorconfig: FMT-2 whitespace gate across the whole repo (root .editorconfig) ---
   # Dedicated job (mirrors `make verify-editorconfig`): the checker is a Go binary and runs

@@ -23,10 +23,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "26"
-      - run: node packages/tbd-schema/scripts/verify-contract-citations.mjs
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo run -q -p xtask -- schema citations
 
   codegen-drift:
     name: schema codegen up to date

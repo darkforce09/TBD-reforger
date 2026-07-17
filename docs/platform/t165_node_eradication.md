@@ -1,6 +1,6 @@
 # T-165 — Node/JS eradication: every .mjs tool → Rust
 
-**Status:** ACTIVE (T-165.0 shipped; next T-165.1) · **Executor:** claude-code (operator-approved
+**Status:** ACTIVE (T-165.0–.1 shipped; next T-165.2) · **Executor:** claude-code (operator-approved
 plan) · **Sequel to:** T-161/T-162 (Python eradication). **Plan of record:** the operator-approved
 T-165 plan (session plan file); this hub tracks slice state + evidence.
 
@@ -27,8 +27,8 @@ third-party `enfusion-mcp` runtime for Workbench (the floor), and no CI job need
 | Slice | Scope | Status |
 |-------|-------|--------|
 | **T-165.0** | `tools/tbd-tools` scaffold (workspace member; tokio + tokio-tungstenite pinned to lock-resolved versions) + dead-set deletion | **shipped** |
-| T-165.1 | Text/JSON gates → xtask (citations, t090-specs, n6, n10, enums, type-inventory, terrain-manifest, flatten-orbat) + contracts.yml/ci.yml citation steps | next |
-| T-165.2 | validate.mjs core → Rust (21-schema 2020-12 bundle, FK walkers, ENF-4) | queued |
+| **T-165.1** | Text/JSON gates → `cargo xtask schema …` (citations, t090-specs, n6, n10, map-object-enums, type-inventory, terrain-manifest, flatten-orbat-slots); parity proven side-by-side (8× verdict+exit MATCH, negative probes, count parity); Makefile + ci.yml + contracts.yml citation steps → cargo; 7 .mjs deleted (verify-type-inventory.mjs kept — spawned by census-types/validate-export until .8) | **shipped** |
+| T-165.2 | validate.mjs core → Rust (21-schema 2020-12 bundle, FK walkers, ENF-4) | next |
 | T-165.3 | codegen → typify + loadout hand-freeze; contracts.yml drift job → cargo | queued |
 | T-165.4 | Golden S2–S14 (TBDD encoder promoted; forest-region derivation ported) + terrain/DEM + glyphs + label gates; `make schema-validate` pure cargo; schema.yml + ci.yml schema job → cargo | queued |
 | T-165.5 | CDP harness core (`cdp`/`serve`/`inject`/`diff_node` + `gate v-suite`) — 25/25 byte-count parity vs Node side-by-side | queued |
