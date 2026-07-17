@@ -62,6 +62,10 @@ pub enum NodeKind {
     /// The virtual "Unfiled" root — [`UNFILED_ID`], never a doc id.
     Unfiled,
     Slot,
+    /// T-168 — an ORBAT faction group header (id is the faction doc id).
+    Faction,
+    /// T-168 — an ORBAT squad group header (id is the squad doc id).
+    Squad,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -153,6 +157,73 @@ fn build_layer<'a>(
         kind: NodeKind::Folder,
         children,
     }
+}
+
+/* ───────────────────────────── T-168 — ORBAT tree ───────────────────────────── */
+
+/// A `factions` row from the doc's `small_maps_json()` → `factionsById`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FactionRow {
+    pub id: String,
+    pub name: String,
+    /// Ordered squad ids under this faction (`faction.squadIds`).
+    pub squad_ids: Vec<String>,
+}
+
+/// A `squads` row from the doc's `small_maps_json()` → `squadsById`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SquadRow {
+    pub id: String,
+    pub name: String,
+    pub faction_id: String,
+    /// Ordered slot ids in this squad (`squad.slotIds`).
+    pub slot_ids: Vec<String>,
+}
+
+/// Build the ORBAT browse tree: faction → squad → slot, in doc order (`squadIds` / `slotIds`).
+/// A dangling id (deleted slot/squad, container not yet patched) is skipped — the `build_outliner`
+/// filter idiom. Empty until the first placed slot mints a default faction+squad (T-168 place-mint).
+#[must_use]
+pub fn build_orbat(
+    factions: &[FactionRow],
+    squads: &[SquadRow],
+    slots: &[SlotRow],
+) -> Vec<OutlinerNode> {
+    let squad_by_id = |id: &str| squads.iter().find(|s| s.id == id);
+    let slot_by_id = |id: &str| slots.iter().find(|s| s.id == id);
+
+    let mut out: Vec<OutlinerNode> = Vec::new();
+    // Deterministic faction order (doc map iteration is arbitrary).
+    let mut ordered: Vec<&FactionRow> = factions.iter().collect();
+    ordered.sort_by(|a, b| a.id.cmp(&b.id));
+    for f in ordered {
+        let squad_nodes: Vec<OutlinerNode> = f
+            .squad_ids
+            .iter()
+            .filter_map(|sid| squad_by_id(sid))
+            .map(|sq| {
+                let slot_children: Vec<OutlinerNode> = sq
+                    .slot_ids
+                    .iter()
+                    .filter_map(|id| slot_by_id(id))
+                    .map(slot_node)
+                    .collect();
+                OutlinerNode {
+                    id: sq.id.clone(),
+                    label: format!("{} ({})", sq.name, slot_children.len()),
+                    kind: NodeKind::Squad,
+                    children: slot_children,
+                }
+            })
+            .collect();
+        out.push(OutlinerNode {
+            id: f.id.clone(),
+            label: f.name.clone(),
+            kind: NodeKind::Faction,
+            children: squad_nodes,
+        });
+    }
+    out
 }
 
 #[cfg(test)]
@@ -275,5 +346,57 @@ mod tests {
         cyclic.push(layer("b2", "B2", Some("c"), &[]));
         let tree = build_outliner(&cyclic, &[]);
         assert_eq!(tree.len(), 1, "only `a` is rooted");
+    }
+
+    fn faction(id: &str, name: &str, squads: &[&str]) -> FactionRow {
+        FactionRow {
+            id: id.into(),
+            name: name.into(),
+            squad_ids: squads.iter().map(|s| (*s).to_string()).collect(),
+        }
+    }
+    fn squad(id: &str, name: &str, faction: &str, slots: &[&str]) -> SquadRow {
+        SquadRow {
+            id: id.into(),
+            name: name.into(),
+            faction_id: faction.into(),
+            slot_ids: slots.iter().map(|s| (*s).to_string()).collect(),
+        }
+    }
+
+    /// No factions/squads (seed boot) → empty ORBAT tree.
+    #[test]
+    fn orbat_empty_before_any_squad() {
+        assert!(build_orbat(&[], &[], &[slot("s0", "Rifleman")]).is_empty());
+    }
+
+    /// faction → squad → slot in doc (`squadIds`/`slotIds`) order; squad label carries its count.
+    #[test]
+    fn orbat_nests_faction_squad_slot_in_order() {
+        let factions = vec![faction("f1", "US Army", &["sq1"])];
+        let squads = vec![squad("sq1", "Alpha", "f1", &["s1", "s0"])];
+        let slots = vec![slot("s0", "Rifleman"), slot("s1", "Squad Leader")];
+        let tree = build_orbat(&factions, &squads, &slots);
+        assert_eq!(tree.len(), 1);
+        assert_eq!(tree[0].kind, NodeKind::Faction);
+        assert_eq!(tree[0].label, "US Army");
+        let sq = &tree[0].children[0];
+        assert_eq!(sq.kind, NodeKind::Squad);
+        assert_eq!(sq.label, "Alpha (2)");
+        // slotIds order preserved (s1 before s0).
+        let ids: Vec<&str> = sq.children.iter().map(|n| n.id.as_str()).collect();
+        assert_eq!(ids, ["s1", "s0"]);
+        assert!(sq.children.iter().all(|n| n.kind == NodeKind::Slot));
+    }
+
+    /// Dangling squad/slot ids are skipped, not rendered blank.
+    #[test]
+    fn orbat_skips_dangling_ids() {
+        let factions = vec![faction("f1", "US Army", &["ghostSquad", "sq1"])];
+        let squads = vec![squad("sq1", "Alpha", "f1", &["ghostSlot", "s0"])];
+        let tree = build_orbat(&factions, &squads, &[slot("s0", "Rifleman")]);
+        assert_eq!(tree[0].children.len(), 1, "ghost squad skipped");
+        assert_eq!(tree[0].children[0].children.len(), 1, "ghost slot skipped");
+        assert_eq!(tree[0].children[0].children[0].id, "s0");
     }
 }

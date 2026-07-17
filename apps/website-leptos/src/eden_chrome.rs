@@ -245,6 +245,24 @@ fn outliner_rows(
                     {kids}
                 }
                 .into_any(),
+                // T-168 — ORBAT faction / squad group headers: inert (browse/select tree; squad
+                // MANAGEMENT is T-071), the slot leaves below carry the select + dblclick contract.
+                NodeKind::Faction => view! {
+                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                        <MaterialIcon name="flag" class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </div>
+                    {kids}
+                }
+                .into_any(),
+                NodeKind::Squad => view! {
+                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+                        <MaterialIcon name="groups" class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </div>
+                    {kids}
+                }
+                .into_any(),
                 NodeKind::Folder => {
                     let is_active = {
                         let id = id.clone();
@@ -357,11 +375,14 @@ fn palette_rows(nodes: &[CatalogNode], depth: usize) -> AnyView {
 /// Left dock — the live **Editor Layers** outliner (spec O1). Click a folder to make it the drop
 /// target, a slot to select it (no camera move — React parity).
 ///
-/// Scope (O7): ORBAT stays a stub header; no reparent DnD, rename, delete, or virtualization.
+/// T-168 — the ORBAT browse/select tree (faction → squad → slot) is live; squad MANAGEMENT
+/// (reparent/rename/delete) stays T-071. Slot leaves click-select + dbl-click → Attributes.
 #[component]
 pub fn DockLeft(
-    /// The tree, rebuilt from the doc at every mutation (`editor_ops::refresh_docks`).
+    /// The Editor Layers tree, rebuilt from the doc at every mutation (`editor_ops::refresh_docks`).
     nodes: RwSignal<Vec<OutlinerNode>>,
+    /// T-168 — the ORBAT tree (faction/squad/slot), rebuilt alongside `nodes`.
+    orbat: RwSignal<Vec<OutlinerNode>>,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
 ) -> impl IntoView {
@@ -370,7 +391,19 @@ pub fn DockLeft(
             <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 "ORBAT"
             </h2>
-            <p class="mt-1 text-label-sm text-outline">"Squad tree lands in a later slice."</p>
+            <div class="mt-1">
+                {move || {
+                    let o = orbat.get();
+                    if o.is_empty() {
+                        view! {
+                            <p class="text-label-sm text-outline">"No squads yet — place a unit to build the ORBAT."</p>
+                        }
+                        .into_any()
+                    } else {
+                        outliner_rows(&o, 0, selected, active_layer)
+                    }
+                }}
+            </div>
             <h2 class="mt-4 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 "Editor Layers"
             </h2>

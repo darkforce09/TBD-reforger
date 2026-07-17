@@ -6,20 +6,20 @@
 //! them through a `thread_local` [`OpsCtx`] set from `mission_editor::on_load` — exactly how the
 //! Undo button reaches the undo stack.
 //!
-//! **Placement, and why it does not mint a squad.** React's `addSlot` runs `ensureDefaultSquad` +
-//! `ensureDefaultLayer` before writing the slot. Here only the *layer* half is ported:
-//! `smoke_save_export_editor` asserts `editor.squads.length === 0`, and `add_slot`'s squad/layer
-//! appends are guarded (`store.rs:298`, doc comment `:266` — "a slot with a not-yet-created
-//! container still stores"), so passing `squad_id: ""` files the slot with no squad rather than
-//! creating one. That is not a hack: the *seed's own* slots carry a dangling `squadId: "sq"` with no
-//! squad in the map (`store.rs:369`). With an empty squads map the field is inert — compile derives
-//! ORBAT from squads, and the ORBAT tree is out of scope this slice (spec O7).
+//! **Placement mints a default squad + layer** (React's `ensureDefaultSquad` +
+//! `ensureDefaultLayer`, T-168). [`ensure_default_squad`] reuses the first existing squad, else
+//! lazily mints the default faction + squad; [`ensure_layer`] resolves / lazily mints the default
+//! layer. Both are minted under the LOCAL origin so they are **undoable** — a boot-time
+//! faction/squad/layer would break the save/export gate, which asserts the graph is empty at boot
+//! (`smoke_save_export_editor` uses the seed only, so nothing is minted there). The placed slot
+//! joins the squad (`squad.slotIds`) and the layer (`layer.entityIds`); the ORBAT tree derives
+//! from the squads (`build_orbat`). Seed slots still carry a dangling `squadId` with no squad in
+//! the map (`store.rs:369`) — they list under Unfiled / no ORBAT squad until placed-through.
 //!
-//! **The default layer is minted lazily**, on the first place, under the LOCAL origin so it is
-//! undoable — a boot-time layer would break that same save/export gate (`editorLayers.length === 0`).
-//! Consequence, recorded in the verify log: the first place is **two** undo steps (layer, then slot),
-//! because `add_editor_layer` and `add_slot` are separate core transactions where React's
-//! `ydoc.addSlot` wraps both in one `transact`. Every later place is one step.
+//! Consequence, recorded in the verify log: the **first** place is up to **three** undo steps
+//! (layer, faction+squad, slot) since `add_editor_layer` / `add_faction`+`add_squad` / `add_slot`
+//! are separate core transactions where React's `ydoc.addSlot` wraps them in one `transact`; every
+//! later place is one step.
 //!
 //! **Borrow discipline** (the `mission_history` rule): each `pub fn` opens exactly one `OPS_CTX`
 //! borrow; doc `borrow_mut`s are scoped so they drop before `mission_history::after_local_edit`
@@ -40,6 +40,12 @@ use crate::select_tool::{EngineHandle, SelectionHandle};
 /// The lazily-minted default layer (React's `ensureDefaultLayer`).
 const DEFAULT_LAYER_ID: &str = "layer-1";
 const DEFAULT_LAYER_NAME: &str = "Layer 1";
+/// T-168 — the lazily-minted default faction + squad (React's `ensureDefaultSquad`), so a placed
+/// slot always joins an ORBAT squad instead of the pre-T-168 `squadId=""`.
+const DEFAULT_FACTION_ID: &str = "faction-1";
+const DEFAULT_FACTION_NAME: &str = "Faction 1";
+const DEFAULT_SQUAD_ID: &str = "squad-1";
+const DEFAULT_SQUAD_NAME: &str = "Squad 1";
 
 struct OpsCtx {
     doc: DocHandle,
@@ -50,6 +56,8 @@ struct OpsCtx {
     /// Dock mirrors — `MissionDocCore` has no change subscription, so these are pushed from
     /// [`refresh_docks`] at every mutation site, like the OBJ/SEL readouts.
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
+    /// T-168 — the ORBAT dock tree mirror (faction/squad/slot), rebuilt alongside `outliner_nodes`.
+    orbat_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
     /// T-159.26 — the Attributes modal's open slot id (`None` = closed). The dbl-click pick and the
     /// outliner activate set it; the modal component reads it reactively.
@@ -88,6 +96,7 @@ pub fn set_ctx(
     selection: SelectionHandle,
     active_layer: RwSignal<Option<String>>,
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
+    orbat_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
     attrs_open: RwSignal<Option<String>>,
     doc_tick: RwSignal<u64>,
@@ -99,6 +108,7 @@ pub fn set_ctx(
             selection,
             active_layer,
             outliner_nodes,
+            orbat_nodes,
             selected_ids,
             attrs_open,
             doc_tick,
@@ -584,6 +594,70 @@ fn layer_rows(core: &MissionDocCore) -> Vec<LayerRow> {
     rows
 }
 
+/// T-168 — read `factionsById` from `small_maps_json()` into ORBAT faction rows.
+fn faction_rows(core: &MissionDocCore) -> Vec<crate::outliner::FactionRow> {
+    let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
+        return Vec::new();
+    };
+    let Some(map) = root.get("factionsById").and_then(|v| v.as_object()) else {
+        return Vec::new();
+    };
+    map.values()
+        .filter_map(|v| {
+            let o = v.as_object()?;
+            Some(crate::outliner::FactionRow {
+                id: o.get("id")?.as_str()?.to_string(),
+                name: o
+                    .get("name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                squad_ids: str_array(o.get("squadIds")),
+            })
+        })
+        .collect()
+}
+
+/// T-168 — read `squadsById` from `small_maps_json()` into ORBAT squad rows.
+fn squad_rows(core: &MissionDocCore) -> Vec<crate::outliner::SquadRow> {
+    let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
+        return Vec::new();
+    };
+    let Some(map) = root.get("squadsById").and_then(|v| v.as_object()) else {
+        return Vec::new();
+    };
+    map.values()
+        .filter_map(|v| {
+            let o = v.as_object()?;
+            Some(crate::outliner::SquadRow {
+                id: o.get("id")?.as_str()?.to_string(),
+                name: o
+                    .get("name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                faction_id: o
+                    .get("factionId")
+                    .and_then(|f| f.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                slot_ids: str_array(o.get("slotIds")),
+            })
+        })
+        .collect()
+}
+
+/// A JSON string array → `Vec<String>` (skipping non-strings). Shared by the ORBAT row readers.
+fn str_array(v: Option<&serde_json::Value>) -> Vec<String> {
+    v.and_then(|e| e.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 /// Adapt the materialized SoA into the tree's slot rows (id + resolved role).
 fn slot_rows(core: &MissionDocCore) -> Vec<SlotRow> {
     let soa = core.materialize();
@@ -612,13 +686,25 @@ pub fn refresh_docks() {
         let Some(ctx) = guard.as_ref() else {
             return;
         };
-        let nodes = {
+        let (nodes, orbat) = {
             let d = ctx.doc.borrow();
-            d.as_ref()
-                .map(|core| build_outliner(&layer_rows(core), &slot_rows(core)))
-                .unwrap_or_default()
+            match d.as_ref() {
+                Some(core) => {
+                    let slots = slot_rows(core);
+                    (
+                        build_outliner(&layer_rows(core), &slots),
+                        crate::outliner::build_orbat(
+                            &faction_rows(core),
+                            &squad_rows(core),
+                            &slots,
+                        ),
+                    )
+                }
+                None => (Vec::new(), Vec::new()),
+            }
         };
         ctx.outliner_nodes.set(nodes);
+        ctx.orbat_nodes.set(orbat);
         ctx.selected_ids.set(ctx.selection.borrow().clone());
         ctx.doc_tick
             .set(ctx.doc_tick.get_untracked().wrapping_add(1));
@@ -717,6 +803,28 @@ fn ensure_layer(ctx: &OpsCtx, core: &MissionDocCore) -> String {
     DEFAULT_LAYER_ID.to_string()
 }
 
+/// T-168 — resolve the squad a placed slot joins (React's `ensureDefaultSquad`): reuse the first
+/// existing squad, else lazily mint the default faction + squad. Returns the squad id.
+fn ensure_default_squad(core: &MissionDocCore) -> String {
+    if let Some(first) = squad_rows(core).first() {
+        return first.id.clone();
+    }
+    // No squad yet — mint the default faction (if absent) then the default squad under it.
+    if !faction_rows(core)
+        .iter()
+        .any(|f| f.id == DEFAULT_FACTION_ID)
+    {
+        core.add_faction(DEFAULT_FACTION_ID, DEFAULT_FACTION_ID, DEFAULT_FACTION_NAME);
+    }
+    core.add_squad(
+        DEFAULT_SQUAD_ID,
+        DEFAULT_FACTION_ID,
+        DEFAULT_SQUAD_NAME,
+        None,
+    );
+    DEFAULT_SQUAD_ID.to_string()
+}
+
 /// Commit an armed place at a **world** position: file a slot under the resolved layer, select it,
 /// and run the shared post-change tail. Returns `false` when nothing was armed.
 ///
@@ -740,10 +848,11 @@ pub fn place_at(x: f64, y: f64) -> bool {
                 return false;
             };
             let layer_id = ensure_layer(ctx, core);
+            let squad_id = ensure_default_squad(core); // T-168 place-mint
             let id = mint_id(ctx, core);
             core.add_slot(
                 &id,
-                "", // no squad — see the module docs
+                &squad_id,
                 &layer_id,
                 0,
                 &payload.role,

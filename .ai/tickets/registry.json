@@ -5347,13 +5347,13 @@
         "state"
       ],
       "title": "Leptos ORBAT tree in the left dock",
-      "summary": "Replace the ORBAT stub header (scope note `apps/website-leptos/src/eden_chrome.rs:360` \u2014 \"ORBAT stays a stub header\") with the live squads/slots tree: select-on-click, dbl-click\u2192Attributes (SEL-ORBAT-DBL-001), squad grouping from the doc, T-037-parity row actions where they existed in React (`OrbatSection.tsx`). Coordinates with the T-071 ORBAT Manager modal (separate surface \u2014 the dock tree is read/select, the modal is manage).",
+      "summary": "SHIPPED @ tag T-168: the ORBAT stub header is replaced with a live faction\u2192squad\u2192slot browse/select tree (`build_orbat` in outliner.rs; NodeKind::Faction/Squad added). Placement now mints a default faction+squad (`ensure_default_squad`, place-mint) so slots join an ORBAT squad; slot leaves click-select + dbl-click\u2192Attributes (SEL-ORBAT-DBL-001, reusing outliner_rows). Browse/select only \u2014 squad MANAGEMENT stays T-071. smoke_outliner_palette extended o3/o4/o5 (squad minted, leaf selects, dbl-click\u2192Attributes); build_orbat unit-tested.",
       "slices": [],
       "depends_on": [
         "T-159"
       ],
       "unblocks": [],
-      "status": "ready",
+      "status": "shipped",
       "implements": [],
       "user_story": "As a mission maker I browse and select squads/slots from the left ORBAT tree like in the React editor.",
       "route": "/missions/:id/edit",

@@ -25,13 +25,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
-    },
-    {
-      "id": "T-168",
-      "title": "Leptos ORBAT tree in the left dock",
-      "status": "ready",
-      "spec": ".ai/artifacts/missed_items_handoff.md",
-      "branch": "main"
     }
   ]
 }

@@ -2244,6 +2244,46 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                     "d3_layerInOutliner".into(),
                     json!(docks1.contains("Layer 1") && docks1.contains("Unfiled (8)")),
                 );
+
+                // O3/O4/O5 (T-168) — the place minted a default squad; the ORBAT tree shows it,
+                // its slot leaf selects, and dbl-click opens Attributes (SEL-ORBAT-DBL-001).
+                checks.insert(
+                    "o3_orbatSquadMinted".into(),
+                    json!(docks1.contains("Squad 1 (1)") && docks1.contains("Faction 1")),
+                );
+                // The ORBAT slot leaf = the first slot button in the ORBAT div (the div right after
+                // the "ORBAT" h2, before "Editor Layers") of the left dock.
+                const ORBAT_LEAF: &str = "(() => { const d=[...document.querySelectorAll('aside')].find(a=>(a.textContent||'').includes('ORBAT')&&(a.textContent||'').includes('Editor Layers')); const o=d&&d.querySelector('div'); return o?o.querySelector('button[aria-label=\"US Rifleman\"]'):null; })()";
+                eval(
+                    &h.page,
+                    &format!(
+                        "{ORBAT_LEAF}?.dispatchEvent(new MouseEvent('click',{{bubbles:true}}))"
+                    ),
+                )
+                .await?;
+                let orbat_sel = eval(&h.page, "JSON.parse(window.__editorSelection.ids())").await?;
+                checks.insert(
+                    "o4_orbatLeafSelects".into(),
+                    json!(
+                        orbat_sel
+                            .as_array()
+                            .map(|a| a.len() == 1 && a[0].as_str() == new_id.as_deref())
+                            == Some(true)
+                    ),
+                );
+                eval(
+                    &h.page,
+                    &format!(
+                        "{ORBAT_LEAF}?.dispatchEvent(new MouseEvent('dblclick',{{bubbles:true}}))"
+                    ),
+                )
+                .await?;
+                checks.insert(
+                    "o5_orbatDblAttributes".into(),
+                    json!(h.page.wait_for(MODAL_OPEN, 40, 250).await?),
+                );
+                // Close the modal so its overlay does not swallow the W1 wheel checks below.
+                key_chord(&h.page, "Escape", "Escape", 0, 27).await?;
             }
 
             // W1 — wheel over a dock must not zoom; over the canvas it must.
@@ -2279,7 +2319,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
         }
 
         let registry_hits = *hits.lock().unwrap();
-        let pass = ready0 && ready && palette_ready && h.no_panics() && checks_pass(&checks, 15);
+        let pass = ready0 && ready && palette_ready && h.no_panics() && checks_pass(&checks, 18);
         let placed = placed_row.as_ref().map(|r| {
             json!({
                 "id": r.first(), "xBits": r.get(1).and_then(|v| v.parse::<u32>().ok()),

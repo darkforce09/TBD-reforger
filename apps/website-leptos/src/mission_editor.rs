@@ -58,6 +58,8 @@ pub fn MissionEditorPage() -> impl IntoView {
     // `catalog` holds the `/registry` fetch state and never leaves `Loading` on the native shell,
     // where `api_get` doesn't exist.
     let outliner_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
+    // T-168 — the ORBAT dock tree mirror (faction/squad/slot), rebuilt alongside `outliner_nodes`.
+    let orbat_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
     let selected_ids = RwSignal::new(Vec::<String>::new());
     let active_layer = RwSignal::new(None::<String>);
     let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
@@ -259,6 +261,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 selection.clone(),
                 active_layer,
                 outliner_nodes,
+                orbat_nodes,
                 selected_ids,
                 attrs_open,
                 doc_tick,
@@ -1084,6 +1087,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 <div class="absolute bottom-0 left-0 top-12 w-64">
                     <crate::eden_chrome::DockLeft
                         nodes=outliner_nodes
+                        orbat=orbat_nodes
                         selected=selected_ids
                         active_layer
                     />
