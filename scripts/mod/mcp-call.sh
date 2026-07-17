@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Drive enfusion-mcp over JSON-RPC from the shell. (T-090.0 — hardened)
 #
-# Daemon-first: reuses a warm enfusion-mcp broker (scripts/mod/lib/mcp-daemon.mjs) so calls return in
+# Daemon-first: reuses a warm enfusion-mcp broker (the Rust `mcpd`, tools/tbd-tools — T-165.7) so calls return in
 # ~Workbench round-trip time instead of re-paying the ~35 s index load. Falls back automatically to a
 # hardened one-shot run (early-exit consumer → returns at response time, never hangs to the timeout) if
 # the daemon is unavailable or MCP_NO_DAEMON=1. Both paths funnel the JSON-RPC id==2 response through
@@ -52,7 +52,14 @@ emit_requests() {
 
 # --- 4-tier runner resolution (one-shot path) ---
 resolve_runner() {
-  if [ -n "${ENFUSION_MCP_BIN:-}" ] && [ -f "$ENFUSION_MCP_BIN" ]; then RUNNER=(node "$ENFUSION_MCP_BIN"); dbg "runner=tier1(ENFUSION_MCP_BIN)"; return; fi
+  # T-165.7: .js/.mjs entries run under node; anything else (e.g. the Rust mcpd stub) execs directly.
+  if [ -n "${ENFUSION_MCP_BIN:-}" ] && [ -f "$ENFUSION_MCP_BIN" ]; then
+    case "$ENFUSION_MCP_BIN" in
+      *.js|*.mjs) RUNNER=(node "$ENFUSION_MCP_BIN") ;;
+      *)          RUNNER=("$ENFUSION_MCP_BIN") ;;
+    esac
+    dbg "runner=tier1(ENFUSION_MCP_BIN)"; return
+  fi
   local pinned="$SCRIPT_DIR/node_modules/enfusion-mcp/dist/index.js"
   if [ -f "$pinned" ]; then RUNNER=(node "$pinned"); dbg "runner=tier2(pinned)"; return; fi
   local hit; hit="$(find "$HOME/.npm/_npx" -maxdepth 4 -path '*enfusion-mcp/dist/index.js' -type f 2>/dev/null | head -1)"

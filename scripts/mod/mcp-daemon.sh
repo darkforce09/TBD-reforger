@@ -8,7 +8,6 @@ SOCK="${MCP_SOCK:-${XDG_RUNTIME_DIR:-/tmp}/tbd-mcp-$(id -u).sock}"
 [ "${#SOCK}" -gt 100 ] && SOCK="/tmp/tbd-mcp-$(id -u).sock"
 PIDFILE="$SOCK.pid"
 LOG="$SOCK.log"
-DAEMON="$SCRIPT_DIR/lib/mcp-daemon.mjs"
 
 # 4-tier resolve of the enfusion-mcp entry (mirrors mcp-call.sh); echoed for export to the node daemon.
 resolve_bin() {
@@ -33,7 +32,10 @@ start() {
   export ENFUSION_PROJECT_PATH="${ENFUSION_PROJECT_PATH:-$HOME/Documents/Games/ArmaReforgerWorkbench/addons}"
   [ -n "$bin" ] && export ENFUSION_MCP_BIN="$bin"
   export MCP_SOCK="$SOCK"
-  setsid node "$DAEMON" --socket "$SOCK" --pidfile "$PIDFILE" >"$LOG" 2>&1 &
+  # T-165.7: the broker is the Rust `mcpd` (tools/tbd-tools); build cached, exec direct so
+  # the pkill/argv patterns see the real binary (no node/cargo wrapper in between).
+  local mcpd_bin; mcpd_bin="$("$SCRIPT_DIR/lib/mcpd-bin.sh")" || { echo "mcp-daemon: mcpd build failed" >&2; return 1; }
+  setsid "$mcpd_bin" --socket "$SOCK" --pidfile "$PIDFILE" >"$LOG" 2>&1 &
   local i=0
   while [ "$i" -lt 120 ]; do          # up to 60 s (first start pays the one-time index load)
     is_running && { echo "mcp-daemon: started ($SOCK)"; return 0; }
@@ -56,7 +58,7 @@ status() {
 # Safety nuke: terminate EVERY tbd MCP broker (any socket), reap orphaned enfusion-mcp servers, and
 # clear stray socket/pid/lock/log files. Use if a daemon (or its child) ever leaks.
 stop_all() {
-  local pids; pids="$(pgrep -f 'lib/mcp-daemon\.mjs' 2>/dev/null || true)"
+  local pids; pids="$(pgrep -f 'mcpd --socket' 2>/dev/null || true)"
   if [ -n "$pids" ]; then
     echo "$pids" | xargs -r kill 2>/dev/null        # SIGTERM → daemons kill their own child + unlink
     sleep 1

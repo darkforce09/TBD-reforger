@@ -5151,7 +5151,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-165.7",
+      "active_slice": "T-165.8",
       "spec": "docs/platform/t165_node_eradication.md",
       "stream": "infra",
       "targets": [
@@ -5241,7 +5241,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t165_node_eradication.md",
           "notes": "MCP broker + stub -> Rust; selftest 19/19 frozen."
         },

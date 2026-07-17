@@ -11,7 +11,7 @@ Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Rep
 
 ```text
 mcp-call.sh
-  ├─ (default) warm daemon  →  AF_UNIX socket  →  lib/mcp-daemon.mjs  →  one enfusion-mcp child
+  ├─ (default) warm daemon  →  AF_UNIX socket  →  `mcpd` (Rust, tools/tbd-tools)  →  one enfusion-mcp child
   └─ fallback one-shot      →  node …/dist/index.js  →  cargo xtask mcp consume (early exit on id==2)
 ```
 
@@ -19,7 +19,7 @@ mcp-call.sh
 |-----------|------|------|
 | Call wrapper | `scripts/mod/mcp-call.sh` | Daemon-first; one-shot fallback; exports all three `ENFUSION_*` paths |
 | JSON-RPC consumer | `cargo xtask mcp consume` (via `lib/xtask-run.sh`) | Shared parser + exit-code contract (daemon, one-shot, self-test) |
-| Daemon broker | `scripts/mod/lib/mcp-daemon.mjs` | One index load (~35 s cold); serializes `tools/call` |
+| Daemon broker | `mcpd` (`tools/tbd-tools`, built via `scripts/mod/lib/mcpd-bin.sh`) | One index load (~35 s cold); serializes `tools/call` |
 | Daemon control | `scripts/mod/mcp-daemon.sh` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
 | Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
 | Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |
@@ -131,7 +131,7 @@ Old `mcp-call.sh` only exported `ENFUSION_GAME_PATH`. `wb_*` tools need all thre
 | Self-test cleanup | Short idle in tests; verifies zero stray processes after run |
 | `.gitignore` | `scripts/mod/node_modules/` — never commit npm tree |
 
-**If load spikes:** run `bash scripts/mod/mcp-daemon.sh stop-all` and confirm no `enfusion-mcp` / `mcp-daemon.mjs` processes remain.
+**If load spikes:** run `bash scripts/mod/mcp-daemon.sh stop-all` and confirm no `enfusion-mcp` / `mcpd` processes remain.
 
 ---
 

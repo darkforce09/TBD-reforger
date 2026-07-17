@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 # Offline self-test for the MCP call path (T-090.0 gates T1-T7; T-162 Rust consumer).
 # No Workbench / no real enfusion-mcp: drives `xtask mcp consume` against recorded fixtures
-# and mcp-call.sh against fixtures/stub-runner.mjs.
+# and mcp-call.sh against the Rust mcpd stub (MCP_STUB=1 — T-165.7).
 # Exit 0 iff every gate passes.
 set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 XTASK="$SCRIPT_DIR/lib/xtask-run.sh"
-STUB="$SCRIPT_DIR/fixtures/stub-runner.mjs"
+# T-165.7: the stub is the Rust mcpd in stub mode (MCP_STUB=1; broker mode still wins on
+# --socket, so exporting it around mcp-daemon.sh is safe).
+STUB="$("$SCRIPT_DIR/lib/mcpd-bin.sh")"
+export MCP_STUB=1
 FIX="$SCRIPT_DIR/fixtures"
 SOCK="/tmp/tbd-mcp-selftest-$(id -u).sock"
 
