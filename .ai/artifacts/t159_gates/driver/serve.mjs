@@ -25,12 +25,36 @@ const MIME = {
   '.map': 'application/json',
 }
 
-export function startServer({ dir, port = 0 } = {}) {
+export function startServer({ dir, port = 0, apiProxy = null } = {}) {
   const server = createServer(async (req, res) => {
     // Identical isolation headers for oracle and target.
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
     res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless')
     res.setHeader('Cache-Control', 'no-store')
+
+    // T-159.25: opt-in same-origin API proxy (the Trunk `[[proxy]]` equivalent for gates that need
+    // a live backend). Same-origin, so it needs neither CORS nor a window.fetch override — the app
+    // boots untouched. apiProxy = 'http://127.0.0.1:8080'.
+    if (apiProxy && req.url.startsWith('/api/')) {
+      try {
+        const chunks = []
+        for await (const c of req) chunks.push(c)
+        const upstream = await fetch(apiProxy + req.url, {
+          method: req.method,
+          headers: { ...req.headers, host: new URL(apiProxy).host },
+          body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks),
+        })
+        const buf = Buffer.from(await upstream.arrayBuffer())
+        res.writeHead(upstream.status, {
+          'content-type': upstream.headers.get('content-type') ?? 'application/json',
+        })
+        res.end(buf)
+      } catch (e) {
+        res.writeHead(502)
+        res.end('proxy error: ' + e.message)
+      }
+      return
+    }
 
     try {
       const url = new URL(req.url, 'http://localhost')
