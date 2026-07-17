@@ -224,7 +224,7 @@ fn refresh_signals(ctx: &HistoryCtx, obj: usize) {
 /// mission" — the strip's semver `<input>` is on this very page. Mirrors the React host handler's
 /// INPUT/SELECT/TEXTAREA/contentEditable guard, read off `activeElement` (the shortcut listens on
 /// `window`, so the event target is the focused node or `<body>`).
-fn in_editable_field() -> bool {
+pub fn in_editable_field() -> bool {
     let Some(el) = web_sys::window()
         .and_then(|w| w.document())
         .and_then(|d| d.active_element())

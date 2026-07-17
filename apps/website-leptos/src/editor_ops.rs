@@ -108,6 +108,267 @@ pub fn set_ctx(
     });
 }
 
+/* ───────────────────────── Mission Settings (T-159.26 — environment half) ───────────────────────── */
+
+/// The doc's terrain + environment fields, for the Mission Settings dialog.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct MissionEnv {
+    pub terrain: String,
+    pub time: String,
+    pub weather: String,
+    pub view_distance: i64,
+    pub thermals: bool,
+}
+
+/// Read terrain + environment from the doc meta (`small_maps_json` → `meta`).
+pub fn read_env() -> MissionEnv {
+    OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            let root: serde_json::Value = serde_json::from_str(&core.small_maps_json()).ok()?;
+            let meta = root.get("meta")?;
+            let env = meta.get("environment");
+            let s = |v: Option<&serde_json::Value>, k: &str, def: &str| {
+                v.and_then(|e| e.get(k)).and_then(|x| x.as_str()).unwrap_or(def).to_string()
+            };
+            Some(MissionEnv {
+                terrain: meta.get("terrain").and_then(|t| t.as_str()).unwrap_or("everon").to_string(),
+                time: s(env, "time", "06:00"),
+                weather: s(env, "weather", "clear"),
+                view_distance: env
+                    .and_then(|e| e.get("viewDistance"))
+                    .and_then(serde_json::Value::as_i64)
+                    .unwrap_or(1600),
+                thermals: env.and_then(|e| e.get("thermals")).and_then(serde_json::Value::as_bool).unwrap_or(false),
+            })
+        })
+        .unwrap_or_default()
+}
+
+/// Merge an environment patch (React `updateEnvironment`) + run the shared tail (one undo step).
+pub fn update_environment(patch_json: String) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.update_environment(&patch_json);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/* ───────────────────────── keyboard actions (T-159.26 — MissionCreatorPage) ───────────────────────── */
+
+thread_local! {
+    /// The in-editor copy/paste clipboard (React `clipboardRef`) — raw slot dicts from `slots_json`.
+    static CLIPBOARD: RefCell<Vec<serde_json::Value>> = const { RefCell::new(Vec::new()) };
+}
+
+/// Delete/Backspace — remove the selected slots in one undoable step (React `removeEntities`).
+pub fn delete_selection() -> bool {
+    let removed = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let ids = ctx.selection.borrow().clone();
+        if ids.is_empty() {
+            return false;
+        }
+        {
+            let d = ctx.doc.borrow();
+            let Some(core) = d.as_ref() else {
+                return false;
+            };
+            core.remove_slots(ids);
+        }
+        ctx.selection.borrow_mut().clear();
+        true
+    });
+    if removed {
+        crate::mission_history::after_local_edit();
+    }
+    removed
+}
+
+/// Spacebar — center the camera on the selection centroid (React `flyTo`, no auto-fly on click).
+pub fn center_on_selection() -> bool {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel = ctx.selection.borrow().clone();
+        if sel.is_empty() {
+            return false;
+        }
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let soa = core.materialize();
+        let mut sx = 0.0f64;
+        let mut sy = 0.0f64;
+        let mut n = 0.0f64;
+        for id in &sel {
+            if let Some(row) = soa.ids.iter().position(|s| s == id) {
+                sx += f64::from(soa.xs[row]);
+                sy += f64::from(soa.ys[row]);
+                n += 1.0;
+            }
+        }
+        if n == 0.0 {
+            return false;
+        }
+        let mut eng = ctx.engine.borrow_mut();
+        if let Some(e) = eng.as_mut() {
+            e.set_view(sx / n, sy / n, e.zoom()); // keep zoom, center on centroid
+            true
+        } else {
+            false
+        }
+    })
+}
+
+/// Ctrl/Cmd+C — snapshot the selected slot dicts to the clipboard (React copy branch).
+pub fn copy_selection() -> bool {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let sel: std::collections::HashSet<String> = ctx.selection.borrow().iter().cloned().collect();
+        if sel.is_empty() {
+            return false;
+        }
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
+            return false;
+        };
+        let clip: Vec<serde_json::Value> = map
+            .as_object()
+            .map(|o| {
+                o.values()
+                    .filter(|v| {
+                        v.get("id")
+                            .and_then(|i| i.as_str())
+                            .is_some_and(|i| sel.contains(i))
+                    })
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default();
+        if clip.is_empty() {
+            return false;
+        }
+        CLIPBOARD.with(|cb| *cb.borrow_mut() = clip);
+        true
+    })
+}
+
+/// Ctrl/Cmd+V — paste the clipboard at `(cx, cy)` (the map cursor), preserving the relative layout
+/// (React `pasteSlots`; centroid → cursor). Mints ids, files under the resolved layer, keeps the
+/// source squad id (inert while squads is empty), selects the paste. `true` if anything pasted.
+pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
+    let placed = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return Vec::new();
+        };
+        let clip = CLIPBOARD.with(|cb| cb.borrow().clone());
+        if clip.is_empty() {
+            return Vec::new();
+        }
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return Vec::new();
+        };
+        let layer_id = ensure_layer(ctx, core);
+        let terrain = serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
+            .ok()
+            .and_then(|v| v.get("meta")?.get("terrain")?.as_str().map(str::to_string))
+            .unwrap_or_default();
+        let b = map_engine_core::mission::compile::terrain_bounds(&terrain);
+
+        let n = clip.len();
+        let mut ids = Vec::with_capacity(n);
+        let (mut sx, mut sy, mut srot, mut zs) =
+            (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        let (mut squad_ids, mut layer_ids) = (Vec::new(), Vec::new());
+        let (mut roles, mut tags, mut asset_ids, mut stances, mut loadouts) =
+            (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        let g = |v: &serde_json::Value, k: &str| {
+            v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string()
+        };
+        let gp = |v: &serde_json::Value, k: &str| {
+            v.get("position")
+                .and_then(|p| p.get(k))
+                .and_then(serde_json::Value::as_f64)
+                .unwrap_or(0.0)
+        };
+        for slot in &clip {
+            ids.push(mint_id(ctx, core));
+            sx.push(gp(slot, "x"));
+            sy.push(gp(slot, "y"));
+            srot.push(gp(slot, "rotation"));
+            zs.push(0.0); // DEM not ready — byte-parity with the flat-map case
+            // Keep the source squad if it still exists, else "" (empty squads map → inert).
+            squad_ids.push(g(slot, "squadId"));
+            layer_ids.push(layer_id.clone());
+            roles.push(g(slot, "role"));
+            tags.push(g(slot, "tag"));
+            asset_ids.push(g(slot, "assetId"));
+            let st = g(slot, "stance");
+            stances.push(if st.is_empty() { "stand".to_string() } else { st });
+            loadouts.push(
+                slot.get("loadout")
+                    .filter(|l| !l.is_null())
+                    .map(std::string::ToString::to_string)
+                    .unwrap_or_default(),
+            );
+        }
+        core.paste_slots(
+            ids.clone(),
+            squad_ids,
+            layer_ids,
+            sx,
+            sy,
+            srot,
+            zs,
+            roles,
+            tags,
+            asset_ids,
+            stances,
+            loadouts,
+            cx,
+            cy,
+            b[2],
+            b[3],
+        );
+        *ctx.selection.borrow_mut() = ids.clone();
+        ids
+    });
+    if !placed.is_empty() {
+        crate::mission_history::after_local_edit();
+        true
+    } else {
+        false
+    }
+}
+
 /* ───────────────────────── Attributes modal (T-159.26 / .23 spec) ───────────────────────── */
 
 /// Open Attributes for `id` — the React dbl-click contract (A1): a multi-selection (>1) suppresses

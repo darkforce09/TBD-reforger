@@ -65,6 +65,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
     let attrs_open = RwSignal::new(None::<String>);
     let doc_tick = RwSignal::new(0u64);
+    let settings_open = RwSignal::new(false);
     // T-159.26 — server hydrate / conflict / dirty (data-safety). `conflict` holds an offered
     // server payload when local IDB content diverges; `dirty` is the unsaved-changes flag;
     // `current_semver` tracks the adopted server version.
@@ -229,6 +230,49 @@ pub fn MissionEditorPage() -> impl IntoView {
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
             crate::mission_history::refresh_hud();
+
+            // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete/Backspace
+            // (remove selection), Space (center on centroid), Ctrl/Cmd+C/V (copy/paste at cursor).
+            // A SEPARATE window keydown from the undo/redo one (which owns Ctrl+Z/Y) — each guards
+            // its own keys, both skip editable fields. `cursor` feeds the paste anchor (world coords).
+            {
+                let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(
+                    move |ev: web_sys::KeyboardEvent| {
+                        if crate::mission_history::in_editable_field() {
+                            return;
+                        }
+                        let modk = ev.ctrl_key() || ev.meta_key();
+                        let (cx, cy) = match cursor.get_untracked() {
+                            Some((x, y)) => (Some(x), Some(y)),
+                            None => (None, None),
+                        };
+                        // Each arm returns whether it acted; prevent the browser default once.
+                        let handled = match ev.code().as_str() {
+                            "KeyC" if modk && !ev.alt_key() && !ev.shift_key() => {
+                                crate::editor_ops::copy_selection()
+                            }
+                            "KeyV" if modk && !ev.alt_key() && !ev.shift_key() => {
+                                crate::editor_ops::paste_at_cursor(cx, cy)
+                            }
+                            "Space" if !modk => crate::editor_ops::center_on_selection(),
+                            "Delete" | "Backspace" if !modk => {
+                                crate::editor_ops::delete_selection()
+                            }
+                            _ => false,
+                        };
+                        if handled {
+                            ev.prevent_default();
+                        }
+                    },
+                );
+                if let Some(win) = web_sys::window() {
+                    let _ = win.add_event_listener_with_callback(
+                        "keydown",
+                        onkeydown.as_ref().unchecked_ref(),
+                    );
+                }
+                onkeydown.forget();
+            }
 
             // T-159.17 — persistence layer (additive; the SYNCHRONOUS seed above keeps the doc smoke
             // synchronous — `smoke_doc_editor` still sees 8 slots immediately on its own cold origin).
@@ -952,6 +996,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         save_semver
                         save_status
                         dirty
+                        settings_open
                     />
                 </div>
                 <div class="absolute bottom-0 left-0 top-12 w-64">
@@ -971,6 +1016,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // chrome subtree so its pointerdowns never open a map gesture.
                 <div class="pointer-events-auto">
                     <crate::attributes::AttributesModal attrs_open doc_tick />
+                </div>
+                <div class="pointer-events-auto">
+                    <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
                 </div>
                 // T-159.26 — local-vs-server conflict prompt (React's ConflictDialog). Renders only
                 // when `conflict` is Some (a divergent local doc on cold boot). Data-safety: the

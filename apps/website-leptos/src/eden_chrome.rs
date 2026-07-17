@@ -94,6 +94,9 @@ pub fn TopCommandStrip(
     /// T-159.26 — unsaved-changes flag; a `•` after the title marks dirty (React's `isDirty` dot).
     #[prop(optional)]
     dirty: Option<RwSignal<bool>>,
+    /// T-159.26 — the Mission Settings dialog's open flag (gear button toggles it).
+    #[prop(optional)]
+    settings_open: Option<RwSignal<bool>>,
 ) -> impl IntoView {
     view! {
         <div class=STRIP>
@@ -176,9 +179,19 @@ pub fn TopCommandStrip(
             <span class="min-w-24 font-mono text-xs text-on-surface-variant">
                 {move || save_status.get()}
             </span>
-            // Settings stub (spec C1: "optional disabled Settings stub"). The Mission Settings
-            // dialog (hillshade / grid / environment) is out of scope for the scaffold.
-            <button type="button" aria-label="Mission settings" class=BTN_ICON disabled=true>
+            // T-159.26 — Mission Settings (environment). Opens the dialog when a `settings_open`
+            // signal is threaded (the editor); disabled in the scaffold-only case.
+            <button
+                type="button"
+                aria-label="Mission settings"
+                class=BTN_ICON
+                disabled=settings_open.is_none()
+                on:click=move |_| {
+                    if let Some(s) = settings_open {
+                        s.set(true);
+                    }
+                }
+            >
                 <MaterialIcon name="settings" class="block text-base" />
             </button>
         </div>
@@ -475,5 +488,158 @@ pub fn BottomToolbelt(
                 </span>
             </div>
         </div>
+    }
+}
+
+/// Mission Settings dialog (MissionSettingsDialog.tsx — environment half). Terrain (readonly) +
+/// time / weather / view distance / thermals flow through `editor_ops::update_environment` (one
+/// undo step each). The render-pref controls (map style, grid, hillshade, world-layer toggles) land
+/// with the map-asset host (T-159.28) — noted in the dialog rather than shown as inert toggles.
+/// Renders no DOM while closed. T-159.26.
+#[component]
+pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> impl IntoView {
+    // Esc closes (the suite Dialog behavior).
+    #[cfg(target_arch = "wasm32")]
+    {
+        let esc = window_event_listener(leptos::ev::keydown, move |ev| {
+            if open.get_untracked() && ev.key() == "Escape" {
+                open.set(false);
+            }
+        });
+        on_cleanup(move || esc.remove());
+    }
+    let ctrl = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
+    move || {
+        if !open.get() {
+            return None;
+        }
+        let _ = doc_tick.get(); // re-read env on undo/redo while open
+        #[cfg(target_arch = "wasm32")]
+        let env = crate::editor_ops::read_env();
+        #[cfg(not(target_arch = "wasm32"))]
+        let env = crate::editor_ops::MissionEnv::default();
+        Some(view! {
+            <div
+                class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+                on:click=move |_| open.set(false)
+            ></div>
+            <div class="glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
+                <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                    <div class="min-w-0">
+                        <h2 class="text-headline-sm text-on-surface">"Mission Settings"</h2>
+                        <p class="mt-1 text-label-md text-on-surface-variant">
+                            "Global environment for this mission."
+                        </p>
+                    </div>
+                    <button
+                        type="button"
+                        aria-label="Close"
+                        on:click=move |_| open.set(false)
+                        class="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                    >
+                        <MaterialIcon name="close" />
+                    </button>
+                </div>
+                <div class="custom-scrollbar flex-1 overflow-y-auto px-6 py-5">
+                    <div class="flex flex-col gap-4">
+                        <label class="flex flex-col gap-1">
+                            <span class="text-label-sm uppercase tracking-wider text-outline">
+                                "Terrain"
+                            </span>
+                            <div class="rounded-md border border-outline-variant/20 bg-surface-container-lowest/30 px-2.5 py-1.5 font-mono text-code-md text-on-surface-variant">
+                                {env.terrain.clone()}
+                            </div>
+                        </label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <label class="flex flex-col gap-1">
+                                <span class="text-label-sm uppercase tracking-wider text-outline">
+                                    "Time"
+                                </span>
+                                <input
+                                    type="time"
+                                    value=env.time.clone()
+                                    on:input=move |ev| {
+                                        #[cfg(target_arch = "wasm32")]
+                                        crate::editor_ops::update_environment(
+                                            serde_json::json!({ "time": event_target_value(&ev) })
+                                                .to_string(),
+                                        );
+                                        #[cfg(not(target_arch = "wasm32"))]
+                                        let _ = &ev;
+                                    }
+                                    class=ctrl
+                                />
+                            </label>
+                            <label class="flex flex-col gap-1">
+                                <span class="text-label-sm uppercase tracking-wider text-outline">
+                                    "View Distance (m)"
+                                </span>
+                                <input
+                                    type="number"
+                                    value=env.view_distance.to_string()
+                                    on:input=move |ev| {
+                                        #[cfg(target_arch = "wasm32")]
+                                        {
+                                            let v: i64 = event_target_value(&ev).parse().unwrap_or(0);
+                                            crate::editor_ops::update_environment(
+                                                serde_json::json!({ "viewDistance": v }).to_string(),
+                                            );
+                                        }
+                                        #[cfg(not(target_arch = "wasm32"))]
+                                        let _ = &ev;
+                                    }
+                                    class=ctrl
+                                />
+                            </label>
+                        </div>
+                        <label class="flex flex-col gap-1">
+                            <span class="text-label-sm uppercase tracking-wider text-outline">
+                                "Weather"
+                            </span>
+                            <select
+                                prop:value=env.weather.clone()
+                                on:change=move |ev| {
+                                    #[cfg(target_arch = "wasm32")]
+                                    crate::editor_ops::update_environment(
+                                        serde_json::json!({ "weather": event_target_value(&ev) })
+                                            .to_string(),
+                                    );
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    let _ = &ev;
+                                }
+                                class=ctrl
+                            >
+                                <option value="clear">"Clear"</option>
+                                <option value="overcast">"Overcast"</option>
+                                <option value="heavy_rain">"Heavy Rain"</option>
+                                <option value="dense_fog">"Dense Fog"</option>
+                            </select>
+                        </label>
+                        <div class="flex items-center justify-between py-0.5">
+                            <span class="text-label-md text-on-surface-variant">"Thermals enabled"</span>
+                            <input
+                                type="checkbox"
+                                prop:checked=env.thermals
+                                on:change=move |ev| {
+                                    #[cfg(target_arch = "wasm32")]
+                                    {
+                                        let on = event_target_checked(&ev);
+                                        crate::editor_ops::update_environment(
+                                            serde_json::json!({ "thermals": on }).to_string(),
+                                        );
+                                    }
+                                    #[cfg(not(target_arch = "wasm32"))]
+                                    let _ = &ev;
+                                }
+                                class="accent-primary"
+                            />
+                        </div>
+                        <p class="mt-2 text-label-sm normal-case text-outline">
+                            "Map style, grid, hillshade, and world-layer toggles arrive with the terrain render host."
+                        </p>
+                    </div>
+                </div>
+            </div>
+        })
     }
 }
