@@ -34,7 +34,7 @@ const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
 const SEED_N: i64 = 8; // must match mission_doc.rs `SEED_N`
 
 /// The Makefile glob `driver/*_editor.mjs` in shell-sort order (selfcheck sorts first).
-pub const EDITOR_SUITE: [&str; 17] = [
+pub const EDITOR_SUITE: [&str; 18] = [
     "selfcheck",
     "arsenal",
     "attributes",
@@ -52,6 +52,7 @@ pub const EDITOR_SUITE: [&str; 17] = [
     "save-export",
     "select",
     "undo",
+    "virtual-outliner",
 ];
 
 /// Locked T-166 sat bundle size — full GET of this body must never happen under `?sat=preview`.
@@ -2345,6 +2346,105 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
+/// T-169 — the VirtualOutliner gate. Seeds a mission past `VIRTUAL_SLOT_THRESHOLD` (via the
+/// `__missionDoc.seed_slots` hook) and asserts the dock trees WINDOW: `window.__outlinerStats`
+/// reports `rendered < total` above the threshold (and `rendered === total` below it), for both
+/// the Editor Layers and ORBAT trees, while a windowed slot row still selects.
+pub async fn smoke_virtual_outliner(dist: &str, path: &str) -> Result<u8> {
+    let h = Harness::new(dist, 5320, 9380, None, None, &[]).await?;
+    let run = async {
+        h.page.navigate(&h.url(path)).await?;
+        h.page
+            .wait_for("!!document.querySelector('canvas')", 80, 250)
+            .await?;
+        let ready = h
+            .page
+            .wait_for(
+                "typeof window.__missionDoc === 'object' && typeof window.__missionDoc.seed_slots === 'function' && typeof window.__editorSelection === 'object'",
+                120,
+                250,
+            )
+            .await?;
+
+        let mut checks = Map::new();
+        // A stats getter for one tree key → `{total, rendered, threshold}` (or nulls).
+        let stat = |key: &str, field: &str| {
+            format!(
+                "(() => {{ const s = window.__outlinerStats && window.__outlinerStats.{key}; return (s && typeof s.{field} === 'number') ? s.{field} : -1 }})()"
+            )
+        };
+        if ready {
+            // Editor Layers has the 8 unfiled seeds now → below threshold → eager (rendered==total).
+            h.page
+                .wait_for(&format!("{} >= 0", stat("editorLayers", "total")), 40, 250)
+                .await?;
+            let e_total0 = eval_i64(&h.page, &stat("editorLayers", "total")).await?;
+            let e_rend0 = eval_i64(&h.page, &stat("editorLayers", "rendered")).await?;
+            checks.insert(
+                "v1_eagerBelowThreshold".into(),
+                json!(e_total0 > 0 && e_total0 <= 50 && e_rend0 == e_total0),
+            );
+
+            // Push both trees past the threshold.
+            eval(&h.page, "window.__missionDoc.seed_slots(80)").await?;
+            h.page
+                .wait_for("window.__missionDoc.slot_count() >= 80", 40, 250)
+                .await?;
+            // Wait for the windowed re-render to publish rendered < total.
+            let windowed = format!(
+                "{} > 50 && {} < {}",
+                stat("editorLayers", "total"),
+                stat("editorLayers", "rendered"),
+                stat("editorLayers", "total")
+            );
+            checks.insert(
+                "v2_editorLayersWindowed".into(),
+                json!(h.page.wait_for(&windowed, 40, 250).await?),
+            );
+            let e_total1 = eval_i64(&h.page, &stat("editorLayers", "total")).await?;
+            let e_rend1 = eval_i64(&h.page, &stat("editorLayers", "rendered")).await?;
+            checks.insert(
+                "v3_windowRendersSubset".into(),
+                json!(e_rend1 > 0 && e_rend1 < e_total1 && e_rend1 <= 60),
+            );
+            checks.insert(
+                "v4_thresholdIs50".into(),
+                json!(eval_i64(&h.page, &stat("editorLayers", "threshold")).await? == 50),
+            );
+            let orbat_windowed = format!(
+                "{} > 50 && {} < {}",
+                stat("orbat", "total"),
+                stat("orbat", "rendered"),
+                stat("orbat", "total")
+            );
+            checks.insert(
+                "v5_orbatWindowed".into(),
+                json!(h.page.wait_for(&orbat_windowed, 40, 250).await?),
+            );
+
+            // A windowed slot row still selects (the virtualization keeps interaction intact).
+            eval(&h.page, "[...document.querySelectorAll('aside button[aria-label=\"Rifleman\"]')][0]?.dispatchEvent(new MouseEvent('click',{bubbles:true}))").await?;
+            checks.insert(
+                "v6_windowedRowSelects".into(),
+                json!(
+                    h.page
+                        .wait_for("window.__editorSelection.count() >= 1", 20, 250)
+                        .await?
+                ),
+            );
+        }
+        let pass = ready && h.no_panics() && checks_pass(&checks, 6);
+        print_verdict(&json!({
+            "gate": "editor-virtual-outliner-smoke", "path": path,
+            "checks": checks, "panics": h.panics_head(), "pass": pass,
+        }));
+        Ok::<u8, anyhow::Error>(to_code(pass))
+    };
+    let code = run.await;
+    h.shutdown().await;
+    code
+}
+
 const BACKEND: &str = "http://127.0.0.1:8080";
 
 /// smoke_hydrate_editor.mjs — T-159.26 server-hydrate data-safety gate (LIVE backend on :8080).
@@ -2788,6 +2888,7 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
         "marquee-drag" => smoke_marquee_drag(&dist, &path).await,
         "undo" => smoke_undo(&dist, &path).await,
         "outliner-palette" => smoke_outliner_palette(&dist, &path).await,
+        "virtual-outliner" => smoke_virtual_outliner(&dist, &path).await,
         "hydrate" => smoke_hydrate(&dist).await,
         "mutations" => smoke_mutations(&dist).await,
         other => Err(anyhow!("unknown smoke '{other}' (see gate smoke --help)")),

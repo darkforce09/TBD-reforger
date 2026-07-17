@@ -18,7 +18,7 @@
 use leptos::prelude::*;
 
 use crate::asset_catalog::{CatalogNode, CatalogState};
-use crate::outliner::{NodeKind, OutlinerNode};
+use crate::outliner::{flatten, FlatRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD};
 use crate::ui::MaterialIcon;
 
 // ── Chrome insets (CSS px) ───────────────────────────────────────────────────────────────────────
@@ -216,112 +216,202 @@ fn indent(depth: usize) -> String {
     format!("padding-left:{}px", depth * 12)
 }
 
-/// Render the outliner recursively. A plain fn returning [`AnyView`], not a `#[component]`: a
-/// component that renders itself recurses in its own return type and never terminates
-/// monomorphization — `.into_any()` erases it (the `announcements.rs` idiom).
-fn outliner_rows(
-    nodes: &[OutlinerNode],
-    depth: usize,
+/// T-169 — window geometry. `ROW_H` is the flow height of one row (`px-1.5 py-1 text-label-sm`);
+/// the spacers use it to reserve the off-screen rows. `OVERSCAN` renders a few rows past the
+/// viewport each way so a fast scroll never flashes blank.
+const ROW_H: f64 = 24.0;
+const CONTAINER_H: f64 = 420.0;
+const OVERSCAN: usize = 6;
+
+/// Render ONE flattened outliner row (no recursion — the windowed list draws a flat slice).
+/// Header kinds (Unfiled / Faction / Squad) are inert; Folder → active-layer, Slot → select +
+/// dbl-click→Attributes (SEL-ORBAT-DBL-001).
+fn single_row(
+    row: &FlatRow,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
 ) -> AnyView {
-    nodes
-        .iter()
-        .map(|n| {
-            let kids = outliner_rows(&n.children, depth + 1, selected, active_layer);
-            // Two bindings: `view!`'s `into_render` takes the text by value, so the `aria-label`
-            // attribute needs its own copy.
-            let label = n.label.clone();
-            let aria = n.label.clone();
-            let id = n.id.clone();
-            match n.kind {
-                // The virtual root is not a doc id (see `outliner::UNFILED_ID`) — it can't be the
-                // active layer and it isn't a drop target, so it renders as an inert header.
-                NodeKind::Unfiled => view! {
-                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
-                        <MaterialIcon name="inbox" class="block text-sm" />
-                        <span>{label}</span>
-                    </div>
-                    {kids}
-                }
-                .into_any(),
-                // T-168 — ORBAT faction / squad group headers: inert (browse/select tree; squad
-                // MANAGEMENT is T-071), the slot leaves below carry the select + dblclick contract.
-                NodeKind::Faction => view! {
-                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                        <MaterialIcon name="flag" class="block text-sm" />
-                        <span class="truncate">{label}</span>
-                    </div>
-                    {kids}
-                }
-                .into_any(),
-                NodeKind::Squad => view! {
-                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
-                        <MaterialIcon name="groups" class="block text-sm" />
-                        <span class="truncate">{label}</span>
-                    </div>
-                    {kids}
-                }
-                .into_any(),
-                NodeKind::Folder => {
-                    let is_active = {
-                        let id = id.clone();
-                        move || active_layer.get().as_deref() == Some(id.as_str())
-                    };
-                    view! {
-                        <button
-                            type="button"
-                            aria-label=aria
-                            title="Make this the drop target"
-                            style=indent(depth)
-                            class=move || if is_active() { ROW_ACTIVE } else { ROW }
-                            on:click=move |_| {
-                                #[cfg(target_arch = "wasm32")]
-                                crate::editor_ops::set_active_layer(Some(id.clone()));
-                            }
-                        >
-                            <MaterialIcon name="folder" class="block text-sm" />
-                            <span class="truncate">{label}</span>
-                        </button>
-                        {kids}
+    let label = row.label.clone();
+    let aria = row.label.clone();
+    let id = row.id.clone();
+    let depth = row.depth;
+    match row.kind {
+        NodeKind::Unfiled => view! {
+            <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+                <MaterialIcon name="inbox" class="block text-sm" />
+                <span>{label}</span>
+            </div>
+        }
+        .into_any(),
+        NodeKind::Faction => view! {
+            <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                <MaterialIcon name="flag" class="block text-sm" />
+                <span class="truncate">{label}</span>
+            </div>
+        }
+        .into_any(),
+        NodeKind::Squad => view! {
+            <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+                <MaterialIcon name="groups" class="block text-sm" />
+                <span class="truncate">{label}</span>
+            </div>
+        }
+        .into_any(),
+        NodeKind::Folder => {
+            let is_active = {
+                let id = id.clone();
+                move || active_layer.get().as_deref() == Some(id.as_str())
+            };
+            view! {
+                <button
+                    type="button"
+                    aria-label=aria
+                    title="Make this the drop target"
+                    style=indent(depth)
+                    class=move || if is_active() { ROW_ACTIVE } else { ROW }
+                    on:click=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor_ops::set_active_layer(Some(id.clone()));
                     }
-                    .into_any()
-                }
-                NodeKind::Slot => {
-                    let is_sel = {
-                        let id = id.clone();
-                        move || selected.get().iter().any(|s| s == &id)
-                    };
-                    let id_dbl = id.clone();
-                    view! {
-                        <button
-                            type="button"
-                            aria-label=aria
-                            style=indent(depth)
-                            class=move || if is_sel() { ROW_ACTIVE } else { ROW }
-                            on:click=move |_| {
-                                #[cfg(target_arch = "wasm32")]
-                                crate::editor_ops::select_slot(id.clone());
-                            }
-                            // T-159.26 A1 — outliner activate (native dblclick) opens Attributes,
-                            // the SEL-ORBAT-DBL-001 contract.
-                            on:dblclick=move |_| {
-                                #[cfg(target_arch = "wasm32")]
-                                crate::editor_ops::open_attributes(id_dbl.clone());
-                                #[cfg(not(target_arch = "wasm32"))]
-                                let _ = &id_dbl;
-                            }
-                        >
-                            <MaterialIcon name="person" class="block text-sm" />
-                            <span class="truncate">{label}</span>
-                        </button>
-                    }
-                    .into_any()
-                }
+                >
+                    <MaterialIcon name="folder" class="block text-sm" />
+                    <span class="truncate">{label}</span>
+                </button>
             }
+            .into_any()
+        }
+        NodeKind::Slot => {
+            let is_sel = {
+                let id = id.clone();
+                move || selected.get().iter().any(|s| s == &id)
+            };
+            let id_dbl = id.clone();
+            view! {
+                <button
+                    type="button"
+                    aria-label=aria
+                    style=indent(depth)
+                    class=move || if is_sel() { ROW_ACTIVE } else { ROW }
+                    on:click=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor_ops::select_slot(id.clone());
+                    }
+                    // T-159.26 A1 — outliner activate (native dblclick) opens Attributes,
+                    // the SEL-ORBAT-DBL-001 contract.
+                    on:dblclick=move |_| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor_ops::open_attributes(id_dbl.clone());
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = &id_dbl;
+                    }
+                >
+                    <MaterialIcon name="person" class="block text-sm" />
+                    <span class="truncate">{label}</span>
+                </button>
+            }
+            .into_any()
+        }
+    }
+}
+
+/// T-169 — publish `window.__outlinerStats[key] = {total, rendered, threshold}` for the gate.
+#[cfg(target_arch = "wasm32")]
+fn set_outliner_stats(key: &str, total: usize, rendered: usize) {
+    use wasm_bindgen::JsValue;
+    let Some(win) = web_sys::window() else { return };
+    let stats = match js_sys::Reflect::get(&win, &JsValue::from_str("__outlinerStats")) {
+        Ok(v) if v.is_object() => v,
+        _ => {
+            let o = js_sys::Object::new();
+            let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__outlinerStats"), &o);
+            o.into()
+        }
+    };
+    let entry = js_sys::Object::new();
+    let set = |k: &str, n: usize| {
+        let _ = js_sys::Reflect::set(&entry, &JsValue::from_str(k), &JsValue::from_f64(n as f64));
+    };
+    set("total", total);
+    set("rendered", rendered);
+    set("threshold", VIRTUAL_SLOT_THRESHOLD);
+    let _ = js_sys::Reflect::set(&stats, &JsValue::from_str(key), &entry);
+}
+#[cfg(not(target_arch = "wasm32"))]
+fn set_outliner_stats(_key: &str, _total: usize, _rendered: usize) {}
+
+/// T-169 — render a dock tree, windowed above [`VIRTUAL_SLOT_THRESHOLD`]. Below it the whole
+/// flattened list renders eagerly; above it a fixed-height scroll container draws only the visible
+/// slice (+ overscan) between two spacer divs, so a mission-scale tree never builds N DOM rows.
+/// `stats_key` names this tree in `window.__outlinerStats`.
+fn virtual_tree(
+    nodes: RwSignal<Vec<OutlinerNode>>,
+    selected: RwSignal<Vec<String>>,
+    active_layer: RwSignal<Option<String>>,
+    stats_key: &'static str,
+    empty_msg: &'static str,
+) -> AnyView {
+    // Flatten once per doc change (O(n), like the mutation itself); the scroll path only re-slices.
+    // Created ONCE per mount (this fn is called outside any reactive closure), so the Effect never
+    // leaks — it re-runs on `nodes` change, and the render `move ||` re-slices on `rev`/scroll.
+    let flat = StoredValue::new(Vec::<FlatRow>::new());
+    let rev = RwSignal::new(0u64);
+    Effect::new(move |_| {
+        let f = flatten(&nodes.get());
+        flat.set_value(f);
+        rev.update(|r| *r = r.wrapping_add(1));
+    });
+    let scroll_top = RwSignal::new(0.0_f64);
+    (move || {
+        rev.track(); // re-render the slice when the tree changes
+        let st = scroll_top.get();
+        flat.with_value(|f| {
+            let total = f.len();
+            if total == 0 {
+                set_outliner_stats(stats_key, 0, 0);
+                return view! { <p class="text-label-sm text-outline">{empty_msg}</p> }.into_any();
+            }
+            if total <= VIRTUAL_SLOT_THRESHOLD {
+                set_outliner_stats(stats_key, total, total);
+                return view! {
+                    <div>{f.iter().map(|r| single_row(r, selected, active_layer)).collect::<Vec<_>>()}</div>
+                }
+                .into_any();
+            }
+            let per_screen = (CONTAINER_H / ROW_H).ceil() as usize;
+            let start = ((st / ROW_H).floor() as usize).saturating_sub(OVERSCAN);
+            let end = (start + per_screen + 2 * OVERSCAN).min(total);
+            set_outliner_stats(stats_key, total, end - start);
+            let top = start as f64 * ROW_H;
+            let bottom = (total - end) as f64 * ROW_H;
+            let rows: Vec<AnyView> = f[start..end]
+                .iter()
+                .map(|r| single_row(r, selected, active_layer))
+                .collect();
+            view! {
+                <div
+                    class="overflow-y-auto"
+                    style=format!("height:{CONTAINER_H}px")
+                    on:scroll=move |ev| {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            use wasm_bindgen::JsCast;
+                            if let Some(el) = ev.target().and_then(|t| t.dyn_into::<web_sys::Element>().ok()) {
+                                scroll_top.set(el.scroll_top() as f64);
+                            }
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = &ev;
+                    }
+                >
+                    <div style=format!("height:{top}px")></div>
+                    {rows}
+                    <div style=format!("height:{bottom}px")></div>
+                </div>
+            }
+            .into_any()
         })
-        .collect::<Vec<_>>()
-        .into_any()
+    })
+    .into_any()
 }
 
 /// Render the palette recursively. A leaf (`payload.is_some()`) arms a place on `pointerdown` —
@@ -392,33 +482,13 @@ pub fn DockLeft(
                 "ORBAT"
             </h2>
             <div class="mt-1">
-                {move || {
-                    let o = orbat.get();
-                    if o.is_empty() {
-                        view! {
-                            <p class="text-label-sm text-outline">"No squads yet — place a unit to build the ORBAT."</p>
-                        }
-                        .into_any()
-                    } else {
-                        outliner_rows(&o, 0, selected, active_layer)
-                    }
-                }}
+                {virtual_tree(orbat, selected, active_layer, "orbat", "No squads yet — place a unit to build the ORBAT.")}
             </div>
             <h2 class="mt-4 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 "Editor Layers"
             </h2>
             <div class="mt-1">
-                {move || {
-                    let n = nodes.get();
-                    if n.is_empty() {
-                        view! {
-                            <p class="text-label-sm text-outline">"No objects placed yet."</p>
-                        }
-                            .into_any()
-                    } else {
-                        outliner_rows(&n, 0, selected, active_layer)
-                    }
-                }}
+                {virtual_tree(nodes, selected, active_layer, "editorLayers", "No objects placed yet.")}
             </div>
         </aside>
     }

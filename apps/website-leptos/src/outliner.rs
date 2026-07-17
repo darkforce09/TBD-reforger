@@ -34,6 +34,9 @@ use std::collections::HashSet;
 
 /// The virtual root's id. Not a doc id — see the module docs.
 pub const UNFILED_ID: &str = "__unfiled";
+/// T-169 — above this many flattened rows a tree renders windowed (React `VIRTUAL_SLOT_THRESHOLD`,
+/// proven @ ~367k). Below it, the eager recursive render is cheaper and keeps native scroll simple.
+pub const VIRTUAL_SLOT_THRESHOLD: usize = 50;
 /// React's `label: s.role || 'Unit'` fallback (`EditorLayersSection.tsx:66`).
 const SLOT_FALLBACK_LABEL: &str = "Unit";
 
@@ -226,6 +229,38 @@ pub fn build_orbat(
     out
 }
 
+/* ───────────────────────────── T-169 — flattened rows for windowing ───────────────────────────── */
+
+/// One flattened tree row (pre-order): the node's identity + its nesting depth. The windowed
+/// renderer slices a `Vec<FlatRow>` and draws only the visible span (React `flattenOutliner`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FlatRow {
+    pub id: String,
+    pub label: String,
+    pub kind: NodeKind,
+    pub depth: usize,
+}
+
+/// Flatten a tree to pre-order rows (parent before its children). Every node becomes exactly one
+/// row — the window operates on this flat list, not the nested `OutlinerNode`s.
+#[must_use]
+pub fn flatten(nodes: &[OutlinerNode]) -> Vec<FlatRow> {
+    let mut out = Vec::new();
+    fn walk(nodes: &[OutlinerNode], depth: usize, out: &mut Vec<FlatRow>) {
+        for n in nodes {
+            out.push(FlatRow {
+                id: n.id.clone(),
+                label: n.label.clone(),
+                kind: n.kind,
+                depth,
+            });
+            walk(&n.children, depth + 1, out);
+        }
+    }
+    walk(nodes, 0, &mut out);
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -387,6 +422,27 @@ mod tests {
         let ids: Vec<&str> = sq.children.iter().map(|n| n.id.as_str()).collect();
         assert_eq!(ids, ["s1", "s0"]);
         assert!(sq.children.iter().all(|n| n.kind == NodeKind::Slot));
+    }
+
+    /// Flatten is pre-order (parent before children) with correct depths, one row per node.
+    #[test]
+    fn flatten_is_preorder_with_depths() {
+        // Unfiled (depth 0) → its 2 slots (depth 1); a root layer (0) → child folder (1) → slot (2).
+        let slots = vec![slot("s0", "A"), slot("s1", "B"), slot("n0", "N")];
+        let layers = vec![
+            layer("root", "Root", None, &[]),
+            layer("kid", "Kid", Some("root"), &["n0"]),
+        ];
+        let tree = build_outliner(&layers, &slots);
+        let flat = flatten(&tree);
+        // Unfiled, s0, s1, root, kid, n0 = 6 rows.
+        assert_eq!(flat.len(), 6);
+        assert_eq!(flat[0].kind, NodeKind::Unfiled);
+        assert_eq!(flat[0].depth, 0);
+        assert_eq!((flat[1].id.as_str(), flat[1].depth), ("s0", 1));
+        assert_eq!((flat[3].id.as_str(), flat[3].depth), ("root", 0));
+        assert_eq!((flat[4].id.as_str(), flat[4].depth), ("kid", 1));
+        assert_eq!((flat[5].id.as_str(), flat[5].depth), ("n0", 2));
     }
 
     /// Dangling squad/slot ids are skipped, not rendered blank.

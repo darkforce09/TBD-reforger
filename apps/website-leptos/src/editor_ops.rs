@@ -803,6 +803,31 @@ fn ensure_layer(ctx: &OpsCtx, core: &MissionDocCore) -> String {
     DEFAULT_LAYER_ID.to_string()
 }
 
+/// T-169 smoke hook — bulk-add `n` slots under the default layer + squad, then refresh the docks,
+/// so the virtual-outliner gate can push a tree past [`crate::outliner::VIRTUAL_SLOT_THRESHOLD`]
+/// without 50 palette drags. Not on any UI path (the `__missionDoc` bridge exposes it for the gate).
+pub fn debug_seed_slots(n: u32) {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return;
+        };
+        let layer_id = ensure_layer(ctx, core);
+        let squad_id = ensure_default_squad(core);
+        for _ in 0..n {
+            let id = mint_id(ctx, core);
+            core.add_slot(
+                &id, &squad_id, &layer_id, 0, "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
+            );
+        }
+    });
+    crate::mission_history::after_local_edit();
+}
+
 /// T-168 — resolve the squad a placed slot joins (React's `ensureDefaultSquad`): reuse the first
 /// existing squad, else lazily mint the default faction + squad. Returns the squad id.
 fn ensure_default_squad(core: &MissionDocCore) -> String {

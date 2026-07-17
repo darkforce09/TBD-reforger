@@ -5377,13 +5377,13 @@
         "state"
       ],
       "title": "Leptos VirtualOutliner at mission scale",
-      "summary": "Virtualize the Editor Layers outliner for huge missions (T-064 parity: virtualization threshold ~50 rows, proven at ~367k slots in React via @tanstack/react-virtual + segment-index flatten). The Leptos `outliner.rs` renders plain rows; big paste/hydrate will DOM-choke. Port the flatten + windowing approach natively (leptos-virtual or hand-rolled window over `flattenOutliner` semantics). React references: `VirtualOutliner.tsx`, `flattenOutliner.ts`, `TreeRow.tsx` (t064_virtualized_outliner.md).",
+      "summary": "SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`; eden_chrome renders each dock tree via `virtual_tree` — eager below the threshold, a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows. Applies to BOTH Editor Layers and ORBAT; `window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate. New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects. `__missionDoc.seed_slots(n)` smoke hook added to push past the threshold.",
       "slices": [],
       "depends_on": [
         "T-159"
       ],
       "unblocks": [],
-      "status": "queued",
+      "status": "shipped",
       "implements": [],
       "user_story": "As a mission maker with a 100k+ slot mission the outliner stays instant instead of freezing the tab.",
       "route": "/missions/:id/edit",
@@ -5424,6 +5424,36 @@
         "website"
       ],
       "spec": ".ai/artifacts/missed_items_handoff.md"
+    },
+    {
+      "id": "T-171",
+      "order": 1680,
+      "program": "platform",
+      "surfaces": [
+        "TOP"
+      ],
+      "impact": [
+        "docs",
+        "dx"
+      ],
+      "title": "Monorepo / website hygiene (layout + dead code + tooling paths)",
+      "summary": "After T-169: Class-R inventory, move apps/website-leptos → apps/website/frontend, purge SAFE dead code (Go-era leftovers, orphan paths), fix Makefile/CI/Cargo/scripts. Claude owns structure+code; Cursor owns docs/rules/registry prose from Claude's return list (T-171.docs). Not mod. Not T-170. Hub: docs/platform/t171_monorepo_hygiene_program.md.",
+      "slices": [],
+      "depends_on": [
+        "T-169"
+      ],
+      "unblocks": [],
+      "status": "queued",
+      "implements": [],
+      "user_story": "As a developer I open a coherent apps/website/{api crate, frontend/} tree with no dead React/Go/Vite residue so new work does not land in the wrong place.",
+      "route": null,
+      "stream": "web-platform",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t171_monorepo_hygiene_program.md"
     }
   ]
 }
