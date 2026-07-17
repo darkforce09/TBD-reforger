@@ -6,7 +6,7 @@ WEB := apps/website
 # golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api web leptos leptos-build leptos-gates test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-assets-link map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-frontend ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -33,22 +33,16 @@ registry-import: ## Ingest the committed T-150 registry envelopes (items + compa
 api: ## Run the API (loads apps/website/.env; migrates on boot)
 	cd $(WEB) && cargo run --bin api
 
-web: map-assets-link ## Run the Vite dev server
-	cd $(WEB)/frontend && npm run dev
-
 leptos: ## Run the Leptos dev server on :3000 (trunk serve; /api proxies to :8080 — T-159.24)
 	cd apps/website-leptos && trunk serve
 
 leptos-build: ## Release-build the Leptos SPA into apps/website-leptos/dist
 	cd apps/website-leptos && trunk build --release
 
-leptos-gates: leptos-build ## Run every T-159 editor smoke against a fresh release dist
+leptos-gates: leptos-build ## T-159 editor smokes + the frozen V-suite against a fresh release dist
 	@set -e; for s in .ai/artifacts/t159_gates/driver/*_editor.mjs; do \
 		echo "== $$s"; node $$s; done
-
-map-assets-link: ## Symlink packages/map-assets → frontend public/ (T-091.1 DEM fetch)
-	@mkdir -p $(WEB)/frontend/public
-	ln -sfn ../../../../packages/map-assets $(WEB)/frontend/public/map-assets
+	node .ai/artifacts/t159_gates/driver/gate_v_suite.mjs verify
 
 map-water-everon: ## One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify (T-090.1.2.5.2)
 	cp packages/map-assets/everon/staging/sap/everon-sap-ortho.pre-water.png packages/map-assets/everon/staging/sap/everon-sap-ortho.png
@@ -77,10 +71,6 @@ test: ## Run backend unit tests
 test-it: ## Run backend integration tests against the local DB (needs `make db-up`)
 	$(MAKE) rust-test-it
 
-wasm: ## Build the map-engine wasm core + wgpu render engine into one pkg (wasm-pack → apps/website/frontend/src/wasm/pkg) — T-145/T-151.0
-	wasm-pack build crates/map-engine-wasm --release --target bundler \
-		--out-dir ../../apps/website/frontend/src/wasm/pkg --out-name map_engine_wasm
-
 wasm-ci: ## Fmt + clippy + test the map-engine core/wasm/render crates (T-145/T-151)
 	cargo fmt --check -p map-engine-core -p map-engine-wasm -p map-engine-render
 	cargo clippy -p map-engine-core -p map-engine-wasm --all-targets --all-features -- -D warnings
@@ -88,9 +78,9 @@ wasm-ci: ## Fmt + clippy + test the map-engine core/wasm/render crates (T-145/T-
 	cargo test -p map-engine-core --all-features
 	cargo test -p map-engine-render
 
-build: wasm ## Build the wasm core + the backend + the frontend
+build: ## Build the backend + the Leptos SPA
 	cd $(WEB) && cargo build --release --bin api
-	cd $(WEB)/frontend && npm run build
+	$(MAKE) leptos-build
 
 tidy: ## Tidy Go modules
 	cd $(WEB) && go mod tidy
@@ -216,29 +206,23 @@ verify-migration: ## Run monorepo migration gate checks (V1–V27)
 	./scripts/verify-monorepo-migration.sh
 
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
-# editorconfig (FMT-2) -> backend -> frontend (incl. format:check FMT-3) -> schema; each
-# sub-target is a separate $(MAKE) so a non-zero recipe
-# halts the run (fail-fast). `go` resolves via the ~/.local/go/bin PATH export above; the
-# frontend job uses whatever `nvm use` (.nvmrc -> Node 26) selected.
-# Backend sub-steps run in this exact order: gofmt (FMT-1) -> CI-1 (scripts/website/verify-ci1.sh)
-# -> golangci-lint run ./... -> go build -> unit tests (services/middleware/realtime, T-130.3
-# F2B-06) -> test-it. golangci-lint resolves via the same
-# ~/.local/go/bin PATH export as go. (CI-1's `only-new-issues` literal lives in the script, not this
-# Makefile, so the §G doc-accuracy forbidden-rg can scan the Makefile cleanly.)
-# golangci-lint: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
+# editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema; each
+# sub-target is a separate $(MAKE) so a non-zero recipe halts the run (fail-fast). The Node
+# steps (schema validate/citations + the t159 gate driver) use whatever `nvm use` selected.
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
 	$(MAKE) verify-editorconfig
 	$(MAKE) rust-ci
 	$(MAKE) verify-coding-standards
-	$(MAKE) ci-local-frontend
+	$(MAKE) ci-local-leptos
 	$(MAKE) ci-local-schema
 
-ci-local-frontend: wasm ## CI gate: wasm core + npm ci + format:check (FMT-3) + lint + build + unit tests (run `nvm use` -> Node 26 first)
-	cd $(WEB)/frontend && npm ci && npm run format:check && npm run lint && npm run build && npm test
+ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32) + native tests + trunk release build (mirrors ci.yml website-leptos)
+	cargo fmt -p website-leptos --check
+	cargo clippy -p website-leptos --target wasm32-unknown-unknown
+	cargo test -p website-leptos
+	cd apps/website-leptos && trunk build --release
 
 ci-local-schema: ## CI gate: schema validate (TEST-3) + @contract citation verify
 	$(MAKE) schema-validate
 	$(MAKE) verify-citations
 
-verify-wgpu-gpu: ## Headless GPU-R self-checks (all __selfChecks incl. marquee/tree/computeCull) — T-151.11.4
-	node scripts/website/verify-wgpu-gpu.mjs

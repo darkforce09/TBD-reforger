@@ -26,7 +26,6 @@
     "pngjs": "^7.0.0"
   },
   "devDependencies": {
-    "json-schema-to-typescript": "^15.0.4",
     "quicktype": "^23.2.6"
   }
 }

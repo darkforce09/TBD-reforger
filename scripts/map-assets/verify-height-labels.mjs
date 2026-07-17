@@ -70,11 +70,12 @@ if (existsSync(locationsPath)) {
   skip("G3 named merge — no locations.json");
 }
 
-// ── wasm-dependent gates (declutter math + ASL oracle). Skip (not fail) when absent so
-//    `make schema-validate` stays green in an LFS-less / pre-`make wasm` CI. ──
+// ── wasm-dependent gates (declutter math + ASL oracle). The wasm-bindgen pkg died with the
+//    React app (T-159.29.3) — the declutter math is pinned by map-engine-core's own cargo tests
+//    (dem::peaks) — so this permanently skips unless a pkg is hand-built to the old path. ──
 const wasmPkg = join(repoRoot, "apps", "website", "frontend", "src", "wasm", "pkg", "map_engine_wasm.js");
 if (!existsSync(wasmPkg)) {
-  skip("declutter + ASL oracle — wasm pkg absent (run make wasm)");
+  skip("declutter + ASL oracle — retired with the React wasm pkg (core cargo tests own the math)");
 } else {
   const wasm = await import(wasmPkg);
   const drawn = JSON.parse(wasm.declutter_height_labels_json(JSON.stringify(labelsRaw), 0));

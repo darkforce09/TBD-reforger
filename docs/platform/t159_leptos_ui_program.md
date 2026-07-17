@@ -4,10 +4,12 @@
 finish plan was operator-approved; Claude Code executes code + verify logs + docs + commits directly
 (no per-slice Cursor Mode B pass). Plan of record: `~/.claude/plans/you-are-fable-5-vast-bird.md`
 (operator copy) — stream ladder T-159.24 → T-159.29 below.
-**ACTIVE:** none — **finish program complete** (`.24`–`.29` + `.27` all shipped + green). **Residual is
-operator-gated + destructive only:** the default SPA flip + the React deletion (see stream `.29` /
-[`t159_29_verify_log.md`](../../.ai/artifacts/t159_29_verify_log.md) §HELD). · **Latest:** **T-159.27** ·
-**Worktree:** `.ai/artifacts/worktrees/TBD-T-159/` @ `t-159-leptos-ui`
+**ACTIVE:** none — **program complete incl. the React deletion** (operator go 2026-07-17):
+`apps/website/frontend/` is deleted; the Leptos SPA is the only frontend. Deletion phase
+`.29.1` (V oracle freeze, 25/25) → `.29.2` (census pin → cargo test) → `.29.3` (delete + CI/Make/
+codegen purge) — [`t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_delete_verify_log.md).
+**Residual (operator):** the prod default flip only (`SPA_DIST_DIR` + OAuth origin + soak). ·
+**Latest:** **T-159.29.3** · **Worktree:** `.ai/artifacts/worktrees/TBD-T-159/` @ `t-159-leptos-ui`
 
 ## Finish-program streams (audit-derived, 2026-07-17)
 
@@ -18,12 +20,15 @@ operator-gated + destructive only:** the default SPA flip + the React deletion (
 | **T-159.26** editor completion | **.26a** Attributes (tag T-159.23) · **.26b** server-hydrate/conflict/dirty (data-safety, live gate) · **.26c** keyboard (Del/Space/Ctrl+C/V) + Mission Settings (environment). ORBAT squad tree (needs T-071 squad creation) + VirtualOutliner @367k folded forward | **shipped** (.26a–.26c) |
 | **T-159.27** Arsenal | ArsenalTab (12 kind-rows = React `LOADOUT_ROWS`) → canonical `SlotLoadoutV2` via `editor_ops::set_loadout`; faithful `picksToLoadout`/`loadoutToPicks` incl. `summary` + optic/magazine sticky pass-through (regression-guarded). **+ native-compile fix** (`MissionEnv` → `dto.rs`; CI `cargo test` red → green). Smart Forge (compat edge rows/paper-doll/weight/Faction Manager) folded forward | **shipped** |
 | **T-159.28** map-asset host | `world_assets` hillshade MVP: manifest → DEM PNG → Rust `dem::` decode+hillshade → `tex_layer_*` (role 1). Satellite (`.tbd-sat`) + world-chunk streaming folded forward | **shipped** |
-| **T-159.29** cutover build-out | backend ServeDir SPA + COOP/COEP + `/map-assets` · CI website-leptos job · env/OAuth flip docs · oracle freeze. **Default flip + React deletion = operator go only.** | **shipped** (build-out; flip/delete HELD) |
+| **T-159.29** cutover build-out | backend ServeDir SPA + COOP/COEP + `/map-assets` · CI website-leptos job · env/OAuth flip docs · oracle freeze. Deletion executed at **.29.1–.3** (operator go); **prod default flip = operator only.** | **shipped** |
 
 ## Progress (latest first)
 
 | Milestone | Status |
 |-----------|--------|
+| **T-159.29.3** React deletion + npm CI/Make/codegen purge | tag **T-159.29.3** · all gates green post-delete |
+| **T-159.29.2** full-Everon census pin → cargo test | tag **T-159.29.2** · core 234 tests |
+| **T-159.29.1** V oracle freeze (25 routes; 5 parity fixes; content accepted) | tag **T-159.29.1** · V-suite 25/25 |
 | **T-159.27** Arsenal loadout tab (canonical `SlotLoadoutV2`) + native-compile fix | tag **T-159.27** · 15/15 smokes · 46 native tests |
 | **T-159.29** cutover build-out (SPA serve + CI job + oracle freeze; flip/delete HELD) | tag **T-159.29** |
 | **T-159.28** map-asset host (hillshade MVP) | tag **T-159.28** |
@@ -36,6 +41,8 @@ operator-gated + destructive only:** the default SPA flip + the React deletion (
 
 ### Verify logs (recent)
 
+- [`.ai/artifacts/t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_delete_verify_log.md) —
+  the React deletion phase (.29.1 freeze 25/25 · .29.2 census 234 tests · .29.3 delete + purge)
 - [`.ai/artifacts/t159_27_verify_log.md`](../../.ai/artifacts/t159_27_verify_log.md) — Arsenal:
   15/15 editor smokes, 46 native tests, clippy 12 = baseline, wasm 7,153,883 B; native `cargo test`
   red → green (MissionEnv relocation)
@@ -70,4 +77,5 @@ core (closed by .22.1).
 | **T-159.26** | **shipped** — editor completion (Attributes rides here; tag T-159.23) |
 | **T-159.27** | **shipped** — `t159_27_verify_log.md` (Arsenal + native-compile fix) |
 | **T-159.28** | **shipped** — `t159_28_verify_log.md` (map-asset host, hillshade MVP) |
-| **T-159.29** | **shipped** — `t159_29_verify_log.md` (cutover build-out; **flip + React delete HELD for operator**) |
+| **T-159.29** | **shipped** — `t159_29_verify_log.md` (cutover build-out) |
+| **T-159.29.1–.3** | **shipped** — `t159_29_delete_verify_log.md` (**React deleted**; only the prod flip stays operator-gated) |

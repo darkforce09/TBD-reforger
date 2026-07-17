@@ -13,7 +13,7 @@
 //!
 //! @contract mission-editor-payload.schema.json (payload); exportSchema.ts MissionExport (envelope)
 
-use serde_json::{json, Map, Value};
+use serde_json::{Map, Value, json};
 
 use crate::mission::orbat::derive_orbat_from_editor;
 
@@ -287,7 +287,13 @@ mod tests {
     #[test]
     fn export_envelope_defaults_and_wraps_payload() {
         let payload = compile_payload(r#"{"meta":null}"#, "{}", true);
-        let doc = compile_export(&payload, r#"{"meta":null}"#, "smoke", "0.1.0", "1970-01-01T00:00:00.000Z");
+        let doc = compile_export(
+            &payload,
+            r#"{"meta":null}"#,
+            "smoke",
+            "0.1.0",
+            "1970-01-01T00:00:00.000Z",
+        );
         assert_eq!(doc["exportFormatVersion"], json!(1));
         assert_eq!(doc["missionId"], json!("smoke"));
         assert_eq!(doc["title"], json!("Untitled Mission"));

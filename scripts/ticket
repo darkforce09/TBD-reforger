@@ -159,7 +159,7 @@ Co-Authored-By: Claude Code <noreply@anthropic.com>" 2>&1 | tee -a "$logfile" ||
   echo "  worktree:  $wt"
   echo "  branch:    $branch"
   echo "  spec:      $spec"
-  echo "  verify:    cd $wt/apps/website/frontend && npm run build && npm run lint"
+  echo "  verify:    (cd $wt && make ci-local-leptos)"
   echo "  merge:     git checkout main && git merge $branch"
   echo "  cleanup:   ./scripts/ticket done $id"
   echo ""

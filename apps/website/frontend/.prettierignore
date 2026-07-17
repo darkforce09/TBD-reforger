@@ -1,5 +1,0 @@
-dist
-node_modules
-src/types/contract
-src/wasm/pkg
-package-lock.json

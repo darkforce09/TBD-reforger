@@ -57,20 +57,17 @@ column equal. Until the Leptos side exists, `--check` self-verifies the React or
 `driver/` — the reusable, zero-dep CDP client (`cdp.mjs`), the determinism payload (`freeze.js`),
 the V-primary normalized-DOM serializer (`dom.js`), and a static SPA server (`serve.mjs`).
 
-```bash
-# Verify the driver against the real React oracle (no backend, no Leptos):
-ORACLE_DIST=…/apps/website/frontend/dist node .ai/artifacts/t159_gates/driver/smoke.mjs
-```
-
-`smoke.mjs` drives `/login` (zero API calls) on two fresh loads and asserts the two normalized-DOM
-captures are **byte-identical** — proving the serializer is deterministic, the property the V gate
-rests on. Verified: identical DOM sha256 across runs; Aegis tokens resolve to computed values
-(`color: rgb(221,226,247)`, `background: rgb(13,19,34)`), `#root` → positional `#0`.
+**T-159.29.3 — the React app is deleted.** The live-oracle era is over; the V gate is now the
+frozen suite: `node driver/gate_v_suite.mjs verify` diffs the Leptos dist against the committed
+`v/oracle-freeze/` goldens (25 routes, captured from the final React dist at T-159.29.1 — see
+`v/oracle-freeze/manifest.json` for per-route sha256 + the oracle dist identity). `gate_v.mjs`
+(single-route, live-oracle) and the deleted `smoke.mjs` (serializer determinism proof, verified
+against real React before the freeze) are historical. `manifests/extract-react.mjs` can no longer
+run — the five S-manifests are frozen goldens of the final React source.
 
 ## Status
 
-- **Built + verified:** S-gate extractor + 5 React-oracle manifests (self-verifying); CDP driver
-  (`cdp`/`serve`/`freeze`/`dom`) + `smoke.mjs` (deterministic DOM capture proven against real React).
-- **Pending:** the R/V/T gate runners (`gate_{r,v,t}.mjs`), the fixture corpus (`fixtures/`), the
-  Leptos-side `extract-leptos.mjs`, and the `t159-leptos` + `t159-gates` CI jobs — these come online
-  as the Leptos app (T-159.1+) provides a target to gate against.
+- **Frozen (T-159.29.1/.3):** 5 S-manifests + 25 V DOM goldens (`v/oracle-freeze/`) — the React
+  oracle's final state; the app itself is deleted. Permanent gates: `gate_v_suite.mjs verify`,
+  the 15 `smoke_*_editor.mjs` CDP smokes, `gate_r_auth.mjs`, and the `dto.rs` R-api cargo tests
+  (all wired into `make leptos-gates`).
