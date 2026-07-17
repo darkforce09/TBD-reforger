@@ -51,10 +51,29 @@ struct OpsCtx {
     /// [`refresh_docks`] at every mutation site, like the OBJ/SEL readouts.
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
+    /// T-159.26 — the Attributes modal's open slot id (`None` = closed). The dbl-click pick and the
+    /// outliner activate set it; the modal component reads it reactively.
+    attrs_open: RwSignal<Option<String>>,
+    /// T-159.26 — reactive doc-change tick (the modal's re-read trigger; `doc_ver` is non-reactive).
+    doc_tick: RwSignal<u64>,
     /// The in-flight palette drag: `Some` between a leaf `pointerdown` and the canvas `pointerup`.
     pending: RefCell<Option<PlacePayload>>,
     /// Monotonic minter for placed-slot ids; [`mint_id`] still proves uniqueness against the doc.
     next_id: Cell<u32>,
+}
+
+/// One slot's editable attributes, read from the materialized SoA for the Attributes modal.
+#[derive(Clone, Debug, PartialEq)]
+pub struct SlotAttrs {
+    pub id: String,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub rotation: f64,
+    pub stance: String,
+    pub role: String,
+    pub tag: String,
+    pub squad: String,
 }
 
 thread_local! {
@@ -62,6 +81,7 @@ thread_local! {
 }
 
 /// Install the ops context (once, from `on_load`, after the doc is seeded).
+#[allow(clippy::too_many_arguments)]
 pub fn set_ctx(
     doc: DocHandle,
     engine: EngineHandle,
@@ -69,6 +89,8 @@ pub fn set_ctx(
     active_layer: RwSignal<Option<String>>,
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
+    attrs_open: RwSignal<Option<String>>,
+    doc_tick: RwSignal<u64>,
 ) {
     OPS_CTX.with(|c| {
         *c.borrow_mut() = Some(OpsCtx {
@@ -78,10 +100,138 @@ pub fn set_ctx(
             active_layer,
             outliner_nodes,
             selected_ids,
+            attrs_open,
+            doc_tick,
             pending: RefCell::new(None),
             next_id: Cell::new(0),
         });
     });
+}
+
+/* ───────────────────────── Attributes modal (T-159.26 / .23 spec) ───────────────────────── */
+
+/// Open Attributes for `id` — the React dbl-click contract (A1): a multi-selection (>1) suppresses
+/// the open. Selects the slot (replace) so the modal, SEL readout, and tint agree.
+pub fn open_attributes(id: String) {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        if ctx.selection.borrow().len() > 1 {
+            return;
+        }
+        *ctx.selection.borrow_mut() = vec![id.clone()];
+        let ids = ctx.selection.borrow().clone();
+        let mut eng = ctx.engine.borrow_mut();
+        if let Some(e) = eng.as_mut() {
+            e.set_selection(ids);
+        }
+        ctx.attrs_open.set(Some(id));
+    });
+    crate::mission_history::refresh_hud();
+}
+
+/// Close the modal (Esc / backdrop / close button).
+pub fn close_attributes() {
+    OPS_CTX.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            ctx.attrs_open.set(None);
+        }
+    });
+}
+
+/// Read one slot's editable attributes from the materialized SoA (the modal's field values).
+/// `None` when the slot no longer exists (undone away while open → the modal closes).
+pub fn read_attrs(id: &str) -> Option<SlotAttrs> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let soa = core.materialize();
+        let row = soa.ids.iter().position(|s| s == id)?;
+        let dict = |idx: u32, dict: &[String]| {
+            if idx == NONE_IDX {
+                String::new()
+            } else {
+                dict.get(idx as usize).cloned().unwrap_or_default()
+            }
+        };
+        let stance = match soa.stance.get(row).copied().unwrap_or(0) {
+            map_engine_core::doc::STANCE_CROUCH => "crouch",
+            map_engine_core::doc::STANCE_PRONE => "prone",
+            _ => "stand",
+        };
+        Some(SlotAttrs {
+            id: id.to_string(),
+            x: f64::from(soa.xs[row]),
+            y: f64::from(soa.ys[row]),
+            z: f64::from(soa.zs[row]),
+            rotation: f64::from(soa.rotations[row]),
+            stance: stance.to_string(),
+            role: dict(soa.role_idx[row], &soa.roles),
+            tag: dict(soa.tag_idx[row], &soa.tags),
+            squad: dict(soa.squad_idx[row], &soa.squads),
+        })
+    })
+}
+
+/// Attributes Transform commit — `update_slot_position` (x/y clamp to terrain bounds, rotation
+/// normalizes, manual z sticks) + the shared post-change tail (A4: one commit = one undo step).
+pub fn attrs_update_position(
+    id: &str,
+    x: Option<f64>,
+    y: Option<f64>,
+    z: Option<f64>,
+    rotation: Option<f64>,
+) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        // Clamp to the mission's terrain bounds (React clamps to the live terrain; the seed's
+        // null meta falls through to everon 12800², compile.rs's own default).
+        let terrain = serde_json::from_str::<serde_json::Value>(&core.small_maps_json())
+            .ok()
+            .and_then(|v| v.get("meta")?.get("terrain")?.as_str().map(str::to_string))
+            .unwrap_or_default();
+        let b = map_engine_core::mission::compile::terrain_bounds(&terrain);
+        core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/// Attributes Identity/stance commit — `update_slot(role/tag/stance)` + the shared tail.
+pub fn attrs_update_slot(
+    id: &str,
+    role: Option<String>,
+    tag: Option<String>,
+    stance: Option<String>,
+) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.update_slot(id, role, tag, stance);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
 }
 
 /// Read the doc's `editorLayers` as rows for the tree. There is **no** public `editor_layers`
@@ -165,6 +315,7 @@ pub fn refresh_docks() {
         };
         ctx.outliner_nodes.set(nodes);
         ctx.selected_ids.set(ctx.selection.borrow().clone());
+        ctx.doc_tick.set(ctx.doc_tick.get_untracked().wrapping_add(1));
     });
 }
 

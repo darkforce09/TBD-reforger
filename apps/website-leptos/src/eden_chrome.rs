@@ -246,6 +246,7 @@ fn outliner_rows(
                         let id = id.clone();
                         move || selected.get().iter().any(|s| s == &id)
                     };
+                    let id_dbl = id.clone();
                     view! {
                         <button
                             type="button"
@@ -255,6 +256,14 @@ fn outliner_rows(
                             on:click=move |_| {
                                 #[cfg(target_arch = "wasm32")]
                                 crate::editor_ops::select_slot(id.clone());
+                            }
+                            // T-159.26 A1 — outliner activate (native dblclick) opens Attributes,
+                            // the SEL-ORBAT-DBL-001 contract.
+                            on:dblclick=move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                crate::editor_ops::open_attributes(id_dbl.clone());
+                                #[cfg(not(target_arch = "wasm32"))]
+                                let _ = &id_dbl;
                             }
                         >
                             <MaterialIcon name="person" class="block text-sm" />

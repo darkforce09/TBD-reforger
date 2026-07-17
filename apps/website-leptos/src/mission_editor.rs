@@ -61,6 +61,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     let selected_ids = RwSignal::new(Vec::<String>::new());
     let active_layer = RwSignal::new(None::<String>);
     let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
+    // T-159.26 — Attributes modal: the open slot id + a doc-change tick the modal re-reads on
+    // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
+    let attrs_open = RwSignal::new(None::<String>);
+    let doc_tick = RwSignal::new(0u64);
 
     // T-159.17 — mission id from the `:id` route param (`/missions/:id/edit`; `smoke` on the gate
     // route). One-shot untracked read at mount (id is static per route mount). Fallback `draft`
@@ -209,6 +213,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                 active_layer,
                 outliner_nodes,
                 selected_ids,
+                attrs_open,
+                doc_tick,
             );
 
             crate::mission_history::register_editor_history();
@@ -814,6 +820,46 @@ pub fn MissionEditorPage() -> impl IntoView {
                 "pointerleave",
                 onpointerleave.as_ref().unchecked_ref(),
             );
+            // T-159.26 A1 — native dblclick on a slot opens Attributes (the T-054 SEL-MAP-004
+            // contract). Picks with a FRESH frozen camera at the event px (the same pick the
+            // click path uses); a miss is a no-op; multi-select suppression lives in
+            // `open_attributes`. The chrome subtree stops pointerdown, so dblclicks over docks
+            // never reach here.
+            let ondblclick = Closure::<dyn FnMut(web_sys::MouseEvent)>::new({
+                let container = container.clone();
+                let engine = engine.clone();
+                let doc = doc.clone();
+                move |ev: web_sys::MouseEvent| {
+                    if ev.button() != 0 {
+                        return;
+                    }
+                    let rect = container.get_bounding_client_rect();
+                    let (px, py) = (
+                        ev.client_x() as f64 - rect.left(),
+                        ev.client_y() as f64 - rect.top(),
+                    );
+                    let cam = {
+                        let g = engine.borrow();
+                        let Some(e) = g.as_ref() else { return };
+                        crate::select_tool::frozen_camera(
+                            rect.width(),
+                            rect.height(),
+                            e.target_x(),
+                            e.target_y(),
+                            e.zoom(),
+                        )
+                    };
+                    let hit = doc
+                        .borrow()
+                        .as_ref()
+                        .and_then(|c| crate::select_tool::pick(&cam, &c.materialize(), px, py));
+                    if let Some(id) = hit {
+                        crate::editor_ops::open_attributes(id);
+                    }
+                }
+            });
+            let _ = container
+                .add_event_listener_with_callback("dblclick", ondblclick.as_ref().unchecked_ref());
 
             let onresize = Closure::<dyn FnMut()>::new({
                 let engine = engine.clone();
@@ -847,6 +893,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             onpointercancel.forget();
             oncontextmenu.forget();
             onpointerleave.forget();
+            ondblclick.forget();
             on_cleanup(move || disposed.store(true, Ordering::Relaxed));
         });
     }
@@ -896,6 +943,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
                     <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count />
+                </div>
+                // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
+                // chrome subtree so its pointerdowns never open a map gesture.
+                <div class="pointer-events-auto">
+                    <crate::attributes::AttributesModal attrs_open doc_tick />
                 </div>
             </div>
         </div>

@@ -10,6 +10,8 @@ mod approvals;
 // T-159.22 — flat registry rows → the Factions palette tree (the T-068.3 `buildCatalogTree` port).
 // Pure data, no web-sys: ungated so its unit tests run on the native `cargo test` shell.
 mod asset_catalog;
+// T-159.26 — Attributes modal (AttributesModal.tsx port; wasm-gated internals).
+mod attributes;
 mod audit;
 mod auth;
 mod client;
