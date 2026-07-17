@@ -53,7 +53,7 @@ function eqArr(a, b) {
 
 // 1) catalog
 if (!existsSync(catalogPath)) {
-  errors.push(`missing ${catalogPath} — run `cargo run -q -p tbd-tools --bin world -- sap-catalog` first`);
+  errors.push(`missing ${catalogPath} — run 'cargo run -q -p tbd-tools --bin world -- sap-catalog' first`);
 } else {
   const cat = JSON.parse(readFileSync(catalogPath, "utf8"));
   if (cat.cellCount !== EXPECT_CELLS || cat.cells?.length !== EXPECT_CELLS) {
