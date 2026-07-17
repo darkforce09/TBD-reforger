@@ -18,5 +18,6 @@ pub mod serve;
 pub mod smokes;
 pub mod sroutes;
 pub mod vsuite;
+pub mod world;
 
 pub const PROGRAM: &str = "T-165";

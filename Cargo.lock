@@ -365,6 +365,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2af50177e190e07a26ab74f8b1efbfe2ef87da2116221318cb1c2e82baf7de06"
 
 [[package]]
+name = "bcdec_rs"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f09c37bc0e9f0924b7dae9988265ef3c76c88538f41a3b06caf4bed07cee5226"
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4694,11 +4700,14 @@ dependencies = [
  "anyhow",
  "axum",
  "base64",
+ "bcdec_rs",
  "clap",
  "flate2",
  "futures-util",
+ "jsonschema",
  "libc",
  "map-engine-core",
+ "png",
  "regex",
  "reqwest",
  "serde",

@@ -1,6 +1,6 @@
 // T-090.1.2 — verify the stitched SAP satellite ortho (post-build ship gate).
 //
-// Asserts the build artifacts produced by catalog-sap-cells.mjs + stitch-sap-ortho.mjs
+// Asserts the build artifacts produced by `world sap-catalog` + stitch-sap-ortho.mjs
 // (under packages/map-assets/everon/staging/sap/, gitignored) plus the committed
 // satellite z0 tile. HARD requirements:
 //   - cell catalog has exactly 2500 cells
@@ -53,7 +53,7 @@ function eqArr(a, b) {
 
 // 1) catalog
 if (!existsSync(catalogPath)) {
-  errors.push(`missing ${catalogPath} — run catalog-sap-cells.mjs first`);
+  errors.push(`missing ${catalogPath} — run `cargo run -q -p tbd-tools --bin world -- sap-catalog` first`);
 } else {
   const cat = JSON.parse(readFileSync(catalogPath, "utf8"));
   if (cat.cellCount !== EXPECT_CELLS || cat.cells?.length !== EXPECT_CELLS) {

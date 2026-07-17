@@ -29,7 +29,7 @@ const outPath = join(repoRoot, "packages", "map-assets", terrain, "locations.jso
 
 if (!existsSync(src)) {
   console.error(`export-locations: source not found: ${src}`);
-  console.error("  Run TBD_TerrainWorldExportPlugin (full) + copy-world-export-profile.mjs --full first.");
+  console.error("  Run TBD_TerrainWorldExportPlugin (full) + `world copy-export-profile --full` first.");
   console.error("  Or pass --src to a raw-entities.jsonl with World/Locations rows.");
   process.exit(1);
 }

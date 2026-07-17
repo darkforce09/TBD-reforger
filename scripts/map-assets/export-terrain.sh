@@ -5,8 +5,8 @@
 # t090_legacy_raster_pipeline.md). Steps:
 #   1. phase gate against terrain-registry.json importPhaseMax
 #   2. staged raw present? else print the Workbench operator/MCP instructions and exit 2
-#   3. node build-world-objects.mjs  (classify -> prefabs/chunks/census + manifest patch + ops log)
-#   4. node build-roads-from-topo.mjs (Q1 roads pulled forward; pak VFS, no Workbench)
+#   3. world build-objects  (classify -> prefabs/chunks/census + manifest patch + ops log)
+#   4. world build-roads     (Q1 roads pulled forward; pak VFS, no Workbench)
 #
 # Exit codes: 0 built · 1 bad args/failed build · 2 staged raw missing (operator step required)
 set -euo pipefail
@@ -29,22 +29,8 @@ if [ -z "$TERRAIN" ]; then
 fi
 
 # Phase gate: requested phase must not exceed the registry's importPhaseMax (phased-import rule:
-# phase N+1 blocked until phase N shipped + human registry bump).
-export REPO_ROOT
-node - "$TERRAIN" "$PHASE" <<'EOF'
-const { readFileSync } = require("node:fs");
-const [terrain, phase] = process.argv.slice(2);
-const ORDER = ["P1_buildings","P2_trees","P3_vegetation","P4_rocks","P5_props","P6_roads_highway","P7_roads_paved","P8_roads_dirt","P9_roads_path","P10_full"];
-const reg = JSON.parse(readFileSync(`${process.env.REPO_ROOT}/packages/map-assets/terrain-registry.json`, "utf8"));
-const row = reg.terrains.find((t) => t.terrainId === terrain);
-if (!row) { console.error(`export-terrain: terrain '${terrain}' not in terrain-registry.json`); process.exit(1); }
-if (!ORDER.includes(phase)) { console.error(`export-terrain: unknown phase '${phase}'`); process.exit(1); }
-const max = row.importPhaseMax ?? "";
-if (!ORDER.includes(max) || ORDER.indexOf(phase) > ORDER.indexOf(max)) {
-  console.error(`export-terrain: phase ${phase} blocked — registry importPhaseMax=${max || "(none)"} (advance only after map-verify-phase PASS + registry bump)`);
-  process.exit(1);
-}
-EOF
+# phase N+1 blocked until phase N shipped + human registry bump). T-165.8: Rust `world` bin.
+(cd "$REPO_ROOT" && cargo run -q -p tbd-tools --bin world -- phase-gate --terrain "$TERRAIN" --phase "$PHASE")
 
 RAW="$REPO_ROOT/packages/map-assets/$TERRAIN/staging/export/raw-entities.jsonl"
 if [ ! -f "$RAW" ]; then
@@ -61,7 +47,7 @@ Operator step (one Workbench run per terrain per export):
      The plugin iterates 512 m cell passes and writes \$profile:TBD_WorldExport_full.jsonl,
      then TBD_WorldExport_full_meta.json (meta = completion sentinel — written last).
   3. Stage it:
-       node scripts/map-assets/copy-world-export-profile.mjs TERRAIN=$TERRAIN --full \\
+       cargo run -q -p tbd-tools --bin world -- copy-export-profile --terrain $TERRAIN --full \\
          --profile "\$PROFILE_DIR"
   4. Re-run: make map-export TERRAIN=$TERRAIN PHASE=$PHASE
 EOM
@@ -69,6 +55,6 @@ EOM
 fi
 
 echo "export-terrain: $TERRAIN $PHASE — building catalog artifacts"
-node "$SCRIPT_DIR/build-world-objects.mjs" --terrain "$TERRAIN" --phase "$PHASE" --patch-manifest --ops-log
-node "$SCRIPT_DIR/build-roads-from-topo.mjs" --terrain "$TERRAIN" --ops-log
+(cd "$REPO_ROOT" && cargo run -q -p tbd-tools --bin world -- build-objects --terrain "$TERRAIN" --phase "$PHASE" --patch-manifest --ops-log)
+(cd "$REPO_ROOT" && cargo run -q -p tbd-tools --bin world -- build-roads --terrain "$TERRAIN" --ops-log)
 echo "export-terrain: $TERRAIN $PHASE done — next: make map-verify-phase TERRAIN=$TERRAIN PHASE=$PHASE"

@@ -5151,7 +5151,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-165.8",
+      "active_slice": "T-165.9",
       "spec": "docs/platform/t165_node_eradication.md",
       "stream": "infra",
       "targets": [
@@ -5250,7 +5250,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t165_node_eradication.md",
           "notes": "World-export pipeline + E6 content-proven re-encode migration."
         },

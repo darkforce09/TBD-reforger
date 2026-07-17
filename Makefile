@@ -182,7 +182,7 @@ map-verify-phase: ## T-090.3.1 — mathematical phase gate G1-G12 + P1-* + E6 fo
 	node scripts/map-assets/verify-phase.mjs --terrain "$(TERRAIN)" --phase "$(PHASE)"
 map-census: ## T-090.2 — validate type-inventory.json; compute counts after export (TERRAIN=<id>)
 	@test -n "$(TERRAIN)" || (echo "map-census: TERRAIN=<id> required"; exit 1)
-	node scripts/map-assets/census-types.mjs
+	cargo run -q -p tbd-tools --bin world -- census --terrain "$(TERRAIN)"
 map-glyphs-build: ## T-090.5.2 — build world-glyph atlas (webp + Deck mapping) from packages/map-assets/glyphs/svg
 	node scripts/map-assets/build-glyph-atlas.mjs
 map-render-verify: ## T-090.5 stub — per-phase render smoke (layer instance count + purity)
