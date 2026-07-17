@@ -25,24 +25,24 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-166 — Leptos editor full map (satellite + world objects)
 
-- **Slice spec:** ``
-- **Program hub:** ``
+- **Slice spec:** `.ai/artifacts/missed_items_handoff.md`
+- **Program hub:** `.ai/artifacts/missed_items_handoff.md`
 - **Branch:** `main`
 - **Targets:** website
 - **Summary:** Restore the full-map render lanes in the Leptos wgpu editor: unified satellite basemap (`everon-sat.tbd-sat` fetch/decode/mip upload — the T-151.1 lane) + world objects (roads/buildings/trees/forest via `map-engine-core::world` parser + chunk residency — the T-151.2/.3/.4/.5 lanes). Today only hillshade renders (fold documented at `apps/website-leptos/src/world_assets.rs:11`). The engine crates already own every pipeline (T-151 W1–W5 shipped pre-rewrite); this is host wiring in `world_assets.rs` + `mission_editor.rs`, not new render code. Specs: t151_1_basemap_lane.md, t151_2_world_parser.md, t151_3_world_residency.md, t151_4_vector_layers.md, t151_5_glyph_atlas.md.
 
 ## T-167 — Leptos smart Arsenal port (paper-doll + compat Forge)
 
-- **Slice spec:** ``
-- **Program hub:** ``
+- **Slice spec:** `.ai/artifacts/missed_items_handoff.md`
+- **Program hub:** `.ai/artifacts/missed_items_handoff.md`
 - **Branch:** `main`
 - **Targets:** website
 - **Summary:** Port the shipped React Smart Arsenal (T-068.10.2–.10.8) into the Leptos Arsenal tab: compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges), clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane. The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`); `SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes. Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md.
 
 ## T-168 — Leptos ORBAT tree in the left dock
 
-- **Slice spec:** ``
-- **Program hub:** ``
+- **Slice spec:** `.ai/artifacts/missed_items_handoff.md`
+- **Program hub:** `.ai/artifacts/missed_items_handoff.md`
 - **Branch:** `main`
 - **Targets:** website
 - **Summary:** Replace the ORBAT stub header (scope note `apps/website-leptos/src/eden_chrome.rs:360` — "ORBAT stays a stub header") with the live squads/slots tree: select-on-click, dbl-click→Attributes (SEL-ORBAT-DBL-001), squad grouping from the doc, T-037-parity row actions where they existed in React (`OrbatSection.tsx`). Coordinates with the T-071 ORBAT Manager modal (separate surface — the dock tree is read/select, the modal is manage).

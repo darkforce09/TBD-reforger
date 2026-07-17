@@ -5300,7 +5300,8 @@
       "executor": "claude-code",
       "targets": [
         "website"
-      ]
+      ],
+      "spec": ".ai/artifacts/missed_items_handoff.md"
     },
     {
       "id": "T-167",
@@ -5329,7 +5330,8 @@
       "executor": "claude-code",
       "targets": [
         "website"
-      ]
+      ],
+      "spec": ".ai/artifacts/missed_items_handoff.md"
     },
     {
       "id": "T-168",
@@ -5358,7 +5360,8 @@
       "executor": "claude-code",
       "targets": [
         "website"
-      ]
+      ],
+      "spec": ".ai/artifacts/missed_items_handoff.md"
     },
     {
       "id": "T-169",
@@ -5387,7 +5390,8 @@
       "executor": "claude-code",
       "targets": [
         "website"
-      ]
+      ],
+      "spec": ".ai/artifacts/missed_items_handoff.md"
     },
     {
       "id": "T-170",
@@ -5416,7 +5420,8 @@
       "executor": "human",
       "targets": [
         "website"
-      ]
+      ],
+      "spec": ".ai/artifacts/missed_items_handoff.md"
     }
   ]
 }
