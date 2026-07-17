@@ -72,3 +72,35 @@ pub fn clear() {
         let _ = storage.remove_item(SESSION_KEY);
     }
 }
+
+/* ─────────────── adopted-server marker (T-159.26 — the T-130.5 conflict path) ─────────────── */
+
+/// localStorage key per mission — React `tbd-editor-adopted:${missionId}`. Records the server
+/// semver the LOCAL doc currently derives from, so a new-tab cold boot whose IDB matches that exact
+/// version trusts local (the delta is the user's own unsaved edits) instead of re-prompting the
+/// conflict.
+fn adopted_key(mission_id: &str) -> String {
+    format!("tbd-editor-adopted:{mission_id}")
+}
+
+/// Mark the local doc as derived from `semver` (React `markServerVersionAdopted`) — after an
+/// initial hydrate, a "load server" resolution, or our own Save. `None` clears it.
+pub fn mark_adopted(mission_id: &str, semver: Option<&str>) {
+    if let Some(storage) = web_sys::window().and_then(|w| w.local_storage().ok().flatten()) {
+        match semver {
+            Some(s) => {
+                let _ = storage.set_item(&adopted_key(mission_id), s);
+            }
+            None => {
+                let _ = storage.remove_item(&adopted_key(mission_id));
+            }
+        }
+    }
+}
+
+/// Read the adopted server semver for `mission_id` (React `readAdoptedServerVersion`).
+#[must_use]
+pub fn read_adopted(mission_id: &str) -> Option<String> {
+    let storage = web_sys::window()?.local_storage().ok()??;
+    storage.get_item(&adopted_key(mission_id)).ok()?
+}

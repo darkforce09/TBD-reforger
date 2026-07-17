@@ -44,6 +44,10 @@ struct HistoryCtx {
     can_redo: RwSignal<bool>,
     obj_count: RwSignal<usize>,
     sel_count: RwSignal<usize>,
+    /// T-159.26 — unsaved-changes flag. Set by any doc-change edit; cleared by a successful Save
+    /// (`mark_saved`) or a hydrate/conflict adopt (`set_dirty(false)`). Drives the TopCommandStrip
+    /// unsaved indicator and the beforeunload guard.
+    dirty: RwSignal<bool>,
 }
 
 thread_local! {
@@ -62,6 +66,7 @@ pub fn set_ctx(
     can_redo: RwSignal<bool>,
     obj_count: RwSignal<usize>,
     sel_count: RwSignal<usize>,
+    dirty: RwSignal<bool>,
 ) {
     HISTORY_CTX.with(|c| {
         *c.borrow_mut() = Some(HistoryCtx {
@@ -74,7 +79,24 @@ pub fn set_ctx(
             can_redo,
             obj_count,
             sel_count,
+            dirty,
         });
+    });
+}
+
+/// A clone of the live doc handle (the same `Rc` the IDB restore swaps into). For the conflict
+/// resolver, which needs the doc but isn't called from `on_load`'s scope. `None` before mount.
+pub fn doc_handle() -> Option<crate::mission_doc::DocHandle> {
+    HISTORY_CTX.with(|c| c.borrow().as_ref().map(|ctx| ctx.doc.clone()))
+}
+
+/// Mark the doc clean (a successful Save) or force a dirty state. Used by `mission_commands` on a
+/// 201 and by the hydrate/conflict adopt path.
+pub fn set_dirty(value: bool) {
+    HISTORY_CTX.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            ctx.dirty.set(value);
+        }
     });
 }
 
@@ -173,6 +195,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
         e.set_selection(ids);
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
+    ctx.dirty.set(true); // T-159.26 — a committed edit is unsaved work
     crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
     refresh_signals(ctx, soa.ids.len());
 }

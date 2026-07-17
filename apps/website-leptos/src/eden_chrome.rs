@@ -91,11 +91,26 @@ pub fn TopCommandStrip(
     can_redo: RwSignal<bool>,
     save_semver: RwSignal<String>,
     save_status: RwSignal<String>,
+    /// T-159.26 — unsaved-changes flag; a `•` after the title marks dirty (React's `isDirty` dot).
+    #[prop(optional)]
+    dirty: Option<RwSignal<bool>>,
 ) -> impl IntoView {
     view! {
         <div class=STRIP>
             <span class="min-w-0 flex-1 truncate text-label-md font-semibold text-on-surface">
                 {title}
+                {dirty
+                    .map(|d| {
+                        view! {
+                            <span
+                                class=move || if d.get() { "ml-1.5 text-primary" } else { "hidden" }
+                                title="Unsaved changes"
+                                aria-label="Unsaved changes"
+                            >
+                                "•"
+                            </span>
+                        }
+                    })}
             </span>
             <span class=DIVIDER></span>
             // `aria-label` is the gate's DOM handle for the button path (smoke_undo_editor A3/A6) —

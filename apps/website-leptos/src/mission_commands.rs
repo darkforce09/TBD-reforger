@@ -30,6 +30,9 @@ struct EditorCtx {
     doc: DocHandle,
     auth: AuthStore,
     mission_id: String,
+    /// T-159.26 — the adopted server semver signal, updated on a successful Save (the saved
+    /// version becomes the version local now derives from).
+    current_semver: RwSignal<Option<String>>,
 }
 
 thread_local! {
@@ -37,14 +40,25 @@ thread_local! {
 }
 
 /// Install the editor context (called once from `on_load`, after the doc is seeded/registered).
-pub fn set_ctx(doc: DocHandle, auth: AuthStore, mission_id: String) {
+pub fn set_ctx(
+    doc: DocHandle,
+    auth: AuthStore,
+    mission_id: String,
+    current_semver: RwSignal<Option<String>>,
+) {
     EDITOR_CTX.with(|c| {
         *c.borrow_mut() = Some(EditorCtx {
             doc,
             auth,
             mission_id,
+            current_semver,
         });
     });
+}
+
+/// The current-semver signal, for the save-success adopt. `None` when the editor isn't mounted.
+fn semver_signal() -> Option<RwSignal<Option<String>>> {
+    EDITOR_CTX.with(|c| c.borrow().as_ref().map(|ctx| ctx.current_semver))
 }
 
 /// An owned snapshot of everything a command needs — taken synchronously so no borrow spans an
@@ -97,10 +111,21 @@ pub fn save_now(semver: String, status: RwSignal<String>) {
     let body = version_body(&semver, "", &payload);
     let auth = snap.auth;
     let path = format!("/missions/{}/versions", snap.mission_id);
+    let mission_id = snap.mission_id.clone();
     status.set(format!("Saving v{semver}…"));
     spawn_local(async move {
         match crate::client::api_post::<serde_json::Value>(auth, &path, body).await {
-            Ok(_) => status.set(format!("Saved v{semver}")),
+            Ok(_) => {
+                status.set(format!("Saved v{semver}"));
+                // T-159.26 — the saved version is now what local derives from: clear the dirty
+                // flag, adopt the semver (cross-tab conflict skip), and update the current-semver
+                // signal so a later Export/adopt uses it.
+                crate::mission_history::set_dirty(false);
+                crate::editor_session::mark_adopted(&mission_id, Some(&semver));
+                if let Some(sig) = semver_signal() {
+                    sig.set(Some(semver.clone()));
+                }
+            }
             Err((409, _)) => status.set(format!("Version {semver} already exists")),
             Err((413, _)) => status.set("Payload too large".to_string()),
             Err((401, _)) => status.set("Sign in to save".to_string()),

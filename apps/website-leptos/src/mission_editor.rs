@@ -65,6 +65,14 @@ pub fn MissionEditorPage() -> impl IntoView {
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
     let attrs_open = RwSignal::new(None::<String>);
     let doc_tick = RwSignal::new(0u64);
+    // T-159.26 — server hydrate / conflict / dirty (data-safety). `conflict` holds an offered
+    // server payload when local IDB content diverges; `dirty` is the unsaved-changes flag;
+    // `current_semver` tracks the adopted server version.
+    let dirty = RwSignal::new(false);
+    let conflict = RwSignal::new(None::<ConflictInfo>);
+    let current_semver = RwSignal::new(None::<String>);
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = current_semver;
 
     // T-159.17 — mission id from the `:id` route param (`/missions/:id/edit`; `smoke` on the gate
     // route). One-shot untracked read at mount (id is static per route mount). Fallback `draft`
@@ -164,7 +172,7 @@ pub fn MissionEditorPage() -> impl IntoView {
             // T-159.20 — editor commands (Save/Export) context + the `__editorCommands` smoke bridge
             // (peer of `__missionDoc`). `set_ctx` shares the same `Rc` the persistence swap targets,
             // so both the buttons and the bridge see an IDB-restored doc.
-            crate::mission_commands::set_ctx(doc.clone(), auth, mission_id.clone());
+            crate::mission_commands::set_ctx(doc.clone(), auth, mission_id.clone(), current_semver);
             crate::mission_commands::register_editor_commands(doc.clone());
 
             // T-159.18 — LMB select foundation. Selection is app-side state (NOT the Y.Doc — it never
@@ -201,6 +209,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 can_redo,
                 obj_count,
                 sel_count,
+                dirty,
             );
             // T-159.22 — dock commands (outliner select / active layer / palette place). Registered
             // BEFORE `refresh_hud()` below, because that call funnels into
@@ -261,6 +270,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                         }
                     }
+                    // 1.5 T-159.26 — server hydrate / conflict / dirty (UUID missions only; the
+                    //     `smoke` gate route is non-UUID and skips this, so the editor smokes are
+                    //     untouched). Replaces the seed with the saved version, or prompts on a
+                    //     genuine local-vs-server conflict — the data-safety guarantee.
+                    crate::mission_hydrate::hydrate_from_server(
+                        doc.clone(),
+                        id.clone(),
+                        auth,
+                        loaded.get(),
+                        current_semver,
+                        conflict,
+                    )
+                    .await;
                     // 2. Initial persist through the debounced writer (get_bytes read at write time;
                     //    cancel when the doc Option is cleared). No mutator hook exists yet, so this
                     //    post-seed/post-load encode is the writer's trigger this slice.
@@ -929,6 +951,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         can_redo
                         save_semver
                         save_status
+                        dirty
                     />
                 </div>
                 <div class="absolute bottom-0 left-0 top-12 w-64">
@@ -948,6 +971,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // chrome subtree so its pointerdowns never open a map gesture.
                 <div class="pointer-events-auto">
                     <crate::attributes::AttributesModal attrs_open doc_tick />
+                </div>
+                // T-159.26 — local-vs-server conflict prompt (React's ConflictDialog). Renders only
+                // when `conflict` is Some (a divergent local doc on cold boot). Data-safety: the
+                // user chooses which version wins before any Save.
+                <div class="pointer-events-auto">
+                    <ConflictDialog conflict conflict_id=mission_id.clone() />
                 </div>
             </div>
         </div>
@@ -1068,4 +1097,77 @@ fn register_editor_cam(
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorCam"), cam.as_ref());
     }
     cam.forget();
+}
+
+/// T-159.26 — the local-vs-server conflict payload the [`ConflictDialog`] offers to load. Un-gated
+/// (two Strings, no wasm types) so the shared editor view can hold the signal; `mission_hydrate`
+/// (wasm-only) produces and consumes it.
+#[derive(Clone)]
+pub struct ConflictInfo {
+    pub payload_json: String,
+    pub semver: Option<String>,
+}
+
+/// The conflict prompt (React `ConflictDialog`): renders only when `conflict` is `Some`. "Load
+/// server version" hydrates the offered payload (data replaced); "Keep local copy" keeps the local
+/// doc and marks it divergent. Renders no DOM while `None` — V-capture-safe.
+#[component]
+fn ConflictDialog(conflict: RwSignal<Option<ConflictInfo>>, conflict_id: String) -> impl IntoView {
+    let id = StoredValue::new(conflict_id);
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = id;
+    move || {
+        conflict.get().map(|c| {
+            let _ = &c;
+            #[cfg(target_arch = "wasm32")]
+            let (id_server, id_local) = (id.get_value(), id.get_value());
+            let semver_label = c
+                .semver
+                .clone()
+                .map(|s| format!("Saved version v{s}"))
+                .unwrap_or_else(|| "A saved version".to_string());
+            view! {
+                <div class="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm"></div>
+                <div class="glass fixed top-1/2 left-1/2 z-[60] flex w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none">
+                    <div class="border-b border-outline-variant/30 px-6 py-4">
+                        <h2 class="text-headline-sm text-on-surface">"Unsaved local changes"</h2>
+                        <p class="mt-1 text-label-md text-on-surface-variant">
+                            {semver_label}
+                            " on the server differs from your local copy. Which version should win?"
+                        </p>
+                    </div>
+                    <div class="flex justify-end gap-2 px-6 py-4">
+                        <button
+                            type="button"
+                            aria-label="Keep local copy"
+                            class="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-label-md text-on-surface transition-colors hover:bg-white/10"
+                            on:click=move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                crate::mission_hydrate::resolve_conflict_local(
+                                    id_local.clone(),
+                                    conflict,
+                                );
+                            }
+                        >
+                            "Keep local copy"
+                        </button>
+                        <button
+                            type="button"
+                            aria-label="Load server version"
+                            class="rounded-lg bg-primary px-4 py-2 text-label-md font-medium text-on-primary"
+                            on:click=move |_| {
+                                #[cfg(target_arch = "wasm32")]
+                                crate::mission_hydrate::resolve_conflict_server(
+                                    id_server.clone(),
+                                    conflict,
+                                );
+                            }
+                        >
+                            "Load server version"
+                        </button>
+                    </div>
+                </div>
+            }
+        })
+    }
 }

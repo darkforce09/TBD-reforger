@@ -48,6 +48,10 @@ mod mission_doc;
 #[cfg(target_arch = "wasm32")]
 mod mission_commands;
 mod mission_editor;
+// T-159.26 server hydrate / conflict / dirty — GET /missions/:id → hydrate the saved version or
+// prompt on a local-vs-server conflict. wasm32-only (auth GET + doc), gated like the doc host.
+#[cfg(target_arch = "wasm32")]
+mod mission_hydrate;
 // T-159.21 undo/redo — drives the hosted MissionDocCore undo stack (+ the post-change glyph rebind
 // and the `__editorHistory` bridge); wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
