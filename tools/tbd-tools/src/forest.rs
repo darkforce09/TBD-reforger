@@ -18,6 +18,19 @@ fn round4(v: f64) -> f64 {
     (v * 10_000.0).round() / 10_000.0
 }
 
+/// JS-number semantics for JSON emission: integral f64 → integer Number (JSON.stringify(64.0)
+/// is "64"), fractional → f64 Number. Keeps Value-equality with JS-written fixtures.
+#[must_use]
+pub fn js_num(v: f64) -> Value {
+    if v.fract() == 0.0 && v.abs() < 9_007_199_254_740_992.0 {
+        Value::from(v as i64)
+    } else {
+        serde_json::Number::from_f64(v)
+            .map(Value::Number)
+            .unwrap_or(Value::Null)
+    }
+}
+
 pub struct Tree {
     pub x: f64,
     pub y: f64,
@@ -164,12 +177,19 @@ pub fn derive_forest_regions(
         .enumerate()
         .map(|(i, c)| {
             let member_set: HashSet<usize> = c.cells.iter().copied().collect();
-            let rings: Vec<Vec<[f64; 2]>> = trace_rings(&member_set, cells)
+            let rings: Vec<Value> = trace_rings(&member_set, cells)
                 .into_iter()
                 .map(|ring| {
-                    ring.into_iter()
-                        .map(|(gx, gy)| [gx as f64 * cell_m, gy as f64 * cell_m])
-                        .collect()
+                    Value::Array(
+                        ring.into_iter()
+                            .map(|(gx, gy)| {
+                                Value::Array(vec![
+                                    js_num(gx as f64 * cell_m),
+                                    js_num(gy as f64 * cell_m),
+                                ])
+                            })
+                            .collect(),
+                    )
                 })
                 .collect();
             let mut tally: Vec<(&String, &u64)> = species_tally[i].iter().collect();
@@ -191,8 +211,8 @@ pub fn derive_forest_regions(
                 "polygon": rings,
                 "treeCount": total,
                 "dominantSpeciesClass": dominant,
-                "densityPerHa": if area_ha > 0.0 { round4(total as f64 / area_ha) } else { 0.0 },
-                "areaHa": area_ha,
+                "densityPerHa": js_num(if area_ha > 0.0 { round4(total as f64 / area_ha) } else { 0.0 }),
+                "areaHa": js_num(area_ha),
                 "coverType": "soft",
                 "source": "derived-hull",
             })

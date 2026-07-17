@@ -29,37 +29,40 @@ pub fn corner_of(coord: f64, world_size_m: f64) -> usize {
     g.clamp(0, n - 1) as usize
 }
 
-/// Accumulate a global corner grid from instance positions.
+/// Accumulate a global corner grid from instance positions (u32 counts — clamped to u16 only at
+/// slice time, exactly like the .mjs).
 #[must_use]
 pub fn accumulate_corners(
     positions: impl Iterator<Item = (f64, f64)>,
     world_size_m: f64,
-) -> Vec<u16> {
+) -> (Vec<u32>, usize) {
     let n = corner_grid_size(world_size_m);
-    let mut grid = vec![0u16; n * n];
+    let mut grid = vec![0u32; n * n];
     for (x, y) in positions {
         let gx = corner_of(x, world_size_m);
         let gy = corner_of(y, world_size_m);
-        grid[gy * n + gx] = grid[gy * n + gx].saturating_add(1);
+        grid[gy * n + gx] += 1;
     }
-    grid
+    (grid, n)
 }
 
-/// Slice a chunk's 17×17 corner window out of the global grid (row-major j*17+i).
+/// Slice a chunk's 17×17 corner window out of the global grid (row-major j*17+i; stride =
+/// `(COLS-1)` shared-border corners per chunk; out-of-range corners read 0; u16 clamp @ 65535).
 #[must_use]
-pub fn slice_chunk(global: &[u16], world_size_m: f64, cx: usize, cy: usize) -> Vec<u16> {
-    let n = corner_grid_size(world_size_m);
+pub fn slice_chunk_corners(grid: &[u32], size: usize, cx: usize, cy: usize) -> Vec<u16> {
     let cols = DENSITY_COLS as usize;
     let rows = DENSITY_ROWS as usize;
-    let corners_per_chunk = 512 / DENSITY_CELL_M as usize; // 16
     let mut out = vec![0u16; cols * rows];
     for j in 0..rows {
+        let gy = cy * (rows - 1) + j;
         for i in 0..cols {
-            let gx = cx * corners_per_chunk + i;
-            let gy = cy * corners_per_chunk + j;
-            if gx < n && gy < n {
-                out[j * cols + i] = global[gy * n + gx];
-            }
+            let gx = cx * (cols - 1) + i;
+            let v = if gx < size && gy < size {
+                grid[gy * size + gx]
+            } else {
+                0
+            };
+            out[j * cols + i] = v.min(65_535) as u16;
         }
     }
     out
@@ -79,10 +82,7 @@ mod tests {
         let buf = encode_tbdd(DENSITY_CELL_M, DENSITY_COLS, DENSITY_ROWS, &[&a, &b]);
         assert_eq!(buf.len(), TBDD_FILE_BYTES);
         let g = decode_tbdd(&buf).expect("decode");
-        assert_eq!(
-            (g.cols, g.rows),
-            (DENSITY_COLS, DENSITY_ROWS)
-        );
+        assert_eq!((g.cols, g.rows), (DENSITY_COLS, DENSITY_ROWS));
 
         let fixture = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../packages/tbd-schema/golden/map-objects/density/density-fixture.bin");
@@ -100,8 +100,8 @@ mod tests {
         let pts: Vec<(f64, f64)> = (0..1000)
             .map(|i| ((i * 7 % 12800) as f64, (i * 13 % 12800) as f64))
             .collect();
-        let grid = accumulate_corners(pts.iter().copied(), world);
-        let sum: u64 = grid.iter().map(|&v| u64::from(v)).sum();
+        let (grid, _) = accumulate_corners(pts.iter().copied(), world);
+        let sum: u64 = grid.iter().map(u64::from).sum();
         assert_eq!(sum, 1000);
         assert_eq!(corner_grid_size(world), 401);
     }

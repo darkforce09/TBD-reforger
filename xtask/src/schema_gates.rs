@@ -949,6 +949,7 @@ pub fn t090_specs() -> Result<u8> {
     for s in [
         "validate",
         "codegen",
+        "verify-map-object-golden",
         "verify-citations",
         "verify-map-object-enums",
         "verify-type-inventory",

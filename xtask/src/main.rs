@@ -8,6 +8,7 @@ mod codegen_schema;
 mod constants;
 mod debug_cmd;
 mod gap;
+mod golden_gate;
 mod mcp;
 mod prompt;
 mod registry;
@@ -87,6 +88,9 @@ enum SchemaCmd {
     N6,
     /// N10 tile-budget single-source
     N10,
+    /// Semantic golden gates S2-S9 + S11-S14 (verify-map-object-golden)
+    #[command(name = "map-object-golden")]
+    MapObjectGolden,
     /// map-object enum single-source (GAP-M5)
     #[command(name = "map-object-enums")]
     MapObjectEnums,
@@ -376,6 +380,7 @@ fn run() -> Result<u8> {
                 SchemaCmd::T090Specs => schema_gates::t090_specs()?,
                 SchemaCmd::N6 => schema_gates::n6_sentence()?,
                 SchemaCmd::N10 => schema_gates::n10_tile_budget()?,
+                SchemaCmd::MapObjectGolden => golden_gate::map_object_golden()?,
                 SchemaCmd::MapObjectEnums => schema_gates::map_object_enums()?,
                 SchemaCmd::TypeInventory => schema_gates::type_inventory()?,
                 SchemaCmd::TerrainManifest { terrain } => schema_gates::terrain_manifest(&terrain)?,
