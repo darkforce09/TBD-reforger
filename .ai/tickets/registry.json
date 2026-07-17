@@ -1,5 +1,5 @@
 {
-  "next_id": 166,
+  "next_id": 171,
   "tickets": [
     {
       "id": "T-001",
@@ -5272,6 +5272,151 @@
           "notes": "Bash logic + closure: 0 .mjs, no-node gate, zero setup-node CI."
         }
       }
+    },
+    {
+      "id": "T-166",
+      "order": 1630,
+      "program": "eden",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Leptos editor full map (satellite + world objects)",
+      "summary": "Restore the full-map render lanes in the Leptos wgpu editor: unified satellite basemap (`everon-sat.tbd-sat` fetch/decode/mip upload \u2014 the T-151.1 lane) + world objects (roads/buildings/trees/forest via `map-engine-core::world` parser + chunk residency \u2014 the T-151.2/.3/.4/.5 lanes). Today only hillshade renders (fold documented at `apps/website-leptos/src/world_assets.rs:11`). The engine crates already own every pipeline (T-151 W1\u2013W5 shipped pre-rewrite); this is host wiring in `world_assets.rs` + `mission_editor.rs`, not new render code. Specs: t151_1_basemap_lane.md, t151_2_world_parser.md, t151_3_world_residency.md, t151_4_vector_layers.md, t151_5_glyph_atlas.md.",
+      "slices": [],
+      "depends_on": [
+        "T-159"
+      ],
+      "unblocks": [],
+      "status": "ready",
+      "implements": [],
+      "user_story": "As a mission maker I see the real Everon map (satellite + roads/buildings/trees) under my slots in the editor, not just hillshade relief.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-167",
+      "order": 1640,
+      "program": "eden",
+      "surfaces": [
+        "ATTR"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Leptos smart Arsenal port (paper-doll + compat Forge)",
+      "summary": "Port the shipped React Smart Arsenal (T-068.10.2\u2013.10.8) into the Leptos Arsenal tab: compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges), clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane. The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`); `SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes. Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md.",
+      "slices": [],
+      "depends_on": [
+        "T-159"
+      ],
+      "unblocks": [],
+      "status": "ready",
+      "implements": [],
+      "user_story": "As a mission maker I build loadouts with compat-aware pickers and a paper-doll, matching the pre-rewrite Arsenal.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-168",
+      "order": 1650,
+      "program": "eden",
+      "surfaces": [
+        "ORBAT"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Leptos ORBAT tree in the left dock",
+      "summary": "Replace the ORBAT stub header (scope note `apps/website-leptos/src/eden_chrome.rs:360` \u2014 \"ORBAT stays a stub header\") with the live squads/slots tree: select-on-click, dbl-click\u2192Attributes (SEL-ORBAT-DBL-001), squad grouping from the doc, T-037-parity row actions where they existed in React (`OrbatSection.tsx`). Coordinates with the T-071 ORBAT Manager modal (separate surface \u2014 the dock tree is read/select, the modal is manage).",
+      "slices": [],
+      "depends_on": [
+        "T-159"
+      ],
+      "unblocks": [],
+      "status": "ready",
+      "implements": [],
+      "user_story": "As a mission maker I browse and select squads/slots from the left ORBAT tree like in the React editor.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-169",
+      "order": 1660,
+      "program": "eden",
+      "surfaces": [
+        "LEFT"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Leptos VirtualOutliner at mission scale",
+      "summary": "Virtualize the Editor Layers outliner for huge missions (T-064 parity: virtualization threshold ~50 rows, proven at ~367k slots in React via @tanstack/react-virtual + segment-index flatten). The Leptos `outliner.rs` renders plain rows; big paste/hydrate will DOM-choke. Port the flatten + windowing approach natively (leptos-virtual or hand-rolled window over `flattenOutliner` semantics). React references: `VirtualOutliner.tsx`, `flattenOutliner.ts`, `TreeRow.tsx` (t064_virtualized_outliner.md).",
+      "slices": [],
+      "depends_on": [
+        "T-159"
+      ],
+      "unblocks": [],
+      "status": "queued",
+      "implements": [],
+      "user_story": "As a mission maker with a 100k+ slot mission the outliner stays instant instead of freezing the tab.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ]
+    },
+    {
+      "id": "T-170",
+      "order": 1670,
+      "program": "eden",
+      "surfaces": [
+        "TOP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ],
+      "title": "Prod default flip to Leptos SPA",
+      "summary": "Make the Leptos SPA the production default: set `SPA_DIST_DIR` to the trunk release dist in the prod env, move the Discord OAuth redirect origin, staging soak, then flip. OPERATOR-GATED (env + Discord app settings are operator-held); claude-code prepares configs/runbook + verifies the staging soak gates. Runbook anchor: docs/website/DEV_RUNBOOK.md \u00a7SPA serving; T-159 finish program left this as the sole operator-gated residual.",
+      "slices": [],
+      "depends_on": [
+        "T-159"
+      ],
+      "unblocks": [],
+      "status": "queued",
+      "implements": [],
+      "user_story": "As the operator I flip production to the Leptos SPA with a tested rollback path.",
+      "route": "/missions/:id/edit",
+      "stream": "web-platform",
+      "branch": "main",
+      "executor": "human",
+      "targets": [
+        "website"
+      ]
     }
   ]
 }
