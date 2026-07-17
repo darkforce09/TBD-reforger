@@ -42,7 +42,18 @@
 `T-090.1.2.6`: remote pointed at superseded WIP `3de3d22f` (ancestor); force-pushed to the shipped
 commit the registry cites, `b958e3b4`. Revert path: `git push --force origin 3de3d22f:refs/tags/T-090.1.2.6`.
 
-## CI watch (appended post-push)
+## CI watch (final — run 29576884048 @ `801e7cf9`)
 
-- ci.yml: PENDING at log-write; results below.
-- contracts.yml: PENDING at log-write; results below.
+**ci.yml: completed SUCCESS — all 5 jobs green:**
+
+| Job | Conclusion |
+|-----|-----------|
+| rust-backend (Rust 1.95 + Postgres 18) | success |
+| map-engine (wasm-ci) | success |
+| editorconfig (FMT-2) | success |
+| schema + citations | success |
+| website-leptos (Leptos SPA) | success |
+
+**contracts.yml: completed SUCCESS** (citations + codegen-drift). tbd-schema compatibility test:
+success. **First fully green CI on `main` since the T-145/T-159 cutovers** (origin CI had last run
+45 commits before the merges).
