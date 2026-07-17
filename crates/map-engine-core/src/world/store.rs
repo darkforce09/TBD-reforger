@@ -201,4 +201,82 @@ mod tests {
             Err(WorldError::Manifest)
         ));
     }
+
+    /// T-159.29.2 — the full-Everon census pin, re-homed from the deleted React vitest
+    /// (`_wasm/world.parity.test.ts`, T-151.2). The per-column byte-parity half of that suite
+    /// compared Rust against the JS `worldObjectsCore` oracle and is retired with it (both sides
+    /// now ARE this crate); the census totals are an oracle-independent pin over the committed
+    /// `packages/map-assets` export and stay load-bearing: any regression in gunzip/parse/classify
+    /// or accidental asset edit breaks an exact number.
+    #[test]
+    fn full_island_census_matches_pinned_inventory() {
+        let everon = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../packages/map-assets/everon");
+        let objects = everon.join("objects");
+        let read = |p: &std::path::Path| std::fs::read(p).unwrap_or_else(|e| panic!("{p:?}: {e}"));
+
+        let mut store = WorldStore::new();
+        store
+            .load_manifest_json(&String::from_utf8(read(&everon.join("manifest.json"))).unwrap())
+            .unwrap();
+        // 1623 prefabs.
+        assert_eq!(
+            store
+                .load_prefabs_gz(&read(&objects.join("prefabs.json.gz")))
+                .unwrap(),
+            1623
+        );
+
+        // 315 chunk files; ΣInstances = 1,216,109.
+        let mut chunk_files: Vec<String> = std::fs::read_dir(objects.join("chunks"))
+            .unwrap()
+            .filter_map(|e| {
+                let name = e.unwrap().file_name().into_string().unwrap();
+                name.ends_with(".json.gz").then_some(name)
+            })
+            .collect();
+        chunk_files.sort();
+        assert_eq!(chunk_files.len(), 315);
+        let mut total: u64 = 0;
+        for f in &chunk_files {
+            let id = f.trim_end_matches(".json.gz");
+            total += u64::from(
+                store
+                    .parse_chunk_gz(id, &read(&objects.join("chunks").join(f)))
+                    .unwrap(),
+            );
+        }
+        assert_eq!(total, 1_216_109);
+
+        // 888 road segments · 36 forest regions.
+        assert_eq!(
+            store
+                .load_roads_gz(&read(&objects.join("roads.json.gz")))
+                .unwrap(),
+            888
+        );
+        assert_eq!(
+            store
+                .load_forest_regions_gz(&read(&objects.join("forest-regions.json.gz")))
+                .unwrap(),
+            36
+        );
+
+        // 625 TBDD density grids; decode smoke on the first 3 (the decoder's own unit tests cover
+        // the format edges — this proves the committed .bin files stay decodable).
+        let mut bins: Vec<String> = std::fs::read_dir(objects.join("density"))
+            .unwrap()
+            .filter_map(|e| {
+                let name = e.unwrap().file_name().into_string().unwrap();
+                name.ends_with(".bin").then_some(name)
+            })
+            .collect();
+        bins.sort();
+        assert_eq!(bins.len(), 625);
+        for f in bins.iter().take(3) {
+            let grid = crate::geometry::tbdd::decode_tbdd(&read(&objects.join("density").join(f)))
+                .unwrap_or_else(|e| panic!("{f}: {e}"));
+            assert!(grid.cols > 0 && grid.rows > 0, "{f}: empty grid");
+        }
+    }
 }
