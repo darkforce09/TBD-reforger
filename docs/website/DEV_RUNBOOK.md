@@ -11,7 +11,7 @@ Backend docs: [`docs/backend/README.md`](backend/README.md).
 
 ```bash
 make db-up          # Postgres on host :5434
-nvm use             # Node 26
+# (Node no longer required — T-165; enfusion-mcp bundles its own runtime needs)
 make ci-local       # verify-editorconfig + backend + verify-coding-standards + FE format:check/lint/build/test + schema/citations
 ```
 
@@ -162,7 +162,7 @@ make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m 
 
 - A fresh DB only has the Discord role→permission mappings (`make seed`).
   Events/missions must be seeded via the API or `psql`.
-- **Node 26** for schema tooling + the CDP gate driver (`nvm use` at repo root). **Rust stable** for API + SPA (`make build` / `make api` / `make leptos`).
+- **Rust stable** for API + SPA + all tooling (`make build` / `make api` / `make leptos`) — T-165 removed every Node tool; Node remains only as the `enfusion-mcp` runtime under `scripts/mod`.
 - Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release); full editor gates: `make leptos-gates`.
 - Integration tests: `make test-it` (needs `make db-up`).
 

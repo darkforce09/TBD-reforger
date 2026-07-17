@@ -21,7 +21,7 @@ ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
 leaderboards, doctrine wiki, CMS, and admin tooling.
 
 - **Backend:** Rust (Axum + sqlx), PostgreSQL — crate `reforger-backend` in `apps/website/` (the T-145 Go→Rust rewrite).
-- **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website-leptos/` — the T-159 rewrite; the React app was deleted at T-159.29.3. Node 26 stays for schema tooling + the CDP gate driver.
+- **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website-leptos/` — the T-159 rewrite; the React app was deleted at T-159.29.3. All tooling is Rust (T-165 Node eradication); Node exists solely as the `enfusion-mcp` runtime (`scripts/mod`).
 - **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
@@ -125,7 +125,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-164**
+**Latest shipped:** **T-165**
 
 **ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 

@@ -5150,8 +5150,7 @@
         "ci",
         "schema"
       ],
-      "status": "ready",
-      "active_slice": "T-165.10",
+      "status": "shipped",
       "spec": "docs/platform/t165_node_eradication.md",
       "stream": "infra",
       "targets": [
@@ -5268,7 +5267,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t165_node_eradication.md",
           "notes": "Bash logic + closure: 0 .mjs, no-node gate, zero setup-node CI."
         }

@@ -25,13 +25,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
-    },
-    {
-      "id": "T-165",
-      "title": "Node/JS eradication: every .mjs tool -> Rust",
-      "status": "ready",
-      "spec": "docs/platform/t165_node_eradication.md",
-      "branch": "ticket/T-165"
     }
   ]
 }

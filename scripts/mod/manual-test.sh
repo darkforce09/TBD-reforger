@@ -66,7 +66,7 @@ else
   fail ".env.example missing GAME_SERVER_TOKENS"
 fi
 
-if [ -f "$MONO_ROOT/.cursor/mcp.json" ] && node -e "JSON.parse(require('fs').readFileSync('$MONO_ROOT/.cursor/mcp.json'))" 2>/dev/null; then
+if [ -f "$MONO_ROOT/.cursor/mcp.json" ] && { ! command -v jq >/dev/null || jq -e . "$MONO_ROOT/.cursor/mcp.json" >/dev/null 2>&1; }; then
   pass ".cursor/mcp.json is valid JSON"
 else
   fail ".cursor/mcp.json invalid or missing"

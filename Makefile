@@ -6,7 +6,7 @@ WEB := apps/website
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -127,7 +127,7 @@ verify-citations: ## Verify @contract citations (DOCUMENTATION_STANDARDS §10; T
 
 verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
 	$(MAKE) verify-doc-layout
-	@node scripts/website/verify-file-length.mjs
+	@cargo run -q -p xtask -- verify file-length
 	@bash scripts/website/verify-no-select-star.sh
 
 verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees under apps/**/docs or packages/**/docs
@@ -211,13 +211,17 @@ ticket-check-strict: ## Full validation including zero legacy planning IDs
 verify-no-python: ## T-162 hard gate — zero .py files / no Python interpreter in scripts
 	./scripts/verify-no-python.sh
 
+verify-no-node: ## T-165.10 hard gate — zero tracked .mjs/.cjs; node only as the enfusion-mcp floor
+	cargo run -q -p xtask -- verify no-node
+
 # ci-local mirrors .github/workflows/ci.yml (CODING_STANDARDS.md §0.3 CI-2, §11). Order:
 # editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema; each
-# sub-target is a separate $(MAKE) so a non-zero recipe halts the run (fail-fast). The Node
-# steps (schema validate/citations + the t159 gate driver) use whatever `nvm use` selected.
+# sub-target is a separate $(MAKE) so a non-zero recipe halts the run (fail-fast). Node-free
+# since T-165 — every gate is cargo/bash (Node exists solely as the enfusion-mcp runtime).
 ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
 	$(MAKE) verify-editorconfig
 	$(MAKE) verify-no-python
+	$(MAKE) verify-no-node
 	$(MAKE) rust-ci
 	$(MAKE) verify-coding-standards
 	$(MAKE) ci-local-leptos

@@ -11,6 +11,7 @@ mod gap;
 mod golden_gate;
 mod label_gates;
 mod mcp;
+mod node_free;
 mod prompt;
 mod registry;
 mod repro;
@@ -69,6 +70,33 @@ enum TopCmd {
         #[command(subcommand)]
         cmd: SchemaCmd,
     },
+    /// T-165.10 closure verifies + generators
+    Verify {
+        #[command(subcommand)]
+        cmd: VerifyCmd,
+    },
+    /// Code generators (T-165.10)
+    Gen {
+        #[command(subcommand)]
+        cmd: GenCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+enum VerifyCmd {
+    /// SIZE-1/3 file-length gate (verify-file-length.mjs port)
+    #[command(name = "file-length")]
+    FileLength,
+    /// T-165.10 hard gate: zero tracked .mjs/.cjs; no node/npx outside the enfusion-mcp floor
+    #[command(name = "no-node")]
+    NoNode,
+}
+
+#[derive(Subcommand, Debug)]
+enum GenCmd {
+    /// Spleen 16x32 BDF → text_font_table.rs on stdout (gen-text-font-table.mjs port)
+    #[command(name = "font-table")]
+    FontTable { bdf: PathBuf },
 }
 
 #[derive(Subcommand, Debug)]
@@ -409,6 +437,19 @@ fn run() -> Result<u8> {
                 }
             }
             Ok(0)
+        }
+        TopCmd::Verify { cmd } => {
+            let code = match cmd {
+                VerifyCmd::FileLength => node_free::verify_file_length()?,
+                VerifyCmd::NoNode => node_free::verify_no_node()?,
+            };
+            Ok(code)
+        }
+        TopCmd::Gen { cmd } => {
+            let code = match cmd {
+                GenCmd::FontTable { bdf } => node_free::gen_font_table(&bdf)?,
+            };
+            Ok(code)
         }
         TopCmd::Schema { cmd } => {
             let code = match cmd {
