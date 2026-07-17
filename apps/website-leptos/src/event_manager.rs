@@ -304,10 +304,10 @@ fn EventManagerInner() -> impl IntoView {
                 <div class="lg:col-span-8">
                     <div class="mb-6 flex items-center justify-between">
                         <h2 class="text-2xl font-bold tracking-tight text-white">
-                            {move || {
-                                let (y, m) = view.get();
-                                format!("{} {y}", MONTH_NAMES[m as usize])
-                            }}
+                            // Two text nodes ("November" + " 2026"), matching React's
+                            // `{monthName} {year}` JSX (the frozen V golden pins the node split).
+                            {move || MONTH_NAMES[view.get().1 as usize].to_string()}
+                            {move || format!(" {}", view.get().0)}
                         </h2>
                         <div class="flex items-center gap-1">
                             <button
@@ -355,8 +355,10 @@ fn EventManagerInner() -> impl IntoView {
                             let by_day = events_by_day();
                             let sel = selected.get();
                             let mut cells: Vec<leptos::prelude::AnyView> = Vec::new();
-                            for i in 0..leading {
-                                cells.push(view! { <div id=format!("pad-{i}")></div> }.into_any());
+                            for _ in 0..leading {
+                                // Plain pad divs — React renders them attribute-less and the frozen
+                                // V golden pins that (no synthetic ids).
+                                cells.push(view! { <div></div> }.into_any());
                             }
                             for d in 1..=days_in_month {
                                 let key = day_key(y, m, d);
@@ -405,8 +407,7 @@ fn EventManagerInner() -> impl IntoView {
                                     );
                             }
                             while cells.len() % 7 != 0 {
-                                let i = cells.len();
-                                cells.push(view! { <div id=format!("pad-t-{i}")></div> }.into_any());
+                                cells.push(view! { <div></div> }.into_any());
                             }
                             cells.collect_view()
                         }}

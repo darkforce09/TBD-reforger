@@ -1,0 +1,188 @@
+{
+  "frozenFrom": "react dist (apps/website/frontend/dist)",
+  "distSha256": "2aa6a2f251e9d3439f7bd0f5ffb49ffd65bd604282c391997f88ad751fb8472a",
+  "viewport": "1440x900",
+  "excluded": {
+    "/missions/:id/edit": "editor gate = the 15 CDP smokes (smoke_*_editor.mjs)"
+  },
+  "scope": "#root>:first-child — the app UI root on both apps; React's empty sonner toaster portal (#root 2nd child) is outside the frozen scope",
+  "routes": [
+    {
+      "slug": "notfound",
+      "path": "/this-route-does-not-exist",
+      "authed": true,
+      "bytes": 64043,
+      "sha256": "00709eac03e2c009c2d3c0840bacda3862e4039082769f69763376e4503b3f43"
+    },
+    {
+      "slug": "dashboard",
+      "path": "/",
+      "authed": true,
+      "bytes": 97827,
+      "sha256": "7526acf6fb0bbedeb0edec9bd18623fc1a9b0a04afe991b0b2aacd62adc67afe"
+    },
+    {
+      "slug": "approvals",
+      "path": "/admin/approvals",
+      "authed": true,
+      "bytes": 72772,
+      "sha256": "cd649445cfa10b4f03297e52dfd811a93bc7b21081f444c33c2c31153a913c10"
+    },
+    {
+      "slug": "audit",
+      "path": "/admin/audit",
+      "authed": true,
+      "bytes": 70465,
+      "sha256": "ae469d58860b35c8552d3c14ff814a8f3486a260a20b600c596f1653dffb4415"
+    },
+    {
+      "slug": "content",
+      "path": "/admin/content",
+      "authed": true,
+      "bytes": 107632,
+      "sha256": "1fdc18e0fed005cdf1c2c6cec94fb6f8b148c91ae1122fe00a18979f4b5233fd",
+      "goldenSource": "leptos",
+      "acceptedDelta": "T-159.25 mock-to-live rebuild: React ContentManager pre-filled a hardcoded mock briefing ('Operation Blue Storm Briefing', published switch on); Leptos wires the live CMS state and starts empty. Intended divergence; React reference kept at content.react.dom.json"
+    },
+    {
+      "slug": "eventmgr",
+      "path": "/admin/events",
+      "authed": true,
+      "bytes": 146112,
+      "sha256": "7e209c4b0de37d85cf25fa057eccf6d152a88657be451c3ac33758da552981a9"
+    },
+    {
+      "slug": "personnel",
+      "path": "/admin/personnel",
+      "authed": true,
+      "bytes": 88050,
+      "sha256": "9cb2a2cebcc8d898cb647b3dd3edb7890f7fad3141dc274ac514c1f661f9fa74"
+    },
+    {
+      "slug": "servercontrol",
+      "path": "/admin/server",
+      "authed": true,
+      "bytes": 124456,
+      "sha256": "ec9cafd454690d8f9a6b89d204ce4b44dab83f6723592d857d1856fd9eba298d"
+    },
+    {
+      "slug": "announcements",
+      "path": "/announcements",
+      "authed": true,
+      "bytes": 71618,
+      "sha256": "1d5b14b9995fcbd0b5fa7d8a54205048f5a12daf700cb1bc3cb24dea59326244"
+    },
+    {
+      "slug": "callback",
+      "path": "/auth/callback",
+      "authed": false,
+      "bytes": 3444,
+      "sha256": "c19a0a6bdee0ee08742e516f0e12f160c9ad580336c77dafb5f91725a8eb1855"
+    },
+    {
+      "slug": "deployments",
+      "path": "/deployments",
+      "authed": true,
+      "bytes": 92862,
+      "sha256": "c63e67c7121119279d4dfe45f7087b85da2530fee8063493f772251a49617703"
+    },
+    {
+      "slug": "events",
+      "path": "/events",
+      "authed": true,
+      "bytes": 69007,
+      "sha256": "bb38ab398b695587e6a33743eefaedbf0743183eb2300136d9acdcf7d8edc241"
+    },
+    {
+      "slug": "eventhub",
+      "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7",
+      "authed": true,
+      "bytes": 108294,
+      "sha256": "b594faefc44a5552ccaa737971d7c9ea89d0f8b0d61fcc5e1ac8b12bd8688ebd"
+    },
+    {
+      "slug": "orbat",
+      "path": "/events/c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7/missions/89b1b731-37a8-4926-901a-3c7ff7de5eb3/orbat",
+      "authed": true,
+      "bytes": 66721,
+      "sha256": "95ffb5cbd630353cb7dda6d2572e60683ad84f12b2ca5298fa533c35135fe775"
+    },
+    {
+      "slug": "leaderboards",
+      "path": "/leaderboards",
+      "authed": true,
+      "bytes": 112177,
+      "sha256": "2df15868ccbf9de9d92497c6e977d93b27216a8c7da56b102bcc7f0cb757b3ac"
+    },
+    {
+      "slug": "login",
+      "path": "/login",
+      "authed": false,
+      "bytes": 4812,
+      "sha256": "fe61a0f50c42d471aced8101d03977708135a2578f97fb07f9c169991f3ec97c"
+    },
+    {
+      "slug": "missions",
+      "path": "/missions",
+      "authed": true,
+      "bytes": 84005,
+      "sha256": "dc78f14dff1614e1e5277b424a4599d2d8df2ada39969b298ec28e5d71587bd1"
+    },
+    {
+      "slug": "missionview",
+      "path": "/missions/512d8658-7025-4a70-94e9-a1b44a7aa155",
+      "authed": true,
+      "bytes": 80022,
+      "sha256": "61c948a2d1ecb84eecbd50d45a9b9ed5ca592d4824b1cf7db0cb2ce518d757b2"
+    },
+    {
+      "slug": "modpacks",
+      "path": "/modpacks",
+      "authed": true,
+      "bytes": 114141,
+      "sha256": "3e14ee9fa42826c1ecc020947b60d2f0e8fae380d2dc1d2dc689138adbbc72fe"
+    },
+    {
+      "slug": "serverintel",
+      "path": "/server-intel",
+      "authed": true,
+      "bytes": 66327,
+      "sha256": "5fb04ab5e855036dcaef7ad45d1f3e6f540b2ef84945f62b409dfa02a216d9a7"
+    },
+    {
+      "slug": "settings",
+      "path": "/settings",
+      "authed": true,
+      "bytes": 82367,
+      "sha256": "5ad2350c1a39862a18a77feec4f98da112c74ef46bc77dc1b8e9323f9f74435b"
+    },
+    {
+      "slug": "mortar",
+      "path": "/tools/mortar",
+      "authed": true,
+      "bytes": 78130,
+      "sha256": "6ff3bbad9110a4c50ee37104e4ccc9ce2387ba4769155000c3e88bb9c2de29f6"
+    },
+    {
+      "slug": "vehicles",
+      "path": "/vehicles",
+      "authed": true,
+      "bytes": 119030,
+      "sha256": "6ba8e25308ddf730b9e1f67756914ee7b526c188055d6b05d2bc5a2afb5437d2"
+    },
+    {
+      "slug": "wiki",
+      "path": "/wiki",
+      "authed": true,
+      "bytes": 135253,
+      "sha256": "9aa12e491f48781d7473fc8a5fef17ded5bae9686dea29ea54770187d69848bc"
+    },
+    {
+      "slug": "wikislug",
+      "path": "/wiki/field-manual",
+      "authed": true,
+      "bytes": 135253,
+      "sha256": "9aa12e491f48781d7473fc8a5fef17ded5bae9686dea29ea54770187d69848bc"
+    }
+  ]
+}

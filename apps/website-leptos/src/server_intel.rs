@@ -117,7 +117,7 @@ fn panel(server: Option<Value>, live_sig: RwSignal<Option<ServerStatusDto>>) -> 
         <div class="relative h-full overflow-y-auto">
             <div
                 class="absolute inset-0 z-0 bg-cover bg-center"
-                style=format!("background-image: url('{COMMAND_MAP_IMAGE}')")
+                style=format!("background-image: url(\"{COMMAND_MAP_IMAGE}\");")
             >
                 <div class="absolute inset-0 bg-background/80 backdrop-blur-sm"></div>
                 <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>

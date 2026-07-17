@@ -137,6 +137,8 @@ fn PersonnelInner() -> impl IntoView {
                         <input
                             type="search"
                             placeholder="Search Discord ID or Arma Name…"
+                            // value="" attribute at rest = React controlled-input parity (frozen V).
+                            value=""
                             prop:value=move || q.get()
                             on:input=move |ev| q.set(event_target_value(&ev))
                             class="w-full max-w-md rounded-full border border-white/10 bg-black/20 py-2.5 pr-3 pl-9 text-label-md text-on-surface placeholder:text-on-surface-variant/60 outline-none focus:border-primary/50"

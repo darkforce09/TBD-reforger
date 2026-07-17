@@ -392,6 +392,9 @@ fn body(
                 <input
                     type="search"
                     placeholder="Search operations..."
+                    // React's controlled input reflects value="" as an attribute at rest — the
+                    // frozen V golden pins it (prop:value below stays the live binding).
+                    value=""
                     prop:value=move || q.get()
                     on:input=move |ev| q.set(event_target_value(&ev))
                     class="min-w-[200px] flex-1 rounded-lg border border-white/10 bg-black/30 px-4 py-2 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60"

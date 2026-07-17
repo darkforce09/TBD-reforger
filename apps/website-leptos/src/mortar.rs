@@ -44,6 +44,9 @@ fn num_input(label: &'static str, sig: RwSignal<f64>) -> impl IntoView {
             {label}
             <input
                 type="number"
+                // React reflects the controlled value as an attribute at rest ("1000" etc.) — the
+                // frozen V golden pins it; prop:value stays the live binding.
+                value=move || sig.get().to_string()
                 prop:value=move || sig.get().to_string()
                 on:input=move |ev| sig.set(event_target_value(&ev).parse().unwrap_or(0.0))
                 class=INPUT_CLASS
