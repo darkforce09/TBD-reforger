@@ -457,6 +457,18 @@ pub struct EventHub {
     pub banner_image_url: Option<String>,
 }
 
+/// The doc's terrain + environment fields, for the Mission Settings dialog. Pure data (no wasm
+/// deps), so it lives here in the always-compiled DTO module: the wasm `editor_ops::read_env`
+/// returns it, and the native `eden_chrome` view-shell fallback (`::default()`) needs it too.
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct MissionEnv {
+    pub terrain: String,
+    pub time: String,
+    pub weather: String,
+    pub view_distance: i64,
+    pub thermals: bool,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

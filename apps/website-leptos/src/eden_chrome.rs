@@ -517,7 +517,7 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         #[cfg(target_arch = "wasm32")]
         let env = crate::editor_ops::read_env();
         #[cfg(not(target_arch = "wasm32"))]
-        let env = crate::editor_ops::MissionEnv::default();
+        let env = crate::dto::MissionEnv::default();
         Some(view! {
             <div
                 class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"

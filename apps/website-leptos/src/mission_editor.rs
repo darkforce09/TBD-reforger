@@ -66,6 +66,9 @@ pub fn MissionEditorPage() -> impl IntoView {
     let attrs_open = RwSignal::new(None::<String>);
     let doc_tick = RwSignal::new(0u64);
     let settings_open = RwSignal::new(false);
+    // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
+    // /registry fetch that builds the Factions palette). None until it lands.
+    let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
     // T-159.26 — server hydrate / conflict / dirty (data-safety). `conflict` holds an offered
     // server payload when local IDB content diverges; `dirty` is the unsaved-changes flag;
     // `current_semver` tracks the adopted server version.
@@ -128,7 +131,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                 match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry")
                     .await
                 {
-                    Ok(r) => catalog.set(CatalogState::Ready(build_catalog_tree(&r.data))),
+                    Ok(r) => {
+                        registry_items.set(Some(r.data.clone()));
+                        catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
+                    }
                     Err(_) => catalog.set(CatalogState::Failed),
                 }
             }
@@ -1050,7 +1056,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture.
                 <div class="pointer-events-auto">
-                    <crate::attributes::AttributesModal attrs_open doc_tick />
+                    <crate::attributes::AttributesModal attrs_open doc_tick registry_items />
                 </div>
                 <div class="pointer-events-auto">
                     <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />

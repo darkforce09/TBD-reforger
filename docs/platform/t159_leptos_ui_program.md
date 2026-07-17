@@ -4,8 +4,10 @@
 finish plan was operator-approved; Claude Code executes code + verify logs + docs + commits directly
 (no per-slice Cursor Mode B pass). Plan of record: `~/.claude/plans/you-are-fable-5-vast-bird.md`
 (operator copy) — stream ladder T-159.24 → T-159.29 below.
-**ACTIVE:** **T-159.26** (Mission Creator editor completion) · **Latest:** **T-159.25** · **Worktree:**
-`.ai/artifacts/worktrees/TBD-T-159/` @ `t-159-leptos-ui`
+**ACTIVE:** none — **finish program complete** (`.24`–`.29` + `.27` all shipped + green). **Residual is
+operator-gated + destructive only:** the default SPA flip + the React deletion (see stream `.29` /
+[`t159_29_verify_log.md`](../../.ai/artifacts/t159_29_verify_log.md) §HELD). · **Latest:** **T-159.27** ·
+**Worktree:** `.ai/artifacts/worktrees/TBD-T-159/` @ `t-159-leptos-ui`
 
 ## Finish-program streams (audit-derived, 2026-07-17)
 
@@ -13,15 +15,20 @@ finish plan was operator-approved; Claude Code executes code + verify logs + doc
 |--------|-------|--------|
 | **T-159.24** prep | Trunk `/api` + `/map-assets` proxies · `make leptos*` · `api_put/patch/delete/post_ok` client verbs · **140 MB upload spike PASS** (940 ms via Trunk proxy → 404 after full read; no direct-:8080 bypass needed) | **shipped** |
 | **T-159.25** suite live-wire | toasts · suite mutations (Settings/ORBAT/Missions/Approvals/Personnel/EventMgr/Mortar/Content, live dev-login proofs) · SSE telemetry · Server Intel + Operations Calendar populated · CreateMissionDialog · live `smoke_mutations` gate | **shipped** (`.25a`–`.25e`) |
-| **T-159.26** editor completion | **.26a** Attributes (tag T-159.23) · **.26b** server-hydrate/conflict/dirty (data-safety, live gate) · **.26c** keyboard (Del/Space/Ctrl+C/V) + Mission Settings (environment). ORBAT squad tree (needs T-071 squad creation) + VirtualOutliner @367k folded forward | **ACTIVE** (.26a–.26c shipped) |
-| **T-159.27** Arsenal + registry | rules/doll/itemDetail/migrate native-tested + vitest goldens as `cargo test` · registry compat · ArsenalTab UI + canvas2d doll + Faction Manager | queued |
-| **T-159.28** map-asset host | `world_assets`: TBDS basemap · DEM PNG (CUR Z) · `.tbd-sat` · world-chunk residency streaming · CI 2-chunk fixture · GPU-readback gates. **Operator visual checkpoint after.** | queued |
-| **T-159.29** cutover build-out | backend ServeDir SPA + COOP/COEP + `/map-assets` · CI website-leptos job · env/OAuth flip docs · oracle freeze. **Default flip + React deletion = operator go only.** | queued |
+| **T-159.26** editor completion | **.26a** Attributes (tag T-159.23) · **.26b** server-hydrate/conflict/dirty (data-safety, live gate) · **.26c** keyboard (Del/Space/Ctrl+C/V) + Mission Settings (environment). ORBAT squad tree (needs T-071 squad creation) + VirtualOutliner @367k folded forward | **shipped** (.26a–.26c) |
+| **T-159.27** Arsenal | ArsenalTab (12 kind-rows = React `LOADOUT_ROWS`) → canonical `SlotLoadoutV2` via `editor_ops::set_loadout`; faithful `picksToLoadout`/`loadoutToPicks` incl. `summary` + optic/magazine sticky pass-through (regression-guarded). **+ native-compile fix** (`MissionEnv` → `dto.rs`; CI `cargo test` red → green). Smart Forge (compat edge rows/paper-doll/weight/Faction Manager) folded forward | **shipped** |
+| **T-159.28** map-asset host | `world_assets` hillshade MVP: manifest → DEM PNG → Rust `dem::` decode+hillshade → `tex_layer_*` (role 1). Satellite (`.tbd-sat`) + world-chunk streaming folded forward | **shipped** |
+| **T-159.29** cutover build-out | backend ServeDir SPA + COOP/COEP + `/map-assets` · CI website-leptos job · env/OAuth flip docs · oracle freeze. **Default flip + React deletion = operator go only.** | **shipped** (build-out; flip/delete HELD) |
 
 ## Progress (latest first)
 
 | Milestone | Status |
 |-----------|--------|
+| **T-159.27** Arsenal loadout tab (canonical `SlotLoadoutV2`) + native-compile fix | tag **T-159.27** · 15/15 smokes · 46 native tests |
+| **T-159.29** cutover build-out (SPA serve + CI job + oracle freeze; flip/delete HELD) | tag **T-159.29** |
+| **T-159.28** map-asset host (hillshade MVP) | tag **T-159.28** |
+| **T-159.26** editor completion (.26a–.26c) | tag **T-159.26** |
+| **T-159.25** suite live-wire (.25a–.25e) | tag **T-159.25** |
 | **T-159.24** prep: proxies + make targets + client verbs + 140 MB spike | tag **T-159.24** |
 | **T-159.22.1** Undo step-boundary gate (driver fix; core OK) | `ce73c5bc` |
 | **T-159.22** Outliner + Asset palette | `0154b4e9` |
@@ -29,6 +36,13 @@ finish plan was operator-approved; Claude Code executes code + verify logs + doc
 
 ### Verify logs (recent)
 
+- [`.ai/artifacts/t159_27_verify_log.md`](../../.ai/artifacts/t159_27_verify_log.md) — Arsenal:
+  15/15 editor smokes, 46 native tests, clippy 12 = baseline, wasm 7,153,883 B; native `cargo test`
+  red → green (MissionEnv relocation)
+- [`.ai/artifacts/t159_29_verify_log.md`](../../.ai/artifacts/t159_29_verify_log.md) — cutover
+  build-out (SPA serve live table, CI job, oracle freeze; flip/delete HELD)
+- [`.ai/artifacts/t159_28_verify_log.md`](../../.ai/artifacts/t159_28_verify_log.md) — map-asset
+  host hillshade MVP
 - [`.ai/artifacts/t159_24_verify_log.md`](../../.ai/artifacts/t159_24_verify_log.md) — prep gates
   11/11 smokes ×2 (baseline + post-change), stash-diff zero new warnings, spike table
 - [`.ai/artifacts/t159_22_1_verify_log.md`](../../.ai/artifacts/t159_22_1_verify_log.md) — CDP
@@ -53,5 +67,7 @@ core (closed by .22.1).
 | **T-159.22.1** | shipped `ce73c5bc` |
 | **T-159.24** | **shipped** — `t159_24_verify_log.md` |
 | **T-159.25** | **shipped** — `t159_25_verify_log.md` (`.25a`–`.25e`) |
-| **T-159.26** | **ACTIVE** — editor completion (Attributes rides here) |
-| **T-159.27** … **T-159.29** | queued |
+| **T-159.26** | **shipped** — editor completion (Attributes rides here; tag T-159.23) |
+| **T-159.27** | **shipped** — `t159_27_verify_log.md` (Arsenal + native-compile fix) |
+| **T-159.28** | **shipped** — `t159_28_verify_log.md` (map-asset host, hillshade MVP) |
+| **T-159.29** | **shipped** — `t159_29_verify_log.md` (cutover build-out; **flip + React delete HELD for operator**) |

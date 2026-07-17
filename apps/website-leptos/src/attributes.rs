@@ -21,6 +21,8 @@ const TABS: [&str; 4] = ["Transform", "Identity", "States", "Arsenal"];
 pub fn AttributesModal(
     attrs_open: RwSignal<Option<String>>,
     doc_tick: RwSignal<u64>,
+    /// T-159.27 — flat registry gear rows for the Arsenal tab.
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
 ) -> impl IntoView {
     // Esc closes (React Dialog behavior); the editor's own keydown handler skips editable fields,
     // so this window listener is the one Esc path.
@@ -37,11 +39,11 @@ pub fn AttributesModal(
         let id = attrs_open.get()?;
         let _ = doc_tick.get(); // re-read fields on every doc change (undo/redo/drag)
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = &id;
+        let _ = (&id, registry_items);
         #[cfg(target_arch = "wasm32")]
         {
             match crate::editor_ops::read_attrs(&id) {
-                Some(attrs) => Some(modal_view(attrs)),
+                Some(attrs) => Some(modal_view(attrs, registry_items)),
                 None => {
                     // Slot undone away while open → close (React's `slot &&` render guard).
                     crate::editor_ops::close_attributes();
@@ -57,8 +59,12 @@ pub fn AttributesModal(
 }
 
 #[cfg(target_arch = "wasm32")]
-fn modal_view(attrs: crate::editor_ops::SlotAttrs) -> AnyView {
+fn modal_view(
+    attrs: crate::editor_ops::SlotAttrs,
+    registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+) -> AnyView {
     let tab = RwSignal::new(1usize); // React useState('Identity')
+    let slot_id = StoredValue::new(attrs.id.clone());
     let id = StoredValue::new(attrs.id.clone());
     let attrs = StoredValue::new(attrs);
     let subtitle = {
@@ -120,7 +126,17 @@ fn modal_view(attrs: crate::editor_ops::SlotAttrs) -> AnyView {
                         0 => transform_tab(id, attrs).into_any(),
                         1 => identity_tab(id, attrs).into_any(),
                         2 => states_tab().into_any(),
-                        _ => arsenal_stub().into_any(),
+                        _ => {
+                            let loadout = crate::editor_ops::read_loadout(&slot_id.get_value());
+                            view! {
+                                <crate::arsenal::ArsenalTab
+                                    slot_id=slot_id.get_value()
+                                    loadout_json=loadout
+                                    registry=registry_items
+                                />
+                            }
+                            .into_any()
+                        }
                     }}
                 </div>
             </div>
@@ -332,21 +348,6 @@ fn states_tab() -> impl IntoView {
                 <span class="text-label-md text-on-surface-variant">"Engineer (soon)"</span>
                 <span class="text-label-sm text-outline">"—"</span>
             </div>
-        </div>
-    }
-}
-
-/// A3 — the Arsenal Forge rides T-159.27; the tab is present but a stub.
-#[cfg(target_arch = "wasm32")]
-fn arsenal_stub() -> impl IntoView {
-    view! {
-        <div class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/10 bg-white/5 px-6 py-16 text-center">
-            <span class="material-symbols-outlined text-4xl text-on-surface-variant">
-                "checkroom"
-            </span>
-            <p class="text-body-md text-on-surface-variant">
-                "Arsenal — the Smart Forge lands in the next slice."
-            </p>
         </div>
     }
 }

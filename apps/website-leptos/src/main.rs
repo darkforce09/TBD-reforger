@@ -12,6 +12,8 @@ mod approvals;
 mod asset_catalog;
 // T-159.26 — Attributes modal (AttributesModal.tsx port; wasm-gated internals).
 mod attributes;
+// T-159.27 — Arsenal loadout tab (ArsenalTab.tsx port; dumb Forge).
+mod arsenal;
 mod audit;
 mod auth;
 mod client;

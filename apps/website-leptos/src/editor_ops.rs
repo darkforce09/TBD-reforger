@@ -110,15 +110,9 @@ pub fn set_ctx(
 
 /* ───────────────────────── Mission Settings (T-159.26 — environment half) ───────────────────────── */
 
-/// The doc's terrain + environment fields, for the Mission Settings dialog.
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct MissionEnv {
-    pub terrain: String,
-    pub time: String,
-    pub weather: String,
-    pub view_distance: i64,
-    pub thermals: bool,
-}
+/// The doc's terrain + environment fields — relocated to the always-compiled [`crate::dto`] so the
+/// native `eden_chrome` view shell can build a default; re-exported here for wasm callers.
+pub use crate::dto::MissionEnv;
 
 /// Read terrain + environment from the doc meta (`small_maps_json` → `meta`).
 pub fn read_env() -> MissionEnv {
@@ -478,6 +472,42 @@ pub fn attrs_update_position(
             .unwrap_or_default();
         let b = map_engine_core::mission::compile::terrain_bounds(&terrain);
         core.update_slot_position(id, x, y, z, rotation, b[2], b[3]);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/// Read a slot's embedded `loadout` JSON (Arsenal picks) from `slots_json`. `None` when unset.
+pub fn read_loadout(id: &str) -> Option<String> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let map: serde_json::Value = serde_json::from_str(&core.slots_json()).ok()?;
+        let lo = map.get(id)?.get("loadout")?;
+        if lo.is_null() {
+            return None;
+        }
+        Some(lo.to_string())
+    })
+}
+
+/// Set/clear a slot's `loadout` (Arsenal commit) + the shared tail (one undo step). `None`/empty
+/// clears the key.
+pub fn set_loadout(id: &str, loadout_json: Option<String>) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.update_slot_loadout(id, loadout_json);
         true
     });
     if did {
