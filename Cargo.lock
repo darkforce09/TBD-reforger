@@ -5944,6 +5944,7 @@ dependencies = [
  "flate2",
  "jsonschema",
  "map-engine-core",
+ "png",
  "prettyplease",
  "regex",
  "schemars",

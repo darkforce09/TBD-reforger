@@ -68,6 +68,19 @@ function runStep(name, fn) {
   fn();
 }
 
+function runCargo(args) {
+  const label = `cargo xtask ${args.join(" ")}`;
+  const r = run("cargo", ["run", "-q", "-p", "xtask", "--", ...args]);
+  if (r.ok) {
+    pass(`${label} exit 0`);
+    return true;
+  }
+  fail(`${label} exit ${r.status}`);
+  const err = (r.stderr + r.stdout).trim();
+  if (err) console.log(err.split("\n").slice(-8).join("\n"));
+  return false;
+}
+
 function runNode(rel, args = [], env = {}) {
   const r = run("node", [join(repoRoot, rel), ...args], { env: { ...process.env, ...env } });
   if (r.ok) {
@@ -104,20 +117,21 @@ runStep("P5_props phase census (.4)", () => {
   runMake("map-verify-phase", { TERRAIN: "everon", PHASE: "P5_props" });
 });
 
+// T-165.4: the four label gates are Rust (`cargo xtask schema …`) — the .mjs versions are deleted.
 runStep("locations (.6)", () => {
-  runNode("scripts/map-assets/verify-locations.mjs", ["TERRAIN=everon"]);
+  runCargo(["schema", "locations", "--terrain", "everon"]);
 });
 
 runStep("height labels (.7)", () => {
-  runNode("scripts/map-assets/verify-height-labels.mjs", ["TERRAIN=everon"]);
+  runCargo(["schema", "height-labels", "--terrain", "everon"]);
 });
 
 runStep("town labels (.8)", () => {
-  runNode("scripts/map-assets/verify-town-labels.mjs", ["--zoom=-2", "TERRAIN=everon"]);
+  runCargo(["schema", "town-labels", "--terrain", "everon", "--zoom=-2"]);
 });
 
 runStep("road names (.9)", () => {
-  runNode("scripts/map-assets/verify-road-names.mjs", ["--zoom=0", "TERRAIN=everon"]);
+  runCargo(["schema", "road-names", "--terrain", "everon", "--zoom", "0"]);
 });
 
 runStep("wasm telemetry (L5)", () => {

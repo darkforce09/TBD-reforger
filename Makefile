@@ -143,25 +143,25 @@ verify-editorconfig: ## FMT-2: run editorconfig-checker from repo root (CODING_S
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cargo run -q -p xtask -- schema terrain-manifest --terrain everon
-	cd packages/tbd-schema && npm ci --silent && npm run verify-terrain-alignment
+	cargo run -q -p xtask -- schema terrain-alignment --terrain everon
 
 verify-terrain-strict: ## Full anchor alignment gate (T-091.0 GetSurfaceY DEM + anchors)
 	cargo run -q -p xtask -- schema terrain-manifest --terrain everon
-	cd packages/tbd-schema && npm ci --silent && node scripts/verify-terrain-alignment.mjs --strict
+	cargo run -q -p xtask -- schema terrain-alignment --terrain everon --strict
 
 # T-090.0.2 — map-object contract verifiers (run inside schema-validate). Real gates.
 .PHONY: map-object-enums-verify map-object-golden-verify map-glyphs-verify t090-spec-verify
 map-object-enums-verify: ## T-090.2 enum single-source: prefab-classify + golden prefabs + glyph kinds subset of map-object-enums
-	cd packages/tbd-schema && npm ci --silent && npm run verify-map-object-enums
+	cargo run -q -p xtask -- schema map-object-enums
 
 map-object-golden-verify: ## T-090.2 semantic golden gates S2–S9: prefabId resolve, dedup, closed-enum coverage
-	cd packages/tbd-schema && npm ci --silent && npm run verify-map-object-golden
+	cargo run -q -p xtask -- schema map-object-golden
 
 map-glyphs-verify: ## T-090.5 glyph coverage: every golden prefab render.iconKey has an SVG + manifest entry
-	cd packages/tbd-schema && npm ci --silent && npm run verify-map-glyphs
+	cargo run -q -p xtask -- schema map-glyphs
 
 t090-spec-verify: ## T-090 spec consistency grep gates (DoD): zoom space, picking, audit-closure, command existence
-	cd packages/tbd-schema && npm ci --silent && npm run verify-t090-specs
+	cargo run -q -p xtask -- schema t090-specs
 
 .PHONY: verify-t090-spec-consistency
 verify-t090-spec-consistency: t090-spec-verify ## Alias — spec corpus cites this name (DoD rule 7)

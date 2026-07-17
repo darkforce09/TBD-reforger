@@ -98,6 +98,35 @@ enum SchemaCmd {
         #[arg(long, default_value = "everon")]
         terrain: String,
     },
+    /// DEM vs GetSurfaceY anchor alignment (verify-terrain-alignment)
+    #[command(name = "terrain-alignment")]
+    TerrainAlignment {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+        #[arg(long)]
+        strict: bool,
+    },
+    /// Locations gates G2-G7 (verify-locations)
+    Locations {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+    },
+    /// Town-label gates (native rebuild on core importance_declutter)
+    #[command(name = "town-labels")]
+    TownLabels {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+        #[arg(long, default_value_t = -2.0, allow_hyphen_values = true)]
+        zoom: f64,
+    },
+    /// Road-name gates (native rebuild on core road_labels)
+    #[command(name = "road-names")]
+    RoadNames {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+        #[arg(long, default_value_t = 0.0)]
+        zoom: f64,
+    },
     /// Glyph coverage gate GL-G1..G6 (verify-map-glyphs-manifest)
     #[command(name = "map-glyphs")]
     MapGlyphs,
@@ -392,6 +421,14 @@ fn run() -> Result<u8> {
                 SchemaCmd::N10 => schema_gates::n10_tile_budget()?,
                 SchemaCmd::MapObjectGolden => golden_gate::map_object_golden()?,
                 SchemaCmd::HeightLabels { terrain } => label_gates::height_labels(&terrain)?,
+                SchemaCmd::TerrainAlignment { terrain, strict } => {
+                    label_gates::terrain_alignment(&terrain, strict)?
+                }
+                SchemaCmd::Locations { terrain } => label_gates::locations(&terrain)?,
+                SchemaCmd::TownLabels { terrain, zoom } => {
+                    label_gates::town_labels(&terrain, zoom)?
+                }
+                SchemaCmd::RoadNames { terrain, zoom } => label_gates::road_names(&terrain, zoom)?,
                 SchemaCmd::MapGlyphs => schema_gates::map_glyphs()?,
                 SchemaCmd::MapObjectEnums => schema_gates::map_object_enums()?,
                 SchemaCmd::TypeInventory => schema_gates::type_inventory()?,

@@ -5151,7 +5151,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-165.4",
+      "active_slice": "T-165.5",
       "spec": "docs/platform/t165_node_eradication.md",
       "stream": "infra",
       "targets": [
@@ -5214,7 +5214,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/platform/t165_node_eradication.md",
           "notes": "Golden S2-S14 + terrain/DEM + glyphs; schema-validate pure cargo."
         },

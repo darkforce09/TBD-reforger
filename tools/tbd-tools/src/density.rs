@@ -101,7 +101,7 @@ mod tests {
             .map(|i| ((i * 7 % 12800) as f64, (i * 13 % 12800) as f64))
             .collect();
         let (grid, _) = accumulate_corners(pts.iter().copied(), world);
-        let sum: u64 = grid.iter().map(u64::from).sum();
+        let sum: u64 = grid.iter().copied().map(u64::from).sum();
         assert_eq!(sum, 1000);
         assert_eq!(corner_grid_size(world), 401);
     }

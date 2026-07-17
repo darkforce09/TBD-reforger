@@ -4,10 +4,7 @@
   "description": "TBD Reforger platform shared contracts: Mission JSON schema, registry format, VOIP bridge contract, and golden missions.",
   "type": "module",
   "private": true,
-  "scripts": {
-    "verify-terrain-alignment": "node scripts/verify-terrain-alignment.mjs",
-    "verify-terrain": "node scripts/verify-terrain-alignment.mjs"
-  },
+  "scripts": {},
   "license": "UNLICENSED",
   "dependencies": {
     "ajv": "^8.17.1",
