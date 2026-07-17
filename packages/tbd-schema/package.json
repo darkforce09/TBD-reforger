@@ -6,8 +6,7 @@
   "private": true,
   "scripts": {
     "verify-terrain-alignment": "node scripts/verify-terrain-alignment.mjs",
-    "verify-terrain": "node scripts/verify-terrain-alignment.mjs",
-    "verify-map-glyphs": "node scripts/verify-map-glyphs-manifest.mjs"
+    "verify-terrain": "node scripts/verify-terrain-alignment.mjs"
   },
   "license": "UNLICENSED",
   "dependencies": {

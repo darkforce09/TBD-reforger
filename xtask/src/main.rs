@@ -9,6 +9,7 @@ mod constants;
 mod debug_cmd;
 mod gap;
 mod golden_gate;
+mod label_gates;
 mod mcp;
 mod prompt;
 mod registry;
@@ -91,6 +92,15 @@ enum SchemaCmd {
     /// Semantic golden gates S2-S9 + S11-S14 (verify-map-object-golden)
     #[command(name = "map-object-golden")]
     MapObjectGolden,
+    /// Height-label gates G2-G6 + ASL oracle (verify-height-labels; native restore)
+    #[command(name = "height-labels")]
+    HeightLabels {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+    },
+    /// Glyph coverage gate GL-G1..G6 (verify-map-glyphs-manifest)
+    #[command(name = "map-glyphs")]
+    MapGlyphs,
     /// map-object enum single-source (GAP-M5)
     #[command(name = "map-object-enums")]
     MapObjectEnums,
@@ -381,6 +391,8 @@ fn run() -> Result<u8> {
                 SchemaCmd::N6 => schema_gates::n6_sentence()?,
                 SchemaCmd::N10 => schema_gates::n10_tile_budget()?,
                 SchemaCmd::MapObjectGolden => golden_gate::map_object_golden()?,
+                SchemaCmd::HeightLabels { terrain } => label_gates::height_labels(&terrain)?,
+                SchemaCmd::MapGlyphs => schema_gates::map_glyphs()?,
                 SchemaCmd::MapObjectEnums => schema_gates::map_object_enums()?,
                 SchemaCmd::TypeInventory => schema_gates::type_inventory()?,
                 SchemaCmd::TerrainManifest { terrain } => schema_gates::terrain_manifest(&terrain)?,

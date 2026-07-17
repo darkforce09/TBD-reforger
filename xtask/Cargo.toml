@@ -13,6 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 anyhow = "1"
+flate2 = "1"
 clap = { version = "4", features = ["derive"] }
 regex = "1"
 serde = { version = "1", features = ["derive"] }
@@ -20,7 +21,7 @@ serde_json = { version = "1", features = ["preserve_order"] }
 walkdir = "2"
 jsonschema = { version = "0.46.10", default-features = false }
 tbd-tools = { path = "../tools/tbd-tools" }
-map-engine-core = { path = "../crates/map-engine-core" }
+map-engine-core = { path = "../crates/map-engine-core", features = ["png"] }
 typify = "0.7"
 schemars = "0.8"
 prettyplease = "0.2"
