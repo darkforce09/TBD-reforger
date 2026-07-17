@@ -149,7 +149,10 @@ pub async fn import_items(
             .iter()
             .map(|(_, it)| it.display_name.to_string())
             .collect();
-        let cats: Vec<String> = chunk.iter().map(|(_, it)| it.category.to_string()).collect();
+        let cats: Vec<String> = chunk
+            .iter()
+            .map(|(_, it)| it.category.to_string())
+            .collect();
         let kinds: Vec<String> = chunk.iter().map(|(_, it)| wire_str(&it.kind)).collect();
         let icons: Vec<Option<String>> = chunk
             .iter()
@@ -157,10 +160,7 @@ pub async fn import_items(
             .collect();
         let orders: Vec<i64> = chunk.iter().map(|(i, _)| *i as i64).collect();
         // v3 (T-068.10.2) metadata — all optional; v2 envelopes bind NULL columns.
-        let abstracts: Vec<Option<bool>> = chunk
-            .iter()
-            .map(|(_, it)| it.abstract_)
-            .collect();
+        let abstracts: Vec<Option<bool>> = chunk.iter().map(|(_, it)| it.abstract_).collect();
         let arsenal_types: Vec<Option<String>> = chunk
             .iter()
             .map(|(_, it)| it.arsenal_type.clone())
@@ -170,8 +170,10 @@ pub async fn import_items(
         let max_weights: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.max_weight_kg).collect();
         let max_volumes: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.max_volume_cm3).collect();
         let addons: Vec<Option<String>> = chunk.iter().map(|(_, it)| it.addon.clone()).collect();
-        let variant_ofs: Vec<Option<String>> =
-            chunk.iter().map(|(_, it)| it.variant_of.as_ref().map(|v| v.to_string())).collect();
+        let variant_ofs: Vec<Option<String>> = chunk
+            .iter()
+            .map(|(_, it)| it.variant_of.as_ref().map(|v| v.to_string()))
+            .collect();
         affected += sqlx::query(
             "INSERT INTO registry_items \
                (modpack_id, resource_name, display_name, category, kind, icon_url, sort_order, \
@@ -268,8 +270,7 @@ pub async fn import_compat(
     };
     // Last-wins dedupe by the edge key (duplicate keys in one statement abort
     // ON CONFLICT DO UPDATE).
-    let mut by_key: BTreeMap<(String, String, String), &registry_compat::Edge> =
-        BTreeMap::new();
+    let mut by_key: BTreeMap<(String, String, String), &registry_compat::Edge> = BTreeMap::new();
     for e in &env.edges {
         let ty = wire_str(&e.edge_type);
         *counts.histogram.entry(ty.clone()).or_insert(0) += 1;

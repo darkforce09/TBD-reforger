@@ -61,9 +61,17 @@ pub struct Gear {
     pub uniform: SlotValue,
     pub vest: SlotValue,
     pub helmet: SlotValue,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "double_option"
+    )]
     pub optic: Option<SlotValue>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "double_option"
+    )]
     pub magazine: Option<SlotValue>,
 }
 
@@ -76,9 +84,17 @@ pub struct Weapon {
     #[serde(rename = "slotType")]
     pub slot_type: String,
     pub weapon: String,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "double_option"
+    )]
     pub optic: Option<SlotValue>,
-    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    #[serde(
+        default,
+        skip_serializing_if = "Option::is_none",
+        with = "double_option"
+    )]
     pub magazine: Option<SlotValue>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attachments: Option<Vec<String>>,
@@ -121,12 +137,10 @@ mod double_option {
 mod tests {
     use super::*;
 
-    const V1: &str = include_str!(
-        "../../../../../packages/tbd-schema/registry/loadout-export.sample.json"
-    );
-    const V2: &str = include_str!(
-        "../../../../../packages/tbd-schema/registry/loadout-export.v2.sample.json"
-    );
+    const V1: &str =
+        include_str!("../../../../../packages/tbd-schema/registry/loadout-export.sample.json");
+    const V2: &str =
+        include_str!("../../../../../packages/tbd-schema/registry/loadout-export.v2.sample.json");
 
     /// Value-level round-trip: parse → serialize → parse; the two JSON values must be EQUAL
     /// (key order irrelevant; null-vs-absent must be preserved — the double-Option contract).
