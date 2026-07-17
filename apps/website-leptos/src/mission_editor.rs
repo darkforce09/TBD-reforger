@@ -66,9 +66,14 @@ pub fn MissionEditorPage() -> impl IntoView {
     let attrs_open = RwSignal::new(None::<String>);
     let doc_tick = RwSignal::new(0u64);
     let settings_open = RwSignal::new(false);
+    // T-167 — Faction Manager dialog toggle (launched from the Factions dock "Manage" button).
+    let fm_open = RwSignal::new(false);
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
     let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
+    // T-167 — the compat edge feed for the Smart Arsenal (optic/magazine edge rows + validation).
+    // Fetched once alongside /registry; starts Loading, degrades to Unavailable on error.
+    let compat = RwSignal::new(crate::arsenal_rules::CompatFeed::default());
     // T-159.26 — server hydrate / conflict / dirty (data-safety). `conflict` holds an offered
     // server payload when local IDB content diverges; `dirty` is the unsaved-changes flag;
     // `current_semver` tracks the adopted server version.
@@ -136,6 +141,29 @@ pub fn MissionEditorPage() -> impl IntoView {
                         catalog.set(CatalogState::Ready(build_catalog_tree(&r.data)));
                     }
                     Err(_) => catalog.set(CatalogState::Failed),
+                }
+            }
+        });
+
+        // T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation). Own
+        // fetch so a compat outage degrades the Arsenal to dumb dropdowns without touching /registry.
+        spawn_local({
+            use crate::arsenal_rules::{CompatFeed, CompatGraph, CompatStatus};
+            async move {
+                match crate::client::api_get::<crate::dto::RegistryCompatResponse>(
+                    auth,
+                    "/registry/compat",
+                )
+                .await
+                {
+                    Ok(r) => compat.set(CompatFeed {
+                        status: CompatStatus::Ready,
+                        graph: CompatGraph::from_edges(&r.data),
+                    }),
+                    Err(_) => compat.set(CompatFeed {
+                        status: CompatStatus::Unavailable,
+                        graph: CompatGraph::default(),
+                    }),
                 }
             }
         });
@@ -1061,7 +1089,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     />
                 </div>
                 <div class="absolute bottom-0 right-0 top-12 w-80">
-                    <crate::eden_chrome::DockRight catalog />
+                    <crate::eden_chrome::DockRight catalog fm_open />
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
                     <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count />
@@ -1069,10 +1097,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture.
                 <div class="pointer-events-auto">
-                    <crate::attributes::AttributesModal attrs_open doc_tick registry_items />
+                    <crate::attributes::AttributesModal attrs_open doc_tick registry_items compat />
                 </div>
                 <div class="pointer-events-auto">
                     <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
+                    <crate::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
                 </div>
                 // T-159.26 — local-vs-server conflict prompt (React's ConflictDialog). Renders only
                 // when `conflict` is Some (a divergent local doc on cold boot). Data-safety: the

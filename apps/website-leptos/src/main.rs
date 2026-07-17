@@ -14,6 +14,8 @@ mod asset_catalog;
 mod attributes;
 // T-159.27 — Arsenal loadout tab (ArsenalTab.tsx port; dumb Forge).
 mod arsenal;
+// T-167 — Smart-Arsenal domain core (arsenalRules.ts + arsenalDollModel.ts port; pure/native-tested).
+mod arsenal_rules;
 mod audit;
 mod auth;
 mod client;
@@ -32,6 +34,8 @@ mod editor_ops;
 // placeholders). Ungated: it holds no wasm-only types (the doc-driving on:click bodies are
 // cfg-gated inside the closures), so the native view shell compiles it too.
 mod eden_chrome;
+// T-167 — Faction Manager dialog (FactionManagerDialog.tsx / T-153 port; /factions CRUD).
+mod faction_manager;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
 // like the doc host below.
 #[cfg(target_arch = "wasm32")]

@@ -1,17 +1,23 @@
-//! Arsenal tab — the loadout Forge (the ArsenalTab.tsx + arsenalRules.ts port, T-159.27). Replaces
-//! the T-159.26 disabled stub with a real, doc-backed loadout editor: a dropdown per gear row,
-//! sourced from the flat `/registry` filtered by item kind, persisted on the slot via
+//! Arsenal tab — the **Smart Forge** (ArsenalTab.tsx + arsenalRules.ts + SoldierSilhouette.tsx
+//! port, T-159.27 → T-167). A doc-backed loadout editor: the 14 loadout rows (incl. the compat
+//! `edge` rows optic/magazine keyed off the picked weapon), a clickable **SVG paper-doll**, an
+//! honest **weight** readout, and per-row **compat validation** — persisted on the slot via
 //! `editor_ops::set_loadout` (one undo step per pick) as the canonical `SlotLoadoutV2` shape (the
 //! same `picksToLoadout` output the mod equip reads), so a pick round-trips through Save/Export.
 //!
-//! **Scope (the "dumb Forge", T-068.4 essence):** the `kind`-sourced rows only — clothing +
-//! weapons picked from the flat catalog. The compat-worker `edge` rows (optic / magazine feeds
-//! keyed off the weapon family) + the clickable paper-doll + weight/validation + the Faction
-//! Manager fold forward to a Smart-Forge follow-on; the doc contract (`SlotLoadoutV2`) is the same,
-//! so those add rows/panels without changing what's persisted here.
+//! The domain decisions (rows, compat graph, option building, validation, doll regions, weight)
+//! live in [`crate::arsenal_rules`] (pure, native-tested). This module is the UI + the persisted
+//! serialization ([`picks_to_loadout`] / [`loadout_to_picks`], unchanged since the dumb Forge:
+//! optic/magazine ride `weapons[0]` as sticky sub-fields).
 #![allow(dead_code)]
+use std::collections::HashMap;
+
 use leptos::prelude::*;
 
+use crate::arsenal_rules::{
+    self as rules, format_loadout_weight, index_by_name, loadout_weight, row_options,
+    validate_loadout, CompatFeed,
+};
 use crate::dto::RegistryItem;
 
 const CONTROL: &str = "w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface outline-none transition-colors focus:border-primary/60";
@@ -105,7 +111,7 @@ const ROWS: &[Row] = &[
 
 /// `loadoutToPicks` — read the slot's `SlotLoadoutV2` JSON into a per-key `resource_name` map. An
 /// absent loadout → all-empty picks. Weapons resolve by `slotIndex`; wear by key.
-fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap<String, String> {
+pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap<String, String> {
     let mut picks = std::collections::HashMap::new();
     let Some(json) = loadout_json else {
         return picks;
@@ -152,7 +158,7 @@ fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap<Str
 /// the doc field). Wear map + weapons array; primary re-emits its sticky `optic`/`magazine` (String
 /// or null) and the always-empty `attachments` (React hardcodes `[]` until the attachments slice).
 /// `names` resolves `resource_name` → `display_name` for the `summary` (falls back to the raw name).
-fn picks_to_loadout(
+pub fn picks_to_loadout(
     picks: &std::collections::HashMap<String, String>,
     names: &std::collections::HashMap<String, String>,
 ) -> Option<String> {
@@ -209,113 +215,230 @@ fn picks_to_loadout(
     Some(loadout.to_string())
 }
 
-/// The Arsenal tab — mounted in the Attributes modal (T-159.26 seam). `registry` is the flat
-/// catalog (fetched once by the editor); `slot_id` + `loadout_json` come from the modal's re-read.
+/// The Smart Arsenal tab — mounted in the Attributes modal (T-159.26 seam). `registry` is the flat
+/// catalog; `compat` the edge feed (both fetched once by the editor); `slot_id` + `loadout_json`
+/// come from the modal's re-read.
 #[component]
 pub fn ArsenalTab(
     slot_id: String,
-    /// The slot's current `loadout` JSON (from `editor_ops::read_loadout`), for the dropdowns.
+    /// The slot's current `loadout` JSON (from `editor_ops::read_loadout`).
     loadout_json: Option<String>,
-    /// The flat registry gear rows (kind-filtered client-side), `None` while loading.
+    /// The flat registry gear rows, `None` while loading.
     registry: RwSignal<Option<Vec<RegistryItem>>>,
+    /// The compat edge feed (optic/magazine rows + validation).
+    compat: RwSignal<CompatFeed>,
 ) -> impl IntoView {
     let id = StoredValue::new(slot_id);
-    let picks = StoredValue::new(loadout_to_picks(loadout_json.as_deref()));
-    // `resource_name` → `display_name` for the loadout `summary` (rebuilt every commit from the
-    // live catalog; empty until the registry resolves, matching the "Loading catalog…" gate).
-    let names = StoredValue::new(std::collections::HashMap::<String, String>::new());
+    // Reactive picks so the doll, weight, validation, and dependent edge rows all re-render live.
+    let picks = RwSignal::new(loadout_to_picks(loadout_json.as_deref()));
+    // The rail/doll active region (highlighted row + hotspot). Default to the primary weapon.
+    let active_key = RwSignal::new("primary".to_string());
     #[cfg(not(target_arch = "wasm32"))]
-    let _ = (id, picks, names);
+    let _ = id;
 
-    // Commit a single row change: update the picks map, rebuild the loadout, persist.
-    let commit = move |key: &'static str, value: String| {
+    // Persist the current picks as the canonical V2 loadout (one undo step). wasm-only.
+    let persist = move |map: &HashMap<String, String>, items: &[RegistryItem]| {
         #[cfg(target_arch = "wasm32")]
         {
-            let mut map = picks.get_value();
-            if value.is_empty() {
-                map.remove(key);
-            } else {
-                map.insert(key.to_string(), value);
-            }
-            crate::editor_ops::set_loadout(
-                &id.get_value(),
-                picks_to_loadout(&map, &names.get_value()),
-            );
+            let names: HashMap<String, String> = items
+                .iter()
+                .map(|it| (it.resource_name.clone(), it.display_name.clone()))
+                .collect();
+            crate::editor_ops::set_loadout(&id.get_value(), picks_to_loadout(map, &names));
         }
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = (key, value);
+        let _ = (map, items);
     };
 
     view! {
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-2">
             {move || match registry.get() {
-                None => {
-                    view! {
-                        <p class="text-label-sm normal-case text-outline">"Loading catalog…"</p>
-                    }
-                        .into_any()
-                }
+                None => view! {
+                    <p class="text-label-sm normal-case text-outline">"Loading catalog…"</p>
+                }.into_any(),
                 Some(items) => {
-                    // Feed the summary resolver from the resolved catalog (one pass, ignored on
-                    // native where `commit` is a no-op).
-                    #[cfg(target_arch = "wasm32")]
-                    names.set_value(
-                        items
-                            .iter()
-                            .map(|it| (it.resource_name.clone(), it.display_name.clone()))
-                            .collect(),
-                    );
                     let items = StoredValue::new(items);
-                    ROWS.iter()
-                        .map(|row| {
-                            let current = picks
-                                .get_value()
-                                .get(row.key)
-                                .cloned()
-                                .unwrap_or_default();
-                            // Options for this row: registry items of the row's kind, non-abstract,
-                            // sorted by display_name; a live pick never blanks (kept even if abstract).
-                            let mut opts: Vec<(String, String)> = items
-                                .get_value()
-                                .iter()
-                                .filter(|it| {
-                                    it.kind == row.kind
-                                        && (it.r#abstract != Some(true)
-                                            || it.resource_name == current)
-                                })
-                                .map(|it| (it.resource_name.clone(), it.display_name.clone()))
-                                .collect();
-                            opts.sort_by(|a, b| a.1.cmp(&b.1));
-                            let key = row.key;
-                            view! {
-                                <label class="flex flex-col gap-1">
-                                    <span class="text-label-sm uppercase tracking-wider text-outline">
-                                        {row.label}
-                                    </span>
-                                    <select
-                                        prop:value=current.clone()
-                                        on:change=move |ev| commit(key, event_target_value(&ev))
-                                        class=CONTROL
-                                    >
-                                        <option value="">"— None —"</option>
-                                        {opts
-                                            .into_iter()
-                                            .map(|(value, label)| {
-                                                view! { <option value=value>{label}</option> }
-                                            })
-                                            .collect_view()}
-                                    </select>
-                                </label>
-                            }
-                        })
-                        .collect_view()
-                        .into_any()
+                    view! {
+                        <div class="grid grid-cols-[1fr_300px] gap-4">
+                            // LEFT: the 14 compat-aware rows + weight + validation.
+                            <div class="flex max-h-[64vh] flex-col gap-2.5 overflow-y-auto pr-1">
+                                {move || {
+                                    let feed = compat.get();
+                                    let map = picks.get();
+                                    let its = items.get_value();
+                                    let idx = index_by_name(&its);
+                                    let errs = validate_loadout(&map, feed.ready_graph(), feed.status);
+                                    rules::LOADOUT_ROWS.iter().map(|row| {
+                                        let current = map.get(row.key).cloned().unwrap_or_default();
+                                        let opts = row_options(
+                                            row, &current, &map, &its, &idx, feed.ready_graph(),
+                                        );
+                                        let err = errs.iter().find(|e| e.key == row.key).map(|e| e.message.clone());
+                                        let key = row.key;
+                                        let is_active = active_key.get() == row.key;
+                                        let ring = if is_active { "ring-1 ring-primary/60" } else { "" };
+                                        let on_change = move |ev: leptos::ev::Event| {
+                                            let v = event_target_value(&ev);
+                                            picks.update(|m| {
+                                                if v.is_empty() { m.remove(key); } else { m.insert(key.to_string(), v.clone()); }
+                                            });
+                                            active_key.set(key.to_string());
+                                            persist(&picks.get_untracked(), &items.get_value());
+                                        };
+                                        view! {
+                                            <label
+                                                class=format!("flex flex-col gap-1 rounded-md p-1 {ring}")
+                                                on:click=move |_| active_key.set(key.to_string())
+                                            >
+                                                <span class="text-label-sm uppercase tracking-wider text-outline">{row.label}</span>
+                                                <select prop:value=current.clone() on:change=on_change class=CONTROL>
+                                                    <option value="">"— None —"</option>
+                                                    {opts.into_iter().map(|o| {
+                                                        view! { <option value=o.value.clone()>{o.label}</option> }
+                                                    }).collect_view()}
+                                                </select>
+                                                {err.map(|m| view! {
+                                                    <span class="text-label-sm normal-case text-error">{m}</span>
+                                                })}
+                                            </label>
+                                        }
+                                    }).collect_view()
+                                }}
+                            </div>
+                            // RIGHT: the SVG paper-doll + weight readout.
+                            <div class="flex flex-col gap-2">
+                                {paper_doll(picks, active_key)}
+                                {move || {
+                                    let its = items.get_value();
+                                    let idx = index_by_name(&its);
+                                    let w = format_loadout_weight(&loadout_weight(&picks.get(), &idx));
+                                    view! {
+                                        <p class="text-center font-mono text-label-md tabular-nums text-on-surface-variant">{w}</p>
+                                    }
+                                }}
+                            </div>
+                        </div>
+                    }.into_any()
                 }
             }}
-            <p class="mt-1 text-label-sm normal-case text-outline">
-                "Compat-validated optics/magazines, the paper-doll, and weight land with the Smart Forge follow-on."
-            </p>
         </div>
+    }
+}
+
+/// The Mode-D 2D **SVG paper-doll** (SoldierSilhouette.tsx port). Keyboard-accessible
+/// `<g role="button">` hotspots per `DOLL_REGIONS` (optic/magazine nest on the rifle group); three
+/// visual states — empty (dashed), equipped (`primary/15`), active (`primary/25`). A hotspot click
+/// sets `active_key` (two-way synced with the row list); it never mutates the loadout itself.
+fn paper_doll(
+    picks: RwSignal<HashMap<String, String>>,
+    active_key: RwSignal<String>,
+) -> impl IntoView {
+    // (key, label, svg path/rect element) — geometry adapted from the React ref (viewBox 360×640).
+    // Each region is one `<g>` hotspot; `shape` is its clickable silhouette.
+    struct Region {
+        key: &'static str,
+        shape: &'static str, // an SVG element string (rect/path) sans fill/stroke.
+    }
+    // Ordered back-to-front (paint order): backpack, body, wear, then the rifle group last.
+    const REGIONS: &[Region] = &[
+        Region {
+            key: "backpack",
+            shape: r#"<rect x="84" y="165" width="44" height="120" rx="12"/>"#,
+        },
+        Region {
+            key: "launcher",
+            shape: r#"<rect x="246" y="72" width="18" height="120" rx="6" transform="rotate(28 255 132)"/>"#,
+        },
+        Region {
+            key: "jacket",
+            shape: r#"<rect x="140" y="132" width="80" height="150" rx="10"/>"#,
+        },
+        Region {
+            key: "pants",
+            shape: r#"<rect x="146" y="282" width="68" height="196" rx="8"/>"#,
+        },
+        Region {
+            key: "boots",
+            shape: r#"<rect x="146" y="484" width="68" height="40" rx="6"/>"#,
+        },
+        Region {
+            key: "handwear",
+            shape: r#"<path d="M108 288 h22 v22 h-22 z M230 288 h22 v22 h-22 z"/>"#,
+        },
+        Region {
+            key: "vest",
+            shape: r#"<rect x="150" y="150" width="60" height="64" rx="6"/>"#,
+        },
+        Region {
+            key: "armoredVest",
+            shape: r#"<rect x="142" y="142" width="76" height="110" rx="8"/>"#,
+        },
+        Region {
+            key: "headCover",
+            shape: r#"<circle cx="180" cy="92" r="26"/>"#,
+        },
+        Region {
+            key: "throwable",
+            shape: r#"<rect x="112" y="326" width="26" height="30" rx="4"/>"#,
+        },
+        Region {
+            key: "handgun",
+            shape: r#"<rect x="222" y="312" width="26" height="34" rx="4"/>"#,
+        },
+    ];
+    // The rifle group (primary + nested optic/magazine), drawn front-most.
+    const RIFLE: &[Region] = &[
+        Region {
+            key: "primary",
+            shape: r#"<rect x="96" y="322" width="150" height="14" rx="3"/>"#,
+        },
+        Region {
+            key: "optic",
+            shape: r#"<rect x="150" y="306" width="26" height="12" rx="3"/>"#,
+        },
+        Region {
+            key: "magazine",
+            shape: r#"<path d="M168 336 q6 26 18 30 l6 -4 q-10 -6 -12 -28 z"/>"#,
+        },
+    ];
+
+    let hotspot = move |r: &'static Region| {
+        let key = r.key;
+        let cls = move || {
+            let equipped = picks.with(|m| m.get(key).map(|v| !v.is_empty()).unwrap_or(false));
+            let active = active_key.get() == key;
+            let base = "cursor-pointer transition-colors";
+            if active {
+                format!("{base} fill-primary/25 stroke-primary [stroke-width:2.5]")
+            } else if equipped {
+                format!("{base} fill-primary/15 stroke-primary/60 [stroke-width:1.5]")
+            } else {
+                format!("{base} fill-on-surface/5 stroke-outline/50 [stroke-width:1.2] [stroke-dasharray:4_3]")
+            }
+        };
+        let label = rules::row(key).map(|r| r.label).unwrap_or(key);
+        // inject the shape verbatim; add the reactive class on the group.
+        view! {
+            <g
+                role="button"
+                tabindex="0"
+                aria-label=label
+                aria-pressed=move || (active_key.get() == key).to_string()
+                class=cls
+                on:click=move |ev: leptos::ev::MouseEvent| { ev.stop_propagation(); active_key.set(key.to_string()); }
+                inner_html=r.shape
+            ></g>
+        }
+    };
+
+    view! {
+        <svg viewBox="0 0 360 640" class="mx-auto h-[52vh] w-full" role="group" aria-label="Loadout paper-doll">
+            // decorative head/neck (non-clickable)
+            <circle cx="180" cy="92" r="22" class="fill-on-surface/10"></circle>
+            <rect x="170" y="112" width="20" height="18" class="fill-on-surface/10"></rect>
+            {REGIONS.iter().map(hotspot).collect_view()}
+            {RIFLE.iter().map(hotspot).collect_view()}
+        </svg>
     }
 }
 

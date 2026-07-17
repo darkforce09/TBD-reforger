@@ -367,6 +367,98 @@ async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
     Ok(hits)
 }
 
+/// T-167 Smart-Arsenal tap: the committed registry golden **augmented** with a compat optic +
+/// magazine (kind + weight), plus `/registry/compat` edges linking the golden's M16A2 to them and
+/// `/factions` from its golden. Inline JSON so the r_api-pinned `GET__registry.json` stays byte-exact.
+/// `(registry_hits, compat_hits, faction_post_hits)`.
+async fn serve_arsenal_golden(
+    page: &Arc<Page>,
+    m16a2: &str,
+) -> Result<(Arc<StdMutex<u64>>, Arc<StdMutex<u64>>, Arc<StdMutex<u64>>)> {
+    const OPTIC: &str = "{ARSENAL_OPTIC}Prefabs/Weapons/Attachments/Optic_ACOG.et";
+    const MAG: &str = "{ARSENAL_MAG}Prefabs/Weapons/Magazines/Mag_STANAG_30.et";
+    let root = repo_root();
+    let mut registry: Value = serde_json::from_str(&std::fs::read_to_string(
+        root.join(".ai/artifacts/t159_gates/fixtures/api/GET__registry.json"),
+    )?)?;
+    let mp = registry["modpack_id"].clone();
+    let mk = |rn: &str, name: &str, kind: &str, wkg: f64| {
+        json!({
+            "id": format!("arsenal-{kind}"), "modpack_id": mp.clone(),
+            "resource_name": rn, "display_name": name, "category": "Weapons/Attachments",
+            "kind": kind, "weight_kg": wkg, "sort_order": 900,
+            "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"
+        })
+    };
+    if let Some(arr) = registry["data"].as_array_mut() {
+        arr.push(mk(OPTIC, "ACOG", "gear_optic", 0.6));
+        arr.push(mk(MAG, "STANAG 30rd", "gear_magazine", 0.45));
+    }
+    let compat = json!({
+        "data": [
+            { "id": "e1", "modpack_id": mp.clone(), "from_node": m16a2, "to_node": OPTIC,
+              "edge_type": "optic_on_weapon", "evidence": "",
+              "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" },
+            { "id": "e2", "modpack_id": mp.clone(), "from_node": m16a2, "to_node": MAG,
+              "edge_type": "mag_in_weapon", "evidence": "",
+              "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z" },
+        ],
+        "etag": "W/\"arsenal-compat\"", "modpack_id": mp, "modpack_version": "test",
+    });
+    let factions: Value = serde_json::from_str(&std::fs::read_to_string(
+        root.join(".ai/artifacts/t159_gates/fixtures/api/GET__factions.json"),
+    )?)?;
+
+    let reg_hits = Arc::new(StdMutex::new(0u64));
+    let compat_hits = Arc::new(StdMutex::new(0u64));
+    let post_hits = Arc::new(StdMutex::new(0u64));
+    page.send(
+        "Fetch.enable",
+        json!({ "patterns": [{ "urlPattern": "*" }] }),
+    )
+    .await?;
+    let mut paused = page.on_event("Fetch.requestPaused").await;
+    let rp = Arc::clone(page);
+    let (rh, ch, ph) = (
+        Arc::clone(&reg_hits),
+        Arc::clone(&compat_hits),
+        Arc::clone(&post_hits),
+    );
+    tokio::spawn(async move {
+        while let Some(p) = paused.recv().await {
+            let Some(request_id) = p["requestId"].as_str() else {
+                continue;
+            };
+            let u = p["request"]["url"].as_str().unwrap_or_default();
+            let method = p["request"]["method"].as_str().unwrap_or("GET");
+            let res = if u.contains("/api/v1/registry/compat") {
+                *ch.lock().unwrap() += 1;
+                rp.fulfill_json(request_id, 200, &compat).await
+            } else if u.contains("/api/v1/registry") {
+                *rh.lock().unwrap() += 1;
+                rp.fulfill_json(request_id, 200, &registry).await
+            } else if u.contains("/api/v1/factions") {
+                if method == "POST" || method == "PUT" {
+                    *ph.lock().unwrap() += 1;
+                    rp.fulfill_json(request_id, 201, &json!({
+                        "id": "fnew", "owner_id": "smoke", "side": "BLUFOR", "name": "Smoke Bn",
+                        "doc": { "side": "BLUFOR", "name": "Smoke Bn", "roles": [], "vehicles": [] },
+                        "created_at": "2026-01-01T00:00:00Z", "updated_at": "2026-01-01T00:00:00Z"
+                    })).await
+                } else {
+                    rp.fulfill_json(request_id, 200, &factions).await
+                }
+            } else if u.contains("/api/v1/") {
+                rp.fulfill_json(request_id, 401, &json!({})).await
+            } else {
+                rp.continue_request(request_id).await
+            };
+            let _ = res;
+        }
+    });
+    Ok((reg_hits, compat_hits, post_hits))
+}
+
 /* ───────────────────────────── the smokes ───────────────────────────── */
 
 /// smoke_editor.mjs — T-159.15: canvas mounts + engine renders + wheel-zoom changes the view.
@@ -1465,7 +1557,7 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
     const M16A2: &str = "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et";
     let h = Harness::new(dist, 5314, 9374, None, None, &[]).await?;
     let run = async {
-        let hits = serve_registry_golden(&h.page).await?;
+        let (hits, compat_hits, post_hits) = serve_arsenal_golden(&h.page, M16A2).await?;
         h.page.navigate(&h.url(path)).await?;
         h.page
             .wait_for("!!document.querySelector('canvas')", 80, 250)
@@ -1559,11 +1651,77 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
                 "r5_undoClears".into(),
                 json!(h.page.wait_for("!JSON.parse(window.__editorCommands.compile_save_json()).editor.slots.some(s => s.loadout)", 20, 250).await?),
             );
+
+            // R6 (T-167 compat) — R5's undo bumped `doc_tick`, which re-creates the modal body and
+            // resets the tab to Identity; re-open the Arsenal tab, re-pick primary, then the
+            // compat-fed Optic row lists the edge's ACOG; pick it → saved weapons[0] carries `optic`.
+            const OPTIC: &str = "{ARSENAL_OPTIC}Prefabs/Weapons/Attachments/Optic_ACOG.et";
+            eval(&h.page, "[...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Arsenal').click()").await?;
+            h.page
+                .wait_for("document.querySelectorAll('select').length >= 12", 40, 250)
+                .await?;
+            let pick_row = |span: &str, val: &str| {
+                format!(
+                    "(() => {{ const sel=[...document.querySelectorAll('label')].find(l=>l.querySelector('span')?.textContent==={span:?})?.querySelector('select'); if(!sel)return false; sel.value={val:?}; sel.dispatchEvent(new Event('change',{{bubbles:true}})); return true }})()"
+                )
+            };
+            eval(&h.page, &pick_row("Primary", M16A2)).await?;
+            checks.insert(
+                "r6_compatFetched".into(),
+                json!(*compat_hits.lock().unwrap() >= 1),
+            );
+            let optic_json = serde_json::to_string(OPTIC)?;
+            checks.insert(
+                "r6_opticListed".into(),
+                json!(h.page.wait_for(&format!("[...document.querySelectorAll('label')].some(l => l.querySelector('span')?.textContent === 'Optic' && [...l.querySelector('select').options].some(o => o.value === {optic_json}))"), 40, 250).await?),
+            );
+            eval(&h.page, &pick_row("Optic", OPTIC)).await?;
+            checks.insert(
+                "r6_opticSaved".into(),
+                json!(h.page.wait_for("(() => { const s=(JSON.parse(window.__editorCommands.compile_save_json()).editor?.slots||[]).find(s=>s.loadout); return !!(s && s.loadout.weapons && s.loadout.weapons[0] && s.loadout.weapons[0].optic) })()", 40, 250).await?),
+            );
+
+            // R7 (paper-doll) — the SVG doll renders keyboard hotspots; clicking Helmet activates it.
+            checks.insert(
+                "r7_dollHotspots".into(),
+                json!(
+                    eval_i64(
+                        &h.page,
+                        "document.querySelectorAll('svg [role=\"button\"]').length"
+                    )
+                    .await?
+                        >= 8
+                ),
+            );
+            eval(&h.page, "document.querySelector('svg [aria-label=\"Helmet\"]')?.dispatchEvent(new MouseEvent('click',{bubbles:true}))").await?;
+            checks.insert(
+                "r7_dollActive".into(),
+                json!(h.page.wait_for("document.querySelector('svg [aria-label=\"Helmet\"]')?.getAttribute('aria-pressed') === 'true'", 20, 250).await?),
+            );
+
+            // R8 (weight) — the honest weight readout renders (contains a kg figure).
+            checks.insert(
+                "r8_weightReadout".into(),
+                json!(eval_bool(&h.page, "[...document.querySelectorAll('p')].some(p => /\\bkg\\b/.test(p.textContent||''))").await?),
+            );
+
+            // R9 (Faction Manager) — close the modal, open the manager from the Factions dock, and a
+            // create round-trips a POST to /factions.
+            key_chord(&h.page, "Escape", "Escape", 0, 27).await?;
+            eval(&h.page, "document.querySelector('[aria-label=\"Manage factions\"]')?.dispatchEvent(new MouseEvent('click',{bubbles:true}))").await?;
+            checks.insert(
+                "r9_fmOpens".into(),
+                json!(h.page.wait_for("[...document.querySelectorAll('h2')].some(h => h.textContent === 'Faction Manager')", 40, 250).await?),
+            );
+            eval(&h.page, "(() => { const i=document.querySelector('input[placeholder^=\"e.g.\"]'); if(i){ i.value='Smoke Bn'; i.dispatchEvent(new Event('input',{bubbles:true})); } document.querySelector('[aria-label=\"Save faction\"]')?.dispatchEvent(new MouseEvent('click',{bubbles:true})); })()").await?;
+            cdp::sleep_ms(600).await; // let the POST round-trip through the Fetch tap
+            checks.insert("r9_fmPost".into(), json!(*post_hits.lock().unwrap() >= 1));
         }
         let registry_hits = *hits.lock().unwrap();
-        let pass = ready && h.no_panics() && checks_pass(&checks, 9);
+        let pass = ready && h.no_panics() && checks_pass(&checks, 17);
         print_verdict(&json!({
             "gate": "editor-arsenal-smoke", "path": path, "registryHits": registry_hits,
+            "compatHits": *compat_hits.lock().unwrap(), "factionPosts": *post_hits.lock().unwrap(),
             "checks": checks, "panics": h.panics_head(), "pass": pass,
         }));
         Ok::<u8, anyhow::Error>(to_code(pass))

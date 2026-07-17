@@ -392,16 +392,24 @@ pub fn DockLeft(
 }
 
 /// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
-/// onto the map to place their slot.
-///
-/// Scope (O7): no search box, no Faction Manager, no Vehicles/Markers/Objectives tabs.
+/// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 #[component]
-pub fn DockRight(catalog: RwSignal<CatalogState>) -> impl IntoView {
+pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> impl IntoView {
     view! {
         <aside class=DOCK_R>
-            <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                "Factions"
-            </h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                    "Factions"
+                </h2>
+                <button
+                    type="button"
+                    aria-label="Manage factions"
+                    on:click=move |_| fm_open.set(true)
+                    class="rounded-md px-1.5 py-0.5 text-label-sm font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/15"
+                >
+                    "Manage"
+                </button>
+            </div>
             <p class="mt-1 text-label-sm normal-case text-outline">
                 "Drag a role onto the map to place its slot."
             </p>

@@ -23,6 +23,8 @@ pub fn AttributesModal(
     doc_tick: RwSignal<u64>,
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
     registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    /// T-167 — compat edge feed for the Smart Arsenal (optic/magazine rows + validation).
+    compat: RwSignal<crate::arsenal_rules::CompatFeed>,
 ) -> impl IntoView {
     // Esc closes (React Dialog behavior); the editor's own keydown handler skips editable fields,
     // so this window listener is the one Esc path.
@@ -35,15 +37,19 @@ pub fn AttributesModal(
         });
         on_cleanup(move || esc.remove());
     }
+    // T-167 — the active tab lives HERE (not in `modal_view`), so a doc change (a loadout pick
+    // bumps `doc_tick`, re-running this closure and rebuilding the body) no longer snaps the user
+    // back to Identity. Without this, every Arsenal pick kicked you off the Arsenal tab.
+    let tab = RwSignal::new(1usize);
     move || {
         let id = attrs_open.get()?;
         let _ = doc_tick.get(); // re-read fields on every doc change (undo/redo/drag)
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = (&id, registry_items);
+        let _ = (&id, registry_items, compat, tab);
         #[cfg(target_arch = "wasm32")]
         {
             match crate::editor_ops::read_attrs(&id) {
-                Some(attrs) => Some(modal_view(attrs, registry_items)),
+                Some(attrs) => Some(modal_view(attrs, registry_items, compat, tab)),
                 None => {
                     // Slot undone away while open → close (React's `slot &&` render guard).
                     crate::editor_ops::close_attributes();
@@ -62,8 +68,9 @@ pub fn AttributesModal(
 fn modal_view(
     attrs: crate::editor_ops::SlotAttrs,
     registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
+    compat: RwSignal<crate::arsenal_rules::CompatFeed>,
+    tab: RwSignal<usize>,
 ) -> AnyView {
-    let tab = RwSignal::new(1usize); // React useState('Identity')
     let slot_id = StoredValue::new(attrs.id.clone());
     let id = StoredValue::new(attrs.id.clone());
     let attrs = StoredValue::new(attrs);
@@ -81,7 +88,11 @@ fn modal_view(
             class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
             on:click=move |_| crate::editor_ops::close_attributes()
         ></div>
-        <div class="glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
+        <div class=move || {
+            // T-167 — the Smart Arsenal (tab 3) needs the wide 2-column doll layout; other tabs stay compact.
+            let width = if tab.get() == 3 { "max-w-5xl" } else { "max-w-lg" };
+            format!("glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] {width} -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200")
+        }>
             <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
                 <div class="min-w-0">
                     <h2 class="text-headline-sm text-on-surface">"Attributes"</h2>
@@ -133,6 +144,7 @@ fn modal_view(
                                     slot_id=slot_id.get_value()
                                     loadout_json=loadout
                                     registry=registry_items
+                                    compat=compat
                                 />
                             }
                             .into_any()

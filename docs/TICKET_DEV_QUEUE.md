@@ -23,14 +23,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-167 — Leptos smart Arsenal port (paper-doll + compat Forge)
-
-- **Slice spec:** `.ai/artifacts/missed_items_handoff.md`
-- **Program hub:** `.ai/artifacts/missed_items_handoff.md`
-- **Branch:** `main`
-- **Targets:** website
-- **Summary:** Port the shipped React Smart Arsenal (T-068.10.2–.10.8) into the Leptos Arsenal tab: compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges), clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane. The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`); `SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes. Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md.
-
 ## T-168 — Leptos ORBAT tree in the left dock
 
 - **Slice spec:** `.ai/artifacts/missed_items_handoff.md`

@@ -1317,9 +1317,9 @@
             "shared"
           ],
           "executor": "claude-code",
-          "status": "deferred",
+          "status": "ready",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md",
-          "notes": "PARKED by operator until Arsenal \"proper\" (post .10.2-.10.4). Re-scoped: compiled mod document loadout gear only (editor embed done in T-068.10). Feeds T-068.12. Handoff: .ai/artifacts/t068_11_claude_code_handoff.md"
+          "notes": "UNPARKED 2026-07-18: T-167 shipped the Smart Arsenal proper (SVG paper-doll + compat optic/mag + weight + Faction Manager) at tag T-167, the operator prereq. Re-scoped: compiled mod document loadout gear only (editor embed done in T-068.10). Feeds T-068.12. Handoff: .ai/artifacts/t068_11_claude_code_handoff.md"
         },
         "T-068.12": {
           "targets": [
@@ -5320,8 +5320,10 @@
       "depends_on": [
         "T-159"
       ],
-      "unblocks": [],
-      "status": "ready",
+      "unblocks": [
+        "T-068.11"
+      ],
+      "status": "shipped",
       "implements": [],
       "user_story": "As a mission maker I build loadouts with compat-aware pickers and a paper-doll, matching the pre-rewrite Arsenal.",
       "route": "/missions/:id/edit",

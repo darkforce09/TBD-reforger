@@ -316,6 +316,95 @@ pub struct RegistryResponse {
     pub modpack_version: String,
 }
 
+/// One compat edge — a generic `(from_node, to_node, edge_type)` graph row. Optic/magazine
+/// compatibility is expressed as `edge_type` values (`optic_on_weapon`, `mag_in_weapon`), not typed
+/// fields, so new families need no DTO change (T-167 / backend `models::registry::RegistryCompatEdge`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegistryCompatEdge {
+    pub id: String,
+    pub modpack_id: String,
+    pub from_node: String,
+    pub to_node: String,
+    pub edge_type: String,
+    #[serde(default)]
+    pub evidence: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// `GET /registry/compat` — the compat edge list + cache identity (mirrors `RegistryResponse`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct RegistryCompatResponse {
+    pub data: Vec<RegistryCompatEdge>,
+    pub etag: String,
+    pub modpack_id: String,
+    pub modpack_version: String,
+}
+
+/// One role template inside a faction doc (character + optional loadout).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FactionRole {
+    pub role: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    pub character: String,
+    /// A `SlotLoadoutV2` object (opaque here — the same shape `arsenal.rs` writes).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub loadout: Option<Value>,
+}
+
+/// One vehicle in a faction's pool.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FactionVehicle {
+    pub vehicle: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+}
+
+/// The full faction-library document (`faction-library.schema.json`). POST/PUT body.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize, Default)]
+pub struct FactionDoc {
+    pub side: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emblem: Option<String>,
+    #[serde(default)]
+    pub roles: Vec<FactionRole>,
+    #[serde(default)]
+    pub vehicles: Vec<FactionVehicle>,
+}
+
+/// One stored faction (`side`/`name` are projections of `doc`). GET/POST/PUT response.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct UserFaction {
+    pub id: String,
+    pub owner_id: String,
+    pub side: String,
+    pub name: String,
+    pub doc: FactionDoc,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// `GET /factions` — the caller's faction library.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct FactionListResponse {
+    pub data: Vec<UserFaction>,
+    pub total: i64,
+    pub limit: i64,
+    pub offset: i64,
+}
+
+/// The four canonical faction sides.
+pub const FACTION_SIDES: &[&str] = &["BLUFOR", "OPFOR", "INDFOR", "CIV"];
+
 /// Cursor-paginated list — `{data, next_cursor}` (audit logs). Item type ported per page.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]

@@ -27,13 +27,6 @@
       "branch": "t-151-wgpu-spike"
     },
     {
-      "id": "T-167",
-      "title": "Leptos smart Arsenal port (paper-doll + compat Forge)",
-      "status": "ready",
-      "spec": ".ai/artifacts/missed_items_handoff.md",
-      "branch": "main"
-    },
-    {
       "id": "T-168",
       "title": "Leptos ORBAT tree in the left dock",
       "status": "ready",
