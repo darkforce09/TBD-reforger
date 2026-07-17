@@ -52,6 +52,10 @@ mod mission_editor;
 // prompt on a local-vs-server conflict. wasm32-only (auth GET + doc), gated like the doc host.
 #[cfg(target_arch = "wasm32")]
 mod mission_hydrate;
+// T-159.28 map-asset host (MVP: DEM hillshade) — fetch bytes + call the Rust dem core + engine
+// tex_layer. wasm32-only (fetch + engine), gated like the doc host.
+#[cfg(target_arch = "wasm32")]
+mod world_assets;
 // T-159.21 undo/redo — drives the hosted MissionDocCore undo stack (+ the post-change glyph rebind
 // and the `__editorHistory` bridge); wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]

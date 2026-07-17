@@ -396,6 +396,30 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 e.slots_bind_soa(soa.ids.clone(), &soa.xy);
                             }
                             start_raf(engine.clone(), disposed.clone());
+                            // T-159.28 — map-asset host (MVP): fetch the terrain DEM and paint the
+                            // hillshade lane, off the render path. `terrain` from the doc meta (the
+                            // seed + hydrate set it; default everon). The bare grid shows until this
+                            // resolves; a fetch failure leaves the grid (never blocks).
+                            {
+                                let terrain = doc
+                                    .borrow()
+                                    .as_ref()
+                                    .and_then(|c| {
+                                        serde_json::from_str::<serde_json::Value>(
+                                            &c.small_maps_json(),
+                                        )
+                                        .ok()?
+                                        .get("meta")?
+                                        .get("terrain")?
+                                        .as_str()
+                                        .map(str::to_string)
+                                    })
+                                    .unwrap_or_else(|| "everon".to_string());
+                                spawn_local(crate::world_assets::load_hillshade(
+                                    engine.clone(),
+                                    terrain,
+                                ));
+                            }
                         }
                         Err(e) => leptos::logging::error!("RenderEngine::create: {e:?}"),
                     }

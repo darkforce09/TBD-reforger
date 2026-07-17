@@ -25,12 +25,31 @@ const MIME = {
   '.map': 'application/json',
 }
 
-export function startServer({ dir, port = 0, apiProxy = null } = {}) {
+export function startServer({ dir, port = 0, apiProxy = null, mapAssetsDir = null } = {}) {
   const server = createServer(async (req, res) => {
     // Identical isolation headers for oracle and target.
     res.setHeader('Cross-Origin-Opener-Policy', 'same-origin')
     res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless')
     res.setHeader('Cache-Control', 'no-store')
+
+    // T-159.28: serve /map-assets from the real packages/map-assets (the Trunk/prod passthrough
+    // equivalent) so the hillshade host can fetch the committed DEM PNG.
+    if (mapAssetsDir && req.url.startsWith('/map-assets/')) {
+      try {
+        const rel = normalize(decodeURIComponent(req.url.slice('/map-assets/'.length))).replace(
+          /^(\.\.[/\\])+/,
+          '',
+        )
+        const file = join(mapAssetsDir, rel)
+        const buf = await readFile(file)
+        res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' })
+        res.end(buf)
+      } catch {
+        res.writeHead(404)
+        res.end('map-asset not found')
+      }
+      return
+    }
 
     // T-159.25: opt-in same-origin API proxy (the Trunk `[[proxy]]` equivalent for gates that need
     // a live backend). Same-origin, so it needs neither CORS nor a window.fetch override — the app
