@@ -32,9 +32,10 @@ The API stays on `:8080` (`make api` at the repo root); dev-login works as today
 cargo check -p website-leptos
 # wasm build pipeline:
 cd apps/website-leptos && trunk build
-# render proof — the wasm actually mounts + renders in a real headless browser:
-node ../../.ai/artifacts/t159_gates/driver/render-check.mjs \
-  --dir apps/website-leptos/dist --path / --expect "TBD Reforger — Leptos"
+# render proof — the wasm actually mounts + renders in a real headless browser
+# (T-165.6: the Rust CDP harness; run from the repo root):
+cargo run -q -p tbd-tools --bin gate -- render-check \
+  --dir apps/website-leptos/dist --path / --expect "COMMAND CENTER"
 ```
 
 ## Status

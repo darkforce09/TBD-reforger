@@ -15,6 +15,7 @@ pub mod forest;
 pub mod geometry;
 pub mod inject;
 pub mod serve;
+pub mod smokes;
 pub mod sroutes;
 pub mod vsuite;
 

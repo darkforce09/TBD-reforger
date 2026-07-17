@@ -73,7 +73,7 @@ pub fn routes() -> Vec<Route> {
 /// JS `String.prototype.length` semantics — UTF-16 code units, not UTF-8 bytes. The Node
 /// harness printed `golden.length`/`dom.length` and stored `bytes:` in the freeze manifest
 /// with these units; the port keeps the same measure.
-fn js_len(s: &str) -> usize {
+pub fn js_len(s: &str) -> usize {
     s.chars().map(char::len_utf16).sum()
 }
 

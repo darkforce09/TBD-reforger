@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::{serve, sroutes, vsuite};
+use tbd_tools::{serve, smokes, sroutes, vsuite};
 
 #[derive(Parser)]
 #[command(name = "gate", about = "T-159/T-165 CDP gate harness")]
@@ -38,6 +38,44 @@ enum Cmd {
     /// Route-table drift gate (extract-leptos-routes.mjs port)
     #[command(name = "s-routes")]
     SRoutes,
+    /// One editor/live smoke by name (smoke_*_editor.mjs ports; see EDITOR_SUITE)
+    Smoke {
+        /// selfcheck|arsenal|attributes|cur|doc|editor|hillshade|hydrate|keyboard-settings|
+        /// marquee-drag|outliner-palette|pan|persist|save-export|select|undo|mutations
+        name: String,
+        #[arg(long)]
+        dist: Option<String>,
+        #[arg(long)]
+        path: Option<String>,
+    },
+    /// All 16 editor smokes in the Makefile glob order (first failure stops)
+    #[command(name = "editor-suite")]
+    EditorSuite {
+        #[arg(long)]
+        dist: Option<String>,
+    },
+    /// R-auth single-flight refresh gate (gate_r_auth.mjs port; LEPTOS_DIST env respected)
+    #[command(name = "r-auth")]
+    RAuth {
+        #[arg(long)]
+        dist: Option<String>,
+    },
+    /// Generic SPA render liveness check (render-check.mjs port)
+    #[command(name = "render-check")]
+    RenderCheck {
+        #[arg(long)]
+        dir: String,
+        #[arg(long, default_value = "/")]
+        path: String,
+        #[arg(long, default_value = "")]
+        expect: String,
+        #[arg(long)]
+        assert_js: Option<String>,
+        #[arg(long, default_value_t = 5197)]
+        port: u16,
+        #[arg(long, default_value_t = 9337)]
+        debug_port: u16,
+    },
     /// Static SPA server with COOP/COEP (serve.mjs CLI port)
     Serve {
         #[arg(long)]
@@ -73,6 +111,27 @@ fn main() -> ExitCode {
                 .await
             }
             Cmd::SRoutes => sroutes::run(),
+            Cmd::Smoke { name, dist, path } => smokes::run_smoke(&name, dist, path).await,
+            Cmd::EditorSuite { dist } => smokes::editor_suite(dist).await,
+            Cmd::RAuth { dist } => smokes::r_auth(dist).await,
+            Cmd::RenderCheck {
+                dir,
+                path,
+                expect,
+                assert_js,
+                port,
+                debug_port,
+            } => {
+                smokes::render_check(&smokes::RenderCheckArgs {
+                    dir,
+                    path,
+                    expect,
+                    assert_js,
+                    port,
+                    debug_port,
+                })
+                .await
+            }
             Cmd::Serve {
                 dir,
                 port,

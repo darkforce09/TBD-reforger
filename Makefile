@@ -40,9 +40,8 @@ leptos-build: ## Release-build the Leptos SPA into apps/website-leptos/dist
 	cd apps/website-leptos && trunk build --release
 
 leptos-gates: leptos-build ## T-159 editor smokes + the frozen V-suite against a fresh release dist
-	@set -e; for s in .ai/artifacts/t159_gates/driver/*_editor.mjs; do \
-		echo "== $$s"; node $$s; done
-	node .ai/artifacts/t159_gates/driver/gate_v_suite.mjs verify
+	cargo run -q -p tbd-tools --bin gate -- editor-suite
+	cargo run -q -p tbd-tools --bin gate -- v-suite verify
 
 map-water-everon: ## One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify (T-090.1.2.5.2)
 	cp packages/map-assets/everon/staging/sap/everon-sap-ortho.pre-water.png packages/map-assets/everon/staging/sap/everon-sap-ortho.png

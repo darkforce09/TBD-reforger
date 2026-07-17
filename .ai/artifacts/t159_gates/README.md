@@ -23,7 +23,10 @@ t159_gates/
   manifests/  extract-react.mjs   ← S-gate: React-oracle extractor (BUILT)
               extract-leptos.mjs   ← per-slice: same schemas from Leptos source (pending)
               routes.csv hooks.csv components.csv css_tokens.txt deps.csv   ← committed goldens
-  driver/     cdp.mjs serve.mjs freeze.js dom.js gate_{s,r,v,t}.mjs         ← pending
+  driver/     (T-165.6: retired — the harness is Rust: `tools/tbd-tools` `gate` bin;
+              `gate editor-suite` + `gate v-suite verify` + `gate s-routes` + `gate r-auth`
+              + `gate render-check` + `gate smoke <name>`; freeze/dom payloads live as
+              verbatim consts in tools/tbd-tools/src/inject.rs)
   fixtures/   api/ doc/ trace/ auth/                                        ← pending
   v/<slice>/  <route>.{dom.json,oracle.png,leptos.png,diff.png}            ← run artifacts
   logs/<slice>/gate_table.json     ← per-slice verify log (the R/S/V/T/G pass rows)
