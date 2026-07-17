@@ -1,0 +1,329 @@
+@import 'tailwindcss';
+
+/* T-159.2a — Aegis tokens ported byte-for-byte from apps/website/frontend/src/index.css so the
+   S-tokens gate diffs equal. The React source's npm @imports are handled differently here: fonts
+   become self-hosted @font-face (woff2 → assets) in the shell slice; the tw-animate-css + shadcn
+   base layers are vendored when a slice first needs them. @source tells Tailwind v4 to scan the
+   class strings inside the Leptos view! macros in the Rust sources. */
+@source "../src/**/*.rs";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* ── Aegis Tactical Command palette ──────────────────────────────
+     Primary is the desaturated "active" blue used for text, icons and
+     active states; on-primary is the dark navy used as foreground on a
+     solid primary surface. The vibrant action blue lives in --color-action. */
+  --color-primary: #adc6ff;
+  --color-on-primary: #122f5f;
+  --color-primary-container: #adc6ff;
+  --color-on-primary-container: #385283;
+  --color-primary-fixed: #d8e2ff;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-inverse-primary: #455e90;
+
+  /* Vibrant action blue — reserved for high-priority triggers (Deploy/Save). */
+  --color-action: #3b82f6;
+  --color-on-action: #ffffff;
+
+  /* Secondary kept dark for subtle shadcn buttons; container is the bright accent. */
+  --color-secondary: #1f2937;
+  --color-on-secondary: #002e6a;
+  --color-secondary-container: #0566d9;
+  --color-on-secondary-container: #e6ecff;
+
+  --color-tertiary: #c3e7ff;
+  --color-on-tertiary: #00344a;
+  --color-tertiary-container: #7bd0ff;
+  --color-on-tertiary-container: #005979;
+
+  /* Surfaces — "Midnight Navy" foundation. */
+  --color-surface: #0d1322;
+  --color-background: #0d1322;
+  --color-on-background: #dde2f7;
+  --color-surface-dim: #0d1322;
+  --color-surface-bright: #333949;
+  --color-surface-variant: #2f3445;
+  --color-surface-container-lowest: #080e1d;
+  --color-surface-container-low: #151b2b;
+  --color-surface-container: #191f2f;
+  --color-surface-container-high: #242a3a;
+  --color-surface-container-highest: #2f3445;
+  --color-surface-glass: rgba(31, 41, 55, 0.7);
+  --color-on-surface: #dde2f7;
+  --color-on-surface-variant: #c4c6d0;
+  --color-inverse-surface: #dde2f7;
+  --color-inverse-on-surface: #2a3040;
+
+  --color-outline: #8e909a;
+  --color-outline-variant: #44474f;
+  --color-border-subtle: #374151;
+
+  /* Semantic. error stays a clear red for destructive UI; error-alert /
+     error-container provide the softer M3-style tones the mockups use. */
+  --color-success: #22c55e;
+  --color-success-muted: #064e3b;
+  --color-warning: #eab308;
+  --color-error: #ef4444;
+  --color-on-error: #690005;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+  --color-error-alert: #f87171;
+  --color-tactical-yellow: #facc15;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ── Semantic typography scale (Aegis) ───────────────────────────
+     Use as text-headline-lg, text-label-sm, text-code-md, … */
+  --text-headline-lg: 30px;
+  --text-headline-lg--line-height: 38px;
+  --text-headline-lg--font-weight: 700;
+  --text-headline-lg--letter-spacing: -0.02em;
+  --text-headline-md: 24px;
+  --text-headline-md--line-height: 32px;
+  --text-headline-md--font-weight: 600;
+  --text-headline-md--letter-spacing: -0.01em;
+  --text-headline-sm: 20px;
+  --text-headline-sm--line-height: 28px;
+  --text-headline-sm--font-weight: 600;
+  --text-body-lg: 18px;
+  --text-body-lg--line-height: 28px;
+  --text-body-lg--font-weight: 400;
+  --text-body-md: 16px;
+  --text-body-md--line-height: 24px;
+  --text-body-md--font-weight: 400;
+  --text-label-md: 14px;
+  --text-label-md--line-height: 20px;
+  --text-label-md--font-weight: 500;
+  --text-label-md--letter-spacing: 0.01em;
+  --text-label-sm: 12px;
+  --text-label-sm--line-height: 16px;
+  --text-label-sm--font-weight: 600;
+  --text-label-sm--letter-spacing: 0.05em;
+  --text-code-md: 14px;
+  --text-code-md--line-height: 20px;
+  --text-code-md--font-weight: 400;
+
+  --spacing-navbar-height: 4rem;
+  --spacing-gutter: 1.5rem;
+  --spacing-container-max: 90rem;
+  --radius-md: 0.375rem;
+}
+
+@layer base {
+  body {
+    @apply bg-background font-sans text-on-surface antialiased;
+    background-image:
+      radial-gradient(circle at center, rgba(30, 58, 95, 0.1) 0%, rgba(13, 19, 34, 1) 100%),
+      url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" opacity="0.03"><rect width="100" height="100" fill="none" stroke="%23adc6ff" stroke-width="0.5"/></svg>');
+    background-attachment: fixed;
+  }
+  * {
+    @apply border-border outline-ring/50;
+  }
+}
+
+/* ── Aegis glass + tactical-map background utilities ──────────────── */
+.glass {
+  background-color: var(--color-surface-glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid color-mix(in oklch, var(--color-outline-variant) 30%, transparent);
+}
+
+.bg-topo-map {
+  background-color: #0d1322;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(47, 52, 69, 0.2) 0%, transparent 60%),
+    linear-gradient(0deg, rgba(13, 19, 34, 0.8) 0%, rgba(13, 19, 34, 0.8) 100%);
+  background-size:
+    100px 100px,
+    100% 100%;
+}
+
+.bg-grid-overlay {
+  background-image:
+    linear-gradient(to right, rgba(142, 144, 154, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(142, 144, 154, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.sidebar-container {
+  background-image:
+    linear-gradient(to bottom, rgba(13, 19, 34, 0.98), rgba(13, 19, 34, 0.98)),
+    url("data:image/svg+xml;utf8,<svg width='100' height='100' xmlns='http://www.w3.org/2000/svg'><path d='M0 50 L50 0 L100 50 L50 100 Z' stroke='rgba(255,255,255,0.03)' fill='none'/></svg>");
+  background-size: cover, 150px;
+}
+
+/* Active nav item — Aegis left-edge vertical bar + subtle glass highlight. */
+.nav-item-active {
+  position: relative;
+  background: linear-gradient(90deg, rgba(173, 198, 255, 0.12) 0%, rgba(173, 198, 255, 0.04) 100%);
+}
+.nav-item-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.375rem;
+  bottom: 0.375rem;
+  width: 2px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px rgba(173, 198, 255, 0.6);
+}
+
+.custom-scrollbar::-webkit-scrollbar,
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: #44474f;
+  border-radius: 2px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: #adc6ff;
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+}
+
+.pulse-dot {
+  animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Expanding radar ring (status dot), countdown glow, and hero inset border glow —
+   from the dashboard tactical-command-center blueprint. */
+.tactical-pulse {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+  }
+  100% {
+    transform: scale(0.8);
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+  }
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(173, 198, 255, 0.5);
+}
+
+.border-glow {
+  box-shadow: inset 0 0 15px rgba(77, 142, 255, 0.1);
+  border: 1px solid rgba(77, 142, 255, 0.3);
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+/* Indeterminate progress bar (Mission Creator load gate, T-060): a short fill
+   sweeps across the track since y-indexeddb gives no per-entity load signal. */
+.animate-mc-load-bar {
+  animation: mc-load-bar 1.1s ease-in-out infinite;
+}
+
+@keyframes mc-load-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+/* Dark-only theme per THEME.md — html has class="dark" */
+.dark,
+:root {
+  --background: #0d1322;
+  --foreground: #dde2f7;
+  --card: #191f2f;
+  --card-foreground: #dde2f7;
+  --popover: #191f2f;
+  --popover-foreground: #dde2f7;
+  --primary: #adc6ff;
+  --primary-foreground: #122f5f;
+  --secondary: #1f2937;
+  --secondary-foreground: #dde2f7;
+  --muted: #151b2b;
+  --muted-foreground: #c4c6d0;
+  --accent: #242a3a;
+  --accent-foreground: #dde2f7;
+  --destructive: #ef4444;
+  --border: #374151;
+  --input: #0b1120;
+  --ring: #adc6ff;
+  --radius: 0.375rem;
+  --sidebar: #0d1322;
+  --sidebar-foreground: #dde2f7;
+  --sidebar-primary: #adc6ff;
+  --sidebar-primary-foreground: #122f5f;
+  --sidebar-accent: #151b2b;
+  --sidebar-accent-foreground: #dde2f7;
+  --sidebar-border: #374151;
+  --sidebar-ring: #adc6ff;
+}

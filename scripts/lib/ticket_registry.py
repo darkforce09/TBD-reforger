@@ -609,8 +609,6 @@ def scan_legacy_ids() -> dict[str, list[str]]:
     scan_roots = [
         root / "docs",
         root / "docs/specs",
-        root / "apps" / "website" / "frontend" / "docs",
-        root / "apps" / "website" / "frontend" / "src",
         root / ".ai" / "tickets" / "queue.json",
         root / "CLAUDE.md",
         root / "README.md",
@@ -868,7 +866,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
             "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
         )
         print(
-            "VERIFY: cd apps/website/frontend && npm run build && npm run lint && npm test && make ci-local-frontend"
+            "VERIFY: make ci-local-leptos  (Leptos SPA: fmt + clippy wasm32 + cargo test + trunk build)"
         )
         print(
             "MANUAL: P1 no pop-in; P2 pan fps ≥55"
@@ -926,7 +924,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
         )
         print("MAY EDIT: docs/platform/CODEBASE_AUDIT_2026.md (append shipped SHA under §Verification)")
         print("DO NOT: edit registry or other docs")
-        print("VERIFY: make test-it && cd apps/website/frontend && npm run build && npm run lint")
+        print("VERIFY: make test-it && make ci-local-leptos")
     elif tid == "T-123":
         print("AUTHORITY: docs/platform/DOCUMENTATION_STANDARDS.md (normative — already written)")
         print("SCOPE: roll out in-code @contract/@route/@model + Godoc/TSDoc/Enfusion tags")
@@ -975,7 +973,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
     elif active == "T-123.2":
         print("SCOPE: frontend tsdoc.json + TSDoc on types/api/hooks + @model/@contract/@route")
         print("NOTE: eslint jsdoc CI lands in T-123.6 — add tags here first")
-        print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")
+        print("VERIFY: make ci-local-leptos")
     elif active == "T-123.4":
         print("SCOPE: schema codegen — internal/contract/ + frontend/src/types/contract/ + regen script")
         print("SCHEMAS: registry-items, loadout-export, mission export defs first")
@@ -1046,7 +1044,7 @@ def cmd_brief(args: argparse.Namespace) -> None:
             "! rg 'map-assets|dem/|sampleElevation' apps/website/frontend/src/features/mission-creator/compiler/"
         )
     else:
-        print("VERIFY: cd apps/website/frontend && npm run build && npm run lint")
+        print("VERIFY: make ci-local-leptos")
     if t.get("acceptance"):
         print("ACCEPTANCE:")
         for a in t["acceptance"]:

@@ -8,6 +8,7 @@
 resolver = "3"
 members = [
     "apps/website",
+    "apps/website-leptos",
     "crates/map-engine-core",
     "crates/map-engine-render",
     "crates/map-engine-wasm",

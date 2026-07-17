@@ -43,18 +43,5 @@ jobs:
           components: rustfmt
       - run: make schema-codegen
       - name: Fail if generated contract output is stale
-        run: git diff --exit-code -- apps/website/frontend/src/types/contract apps/website/src/contract/generated
+        run: git diff --exit-code -- apps/website/src/contract/generated
 
-  frontend-doc-lint:
-    name: eslint (TSDoc contract gate)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/website/frontend
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "26"
-      - run: npm ci
-      - run: npm run lint

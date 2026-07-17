@@ -10,7 +10,7 @@ use axum::routing::{get, post};
 use serde_json::json;
 use sqlx::PgPool;
 use tower_http::catch_panic::CatchPanicLayer;
-use tower_http::services::ServeDir;
+use tower_http::services::{ServeDir, ServeFile};
 
 use crate::state::AppState;
 use crate::{handlers, middleware};
@@ -275,17 +275,50 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
     r
 }
 
-/// Build the application: `/healthz`, `/api/v1/*`, static `/uploads`, and the global
-/// middleware chain (outermost first: request-id → logging → recovery → CORS →
-/// body-limit → rate-limit).
+/// Build the application: `/healthz`, `/api/v1/*`, static `/uploads`, the optional Leptos SPA +
+/// `/map-assets` (T-159.29), and the global middleware chain (outermost first: request-id →
+/// logging → recovery → CORS → body-limit → rate-limit).
 pub fn router(state: AppState) -> Router {
     let dev = state.cfg.is_development();
     let version_limit = state.cfg.mission_version_body_limit() as usize;
-    Router::new()
+    let mut r = Router::new()
         .route("/healthz", get(healthz))
         .nest("/api/v1", api_routes(dev, version_limit))
-        .nest_service("/uploads", ServeDir::new("uploads"))
-        .layer(from_fn_with_state(state.clone(), middleware::rate_limit))
+        .nest_service("/uploads", ServeDir::new("uploads"));
+
+    // T-159.29 — serve the Leptos SPA statically when SPA_DIST_DIR is set (the cutover flip; unset
+    // in dev, where `trunk serve` owns the SPA). Cross-origin isolation (COOP `same-origin` + COEP
+    // `credentialless`) mirrors the Vite/Trunk headers so the wasm SharedArrayBuffer path stays
+    // available; a no-extension path falls back to index.html (client routing). `/map-assets` is
+    // served from MAP_ASSETS_DIR (or the repo default) so the editor's DEM/basemap/world chunks
+    // resolve same-origin.
+    if !state.cfg.spa_dist_dir.is_empty() {
+        use axum::http::header::{HeaderName, HeaderValue};
+        use tower_http::set_header::SetResponseHeaderLayer;
+
+        let dist = state.cfg.spa_dist_dir.clone();
+        let index = format!("{dist}/index.html");
+        let map_assets = if state.cfg.map_assets_dir.is_empty() {
+            "../../packages/map-assets".to_string()
+        } else {
+            state.cfg.map_assets_dir.clone()
+        };
+        let coop = SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("cross-origin-opener-policy"),
+            HeaderValue::from_static("same-origin"),
+        );
+        let coep = SetResponseHeaderLayer::overriding(
+            HeaderName::from_static("cross-origin-embedder-policy"),
+            HeaderValue::from_static("credentialless"),
+        );
+        r = r
+            .nest_service("/map-assets", ServeDir::new(map_assets))
+            .fallback_service(ServeDir::new(dist).fallback(ServeFile::new(index)))
+            .layer(coop)
+            .layer(coep);
+    }
+
+    r.layer(from_fn_with_state(state.clone(), middleware::rate_limit))
         .layer(DefaultBodyLimit::max(middleware::MAX_JSON_BODY))
         .layer(from_fn_with_state(state.clone(), middleware::cors))
         .layer(CatchPanicLayer::new())

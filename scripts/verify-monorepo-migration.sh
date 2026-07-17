@@ -17,7 +17,7 @@ wc=$(git log --oneline -- apps/mod/ mod/ 2>/dev/null | wc -l || echo 0)
 [[ "$wc" -ge 1 ]] && pass "V1 apps/mod/ has git history ($wc commits)" || fail "V1 apps/mod/ history"
 
 # V2/V3 content parity — spot-check key paths exist
-for p in apps/website/cmd/api apps/website/frontend apps/mod/tbd-framework packages/tbd-schema .ai/tickets/registry.json; do
+for p in apps/website/src apps/website-leptos apps/mod/tbd-framework packages/tbd-schema .ai/tickets/registry.json; do
   [[ -e "$p" || -f "$p" ]] && pass "V2 path exists: $p" || fail "V2 missing: $p"
 done
 
@@ -69,11 +69,11 @@ for t in db-up api web ticket-sync ticket-check-strict schema-validate; do
   grep -q "^${t}:" Makefile && pass "V13 target $t" || fail "V13 target $t"
 done
 
-# V14 frontend build/lint
-if (cd apps/website/frontend && npm run build >/dev/null 2>&1 && npm run lint >/dev/null 2>&1); then
-  pass "V14 frontend build+lint"
+# V14 frontend (Leptos SPA) compiles — the React app was deleted at T-159.29.3.
+if cargo check -p website-leptos --target wasm32-unknown-unknown >/dev/null 2>&1; then
+  pass "V14 frontend (leptos) cargo check"
 else
-  fail "V14 frontend build+lint"
+  fail "V14 frontend (leptos) cargo check"
 fi
 
 # V15 Go compile

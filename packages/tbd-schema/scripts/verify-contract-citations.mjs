@@ -62,6 +62,9 @@ function pointerResolves(doc, pointer) {
 // block (that presence is TS-5/eslint), but the cross-boundary content (DOCUMENTATION_STANDARDS
 // §3). Generic envelope types (e.g. `Paginated<T>`) are exempt: their contract is carried by the
 // type argument, not a single model. Generated `types/contract/**` is skipped (schema codegen).
+// T-159.29.3: the React app is deleted — these roots no longer exist, so TS-6 is a no-op
+// (the walk existsSync-skips them). Kept as the reference of what the gate covered; the Leptos
+// SPA's contract layer is Rust (dto.rs) and is gated by its own R-api golden round-trip tests.
 const TS_CONTRACT_DIRS = [
   "apps/website/frontend/src/types",
   "apps/website/frontend/src/api",

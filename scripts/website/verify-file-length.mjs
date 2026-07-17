@@ -33,9 +33,10 @@ function* walk(dir) {
   }
 }
 
-// Generated wasm-bindgen output (gitignored, rebuilt by `make wasm`) — SIZE gates
-// target hand-written code only.
-const GENERATED_PREFIXES = ["apps/website/frontend/src/wasm/pkg/"];
+// Generated output prefixes — SIZE gates target hand-written code only. (Empty since
+// T-159.29.3: the React app and its wasm-bindgen pkg are deleted; the walk now sees only the
+// Rust backend's .go/.ts-free tree, and Rust files are not SIZE-gated here.)
+const GENERATED_PREFIXES = [];
 
 let warns = 0;
 let fails = 0;

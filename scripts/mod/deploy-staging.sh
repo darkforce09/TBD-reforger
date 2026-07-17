@@ -146,7 +146,6 @@ else
     --exclude='**/node_modules/' \
     --exclude=apps/website/.tools/ \
     --exclude=apps/website/.env \
-    --exclude=apps/website/frontend/dist/ \
     --exclude=apps/mod/tbd-framework/Scripts/WorkbenchGame/ \
     --exclude=scripts/deploy/deploy.env \
     "$MONO_ROOT/" "$TBD_SSH_HOST:$TBD_REMOTE_DIR/"

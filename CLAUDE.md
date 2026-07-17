@@ -11,12 +11,12 @@ ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
 leaderboards, doctrine wiki, CMS, and admin tooling.
 
 - **Backend:** Go (Gin + GORM), PostgreSQL. Module `github.com/tbd-milsim/reforger-backend`, Go 1.26.
-- **Frontend:** React 19 + TypeScript + Vite, TanStack Query, Zustand, Tailwind. Node 26. In `apps/website/frontend/`.
+- **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website-leptos/` — the T-159 rewrite; the React app was deleted at T-159.29.3. Node 26 stays for schema tooling + the CDP gate driver.
 - **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
 ## Monorepo layout
-- `apps/website/` — Go API + React SPA (run via root `Makefile`)
+- `apps/website/` — Rust API (Axum) · `apps/website-leptos/` — Leptos SPA (run via root `Makefile`)
 - `apps/mod/` — Enfusion mod framework (`tbd-framework`, gitignored `crf_framework`/EnfusionMCP)
 - `packages/tbd-schema/` — mission JSON schema + golden missions
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
@@ -27,7 +27,7 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `apps/website/internal/models/` — GORM models; **JSON field names (snake_case) here are the API contract**.
 - `apps/website/internal/db/migrations/` — SQL run before AutoMigrate (extensions, enums, indexes, leaderboard MV).
 - `apps/website/internal/services/`, `apps/website/internal/middleware/`, `apps/website/internal/realtime/` (SSE hub).
-- `apps/website/frontend/src/` — `api/` (axios client + single-flight refresh), `hooks/` (queries.ts, mutations.ts, useAuthBootstrap), `pages/`, `components/`, `store/useAuthStore.ts`, `types/` (hand-written API types).
+- `apps/website-leptos/src/` — one module per page + `client.rs` (gloo-net + single-flight refresh), `dto.rs` (API DTOs, R-api golden-tested), `mission_editor.rs` + editor modules (wgpu engine via `map-engine-render`).
 
 ## Run it locally
 Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434, `FRONTEND_URL=http://localhost:5173`). Go lives at `~/.local/go/bin`; root `Makefile` prepends it for `make api` / `make build`.
@@ -35,12 +35,12 @@ Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on po
 ```bash
 make db-up        # start local Postgres (podman/docker compose), port 5434
 make api          # run Go API on :8080 (migrates on boot)
-make web          # run Vite dev server on :5173 (proxies /api -> :8080)
+make leptos       # run the Leptos dev server on :3000 (trunk serve; proxies /api -> :8080)
 make test-it      # Go integration tests (needs db-up; sets TEST_DATABASE_URL)
 make db-down      # stop Postgres (keeps volume)
 ```
 
-Frontend checks: `cd apps/website/frontend && npm run build` (tsc + vite), `npm run lint`.
+Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release build); full editor gates: `make leptos-gates`.
 
 ### Dev login (no Discord needed)
 `APP_ENV=development` exposes `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted`.
@@ -52,14 +52,15 @@ open it in the browser to log in, or curl it and read `access_token` from the
 - API JSON is **snake_case** (from GORM struct tags). Hand-written GORM models remain the
   snake_case DB/API source of truth, and hand-written frontend `types/` mirror them — when changing
   a model, update the matching TS type. Cross-boundary **contract** types are **generated** from
-  `packages/tbd-schema/schema/*.json` via `make schema-codegen` into `apps/website/internal/contract/`
-  + `apps/website/frontend/src/types/contract/` (DO NOT EDIT; T-123.4). The mission **export** JSON
-  (`/missions/:id/export`) is the one camelCase exception.
+  `packages/tbd-schema/schema/*.json` via `make schema-codegen` into
+  `apps/website/src/contract/generated/` (DO NOT EDIT; T-123.4 — Rust-only since the T-159.29.3
+  React deletion; the Leptos SPA hand-writes `dto.rs` gated by R-api golden tests). The mission
+  **export** JSON (`/missions/:id/export`) is the one camelCase exception.
 - List endpoints return `{data, total, limit, offset}` (audit logs use a `next_cursor`).
 - Auth tiers: public, `RequireAuth` (JWT), `RequireMinRole(admin|mission_maker)`,
   `RequireServiceToken` (`X-Service-Token`, for game-server ingest).
 - Refresh tokens are **single-use** (rotated + revoked each call). All refreshes go
-  through one single-flight helper (`apps/website/frontend/src/api/refresh.ts`) so the token is
+  through one single-flight helper (`apps/website-leptos/src/client.rs`) so the token is
   never double-spent.
 - Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
@@ -81,15 +82,15 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 |-------------|--------|
 | Shipped feature / milestone | **§Status** — new T-0xx bullet under **Done**; bump `latest shipped` line |
 | **Active slice** (code in progress, not shipped) | **§Status — ACTIVE SLICE** block at top; keep `latest shipped` on last **git tag** only |
-| New/changed route | Matching `docs/website/frontend/pages/*.md` + row in `docs/website/frontend/INDEX.md`; verify against `apps/website/frontend/src/router.tsx` |
-| UI surface (no new route) | Relevant page doc + `Live source:` path to `apps/website/frontend/src/pages/` or `features/` |
-| API / model change | `internal/models/` tags + matching `apps/website/frontend/src/types/`; note handler if behavior changed |
+| New/changed route | Matching `docs/website/frontend/pages/*.md` + row in `docs/website/frontend/INDEX.md`; verify against `apps/website-leptos/src/router.rs` |
+| UI surface (no new route) | Relevant page doc + `Live source:` path to the `apps/website-leptos/src/` page module |
+| API / model change | Backend model/handler + the matching `apps/website-leptos/src/dto.rs` DTO (R-api golden); note handler if behavior changed |
 | Mission Creator | MC README, `agent_execution.md` Decisions log, and/or `feature_inventory.md` — only if editor contract or Eden parity changed |
 | Deferred / queued work | [`.ai/tickets/registry.json`](.ai/tickets/registry.json) row `status: deferred` or `queued` — sync via `./scripts/ticket sync`; never mark shipped until verified |
 
 **Doc hub:** [`docs/website/README.md`](docs/website/README.md) → [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) → domain **`ROADMAP.md`** files. Tag contract: [`docs/website/TAGS.md`](docs/website/TAGS.md). **Commit checklist:** [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
 
-**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `apps/website/frontend/src/pages` + `features/`.
+**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `apps/website-leptos/src/` (the React app was deleted at T-159.29.3).
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 

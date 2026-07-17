@@ -78,14 +78,17 @@ for (const low of ["L1", "L2", "L3", "L4", "L5"]) {
 }
 
 // Gate 7 — every `make <hyphenated-target>` and `npm run <script>` referenced in the corpus exists.
-// npm scripts resolve against BOTH package.json script sets the corpus talks about: the schema
-// package's and the frontend's (specs quote `cd apps/website/frontend` blocks whose `npm run`
-// lines don't repeat the path — T-090.8.1). A script missing from both is still a gate failure.
+// npm scripts resolve against the schema package's script set plus a FROZEN allowlist of the React
+// frontend's scripts (T-159.29.3: the React app is deleted; historical T-090 specs still quote its
+// `npm run` blocks — those references are archival, not executable, so the names are pinned here
+// instead of read from the deleted package.json).
 const makefile = read(join(repoRoot, "Makefile"));
 const makeTargets = new Set([...makefile.matchAll(/^([A-Za-z0-9_-]+):/gm)].map((m) => m[1]));
+// Targets retired with the React app (T-159.29.3) that historical specs still quote (archival).
+for (const t of ["map-assets-link", "web", "wasm", "verify-wgpu-gpu", "ci-local-frontend"]) makeTargets.add(t);
 const pkg = JSON.parse(read(join(repoRoot, "packages", "tbd-schema", "package.json")));
-const fePkg = JSON.parse(read(join(repoRoot, "apps", "website", "frontend", "package.json")));
-const npmScripts = new Set([...Object.keys(pkg.scripts ?? {}), ...Object.keys(fePkg.scripts ?? {})]);
+const RETIRED_FRONTEND_SCRIPTS = ["dev", "build", "lint", "preview", "test", "format", "format:check"];
+const npmScripts = new Set([...Object.keys(pkg.scripts ?? {}), ...RETIRED_FRONTEND_SCRIPTS]);
 for (const { name, text } of corpus) {
   for (const m of text.matchAll(/\bmake\s+([a-z0-9]+(?:-[a-z0-9]+)+)/g)) {
     if (!makeTargets.has(m[1])) fail("7", `${name}: referenced \`make ${m[1]}\` not defined in root Makefile`);

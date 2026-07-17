@@ -6,7 +6,6 @@
   "Exclude": [
     "node_modules",
     "dist",
-    "apps/website/frontend/src/types/contract",
     "apps/mod/",
     "public/map-assets",
     "\\.ai/artifacts/",
