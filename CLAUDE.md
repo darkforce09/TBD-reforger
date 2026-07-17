@@ -5,6 +5,16 @@ Working context for AI sessions. Read this first; it is the source of truth for
 (`docs/website/platform/context_handoff.md`, `docs/backend/architecture.md`) — verify against
 live code for post-T-008 behavior.
 
+## HARD GATE — No deferrals without explicit operator word
+
+**Do the whole ask.** Do not "fold forward", invent Out-of-scope, ship an MVP and call the
+program done, or write a verify-log DEFERRED section instead of code — unless the **operator
+explicitly** said to defer that piece ("defer X", "skip X", "not this pass"). Soft plan language
+("if feasible", "optional", "P1 later") and **agent-authored** deferral lists are **not** permission.
+
+Full rule: [`.cursor/rules/no-silent-deferrals.mdc`](.cursor/rules/no-silent-deferrals.mdc).
+Applies to Claude Code, Cursor, Fable, and any finish/audit plan.
+
 ## What this is
 A web suite for the "TBD" Arma Reforger milsim community: Discord auth, event /
 ORBAT scheduling, a mission library (2D editor payloads), server telemetry +

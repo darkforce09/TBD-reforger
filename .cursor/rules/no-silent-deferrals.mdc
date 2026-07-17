@@ -1,39 +1,51 @@
 ---
-description: Never defer planned work unless the user explicitly says to defer
+description: HARD — Never defer/fold/MVP-skip in-scope work unless the operator explicitly authorizes that deferral
 alwaysApply: true
 ---
 
-# No silent deferrals
+# No deferrals without explicit operator word
 
-When implementing an approved plan, ticket, or handoff: **do the whole scope**. Do not mark items DEFERRED, "follow-up", "partial", "if feasible", or "ship later" unless the user **explicitly** says to defer that piece in this conversation.
+**Default: finish it.** If the operator asked for a complete outcome (e.g. "replace React with Rust", "do the whole plan"), **ship the whole outcome**. Do not invent deferrals.
 
-## Default
+## The only legal deferral
 
-- Plan / acceptance matrix / todos = **must ship** in this pass.
-- Soft plan language ("if feasible", "optional", "document partial") is **not** permission to skip. Treat it as **do it**; only the user's clear "defer X" / "skip X" / "not this slice" overrides.
-- Finishing early by writing a verify-log DEFERRED section instead of code is a **failure**.
+The operator **explicitly** says, in this conversation (or a quoted prior message they reaffirm), words like:
 
-## Allowed deferrals (only these)
+- "defer X"
+- "skip X"
+- "not this pass — X later"
+- "MVP only — leave Y"
 
-1. User said so in this thread (quote their words in the verify note).
-2. Hard external blocker (no GPU, missing secrets, Workbench down) — **stop and ask**; do not invent a follow-up ticket and call it done.
-3. Out-of-scope listed in the plan's **Out of scope** section (not soft options inside Scope).
+**Quote that authorization** in the verify log / commit body. No quote → **not deferred**.
 
-## Forbidden
+Soft plan prose ("if feasible", "optional", "P1 later", "fold forward", "record as follow-up") is **not** authorization — including when **you** wrote that prose into the plan.
+
+## Forbidden (these are failures, not process)
 
 ```text
-❌ "Compute cull DEFERRED — follow-up T-xxx.8.1"
-❌ Shipping CPU path only when the plan also required WebGPU compute
-❌ Closing todos as completed while leaving gated work undocumented-as-deferred
-❌ Asking "want me to do the rest?" after marking the slice shipped
+❌ "Folded forward" / "deferred to T-xxx" / "follow-on" for in-scope work
+❌ Shipping an MVP and calling the program/slice "complete" while listed scope remains
+❌ Writing your own "Out of scope" / "Deferred" section to shrink an operator "do everything" ask
+❌ "Document as deferred" in a verify log instead of implementing
+❌ Partial ship + "operator can do the rest later" without explicit defer approval
+❌ Treating audit P0/P1 labels as permission to skip P1 when the ask was complete cutover
 ```
 
 ```text
-✅ Implement every Scope / acceptance-matrix row
-✅ If blocked: ask once, wait — do not tag ship
-✅ Defer only after user: "defer compute cull" / "skip W8 compute"
+✅ Implement every item required by the operator ask / approved plan Scope / acceptance matrix
+✅ If truly blocked (secrets, Workbench down, missing GPU): STOP and ASK — do not invent a deferral ticket and mark done
+✅ Defer only after operator: "defer satellite" / "skip Smart Forge this pass"
 ```
+
+## Plans and audits
+
+When drafting a finish plan: **do not pre-load deferrals**. List remaining work as **must-do**. If something might need operator judgment, **ask before** writing "fold forward" into the plan. A plan that ships with a Deferred appendix the operator never approved is non-compliant.
+
+## Cursor Mode B / Claude handoffs
+
+- Do **not** put "fold forward X" / "out of scope: do Y later" in specs/handoffs unless the operator already authorized that deferral.
+- `═══ DO NOT ═══` may ban unrelated lanes; it must **not** silently drop the operator's complete-outcome ask.
 
 ## Interaction with Mode A/B/C
 
-This rule does **not** authorize Cursor to write app code. It means: when **you** (or Claude via handoff) are executing a plan, **do not drop gated items**. Cursor Mode B handoffs must not pre-authorize "document as deferred" for in-scope work.
+Does **not** authorize Cursor to write app code. It binds **every** agent (Cursor, Claude Code, Fable, auditors): no silent or self-authored deferrals.

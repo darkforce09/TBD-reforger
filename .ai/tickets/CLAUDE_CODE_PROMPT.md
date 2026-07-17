@@ -73,6 +73,8 @@ Implement **T-0xx.Y** — {one-line title}.
 ═══ DO NOT ═══
   - Edit docs/**, `.ai/tickets/registry.json`, `docs/TICKET_*.md`, CLAUDE status markers
   - Grow fat wgpu*Controller / *Bridge business logic in TypeScript
+  - Defer / "fold forward" / invent Out-of-scope for in-scope work unless the operator
+    explicitly said "defer X" / "skip X" (see .cursor/rules/no-silent-deferrals.mdc)
   - {slice-specific forbidden items}
 
 ═══ VERIFY (all exit 0) ═══

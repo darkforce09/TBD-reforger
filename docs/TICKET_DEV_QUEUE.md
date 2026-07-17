@@ -25,7 +25,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-165 — Node/JS eradication: every .mjs tool -> Rust
 
-- **Active slice:** `T-165.5`
+- **Active slice:** `T-165.6`
 - **Slice spec:** `docs/platform/t165_node_eradication.md`
 - **Program hub:** `docs/platform/t165_node_eradication.md`
 - **Branch:** `ticket/T-165`

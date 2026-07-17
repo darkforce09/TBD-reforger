@@ -8,6 +8,13 @@ Edit **`tickets/registry.json`** → run **`./scripts/ticket sync`** → run **`
 
 Never hand-edit: `queue.json`, `docs/TICKET_*.md`, CLAUDE marker block, MC ROADMAP marker block, gap_analysis ticket column.
 
+## HARD — No deferrals without operator word
+
+Do not put "fold forward", "deferred to later slice", or self-authored Out-of-scope into specs /
+handoffs / finish plans unless the **operator explicitly** authorized that deferral in-thread.
+Complete-outcome asks ("replace React", "finish the port") mean **finish**, not MVP + appendix.
+Rule: [`.cursor/rules/no-silent-deferrals.mdc`](../../.cursor/rules/no-silent-deferrals.mdc).
+
 ## Status lifecycle
 
 | You say | Registry change |
