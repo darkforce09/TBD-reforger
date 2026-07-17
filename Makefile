@@ -175,11 +175,11 @@ map-export: ## T-090.3.1 — classify staged Workbench export for TERRAIN=<id> P
 map-export-all: ## T-090.3 stub — export every terrain in terrain-registry.json
 	@echo "map-export-all: not implemented (T-090.3)"; exit 1
 map-export-validate: ## T-090.3.1 — validate committed export artifacts for every registry terrain (CI-safe)
-	node scripts/map-assets/validate-export-artifacts.mjs
+	cargo run -q -p tbd-tools --bin world -- validate-exports
 map-verify-phase: ## T-090.3.1 — mathematical phase gate G1-G12 + P1-* + E6 for TERRAIN=<id> PHASE=Pn (needs staging)
 	@test -n "$(TERRAIN)" || (echo "map-verify-phase: TERRAIN=<id> required"; exit 1)
 	@test -n "$(PHASE)" || (echo "map-verify-phase: PHASE=Pn required"; exit 1)
-	node scripts/map-assets/verify-phase.mjs --terrain "$(TERRAIN)" --phase "$(PHASE)"
+	cargo run -q -p tbd-tools --bin world -- verify-phase --terrain "$(TERRAIN)" --phase "$(PHASE)"
 map-census: ## T-090.2 — validate type-inventory.json; compute counts after export (TERRAIN=<id>)
 	@test -n "$(TERRAIN)" || (echo "map-census: TERRAIN=<id> required"; exit 1)
 	cargo run -q -p tbd-tools --bin world -- census --terrain "$(TERRAIN)"
