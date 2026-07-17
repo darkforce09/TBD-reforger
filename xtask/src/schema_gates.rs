@@ -948,6 +948,7 @@ pub fn t090_specs() -> Result<u8> {
     // quote the npm form (archival, not executable).
     for s in [
         "validate",
+        "codegen",
         "verify-citations",
         "verify-map-object-enums",
         "verify-type-inventory",

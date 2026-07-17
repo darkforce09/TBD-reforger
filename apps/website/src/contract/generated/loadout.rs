@@ -1,115 +1,162 @@
-// Code generated from JSON Schema using quicktype. DO NOT EDIT.
-// Source: packages/tbd-schema/schema/loadout-export.schema.json — regenerate with: make schema-codegen
+// HAND-MAINTAINED since T-165.3 (do edit — but keep the round-trip tests green).
+// Source of truth: packages/tbd-schema/schema/loadout-export.schema.json.
+// History: this file was quicktype-generated until T-165.3; that output was provably lossy —
+// it merged the versioned root `oneOf` into one struct and emitted empty `Wear {}` /
+// `Equipment {}` (patternProperties dropped). The faithful model below is guarded by
+// value-level round-trip tests against BOTH committed sample fixtures.
 
-// Example code that deserializes and serializes the model.
-// extern crate serde;
-// #[macro_use]
-// extern crate serde_derive;
-// extern crate serde_json;
-//
-// use generated_module::loadout;
-//
-// fn main() {
-//     let json = r#"{"answer": 42}"#;
-//     let model: loadout = serde_json::from_str(&json).unwrap();
-// }
+use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-/// Loadout download consumed by the mod equip path. v1: ACE-shaped fixed gear slots. v2
-/// (T-068.10.4): Reforger-shaped — wear is an open map keyed by engine LoadoutSlotInfo name
-/// (canonical keys documented; mod-added areas allowed), weapons are slot-indexed (two
-/// untyped primary slots + secondary + grenade/throwable per Character_Base.et),
-/// equipment/cargo are forward skeletons. v2 keeps a derived legacy gear block so the v1 mod
-/// reader (TBD_LoadoutEquipComponent, JsonLoadContext ignores unknown fields — U6) keeps
-/// working until T-068.12 reads v2 natively.
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Loadout {
-    pub gear: Gear,
+/// A slot value: Enfusion ResourceName, or null when the slot is empty.
+pub type SlotValue = Option<String>;
 
-    pub loadout_version: LoadoutVersion,
-
-    pub modpack_id: String,
-
-    /// Container cargo (volume/weight budget model — no grid cells). Skeleton in v2 — UI and
-    /// budget validation land with the cargo slice.
-    pub cargo: Option<Vec<Cargo>>,
-
-    /// Equipment micro-slots (SCR_EquipmentStorageComponent): binoculars, wristwatch, … Skeleton
-    /// in v2 — UI lands with the equipment slice.
-    pub equipment: Option<Equipment>,
-
-    /// Slot-indexed weapons. Vanilla characters: slotIndex 0/1 slotType 'primary' (two untyped
-    /// long slots — two rifles legal), 2 'secondary' (pistol), 3 'grenade', 4 'throwable'.
-    /// T-068.12 must equip via slot-indexed SetWeapon, not blind EquipWeapon.
-    pub weapons: Option<Vec<LoadoutExportSchema>>,
-
-    /// Wear areas keyed by engine LoadoutSlotInfo name. Canonical keys: headCover, jacket,
-    /// pants, boots, vest, armoredVest, backpack, handwear (Character_Base.et); pattern-open so
-    /// mod-added LoadoutAreaType subclasses are representable without a schema change.
-    pub wear: Option<Wear>,
+/// The loadout-export document — versioned root `oneOf`, tagged by `loadoutVersion`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "loadoutVersion")]
+pub enum LoadoutExport {
+    #[serde(rename = "1")]
+    V1(LoadoutV1),
+    #[serde(rename = "2")]
+    V2(LoadoutV2),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Cargo {
+/// v1 — the flat four-slot gear block (the mod's Phase-1 reader).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct LoadoutV1 {
+    #[serde(rename = "modpackId")]
+    pub modpack_id: String,
+    pub gear: Gear,
+}
+
+/// v2 — Reforger-shaped wear map + slot-indexed weapons (+ skeleton equipment/cargo) plus the
+/// derived legacy `gear` block v1 readers keep consuming.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct LoadoutV2 {
+    #[serde(rename = "modpackId")]
+    pub modpack_id: String,
+    /// Wear areas keyed by engine LoadoutSlotInfo name — pattern-open (mod-added areas legal).
+    pub wear: BTreeMap<String, SlotValue>,
+    pub weapons: Vec<Weapon>,
+    /// Equipment micro-slots (skeleton in v2).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub equipment: Option<BTreeMap<String, SlotValue>>,
+    /// Container cargo (volume/weight budget model; skeleton in v2).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cargo: Option<Vec<CargoEntry>>,
+    /// Derived legacy block (jacket→uniform, armoredVest||vest→vest, headCover→helmet,
+    /// weapons[0]→primary/optic/magazine).
+    pub gear: Gear,
+}
+
+/// The v1/legacy gear block. The four base keys are REQUIRED (nullable); optic/magazine are
+/// optional-and-nullable (absent ≠ null — preserved via the double-Option idiom).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Gear {
+    pub primary: SlotValue,
+    pub uniform: SlotValue,
+    pub vest: SlotValue,
+    pub helmet: SlotValue,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    pub optic: Option<SlotValue>,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    pub magazine: Option<SlotValue>,
+}
+
+/// One engine weapon slot.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct Weapon {
+    #[serde(rename = "slotIndex")]
+    pub slot_index: i64,
+    #[serde(rename = "slotType")]
+    pub slot_type: String,
+    pub weapon: String,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    pub optic: Option<SlotValue>,
+    #[serde(default, skip_serializing_if = "Option::is_none", with = "double_option")]
+    pub magazine: Option<SlotValue>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<String>>,
+}
+
+/// One cargo row (container/item/qty).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct CargoEntry {
     pub container: String,
-
     pub item: String,
-
     pub qty: i64,
 }
 
-/// Equipment micro-slots (SCR_EquipmentStorageComponent): binoculars, wristwatch, … Skeleton
-/// in v2 — UI lands with the equipment slice.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Equipment {}
+/// Serde double-Option: outer None = key absent, Some(None) = explicit null.
+mod double_option {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-/// v1 fixed gear slots. In v2 envelopes this block is DERIVED (jacket→uniform, armoredVest
-/// else vest→vest, headCover→helmet, weapons[0]→primary/optic/magazine) for the v1 mod
-/// reader; T-068.12 switches to the v2 fields.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Gear {
-    pub helmet: Option<String>,
+    pub fn serialize<T, S>(v: &Option<Option<T>>, s: S) -> Result<S::Ok, S::Error>
+    where
+        T: Serialize,
+        S: Serializer,
+    {
+        match v {
+            Some(inner) => inner.serialize(s),
+            None => s.serialize_none(),
+        }
+    }
 
-    pub magazine: Option<String>,
-
-    pub optic: Option<String>,
-
-    pub primary: Option<String>,
-
-    pub uniform: Option<String>,
-
-    pub vest: Option<String>,
+    pub fn deserialize<'de, T, D>(d: D) -> Result<Option<Option<T>>, D::Error>
+    where
+        T: Deserialize<'de>,
+        D: Deserializer<'de>,
+    {
+        Ok(Some(Option::<T>::deserialize(d)?))
+    }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub enum LoadoutVersion {
-    #[serde(rename = "1")]
-    The1,
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    #[serde(rename = "2")]
-    The2,
+    const V1: &str = include_str!(
+        "../../../../../packages/tbd-schema/registry/loadout-export.sample.json"
+    );
+    const V2: &str = include_str!(
+        "../../../../../packages/tbd-schema/registry/loadout-export.v2.sample.json"
+    );
+
+    /// Value-level round-trip: parse → serialize → parse; the two JSON values must be EQUAL
+    /// (key order irrelevant; null-vs-absent must be preserved — the double-Option contract).
+    fn round_trips(fixture: &str) {
+        let parsed: LoadoutExport = serde_json::from_str(fixture).expect("deserialize");
+        let re = serde_json::to_string(&parsed).expect("serialize");
+        let a: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        let b: serde_json::Value = serde_json::from_str(&re).unwrap();
+        assert_eq!(a, b, "value round-trip drift");
+    }
+
+    #[test]
+    fn v1_sample_round_trips() {
+        round_trips(V1);
+        let LoadoutExport::V1(doc) = serde_json::from_str(V1).unwrap() else {
+            panic!("v1 fixture parsed as wrong version");
+        };
+        assert!(doc.gear.primary.is_some() && doc.gear.helmet.is_none());
+    }
+
+    #[test]
+    fn v2_sample_round_trips() {
+        round_trips(V2);
+        let LoadoutExport::V2(doc) = serde_json::from_str(V2).unwrap() else {
+            panic!("v2 fixture parsed as wrong version");
+        };
+        assert_eq!(doc.wear.len(), 8);
+        assert!(doc.weapons.iter().any(|w| w.slot_index == 0));
+        // The fixture's second weapon omits optic entirely — absent, not null.
+        let grenade = doc.weapons.iter().find(|w| w.slot_index == 3).unwrap();
+        assert!(grenade.optic.is_none() && grenade.attachments.is_none());
+    }
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LoadoutExportSchema {
-    pub attachments: Option<Vec<String>>,
-
-    pub magazine: Option<String>,
-
-    pub optic: Option<String>,
-
-    pub slot_index: i64,
-
-    pub slot_type: String,
-
-    pub weapon: String,
-}
-
-/// Wear areas keyed by engine LoadoutSlotInfo name. Canonical keys: headCover, jacket,
-/// pants, boots, vest, armoredVest, backpack, handwear (Character_Base.et); pattern-open so
-/// mod-added LoadoutAreaType subclasses are representable without a schema change.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Wear {}

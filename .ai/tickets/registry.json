@@ -5139,7 +5139,7 @@
       "id": "T-165",
       "order": 1620,
       "title": "Node/JS eradication: every .mjs tool -> Rust",
-      "summary": "ACTIVE: port all repo-authored Node tooling (90 .mjs / 13.8k LOC: schema toolchain, map-asset pipeline, T-159 CDP harness, MCP broker) to Rust; only the third-party enfusion-mcp runtime remains (the floor); zero setup-node in CI at closure. T-165.0-.2 shipped: scaffold + dead-set; text/JSON gates + the full validate suite -> `cargo xtask schema` (130/130 PASS parity, label-set identical); ci.yml schema job + schema.yml + contracts citations are Node-free. Hub: docs/platform/t165_node_eradication.md.",
+      "summary": "ACTIVE: port all repo-authored Node tooling (90 .mjs / 13.8k LOC: schema toolchain, map-asset pipeline, T-159 CDP harness, MCP broker) to Rust; only the third-party enfusion-mcp runtime remains (the floor); zero setup-node in CI at closure. T-165.0-.3 shipped (codegen -> typify, loadout.rs hand-frozen w/ round-trip tests, contracts.yml Node-free): scaffold + dead-set; text/JSON gates + the full validate suite -> `cargo xtask schema` (130/130 PASS parity, label-set identical); ci.yml schema job + schema.yml + contracts citations are Node-free. Hub: docs/platform/t165_node_eradication.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -5151,7 +5151,7 @@
         "schema"
       ],
       "status": "ready",
-      "active_slice": "T-165.3",
+      "active_slice": "T-165.4",
       "spec": "docs/platform/t165_node_eradication.md",
       "stream": "infra",
       "targets": [
@@ -5205,7 +5205,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/platform/t165_node_eradication.md",
           "notes": "codegen -> typify; loadout.rs hand-frozen; drift job -> cargo."
         },
@@ -5214,7 +5214,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "ready",
           "spec": "docs/platform/t165_node_eradication.md",
           "notes": "Golden S2-S14 + terrain/DEM + glyphs; schema-validate pure cargo."
         },

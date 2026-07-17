@@ -1,6 +1,6 @@
 # T-165 — Node/JS eradication: every .mjs tool → Rust
 
-**Status:** ACTIVE (T-165.0–.2 shipped; next T-165.3) · **Executor:** claude-code (operator-approved
+**Status:** ACTIVE (T-165.0–.3 shipped; next T-165.4) · **Executor:** claude-code (operator-approved
 plan) · **Sequel to:** T-161/T-162 (Python eradication). **Plan of record:** the operator-approved
 T-165 plan (session plan file); this hub tracks slice state + evidence.
 
@@ -29,8 +29,8 @@ third-party `enfusion-mcp` runtime for Workbench (the floor), and no CI job need
 | **T-165.0** | `tools/tbd-tools` scaffold (workspace member; tokio + tokio-tungstenite pinned to lock-resolved versions) + dead-set deletion | **shipped** |
 | **T-165.1** | Text/JSON gates → `cargo xtask schema …` (citations, t090-specs, n6, n10, map-object-enums, type-inventory, terrain-manifest, flatten-orbat-slots); parity proven side-by-side (8× verdict+exit MATCH, negative probes, count parity); Makefile + ci.yml + contracts.yml citation steps → cargo; 7 .mjs deleted (verify-type-inventory.mjs kept — spawned by census-types/validate-export until .8) | **shipped** |
 | **T-165.2** | validate suite → `cargo xtask schema validate` + `validate-file` (Registry-resolved cross-file $refs, FK walkers, ENF-4 `$defs` pointer validators). Parity: **130/130 PASS both runners, label-set diff empty, negative probe rc=1 both**. ci.yml schema job + schema.yml + deploy-staging V1 → cargo (schema CI is Node-free); validate.mjs + validate-file.mjs deleted | **shipped** |
-| T-165.3 | codegen → typify + loadout hand-freeze; contracts.yml drift job → cargo | next |
-| T-165.4 | Golden S2–S14 (TBDD encoder promoted; forest-region derivation ported) + terrain/DEM + glyphs + label gates; `make schema-validate` pure cargo; schema.yml + ci.yml schema job → cargo | queued |
+| **T-165.3** | codegen → `cargo xtask schema codegen` (typify; run-to-run hash-idempotent; regenerated 4 contracts — `regress`-validated patterns, an upgrade over quicktype). `loadout.rs` hand-frozen: faithful versioned oneOf + patternProperties wear/equipment maps + double-Option null-vs-absent, value-level round-trip tests vs BOTH fixtures. `registry_import.rs` adapted; contracts.yml codegen-drift job Node-free; codegen.mjs deleted; quicktype devDep dropped | **shipped** |
+| T-165.4 | Golden S2–S14 (TBDD encoder promoted; forest-region derivation ported) + terrain/DEM + glyphs + label gates; `make schema-validate` pure cargo | next |
 | T-165.5 | CDP harness core (`cdp`/`serve`/`inject`/`diff_node` + `gate v-suite`) — 25/25 byte-count parity vs Node side-by-side | queued |
 | T-165.6 | Smokes suite registry → Rust; Node driver deleted; `make leptos-gates` = cargo | queued |
 | T-165.7 | MCP broker + `--stub` → Rust; runner-resolution fix in mcp-call.sh/mcp-daemon.sh; selftest 19/19 | queued |

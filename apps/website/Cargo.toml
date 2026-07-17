@@ -38,6 +38,8 @@ jsonschema = { version = "0.46.10", default-features = false }
 # rust_crypto = pure-Rust HMAC/SHA backend for HS256 (no aws-lc-rs C dependency).
 jsonwebtoken = { version = "10.4.0", default-features = false, features = ["rust_crypto"] }
 rand = "0.10.2"
+# typify-generated contract types validate string patterns via regress (T-165.3).
+regress = "0.10"
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "charset", "http2", "form", "rustls-no-provider"] }
 rust_decimal = { version = "1.42.1", features = ["db-postgres"] }
 rustls = { version = "0.23.41", default-features = false, features = ["ring", "std", "tls12", "logging"] }

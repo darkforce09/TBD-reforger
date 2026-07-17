@@ -4,6 +4,7 @@
 
 mod check;
 mod cmds;
+mod codegen_schema;
 mod constants;
 mod debug_cmd;
 mod gap;
@@ -70,6 +71,8 @@ enum TopCmd {
 
 #[derive(Subcommand, Debug)]
 enum SchemaCmd {
+    /// Contract codegen: JSON Schema → Rust via typify (T-165.3)
+    Codegen,
     /// Full contract-validation suite (validate.mjs port — T-165.2)
     Validate,
     /// Validate one mission JSON file or stdin (`-`) — validate-file.mjs port
@@ -366,6 +369,7 @@ fn run() -> Result<u8> {
         }
         TopCmd::Schema { cmd } => {
             let code = match cmd {
+                SchemaCmd::Codegen => codegen_schema::codegen()?,
                 SchemaCmd::Validate => schema_gates::validate_all()?,
                 SchemaCmd::ValidateFile { target } => schema_gates::validate_file(&target)?,
                 SchemaCmd::Citations => schema_gates::citations()?,

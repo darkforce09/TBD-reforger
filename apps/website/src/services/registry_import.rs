@@ -118,7 +118,7 @@ pub async fn import_items(
     if !details.is_empty() {
         return Err(ImportError::Invalid(details));
     }
-    let env: registry_items::RegistryItems = serde_json::from_slice(raw)?;
+    let env: registry_items::TbdRegistryItems = serde_json::from_slice(raw)?;
     let modpack = resolve_modpack_id(&env.modpack_id, modpack_override)?;
     ensure_modpack(pool, modpack).await?;
 
@@ -128,12 +128,12 @@ pub async fn import_items(
     };
     // Last-wins dedupe by resource_name, keeping each survivor's envelope index
     // as its sort_order (deterministic browse order = export order).
-    let mut by_key: BTreeMap<&str, (usize, &registry_items::ItemElement)> = BTreeMap::new();
+    let mut by_key: BTreeMap<&str, (usize, &registry_items::Item)> = BTreeMap::new();
     for (i, it) in env.items.iter().enumerate() {
         *counts.histogram.entry(wire_str(&it.kind)).or_insert(0) += 1;
         by_key.insert(it.resource_name.as_str(), (i, it));
     }
-    let unique: Vec<(usize, &registry_items::ItemElement)> = by_key.into_values().collect();
+    let unique: Vec<(usize, &registry_items::Item)> = by_key.into_values().collect();
     counts.unique = unique.len() as u64;
 
     let mut tx = pool.begin().await?;
@@ -143,13 +143,13 @@ pub async fn import_items(
     for chunk in unique.chunks(CHUNK) {
         let rns: Vec<String> = chunk
             .iter()
-            .map(|(_, it)| it.resource_name.clone())
+            .map(|(_, it)| it.resource_name.to_string())
             .collect();
         let dns: Vec<String> = chunk
             .iter()
-            .map(|(_, it)| it.display_name.clone())
+            .map(|(_, it)| it.display_name.to_string())
             .collect();
-        let cats: Vec<String> = chunk.iter().map(|(_, it)| it.category.clone()).collect();
+        let cats: Vec<String> = chunk.iter().map(|(_, it)| it.category.to_string()).collect();
         let kinds: Vec<String> = chunk.iter().map(|(_, it)| wire_str(&it.kind)).collect();
         let icons: Vec<Option<String>> = chunk
             .iter()
@@ -159,7 +159,7 @@ pub async fn import_items(
         // v3 (T-068.10.2) metadata — all optional; v2 envelopes bind NULL columns.
         let abstracts: Vec<Option<bool>> = chunk
             .iter()
-            .map(|(_, it)| it.registry_items_schema_abstract)
+            .map(|(_, it)| it.abstract_)
             .collect();
         let arsenal_types: Vec<Option<String>> = chunk
             .iter()
@@ -171,7 +171,7 @@ pub async fn import_items(
         let max_volumes: Vec<Option<f64>> = chunk.iter().map(|(_, it)| it.max_volume_cm3).collect();
         let addons: Vec<Option<String>> = chunk.iter().map(|(_, it)| it.addon.clone()).collect();
         let variant_ofs: Vec<Option<String>> =
-            chunk.iter().map(|(_, it)| it.variant_of.clone()).collect();
+            chunk.iter().map(|(_, it)| it.variant_of.as_ref().map(|v| v.to_string())).collect();
         affected += sqlx::query(
             "INSERT INTO registry_items \
                (modpack_id, resource_name, display_name, category, kind, icon_url, sort_order, \
@@ -222,7 +222,7 @@ pub async fn import_items(
     if prune {
         let keep: Vec<String> = unique
             .iter()
-            .map(|(_, it)| it.resource_name.clone())
+            .map(|(_, it)| it.resource_name.to_string())
             .collect();
         counts.pruned = sqlx::query(
             "DELETE FROM registry_items \
@@ -258,7 +258,7 @@ pub async fn import_compat(
     if !details.is_empty() {
         return Err(ImportError::Invalid(details));
     }
-    let env: registry_compat::RegistryCompat = serde_json::from_slice(raw)?;
+    let env: registry_compat::TbdRegistryCompat = serde_json::from_slice(raw)?;
     let modpack = resolve_modpack_id(&env.modpack_id, modpack_override)?;
     ensure_modpack(pool, modpack).await?;
 
@@ -268,19 +268,19 @@ pub async fn import_compat(
     };
     // Last-wins dedupe by the edge key (duplicate keys in one statement abort
     // ON CONFLICT DO UPDATE).
-    let mut by_key: BTreeMap<(String, String, String), &registry_compat::EdgeElement> =
+    let mut by_key: BTreeMap<(String, String, String), &registry_compat::Edge> =
         BTreeMap::new();
     for e in &env.edges {
         let ty = wire_str(&e.edge_type);
         *counts.histogram.entry(ty.clone()).or_insert(0) += 1;
-        by_key.insert((e.from_node.clone(), e.to_node.clone(), ty), e);
+        by_key.insert((e.from_node.to_string(), e.to_node.to_string(), ty), e);
     }
     counts.unique = by_key.len() as u64;
 
     let mut tx = pool.begin().await?;
     let before = count_rows(&mut tx, COUNT_COMPAT, modpack).await?;
 
-    let entries: Vec<((String, String, String), &registry_compat::EdgeElement)> =
+    let entries: Vec<((String, String, String), &registry_compat::Edge)> =
         by_key.into_iter().collect();
     let mut affected = 0u64;
     for chunk in entries.chunks(CHUNK) {

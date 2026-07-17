@@ -32,14 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v6
-        with:
-          node-version: "26"
-      # Rust toolchain so codegen can rustfmt the generated serde projections.
+      # T-165.3: codegen is Rust (xtask + typify) — no Node in this job.
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.95.0"
           components: rustfmt
+      - uses: Swatinem/rust-cache@v2
       - run: make schema-codegen
       - name: Fail if generated contract output is stale
         run: git diff --exit-code -- apps/website/src/contract/generated

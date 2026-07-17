@@ -25,9 +25,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-165 — Node/JS eradication: every .mjs tool -> Rust
 
-- **Active slice:** `T-165.3`
+- **Active slice:** `T-165.4`
 - **Slice spec:** `docs/platform/t165_node_eradication.md`
 - **Program hub:** `docs/platform/t165_node_eradication.md`
 - **Branch:** `ticket/T-165`
 - **Targets:** root
-- **Summary:** ACTIVE: port all repo-authored Node tooling (90 .mjs / 13.8k LOC: schema toolchain, map-asset pipeline, T-159 CDP harness, MCP broker) to Rust; only the third-party enfusion-mcp runtime remains (the floor); zero setup-node in CI at closure. T-165.0-.2 shipped: scaffold + dead-set; text/JSON gates + the full validate suite -> `cargo xtask schema` (130/130 PASS parity, label-set identical); ci.yml schema job + schema.yml + contracts citations are Node-free. Hub: docs/platform/t165_node_eradication.md.
+- **Summary:** ACTIVE: port all repo-authored Node tooling (90 .mjs / 13.8k LOC: schema toolchain, map-asset pipeline, T-159 CDP harness, MCP broker) to Rust; only the third-party enfusion-mcp runtime remains (the floor); zero setup-node in CI at closure. T-165.0-.3 shipped (codegen -> typify, loadout.rs hand-frozen w/ round-trip tests, contracts.yml Node-free): scaffold + dead-set; text/JSON gates + the full validate suite -> `cargo xtask schema` (130/130 PASS parity, label-set identical); ci.yml schema job + schema.yml + contracts citations are Node-free. Hub: docs/platform/t165_node_eradication.md.

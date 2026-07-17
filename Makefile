@@ -118,8 +118,8 @@ schema-validate: ## Validate golden missions + T-090 map-object contracts (enums
 	cargo run -q -p xtask -- schema n6
 	cargo run -q -p xtask -- schema n10
 
-schema-codegen: ## Regenerate TS + Rust contract types from packages/tbd-schema/schema (DOCUMENTATION_STANDARDS §9.1)
-	cd packages/tbd-schema && npm ci --silent && node scripts/codegen.mjs
+schema-codegen: ## Regenerate Rust contract types from packages/tbd-schema/schema via typify (T-165.3; loadout.rs is hand-maintained)
+	cargo run -q -p xtask -- schema codegen
 
 verify-citations: ## Verify @contract citations (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port)
 	cargo run -q -p xtask -- schema citations
