@@ -2,11 +2,13 @@
 
 | Worktree | Branch | Ticket | Status |
 |----------|--------|--------|--------|
-| *(repo root)* | `main` | docs / registry | Cursor docs on main |
-| **TBD-T-159** | `t-159-leptos-ui` | **T-159** Leptos UI rewrite | **Active** |
-| **TBD-T-161** | `t-161-ticket-xtask` | **T-161** Ticket CLI → Rust xtask | **Shipped** — ready to merge |
+| *(repo root)* | `main` | docs / registry | — |
 
-**Merged / cleaned:** T-127 · T-128 · T-090-2 · **T-092**.
+**No active worktrees.** T-159 (Leptos UI rewrite incl. React deletion) and T-161/T-162
+(ticket CLI → Rust xtask + Python eradication) merged to `main` 2026-07-17 (T-163) and their
+worktrees + branches were removed.
+
+**Merged / cleaned:** T-127 · T-128 · T-090-2 · T-092 · **T-159** · **T-161/T-162**.
 
 ---
 

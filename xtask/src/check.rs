@@ -19,7 +19,9 @@ fn validate_row(row: &serde_json::Value) -> Vec<String> {
     let mut errors = vec![];
     let tid = opt_str(row, "id").unwrap_or("?");
     let status = opt_str(row, "status").unwrap_or("");
-    for key in ["id", "title", "summary", "program", "surfaces", "impact", "status"] {
+    for key in [
+        "id", "title", "summary", "program", "surfaces", "impact", "status",
+    ] {
         if !is_truthy(row.get(key)) {
             errors.push(format!("{tid}: missing {key}"));
         }
@@ -59,8 +61,6 @@ fn scan_legacy_ids(root: &Path) -> HashMap<String, Vec<String>> {
     let scan_roots: Vec<PathBuf> = vec![
         root.join("docs"),
         root.join("docs/specs"),
-        root.join("apps/website/frontend/docs"),
-        root.join("apps/website/frontend/src"),
         root.join(".ai/tickets/queue.json"),
         root.join("CLAUDE.md"),
         root.join("README.md"),
@@ -194,18 +194,13 @@ pub fn check(root: &Path, registry: &serde_json::Value, strict: bool) -> Vec<Str
     if strict {
         let hits = scan_legacy_ids(root);
         for (path, matches) in hits {
-            errors.push(format!(
-                "Legacy ID in {path}: {} match(es)",
-                matches.len()
-            ));
+            errors.push(format!("Legacy ID in {path}: {} match(es)", matches.len()));
         }
         let gap = gap_analysis_path(root);
         if gap.is_file() {
             let text = fs::read_to_string(&gap).unwrap_or_default();
             if text.contains("| priority |") || PRIORITY_P.is_match(&text) {
-                errors.push(
-                    "gap_analysis still has priority column or numbered P backlog".into(),
-                );
+                errors.push("gap_analysis still has priority column or numbered P backlog".into());
             }
         }
     }

@@ -131,7 +131,10 @@ pub fn write_json_ascii(path: &Path, data: &Value) -> Result<()> {
 }
 
 pub fn tickets(reg: &Registry) -> &[Value] {
-    reg.get("tickets").and_then(|t| t.as_array()).map(|a| a.as_slice()).unwrap_or(&[])
+    reg.get("tickets")
+        .and_then(|t| t.as_array())
+        .map(|a| a.as_slice())
+        .unwrap_or(&[])
 }
 
 pub fn tickets_mut(reg: &mut Registry) -> Result<&mut Vec<Value>> {
@@ -141,11 +144,16 @@ pub fn tickets_mut(reg: &mut Registry) -> Result<&mut Vec<Value>> {
 }
 
 pub fn ticket_by_id<'a>(reg: &'a Registry, tid: &str) -> Option<&'a Value> {
-    tickets(reg).iter().find(|t| t.get("id").and_then(|i| i.as_str()) == Some(tid))
+    tickets(reg)
+        .iter()
+        .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(tid))
 }
 
 pub fn ticket_by_id_mut<'a>(reg: &'a mut Registry, tid: &str) -> Option<&'a mut Value> {
-    tickets_mut(reg).ok()?.iter_mut().find(|t| t.get("id").and_then(|i| i.as_str()) == Some(tid))
+    tickets_mut(reg)
+        .ok()?
+        .iter_mut()
+        .find(|t| t.get("id").and_then(|i| i.as_str()) == Some(tid))
 }
 
 pub fn str_field(t: &Value, key: &str) -> String {
@@ -169,7 +177,10 @@ pub fn order_truthy(t: &Value) -> bool {
     match t.get("order") {
         None | Some(Value::Null) => false,
         Some(Value::Bool(false)) => false,
-        Some(Value::Number(n)) => n.as_i64().map(|i| i != 0).unwrap_or(true) || n.as_f64().map(|f| f != 0.0).unwrap_or(true),
+        Some(Value::Number(n)) => {
+            n.as_i64().map(|i| i != 0).unwrap_or(true)
+                || n.as_f64().map(|f| f != 0.0).unwrap_or(true)
+        }
         Some(Value::String(s)) => !s.is_empty(),
         Some(_) => true,
     }
@@ -229,10 +240,15 @@ pub fn slice_targets(t: &Value) -> Vec<String> {
         if let Some(row) = plan.get(active) {
             if let Some(arr) = row.get("targets").and_then(|t| t.as_array()) {
                 if !arr.is_empty() {
-                    return arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect();
+                    return arr
+                        .iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect();
                 }
             }
-            return string_list(t, "targets").or_else(|| Some(vec!["website".into()])).unwrap();
+            return string_list(t, "targets")
+                .or_else(|| Some(vec!["website".into()]))
+                .unwrap();
         }
     }
     string_list(t, "targets").unwrap_or_else(|| vec!["website".into()])
@@ -240,7 +256,9 @@ pub fn slice_targets(t: &Value) -> Vec<String> {
 
 pub fn string_list(t: &Value, key: &str) -> Option<Vec<String>> {
     t.get(key)?.as_array().map(|a| {
-        a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect()
+        a.iter()
+            .filter_map(|v| v.as_str().map(|s| s.to_string()))
+            .collect()
     })
 }
 

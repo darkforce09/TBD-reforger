@@ -1,5 +1,5 @@
-use anyhow::{bail, Result};
-use serde_json::{json, Value};
+use anyhow::{Result, bail};
+use serde_json::{Value, json};
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::Path;
@@ -249,13 +249,11 @@ fn generate_ticket_mod_queue_md(registry: &Value) -> String {
             matches!(
                 opt_str(t, "status"),
                 Some("ready" | "queued" | "running" | "review")
-            ) && matches!(
-                slice_executor(t).as_str(),
-                "workbench" | "human"
-            ) && string_list(t, "targets")
-                .unwrap_or_default()
-                .iter()
-                .any(|x| x == "mod")
+            ) && matches!(slice_executor(t).as_str(), "workbench" | "human")
+                && string_list(t, "targets")
+                    .unwrap_or_default()
+                    .iter()
+                    .any(|x| x == "mod")
         })
         .collect();
     rows.sort_by_key(|t| ticket_sort_key(t));
@@ -451,9 +449,7 @@ fn inject_status_block(root: &Path, registry: &Value) -> Result<()> {
     lines.push("**Next (by order):**".into());
     let mut queued: Vec<&Value> = all
         .iter()
-        .filter(|t| {
-            matches!(opt_str(t, "status"), Some("queued" | "ready")) && order_truthy(t)
-        })
+        .filter(|t| matches!(opt_str(t, "status"), Some("queued" | "ready")) && order_truthy(t))
         .collect();
     queued.sort_by_key(|t| order_or(t, 9999));
     for t in queued.into_iter().take(10) {

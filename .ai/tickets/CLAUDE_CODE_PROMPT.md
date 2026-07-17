@@ -37,7 +37,7 @@ Read CLAUDE.md first.
 Implement **T-0xx.Y** — {one-line title}.
 
 ═══ PREFLIGHT ═══
-  git pull && git lfs pull && make map-assets-link
+  git pull && git lfs pull  # (map-assets-link retired at T-159.29.3 — Trunk/backend serve map-assets)
   ./scripts/ticket brief T-0xx
 
 ═══ READ (in order — spec wins on conflict) ═══

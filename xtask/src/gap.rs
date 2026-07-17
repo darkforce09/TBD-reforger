@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use regex::Regex;
 use serde_json::Value;
 use std::fs;
@@ -8,8 +8,7 @@ use std::sync::LazyLock;
 use crate::registry::{str_field, tickets};
 use crate::root::gap_analysis_path;
 
-static CHECKMARK_TICKET: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"✅\s*(T-\d{3})").unwrap());
+static CHECKMARK_TICKET: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"✅\s*(T-\d{3})").unwrap());
 static SEP_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^\|\s*-+\s*\|").unwrap());
 
 struct GapTable {
@@ -36,7 +35,10 @@ fn split_table_row(line: &str) -> Vec<String> {
 }
 
 fn parse_gap_analysis(content: &str) -> GapDoc {
-    let lines: Vec<String> = content.split_inclusive('\n').map(|s| s.to_string()).collect();
+    let lines: Vec<String> = content
+        .split_inclusive('\n')
+        .map(|s| s.to_string())
+        .collect();
     let mut doc = GapDoc {
         lines: lines.clone(),
         tables: vec![],

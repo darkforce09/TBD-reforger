@@ -90,7 +90,7 @@ Read CLAUDE.md first.
 Implement **T-0xx** — {one-line title}.
 
 ═══ PREFLIGHT ═══
-  git pull && make map-assets-link
+  git pull && make ci-local-leptos  # (map-assets-link retired at T-159.29.3)
   ./scripts/ticket brief T-0xx
 
 ═══ READ (in order — spec wins on conflict) ═══
@@ -113,7 +113,7 @@ Implement **T-0xx** — {one-line title}.
   - Edit docs/**, registry, docs/TICKET_*.md, CLAUDE status markers
 
 ═══ VERIFY (all exit 0) ═══
-  cd apps/website/frontend && npm run build && npm run lint
+  make ci-local-leptos
 
 ═══ MANUAL ═══
   - …

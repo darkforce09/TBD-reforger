@@ -1,7 +1,7 @@
 //! Debug helpers for scripts/mod/debug-direct-join.sh (T-162).
 
 use anyhow::{Context, Result};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::fs::OpenOptions;
 use std::io::Write;
 use std::net::UdpSocket;

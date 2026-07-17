@@ -1,6 +1,6 @@
 //! MCP JSON-RPC helpers (T-162) — formerly scripts/mod/lib/mcp-*.py
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::io::{self, BufRead, Read, Write};
 use std::os::unix::net::UnixStream;
 use std::path::Path;
@@ -92,11 +92,7 @@ pub fn cmd_consume() -> i32 {
             return 0;
         }
     }
-    if saw_init {
-        1
-    } else {
-        2
-    }
+    if saw_init { 1 } else { 2 }
 }
 
 /// Exit 0 = got response line; 7 = daemon unavailable (Python contract).

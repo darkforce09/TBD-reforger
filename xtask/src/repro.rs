@@ -1,6 +1,6 @@
 //! Repro helpers for scripts/website/mission-version-upload-repro.sh (T-162).
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use serde_json::Value;
 use std::fs;
 use std::io::{self, Read};
@@ -9,14 +9,9 @@ use std::path::Path;
 /// Read JSON from stdin; print `.id` (mission create response).
 pub fn cmd_mission_id() -> Result<()> {
     let mut buf = String::new();
-    io::stdin()
-        .read_to_string(&mut buf)
-        .context("read stdin")?;
+    io::stdin().read_to_string(&mut buf).context("read stdin")?;
     let v: Value = serde_json::from_str(&buf).context("parse JSON")?;
-    let id = v
-        .get("id")
-        .and_then(|x| x.as_str())
-        .context("missing id")?;
+    let id = v.get("id").and_then(|x| x.as_str()).context("missing id")?;
     println!("{id}");
     Ok(())
 }

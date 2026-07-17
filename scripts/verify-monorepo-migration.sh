@@ -65,7 +65,7 @@ fi
 
 # V13 Makefile
 make help >/dev/null 2>&1 && pass "V13 make help" || fail "V13 make help"
-for t in db-up api web ticket-sync ticket-check-strict schema-validate; do
+for t in db-up api leptos ticket-sync ticket-check-strict schema-validate; do
   grep -q "^${t}:" Makefile && pass "V13 target $t" || fail "V13 target $t"
 done
 

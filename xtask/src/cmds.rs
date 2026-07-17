@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::fs;
 use std::path::Path;
 use std::process::Command;
@@ -40,49 +40,87 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
 
     match (active.as_str(), tid.as_str()) {
         ("T-090.1.2.2", _) => {
-            println!("SCOPE: SAP cell seam repair — analyze 256 m grid edges, feather/blend in stitch-sap-ortho.mjs, rebuild lossless z0–6 pyramid");
-            println!("DO NOT REOPEN: T-090.1.2 decode contract, T-090.1.2.1 lossless pyramid encode (reuse --lossless rebuild)");
-            println!("PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090");
+            println!(
+                "SCOPE: SAP cell seam repair — analyze 256 m grid edges, feather/blend in stitch-sap-ortho.mjs, rebuild lossless z0–6 pyramid"
+            );
+            println!(
+                "DO NOT REOPEN: T-090.1.2 decode contract, T-090.1.2.1 lossless pyramid encode (reuse --lossless rebuild)"
+            );
+            println!(
+                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090"
+            );
             println!("HANDOFF: .ai/artifacts/t090_1_2_2_claude_code_handoff.md");
-            println!("VERIFY: analyze-sap-seams + verify-sap-seams + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid + make verify-terrain");
+            println!(
+                "VERIFY: analyze-sap-seams + verify-sap-seams + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid + make verify-terrain"
+            );
             println!("MANUAL: S1 operator seam location invisible at max zoom");
         }
         ("T-090.1.2.3", _) => {
-            println!("SCOPE: basemap tile prefetch + cache — fix pan ~40 fps flicker; useTerrainBasemapLayer.ts (+ basemapTileCache.ts)");
+            println!(
+                "SCOPE: basemap tile prefetch + cache — fix pan ~40 fps flicker; useTerrainBasemapLayer.ts (+ basemapTileCache.ts)"
+            );
             println!("PARALLEL: frontend only — safe alongside T-090.1.2.2");
             println!("HANDOFF: .ai/artifacts/t090_1_2_3_claude_code_handoff.md");
-            println!("RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md");
-            println!("VERIFY: cd apps/website/frontend && npm run build && npm run lint && npm test && make ci-local-frontend");
+            println!(
+                "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
+            );
+            println!("VERIFY: make ci-local-leptos");
             println!("MANUAL: P1 no pop-in; P2 pan fps ≥55");
         }
         ("T-090.1.2.5", _) => {
-            println!("SCOPE: satellite water — ocean + inland on SAP ortho; P0 mask spike, composite-water-ortho.mjs, lossless pyramid rebuild");
+            println!(
+                "SCOPE: satellite water — ocean + inland on SAP ortho; P0 mask spike, composite-water-ortho.mjs, lossless pyramid rebuild"
+            );
             println!("DEPENDS: run after T-090.1.2.2 seam ortho when possible");
             println!("HANDOFF: .ai/artifacts/t090_1_2_5_claude_code_handoff.md");
-            println!("RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md");
-            println!("VERIFY: water spike + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid");
+            println!(
+                "RESUME: docs/specs/Mission_Creator_Architecture/t090_1_2_satellite_backlog.md"
+            );
+            println!(
+                "VERIFY: water spike + verify-sap-ortho + EXPECT_LOSSLESS=1 verify-tile-pyramid"
+            );
             println!("MANUAL: W1 coast water; W2 inland lakes/rivers");
         }
         ("T-090.1.2.1", _) => {
-            println!("SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — build-tile-pyramid.sh --lossless, verify VP8L, manifest maxZoom 6");
-            println!("DO NOT REOPEN: T-090.1.2 decode/stitch/orientation (shipped @ c2730a3) unless verify-sap-ortho fails");
-            println!("ORTH: packages/map-assets/everon/staging/sap/everon-sap-ortho.png (12800² — already built; do NOT re-stitch)");
-            println!("PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090");
+            println!(
+                "SCOPE: lossless WebP z0–6 pyramid from staged SAP ortho — build-tile-pyramid.sh --lossless, verify VP8L, manifest maxZoom 6"
+            );
+            println!(
+                "DO NOT REOPEN: T-090.1.2 decode/stitch/orientation (shipped @ c2730a3) unless verify-sap-ortho fails"
+            );
+            println!(
+                "ORTH: packages/map-assets/everon/staging/sap/everon-sap-ortho.png (12800² — already built; do NOT re-stitch)"
+            );
+            println!(
+                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-090"
+            );
             println!("HANDOFF: .ai/artifacts/t090_1_2_1_claude_code_handoff.md");
-            println!("VERIFY: node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon && EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon && make verify-terrain && make ci-local-frontend");
-            println!("MANUAL: L1 max-zoom field/road pixel-sharp; L2 north-up; L3 alignment; L4 ≥55 fps");
+            println!(
+                "VERIFY: node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon && EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon && make verify-terrain && make ci-local-leptos"
+            );
+            println!(
+                "MANUAL: L1 max-zoom field/road pixel-sharp; L2 north-up; L3 alignment; L4 ≥55 fps"
+            );
         }
         (_, "T-122") => {
-            println!("SCOPE: ALL findings in docs/platform/CODEBASE_AUDIT_2026.md (C/R/T/M/D) — one branch");
-            println!("MAY EDIT: docs/platform/CODEBASE_AUDIT_2026.md (append shipped SHA under §Verification)");
+            println!(
+                "SCOPE: ALL findings in docs/platform/CODEBASE_AUDIT_2026.md (C/R/T/M/D) — one branch"
+            );
+            println!(
+                "MAY EDIT: docs/platform/CODEBASE_AUDIT_2026.md (append shipped SHA under §Verification)"
+            );
             println!("DO NOT: edit registry or other docs");
-            println!("VERIFY: make test-it && cd apps/website/frontend && npm run build && npm run lint");
+            println!("VERIFY: make test-it && make ci-local-leptos");
         }
         (_, "T-123") => {
-            println!("AUTHORITY: docs/platform/DOCUMENTATION_STANDARDS.md (normative — already written)");
+            println!(
+                "AUTHORITY: docs/platform/DOCUMENTATION_STANDARDS.md (normative — already written)"
+            );
             println!("SCOPE: roll out in-code @contract/@route/@model + Godoc/TSDoc/Enfusion tags");
             println!("OUT OF SCOPE: markdownlint only");
-            println!("SLICES: .0 doc hub → .1 Go → .2 TS → .3 Enfusion → .4 codegen → .5 Go JSON validation → .6 CI");
+            println!(
+                "SLICES: .0 doc hub → .1 Go → .2 TS → .3 Enfusion → .4 codegen → .5 Go JSON validation → .6 CI"
+            );
             println!("SPEC: docs/platform/t123_documentation_standards_rollout.md");
         }
         (_, "T-124") => {
@@ -95,38 +133,60 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
         ("T-124.3", _) => println!("SHIPPED @ cd11db0 — do not reopen"),
         (_, "T-125") => {
             println!("AUTHORITY: new CODING_STANDARDS.md (T-125.0) + DOCUMENTATION_STANDARDS.md");
-            println!("SCOPE: full CI gate, golangci full set, TS strict, @route completion, error policy");
+            println!(
+                "SCOPE: full CI gate, golangci full set, TS strict, @route completion, error policy"
+            );
             println!("PREREQ: T-124 shipped (met @ cd11db0)");
             println!("SPEC: docs/platform/t125_coding_standards_enforcement.md");
         }
-        ("T-125.0", _) => println!("SCOPE: write docs/platform/CODING_STANDARDS.md — style/structure/errors/tests"),
-        ("T-125.1", _) => println!("SCOPE: .github/workflows/ci.yml + make ci-local; Postgres 18 service"),
-        ("T-125.2", _) => println!("SCOPE: golangci errcheck/govet/staticcheck; remove only-new-issues; fix all Go lint"),
-        ("T-125.3", _) => println!("SCOPE: tsconfig strict:true + eslint @contract/@model enforcement + fixes"),
-        ("T-125.4", _) => println!("SCOPE: @route on all handlers; error-handling; Enfusion DTO fixture gate in validate.mjs"),
+        ("T-125.0", _) => println!(
+            "SCOPE: write docs/platform/CODING_STANDARDS.md — style/structure/errors/tests"
+        ),
+        ("T-125.1", _) => {
+            println!("SCOPE: .github/workflows/ci.yml + make ci-local; Postgres 18 service")
+        }
+        ("T-125.2", _) => println!(
+            "SCOPE: golangci errcheck/govet/staticcheck; remove only-new-issues; fix all Go lint"
+        ),
+        ("T-125.3", _) => {
+            println!("SCOPE: tsconfig strict:true + eslint @contract/@model enforcement + fixes")
+        }
+        ("T-125.4", _) => println!(
+            "SCOPE: @route on all handlers; error-handling; Enfusion DTO fixture gate in validate.mjs"
+        ),
         ("T-125.5", _) => println!("SCOPE: .editorconfig + optional Prettier"),
         ("T-125.6", _) => {
-            println!("EXECUTOR: cursor-docs — registry shipped, hub links, CLAUDE §Done, ticket sync");
+            println!(
+                "EXECUTOR: cursor-docs — registry shipped, hub links, CLAUDE §Done, ticket sync"
+            );
             println!("DO NOT: Claude executes this slice");
         }
         ("T-123.0", _) => {
-            println!("SCOPE: AGENT_COMMIT_CHECKLIST link, platform README, handoff artifact — docs only");
+            println!(
+                "SCOPE: AGENT_COMMIT_CHECKLIST link, platform README, handoff artifact — docs only"
+            );
             println!("DO NOT: edit apps/website/, apps/mod/, packages/tbd-schema/ source");
             println!("VERIFY: ./scripts/ticket sync && ./scripts/ticket check --strict");
         }
         ("T-123.1", _) => {
-            println!("SCOPE: Go internal/models + handlers — Godoc + @contract/@route on cross-boundary symbols");
+            println!(
+                "SCOPE: Go internal/models + handlers — Godoc + @contract/@route on cross-boundary symbols"
+            );
             println!("FIX: schemaVersion int drift → string per DOCUMENTATION_STANDARDS §2.2");
             println!("DO NOT: edit docs/ or registry");
             println!("VERIFY: make test-it && go build ./...");
         }
         ("T-123.2", _) => {
-            println!("SCOPE: frontend tsdoc.json + TSDoc on types/api/hooks + @model/@contract/@route");
+            println!(
+                "SCOPE: frontend tsdoc.json + TSDoc on types/api/hooks + @model/@contract/@route"
+            );
             println!("NOTE: eslint jsdoc CI lands in T-123.6 — add tags here first");
-            println!("VERIFY: cd apps/website/frontend && npm run build && npm run lint");
+            println!("VERIFY: make ci-local-leptos");
         }
         ("T-123.4", _) => {
-            println!("SCOPE: schema codegen — internal/contract/ + frontend/src/types/contract/ + regen script");
+            println!(
+                "SCOPE: schema codegen — internal/contract/ + frontend/src/types/contract/ + regen script"
+            );
             println!("SCHEMAS: registry-items, loadout-export, mission export defs first");
             println!("VERIFY: cd packages/tbd-schema && npm run validate && make test-it");
         }
@@ -136,36 +196,62 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!("VERIFY: make test-it (golden pass + invalid fixture fail cases)");
         }
         ("T-123.6", _) => {
-            println!("SCOPE: CI — revive exported, eslint jsdoc, verify-contract-citations.mjs, schema.yml");
+            println!(
+                "SCOPE: CI — revive exported, eslint jsdoc, verify-contract-citations.mjs, schema.yml"
+            );
             println!("VERIFY: local golangci-lint + FE lint + citation script exit 0");
         }
         ("T-123.3", _) => {
-            println!("SCOPE: Enfusion Backend/Gamemode — //! headers, DTO field docs, @authority/@rpc/@replicated");
+            println!(
+                "SCOPE: Enfusion Backend/Gamemode — //! headers, DTO field docs, @authority/@rpc/@replicated"
+            );
             println!("PREFLIGHT: enfusion-mcp before any .c edit");
             println!("VERIFY: Workbench compile on touched scripts (human note)");
         }
         ("T-090.1", _) => {
-            println!("SCOPE: aligned WebP tile basemap — TileLayer / manifest tiles[]; see t090_1_aligned_basemap.md");
-            println!("DO NOT REOPEN: T-091 dem/* + ydoc Z wiring (shipped @ dde589e) unless regression");
+            println!(
+                "SCOPE: aligned WebP tile basemap — TileLayer / manifest tiles[]; see t090_1_aligned_basemap.md"
+            );
+            println!(
+                "DO NOT REOPEN: T-091 dem/* + ydoc Z wiring (shipped @ dde589e) unless regression"
+            );
             println!("PREFLIGHT: make map-assets-link && ./scripts/ticket brief T-090");
         }
         ("T-091.2", _) => {
-            println!("DO NOT REOPEN: T-091.0 plugin/export, T-091.1 dem/* loader (shipped @ 2c56c2e) unless regression fix");
-            println!("SCOPE: ydoc z sample (addSlot/pasteSlots/moveEntities/updateSlotPosition X/Y), TacticalMap CUR z, BottomToolbelt 3dp Z, useDemLayer hillshade (BitmapLayer ≤1024px), MissionSettings toggles, meta.environment showGrid/showHillshade");
-            println!("CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader");
-            println!("PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091");
-            println!("VERIFY: make map-assets-link && cd apps/website/frontend && npm run build && npm run lint && npm test && make verify-terrain-strict && ! rg 'map-assets|fetch.*dem' apps/website/frontend/src/features/mission-creator/compiler/");
-            println!("MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample");
+            println!(
+                "DO NOT REOPEN: T-091.0 plugin/export, T-091.1 dem/* loader (shipped @ 2c56c2e) unless regression fix"
+            );
+            println!(
+                "SCOPE: ydoc z sample (addSlot/pasteSlots/moveEntities/updateSlotPosition X/Y), TacticalMap CUR z, BottomToolbelt 3dp Z, useDemLayer hillshade (BitmapLayer ≤1024px), MissionSettings toggles, meta.environment showGrid/showHillshade"
+            );
+            println!(
+                "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
+            );
+            println!(
+                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091"
+            );
+            println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
+            println!(
+                "MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample"
+            );
         }
         ("T-091.1", _) => {
-            println!("DO NOT: TBD_TerrainExportPlugin.c, Workbench, MCP terrain export, re-export everon-dem-16bit.png, anchor probes, or packages/map-assets/ edits");
-            println!("SCOPE: apps/website/frontend — tactical-map/dem/*, public/map-assets symlink, vitest; wire DemController in TacticalMap.tsx");
-            println!("REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs");
-            println!("PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091");
-            println!("VERIFY: make map-assets-link && cd apps/website/frontend && npm run build && npm run lint && npm test && make verify-terrain-strict && ! rg 'map-assets|dem/|sampleElevation' apps/website/frontend/src/features/mission-creator/compiler/");
+            println!(
+                "DO NOT: TBD_TerrainExportPlugin.c, Workbench, MCP terrain export, re-export everon-dem-16bit.png, anchor probes, or packages/map-assets/ edits"
+            );
+            println!(
+                "SCOPE (React-era, shipped; app retired at T-159.29.3): tactical-map/dem/* + DemController wiring"
+            );
+            println!(
+                "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
+            );
+            println!(
+                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091"
+            );
+            println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
         }
         _ => {
-            println!("VERIFY: cd apps/website/frontend && npm run build && npm run lint");
+            println!("VERIFY: make ci-local-leptos");
         }
     }
 
@@ -196,7 +282,11 @@ pub fn cmd_show(registry: &Value, id: &str) -> Result<()> {
     let t = require_ticket(registry, id);
     let surfaces = string_list(t, "surfaces").unwrap_or_default().join(", ");
     let impact = string_list(t, "impact").unwrap_or_default().join(", ");
-    println!("### {} · {}", str_field(t, "id"), opt_str(t, "title").unwrap_or(""));
+    println!(
+        "### {} · {}",
+        str_field(t, "id"),
+        opt_str(t, "title").unwrap_or("")
+    );
     println!(
         "**Program:** {} · **Where:** {surfaces}",
         opt_str(t, "program").unwrap_or("")
@@ -237,7 +327,9 @@ pub fn cmd_show(registry: &Value, id: &str) -> Result<()> {
 
 pub fn cmd_next(registry: &Value) -> Result<()> {
     if let Some(slice_row) = tickets(registry).iter().find(|t| {
-        t.get("active_slice").map(|v| is_truthy(Some(v))).unwrap_or(false)
+        t.get("active_slice")
+            .map(|v| is_truthy(Some(v)))
+            .unwrap_or(false)
     }) {
         println!(
             "ACTIVE: {} slice {}",
@@ -288,7 +380,10 @@ pub fn cmd_prompt(
         slice_spec(t)
     };
     if spec_rel.is_empty() {
-        let sid = slice_id.as_deref().map(|s| format!(" slice {s}")).unwrap_or_default();
+        let sid = slice_id
+            .as_deref()
+            .map(|s| format!(" slice {s}"))
+            .unwrap_or_default();
         eprintln!("No spec for {id}{sid}");
         std::process::exit(1);
     }
@@ -323,8 +418,14 @@ pub fn cmd_list(root: &Path, registry: &Value) -> Result<()> {
     } else {
         generate_queue_json(registry)
     };
-    let batch = data.get("batch_size").and_then(|v| v.as_i64()).unwrap_or(10);
-    let conc = data.get("concurrency").and_then(|v| v.as_i64()).unwrap_or(3);
+    let batch = data
+        .get("batch_size")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(10);
+    let conc = data
+        .get("concurrency")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(3);
     println!("batch_size={batch} concurrency={conc}");
     println!("{:<8} {:<10} {:<50} TITLE", "ID", "STATUS", "SPEC");
     println!("{}", "-".repeat(100));
@@ -393,9 +494,15 @@ pub fn cmd_sparse_paths(registry: &Value, id: &str) -> Result<()> {
     paths.insert(".github".to_string());
     for tgt in slice_targets(t) {
         match tgt.as_str() {
-            "website" => { paths.insert("apps/website".into()); }
-            "mod" => { paths.insert("apps/mod".into()); }
-            "shared" => { paths.insert("packages/tbd-schema".into()); }
+            "website" => {
+                paths.insert("apps/website".into());
+            }
+            "mod" => {
+                paths.insert("apps/mod".into());
+            }
+            "shared" => {
+                paths.insert("packages/tbd-schema".into());
+            }
             "root" => {
                 for p in [
                     "scripts",
@@ -436,7 +543,12 @@ pub fn cmd_ship(root: &Path, registry: &mut Value, id: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn cmd_mark_ready(root: &Path, registry: &mut Value, id: &str, spec_arg: Option<&str>) -> Result<()> {
+pub fn cmd_mark_ready(
+    root: &Path,
+    registry: &mut Value,
+    id: &str,
+    spec_arg: Option<&str>,
+) -> Result<()> {
     {
         let t = ticket_by_id_mut(registry, id).unwrap_or_else(|| unknown_ticket(id));
         if let Some(s) = spec_arg {
@@ -839,7 +951,8 @@ pub fn cmd_run(root: &Path, registry: &Value, dry_run: bool, stream: Option<&str
 fn cmd_config_value(root: &Path, registry: &Value, key: &str) -> String {
     let queue_path = root.join(".ai/tickets/queue.json");
     let data: Value = if queue_path.is_file() {
-        serde_json::from_str(&fs::read_to_string(&queue_path).unwrap_or_default()).unwrap_or(json!({}))
+        serde_json::from_str(&fs::read_to_string(&queue_path).unwrap_or_default())
+            .unwrap_or(json!({}))
     } else {
         generate_queue_json(registry)
     };
@@ -879,6 +992,8 @@ fn run_one(root: &Path, registry: &Value, id: &str, dry_run: bool) -> Result<()>
         return Ok(());
     }
     // Full Claude Code invoke is environment-specific; mark running + note
-    eprintln!("[{id}] run: invoke Claude Code manually / ticket pipeline (xtask run is scaffolding)");
+    eprintln!(
+        "[{id}] run: invoke Claude Code manually / ticket pipeline (xtask run is scaffolding)"
+    );
     Ok(())
 }

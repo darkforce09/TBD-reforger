@@ -14,7 +14,7 @@ mod repro;
 mod root;
 mod sync;
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 use std::process::ExitCode;
@@ -59,9 +59,7 @@ enum TopCmd {
     },
     /// Print a top-level registry.json field (e.g. next_id)
     #[command(name = "registry-get")]
-    RegistryGet {
-        field: String,
-    },
+    RegistryGet { field: String },
 }
 
 #[derive(Subcommand, Debug)]
@@ -259,9 +257,7 @@ fn run() -> Result<u8> {
                     args_json,
                 } => {
                     if sock.is_empty() || tool.is_empty() {
-                        eprintln!(
-                            "usage: mcp-socket-send <socket> <tool> [args-json]"
-                        );
+                        eprintln!("usage: mcp-socket-send <socket> <tool> [args-json]");
                         7
                     } else {
                         mcp::cmd_socket_send(&sock, &tool, &args_json)
@@ -290,13 +286,7 @@ fn run() -> Result<u8> {
                     data,
                     run_id,
                 } => {
-                    debug_cmd::cmd_ndjson_append(
-                        &log,
-                        &hypothesis,
-                        &message,
-                        &data,
-                        &run_id,
-                    )?;
+                    debug_cmd::cmd_ndjson_append(&log, &hypothesis, &message, &data, &run_id)?;
                 }
                 DebugCmd::DirectJoinLog {
                     log,

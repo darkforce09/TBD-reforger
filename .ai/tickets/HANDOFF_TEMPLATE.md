@@ -51,7 +51,7 @@ N. Tag **T-0xx.Y**
 ## Preflight
 
 \`\`\`bash
-git pull && git lfs pull && make map-assets-link
+git pull && git lfs pull  # (map-assets-link retired at T-159.29.3 — Trunk/backend serve map-assets)
 ./scripts/ticket brief T-0xx
 \`\`\`
 

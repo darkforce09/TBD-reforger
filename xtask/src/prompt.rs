@@ -3,7 +3,8 @@ use regex::Regex;
 use std::sync::LazyLock;
 
 static SECTION: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(r"(?ms)^##\s+Claude Code prompt[^\n]*\n+(?:[^\n]*\n)*?```(?:\w*\n)?(.*?)```").unwrap()
+    Regex::new(r"(?ms)^##\s+Claude Code prompt[^\n]*\n+(?:[^\n]*\n)*?```(?:\w*\n)?(.*?)```")
+        .unwrap()
 });
 
 pub fn extract_prompt(markdown: &str) -> Result<String> {
