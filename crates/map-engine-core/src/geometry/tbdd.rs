@@ -86,25 +86,43 @@ pub fn decode_tbdd(bytes: &[u8]) -> Result<TbddGrid, TbddError> {
     })
 }
 
+/// Encode a TBDD buffer (the exporter/tooling side of [`decode_tbdd`]; T-165.4 — promoted from
+/// the test-private helper so the Rust world-export pipeline shares one codec with the engine).
+/// Layout (locked, little-endian): 16-byte header (`TBDD`, u16 version=1, u16 cell_m, u16 cols,
+/// u16 rows, u8 channel_count, 3B zero pad) then per-channel `u16[cols*rows]` row-major counts.
+///
+/// # Panics
+/// Panics if a channel's length ≠ `cols * rows` (caller bug — mirrors the .mjs throw).
+#[must_use]
+pub fn encode_tbdd(cell_m: u16, cols: u16, rows: u16, channels: &[&[u16]]) -> Vec<u8> {
+    let cells = cols as usize * rows as usize;
+    let mut b = Vec::with_capacity(16 + channels.len() * cells * 2);
+    b.extend_from_slice(b"TBDD");
+    b.extend_from_slice(&1u16.to_le_bytes()); // version
+    b.extend_from_slice(&cell_m.to_le_bytes());
+    b.extend_from_slice(&cols.to_le_bytes());
+    b.extend_from_slice(&rows.to_le_bytes());
+    b.push(u8::try_from(channels.len()).expect("<=255 channels"));
+    b.extend_from_slice(&[0, 0, 0]); // pad
+    for (c, ch) in channels.iter().enumerate() {
+        assert!(
+            ch.len() == cells,
+            "encode_tbdd: channel {c} has {} values, want {cells}",
+            ch.len()
+        );
+        for &v in *ch {
+            b.extend_from_slice(&v.to_le_bytes());
+        }
+    }
+    b
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn encode(cell_m: u16, cols: u16, rows: u16, channels: &[&[u16]]) -> Vec<u8> {
-        let mut b = Vec::new();
-        b.extend_from_slice(b"TBDD");
-        b.extend_from_slice(&1u16.to_le_bytes()); // version
-        b.extend_from_slice(&cell_m.to_le_bytes());
-        b.extend_from_slice(&cols.to_le_bytes());
-        b.extend_from_slice(&rows.to_le_bytes());
-        b.push(channels.len() as u8);
-        b.extend_from_slice(&[0, 0, 0]); // pad
-        for ch in channels {
-            for &v in *ch {
-                b.extend_from_slice(&v.to_le_bytes());
-            }
-        }
-        b
+        encode_tbdd(cell_m, cols, rows, channels)
     }
 
     #[test]
