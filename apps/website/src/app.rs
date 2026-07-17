@@ -286,23 +286,26 @@ pub fn router(state: AppState) -> Router {
         .nest("/api/v1", api_routes(dev, version_limit))
         .nest_service("/uploads", ServeDir::new("uploads"));
 
+    // Always serve `/map-assets` (Trunk proxies here in dev; production SPA cutover uses the same
+    // path). Gating this behind SPA_DIST_DIR left the editor with 404s for DEM/sat/world under
+    // `make leptos` + `make api`.
+    let map_assets = if state.cfg.map_assets_dir.is_empty() {
+        "../../packages/map-assets".to_string()
+    } else {
+        state.cfg.map_assets_dir.clone()
+    };
+    r = r.nest_service("/map-assets", ServeDir::new(map_assets));
+
     // T-159.29 — serve the Leptos SPA statically when SPA_DIST_DIR is set (the cutover flip; unset
     // in dev, where `trunk serve` owns the SPA). Cross-origin isolation (COOP `same-origin` + COEP
     // `credentialless`) mirrors the Vite/Trunk headers so the wasm SharedArrayBuffer path stays
-    // available; a no-extension path falls back to index.html (client routing). `/map-assets` is
-    // served from MAP_ASSETS_DIR (or the repo default) so the editor's DEM/basemap/world chunks
-    // resolve same-origin.
+    // available; a no-extension path falls back to index.html (client routing).
     if !state.cfg.spa_dist_dir.is_empty() {
         use axum::http::header::{HeaderName, HeaderValue};
         use tower_http::set_header::SetResponseHeaderLayer;
 
         let dist = state.cfg.spa_dist_dir.clone();
         let index = format!("{dist}/index.html");
-        let map_assets = if state.cfg.map_assets_dir.is_empty() {
-            "../../packages/map-assets".to_string()
-        } else {
-            state.cfg.map_assets_dir.clone()
-        };
         let coop = SetResponseHeaderLayer::overriding(
             HeaderName::from_static("cross-origin-opener-policy"),
             HeaderValue::from_static("same-origin"),
@@ -312,7 +315,6 @@ pub fn router(state: AppState) -> Router {
             HeaderValue::from_static("credentialless"),
         );
         r = r
-            .nest_service("/map-assets", ServeDir::new(map_assets))
             .fallback_service(ServeDir::new(dist).fallback(ServeFile::new(index)))
             .layer(coop)
             .layer(coep);

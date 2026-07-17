@@ -265,6 +265,167 @@ impl Default for AuthStore {
     }
 }
 
+/* ─────────────────────────── /auth/callback ─────────────────────────── */
+
+/// Human-readable copy for backend `redirect_auth_error` fragment codes.
+fn auth_error_copy(code: &str) -> &'static str {
+    match code {
+        "missing_code" => "Discord did not return an authorization code. Please try again.",
+        "invalid_state" => "The sign-in request expired or was tampered with. Please try again.",
+        "discord_unreachable" => "Could not reach Discord. Please try again in a moment.",
+        "banned" => "This account is banned from the platform.",
+        "oauth_unconfigured" => {
+            "Discord sign-in is not configured on this server. Contact an administrator."
+        }
+        "no_session" => "No sign-in details were found. Please start from the login page.",
+        _ => "Something went wrong completing sign-in. Please try again.",
+    }
+}
+
+/// Parse `#access_token=…&refresh_token=…&expires_at=…` (or `#error=…`) once at mount.
+#[cfg(target_arch = "wasm32")]
+fn parse_callback_hash() -> Result<(RefreshResponse, bool), String> {
+    let win = web_sys::window().ok_or_else(|| auth_error_copy("no_session").to_string())?;
+    let hash = win.location().hash().unwrap_or_default();
+    let params: Vec<(String, String)> = hash
+        .trim_start_matches('#')
+        .split('&')
+        .filter_map(|pair| {
+            let mut it = pair.splitn(2, '=');
+            let k = it.next()?;
+            let v = it.next().unwrap_or("");
+            Some((
+                js_sys::decode_uri_component(k)
+                    .ok()
+                    .map(|s| s.into())
+                    .unwrap_or_else(|| k.to_string()),
+                js_sys::decode_uri_component(v)
+                    .ok()
+                    .map(|s| s.into())
+                    .unwrap_or_else(|| v.to_string()),
+            ))
+        })
+        .collect();
+    let get = |key: &str| {
+        params
+            .iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.clone())
+    };
+    if let Some(code) = get("error") {
+        return Err(auth_error_copy(&code).to_string());
+    }
+    let access = get("access_token").filter(|s| !s.is_empty());
+    let refresh = get("refresh_token").filter(|s| !s.is_empty());
+    let expires = get("expires_at").filter(|s| !s.is_empty());
+    match (access, refresh, expires) {
+        (Some(access_token), Some(refresh_token), Some(expires_at)) => Ok((
+            RefreshResponse {
+                access_token,
+                refresh_token,
+                expires_at,
+            },
+            get("arma_linked").as_deref() == Some("true"),
+        )),
+        _ => Err(auth_error_copy("no_session").to_string()),
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn scrub_callback_hash() {
+    if let Some(win) = web_sys::window() {
+        let path = win
+            .location()
+            .pathname()
+            .unwrap_or_else(|_| "/auth/callback".into());
+        let _ = win.history().ok().and_then(|h| {
+            h.replace_state_with_url(&wasm_bindgen::JsValue::NULL, "", Some(&path))
+                .ok()
+        });
+    }
+}
+
+/// OAuth / dev-login return URL — parse fragment tokens, GET `/me`, land on `/`.
+#[component]
+pub fn AuthCallbackPage() -> impl IntoView {
+    let store = expect_context::<AuthStore>();
+    let error = RwSignal::new(Option::<String>::None);
+    let busy = RwSignal::new(true);
+
+    #[cfg(target_arch = "wasm32")]
+    {
+        match parse_callback_hash() {
+            Err(msg) => {
+                scrub_callback_hash();
+                error.set(Some(msg));
+                busy.set(false);
+            }
+            Ok((tokens, arma_fallback)) => {
+                scrub_callback_hash();
+                store.set_tokens(tokens.clone());
+                persist(&store.persist_state());
+                leptos::task::spawn_local(async move {
+                    match crate::client::api_get::<crate::dto::MeResponse>(store, "/me").await {
+                        Ok(me) => {
+                            store.set_session(Session {
+                                access_token: store
+                                    .access_token
+                                    .get_untracked()
+                                    .unwrap_or_default(),
+                                refresh_token: store
+                                    .refresh_token
+                                    .get_untracked()
+                                    .unwrap_or_default(),
+                                expires_at: store.expires_at.get_untracked().unwrap_or_default(),
+                                user: me.user,
+                                arma_linked: me.arma_linked || arma_fallback,
+                            });
+                            persist(&store.persist_state());
+                            if let Some(win) = web_sys::window() {
+                                let _ = win.location().set_href("/");
+                            }
+                        }
+                        Err(_) => {
+                            // Keep minted tokens (T-126 S6) — reload can bootstrap via refresh.
+                            error.set(Some(auth_error_copy("server_error").to_string()));
+                            busy.set(false);
+                        }
+                    }
+                });
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = store;
+        busy.set(false);
+        error.set(Some(auth_error_copy("no_session").to_string()));
+    }
+
+    view! {
+        <div class="flex min-h-screen items-center justify-center bg-background p-6">
+            <div class="max-w-md rounded-xl border border-border-subtle bg-surface-container p-8 text-center">
+                <Show when=move || error.get().is_some()>
+                    <h1 class="text-xl font-semibold text-error">"Sign-in failed"</h1>
+                    <p class="mt-2 text-sm text-on-surface-variant">
+                        {move || error.get().unwrap_or_default()}
+                    </p>
+                    <a href="/login" class="mt-4 inline-block text-primary hover:underline">
+                        "Back to login"
+                    </a>
+                </Show>
+                <Show when=move || busy.get() && error.get().is_none()>
+                    <h1 class="text-xl font-semibold text-on-surface">"Completing sign-in…"</h1>
+                    <p class="mt-2 text-sm text-on-surface-variant">
+                        "Establishing your session."
+                    </p>
+                </Show>
+            </div>
+        </div>
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

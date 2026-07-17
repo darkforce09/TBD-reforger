@@ -66,6 +66,13 @@ web-sys = { version = "0.3", features = [
     # T-159.25 Server Intel copy-address (navigator.clipboard.writeText).
     "Navigator",
     "Clipboard",
+    # T-166 — TBDS/WebP decode → ImageBitmap (WebGPU) or OffscreenCanvas→RGBA (WebGL2 gates).
+    "ImageBitmap",
+    "ImageBitmapOptions",
+    "ColorSpaceConversion",
+    "OffscreenCanvas",
+    "OffscreenCanvasRenderingContext2d",
+    "ImageData",
 ] }
 
 # T-159.15 Mission Creator engine — the wasm-boundary collapse. The Leptos app links the wgpu render
@@ -76,7 +83,7 @@ map-engine-render = { path = "../../crates/map-engine-render" }
 # T-159.16 MissionDoc host — the `yrs` document core in the SAME wasm module (spec D2: a workspace dep
 # on map-engine-core with the `doc` feature, NOT the map-engine-wasm JS shim). `doc` pulls yrs; its
 # serde_json is already shared with render's `world` feature, so no duplicate dep.
-map-engine-core = { path = "../../crates/map-engine-core", features = ["doc", "mission", "png"] }
+map-engine-core = { path = "../../crates/map-engine-core", features = ["doc", "mission", "png", "world"] }
 # T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
 # `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
 # features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on

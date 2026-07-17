@@ -1,0 +1,191 @@
+---
+description: HARD — Class-R plan rigor. Measure every pin before CreatePlan. No vibe plans, no false-green gates, no silent lane skips. Polish the atoms.
+alwaysApply: true
+---
+
+# Class-R plans (HARD — atom-level)
+
+**Standard:** A plan is wrong until every numeric claim, API name, LOD assert, smoke check, and scope boundary has **file:line or command evidence** from *this* checkout. "Looks right", "should be", "typically", and soft optionals are failures.
+
+Applies to: Plan mode, CreatePlan, finish/audit plans, ticket handoffs, acceptance matrices, Mode A critiques that propose acceptance, any "how we'll know done" table.
+
+Complements: [no-silent-deferrals.mdc](no-silent-deferrals.mdc) (scope), [cursor-agent-workflow.mdc](cursor-agent-workflow.mdc) (who writes code). This rule owns **plan truth**.
+
+Does **not** authorize Cursor to write app code.
+
+---
+
+## Zero-tolerance definition of done (for the *plan*, not the ship)
+
+Before you show the operator a plan, you must be able to answer YES to all:
+
+1. Every constant in the plan was measured in this session (or cited with file:line from code that still matches).
+2. Every CDP/smoke assert would **fail** if the feature were absent or stubbed.
+3. Every default-camera / default-zoom assert was checked against live LOD gates.
+4. Every "out of scope" line is either another ticket ID or a quoted operator deferral.
+5. You re-read the ticket summary + cited specs + fold comments and confirmed no named lane/UI/fold was silently dropped.
+6. You ran at least one ruthless pass looking for false-green traps (below).
+
+If any item is NO → do not present the plan; measure more.
+
+---
+
+## Mandatory research loop (before CreatePlan)
+
+Run in parallel where possible. Do not draft first and "fill evidence later".
+
+### R1 — Authority (words that define scope)
+
+| Source | Extract |
+|--------|---------|
+| Operator message | Complete-outcome ask; any explicit "defer/skip X" |
+| `.ai/artifacts/*_handoff.md` | Fold locations (file:line), entry points, gate notes |
+| `./scripts/ticket brief T-xxx` + registry row | summary, depends_on, unblocks, status, slice_plan parks |
+| Cited specs | Draw-order, L-requirements, acceptance tables |
+| Fold comments in live code | `fold` / `Deferred` / `later slice` / `follow-on` — these are **must-close** unless operator deferred |
+
+**Ticket shorthand understates specs.** If registry cites `t151_1…t151_5`, the plan includes **all W1–W5 host lanes those specs require**, not only the nouns in the one-line summary ("roads/buildings/trees" ≠ skip sea/contours/landcover/forest mass).
+
+### R2 — Measure every pin (Class R)
+
+For **each** number or enum the plan will assert:
+
+| Kind | How to measure (examples) |
+|------|---------------------------|
+| Asset bytes | `stat` **and** manifest field — both; must match |
+| Census counts | Class-R tests in crates + `ls \| wc` on `packages/` — prefer live over CLAUDE.md |
+| LOD constants | Read `lod_gates.rs` / residency aliases — quote exact values |
+| Default camera | Read editor mount (`INITIAL_ZOOM`, target, terrain bounds) |
+| Engine counters | Read `engine.stats()` format string — **exact snake_case keys** |
+| Routes | `app.rs` + handler signature + query struct fields |
+| Smoke today | Exact assert expressions + line numbers in `smokes.rs` |
+| React parity | `git show <tag>:path` — key **lists and orders** separately |
+
+Put a **Verified constants** table in the plan: `pin | value | evidence`.
+
+No pin → no claim. Soft `> 0` is allowed only when no census exists; if census exists (888 roads, 36 landcover), assert **equality**.
+
+### R3 — LOD / camera visibility matrix (mandatory for any render/UI counter)
+
+If the plan asserts GPU/UI counters at boot:
+
+1. Read default zoom/camera from the host that smokes will open.
+2. Build a table: lane → visible at default? → smoke assert.
+3. For lanes **hidden** at default, either omit the assert or add an explicit **probe** (set zoom/pan then assert). Never require a counter LOD zeroes.
+
+Known false-green class (map editor @ `INITIAL_ZOOM = -2`):
+
+- Require `tree_glyphs > 0` while `TREE_GLYPH_MIN_ZOOM = 0` → automatic fail/wrong plan
+- Require `forest_outline_segments > 0` outside `[FOREST_OUTLINE_MIN_ZOOM, TREE_GLYPH_MIN_ZOOM)` → wrong
+- Treat `FOREST_FILL_MAX_ZOOM` as the live fill gate when `class_visible("forestFill")` is `zoom < 0` → wrong
+
+Re-derive from code each time; do not memorize lore.
+
+### R4 — Name and type fidelity
+
+| Wrong (plan smell) | Right |
+|--------------------|-------|
+| CamelCase invent (`roadSegments`) | Live `engine.stats()` / bridge keys |
+| Wasm-only type as Leptos host API (`DemGrid`) | What `map-engine-core` exports (`DemVectorGrid`, …) |
+| Stale census (275 chunks) | Live `packages/` + current Class-R test |
+| Equating two lanes (`landcover_polygons` == `forest_polygons`) | Separate counters, separate uploads |
+| Same keys ⇒ same order (`LOADOUT_ROWS` == `RAIL_REGIONS`) | Lock **both** orders |
+| Comment lore (`squads.length === 0`) | Actual smoke check name/expression (`emptyGraph`, …) |
+
+### R5 — False-green catalog (ban these patterns)
+
+A smoke is illegal in the plan if it can pass while the feature is missing:
+
+```text
+❌ DOM count on a control type the new UI no longer needs (keep old <select> hidden)
+❌ "Stub string gone" without proving live data nodes after the real bootstrap path
+❌ "after seed" when seed has no maps/rows and place/hydrate is required
+❌ Virtualize only half of a shared list (Editor Layers yes, ORBAT no) when React shared one window
+❌ Full-file GET of a 100MB+ LFS asset in CI when the plan claims Range-preview-only
+❌ Intercept ≥1 on the wrong endpoint (catalog instead of compat / factions)
+❌ Soft presence checks when a Class-R equality pin exists
+❌ Claiming tip-React parity while shipping an older fallback (SVG vs 3D) without stating which contract
+```
+
+Every CDP row must answer: **what concrete absence makes this assert false?**
+
+### R6 — Scope boundary discipline
+
+**In-scope** = operator ask ∪ ticket summary ∪ cited specs ∪ fold comments ∪ handoff musts.
+
+**Legal out-of-scope** only:
+
+1. Other ticket ID already owning that surface (name it: T-152.5 apron, T-071 Manager, T-154 3D doll, …), **or**
+2. Operator-quoted deferral ("defer X" / "skip X") — quote in plan.
+
+Illegal: inventing "skip sea/contours for later", "MVP host wiring without forest mass", "FM pane" when the registry means a full dialog+API, while still claiming the ticket/specs complete.
+
+If unsure whether X is T-166 vs T-152: **read the cited spec's out-of-scope and the other ticket** — then ask the operator only if still ambiguous. Do not guess-skip.
+
+### R7 — React / history ports
+
+When the tree deleted the reference implementation:
+
+1. Cite `git show <tag>:<path>` (default tip-of-React tag used by handoff, often `T-159.29.2`).
+2. Separate: **behavior contract** (specs + ticket) vs **tip-React extras** (e.g. T-154 remount). State which the ticket locks.
+3. Lock ordered key lists independently.
+4. Trace data prerequisites (e.g. `ensureDefaultSquad` on place) — a UI tree with empty maps is not done.
+
+---
+
+## Required plan sections (shipping work)
+
+Omit only if the artifact is Mode A critique-only (still include evidence for every critique claim).
+
+1. **Authority** — tickets, handoffs, specs, operator quotes
+2. **Verified constants** — pin / value / evidence
+3. **LOD / camera matrix** — if any render counters (else N/A one-liner with why)
+4. **Must-ship matrix** — every fold/spec lane; close conditions
+5. **Headless CDP matrix** — smoke name, path/query, exact asserts, suite membership, false-green notes
+6. **Infra prerequisites** — e.g. Range/206 on gate serve before sat preview CI
+7. **Ship checklist** — `make leptos-gates`, `make ci-local`, `make verify-no-node`, verify log with pasted JSON/pins, registry sync, tag, push, CI watch
+8. **Explicit not-in-plan** — only legal outs (ticket IDs / quoted deferrals)
+9. **WIP / dirty tree** — if checkout already half-done, first execute step restores buildability
+
+---
+
+## Self-audit before presenting (mandatory second pass)
+
+After drafting, re-enter as an adversary:
+
+1. Diff must-ship against ticket summary **and** each cited spec's goal/draw-order/L-table.
+2. For each CDP assert: simulate "implementer ships stub" — does the smoke still pass? If yes, rewrite assert.
+3. Re-check every zoom-sensitive counter against `lod_gates` + default camera.
+4. Re-check every census number with a command if not run this session.
+5. Search the draft for forbidden language (below) and delete/replace.
+6. Confirm no "skip X" without ticket-ID or operator quote.
+
+Only then call CreatePlan / show the operator.
+
+---
+
+## Forbidden plan language
+
+```text
+❌ if feasible / optional / P1 later / good enough without X / fold forward / follow-on
+❌ "approximately" / "around" / "should be" for pins that are exact on disk
+❌ Wrong or invented stats/bridge keys
+❌ Asserting LOD-off counters at default zoom
+❌ "after seed" when place/hydrate is required
+❌ CI path that whole-file-reads huge LFS while claiming preview-only
+❌ Out-of-scope that invents deferrals (see no-silent-deferrals)
+❌ "parity with React" without naming tag + which contract (spec vs tip extras)
+```
+
+```text
+✅ pin = N (evidence: path:line or command output)
+✅ assert equality to census; separate zoom probe for LOD-gated lanes
+✅ out-of-scope: T-152.5 apron (spec X §Y) — not this ticket
+✅ smoke fails if feature absent (state the failure mode)
+```
+
+---
+
+## Execution note (when plan is approved)
+
+The plan's CDP matrix is the contract. Shipping code that "mostly works" while smokes use soft asserts is a **plan violation** carried into implementation — fix the asserts, do not weaken them to get green.

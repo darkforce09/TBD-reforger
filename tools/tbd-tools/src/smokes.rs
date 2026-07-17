@@ -20,17 +20,28 @@ use crate::cdp::{self, Browser, Page};
 use crate::serve::{RunningServer, ServeConfig, repo_root, start_server};
 
 const DIST_DEFAULT: &str = "apps/website-leptos/dist";
-const EDIT_PATH: &str = "/missions/smoke/edit";
+/// Default editor path for the suite. `sat=preview` keeps smokes off the 152 MB full TBDS GET
+/// (which freezes headless CDP mid-suite once `/map-assets` is live).
+///
+/// `force=webgl` (T-166): pin the software **WebGL2/SwiftShader** backend. The default
+/// WebGPU/lavapipe path is unreliable headless under memory pressure — its rAF render loop
+/// intermittently stalls the page main thread long enough that a `Runtime.evaluate` (e.g. the
+/// `__editorSelection.probe()` centering call) never returns, wedging the suite. `arsenal` is
+/// simply the first default-backend smoke after WebGL2 `selfcheck`, so it always died first.
+/// These smokes exercise doc / UI / interaction, not the GPU backend (the GPU-byte gates —
+/// `selfcheck`, `fullmap`, `hillshade` — already force WebGL2), so pinning it suite-wide is safe.
+const EDIT_PATH: &str = "/missions/smoke/edit?force=webgl&sat=preview";
 const SEED_N: i64 = 8; // must match mission_doc.rs `SEED_N`
 
 /// The Makefile glob `driver/*_editor.mjs` in shell-sort order (selfcheck sorts first).
-pub const EDITOR_SUITE: [&str; 16] = [
+pub const EDITOR_SUITE: [&str; 17] = [
     "selfcheck",
     "arsenal",
     "attributes",
     "cur",
     "doc",
     "editor",
+    "fullmap",
     "hillshade",
     "hydrate",
     "keyboard-settings",
@@ -42,6 +53,9 @@ pub const EDITOR_SUITE: [&str; 16] = [
     "select",
     "undo",
 ];
+
+/// Locked T-166 sat bundle size — full GET of this body must never happen under `?sat=preview`.
+const SAT_FULL_BYTES: u64 = 152_713_114;
 
 struct Harness {
     srv: RunningServer,
@@ -106,8 +120,10 @@ impl Harness {
         self.panics.lock().unwrap().is_empty()
     }
 
-    async fn shutdown(mut self) {
-        self.browser.kill();
+    async fn shutdown(self) {
+        // Reap chrome (SIGTERM → wait → SIGKILL) + drop its profile dir BEFORE the next smoke,
+        // so the debug port + profile lock free deterministically (T-166 suite-hang fix).
+        self.browser.shutdown().await;
         self.srv.close().await;
     }
 }
@@ -302,6 +318,11 @@ const DOC_READY: &str = "typeof window.__missionDoc === 'object' && window.__mis
 const HIST_READY: &str = "typeof window.__editorHistory === 'object' && window.__editorHistory !== null && typeof window.__editorHistory.can_undo === 'function'";
 
 fn force_webgl(path: &str) -> String {
+    // Idempotent — EDIT_PATH already pins `force=webgl` (T-166), so callers that wrap it must not
+    // double-append.
+    if path.contains("force=webgl") {
+        return path.to_string();
+    }
     format!(
         "{path}{}force=webgl",
         if path.contains('?') { '&' } else { '?' }
@@ -350,41 +371,42 @@ async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
 
 /// smoke_editor.mjs — T-159.15: canvas mounts + engine renders + wheel-zoom changes the view.
 pub async fn smoke_editor(dist: &str, path: &str) -> Result<u8> {
-    use sha2::{Digest, Sha256};
     let h = Harness::new(dist, 5299, 9359, None, None, &[]).await?;
     let run = async {
         h.page.navigate(&h.url(path)).await?;
         h.page
             .wait_for("!!document.querySelector('canvas')", 80, 250)
             .await?;
-        cdp::sleep_ms(1200).await; // create + several rAF frames
+        // Wait for engine + `__editorCam` (T-166 host bootstrap can outlast a fixed 1.2s sleep).
+        h.page
+            .wait_for("typeof window.__editorCam==='function'", 80, 250)
+            .await?;
+        cdp::sleep_ms(400).await;
 
-        // Screenshot hash (base64 string, as the Node script hashes r.data).
-        let shot = || async {
-            let r = h
-                .page
-                .send("Page.captureScreenshot", json!({ "format": "png" }))
-                .await?;
-            let mut hs = Sha256::new();
-            hs.update(r["data"].as_str().unwrap_or_default().as_bytes());
-            Ok::<String, anyhow::Error>(
-                hs.finalize()
-                    .iter()
-                    .map(|b| format!("{b:02x}"))
-                    .collect::<String>()[..16]
-                    .to_string(),
-            )
-        };
-        let before = shot().await?;
-        eval(&h.page, "(()=>{const c=document.querySelector('div.relative')||document.body;c.dispatchEvent(new WheelEvent('wheel',{deltaY:-600,clientX:720,clientY:450,bubbles:true,cancelable:true}));return 1})()").await?;
-        cdp::sleep_ms(600).await;
-        let after = shot().await?;
-        let info = eval_str(&h.page, "(()=>{const c=document.querySelector('canvas');return JSON.stringify({w:c?.width||0,h:c?.height||0})})()").await?;
+        // `__editorCam()` returns a JSON *string* `{"tx","ty","z","backend"}` (not an object).
+        let cam_z = "(()=>{try{const raw=window.__editorCam&&window.__editorCam();const c=typeof raw==='string'?JSON.parse(raw):raw;return String(c&&c.z!=null?c.z:NaN)}catch(e){return 'NaN'}})()";
+        let z_before: f64 = eval_str(&h.page, cam_z).await?.parse().unwrap_or(f64::NAN);
+        // Dispatch on the canvas (gesture host), not the first `div.relative` (chrome shell) —
+        // a target outside the capture listener never reaches `zoom_at`.
+        eval(
+            &h.page,
+            "(()=>{const c=document.querySelector('canvas');if(!c)return 0;const r=c.getBoundingClientRect();c.dispatchEvent(new WheelEvent('wheel',{deltaY:-600,clientX:r.left+r.width/2,clientY:r.top+r.height/2,bubbles:true,cancelable:true}));return 1})()",
+        )
+        .await?;
+        cdp::sleep_ms(400).await;
+        let z_after: f64 = eval_str(&h.page, cam_z).await?.parse().unwrap_or(f64::NAN);
+        let info = eval_str(
+            &h.page,
+            "(()=>{const c=document.querySelector('canvas');return JSON.stringify({w:c?.width||0,h:c?.height||0})})()",
+        )
+        .await?;
         let canvas: Value = serde_json::from_str(&info).unwrap_or(json!({}));
-        let changed = before != after;
+        let changed =
+            z_before.is_finite() && z_after.is_finite() && (z_after - z_before).abs() > 1e-6;
         let pass = h.no_panics() && changed;
         print_verdict(&json!({
             "gate": "editor-smoke", "path": path, "canvas": canvas,
+            "zoomBefore": z_before, "zoomAfter": z_after,
             "viewChangedOnWheel": changed, "panics": h.panics_head(), "pass": pass,
         }));
         Ok::<u8, anyhow::Error>(to_code(pass))
@@ -459,9 +481,167 @@ pub async fn smoke_selfcheck(dist: &str, path: &str) -> Result<u8> {
     code
 }
 
+/// T-166 — full W1–W5 host wiring Class-R matrix (`?force=webgl&sat=preview`).
+pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
+    let path = "/missions/smoke/edit?force=webgl&sat=preview";
+    let h = Harness::new(dist, 5318, 9378, Some(PathBuf::from(map_assets)), None, &[]).await?;
+    let run = async {
+        // Track whether any Network response delivered the full sat body (A_sat_bytes).
+        h.page.send("Network.enable", json!({})).await?;
+        let mut net = h.page.on_event("Network.responseReceived").await;
+        let sat_full_hits = Arc::new(StdMutex::new(0u32));
+        let hits = Arc::clone(&sat_full_hits);
+        tokio::spawn(async move {
+            while let Some(e) = net.recv().await {
+                let url = e["response"]["url"].as_str().unwrap_or("");
+                if !url.contains(".tbd-sat") {
+                    continue;
+                }
+                let len = e["response"]["headers"]
+                    .as_object()
+                    .and_then(|hdrs| {
+                        hdrs.iter()
+                            .find(|(k, _)| k.eq_ignore_ascii_case("content-length"))
+                    })
+                    .and_then(|(_, v)| v.as_str())
+                    .and_then(|s| s.parse::<u64>().ok())
+                    .or_else(|| e["response"]["encodedDataLength"].as_u64())
+                    .unwrap_or(0);
+                if len == SAT_FULL_BYTES {
+                    *hits.lock().unwrap() += 1;
+                }
+            }
+        });
+
+        h.page.navigate(&h.url(path)).await?;
+        h.page
+            .wait_for("!!document.querySelector('canvas')", 80, 250)
+            .await?;
+        let ready = h
+            .page
+            .wait_for("typeof window.__editorCam === 'function'", 160, 250)
+            .await?;
+
+        let mut checks = Map::new();
+        if ready {
+            // Wait for host bootstrap + residency drain (hillshade first, then world pins).
+            let bridge = h
+                .page
+                .wait_for(
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 36 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_polygons > 0 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
+                    400,
+                    250,
+                )
+                .await?;
+            checks.insert("bridgeSettled".into(), json!(bridge));
+
+            let a_hs = eval_bool(
+                &h.page,
+                "!!window.__mapAssets && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.hillshadeH > 0",
+            )
+            .await?;
+            let a_sat = eval_bool(
+                &h.page,
+                "!!window.__mapAssets && window.__mapAssets.satW > 0 && window.__mapAssets.satH > 0 && window.__mapAssets.satMode === 'single'",
+            )
+            .await?;
+            let a_roads = eval_bool(&h.page, "window.__mapAssets.road_segments === 888").await?;
+            let a_lc = eval_bool(&h.page, "window.__mapAssets.landcover_polygons === 36").await?;
+            let a_sea = eval_bool(&h.page, "window.__mapAssets.sea_polygons > 0").await?;
+            let a_cont = eval_bool(&h.page, "window.__mapAssets.contour_segments > 0").await?;
+            let a_bld = eval_bool(
+                &h.page,
+                "window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0",
+            )
+            .await?;
+            let a_forest = eval_bool(&h.page, "window.__mapAssets.forest_polygons > 0").await?;
+            let a_atlas = eval_bool(
+                &h.page,
+                "window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true",
+            )
+            .await?;
+            let a_trees_off = eval_bool(&h.page, "window.__mapAssets.tree_glyphs === 0").await?;
+
+            checks.insert("A_hs".into(), json!(a_hs));
+            checks.insert("A_sat".into(), json!(a_sat));
+            checks.insert("A_roads".into(), json!(a_roads));
+            checks.insert("A_lc".into(), json!(a_lc));
+            checks.insert("A_sea".into(), json!(a_sea));
+            checks.insert("A_cont".into(), json!(a_cont));
+            checks.insert("A_bld".into(), json!(a_bld));
+            checks.insert("A_forest".into(), json!(a_forest));
+            checks.insert("A_atlas".into(), json!(a_atlas));
+            checks.insert("A_trees_off".into(), json!(a_trees_off));
+
+            // Zoom probe ≥ 0 → tree glyphs on. Use z=2 (not 0): at island-center z=0 the
+            // exact-count heatmap rung (INSTANCE_BUDGET) clears tree glyphs by design — smoke would
+            // false-red on a correct LOD ladder. z=2 shrinks the draw-set under budget.
+            let set_ok = eval_bool(
+                &h.page,
+                "typeof window.__editorCamSet === 'function' && (window.__editorCamSet(6400, 6400, 2), true)",
+            )
+            .await?;
+            checks.insert("A_trees_probe".into(), json!(set_ok));
+            tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+            let a_trees_on = h
+                .page
+                .wait_for(
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.tree_glyphs > 0",
+                    160,
+                    250,
+                )
+                .await?;
+            checks.insert("A_trees_on".into(), json!(a_trees_on));
+            let sat_hits = *sat_full_hits.lock().unwrap();
+            checks.insert("A_sat_bytes".into(), json!(sat_hits == 0));
+            checks.insert("A_panic".into(), json!(h.no_panics()));
+
+            let pass = ready
+                && h.no_panics()
+                && checks.values().all(|v| *v == json!(true))
+                && checks.len() >= 12;
+            print_verdict(&json!({
+                "gate": "editor-fullmap-smoke",
+                "path": path,
+                "pins": {
+                    "sat_full_bytes": SAT_FULL_BYTES,
+                    "roads": 888,
+                    "landcover": 36,
+                    "default_zoom": -2.0,
+                    "tree_glyph_min_zoom": 0.0,
+                },
+                "checks": checks,
+                "panics": h.panics_head(),
+                "pass": pass,
+            }));
+            return Ok::<u8, anyhow::Error>(to_code(pass));
+        }
+
+        let pass = false;
+        print_verdict(&json!({
+            "gate": "editor-fullmap-smoke",
+            "path": path,
+            "pins": {
+                "sat_full_bytes": SAT_FULL_BYTES,
+                "roads": 888,
+                "landcover": 36,
+                "default_zoom": -2.0,
+                "tree_glyph_min_zoom": 0.0,
+            },
+            "checks": checks,
+            "panics": h.panics_head(),
+            "pass": pass,
+        }));
+        Ok::<u8, anyhow::Error>(to_code(pass))
+    };
+    let code = run.await;
+    h.shutdown().await;
+    code
+}
+
 /// smoke_hillshade_editor.mjs — T-159.28: DEM fetched + Rust-decoded + hillshade uploaded.
 pub async fn smoke_hillshade(dist: &str, map_assets: &str) -> Result<u8> {
-    let path = "/missions/smoke/edit?force=webgl";
+    let path = "/missions/smoke/edit?force=webgl&sat=preview";
     let h = Harness::new(dist, 5317, 9377, Some(PathBuf::from(map_assets)), None, &[]).await?;
     let run = async {
         h.page.navigate(&h.url(path)).await?;
@@ -2396,6 +2576,7 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
     match name {
         "editor" => smoke_editor(&dist, &path).await,
         "selfcheck" => smoke_selfcheck(&dist, &path).await,
+        "fullmap" => smoke_fullmap(&dist, "packages/map-assets").await,
         "hillshade" => smoke_hillshade(&dist, "packages/map-assets").await,
         "doc" => smoke_doc(&dist, &path).await,
         "pan" => smoke_pan(&dist, &path).await,

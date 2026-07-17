@@ -166,6 +166,8 @@ pub fn MissionEditorPage() -> impl IntoView {
 
             let engine: Rc<RefCell<Option<map_engine_render::RenderEngine>>> =
                 Rc::new(RefCell::new(None));
+            // T-166 — shared map-asset host (camera-settle refresh after wheel/pan).
+            let map_host = crate::world_assets::new_host_handle();
             let disposed = Arc::new(AtomicBool::new(false));
 
             // T-159.16 — MissionDoc host. Built + seeded + bridged synchronously (before the async
@@ -372,6 +374,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let disposed = disposed.clone();
                 let doc = doc.clone();
                 let canvas = canvas.clone();
+                let map_host = map_host.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
                     match map_engine_render::RenderEngine::create(canvas, force_webgl).await {
@@ -391,7 +394,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             eng.set_continuous_render(false); // damage-driven, matches the prod oracle
                             *engine.borrow_mut() = Some(eng);
                             register_self_checks(engine.clone());
-                            register_editor_cam(engine.clone());
+                            register_editor_cam(engine.clone(), map_host.clone());
                             // T-159.16 — optional doc→engine bind (D5). `slots_bind_soa` early-returns
                             // while the slot atlas is unuploaded (the editor uploads none yet), so this
                             // is a safe cache write that proves the SoA wire compiles + runs; the tiny
@@ -403,10 +406,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 e.slots_bind_soa(soa.ids.clone(), &soa.xy);
                             }
                             start_raf(engine.clone(), disposed.clone());
-                            // T-159.28 — map-asset host (MVP): fetch the terrain DEM and paint the
-                            // hillshade lane, off the render path. `terrain` from the doc meta (the
-                            // seed + hydrate set it; default everon). The bare grid shows until this
-                            // resolves; a fetch failure leaves the grid (never blocks).
+                            // T-166 — full map-asset host (hillshade + sat + DEM vectors + world +
+                            // forest). Terrain from doc meta (seed/hydrate; default everon).
                             {
                                 let terrain = doc
                                     .borrow()
@@ -422,9 +423,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                                         .map(str::to_string)
                                     })
                                     .unwrap_or_else(|| "everon".to_string());
-                                spawn_local(crate::world_assets::load_hillshade(
+                                let host = map_host.clone();
+                                spawn_local(crate::world_assets::bootstrap(
                                     engine.clone(),
                                     terrain,
+                                    host,
                                 ));
                             }
                         }
@@ -449,6 +452,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let engine = engine.clone();
                 let container = container.clone();
                 let pan_px = pan_px.clone();
+                let map_host = map_host.clone();
                 move |ev: web_sys::WheelEvent| {
                     // T-159.22 — the wheel is capture-phase on the CONTAINER, so it fires before any
                     // dock could stop it (that is deliberate: it is what lets `prevent_default` beat
@@ -482,6 +486,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                         if pan_px.get().is_some() {
                             pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
                         }
+                        crate::world_assets::schedule_camera_settle(
+                            map_host.clone(),
+                            engine.clone(),
+                        );
                     }
                 }
             });
@@ -697,6 +705,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let left = left.clone();
                 let doc = doc.clone();
                 let selection = selection.clone();
+                let map_host = map_host.clone();
                 // T-159.21 — no `mission_id` capture: the persist tail now runs inside
                 // `mission_history::after_local_edit`, which reads the id from its ctx.
                 move |ev: web_sys::PointerEvent| {
@@ -748,6 +757,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                         if container.has_pointer_capture(ev.pointer_id()) {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
+                        crate::world_assets::schedule_camera_settle(
+                            map_host.clone(),
+                            engine.clone(),
+                        );
                     }
                     // LMB gesture end. `take()` into a `let` first so the RefMut drops before the
                     // per-branch re-borrows below (the `if let` temporary-lifetime footgun). If a pan
@@ -1164,32 +1177,53 @@ fn register_self_checks(
 /// Rust.) All are `&self` behind a shared `borrow()`, released before return — no contention with the
 /// rAF loop's `borrow_mut` (JS is single-threaded). Registered once the engine is `Some`; the closure
 /// leaks like the self-checks. The smoke drives pan via getter deltas (never `unproject_xy`, X-05).
+///
+/// T-166 — also installs `window.__editorCamSet(tx, ty, z)` so `smoke_fullmap` can Class-R probe
+/// tree glyphs at zoom ≥ 0 without relying on CDP `mouseWheel` → DOM `wheel` delivery.
 #[cfg(target_arch = "wasm32")]
 fn register_editor_cam(
     engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
+    map_host: crate::world_assets::HostHandle,
 ) {
     use wasm_bindgen::prelude::*;
 
-    let cam = Closure::wrap(Box::new(move || -> JsValue {
-        engine
-            .borrow()
-            .as_ref()
-            .map(|e| {
-                JsValue::from_str(&format!(
-                    r#"{{"tx":{},"ty":{},"z":{},"backend":"{}"}}"#,
-                    e.target_x(),
-                    e.target_y(),
-                    e.zoom(),
-                    e.backend()
-                ))
-            })
-            .unwrap_or_else(|| JsValue::from_str("null"))
+    let cam = Closure::wrap(Box::new({
+        let engine = engine.clone();
+        move || -> JsValue {
+            engine
+                .borrow()
+                .as_ref()
+                .map(|e| {
+                    JsValue::from_str(&format!(
+                        r#"{{"tx":{},"ty":{},"z":{},"backend":"{}"}}"#,
+                        e.target_x(),
+                        e.target_y(),
+                        e.zoom(),
+                        e.backend()
+                    ))
+                })
+                .unwrap_or_else(|| JsValue::from_str("null"))
+        }
     }) as Box<dyn FnMut() -> JsValue>);
+
+    let cam_set = Closure::wrap(Box::new({
+        let engine = engine.clone();
+        let map_host = map_host.clone();
+        move |tx: f64, ty: f64, z: f64| {
+            if let Some(e) = engine.borrow_mut().as_mut() {
+                e.set_view(tx, ty, z);
+            }
+            // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
+            crate::world_assets::flush_viewport(map_host.clone(), engine.clone());
+        }
+    }) as Box<dyn FnMut(f64, f64, f64)>);
 
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorCam"), cam.as_ref());
+        let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorCamSet"), cam_set.as_ref());
     }
     cam.forget();
+    cam_set.forget();
 }
 
 /// T-159.26 — the local-vs-server conflict payload the [`ConflictDialog`] offers to load. Un-gated

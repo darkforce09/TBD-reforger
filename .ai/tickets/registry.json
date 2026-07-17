@@ -5285,13 +5285,13 @@
         "state"
       ],
       "title": "Leptos editor full map (satellite + world objects)",
-      "summary": "Restore the full-map render lanes in the Leptos wgpu editor: unified satellite basemap (`everon-sat.tbd-sat` fetch/decode/mip upload \u2014 the T-151.1 lane) + world objects (roads/buildings/trees/forest via `map-engine-core::world` parser + chunk residency \u2014 the T-151.2/.3/.4/.5 lanes). Today only hillshade renders (fold documented at `apps/website-leptos/src/world_assets.rs:11`). The engine crates already own every pipeline (T-151 W1\u2013W5 shipped pre-rewrite); this is host wiring in `world_assets.rs` + `mission_editor.rs`, not new render code. Specs: t151_1_basemap_lane.md, t151_2_world_parser.md, t151_3_world_residency.md, t151_4_vector_layers.md, t151_5_glyph_atlas.md.",
+      "summary": "SHIPPED: Leptos W1\u2013W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md.",
       "slices": [],
       "depends_on": [
         "T-159"
       ],
       "unblocks": [],
-      "status": "ready",
+      "status": "shipped",
       "implements": [],
       "user_story": "As a mission maker I see the real Everon map (satellite + roads/buildings/trees) under my slots in the editor, not just hillshade relief.",
       "route": "/missions/:id/edit",

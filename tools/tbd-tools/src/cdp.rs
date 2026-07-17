@@ -81,16 +81,51 @@ pub struct Browser {
     child: Child,
     pub debug_port: u16,
     pub http: reqwest::Client,
+    /// Per-launch chromium profile dir (T-166 hygiene). Every smoke gets its OWN profile so OPFS
+    /// + IndexedDB (large persisted world/mission state) never bleed across smokes in a suite run.
+    user_data_dir: PathBuf,
 }
 
 impl Browser {
-    /// Mirror of Node's `proc.kill('SIGTERM')` (tokio's `Child::kill` would SIGKILL).
+    /// SIGTERM the whole chrome PROCESS GROUP (T-166). Chrome forks renderer/gpu/zygote children;
+    /// signalling only the parent pid (the old behavior) orphaned those children, which kept
+    /// pegging every core under SwiftShader software GL → the *next* smoke's page starved of CPU
+    /// and its `Runtime.evaluate` wedged (the suite "hang"). `launch` puts chrome in its own group
+    /// (`process_group(0)`, leader pid == child pid) so `kill(-pid, …)` targets the tree, not us.
     pub fn kill(&mut self) {
+        self.signal_group(libc::SIGTERM);
+    }
+
+    fn signal_group(&self, sig: libc::c_int) {
         if let Some(pid) = self.child.id() {
             unsafe {
-                libc::kill(pid as i32, libc::SIGTERM);
+                // Negative pid = "the process group" (pgid == leader pid).
+                libc::kill(-(pid as i32), sig);
             }
         }
+    }
+
+    /// SIGTERM the group → reap (bounded) → SIGKILL the group → remove the profile dir. Reaping
+    /// BEFORE the next smoke launches frees the debug port + CPU and drops all renderer children.
+    pub async fn shutdown(mut self) {
+        self.signal_group(libc::SIGTERM);
+        if tokio::time::timeout(Duration::from_secs(5), self.child.wait())
+            .await
+            .is_err()
+        {
+            // Still alive after SIGTERM → SIGKILL the whole group and reap so nothing lingers.
+            self.signal_group(libc::SIGKILL);
+            let _ = self.child.wait().await;
+        }
+        let _ = tokio::fs::remove_dir_all(&self.user_data_dir).await;
+    }
+}
+
+impl Drop for Browser {
+    fn drop(&mut self) {
+        // Best-effort profile cleanup for the `kill()`-then-drop path (e.g. vsuite), which does
+        // not go through the async `shutdown`. `shutdown` already removed it → this is a no-op.
+        let _ = std::fs::remove_dir_all(&self.user_data_dir);
     }
 }
 
@@ -99,10 +134,16 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     let chromium = find_chromium().ok_or_else(|| {
         anyhow!("cdp: no chromium (set CHROME_HEADLESS_SHELL or install playwright)")
     })?;
+    // Unique profile dir per launch (harness pid + debug port — no Date/rand, deterministic
+    // within a run). Removed first in case a crashed prior run left a stale copy with a lock.
+    let user_data_dir =
+        std::env::temp_dir().join(format!("tbd-cdp-{}-{debug_port}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&user_data_dir);
     let mut args: Vec<String> = vec![
         "--no-sandbox".into(),
         "--disable-gpu-sandbox".into(),
         format!("--remote-debugging-port={debug_port}"),
+        format!("--user-data-dir={}", user_data_dir.display()),
         "--use-angle=swiftshader".into(),
         "--enable-unsafe-swiftshader".into(),
         "--enable-unsafe-webgpu".into(),
@@ -113,6 +154,9 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     args.extend(extra_args.iter().cloned());
     let child = Command::new(&chromium)
         .args(&args)
+        // Own process group (leader pid == child pid) so shutdown can signal the whole chrome
+        // tree — renderer/gpu children included — without touching the harness (T-166).
+        .process_group(0)
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
@@ -134,6 +178,7 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
         child,
         debug_port,
         http,
+        user_data_dir,
     })
 }
 
@@ -262,7 +307,14 @@ impl Page {
             .send(Message::text(frame))
             .await
             .context("cdp: ws send")?;
-        let m = rx.await.context("cdp: ws closed mid-call")?;
+        // Bounded wait (T-166 safety net): a wedged page main thread makes `Runtime.evaluate`
+        // never return, which would hang `wait_for` — and the whole suite — forever. 130 s sits
+        // just past the 120 s server-side `Runtime.evaluate` timeout so a real slow eval still
+        // completes, but a genuine wedge fails the smoke loudly instead of hanging.
+        let m = tokio::time::timeout(Duration::from_secs(130), rx)
+            .await
+            .map_err(|_| anyhow!("cdp: ws call timed out ({method})"))?
+            .context("cdp: ws closed mid-call")?;
         if !m["error"].is_null() {
             return Err(anyhow!("{method}: {}", m["error"]));
         }

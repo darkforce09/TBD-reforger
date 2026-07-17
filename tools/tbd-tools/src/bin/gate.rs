@@ -40,7 +40,7 @@ enum Cmd {
     SRoutes,
     /// One editor/live smoke by name (smoke_*_editor.mjs ports; see EDITOR_SUITE)
     Smoke {
-        /// selfcheck|arsenal|attributes|cur|doc|editor|hillshade|hydrate|keyboard-settings|
+        /// selfcheck|arsenal|attributes|cur|doc|editor|fullmap|hillshade|hydrate|keyboard-settings|
         /// marquee-drag|outliner-palette|pan|persist|save-export|select|undo|mutations
         name: String,
         #[arg(long)]
@@ -48,7 +48,7 @@ enum Cmd {
         #[arg(long)]
         path: Option<String>,
     },
-    /// All 16 editor smokes in the Makefile glob order (first failure stops)
+    /// All 17 editor smokes in the Makefile glob order (first failure stops)
     #[command(name = "editor-suite")]
     EditorSuite {
         #[arg(long)]

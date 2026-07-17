@@ -13,6 +13,7 @@ use axum::body::Body;
 use axum::extract::State;
 use axum::http::{HeaderMap, Method, StatusCode, Uri, header};
 use axum::response::Response;
+use tokio::io::{AsyncReadExt, AsyncSeekExt};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
@@ -89,6 +90,100 @@ fn respond(status: StatusCode, content_type: Option<&str>, body: Vec<u8>) -> Res
     res
 }
 
+/// Parse `bytes=START-END` (END optional). Returns inclusive byte range clamped to `file_len`.
+fn parse_bytes_range(h: &HeaderMap, file_len: u64) -> Option<(u64, u64)> {
+    if file_len == 0 {
+        return None;
+    }
+    let raw = h.get(header::RANGE)?.to_str().ok()?;
+    let spec = raw.strip_prefix("bytes=")?;
+    // Single range only (sat preview / TBDS tiles).
+    let spec = spec.split(',').next()?.trim();
+    let (start_s, end_s) = spec.split_once('-')?;
+    if start_s.is_empty() {
+        // suffix form `bytes=-N`
+        let n: u64 = end_s.parse().ok()?;
+        if n == 0 {
+            return None;
+        }
+        let start = file_len.saturating_sub(n);
+        return Some((start, file_len - 1));
+    }
+    let start: u64 = start_s.parse().ok()?;
+    if start >= file_len {
+        return None;
+    }
+    let end = if end_s.is_empty() {
+        file_len - 1
+    } else {
+        end_s.parse::<u64>().ok()?.min(file_len - 1)
+    };
+    if end < start {
+        return None;
+    }
+    Some((start, end))
+}
+
+/// Serve one map-asset file with optional HTTP Range (T-166). Full GET still reads the file;
+/// Range uses seek + exact-length read so a 152_713_114 B sat bundle is never fully buffered.
+async fn serve_map_asset(file: &Path, headers: &HeaderMap) -> Response {
+    let meta = match tokio::fs::metadata(file).await {
+        Ok(m) if m.is_file() => m,
+        _ => return respond(StatusCode::NOT_FOUND, None, b"map-asset not found".to_vec()),
+    };
+    let file_len = meta.len();
+    let ext = file.extension().and_then(|e| e.to_str()).unwrap_or("");
+    let ct = mime_for(ext).unwrap_or("application/octet-stream");
+
+    if let Some((start, end)) = parse_bytes_range(headers, file_len) {
+        let len = end - start + 1;
+        let mut f = match tokio::fs::File::open(file).await {
+            Ok(f) => f,
+            Err(_) => {
+                return respond(StatusCode::NOT_FOUND, None, b"map-asset not found".to_vec());
+            }
+        };
+        if f.seek(std::io::SeekFrom::Start(start)).await.is_err() {
+            return respond(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                None,
+                b"seek failed".to_vec(),
+            );
+        }
+        let mut buf = vec![0u8; len as usize];
+        if f.read_exact(&mut buf).await.is_err() {
+            return respond(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                None,
+                b"range read failed".to_vec(),
+            );
+        }
+        let mut res = Response::builder()
+            .status(StatusCode::PARTIAL_CONTENT)
+            .header(header::CONTENT_TYPE, ct)
+            .header(header::ACCEPT_RANGES, "bytes")
+            .header(
+                header::CONTENT_RANGE,
+                format!("bytes {start}-{end}/{file_len}"),
+            )
+            .header(header::CONTENT_LENGTH, len)
+            .body(Body::from(buf))
+            .unwrap();
+        base_headers(&mut res);
+        return res;
+    }
+
+    match tokio::fs::read(file).await {
+        Ok(buf) => {
+            let mut res = respond(StatusCode::OK, Some(ct), buf);
+            res.headers_mut()
+                .insert(header::ACCEPT_RANGES, "bytes".parse().unwrap());
+            res
+        }
+        Err(_) => respond(StatusCode::NOT_FOUND, None, b"map-asset not found".to_vec()),
+    }
+}
+
 async fn handler(
     State(state): State<Arc<AppState>>,
     method: Method,
@@ -98,23 +193,14 @@ async fn handler(
 ) -> Response {
     let path = uri.path().to_string();
 
-    // /map-assets/ passthrough (T-159.28 equivalent).
+    // /map-assets/ passthrough (T-159.28). T-166: honor Range with seek+partial read → 206
+    // so CI sat preview never loads the full 152_713_114 B `.tbd-sat` into RAM.
     if let Some(assets) = &state.cfg.map_assets_dir
         && let Some(rest) = path.strip_prefix("/map-assets/")
     {
         let decoded = percent_decode(rest);
         let file = assets.join(sanitize_rel(&decoded));
-        return match tokio::fs::read(&file).await {
-            Ok(buf) => {
-                let ext = file.extension().and_then(|e| e.to_str()).unwrap_or("");
-                respond(
-                    StatusCode::OK,
-                    Some(mime_for(ext).unwrap_or("application/octet-stream")),
-                    buf,
-                )
-            }
-            Err(_) => respond(StatusCode::NOT_FOUND, None, b"map-asset not found".to_vec()),
-        };
+        return serve_map_asset(&file, &headers).await;
     }
 
     // Same-origin API proxy (T-159.25 equivalent).

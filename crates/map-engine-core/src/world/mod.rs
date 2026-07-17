@@ -93,4 +93,4 @@ pub use roads::{
     CENTERLINE_DEDUPE_M, RoadSegment, extract_road_centerline, parse_roads_payload,
     road_style_width,
 };
-pub use store::{WorldError, WorldStore};
+pub use store::{WorldError, WorldStore, bytes_to_json};

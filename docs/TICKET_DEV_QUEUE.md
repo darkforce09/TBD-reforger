@@ -23,14 +23,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-166 — Leptos editor full map (satellite + world objects)
-
-- **Slice spec:** `.ai/artifacts/missed_items_handoff.md`
-- **Program hub:** `.ai/artifacts/missed_items_handoff.md`
-- **Branch:** `main`
-- **Targets:** website
-- **Summary:** Restore the full-map render lanes in the Leptos wgpu editor: unified satellite basemap (`everon-sat.tbd-sat` fetch/decode/mip upload — the T-151.1 lane) + world objects (roads/buildings/trees/forest via `map-engine-core::world` parser + chunk residency — the T-151.2/.3/.4/.5 lanes). Today only hillshade renders (fold documented at `apps/website-leptos/src/world_assets.rs:11`). The engine crates already own every pipeline (T-151 W1–W5 shipped pre-rewrite); this is host wiring in `world_assets.rs` + `mission_editor.rs`, not new render code. Specs: t151_1_basemap_lane.md, t151_2_world_parser.md, t151_3_world_residency.md, t151_4_vector_layers.md, t151_5_glyph_atlas.md.
-
 ## T-167 — Leptos smart Arsenal port (paper-doll + compat Forge)
 
 - **Slice spec:** `.ai/artifacts/missed_items_handoff.md`

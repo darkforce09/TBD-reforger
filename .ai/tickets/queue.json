@@ -27,13 +27,6 @@
       "branch": "t-151-wgpu-spike"
     },
     {
-      "id": "T-166",
-      "title": "Leptos editor full map (satellite + world objects)",
-      "status": "ready",
-      "spec": ".ai/artifacts/missed_items_handoff.md",
-      "branch": "main"
-    },
-    {
       "id": "T-167",
       "title": "Leptos smart Arsenal port (paper-doll + compat Forge)",
       "status": "ready",

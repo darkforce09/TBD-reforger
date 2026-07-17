@@ -1415,6 +1415,30 @@ impl WorldResidency {
         self.inflight.clear();
     }
 
+    /// Release one in-flight mark after a soft fetch failure (host may retry next settle).
+    pub fn release_inflight(&mut self, id: &str) {
+        self.inflight.remove(id);
+    }
+
+    /// Instance count of a resident chunk (`None` if not resident).
+    #[must_use]
+    pub fn resident_instance_count(&self, id: &str) -> Option<u32> {
+        self.chunks.get(id).map(|c| c.count)
+    }
+
+    /// Drop a resident (or empty-stub) chunk so the next `set_viewport` re-requests it.
+    /// Used by the Leptos host to recover from a soft HTTP failure that must not be cached
+    /// as a permanent empty stub (tree-glyph zoom probes need real instance rows).
+    pub fn invalidate_chunk(&mut self, id: &str) {
+        if self.chunks.remove(id).is_some() {
+            self.index.remove_chunk(id);
+            self.building_counts.remove(id);
+            self.last_used.remove(id);
+            self.inserted_seq.remove(id);
+        }
+        self.inflight.remove(id);
+    }
+
     /// Mark ids as in-flight (not yet resident). Used after `clear_inflight` when starting a
     /// replacement fetch so concurrent same-key `set_viewport` does not re-queue them.
     pub fn mark_inflight(&mut self, ids: &[String]) {
