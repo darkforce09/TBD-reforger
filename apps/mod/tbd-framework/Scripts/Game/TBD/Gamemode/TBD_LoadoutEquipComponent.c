@@ -25,7 +25,7 @@ class TBD_LoadoutEquipComponentClass : SCR_BaseGameModeComponentClass {}
 
 //------------------------------------------------------------------------------------------------
 //! DTO mirrors loadout-export.schema.json "gear" object (each value a ResourceName or null/"").
-//! @contract loadout-export.schema.json#/properties/gear
+//! @contract loadout-export.schema.json#/$defs/gear
 class TBD_LoadoutGearStruct
 {
 	string primary; //!< Primary weapon ResourceName (empty = none).

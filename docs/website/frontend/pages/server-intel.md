@@ -9,7 +9,7 @@
 - **What:** Real-time server health, active mission context, and connection info for **TBD Main**.
 - **Why:** Anti-ghosting safe telemetry; players join without tactical leaks.
 - **Route:** `/server-intel`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/server_intel_dashboard/code.html`
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/server_intel_dashboard/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.1 Server Intel
 

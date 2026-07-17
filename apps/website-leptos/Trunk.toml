@@ -2,6 +2,11 @@
 target = "index.html"
 dist = "dist"
 
+# CI parity: aegis.css is Tailwind v4 syntax (@import/@source/@theme). Locally trunk finds the
+# v4 binary on PATH; in CI it would auto-download its 3.x default and fail — pin the version.
+[tools]
+tailwindcss = "4.3.2"
+
 [serve]
 address = "127.0.0.1"
 port = 3000

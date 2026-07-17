@@ -9,7 +9,7 @@
 - **What:** Admin queue of missions pending approval.
 - **Why:** Quality control before missions go live.
 - **Route:** `/admin/approvals`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/mission_approvals_queue_admin_dashboard/code.html`
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/mission_approvals_queue_admin_dashboard/code.html`
 - **Min role:** `admin`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.9 Mission Approvals
 

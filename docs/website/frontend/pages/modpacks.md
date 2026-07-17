@@ -9,7 +9,7 @@
 - **What:** Server modpack dependencies and download/workshop links.
 - **Why:** Players sync mods before joining.
 - **Route:** `/modpacks`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/server_modpacks_deployment_dependencies/code.html`
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/server_modpacks_deployment_dependencies/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.7 Modpacks
 

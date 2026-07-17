@@ -20,8 +20,10 @@ if (!existsSync(locPath)) {
   process.exit(1);
 }
 if (!existsSync(wasmPkg)) {
-  console.error("verify-town-labels: wasm pkg missing — run make wasm");
-  process.exit(1);
+  // T-164: the wasm-bindgen pkg died with the React app (T-159.29.3); the label-declutter math is
+  // pinned by map-engine-core's cargo tests (`make wasm-ci`). Skip, never fail.
+  console.log("  SKIP  verify-town-labels — retired with the React wasm pkg (make wasm-ci owns the math)");
+  process.exit(0);
 }
 
 const sourceRaw = JSON.parse(readFileSync(locPath, "utf8"));

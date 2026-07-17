@@ -10,7 +10,7 @@ A web suite for the "TBD" Arma Reforger milsim community: Discord auth, event /
 ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
 leaderboards, doctrine wiki, CMS, and admin tooling.
 
-- **Backend:** Go (Gin + GORM), PostgreSQL. Module `github.com/tbd-milsim/reforger-backend`, Go 1.26.
+- **Backend:** Rust (Axum + sqlx), PostgreSQL — crate `reforger-backend` in `apps/website/` (the T-145 Go→Rust rewrite).
 - **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website-leptos/` — the T-159 rewrite; the React app was deleted at T-159.29.3. Node 26 stays for schema tooling + the CDP gate driver.
 - **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
@@ -22,21 +22,21 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
 - `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`scripts/mod/mcp-call.sh`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
 - `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline output
-- `apps/website/cmd/api/` — API entrypoint (loads `.env`, runs migrations on boot, serves `/api/v1`).
-- `apps/website/internal/handlers/` — HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
-- `apps/website/internal/models/` — GORM models; **JSON field names (snake_case) here are the API contract**.
-- `apps/website/internal/db/migrations/` — SQL run before AutoMigrate (extensions, enums, indexes, leaderboard MV).
-- `apps/website/internal/services/`, `apps/website/internal/middleware/`, `apps/website/internal/realtime/` (SSE hub).
+- `apps/website/src/bin/api.rs` — entrypoint: loads `.env`, runs migrations on boot, serves `/api/v1`.
+- `apps/website/src/handlers/` — Axum HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
+- `apps/website/src/models/` — serde models; **JSON field names (snake_case) here are the API contract**.
+- `apps/website/migrations/` — sqlx SQL migrations (extensions, enums, indexes, leaderboard MV).
+- `apps/website/src/{services,middleware,realtime}/` — logic core, auth tiers, SSE hub.
 - `apps/website-leptos/src/` — one module per page + `client.rs` (gloo-net + single-flight refresh), `dto.rs` (API DTOs, R-api golden-tested), `mission_editor.rs` + editor modules (wgpu engine via `map-engine-render`).
 
 ## Run it locally
-Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434, `FRONTEND_URL=http://localhost:5173`). Go lives at `~/.local/go/bin`; root `Makefile` prepends it for `make api` / `make build`.
+Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`; the root `Makefile` prepends it (plus `~/go/bin` for the editorconfig-checker binary only).
 
 ```bash
 make db-up        # start local Postgres (podman/docker compose), port 5434
-make api          # run Go API on :8080 (migrates on boot)
+make api          # run the Rust API on :8080 (cargo run --bin api; migrates on boot)
 make leptos       # run the Leptos dev server on :3000 (trunk serve; proxies /api -> :8080)
-make test-it      # Go integration tests (needs db-up; sets TEST_DATABASE_URL)
+make test-it      # Rust integration tests (needs db-up; sets TEST_DATABASE_URL)
 make db-down      # stop Postgres (keeps volume)
 ```
 
@@ -49,9 +49,9 @@ open it in the browser to log in, or curl it and read `access_token` from the
 `Location` fragment for API testing.
 
 ## Conventions
-- API JSON is **snake_case** (from GORM struct tags). Hand-written GORM models remain the
-  snake_case DB/API source of truth, and hand-written frontend `types/` mirror them — when changing
-  a model, update the matching TS type. Cross-boundary **contract** types are **generated** from
+- API JSON is **snake_case** (from serde field names). The Rust models in `apps/website/src/models/`
+  are the snake_case DB/API source of truth, and the Leptos `dto.rs` DTOs mirror them (R-api golden
+  round-trip tests) — when changing a model, update the matching DTO. Cross-boundary **contract** types are **generated** from
   `packages/tbd-schema/schema/*.json` via `make schema-codegen` into
   `apps/website/src/contract/generated/` (DO NOT EDIT; T-123.4 — Rust-only since the T-159.29.3
   React deletion; the Leptos SPA hand-writes `dto.rs` gated by R-api golden tests). The mission
@@ -115,7 +115,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-163**
+**Latest shipped:** **T-164**
 
 **ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 
@@ -740,12 +740,13 @@ Then **T-068.12** player equip. Markers (**T-069**) deferred.
   DELETE SQL to purge those mock missions if they leak into the live library.
 
 ## Verifying changes
-Source of truth for the API contract is the Go handlers + `internal/models` tags;
-frontend types yield to Go on conflict. To check a wire change for real, run the stack,
-`dev-login`, hit the endpoint, and confirm the JSON matches the TS type — `tsc` alone
-only proves the frontend is self-consistent, not that it matches the backend.
+Source of truth for the API contract is the Axum handlers + `apps/website/src/models/`;
+the Leptos `dto.rs` yields to the backend on conflict. To check a wire change for real, run the
+stack, `dev-login`, hit the endpoint, and confirm the JSON round-trips through the DTO — the
+R-api golden tests (`cargo test -p website-leptos`) pin this against committed captures.
 
-**Platform CI replay (T-125):** `make db-up` → `nvm use` → **`make ci-local`** (mirrors
-[`ci.yml`](.github/workflows/ci.yml): **verify-editorconfig**, gofmt, CI-1, golangci, build, test-it,
-verify-coding-standards, **format:check**, FE lint/build/test, schema validate, citations). See
+**Platform CI replay:** `make db-up` → **`make ci-local`** (mirrors
+[`ci.yml`](.github/workflows/ci.yml): verify-editorconfig, verify-no-python, rust-ci (cargo
+fmt/clippy/build + wasm-ci + test-it), verify-coding-standards, ci-local-leptos (fmt + clippy
+wasm32 + cargo test + trunk release), schema validate + citations). See
 [`CODING_STANDARDS.md`](docs/platform/CODING_STANDARDS.md) §11.

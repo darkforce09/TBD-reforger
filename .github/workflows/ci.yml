@@ -4,8 +4,9 @@ name: ci
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
-# golangci full-repo gate (GO-2..GO-8, COMP-1) wired T-125.2 — backend step after gofmt.
-# contracts.yml go-doc-lint: path-filtered supplement only (no only-new-issues).
+# The backend/map-engine/website-leptos jobs are all cargo gates (fmt + clippy -D + build + test)
+# since the T-145 Go→Rust and T-159 React→Leptos cutovers; contracts.yml stays the path-filtered
+# citations/codegen supplement.
 on:
   push:
     branches: [main]
@@ -70,12 +71,16 @@ jobs:
 
   # --- map-engine: the T-151 crate gates (fmt + clippy native/wasm32 + native tests) ---
   # T-151.11.4 (audit F-09): these gates previously ran only locally (`make wasm-ci`).
+  # T-164: core tests read the Everon DEM (LFS, 72 MB) — pull ONLY that object (a full
+  # `lfs: true` checkout would drag the 206 MB satellite bundle every run).
   map-engine:
     name: map-engine (wasm-ci)
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
+      - name: fetch LFS test fixture (Everon DEM only)
+        run: git lfs pull --include packages/map-assets/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy

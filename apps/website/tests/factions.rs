@@ -111,7 +111,12 @@ async fn faction_library_crud_gates() {
     bad["side"] = json!("REDFOR");
     let (s, body) = req(&app, Method::POST, "/api/v1/factions", &maker, Some(bad)).await;
     assert_eq!(s, StatusCode::BAD_REQUEST);
-    assert!(body["error"].as_str().unwrap().contains("faction-library.schema.json"));
+    assert!(
+        body["error"]
+            .as_str()
+            .unwrap()
+            .contains("faction-library.schema.json")
+    );
 
     // T3 — create from the golden doc; side/name projected from the doc.
     let (s, created) = req(

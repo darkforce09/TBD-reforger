@@ -1,7 +1,7 @@
 # website-leptos — T-159 Leptos rewrite
 
 The Rust/wasm (Leptos CSR) rewrite of the website SPA. Parallel lane: the React app under
-`apps/website/frontend` stays the default build until the cutover slice (T-159.24). This crate talks
+The Leptos SPA is the ONLY frontend since T-159.29.3 (the React app is deleted). This crate talks
 to the existing API on `:8080` and, from T-159.15, links `map-engine-core`/`map-engine-render`
 directly (the wasm-boundary collapse).
 

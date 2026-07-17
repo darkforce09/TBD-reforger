@@ -9,7 +9,7 @@
 - **What:** CMS for announcements and wiki pages with rich editor.
 - **Why:** Admins publish news and update SOPs without code deploys.
 - **Route:** `/admin/content` (nav label: **Comms Broadcaster**)
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/content_manager_admin_cms/code.html`
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/content_manager_admin_cms/code.html`
 - **Min role:** `admin`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.11 Content Manager
 

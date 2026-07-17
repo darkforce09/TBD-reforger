@@ -9,7 +9,7 @@
 - **What:** Full-bleed Deck.gl tactical map editor for placing entities, ORBAT layers, and compiling mission versions.
 - **Why:** Mission makers author `json_payload` for the mission library and event ORBAT materialization.
 - **Route:** `/missions/:id/edit`
-- **Live source:** `apps/website/frontend/src/features/mission-creator/` (wrapper) + `apps/website/frontend/src/features/tactical-map/` (engine); lazy route in `apps/website/frontend/src/router.tsx`
+- **Live source:** `apps/website-leptos/src/mission_editor.rs` + the editor modules (`select_tool`/`outliner`/`attributes`/`arsenal`/`eden_chrome`/…) on the wgpu engine (`crates/map-engine-render`); route in `apps/website-leptos/src/router.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** none
 - **Min role:** `mission_maker` (owner or admin)
 - **Blueprint ref:** [Mission Creator ROADMAP](../../../specs/Mission_Creator_Architecture/ROADMAP.md), [feature inventory](../../../specs/Mission_Creator_Architecture/feature_inventory.md)

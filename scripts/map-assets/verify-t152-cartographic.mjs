@@ -121,12 +121,15 @@ runStep("road names (.9)", () => {
 });
 
 runStep("wasm telemetry (L5)", () => {
+  // T-164: the wasm-bindgen pkg died with the React app (T-159.29.3) and `make wasm` with it —
+  // the size guard is obsolete (map-engine crates are gated by `make wasm-ci` cargo tests). If a
+  // pkg is hand-built to the old path the guard still runs; otherwise skip, never fail.
   const wasmPath = join(
     repoRoot,
     "apps/website/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm",
   );
   if (!existsSync(wasmPath)) {
-    fail("wasm artifact missing — run make wasm");
+    console.log("  SKIP  wasm size guard — retired with the React wasm pkg (make wasm-ci owns the crates)");
     return;
   }
   const bytes = statSync(wasmPath).size;

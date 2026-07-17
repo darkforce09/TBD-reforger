@@ -9,8 +9,8 @@
 - **What:** [One sentence]
 - **Why:** [Business reason]
 - **Route:** `/path` or `(shell component)`
-- **Live source:** `apps/website/frontend/src/pages/...` or `apps/website/frontend/src/features/...`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/<folder>/code.html` or none (archived — see [stitch-exports README](../../../apps/website/frontend/src/stitch-exports/README.md))
+- **Live source:** `apps/website-leptos/src/<module>.rs`
+- **Stitch reference:** `[git history] src/stitch-exports/<name>/code.html` — archive tier
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../platform/context_handoff.md) §4.x (if applicable)
 

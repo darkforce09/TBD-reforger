@@ -1,10 +1,20 @@
 # TBD Reforger — Coding Standards
 
 **Status:** living
-**Audience:** every engineer and AI agent that writes Go, TypeScript/React, or Enfusion code in this monorepo
+**Audience:** every engineer and AI agent that writes Rust, Enfusion, or tooling code in this monorepo
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/platform/README.md`](README.md) → **this doc** (supporting tier)
 **Updated:** 2026-06-30
-**Ticket:** [T-125](t125_coding_standards_enforcement.md) — **shipped** @ `e21dac3` (tag **T-125.5**); program **T-125.0–.6 complete** (38 rules, all CI gates live).
+**Ticket:** [T-125](t125_coding_standards_enforcement.md) — **shipped** @ `e21dac3` (tag **T-125.5**); program **T-125.0–.6 complete** (38 rules, all CI gates live *in the Go/React era*).
+
+> **T-164 language-cutover note (2026-07-17):** the Go backend was replaced by Rust (T-145,
+> Axum + sqlx) and the React frontend by Leptos (T-159; React deleted at T-159.29.3). **§2 Go and
+> §3 TypeScript/React below — and every GO-\*/TS-\*/FMT-1/FMT-3 gate row marked "live" in §10 —
+> are RETIRED**, kept as the historical record of the T-125 program. Live enforcement today:
+> `cargo fmt --check` + `cargo clippy -D warnings` across all workspace crates + `make wasm-ci`
+> (backend/engine), `make ci-local-leptos` + `make leptos-gates` (SPA incl. the frozen V-suite),
+> `make verify-no-python` (T-162), schema validate + `@contract` citations, and editorconfig —
+> all wrapped by **`make ci-local`**, mirrored by `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
+> §6–§9 (testing/formatting/size/logging principles) remain in force, language-neutral.
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
@@ -90,10 +100,12 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 
 ---
 
-## 2. Go
+## 2. Go — RETIRED (T-145 Go→Rust)
 
-The backend is Gin + GORM. Handlers are the HTTP edge; `internal/services/` is the logic core;
-`internal/models/` is the snake_case DB/API contract.
+> Historical: the Go backend (Gin + GORM) was rewritten in Rust (Axum + sqlx) at T-145 and no Go
+> remains in the repo. The architectural intent carries over 1:1 — handlers are the HTTP edge,
+> `src/services/` the logic core, `src/models/` the snake_case DB/API contract — enforced today by
+> `cargo clippy -D warnings` + the centralized `ApiError` type + `cargo fmt`.
 
 **REQUIRED**
 
@@ -139,11 +151,12 @@ The backend is Gin + GORM. Handlers are the HTTP edge; `internal/services/` is t
 
 ---
 
-## 3. TypeScript / React
+## 3. TypeScript / React — RETIRED (T-159.29.3 React deletion)
 
-Vite + React 19 + TanStack Query + Zustand. `src/types/` is the hand-written API contract mirror;
-`src/api/` the axios layer; `src/hooks/` the query/mutation layer; `src/pages/` route screens;
-`src/features/` self-contained domains; `src/components/ui/` shared primitives.
+> Historical: the React SPA was rewritten in Leptos (Rust/wasm) and deleted at T-159.29.3. The
+> contract-mirror intent lives on in `apps/website-leptos/src/dto.rs` (R-api golden round-trip
+> tests); UI gates are `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release)
+> and `make leptos-gates` (editor CDP smokes + the frozen V-suite).
 
 **REQUIRED**
 
@@ -336,7 +349,9 @@ Created in **T-125.2** at the repo root. Each entry is normative:
 ## 10. Enforcement matrix
 
 Every rule, its gate (§0.2), the exact tool + config, the local verify command (exit 0 = pass), the
-slice that wires it, and whether it is **live** today or **planned**. **Pillar:** Sc=Scalability,
+slice that wires it, and whether it was **live** at T-125-ship or **planned**. (GO-\*/TS-\*/FMT-1/
+FMT-3 rows describe the retired Go/React era — see the T-164 note up top; their verify commands no
+longer exist.) **Pillar:** Sc=Scalability,
 Re=Readability, Us=Usability, De=Debuggability.
 
 | Rule | Pillar | Statement | Gate | Enforcement (tool + config) | Verify (exit 0) | Slice | Status |
@@ -411,29 +426,34 @@ what it wraps. Each line names the rules it satisfies; `# after T-125.X` marks a
 exist until that slice ships.
 
 ```bash
-make ci-local                          # whole gate (CI-1, CI-2); needs `make db-up` + `nvm use`
+make ci-local                          # whole gate; needs `make db-up` (+ `nvm use` for schema tooling)
 
 # 0. EditorConfig (FMT-2) — first in ci-local
 make verify-editorconfig
+# 0b. Python eradication hard gate (T-162)
+make verify-no-python
 
-# 1. Go format + lint (ci-local-backend)
-test -z "$(gofmt -l apps/website/internal apps/website/cmd)"   # FMT-1
-bash scripts/website/verify-ci1.sh                               # CI-1
-cd apps/website && golangci-lint run ./...                     # GO-2,3,4,6,8 + COMP-1(Go)
-cd apps/website && go build ./...
-make test-it                                                   # TEST-1, GO-5, ERR-1, ERR-2, ERR-5
-make verify-coding-standards                                   # GO-1, GO-9, ERR-4, LOG-3, SIZE-1, SIZE-3
-# 2. Frontend (ci-local-frontend)
-cd apps/website/frontend
-  npm ci && npm run format:check && npm run lint && npm run build && npm test   # FMT-3, TEST-2, TS-1..7, LOG-2, COMP-1(TS), TS-5
+# 1. Rust backend + engine crates (rust-ci)
+cd apps/website && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
+make wasm-ci                           # map-engine core/wasm/render fmt + clippy -D + tests
+make test-it                           # backend integration tests (fresh sqlx-migrated DB)
+make verify-coding-standards           # SIZE-1/SIZE-3 + doc layout + no SELECT *
+
+# 2. Leptos SPA (ci-local-leptos)
+cargo fmt -p website-leptos --check
+cargo clippy -p website-leptos --target wasm32-unknown-unknown
+cargo test -p website-leptos           # 46 native incl. R-api goldens
+cd apps/website-leptos && trunk build --release
+# full editor gates (not in ci-local; chromium-driven): make leptos-gates
+
 # 3. Schema + citations (ci-local-schema)
 make schema-validate                   # TEST-3, ENF-4
-make verify-citations                  # TS-6, GO-7 @route route-match, ENF-3
+make verify-citations                  # @contract citations + @route route-match, ENF-3
 ```
 
-> **Slice availability (2026-06-30):** **T-125 program complete** — all **38** rules in §10 are **live**
-> (CI-BLOCK, CI-SCRIPT, ALLOWLIST, or MANUAL for Enfusion-only ENF-1/2). `make ci-local` mirrors
-> **`ci.yml`** (backend + frontend + schema + **editorconfig** jobs).
+> **Gate status (2026-07-17, T-164):** the Go/React-era rows retired with their languages; the
+> replay block above is the live `make ci-local` reality, mirrored 1:1 by **`ci.yml`**
+> (rust-backend + map-engine + website-leptos + schema + editorconfig jobs).
 
 ---
 

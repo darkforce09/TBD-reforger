@@ -9,8 +9,8 @@
 - **What:** Searchable grid of community missions with filters, tabs, dossier Sheet, and **mission creation** (T-048).
 - **Why:** Browse, create, and open missions before events or 2D editing — single Mission Hub surface.
 - **Route:** `/missions`
-- **Live source:** `apps/website/frontend/src/pages/missions.tsx` (`MissionLibraryPage`); create dialog: `apps/website/frontend/src/features/mission-creator/CreateMissionDialog.tsx` (T-048)
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/mission_library_tactical_browser/code.html` (archived)
+- **Live source:** `apps/website-leptos/src/missions.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/mission_library_tactical_browser/code.html`
 - **Min role:** `enlisted` (browse); `mission_maker` (+ New Mission button)
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.5 Mission Library
 - **Implementation spec:** [t048_library_create_dialog.md](../../../specs/Mission_Creator_Architecture/t048_library_create_dialog.md)

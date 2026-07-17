@@ -15,7 +15,7 @@ nvm use             # Node 26
 make ci-local       # verify-editorconfig + backend + verify-coding-standards + FE format:check/lint/build/test + schema/citations
 ```
 
-**Formatting (T-125.5):** `make verify-editorconfig` (FMT-2, repo root; needs `editorconfig-checker` in `~/go/bin`) · `cd apps/website/frontend && npm run format:check` (FMT-3). Coding-standards bundle: `make verify-coding-standards` (includes `verify-doc-layout` per DOCUMENTATION_STANDARDS §8.2) — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11.
+**Formatting (T-125.5):** `make verify-editorconfig` (FMT-2, repo root; needs `editorconfig-checker` in `~/go/bin`) · `cargo fmt --check` in `apps/website` + `-p website-leptos` (the FMT-3 npm gate retired at T-159.29.3). Coding-standards bundle: `make verify-coding-standards` (includes `verify-doc-layout` per DOCUMENTATION_STANDARDS §8.2) — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11.
 
 ```bash
 # 1. Postgres (port 5434) — quick, run in foreground
@@ -24,8 +24,8 @@ make db-up
 # 2. Go API on :8080 — run in background; compiles + migrates on boot.
 make api
 
-# 3. Vite dev server on :5173 (proxies /api -> :8080) — run in background
-make web
+# 3. Leptos dev server on :3000 (trunk serve; proxies /api -> :8080) — run in background
+make leptos
 ```
 
 > **Note:** root `Makefile` prepends `~/.local/go/bin` to PATH for Go targets. If you run `go` directly outside `make`, use `export PATH="$HOME/.local/go/bin:$PATH"`.
@@ -53,7 +53,7 @@ cd packages/tbd-schema && npm run validate
 make verify-citations
 ```
 
-These run in CI via [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (primary full-repo gate: backend integration tests + golangci + frontend build/lint/test + schema validate + citations) and path-filtered supplements in [`contracts.yml`](../../.github/workflows/contracts.yml) (codegen-drift, supplemental golangci, ESLint TSDoc) and [`schema.yml`](../../.github/workflows/schema.yml). `CreateVersion` validates the mission version payload against `mission-editor-payload.schema.json` before persist.
+These run in CI via [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (primary full-repo gate: Rust backend fmt/clippy/build/test + map-engine wasm-ci + website-leptos cargo/trunk + schema validate + citations + editorconfig) and path-filtered supplements in [`contracts.yml`](../../.github/workflows/contracts.yml) (codegen-drift + citations) and [`schema.yml`](../../.github/workflows/schema.yml). `CreateVersion` validates the mission version payload against `mission-editor-payload.schema.json` before persist.
 
 ## Log in (no Discord needed)
 
@@ -101,16 +101,16 @@ make registry-import
 #   [--modpack <uuid>] [--prune]
 ```
 
-Restart `make api` after handler changes — `go run` does not hot-reload.
+Restart `make api` after handler changes — `cargo run` does not hot-reload.
 
 | Route | Auth | Notes |
 |-------|------|--------|
 | `GET /api/v1/registry` | mission_maker+ JWT | Items; weak ETag / 304 |
 | `GET /api/v1/registry/compat` | mission_maker+ JWT | Edges; `?edge_type=` filter; ETag |
 
-Frontend worker (T-068.9): `initRegistryCompat` / `canAttach` / `canEquip` / `itemsFor` in
-`apps/website/frontend/src/features/mission-creator/registry/registryCompatClient.ts`
-(IDB-cached). Smart Arsenal UI = **T-068.10**.
+The React-era compat worker (T-068.9/`registryCompatClient.ts`) retired with the React app
+(T-159.29.3); the Leptos Arsenal ships the kind-sourced rows (T-159.27) and the compat-validated
+Smart Forge is the folded-forward follow-on.
 
 **Mod compiled mission (T-092.2 @ `a73224f2`):** game server fetches the mod-native document (not the export wrapper):
 
@@ -154,22 +154,23 @@ make verify-terrain           # manifest ↔ terrains.ts + anchor schema
 make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m (PASS @ 6d96339)
 ```
 
-**Local dev serving:** run `make map-assets-link` once per clone (symlinks `packages/map-assets` → `frontend/public/map-assets`). `make web` runs this automatically. Required for Everon DEM fetch in the Mission Creator (T-091.1+).
+**Local dev serving:** map assets flow through the Trunk `/map-assets` proxy in dev and the backend `MAP_ASSETS_DIR` ServeDir in prod (T-159.24/.29) — no symlink step. Requires `git lfs pull` for the Everon DEM.
 
-**Frontend tests:** `cd apps/website/frontend && npm test` — vitest `sampleElevation.test.ts` (11 anchor cases vs committed PNG; requires `git lfs pull` for DEM).
+**Frontend/engine tests:** `cargo test -p website-leptos` (46) + `cargo test -p map-engine-core --all-features` (234 — incl. DEM peaks vs the committed PNG; requires `git lfs pull`).
 
 ## Notes
 
 - A fresh DB only has the Discord role→permission mappings (`make seed`).
   Events/missions must be seeded via the API or `psql`.
-- **Node 26** required for frontend (`nvm use` at repo root). **Go 1.26** for API (`make build` / `make api`).
-- Frontend checks: `cd apps/website/frontend && npm run build` (tsc+vite), `npm run lint`, `npm test` (vitest **21/21**).
+- **Node 26** for schema tooling + the CDP gate driver (`nvm use` at repo root). **Rust stable** for API + SPA (`make build` / `make api` / `make leptos`).
+- Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release); full editor gates: `make leptos-gates`.
 - Integration tests: `make test-it` (needs `make db-up`).
 
 ## Mock data (optional, not run by `make seed`)
 
-`internal/db/seeds/mock_data.sql` (Operation Red Dawn etc.) is **only** applied by the
-explicit `go run ./cmd/seed` command — `make seed` does not touch it. The Mission Library
+`apps/website/internal/db/seeds/mock_data.sql` (Operation Red Dawn etc.) is **only** applied by
+piping it through psql explicitly (`podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger <
+apps/website/internal/db/seeds/mock_data.sql`) — `make seed` does not touch it. The Mission Library
 renders live API data, so these four fixed-UUID missions show up as real entries. To purge
 them (children first; there are no ON DELETE CASCADE FKs):
 

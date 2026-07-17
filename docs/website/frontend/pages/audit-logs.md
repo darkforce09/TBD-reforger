@@ -9,8 +9,8 @@
 - **What:** Terminal-style live feed of system audit events.
 - **Why:** Admin paper trail for security and debugging.
 - **Route:** `/admin/audit`
-- **Live source:** `apps/website/frontend/src/pages/admin.tsx` (`AuditLogsPage`); data via `useAuditLogs`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/system_audit_logs_admin_console/code.html` (archived)
+- **Live source:** `apps/website-leptos/src/audit.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/system_audit_logs_admin_console/code.html`
 - **Min role:** `admin`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.12
 

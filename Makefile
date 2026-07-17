@@ -1,12 +1,12 @@
 # TBD Reforger Platform — monorepo dev tasks (delegates to apps/website/).
 COMPOSE := $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
 WEB := apps/website
-# Go is often installed under ~/.local/go/bin and not on PATH (see CLAUDE.md).
+# ~/.local/go/bin stays on PATH only for the Go toolchain that `go install`s editorconfig-checker.
 # ~/go/bin is the default GOPATH/bin where `go install` drops tools (editorconfig-checker, T-125.5);
-# golangci-lint lives in ~/.local/go/bin. Both are prepended so `make ci-local` resolves them.
+# ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tidy tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration verify-no-python map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-migration verify-no-python map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -82,9 +82,6 @@ build: ## Build the backend + the Leptos SPA
 	cd $(WEB) && cargo build --release --bin api
 	$(MAKE) leptos-build
 
-tidy: ## Tidy Go modules
-	cd $(WEB) && go mod tidy
-
 # --- Rust port (T-145). Additive during the Go→Rust transition; these become the
 # canonical `api`/`build`/`test` targets at cutover (plan Phase 11). Cargo is at
 # ~/.cargo/bin (user-space rustup; never dnf on Bazzite).
@@ -95,7 +92,7 @@ rust-build: ## Build the Rust backend (all targets)
 rust-test: ## Run Rust unit tests (no DB)
 	cd $(WEB) && cargo test --lib --bins
 rust-test-it: ## Run Rust integration tests against a fresh dedicated DB (needs `make db-up` @ :5434)
-	@# A dedicated, Rust-migrated DB (the dev `tbd_reforger` is Go-owned — no sqlx tracking).
+	@# A dedicated, Rust-migrated DB (the dev `tbd_reforger` predates sqlx tracking).
 	-podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "DROP DATABASE IF EXISTS rust_it WITH (FORCE);"
 	podman exec tbd_reforger_db psql -U tbd -d tbd_reforger -qc "CREATE DATABASE rust_it;"
 	cd $(WEB) && TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/rust_it?sslmode=disable cargo test

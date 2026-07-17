@@ -9,7 +9,7 @@
 - **What:** Interactive map-based mortar firing solution calculator.
 - **Why:** Field tool for milsim fire support; client-side only.
 - **Route:** `/tools/mortar`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/mortar_calculator_tactical_view/code.html`
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/mortar_calculator_tactical_view/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** —
 

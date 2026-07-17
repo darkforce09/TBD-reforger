@@ -26,8 +26,9 @@ if (!existsSync(roadsPath)) {
   process.exit(1)
 }
 if (!existsSync(wasmPkg)) {
-  console.error('verify-road-names: wasm pkg missing — run make wasm')
-  process.exit(1)
+  // T-164: retired with the React wasm pkg (T-159.29.3) — make wasm-ci owns the math. Skip.
+  console.log('  SKIP  verify-road-names — retired with the React wasm pkg (make wasm-ci owns the math)')
+  process.exit(0)
 }
 
 const namesRaw = readFileSync(namesPath, 'utf8')

@@ -10,7 +10,7 @@
 - **Why:** Community doctrine, SOPs, IFF, medical flowcharts.
 - **Scope note:** Vehicle reference moved to [/vehicles](vehicle-database.md) (`VehicleDatabasePage` in `doctrine.tsx`). This page covers wiki SOPs only — no vehicle table.
 - **Route:** `/wiki` and `/wiki/:slug`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/sop_wiki_vehicle_database_iff/code.html`
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/sop_wiki_vehicle_database_iff/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.6 Wiki
 

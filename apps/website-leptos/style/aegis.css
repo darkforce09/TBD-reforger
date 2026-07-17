@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* T-159.2a — Aegis tokens ported byte-for-byte from apps/website/frontend/src/index.css so the
+/* T-159.2a — Aegis tokens ported byte-for-byte from the React index.css (tree deleted at T-159.29.3) so the
    S-tokens gate diffs equal. The React source's npm @imports are handled differently here: fonts
    become self-hosted @font-face (woff2 → assets) in the shell slice; the tw-animate-css + shadcn
    base layers are vendored when a slice first needs them. @source tells Tailwind v4 to scan the

@@ -20,10 +20,10 @@ use crate::middleware::MissionMakerUser;
 use crate::models::UserFaction;
 use crate::state::AppState;
 
-
 /// Validate the raw doc and project (side, name) out of it.
 fn validated_side_name(doc: &Value) -> Result<(String, String), ApiError> {
-    let raw = serde_json::to_vec(doc).map_err(|_| ApiError::bad_request("doc is not valid JSON"))?;
+    let raw =
+        serde_json::to_vec(doc).map_err(|_| ApiError::bad_request("doc is not valid JSON"))?;
     let details = validate_faction_library_doc(&raw)
         .map_err(|e| ApiError::internal(format!("faction schema compile failed: {e}")))?;
     if !details.is_empty() {
@@ -70,11 +70,12 @@ pub async fn get_faction(
         "SELECT id, owner_id, side, name, doc, created_at, updated_at FROM user_factions \
          WHERE id = $1 AND owner_id = $2",
     )
-            .bind(id)
-            .bind(&maker.0.discord_id)
-            .fetch_optional(&state.pool)
-            .await?;
-    row.map(Json).ok_or_else(|| ApiError::not_found("faction not found"))
+    .bind(id)
+    .bind(&maker.0.discord_id)
+    .fetch_optional(&state.pool)
+    .await?;
+    row.map(Json)
+        .ok_or_else(|| ApiError::not_found("faction not found"))
 }
 
 /// `POST /api/v1/factions` — create a faction from a full faction-library doc.
@@ -125,7 +126,9 @@ pub async fn update_faction(
     .fetch_optional(&state.pool)
     .await?;
     if clash.is_some() {
-        return Err(ApiError::conflict("a faction with this name already exists"));
+        return Err(ApiError::conflict(
+            "a faction with this name already exists",
+        ));
     }
 
     let row: Option<UserFaction> = sqlx::query_as(
@@ -140,7 +143,8 @@ pub async fn update_faction(
     .bind(&maker.0.discord_id)
     .fetch_optional(&state.pool)
     .await?;
-    row.map(Json).ok_or_else(|| ApiError::not_found("faction not found"))
+    row.map(Json)
+        .ok_or_else(|| ApiError::not_found("faction not found"))
 }
 
 /// `DELETE /api/v1/factions/:id` — delete an owned faction.

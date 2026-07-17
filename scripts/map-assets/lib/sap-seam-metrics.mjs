@@ -22,9 +22,10 @@ import { CELL_PX, GRID } from "../decode-edds.mjs";
 export const HW = 4; // seam-bridge half-width; band = [c-HW, c+HW-1] (8 px, within spec "2–8 px")
 export const ANCHOR = HW + 1; // bridge anchor offset: lerp between col/row c-ANCHOR and c+HW
 export const FILL_FLOOR = 0.25; // absolute band-gradient reference (reported); met by high/mid-contrast seams
-export const REL_FLOOR = 0.05; // primary numeric floor: band must recover to ≥ this fraction of local interior
-                               // detail (a linear bridge yields gradient ∝ local contrast, so an absolute floor
-                               // would unfairly fail low-contrast coastal seams; observed post-fix ratios 0.08–0.16).
+// Primary numeric floor: the band must recover to ≥ this fraction of local interior detail (a
+// linear bridge yields gradient ∝ local contrast, so an absolute floor would unfairly fail
+// low-contrast coastal seams; observed post-fix ratios 0.08–0.16).
+export const REL_FLOOR = 0.05;
 export const STEP_CAP = 6.0; // guard: cross-seam mean ΔRGB (anchor strips) must stay ≤ this (no new exposure step)
 export const DETAIL_MIN = 1.0; // a seam is only evaluated where the cell interior gradient exceeds this (else uniform → skip)
 export const FLAT_EPS = 0.15; // per-line gradient below this counts as "flat" (apron) when measuring apron width

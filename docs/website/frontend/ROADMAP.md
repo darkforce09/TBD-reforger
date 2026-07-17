@@ -4,7 +4,7 @@
 
 **Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
 
-**Code:** [`apps/website/frontend/src/`](../../../apps/website/frontend/src) · **Routes:** [`apps/website/frontend/src/router.tsx`](../../../apps/website/frontend/src/router.tsx)
+**Code:** [`apps/website-leptos/src/`](../../../apps/website-leptos/src) · **Routes:** [`apps/website-leptos/src/router.rs`](../../../apps/website-leptos/src/router.rs)
 
 ---
 
@@ -27,7 +27,7 @@
 
 ## DONE — shipped surfaces
 
-All routes below have a surface spec unless noted. Live UI = `apps/website/frontend/src/pages` + `features/`.
+All routes below have a surface spec unless noted. Live UI = `apps/website-leptos/src/` (T-159).
 
 | Route | Doc | Notes |
 |-------|-----|-------|
@@ -109,7 +109,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
 ## Design system
 
-- **Live tokens:** [`apps/website/frontend/src/index.css`](../../../apps/website/frontend/src/index.css)
+- **Live tokens:** [`apps/website-leptos/style/aegis.css`](../../../apps/website-leptos/style/aegis.css)
 - **Reference YAML:** [`docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md`](../../specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md)
 - **Methodology:** [`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)
 

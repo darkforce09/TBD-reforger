@@ -9,8 +9,8 @@
 - **What:** Split-pane upcoming operations list with embedded Event Hub in the detail column.
 - **Why:** Players browse Tuesday ops and register without a full-page navigation away from the schedule.
 - **Route:** `/events`
-- **Live source:** `apps/website/frontend/src/pages/operations.tsx` (`EventSchedulePage`); detail embeds `EventHubView` from `apps/website/frontend/src/pages/events.tsx`
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/upcoming_operations_event_schedule/code.html` (archived — layout replaced by `SplitPane`)
+- **Live source:** `apps/website-leptos/src/events.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/upcoming_operations_event_schedule/code.html` (archived — layout replaced by `SplitPane`)
 - **Min role:** `public-nav`
 - **Blueprint ref:** —
 

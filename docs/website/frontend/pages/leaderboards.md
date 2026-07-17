@@ -9,8 +9,8 @@
 - **What:** Competitive stats rankings with search, category tabs, podium, and table.
 - **Why:** Community engagement; telemetry-driven stats.
 - **Route:** `/leaderboards`
-- **Live source:** `apps/website/frontend/src/pages/operations.tsx` (`LeaderboardsPage`)
-- **Stitch reference:** `apps/website/frontend/src/stitch-exports/global_leaderboards_player_rankings/code.html` (archived)
+- **Live source:** `apps/website-leptos/src/leaderboards.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/global_leaderboards_player_rankings/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.4 Leaderboards
 

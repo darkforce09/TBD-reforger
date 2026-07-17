@@ -1,5 +1,5 @@
 {
-  "next_id": 164,
+  "next_id": 165,
   "tickets": [
     {
       "id": "T-001",
@@ -3847,7 +3847,14 @@
       "status": "queued",
       "program": "eden",
       "title": "Simplified Squad Connections",
-      "summary": "Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data."
+      "summary": "Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data.",
+      "surfaces": [
+        "MAP",
+        "ORBAT"
+      ],
+      "impact": [
+        "ui"
+      ]
     },
     {
       "id": "T-148",
@@ -3855,7 +3862,14 @@
       "status": "queued",
       "program": "eden",
       "title": "Shift+Drag Rotation Tool",
-      "summary": "Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction."
+      "summary": "Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction.",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "state"
+      ]
     },
     {
       "id": "T-149",
@@ -3863,7 +3877,14 @@
       "status": "idea",
       "program": "eden",
       "title": "Forest Mass Polygon Smoothing",
-      "summary": "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography."
+      "summary": "Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.",
+      "surfaces": [
+        "MAP"
+      ],
+      "impact": [
+        "ui",
+        "perf"
+      ]
     },
     {
       "id": "T-145",
@@ -3872,12 +3893,13 @@
       "summary": "Rewrite the Go backend to Rust (Axum + sqlx) and move the mission document core into a Rust/wasm yrs doc. The F1->F4 flip made the yrs wasm doc authoritative and removed yjs + y-indexeddb from the app.",
       "program": "Platform",
       "surfaces": [
-        "Backend API"
+        "SHELL",
+        "DATA"
       ],
       "impact": [
-        "Architecture rewrite to replace Go with Rust for memory safety",
-        " strict concurrency checks",
-        " and superior binary compiling pipelines."
+        "api",
+        "infra",
+        "compiler"
       ],
       "status": "shipped",
       "shipped_at": "a228ed98"
@@ -3889,10 +3911,11 @@
       "summary": "wgpu Mission Creator engine: W0\u2013W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1\u2013.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
       "program": "Platform",
       "surfaces": [
-        "Mission Creator map render"
+        "MAP"
       ],
       "impact": [
-        "Replace Deck.gl with a wgpu/wasm engine reading the yrs core directly for zero-copy render at scale"
+        "perf",
+        "ui"
       ],
       "status": "ready",
       "shipped_at": "c4831451",
@@ -5081,6 +5104,30 @@
       ],
       "status": "shipped",
       "spec": "docs/platform/t163_merge_integration.md",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code",
+      "parallel_ok": false
+    },
+    {
+      "id": "T-164",
+      "order": 1610,
+      "title": "Post-merge green sweep: CI green + registry hygiene + doc truth",
+      "summary": "SHIPPED: all 6 red CI jobs fixed (citation #/$defs/gear, backend cargo fmt, map-engine LFS DEM pull, editorconfig sap-seam+vendor exclude, Trunk tailwindcss 4.3.2 pin); ticket check exit 0 (T-147/148/149 fields, T-145/T-151 vocab recode); T-090.1.2.6 remote tag force-pushed to shipped commit; verify-t152-cartographic wasm step retired-skip; operational doc truth (CLAUDE.md Rust backend, Makefile tidy removal, DEV_RUNBOOK, CODING_STANDARDS retired gates, 23 page docs Live source \u2192 Leptos modules). Verify: .ai/artifacts/t164_verify_log.md.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "DATA"
+      ],
+      "impact": [
+        "ci",
+        "docs",
+        "infra"
+      ],
+      "status": "shipped",
+      "spec": "docs/platform/t164_green_sweep.md",
       "stream": "infra",
       "targets": [
         "root"
