@@ -20,8 +20,12 @@ clap = { version = "4", features = ["derive"] }
 flate2 = "1"
 jsonschema = { version = "0.46.10", default-features = false }
 libc = "0.2"
+image = { version = "0.25", default-features = false, features = ["png", "tga"] }
+image-webp = "0.2"
 png = "0.17"
-map-engine-core = { path = "../../crates/map-engine-core" }
+resvg = { version = "0.45", default-features = false }
+webp = "0.3"
+map-engine-core = { path = "../../crates/map-engine-core", features = ["png", "world"] }
 futures-util = "0.3"
 regex = "1"
 reqwest = { version = "0.13.4", default-features = false, features = ["json", "charset"] }
@@ -42,6 +46,10 @@ path = "src/bin/mcpd.rs"
 [[bin]]
 name = "world"
 path = "src/bin/world.rs"
+
+[[bin]]
+name = "map"
+path = "src/bin/map.rs"
 
 [lib]
 name = "tbd_tools"

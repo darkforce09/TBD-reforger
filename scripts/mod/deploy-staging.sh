@@ -3,7 +3,7 @@
 #
 # Prereqs (dev PC):
 #   cp scripts/deploy/deploy.env.example scripts/deploy/deploy.env   # fill SSH + token
-#   cd packages/tbd-schema && npm ci
+#   (tbd-schema is npm-free since T-165.9 — schema gates run via `cargo xtask`)
 #
 # Usage:
 #   bash scripts/mod/deploy-staging.sh                       # mode from deploy.env (default: addons)

@@ -1197,8 +1197,8 @@ pub fn catalog_sap_cells(terrain: &str) -> Result<u8> {
     use super::edds::{CELL_COUNT, CELL_M, CELL_PX, GRID, WORLD_M, cell_grid, cell_path};
     use super::pak::PakVfs;
     if terrain != "everon" {
-        // E2c-allow: the SAP supertexture lane is Eden-only this slice (matches the .mjs guard).
-        eprintln!("only everon supported this slice (got {terrain})");
+        // E2c-allow: the SAP lane is Eden-only this slice (matches the .mjs guard)
+        eprintln!("only everon supported this slice (got {terrain})"); // E2c-allow
         return Ok(1);
     }
     let out_dir = repo_root().join("packages/map-assets/everon/staging/sap"); // E2c-allow

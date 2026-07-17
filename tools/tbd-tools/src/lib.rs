@@ -14,6 +14,7 @@ pub mod density;
 pub mod forest;
 pub mod geometry;
 pub mod inject;
+pub mod map;
 pub mod serve;
 pub mod smokes;
 pub mod sroutes;

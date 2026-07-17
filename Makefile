@@ -45,24 +45,24 @@ leptos-gates: leptos-build ## T-159 editor smokes + the frozen V-suite against a
 
 map-water-everon: ## One-button Everon water composite: restore → mask → composite → bundle + pyramid → verify (T-090.1.2.5.2)
 	cp packages/map-assets/everon/staging/sap/everon-sap-ortho.pre-water.png packages/map-assets/everon/staging/sap/everon-sap-ortho.png
-	node -e "const f='packages/map-assets/everon/staging/sap/TBD_SatExport_meta.json',fs=require('fs'),m=JSON.parse(fs.readFileSync(f,'utf8'));delete m.waterComposite;fs.writeFileSync(f,JSON.stringify(m,null,2)+'\n')"
-	node scripts/map-assets/analyze-water-sources.mjs
-	node --max-old-space-size=8192 scripts/map-assets/composite-water-ortho.mjs
-	node scripts/map-assets/build-unified-satellite.mjs --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/satellite/everon-sat.tbd-sat --terrain everon
-	node -e "const fs=require('fs'),mp='packages/map-assets/everon/manifest.json',m=JSON.parse(fs.readFileSync(mp,'utf8'));m.tiles.satellite.unified.bytes=fs.statSync('packages/map-assets/everon/satellite/everon-sat.tbd-sat').size;fs.writeFileSync(mp,JSON.stringify(m,null,2)+'\n')"
-	bash scripts/map-assets/build-tile-pyramid.sh --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless
-	node scripts/map-assets/verify-sap-ortho.mjs TERRAIN=everon
-	node scripts/map-assets/verify-unified-satellite.mjs TERRAIN=everon
-	EXPECT_LOSSLESS=1 node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+	cargo run -q -p tbd-tools --bin map -- reset-water-meta --terrain everon
+	cargo run -q -p tbd-tools --bin map -- analyze-water
+	cargo run -q -p tbd-tools --bin map -- composite-water
+	cargo run -q -p tbd-tools --bin map -- build-unified --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/satellite/everon-sat.tbd-sat --terrain everon
+	cargo run -q -p tbd-tools --bin map -- patch-unified-bytes --terrain everon
+	cargo run -q -p tbd-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/sap/everon-sap-ortho.png --out packages/map-assets/everon/tiles/satellite --minzoom 0 --maxzoom 6 --tilesize 256 --lossless
+	cargo run -q -p tbd-tools --bin map -- verify-sap-ortho --terrain everon
+	cargo run -q -p tbd-tools --bin map -- verify-unified --terrain everon
+	cargo run -q -p tbd-tools --bin map -- verify-pyramid --terrain everon --expect-lossless
 
 map-cartographic-everon: ## One-button Everon Map view (stylized cartographic): staging ortho → pyramid → manifest patch → verify (T-090.1.1)
-	TERRAIN=everon node scripts/map-assets/build-map-cartographic.mjs
-	bash scripts/map-assets/build-tile-pyramid.sh --input packages/map-assets/everon/staging/map/everon-map-ortho.png --out packages/map-assets/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256
-	node -e "const fs=require('fs'),mp='packages/map-assets/everon/manifest.json',m=JSON.parse(fs.readFileSync(mp,'utf8'));Object.assign(m.tiles.map,{source:'workbench-cartographic',encoding:'webp-lossy'});fs.writeFileSync(mp,JSON.stringify(m,null,2)+'\n')"
+	cargo run -q -p tbd-tools --bin map -- build-cartographic --terrain everon
+	cargo run -q -p tbd-tools --bin map -- build-pyramid --input packages/map-assets/everon/staging/map/everon-map-ortho.png --out packages/map-assets/everon/tiles/map --minzoom 0 --maxzoom 6 --tilesize 256
+	cargo run -q -p tbd-tools --bin map -- patch-map-tiles-meta --terrain everon
 	$(MAKE) map-cartographic-verify
 
 map-cartographic-verify: ## Verify the Everon Map pyramid (complete z0–6 + manifest agreement, T-090.1.1)
-	VIEW=map node scripts/map-assets/verify-tile-pyramid.mjs TERRAIN=everon
+	cargo run -q -p tbd-tools --bin map -- verify-pyramid --terrain everon --view-map
 
 test: ## Run backend unit tests
 	$(MAKE) rust-test
@@ -184,7 +184,7 @@ map-census: ## T-090.2 — validate type-inventory.json; compute counts after ex
 	@test -n "$(TERRAIN)" || (echo "map-census: TERRAIN=<id> required"; exit 1)
 	cargo run -q -p tbd-tools --bin world -- census --terrain "$(TERRAIN)"
 map-glyphs-build: ## T-090.5.2 — build world-glyph atlas (webp + Deck mapping) from packages/map-assets/glyphs/svg
-	node scripts/map-assets/build-glyph-atlas.mjs
+	cargo run -q -p tbd-tools --bin map -- build-glyph-atlas
 map-render-verify: ## T-090.5 stub — per-phase render smoke (layer instance count + purity)
 	@echo "map-render-verify: not implemented (T-090.5)"; exit 1
 

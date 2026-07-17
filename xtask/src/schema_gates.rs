@@ -928,11 +928,18 @@ pub fn t090_specs() -> Result<u8> {
     ] {
         make_targets.insert(t.to_string());
     }
-    let pkg = read_json(&schema_root(&root).join("package.json"))?;
-    let mut npm_scripts: HashSet<String> = pkg["scripts"]
-        .as_object()
-        .map(|m| m.keys().cloned().collect())
-        .unwrap_or_default();
+    // T-165.9: the tbd-schema npm package is deleted (the Node eradication endpoint) — any
+    // npm-script citation in the spec corpus is archival by definition, so the live-scripts
+    // set is empty and the allowlist below carries every historically-cited name.
+    let pkg_path = schema_root(&root).join("package.json");
+    let mut npm_scripts: HashSet<String> = if pkg_path.exists() {
+        read_json(&pkg_path)?["scripts"]
+            .as_object()
+            .map(|m| m.keys().cloned().collect())
+            .unwrap_or_default()
+    } else {
+        HashSet::new()
+    };
     for s in [
         "dev",
         "build",
@@ -958,6 +965,9 @@ pub fn t090_specs() -> Result<u8> {
         "verify-n6",
         "verify-n10",
         "verify-terrain-manifest",
+        // retired with the T-165.4/.9 terrain + image lanes (package deleted at .9)
+        "verify-terrain-alignment",
+        "verify-terrain",
     ] {
         npm_scripts.insert(s.to_string());
     }
