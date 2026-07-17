@@ -70,6 +70,9 @@ mod server_control;
 mod server_intel;
 mod settings;
 mod split_pane;
+// T-159.25 SSE consumer (useServerTelemetry port) — web-sys fetch/reader, wasm32-only.
+#[cfg(target_arch = "wasm32")]
+mod sse;
 // T-159.25 — sonner replacement: Toasts context + top-right viewport (renders no DOM while empty).
 mod toast;
 mod ui;

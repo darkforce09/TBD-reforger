@@ -55,6 +55,17 @@ web-sys = { version = "0.3", features = [
     "Url",
     "HtmlAnchorElement",
     "HtmlElement",
+    # T-159.25 SSE consumer (sse.rs): Bearer fetch + ReadableStream reader — the useServerTelemetry
+    # transport (EventSource can't carry the Authorization header).
+    "Headers",
+    "Request",
+    "RequestInit",
+    "Response",
+    "ReadableStream",
+    "ReadableStreamDefaultReader",
+    # T-159.25 Server Intel copy-address (navigator.clipboard.writeText).
+    "Navigator",
+    "Clipboard",
 ] }
 
 # T-159.15 Mission Creator engine — the wasm-boundary collapse. The Leptos app links the wgpu render
@@ -71,6 +82,9 @@ map-engine-core = { path = "../../crates/map-engine-core", features = ["doc", "m
 # features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on
 # wasm32-unknown-unknown — so keep default features (dropping them strips the async API).
 idb = "0.6"
+# T-159.25 SSE consumer — awaiting fetch/reader promises in sse.rs. Already in the tree via leptos
+# (spawn_local); listing it just makes the direct use explicit.
+wasm-bindgen-futures = "0.4"
 
 # [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
 # wasm-opt via the index.html data-wasm-opt attribute.

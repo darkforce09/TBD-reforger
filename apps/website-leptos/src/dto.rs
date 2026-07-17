@@ -52,6 +52,52 @@ pub struct LinkStatus {
     pub pending_code: Option<bool>,
 }
 
+/// One events-list row — mirrors `types/api` `EventListItem` (`GET /events?scope=…`). T-159.25.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct EventListItem {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name_override: Option<String>,
+    pub start_time: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub briefing: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub banner_image_url: Option<String>,
+    pub status: String,
+    pub registration_locked: bool,
+    pub max_slots: i64,
+    pub mission_count: i64,
+    pub registered: i64,
+    pub filled: i64,
+    pub total_slots: i64,
+    pub percent: f64,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
+/// Live server telemetry frame — mirrors `types/models/telemetry` `ServerStatus` (SSE `data:`
+/// payload + the `status` field of a server row). T-159.25.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ServerStatusDto {
+    pub server_id: String,
+    pub is_online: bool,
+    pub player_count: i64,
+    pub max_players: i64,
+    pub server_fps: i64,
+    pub uptime_seconds: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current_match_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ingame_time: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ingame_weather: Option<String>,
+    pub updated_at: String,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
 /// One approvals-queue row — mirrors `types/api` `ApprovalRow` (`GET /approvals`).
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
