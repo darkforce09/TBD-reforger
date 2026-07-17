@@ -19,14 +19,20 @@
 # Fix: bodylimit.go isMissionVersionPOST() (FullPath + URL-path fallback) + a production-like
 # integration test that mounts GlobalBodyLimit.
 #
-# Prereqs: `make db-up && make api` running on :8080 (dev env, dev-login enabled), python3, curl.
+# Prereqs: `make db-up && make api` running on :8080 (dev env, dev-login enabled), curl, cargo/xtask.
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+XTASK=(cargo run -q -p xtask --)
 
 API="${API:-http://localhost:8080/api/v1}"
 ROLE="${ROLE:-mission_maker}"
 SIZES_MB="${SIZES_MB:-2 10 140}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
+
+cd "$ROOT"
 
 echo "==> dev-login ($ROLE)"
 LOC=$(curl -s -o /dev/null -w '%{redirect_url}' "$API/auth/dev-login?role=$ROLE")
@@ -37,7 +43,7 @@ echo "==> create mission"
 MID=$(curl -s -X POST "$API/missions" \
   -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{"title":"version-upload-repro","terrain":"everon","game_mode":"pve_coop","max_players":8}' \
-  | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+  | "${XTASK[@]}" repro mission-id)
 echo "    mission=$MID"
 
 i=0
@@ -45,12 +51,7 @@ for MB in $SIZES_MB; do
   i=$((i + 1))
   F="$TMP/body_${MB}mb.json"
   # Start at 1.x so we never collide with the mission's auto-created initial 0.1.0 version.
-  python3 - "$F" "$MB" "1.$i.0" <<'PY'
-import sys
-fn, mb, ver = sys.argv[1], int(sys.argv[2]), sys.argv[3]
-notes = "x" * (mb * 1024 * 1024)
-open(fn, "w").write('{"semver":"%s","payload":{"spawns":[]},"editor_notes":"%s"}' % (ver, notes))
-PY
+  "${XTASK[@]}" repro mission-version-body --out "$F" --mb "$MB" --semver "1.$i.0"
   printf '==> POST %4s MB  ' "$MB"
   curl -s -o "$TMP/resp.txt" -w 'HTTP %{http_code}  uploaded=%{size_upload}B  time=%{time_total}s\n' \
     -X POST "$API/missions/$MID/versions" \

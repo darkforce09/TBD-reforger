@@ -1639,9 +1639,10 @@ impl WorldStore {
         self.inner.regions.len() as u32
     }
 
-    /// Compose LOD-filtered road casing + centerline strips at `deck_zoom` (T-151.4 L5).
+    /// Compose LOD-filtered road casing + centerline strips at `deck_zoom` (T-151.4 L5;
+    /// `airfield_polish` = T-152.5 runway styling — restores the 074086d8 caller).
     #[must_use]
-    pub fn compose_roads(&self, deck_zoom: f64) -> RoadComposeResult {
+    pub fn compose_roads(&self, deck_zoom: f64, airfield_polish: bool) -> RoadComposeResult {
         let inputs: Vec<RoadInput<'_>> = self
             .inner
             .roads
@@ -1652,7 +1653,7 @@ impl WorldStore {
                 width_m: r.width_m,
             })
             .collect();
-        let m = compose_roads_mesh(&inputs, deck_zoom);
+        let m = compose_roads_mesh(&inputs, deck_zoom, airfield_polish);
         RoadComposeResult { inner: m }
     }
 

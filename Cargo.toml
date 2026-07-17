@@ -12,4 +12,5 @@ members = [
     "crates/map-engine-core",
     "crates/map-engine-render",
     "crates/map-engine-wasm",
+    "xtask",
 ]

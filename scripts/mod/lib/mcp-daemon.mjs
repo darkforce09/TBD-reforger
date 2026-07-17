@@ -5,7 +5,7 @@
 // time), and serves tools/call requests over an AF_UNIX socket — so repeated mcp-call.sh
 // invocations reuse the warm server instead of re-paying init per call. Requests are
 // serialized (the Workbench NetAPI is single-stream); responses are matched by id and
-// relabelled to id==2 so scripts/mod/lib/mcp-consume.py parses them unchanged.
+// relabelled to id==2 so `cargo xtask mcp consume` parses them unchanged.
 //
 // Args: --socket <path> [--pidfile <path>]
 // Env:  ENFUSION_MCP_BIN (resolved by mcp-daemon.sh), MCP_DAEMON_IDLE (s, default 1800; 0=never),

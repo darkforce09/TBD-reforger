@@ -12,16 +12,16 @@ Reliable shell access to **enfusion-mcp** for Claude Code terminal sessions. Rep
 ```text
 mcp-call.sh
   ├─ (default) warm daemon  →  AF_UNIX socket  →  lib/mcp-daemon.mjs  →  one enfusion-mcp child
-  └─ fallback one-shot      →  node …/dist/index.js  →  lib/mcp-consume.py (early exit on id==2)
+  └─ fallback one-shot      →  node …/dist/index.js  →  cargo xtask mcp consume (early exit on id==2)
 ```
 
 | Component | Path | Role |
 |-----------|------|------|
 | Call wrapper | `scripts/mod/mcp-call.sh` | Daemon-first; one-shot fallback; exports all three `ENFUSION_*` paths |
-| JSON-RPC consumer | `scripts/mod/lib/mcp-consume.py` | Shared parser + exit-code contract (daemon, one-shot, self-test) |
+| JSON-RPC consumer | `cargo xtask mcp consume` (via `lib/xtask-run.sh`) | Shared parser + exit-code contract (daemon, one-shot, self-test) |
 | Daemon broker | `scripts/mod/lib/mcp-daemon.mjs` | One index load (~35 s cold); serializes `tools/call` |
-| Daemon control | `scripts/mod/mcp-daemon.sh` | `start` · `stop` · `status` · `restart` · **`stop-all`** |
-| Socket client | `scripts/mod/lib/mcp-socket-send.py` | Sends framed requests to the daemon |
+| Daemon control | `scripts/mod/mcp-daemon.sh` | `start` · `stop` · `status` · `restart` · **`stop-all`** (probe via `xtask mcp probe-sock`) |
+| Socket client | `cargo xtask mcp socket-send` | Sends framed requests to the daemon |
 | Offline gates | `scripts/mod/mcp-call-selftest.sh` | 19 fixture tests, no Workbench |
 | Live smoke | `scripts/mod/mcp-smoke.sh` | `wb_connect` + `wb_state` after bootstrap |
 
@@ -106,7 +106,7 @@ Install pinned deps: `(cd scripts/mod && npm ci)`.
 
 The stdio MCP server does not exit on stdin EOF. The old consumer looped until EOF, so `timeout 90` always waited ~90 s (or SIGKILL mid-response → empty stdout).
 
-**Fix:** `mcp-consume.py` calls `sys.exit(0)` immediately after printing id==2 → pipe closes → server gets SIGPIPE → returns at response time. One-shot path also uses a generous `MCP_CALL_TIMEOUT` backstop.
+**Fix:** `cargo xtask mcp consume` exits immediately after printing id==2 → pipe closes → server gets SIGPIPE → returns at response time. One-shot path also uses a generous `MCP_CALL_TIMEOUT` backstop.
 
 ### 3. Tool errors misclassified
 

@@ -33,7 +33,7 @@ if ./scripts/ticket check --strict 2>/dev/null; then
 else
   fail "V6 ticket check --strict"
 fi
-nid=$(python3 -c "import json; print(json.load(open('.ai/tickets/registry.json'))['next_id'])")
+nid=$(cargo run -q -p xtask -- registry-get next_id)
 [[ "$nid" -ge 121 ]] && pass "V6 next_id=$nid" || fail "V6 next_id"
 
 # V7 registry under .ai/
@@ -46,15 +46,15 @@ nid=$(python3 -c "import json; print(json.load(open('.ai/tickets/registry.json')
 [[ -d .ai/artifacts ]] && pass "V9 .ai/artifacts/" || fail "V9 .ai/artifacts"
 
 # V10 T-068 ready
-python3 -c "
-import json, sys
-r=json.load(open('.ai/tickets/registry.json'))
-t=next(x for x in r['tickets'] if x['id']=='T-068')
-assert t['status']=='ready' and t.get('active_slice') and t.get('spec')
-import os; assert os.path.isfile(t['spec'])
-dep=next(x for x in r['tickets'] if x['id']=='T-067')
-assert dep['status']=='shipped'
-" && pass "V10 T-068 ready + deps" || fail "V10 T-068"
+status=$(./scripts/ticket get T-068 status)
+active=$(./scripts/ticket get T-068 active_slice)
+spec=$(./scripts/ticket get T-068 spec)
+dep=$(./scripts/ticket get T-067 status)
+if [[ "$status" == "ready" && -n "$active" && -f "$spec" && "$dep" == "shipped" ]]; then
+  pass "V10 T-068 ready + deps"
+else
+  fail "V10 T-068 ready + deps"
+fi
 
 # V11 CLAUDE.md
 [[ -f CLAUDE.md ]] && grep -q 'ticket-sync:status' CLAUDE.md && grep -q 'Executor gate' CLAUDE.md \
@@ -110,7 +110,7 @@ hits=$(rg -l 'Projects/TBD_Website' . 2>/dev/null | rg -v 'MONOREPO_MIGRATION|ve
 [[ -f apps/website/CLAUDE.md ]] && grep -q 'Canonical context' apps/website/CLAUDE.md && pass "V22 website stub" || fail "V22 website stub"
 
 # V23 sparse-paths helper
-python3 scripts/lib/ticket_registry.py sparse-paths T-068 >/dev/null && pass "V23 sparse-paths" || fail "V23 sparse-paths"
+./scripts/ticket sparse-paths T-068 >/dev/null && pass "V23 sparse-paths" || fail "V23 sparse-paths"
 
 # V24 advance-slice command exists
 ./scripts/ticket help 2>&1 | grep -q advance-slice && pass "V24 advance-slice" || fail "V24 advance-slice"

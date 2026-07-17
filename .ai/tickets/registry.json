@@ -1,5 +1,5 @@
 {
-  "next_id": 162,
+  "next_id": 163,
   "tickets": [
     {
       "id": "T-001",
@@ -4867,7 +4867,7 @@
           "status": "shipped",
           "shipped_at": "ce73c5bc",
           "spec": "docs/platform/t159_22_1_undo_granularity.md",
-          "notes": "No core defect — CDP keyChord double-fire. Gate rebased + undo_depth. Verify: .ai/artifacts/t159_22_1_verify_log.md"
+          "notes": "No core defect \u2014 CDP keyChord double-fire. Gate rebased + undo_depth. Verify: .ai/artifacts/t159_22_1_verify_log.md"
         },
         "T-159.23": {
           "targets": [
@@ -4906,7 +4906,7 @@
       "id": "T-161",
       "order": 1580,
       "title": "Ticket CLI: Python \u2192 Rust xtask",
-      "summary": "Replace scripts/lib/ticket_*.py + bash scripts/ticket with workspace xtask binary (sync/check/brief/prompt/mutators/run). Hub: docs/platform/t161_ticket_xtask_program.md. Worktree TBD-T-161 @ t-161-ticket-xtask. ACTIVE T-161.1 scaffold+sync/check.",
+      "summary": "SHIPPED: Python ticket CLI \u2192 Rust xtask (Grok 4.5). scripts/ticket \u2192 cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md.",
       "program": "platform",
       "surfaces": [
         "DATA",
@@ -4915,7 +4915,7 @@
       "impact": [
         "schema"
       ],
-      "status": "ready",
+      "status": "shipped",
       "spec": "docs/platform/t161_ticket_xtask_program.md",
       "branch": "t-161-ticket-xtask",
       "stream": "infra",
@@ -4932,7 +4932,6 @@
         "T-161.4",
         "T-161.5"
       ],
-      "active_slice": "T-161.1",
       "slice_plan": {
         "T-161.0": {
           "targets": [
@@ -4941,52 +4940,129 @@
           "executor": "cursor-docs",
           "status": "shipped",
           "spec": "docs/platform/t161_ticket_xtask_program.md",
-          "notes": "Hub + registry + worktree TBD-T-161 + T-161.1 handoff."
+          "notes": "Hub + worktree."
         },
         "T-161.1": {
           "targets": [
             "root"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "spec": "docs/platform/t161_1_xtask_scaffold_sync.md",
-          "notes": "xtask crate; sync + check parity vs Python. Handoff: .ai/artifacts/t161_1_claude_code_handoff.md"
+          "notes": "xtask sync/check. Cursor Grok override. Verify t161_1_verify_log.md (executed by Cursor Grok 4.5 override)"
         },
         "T-161.2": {
           "targets": [
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t161_ticket_xtask_program.md",
-          "notes": "Read path: brief/prompt/show/next/list/milestone/plan-batch/sparse-paths/gap-round-trip."
+          "notes": "Read cmds. Verify t161_2_verify_log.md (executed by Cursor Grok 4.5 override)"
         },
         "T-161.3": {
           "targets": [
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t161_ticket_xtask_program.md",
-          "notes": "Mutators + queue helpers."
+          "notes": "Mutators. Verify t161_3_verify_log.md (executed by Cursor Grok 4.5 override)"
         },
         "T-161.4": {
           "targets": [
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t161_ticket_xtask_program.md",
-          "notes": "Flip scripts/ticket \u2192 cargo xtask; delete Python ticket libs; run/done/clean."
+          "notes": "Flip + delete Python. Verify t161_4_verify_log.md (executed by Cursor Grok 4.5 override)"
         },
         "T-161.5": {
           "targets": [
             "root"
           ],
           "executor": "cursor-docs",
-          "status": "queued",
+          "status": "shipped",
           "spec": "docs/platform/t161_ticket_xtask_program.md",
-          "notes": "Doc sync + mark program shipped."
+          "notes": "Doc closeout + program shipped."
+        }
+      }
+    },
+    {
+      "id": "T-162",
+      "order": 1590,
+      "title": "Eradicate remaining Python \u2192 Rust xtask",
+      "summary": "SHIPPED: eradicate remaining Python \u2192 Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: docs/platform/t162_python_eradication.md.",
+      "program": "platform",
+      "surfaces": [
+        "DATA",
+        "SHELL"
+      ],
+      "impact": [
+        "schema"
+      ],
+      "status": "shipped",
+      "spec": "docs/platform/t162_python_eradication.md",
+      "branch": "t-161-ticket-xtask",
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "cursor-docs",
+      "parallel_ok": true,
+      "slices": [
+        "T-162.0",
+        "T-162.1",
+        "T-162.2",
+        "T-162.3",
+        "T-162.4"
+      ],
+      "slice_plan": {
+        "T-162.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "Hub + registry inventory."
+        },
+        "T-162.1": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "MCP consume/socket-send/probe-sock \u2192 xtask; flip mcp-call/daemon/selftest."
+        },
+        "T-162.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "Delete seed/rewrite/backfill one-shots."
+        },
+        "T-162.3": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "Replace inline python3 in verify-monorepo/upload-repro/debug-direct-join."
+        },
+        "T-162.4": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "spec": "docs/platform/t162_python_eradication.md",
+          "notes": "verify-no-python.sh + docs + ship."
         }
       }
     }
