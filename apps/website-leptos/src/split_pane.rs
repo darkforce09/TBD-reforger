@@ -119,6 +119,8 @@ pub fn ListDetailItem(
     #[prop(optional)] preview: Option<AnyView>,
     #[prop(optional)] trailing: Option<AnyView>,
     #[prop(optional)] class: &'static str,
+    /// T-159.25 — selection wiring (React rows pass onClick).
+    #[prop(optional)] on_click: Option<Callback<()>>,
 ) -> impl IntoView {
     let btn = cn(&[
         "group relative w-full overflow-hidden rounded-lg border p-3 text-left transition-all duration-200",
@@ -150,7 +152,15 @@ pub fn ListDetailItem(
         if pulse { "animate-pulse" } else { "" },
     ]);
     view! {
-        <button type="button" class=btn>
+        <button
+            type="button"
+            class=btn
+            on:click=move |_| {
+                if let Some(cb) = on_click {
+                    cb.run(());
+                }
+            }
+        >
             {active.then(|| view! { <span class="absolute top-0 bottom-0 left-0 w-1 bg-primary"></span> })}
             {has_meta
                 .then(move || {

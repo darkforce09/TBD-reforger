@@ -52,6 +52,19 @@ pub struct LinkStatus {
     pub pending_code: Option<bool>,
 }
 
+/// A mortar firing solution — mirrors `types/api` `FireSolution` (`POST /fire-missions/solve`).
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct FireSolution {
+    pub weapon_system: String,
+    pub distance_m: f64,
+    pub azimuth_deg: f64,
+    pub elevation_mils: i64,
+    pub time_of_flight_s: f64,
+    #[serde(flatten)]
+    pub extra: serde_json::Map<String, Value>,
+}
+
 /// One events-list row — mirrors `types/api` `EventListItem` (`GET /events?scope=…`). T-159.25.
 #[allow(dead_code)]
 #[derive(Clone, PartialEq, Serialize, Deserialize)]
