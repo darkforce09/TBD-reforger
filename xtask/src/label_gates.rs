@@ -47,7 +47,7 @@ pub fn height_labels(terrain: &str) -> Result<u8> {
     let labels_raw = read_json(&label_path)?;
     let rows = labels_raw.as_array().cloned().unwrap_or_default();
     let mut failures = 0usize;
-    let mut pass = |m: String| println!("  PASS  {m}");
+    let pass = |m: String| println!("  PASS  {m}");
     let mut fail_msgs: Vec<String> = Vec::new();
     println!("verify-height-labels ({terrain}):");
 
