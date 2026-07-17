@@ -165,7 +165,10 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
         {
             let toasts = crate::toast::use_toasts();
             if let Some(win) = web_sys::window() {
-                let _ = win.navigator().clipboard().write_text(&copy_text.get_value());
+                let _ = win
+                    .navigator()
+                    .clipboard()
+                    .write_text(&copy_text.get_value());
                 toasts.success("Server address copied");
             }
         }

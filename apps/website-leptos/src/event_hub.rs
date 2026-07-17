@@ -38,8 +38,7 @@ const PLACEHOLDER_OPFOR: [&str; 3] = [
 const PLACEHOLDER_LORE: &str = "Hostile mechanized elements have pushed across the northern border under cover of a winter storm. Command has tasked us with holding the line until reinforcements arrive. Expect contested airspace and degraded visibility.";
 // A simple uniform-silhouette SVG so the frame always renders offline (events.tsx).
 const PLACEHOLDER_UNIFORM: &str = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='120'><rect width='80' height='120' fill='%23242a3a'/><circle cx='40' cy='38' r='15' fill='%233a4252'/><rect x='18' y='56' width='44' height='56' rx='9' fill='%233a4252'/></svg>";
-const PLACEHOLDER_VEHICLES: [(&str, u32); 3] =
-    [("BTR-70 APC", 4), ("UAZ-469", 6), ("Mi-8 Hip", 2)];
+const PLACEHOLDER_VEHICLES: [(&str, u32); 3] = [("BTR-70 APC", 4), ("UAZ-469", 6), ("Mi-8 Hip", 2)];
 
 fn game_mode_label(mode: &str) -> &str {
     match mode {
@@ -71,9 +70,11 @@ fn faction_side(name: &str) -> u8 {
         .filter(|t| !t.is_empty())
         .collect();
     let has = |t: &str| tokens.contains(&t);
-    if ["blufor", "bluefor", "nato", "usmc", "usa", "west", "western"]
-        .iter()
-        .any(|t| has(t))
+    if [
+        "blufor", "bluefor", "nato", "usmc", "usa", "west", "western",
+    ]
+    .iter()
+    .any(|t| has(t))
         || lower.contains("us army")
     {
         0
@@ -1330,7 +1331,9 @@ fn AssignPicker(
             {
                 let path = format!(
                     "/members?q={}",
-                    js_sys::encode_uri_component(&q).as_string().unwrap_or_default()
+                    js_sys::encode_uri_component(&q)
+                        .as_string()
+                        .unwrap_or_default()
                 );
                 crate::client::api_get::<DataEnvelope<Member>>(store, &path)
                     .await

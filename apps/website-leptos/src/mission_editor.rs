@@ -125,7 +125,8 @@ pub fn MissionEditorPage() -> impl IntoView {
         spawn_local({
             use crate::asset_catalog::{build_catalog_tree, CatalogState};
             async move {
-                match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry").await
+                match crate::client::api_get::<crate::dto::RegistryResponse>(auth, "/registry")
+                    .await
                 {
                     Ok(r) => catalog.set(CatalogState::Ready(build_catalog_tree(&r.data))),
                     Err(_) => catalog.set(CatalogState::Failed),
@@ -555,8 +556,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                     let world = {
                         let g = engine.borrow();
                         g.as_ref().map(|e| {
-                            st::frozen_camera(rect.width(), rect.height(), e.target_x(), e.target_y(), e.zoom())
-                                .unproject_xy(px, py)
+                            st::frozen_camera(
+                                rect.width(),
+                                rect.height(),
+                                e.target_x(),
+                                e.target_y(),
+                                e.zoom(),
+                            )
+                            .unproject_xy(px, py)
                         })
                     };
                     cursor.set(
@@ -582,7 +589,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                     // Promote a Pending press once it clears the threshold; else keep the active drag.
                     let active = match g0 {
                         LG::Pending(p) => {
-                            let moved = ((px - p.start_x).powi(2) + (py - p.start_y).powi(2)).sqrt();
+                            let moved =
+                                ((px - p.start_x).powi(2) + (py - p.start_y).powi(2)).sqrt();
                             if moved < st::DRAG_THRESHOLD_PX {
                                 *left.borrow_mut() = Some(LG::Pending(p));
                                 return;
@@ -837,9 +845,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                     }
                 }
             });
-            let oncontextmenu = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(
-                move |ev: web_sys::MouseEvent| ev.prevent_default(),
-            );
+            let oncontextmenu =
+                Closure::<dyn FnMut(web_sys::MouseEvent)>::new(move |ev: web_sys::MouseEvent| {
+                    ev.prevent_default()
+                });
             // T-159.21 — pointer off the map ⇒ the CUR read-out shows the em-dash cells (React's
             // `onPointerLeave → null`). Fires when the pointer enters a chrome panel too, which is
             // correct: those px are not map coordinates.
@@ -895,8 +904,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                 "pointermove",
                 onpointermove.as_ref().unchecked_ref(),
             );
-            let _ = container
-                .add_event_listener_with_callback("pointerup", onpointerup.as_ref().unchecked_ref());
+            let _ = container.add_event_listener_with_callback(
+                "pointerup",
+                onpointerup.as_ref().unchecked_ref(),
+            );
             // pointercancel ends the pan + a pending LMB without a click (T-159.18).
             let _ = container.add_event_listener_with_callback(
                 "pointercancel",
@@ -1127,7 +1138,11 @@ fn register_self_checks(
         }) as Box<dyn FnMut() -> js_sys::Promise>)
     };
 
-    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("calibration"), calibration.as_ref());
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("calibration"),
+        calibration.as_ref(),
+    );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("texture"), texture.as_ref());
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__selfChecks"), &obj);

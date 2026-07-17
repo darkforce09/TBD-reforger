@@ -250,27 +250,28 @@ pub fn register_key_handler() {
     let Some(win) = web_sys::window() else {
         return;
     };
-    let onkeydown = Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(move |ev: web_sys::KeyboardEvent| {
-        if in_editable_field() {
-            return;
-        }
-        if !(ev.ctrl_key() || ev.meta_key()) || ev.alt_key() {
-            return;
-        }
-        match ev.code().as_str() {
-            "KeyZ" if ev.shift_key() => {
-                redo();
+    let onkeydown =
+        Closure::<dyn FnMut(web_sys::KeyboardEvent)>::new(move |ev: web_sys::KeyboardEvent| {
+            if in_editable_field() {
+                return;
             }
-            "KeyZ" => {
-                undo();
+            if !(ev.ctrl_key() || ev.meta_key()) || ev.alt_key() {
+                return;
             }
-            "KeyY" if !ev.shift_key() => {
-                redo();
+            match ev.code().as_str() {
+                "KeyZ" if ev.shift_key() => {
+                    redo();
+                }
+                "KeyZ" => {
+                    undo();
+                }
+                "KeyY" if !ev.shift_key() => {
+                    redo();
+                }
+                _ => return,
             }
-            _ => return,
-        }
-        ev.prevent_default();
-    });
+            ev.prevent_default();
+        });
     let _ = win.add_event_listener_with_callback("keydown", onkeydown.as_ref().unchecked_ref());
     onkeydown.forget();
 }

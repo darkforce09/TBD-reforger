@@ -132,17 +132,27 @@ pub fn read_env() -> MissionEnv {
             let meta = root.get("meta")?;
             let env = meta.get("environment");
             let s = |v: Option<&serde_json::Value>, k: &str, def: &str| {
-                v.and_then(|e| e.get(k)).and_then(|x| x.as_str()).unwrap_or(def).to_string()
+                v.and_then(|e| e.get(k))
+                    .and_then(|x| x.as_str())
+                    .unwrap_or(def)
+                    .to_string()
             };
             Some(MissionEnv {
-                terrain: meta.get("terrain").and_then(|t| t.as_str()).unwrap_or("everon").to_string(),
+                terrain: meta
+                    .get("terrain")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or("everon")
+                    .to_string(),
                 time: s(env, "time", "06:00"),
                 weather: s(env, "weather", "clear"),
                 view_distance: env
                     .and_then(|e| e.get("viewDistance"))
                     .and_then(serde_json::Value::as_i64)
                     .unwrap_or(1600),
-                thermals: env.and_then(|e| e.get("thermals")).and_then(serde_json::Value::as_bool).unwrap_or(false),
+                thermals: env
+                    .and_then(|e| e.get("thermals"))
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(false),
             })
         })
         .unwrap_or_default()
@@ -247,7 +257,8 @@ pub fn copy_selection() -> bool {
         let Some(ctx) = guard.as_ref() else {
             return false;
         };
-        let sel: std::collections::HashSet<String> = ctx.selection.borrow().iter().cloned().collect();
+        let sel: std::collections::HashSet<String> =
+            ctx.selection.borrow().iter().cloned().collect();
         if sel.is_empty() {
             return false;
         }
@@ -305,8 +316,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
 
         let n = clip.len();
         let mut ids = Vec::with_capacity(n);
-        let (mut sx, mut sy, mut srot, mut zs) =
-            (Vec::new(), Vec::new(), Vec::new(), Vec::new());
+        let (mut sx, mut sy, mut srot, mut zs) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
         let (mut squad_ids, mut layer_ids) = (Vec::new(), Vec::new());
         let (mut roles, mut tags, mut asset_ids, mut stances, mut loadouts) =
             (Vec::new(), Vec::new(), Vec::new(), Vec::new(), Vec::new());
@@ -325,14 +335,18 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
             sy.push(gp(slot, "y"));
             srot.push(gp(slot, "rotation"));
             zs.push(0.0); // DEM not ready — byte-parity with the flat-map case
-            // Keep the source squad if it still exists, else "" (empty squads map → inert).
+                          // Keep the source squad if it still exists, else "" (empty squads map → inert).
             squad_ids.push(g(slot, "squadId"));
             layer_ids.push(layer_id.clone());
             roles.push(g(slot, "role"));
             tags.push(g(slot, "tag"));
             asset_ids.push(g(slot, "assetId"));
             let st = g(slot, "stance");
-            stances.push(if st.is_empty() { "stand".to_string() } else { st });
+            stances.push(if st.is_empty() {
+                "stand".to_string()
+            } else {
+                st
+            });
             loadouts.push(
                 slot.get("loadout")
                     .filter(|l| !l.is_null())
@@ -576,7 +590,8 @@ pub fn refresh_docks() {
         };
         ctx.outliner_nodes.set(nodes);
         ctx.selected_ids.set(ctx.selection.borrow().clone());
-        ctx.doc_tick.set(ctx.doc_tick.get_untracked().wrapping_add(1));
+        ctx.doc_tick
+            .set(ctx.doc_tick.get_untracked().wrapping_add(1));
     });
 }
 

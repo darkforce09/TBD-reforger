@@ -8,8 +8,8 @@
 //! POST /events/:id/missions per staged mission), and delete with the Aegis confirm
 //! (DELETE /events/:id). Calendar date math stays on `js_sys::Date` (freeze.js parity).
 #![allow(dead_code)]
-use crate::dto::{EventListItem, MissionCard, Paginated};
 use crate::datefmt::format_local_datetime;
+use crate::dto::{EventListItem, MissionCard, Paginated};
 use crate::ui::{badge_class, cn, AdminGate, Dialog, MaterialIcon};
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
@@ -165,13 +165,17 @@ fn EventManagerInner() -> impl IntoView {
     };
     let day_ops = move || {
         let (y, m, d) = selected.get();
-        events_by_day().remove(&day_key(y, m, d)).unwrap_or_default()
+        events_by_day()
+            .remove(&day_key(y, m, d))
+            .unwrap_or_default()
     };
 
     let select_day = move |y: i32, m: i32, d: u32| {
         selected.set((y, m, d));
         attach_open.set(false);
-        let ops = events_by_day().remove(&day_key(y, m, d)).unwrap_or_default();
+        let ops = events_by_day()
+            .remove(&day_key(y, m, d))
+            .unwrap_or_default();
         selected_event.set(ops.first().map(|o| o.id.clone()));
     };
 
@@ -226,7 +230,10 @@ fn EventManagerInner() -> impl IntoView {
                             }
                         }
                         toasts.success(if n > 0 {
-                            format!("Event published with {n} mission{}", if n == 1 { "" } else { "s" })
+                            format!(
+                                "Event published with {n} mission{}",
+                                if n == 1 { "" } else { "s" }
+                            )
                         } else {
                             "Event published".to_string()
                         });

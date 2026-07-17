@@ -165,7 +165,12 @@ async fn run_save(id: &str, pending: PendingSave) {
 /// coalesces to one write), and on fire reads bytes at write time. `get_bytes`/`is_cancelled` are
 /// evaluated inside `run_save`, so they must not hold any `RefCell` borrow across an `.await`
 /// (callers pass closures that borrow transiently and return owned data).
-pub fn save_state_debounced(id: &str, get_bytes: GetBytes, is_cancelled: IsCancelled, delay_ms: i32) {
+pub fn save_state_debounced(
+    id: &str,
+    get_bytes: GetBytes,
+    is_cancelled: IsCancelled,
+    delay_ms: i32,
+) {
     let id_owned = id.to_string();
     PENDING.with(|p| {
         p.borrow_mut().insert(
@@ -263,14 +268,16 @@ where
     F: std::future::Future<Output = ()> + 'static,
 {
     let mut fut = Some(fut);
-    js_sys::Promise::new(&mut move |resolve: js_sys::Function, _reject: js_sys::Function| {
-        if let Some(f) = fut.take() {
-            spawn_local(async move {
-                f.await;
-                let _ = resolve.call0(&JsValue::NULL);
-            });
-        }
-    })
+    js_sys::Promise::new(
+        &mut move |resolve: js_sys::Function, _reject: js_sys::Function| {
+            if let Some(f) = fut.take() {
+                spawn_local(async move {
+                    f.await;
+                    let _ = resolve.call0(&JsValue::NULL);
+                });
+            }
+        },
+    )
 }
 
 /// A canonical, order-independent fingerprint of the materialized slots — the SEMANTIC Class R
@@ -285,7 +292,11 @@ where
 /// never `b.encode_state()==bytes`). A byte compare would be a false negative; this digest is sound.
 fn slots_digest(core: &MissionDocCore) -> String {
     let soa = core.materialize();
-    let get = |dict: &[String], idx: u32| dict.get(idx as usize).map_or("", String::as_str).to_string();
+    let get = |dict: &[String], idx: u32| {
+        dict.get(idx as usize)
+            .map_or("", String::as_str)
+            .to_string()
+    };
     let mut rows: Vec<String> = (0..soa.ids.len())
         .map(|i| {
             format!(
@@ -350,19 +361,22 @@ pub fn register_mission_persist(
 
     let ready_fn = {
         let ready = ready.clone();
-        Closure::wrap(Box::new(move || -> JsValue { JsValue::from_bool(ready.get()) })
-            as Box<dyn FnMut() -> JsValue>)
+        Closure::wrap(
+            Box::new(move || -> JsValue { JsValue::from_bool(ready.get()) })
+                as Box<dyn FnMut() -> JsValue>,
+        )
     };
     let loaded_fn = {
         let loaded = loaded.clone();
-        Closure::wrap(Box::new(move || -> JsValue { JsValue::from_bool(loaded.get()) })
-            as Box<dyn FnMut() -> JsValue>)
+        Closure::wrap(
+            Box::new(move || -> JsValue { JsValue::from_bool(loaded.get()) })
+                as Box<dyn FnMut() -> JsValue>,
+        )
     };
     let warm_fn = {
         let id = mission_id.clone();
         Closure::wrap(Box::new(move || -> JsValue {
-            match crate::editor_session::read_warm(&id)
-                .and_then(|s| serde_json::to_string(&s).ok())
+            match crate::editor_session::read_warm(&id).and_then(|s| serde_json::to_string(&s).ok())
             {
                 Some(json) => JsValue::from_str(&json),
                 None => JsValue::NULL,
@@ -372,11 +386,7 @@ pub fn register_mission_persist(
     let digest_fn = {
         let doc = doc.clone();
         Closure::wrap(Box::new(move || -> JsValue {
-            let digest = doc
-                .borrow()
-                .as_ref()
-                .map(slots_digest)
-                .unwrap_or_default();
+            let digest = doc.borrow().as_ref().map(slots_digest).unwrap_or_default();
             JsValue::from_str(&digest)
         }) as Box<dyn FnMut() -> JsValue>)
     };
@@ -409,11 +419,7 @@ pub fn register_mission_persist(
         loaded_fn.as_ref(),
     );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("warm"), warm_fn.as_ref());
-    let _ = js_sys::Reflect::set(
-        &obj,
-        &JsValue::from_str("slots_digest"),
-        digest_fn.as_ref(),
-    );
+    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("slots_digest"), digest_fn.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("flush"), flush_fn.as_ref());
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("clear"), clear_fn.as_ref());
     let _ = js_sys::Reflect::set(

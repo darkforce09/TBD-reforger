@@ -37,8 +37,8 @@ pub fn stream_server_status(
             let init = web_sys::RequestInit::new();
             init.set_method("GET");
             init.set_headers(&headers);
-            let req = web_sys::Request::new_with_str_and_init(&url, &init)
-                .map_err(|_| "request")?;
+            let req =
+                web_sys::Request::new_with_str_and_init(&url, &init).map_err(|_| "request")?;
             let win = web_sys::window().ok_or("window")?;
             let resp: web_sys::Response =
                 wasm_bindgen_futures::JsFuture::from(win.fetch_with_request(&req))
@@ -50,8 +50,7 @@ pub fn stream_server_status(
                 return Err("SSE connection failed");
             }
             let body = resp.body().ok_or("SSE connection failed")?;
-            let reader: web_sys::ReadableStreamDefaultReader =
-                body.get_reader().unchecked_into();
+            let reader: web_sys::ReadableStreamDefaultReader = body.get_reader().unchecked_into();
             connected.set(true);
             error.set(None);
             let mut buf: Vec<u8> = Vec::new();
@@ -78,9 +77,7 @@ pub fn stream_server_status(
                     let text = String::from_utf8_lossy(&frame);
                     let line = text.trim();
                     if let Some(data) = line.strip_prefix("data:") {
-                        if let Ok(json) =
-                            serde_json::from_str::<ServerStatusDto>(data.trim())
-                        {
+                        if let Ok(json) = serde_json::from_str::<ServerStatusDto>(data.trim()) {
                             status.set(Some(json));
                         }
                     }

@@ -83,6 +83,34 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: make wasm-ci
 
+  # --- website-leptos: the Rust/Leptos SPA (T-159) — fmt + clippy(wasm32) + trunk release build ---
+  # The G gate: proves the SPA compiles + bundles. The editor S/V/R/T smokes need a cached headless
+  # chromium (the T-151 pattern) and run as a follow-on job once the SPA is the default; this job is
+  # the build-green backstop that keeps `t-159-leptos-ui` compilable in CI.
+  website-leptos:
+    name: website-leptos (Leptos SPA)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+      - name: fmt
+        run: cargo fmt -p website-leptos --check
+      - name: clippy (wasm32)
+        run: cargo clippy -p website-leptos --target wasm32-unknown-unknown
+      - name: cargo test (native shell)
+        run: cargo test -p website-leptos
+      - name: trunk build --release
+        working-directory: apps/website-leptos
+        run: trunk build --release
+
   # --- frontend: Node 26 — npm ci + format:check (FMT-3) + lint + build + unit tests (TEST-2) ---
   # No map-assets symlink step: vitest resolves `map-assets` via vitest.config.ts, and
   # `vite build` has no map-assets module import (vite.config.ts has no such alias).

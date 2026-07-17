@@ -76,8 +76,7 @@ pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
                 "max_players": max_players.get_untracked(),
             });
             leptos::task::spawn_local(async move {
-                match crate::client::api_post::<serde_json::Value>(store, "/missions", body).await
-                {
+                match crate::client::api_post::<serde_json::Value>(store, "/missions", body).await {
                     Ok(data) => {
                         toasts.success("Mission created");
                         open.set(false);
@@ -85,9 +84,7 @@ pub fn CreateMissionDialog(open: RwSignal<bool>) -> impl IntoView {
                             // navigate(`/missions/${id}/edit`) — a full-page load matches the
                             // lazy editor route boundary well enough here.
                             if let Some(win) = web_sys::window() {
-                                let _ = win
-                                    .location()
-                                    .set_href(&format!("/missions/{id}/edit"));
+                                let _ = win.location().set_href(&format!("/missions/{id}/edit"));
                             }
                         }
                     }

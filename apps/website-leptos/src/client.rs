@@ -260,7 +260,11 @@ mod wasm_client {
     /// POST `path` with a JSON body, ignoring any response body (register/reserve/release/logout —
     /// React invalidates queries and discards the response). Ok(()) on 2xx. T-159.24.
     #[allow(dead_code)] // wired by the T-159.25 suite live-wire
-    pub async fn api_post_ok(store: AuthStore, path: &str, body: serde_json::Value) -> Result<(), super::ApiErr> {
+    pub async fn api_post_ok(
+        store: AuthStore,
+        path: &str,
+        body: serde_json::Value,
+    ) -> Result<(), super::ApiErr> {
         request(
             store,
             gloo_net::http::Method::POST,
@@ -303,9 +307,7 @@ mod wasm_client {
 
 #[cfg(target_arch = "wasm32")]
 #[allow(unused_imports)] // the T-159.24 verbs are wired by the T-159.25 suite live-wire
-pub use wasm_client::{
-    api_delete, api_get, api_patch, api_post, api_post_ok, api_put, bootstrap,
-};
+pub use wasm_client::{api_delete, api_get, api_patch, api_post, api_post_ok, api_put, bootstrap};
 
 #[cfg(test)]
 mod tests {

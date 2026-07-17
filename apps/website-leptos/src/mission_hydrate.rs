@@ -93,7 +93,10 @@ pub async fn hydrate_from_server(
                 return;
             }
         }
-        conflict.set(Some(crate::mission_editor::ConflictInfo { payload_json, semver }));
+        conflict.set(Some(crate::mission_editor::ConflictInfo {
+            payload_json,
+            semver,
+        }));
     } else {
         // Empty local → adopt the server payload (replaces the seed).
         adopt_payload(&doc, &payload_json, &row);
@@ -108,7 +111,10 @@ pub fn resolve_conflict_server(
     id: String,
     conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
 ) {
-    if let (Some(c), Some(doc)) = (conflict.get_untracked(), crate::mission_history::doc_handle()) {
+    if let (Some(c), Some(doc)) = (
+        conflict.get_untracked(),
+        crate::mission_history::doc_handle(),
+    ) {
         // The payload carries its own map.terrain; the compile drops the title, so leave the
         // existing title untouched (row meta isn't refetched here).
         adopt_payload(&doc, &c.payload_json, &RowMeta::default());
@@ -120,7 +126,10 @@ pub fn resolve_conflict_server(
 
 /// The "Keep local" resolution (React `resolveConflict('local')`): local knowingly diverges, so
 /// drop the adopted marker and mark dirty. Clears the conflict signal.
-pub fn resolve_conflict_local(id: String, conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>) {
+pub fn resolve_conflict_local(
+    id: String,
+    conflict: RwSignal<Option<crate::mission_editor::ConflictInfo>>,
+) {
     crate::editor_session::mark_adopted(&id, None);
     crate::mission_history::set_dirty(true);
     conflict.set(None);
@@ -161,7 +170,12 @@ fn adopt_payload(doc: &DocHandle, payload_json: &str, row: &RowMeta) {
         core.set_origin_init(true);
         core.hydrate(payload_json, DEFAULT_LAYER_ID);
         if !row.is_empty() {
-            core.apply_row_meta(&row.title, &row.terrain, opt(&row.time_of_day), opt(&row.weather));
+            core.apply_row_meta(
+                &row.title,
+                &row.terrain,
+                opt(&row.time_of_day),
+                opt(&row.weather),
+            );
         }
         core.set_origin_init(false);
     }
@@ -178,7 +192,12 @@ fn apply_row(doc: &DocHandle, row: &RowMeta) {
     let guard = doc.borrow();
     if let Some(core) = guard.as_ref() {
         core.set_origin_init(true);
-        core.apply_row_meta(&row.title, &row.terrain, opt(&row.time_of_day), opt(&row.weather));
+        core.apply_row_meta(
+            &row.title,
+            &row.terrain,
+            opt(&row.time_of_day),
+            opt(&row.weather),
+        );
         core.set_origin_init(false);
     }
 }

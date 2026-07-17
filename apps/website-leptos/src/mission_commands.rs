@@ -93,7 +93,13 @@ pub fn export_now(version: &str) {
         return;
     };
     let payload = compile_payload(&snap.small, &snap.slots, true);
-    let doc = compile_export(&payload, &snap.small, &snap.mission_id, version, &js_date_iso());
+    let doc = compile_export(
+        &payload,
+        &snap.small,
+        &snap.mission_id,
+        version,
+        &js_date_iso(),
+    );
     let json = serde_json::to_string_pretty(&doc).unwrap_or_default();
     let filename = format!("mission-{}.json", snap.mission_id);
     let _ = download_json(&filename, &json);

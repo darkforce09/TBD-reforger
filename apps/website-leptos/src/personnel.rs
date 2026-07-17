@@ -78,7 +78,9 @@ fn PersonnelInner() -> impl IntoView {
                 } else {
                     format!(
                         "/admin/users?q={}",
-                        js_sys::encode_uri_component(&q).as_string().unwrap_or_default()
+                        js_sys::encode_uri_component(&q)
+                            .as_string()
+                            .unwrap_or_default()
                     )
                 };
                 crate::client::api_get::<Paginated<AdminUserRow>>(store, &path)
@@ -463,7 +465,10 @@ fn stat(label: &'static str, value: String) -> impl IntoView {
         </div>
     }
 }
-fn stat_reactive(label: &'static str, value: impl Fn() -> String + Send + Sync + 'static) -> impl IntoView {
+fn stat_reactive(
+    label: &'static str,
+    value: impl Fn() -> String + Send + Sync + 'static,
+) -> impl IntoView {
     view! {
         <div class="rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-center">
             <p class="text-label-sm text-on-surface-variant uppercase">{label}</p>

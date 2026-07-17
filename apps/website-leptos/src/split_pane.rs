@@ -120,7 +120,8 @@ pub fn ListDetailItem(
     #[prop(optional)] trailing: Option<AnyView>,
     #[prop(optional)] class: &'static str,
     /// T-159.25 — selection wiring (React rows pass onClick).
-    #[prop(optional)] on_click: Option<Callback<()>>,
+    #[prop(optional)]
+    on_click: Option<Callback<()>>,
 ) -> impl IntoView {
     let btn = cn(&[
         "group relative w-full overflow-hidden rounded-lg border p-3 text-left transition-all duration-200",

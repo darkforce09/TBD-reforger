@@ -98,7 +98,10 @@ pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNod
         .flat_map(|l| l.entity_ids.iter().map(String::as_str))
         .collect();
 
-    let mut unfiled: Vec<&SlotRow> = slots.iter().filter(|s| !filed.contains(s.id.as_str())).collect();
+    let mut unfiled: Vec<&SlotRow> = slots
+        .iter()
+        .filter(|s| !filed.contains(s.id.as_str()))
+        .collect();
     unfiled.sort_by(|a, b| a.id.cmp(&b.id)); // deterministic; materialize order is arbitrary
     if !unfiled.is_empty() {
         out.push(OutlinerNode {

@@ -77,7 +77,9 @@ pub async fn load_hillshade(engine: EngineHandle, terrain: String) {
         return;
     };
     // role 1 = hillshade, mode 3 = hillshade (see engine `BasemapRenderMode`). One mip, one block.
-    if e.tex_layer_begin(1, min_x, min_y, max_x, max_y, w, h, 1, 3).is_err() {
+    if e.tex_layer_begin(1, min_x, min_y, max_x, max_y, w, h, 1, 3)
+        .is_err()
+    {
         return;
     }
     if e.tex_layer_write_rgba(1, 0, 0, 0, w, h, &hs.data).is_err() {
@@ -97,7 +99,15 @@ fn install_bridge(w: u32, h: u32) {
         return;
     };
     let obj = js_sys::Object::new();
-    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("hillshadeW"), &JsValue::from_f64(f64::from(w)));
-    let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("hillshadeH"), &JsValue::from_f64(f64::from(h)));
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("hillshadeW"),
+        &JsValue::from_f64(f64::from(w)),
+    );
+    let _ = js_sys::Reflect::set(
+        &obj,
+        &JsValue::from_str("hillshadeH"),
+        &JsValue::from_f64(f64::from(h)),
+    );
     let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__mapAssets"), &obj);
 }

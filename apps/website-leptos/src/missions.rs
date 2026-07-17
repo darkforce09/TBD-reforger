@@ -118,7 +118,13 @@ pub fn MissionLibraryPage() -> impl IntoView {
     });
     // The hero always spotlights the newest GLOBAL operation so it stays stable across tabs.
     let global = LocalResource::new(move || {
-        let url = missions_query("global", &q.get(), &terrain.get(), &mode.get(), &players.get());
+        let url = missions_query(
+            "global",
+            &q.get(),
+            &terrain.get(),
+            &mode.get(),
+            &players.get(),
+        );
         async move {
             #[cfg(target_arch = "wasm32")]
             {

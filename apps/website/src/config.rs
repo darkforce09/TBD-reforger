@@ -21,6 +21,12 @@ pub struct Config {
     // Frontend integration
     pub frontend_url: String,
     pub allowed_origins: Vec<String>,
+    /// T-159.29 — the Leptos SPA `dist/` to serve statically (with COOP/COEP + SPA fallback). Empty
+    /// = don't serve a SPA (dev uses `trunk serve`; the API is API-only). Set at the cutover flip.
+    pub spa_dist_dir: String,
+    /// T-159.29 — the map-assets dir served at `/map-assets` when a SPA is served (the editor's DEM
+    /// / basemap / world chunks). Empty defaults to `../../packages/map-assets` relative to the CWD.
+    pub map_assets_dir: String,
 
     // Database
     pub database_url: String,
@@ -65,6 +71,8 @@ impl Config {
             trusted_proxies: split_csv(&env::var("TRUSTED_PROXIES").unwrap_or_default()),
             allowed_origins: split_csv(&get_env("ALLOWED_ORIGINS", &frontend_url)),
             frontend_url,
+            spa_dist_dir: env::var("SPA_DIST_DIR").unwrap_or_default(),
+            map_assets_dir: env::var("MAP_ASSETS_DIR").unwrap_or_default(),
             database_url: env::var("DATABASE_URL").unwrap_or_default(),
             mission_version_max_body_bytes: get_env_int(
                 "MISSION_VERSION_MAX_BODY_BYTES",
@@ -113,6 +121,8 @@ impl Config {
             trusted_proxies: Vec::new(),
             frontend_url: "http://localhost:5173".into(),
             allowed_origins: vec!["http://localhost:5173".into()],
+            spa_dist_dir: String::new(),
+            map_assets_dir: String::new(),
             database_url: database_url.into(),
             mission_version_max_body_bytes: DEFAULT_MISSION_VERSION_MAX_BODY_BYTES,
             jwt_secret: jwt_secret.into(),

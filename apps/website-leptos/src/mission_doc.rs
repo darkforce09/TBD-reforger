@@ -117,8 +117,10 @@ pub fn register_mission_doc(doc: DocHandle, ver: Rc<Cell<u32>>) {
     };
     let change_version = {
         let ver = ver.clone();
-        Closure::wrap(Box::new(move || -> JsValue { JsValue::from_f64(f64::from(ver.get())) })
-            as Box<dyn FnMut() -> JsValue>)
+        Closure::wrap(
+            Box::new(move || -> JsValue { JsValue::from_f64(f64::from(ver.get())) })
+                as Box<dyn FnMut() -> JsValue>,
+        )
     };
     let roundtrip = {
         let doc = doc.clone();

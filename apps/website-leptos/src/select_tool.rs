@@ -360,7 +360,10 @@ fn farthest_empty_px(w: f64, h: f64, proj: &[(f64, f64)]) -> (f64, f64) {
     let (nx, ny) = (21usize, 13usize);
     // Degenerate viewport (chrome ≥ container) → fall back to the whole rect rather than emit a
     // NaN/inverted box.
-    let (mut x0, mut x1) = (crate::eden_chrome::DOCK_LEFT_PX, w - crate::eden_chrome::DOCK_RIGHT_PX);
+    let (mut x0, mut x1) = (
+        crate::eden_chrome::DOCK_LEFT_PX,
+        w - crate::eden_chrome::DOCK_RIGHT_PX,
+    );
     let (mut y0, mut y1) = (
         crate::eden_chrome::STRIP_TOP_PX,
         h - crate::eden_chrome::TOOLBELT_BAND_PX,
@@ -396,7 +399,11 @@ fn farthest_empty_px(w: f64, h: f64, proj: &[(f64, f64)]) -> (f64, f64) {
 /// zoom preserved), then return JSON `{"id","hit":[px,py],"empty":[px,py]}` where `hit` projects the
 /// centred seed to screen (≈ container centre) and `empty` is a guaranteed slot-free px. This makes
 /// the click smoke deterministic and independent of where the fixed seed happens to land.
-fn probe_json(doc: &DocHandle, engine: &EngineHandle, container: &web_sys::HtmlDivElement) -> String {
+fn probe_json(
+    doc: &DocHandle,
+    engine: &EngineHandle,
+    container: &web_sys::HtmlDivElement,
+) -> String {
     let null = || String::from(r#"{"id":null,"hit":null,"empty":null}"#);
     let soa = match doc.borrow().as_ref().map(|c| c.materialize()) {
         Some(s) if !s.ids.is_empty() => s,

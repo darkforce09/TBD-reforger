@@ -63,7 +63,11 @@ fn modal_view(attrs: crate::editor_ops::SlotAttrs) -> AnyView {
     let attrs = StoredValue::new(attrs);
     let subtitle = {
         let a = attrs.get_value();
-        let role = if a.role.is_empty() { "Slot".to_string() } else { a.role.clone() };
+        let role = if a.role.is_empty() {
+            "Slot".to_string()
+        } else {
+            a.role.clone()
+        };
         format!("{role} · {}", a.id)
     };
     view! {
@@ -290,7 +294,11 @@ fn identity_tab(
     attrs: StoredValue<crate::editor_ops::SlotAttrs>,
 ) -> impl IntoView {
     let a = attrs.get_value();
-    let squad = if a.squad.is_empty() { "—".to_string() } else { a.squad.clone() };
+    let squad = if a.squad.is_empty() {
+        "—".to_string()
+    } else {
+        a.squad.clone()
+    };
     view! {
         <div class="flex flex-col gap-4">
             {text_field("Role", a.role.clone(), "Rifleman", move |role| {

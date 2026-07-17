@@ -232,7 +232,11 @@ fn editor(
         let t = title.get_untracked().trim().to_string();
         docs.update(|list| {
             if let Some(doc) = list.iter_mut().find(|x| x.id == doc_id.get_value()) {
-                doc.title = if t.is_empty() { "Untitled Post".into() } else { t.clone() };
+                doc.title = if t.is_empty() {
+                    "Untitled Post".into()
+                } else {
+                    t.clone()
+                };
                 doc.body = body.get_untracked();
                 doc.category = category.get_untracked();
                 doc.published = published;

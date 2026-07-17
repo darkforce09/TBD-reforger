@@ -137,7 +137,10 @@ mod tests {
 
         assert_eq!(nato.children.len(), 1, "one sub-folder, no Rifleman folder");
         let army = &nato.children[0];
-        assert_eq!(army.id, "NATO/US_Army", "folder id is the accumulated prefix");
+        assert_eq!(
+            army.id, "NATO/US_Army",
+            "folder id is the accumulated prefix"
+        );
         assert_eq!(army.label, "US_Army");
         assert!(!army.default_expanded, "only depth 0 opens by default");
 
@@ -164,7 +167,8 @@ mod tests {
     fn leaf_id_and_payload_carry_the_resource_name() {
         let tree = build_catalog_tree(&golden_items());
         let rifleman = &tree[0].children[0].children[0];
-        let expected = "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
+        let expected =
+            "{26A9756790131354}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Rifleman.et";
         assert_eq!(rifleman.id, expected);
         assert_eq!(
             rifleman.payload,
