@@ -1075,8 +1075,6 @@ pub struct RenderEngine {
     damage: crate::damage::RenderDamage,
     /// Last `render()` submitted GPU work (Class R idle gate).
     submitted_last_frame: bool,
-    /// Density heatmap visible flag (stats).
-    density_heatmap: bool,
     /// T-151.8.1 WebGPU compute cull (None on WebGL2).
     icon_cull: Option<crate::icon_cull_gpu::IconComputeCull>,
     /// Last tree-glyph 20 B upload (CPU oracle + compute src).
@@ -1465,7 +1463,6 @@ impl RenderEngine {
             timer,
             damage: crate::damage::RenderDamage::new(),
             submitted_last_frame: false,
-            density_heatmap: false,
             icon_cull,
             tree_icons_20: Vec::new(),
             compute_cull_trees: !is_gl,
@@ -2122,7 +2119,7 @@ impl RenderEngine {
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"text_labels_drawn\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
-                "\"submitted_last_frame\":{},\"density_heatmap\":{},",
+                "\"submitted_last_frame\":{},",
                 "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{},",
                 "\"compute_cull_gpu_sampled\":{},",
                 "\"icon_lane_uploads\":{},\"polygon_lane_uploads\":{},\"strip_lane_uploads\":{},",
@@ -2159,7 +2156,6 @@ impl RenderEngine {
             slot_drag_instances,
             cluster_instances,
             self.submitted_last_frame,
-            self.density_heatmap,
             self.compute_cull_trees && self.icon_cull.is_some(),
             self.icon_cull
                 .as_ref()
@@ -3318,109 +3314,6 @@ impl RenderEngine {
         self.remove_lane(LaneRole::WorldTrees);
         self.remove_lane(LaneRole::WorldProps);
         self.remove_lane(LaneRole::WorldBadges);
-    }
-
-    /// T-151.8 — upload exact-count density grid (LE u32 bytes) as a world-bounds heatmap quad.
-    /// Class R count grid lives in residency; GPU samples an RGBA8 visual encoding of those counts.
-    /// `world_w`/`world_h` = terrain meters (Everon 12800). Empty / invisible → drop lane.
-    pub fn upload_density_grid(
-        &mut self,
-        counts_le: &[u8],
-        width: u32,
-        height: u32,
-        world_w: f64,
-        world_h: f64,
-        visible: bool,
-    ) {
-        self.density_heatmap = visible && width > 0 && height > 0 && !counts_le.is_empty();
-        if !self.density_heatmap {
-            self.remove_lane(LaneRole::DensityHeat);
-            return;
-        }
-        let Some(rgba) = crate::density_heat::density_counts_to_rgba(counts_le, width, height)
-        else {
-            self.remove_lane(LaneRole::DensityHeat);
-            self.density_heatmap = false;
-            return;
-        };
-        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("density-heat"),
-            size: wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba8Unorm,
-            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
-            view_formats: &[],
-        });
-        self.queue.write_texture(
-            wgpu::TexelCopyTextureInfo {
-                texture: &texture,
-                mip_level: 0,
-                origin: wgpu::Origin3d::ZERO,
-                aspect: wgpu::TextureAspect::All,
-            },
-            &rgba,
-            wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(width * 4),
-                rows_per_image: Some(height),
-            },
-            wgpu::Extent3d {
-                width,
-                height,
-                depth_or_array_layers: 1,
-            },
-        );
-        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            label: Some("density-heat"),
-            layout: &self.tex_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&self.sampler),
-                },
-            ],
-        });
-        let rect = lanes::world_rect_rel([0.0, 0.0], [world_w, world_h]);
-        let inst = QuadInstance {
-            min: [rect[0], rect[1]],
-            max: [rect[2], rect[3]],
-            color: [1.0, 1.0, 1.0, 0.85],
-        };
-        use wgpu::util::DeviceExt;
-        let instances = self
-            .device
-            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                label: Some("density-heat-quad"),
-                contents: bytemuck::cast_slice(&[inst]),
-                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
-            });
-        let lane = TexLane {
-            texture,
-            bind_group,
-            instances,
-            mode: BasemapMode::Unified,
-            tiles: 0,
-            bytes: rgba.len() as u64,
-        };
-        self.upsert_lane(
-            LaneRole::DensityHeat,
-            Batch {
-                role: LaneRole::DensityHeat,
-                visible: true,
-                payload: BatchPayload::Textured(lane),
-            },
-        );
     }
 
     // ── W6 mission slot / cluster icon lanes ─────────────────────────────────────────────────

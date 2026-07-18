@@ -27,7 +27,6 @@ pub struct MapAssetsBridge {
     pub atlas_bytes: u64,
     /// Residency-side packed count (CDP / verify-log).
     pub tree_glyph_packed: u32,
-    pub heatmap_trees: bool,
     // T-173 perf counters (gates G-C/G-D): engine upload-call totals + residency recompose
     // totals + output-buffer revision. The perf probe diffs these across gesture windows.
     pub icon_lane_uploads: u64,
@@ -98,7 +97,6 @@ impl MapAssetsBridge {
             "tree_glyph_packed",
             JsValue::from_f64(f64::from(self.tree_glyph_packed)),
         );
-        set("heatmap_trees", JsValue::from_bool(self.heatmap_trees));
         set(
             "icon_lane_uploads",
             JsValue::from_f64(self.icon_lane_uploads as f64),

@@ -381,10 +381,15 @@ pub async fn load_map_basemap(
     e.tex_layer_commit(ROLE_BASEMAP, 1.0, true).is_ok()
 }
 
-/// Load satellite for `terrain`. Preview via Range first; full unified unless `sat=preview`.
+/// Load satellite for `terrain`. Preview via Range first, then the full unified mip chain
+/// (preview -> full progressive) on every host, including `localhost` day-to-day (`make leptos`),
+/// so the editor is sharp instead of stuck on the <=1024 px preview: the coarse preview shows
+/// first, then `load_unified_full` replaces it in the background.
 ///
-/// Dev default is preview-only (`localhost` / `127.0.0.1` without `sat=full`) so `make leptos`
-/// does not freeze the tab on a 152 MB GET — pass `?sat=full` for the complete mip chain.
+/// T-174: `?sat=preview` (hostname-independent, via `sat_preview_only`) keeps the Range-only path
+/// for CI/gate harnesses + fast local iteration -- it never GETs the full bundle body. (`?sat=full`
+/// is now a redundant no-op: full is the default on all hosts; the old localhost preview-only
+/// default was removed.)
 pub async fn load_satellite(
     engine: EngineHandle,
     base: &str,
@@ -399,24 +404,8 @@ pub async fn load_satellite(
         format!("{base}/{unified_url}")
     };
     let _ = try_preview(&engine, &url, terrain_w, terrain_h, &bridge).await;
-    if sat_preview_only() || sat_dev_preview_default() {
+    if sat_preview_only() {
         return;
     }
     let _ = load_unified_full(&engine, &url, terrain_w, terrain_h, &bridge).await;
-}
-
-/// Local Trunk/dev hosts skip the full-bundle GET unless `?sat=full` is set.
-fn sat_dev_preview_default() -> bool {
-    let Some(win) = web_sys::window() else {
-        return false;
-    };
-    let Ok(host) = win.location().hostname() else {
-        return false;
-    };
-    let local = host == "localhost" || host == "127.0.0.1" || host.ends_with(".localhost");
-    if !local {
-        return false;
-    }
-    let search = win.location().search().unwrap_or_default();
-    !search.contains("sat=full")
 }

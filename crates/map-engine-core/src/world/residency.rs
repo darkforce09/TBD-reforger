@@ -1457,21 +1457,6 @@ impl WorldResidency {
         self.exact_tree_count
     }
 
-    /// R32Uint density grid bytes (little-endian u32 per texel) + width/height.
-    #[must_use]
-    pub fn density_grid_r32_bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(self.density_grid.len() * 4);
-        for &v in &self.density_grid {
-            out.extend_from_slice(&v.to_le_bytes());
-        }
-        out
-    }
-
-    #[must_use]
-    pub fn density_grid_dims(&self) -> (u32, u32) {
-        (self.density_grid_w, self.density_grid_h)
-    }
-
     /// Pick nearest world instance id `"{chunkId}:{row}"` within `radius_m`, optional class mask.
     pub fn pick_nearest(
         &mut self,

@@ -725,7 +725,7 @@ fn single_row(
     let toggle = chevron_or_spacer(row.has_children, open, &row.id, collapsed);
     match row.kind {
         NodeKind::Unfiled => view! {
-            <div class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+            <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
                 {guide_spans(depth)}
                 {toggle}
                 <MaterialIcon name="inbox" class="block text-sm" />
@@ -734,7 +734,7 @@ fn single_row(
         }
         .into_any(),
         NodeKind::Faction => view! {
-            <div class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+            <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 {guide_spans(depth)}
                 {toggle}
                 <MaterialIcon name="flag" class="block text-sm" />
@@ -743,7 +743,7 @@ fn single_row(
         }
         .into_any(),
         NodeKind::Squad => view! {
-            <div class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+            <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
                 {guide_spans(depth)}
                 {toggle}
                 <MaterialIcon name="groups" class="block text-sm" />
@@ -955,7 +955,7 @@ fn palette_rows(
                             role="button"
                             tabindex="-1"
                             aria-label=aria
-                            class="flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline transition-colors hover:text-on-surface"
+                            class="relative flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline transition-colors hover:text-on-surface"
                             on:click=move |_| {
                                 collapsed
                                     .update(|c| {

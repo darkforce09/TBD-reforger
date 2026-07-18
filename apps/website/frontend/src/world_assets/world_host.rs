@@ -20,8 +20,6 @@ const ROLE_ROADS_CASING: u32 = 3;
 const ROLE_ROADS: u32 = 4;
 /// T-173 H6 — airfield apron polygon lane (matches `draw_order::lane_role_from_u32` 8).
 const ROLE_AIRFIELD_APRON: u32 = 8;
-/// Everon world extent (m) — density heatmap texture spans the whole island (T-173 H1).
-const TERRAIN_M: f64 = 12_800.0;
 const FETCH_CONCURRENCY: usize = 12;
 const ATLAS_WEBP: &str = "/map-assets/glyphs/atlas/world-glyphs.webp";
 const ATLAS_JSON: &str = "/map-assets/glyphs/atlas/world-glyphs.json";
@@ -418,7 +416,6 @@ impl WorldHost {
             let mut b = bridge.borrow_mut();
             b.merge_residency_stats(&self.residency.stats_json());
             b.tree_glyph_packed = self.residency.tree_glyph_count();
-            b.heatmap_trees = self.residency.heatmap_trees_active();
             return false;
         }
         self.last_pushed = Some(gate);
@@ -443,16 +440,9 @@ impl WorldHost {
         let strip_count = self.residency.fence_strip_segment_count()
             + self.residency.pier_strip_segment_count()
             + self.residency.bridge_rail_strip_count();
-        // T-173 H1 — density heatmap: the over-budget tree-density rung. Residency already computes
-        // the R32 grid + hysteresis state; upload it gated on `heatmap_trees_active()` (only shows
-        // when the visible tree census exceeds INSTANCE_BUDGET, i.e. zoomed out on dense forest).
-        let density = self.residency.density_grid_r32_bytes();
-        let (dw, dh) = self.residency.density_grid_dims();
-        let density_vis = self.residency.heatmap_trees_active();
         {
             let mut b = bridge.borrow_mut();
             b.tree_glyph_packed = self.residency.tree_glyph_count();
-            b.heatmap_trees = self.residency.heatmap_trees_active();
             b.merge_residency_stats(&stats);
         }
         {
@@ -475,7 +465,6 @@ impl WorldHost {
                 e.upload_icon_lane(2, &badges, true);
             }
             e.upload_world_fence_strips(&strips, strip_count, strip_vis);
-            e.upload_density_grid(&density, dw, dh, TERRAIN_M, TERRAIN_M, density_vis);
             publish_engine(bridge, e);
         }
         true

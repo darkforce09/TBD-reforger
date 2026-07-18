@@ -28,8 +28,6 @@ pub enum LaneRole {
     WorldFences,
     ForestFill,
     ForestOutline,
-    /// T-151.8 exact-count density heatmap (tree ladder over-budget rung).
-    DensityHeat,
     /// W5 tree + vegetation glyphs.
     WorldTrees,
     /// W5 prop + rockLarge glyphs.
@@ -76,7 +74,6 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldFences => 11,
         LaneRole::ForestFill => 12,
         LaneRole::ForestOutline => 13,
-        LaneRole::DensityHeat => 14,
         LaneRole::WorldTrees => 15,
         LaneRole::WorldProps => 16,
         LaneRole::WorldBadges => 17,
@@ -165,7 +162,6 @@ mod lane_order_pins {
             L::WorldFences,
             L::ForestFill,
             L::ForestOutline,
-            L::DensityHeat,
             L::WorldTrees,
             L::WorldProps,
             L::WorldBadges,
@@ -202,7 +198,6 @@ mod lane_order_pins {
             L::WorldFences,
             L::ForestFill,
             L::ForestOutline,
-            L::DensityHeat,
             L::WorldTrees,
             L::WorldProps,
             L::WorldBadges,
