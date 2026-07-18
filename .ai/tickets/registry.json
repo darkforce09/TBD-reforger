@@ -5436,8 +5436,8 @@
         "docs",
         "dx"
       ],
-      "title": "Monorepo / website hygiene (layout + dead code + tooling paths)",
-      "summary": "After T-169: Class-R inventory, move apps/website-leptos → apps/website/frontend, purge SAFE dead code (Go-era leftovers, orphan paths), fix Makefile/CI/Cargo/scripts. Claude owns structure+code; Cursor owns docs/rules/registry prose from Claude's return list (T-171.docs). Not mod. Not T-170. Hub: docs/platform/t171_monorepo_hygiene_program.md.",
+      "title": "Monorepo / website hygiene (full pass)",
+      "summary": "After T-169: Class-R inventory; nest apps/website/{api,frontend}; rename packages website-api/website-frontend; purge dual Go internal/ + nested Vite/Go Makefile; consolidate golden/fixture homes; finish map-assets consumption story; tooling/CI one path. Claude structure+code; Cursor T-171.docs from complete return list (incl. Where-does-X-go + ADR/ROADMAP rot). Not mod. No silent deferrals. Hub: docs/platform/t171_monorepo_hygiene_program.md.",
       "slices": [],
       "depends_on": [
         "T-169"
