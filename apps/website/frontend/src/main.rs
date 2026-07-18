@@ -67,6 +67,8 @@ mod world_assets;
 #[cfg(target_arch = "wasm32")]
 mod mission_history;
 mod mission_overview;
+// T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
+mod mission_size;
 mod missions;
 mod modpacks;
 mod mortar;

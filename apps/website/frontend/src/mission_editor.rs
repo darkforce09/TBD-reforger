@@ -51,6 +51,40 @@ pub fn MissionEditorPage() -> impl IntoView {
     let obj_count = RwSignal::new(0usize);
     let sel_count = RwSignal::new(0usize);
     let cursor = RwSignal::new(None::<(f64, f64, Option<f64>)>);
+    // T-172 B9 — toolbelt SZ estimate (recomputed 500 ms after obj_count settles) + the
+    // bottom-right wgpu debug readout (fed ~1 Hz by the rAF loop).
+    let sz_bytes = RwSignal::new(None::<usize>);
+    let debug_hud = RwSignal::new(String::new());
+    #[cfg(target_arch = "wasm32")]
+    {
+        use std::cell::Cell;
+        use std::rc::Rc;
+        use wasm_bindgen::prelude::*;
+        use wasm_bindgen::JsCast;
+        let timer: Rc<Cell<Option<i32>>> = Rc::new(Cell::new(None));
+        Effect::new(move |_| {
+            let _ = obj_count.get();
+            let Some(win) = web_sys::window() else { return };
+            if let Some(id) = timer.get() {
+                win.clear_timeout_with_handle(id);
+            }
+            let timer2 = timer.clone();
+            let cb = Closure::once_into_js(move || {
+                timer2.set(None);
+                sz_bytes.set(
+                    crate::editor_ops::slots_json()
+                        .as_deref()
+                        .and_then(crate::mission_size::estimate_compiled_bytes),
+                );
+            });
+            if let Ok(id) = win.set_timeout_with_callback_and_timeout_and_arguments_0(
+                cb.as_ref().unchecked_ref(),
+                500,
+            ) {
+                timer.set(Some(id));
+            }
+        });
+    }
 
     // T-159.22 — dock state. `outliner_nodes` / `selected_ids` are the same kind of pull-mirror as
     // OBJ/SEL above (pushed by `editor_ops::refresh_docks` from `mission_history::refresh_signals`,
@@ -453,7 +487,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                             {
                                 e.slots_bind_soa(soa.ids.clone(), &soa.xy);
                             }
-                            start_raf(engine.clone(), disposed.clone());
+                            start_raf(engine.clone(), disposed.clone(), debug_hud);
                             // T-166 — full map-asset host (hillshade + sat + DEM vectors + world +
                             // forest). Terrain from doc meta (seed/hydrate; default everon).
                             {
@@ -1114,6 +1148,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                         save_status
                         dirty
                         settings_open
+                        doc_tick
+                        obj_count
                     />
                 </div>
                 <div class="absolute bottom-0 left-0 top-12 w-64">
@@ -1128,7 +1164,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <crate::eden_chrome::DockRight catalog fm_open />
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
-                    <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count selected_ids />
+                    <crate::eden_chrome::BottomToolbelt
+                        cursor
+                        sel_count
+                        obj_count
+                        selected_ids
+                        sz_bytes
+                    />
+                    // T-172 B9 — bottom-right wgpu debug readout (screen-05 HUD parity).
+                    {move || {
+                        let t = debug_hud.get();
+                        (!t.is_empty())
+                            .then(|| {
+                                view! {
+                                    <div class="pointer-events-none absolute right-3 bottom-2 font-mono text-[11px] text-success/90">
+                                        {t}
+                                    </div>
+                                }
+                            })
+                    }}
                 </div>
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture.
@@ -1158,12 +1212,18 @@ pub fn MissionEditorPage() -> impl IntoView {
 fn start_raf(
     engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
     disposed: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    debug_hud: RwSignal<String>,
 ) {
     use std::cell::RefCell;
     use std::rc::Rc;
     use std::sync::atomic::Ordering;
     use wasm_bindgen::prelude::*;
     use wasm_bindgen::JsCast;
+
+    // T-172 B9 — ~1 Hz debug readout sample (screen-05 bottom-right HUD): zoom, drawn world
+    // chunks, tree glyphs, FPS. Counting frames between samples measures real rAF cadence.
+    let mut frames = 0u32;
+    let mut last_sample = 0.0f64;
 
     let f: Rc<RefCell<Option<Closure<dyn FnMut()>>>> = Rc::new(RefCell::new(None));
     let g = f.clone();
@@ -1175,6 +1235,27 @@ fn start_raf(
         if let Some(e) = engine.borrow_mut().as_mut() {
             let _ = e.render();
             e.poll(); // ★ T-159.15.1: drain readback map_async so the next submit can't double-map
+            frames += 1;
+            {
+                // js_sys::Date over web_sys Performance — no extra web-sys feature needed, and
+                // ms precision is plenty for a 1 Hz FPS sample.
+                let now = js_sys::Date::now();
+                if last_sample == 0.0 {
+                    last_sample = now;
+                } else if now - last_sample >= 1000.0 {
+                    let fps = (f64::from(frames) * 1000.0 / (now - last_sample)).round();
+                    let stats: serde_json::Value =
+                        serde_json::from_str(&e.stats()).unwrap_or_default();
+                    let chunks = stats["chunks"].as_u64().unwrap_or(0);
+                    let glyphs = stats["tree_glyphs"].as_u64().unwrap_or(0);
+                    debug_hud.set(format!(
+                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS",
+                        e.zoom()
+                    ));
+                    frames = 0;
+                    last_sample = now;
+                }
+            }
         }
         let cb_ref = f.borrow();
         if let (Some(cb), Some(win)) = (cb_ref.as_ref(), web_sys::window()) {

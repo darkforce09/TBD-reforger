@@ -108,13 +108,13 @@ pub fn export_now(version: &str) {
 /// Save a new immutable version (React `saveVersion`): compile with `orbat` omitted (the server
 /// re-derives), POST `{semver, editor_notes, payload}` to `/missions/:id/versions`, and reflect the
 /// outcome in `status`. 409 = dup semver, 413 = too large, 401 = not signed in.
-pub fn save_now(semver: String, status: RwSignal<String>) {
+pub fn save_now(semver: String, notes: String, status: RwSignal<String>) {
     let Some(snap) = snapshot() else {
         status.set("Editor not ready".to_string());
         return;
     };
     let payload = compile_payload(&snap.small, &snap.slots, false);
-    let body = version_body(&semver, "", &payload);
+    let body = version_body(&semver, &notes, &payload);
     let auth = snap.auth;
     let path = format!("/missions/{}/versions", snap.mission_id);
     let mission_id = snap.mission_id.clone();

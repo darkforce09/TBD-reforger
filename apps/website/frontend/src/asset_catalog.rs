@@ -106,6 +106,30 @@ pub fn build_catalog_tree(items: &[RegistryItem]) -> Vec<CatalogNode> {
     roots
 }
 
+/// Asset-search filter (T-172 B9 — the T-055 React behavior): case-insensitive label substring.
+/// A folder survives on a self-match (keeping its whole subtree) or on any descendant match
+/// (keeping only the matching children). Empty/whitespace query returns the tree unchanged.
+#[must_use]
+pub fn filter_catalog(nodes: &[CatalogNode], query: &str) -> Vec<CatalogNode> {
+    let q = query.trim().to_lowercase();
+    if q.is_empty() {
+        return nodes.to_vec();
+    }
+    fn keep(node: &CatalogNode, q: &str) -> Option<CatalogNode> {
+        if node.label.to_lowercase().contains(q) {
+            return Some(node.clone()); // self-match → full subtree
+        }
+        let children: Vec<CatalogNode> = node.children.iter().filter_map(|c| keep(c, q)).collect();
+        if children.is_empty() {
+            return None;
+        }
+        let mut out = node.clone();
+        out.children = children;
+        Some(out)
+    }
+    nodes.iter().filter_map(|n| keep(n, &q)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -193,5 +217,26 @@ mod tests {
         assert_eq!(leaves, 8, "only character rows are placed");
         // The gear categories (NATO/Uniform, NATO/Vest, …) would have added sibling folders.
         assert_eq!(tree[0].children.len(), 1, "no gear folders under NATO");
+    }
+
+    /// T-172 B9 — search filter: descendant match prunes siblings, folder self-match keeps the
+    /// whole subtree, empty query is identity, no match → empty.
+    #[test]
+    fn filter_catalog_rules() {
+        let tree = build_catalog_tree(&golden_items());
+        assert_eq!(filter_catalog(&tree, "  "), tree, "empty query = identity");
+
+        let rifle = filter_catalog(&tree, "rifleman");
+        assert_eq!(rifle.len(), 1, "NATO kept via descendant");
+        let leaves = &rifle[0].children[0].children;
+        assert!(!leaves.is_empty() && leaves.len() < 8, "siblings pruned");
+        assert!(leaves
+            .iter()
+            .all(|c| c.label.to_lowercase().contains("rifleman")));
+
+        let nato = filter_catalog(&tree, "nato");
+        assert_eq!(nato, tree, "folder self-match keeps the full subtree");
+
+        assert!(filter_catalog(&tree, "zzz-none").is_empty());
     }
 }

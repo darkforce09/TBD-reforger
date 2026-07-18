@@ -51,7 +51,7 @@ const OVERLAY_DOCKED: &str =
 /// `cn(overlayDocked, 'flex h-full items-center gap-2 border-b border-white/10 px-3')`.
 const STRIP: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full items-center gap-2 border-b border-white/10 px-3";
 /// `cn(overlayDocked, …)` + the dock's own edge border.
-const DOCK_L: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl h-full overflow-y-auto border-r border-white/10 p-3";
+const DOCK_L: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex h-full flex-col overflow-y-auto border-r border-white/10 p-3";
 const DOCK_R: &str = "pointer-events-auto bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl h-full overflow-y-auto border-l border-white/10 p-3";
 /// `cn(overlayPanel, 'flex items-center gap-1 px-1.5 py-1.5')`.
 const TOOLBELT: &str = "pointer-events-auto rounded-xl border border-white/10 bg-surface-container-lowest/55 shadow-xl backdrop-blur-xl flex items-center gap-1 px-1.5 py-1.5";
@@ -77,15 +77,94 @@ fn fmt_coord(v: Option<f64>) -> String {
     }
 }
 
-/// Top Command Strip — title · Undo/Redo · Save/Export (T-159.20, moved here) · Settings stub.
-///
-/// Scope (spec C1/C7): no File/Edit/View menu stubs, no time scrubber / weather select, no history
-/// dropdown, no Mission Settings dialog, and no Save dialog (semver stays an inline input — the
-/// dialog's size estimate + progress + debug panel are a later slice).
+// Top Command Strip (T-172 B9) — menu bar · editable title · time scrubber + weather ·
+// History (disabled) · Undo/Redo · Save dialog · Export · Settings.
+
+/// One top-strip menu (T-172 B9). React rendered File/Edit/View/Mission/Environment as dead
+/// "(soon)" stubs; these open real dropdowns with the commands that exist. No DOM while closed.
+struct MenuItem {
+    label: &'static str,
+    /// None = disabled row (rendered, not clickable — parity with genuinely-future features).
+    action: Option<MenuAction>,
+}
+
+#[derive(Clone, Copy)]
+enum MenuAction {
+    Save,
+    Export,
+    Undo,
+    Redo,
+    Settings,
+}
+
+const MENUS: [(&str, &[MenuItem]); 5] = [
+    (
+        "File",
+        &[
+            MenuItem {
+                label: "Save Version…",
+                action: Some(MenuAction::Save),
+            },
+            MenuItem {
+                label: "Export JSON",
+                action: Some(MenuAction::Export),
+            },
+        ],
+    ),
+    (
+        "Edit",
+        &[
+            MenuItem {
+                label: "Undo",
+                action: Some(MenuAction::Undo),
+            },
+            MenuItem {
+                label: "Redo",
+                action: Some(MenuAction::Redo),
+            },
+        ],
+    ),
+    (
+        "View",
+        &[MenuItem {
+            label: "Map layers — render host (T-159.28)",
+            action: None,
+        }],
+    ),
+    (
+        "Mission",
+        &[MenuItem {
+            label: "Mission Settings…",
+            action: Some(MenuAction::Settings),
+        }],
+    ),
+    (
+        "Environment",
+        &[MenuItem {
+            label: "Time & Weather (Mission Settings)…",
+            action: Some(MenuAction::Settings),
+        }],
+    ),
+];
+
+/// Minutes-since-midnight ↔ `HH:MM` for the time scrubber (T-172 B9). Pure + tested.
+pub fn minutes_to_hhmm(min: u32) -> String {
+    format!("{:02}:{:02}", (min / 60) % 24, min % 60)
+}
+
+pub fn hhmm_to_minutes(s: &str) -> Option<u32> {
+    let (h, m) = s.split_once(':')?;
+    let h: u32 = h.parse().ok()?;
+    let m: u32 = m.parse().ok()?;
+    if h > 23 || m > 59 {
+        return None;
+    }
+    Some(h * 60 + m)
+}
+
 #[component]
 pub fn TopCommandStrip(
-    /// Mission title. The `:id` route param today; the doc's `meta.title` once the settings/hydrate
-    /// lane lands (React binds an editable input to `setTitle`).
+    /// Mission title fallback — the `:id` route param; the doc's `meta.title` wins once read.
     title: String,
     can_undo: RwSignal<bool>,
     can_redo: RwSignal<bool>,
@@ -97,11 +176,192 @@ pub fn TopCommandStrip(
     /// T-159.26 — the Mission Settings dialog's open flag (gear button toggles it).
     #[prop(optional)]
     settings_open: Option<RwSignal<bool>>,
+    /// T-172 B9 — doc revision; re-reads the env (scrubber/weather) + title after undo/redo.
+    #[prop(optional)]
+    doc_tick: Option<RwSignal<u64>>,
+    /// T-172 B9 — obj count for the Save dialog's size line.
+    #[prop(optional)]
+    obj_count: Option<RwSignal<usize>>,
 ) -> impl IntoView {
+    let open_menu = RwSignal::new(None::<usize>);
+    let save_open = RwSignal::new(false);
+    let save_notes = RwSignal::new(String::new());
+    #[cfg(target_arch = "wasm32")]
+    {
+        let esc = window_event_listener(leptos::ev::keydown, move |ev| {
+            if ev.key() == "Escape" {
+                if open_menu.get_untracked().is_some() {
+                    open_menu.set(None);
+                }
+                if save_open.get_untracked() {
+                    save_open.set(false);
+                }
+            }
+        });
+        on_cleanup(move || esc.remove());
+    }
+    // Env mirror for the inline scrubber/weather — re-read on every doc change.
+    let env = Memo::new(move |_| {
+        if let Some(t) = doc_tick {
+            t.track();
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            crate::editor_ops::read_env()
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            crate::dto::MissionEnv::default()
+        }
+    });
+    let run_action = move |a: MenuAction| {
+        open_menu.set(None);
+        match a {
+            MenuAction::Save => save_open.set(true),
+            MenuAction::Export => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_commands::export_now(&save_semver.get_untracked());
+            }
+            MenuAction::Undo => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_history::undo();
+            }
+            MenuAction::Redo => {
+                #[cfg(target_arch = "wasm32")]
+                crate::mission_history::redo();
+            }
+            MenuAction::Settings => {
+                if let Some(s) = settings_open {
+                    s.set(true);
+                }
+            }
+        }
+    };
+    let title_fallback = StoredValue::new(title);
     view! {
         <div class=STRIP>
-            <span class="min-w-0 flex-1 truncate text-label-md font-semibold text-on-surface">
-                {title}
+            // Menu bar (screen 05: File / Edit / View / Mission / Environment).
+            <div class="flex items-center">
+                {MENUS
+                    .iter()
+                    .enumerate()
+                    .map(|(i, (name, items))| {
+                        view! {
+                            <div class="relative">
+                                <button
+                                    type="button"
+                                    class=move || {
+                                        if open_menu.get() == Some(i) {
+                                            "rounded bg-white/10 px-2 py-1 text-label-sm text-on-surface"
+                                        } else {
+                                            "rounded px-2 py-1 text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+                                        }
+                                    }
+                                    on:click=move |_| {
+                                        open_menu
+                                            .update(|m| {
+                                                *m = if *m == Some(i) { None } else { Some(i) };
+                                            });
+                                    }
+                                >
+                                    {*name}
+                                </button>
+                                {move || {
+                                    (open_menu.get() == Some(i))
+                                        .then(|| {
+                                            view! {
+                                                <div class="glass animate-menu-in absolute top-full left-0 z-50 mt-1 w-64 rounded-lg py-1 shadow-lg">
+                                                    {items
+                                                        .iter()
+                                                        .map(|it| {
+                                                            let label = it.label;
+                                                            match it.action {
+                                                                Some(a) => {
+                                                                    let disabled = move || match a {
+                                                                        MenuAction::Undo => !can_undo.get(),
+                                                                        MenuAction::Redo => !can_redo.get(),
+                                                                        _ => false,
+                                                                    };
+                                                                    view! {
+                                                                        <button
+                                                                            type="button"
+                                                                            class="flex w-full items-center px-3 py-1.5 text-left text-label-sm text-on-surface transition-colors hover:bg-white/10 disabled:cursor-default disabled:text-outline disabled:hover:bg-transparent"
+                                                                            disabled=disabled
+                                                                            on:click=move |_| run_action(a)
+                                                                        >
+                                                                            {label}
+                                                                        </button>
+                                                                    }
+                                                                        .into_any()
+                                                                }
+                                                                None => {
+                                                                    view! {
+                                                                        <span class="flex w-full items-center px-3 py-1.5 text-label-sm text-outline">
+                                                                            {label}
+                                                                        </span>
+                                                                    }
+                                                                        .into_any()
+                                                                }
+                                                            }
+                                                        })
+                                                        .collect_view()}
+                                                </div>
+                                            }
+                                        })
+                                }}
+                            </div>
+                        }
+                    })
+                    .collect_view()}
+            </div>
+            // Click-away scrim for an open menu (below the dropdowns' z-50).
+            {move || {
+                open_menu
+                    .get()
+                    .is_some()
+                    .then(|| {
+                        view! {
+                            <div
+                                class="fixed inset-0 z-40"
+                                on:click=move |_| open_menu.set(None)
+                            ></div>
+                        }
+                    })
+            }}
+            <span class=DIVIDER></span>
+            // Editable mission title (React setTitle) + the dirty dot.
+            <div class="flex min-w-0 flex-1 items-center">
+                {move || {
+                    if let Some(t) = doc_tick {
+                        t.track();
+                    }
+                    #[cfg(target_arch = "wasm32")]
+                    let doc_title = {
+                        let t = crate::editor_ops::read_title();
+                        if t.is_empty() { title_fallback.get_value() } else { t }
+                    };
+                    #[cfg(not(target_arch = "wasm32"))]
+                    let doc_title = title_fallback.get_value();
+                    view! {
+                        <input
+                            type="text"
+                            aria-label="Mission title"
+                            class="w-full min-w-0 truncate rounded border border-transparent bg-transparent px-1.5 py-0.5 text-label-md font-semibold text-on-surface outline-none transition-colors focus:border-outline-variant/40 focus:bg-surface-container"
+                            prop:value=doc_title
+                            on:change=move |ev| {
+                                #[cfg(target_arch = "wasm32")]
+                                {
+                                    let v = event_target_value(&ev);
+                                    if !v.trim().is_empty() {
+                                        crate::editor_ops::set_title(v.trim());
+                                    }
+                                }
+                                #[cfg(not(target_arch = "wasm32"))]
+                                let _ = &ev;
+                            }
+                        />
+                    }
+                }}
                 {dirty
                     .map(|d| {
                         view! {
@@ -114,8 +374,66 @@ pub fn TopCommandStrip(
                             </span>
                         }
                     })}
-            </span>
+            </div>
+            // Inline time scrubber + weather (screen 05 center) — same doc fields as the
+            // Mission Settings dialog (`update_environment`, one undo step per commit).
+            <div class="flex shrink-0 items-center gap-2">
+                <input
+                    type="range"
+                    min="0"
+                    max="1439"
+                    step="1"
+                    aria-label="Time of day"
+                    class="w-28 accent-[--color-primary]"
+                    prop:value=move || {
+                        hhmm_to_minutes(&env.get().time).unwrap_or(360).to_string()
+                    }
+                    on:change=move |ev| {
+                        #[cfg(target_arch = "wasm32")]
+                        {
+                            let v: u32 = event_target_value(&ev).parse().unwrap_or(0);
+                            crate::editor_ops::update_environment(
+                                serde_json::json!({ "time": minutes_to_hhmm(v) }).to_string(),
+                            );
+                        }
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = &ev;
+                    }
+                />
+                <span class="font-mono text-xs tabular-nums text-on-surface-variant">
+                    {move || env.get().time}
+                </span>
+                <select
+                    aria-label="Weather"
+                    class="rounded border border-outline-variant/40 bg-surface-container px-1.5 py-0.5 text-xs text-on-surface"
+                    prop:value=move || env.get().weather
+                    on:change=move |ev| {
+                        #[cfg(target_arch = "wasm32")]
+                        crate::editor_ops::update_environment(
+                            serde_json::json!({ "weather": event_target_value(&ev) }).to_string(),
+                        );
+                        #[cfg(not(target_arch = "wasm32"))]
+                        let _ = &ev;
+                    }
+                >
+                    <option value="clear">"Clear"</option>
+                    <option value="overcast">"Overcast"</option>
+                    <option value="heavy_rain">"Heavy Rain"</option>
+                    <option value="dense_fog">"Dense Fog"</option>
+                </select>
+            </div>
             <span class=DIVIDER></span>
+            // History — present-but-disabled (React parity; version list lands with the history
+            // lane).
+            <button
+                type="button"
+                aria-label="History"
+                title="Version history (soon)"
+                class=BTN_ICON
+                disabled=true
+            >
+                <MaterialIcon name="history" class="block text-base" />
+            </button>
             // `aria-label` is the gate's DOM handle for the button path (smoke_undo_editor A3/A6) —
             // a real a11y name, not a test-only attribute.
             <button
@@ -149,20 +467,10 @@ pub fn TopCommandStrip(
                 <MaterialIcon name="redo" class="block text-base" />
             </button>
             <span class=DIVIDER></span>
-            <input
-                type="text"
-                aria-label="Version"
-                class="w-20 rounded border border-outline-variant/40 bg-surface-container px-2 py-1 font-mono text-xs text-on-surface"
-                prop:value=move || save_semver.get()
-                on:input=move |ev| save_semver.set(event_target_value(&ev))
-            />
             <button
                 type="button"
                 class="rounded bg-primary px-3 py-1 text-xs font-medium text-on-primary"
-                on:click=move |_| {
-                    #[cfg(target_arch = "wasm32")]
-                    crate::mission_commands::save_now(save_semver.get_untracked(), save_status);
-                }
+                on:click=move |_| save_open.set(true)
             >
                 "Save Version"
             </button>
@@ -194,6 +502,122 @@ pub fn TopCommandStrip(
             >
                 <MaterialIcon name="settings" class="block text-base" />
             </button>
+            // Save Version dialog (React SaveVersionDialog: semver + notes + size estimate +
+            // indeterminate bar while saving). Renders no DOM while closed.
+            {move || {
+                save_open
+                    .get()
+                    .then(|| {
+                        let estimate = {
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                crate::editor_ops::slots_json()
+                                    .as_deref()
+                                    .and_then(crate::mission_size::estimate_compiled_bytes)
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            {
+                                None::<usize>
+                            }
+                        };
+                        let obj = obj_count.map_or(0, |o| o.get());
+                        let size_line = match estimate {
+                            Some(b) => {
+                                format!(
+                                    "~{} · {} objects",
+                                    crate::mission_size::format_bytes(b),
+                                    obj,
+                                )
+                            }
+                            None => format!("{obj} objects"),
+                        };
+                        let big = estimate.is_some_and(|b| b > 200_000_000);
+                        view! {
+                            <div
+                                class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                                on:click=move |_| save_open.set(false)
+                            ></div>
+                            <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none">
+                                <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
+                                    <div class="min-w-0">
+                                        <h2 class="text-headline-sm text-on-surface">"Save Version"</h2>
+                                        <p class="mt-1 text-label-md text-on-surface-variant">
+                                            "Versions are immutable — pick a new semver."
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        aria-label="Close"
+                                        on:click=move |_| save_open.set(false)
+                                        class="shrink-0 rounded-md p-1 text-outline transition-colors hover:bg-surface-variant/50 hover:text-on-surface"
+                                    >
+                                        <MaterialIcon name="close" />
+                                    </button>
+                                </div>
+                                <div class="flex flex-col gap-3 px-6 py-5">
+                                    <label class="flex flex-col gap-1">
+                                        <span class="text-label-sm uppercase tracking-wider text-outline">
+                                            "Version"
+                                        </span>
+                                        <input
+                                            type="text"
+                                            aria-label="Version"
+                                            class="w-32 rounded border border-outline-variant/40 bg-surface-container px-2 py-1 font-mono text-xs text-on-surface"
+                                            prop:value=move || save_semver.get()
+                                            on:input=move |ev| save_semver.set(event_target_value(&ev))
+                                        />
+                                    </label>
+                                    <label class="flex flex-col gap-1">
+                                        <span class="text-label-sm uppercase tracking-wider text-outline">
+                                            "Notes"
+                                        </span>
+                                        <textarea
+                                            aria-label="Editor notes"
+                                            rows="2"
+                                            class="w-full resize-none rounded border border-outline-variant/40 bg-surface-container px-2 py-1 text-xs text-on-surface"
+                                            prop:value=move || save_notes.get()
+                                            on:input=move |ev| save_notes.set(event_target_value(&ev))
+                                        ></textarea>
+                                    </label>
+                                    <p class=if big {
+                                        "font-mono text-xs text-tactical-yellow"
+                                    } else {
+                                        "font-mono text-xs text-on-surface-variant"
+                                    }>{size_line}</p>
+                                    {move || {
+                                        save_status
+                                            .get()
+                                            .starts_with("Saving")
+                                            .then(|| {
+                                                view! {
+                                                    <div class="h-1 w-full overflow-hidden rounded-full bg-surface-variant/40">
+                                                        <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
+                                                    </div>
+                                                }
+                                            })
+                                    }}
+                                    <p class="min-h-4 font-mono text-xs text-on-surface-variant">
+                                        {move || save_status.get()}
+                                    </p>
+                                    <button
+                                        type="button"
+                                        class="self-end rounded bg-primary px-4 py-1.5 text-xs font-medium text-on-primary"
+                                        on:click=move |_| {
+                                            #[cfg(target_arch = "wasm32")]
+                                            crate::mission_commands::save_now(
+                                                save_semver.get_untracked(),
+                                                save_notes.get_untracked(),
+                                                save_status,
+                                            );
+                                        }
+                                    >
+                                        "Save"
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    })
+            }}
         </div>
     }
 }
@@ -587,9 +1011,31 @@ pub fn DockLeft(
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
 ) -> impl IntoView {
+    // T-172 B9 — screen-05 bottom icon strip: React's LeftSidebar BOTTOM_TABS were explicitly
+    // visual-only (Hierarchy active), so present-but-disabled is the honest parity.
+    let strip_btn = |icon: &'static str, label: &'static str, active: bool| {
+        view! {
+            <button
+                type="button"
+                disabled=true
+                title=label
+                aria-label=label
+                class=if active {
+                    "rounded-md p-1.5 text-primary"
+                } else {
+                    "rounded-md p-1.5 text-outline"
+                }
+            >
+                <MaterialIcon name=icon class="block text-base" />
+            </button>
+        }
+    };
     view! {
         <aside class=DOCK_L>
-            <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+            <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface">
+                "Outliner"
+            </h2>
+            <h2 class="mt-3 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 "ORBAT"
             </h2>
             <div class="mt-1">
@@ -600,6 +1046,13 @@ pub fn DockLeft(
             </h2>
             <div class="mt-1">
                 {virtual_tree(nodes, selected, active_layer, "editorLayers", "No objects placed yet.")}
+            </div>
+            <div class="mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-2">
+                {strip_btn("account_tree", "Hierarchy (visual only)", true)}
+                {strip_btn("layers", "Layers (visual only)", false)}
+                {strip_btn("inventory_2", "Assets (visual only)", false)}
+                {strip_btn("history", "History (visual only)", false)}
+                {strip_btn("settings", "Settings (visual only)", false)}
             </div>
         </aside>
     }
@@ -624,12 +1077,38 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
             seeded.set_value(true);
         }
     });
+    // T-172 B9 — screen-05 palette chrome: FACTIONS / VEHICLES / MARKERS tabs + Asset Browser
+    // search. Vehicles/Markers placement stays T-070/T-069 — React's tabs were stubs too, so the
+    // panels say exactly that. Search filters the catalog (T-055 behavior) and force-expands
+    // matches (an empty collapse set while a query is live).
+    let tab = RwSignal::new(0usize);
+    let search = RwSignal::new(String::new());
+    let no_collapse = RwSignal::new(std::collections::HashSet::<String>::new());
+    let tab_btn = move |i: usize, label: &'static str| {
+        view! {
+            <button
+                type="button"
+                class=move || {
+                    if tab.get() == i {
+                        "border-b-2 border-primary px-1.5 pb-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface"
+                    } else {
+                        "border-b-2 border-transparent px-1.5 pb-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant transition-colors hover:text-on-surface"
+                    }
+                }
+                on:click=move |_| tab.set(i)
+            >
+                {label}
+            </button>
+        }
+    };
     view! {
         <aside class=DOCK_R>
             <div class="flex items-center justify-between">
-                <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                    "Factions"
-                </h2>
+                <div class="flex items-center gap-1">
+                    {tab_btn(0, "Factions")}
+                    {tab_btn(1, "Vehicles")}
+                    {tab_btn(2, "Markers")}
+                </div>
                 <button
                     type="button"
                     aria-label="Manage factions"
@@ -639,33 +1118,80 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                     "Manage"
                 </button>
             </div>
-            <p class="mt-1 text-label-sm normal-case text-outline">
-                "Drag a role onto the map to place its slot."
-            </p>
-            <div class="mt-2">
-                {move || match catalog.get() {
-                    CatalogState::Loading => {
-                        view! { <p class="text-label-sm text-outline">"Loading assets…"</p> }
-                            .into_any()
-                    }
-                    CatalogState::Failed => {
-                        view! {
-                            <p class="text-label-sm text-outline">"Could not load the catalog."</p>
-                        }
-                            .into_any()
-                    }
-                    CatalogState::Ready(nodes) if nodes.is_empty() => {
-                        view! { <p class="text-label-sm text-outline">"No placeable assets."</p> }
-                            .into_any()
-                    }
-                    CatalogState::Ready(nodes) => {
-                        // Track the collapse set so a chevron toggle re-renders the tree
-                        // (palette_rows reads it untracked).
-                        palette_collapsed.track();
-                        palette_rows(&nodes, 0, palette_collapsed)
-                    }
-                }}
-            </div>
+            {move || match tab.get() {
+                0 => view! {
+                    <h3 class="mt-2 text-label-md font-semibold text-on-surface">"Asset Browser"</h3>
+                    <p class="mt-0.5 text-label-sm normal-case text-outline">
+                        "Drag a role onto the map to place its slot."
+                    </p>
+                    <input
+                        type="search"
+                        aria-label="Search assets"
+                        placeholder="Search assets…"
+                        class="mt-2 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-sm text-on-surface outline-none transition-colors placeholder:text-outline focus:border-primary/60"
+                        on:input=move |ev| search.set(event_target_value(&ev))
+                    />
+                    <div class="mt-2">
+                        {move || match catalog.get() {
+                            CatalogState::Loading => {
+                                view! {
+                                    <p class="text-label-sm text-outline">"Loading assets…"</p>
+                                }
+                                    .into_any()
+                            }
+                            CatalogState::Failed => {
+                                view! {
+                                    <p class="text-label-sm text-outline">
+                                        "Could not load the catalog."
+                                    </p>
+                                }
+                                    .into_any()
+                            }
+                            CatalogState::Ready(nodes) if nodes.is_empty() => {
+                                view! {
+                                    <p class="text-label-sm text-outline">"No placeable assets."</p>
+                                }
+                                    .into_any()
+                            }
+                            CatalogState::Ready(nodes) => {
+                                let q = search.get();
+                                if q.trim().is_empty() {
+                                    // Track the collapse set so a chevron toggle re-renders the
+                                    // tree (palette_rows reads it untracked).
+                                    palette_collapsed.track();
+                                    palette_rows(&nodes, 0, palette_collapsed)
+                                } else {
+                                    let filtered =
+                                        crate::asset_catalog::filter_catalog(&nodes, &q);
+                                    if filtered.is_empty() {
+                                        view! {
+                                            <p class="text-label-sm text-outline">
+                                                "No assets match."
+                                            </p>
+                                        }
+                                            .into_any()
+                                    } else {
+                                        palette_rows(&filtered, 0, no_collapse)
+                                    }
+                                }
+                            }
+                        }}
+                    </div>
+                }
+                    .into_any(),
+                1 => view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">
+                        "Vehicle placement lands in T-070."
+                    </p>
+                }
+                    .into_any(),
+                _ => view! {
+                    <p class="mt-3 text-label-sm normal-case text-outline">
+                        "Marker placement lands in T-069."
+                    </p>
+                }
+                    .into_any(),
+            }}
         </aside>
     }
 }
@@ -684,6 +1210,9 @@ pub fn BottomToolbelt(
     obj_count: RwSignal<usize>,
     /// Live selection mirror — drives the CUR↔SEL swap.
     selected_ids: RwSignal<Vec<String>>,
+    /// T-172 B9 — debounced compiled-payload estimate (None → `—`).
+    #[prop(optional)]
+    sz_bytes: Option<RwSignal<Option<usize>>>,
 ) -> impl IntoView {
     // Exactly-one-selected → that slot's x/y/z from the doc. Recomputes on selection change AND
     // on the post-mutation selected_ids re-set (drag commit), so it never shows a stale position.
@@ -754,6 +1283,19 @@ pub fn BottomToolbelt(
                 <span>
                     "SEL"
                     <span class="ml-1 text-on-surface">{move || sel_count.get()}</span>
+                </span>
+                <span title="Estimated save payload">
+                    "SZ"
+                    <span class="ml-1 text-on-surface">
+                        {move || {
+                            sz_bytes
+                                .and_then(|s| s.get())
+                                .map_or_else(
+                                    || "—".to_string(),
+                                    crate::mission_size::format_bytes,
+                                )
+                        }}
+                    </span>
                 </span>
             </div>
         </div>
@@ -910,5 +1452,24 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                 </div>
             </div>
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{hhmm_to_minutes, minutes_to_hhmm};
+
+    #[test]
+    fn time_scrubber_roundtrip() {
+        assert_eq!(minutes_to_hhmm(0), "00:00");
+        assert_eq!(minutes_to_hhmm(360), "06:00");
+        assert_eq!(minutes_to_hhmm(1439), "23:59");
+        assert_eq!(hhmm_to_minutes("06:00"), Some(360));
+        assert_eq!(hhmm_to_minutes("23:59"), Some(1439));
+        assert_eq!(hhmm_to_minutes("24:00"), None);
+        assert_eq!(hhmm_to_minutes("nope"), None);
+        for m in [0u32, 1, 59, 60, 719, 1439] {
+            assert_eq!(hhmm_to_minutes(&minutes_to_hhmm(m)), Some(m));
+        }
     }
 }

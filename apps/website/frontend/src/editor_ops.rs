@@ -162,6 +162,53 @@ pub fn read_env() -> MissionEnv {
         .unwrap_or_default()
 }
 
+/// The doc's `meta.title` (empty when unset — the strip falls back to the route id). T-172 B9.
+pub fn read_title() -> String {
+    OPS_CTX
+        .with(|c| {
+            let guard = c.borrow();
+            let ctx = guard.as_ref()?;
+            let d = ctx.doc.borrow();
+            let core = d.as_ref()?;
+            let root: serde_json::Value = serde_json::from_str(&core.small_maps_json()).ok()?;
+            root.get("meta")?
+                .get("title")
+                .and_then(|t| t.as_str())
+                .map(str::to_string)
+        })
+        .unwrap_or_default()
+}
+
+/// Strip title commit (React's editable title → `setTitle`) — writes `meta.title` + runs the
+/// shared post-edit tail (one undo step, dirty flag). T-172 B9.
+pub fn set_title(title: &str) {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.set_title(title);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+}
+
+/// The doc's raw `slots_json` — the SZ estimator's input (T-172 B9).
+pub fn slots_json() -> Option<String> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        d.as_ref().map(|core| core.slots_json())
+    })
+}
+
 /// Merge an environment patch (React `updateEnvironment`) + run the shared tail (one undo step).
 pub fn update_environment(patch_json: String) {
     let did = OPS_CTX.with(|c| {
