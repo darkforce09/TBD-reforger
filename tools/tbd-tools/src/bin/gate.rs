@@ -1,6 +1,6 @@
 //! T-165.5 — `gate`: the Rust CDP gate harness CLI (replaces the Node driver entrypoints).
 //!
-//!   gate v-suite <freeze|verify|accept> [--oracle-dir d] [--leptos-dir d] [--only slug] [--note why]
+//!   gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]
 //!   gate s-routes
 //!   gate serve --dir <dist> [--port 5198] [--api-proxy http://127.0.0.1:8080] [--map-assets dir]
 //!
@@ -24,10 +24,8 @@ enum Cmd {
     /// V-suite frozen-oracle DOM gate (gate_v_suite.mjs port)
     #[command(name = "v-suite")]
     VSuite {
-        /// freeze | verify | accept
+        /// verify | accept  (freeze retired at T-171 — the React oracle is non-regenerable)
         mode: String,
-        #[arg(long, default_value = "apps/website/frontend/dist")]
-        oracle_dir: PathBuf,
         #[arg(long, default_value = "apps/website/frontend/dist")]
         leptos_dir: PathBuf,
         #[arg(long, default_value = "")]
@@ -96,14 +94,12 @@ fn main() -> ExitCode {
         match cli.cmd {
             Cmd::VSuite {
                 mode,
-                oracle_dir,
                 leptos_dir,
                 only,
                 note,
             } => {
                 vsuite::run(&vsuite::VSuiteArgs {
                     mode,
-                    oracle_dir,
                     leptos_dir,
                     only,
                     note,

@@ -188,6 +188,14 @@ map-glyphs-build: ## T-090.5.2 — build world-glyph atlas (webp + Deck mapping)
 map-render-verify: ## T-090.5 stub — per-phase render smoke (layer instance count + purity)
 	@echo "map-render-verify: not implemented (T-090.5)"; exit 1
 
+# T-171 — selective LFS pulls (the only two LFS objects in the repo; a plain clone gets
+# pointer files and the API serves 404 for them until pulled). DEM is enough for
+# map-engine-core tests + hillshade; the satellite bundle is the full-res editor basemap.
+lfs-dem: ## Pull the Everon DEM from LFS (72 MB — map-engine tests + hillshade)
+	git lfs pull --include packages/map-assets/everon/dem/everon-dem-16bit.png
+lfs-sat: ## Pull the Everon satellite bundle from LFS (153 MB — full-res editor basemap)
+	git lfs pull --include packages/map-assets/everon/satellite/everon-sat.tbd-sat
+
 mcp-selftest: ## Offline MCP gates (19/19) — no Workbench
 	bash scripts/mod/mcp-call-selftest.sh
 mcp-smoke: ## Live MCP smoke — wb_connect + wb_state (Workbench Net API up)

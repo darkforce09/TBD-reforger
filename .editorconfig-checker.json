@@ -8,6 +8,7 @@
     "dist",
     "apps/mod/",
     "apps/website/frontend/tests/fixtures/",
+    "tools/tbd-tools/fixtures/",
     "\\.ai/artifacts/",
     "scripts/map-assets/vendor/",
     "docs/specs/macOS_Blueprints/",

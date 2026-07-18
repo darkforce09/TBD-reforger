@@ -1,11 +1,12 @@
-//! T-165.5 — the V-suite freeze/verify/accept gate (port of `driver/gate_v_suite.mjs`).
+//! T-165.5 — the V-suite verify/accept gate (port of `driver/gate_v_suite.mjs`).
 //!
 //! Captures the normalized DOM (the injected dom.js serializer — see `inject.rs` provenance)
 //! plus a PNG for every leaf route and diffs against the frozen goldens under
-//! `.ai/artifacts/t159_gates/v/oracle-freeze/`. `verify` is the permanent V regression gate
+//! `tools/tbd-tools/fixtures/t159/oracle-freeze/`. `verify` is the permanent V regression gate
 //! (the React oracle is deleted); `accept` re-sources one route's golden from the current
-//! Leptos dist with a recorded note; `freeze` is kept for provenance (needs a dist at
-//! `--oracle-dir`, which no longer exists post T-159.29.3).
+//! Leptos dist with a recorded note. `freeze` was retired at T-171: the React dist it captured
+//! from is gone, and `apps/website/frontend/dist` is the LIVE Leptos dist — a re-freeze would
+//! overwrite the non-regenerable React oracle.
 //!
 //! Readiness = the freeze.js clock + fixture-intercepted fetches, then a stability loop:
 //! serialize until two consecutive captures are byte-identical. Viewport pinned 1440×900.
@@ -84,7 +85,7 @@ fn sha_hex(bytes: &[u8]) -> String {
 }
 
 fn gold_dir() -> PathBuf {
-    repo_root().join(".ai/artifacts/t159_gates/v/oracle-freeze")
+    repo_root().join("tools/tbd-tools/fixtures/t159/oracle-freeze")
 }
 
 fn fixtures_dir() -> PathBuf {
@@ -324,33 +325,8 @@ pub fn diff_node(o: &Value, l: &Value, path: &str, out: &mut Vec<Value>, cap: us
     }
 }
 
-/// Identity of the frozen oracle build: sha over the sorted `(name, sha)` rows of
-/// index.html + assets/*.
-pub fn dist_identity(dir: &Path) -> Result<String> {
-    let mut rows = Vec::new();
-    let mut add = |p: &Path, rel: &str| -> Result<()> {
-        rows.push(format!("{rel}:{}", sha_hex(&std::fs::read(p)?)));
-        Ok(())
-    };
-    add(&dir.join("index.html"), "index.html")?;
-    let assets = dir.join("assets");
-    if assets.exists() {
-        let mut names: Vec<String> = std::fs::read_dir(&assets)?
-            .filter_map(|e| e.ok())
-            .filter(|e| e.path().is_file())
-            .filter_map(|e| e.file_name().into_string().ok())
-            .collect();
-        names.sort();
-        for f in names {
-            add(&assets.join(&f), &format!("assets/{f}"))?;
-        }
-    }
-    Ok(sha_hex(rows.join("\n").as_bytes()))
-}
-
 pub struct VSuiteArgs {
     pub mode: String,
-    pub oracle_dir: PathBuf,
     pub leptos_dir: PathBuf,
     pub only: String,
     pub note: String,
@@ -358,10 +334,18 @@ pub struct VSuiteArgs {
 
 /// Run the suite. Returns the process exit code (0 green, 1 diff/missing, 2 usage).
 pub async fn run(args: &VSuiteArgs) -> Result<u8> {
-    if !["freeze", "verify", "accept"].contains(&args.mode.as_str()) {
+    if args.mode == "freeze" {
         eprintln!(
-            "usage: gate v-suite <freeze|verify|accept> [--oracle-dir d] [--leptos-dir d] [--only slug] [--note why]"
+            "v-suite freeze retired (T-171): the React oracle under {} is non-regenerable — \
+             the source dist was deleted at T-159.29.3, and a capture from the live Leptos dist \
+             would overwrite it. Use `verify` (regression) or `accept --only <slug> --note` \
+             (intentional single-route divergence).",
+            gold_dir().display()
         );
+        return Ok(2);
+    }
+    if !["verify", "accept"].contains(&args.mode.as_str()) {
+        eprintln!("usage: gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]");
         return Ok(2);
     }
     if args.mode == "accept" && (args.only.is_empty() || args.note.is_empty()) {
@@ -392,23 +376,6 @@ async fn run_modes(
     let mut fail = 0usize;
     for route in routes {
         match args.mode.as_str() {
-            "freeze" => {
-                let cap = capture_route(browser, &args.oracle_dir, 5195, route).await?;
-                std::fs::create_dir_all(gold)?;
-                std::fs::write(gold.join(format!("{}.dom.json", route.slug)), &cap.dom)?;
-                std::fs::write(gold.join(format!("{}.png", route.slug)), &cap.png)?;
-                let digest = sha_hex(cap.dom.as_bytes());
-                rows.push(json!({
-                    "slug": route.slug, "path": route.path, "authed": route.authed,
-                    "goldenSource": "react", "bytes": js_len(&cap.dom), "sha256": digest,
-                }));
-                println!(
-                    "froze  {:<14} {:>8} B  {}",
-                    route.slug,
-                    js_len(&cap.dom),
-                    &digest[..12]
-                );
-            }
             "accept" => {
                 // Preserve the React capture as the historical reference, then re-golden.
                 let gold_file = gold.join(format!("{}.dom.json", route.slug));
@@ -485,26 +452,6 @@ async fn run_modes(
     }
 
     match args.mode.as_str() {
-        "freeze" => {
-            let manifest = json!({
-                "frozenFrom": "react dist (apps/website/frontend/dist)",
-                "distSha256": dist_identity(&args.oracle_dir)?,
-                "viewport": "1440x900",
-                "excluded": { "/missions/:id/edit": "editor gate = the 15 CDP smokes (smoke_*_editor.mjs)" },
-                "scope": "#root>:first-child — the app UI root on both apps; React's empty sonner toaster portal (#root 2nd child) is outside the frozen scope",
-                "routes": rows,
-            });
-            std::fs::write(
-                gold.join("manifest.json"),
-                serde_json::to_string_pretty(&manifest)? + "\n",
-            )?;
-            println!(
-                "\nfroze {} routes · dist {} → {}/",
-                rows.len(),
-                &manifest["distSha256"].as_str().unwrap_or_default()[..12],
-                gold.display()
-            );
-        }
         "accept" => {
             println!(
                 "\naccepted {} route(s) — golden re-sourced from Leptos, React reference kept",

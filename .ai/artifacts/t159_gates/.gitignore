@@ -1,8 +1,6 @@
-# Gate run artifacts (regenerable). Committed goldens live in manifests/ and v/oracle-freeze/
-# (the T-159.29.1 frozen React DOM oracle — NOT regenerable once React is deleted). Smoke/run
-# captures and per-slice logs are not committed.
-v/*
-!v/oracle-freeze/
+# Gate RUN artifacts only (regenerable) — nothing under this directory is committed since
+# T-171. The goldens moved: R-api fixtures -> apps/website/frontend/tests/fixtures/api/;
+# S-manifests + the frozen React V-oracle -> tools/tbd-tools/fixtures/t159/. See README.md.
+v/
 logs/
 .devtoken
-fixtures/api/.devtoken
