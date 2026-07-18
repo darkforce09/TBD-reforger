@@ -465,11 +465,17 @@ pub fn build_world_objects_opt(
         }
         let _ = std::fs::remove_dir_all(&density_dir);
         std::fs::create_dir_all(&density_dir)?;
+        // T-176 A2 — the tree channel written to disk is the canopy-blurred grid (density.rs
+        // `box_blur_corners`); the raw `tree_grid` above stays only for the PH-P2 sum identity.
+        // Blur the GLOBAL grid before slicing so adjacent chunks share identical border corners
+        // (no seams). Rocks stay raw counts.
+        let tree_canopy =
+            density::box_blur_corners(&tree_grid, tree_size, density::CANOPY_KERNEL_RADIUS_CELLS);
         let grid_cells = (world_size_m / CHUNK_SIZE_M).round() as usize;
         let mut density_bytes = 0u64;
         for cy in 0..grid_cells {
             for cx in 0..grid_cells {
-                let tree_ch = density::slice_chunk_corners(&tree_grid, tree_size, cx, cy);
+                let tree_ch = density::slice_chunk_corners(&tree_canopy, tree_size, cx, cy);
                 let rock_ch = density::slice_chunk_corners(&rock_grid, rock_size, cx, cy);
                 let buf = map_engine_core::geometry::tbdd::encode_tbdd(
                     density::DENSITY_CELL_M,
@@ -783,6 +789,179 @@ pub fn build_world_objects_opt(
         );
     }
     Ok(BuildSummary { summary })
+}
+
+/// T-176 A2 — re-derive the TBDD density grids from the **committed** objects (no staging /
+/// Workbench). Reads `objects/prefabs.json.gz` (prefabId→kind) + every `objects/chunks/*.json.gz`
+/// (`instances:[[prefabId,x,y,z,yaw],…]`), accumulates a global corner grid at `DENSITY_CELL_M`,
+/// box-blurs the tree channel into a smooth canopy field (bridges tree gaps, leaves clearings as
+/// holes), slices per chunk, and overwrites `objects/density/*.bin`. Rocks stay raw counts (unused
+/// by the forest mass; kept for channel parity). Byte-consistent with the staging path
+/// (`build_world_objects` shares `box_blur_corners`) and the D2 gate recompute.
+pub fn redensify_from_committed(terrain: &str) -> Result<()> {
+    let t = terrain_row(terrain)?;
+    let b = t["worldBoundsM"].as_array().cloned().unwrap_or_default();
+    if b.len() < 4 || b[0].as_f64() != Some(0.0) || b[1].as_f64() != Some(0.0) {
+        bail!("worldBoundsM unsupported (expect square, origin 0)");
+    }
+    let world_size_m = b[2].as_f64().unwrap_or(0.0);
+    if world_size_m <= 0.0 || b[2].as_f64() != b[3].as_f64() {
+        bail!("worldBoundsM unsupported (expect square)");
+    }
+
+    let terrain_dir = repo_root().join("packages/map-assets").join(terrain);
+    let objects_dir = terrain_dir.join("objects");
+    let chunks_dir = objects_dir.join("chunks");
+    let density_dir = objects_dir.join("density");
+
+    // prefabId → kind (from the committed catalog).
+    let prefabs_doc: Value = serde_json::from_slice(&gunzip(&std::fs::read(
+        objects_dir.join("prefabs.json.gz"),
+    )?)?)?;
+    let prefabs = prefabs_doc["prefabs"]
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("prefabs.json.gz: no prefabs array"))?;
+    let mut kind_by_id: HashMap<u64, String> = HashMap::new();
+    for p in prefabs {
+        if let (Some(id), Some(kind)) = (p["prefabId"].as_u64(), p["kind"].as_str()) {
+            kind_by_id.insert(id, kind.to_string());
+        }
+    }
+
+    // Tree + rock positions from every committed chunk.
+    let mut trees: Vec<(f64, f64)> = Vec::new();
+    let mut rocks: Vec<(f64, f64)> = Vec::new();
+    let mut chunk_files: Vec<PathBuf> = std::fs::read_dir(&chunks_dir)?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "gz"))
+        .collect();
+    chunk_files.sort();
+    for path in &chunk_files {
+        let doc: Value = serde_json::from_slice(&gunzip(&std::fs::read(path)?)?)?;
+        let Some(insts) = doc["instances"].as_array() else {
+            continue;
+        };
+        for inst in insts {
+            let Some(a) = inst.as_array() else { continue };
+            if a.len() < 3 {
+                continue;
+            }
+            let Some(id) = a[0].as_u64() else { continue };
+            let (Some(x), Some(y)) = (a[1].as_f64(), a[2].as_f64()) else {
+                continue;
+            };
+            if !x.is_finite() || !y.is_finite() {
+                continue;
+            }
+            match kind_by_id.get(&id).map(String::as_str) {
+                Some("tree") => trees.push((x, y)),
+                Some("rock") => rocks.push((x, y)),
+                _ => {}
+            }
+        }
+    }
+
+    let (tree_grid, tree_size) = density::accumulate_corners(trees.iter().copied(), world_size_m);
+    let (rock_grid, rock_size) = density::accumulate_corners(rocks.iter().copied(), world_size_m);
+    let tree_canopy =
+        density::box_blur_corners(&tree_grid, tree_size, density::CANOPY_KERNEL_RADIUS_CELLS);
+
+    let grid_cells = (world_size_m / CHUNK_SIZE_M).round() as usize;
+    let _ = std::fs::remove_dir_all(&density_dir);
+    std::fs::create_dir_all(&density_dir)?;
+    let mut density_bytes = 0u64;
+    for cy in 0..grid_cells {
+        for cx in 0..grid_cells {
+            let tree_ch = density::slice_chunk_corners(&tree_canopy, tree_size, cx, cy);
+            let rock_ch = density::slice_chunk_corners(&rock_grid, rock_size, cx, cy);
+            let buf = map_engine_core::geometry::tbdd::encode_tbdd(
+                density::DENSITY_CELL_M,
+                density::DENSITY_COLS,
+                density::DENSITY_ROWS,
+                &[&tree_ch, &rock_ch],
+            );
+            density_bytes += buf.len() as u64;
+            std::fs::write(
+                density_dir.join(format!("{}.bin", chunk_key(cx as i64, cy as i64))),
+                buf,
+            )?;
+        }
+    }
+
+    eprintln!(
+        "[redensify] {terrain}: {} trees, {} rocks -> {grid_cells}x{grid_cells} = {} bins, {density_bytes} B; cell {} m, blur r={} (canopy)",
+        trees.len(),
+        rocks.len(),
+        grid_cells * grid_cells,
+        density::DENSITY_CELL_M,
+        density::CANOPY_KERNEL_RADIUS_CELLS,
+    );
+    Ok(())
+}
+
+/// T-176 A2 — regenerate the golden S13 density fixture (`density-fixture.bin` + `expectedCorners` +
+/// `expectedFileBytes` in `density-fixture.json`) from its own `treePositions`/`rockPositions` at the
+/// current `DENSITY_CELL_M`. The S13 gate encodes the same slice and checks every corner, so after a
+/// cell-size change the committed fixture must be regenerated. No canopy blur — this validates the
+/// codec/accumulate pipeline, not the mass.
+pub fn gen_density_fixture() -> Result<()> {
+    let dir = repo_root().join("packages/tbd-schema/golden/map-objects/density");
+    let json_path = dir.join("density-fixture.json");
+    let mut fx: Value = serde_json::from_str(&std::fs::read_to_string(&json_path)?)?;
+    let world = fx["worldSizeM"].as_f64().unwrap_or(0.0);
+    let ccx = fx["chunk"]["cx"].as_u64().unwrap_or(0) as usize;
+    let ccy = fx["chunk"]["cy"].as_u64().unwrap_or(0) as usize;
+    let pos = |key: &str| -> Vec<(f64, f64)> {
+        fx[key]
+            .as_array()
+            .map(|a| {
+                a.iter()
+                    .filter_map(|r| Some((r["x"].as_f64()?, r["y"].as_f64()?)))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let trees = pos("treePositions");
+    let rocks = pos("rockPositions");
+    let (t_grid, t_size) = density::accumulate_corners(trees.into_iter(), world);
+    let (r_grid, r_size) = density::accumulate_corners(rocks.into_iter(), world);
+    let t_slice = density::slice_chunk_corners(&t_grid, t_size, ccx, ccy);
+    let r_slice = density::slice_chunk_corners(&r_grid, r_size, ccx, ccy);
+    let buf = map_engine_core::geometry::tbdd::encode_tbdd(
+        density::DENSITY_CELL_M,
+        density::DENSITY_COLS,
+        density::DENSITY_ROWS,
+        &[&t_slice, &r_slice],
+    );
+    std::fs::write(dir.join("density-fixture.bin"), &buf)?;
+
+    let cols = density::DENSITY_COLS as usize;
+    let rows = density::DENSITY_ROWS as usize;
+    let mut corners: Vec<Value> = Vec::new();
+    for j in 0..rows {
+        for i in 0..cols {
+            let tree = t_slice[j * cols + i];
+            let rock = r_slice[j * cols + i];
+            if tree != 0 || rock != 0 {
+                corners.push(json!({ "i": i, "j": j, "tree": tree, "rock": rock }));
+            }
+        }
+    }
+    let half = density::DENSITY_CELL_M / 2;
+    fx["description"] = json!(format!(
+        "S13 synthetic TBDD fixture — encode(fixture) must equal density-fixture.bin byte-for-byte; decode(bin) must match expectedCorners. Corner (i,j) of chunk (cx,cy) counts instances in [X-{half},X+{half}) x [Y-{half},Y+{half}), X = cx*512+i*{}.",
+        density::DENSITY_CELL_M
+    ));
+    let n_corners = corners.len();
+    fx["expectedCorners"] = Value::Array(corners);
+    fx["expectedFileBytes"] = json!(buf.len());
+    std::fs::write(&json_path, serde_json::to_string_pretty(&fx)? + "\n")?;
+    eprintln!(
+        "[gen-density-fixture] {} bytes, {n_corners} nonzero corners, cell {} m",
+        buf.len(),
+        density::DENSITY_CELL_M
+    );
+    Ok(())
 }
 
 /// build-roads-from-topo.mjs port. Determinism: records sorted by (type, first x, first y,

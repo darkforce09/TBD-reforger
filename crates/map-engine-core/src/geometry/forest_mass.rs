@@ -7,6 +7,13 @@
 /// **Source of truth** (T-151.5.1): matches Path B region export floor (threshold 2).
 /// Deck TS mirrors this const for Class R only — do not treat `forestMass.ts` as authority.
 pub const DENSITY_ISO: f64 = 2.0;
+/// T-176 A2 — marching-squares iso for the **8 m canopy-blurred** tree channel (`tools/tbd-tools`
+/// `density::box_blur_corners`). The blurred corner value = tree count in the (2r+1)² canopy window,
+/// so this stays a tree-count threshold: fill where ≥ `CANOPY_MASS_ISO` trees fall within the
+/// window → the fill hugs real clusters, clearings stay open. Separate from `DENSITY_ISO` (the 32 m
+/// per-cell floor / Path B mirror, pinned by `density_iso_is_two`). Tune with
+/// `density::CANOPY_KERNEL_RADIUS_CELLS`.
+pub const CANOPY_MASS_ISO: f64 = 2.0;
 /// Forest mass fill colour rgb (`FOREST_FILL_RGB`, `forestMass.ts:34`).
 pub const FOREST_FILL_RGB: [u8; 3] = [34, 120, 60];
 

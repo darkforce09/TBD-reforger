@@ -3,7 +3,7 @@
 use std::collections::{HashMap, HashSet, VecDeque};
 
 use map_engine_core::geometry::forest_mass::{
-    forest_fill_alpha, forest_mass_from_corners, DENSITY_ISO,
+    forest_fill_alpha, forest_mass_from_corners, CANOPY_MASS_ISO,
 };
 use map_engine_core::geometry::tbdd::decode_tbdd;
 use map_engine_core::geometry::vector_compose::{compose_forest_mesh, retint_fill_alpha};
@@ -261,7 +261,7 @@ fn compose_chunk(id: &str, bytes: &[u8]) -> Option<Composed> {
         origin_x,
         origin_y,
         f64::from(grid.cell_m),
-        DENSITY_ISO,
+        CANOPY_MASS_ISO,
     );
     let (fill, outline) = compose_forest_mesh(&geo, 1.0);
     Some(Composed {

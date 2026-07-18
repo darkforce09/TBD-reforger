@@ -93,6 +93,15 @@ enum Cmd {
         #[arg(long)]
         ops_log: bool,
     },
+    /// T-176 A2 — re-derive density grids from committed objects (no staging/Workbench). Overwrites
+    /// objects/density/*.bin at the current DENSITY_CELL_M with a canopy-blurred tree channel.
+    Redensify {
+        #[arg(long, default_value = "everon")]
+        terrain: String,
+    },
+    /// T-176 A2 — regenerate the golden S13 density fixture (bin + expectedCorners) at the current
+    /// DENSITY_CELL_M. Run after a cell-size change so `make schema-validate` (S13) stays green.
+    GenDensityFixture,
     /// verify-phase.mjs port: G1-G12 + P-gates + D/F + E6 determinism
     VerifyPhase {
         #[arg(long)]
@@ -151,6 +160,14 @@ fn run() -> anyhow::Result<ExitCode> {
             ops_log,
         } => {
             build::build_world_objects(&terrain, &phase, out.as_deref(), patch_manifest, ops_log)?;
+            Ok(ExitCode::SUCCESS)
+        }
+        Cmd::Redensify { terrain } => {
+            build::redensify_from_committed(&terrain)?;
+            Ok(ExitCode::SUCCESS)
+        }
+        Cmd::GenDensityFixture => {
+            build::gen_density_fixture()?;
             Ok(ExitCode::SUCCESS)
         }
         Cmd::VerifyPhase { terrain, phase } => {

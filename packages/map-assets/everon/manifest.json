@@ -87,7 +87,7 @@
     "exportedAt": "2026-07-04T23:43:38.437Z",
     "regionsPath": "objects/forest-regions.json.gz",
     "densityPath": "objects/density",
-    "densityCellM": 32,
+    "densityCellM": 8,
     "lod": {
       "schemaVersion": "1.0.0",
       "refZoom": 3,

@@ -110,6 +110,25 @@ pub fn register_render_ctx(engine: EngineHandle, host: HostHandle) {
     RENDER_CTX.with(|c| *c.borrow_mut() = Some((engine, host)));
 }
 
+thread_local! {
+    /// T-176 B2 — true while a pan gesture is active (pointer down → up). During a pan,
+    /// `flush_viewport` skips the heavy zoom-band marching-squares rebuilds (DEM contour/sea +
+    /// the 8 m forest mass) so a simultaneous wheel-zoom doesn't rebuild them on every ~250 ms
+    /// forced settle mid-drag (the zoom+pan stutter). World chunk residency still streams. The
+    /// gesture-end (pointer-up) settle runs the full recompute once. A thread-local (not a MapHost
+    /// field) so it stays readable while `flush_viewport` has taken the host out.
+    static CAMERA_GESTURE: Cell<bool> = const { Cell::new(false) };
+}
+
+/// T-176 B2 — mark a camera pan gesture active/inactive (mission_editor pointer down/up on MMB/RMB).
+pub fn set_camera_gesture(active: bool) {
+    CAMERA_GESTURE.with(|g| g.set(active));
+}
+
+fn camera_gesture_active() -> bool {
+    CAMERA_GESTURE.with(Cell::get)
+}
+
 /// T-173 P6 — hillshade overlay on/off + strength (React `useDemLayer` role-1 lane, live re-tint,
 /// no texture rebuild). `opacity` is 0..1.
 pub fn apply_hillshade(visible: bool, opacity: f64) {
@@ -286,13 +305,26 @@ pub fn flush_viewport(host: HostHandle, engine: EngineHandle) {
                 }
             };
             let zoom = engine.borrow().as_ref().map(|e| e.zoom()).unwrap_or(-2.0);
-            h.dem.sync(&engine, zoom);
+            // T-176 B2 — while a pan gesture is active, defer the heavy zoom-band marching-squares
+            // rebuilds (DEM contour/sea via `dem.sync`, and the 8 m forest mass) — a simultaneous
+            // wheel-zoom changes their band, and rebuilding on every ~250 ms forced settle mid-drag
+            // is the zoom+pan stutter (the 8 m forest is ~16× the old compose). World chunk
+            // residency below still streams so buildings/roads fill as you pan; the gesture-end
+            // (pointer-up) settle re-runs this with the gesture flag clear → one full recompute.
+            let gesture = camera_gesture_active();
+            if !gesture {
+                h.dem.sync(&engine, zoom);
+            }
             // T-173 P2 — the memoized hosts now report whether a pass changed anything; once both
             // are idle the remaining passes would be pure no-ops (revision-gated), so stop early.
             // Multi-pass hydration still works: pass N ingests what pass N-1 fetched, and each of
             // those passes reports `did_work=true` until the viewport is fully resident.
             let did_world = h.world.run_viewport(&engine, &h.bridge).await;
-            let did_forest = h.forest.run_viewport(&engine, &h.bridge).await;
+            let did_forest = if gesture {
+                false
+            } else {
+                h.forest.run_viewport(&engine, &h.bridge).await
+            };
             // T-173 H5 — repack the text labels for the current zoom band (memoized; cheap no-op
             // when the band + toggles are unchanged).
             {

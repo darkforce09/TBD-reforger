@@ -166,10 +166,15 @@ impl WorldHost {
         // cheap no-op on a settle where the prefs didn't move.
         self.apply_layer_prefs(engine);
         let roads_changed = self.push_roads(engine, zoom);
-        let landcover_changed = self.push_landcover(engine);
         let missing = self
             .residency
             .set_viewport(bounds[0], bounds[1], bounds[2], bounds[3], zoom);
+        // T-176 A1 — `push_landcover` reads `residency.forest_fill_effective()` (deck_zoom +
+        // tree-pack state). `set_viewport` is what updates those each pass, so calling
+        // `push_landcover` BEFORE it evaluated the *previous* pass's state — a one-pass lag that
+        // stranded the landcover wash visible over a z≥0 view ("forest highlight wrong until you
+        // zoom all the way in then out"). Order it after `set_viewport` so it sees the live zoom.
+        let landcover_changed = self.push_landcover(engine);
         // T-173 P3 — the old per-settle "invalidate every Some(0)/None draw id + re-set_viewport"
         // recovery loop is deleted: it refetched legit-empty chunks forever and cancelled in-flight
         // ones (double fetch). Empty/soft-fail handling now lives at the source — `ingest_chunk_gz`
@@ -319,10 +324,16 @@ impl WorldHost {
             return true;
         }
         if self.landcover_mesh.is_none() {
+            // T-176 A2 — the forest-kind landcover hulls are the loose 32 m wash: mega-merged
+            // connected components whose filled outline paints interior clearings and blankets most
+            // of the island (screens 01–03). The forest highlight now comes from the tight per-chunk
+            // TBDD mass (roles 5/6, iso-contoured density) + tree glyphs, so drop `forest` here and
+            // keep only `field`/`waterBody` on lane role 1.
             let inputs: Vec<LandcoverInput<'_>> = self
                 .store
                 .regions
                 .iter()
+                .filter(|r| r.kind.as_str() != "forest")
                 .map(|r| LandcoverInput {
                     kind: r.kind.as_str(),
                     rings: r.polygon.as_slice(),
@@ -333,14 +344,20 @@ impl WorldHost {
         self.landcover_shown = true;
         if let Some(mesh) = &self.landcover_mesh {
             if let Some(e) = engine.borrow_mut().as_mut() {
-                e.upload_polygon_mesh(
-                    ROLE_LANDCOVER,
-                    &mesh.positions,
-                    &mesh.colors,
-                    &mesh.indices,
-                    mesh.polygon_count,
-                    true,
-                );
+                if mesh.polygon_count > 0 {
+                    e.upload_polygon_mesh(
+                        ROLE_LANDCOVER,
+                        &mesh.positions,
+                        &mesh.colors,
+                        &mesh.indices,
+                        mesh.polygon_count,
+                        true,
+                    );
+                } else {
+                    // T-176 A2 — after dropping forest-kind, Everon has no field/waterBody regions,
+                    // so the composed lane is empty; clear it rather than upload a zero-poly mesh.
+                    e.clear_vector_lane(ROLE_LANDCOVER);
+                }
             }
         }
         true

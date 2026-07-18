@@ -3,12 +3,23 @@
 //! (`encode_tbdd`/`decode_tbdd`) — this module carries the density-grid constants + the global
 //! corner accumulation/slicing used by the world builder + gates.
 //!
-//! Corner definition: corner (i,j) of chunk (cx,cy) sits at world (cx*512 + i*32, cy*512 + j*32);
-//! its count = instances whose rounded-2dp (x,y) falls in [X-16, X+16) × [Y-16, Y+16).
+//! Corner definition: corner (i,j) of chunk (cx,cy) sits at world
+//! (cx*512 + i*`DENSITY_CELL_M`, cy*512 + j*`DENSITY_CELL_M`); its count = instances whose
+//! rounded-2dp (x,y) falls in [X-cell/2, X+cell/2) × [Y-cell/2, Y+cell/2).
+//!
+//! T-176 A2 — the tree channel written to disk is the raw corner counts **box-blurred** into a
+//! canopy field (`box_blur_corners` at `CANOPY_KERNEL_RADIUS_CELLS`); the rock channel stays raw.
 
-pub const DENSITY_CELL_M: u16 = 32;
-pub const DENSITY_COLS: u16 = 17;
-pub const DENSITY_ROWS: u16 = 17;
+// T-176 A2 — finer forest fidelity: 8 m cells (was 32 m; operator "32 m too big"). A 512 m chunk /
+// 8 m = 64 cells → 65 shared-border corners. `TBDD_FILE_BYTES` + `corner_grid_size` cascade.
+pub const DENSITY_CELL_M: u16 = 8;
+pub const DENSITY_COLS: u16 = 65;
+pub const DENSITY_ROWS: u16 = 65;
+/// T-176 A2 — canopy box-blur radius in cells applied to the tree channel at bake time (global,
+/// pre-slice → seamless per-chunk marching). At 8 m cells r=1 = a 3×3 (~24 m) window: bridges the
+/// normal tree spacing (~11 m on Everon) into solid canopy while leaving clearings ≥ ~24 m as holes.
+/// Tune together with `map_engine_core::geometry::forest_mass::CANOPY_MASS_ISO`.
+pub const CANOPY_KERNEL_RADIUS_CELLS: usize = 1;
 pub const DENSITY_CHANNELS: [&str; 2] = ["tree", "rock"];
 pub const TBDD_VERSION: u16 = 1;
 pub const TBDD_HEADER_BYTES: usize = 16;
@@ -46,8 +57,49 @@ pub fn accumulate_corners(
     (grid, n)
 }
 
-/// Slice a chunk's 17×17 corner window out of the global grid (row-major j*17+i; stride =
-/// `(COLS-1)` shared-border corners per chunk; out-of-range corners read 0; u16 clamp @ 65535).
+/// T-176 A2 — separable box-SUM blur of a global corner grid (radius `r` cells, clamped edges).
+/// Output corner = Σ raw counts in the (2r+1)² window ≈ "trees within ~(2r+1)·cell m". Turns the
+/// sparse fine tree-count grid into a smooth canopy-density field so `forest_mass_from_corners` at
+/// `CANOPY_MASS_ISO` hugs real clusters (holes at clearings) instead of speckling. Applied to the
+/// **global** grid before per-chunk slicing so adjacent chunks share identical blurred border
+/// corners (no seams). Sum (not average) keeps values as integer tree counts, so the marching iso
+/// stays a tree-count threshold.
+#[must_use]
+pub fn box_blur_corners(grid: &[u32], size: usize, r: usize) -> Vec<u32> {
+    if r == 0 || size == 0 {
+        return grid.to_vec();
+    }
+    let mut h = vec![0u32; size * size];
+    for y in 0..size {
+        let row = y * size;
+        for x in 0..size {
+            let lo = x.saturating_sub(r);
+            let hi = (x + r).min(size - 1);
+            let mut s = 0u32;
+            for v in &grid[row + lo..=row + hi] {
+                s += *v;
+            }
+            h[row + x] = s;
+        }
+    }
+    let mut out = vec![0u32; size * size];
+    for x in 0..size {
+        for y in 0..size {
+            let lo = y.saturating_sub(r);
+            let hi = (y + r).min(size - 1);
+            let mut s = 0u32;
+            for k in lo..=hi {
+                s += h[k * size + x];
+            }
+            out[y * size + x] = s;
+        }
+    }
+    out
+}
+
+/// Slice a chunk's `DENSITY_COLS`×`DENSITY_ROWS` corner window out of the global grid (row-major
+/// j*COLS+i; stride = `(COLS-1)` shared-border corners per chunk; out-of-range corners read 0; u16
+/// clamp @ 65535).
 #[must_use]
 pub fn slice_chunk_corners(grid: &[u32], size: usize, cx: usize, cy: usize) -> Vec<u16> {
     let cols = DENSITY_COLS as usize;
@@ -89,7 +141,7 @@ mod tests {
         if fixture.exists() {
             let bytes = std::fs::read(&fixture).unwrap();
             let g = decode_tbdd(&bytes).expect("fixture decode");
-            assert_eq!((g.cols, g.rows), (17, 17));
+            assert_eq!((g.cols, g.rows), (65, 65)); // T-176 A2 — 8 m grid (65 corners / 512 m chunk)
         }
     }
 

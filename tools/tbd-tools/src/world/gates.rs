@@ -1071,6 +1071,10 @@ fn run_p2_gates(
         density::accumulate_corners(tree_rows.iter().map(|(x, y, _)| (*x, *y)), world_size_m);
     let (rock_grid, rock_size) =
         density::accumulate_corners(raw_rock_rows.iter().copied(), world_size_m);
+    // T-176 A2 — the committed tree channel is canopy-blurred (density.rs / build.rs); recompute the
+    // same global blur so D2 stays byte-exact. PH-P2-5 below still asserts on the RAW `tree_grid`.
+    let tree_canopy =
+        density::box_blur_corners(&tree_grid, tree_size, density::CANOPY_KERNEL_RADIUS_CELLS);
 
     {
         let sum: u64 = tree_grid.iter().map(|&v| u64::from(v)).sum();
@@ -1147,7 +1151,7 @@ fn run_p2_gates(
                 density::DENSITY_COLS,
                 density::DENSITY_ROWS,
                 &[
-                    &density::slice_chunk_corners(&tree_grid, tree_size, cx, cy),
+                    &density::slice_chunk_corners(&tree_canopy, tree_size, cx, cy),
                     &density::slice_chunk_corners(&rock_grid, rock_size, cx, cy),
                 ],
             );

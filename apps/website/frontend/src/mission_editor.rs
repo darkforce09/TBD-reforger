@@ -675,6 +675,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                         ev.prevent_default();
                         let _ = container.set_pointer_capture(ev.pointer_id());
                         pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
+                        // T-176 B2 — mark the pan active so a settle fired mid-drag (incl. by a
+                        // simultaneous wheel-zoom) defers the heavy zoom-band recompute (DEM
+                        // contours + 8 m forest mass) until the gesture ends.
+                        crate::world_assets::set_camera_gesture(true);
                     } else if ev.button() == 0 {
                         // T-159.18/.19 — LMB pending-left: freeze the ortho camera at press (X-05: the
                         // live engine unproject is deleted; a live unproject would feedback-loop
@@ -950,6 +954,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                         if container.has_pointer_capture(ev.pointer_id()) {
                             let _ = container.release_pointer_capture(ev.pointer_id());
                         }
+                        // T-176 B2 — pan ended: clear the gesture flag BEFORE scheduling so this
+                        // settle runs the full zoom-band recompute (contours + forest) once.
+                        crate::world_assets::set_camera_gesture(false);
                         crate::world_assets::schedule_camera_settle(
                             map_host.clone(),
                             engine.clone(),

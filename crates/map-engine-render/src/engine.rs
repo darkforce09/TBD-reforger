@@ -957,7 +957,15 @@ fn draw_batches<'a>(
                 }
                 let atlas_bg = match batch.role {
                     LaneRole::SlotDrag => slot_drag_bind,
-                    LaneRole::Slots | LaneRole::Clusters => slot_base_bind,
+                    // T-176 B1 — the palette place-preview ghost (`set_place_preview`) uploads a
+                    // slot-atlas ring to `SlotPlacePreview`; it MUST bind the slot atlas like
+                    // `Slots`. It was missing here, so it fell to `glyph_atlas_bind` below and drew
+                    // against the world glyph atlas (wrong UVs → invisible), or was `continue`d when
+                    // that atlas is `None` on a cold map — the ghost only appeared after drop (which
+                    // routes through `Slots`). Drag-move preview (`SlotDrag`) already worked.
+                    LaneRole::Slots | LaneRole::Clusters | LaneRole::SlotPlacePreview => {
+                        slot_base_bind
+                    }
                     _ => glyph_atlas_bind,
                 };
                 let Some(atlas_bg) = atlas_bg else {
