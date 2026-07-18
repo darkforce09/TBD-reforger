@@ -44,8 +44,9 @@ fn ApiPage() -> impl IntoView {
     }
 }
 
-/// Login page (auth.tsx) — rendered bare (no chrome). A guest sees the sign-in card; the
-/// authed-user redirect to "/" + the Discord OAuth start are follow-ups (need the auth flow).
+/// Login page (auth.tsx) — rendered bare (no chrome). A guest sees the sign-in card; the button
+/// starts the real Discord OAuth flow (full-page redirect — the API 302s to Discord and lands
+/// back on /auth/callback). T-172 H9.
 #[component]
 fn LoginPage() -> impl IntoView {
     view! {
@@ -61,6 +62,11 @@ fn LoginPage() -> impl IntoView {
                 <button
                     type="button"
                     class="mt-6 w-full rounded-lg bg-primary py-3 font-medium text-on-primary"
+                    on:click=move |_| {
+                        if let Some(win) = web_sys::window() {
+                            let _ = win.location().set_href("/api/v1/auth/discord/login");
+                        }
+                    }
                 >
                     "Sign in with Discord"
                 </button>

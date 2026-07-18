@@ -15,6 +15,8 @@ use leptos::prelude::*;
 pub enum ToastKind {
     Success,
     Error,
+    /// Neutral — sonner's `toast.message` (T-172, e.g. the modpacks Launch stub).
+    Info,
 }
 
 #[derive(Clone)]
@@ -47,6 +49,11 @@ impl Toasts {
 
     pub fn error(&self, msg: impl Into<String>) {
         self.push(ToastKind::Error, msg.into());
+    }
+
+    /// Neutral notice — `toast.message(...)` parity.
+    pub fn message(&self, msg: impl Into<String>) {
+        self.push(ToastKind::Info, msg.into());
     }
 
     fn push(&self, kind: ToastKind, msg: String) {
@@ -94,10 +101,12 @@ pub fn ToastViewport() -> impl IntoView {
                             let accent = match t.kind {
                                 ToastKind::Success => "border-success/40 text-success",
                                 ToastKind::Error => "border-error-alert/40 text-error-alert",
+                                ToastKind::Info => "border-outline-variant/40 text-on-surface-variant",
                             };
                             let icon = match t.kind {
                                 ToastKind::Success => "check_circle",
                                 ToastKind::Error => "error",
+                                ToastKind::Info => "info",
                             };
                             view! {
                                 <div class=format!(

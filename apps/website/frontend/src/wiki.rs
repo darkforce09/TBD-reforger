@@ -363,6 +363,12 @@ fn resolve_wiki_selection(slug: Option<&str>) -> &'static Manual {
         .unwrap_or(&MANUALS[0])
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum WikiMode {
+    Read,
+    Edit,
+}
+
 #[component]
 pub fn WikiPage() -> impl IntoView {
     // Selection derives from the route (deep-linkable; back/forward work); rows navigate.
@@ -370,6 +376,17 @@ pub fn WikiPage() -> impl IntoView {
     let selected =
         Memo::new(move |_| resolve_wiki_selection(params.read().get("slug").as_deref()).id);
     let search = RwSignal::new(String::new());
+    // READ/EDIT mode + session-local per-manual Markdown edits (React parity; no backend until
+    // the wiki CMS ships). Switching manuals drops back to read mode, like React.
+    let mode = RwSignal::new(WikiMode::Read);
+    let edits = RwSignal::new(std::collections::HashMap::<&'static str, String>::new());
+    Effect::new(move |prev: Option<&'static str>| {
+        let id = selected.get();
+        if prev.is_some_and(|p| p != id) {
+            mode.set(WikiMode::Read);
+        }
+        id
+    });
     view! {
         <crate::ui::AuthGate>
             <GlassSplit
@@ -380,6 +397,8 @@ pub fn WikiPage() -> impl IntoView {
                     {move || {
                         article(
                             MANUALS.iter().find(|m| m.id == selected.get()).unwrap_or(&MANUALS[0]),
+                            mode,
+                            edits,
                         )
                     }}
                 }
@@ -450,7 +469,13 @@ fn manual_index(active_id: &'static str, query: &str) -> impl IntoView {
         .collect_view()
 }
 
-fn article(m: &'static Manual) -> impl IntoView {
+fn article(
+    m: &'static Manual,
+    mode: RwSignal<WikiMode>,
+    edits: RwSignal<std::collections::HashMap<&'static str, String>>,
+) -> impl IntoView {
+    let id = m.id;
+    let body = m.body;
     view! {
         <section class="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
             <header class="flex shrink-0 items-start justify-between gap-4 border-b border-white/10 px-8 pt-8 pb-5 md:px-12">
@@ -467,33 +492,70 @@ fn article(m: &'static Manual) -> impl IntoView {
                     </div>
                     <h1 class="text-4xl font-bold tracking-tight text-white">{m.title}</h1>
                 </div>
-                {read_edit_toggle()}
+                {read_edit_toggle(mode)}
             </header>
-            <article class="custom-scrollbar flex-1 overflow-y-auto p-8 md:p-12">
-                <div class="max-w-3xl">{render_markdown(m.body)}</div>
-            </article>
+            {move || {
+                if mode.get() == WikiMode::Edit {
+                    // Distraction-free Markdown editor (React parity, T-172 H7): session-local
+                    // per-manual edits. Initial value read untracked so keystrokes never rebuild
+                    // the textarea (focus survives); the read branch tracks edits and re-renders.
+                    let initial = edits
+                        .with_untracked(|e| e.get(id).cloned())
+                        .unwrap_or_else(|| body.to_string());
+                    view! {
+                        <textarea
+                            prop:value=initial
+                            spellcheck="false"
+                            on:input=move |ev| {
+                                edits
+                                    .update(|e| {
+                                        e.insert(id, event_target_value(&ev));
+                                    })
+                            }
+                            class="h-full w-full flex-1 resize-none border-none bg-transparent p-8 font-mono text-sm leading-relaxed text-on-surface-variant outline-none focus:ring-0 md:p-12"
+                        ></textarea>
+                    }
+                        .into_any()
+                } else {
+                    let source = edits
+                        .with(|e| e.get(id).cloned())
+                        .unwrap_or_else(|| body.to_string());
+                    view! {
+                        <article class="custom-scrollbar flex-1 overflow-y-auto p-8 md:p-12">
+                            <div class="max-w-3xl">{render_markdown(&source)}</div>
+                        </article>
+                    }
+                        .into_any()
+                }
+            }}
         </section>
     }
 }
 
-/// ReadEditToggle at mode="read".
-fn read_edit_toggle() -> impl IntoView {
+/// The `[ READ ]` / `[ EDIT ]` pill toggle — live (T-172 H7). Class strings per state are
+/// byte-identical to the gate-era static render (read active by default).
+fn read_edit_toggle(mode: RwSignal<WikiMode>) -> impl IntoView {
+    let btn = |m: WikiMode, label: &'static str| {
+        view! {
+            <button
+                type="button"
+                class=move || {
+                    if mode.get() == m {
+                        "rounded-full px-3 py-1 font-medium transition-all bg-surface-glass text-on-surface shadow-md"
+                    } else {
+                        "rounded-full px-3 py-1 font-medium transition-all text-on-surface-variant hover:text-on-surface"
+                    }
+                }
+                on:click=move |_| mode.set(m)
+            >
+                {label}
+            </button>
+        }
+    };
     view! {
         <div class="inline-flex shrink-0 gap-1 rounded-full border border-white/5 bg-black/20 p-1 font-mono text-xs">
-            // WikiPage's own toggle (not the ReadEditToggle component) — two explicit buttons whose
-            // label is a single baked-uppercase text node "[ READ ]" / "[ EDIT ]" (mode="read").
-            <button
-                type="button"
-                class="rounded-full px-3 py-1 font-medium transition-all bg-surface-glass text-on-surface shadow-md"
-            >
-                "[ READ ]"
-            </button>
-            <button
-                type="button"
-                class="rounded-full px-3 py-1 font-medium transition-all text-on-surface-variant hover:text-on-surface"
-            >
-                "[ EDIT ]"
-            </button>
+            {btn(WikiMode::Read, "[ READ ]")}
+            {btn(WikiMode::Edit, "[ EDIT ]")}
         </div>
     }
 }
