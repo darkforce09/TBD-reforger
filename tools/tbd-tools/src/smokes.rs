@@ -2685,8 +2685,12 @@ pub async fn smoke_hydrate(dist: &str) -> Result<u8> {
             )
             .await?;
 
+        // T-172 B4 follow-up: pin force=webgl like every other editor smoke — with the slot
+        // atlas live, the first hydrated slots_bind_soa allocates a GPU instance buffer, and
+        // headless Chromium's software WebGPU device rejects any createBuffer (the known
+        // wedge the suite avoids via WebGL2/SwiftShader).
         h.page
-            .navigate(&h.url(&format!("/missions/{mission_id}/edit")))
+            .navigate(&h.url(&force_webgl(&format!("/missions/{mission_id}/edit"))))
             .await?;
         h.page
             .wait_for("!!document.querySelector('canvas')", 80, 250)
