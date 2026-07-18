@@ -6,7 +6,7 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 
 | Path | Contents |
 |------|----------|
-| [`apps/website/`](apps/website/) | Go API (`cmd/`, `internal/`), React frontend, Docker Compose, `.env` |
+| [`apps/website/`](apps/website/) | `api/` Rust API (Axum + sqlx, Docker Compose, `.env`) · `frontend/` Leptos SPA (Trunk) |
 | [`apps/mod/`](apps/mod/) | `tbd-framework` Enfusion scripts; `crf_framework/` (gitignored local reference) |
 | [`packages/tbd-schema/`](packages/tbd-schema/) | Mission JSON schema, golden missions, spikes |
 | [`docs/specs/`](docs/specs/) | Design specs (Mission Creator, blueprints, UX) |
@@ -19,10 +19,10 @@ Unified monorepo for the TBD Arma Reforger milsim community: web platform, Enfus
 ## Quick start
 
 ```bash
-cp apps/website/.env.example apps/website/.env   # if needed
+cp apps/website/api/.env.example apps/website/api/.env   # if needed
 make db-up
 make api      # :8080
-make web      # :5173 (proxies /api)
+make leptos   # :3000 (trunk serve; proxies /api + /map-assets)
 ```
 
 Dev login (no Discord): `GET http://localhost:8080/api/v1/auth/dev-login?role=admin`

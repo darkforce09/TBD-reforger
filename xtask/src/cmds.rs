@@ -188,7 +188,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "SCOPE: schema codegen — internal/contract/ + frontend/src/types/contract/ + regen script"
             );
             println!("SCHEMAS: registry-items, loadout-export, mission export defs first");
-            println!("VERIFY: cd packages/tbd-schema && npm run validate && make test-it");
+            println!("VERIFY: make schema-validate && make test-it");
         }
         ("T-123.5", _) => {
             println!("SCOPE: CreateVersion validates against mission.schema.json before persist");
@@ -228,7 +228,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
             );
             println!(
-                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091"
+                "PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091"
             );
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
             println!(
@@ -246,7 +246,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
                 "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
             );
             println!(
-                "PREFLIGHT: git lfs pull && make map-assets-link && ./scripts/ticket brief T-091"
+                "PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091"
             );
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
         }

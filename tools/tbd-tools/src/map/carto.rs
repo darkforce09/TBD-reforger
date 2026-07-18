@@ -649,20 +649,9 @@ pub fn verify_t152() -> Result<u8> {
     run_cargo(&["schema", "road-names", "--terrain", "everon", "--zoom", "0"]); // E2c-allow
 
     println!("\nverify-t152-cartographic: wasm telemetry (L5)");
-    let wasm_path = root.join("apps/website/frontend/src/wasm/pkg/map_engine_wasm_bg.wasm");
-    if wasm_path.exists() {
-        let bytes = std::fs::metadata(&wasm_path)?.len();
-        let tip = 4_193_922u64;
-        if bytes < tip {
-            failm!("wasm {bytes} B < T-152.3 tip {tip} B");
-        } else {
-            pass!("wasm size {bytes} B (≥ T-152.3 tip {tip} B)");
-        }
-    } else {
-        println!(
-            "  SKIP  wasm size guard — retired with the React wasm pkg (make wasm-ci owns the crates)"
-        );
-    }
+    println!(
+        "  SKIP  wasm size guard — retired with the React wasm pkg at T-159.29.3 (make wasm-ci owns the crates)"
+    );
 
     println!();
     if failures.get() > 0 {

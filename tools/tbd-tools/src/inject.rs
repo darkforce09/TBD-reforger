@@ -1,11 +1,12 @@
-//! T-165.5 — the browser-injected JS payloads, byte-copied from the Node harness.
+//! T-165.5 — the browser-injected JS payloads, byte-copied from the (since-deleted) Node harness.
 //!
 //! PROVENANCE + HARD RULE (T-165 plan, V-golden byte-parity): these strings are the exact
-//! template-literal bodies of `.ai/artifacts/t159_gates/driver/freeze.js` (`FREEZE_SRC`) and
-//! `driver/dom.js` (`DOM_SERIALIZER_SRC`). They execute inside V8 via
-//! `Page.addScriptToEvaluateOnNewDocument`; the harness only ferries them. The frozen V-suite
-//! goldens were serialized by THIS exact serializer source — never re-implement or "clean up"
-//! these payloads natively, or the byte-identity contract with the committed goldens breaks.
+//! template-literal bodies of the Node driver's `freeze.js` (`FREEZE_SRC`) and `dom.js`
+//! (`DOM_SERIALIZER_SRC`); the driver itself was deleted at T-165.6, so these consts ARE the
+//! source of truth. They execute inside V8 via `Page.addScriptToEvaluateOnNewDocument`; the
+//! harness only ferries them. The frozen V-suite goldens (tools/tbd-tools/fixtures/t159/
+//! oracle-freeze/) were serialized by THIS exact serializer source — never re-implement or
+//! "clean up" these payloads natively, or the byte-identity contract with the goldens breaks.
 
 /// `freeze.js` — determinism payload (fixed clock, seeded RNG, animation kill), document-start.
 pub const FREEZE_SRC: &str = r#"
@@ -110,38 +111,32 @@ window.__t159SerializeDom = function (selector, exclude) {
 
 #[cfg(test)]
 mod tests {
+    use sha2::{Digest, Sha256};
+
     use super::*;
 
-    /// The two payloads must stay byte-identical to the Node harness sources (post template-
-    /// literal unescape: `\\s` in the .js file source = `\s` on the wire). Guards against
-    /// "cleanup" drift while the .mjs driver still exists (deleted @ T-165.6 — then this test
-    /// pins the frozen-golden contract alone).
+    /// T-171: the Node driver these payloads were byte-copied from is gone (T-165.6), so the
+    /// consts ARE the source of truth — pin their sha256 so a well-meaning "cleanup" can't
+    /// silently break byte-identity with the frozen V-suite goldens they serialized
+    /// (tools/tbd-tools/fixtures/t159/oracle-freeze/). An intentional payload change requires
+    /// re-pinning BOTH hashes here and re-accepting every affected golden via
+    /// `gate v-suite accept`.
     #[test]
-    fn payloads_match_node_driver_sources() {
-        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
-        for (rust_src, file, export) in [
-            (FREEZE_SRC, "freeze.js", "FREEZE_SRC"),
-            (DOM_SERIALIZER_SRC, "dom.js", "DOM_SERIALIZER_SRC"),
-        ] {
-            let path = format!("{root}/.ai/artifacts/t159_gates/driver/{file}");
-            let Ok(js) = std::fs::read_to_string(&path) else {
-                // Driver deleted (post T-165.6): the Rust consts ARE the source of truth.
-                continue;
-            };
-            let tail = js
-                .split(&format!("{export} = /* js */ `"))
-                .nth(1)
-                .unwrap_or_else(|| panic!("{file}: export marker not found"));
-            let body = tail
-                .rsplit_once('`')
-                .unwrap_or_else(|| panic!("{file}: unterminated template literal"))
-                .0;
-            // The only escape used in these literals is `\\` (file) → `\` (wire).
-            let expected = body.replace("\\\\", "\\");
-            assert_eq!(
-                rust_src, expected,
-                "{file}: Rust const drifted from the Node driver template literal"
-            );
-        }
+    fn payloads_are_pinned() {
+        let sha = |s: &str| -> String {
+            let mut h = Sha256::new();
+            h.update(s.as_bytes());
+            h.finalize().iter().map(|b| format!("{b:02x}")).collect()
+        };
+        assert_eq!(
+            sha(FREEZE_SRC),
+            "316d38c6fa6dad0d1e458e5ec300b08f2ea40094a75b27f4a3424c4d5604b1bd",
+            "FREEZE_SRC drifted from the payload that serialized the frozen goldens"
+        );
+        assert_eq!(
+            sha(DOM_SERIALIZER_SRC),
+            "231a51b88dcf92bf372526fdd09e335126401bd5f6b958f71bd25869e837ea48",
+            "DOM_SERIALIZER_SRC drifted from the payload that serialized the frozen goldens"
+        );
     }
 }

@@ -990,7 +990,7 @@ pub fn t090_specs() -> Result<u8> {
                 fail(
                     "7",
                     format!(
-                        "{name}: referenced `npm run {}` not in packages/tbd-schema or apps/website/frontend package.json scripts",
+                        "{name}: referenced `npm run {}` not in the historically-cited npm-script allowlist (Node was eradicated at T-165)",
                         &c[1]
                     ),
                 );
@@ -1007,8 +1007,6 @@ pub fn t090_specs() -> Result<u8> {
         root.join("docs/website/frontend/ROADMAP.md"),
         root.join("docs/website/frontend/INDEX.md"),
         root.join("docs/website/frontend/pages/mission-editor.md"),
-        root.join("apps/website/frontend/docs/INDEX.md"),
-        root.join("apps/website/frontend/docs/pages/mission-editor.md"),
         root.join("docs/mod/CLAUDE-CODE-START.md"),
     ];
     let mut gate8: Vec<(String, String)> = corpus.clone();

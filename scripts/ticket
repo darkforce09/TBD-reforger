@@ -29,10 +29,10 @@ Registry (edit .ai/tickets/registry.json, then sync):
   ready-ids / get / config / set-status
                           Queue helpers (used by run/clean)
 
-Pipeline:
+Pipeline (work ships directly on main — the ticket/T-0xx branch flow is retired):
   run [--dry-run] [--stream NAME]  Implement up to batch_size ready tickets
-  done ID                 After merge: cleanup + mark shipped
-  clean ID                Remove worktree + local branch only
+  done ID                 Mark shipped after verify (cleans a leftover worktree if any)
+  clean ID                Remove a leftover pipeline worktree only
 
 Implementation: cargo xtask ticket … (T-161 Rust port).
 EOF

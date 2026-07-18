@@ -1,5 +1,6 @@
 //! T-165.6 — the editor CDP smokes + auxiliary browser gates (ports of the 19 Node driver
-//! scripts under `.ai/artifacts/t159_gates/driver/`). One async fn per script; the `gate` bin
+//! scripts that lived under the t159_gates driver/ dir until T-165.6 deleted it). One async fn
+//! per script; the `gate` bin
 //! exposes `gate smoke <name>`, the ordered `gate editor-suite` (the Makefile glob
 //! replacement), `gate r-auth`, and `gate render-check`.
 //!
