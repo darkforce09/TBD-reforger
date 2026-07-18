@@ -151,7 +151,7 @@ fn js_date_iso() -> String {
 
 /// The `Blob → URL.createObjectURL → <a download> → click → revokeObjectURL` download dance
 /// (mirrors the React `exportJson` DOM path).
-fn download_json(filename: &str, contents: &str) -> Result<(), JsValue> {
+pub(crate) fn download_json(filename: &str, contents: &str) -> Result<(), JsValue> {
     let win = web_sys::window().ok_or_else(|| JsValue::from_str("no window"))?;
     let document = win
         .document()

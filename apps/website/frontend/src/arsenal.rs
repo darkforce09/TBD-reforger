@@ -250,6 +250,20 @@ pub fn ArsenalTab(
         let _ = (map, items);
     };
 
+    // T-172 B10 — full screen-04 Smart Forge layout (operator-confirmed scope): region icon
+    // rail · filtered item list · 3D doll (DollEngine; SVG paper-doll only as the create-error
+    // fallback, the T-154 contract) · compat panel · COMPAT/VALID badges · Download loadout JSON.
+    // Data flow unchanged: picks/active_key drive everything; persist writes SlotLoadoutV2.
+    let doll_unavailable = RwSignal::new(false);
+    let filter = RwSignal::new(String::new());
+    // Switching regions clears the list filter (each region gets a fresh search).
+    Effect::new(move |prev: Option<String>| {
+        let k = active_key.get();
+        if prev.as_deref().is_some_and(|p| p != k) {
+            filter.set(String::new());
+        }
+        k
+    });
     view! {
         <div class="flex flex-col gap-2">
             {move || match registry.get() {
@@ -257,72 +271,422 @@ pub fn ArsenalTab(
                     <p class="text-label-sm normal-case text-outline">"Loading catalog…"</p>
                 }.into_any(),
                 Some(items) => {
+                    let names: HashMap<String, String> = items
+                        .iter()
+                        .map(|it| (it.resource_name.clone(), it.display_name.clone()))
+                        .collect();
                     let items = StoredValue::new(items);
+                    let names = StoredValue::new(names);
+                    let pick_item = move |key: String, value: String| {
+                        picks.update(|m| {
+                            if value.is_empty() { m.remove(key.as_str()); }
+                            else { m.insert(key.clone(), value.clone()); }
+                        });
+                        persist(&picks.get_untracked(), &items.get_value());
+                    };
                     view! {
-                        <div class="grid grid-cols-[1fr_300px] gap-4">
-                            // LEFT: the 14 compat-aware rows + weight + validation.
-                            <div class="flex max-h-[64vh] flex-col gap-2.5 overflow-y-auto pr-1">
+                        // Top badges: compat status (left) + live weight (right).
+                        <div class="flex items-center justify-between">
+                            {move || {
+                                let s = compat.get().status;
+                                let (cls, label) = match s {
+                                    rules::CompatStatus::Ready => (
+                                        "rounded border border-success/40 bg-success/10 px-2 py-0.5 font-mono text-label-sm uppercase tracking-wider text-success",
+                                        "Compat active",
+                                    ),
+                                    rules::CompatStatus::Loading => (
+                                        "rounded border border-outline-variant/40 bg-surface-variant/30 px-2 py-0.5 font-mono text-label-sm uppercase tracking-wider text-on-surface-variant",
+                                        "Compat loading…",
+                                    ),
+                                    rules::CompatStatus::Unavailable => (
+                                        "rounded border border-outline-variant/40 bg-surface-variant/30 px-2 py-0.5 font-mono text-label-sm uppercase tracking-wider text-outline",
+                                        "Compat unavailable",
+                                    ),
+                                };
+                                view! { <span class=cls data-compat-badge>{label}</span> }
+                            }}
+                            {move || {
+                                let its = items.get_value();
+                                let idx = index_by_name(&its);
+                                let w = format_loadout_weight(&loadout_weight(&picks.get(), &idx));
+                                view! {
+                                    <p class="font-mono text-label-sm tabular-nums normal-case text-on-surface-variant">{w}</p>
+                                }
+                            }}
+                        </div>
+                        <div class="grid h-[52vh] min-h-0 grid-cols-[44px_230px_minmax(0,1fr)_230px] gap-3">
+                            // Region icon rail (14, RAIL order).
+                            <div class="custom-scrollbar flex flex-col items-center gap-1 overflow-y-auto rounded-lg border border-outline-variant/20 bg-surface-container-lowest/40 py-1.5">
+                                {rules::RAIL_REGIONS.iter().map(|r| {
+                                    let key = r.key;
+                                    view! {
+                                        <button
+                                            type="button"
+                                            data-arsenal-rail=key
+                                            aria-label=region_title(key)
+                                            title=region_title(key)
+                                            class=move || {
+                                                let active = active_key.get() == key;
+                                                let equipped = picks.with(|m| m.get(key).is_some_and(|v| !v.is_empty()));
+                                                if active {
+                                                    "flex size-8 items-center justify-center rounded-md bg-primary/25 text-primary"
+                                                } else if equipped {
+                                                    "flex size-8 items-center justify-center rounded-md text-primary/80 transition-colors hover:bg-white/10"
+                                                } else {
+                                                    "flex size-8 items-center justify-center rounded-md text-outline transition-colors hover:bg-white/10 hover:text-on-surface"
+                                                }
+                                            }
+                                            on:click=move |_| active_key.set(key.to_string())
+                                        >
+                                            <span class="material-symbols-outlined text-[18px]">{region_icon(key)}</span>
+                                        </button>
+                                    }
+                                }).collect_view()}
+                            </div>
+                            // Item list for the active region (filter + None + grouped options).
+                            <div class="custom-scrollbar flex min-h-0 flex-col overflow-y-auto rounded-lg border border-outline-variant/20 bg-surface-container-lowest/40 p-2">
                                 {move || {
                                     let feed = compat.get();
                                     let map = picks.get();
                                     let its = items.get_value();
                                     let idx = index_by_name(&its);
-                                    let errs = validate_loadout(&map, feed.ready_graph(), feed.status);
-                                    rules::LOADOUT_ROWS.iter().map(|row| {
-                                        let current = map.get(row.key).cloned().unwrap_or_default();
-                                        let opts = row_options(
-                                            row, &current, &map, &its, &idx, feed.ready_graph(),
-                                        );
-                                        let err = errs.iter().find(|e| e.key == row.key).map(|e| e.message.clone());
-                                        let key = row.key;
-                                        let is_active = active_key.get() == row.key;
-                                        let ring = if is_active { "ring-1 ring-primary/60" } else { "" };
-                                        let on_change = move |ev: leptos::ev::Event| {
-                                            let v = event_target_value(&ev);
-                                            picks.update(|m| {
-                                                if v.is_empty() { m.remove(key); } else { m.insert(key.to_string(), v.clone()); }
-                                            });
-                                            active_key.set(key.to_string());
-                                            persist(&picks.get_untracked(), &items.get_value());
-                                        };
-                                        view! {
-                                            <label
-                                                class=format!("flex flex-col gap-1 rounded-md p-1 {ring}")
-                                                on:click=move |_| active_key.set(key.to_string())
-                                            >
-                                                <span class="text-label-sm uppercase tracking-wider text-outline">{row.label}</span>
-                                                <select prop:value=current.clone() on:change=on_change class=CONTROL>
-                                                    <option value="">"— None —"</option>
-                                                    {opts.into_iter().map(|o| {
-                                                        view! { <option value=o.value.clone()>{o.label}</option> }
-                                                    }).collect_view()}
-                                                </select>
-                                                {err.map(|m| view! {
-                                                    <span class="text-label-sm normal-case text-error">{m}</span>
-                                                })}
-                                            </label>
+                                    let key = active_key.get();
+                                    let Some(row) = rules::LOADOUT_ROWS.iter().find(|r| r.key == key) else {
+                                        return view! { <p class="text-label-sm text-outline">"—"</p> }.into_any();
+                                    };
+                                    let current = map.get(row.key).cloned().unwrap_or_default();
+                                    let opts = row_options(row, &current, &map, &its, &idx, feed.ready_graph());
+                                    let q = filter.get().trim().to_lowercase();
+                                    let opts: Vec<_> = opts
+                                        .into_iter()
+                                        .filter(|o| q.is_empty() || o.label.to_lowercase().contains(&q))
+                                        .collect();
+                                    let count = opts.len();
+                                    // Group by registry category (screen 04's WEAPONS/… headers).
+                                    let mut groups: Vec<(String, Vec<rules::RowOption>)> = Vec::new();
+                                    for o in opts {
+                                        let cat = idx
+                                            .get(o.value.as_str())
+                                            .map(|it| it.category.to_uppercase())
+                                            .unwrap_or_else(|| "OTHER".to_string());
+                                        match groups.last_mut() {
+                                            Some((c, list)) if *c == cat => list.push(o),
+                                            _ => groups.push((cat, vec![o])),
                                         }
-                                    }).collect_view()
+                                    }
+                                    let err = validate_loadout(&map, feed.ready_graph(), feed.status)
+                                        .into_iter()
+                                        .find(|e| e.key == row.key)
+                                        .map(|e| e.message);
+                                    let row_key = row.key;
+                                    let none_cls = if current.is_empty() {
+                                        "flex w-full items-center justify-between rounded px-2 py-1 text-left text-label-sm bg-primary/15 text-primary"
+                                    } else {
+                                        "flex w-full items-center justify-between rounded px-2 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+                                    };
+                                    view! {
+                                        <div class="flex items-center justify-between px-1 pb-1">
+                                            <span class="text-label-sm font-semibold uppercase tracking-wider text-on-surface">{row.label}</span>
+                                            <span class="font-mono text-label-sm text-outline">{count}</span>
+                                        </div>
+                                        <input
+                                            type="search"
+                                            aria-label=format!("Filter {}", row.label)
+                                            placeholder=format!("Filter {}…", row.label.to_lowercase())
+                                            prop:value=move || filter.get()
+                                            on:input=move |ev| filter.set(event_target_value(&ev))
+                                            class="mb-1.5 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1 text-label-sm text-on-surface outline-none placeholder:text-outline focus:border-primary/60"
+                                        />
+                                        <button
+                                            type="button"
+                                            class=none_cls
+                                            on:click=move |_| pick_item(row_key.to_string(), String::new())
+                                        >
+                                            <span>"— None —"</span>
+                                            {current.is_empty().then(|| view! { <MaterialCheck /> })}
+                                        </button>
+                                        {groups.into_iter().map(|(cat, list)| view! {
+                                            <p class="mt-1.5 px-1 font-mono text-[10px] tracking-widest text-outline uppercase">{cat}</p>
+                                            {list.into_iter().map(|o| {
+                                                let is_current = o.value == current;
+                                                let cls = if is_current {
+                                                    "flex w-full items-center justify-between rounded px-2 py-1 text-left text-label-sm bg-primary/15 text-primary"
+                                                } else if o.incompatible {
+                                                    "flex w-full items-center justify-between rounded px-2 py-1 text-left text-label-sm text-error transition-colors hover:bg-white/10"
+                                                } else {
+                                                    "flex w-full items-center justify-between rounded px-2 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+                                                };
+                                                let value = o.value.clone();
+                                                let data_value = o.value.clone();
+                                                view! {
+                                                    <button
+                                                        type="button"
+                                                        data-value=data_value
+                                                        class=cls
+                                                        on:click=move |_| pick_item(row_key.to_string(), value.clone())
+                                                    >
+                                                        <span class="truncate normal-case">{o.label.clone()}</span>
+                                                        {is_current.then(|| view! { <MaterialCheck /> })}
+                                                    </button>
+                                                }
+                                            }).collect_view()}
+                                        }).collect_view()}
+                                        {err.map(|m| view! {
+                                            <p class="mt-1.5 px-1 text-label-sm normal-case text-error">{m}</p>
+                                        })}
+                                    }
+                                        .into_any()
                                 }}
                             </div>
-                            // RIGHT: the SVG paper-doll + weight readout.
-                            <div class="flex flex-col gap-2">
-                                {paper_doll(picks, active_key)}
-                                {move || {
-                                    let its = items.get_value();
-                                    let idx = index_by_name(&its);
-                                    let w = format_loadout_weight(&loadout_weight(&picks.get(), &idx));
-                                    view! {
-                                        <p class="text-center font-mono text-label-md tabular-nums text-on-surface-variant">{w}</p>
-                                    }
-                                }}
+                            // Center: the 3D doll (SVG paper-doll on create failure) + caption.
+                            <div class="relative flex min-h-0 flex-col overflow-hidden rounded-lg bg-[#858fa1]">
+                                <div class="relative min-h-0 flex-1">
+                                    {move || doll_view(picks, active_key, names, doll_unavailable)}
+                                </div>
+                                <p class="pointer-events-none absolute inset-x-0 bottom-1 text-center font-mono text-label-sm text-surface-container-lowest">
+                                    {move || {
+                                        let key = active_key.get();
+                                        let label = rules::LOADOUT_ROWS.iter().find(|r| r.key == key).map_or("", |r| r.label);
+                                        let name = picks.with(|m| m.get(key.as_str()).cloned()).filter(|v| !v.is_empty())
+                                            .map(|rn| names.with_value(|n| n.get(&rn).cloned().unwrap_or(rn)))
+                                            .unwrap_or_else(|| "empty".to_string());
+                                        format!("{label} — {name}")
+                                    }}
+                                </p>
+                            </div>
+                            // Compat panel: the active item + its dependent edge slots.
+                            <div class="custom-scrollbar flex min-h-0 flex-col overflow-y-auto rounded-lg border border-outline-variant/20 bg-surface-container-lowest/40 p-2.5">
+                                {move || compat_panel(picks, active_key, compat, names, items, pick_item)}
                             </div>
                         </div>
+                        // Bottom: validation verdict + loadout download.
+                        <div class="flex items-center justify-between">
+                            {move || {
+                                let feed = compat.get();
+                                let errs = validate_loadout(&picks.get(), feed.ready_graph(), feed.status);
+                                if errs.is_empty() {
+                                    view! {
+                                        <span
+                                            data-loadout-valid
+                                            class="rounded border border-success/40 bg-success/10 px-2 py-0.5 font-mono text-label-sm uppercase tracking-wider text-success"
+                                        >
+                                            "Loadout valid"
+                                        </span>
+                                    }
+                                        .into_any()
+                                } else {
+                                    view! {
+                                        <span
+                                            data-loadout-valid
+                                            class="rounded border border-error-alert/40 bg-error/10 px-2 py-0.5 font-mono text-label-sm uppercase tracking-wider text-error-alert"
+                                        >
+                                            {format!("{} issue(s)", errs.len())}
+                                        </span>
+                                    }
+                                        .into_any()
+                                }
+                            }}
+                            <button
+                                type="button"
+                                class="flex items-center gap-1.5 rounded-lg border border-outline-variant/40 px-3 py-1.5 text-label-sm font-medium text-on-surface transition-colors hover:bg-white/10"
+                                on:click=move |_| {
+                                    #[cfg(target_arch = "wasm32")]
+                                    {
+                                        let map = picks.get_untracked();
+                                        let names: HashMap<String, String> = items
+                                            .get_value()
+                                            .iter()
+                                            .map(|it| (it.resource_name.clone(), it.display_name.clone()))
+                                            .collect();
+                                        let json = picks_to_loadout(&map, &names)
+                                            .unwrap_or_else(|| "{\"version\":2,\"wear\":{},\"weapons\":[]}".to_string());
+                                        let _ = crate::mission_commands::download_json("loadout-export.json", &json);
+                                    }
+                                }
+                            >
+                                <span class="material-symbols-outlined text-[16px]">"download"</span>
+                                "Download loadout JSON"
+                            </button>
+                        </div>
+                        <p class="text-label-sm normal-case text-outline">
+                            "Equipment items (binoculars, radios, medical, glasses) get their rows with the equipment/cargo slices — the registry already classifies them."
+                        </p>
                     }.into_any()
                 }
             }}
         </div>
     }
+}
+
+/// The center doll: `ArsenalDoll` (wgpu) with the SVG `paper_doll` as the create-error fallback
+/// (T-154 contract). Native shell: always the SVG (no GPU).
+fn doll_view(
+    picks: RwSignal<HashMap<String, String>>,
+    active_key: RwSignal<String>,
+    names: StoredValue<HashMap<String, String>>,
+    unavailable: RwSignal<bool>,
+) -> AnyView {
+    #[cfg(target_arch = "wasm32")]
+    {
+        if !unavailable.get() {
+            return view! {
+                <crate::arsenal_doll::ArsenalDoll
+                    picks
+                    active_key
+                    names
+                    unavailable
+                    on_select=Callback::new(move |key: String| active_key.set(key))
+                />
+            }
+            .into_any();
+        }
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = (names, unavailable);
+    paper_doll(picks, active_key).into_any()
+}
+
+/// Small check glyph for the current pick row.
+#[component]
+fn MaterialCheck() -> impl IntoView {
+    view! { <span class="material-symbols-outlined shrink-0 text-[16px]">"check"</span> }
+}
+
+/// Rail tooltip title per region.
+fn region_title(key: &str) -> &'static str {
+    rules::LOADOUT_ROWS
+        .iter()
+        .find(|r| r.key == key)
+        .map_or("", |r| r.label)
+}
+
+/// Rail icon per region (Material Symbols approximations of the screen-04 glyphs).
+fn region_icon(key: &str) -> &'static str {
+    match key {
+        "primary" => "swords",
+        "optic" => "filter_center_focus",
+        "magazine" => "dataset",
+        "launcher" => "rocket_launch",
+        "handgun" => "front_hand",
+        "throwable" => "bomb",
+        "headCover" => "sports_motorsports",
+        "jacket" => "apparel",
+        "vest" => "shield",
+        "armoredVest" => "security",
+        "backpack" => "backpack",
+        "handwear" => "waving_hand",
+        "pants" => "accessibility",
+        _ => "footprint", // boots
+    }
+}
+
+/// The right compat panel: the active pick's display name + each edge slot that depends on the
+/// active region (screen 04: OPTIC "Nothing compatible." / MAGAZINE list). Rows click-pick.
+fn compat_panel(
+    picks: RwSignal<HashMap<String, String>>,
+    active_key: RwSignal<String>,
+    compat: RwSignal<CompatFeed>,
+    names: StoredValue<HashMap<String, String>>,
+    _items: StoredValue<Vec<RegistryItem>>,
+    pick_item: impl Fn(String, String) + Copy + 'static,
+) -> AnyView {
+    let key = active_key.get();
+    let map = picks.get();
+    let host = map.get(key.as_str()).cloned().unwrap_or_default();
+    let head = if host.is_empty() {
+        format!("{} — empty", region_title(&key))
+    } else {
+        names.with_value(|n| n.get(&host).cloned().unwrap_or_else(|| host.clone()))
+    };
+    let dependents: Vec<&'static rules::LoadoutRow> = rules::LOADOUT_ROWS
+        .iter()
+        .filter(
+            |r| matches!(r.source, rules::RowSource::Edge { depends_on, .. } if depends_on == key),
+        )
+        .collect();
+    let feed = compat.get();
+    let body = if dependents.is_empty() {
+        view! {
+            <p class="mt-2 text-label-sm normal-case text-outline">"No dependent slots."</p>
+        }
+        .into_any()
+    } else {
+        dependents
+            .into_iter()
+            .map(|row| {
+                let rules::RowSource::Edge { edge, .. } = row.source else {
+                    unreachable!()
+                };
+                let section = view! {
+                    <p class="mt-3 font-mono text-[10px] tracking-widest text-outline uppercase">
+                        {row.label}
+                    </p>
+                };
+                let content = if host.is_empty() {
+                    view! {
+                        <p class="text-label-sm normal-case text-outline">
+                            {format!("Pick a {} first.", region_title(&key).to_lowercase())}
+                        </p>
+                    }
+                    .into_any()
+                } else if let Some(g) = feed.ready_graph() {
+                    let options = g.items_for(&host, edge);
+                    if options.is_empty() {
+                        view! {
+                            <p class="text-label-sm normal-case text-outline">"Nothing compatible."</p>
+                        }
+                        .into_any()
+                    } else {
+                        let current = map.get(row.key).cloned().unwrap_or_default();
+                        let row_key = row.key;
+                        options
+                            .into_iter()
+                            .map(|rn| {
+                                let label = names
+                                    .with_value(|n| n.get(&rn).cloned().unwrap_or_else(|| rn.clone()));
+                                let is_current = rn == current;
+                                let cls = if is_current {
+                                    "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm bg-primary/15 text-primary"
+                                } else {
+                                    "flex w-full items-center justify-between rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface"
+                                };
+                                let data_value = rn.clone();
+                                view! {
+                                    <button
+                                        type="button"
+                                        data-value=data_value
+                                        class=cls
+                                        on:click=move |_| pick_item(row_key.to_string(), rn.clone())
+                                    >
+                                        <span class="truncate normal-case">{label}</span>
+                                        {is_current.then(|| view! { <MaterialCheck /> })}
+                                    </button>
+                                }
+                            })
+                            .collect_view()
+                            .into_any()
+                    }
+                } else {
+                    view! {
+                        <p class="text-label-sm normal-case text-outline">"Compat unavailable."</p>
+                    }
+                    .into_any()
+                };
+                view! {
+                    {section}
+                    {content}
+                }
+                .into_any()
+            })
+            .collect::<Vec<_>>()
+            .collect_view()
+            .into_any()
+    };
+    view! {
+        <p class="text-label-md font-semibold normal-case text-on-surface">{head}</p>
+        {body}
+    }
+    .into_any()
 }
 
 /// The Mode-D 2D **SVG paper-doll** (SoldierSilhouette.tsx port). Keyboard-accessible

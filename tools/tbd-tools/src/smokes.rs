@@ -1609,37 +1609,47 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
             );
             eval(&h.page, "[...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Arsenal').click()").await?;
 
-            // R2 — registry resolved → one <select> per gear row (12).
+            // R2 (T-172 B10) — registry resolved → the Forge layout: 14-region rail + the item
+            // list for the default-active Primary region.
             checks.insert(
                 "r2_registryFetched".into(),
                 json!(*hits.lock().unwrap() >= 1),
             );
             checks.insert(
-                "r2_selectsRendered".into(),
+                "r2_railRendered".into(),
                 json!(
                     h.page
-                        .wait_for("document.querySelectorAll('select').length >= 12", 40, 250)
+                        .wait_for(
+                            "document.querySelectorAll('[data-arsenal-rail]').length >= 14",
+                            40,
+                            250
+                        )
                         .await?
                 ),
             );
 
             let depth0 = eval_i64(&h.page, "window.__editorHistory.undo_depth()").await?;
 
-            // R3 — the Primary select lists the golden's M16A2; pick it.
+            // R3 — the Primary item list carries the golden's M16A2; click-pick it.
             let m16_json = serde_json::to_string(M16A2)?;
             checks.insert(
                 "r3_m16Listed".into(),
-                json!(eval_bool(&h.page, &format!("[...document.querySelectorAll('select')].some(s => [...s.options].some(o => o.value === {m16_json}))")).await?),
+                json!(
+                    h.page
+                        .wait_for(
+                            &format!(
+                                "!![...document.querySelectorAll('[data-value]')].find(b => b.getAttribute('data-value') === {m16_json})"
+                            ),
+                            40,
+                            250
+                        )
+                        .await?
+                ),
             );
             eval(
                 &h.page,
                 &format!(
-                    "(() => {{
-      const sel = [...document.querySelectorAll('label')]
-        .find(l => l.querySelector('span')?.textContent === 'Primary')?.querySelector('select');
-      sel.value = {m16_json};
-      sel.dispatchEvent(new Event('change', {{ bubbles: true }}));
-    }})()"
+                    "[...document.querySelectorAll('[data-value]')].find(b => b.getAttribute('data-value') === {m16_json})?.click()"
                 ),
             )
             .await?;
@@ -1678,20 +1688,25 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
                 json!(h.page.wait_for("!JSON.parse(window.__editorCommands.compile_save_json()).editor.slots.some(s => s.loadout)", 20, 250).await?),
             );
 
-            // R6 (T-167 compat) — R5's undo bumped `doc_tick`, which re-creates the modal body and
-            // resets the tab to Identity; re-open the Arsenal tab, re-pick primary, then the
-            // compat-fed Optic row lists the edge's ACOG; pick it → saved weapons[0] carries `optic`.
+            // R6 (T-167 compat / T-172 Forge) — R5's undo bumped `doc_tick`, which re-creates the
+            // modal body and resets the tab to Identity; re-open the Arsenal tab, re-pick primary
+            // from the item list, then the compat PANEL lists the edge's ACOG under OPTIC; click
+            // it → saved weapons[0] carries `optic`.
             const OPTIC: &str = "{ARSENAL_OPTIC}Prefabs/Weapons/Attachments/Optic_ACOG.et";
             eval(&h.page, "[...document.querySelectorAll('button')].find(b => b.getAttribute('aria-label') === 'Arsenal').click()").await?;
             h.page
-                .wait_for("document.querySelectorAll('select').length >= 12", 40, 250)
+                .wait_for(
+                    "document.querySelectorAll('[data-arsenal-rail]').length >= 14",
+                    40,
+                    250,
+                )
                 .await?;
-            let pick_row = |span: &str, val: &str| {
+            let pick_value = |val: &str| {
                 format!(
-                    "(() => {{ const sel=[...document.querySelectorAll('label')].find(l=>l.querySelector('span')?.textContent==={span:?})?.querySelector('select'); if(!sel)return false; sel.value={val:?}; sel.dispatchEvent(new Event('change',{{bubbles:true}})); return true }})()"
+                    "(() => {{ const b=[...document.querySelectorAll('[data-value]')].find(b=>b.getAttribute('data-value')==={val:?}); if(!b)return false; b.click(); return true }})()"
                 )
             };
-            eval(&h.page, &pick_row("Primary", M16A2)).await?;
+            h.page.wait_for(&pick_value(M16A2), 40, 250).await?;
             checks.insert(
                 "r6_compatFetched".into(),
                 json!(*compat_hits.lock().unwrap() >= 1),
@@ -1699,31 +1714,91 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
             let optic_json = serde_json::to_string(OPTIC)?;
             checks.insert(
                 "r6_opticListed".into(),
-                json!(h.page.wait_for(&format!("[...document.querySelectorAll('label')].some(l => l.querySelector('span')?.textContent === 'Optic' && [...l.querySelector('select').options].some(o => o.value === {optic_json}))"), 40, 250).await?),
+                json!(
+                    h.page
+                        .wait_for(
+                            &format!(
+                                "!![...document.querySelectorAll('[data-value]')].find(b => b.getAttribute('data-value') === {optic_json})"
+                            ),
+                            40,
+                            250
+                        )
+                        .await?
+                ),
             );
-            eval(&h.page, &pick_row("Optic", OPTIC)).await?;
+            eval(
+                &h.page,
+                &format!(
+                    "[...document.querySelectorAll('[data-value]')].find(b => b.getAttribute('data-value') === {optic_json})?.click()"
+                ),
+            )
+            .await?;
             checks.insert(
                 "r6_opticSaved".into(),
                 json!(h.page.wait_for("(() => { const s=(JSON.parse(window.__editorCommands.compile_save_json()).editor?.slots||[]).find(s=>s.loadout); return !!(s && s.loadout.weapons && s.loadout.weapons[0] && s.loadout.weapons[0].optic) })()", 40, 250).await?),
             );
 
-            // R7 (paper-doll) — the SVG doll renders keyboard hotspots; clicking Helmet activates it.
-            checks.insert(
-                "r7_dollHotspots".into(),
-                json!(
-                    eval_i64(
-                        &h.page,
-                        "document.querySelectorAll('svg [role=\"button\"]').length"
-                    )
-                    .await?
-                        >= 8
-                ),
-            );
-            eval(&h.page, "document.querySelector('svg [aria-label=\"Helmet\"]')?.dispatchEvent(new MouseEvent('click',{bubbles:true}))").await?;
-            checks.insert(
-                "r7_dollActive".into(),
-                json!(h.page.wait_for("document.querySelector('svg [aria-label=\"Helmet\"]')?.getAttribute('aria-pressed') === 'true'", 20, 250).await?),
-            );
+            // R7 (T-172 B10 — 3D doll) — the DollEngine canvas mounts (long wait: SwiftShader
+            // create is slow headless); its window hooks report a live backend, the active-region
+            // anchor projects, and a CPU pick at that anchor resolves a region. If create failed
+            // (no GL at all), the SVG paper-doll fallback must be up instead — the T-154 contract.
+            let doll_3d = h
+                .page
+                .wait_for(
+                    "!!document.querySelector('[data-arsenal-doll] canvas') && typeof window.__arsenalDoll === 'object'",
+                    120,
+                    250,
+                )
+                .await?;
+            if doll_3d {
+                checks.insert(
+                    "r7_dollBackend".into(),
+                    json!(
+                        h.page
+                            .wait_for(
+                                "typeof window.__arsenalDoll.backend() === 'string' && window.__arsenalDoll.backend().length > 0",
+                                40,
+                                250
+                            )
+                            .await?
+                    ),
+                );
+                checks.insert(
+                    "r7_dollAnchorPick".into(),
+                    json!(
+                        h.page
+                            .wait_for(
+                                "(() => { const a = window.__arsenalDoll.anchor(0); return a && a.length === 2 && window.__arsenalDoll.pick(a[0], a[1]) >= 0 })()",
+                                40,
+                                250
+                            )
+                            .await?
+                    ),
+                );
+                checks.insert(
+                    "r7_dollCallout".into(),
+                    json!(
+                        eval_bool(&h.page, "!!document.querySelector('[data-doll-callout]')")
+                            .await?
+                    ),
+                );
+            } else {
+                // Fallback branch: SVG hotspots (the old R7) prove the fallback path works.
+                checks.insert(
+                    "r7_dollBackend".into(),
+                    json!(
+                        eval_i64(
+                            &h.page,
+                            "document.querySelectorAll('svg [role=\"button\"]').length"
+                        )
+                        .await?
+                            >= 8
+                    ),
+                );
+                checks.insert("r7_dollAnchorPick".into(), json!(true));
+                checks.insert("r7_dollCallout".into(), json!(true));
+                eprintln!("smoke_arsenal: DollEngine unavailable — verified the SVG fallback");
+            }
 
             // R8 (weight) — the honest weight readout renders (contains a kg figure).
             checks.insert(
@@ -1744,7 +1819,7 @@ pub async fn smoke_arsenal(dist: &str, path: &str) -> Result<u8> {
             checks.insert("r9_fmPost".into(), json!(*post_hits.lock().unwrap() >= 1));
         }
         let registry_hits = *hits.lock().unwrap();
-        let pass = ready && h.no_panics() && checks_pass(&checks, 17);
+        let pass = ready && h.no_panics() && checks_pass(&checks, 18);
         print_verdict(&json!({
             "gate": "editor-arsenal-smoke", "path": path, "registryHits": registry_hits,
             "compatHits": *compat_hits.lock().unwrap(), "factionPosts": *post_hits.lock().unwrap(),

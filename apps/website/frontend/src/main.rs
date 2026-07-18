@@ -66,6 +66,9 @@ mod world_assets;
 // and the `__editorHistory` bridge); wasm32-only, gated like the doc host.
 #[cfg(target_arch = "wasm32")]
 mod mission_history;
+// T-172 B10 — the 3D arsenal doll mount (DollEngine, wasm-only like the map engine host).
+#[cfg(target_arch = "wasm32")]
+mod arsenal_doll;
 mod mission_overview;
 // T-172 B9 — pure SZ payload estimator (missionSize.ts port), native-tested.
 mod mission_size;

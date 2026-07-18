@@ -90,7 +90,9 @@ fn modal_view(
         ></div>
         <div class=move || {
             // T-167 — the Smart Arsenal (tab 3) needs the wide 2-column doll layout; other tabs stay compact.
-            let width = if tab.get() == 3 { "max-w-5xl" } else { "max-w-lg" };
+            // T-172 B10 — the Arsenal tab hosts the full Smart Forge (rail · list · 3D doll ·
+            // compat panel), so it gets the widest modal tier.
+            let width = if tab.get() == 3 { "max-w-6xl" } else { "max-w-lg" };
             format!("glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] {width} -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200")
         }>
             <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
