@@ -74,9 +74,32 @@ pub fn AppLayout() -> impl IntoView {
                     "min-h-0 flex-1 bg-background overflow-y-auto p-6"
                 }
             };
+            // Narrow-viewport slide-over nav (T-172 A9). No DOM while closed.
+            let mobile_open = RwSignal::new(false);
+            #[cfg(target_arch = "wasm32")]
+            {
+                let esc = window_event_listener(leptos::ev::keydown, move |ev| {
+                    if mobile_open.get_untracked() && ev.key() == "Escape" {
+                        mobile_open.set(false);
+                    }
+                });
+                on_cleanup(move || esc.remove());
+            }
             view! {
                 <div class="flex h-screen overflow-hidden bg-background">
-                    <SidebarMobileToggle />
+                    <SidebarMobileToggle open=mobile_open />
+                    {move || {
+                        mobile_open.get().then(|| view! {
+                            <div
+                                class="animate-overlay-fade fixed inset-0 z-40 bg-black/50 lg:hidden"
+                                on:click=move |_| mobile_open.set(false)
+                            ></div>
+                            <aside class="animate-sheet-in-left fixed inset-y-0 left-0 z-50 flex w-80 flex-col bg-surface-container-low lg:hidden">
+                                <SidebarBrand />
+                                <SidebarNav on_nav=Callback::new(move |()| mobile_open.set(false)) />
+                            </aside>
+                        })
+                    }}
                     <Sidebar />
                     <div class="flex min-w-0 flex-1 flex-col">
                         <TopNav />
@@ -252,14 +275,15 @@ fn TopNav() -> impl IntoView {
 }
 
 #[component]
-fn SidebarMobileToggle() -> impl IntoView {
-    // Closed by default (mobileOpen = false): just the toggle button (hidden ≥lg via lg:hidden).
-    // The slide-over overlay is interactive state for a later slice.
+fn SidebarMobileToggle(open: RwSignal<bool>) -> impl IntoView {
+    // Toggles the narrow-viewport slide-over (T-172 A9). Button markup unchanged (V gate);
+    // hidden ≥lg via lg:hidden.
     view! {
         <button
             type="button"
             class="fixed top-3 left-3 z-50 rounded-md bg-surface-container p-2 lg:hidden"
             aria-label="Open menu"
+            on:click=move |_| open.update(|v| *v = !*v)
         >
             <MaterialIcon name="menu" />
         </button>
@@ -289,7 +313,11 @@ fn SidebarBrand() -> impl IntoView {
 }
 
 #[component]
-fn SidebarNav() -> impl IntoView {
+fn SidebarNav(
+    /// Invoked on any nav-link click — the mobile drawer closes itself through this (T-172 A9).
+    #[prop(optional)]
+    on_nav: Option<Callback<()>>,
+) -> impl IntoView {
     // Real auth store (guest → None → browse-mode, all nav) + the live route for the active link.
     // Both are read inside one reactive closure (T-172 A2 + H1): the active highlight follows SPA
     // navigation and the admin section appears/disappears with the session, no reload needed. The
@@ -346,6 +374,11 @@ fn SidebarNav() -> impl IntoView {
                                                     href=item.path
                                                     class=a_class
                                                     aria-current=active.then_some("page")
+                                                    on:click=move |_| {
+                                                        if let Some(cb) = on_nav {
+                                                            cb.run(());
+                                                        }
+                                                    }
                                                 >
                                                     <MaterialIcon name=item.icon class="text-[22px]" />
                                                     {item.label}
