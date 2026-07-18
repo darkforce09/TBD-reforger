@@ -353,15 +353,21 @@ impl WorldHost {
         let base = self.asset_base.clone();
         let chunks = self.chunks_path.clone();
         let mut fetched = Vec::with_capacity(ids.len());
-        // Sequential batches of FETCH_CONCURRENCY (wasm-friendly).
+        // T-175 H3 — fetch each batch of FETCH_CONCURRENCY chunks **concurrently** (was one serial
+        // `await` per chunk, so a zoom-out / cold boot that pins dozens of new chunks stalled on
+        // sequential RTTs). The browser runs the batch's requests in parallel; the futures poll
+        // cooperatively on the wasm single thread. Order within the batch is preserved.
         for batch in ids.chunks(FETCH_CONCURRENCY) {
-            for id in batch {
+            let futs = batch.iter().map(|id| {
                 let url = format!("{base}/{chunks}/{id}.json.gz");
-                let bytes = fetch_bytes(&url).await;
-                fetched.push(PendingChunk {
-                    id: id.clone(),
-                    bytes,
-                });
+                let id = id.clone();
+                async move {
+                    let bytes = fetch_bytes(&url).await;
+                    PendingChunk { id, bytes }
+                }
+            });
+            for item in futures::future::join_all(futs).await {
+                fetched.push(item);
             }
         }
         // Newest fetches first — the 4ms ingest budget only applies ~1 heavy chunk/frame, so
@@ -454,14 +460,18 @@ impl WorldHost {
                 e.upload_world_buildings(&fill, chunks_pinned, b_vis);
                 e.upload_world_building_outlines(&outline, b_vis);
             }
-            // Sticky empty mid-hydration for glyphs.
-            if !trees.is_empty() || pin_settled {
+            // T-175 A1 — clear a glyph lane when the LOD says it is OFF (below its zoom band or the
+            // tree heatmap rung), independent of `pin_settled`. The old `|| pin_settled`-only guard
+            // skipped the empty upload on a zoom-out (island pin set keeps `pin_settled` false), so
+            // the GPU kept the previous zoom-in's glyphs (only frustum-culled). A *want-but-still-
+            // loading* empty (lane not off, not settled) still skips → no mid-hydration flicker.
+            if !trees.is_empty() || pin_settled || self.residency.tree_lane_off() {
                 e.upload_icon_lane(0, &trees, true);
             }
-            if !props.is_empty() || pin_settled {
+            if !props.is_empty() || pin_settled || self.residency.prop_lane_off() {
                 e.upload_icon_lane(1, &props, true);
             }
-            if !badges.is_empty() || pin_settled {
+            if !badges.is_empty() || pin_settled || self.residency.badge_lane_off() {
                 e.upload_icon_lane(2, &badges, true);
             }
             e.upload_world_fence_strips(&strips, strip_count, strip_vis);

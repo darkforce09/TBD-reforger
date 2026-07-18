@@ -25,7 +25,7 @@ use map_engine_core::camera::OrthoCamera;
 use map_engine_core::slots_gpu::{
     self, DragGpuPhase, SLOT_ICON_STRIDE, classify_drag_transition, hide_slot_row_patch,
     pack_cluster_instances, pack_drag_overlay, pack_selection_only, pack_slot_instances,
-    selected_mask,
+    selected_mask, selected_row_patch, unselected_row_patch,
 };
 use wasm_bindgen::prelude::*;
 
@@ -3255,9 +3255,15 @@ impl RenderEngine {
                     cull.upload_icons(&self.device, &self.queue, &[]);
                 }
             }
-            if !visible {
-                self.remove_lane(role);
-            }
+            // T-175 A1 — an empty upload is authoritative "zero instances": drop the
+            // IconInstanced batch for **every** role regardless of `visible`, not only when
+            // hidden. Previously visible+empty early-returned before `remove_lane`, so props /
+            // badges / WebGL trees kept the last non-empty batch on the GPU → glyphs stuck after
+            // a zoom-out LOD clear (only frustum-culled out of frame). The host only calls this
+            // with an empty slice when the lane is legitimately off (LOD) or settled, so clearing
+            // here can't wipe a mid-hydration lane.
+            self.remove_lane(role);
+            self.damage.mark();
             return;
         }
         if !bytes.len().is_multiple_of(STRIDE) {
@@ -3446,21 +3452,65 @@ impl RenderEngine {
         self.upload_cluster_lane(&bytes, !bytes.is_empty());
     }
 
-    /// Selection ids → full rematerialize (T-151.7.2). Empty = clear tint.
+    /// Selection ids → GPU tint. T-175 B4: on the full-detail lane with the slot set unchanged,
+    /// patch only the rows whose selection membership flipped (O(delta) sub-row writes) instead of
+    /// re-packing + re-uploading all n instances every click / outliner select. Falls back to a full
+    /// `rematerialize_slot_lane` for the cluster/selection-only dense-k lane; the drag overlay still
+    /// owns the tint while dragging. Empty = clear tint.
     pub fn set_selection(&mut self, ids: Vec<String>) {
-        self.slot_bridge.selected_ids = ids.into_iter().collect();
+        let new_sel: std::collections::HashSet<String> = ids.into_iter().collect();
         if !self.slot_bridge.atlas_ready {
+            self.slot_bridge.selected_ids = new_sel;
             return;
         }
         // Invariant: dragActive only while drag_ids non-empty.
         if self.slot_bridge.drag_active && self.slot_bridge.drag_ids.is_empty() {
+            self.slot_bridge.selected_ids = new_sel;
             self.clear_slot_drag_internal();
             return;
         }
         if self.slot_bridge.drag_active {
-            return; // drag overlay owns tint
+            self.slot_bridge.selected_ids = new_sel; // drag overlay owns tint
+            return;
         }
-        self.rematerialize_slot_lane();
+        // Cluster/selection-only lane packs a dense-k row set (no full-doc row index) → can't
+        // sub-row patch; re-pack the whole short lane.
+        if self.slot_bridge.slots_lane_selection_only {
+            self.slot_bridge.selected_ids = new_sel;
+            self.rematerialize_slot_lane();
+            return;
+        }
+        // Fast path: diff old vs new selection over the bound rows, patch the 12 B tint/size block
+        // at `row·20 + 8` only for rows that changed membership. The patched bytes are byte-identical
+        // to a full `pack_slot_instances` for that row (slot rows carry yaw 0 / glyph 0), so the GPU
+        // state matches a rematerialize exactly. `slots_bind_soa` still rematerializes on structural
+        // change, so the lane always reflects `last_ids × old selection` when we get here.
+        let old_sel = std::mem::replace(&mut self.slot_bridge.selected_ids, new_sel);
+        let flips: Vec<(usize, bool)> = {
+            let sb = &self.slot_bridge;
+            sb.last_ids
+                .iter()
+                .enumerate()
+                .filter_map(|(row, id)| {
+                    let now = sb.selected_ids.contains(id);
+                    (old_sel.contains(id) != now).then_some((row, now))
+                })
+                .collect()
+        };
+        if flips.is_empty() {
+            return;
+        }
+        for (row, now) in &flips {
+            let patch = if *now {
+                selected_row_patch()
+            } else {
+                unselected_row_patch()
+            };
+            #[allow(clippy::cast_possible_truncation)]
+            let off = (row * SLOT_ICON_STRIDE + 8) as u32;
+            self.patch_slot_lane(off, &patch);
+        }
+        self.damage.mark();
     }
 
     /// Drag ids + world-meter delta. Empty ids = clear (T-151.7.1 start/delta/end).
@@ -3786,6 +3836,9 @@ impl RenderEngine {
             .write_buffer(&atlas.base_uniform_buf, ICON_PXM_OFF as u64, &bytes);
         self.queue
             .write_buffer(&atlas.drag_uniform_buf, ICON_PXM_OFF as u64, &bytes);
+        // T-175 H5 — engine is damage-driven; a uniform-only write (icon size on zoom-during-drag)
+        // must request a repaint or the change is invisible until the next damaging event.
+        self.damage.mark();
     }
 
     /// Set SlotDrag drag delta (world meters). Writes 8 B drag_delta + leaves px_to_m.
@@ -3804,6 +3857,39 @@ impl RenderEngine {
             .write_buffer(&atlas.drag_uniform_buf, ICON_DRAG_OFF as u64, &bytes);
         // Account for drag uniform write on next frame's stats (render resets to 64 first).
         self.uniform_bytes_last_frame = 64 + 16;
+        // T-175 B3 — the engine is damage-driven (`set_continuous_render(false)`); the Delta phase
+        // only wrote this uniform without marking damage, so `render()` no-op'd and the drag preview
+        // stayed frozen ~1 threshold-hop from the press until the pointerup commit repainted (the
+        // "~1 px then teleport"). Mark damage so every pointer-move delta repaints the overlay.
+        self.damage.mark();
+    }
+
+    /// T-175 B2 — show a translucent place-preview ghost (one slot ring) at a world position under
+    /// the cursor while dragging a palette asset onto the map. Reuses the slot atlas pipeline +
+    /// shared `px_to_m`, so it scales like a real slot ring. Marks damage (engine is damage-driven,
+    /// so a lane upload alone would otherwise not repaint on a fast pointer-move).
+    pub fn set_place_preview(&mut self, world_x: f32, world_y: f32) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let tint = slots_gpu::pack_rgba_u32([173, 198, 255, 140]); // Aegis primary, translucent
+        let mut b = Vec::with_capacity(SLOT_ICON_STRIDE);
+        slots_gpu::pack_icon_instance(
+            &mut b,
+            world_x,
+            world_y,
+            slots_gpu::SLOT_RING_PX,
+            slots_gpu::SLOT_GLYPH_RING,
+            tint,
+        );
+        self.upload_slot_role_lane(LaneRole::SlotPlacePreview, &b, true);
+        self.damage.mark();
+    }
+
+    /// T-175 B2 — clear the palette place-preview ghost (drop commit / cancel / pointer leave).
+    pub fn clear_place_preview(&mut self) {
+        self.remove_lane(LaneRole::SlotPlacePreview);
+        self.damage.mark();
     }
 
     /// Full upload of slot ring instances (20 B each, world meters). `VERTEX|COPY_DST`.

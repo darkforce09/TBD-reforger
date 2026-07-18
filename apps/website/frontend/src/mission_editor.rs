@@ -31,6 +31,20 @@ fn device_size(css_w: f64, css_h: f64, dpr: f64) -> (u32, u32) {
     (r(css_w), r(css_h))
 }
 
+/// T-175 B5 — editor boot phase driving the loading overlay. Cold open runs two independent async
+/// tasks (IDB restore + server hydrate, and engine create + world/map-asset bootstrap); the overlay
+/// stays up with an honest phase label until **both** settle, so the operator never stares at a
+/// silent half-ready map. (The React editor had a T-060 determinate overlay that never ported.)
+#[derive(Clone, Copy, PartialEq)]
+enum BootPhase {
+    /// IDB restore + server hydrate in flight.
+    Hydrating,
+    /// Doc ready; engine/atlas/world residency still settling.
+    LoadingMap,
+    /// Doc hydrated + world settled — overlay hidden.
+    Ready,
+}
+
 #[component]
 pub fn MissionEditorPage() -> impl IntoView {
     let container_ref = NodeRef::<leptos::html::Div>::new();
@@ -55,6 +69,8 @@ pub fn MissionEditorPage() -> impl IntoView {
     // bottom-right wgpu debug readout (fed ~1 Hz by the rAF loop).
     let sz_bytes = RwSignal::new(None::<usize>);
     let debug_hud = RwSignal::new(String::new());
+    // T-175 B5 — boot loading overlay phase (set by the wasm boot tasks; the view reads it).
+    let boot = RwSignal::new(BootPhase::Hydrating);
     #[cfg(target_arch = "wasm32")]
     {
         use std::cell::Cell;
@@ -362,11 +378,23 @@ pub fn MissionEditorPage() -> impl IntoView {
                 persist_ready.clone(),
                 persist_loaded.clone(),
             );
+            // T-175 B1 — two-party handshake so restored/hydrated slot positions always reach the
+            // GPU regardless of which async task (IDB restore / server hydrate vs engine create)
+            // finishes first. Whichever sets its flag second runs the single authoritative
+            // `rebind_engine_from_doc` from the settled doc — no seed→restore flash, no double bind.
+            let restore_settled = Rc::new(Cell::new(false));
+            let engine_mounted = Rc::new(Cell::new(false));
+            // T-175 B5 — the two boot-readiness flags the loading overlay clears on: doc settled
+            // (restore + hydrate) and world/map-asset residency settled. `boot` → Ready when both.
+            let world_ready = Rc::new(Cell::new(false));
             spawn_local({
                 let doc = doc.clone();
                 let id = mission_id.clone();
                 let ready = persist_ready.clone();
                 let loaded = persist_loaded.clone();
+                let restore_settled = restore_settled.clone();
+                let engine_mounted = engine_mounted.clone();
+                let world_ready = world_ready.clone();
                 async move {
                     // 1. Restore from IDB if a blob exists — SWAP a fresh core (mirrors React's
                     //    empty-shell + apply; rests on the tested fresh-peer path + persist_roundtrip_ok,
@@ -403,6 +431,20 @@ pub fn MissionEditorPage() -> impl IntoView {
                         conflict,
                     )
                     .await;
+                    // 1.75 T-175 B1 — the doc is now settled (IDB restore + server hydrate). Mark it
+                    //      and, if the engine already mounted + first-bound the seed, rebind it from
+                    //      the settled doc so restored slot positions render (not the seed).
+                    restore_settled.set(true);
+                    if engine_mounted.get() {
+                        crate::mission_history::rebind_engine_from_doc();
+                    }
+                    // T-175 B5 — doc is hydrated: advance the loading overlay (→ Ready if the world
+                    // already settled, else show "Loading map…" until the world task finishes).
+                    boot.set(if world_ready.get() {
+                        BootPhase::Ready
+                    } else {
+                        BootPhase::LoadingMap
+                    });
                     // 2. Initial persist through the debounced writer (get_bytes read at write time;
                     //    cancel when the doc Option is cleared). No mutator hook exists yet, so this
                     //    post-seed/post-load encode is the writer's trigger this slice.
@@ -443,6 +485,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let canvas = canvas.clone();
                 let map_host = map_host.clone();
                 let dem_grid = dem_grid.clone();
+                let restore_settled = restore_settled.clone();
+                let engine_mounted = engine_mounted.clone();
+                let world_ready = world_ready.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
                     match map_engine_render::RenderEngine::create(canvas, force_webgl).await {
@@ -493,6 +538,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                             {
                                 e.slots_bind_soa(soa.ids.clone(), &soa.xy);
                             }
+                            // T-175 B1 — engine is mounted + first-bound. If the IDB restore + hydrate
+                            // already settled, rebind now from the settled doc (the first bind above
+                            // may have drawn the pre-restore seed); otherwise the restore task will
+                            // rebind once it settles. Exactly one authoritative rebind runs.
+                            engine_mounted.set(true);
+                            if restore_settled.get() {
+                                crate::mission_history::rebind_engine_from_doc();
+                            }
                             start_raf(engine.clone(), disposed.clone(), debug_hud);
                             // T-166 — full map-asset host (hillshade + sat + DEM vectors + world +
                             // forest). Terrain from doc meta (seed/hydrate; default everon).
@@ -512,12 +565,24 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     })
                                     .unwrap_or_else(|| "everon".to_string());
                                 let host = map_host.clone();
-                                spawn_local(crate::world_assets::bootstrap(
+                                // T-175 B5 — mark the world settled + clear the loading overlay once
+                                // the map-asset / residency bootstrap finishes (→ Ready if the doc
+                                // already hydrated, else the hydrate task flips Ready).
+                                let boot_fut = crate::world_assets::bootstrap(
                                     engine.clone(),
                                     terrain,
                                     host,
                                     dem_grid.clone(),
-                                ));
+                                );
+                                let world_ready = world_ready.clone();
+                                let restore_settled = restore_settled.clone();
+                                spawn_local(async move {
+                                    boot_fut.await;
+                                    world_ready.set(true);
+                                    if restore_settled.get() {
+                                        boot.set(BootPhase::Ready);
+                                    }
+                                });
                             }
                         }
                         Err(e) => leptos::logging::error!("RenderEngine::create: {e:?}"),
@@ -688,6 +753,19 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 (c[0], c[1], z)
                             }),
                     );
+                    // T-175 B2 — palette place ghost: while an asset is being dragged from the
+                    // palette (`begin_place` armed `pending`), show a live translucent slot ring at
+                    // the cursor's world point so the operator sees where it will land (the drop
+                    // commits at pointerup). Mutually exclusive with a map drag/marquee (`left` is
+                    // None during a palette place), so this returns before the gesture machine.
+                    if crate::editor_ops::has_pending() {
+                        if let Some(c) = world.filter(|c| c[0].is_finite() && c[1].is_finite()) {
+                            if let Some(e) = engine.borrow_mut().as_mut() {
+                                e.set_place_preview(c[0] as f32, c[1] as f32);
+                            }
+                        }
+                        return;
+                    }
                     if let Some((lx, ly)) = pan_px.get() {
                         let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
                         if let Some(e) = engine.borrow_mut().as_mut() {
@@ -860,6 +938,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                             }
                             None => crate::editor_ops::cancel_pending(),
                         }
+                        // T-175 B2 — the place gesture ended (drop or cancel): drop the ghost.
+                        if let Some(e) = engine.borrow_mut().as_mut() {
+                            e.clear_place_preview();
+                        }
                         return;
                     }
                     // Pan end (MMB/RMB).
@@ -983,7 +1065,15 @@ pub fn MissionEditorPage() -> impl IntoView {
             // `onPointerLeave → null`). Fires when the pointer enters a chrome panel too, which is
             // correct: those px are not map coordinates.
             let onpointerleave = Closure::<dyn FnMut(web_sys::PointerEvent)>::new({
-                move |_ev: web_sys::PointerEvent| cursor.set(None)
+                let engine = engine.clone();
+                move |_ev: web_sys::PointerEvent| {
+                    cursor.set(None);
+                    // T-175 B2 — hide the palette place ghost when the cursor leaves the map (a
+                    // still-armed place re-shows it on re-entry; an off-canvas release cancels).
+                    if let Some(e) = engine.borrow_mut().as_mut() {
+                        e.clear_place_preview();
+                    }
+                }
             });
             // T-159.18/.19 — pointercancel ends BOTH a pan and any LMB gesture, but (unlike pointerup)
             // is NOT a commit: it drops the gesture without picking / moving / selecting, and clears any
@@ -1214,6 +1304,31 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <ConflictDialog conflict conflict_id=mission_id.clone() />
                 </div>
             </div>
+            // T-175 B5 — boot loading overlay. Honest phase label + indeterminate bar (the surviving
+            // T-060 `mc-load-bar`) until doc hydrate AND the initial world/map-asset settle finish,
+            // so the operator never faces a silent half-ready map. `pointer-events-none` so it never
+            // intercepts an operator / editor-smoke click (the map no-ops while the engine is None).
+            {move || {
+                let phase = boot.get();
+                (phase != BootPhase::Ready)
+                    .then(|| {
+                        let label = if phase == BootPhase::Hydrating {
+                            "Loading mission…"
+                        } else {
+                            "Loading map…"
+                        };
+                        view! {
+                            <div class="animate-overlay-fade pointer-events-none absolute inset-0 z-50 flex items-center justify-center bg-background/85 backdrop-blur-sm">
+                                <div class="flex w-64 flex-col items-center gap-3">
+                                    <p class="text-sm font-medium text-on-surface-variant">{label}</p>
+                                    <div class="h-1 w-56 overflow-hidden rounded-full bg-surface-variant/40">
+                                        <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    })
+            }}
         </div>
     }
 }

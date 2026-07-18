@@ -42,6 +42,9 @@ pub enum LaneRole {
     WorldTownLabels,
     /// W6 mission slot rings.
     Slots,
+    /// T-175 B2 — palette place-preview ghost (single translucent ring under the cursor while
+    /// dragging an asset from the palette onto the map; above slots, below the drag overlay).
+    SlotPlacePreview,
     /// W6 drag-preview overlay (T-061).
     SlotDrag,
     /// W6 cluster discs (T-065).
@@ -82,10 +85,11 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldTownLabels => 20,
         LaneRole::Grid => 21,
         LaneRole::Slots => 22,
-        LaneRole::SlotDrag => 23,
-        LaneRole::Clusters => 24,
-        LaneRole::Marquee => 25,
-        LaneRole::MarqueeOutline => 26,
+        LaneRole::SlotPlacePreview => 23,
+        LaneRole::SlotDrag => 24,
+        LaneRole::Clusters => 25,
+        LaneRole::Marquee => 26,
+        LaneRole::MarqueeOutline => 27,
     }
 }
 
@@ -170,6 +174,7 @@ mod lane_order_pins {
             L::WorldTownLabels,
             L::Grid,
             L::Slots,
+            L::SlotPlacePreview,
             L::SlotDrag,
             L::Clusters,
         ]
@@ -216,5 +221,13 @@ mod lane_order_pins {
     #[test]
     fn first_role_after_trees_is_props() {
         assert_eq!(lane_order(L::WorldProps), lane_order(L::WorldTrees) + 1);
+    }
+
+    /// T-175 B2: the palette place-preview ghost draws above placed slots, below the drag overlay.
+    #[test]
+    fn place_preview_sits_above_slots_below_drag() {
+        assert!(lane_order(L::SlotPlacePreview) > lane_order(L::Slots));
+        assert!(lane_order(L::SlotPlacePreview) < lane_order(L::SlotDrag));
+        assert!(lane_order(L::SlotPlacePreview) < lane_order(L::Marquee));
     }
 }

@@ -31,9 +31,7 @@ use super::chunk_math::{
     Bbox, TerrainSizeM, chunk_ids_for_rect, chunk_ids_for_viewport, chunk_rect_for_bbox,
 };
 use super::classify::class_code;
-use super::density_ladder::{
-    density_grid_dims, exact_tree_count, heatmap_trees, pack_density_grid_r32, visible_tree_count,
-};
+use super::density_ladder::{exact_tree_count, heatmap_trees, visible_tree_count};
 use super::glyph_math::{
     BADGE_SIZE_MIN_PX, DEFAULT_BASE_SIZE_PX, GLYPH_SIZE_MIN_PX, badge_size_meters,
     deck_angle_for_rotation_deg, glyph_size_meters, hex_to_rgba, landmark_glyph_icon_key,
@@ -143,6 +141,11 @@ pub struct WorldResidency {
     /// the override). Cheap outer guard: the badge lane may skip its whole loop when `deck_zoom` is
     /// below every override, preserving the non-landmark fast path.
     min_importance_zoom: Option<f64>,
+    /// T-175 A5 — sorted-dedup distinct `importanceZoom` breakpoints across all building prefabs
+    /// (static: `building_by_u16` is set once at prefab load, never mutated by chunk ingest). The
+    /// glyph compose memo hashes `partition_point(|t| t <= z)` (activation index) instead of raw
+    /// zoom so a fine zoom only busts the badge memo when it actually crosses a landmark's override.
+    importance_breakpoints: Vec<f64>,
     /// Fence prop half-extents keyed by prefab u16 id (T-152.4).
     fence_by_u16: HashMap<u16, FencePrefabInfo>,
     /// Tree/veg/prop/rockLarge glyph lookup keyed by prefab u16 id.
@@ -174,10 +177,15 @@ pub struct WorldResidency {
     /// so the glyph memo below recomposes when a newly-ingested chunk enters the draw set even
     /// though the viewport rect is unchanged.
     content_epoch: u64,
-    /// T-173 P2 — hash of the last glyph/strip/density compose inputs (draw-id set, zoom, content
-    /// epoch, toggles, airfield/landmark state). `refresh_draw_set_and_glyphs` returns early on a
-    /// match instead of re-packing up to 150 k instances every `set_viewport`.
-    last_compose_key: u64,
+    /// T-173 P2 / T-175 A5 — split compose memo. `glyph_base_key` hashes the tree/prop/badge pack
+    /// inputs (draw-id set, content epoch, toggles, airfield/importance state, and a **floor-aware**
+    /// zoom signature — a sentinel above the min-px size floor where glyph sizes are constant, exact
+    /// zoom below). `refresh_draw_set_and_glyphs` skips the ≤150 k-instance glyph re-pack when it is
+    /// unchanged, so a fine zoom that doesn't cross a LOD band / size floor is a memo hit.
+    glyph_base_key: u64,
+    /// T-175 A5 — separate memo for the fence/pier/rail strip lane (its own min-px width floor);
+    /// kept on raw-zoom bits (strips are cheap and their per-prefab width floor varies).
+    strip_key: u64,
 
     /// T-173 P3 — chunks that parsed cleanly to **zero instances**: their stubs are never
     /// evicted and never re-requested (the pre-T-173 host loop invalidated + refetched every
@@ -228,6 +236,13 @@ pub struct WorldResidency {
     tree_glyph_buf: Vec<u8>,
     prop_glyph_buf: Vec<u8>,
     badge_glyph_buf: Vec<u8>,
+    /// T-175 A1 — last per-lane LOD want computed in `rebuild_glyph_buffers`. The host reads these
+    /// (via `*_lane_off`) to force an empty-lane GPU clear when a lane is legitimately off (below
+    /// its zoom band / heatmap rung) instead of leaving stale glyphs stuck, while still keeping a
+    /// *want-but-still-loading* empty sticky (no mid-hydration flicker).
+    tree_want: bool,
+    prop_want: bool,
+    badge_want: bool,
 
     /// Last `set_viewport` strict bbox (no preload) — source for draw-set cull.
     last_viewport: Bbox,
@@ -237,10 +252,11 @@ pub struct WorldResidency {
     heatmap_trees: bool,
     /// Last exact tree+veg count over `draw_ids` (Class R).
     exact_tree_count: u32,
-    /// R32Uint count grid (row-major cy×cx) for resident chunks.
-    density_grid: Vec<u32>,
-    density_grid_w: u32,
-    density_grid_h: u32,
+    /// T-175 A5 — deck zoom at/above which every glyph lane (tree/prop/badge) is size-dominated
+    /// (`size_m ≥ min_px·2^−z`), i.e. `max` over lanes of `log2(min_px / min_size_m)`. Above it the
+    /// packed sizes are constant in zoom, so the glyph memo can sentinel the zoom term. Recomputed
+    /// with the glyph lookup.
+    glyph_size_floor_zoom: f64,
 }
 
 fn deinterleave(positions: &[f32], count: u32) -> (Vec<f32>, Vec<f32>) {
@@ -263,6 +279,7 @@ impl Default for WorldResidency {
             has_oversized: false,
             building_by_u16: HashMap::new(),
             min_importance_zoom: None,
+            importance_breakpoints: Vec::new(),
             fence_by_u16: HashMap::new(),
             glyph_by_u16: HashMap::new(),
             icon_key_to_idx: HashMap::new(),
@@ -285,7 +302,8 @@ impl Default for WorldResidency {
             frames_over_budget: 0,
             apply_budget_ms_last: 0.0,
             content_epoch: 0,
-            last_compose_key: 0,
+            glyph_base_key: 0,
+            strip_key: 0,
             known_empty: HashSet::new(),
             fetch_failures: HashMap::new(),
             buffers_revision: 0,
@@ -308,13 +326,14 @@ impl Default for WorldResidency {
             tree_glyph_buf: Vec::new(),
             prop_glyph_buf: Vec::new(),
             badge_glyph_buf: Vec::new(),
+            tree_want: false,
+            prop_want: false,
+            badge_want: false,
             last_viewport: [0.0, 0.0, 0.0, 0.0],
             draw_ids: Vec::new(),
             heatmap_trees: false,
             exact_tree_count: 0,
-            density_grid: Vec::new(),
-            density_grid_w: 0,
-            density_grid_h: 0,
+            glyph_size_floor_zoom: 0.0,
         }
     }
 }
@@ -337,7 +356,8 @@ impl WorldResidency {
         self.rebuild_glyph_lookup_from_prefabs();
         // The atlas key→idx map is not part of the compose memo key (T-173 P2) — force a recompose
         // so glyphs pick up the freshly-registered UV indices.
-        self.last_compose_key = 0;
+        self.glyph_base_key = 0;
+        self.strip_key = 0;
         self.refresh_draw_set_and_glyphs();
     }
 
@@ -478,6 +498,29 @@ impl WorldResidency {
                 },
             );
         }
+        // T-175 A5 — the zoom at/above which every glyph lane is size-dominated (min-px floor
+        // inactive): `max` over lanes of `log2(min_px / min_size_m)`. Tree/prop sizes come from the
+        // resolved lookup (groups 0/1); the badge is the fixed `badge_size_meters()`. Above this
+        // zoom the packed glyph sizes are constant, so the glyph memo can sentinel the zoom term.
+        let min_glyph_size_m = self
+            .glyph_by_u16
+            .values()
+            .filter(|g| g.group == 0 || g.group == 1)
+            .map(|g| f64::from(g.size_m))
+            .filter(|s| *s > 0.0)
+            .fold(f64::INFINITY, f64::min);
+        let z_glyph = if min_glyph_size_m.is_finite() {
+            (GLYPH_SIZE_MIN_PX / min_glyph_size_m).log2()
+        } else {
+            f64::NEG_INFINITY
+        };
+        let badge_size_m = badge_size_meters();
+        let z_badge = if badge_size_m > 0.0 {
+            (BADGE_SIZE_MIN_PX / badge_size_m).log2()
+        } else {
+            f64::NEG_INFINITY
+        };
+        self.glyph_size_floor_zoom = z_glyph.max(z_badge);
     }
 
     /// Parse the terrain manifest: the `objects` block (chunk size + object-export gate) and the
@@ -524,6 +567,19 @@ impl WorldResidency {
             .values()
             .filter_map(|b| b.importance_zoom)
             .fold(None, |acc, v| Some(acc.map_or(v, |a: f64| a.min(v))));
+        // T-175 A5 — the full sorted-dedup breakpoint set (static after prefab load) feeds the glyph
+        // compose memo's importance activation index, so a fine zoom only busts the badge memo when
+        // it crosses a landmark override (not every zoom tick). Today this is just `[-4.0]`.
+        {
+            let mut bp: Vec<f64> = self
+                .building_by_u16
+                .values()
+                .filter_map(|b| b.importance_zoom)
+                .collect();
+            bp.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+            bp.dedup();
+            self.importance_breakpoints = bp;
+        }
         self.fence_by_u16 = fence_prefab_lookup(&raw);
         self.rebuild_glyph_lookup_from_prefabs();
         Ok(self.prefab_by_id.len())
@@ -556,7 +612,6 @@ impl WorldResidency {
         deck_zoom: f64,
     ) -> Vec<String> {
         let prev_zoom = self.deck_zoom;
-        let zoom_changed = (prev_zoom - deck_zoom).abs() > f64::EPSILON;
         self.deck_zoom = deck_zoom;
         self.last_viewport = [min_x, min_y, max_x, max_y];
         // T-152.21 — keep world chunks resident below the footprint gate when a landmark's
@@ -572,8 +627,8 @@ impl WorldResidency {
                 self.pinned_key.clear();
                 self.rebuild_buffers();
             } else {
-                // Glyph LOD / draw-set may still change with zoom or viewport.
-                let _ = zoom_changed;
+                // Glyph LOD / draw-set may still change with zoom or viewport; the glyph memo
+                // inside (T-175 A5) makes an unchanged call cheap, so refresh unconditionally.
                 self.refresh_draw_set_and_glyphs();
             }
             return Vec::new();
@@ -1084,24 +1139,67 @@ impl WorldResidency {
         self.strip_buf = pack_cartographic_strips(&acc);
     }
 
-    /// T-173 P2 — hash of every input the glyph/strip/density pack reads, so
-    /// `refresh_draw_set_and_glyphs` can skip an identical recompose. `draw_ids` must already be
-    /// set (sorted) before this is called. Zoom is hashed by bits (min-px sizing is continuous),
-    /// so any real camera move that changes glyph sizes still invalidates the memo.
-    fn compose_key(&self) -> u64 {
+    /// T-175 A5 — count of resident landmark `importanceZoom` breakpoints satisfied at `z`
+    /// (`partition_point(|t| t <= z)`). This changes iff `z` crosses some landmark's override, so a
+    /// zoom that doesn't cross one leaves the badge memo stable — capturing both the outer
+    /// `min_importance_zoom` guard and the per-prefab `z >= importanceZoom` re-check discretely.
+    fn importance_activation_index(&self, z: f64) -> usize {
+        self.importance_breakpoints.partition_point(|&t| t <= z)
+    }
+
+    /// T-175 A5 — floor-aware zoom term: a sentinel above `floor_zoom` (where the lane's min-px size
+    /// floor is inactive → packed sizes are constant in zoom, so the memo need not bust on zoom),
+    /// else the exact zoom bits (continuous-size regime — identical to the old blunt behaviour).
+    fn floor_zoom_term(z: f64, floor_zoom: f64) -> u64 {
+        if z >= floor_zoom {
+            u64::MAX
+        } else {
+            z.to_bits()
+        }
+    }
+
+    /// T-175 A5 — memo key for the tree/prop/badge glyph pack. All zoom dependence is discrete
+    /// (`class_visible` band gates + importance activation index) **except** the min-px glyph size,
+    /// which is captured by `floor_zoom_term`: above `glyph_size_floor_zoom` sizes are constant so
+    /// the zoom term is a sentinel; below it the exact zoom is hashed. `heatmap_trees` is **not**
+    /// hashed: the caller recomputes it exactly when this key changes (a heatmap flip without a key
+    /// change would need 127.5 k visible trees inside a pan-stable chunk set — impossible).
+    fn glyph_base_sig(&self) -> u64 {
         use std::hash::{Hash, Hasher};
+        let z = self.deck_zoom;
         let mut h = std::collections::hash_map::DefaultHasher::new();
         self.draw_ids.hash(&mut h);
-        self.deck_zoom.to_bits().hash(&mut h);
         self.content_epoch.hash(&mut h);
         self.toggle_trees.hash(&mut h);
         self.toggle_props.hash(&mut h);
         self.toggle_buildings.hash(&mut h);
-        self.toggle_fences.hash(&mut h);
         self.toggle_airfield.hash(&mut h);
-        // bbox / importance state changes the badge + airfield-icon set.
         self.airfield_bbox.map(|b| b.map(f64::to_bits)).hash(&mut h);
+        // Discrete band gates the glyph pack reads (generous set — extra bits that never cross above
+        // the size floor are harmless; a missing one that crosses would be a bug, guarded by tests).
+        class_visible("tree", z).hash(&mut h);
+        class_visible("vegetation", z).hash(&mut h);
+        class_visible("prop", z).hash(&mut h);
+        class_visible("rockLarge", z).hash(&mut h);
+        class_visible("buildingBadge", z).hash(&mut h);
         self.min_importance_zoom.map(f64::to_bits).hash(&mut h);
+        self.importance_activation_index(z).hash(&mut h);
+        Self::floor_zoom_term(z, self.glyph_size_floor_zoom).hash(&mut h);
+        h.finish()
+    }
+
+    /// T-175 A5 — memo key for the fence/pier/rail strip lane. Strips carry their own per-prefab
+    /// min-px width floor (varies), so this keeps the blunt `deck_zoom.to_bits()` term (unchanged
+    /// pre-T-175 behaviour); strip packs are cheap relative to the 150 k glyph lane.
+    fn strip_compose_key(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let z = self.deck_zoom;
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        self.draw_ids.hash(&mut h);
+        self.content_epoch.hash(&mut h);
+        self.toggle_fences.hash(&mut h);
+        self.toggle_buildings.hash(&mut h);
+        z.to_bits().hash(&mut h);
         h.finish()
     }
 
@@ -1124,54 +1222,59 @@ impl WorldResidency {
         ids
     }
 
-    /// Recompute `draw_ids` + density ladder + glyph buffers from `last_viewport`.
+    /// Recompute `draw_ids` + glyph/strip buffers from `last_viewport`.
+    ///
+    /// T-175 A5 — split compose memo. The glyph lane (≤150 k trees/props/badges) is gated by a
+    /// **floor-aware** key (`glyph_base_sig`): a fine zoom that stays in-band and above the min-px
+    /// size floor is a memo hit, so the 150 k pack no longer re-runs on every wheel tick. The strip
+    /// lane keeps its own (blunt-zoom) key. The orphaned per-recompose density-grid pack (T-174 glow
+    /// leftover — no reader) was removed from this hot path.
     fn refresh_draw_set_and_glyphs(&mut self) {
         self.draw_ids = self.draw_chunk_ids(self.last_viewport);
-        // T-173 P2 — memo: the glyph/strip/density pack is a pure function of the draw-id set,
-        // zoom (min-px sizing is continuous in zoom), resident-content epoch, the layer toggles,
-        // and the airfield/landmark state. Recompute the key; a match means the last-composed
-        // buffers are still correct — skip the ≤150 k-instance re-pack and don't bump the revision.
-        let key = self.compose_key();
-        if key == self.last_compose_key {
-            return;
-        }
-        self.last_compose_key = key;
         let chunk_size_m = self
             .manifest
             .as_ref()
             .map(|m| m.chunk_size_m)
             .unwrap_or(512.0);
-        let (gw, gh) = density_grid_dims(self.terrain.width, self.terrain.height, chunk_size_m);
-        self.density_grid_w = gw;
-        self.density_grid_h = gh;
-        if gw > 0 && gh > 0 && self.terrain.width > 0.0 {
-            self.density_grid = pack_density_grid_r32(&self.chunks, gw, gh);
-        } else {
-            self.density_grid.clear();
+        let mut changed = false;
+
+        // --- glyph lane (tree/prop/badge) ---
+        let glyph_key = self.glyph_base_sig();
+        if glyph_key != self.glyph_base_key {
+            self.glyph_base_key = glyph_key;
+            // T-152.14 heatmap rung — recomputed exactly when the glyph key moves (matches the
+            // pre-T-175 "recompute on every memo miss" freshness; O(visible trees), far cheaper than
+            // a repack). Counts viewport-VISIBLE trees (area-fraction) with hysteresis
+            // `[0.85×budget, budget]`: enter above budget, stay in the rung until below 127_500.
+            let visible = visible_tree_count(
+                &self.chunks,
+                &self.draw_ids,
+                self.last_viewport,
+                chunk_size_m,
+            );
+            let reenter = INSTANCE_BUDGET * 85 / 100;
+            self.heatmap_trees = if self.heatmap_trees {
+                visible >= reenter
+            } else {
+                heatmap_trees(visible)
+            };
+            self.exact_tree_count = exact_tree_count(&self.chunks, &self.draw_ids) as u32;
+            self.rebuild_glyph_buffers();
+            self.glyph_recomposes += 1;
+            changed = true;
         }
-        // Whole-chunk exact stays the stats/density-texel surface (the R32 grid is per-chunk).
-        let exact = exact_tree_count(&self.chunks, &self.draw_ids);
-        self.exact_tree_count = exact as u32;
-        // T-152.14: the heatmap-vs-glyph swap counts viewport-VISIBLE trees (area-fraction, audit
-        // A2) with hysteresis `[0.85×budget, budget]` — a chunk barely on-screen no longer clears
-        // every glyph, and the rung does not flicker on pan. Enter above budget; stay resident in
-        // the heatmap rung until the visible count drops below 0.85× (127_500 at the locked budget).
-        let visible = visible_tree_count(
-            &self.chunks,
-            &self.draw_ids,
-            self.last_viewport,
-            chunk_size_m,
-        );
-        let reenter = INSTANCE_BUDGET * 85 / 100;
-        self.heatmap_trees = if self.heatmap_trees {
-            visible >= reenter
-        } else {
-            heatmap_trees(visible)
-        };
-        self.rebuild_strip_buffers();
-        self.rebuild_glyph_buffers();
-        self.glyph_recomposes += 1;
-        self.buffers_revision += 1;
+
+        // --- strip lane (fence/pier/rail) ---
+        let strip_key = self.strip_compose_key();
+        if strip_key != self.strip_key {
+            self.strip_key = strip_key;
+            self.rebuild_strip_buffers();
+            changed = true;
+        }
+
+        if changed {
+            self.buffers_revision += 1;
+        }
     }
 
     /// Compose tree / prop / badge glyph instance buffers from **draw_ids** only.
@@ -1192,6 +1295,13 @@ impl WorldResidency {
         let badge_gate = class_visible("buildingBadge", z);
         let badge_want = self.toggle_buildings
             && (badge_gate || self.min_importance_zoom.is_some_and(|m| z >= m));
+
+        // T-175 A1 — record the per-lane LOD want (before the early return) so the host can force an
+        // empty-lane GPU clear when a lane is off, distinguishing it from a want-but-still-loading
+        // empty. `tree_want` alone isn't enough for trees — the heatmap rung also suppresses them.
+        self.tree_want = tree_want;
+        self.prop_want = prop_want;
+        self.badge_want = badge_want;
 
         if !tree_want && !prop_want && !badge_want {
             return;
@@ -1386,6 +1496,26 @@ impl WorldResidency {
     #[must_use]
     pub fn world_badge_glyphs(&self) -> Vec<u8> {
         self.badge_glyph_buf.clone()
+    }
+
+    /// T-175 A1 — tree glyph lane is LOD-**off** (below its zoom band, toggled off, or the heatmap
+    /// rung suppresses it). When true the host must upload an empty lane to clear the GPU even if
+    /// the pin set hasn't settled, instead of leaving the last zoom-in's glyphs stuck.
+    #[must_use]
+    pub fn tree_lane_off(&self) -> bool {
+        !self.tree_want || self.heatmap_trees
+    }
+
+    /// T-175 A1 — prop/rock glyph lane is LOD-off (below band or toggled off).
+    #[must_use]
+    pub fn prop_lane_off(&self) -> bool {
+        !self.prop_want
+    }
+
+    /// T-175 A1 — building-badge glyph lane is LOD-off (below the class gate + no importance override).
+    #[must_use]
+    pub fn badge_lane_off(&self) -> bool {
+        !self.badge_want
     }
 
     #[must_use]
@@ -1611,7 +1741,9 @@ impl WorldResidency {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::density_ladder::density_texel_sum_for_draw_ids;
+    use crate::world::density_ladder::{
+        density_grid_dims, density_texel_sum_for_draw_ids, pack_density_grid_r32,
+    };
     use flate2::Compression;
     use flate2::write::GzEncoder;
     use std::io::Write;
@@ -1620,6 +1752,14 @@ mod tests {
         let mut enc = GzEncoder::new(Vec::new(), Compression::default());
         enc.write_all(text.as_bytes()).unwrap();
         enc.finish().unwrap()
+    }
+
+    /// T-175 A5 — the per-recompose density R32 grid was removed from `WorldResidency` (dead: no
+    /// reader outside these T-152.14 rung tests). Recompute it on demand here from the free packer
+    /// so the whole-chunk exact / texel-sum invariants stay covered.
+    fn density_grid_of(r: &WorldResidency) -> (Vec<u32>, u32) {
+        let (gw, gh) = density_grid_dims(r.terrain.width, r.terrain.height, 512.0);
+        (pack_density_grid_r32(&r.chunks, gw, gh), gw)
     }
 
     /// A residency over a full 25×25 Everon grid (one building prefab id 9), every cell present.
@@ -2017,7 +2157,8 @@ mod tests {
         assert_eq!(exact, 10);
         assert!(!r.heatmap_trees_active());
         // Texel sum Class R (grid stays whole-chunk exact).
-        let sum = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
+        let (grid, gw) = density_grid_of(&r);
+        let sum = density_texel_sum_for_draw_ids(&grid, gw, &r.draw_ids);
         assert_eq!(sum, exact as u64);
 
         // Force over-budget: inflate the fully-visible chunk to INSTANCE_BUDGET + 1 (area-frac 1).
@@ -2026,7 +2167,8 @@ mod tests {
         assert!(r.heatmap_trees_active());
         assert_eq!(r.tree_glyph_count(), 0);
         assert_eq!(r.exact_tree_count_draw() as usize, INSTANCE_BUDGET + 1);
-        let sum2 = density_texel_sum_for_draw_ids(&r.density_grid, r.density_grid_w, &r.draw_ids);
+        let (grid2, gw2) = density_grid_of(&r);
+        let sum2 = density_texel_sum_for_draw_ids(&grid2, gw2, &r.draw_ids);
         assert_eq!(sum2, (INSTANCE_BUDGET + 1) as u64);
         // A3 handoff: glyphs are heatmap-cleared at z ≥ 0, so forest mass persists — not blank.
         assert!(r.forest_fill_effective());
@@ -2104,7 +2246,8 @@ mod tests {
                 let glyphs = r.tree_glyph_count() > 0;
                 let fill = r.forest_fill_effective();
                 let heat = r.heatmap_trees_active();
-                let grid_nonzero = r.density_grid.iter().any(|&v| v > 0);
+                let (grid, _gw) = density_grid_of(&r);
+                let grid_nonzero = grid.iter().any(|&v| v > 0);
                 assert!(
                     glyphs || fill || (heat && grid_nonzero),
                     "blank band @ z={z}, per_chunk={per_chunk}"
@@ -2131,6 +2274,62 @@ mod tests {
         assert_eq!(
             stats["chunks_draw"].as_u64().unwrap(),
             r.draw_ids().len() as u64
+        );
+    }
+
+    /// T-175 A5 — the floor-aware zoom term is a constant sentinel at/above the size floor (packed
+    /// sizes are zoom-independent there → memo hit) and the exact zoom bits below it.
+    #[test]
+    fn a5_floor_zoom_term_sentinel_above_exact_below() {
+        assert_eq!(
+            WorldResidency::floor_zoom_term(3.0, 2.5),
+            WorldResidency::floor_zoom_term(4.0, 2.5),
+            "above the floor the term is a constant sentinel"
+        );
+        assert_eq!(
+            WorldResidency::floor_zoom_term(2.5, 2.5),
+            u64::MAX,
+            "boundary inclusive"
+        );
+        assert_ne!(
+            WorldResidency::floor_zoom_term(2.0, 2.5),
+            WorldResidency::floor_zoom_term(2.4, 2.5),
+            "below the floor distinct zooms are distinct"
+        );
+    }
+
+    /// T-175 A5 — the glyph compose memo hits on a fine zoom that stays in-band and above the size
+    /// floor (no ≤150 k repack), but busts on a LOD band crossing and in the continuous-size regime
+    /// below the floor. Guards the discrete-gate enumeration in `glyph_base_sig`.
+    #[test]
+    #[allow(clippy::field_reassign_with_default)] // test fixture: poke floor + zoom on a default
+    fn a5_glyph_memo_hits_in_band_busts_on_cross() {
+        let mut r = WorldResidency::default();
+        r.glyph_size_floor_zoom = 2.678; // badge floor log2(8 / 1.25)
+
+        r.deck_zoom = 3.1;
+        let a = r.glyph_base_sig();
+        r.deck_zoom = 3.5;
+        let b = r.glyph_base_sig();
+        assert_eq!(
+            a, b,
+            "fine zoom above floor with no band crossing → memo hit"
+        );
+
+        r.deck_zoom = 2.9; // prop band gate is z ≥ 3 → this drops prop, still above the size floor
+        let c = r.glyph_base_sig();
+        assert_ne!(
+            b, c,
+            "prop band crossing busts the memo even above the size floor"
+        );
+
+        r.deck_zoom = 2.0;
+        let d = r.glyph_base_sig();
+        r.deck_zoom = 2.4;
+        let e = r.glyph_base_sig();
+        assert_ne!(
+            d, e,
+            "below the size floor any zoom delta busts (continuous glyph size)"
         );
     }
 }

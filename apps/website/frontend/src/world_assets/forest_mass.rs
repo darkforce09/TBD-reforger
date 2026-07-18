@@ -97,7 +97,13 @@ impl ForestMassHost {
                 .collect();
             if !missing.is_empty() {
                 fetched = true;
-                self.fetch_missing(missing).await;
+                // T-175 A2/H3 — fetch each batch concurrently (was one serial await per chunk
+                // despite the `FETCH_CONCURRENCY` name → a zoom-out to island stalled on dozens of
+                // sequential `.bin` RTTs before ANY forest drew) and push a partial composite after
+                // each batch so the mass fills progressively (the `present`-count memo makes each
+                // partial upload cheap).
+                self.fetch_missing(missing, engine, bridge, zoom, &ids)
+                    .await;
             }
         }
         let pushed = self.push_composite(engine, bridge, zoom, &ids);
@@ -125,15 +131,31 @@ impl ForestMassHost {
         }
     }
 
-    async fn fetch_missing(&mut self, ids: Vec<String>) {
+    /// T-175 A2/H3 — fetch missing chunk `.bin`s in **concurrent** batches of `FETCH_CONCURRENCY`
+    /// (the browser runs the batch's requests in parallel; the futures poll cooperatively on the
+    /// wasm single thread) and push a partial forest composite after each batch resolves so the mass
+    /// fills progressively instead of only after every chunk has landed.
+    async fn fetch_missing(
+        &mut self,
+        ids: Vec<String>,
+        engine: &EngineHandle,
+        bridge: &BridgeHandle,
+        zoom: f64,
+        all_ids: &[String],
+    ) {
         let base = self.asset_base.clone();
         for batch in ids.chunks(FETCH_CONCURRENCY) {
-            for id in batch {
+            let futs = batch.iter().map(|id| {
                 let url = format!("{base}/objects/density/{id}.bin");
-                let bytes = fetch_bytes(&url).await;
-                let composed = bytes.and_then(|b| compose_chunk(id, &b));
-                self.cache.insert(id.clone(), composed);
+                let id = id.clone();
+                async move { (id, fetch_bytes(&url).await) }
+            });
+            for (id, bytes) in futures::future::join_all(futs).await {
+                let composed = bytes.and_then(|b| compose_chunk(&id, &b));
+                self.cache.insert(id, composed);
             }
+            // Progressive partial upload as each batch lands (present-count memo gates re-uploads).
+            self.push_composite(engine, bridge, zoom, all_ids);
         }
     }
 

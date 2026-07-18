@@ -167,6 +167,39 @@ pub fn refresh_hud() {
     });
 }
 
+/// T-175 B1 — rebind the engine slot glyphs from the live doc after a **wholesale document swap**
+/// (IDB restore / server hydrate) so the restored slot positions actually reach the GPU. The IDB
+/// restore path previously only called [`refresh_hud`] (HUD counts, no engine rebind), so if the
+/// engine-create task won the race and first-bound the seed doc, restored positions never rendered
+/// until a manual edit ("first load: slots at wrong position"). Unlike [`after_doc_change`] this
+/// does **not** mark dirty / bump `doc_ver` / schedule a persist — those would echo the restore back
+/// as a user edit. No-op if the engine isn't mounted yet (the engine-mount handshake reruns it);
+/// idempotent (a full replace), so whichever of restore / engine-mount settles last binds once from
+/// the settled doc — no seed→restore flash, no double bind.
+pub fn rebind_engine_from_doc() {
+    HISTORY_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        let Some(soa) = ctx.doc.borrow().as_ref().map(MissionDocCore::materialize) else {
+            return;
+        };
+        {
+            let live: HashSet<&str> = soa.ids.iter().map(String::as_str).collect();
+            ctx.selection
+                .borrow_mut()
+                .retain(|id| live.contains(id.as_str()));
+        }
+        let ids = ctx.selection.borrow().clone();
+        if let Some(e) = ctx.engine.borrow_mut().as_mut() {
+            e.slots_bind_soa(soa.ids.clone(), &soa.xy);
+            e.set_selection(ids);
+        }
+        refresh_signals(ctx, soa.ids.len());
+    });
+}
+
 /// Selection-only refresh (click / marquee / outliner select / attributes open): pushes SEL and
 /// the dock highlight mirror WITHOUT rebuilding the outliner/ORBAT node trees. Rebuilding both
 /// trees (`refresh_docks`) on every click re-flattened O(n) rows per selection — the T-172 B8

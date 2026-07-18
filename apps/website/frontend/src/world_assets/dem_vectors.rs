@@ -17,7 +17,11 @@ use crate::select_tool::EngineHandle;
 
 const ROLE_SEA: u32 = 0;
 const ROLE_CONTOURS: u32 = 2;
-const CONTOUR_RGBA: [u8; 4] = [90, 70, 40, 180];
+// T-175 A3 — contours were near-invisible: the old dark brown (luma ~72, α180) vanished over both
+// the dark satellite photo and the tan Map basemap. Raised to a lighter warm tan-brown at higher
+// alpha (luma ~155, α235) so the 1 px hairline reads on both basemaps. (wgpu draws contours as a
+// native 1 px LineList — width is not a lever; only colour/alpha is. Operator-tunable.)
+const CONTOUR_RGBA: [u8; 4] = [188, 150, 100, 235];
 const TERRAIN_M: f64 = 12_800.0;
 
 pub struct DemVectors {

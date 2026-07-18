@@ -208,6 +208,28 @@ pub fn hide_slot_row_patch() -> [u8; 12] {
     hide
 }
 
+/// T-175 B4 — 12 B **selected** row patch for the base slot lane at instance offset+8:
+/// `[size=28 px, yaw=0, glyph=SLOT_GLYPH_RING(0), tint=tactical-yellow]`. Byte-identical to what
+/// `pack_slot_instances` emits for a selected row, so an O(delta) sub-row patch matches a full
+/// rematerialize exactly (slot rows always carry yaw 0 / glyph 0).
+#[must_use]
+pub fn selected_row_patch() -> [u8; 12] {
+    let mut p = [0u8; 12];
+    p[0..4].copy_from_slice(&SLOT_SELECTED_PX.to_le_bytes());
+    // yaw i16 = 0, glyph u16 = SLOT_GLYPH_RING (0) — left zero
+    p[8..12].copy_from_slice(&pack_rgba_u32(SLOT_SELECTED_RGBA).to_le_bytes());
+    p
+}
+
+/// T-175 B4 — 12 B **unselected** row patch: `[size=20 px, yaw=0, glyph=0, tint=Aegis-primary]`.
+#[must_use]
+pub fn unselected_row_patch() -> [u8; 12] {
+    let mut p = [0u8; 12];
+    p[0..4].copy_from_slice(&SLOT_RING_PX.to_le_bytes());
+    p[8..12].copy_from_slice(&pack_rgba_u32(SLOT_PRIMARY_RGBA).to_le_bytes());
+    p
+}
+
 /// Pack drag overlay instances for the given drag ids (lookup by id → row in `ids`/`xy`).
 /// Returns packed bytes + parallel full-doc row indices that were hidden (for base patches).
 #[must_use]
