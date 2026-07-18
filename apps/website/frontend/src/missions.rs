@@ -583,7 +583,17 @@ fn MissionDossierSheet(
 
     view! {
         <Suspense fallback=move || {
-            view! { <p class="p-8 text-on-surface-variant">"Loading dossier…"</p> }
+            // Indeterminate load gate (T-172 A7): label + sweeping bar while the dossier fetches.
+            view! {
+                <div class="flex h-full flex-col items-center justify-center gap-4 p-8">
+                    <p class="font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
+                        "Loading dossier…"
+                    </p>
+                    <div class="h-1 w-56 overflow-hidden rounded-full bg-surface-variant/40">
+                        <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
+                    </div>
+                </div>
+            }
         }>
             {move || {
                 mission

@@ -85,13 +85,13 @@ fn modal_view(
     };
     view! {
         <div
-            class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+            class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
             on:click=move |_| crate::editor_ops::close_attributes()
         ></div>
         <div class=move || {
             // T-167 — the Smart Arsenal (tab 3) needs the wide 2-column doll layout; other tabs stay compact.
             let width = if tab.get() == 3 { "max-w-5xl" } else { "max-w-lg" };
-            format!("glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] {width} -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200")
+            format!("glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] {width} -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200")
         }>
             <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
                 <div class="min-w-0">

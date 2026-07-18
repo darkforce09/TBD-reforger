@@ -169,10 +169,10 @@ pub fn FactionManagerDialog(
         let items = StoredValue::new(items);
         Some(view! {
             <div
-                class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+                class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
                 on:click=move |_| open.set(false)
             ></div>
-            <div class="glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none">
+            <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none">
                 <div class="flex items-center justify-between border-b border-outline-variant/30 px-6 py-4">
                     <h2 class="text-headline-sm text-on-surface">"Faction Manager"</h2>
                     <button type="button" aria-label="Close" on:click=move |_| open.set(false)

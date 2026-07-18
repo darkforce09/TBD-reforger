@@ -285,6 +285,10 @@
 .animate-dialog-in {
   animation: dialog-in 200ms ease-out;
 }
+.animate-menu-in {
+  animation: menu-in 150ms ease-out;
+  transform-origin: top right;
+}
 
 @keyframes overlay-fade {
   from {
@@ -313,14 +317,27 @@
   }
 }
 
+/* Centered dialogs position with translate(-50%,-50%), so the enter animation must carry
+   that translate or the panel would jump off-center for its first frames. */
 @keyframes dialog-in {
   from {
     opacity: 0;
-    transform: scale(0.96) translateY(8px);
+    transform: translate(-50%, calc(-50% + 8px)) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 

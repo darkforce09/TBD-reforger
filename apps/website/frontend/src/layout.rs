@@ -239,7 +239,7 @@ fn TopNav() -> impl IntoView {
                                     let item = "flex w-full items-center gap-2 px-4 py-2 text-left text-label-md text-on-surface transition-colors hover:bg-surface-variant/40";
                                     view! {
                                         <div class="fixed inset-0 z-40" on:click=move |_| menu_open.set(false)></div>
-                                        <div class="glass animate-dialog-in absolute top-full right-0 z-50 mt-2 w-56 rounded-lg py-1 shadow-lg">
+                                        <div class="glass animate-menu-in absolute top-full right-0 z-50 mt-2 w-56 rounded-lg py-1 shadow-lg">
                                             <a href="/settings" class=item on:click=move |_| menu_open.set(false)>
                                                 <MaterialIcon name="settings" class="text-[18px] text-on-surface-variant" />
                                                 "Settings"

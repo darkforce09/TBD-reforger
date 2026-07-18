@@ -631,10 +631,10 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
         let env = crate::dto::MissionEnv::default();
         Some(view! {
             <div
-                class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+                class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
                 on:click=move |_| open.set(false)
             ></div>
-            <div class="glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
+            <div class="glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200">
                 <div class="flex items-start justify-between gap-4 border-b border-outline-variant/30 px-6 py-4">
                     <div class="min-w-0">
                         <h2 class="text-headline-sm text-on-surface">"Mission Settings"</h2>

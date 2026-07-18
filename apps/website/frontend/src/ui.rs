@@ -120,12 +120,12 @@ pub fn Dialog(
         open.get().then(|| {
             view! {
                 <div
-                    class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
+                    class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-200"
                     on:click=move |_| open.set(false)
                 ></div>
                 <div class=cn(
                     &[
-                        "glass fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200",
+                        "glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[92vw] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none transition-all duration-200",
                         class,
                     ],
                 )>
@@ -184,12 +184,12 @@ pub fn Sheet(
         open.get().then(|| {
             view! {
                 <div
-                    class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+                    class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
                     on:click=move |_| open.set(false)
                 ></div>
                 <div class=cn(
                     &[
-                        "glass fixed z-50 flex flex-col border-outline-variant/30 shadow-2xl outline-none transition-transform duration-300 ease-out inset-y-0 right-0 h-full w-[92vw] max-w-md border-l",
+                        "glass animate-sheet-in fixed z-50 flex flex-col border-outline-variant/30 shadow-2xl outline-none transition-transform duration-300 ease-out inset-y-0 right-0 h-full w-[92vw] max-w-md border-l",
                         class,
                     ],
                 )>
