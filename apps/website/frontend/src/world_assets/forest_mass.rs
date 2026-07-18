@@ -6,7 +6,7 @@ use map_engine_core::geometry::forest_mass::{
     forest_fill_alpha, forest_mass_from_corners, DENSITY_ISO,
 };
 use map_engine_core::geometry::tbdd::decode_tbdd;
-use map_engine_core::geometry::vector_compose::compose_forest_mesh;
+use map_engine_core::geometry::vector_compose::{compose_forest_mesh, retint_fill_alpha};
 use map_engine_core::world::{chunk_ids_for_viewport, class_visible, TerrainSizeM};
 
 use crate::select_tool::EngineHandle;
@@ -39,6 +39,11 @@ pub struct ForestMassHost {
     cache: HashMap<String, Option<Composed>>,
     lru: VecDeque<String>,
     last_key: String,
+    /// What the last `push_composite` actually uploaded: (ids key, alpha bits, chunks present,
+    /// fill on, outline on). Identical state → skip the concat + re-upload entirely — the boot
+    /// drain (12 passes) and each settle (6 passes) were re-uploading an unchanged mesh every
+    /// pass (T-172 H2).
+    pushed: (String, u64, usize, bool, bool),
 }
 
 impl ForestMassHost {
@@ -49,6 +54,7 @@ impl ForestMassHost {
             cache: HashMap::new(),
             lru: VecDeque::new(),
             last_key: String::new(),
+            pushed: (String::new(), u64::MAX, usize::MAX, false, false),
         }
     }
 
@@ -127,7 +133,7 @@ impl ForestMassHost {
     }
 
     fn push_composite(
-        &self,
+        &mut self,
         engine: &EngineHandle,
         bridge: &BridgeHandle,
         zoom: f64,
@@ -141,6 +147,21 @@ impl ForestMassHost {
                 e.clear_vector_lane(ROLE_FOREST_FILL);
                 e.clear_vector_lane(ROLE_FOREST_OUTLINE);
             }
+            // Re-arm the memo so the next visible push uploads.
+            self.pushed = (String::new(), u64::MAX, usize::MAX, false, false);
+            return;
+        }
+        // Skip identical re-uploads (T-172 H2): same viewport chunk set, same alpha band, same
+        // number of resolved chunks, same class flags → the concatenated mesh is byte-identical.
+        let present = ids.iter().filter(|id| self.cache.contains_key(*id)).count();
+        let state = (
+            self.last_key.clone(),
+            alpha.to_bits(),
+            present,
+            fill_on,
+            outline_on,
+        );
+        if state == self.pushed {
             return;
         }
         let mut pos = Vec::new();
@@ -156,7 +177,6 @@ impl ForestMassHost {
             };
             if fill_on && alpha > 0.0 && c.fill_n > 0 {
                 pos.extend_from_slice(&c.fill_pos);
-                // Re-tint alpha onto colors if needed — colors already baked at compose time with alpha.
                 col.extend_from_slice(&c.fill_col);
                 for &i in &c.fill_idx {
                     idx.push(base_v + i);
@@ -169,6 +189,10 @@ impl ForestMassHost {
                 outline_n += c.outline_n;
             }
         }
+        // The cached chunk meshes are baked at alpha 1.0; tint the concatenated copy to the zoom
+        // band so the fill blends translucent over the basemap (T-172 B3).
+        #[allow(clippy::cast_possible_truncation)]
+        retint_fill_alpha(&mut col, alpha as f32);
         if let Some(e) = engine.borrow_mut().as_mut() {
             if fill_on && poly_n > 0 {
                 e.upload_polygon_mesh(ROLE_FOREST_FILL, &pos, &col, &idx, poly_n, true);
@@ -182,6 +206,7 @@ impl ForestMassHost {
             }
             publish_engine(bridge, e);
         }
+        self.pushed = state;
     }
 }
 

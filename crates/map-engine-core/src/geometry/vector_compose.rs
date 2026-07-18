@@ -46,6 +46,17 @@ fn u8_rgba_to_f32(c: [u8; 4], layer_alpha: f32) -> [f32; 4] {
     ]
 }
 
+/// Overwrite the alpha component of an interleaved RGBA-f32 vertex color buffer. The forest
+/// fill's per-chunk meshes are cached composed at alpha 1.0; the host re-tints the concatenated
+/// copy to the zoom band's `forest_fill_alpha` before upload (T-172 B3 — the baked 1.0 made the
+/// blend collapse to opaque). Colors are straight (non-premultiplied), so alpha-only is correct.
+pub fn retint_fill_alpha(colors: &mut [f32], alpha: f32) {
+    let a = alpha.clamp(0.0, 1.0);
+    for c in colors.chunks_exact_mut(4) {
+        c[3] = a;
+    }
+}
+
 pub(crate) fn mesh_from_tri(mesh: TriMesh, colors_u8: &[u8], layer_alpha: f32) -> PolyMeshGpu {
     if mesh.indices.is_empty() {
         return PolyMeshGpu::default();
@@ -293,5 +304,17 @@ mod tests {
         let m = compose_sea_mesh(&geo, 1.0);
         assert!(!m.indices.is_empty());
         assert_eq!(m.colors.len(), m.positions.len() / 2 * 4);
+    }
+
+    #[test]
+    fn retint_fill_alpha_sets_every_fourth_only() {
+        let mut cols = vec![0.2, 0.4, 0.6, 1.0, 0.1, 0.3, 0.5, 1.0];
+        retint_fill_alpha(&mut cols, 0.35);
+        assert_eq!(cols, vec![0.2, 0.4, 0.6, 0.35, 0.1, 0.3, 0.5, 0.35]);
+        // Out-of-range alpha clamps.
+        retint_fill_alpha(&mut cols, 2.0);
+        assert!((cols[3] - 1.0).abs() < f32::EPSILON);
+        retint_fill_alpha(&mut cols, -1.0);
+        assert_eq!(cols[7], 0.0);
     }
 }
