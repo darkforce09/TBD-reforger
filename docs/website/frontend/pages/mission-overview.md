@@ -9,7 +9,7 @@
 - **What:** Detail page for a single mission: lore, map, armory, ORBAT, actions.
 - **Why:** Players and authors review mission before play or edit.
 - **Route:** `/missions/:id`
-- **Live source:** `apps/website-leptos/src/mission_overview.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/mission_overview.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/operation_enduring_freedom_mission_overview/code.html`
 - **Min role:** `public-nav`
 - **Blueprint ref:** —

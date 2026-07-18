@@ -34,6 +34,8 @@ isProject: false
 
 # AGENT EXECUTION CONTRACT
 
+> **Live stack (T-145 / T-151 / T-159 / T-171):** Leptos + yrs + wgpu at `apps/website/frontend/` — not Deck.gl / React / Vite / Go middleware. Verify commands: `make ci-local-leptos` (not `npm run build && npm run lint`). Homes: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Body below retains React-era paths as ship history.
+
 > **Phase completion log (T-033–T-040):** PRE-3.5 ✅ DOC-0 ✅ 3.5 ✅ 7b ✅ 7a ✅ 9 ✅.
 > **North star:** **1M–10M editable entities** via **T-059..T-067**. **T-067 shipped.** Next: **T-068+** — [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md).
 

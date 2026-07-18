@@ -22,3 +22,11 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-172 — Leptos SPA + Mission Creator bug bash
+
+- **Slice spec:** `docs/platform/t172_leptos_bug_bash.md`
+- **Program hub:** `docs/platform/t172_leptos_bug_bash.md`
+- **Branch:** `main`
+- **Targets:** website
+- **Summary:** Operator bug bash after T-166–T-171: fix seeded shell/MC bugs (dead user menu, stuck nav highlight, dead narrow sidebar hamburger, non-selecting Wiki/Vehicles/Modpacks, lag, invisible slots, opaque forests, CUR Z, tree chrome, T-154 3D Arsenal, React chrome gaps) AND mandatory Claude bug hunt (Phase 0 Found-by-hunt H1…Hn + mid-pass) — all inventory rows fixed in-ticket. Screens: .ai/artifacts/t172_operator_screens/. Hub: docs/platform/t172_leptos_bug_bash.md. Not mod. Not T-170.

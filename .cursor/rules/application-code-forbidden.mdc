@@ -1,6 +1,6 @@
 ---
 description: HARD GATE — no Cursor edits to application source without explicit user code authorization
-globs: apps/website/**/*.go,apps/website/frontend/src/**/*.{ts,tsx},apps/mod/**/*.{c,et,conf,lua}
+globs: apps/website/api/src/**/*.rs,apps/website/frontend/src/**/*.rs,apps/mod/**/*.{c,et,conf,lua}
 alwaysApply: false
 ---
 
@@ -8,7 +8,7 @@ alwaysApply: false
 
 **Default: DO NOT EDIT these files in Cursor.**
 
-Application code is shipped by **Claude Code** on `executor: claude-code` ticket branches (`./scripts/ticket run`).
+Application code is shipped by **Claude Code** on `executor: claude-code` slices via `./scripts/ticket run` (work lands on **`main`** — no `ticket/T-0xx` branches).
 
 ## Allowed in Cursor (without extra permission)
 
@@ -17,7 +17,7 @@ Application code is shipped by **Claude Code** on `executor: claude-code` ticket
 
 ## Forbidden unless user explicitly says "Cursor implement this code"
 
-- Any patch under `apps/website/internal/`, `apps/website/frontend/src/`, `apps/mod/`
+- Any patch under `apps/website/api/src/`, `apps/website/frontend/src/`, `apps/mod/`
 - "Fixing" audit findings (C1, C2, etc.) yourself
 - Completing plan todos that say `claude-code`
 

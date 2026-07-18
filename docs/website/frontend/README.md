@@ -11,4 +11,4 @@
 
 **Ticket queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md)
 
-**Live UI authority:** `apps/website-leptos/src/` (one module per page; T-159 Leptos rewrite — React deleted at T-159.29.3)
+**Live UI authority:** `apps/website/frontend/src/` (one module per page; T-159 Leptos rewrite — React deleted at T-159.29.3)

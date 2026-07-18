@@ -5,6 +5,8 @@
 **Audited:** 2026-06-20 (initial) · **Second pass:** 2026-06-20 (code + scrape cross-check)  
 **UX cross-check:** [ux_spec.md](ux_spec.md)
 
+> **SUPERSEDED tech nouns (T-145 / T-151 / T-159):** Yjs / y-indexeddb / Deck.gl rows below are ship history. Live = yrs + wgpu + Leptos (`apps/website/frontend/`). See [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+
 ---
 
 ## Glossary (TBD)

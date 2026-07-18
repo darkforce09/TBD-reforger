@@ -60,21 +60,15 @@ Confirm key paths exist:
 From repo root:
 
 ```bash
-cp apps/website/.env.example apps/website/.env   # only if .env missing
+cp apps/website/api/.env.example apps/website/api/.env   # only if .env missing
 make db-up
-PATH="$HOME/.local/go/bin:$PATH" make api   # background terminal
-make web                                     # background terminal
-curl -sf http://localhost:8080/healthz          # confirm API up (JSON status ok)
-```
-
-First-time frontend deps (if `node_modules` is absent):
-
-```bash
-cd apps/website/frontend && npm ci
+make api      # background terminal — Axum :8080
+make leptos   # background terminal — Trunk :3000
+curl -sf http://localhost:8080/api/v1/health
 ```
 
 - **Dev login:** `http://localhost:8080/api/v1/auth/dev-login?role=mission_maker`
-- **Mission Creator:** `http://localhost:5173/missions/:id/edit` (after creating/opening a mission)
+- **Mission Creator:** `http://127.0.0.1:3000/missions/:id/edit` (after creating/opening a mission)
 - **Full details:** [DEV_RUNBOOK.md](DEV_RUNBOOK.md)
 
 **Mod Workbench (T-068.1 / T-068.5 / T-068.8):** Claude Code runs **`bash scripts/mod/tbd-dev-bootstrap.sh`** (auto-launches Workbench) + MCP — see [`docs/mod/CLAUDE-CODE-START.md`](../mod/CLAUDE-CODE-START.md).
@@ -194,7 +188,7 @@ Idea (Brainstorm) → registry row (Docs & Tickets) → ./scripts/ticket sync
 
 ## What this setup does NOT do
 
-- No Go/React implementation until Claude Code slice **T-068.0.1+** on `ticket/T-068`
+- No app-code implementation in Cursor — Claude Code on **`main`** for `executor: claude-code` slices
 - Workbench export (**T-068.1**), mod equip (**T-068.5**), compat export (**T-068.8**) — **claude-code** runs bootstrap + MCP (not skipped by `./scripts/ticket run`)
 - Phase 1 E2E sign-off (**T-068.6**) remains **human** executor
 - No changes to ticket registry unless you start spec work in **Docs & Tickets**

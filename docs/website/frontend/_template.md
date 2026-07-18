@@ -9,7 +9,7 @@
 - **What:** [One sentence]
 - **Why:** [Business reason]
 - **Route:** `/path` or `(shell component)`
-- **Live source:** `apps/website-leptos/src/<module>.rs`
+- **Live source:** `apps/website/frontend/src/<module>.rs`
 - **Stitch reference:** `[git history] src/stitch-exports/<name>/code.html` — archive tier
 - **Min role:** `enlisted` | `mission_maker` | `admin` | `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../platform/context_handoff.md) §4.x (if applicable)

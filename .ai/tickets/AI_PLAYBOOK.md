@@ -68,7 +68,7 @@ Rule: [`.cursor/rules/no-silent-deferrals.mdc`](../../.cursor/rules/no-silent-de
 
 | Executor | Agent | Scope |
 |----------|-------|-------|
-| `claude-code` | Claude Code | `website/` code on `ticket/T-0xx` branches |
+| `claude-code` | Claude Code | `apps/website/{api,frontend}/` code on **`main`** |
 | `cursor-docs` | Cursor | specs, registry, `./scripts/ticket sync` |
 | `workbench` / `human` | Human | `mod/tbd-framework` — see [`docs/TICKET_MOD_QUEUE.md`](../../docs/TICKET_MOD_QUEUE.md) |
 

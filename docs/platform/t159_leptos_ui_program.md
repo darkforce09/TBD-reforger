@@ -1,15 +1,18 @@
 # T-159 — Leptos UI rewrite program
 
+> **T-171 note:** paths in this hub that say `apps/website-leptos/` or treat `apps/website/frontend/` as the deleted React tree **pre-date the T-171 nest**. Live SPA = `apps/website/frontend/` (pkg `website-frontend`). See [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+
 **Status:** program hub · **MODE (2026-07-17): single-session solo finish** — the Fable 5 audit +
 finish plan was operator-approved; Claude Code executes code + verify logs + docs + commits directly
 (no per-slice Cursor Mode B pass). Plan of record: `~/.claude/plans/you-are-fable-5-vast-bird.md`
 (operator copy) — stream ladder T-159.24 → T-159.29 below.
 **ACTIVE:** none — **program complete incl. the React deletion** (operator go 2026-07-17):
-`apps/website/frontend/` is deleted; the Leptos SPA is the only frontend. Deletion phase
+React `apps/website/frontend/` was deleted at T-159.29.3; Leptos was then at `apps/website-leptos/`
+and nested to `apps/website/frontend/` at **T-171**. Deletion phase
 `.29.1` (V oracle freeze, 25/25) → `.29.2` (census pin → cargo test) → `.29.3` (delete + CI/Make/
 codegen purge) — [`t159_29_delete_verify_log.md`](../../.ai/artifacts/t159_29_delete_verify_log.md).
 **Residual (operator):** the prod default flip only (`SPA_DIST_DIR` + OAuth origin + soak). ·
-**Latest:** **T-159.29.3** · **Worktree:** `.ai/artifacts/worktrees/TBD-T-159/` @ `t-159-leptos-ui`
+**Latest:** **T-159.29.3** · **Worktree (historical):** `.ai/artifacts/worktrees/TBD-T-159/`
 
 ## Finish-program streams (audit-derived, 2026-07-17)
 

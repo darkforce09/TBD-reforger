@@ -3,19 +3,22 @@
 **Purpose:** This document contains the complete context, UI blueprints, and system architecture for the "TBD Reforger Event Platform." It is designed to be fed into an LLM (like Claude) to provide 100% project context for generating backend code, data models, and integration scripts.
 
 > **Status:** Original product/UI blueprint. §3 data models are **partially stale** (pre-T-008
-> campaign refactor — use [`internal/models/`](../../../apps/website/internal/models) as API contract).
-> §4 UI blueprints remain useful reference. Current status: [`CLAUDE.md`](../../../apps/website/CLAUDE.md).
+> campaign refactor — use [`apps/website/api/src/models/`](../../../apps/website/api/src/models/) as API contract).
+> §4 UI blueprints remain useful reference. Current status: root [`CLAUDE.md`](../../../CLAUDE.md).
+> **Live stack (T-145 / T-159 / T-171):** Frontend = Leptos CSR (`apps/website/frontend/`); Backend = Rust Axum + sqlx (`apps/website/api/`).
 
 ---
 
 ## 1. Project Overview
 We are building a premium, all-in-one web suite for a tactical Arma Reforger Milsim community named "TBD". The platform handles user authentication, event scheduling, mission creation (via a visual 2D web editor), server telemetry, and community doctrine.
 
-**Tech Stack:**
-- **Frontend**: React (Dark theme, Tailwind/CSS, highly visual and interactive).
-- **Backend**: Go (RESTful API, JWT handling).
-- **Database**: TBD (Likely PostgreSQL for relational data, plus JSON document storage for missions).
+**Tech Stack (live):**
+- **Frontend**: Leptos 0.8 CSR (Rust→wasm, Trunk) — `apps/website/frontend/` (React deleted at T-159.29.3).
+- **Backend**: Rust Axum + sqlx — `apps/website/api/` (Go deleted at T-145).
+- **Database**: PostgreSQL (relational + JSONB mission payloads).
 - **Game Engine**: Arma Reforger (Enfusion Engine).
+
+**(Historical blueprint claimed React + Go — superseded.)**
 
 ---
 
@@ -23,7 +26,7 @@ We are building a premium, all-in-one web suite for a tactical Arma Reforger Mil
 
 ### A. Discord Integration
 - **OAuth2 Login**: The platform uses Discord for primary authentication. No local passwords.
-- **Role Syncing**: The Go backend must sync Discord roles (e.g., @Admin, @MissionMaker) to web permissions.
+- **Role Syncing**: The API must sync Discord roles (e.g., @Admin, @MissionMaker) to web permissions.
 - **Webhooks**: The CMS must push news and event announcements directly to the Discord `#announcements` channel via webhook embeds.
 
 ### B. Arma Reforger Server Integration
@@ -37,7 +40,7 @@ We are building a premium, all-in-one web suite for a tactical Arma Reforger Mil
 ## 3. Data Models (High-Level)
 
 > **Partially stale (pre-T-008):** Event/mission schema here predates the campaign refactor
-> (`event_missions`, per-mission ORBAT). Use [`internal/models/`](../../../apps/website/internal/models) as the API contract.
+> (`event_missions`, per-mission ORBAT). Use [`apps/website/api/src/models/`](../../../apps/website/api/src/models/) as the API contract.
 
 ### Users & Authentication
 - `discord_id` (Primary Key)

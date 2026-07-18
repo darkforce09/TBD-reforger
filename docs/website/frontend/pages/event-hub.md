@@ -9,7 +9,7 @@
 - **What:** Operation container page: hero briefing, countdown, modpack link, and per-mission dossiers with inline ORBAT registration.
 - **Why:** Players review multi-mission events and claim slots without leaving the hub.
 - **Route:** `/events/:id`
-- **Live source:** `apps/website-leptos/src/event_hub.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/event_hub.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** none (composed from campaign refactor UX)
 - **Min role:** `public-nav` (registration requires auth)
 - **Blueprint ref:** —
@@ -40,7 +40,7 @@
 Standalone split-pane ORBAT selector for bookmarking a single mission:
 
 - **Route:** `/events/:id/missions/:emid/orbat`
-- **Live source:** the shared ORBAT selector in `apps/website-leptos/src/orbat_selection.rs` (reused by `event_hub.rs`)
+- **Live source:** the shared ORBAT selector in `apps/website/frontend/src/orbat_selection.rs` (reused by `event_hub.rs`)
 - **Use when:** Direct link to one mission's slot picker (e.g. Discord pin). Full hub context is optional; page focuses on ORBAT column layout.
 
 ### States

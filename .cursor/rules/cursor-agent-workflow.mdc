@@ -13,8 +13,8 @@ These rules override helpfulness. When in doubt, **stop and ask** — do not gue
 
 | Agent | Owns | Must NOT |
 |-------|------|----------|
-| **Cursor (you)** | Plan review, critique, docs, `.ai/tickets/registry.json`, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `./scripts/ticket sync` | Application code in `apps/website/`, `apps/mod/`, `packages/tbd-schema/` (except schema doc-only) |
-| **Claude Code** | Application code on `executor: claude-code` slices via `./scripts/ticket run` | Documentation, registry, ticket sync |
+| **Cursor (you)** | Plan review, critique, docs, `.ai/tickets/registry.json`, spec markdown, handoff artifacts (`.ai/artifacts/*_handoff.md`), `./scripts/ticket sync` | Application code in `apps/website/api/`, `apps/website/frontend/`, `apps/mod/`, `packages/tbd-schema/` (except schema doc-only) |
+| **Claude Code** | Application code on `executor: claude-code` slices via `./scripts/ticket run` (on **`main`**) | Documentation, registry, ticket sync |
 
 **Executor gate:** Only act on slices where `executor` is `cursor-docs` or `claude-code`. If `workbench`, `human`, or `ci` — **stop and wait**.
 
@@ -58,7 +58,7 @@ You babble; that's fine. **Classify intent** from the message — never require 
 - "Fix C1", "implement", "ship the hotfix", "run the ticket"
 - "Implement the plan" without prior Mode B ticket
 
-**Default response:** Code is **Claude Code** — output handoff or say `./scripts/ticket run`. Do not patch `.go`/`.ts`/`.c` unless user **clearly** overrides: *"Cursor, you write the code"*.
+**Default response:** Code is **Claude Code** — output handoff or say `./scripts/ticket run`. Do not patch `.rs`/`.c` under `apps/website/{api,frontend}/` or `apps/mod/` unless user **clearly** overrides: *"Cursor, you write the code"*.
 
 ## Danger patterns — still over-interpret carefully
 
@@ -89,8 +89,8 @@ State **Mode A/B/C** and list **every path** you will touch. App paths under `ap
 If about to write files, state **Mode (A/B/C)** and list **every path** you will touch.
 
 If the list includes any of:
-- `apps/website/internal/**`
-- `apps/website/frontend/src/**`
+- `apps/website/api/src/**`
+- `apps/website/frontend/src/**` (live Leptos SPA — Claude-owned)
 - `apps/mod/**`
 
 and Mode is not explicit user-authorized code → **STOP**.
@@ -104,7 +104,7 @@ and Mode is not explicit user-authorized code → **STOP**.
 ## Commits
 
 - Do not commit unless user asks.
-- Doc-only commits: Cursor. Code commits: Claude Code on ticket branch with `T-0xx` tag.
+- Doc-only commits: Cursor. Code commits: Claude Code on **`main`** with `T-0xx` tag.
 
 ## When you mess up
 

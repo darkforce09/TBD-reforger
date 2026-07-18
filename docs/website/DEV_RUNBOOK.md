@@ -1,63 +1,55 @@
 # Dev Runbook — spin up the stack
 
-Quick steps to bring up DB + API + Vite locally. See [`CLAUDE.md`](../../apps/website/CLAUDE.md) for full context.
-Backend docs: [`docs/backend/README.md`](backend/README.md).
+Quick steps to bring up DB + Axum API + Leptos (Trunk) locally. Canonical context: root [`CLAUDE.md`](../../CLAUDE.md).
+Backend planning (partially archive): [`docs/website/backend/ROADMAP.md`](backend/ROADMAP.md).
+Conventions: [`WHERE_DOES_X_GO.md`](../platform/WHERE_DOES_X_GO.md).
 
 ## Start everything
 
-**Toolchain (T-124):** Go **1.26**, Node **26** (repo root [`.nvmrc`](../../.nvmrc) — `nvm use` before frontend work), Postgres **18** (`postgres:18-alpine` in compose).
+**Toolchain:** Rust stable (API + SPA + tooling). Postgres **18** (`postgres:18-alpine` in `apps/website/api/docker-compose.yml`). Node exists only for `enfusion-mcp` under `scripts/mod` (T-165).
 
-**CI replay (T-125 — full program):** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) on every push/PR to `main`. Local mirror:
+**CI replay:** Primary gate [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). Local mirror:
 
 ```bash
 make db-up          # Postgres on host :5434
-# (Node no longer required — T-165; enfusion-mcp bundles its own runtime needs)
-make ci-local       # verify-editorconfig + backend + verify-coding-standards + FE format:check/lint/build/test + schema/citations
+make ci-local       # editorconfig + website-api + coding-standards + leptos + schema/citations
 ```
 
-**Formatting (T-125.5):** `make verify-editorconfig` (FMT-2, repo root; needs `editorconfig-checker` in `~/go/bin`) · `cargo fmt --check` in `apps/website` + `-p website-leptos` (the FMT-3 npm gate retired at T-159.29.3). Coding-standards bundle: `make verify-coding-standards` (includes `verify-doc-layout` per DOCUMENTATION_STANDARDS §8.2) — see [`CODING_STANDARDS.md`](../platform/CODING_STANDARDS.md) §11.
+**Formatting:** `make verify-editorconfig` · `cargo fmt --check` in `apps/website/api` + `-p website-frontend`. Coding-standards: `make verify-coding-standards`.
 
 ```bash
-# 1. Postgres (port 5434) — quick, run in foreground
+# 1. Postgres (port 5434)
 make db-up
 
-# 2. Go API on :8080 — run in background; compiles + migrates on boot.
+# 2. Axum API on :8080 (CWD = apps/website/api; migrates on boot)
 make api
 
-# 3. Leptos dev server on :3000 (trunk serve; proxies /api -> :8080) — run in background
+# 3. Leptos Trunk SPA on :3000 (proxies /api + /map-assets → :8080)
 make leptos
 ```
 
-> **Note:** root `Makefile` prepends `~/.local/go/bin` to PATH for Go targets. If you run `go` directly outside `make`, use `export PATH="$HOME/.local/go/bin:$PATH"`.
+Config: `apps/website/api/.env` (`FRONTEND_URL=http://127.0.0.1:3000`). Prod SPA flip: `SPA_DIST_DIR=../frontend/dist`.
 
 ## Confirm it's up
 
 ```bash
-# API responds (200) once migrations finish (~few seconds)
 curl -sf http://localhost:8080/api/v1/health
 ```
 
 - API: http://localhost:8080
-- Web: http://localhost:5173
+- Web: http://127.0.0.1:3000
 
 ## Contract codegen, validation & CI (T-123)
 
 ```bash
-# Regenerate Go + TS contract types from packages/tbd-schema/schema/*.json (DO NOT hand-edit outputs)
-make schema-codegen
-
-# Validate the shared schemas + golden fixtures (Ajv)
-cd packages/tbd-schema && npm run validate
-
-# Verify every @contract tag in the repo resolves to a schema file + JSON pointer
+make schema-codegen    # → apps/website/api/src/contract/generated/ (DO NOT hand-edit)
+make schema-validate   # packages/tbd-schema goldens
 make verify-citations
 ```
 
-These run in CI via [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (primary full-repo gate: Rust backend fmt/clippy/build/test + map-engine wasm-ci + website-leptos cargo/trunk + schema validate + citations + editorconfig) and path-filtered supplements in [`contracts.yml`](../../.github/workflows/contracts.yml) (codegen-drift + citations) and [`schema.yml`](../../.github/workflows/schema.yml). `CreateVersion` validates the mission version payload against `mission-editor-payload.schema.json` before persist.
+CI jobs: `website-api` + `website-frontend` (renamed from `rust-backend` / `website-leptos` at T-171). Path-filtered supplements: [`contracts.yml`](../../.github/workflows/contracts.yml), [`schema.yml`](../../.github/workflows/schema.yml).
 
 ## Log in (no Discord needed)
-
-Open in browser (mints a real session, redirects to the SPA):
 
 ```
 http://localhost:8080/api/v1/auth/dev-login?role=admin
@@ -69,7 +61,7 @@ Roles: `admin | mission_maker | leader | enlisted`.
 
 ```bash
 make db-down      # stops Postgres, keeps volume
-# API + Vite: kill the background processes
+# API + trunk: kill the background processes
 ```
 
 ## Postgres 18 upgrade (T-124)
@@ -86,7 +78,7 @@ Dev data is reseedable; mock missions are optional (see below).
 
 ## Registry catalog (T-068 / T-150 / T-068.9)
 
-**Dev seed** (`make seed` → `registry_dev.sql`) is the thin 21-row smoke set.
+**Dev seed** (`make seed` → `apps/website/api/seeds/registry_dev.sql`) is the thin 21-row smoke set.
 
 **Full catalog** (Workbench universal export): **1,880 items** + **4,012 compat edges**.
 
@@ -95,7 +87,7 @@ Dev data is reseedable; mock missions are optional (see below).
 make registry-import
 
 # Or explicit paths / prune:
-# cargo run --bin import-registry -- \
+# cargo run --bin import-registry --manifest-path apps/website/api/Cargo.toml -- \
 #   --items packages/tbd-schema/registry/registry-items.workbench.json \
 #   --compat packages/tbd-schema/registry/registry-compat.workbench.json \
 #   [--modpack <uuid>] [--prune]
@@ -108,74 +100,81 @@ Restart `make api` after handler changes — `cargo run` does not hot-reload.
 | `GET /api/v1/registry` | mission_maker+ JWT | Items; weak ETag / 304 |
 | `GET /api/v1/registry/compat` | mission_maker+ JWT | Edges; `?edge_type=` filter; ETag |
 
-The React-era compat worker (T-068.9/`registryCompatClient.ts`) retired with the React app
-(T-159.29.3); the Leptos Arsenal ships the kind-sourced rows (T-159.27) and the compat-validated
-Smart Forge is the folded-forward follow-on.
-
-**Mod compiled mission (T-092.2 @ `a73224f2`):** game server fetches the mod-native document (not the export wrapper):
+**Mod compiled mission (T-092.2):**
 
 ```bash
-# Requires SERVICE_TOKEN in apps/website/.env — same tier as /ingest
+# Requires SERVICE_TOKEN in apps/website/api/.env
 curl -sS -H "X-Service-Token: $SERVICE_TOKEN" \
   http://localhost:8080/api/v1/missions/{mission_id}/compiled | jq .schemaVersion
-
-# 401 without token; 409 when mission has no version or no placed slots
 ```
 
-Mission must have a saved version with placed slots; first save after create must bump semver past auto-seeded `0.1.0`. Profile cache: `$profile:missions/{id}.json` (mod loader).
+## Map assets (T-090 / T-091 / T-171)
 
-## Map assets (T-090 / T-091)
+Corpus: `packages/map-assets/` — Everon ~1.3 GB on disk; **tracked in LFS = exactly 2 objects**:
 
-Static terrain binaries live under `packages/map-assets/{everon,arland}/`. **Git LFS** tracks DEM PNG and unified `.tbd-sat` bundles only (see root [`.gitattributes`](../../.gitattributes)). **Tile pyramids** under `tiles/` are **not** in git — build locally when needed.
+| Object | Size | Purpose |
+|--------|------|---------|
+| `everon/dem/everon-dem-16bit.png` | ~72 MB | DEM / hillshade / map-engine tests |
+| `everon/satellite/everon-sat.tbd-sat` | ~153 MB | Unified satellite basemap |
+
+`**/staging/` + `**/tiles/` are gitignored (rebuildable via `make map-*`). `.gitattributes` LFS patterns: `packages/map-assets/**/*.{png,r16,tbd-sat}`.
+
+| Consumer | Needs | Mechanism |
+|----------|-------|-----------|
+| CI `map-engine` job | DEM only | `git lfs pull --include …/everon-dem-16bit.png` |
+| CI other jobs | none | sat deliberately never dragged |
+| Local dev editor | DEM + sat | Axum `ServeDir` `/map-assets` (`MAP_ASSETS_DIR`, default `../../../packages/map-assets` from `api/` CWD) ← Trunk proxy ← SPA `fetch("/map-assets/…")` |
+| Gate harness | dist + optional map-assets | `gate serve --map-assets` |
+| Clone without LFS | degraded | manifest/JSON/chunks plain-git; DEM/sat 404 → no sat/hillshade |
+
+**Convenience targets:**
 
 ```bash
-git lfs install   # once per clone
-git lfs pull      # DEM + unified satellite bundle
+make lfs-dem   # ~72 MB — enough for map-engine tests + hillshade
+make lfs-sat   # ~153 MB — full satellite bundle
+# or: git lfs install && git lfs pull
 ```
 
-Each terrain has a `manifest.json` validated against [`packages/tbd-schema/schema/terrain-manifest.schema.json`](../../packages/tbd-schema/schema/terrain-manifest.schema.json). **Everon** has real DEM dims (6400×6400) @ T-091.0; **Arland** still stub (`widthPx/heightPx: 0`).
+Each terrain has a `manifest.json` validated against [`terrain-manifest.schema.json`](../../packages/tbd-schema/schema/terrain-manifest.schema.json).
 
-**Tile pyramid (optional fallback):** not shipped in git. After clone, MC uses the unified `everon-sat.tbd-sat` bundle (T-090.1.2.8). Rebuild locally:
+**Tile pyramid (optional):** not in git. Rebuild:
 
 ```bash
-make map-water-everon          # satellite ortho + unified bundle + satellite pyramid
-make map-cartographic-everon   # Map view: land-cover tints + water + roads → tiles/map pyramid (T-090.1.1.1)
-make map-cartographic-verify   # Pyramid z0–6 + manifest agreement
+make map-water-everon
+make map-cartographic-everon
+make map-cartographic-verify
 ```
 
-See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick 12800² builds need spill on disk (not tmpfs `/tmp`) — `build-map-cartographic.mjs` pins `MAGICK_TEMPORARY_PATH=/var/tmp`. **Land-cover (T-090.1.1.1):** SAP-derived masks tint @ **4096² before Lanczos upscale** — do not stack multiple 12800² overlays in one magick pass (OOM + multi-GB `/var/tmp` spill).
+See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick spill → `/var/tmp`.
 
-**DEM re-export runbook:** [`t091_0_dem_tile_export.md`](../specs/Mission_Creator_Architecture/t091_0_dem_tile_export.md) §Re-export runbook (GetSurfaceY plugin — manual WE export dead on packed Eden).
-
-**Verify alignment:**
+**Verify:**
 
 ```bash
-make verify-terrain           # manifest ↔ terrains.ts + anchor schema
-make verify-terrain-strict    # T-091.0 gate — real DEM + ≥10 anchors ±1 m (PASS @ 6d96339)
+make verify-terrain
+make verify-terrain-strict
 ```
 
-**Local dev serving:** map assets flow through the Trunk `/map-assets` proxy in dev and the backend `MAP_ASSETS_DIR` ServeDir in prod (T-159.24/.29) — no symlink step. Requires `git lfs pull` for the Everon DEM.
-
-**Frontend/engine tests:** `cargo test -p website-leptos` (46) + `cargo test -p map-engine-core --all-features` (234 — incl. DEM peaks vs the committed PNG; requires `git lfs pull`).
+**Frontend/engine tests:** `cargo test -p website-frontend` + `cargo test -p map-engine-core --all-features` (DEM peaks need `make lfs-dem` or `git lfs pull`).
 
 ## Notes
 
-- A fresh DB only has the Discord role→permission mappings (`make seed`).
-  Events/missions must be seeded via the API or `psql`.
-- **Rust stable** for API + SPA + all tooling (`make build` / `make api` / `make leptos`) — T-165 removed every Node tool; Node remains only as the `enfusion-mcp` runtime under `scripts/mod`.
-- Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release); full editor gates: `make leptos-gates`.
+- A fresh DB only has Discord role mappings + registry smoke rows (`make seed` → `apps/website/api/seeds/`).
+- Frontend: `make ci-local-leptos`; full editor gates: `make leptos-gates`.
 - Integration tests: `make test-it` (needs `make db-up`).
 
 ## Mock data (optional, not run by `make seed`)
 
-`apps/website/internal/db/seeds/mock_data.sql` (Operation Red Dawn etc.) is **only** applied by
-piping it through psql explicitly (`podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger <
-apps/website/internal/db/seeds/mock_data.sql`) — `make seed` does not touch it. The Mission Library
-renders live API data, so these four fixed-UUID missions show up as real entries. To purge
-them (children first; there are no ON DELETE CASCADE FKs):
+`apps/website/api/seeds/mock_data.sql` (Operation Red Dawn etc.) is **manual psql only** — the Go `cmd/seed` applier was deleted at T-145. Example:
 
 ```bash
-docker compose exec -T db psql -U tbd -d tbd_reforger <<'SQL'
+podman exec -i tbd_reforger_db psql -U tbd -d tbd_reforger < \
+  apps/website/api/seeds/mock_data.sql
+```
+
+To purge those four fixed-UUID missions (children first; no ON DELETE CASCADE):
+
+```bash
+docker compose -f apps/website/api/docker-compose.yml exec -T db psql -U tbd -d tbd_reforger <<'SQL'
 DELETE FROM mission_versions  WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
 DELETE FROM mission_armories  WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');
 DELETE FROM mission_bookmarks WHERE mission_id IN ('00000000-0000-4000-c000-000000000001','00000000-0000-4000-c000-000000000002','00000000-0000-4000-c000-000000000003','00000000-0000-4000-c000-000000000004');

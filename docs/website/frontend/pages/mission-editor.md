@@ -1,15 +1,17 @@
 # Mission Editor (2D Canvas)
 
+> **Live (T-151 / T-159 / T-171):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
+
 ## Status
 
 `in-progress`
 
 ## Summary
 
-- **What:** Full-bleed Deck.gl tactical map editor for placing entities, ORBAT layers, and compiling mission versions.
+- **What:** Full-bleed tactical map editor (wgpu) for placing entities, ORBAT layers, and compiling mission versions.
 - **Why:** Mission makers author `json_payload` for the mission library and event ORBAT materialization.
 - **Route:** `/missions/:id/edit`
-- **Live source:** `apps/website-leptos/src/mission_editor.rs` + the editor modules (`select_tool`/`outliner`/`attributes`/`arsenal`/`eden_chrome`/…) on the wgpu engine (`crates/map-engine-render`); route in `apps/website-leptos/src/router.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/mission_editor.rs` + the editor modules (`select_tool`/`outliner`/`attributes`/`arsenal`/`eden_chrome`/…) on the wgpu engine (`crates/map-engine-render`); route in `apps/website/frontend/src/router.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** none
 - **Min role:** `mission_maker` (owner or admin)
 - **Blueprint ref:** [Mission Creator ROADMAP](../../../specs/Mission_Creator_Architecture/ROADMAP.md), [feature inventory](../../../specs/Mission_Creator_Architecture/feature_inventory.md)

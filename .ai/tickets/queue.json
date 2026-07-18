@@ -25,6 +25,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
+    },
+    {
+      "id": "T-172",
+      "title": "Leptos SPA + Mission Creator bug bash",
+      "status": "ready",
+      "spec": "docs/platform/t172_leptos_bug_bash.md",
+      "branch": "main"
     }
   ]
 }

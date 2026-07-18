@@ -13,16 +13,16 @@ When the user asks for prompts to send to Claude Code — including parallel str
 
 One fenced block containing the **entire** prompt (use `═══` sections per [`.ai/tickets/CLAUDE_CODE_PROMPT.md`](.ai/tickets/CLAUDE_CODE_PROMPT.md)). Brief one-line intro above the block is OK; **do not** split the prompt across prose paragraphs.
 
-### Parallel streams (e.g. T-090.1.1 on `main` + T-092.1 on worktree)
+### Parallel streams (e.g. two independent slices both on `main`)
 
 **Exactly N code blocks for N streams** — typically **two**:
 
-1. Short heading: `# Stream A — {slice id} {title}` + CWD/branch one-liner
+1. Short heading: `# Stream A — {slice id} {title}` + CWD one-liner (`repo root`, `main`)
 2. **One complete fenced block** with the full prompt (everything Claude needs)
 3. Short heading: `# Stream B — …`
 4. **One complete fenced block** with the full prompt
 
-Preflight bash may be a **third small block** at the end (optional) — never substitute it for the main prompt blocks.
+Default is **main-only** (no `ticket/T-0xx` worktrees). Preflight bash may be a **third small block** at the end (optional) — never substitute it for the main prompt blocks.
 
 ## Forbidden
 
@@ -47,11 +47,11 @@ Build from: slice spec §Claude Code prompt, `.ai/artifacts/*_handoff.md`, `./sc
 {full prompt — PREFLIGHT, READ, PROBLEM, DO, DO NOT, VERIFY, RETURN}
 ```
 
-# Stream B — T-092.1 → T-092.2
+# Stream B — T-068.11 Compiler loadout export
 
-**CWD:** `.ai/artifacts/worktrees/TBD-T-092` (`ticket/T-092`)
+**CWD:** repo root (`main`)
 
 ```
-{full prompt for both slices sequential}
+{full prompt — PREFLIGHT, READ, PROBLEM, DO, DO NOT, VERIFY, RETURN}
 ```
 ```

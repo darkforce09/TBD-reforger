@@ -1,10 +1,12 @@
 # Backend — ROADMAP
 
-**Start here.** Planning view for the Go API — what is **shipped**, what is **deferred**, and links to all backend documentation and code.
+> **SUPERSEDED (T-145 / T-171):** Live API is **Rust Axum + sqlx** at [`apps/website/api/`](../../../apps/website/api/) (pkg `website-api`). Go/`internal/`/`cmd/api` / GORM / golangci rows below are historical. Run: `make api` · SPA: `make leptos` · seeds: `apps/website/api/seeds/` · migrations: `apps/website/api/migrations/`. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md). Canonical status: root [`CLAUDE.md`](../../../CLAUDE.md).
+
+**Start here for planning history.** What was **shipped** under the Go era; verify paths against live `api/src/`.
 
 **Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
 
-**Code:** [`cmd/api/`](../../../apps/website/cmd/api) · **Contract:** [`internal/models/`](../../../apps/website/internal/models) (GORM JSON tags = API shape)
+**Live code:** [`apps/website/api/src/`](../../../apps/website/api/src) · **Contract:** `api/src/models/` (serde snake_case) + generated `api/src/contract/generated/`
 
 ---
 
@@ -12,11 +14,11 @@
 
 | Doc | When to open it |
 |-----|-----------------|
-| **[`docs/backend/architecture.md`](architecture.md)** | Target schema + design (verify vs live models post T-008) |
-| **[`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md)** | db-up, api, web, dev-login, test-it, seeds |
-| **[`docs/platform/registration_flow.md`](../platform/registration_flow.md)** | ORBAT registration design (**implemented** T-008–T-010) |
-| **[`docs/platform/context_handoff.md`](../platform/context_handoff.md)** | Original product blueprint (§3 partially stale) |
-| **[`CLAUDE.md`](../../../apps/website/CLAUDE.md)** | T-0xx milestones, auth tiers, doc-on-commit rule |
+| **[`architecture.md`](architecture.md)** | ARCHIVE design plan — verify vs live `api/src/models/` |
+| **[`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md)** | db-up, api, leptos, dev-login, test-it, seeds, map-assets |
+| **[`docs/website/platform/registration_flow.md`](../platform/registration_flow.md)** | ORBAT registration design (**implemented** T-008–T-010) |
+| **[`docs/website/platform/context_handoff.md`](../platform/context_handoff.md)** | Original product blueprint (§3 partially stale) |
+| **Root [`CLAUDE.md`](../../../CLAUDE.md)** | T-0xx milestones, auth tiers, doc-on-commit rule |
 | **[`docs/TAGS.md`](../TAGS.md)** | T-0xx naming contract |
 
 ---
@@ -34,9 +36,9 @@
 | **Wiki / CMS** | `content.go` | `wiki.go`, `content.go` | Doctrine + admin CMS |
 | **Vehicles** | — | `vehicles.go` | Vehicle database |
 | **Admin** | `admin.go` | `admin.go` | Personnel, audit logs |
-| **Realtime** | — | SSE hub in `internal/realtime/` | |
+| **Realtime** | — | SSE hub in `api/src/realtime/` | |
 
-**Migrations:** [`internal/db/migrations/`](../../../apps/website/internal/db/migrations) · **Seeds:** [`internal/db/seeds/`](../../../apps/website/internal/db/seeds) (`make seed` = Discord roles only)
+**Migrations (live):** [`apps/website/api/migrations/`](../../../apps/website/api/migrations) · **Seeds:** [`apps/website/api/seeds/`](../../../apps/website/api/seeds) (`make seed` = Discord roles + registry_dev)
 
 ---
 
@@ -50,7 +52,7 @@
 
 | T-ID | Item | Notes |
 |------|------|-------|
-| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags (Go/TS/Enfusion); `internal/contract/` codegen via `make schema-codegen`; `CreateVersion` validates `mission-editor-payload.schema.json`; `contracts.yml` CI (citation verifier, golangci revive, eslint TSDoc, codegen-drift) |
+| **T-123** | **Documentation standards rollout** | [`DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md) — `@contract`/`@route`/`@authority` tags; codegen → `apps/website/api/src/contract/generated/` via `make schema-codegen`; `CreateVersion` validates payload schema; `contracts.yml` CI |
 
 ## SHIPPED (T-068.2–T-068.4 @ main)
 
@@ -104,4 +106,4 @@ curl -si "http://localhost:8080/api/v1/auth/dev-login?role=admin" | head -1
 make test-it
 ```
 
-API contract smoke: hit endpoint, confirm JSON matches GORM tags + frontend types.
+API contract smoke: hit endpoint, confirm JSON matches `api/src/models/` serde + `frontend/src/dto.rs`.

@@ -11,7 +11,7 @@ Copy this skeleton when Cursor creates a new handoff (Mode B).
 ```markdown
 # T-0xx.Y — Claude Code handoff ({short title})
 
-**Slice:** T-0xx.Y · **Executor:** claude-code · **Branch:** ticket/T-0xx  
+**Slice:** T-0xx.Y · **Executor:** claude-code · **Branch:** `main`  
 **Parent shipped:** T-0xx.Y-1 @ `{sha}`  
 **Spec (authority):** [`docs/specs/.../t0xx_slice.md`](...)
 

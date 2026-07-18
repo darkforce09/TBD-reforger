@@ -3,12 +3,19 @@
 **Status:** Authoritative engineering blueprint (supersedes the renderer/stack choices in `problem_statement.md`)
 **Audience:** Implementing engineers. Read `problem_statement.md` (problem statement) and `mission_creator_design.md` (product/UX) first; this document is *how we build it, file by file.*
 
+> **SUPERSEDED stack ADRs (T-145 / T-151 / T-159 / T-171):**
+> - **ADR-1** Deck.gl → **T-151** wgpu (`crates/map-engine-render`)
+> - **ADR-2** Vite + React 19 → **T-159** Leptos CSR + Trunk (`apps/website/frontend/`)
+> - **ADR-3** Yjs → **T-145** yrs wasm doc core
+>
+> Body / React module tree below is **history**. Live homes: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+
 > **UX/layout authority is `agent_execution.md` + `ux_spec.md`.**
 > The locked UX is the **Arma 3 Eden Editor docked shell** (fullscreen, panels flush to the
 > edges, always-on Asset Palette, Attributes modal on double-click). Where §5 of this file still
 > describes earlier explorations (floating panels, a right-panel inspector swap, a "popover"
 > inspector), the Eden Decisions log in 05/04 **wins**. This file remains authoritative for the
-> data model, workers, compiler, and DEM.
+> data model, workers, compiler, and DEM *concepts* — not the deleted React paths.
 
 ---
 

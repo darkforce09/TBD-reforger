@@ -2,7 +2,7 @@
 
 Working context for AI sessions. Read this first; it is the source of truth for
 **current state and how to run things**. Design specs live under [`docs/`](docs/website/README.md)
-(`docs/website/platform/context_handoff.md`, `docs/backend/architecture.md`) — verify against
+(`docs/website/platform/context_handoff.md`, [`docs/website/backend/architecture.md`](docs/website/backend/architecture.md) — archive) — verify against
 live code for post-T-008 behavior.
 
 ## HARD GATE — No deferrals without explicit operator word
@@ -20,27 +20,28 @@ A web suite for the "TBD" Arma Reforger milsim community: Discord auth, event /
 ORBAT scheduling, a mission library (2D editor payloads), server telemetry +
 leaderboards, doctrine wiki, CMS, and admin tooling.
 
-- **Backend:** Rust (Axum + sqlx), PostgreSQL — crate `reforger-backend` in `apps/website/` (the T-145 Go→Rust rewrite).
-- **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website-leptos/` — the T-159 rewrite; the React app was deleted at T-159.29.3. All tooling is Rust (T-165 Node eradication); Node exists solely as the `enfusion-mcp` runtime (`scripts/mod`).
+- **Backend:** Rust (Axum + sqlx), PostgreSQL — crate `website-api` in `apps/website/api/` (the T-145 Go→Rust rewrite).
+- **Frontend:** Leptos 0.8 CSR (Rust→wasm, Trunk) in `apps/website/frontend/` — the T-159 rewrite; the React app was deleted at T-159.29.3. All tooling is Rust (T-165 Node eradication); Node exists solely as the `enfusion-mcp` runtime (`scripts/mod`).
 - **Mod:** Enfusion framework in `apps/mod/tbd-framework/`; shared mission schema in `packages/tbd-schema/`.
 - **Auth:** Discord OAuth2 → JWT access token + rotating single-use refresh token.
 
 ## Monorepo layout
-- `apps/website/` — Rust API (Axum) · `apps/website-leptos/` — Leptos SPA (run via root `Makefile`)
+- `apps/website/` — app nest: `api/` (Axum, pkg `website-api`) + `frontend/` (Leptos Trunk, pkg `website-frontend`); seeds at `api/seeds/`
 - `apps/mod/` — Enfusion mod framework (`tbd-framework`, gitignored `crf_framework`/EnfusionMCP)
 - `packages/tbd-schema/` — mission JSON schema + golden missions
+- `packages/map-assets/` — terrain DEM/sat (LFS) + rebuildable staging/tiles; served by API `/map-assets`
 - `docs/specs/` — design specs (Mission Creator, blueprints); `docs/mod/`, `docs/website/` — app docs (frontend surface specs: `docs/website/frontend/pages/`, not under `apps/`)
 - `scripts/mod/`, `scripts/website/`, `scripts/deploy/` — ops scripts (dev/staging/deploy); **`scripts/mod/mcp-call.sh`** + warm daemon for Workbench MCP (see [`docs/mod/MCP_TOOLING.md`](docs/mod/MCP_TOOLING.md))
-- `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline output
-- `apps/website/src/bin/api.rs` — entrypoint: loads `.env`, runs migrations on boot, serves `/api/v1`.
-- `apps/website/src/handlers/` — Axum HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
-- `apps/website/src/models/` — serde models; **JSON field names (snake_case) here are the API contract**.
-- `apps/website/migrations/` — sqlx SQL migrations (extensions, enums, indexes, leaderboard MV).
-- `apps/website/src/{services,middleware,realtime}/` — logic core, auth tiers, SSE hub.
-- `apps/website-leptos/src/` — one module per page + `client.rs` (gloo-net + single-flight refresh), `dto.rs` (API DTOs, R-api golden-tested), `mission_editor.rs` + editor modules (wgpu engine via `map-engine-render`).
+- `.ai/tickets/` + `scripts/ticket` — unified ticket registry at repo root; `.ai/artifacts/` pipeline **output only** (fixtures live crate-local `tests/fixtures/` — see [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md))
+- `apps/website/api/src/bin/api.rs` — entrypoint: loads `.env`, runs migrations on boot, serves `/api/v1`.
+- `apps/website/api/src/handlers/` — Axum HTTP handlers, one file per resource (auth, missions, events, telemetry, admin, …).
+- `apps/website/api/src/models/` — serde models; **JSON field names (snake_case) here are the API contract**.
+- `apps/website/api/migrations/` — sqlx SQL migrations (extensions, enums, indexes, leaderboard MV).
+- `apps/website/api/src/{services,middleware,realtime}/` — logic core, auth tiers, SSE hub.
+- `apps/website/frontend/src/` — one module per page + `client.rs` (gloo-net + single-flight refresh), `dto.rs` (API DTOs, R-api golden-tested), `mission_editor.rs` + editor modules (wgpu engine via `map-engine-render`).
 
 ## Run it locally
-Everything is configured in `apps/website/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`; the root `Makefile` prepends it (plus `~/go/bin` for the editorconfig-checker binary only).
+Everything is configured in `apps/website/api/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`; the root `Makefile` prepends it (plus `~/go/bin` for the editorconfig-checker binary only).
 
 ```bash
 make db-up        # start local Postgres (podman/docker compose), port 5434
@@ -59,23 +60,24 @@ open it in the browser to log in, or curl it and read `access_token` from the
 `Location` fragment for API testing.
 
 ## Conventions
-- API JSON is **snake_case** (from serde field names). The Rust models in `apps/website/src/models/`
+- **Where does X go?** — [`docs/platform/WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md) (T-171 pin: SPA pages, handlers, migrations, seeds, fixtures, map-assets, tickets).
+- API JSON is **snake_case** (from serde field names). The Rust models in `apps/website/api/src/models/`
   are the snake_case DB/API source of truth, and the Leptos `dto.rs` DTOs mirror them (R-api golden
   round-trip tests) — when changing a model, update the matching DTO. Cross-boundary **contract** types are **generated** from
   `packages/tbd-schema/schema/*.json` via `make schema-codegen` into
-  `apps/website/src/contract/generated/` (DO NOT EDIT; T-123.4 — Rust-only since the T-159.29.3
+  `apps/website/api/src/contract/generated/` (DO NOT EDIT; T-123.4 — Rust-only since the T-159.29.3
   React deletion; the Leptos SPA hand-writes `dto.rs` gated by R-api golden tests). The mission
   **export** JSON (`/missions/:id/export`) is the one camelCase exception.
 - List endpoints return `{data, total, limit, offset}` (audit logs use a `next_cursor`).
 - Auth tiers: public, `RequireAuth` (JWT), `RequireMinRole(admin|mission_maker)`,
   `RequireServiceToken` (`X-Service-Token`, for game-server ingest).
 - Refresh tokens are **single-use** (rotated + revoked each call). All refreshes go
-  through one single-flight helper (`apps/website-leptos/src/client.rs`) so the token is
+  through one single-flight helper (`apps/website/frontend/src/client.rs`) so the token is
   never double-spent.
 - Git: **commit directly to `main`; never create a branch** (single-ticket mode). End commit messages with
   the `Co-Authored-By` trailer. Commits are tagged `T-00x`.
 - **Ticket pipeline** ([`.ai/tickets/README.md`](.ai/tickets/README.md)): all work happens **directly on `main` — no branches** (supersedes the old `ticket/T-0xx` flow). Composer 2.5 owns doc writes/sync; Claude Code ships code + in-code comments; the registry is source of truth (`./scripts/ticket sync`).
-- **Documentation standards:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](docs/platform/DOCUMENTATION_STANDARDS.md) — cross-boundary `@contract` / `@route` / `@model`, Godoc/TSDoc/Enforce rules, codegen + validation + CI (**T-123**).
+- **Documentation standards:** [`docs/platform/DOCUMENTATION_STANDARDS.md`](docs/platform/DOCUMENTATION_STANDARDS.md) — cross-boundary `@contract` / `@route` / `@model`, codegen + validation + CI (**T-123**).
 - Docs: see **§Documentation** — sync before commit. Ticket queue: [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md).
 
 ## Documentation
@@ -92,15 +94,15 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 |-------------|--------|
 | Shipped feature / milestone | **§Status** — new T-0xx bullet under **Done**; bump `latest shipped` line |
 | **Active slice** (code in progress, not shipped) | **§Status — ACTIVE SLICE** block at top; keep `latest shipped` on last **git tag** only |
-| New/changed route | Matching `docs/website/frontend/pages/*.md` + row in `docs/website/frontend/INDEX.md`; verify against `apps/website-leptos/src/router.rs` |
-| UI surface (no new route) | Relevant page doc + `Live source:` path to the `apps/website-leptos/src/` page module |
-| API / model change | Backend model/handler + the matching `apps/website-leptos/src/dto.rs` DTO (R-api golden); note handler if behavior changed |
+| New/changed route | Matching `docs/website/frontend/pages/*.md` + row in `docs/website/frontend/INDEX.md`; verify against `apps/website/frontend/src/router.rs` |
+| UI surface (no new route) | Relevant page doc + `Live source:` path to the `apps/website/frontend/src/` page module |
+| API / model change | Backend model/handler + the matching `apps/website/frontend/src/dto.rs` DTO (R-api golden); note handler if behavior changed |
 | Mission Creator | MC README, `agent_execution.md` Decisions log, and/or `feature_inventory.md` — only if editor contract or Eden parity changed |
 | Deferred / queued work | [`.ai/tickets/registry.json`](.ai/tickets/registry.json) row `status: deferred` or `queued` — sync via `./scripts/ticket sync`; never mark shipped until verified |
 
 **Doc hub:** [`docs/website/README.md`](docs/website/README.md) → [`docs/TICKET_LEAD.md`](docs/TICKET_LEAD.md) → domain **`ROADMAP.md`** files. Tag contract: [`docs/website/TAGS.md`](docs/website/TAGS.md). **Commit checklist:** [`docs/website/AGENT_COMMIT_CHECKLIST.md`](docs/website/AGENT_COMMIT_CHECKLIST.md).
 
-**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `apps/website-leptos/src/` (the React app was deleted at T-159.29.3).
+**Do not update** blueprint HTML, stitch exports, or mock-up HTML — archive tier only. Live UI = `apps/website/frontend/src/` (the React app was deleted at T-159.29.3).
 
 **Doc-only commits** (reorgs, typo fixes) get their own T-0xx tag and a §Status note if structure or authority changed.
 
@@ -116,7 +118,7 @@ Keep docs in sync **in the same commit** as the code change (or immediately befo
 | Strict legacy-ID scan | `make ticket-check-strict` |
 | Operator playbook | [`.ai/tickets/AI_PLAYBOOK.md`](.ai/tickets/AI_PLAYBOOK.md) |
 | Claude Code brief | `./scripts/ticket brief T-0xx` |
-| Batch implement | `./scripts/ticket run` on `ticket/T-0xx` branch (claude-code slices only) |
+| Batch implement | `./scripts/ticket run` on `main` (claude-code slices only) |
 | Mod / Workbench queue | [`docs/TICKET_MOD_QUEUE.md`](docs/TICKET_MOD_QUEUE.md) |
 | Advance slice | `./scripts/ticket advance-slice T-0xx` |
 
@@ -125,7 +127,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-169**
+**Latest shipped:** **T-171**
 
 **ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 
@@ -143,6 +145,8 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
+
+**T-171 — website nest + hygiene** @ `2421b335` (tag **T-171**): `apps/website/{api,frontend}` layout; pkgs `website-api` / `website-frontend`; seeds at `api/seeds/`; fixture convention crate-local; map-assets via API `/map-assets` + `make lfs-dem`/`lfs-sat`. CI job ids `rust-backend`→`website-api`, `website-leptos`→`website-frontend`. Conventions pin: [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md). Docs pass: T-171.docs.
 
 **Workspace restructure (2026-06-26, `2a51d66`):** monorepo reorganized into the
 `apps/` + `packages/` + unified `docs/` + `scripts/` + hidden `.ai/` layout (see
@@ -654,7 +658,7 @@ Then **T-068.12** player equip. Markers (**T-069**) deferred.
     embedded `OrbatSelector` card widget, the Deployments service-record dossier, and the
     wide-table Personnel roster (token-fixed only).
   - Verified: `npm run build` + `npm run lint` clean after every commit. Runtime layout of
-    the migrated split-pane/full-bleed pages is worth an in-browser pass (`make web`).
+    the migrated split-pane/full-bleed pages is worth an in-browser pass (`make leptos`).
 
 - T-029..T-040 **2D Mission Creator — Deck.gl editor (Eden editor shipped; phases 2/5/6/8 blocked)**. New self-contained
   feature modules `apps/website/frontend/src/features/tactical-map/` (terrain-agnostic engine) +
@@ -743,17 +747,16 @@ Then **T-068.12** player equip. Markers (**T-069**) deferred.
 - Real Discord OAuth credentials are blank in `.env` (dev uses dev-login).
 - Telemetry is ingested via service-token endpoints; no live game-server bridge wired.
 - A fresh DB is empty of content (events, missions, etc.) — seed those via the API
-  or `psql`. The one committed seed is the Discord role→permission mappings
-  (`internal/db/seeds/discord_roles.sql`, applied with `make seed`).
-  `internal/db/seeds/mock_data.sql` (Operation Red Dawn etc., four fixed UUIDs) is **not**
-  run by `make seed` — only by the explicit `go run ./cmd/seed`. DEV_RUNBOOK.md has the
-  DELETE SQL to purge those mock missions if they leak into the live library.
+  or `psql`. The committed seeds live at `apps/website/api/seeds/`: `discord_roles.sql` +
+  `registry_dev.sql` via `make seed`; `mock_data.sql` (Operation Red Dawn etc., four fixed
+  UUIDs) is **manual `psql` only** (the Go `cmd/seed` applier was deleted at T-145). DEV_RUNBOOK.md
+  has the DELETE SQL to purge those mock missions if they leak into the live library.
 
 ## Verifying changes
-Source of truth for the API contract is the Axum handlers + `apps/website/src/models/`;
+Source of truth for the API contract is the Axum handlers + `apps/website/api/src/models/`;
 the Leptos `dto.rs` yields to the backend on conflict. To check a wire change for real, run the
 stack, `dev-login`, hit the endpoint, and confirm the JSON round-trips through the DTO — the
-R-api golden tests (`cargo test -p website-leptos`) pin this against committed captures.
+R-api golden tests (`cargo test -p website-frontend`) pin this against committed captures.
 
 **Platform CI replay:** `make db-up` → **`make ci-local`** (mirrors
 [`ci.yml`](.github/workflows/ci.yml): verify-editorconfig, verify-no-python, rust-ci (cargo

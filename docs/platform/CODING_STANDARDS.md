@@ -6,15 +6,19 @@
 **Updated:** 2026-06-30
 **Ticket:** [T-125](t125_coding_standards_enforcement.md) — **shipped** @ `e21dac3` (tag **T-125.5**); program **T-125.0–.6 complete** (38 rules, all CI gates live *in the Go/React era*).
 
-> **T-164 language-cutover note (2026-07-17):** the Go backend was replaced by Rust (T-145,
-> Axum + sqlx) and the React frontend by Leptos (T-159; React deleted at T-159.29.3). **§2 Go and
-> §3 TypeScript/React below — and every GO-\*/TS-\*/FMT-1/FMT-3 gate row marked "live" in §10 —
-> are RETIRED**, kept as the historical record of the T-125 program. Live enforcement today:
-> `cargo fmt --check` + `cargo clippy -D warnings` across all workspace crates + `make wasm-ci`
-> (backend/engine), `make ci-local-leptos` + `make leptos-gates` (SPA incl. the frozen V-suite),
-> `make verify-no-python` (T-162), schema validate + `@contract` citations, and editorconfig —
-> all wrapped by **`make ci-local`**, mirrored by `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
+> **SUPERSEDED (T-145 / T-159 / T-165 / T-171):** Go + React/TS eras are gone. **§2 Go and
+> §3 TypeScript/React below — and every GO-\*/TS-\*/FMT-1/FMT-3 / golangci / `npm run` gate row
+> marked "live" in §10 — are RETIRED historical record.** Do not treat them as current.
+>
+> **Live layout:** `apps/website/api/` (`website-api`) · `apps/website/frontend/` (`website-frontend`).
+> CI jobs: `website-api` / `website-frontend`. Conventions: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+>
+> **Live enforcement:** `cargo fmt --check` + `cargo clippy -D warnings` + `make wasm-ci` +
+> `make ci-local-leptos` + `make leptos-gates` + `make verify-no-python` + schema/citations +
+> editorconfig — all via **`make ci-local`** / `ci.yml`. §4 (HTTP contract), §5 (Enfusion),
 > §6–§9 (testing/formatting/size/logging principles) remain in force, language-neutral.
+>
+> V-suite: `verify|accept` only (freeze mode retired); oracles at `tools/tbd-tools/fixtures/t159/oracle-freeze`.
 
 > This document is the source of truth for **how code is written** across the three boundaries of
 > `TBD-Reforger`. Its sibling, [`DOCUMENTATION_STANDARDS.md`](DOCUMENTATION_STANDARDS.md), owns **how
@@ -154,7 +158,7 @@ Every rule serves one primary pillar — the *why*. The rule is the *what*; §10
 ## 3. TypeScript / React — RETIRED (T-159.29.3 React deletion)
 
 > Historical: the React SPA was rewritten in Leptos (Rust/wasm) and deleted at T-159.29.3. The
-> contract-mirror intent lives on in `apps/website-leptos/src/dto.rs` (R-api golden round-trip
+> contract-mirror intent lives on in `apps/website/frontend/src/dto.rs` (R-api golden round-trip
 > tests); UI gates are `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release)
 > and `make leptos-gates` (editor CDP smokes + the frozen V-suite).
 
@@ -426,24 +430,24 @@ what it wraps. Each line names the rules it satisfies; `# after T-125.X` marks a
 exist until that slice ships.
 
 ```bash
-make ci-local                          # whole gate; needs `make db-up` (+ `nvm use` for schema tooling)
+make ci-local                          # whole gate; needs `make db-up`
 
 # 0. EditorConfig (FMT-2) — first in ci-local
 make verify-editorconfig
 # 0b. Python eradication hard gate (T-162)
 make verify-no-python
 
-# 1. Rust backend + engine crates (rust-ci)
-cd apps/website && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
+# 1. Rust API + engine crates (website-api job)
+cd apps/website/api && cargo fmt --check && cargo clippy --all-targets -- -D warnings && cargo build
 make wasm-ci                           # map-engine core/wasm/render fmt + clippy -D + tests
 make test-it                           # backend integration tests (fresh sqlx-migrated DB)
 make verify-coding-standards           # SIZE-1/SIZE-3 + doc layout + no SELECT *
 
-# 2. Leptos SPA (ci-local-leptos)
-cargo fmt -p website-leptos --check
-cargo clippy -p website-leptos --target wasm32-unknown-unknown
-cargo test -p website-leptos           # 46 native incl. R-api goldens
-cd apps/website-leptos && trunk build --release
+# 2. Leptos SPA (website-frontend / ci-local-leptos)
+cargo fmt -p website-frontend --check
+cargo clippy -p website-frontend --target wasm32-unknown-unknown
+cargo test -p website-frontend         # R-api goldens
+cd apps/website/frontend && trunk build --release
 # full editor gates (not in ci-local; chromium-driven): make leptos-gates
 
 # 3. Schema + citations (ci-local-schema)
@@ -451,9 +455,8 @@ make schema-validate                   # TEST-3, ENF-4
 make verify-citations                  # @contract citations + @route route-match, ENF-3
 ```
 
-> **Gate status (2026-07-17, T-164):** the Go/React-era rows retired with their languages; the
-> replay block above is the live `make ci-local` reality, mirrored 1:1 by **`ci.yml`**
-> (rust-backend + map-engine + website-leptos + schema + editorconfig jobs).
+> **Gate status (T-171):** Go/React-era rows retired; live `make ci-local` mirrored by **`ci.yml`**
+> jobs `website-api` + `map-engine` + `website-frontend` + schema + editorconfig.
 
 ---
 

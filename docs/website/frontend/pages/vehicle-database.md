@@ -9,7 +9,7 @@
 - **What:** Split-pane vehicle reference with search, faction filters, and per-vehicle dossier.
 - **Why:** IFF and armor intel separated from wiki SOPs for faster lookup during ops.
 - **Route:** `/vehicles`
-- **Live source:** `apps/website-leptos/src/vehicles.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/vehicles.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/sop_wiki_vehicle_database_iff/code.html` (archived — vehicles section split out)
 - **Min role:** `public-nav`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.6

@@ -1,5 +1,5 @@
 {
-  "next_id": 171,
+  "next_id": 173,
   "tickets": [
     {
       "id": "T-001",
@@ -5437,13 +5437,13 @@
         "dx"
       ],
       "title": "Monorepo / website hygiene (full pass)",
-      "summary": "After T-169: Class-R inventory; nest apps/website/{api,frontend}; rename packages website-api/website-frontend; purge dual Go internal/ + nested Vite/Go Makefile; consolidate golden/fixture homes; finish map-assets consumption story; tooling/CI one path. Claude structure+code; Cursor T-171.docs from complete return list (incl. Where-does-X-go + ADR/ROADMAP rot). Not mod. No silent deferrals. Hub: docs/platform/t171_monorepo_hygiene_program.md.",
+      "summary": "Shipped @ 2421b335 (tag T-171). Nest apps/website/{api,frontend}; crates website-api/website-frontend; Go internal/ + nested Makefile purged; fixtures consolidated; map-assets LFS story + CI job renames (website-api/website-frontend). Cursor T-171.docs: WHERE_DOES_X_GO pin + CLAUDE/rules/docs/MC banners. Inventory: .ai/artifacts/t171_inventory.md. Hub: docs/platform/t171_monorepo_hygiene_program.md.",
       "slices": [],
       "depends_on": [
         "T-169"
       ],
       "unblocks": [],
-      "status": "queued",
+      "status": "shipped",
       "implements": [],
       "user_story": "As a developer I open a coherent apps/website/{api crate, frontend/} tree with no dead React/Go/Vite residue so new work does not land in the wrong place.",
       "route": null,
@@ -5454,6 +5454,43 @@
         "website"
       ],
       "spec": "docs/platform/t171_monorepo_hygiene_program.md"
+    },
+    {
+      "id": "T-172",
+      "order": 1690,
+      "program": "platform",
+      "surfaces": [
+        "SHELL",
+        "MAP",
+        "ATTR",
+        "LEFT",
+        "RIGHT",
+        "TOP",
+        "BOTTOM"
+      ],
+      "impact": [
+        "ui",
+        "perf",
+        "state"
+      ],
+      "title": "Leptos SPA + Mission Creator bug bash",
+      "summary": "Operator bug bash after T-166–T-171: fix seeded shell/MC bugs (dead user menu, stuck nav highlight, dead narrow sidebar hamburger, non-selecting Wiki/Vehicles/Modpacks, lag, invisible slots, opaque forests, CUR Z, tree chrome, T-154 3D Arsenal, React chrome gaps) AND mandatory Claude bug hunt (Phase 0 Found-by-hunt H1…Hn + mid-pass) — all inventory rows fixed in-ticket. Screens: .ai/artifacts/t172_operator_screens/. Hub: docs/platform/t172_leptos_bug_bash.md. Not mod. Not T-170.",
+      "slices": [],
+      "depends_on": [
+        "T-171"
+      ],
+      "unblocks": [],
+      "status": "ready",
+      "implements": [],
+      "user_story": "As an operator I can use the local Leptos site and Mission Creator without dead clicks, invisible units, highlighter forests, or a missing 3D Arsenal.",
+      "route": "/",
+      "stream": "web-platform",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t172_leptos_bug_bash.md"
     }
   ]
 }

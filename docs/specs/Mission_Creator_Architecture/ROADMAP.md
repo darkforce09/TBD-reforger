@@ -1,8 +1,10 @@
 # Mission Creator — ROADMAP
 
+> **Live surface (T-159 / T-171):** [`apps/website/frontend/src/mission_editor.rs`](../../../apps/website/frontend/src/mission_editor.rs) + editor modules on wgpu (`map-engine-render`). React/Deck/Vite/`features/tactical-map` paths below are **ship history**. Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+
 **Start here.** Single planning view for the 2D mission editor — what is **done**, what **must work**, and links to all supporting documentation.
 
-**Route:** `/missions/:id/edit` · **Code:** [`frontend/src/features/mission-creator/`](../../../apps/website/frontend/src/features/mission-creator) + [`tactical-map/`](../../../apps/website/frontend/src/features/tactical-map)
+**Route:** `/missions/:id/edit` · **Code (live):** `apps/website/frontend/src/mission_editor.rs` (+ modules) · **Historical React tree:** `features/mission-creator/` + `tactical-map/` (deleted)
 
 **Open work:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) (auto-generated queue, dependencies, ready/queued tickets). Eden parity item detail: [`eden/gap_analysis.md`](eden/gap_analysis.md) (`eden_id` columns).
 

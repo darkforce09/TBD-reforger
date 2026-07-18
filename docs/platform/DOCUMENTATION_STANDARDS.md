@@ -1,9 +1,11 @@
 # TBD Reforger — Documentation Standards
 
 **Status:** living
-**Audience:** every engineer and AI agent that writes Go, TypeScript/React, or Enfusion code in this monorepo
+**Audience:** every engineer and AI agent that writes Rust, Enfusion, or tooling code in this monorepo
 **Authority:** Running code → [`CLAUDE.md`](../../CLAUDE.md) → [`docs/website/README.md`](../website/README.md) → **this doc** (supporting tier)
-**Updated:** 2026-06-30
+**Updated:** 2026-07-18 (T-171 path refresh)
+
+> **Live stack (T-145 / T-159 / T-171):** `apps/website/api/` (Axum + sqlx) + `apps/website/frontend/` (Leptos). Go/TS examples below are **historical patterns** for `@contract` / `@route` vocabulary — prefer Rust rustdoc + clippy today. Homes: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 
 > This document is the source of truth for **how code is documented** across the three
 > boundaries of `TBD-Reforger`. It is **ruthless and prescriptive**: where it says REQUIRED,
@@ -20,7 +22,7 @@ The monorepo spans three hard boundaries:
 | Boundary | Language | Role |
 |----------|----------|------|
 | [`packages/tbd-schema`](../../packages/tbd-schema) | JSON Schema (draft 2020-12) | **The source of truth.** Declares every cross-boundary data contract. |
-| [`apps/website`](../../apps/website) | Go (Gin + GORM) + React/TS | API server + SPA. |
+| [`apps/website`](../../apps/website) | Rust: `api/` (Axum) + `frontend/` (Leptos) | API server + SPA. |
 | [`apps/mod`](../../apps/mod) | Enfusion / Enforce Script (`.c`) | The Arma Reforger game framework. |
 
 A single concept — a mission, a loadout, a registry item — is declared in **four** places (schema,
@@ -331,7 +333,7 @@ existing Decisions-log pattern (e.g. the UX Decisions log in
 - Duplicate hub trees mirroring `docs/website/` inside application folders
 
 **Rule 8.2.3 — Frontend surface spec contract.** When adding or changing a frontend route
-([`apps/website/frontend/src/router.tsx`](../../apps/website/frontend/src/router.tsx)):
+([`apps/website/frontend/src/router.rs`](../../apps/website/frontend/src/router.rs)):
 
 1. Create or update [`docs/website/frontend/pages/<name>.md`](../website/frontend/pages/) from
    [`_template.md`](../website/frontend/_template.md)
@@ -390,20 +392,18 @@ it remains **permanently required on hand-written Enforce DTOs** (Enforce has no
 
 **Mandate**
 
-1. **Generated projections (shipped).** Go and TS contract types are **generated from**
-   `packages/tbd-schema/schema/*.json` via `make schema-codegen` (`scripts/codegen.mjs`):
-   - TS → `apps/website/frontend/src/types/contract/` (`json-schema-to-typescript`).
-   - Go → `apps/website/internal/contract/<pkg>/` (`quicktype`).
+1. **Generated projections (shipped, Rust-only since T-159.29.3).** Contract types are **generated from**
+   `packages/tbd-schema/schema/*.json` via `make schema-codegen`:
+   - Rust → `apps/website/api/src/contract/generated/` (DO NOT hand-edit).
+   - Leptos SPA hand-writes `apps/website/frontend/src/dto.rs` gated by R-api golden tests.
    - Enforce Script has no codegen tooling: Enforce DTOs stay hand-written but MUST carry
-     `@contract` (§3/§6.4) **and** a golden fixture that round-trips through
-     [`scripts/validate.mjs`](../../packages/tbd-schema/scripts/validate.mjs).
-2. **Go-side runtime validation (shipped).** `CreateVersion` validates the incoming version payload
+     `@contract` (§3/§6.4) **and** a golden fixture that round-trips through schema validate.
+2. **API runtime validation (shipped).** `CreateVersion` validates the incoming version payload
    against [`mission-editor-payload.schema.json`](../../packages/tbd-schema/schema/mission-editor-payload.schema.json)
-   **before persist** (`internal/contract/validate.go` — `go:embed` + `santhosh-tekuri/jsonschema/v6`),
+   **before persist** (`apps/website/api/src/contract/validate.rs`),
    returning **400** on a malformed payload. It validates the **editor superset**, not the canonical
    `mission.schema.json` — those are different artifacts (see §2.2).
-3. **Hand-written types remain debt.** Each carries `@contract`; new cross-boundary types SHOULD be
-   generated. Hand-written GORM models stay as the snake_case DB/API source of truth.
+3. **Hand-written types remain debt** where not generated. API wire models = `apps/website/api/src/models/` (serde snake_case).
 
 > **Implementation:** [**T-123**](t123_documentation_standards_rollout.md) slices **T-123.4** (codegen), **T-123.5** (validation), **T-123.6** (CI).
 
@@ -416,28 +416,41 @@ Ruthless means enforced. Primary gates live in [`.github/workflows/ci.yml`](../.
 
 | Gate | Tool | Scope |
 |------|------|-------|
-| Go exported-doc | `golangci-lint` + `revive` `exported` | every exported identifier documented (`ci.yml` backend) |
-| TS contract docs | `eslint-plugin-jsdoc` `require-jsdoc` | TSDoc on exports in `src/types/`, `src/api/`, `src/hooks/` (`ci.yml` frontend `npm run lint`) |
-| TS cross-boundary tags | [`verify-contract-citations.mjs`](../../packages/tbd-schema/scripts/verify-contract-citations.mjs) | `@contract`/`@model` on FE exports; `@route` route-match on handlers; Enfusion `@contract` resolve (`ci.yml` schema) |
-| Enfusion DTO conformance | golden fixture + `validate.mjs` | each Backend `@contract` DTO has a validating fixture (T-125.4 ENF-4; `ci.yml` schema) |
+| Rust API / SPA | `cargo fmt` + `clippy -D warnings` | `website-api` + `website-frontend` (`ci.yml` jobs) |
+| Cross-boundary tags | citation verifier (xtask / schema CI) | `@contract`/`@route` resolve; Enfusion `@contract` |
+| Enfusion DTO conformance | golden fixture + schema validate | each Backend `@contract` DTO has a validating fixture |
+
+> **Historical (retired T-145/T-159):** golangci `exported`, eslint TSDoc — replaced by clippy + rustdoc.
 
 The citation verifier is the keystone: it turns `@contract` from a comment into a **checked link**,
 so a renamed schema definition fails CI instead of silently parsing to empty.
 
 ---
 
-## 11. Quick-reference cheat sheet
+## 11. Fixture homes (T-171)
+
+Pin: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
+
+1. **Fixtures live crate-local** in `tests/fixtures/` beside their primary consumer.
+2. **Cross-crate contract data** lives in `packages/tbd-schema` (schema / golden / golden-missions / registry).
+3. **`.ai/artifacts/` is pipeline OUTPUT only** — never a load-bearing input (`include_str!` / gate reads forbidden).
+4. Byte-pinned goldens are excluded from editorconfig-checker (see `.editorconfig-checker.json`).
+
+SPA R-api goldens: `apps/website/frontend/tests/fixtures/api/`. Gate oracles/manifests: `tools/tbd-tools/fixtures/t159/`.
+
+## 12. Quick-reference cheat sheet
 
 Cross-link this from [`AGENT_COMMIT_CHECKLIST.md`](../website/AGENT_COMMIT_CHECKLIST.md). Doc
-**placement** (where markdown files live): §8.2.
+**placement** (where markdown files live): §8.2. Homes: [`WHERE_DOES_X_GO.md`](WHERE_DOES_X_GO.md).
 
 **Every exported symbol needs:**
 
 | Language | Syntax | Cross-boundary tags |
 |----------|--------|---------------------|
-| Go | Godoc comment starting with the identifier name; package doc; field intent comments | `@contract` on schema projections; `@route` on handlers |
-| TS | `/** */` TSDoc on contract-layer exports; `@param`/`@returns`/`@see` | `@model` (→ Go), `@contract` (→ schema), `@route` (on hooks) |
+| Rust (API) | rustdoc on public items; `@route` / `@contract` where cross-boundary | handlers in `api/src/handlers/`; models = wire contract |
+| Rust (SPA) | module docs; DTO comments cite schema where useful | `dto.rs` R-api goldens |
 | Enfusion | `//!` banner; `/** */` header on Backend/Gamemode; `[Attribute(desc:)]` text; per-field DTO docs | `@contract` on DTOs; `@route` on REST calls; **`@authority` / `@rpc` / `@replicated`** on networked code |
+| Go / TS | **retired** (T-145 / T-159) — historical examples in §3–§6 only | — |
 
 **Contract change checklist:** schema bump → regenerate DTOs → Decisions-log entry → update every
 `@contract`/`@route`/`@model` link → same commit (§1, §8.1).

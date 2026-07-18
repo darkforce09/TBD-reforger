@@ -9,7 +9,7 @@
 - **What:** Admin user management table with search, edit, ban.
 - **Why:** Manage Discord/Arma linked accounts, roles, warnings.
 - **Route:** `/admin/personnel`
-- **Live source:** `apps/website-leptos/src/personnel.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/personnel.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
 - **Stitch reference:** `[git history — deleted with the React tree at T-159.29.3] src/stitch-exports/personnel_roster_admin_management/code.html`
 - **Min role:** `admin`
 - **Blueprint ref:** [docs/platform/context_handoff.md](../../../website/platform/context_handoff.md) §4.10

@@ -9,7 +9,7 @@
 - **What:** OAuth return URL that parses tokens and establishes session.
 - **Why:** Completes Discord login flow in the SPA.
 - **Route:** `/auth/callback`
-- **Live source:** `apps/website-leptos/src/auth.rs` (`AuthCallbackPage`; T-159)
+- **Live source:** `apps/website/frontend/src/auth.rs` (`AuthCallbackPage`; T-159)
 - **Stitch reference:** none
 - **Min role:** `public-nav`
 - **Blueprint ref:** —

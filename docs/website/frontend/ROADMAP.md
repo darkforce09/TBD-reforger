@@ -1,10 +1,10 @@
 # Frontend — ROADMAP
 
-**Start here.** Planning view for the React SPA — what is **shipped**, what is **deferred**, and links to every surface doc.
+**Start here.** Planning view for the Leptos SPA — what is **shipped**, what is **deferred**, and links to every surface doc.
 
 **Queue:** [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · **Full registry:** [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md)
 
-**Code:** [`apps/website-leptos/src/`](../../../apps/website-leptos/src) · **Routes:** [`apps/website-leptos/src/router.rs`](../../../apps/website-leptos/src/router.rs)
+**Code:** [`apps/website/frontend/src/`](../../../apps/website/frontend/src) · **Routes:** [`apps/website/frontend/src/router.rs`](../../../apps/website/frontend/src/router.rs) · Conventions: [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md)
 
 ---
 
@@ -19,7 +19,7 @@
 | **[`docs/platform/CODEBASE_AUDIT_2026.md`](../../platform/CODEBASE_AUDIT_2026.md)** | T-122 audit + T-123 resolutions (T1/T8) |
 | **[`docs/platform/DOCUMENTATION_STANDARDS.md`](../../platform/DOCUMENTATION_STANDARDS.md)** | Cross-boundary `@contract` / codegen / validation (T-123 shipped) |
 | **[`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)** | Split-pane / frictionlessness methodology |
-| **[`CLAUDE.md`](../../../apps/website/CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
+| **Root [`CLAUDE.md`](../../../CLAUDE.md)** | Agent runtime, T-0xx status, doc-on-commit rule |
 | **[`docs/AGENT_COMMIT_CHECKLIST.md`](../AGENT_COMMIT_CHECKLIST.md)** | Same-commit doc sync — read before every T-0xx |
 | **[Archive](../archive/README.md)** | Historical stitch/blueprint HTML (reference only) |
 
@@ -27,7 +27,7 @@
 
 ## DONE — shipped surfaces
 
-All routes below have a surface spec unless noted. Live UI = `apps/website-leptos/src/` (T-159).
+All routes below have a surface spec unless noted. Live UI = `apps/website/frontend/src/` (T-159).
 
 | Route | Doc | Notes |
 |-------|-----|-------|
@@ -109,7 +109,7 @@ Full deferred table: [`docs/TICKET_REGISTRY.md`](../../TICKET_REGISTRY.md).
 
 ## Design system
 
-- **Live tokens:** [`apps/website-leptos/style/aegis.css`](../../../apps/website-leptos/style/aegis.css)
+- **Live tokens:** [`apps/website/frontend/style/aegis.css`](../../../apps/website/frontend/style/aegis.css)
 - **Reference YAML:** [`docs/specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md`](../../specs/Mission_Creator_Mock_Up/aegis_tokens/DESIGN.md)
 - **Methodology:** [`docs/platform/macos_ux_architecture.md`](../platform/macos_ux_architecture.md)
 

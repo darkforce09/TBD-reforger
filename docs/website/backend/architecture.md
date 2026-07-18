@@ -1,13 +1,19 @@
 # TBD Reforger Platform — Backend Architecture Plan
 
+> **ARCHIVE (T-145 / T-171).** This document is the original Go-era design plan. It is **not** the live backend.
+>
+> **Live API:** [`apps/website/api/`](../../../apps/website/api/) — Rust **Axum + sqlx**, pkg `website-api`. Handlers `api/src/handlers/`, models `api/src/models/`, migrations `api/migrations/`, seeds `api/seeds/`.
+>
+> **Run / status:** root [`CLAUDE.md`](../../../CLAUDE.md) · [`DEV_RUNBOOK.md`](../DEV_RUNBOOK.md) · conventions [`WHERE_DOES_X_GO.md`](../../platform/WHERE_DOES_X_GO.md).
+>
+> Body below kept for schema archaeology only — do not implement against Go/`internal/`/`cmd/api` paths.
+
+---
+
 **Author:** Lead Backend Engineer (handoff design)
 **Date:** 2026-06-17
-**Scope:** PostgreSQL schema + Go REST API for the TBD Arma Reforger Event Platform.
-**Sources:** [`docs/platform/context_handoff.md`](../platform/context_handoff.md) + the 21 Stitch page mockups in `frontend/src/stitch-exports/`.
-
-> **Status:** Original design plan. Schema may pre-date T-008 campaign refactor — verify against
-> [`internal/models/`](../../../apps/website/internal/models). Current status: [`CLAUDE.md`](../../../apps/website/CLAUDE.md).
-> Stitch exports are **archived** — live UI: `frontend/src/pages`.
+**Scope (historical):** PostgreSQL schema + Go REST API for the TBD Arma Reforger Event Platform.
+**Sources:** [`docs/website/platform/context_handoff.md`](../platform/context_handoff.md).
 
 ---
 

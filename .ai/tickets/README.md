@@ -1,9 +1,11 @@
 # Ticket pipeline
 
-**Source of truth:** [`registry.json`](registry.json) — never hand-edit [`queue.json`](queue.json) or `docs/TICKET_*.md` (generated).
+**Source of truth:** [`registry.json`](registry.json) — never hand-edit generated `docs/TICKET_*.md`.
 
 **Implementation (T-161):** `./scripts/ticket` → Rust `xtask` (`cargo run -q -p xtask -- ticket …`).
-No Python ticket libs remain (`ticket_registry.py` / `ticket_queue.py` deleted).
+No Python ticket libs remain.
+
+**Work model (locked):** all ticket work lands on **`main`** — no `ticket/T-0xx` branches or worktrees as the default. See root [`CLAUDE.md`](../../CLAUDE.md).
 
 See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
@@ -11,8 +13,8 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 
 1. **Composer 2.5 / Cursor** — edit `registry.json`, write specs, `./scripts/ticket sync`
 2. **Mark ready** — `./scripts/ticket mark-ready T-068 path/to/t068_....md`
-3. **Implement** — `./scripts/ticket run` (or `make tickets`)
-4. **Merge** — human verifies branch
+3. **Implement** — `./scripts/ticket run` (or `make tickets`) on **`main`**
+4. **Verify** — human checks gates / smoke
 5. **Done** — `./scripts/ticket done T-068` (marks shipped + sync)
 6. **Docs** — Cursor syncs narrative docs on `main`
 
@@ -24,8 +26,8 @@ See [`AI_PLAYBOOK.md`](AI_PLAYBOOK.md) for operator recipes.
 | `./scripts/ticket check [--strict]` | Validate registry + outputs |
 | `./scripts/ticket list` | Show dev queue (from registry) |
 | `./scripts/ticket mark-ready ID [SPEC]` | Mark ready in registry + sync |
-| `./scripts/ticket run` | Up to `batch_size` parallel Claude Code runs |
-| `./scripts/ticket done ID` | Cleanup worktree + mark shipped |
+| `./scripts/ticket run` | Up to `batch_size` Claude Code runs (`claude-code` slices) |
+| `./scripts/ticket done ID` | Mark shipped + sync |
 | `./scripts/ticket brief ID` | Developer handoff card |
 | `./scripts/ticket prompt ID [--slice SLICE]` | Print Claude Code prompt from slice spec |
 | `./scripts/ticket show ID` | One ticket card |
@@ -49,14 +51,14 @@ make ticket-list
 | `queued` | Backlog — has order |
 | `ready` | Spec on `main` — OK to `run` |
 | `running` | Claude Code working |
-| `review` | Branch ready for you |
+| `review` | Ready for human verify |
 | `shipped` | Done |
 | `deferred` | Deprioritized |
 | `cancelled` | Dropped — row kept |
 
 ## Logs
 
-`artifacts/ticket-pipeline/T-0xx/run.log`
+`.ai/artifacts/ticket-pipeline/T-0xx/run.log`
 
 ## Authority
 

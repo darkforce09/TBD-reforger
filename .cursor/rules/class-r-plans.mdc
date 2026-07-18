@@ -122,9 +122,9 @@ Illegal: inventing "skip sea/contours for later", "MVP host wiring without fores
 
 If unsure whether X is T-166 vs T-152: **read the cited spec's out-of-scope and the other ticket** — then ask the operator only if still ambiguous. Do not guess-skip.
 
-### R7 — React / history ports
+### R7 — Historical ports (React-era framing)
 
-When the tree deleted the reference implementation:
+**Historical:** the live SPA is Leptos at `apps/website/frontend/` (T-159 / T-171). When a ticket still requires parity with a deleted React tip:
 
 1. Cite `git show <tag>:<path>` (default tip-of-React tag used by handoff, often `T-159.29.2`).
 2. Separate: **behavior contract** (specs + ticket) vs **tip-React extras** (e.g. T-154 remount). State which the ticket locks.

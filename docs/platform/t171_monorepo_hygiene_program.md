@@ -1,6 +1,6 @@
 # T-171 — Monorepo / website hygiene program
 
-**Status:** queued (start only after **T-169** ships)  
+**Status:** SHIPPED @ tag **T-171** / `2421b335` (code + layout) · docs pass **T-171.docs**  
 **Scope:** website + platform tooling/docs — **not** `apps/mod/`  
 **Goal:** one coherent, thorough hygiene pass so the website/monorepo layout, dead code, tickets, docs, conventions, fixtures, and crate/path names match reality — and new work has one obvious home.
 
@@ -27,8 +27,8 @@ docs/                         # Cursor prose pass from Claude’s return list (T
 
 | Path | Cargo package name |
 |------|--------------------|
-| `apps/website/api` | `website-api` (or keep `reforger-backend` only if renaming breaks more than it fixes — prefer `website-api`) |
-| `apps/website/frontend` | `website-frontend` (was `website-leptos`) |
+| `apps/website/api` | `website-api` (shipped; was `reforger-backend`) |
+| `apps/website/frontend` | `website-frontend` (shipped; was `website-leptos`) |
 
 Update every `-p`, CI job, Makefile target, and doc string in the same ship. Prefer clear names over preserving obsolete package ids.
 
