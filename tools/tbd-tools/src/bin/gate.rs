@@ -69,6 +69,9 @@ enum Cmd {
         expect: String,
         #[arg(long)]
         assert_js: Option<String>,
+        /// Inject the v-suite admin localStorage seed before boot (auth-gated pages).
+        #[arg(long, default_value_t = false)]
+        seed_auth: bool,
         #[arg(long, default_value_t = 5197)]
         port: u16,
         #[arg(long, default_value_t = 9337)]
@@ -115,6 +118,7 @@ fn main() -> ExitCode {
                 path,
                 expect,
                 assert_js,
+                seed_auth,
                 port,
                 debug_port,
             } => {
@@ -123,6 +127,7 @@ fn main() -> ExitCode {
                     path,
                     expect,
                     assert_js,
+                    seed_auth,
                     port,
                     debug_port,
                 })

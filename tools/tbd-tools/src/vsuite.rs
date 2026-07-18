@@ -108,7 +108,8 @@ fn fixture_for(url: &str) -> Option<PathBuf> {
 
 /// The localStorage auth seed — the stored VALUE is built with the same key order as the
 /// Node harness's object literal (serde_json preserve_order), so the app boots identically.
-fn seed_script() -> Result<String> {
+/// pub(crate): render-check's `--seed-auth` (T-172 behavioral probes) injects the same seed.
+pub(crate) fn seed_script() -> Result<String> {
     let me: Value = serde_json::from_str(
         &std::fs::read_to_string(fixtures_dir().join("GET__me.json")).context("GET__me.json")?,
     )?;
@@ -345,7 +346,9 @@ pub async fn run(args: &VSuiteArgs) -> Result<u8> {
         return Ok(2);
     }
     if !["verify", "accept"].contains(&args.mode.as_str()) {
-        eprintln!("usage: gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]");
+        eprintln!(
+            "usage: gate v-suite <verify|accept> [--leptos-dir d] [--only slug] [--note why]"
+        );
         return Ok(2);
     }
     if args.mode == "accept" && (args.only.is_empty() || args.note.is_empty()) {

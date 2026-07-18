@@ -2928,20 +2928,24 @@ pub struct RenderCheckArgs {
     pub path: String,
     pub expect: String,
     pub assert_js: Option<String>,
+    /// Inject the v-suite admin localStorage seed before boot (T-172 behavioral probes on
+    /// auth-gated pages).
+    pub seed_auth: bool,
     pub port: u16,
     pub debug_port: u16,
 }
 
 pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
-    let h = Harness::new(
-        &a.dir,
-        a.port,
-        a.debug_port,
-        None,
-        None,
-        &[crate::inject::FREEZE_SRC],
-    )
-    .await?;
+    let seed = if a.seed_auth {
+        Some(crate::vsuite::seed_script()?)
+    } else {
+        None
+    };
+    let mut injects: Vec<&str> = vec![crate::inject::FREEZE_SRC];
+    if let Some(s) = seed.as_deref() {
+        injects.push(s);
+    }
+    let h = Harness::new(&a.dir, a.port, a.debug_port, None, None, &injects).await?;
     let run = async {
         let url = h.url(&a.path);
         h.page.navigate(&url).await?;
@@ -2956,16 +2960,17 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
         cdp::sleep_ms(150).await;
         let text = eval_str(&h.page, "document.body.innerText").await?;
         let html = eval_str(&h.page, "document.body.innerHTML").await?;
-        let assert_ok = match &a.assert_js {
-            Some(js) => Some(
-                eval(&h.page, js).await?.as_bool() == Some(true) || {
-                    // JS Boolean() truthiness on the raw value.
-                    let v = eval(&h.page, js).await?;
-                    !(v.is_null() || v == json!(false) || v == json!(0) || v == json!(""))
-                },
-            ),
+        // awaitPromise so async-IIFE probes can settle reactive updates between steps
+        // (T-172 behavioral probes); plain values pass through unchanged. The raw value is
+        // echoed in the verdict so a diagnostic probe can return a JSON string.
+        let assert_value = match &a.assert_js {
+            Some(js) => Some(h.page.evaluate(js, true).await?),
             None => None,
         };
+        let assert_ok = assert_value.as_ref().map(|v| {
+            v.as_bool() == Some(true)
+                || !(v.is_null() || *v == json!(false) || *v == json!(0) || *v == json!(""))
+        });
         h.page.close().await;
 
         let found = if a.expect.is_empty() {
@@ -2978,7 +2983,7 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
             && a.assert_js.as_ref().is_none_or(|_| assert_ok == Some(true));
         print_verdict(&json!({
             "url": url, "ready": ready, "expect": a.expect, "found": found,
-            "assertJs": a.assert_js, "assertOk": assert_ok,
+            "assertJs": a.assert_js, "assertOk": assert_ok, "assertValue": assert_value,
             "textPreview": text.chars().take(200).collect::<String>(),
             "htmlBytes": crate::vsuite::js_len(&html),
         }));
