@@ -6,7 +6,7 @@
 # nullable columns may use `*`.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../../apps/website" && pwd)"
+ROOT="$(cd "$(dirname "$0")/../../apps/website/api" && pwd)"
 ALLOW='modpack_mods|orbat_reservations'   # verified: no nullable columns
 bad=0
 

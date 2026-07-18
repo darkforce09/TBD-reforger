@@ -28,7 +28,7 @@ enum Cmd {
         mode: String,
         #[arg(long, default_value = "apps/website/frontend/dist")]
         oracle_dir: PathBuf,
-        #[arg(long, default_value = "apps/website-leptos/dist")]
+        #[arg(long, default_value = "apps/website/frontend/dist")]
         leptos_dir: PathBuf,
         #[arg(long, default_value = "")]
         only: String,

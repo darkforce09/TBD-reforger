@@ -1,0 +1,97 @@
+# T-159 — Leptos (Rust/wasm) website SPA; THE frontend since the T-159.29.3 React deletion
+# (dev: `make leptos`; prod: SPA_DIST_DIR serve). CSR-only for now (L1); links the existing
+# map-engine crates directly from T-159.15 (the wasm-boundary collapse).
+[package]
+name = "website-frontend"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+leptos = { version = "0.8", features = ["csr"] }
+leptos_router = "0.8"
+console_error_panic_hook = "0.1"
+futures = "0.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+gloo-net = "0.6"
+js-sys = "0.3"
+wasm-bindgen = "0.2"
+web-sys = { version = "0.3", features = [
+    "Window",
+    "Location",
+    "Storage",
+    # T-159.17 yrs IDB persist: `window.document()` + `document.hidden()` (Page Visibility) and the
+    # `visibilitychange` flush-on-hide listener. sessionStorage/localStorage stay under `Storage`;
+    # set_timeout/clear_timeout_with_handle live under the existing `Window`.
+    "Document",
+    "RequestCredentials",
+    "HtmlCanvasElement",
+    # T-159.15.1 Mission Creator render loop: container div, its bounding rect, wheel-zoom, and the
+    # capture/passive wheel + window resize listeners.
+    "HtmlDivElement",
+    "Element",
+    "DomRect",
+    "WheelEvent",
+    # T-159.15.2 Mission Creator pan: MMB/RMB drag (PointerEvent) + contextmenu (MouseEvent).
+    # `PointerEvent = ["Event","MouseEvent","UiEvent"]` transitively enables the inherited
+    # button()/client_x()/prevent_default() accessors; MouseEvent is listed for the standalone
+    # contextmenu handler type. set/has/release_pointer_capture live under the existing `Element`.
+    "PointerEvent",
+    "MouseEvent",
+    # T-159.21 undo/redo shortcuts: the window `keydown` listener (Ctrl/Cmd+Z, Ctrl+Y). Brings the
+    # inherited code()/ctrl_key()/meta_key()/shift_key()/alt_key() accessors via UiEvent/Event.
+    # The focus guard's `active_element` / `is_content_editable` are already covered by the
+    # existing `Document` / `Element` / `HtmlElement`.
+    "KeyboardEvent",
+    "EventTarget",
+    "AddEventListenerOptions",
+    # T-159.20 Save/Export: the semver <input> (HtmlInputElement) + the Export download dance
+    # (Blob/BlobPropertyBag → Url.createObjectURL → <a download> click → revokeObjectURL). `click()`
+    # lives on HtmlElement; the anchor is created via `document.create_element("a")` → HtmlAnchorElement.
+    "HtmlInputElement",
+    "Blob",
+    "BlobPropertyBag",
+    "Url",
+    "HtmlAnchorElement",
+    "HtmlElement",
+    # T-159.25 SSE consumer (sse.rs): Bearer fetch + ReadableStream reader — the useServerTelemetry
+    # transport (EventSource can't carry the Authorization header).
+    "Headers",
+    "Request",
+    "RequestInit",
+    "Response",
+    "ReadableStream",
+    "ReadableStreamDefaultReader",
+    # T-159.25 Server Intel copy-address (navigator.clipboard.writeText).
+    "Navigator",
+    "Clipboard",
+    # T-166 — TBDS/WebP decode → ImageBitmap (WebGPU) or OffscreenCanvas→RGBA (WebGL2 gates).
+    "ImageBitmap",
+    "ImageBitmapOptions",
+    "ColorSpaceConversion",
+    "OffscreenCanvas",
+    "OffscreenCanvasRenderingContext2d",
+    "ImageData",
+] }
+
+# T-159.15 Mission Creator engine — the wasm-boundary collapse. The Leptos app links the wgpu render
+# engine directly (one wasm module / one linear memory), so it owns `RenderEngine` as plain Rust
+# instead of reaching it through the map-engine-wasm shim. rlib; its wgpu stack is wasm32-gated.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+map-engine-render = { path = "../../../crates/map-engine-render" }
+# T-159.16 MissionDoc host — the `yrs` document core in the SAME wasm module (spec D2: a workspace dep
+# on map-engine-core with the `doc` feature, NOT the map-engine-wasm JS shim). `doc` pulls yrs; its
+# serde_json is already shared with render's `world` feature, so no duplicate dep.
+map-engine-core = { path = "../../../crates/map-engine-core", features = ["doc", "mission", "png", "world"] }
+# T-159.17 yrs IDB persist — the React `yrsPersist.ts` parity (DB `tbd-mission-yrs` / store
+# `doc-state` / whole `encode_state()` blob). `idb` is a wasm-first IndexedDB wrapper; its default
+# features pull `tokio` with ONLY `features=["sync"]` (oneshot), which compiles on
+# wasm32-unknown-unknown — so keep default features (dropping them strips the async API).
+idb = "0.6"
+# T-159.25 SSE consumer — awaiting fetch/reader promises in sse.rs. Already in the tree via leptos
+# (spawn_local); listing it just makes the direct use explicit.
+wasm-bindgen-futures = "0.4"
+
+# [profile.*] lives in the workspace root Cargo.toml (member profiles are ignored). trunk applies
+# wasm-opt via the index.html data-wasm-opt attribute.

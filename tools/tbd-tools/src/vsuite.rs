@@ -88,7 +88,7 @@ fn gold_dir() -> PathBuf {
 }
 
 fn fixtures_dir() -> PathBuf {
-    repo_root().join(".ai/artifacts/t159_gates/fixtures/api")
+    repo_root().join("apps/website/frontend/tests/fixtures/api")
 }
 
 /// `/api/v1/<path>[?…]` → fixture file (gate_v's mapping): `GET__` + path with the trailing

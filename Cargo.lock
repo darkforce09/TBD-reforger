@@ -3689,45 +3689,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reforger-backend"
-version = "0.1.0"
-dependencies = [
- "ammonia",
- "anyhow",
- "async-stream",
- "axum",
- "axum-extra",
- "chrono",
- "csv",
- "dotenvy",
- "futures",
- "governor",
- "hex",
- "jsonschema",
- "jsonwebtoken",
- "map-engine-core",
- "rand 0.10.2",
- "regress 0.10.5",
- "reqwest",
- "rust_decimal",
- "rustls",
- "serde",
- "serde_json",
- "sha2 0.11.0",
- "sqlx",
- "subtle",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "tower",
- "tower-http 0.7.0",
- "tracing",
- "tracing-subscriber",
- "url",
- "uuid",
-]
-
-[[package]]
 name = "regex"
 version = "1.12.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5784,7 +5745,46 @@ dependencies = [
 ]
 
 [[package]]
-name = "website-leptos"
+name = "website-api"
+version = "0.1.0"
+dependencies = [
+ "ammonia",
+ "anyhow",
+ "async-stream",
+ "axum",
+ "axum-extra",
+ "chrono",
+ "csv",
+ "dotenvy",
+ "futures",
+ "governor",
+ "hex",
+ "jsonschema",
+ "jsonwebtoken",
+ "map-engine-core",
+ "rand 0.10.2",
+ "regress 0.10.5",
+ "reqwest",
+ "rust_decimal",
+ "rustls",
+ "serde",
+ "serde_json",
+ "sha2 0.11.0",
+ "sqlx",
+ "subtle",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "tower",
+ "tower-http 0.7.0",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+ "uuid",
+]
+
+[[package]]
+name = "website-frontend"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",

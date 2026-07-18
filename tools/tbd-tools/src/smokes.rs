@@ -19,7 +19,7 @@ use serde_json::{Map, Value, json};
 use crate::cdp::{self, Browser, Page};
 use crate::serve::{RunningServer, ServeConfig, repo_root, start_server};
 
-const DIST_DEFAULT: &str = "apps/website-leptos/dist";
+const DIST_DEFAULT: &str = "apps/website/frontend/dist";
 /// Default editor path for the suite. `sat=preview` keeps smokes off the 152 MB full TBDS GET
 /// (which freezes headless CDP mid-suite once `/map-assets` is live).
 ///
@@ -336,7 +336,7 @@ fn force_webgl(path: &str) -> String {
 /// the committed golden; other /api/v1/ → 401 {}; everything else continues. Returns a counter.
 async fn serve_registry_golden(page: &Arc<Page>) -> Result<Arc<StdMutex<u64>>> {
     let golden = std::fs::read_to_string(
-        repo_root().join(".ai/artifacts/t159_gates/fixtures/api/GET__registry.json"),
+        repo_root().join("apps/website/frontend/tests/fixtures/api/GET__registry.json"),
     )?;
     let golden: Value = serde_json::from_str(&golden)?;
     let hits = Arc::new(StdMutex::new(0u64));
@@ -380,7 +380,7 @@ async fn serve_arsenal_golden(
     const MAG: &str = "{ARSENAL_MAG}Prefabs/Weapons/Magazines/Mag_STANAG_30.et";
     let root = repo_root();
     let mut registry: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join(".ai/artifacts/t159_gates/fixtures/api/GET__registry.json"),
+        root.join("apps/website/frontend/tests/fixtures/api/GET__registry.json"),
     )?)?;
     let mp = registry["modpack_id"].clone();
     let mk = |rn: &str, name: &str, kind: &str, wkg: f64| {
@@ -407,7 +407,7 @@ async fn serve_arsenal_golden(
         "etag": "W/\"arsenal-compat\"", "modpack_id": mp, "modpack_version": "test",
     });
     let factions: Value = serde_json::from_str(&std::fs::read_to_string(
-        root.join(".ai/artifacts/t159_gates/fixtures/api/GET__factions.json"),
+        root.join("apps/website/frontend/tests/fixtures/api/GET__factions.json"),
     )?)?;
 
     let reg_hits = Arc::new(StdMutex::new(0u64));

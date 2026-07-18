@@ -143,8 +143,8 @@ else
     --exclude=apps/mod/Tbd_framework/ \
     --exclude=apps/mod/.local-test-profile/ \
     --exclude='**/node_modules/' \
-    --exclude=apps/website/.tools/ \
-    --exclude=apps/website/.env \
+    --exclude=apps/website/api/.tools/ \
+    --exclude=apps/website/api/.env \
     --exclude=apps/mod/tbd-framework/Scripts/WorkbenchGame/ \
     --exclude=scripts/deploy/deploy.env \
     "$MONO_ROOT/" "$TBD_SSH_HOST:$TBD_REMOTE_DIR/"
@@ -172,7 +172,7 @@ echo "==> docker compose (API + Postgres)"
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] docker compose -f docker-compose.staging.yml up -d --build"
 else
-  ssh_cmd "cd '$TBD_REMOTE_DIR/apps/website' && docker compose -f docker-compose.staging.yml up -d --build"
+  ssh_cmd "cd '$TBD_REMOTE_DIR/apps/website/api' && docker compose -f docker-compose.staging.yml up -d --build"
 fi
 
 # V2–V4 hit the game-server REST routes (/api/missions/:id/compiled, /api/game/.../roster).

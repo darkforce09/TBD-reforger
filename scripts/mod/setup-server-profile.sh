@@ -20,7 +20,7 @@ PROFILE_ROOT="$PROFILE/profile"
 
 mkdir -p "$PROFILE_ROOT/missions"
 
-# Backend config — edit serverToken to match GAME_SERVER_TOKENS in apps/website/.env
+# Backend config — edit serverToken to match GAME_SERVER_TOKENS in apps/website/api/.env
 cp "$MOD_ROOT/tbd-framework/Data/backend.example.json" "$PROFILE_ROOT/TBD_BackendConfig.json"
 
 # Point at local API + dev token from .env if present

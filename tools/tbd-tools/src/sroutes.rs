@@ -1,6 +1,6 @@
 //! T-165.5 — S-routes gate (port of `manifests/extract-leptos-routes.mjs`).
 //!
-//! Extracts the route table from `apps/website-leptos/src/router.rs` and diffs it against the
+//! Extracts the route table from `apps/website/frontend/src/router.rs` and diffs it against the
 //! frozen React oracle manifest `manifests/routes.csv`. Robust to rustfmt line-wrapping: splits
 //! on `RouteDef { … }` blocks and pulls each field by name.
 //!
@@ -14,7 +14,7 @@ use crate::serve::repo_root;
 
 pub fn run() -> Result<u8> {
     let root = repo_root();
-    let router = root.join("apps/website-leptos/src/router.rs");
+    let router = root.join("apps/website/frontend/src/router.rs");
     let oracle_path = root.join(".ai/artifacts/t159_gates/manifests/routes.csv");
 
     let src =

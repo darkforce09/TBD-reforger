@@ -22,7 +22,7 @@ const TARGETS: [(&str, &str); 4] = [
 pub fn codegen() -> Result<u8> {
     let root = repo_root()?;
     let schema_dir = root.join("packages/tbd-schema/schema");
-    let out_dir = root.join("apps/website/src/contract/generated");
+    let out_dir = root.join("apps/website/api/src/contract/generated");
     fs::create_dir_all(&out_dir)?;
 
     for (schema_file, module) in TARGETS {

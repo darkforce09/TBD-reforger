@@ -1,6 +1,6 @@
 # TBD Reforger Platform — monorepo dev tasks (delegates to apps/website/).
 COMPOSE := $(shell command -v docker >/dev/null 2>&1 && echo "docker compose" || echo "podman compose")
-WEB := apps/website
+WEB := apps/website/api
 # ~/.local/go/bin stays on PATH only for the Go toolchain that `go install`s editorconfig-checker.
 # ~/go/bin is the default GOPATH/bin where `go install` drops tools (editorconfig-checker, T-125.5);
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
@@ -27,17 +27,17 @@ seed: ## Apply data seeds (Discord role mappings + registry catalog) to the runn
 
 registry-import: ## Ingest the committed T-150 registry envelopes (items + compat) into the dev DB (T-068.9)
 	cd $(WEB) && cargo run --bin import-registry -- \
-		--items ../../packages/tbd-schema/registry/registry-items.workbench.json \
-		--compat ../../packages/tbd-schema/registry/registry-compat.workbench.json
+		--items ../../../packages/tbd-schema/registry/registry-items.workbench.json \
+		--compat ../../../packages/tbd-schema/registry/registry-compat.workbench.json
 
-api: ## Run the API (loads apps/website/.env; migrates on boot)
+api: ## Run the API (loads apps/website/api/.env; migrates on boot)
 	cd $(WEB) && cargo run --bin api
 
 leptos: ## Run the Leptos dev server on :3000 (trunk serve; /api proxies to :8080 — T-159.24)
-	cd apps/website-leptos && trunk serve
+	cd apps/website/frontend && trunk serve
 
-leptos-build: ## Release-build the Leptos SPA into apps/website-leptos/dist
-	cd apps/website-leptos && trunk build --release
+leptos-build: ## Release-build the Leptos SPA into apps/website/frontend/dist
+	cd apps/website/frontend && trunk build --release
 
 leptos-gates: leptos-build ## T-159 editor smokes + the frozen V-suite against a fresh release dist
 	cargo run -q -p tbd-tools --bin gate -- editor-suite
@@ -84,7 +84,7 @@ build: ## Build the backend + the Leptos SPA
 # --- Rust port (T-145). Additive during the Go→Rust transition; these become the
 # canonical `api`/`build`/`test` targets at cutover (plan Phase 11). Cargo is at
 # ~/.cargo/bin (user-space rustup; never dnf on Bazzite).
-rust-api: ## Run the Rust API (loads apps/website/.env; migrates on boot)
+rust-api: ## Run the Rust API (loads apps/website/api/.env; migrates on boot)
 	cd $(WEB) && cargo run --bin api
 rust-build: ## Build the Rust backend (all targets)
 	cd $(WEB) && cargo build --all-targets
@@ -227,11 +227,11 @@ ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm us
 	$(MAKE) ci-local-leptos
 	$(MAKE) ci-local-schema
 
-ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32) + native tests + trunk release build (mirrors ci.yml website-leptos)
-	cargo fmt -p website-leptos --check
-	cargo clippy -p website-leptos --target wasm32-unknown-unknown
-	cargo test -p website-leptos
-	cd apps/website-leptos && trunk build --release
+ci-local-leptos: ## CI gate: Leptos SPA fmt + clippy(wasm32) + native tests + trunk release build (mirrors ci.yml website-frontend)
+	cargo fmt -p website-frontend --check
+	cargo clippy -p website-frontend --target wasm32-unknown-unknown
+	cargo test -p website-frontend
+	cd apps/website/frontend && trunk build --release
 
 ci-local-schema: ## CI gate: schema validate (TEST-3) + @contract citation verify
 	$(MAKE) schema-validate

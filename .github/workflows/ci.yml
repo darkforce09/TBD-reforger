@@ -4,9 +4,9 @@ name: ci
 # Required on every push + PR to `main` — NO `paths:` filter. This is what distinguishes
 # it from contracts.yml / schema.yml, which stay as path-scoped supplements (do NOT merge
 # them here in this slice).
-# The backend/map-engine/website-leptos jobs are all cargo gates (fmt + clippy -D + build + test)
-# since the T-145 Go→Rust and T-159 React→Leptos cutovers; contracts.yml stays the path-filtered
-# citations/codegen supplement.
+# The website-api/map-engine/website-frontend jobs are all cargo gates (fmt + clippy -D + build +
+# test) since the T-145 Go→Rust and T-159 React→Leptos cutovers; contracts.yml stays the
+# path-filtered citations/codegen supplement.
 on:
   push:
     branches: [main]
@@ -23,8 +23,8 @@ permissions:
 jobs:
   # --- backend: Rust 1.95 + Postgres 18 — the sole backend after the T-145 Go->Rust
   # cutover. fmt (FMT-1) + clippy (GO-2..8 analog) + build + integration tests (TEST-1). ---
-  rust-backend:
-    name: rust-backend (Rust 1.95 + Postgres 18)
+  website-api:
+    name: website-api (Rust 1.95 + Postgres 18)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     services:
@@ -43,7 +43,7 @@ jobs:
           --health-retries 10
     defaults:
       run:
-        working-directory: apps/website
+        working-directory: apps/website/api
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -51,8 +51,6 @@ jobs:
           toolchain: "1.95.0"
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: apps/website
       - name: fmt (FMT-1 analog)
         run: cargo fmt --check
       - name: clippy (GO-2..8 analog)
@@ -88,12 +86,12 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: make wasm-ci
 
-  # --- website-leptos: the Rust/Leptos SPA — THE frontend after the T-159.29.3 React deletion ---
+  # --- website-frontend: the Rust/Leptos SPA — THE frontend after the T-159.29.3 React deletion ---
   # fmt + clippy(wasm32) + native tests + trunk release build. The editor S/V/R/T smokes + the
   # frozen V-suite (make leptos-gates) need a cached headless chromium (the T-151 pattern) and run
   # locally per stream; wiring them as a CI job is a follow-on.
-  website-leptos:
-    name: website-leptos (Leptos SPA)
+  website-frontend:
+    name: website-frontend (Leptos SPA)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -107,13 +105,13 @@ jobs:
         with:
           tool: trunk
       - name: fmt
-        run: cargo fmt -p website-leptos --check
+        run: cargo fmt -p website-frontend --check
       - name: clippy (wasm32)
-        run: cargo clippy -p website-leptos --target wasm32-unknown-unknown
+        run: cargo clippy -p website-frontend --target wasm32-unknown-unknown
       - name: cargo test (native shell)
-        run: cargo test -p website-leptos
+        run: cargo test -p website-frontend
       - name: trunk build --release
-        working-directory: apps/website-leptos
+        working-directory: apps/website/frontend
         run: trunk build --release
 
   # --- schema: golden-mission validate (TEST-3) + @contract citation integrity ---
