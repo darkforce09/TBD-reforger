@@ -18,6 +18,28 @@ fn is_active(path: &str, current: &str) -> bool {
     }
 }
 
+/// Which shell frame a pathname gets. Derived in a `Memo` so SPA navigation only remounts the
+/// frame when the *kind* changes (login ↔ chrome ↔ editor), not on every route (T-172 A2/A8).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FrameKind {
+    /// `/login` + `/auth/callback` — React renders these outside AppLayout, bare.
+    Bare,
+    /// Mission Creator editor — full-viewport, no platform chrome.
+    Chromeless,
+    /// Sidebar + TopNav + `<main>`.
+    Chrome,
+}
+
+fn classify_frame(path: &str) -> FrameKind {
+    if path == "/login" || path == "/auth/callback" {
+        FrameKind::Bare
+    } else if crate::router::chromeless(path) {
+        FrameKind::Chromeless
+    } else {
+        FrameKind::Chrome
+    }
+}
+
 #[component]
 pub fn AppLayout() -> impl IntoView {
     // The auth store (Zustand replacement) lives at the shell root; children read it via context.
@@ -28,39 +50,44 @@ pub fn AppLayout() -> impl IntoView {
     // Cold-load bootstrap: hydrate the session from tbd-auth (no-op for a guest with nothing stored).
     #[cfg(target_arch = "wasm32")]
     leptos::task::spawn_local(crate::client::bootstrap(expect_context::<AuthStore>()));
-    // Route determines the frame. Read once at load; reactive re-wrap on SPA nav is a follow-up.
-    let path = use_location().pathname.get();
-    let frame = if path == "/login" || path == "/auth/callback" {
+    // Route determines the frame — reactive on SPA nav (T-172 A2/A8). The Memo dedups by
+    // FrameKind, so navigating between two Chrome routes never remounts Sidebar/TopNav; only
+    // crossing a login/editor boundary swaps the frame.
+    let pathname = use_location().pathname;
+    let frame_kind = Memo::new(move |_| classify_frame(&pathname.get()));
+    let frame = move || match frame_kind.get() {
         // React renders these OUTSIDE AppLayout — bare, no chrome, no wrapper div.
-        view! { <AppRoutes /> }.into_any()
-    } else if crate::router::chromeless(&path) {
+        FrameKind::Bare => view! { <AppRoutes /> }.into_any(),
         // The Mission Creator editor: AppLayout's chromeless full-viewport branch.
-        view! {
+        FrameKind::Chromeless => view! {
             <div class="h-screen w-screen overflow-hidden bg-background">
                 <AppRoutes />
             </div>
         }
-        .into_any()
-    } else {
+        .into_any(),
         // Normal chrome: Sidebar + TopNav + the padded/full-bleed <main>.
-        let main_class = if crate::router::full_bleed(&path) {
-            "min-h-0 flex-1 bg-background overflow-hidden"
-        } else {
-            "min-h-0 flex-1 bg-background overflow-y-auto p-6"
-        };
-        view! {
-            <div class="flex h-screen overflow-hidden bg-background">
-                <SidebarMobileToggle />
-                <Sidebar />
-                <div class="flex min-w-0 flex-1 flex-col">
-                    <TopNav />
-                    <main class=main_class>
-                        <AppRoutes />
-                    </main>
+        FrameKind::Chrome => {
+            let main_class = move || {
+                if crate::router::full_bleed(&pathname.get()) {
+                    "min-h-0 flex-1 bg-background overflow-hidden"
+                } else {
+                    "min-h-0 flex-1 bg-background overflow-y-auto p-6"
+                }
+            };
+            view! {
+                <div class="flex h-screen overflow-hidden bg-background">
+                    <SidebarMobileToggle />
+                    <Sidebar />
+                    <div class="flex min-w-0 flex-1 flex-col">
+                        <TopNav />
+                        <main class=main_class>
+                            <AppRoutes />
+                        </main>
+                    </div>
                 </div>
-            </div>
+            }
+            .into_any()
         }
-        .into_any()
     };
     // The viewport is a sibling of the frame (like React's root-level <Toaster/>) and renders no
     // DOM while the toast list is empty, so byte-equal V captures are unaffected.
@@ -72,13 +99,13 @@ pub fn AppLayout() -> impl IntoView {
 
 #[component]
 fn TopNav() -> impl IntoView {
-    // Breadcrumb from the live route (exact-match; dynamic-route patterns are a follow-up).
-    let breadcrumb = crate::router::breadcrumb(&use_location().pathname.get());
+    // Breadcrumb from the live route — reactive on SPA nav (T-172 A8).
+    let pathname = use_location().pathname;
     let auth = expect_context::<AuthStore>();
     view! {
         <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">
             <div class="flex h-full min-w-0 items-center gap-2 pl-12 lg:pl-0">
-                {match breadcrumb {
+                {move || match crate::router::breadcrumb(&pathname.get()) {
                     Some((parent, current)) => view! {
                         <>
                             <span class="text-label-md text-on-surface-variant">{parent}</span>
@@ -200,15 +227,19 @@ fn SidebarBrand() -> impl IntoView {
 #[component]
 fn SidebarNav() -> impl IntoView {
     // Real auth store (guest → None → browse-mode, all nav) + the live route for the active link.
-    let user_role = expect_context::<AuthStore>().user.get().map(|u| u.role);
-    // Read once at render → correct at page load (what the V gate checks). Wrapping the class in a
-    // reactive closure so active follows SPA navigation without a reload is a small follow-up.
-    let current = use_location().pathname.get();
+    // Both are read inside one reactive closure (T-172 A2 + H1): the active highlight follows SPA
+    // navigation and the admin section appears/disappears with the session, no reload needed. The
+    // rendered class strings are byte-identical to the one-shot version (V gate).
+    let auth = expect_context::<AuthStore>();
+    let pathname = use_location().pathname;
     view! {
         <nav class="custom-scrollbar flex-1 overflow-y-auto px-3 py-4">
-            {NAVIGATION
+            {move || {
+                let user_role = auth.user.get().map(|u| u.role);
+                let current = pathname.get();
+                NAVIGATION
                 .iter()
-                .filter_map(move |section| {
+                .filter_map(|section| {
                     if section.admin && !has_min_role(user_role, Role::Admin) {
                         return None;
                     }
@@ -263,7 +294,39 @@ fn SidebarNav() -> impl IntoView {
                         </div>
                     })
                 })
-                .collect_view()}
+                .collect_view()
+            }}
         </nav>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{classify_frame, is_active, FrameKind};
+
+    #[test]
+    fn is_active_dashboard_exact() {
+        assert!(is_active("/", "/"));
+        assert!(!is_active("/", "/missions"));
+    }
+
+    #[test]
+    fn is_active_prefix_and_exact() {
+        assert!(is_active("/missions", "/missions"));
+        assert!(is_active("/missions", "/missions/abc"));
+        assert!(!is_active("/missions", "/missions-archive"));
+        assert!(!is_active("/events", "/missions"));
+    }
+
+    #[test]
+    fn classify_frame_kinds() {
+        assert!(matches!(classify_frame("/login"), FrameKind::Bare));
+        assert!(matches!(classify_frame("/auth/callback"), FrameKind::Bare));
+        assert!(matches!(
+            classify_frame("/missions/abc/edit"),
+            FrameKind::Chromeless
+        ));
+        assert!(matches!(classify_frame("/"), FrameKind::Chrome));
+        assert!(matches!(classify_frame("/missions"), FrameKind::Chrome));
     }
 }
