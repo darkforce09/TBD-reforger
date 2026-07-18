@@ -102,6 +102,38 @@ fn TopNav() -> impl IntoView {
     // Breadcrumb from the live route — reactive on SPA nav (T-172 A8).
     let pathname = use_location().pathname;
     let auth = expect_context::<AuthStore>();
+    // User-menu dropdown (T-172 A1). Renders no DOM while closed (V-suite byte-equal).
+    let menu_open = RwSignal::new(false);
+    #[cfg(target_arch = "wasm32")]
+    {
+        let esc = window_event_listener(leptos::ev::keydown, move |ev| {
+            if menu_open.get_untracked() && ev.key() == "Escape" {
+                menu_open.set(false);
+            }
+        });
+        on_cleanup(move || esc.remove());
+    }
+    // Sign Out: revoke the presented refresh token server-side (fire-and-forget — logout always
+    // 204s), then drop + persist the cleared session so a reload can't resurrect it.
+    let sign_out = move |_| {
+        menu_open.set(false);
+        #[cfg(target_arch = "wasm32")]
+        {
+            let rt = auth.refresh_token.get_untracked();
+            auth.clear_session();
+            crate::auth::persist(&auth.persist_state());
+            leptos::task::spawn_local(async move {
+                if let Some(rt) = rt {
+                    let _ = crate::client::api_post_ok(
+                        auth,
+                        "/auth/logout",
+                        serde_json::json!({ "refresh_token": rt }),
+                    )
+                    .await;
+                }
+            });
+        }
+    };
     view! {
         <header class="flex h-16 shrink-0 items-center justify-between border-b border-outline-variant/30 bg-surface-container-low/70 px-6 backdrop-blur-xl">
             <div class="flex h-full min-w-0 items-center gap-2 pl-12 lg:pl-0">
@@ -121,7 +153,7 @@ fn TopNav() -> impl IntoView {
                 }}
             </div>
             // Reactive: guest sign-in CTA until bootstrap lands the session, then StatusPill + the
-            // avatar button (the open user-menu dropdown is interactive state — a follow-up).
+            // avatar button with its dropdown (Settings / Link Arma Identity / Sign Out).
             <div class="relative flex h-full items-center gap-4">
                 {move || {
                     if !auth.is_authenticated() {
@@ -169,6 +201,7 @@ fn TopNav() -> impl IntoView {
                             <button
                                 type="button"
                                 class="flex items-center gap-2 rounded-lg p-1 pr-3 transition-colors hover:bg-surface-variant/50"
+                                on:click=move |_| menu_open.update(|v| *v = !*v)
                             >
                                 <img
                                     src=avatar
@@ -178,6 +211,37 @@ fn TopNav() -> impl IntoView {
                                 <span class="text-label-md font-medium">{username}</span>
                                 <MaterialIcon name="expand_more" class="text-on-surface-variant" />
                             </button>
+                            {move || {
+                                menu_open.get().then(|| {
+                                    let item = "flex w-full items-center gap-2 px-4 py-2 text-left text-label-md text-on-surface transition-colors hover:bg-surface-variant/40";
+                                    view! {
+                                        <div class="fixed inset-0 z-40" on:click=move |_| menu_open.set(false)></div>
+                                        <div class="glass animate-dialog-in absolute top-full right-0 z-50 mt-2 w-56 rounded-lg py-1 shadow-lg">
+                                            <a href="/settings" class=item on:click=move |_| menu_open.set(false)>
+                                                <MaterialIcon name="settings" class="text-[18px] text-on-surface-variant" />
+                                                "Settings"
+                                            </a>
+                                            <a
+                                                href="/settings#arma-link"
+                                                class=item
+                                                on:click=move |_| menu_open.set(false)
+                                            >
+                                                <MaterialIcon name="link" class="text-[18px] text-on-surface-variant" />
+                                                "Link Arma Identity"
+                                            </a>
+                                            <hr class="my-1 border-outline-variant/30" />
+                                            <button
+                                                type="button"
+                                                class="flex w-full items-center gap-2 px-4 py-2 text-left text-label-md text-error transition-colors hover:bg-error/10"
+                                                on:click=sign_out
+                                            >
+                                                <MaterialIcon name="logout" class="text-[18px]" />
+                                                "Sign Out"
+                                            </button>
+                                        </div>
+                                    }
+                                })
+                            }}
                         </>
                     }
                         .into_any()
