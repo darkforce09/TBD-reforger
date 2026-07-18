@@ -239,25 +239,46 @@ pub struct FlatRow {
     pub label: String,
     pub kind: NodeKind,
     pub depth: usize,
+    /// True when the source node has children — drives the chevron + open/closed folder icon
+    /// (T-172 B6/B7). A collapsed container still renders its own row; its subtree does not.
+    pub has_children: bool,
 }
 
 /// Flatten a tree to pre-order rows (parent before its children). Every node becomes exactly one
 /// row — the window operates on this flat list, not the nested `OutlinerNode`s.
 #[must_use]
 pub fn flatten(nodes: &[OutlinerNode]) -> Vec<FlatRow> {
+    flatten_visible(nodes, &std::collections::HashSet::new())
+}
+
+/// Flatten honoring a collapsed-id set (T-172 B6): a collapsed node emits its own row but none
+/// of its descendants. An empty set = the old fully-expanded `flatten`.
+#[must_use]
+pub fn flatten_visible(
+    nodes: &[OutlinerNode],
+    collapsed: &std::collections::HashSet<String>,
+) -> Vec<FlatRow> {
     let mut out = Vec::new();
-    fn walk(nodes: &[OutlinerNode], depth: usize, out: &mut Vec<FlatRow>) {
+    fn walk(
+        nodes: &[OutlinerNode],
+        depth: usize,
+        collapsed: &std::collections::HashSet<String>,
+        out: &mut Vec<FlatRow>,
+    ) {
         for n in nodes {
             out.push(FlatRow {
                 id: n.id.clone(),
                 label: n.label.clone(),
                 kind: n.kind,
                 depth,
+                has_children: !n.children.is_empty(),
             });
-            walk(&n.children, depth + 1, out);
+            if !collapsed.contains(&n.id) {
+                walk(&n.children, depth + 1, collapsed, out);
+            }
         }
     }
-    walk(nodes, 0, &mut out);
+    walk(nodes, 0, collapsed, &mut out);
     out
 }
 
@@ -454,5 +475,37 @@ mod tests {
         assert_eq!(tree[0].children.len(), 1, "ghost squad skipped");
         assert_eq!(tree[0].children[0].children.len(), 1, "ghost slot skipped");
         assert_eq!(tree[0].children[0].children[0].id, "s0");
+    }
+
+    /// T-172 B6 — collapse hides the subtree, keeps the container row, and `has_children` is
+    /// true only for containers with kids; depths of surviving rows are unchanged.
+    #[test]
+    fn flatten_visible_collapse_hides_subtree() {
+        let layers = vec![
+            layer("l1", "Alpha", None, &["s0"]),
+            layer("l2", "Bravo", Some("l1"), &["s1"]),
+        ];
+        let slots = vec![slot("s0", "SL"), slot("s1", "AR")];
+        let tree = build_outliner(&layers, &slots);
+        let all = flatten(&tree);
+        // l1 > [s0, l2 > s1] — full walk has 4 rows (order: folders/slots per build rules).
+        assert_eq!(all.len(), 4);
+        let l1_row = all.iter().find(|r| r.id == "l1").unwrap();
+        assert!(l1_row.has_children);
+        assert!(!all.iter().find(|r| r.id == "s1").unwrap().has_children);
+
+        let mut collapsed = std::collections::HashSet::new();
+        collapsed.insert("l1".to_string());
+        let vis = flatten_visible(&tree, &collapsed);
+        assert_eq!(vis.len(), 1, "collapsed root leaves only its own row");
+        assert_eq!(vis[0].id, "l1");
+        assert_eq!(vis[0].depth, 0);
+
+        // Collapsing the nested folder keeps l1's direct children visible.
+        let mut collapsed = std::collections::HashSet::new();
+        collapsed.insert("l2".to_string());
+        let vis = flatten_visible(&tree, &collapsed);
+        assert!(vis.iter().any(|r| r.id == "l2"));
+        assert!(!vis.iter().any(|r| r.id == "s1"));
     }
 }

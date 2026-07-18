@@ -2137,6 +2137,24 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
             .evaluate("window.__missionPersist.clear()", true)
             .await?;
         let ready = boot_to(format!("{SEL_READY} && {PERSIST_READY} && {DOC_READY}")).await?;
+        // T-172 B6 — palette folders below depth 0 boot collapsed (`default_expanded` rule 3:
+        // only faction roots open). Expand US_Army before waiting on its leaves.
+        let us_army = h
+            .page
+            .wait_for(
+                "!!document.querySelector('aside [aria-label=\"US_Army\"]')",
+                200,
+                250,
+            )
+            .await?;
+        if us_army {
+            h.page
+                .evaluate(
+                    "document.querySelector('aside [aria-label=\"US_Army\"]').click()",
+                    true,
+                )
+                .await?;
+        }
         let palette_ready = h
             .page
             .wait_for(

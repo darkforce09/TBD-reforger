@@ -18,7 +18,7 @@
 use leptos::prelude::*;
 
 use crate::asset_catalog::{CatalogNode, CatalogState};
-use crate::outliner::{flatten, FlatRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD};
+use crate::outliner::{flatten_visible, FlatRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD};
 use crate::ui::MaterialIcon;
 
 // ── Chrome insets (CSS px) ───────────────────────────────────────────────────────────────────────
@@ -198,22 +198,65 @@ pub fn TopCommandStrip(
     }
 }
 
-// ── Tree rows (T-159.22) ─────────────────────────────────────────────────────────────────────────
-// Both trees render **fully expanded**: React's `TreeView` seeds an expanded set from
-// `defaultExpanded` and lets rows collapse, but at seed scale the outliner is two shallow folders and
-// the palette is NATO > US_Army > 8 leaves — all visible either way. Expand/collapse is deferred with
-// the rest of the `TreeView` port (spec O6/O7); `CatalogNode::default_expanded` is carried because it
-// is part of the ported `buildCatalogTree` contract, and consumed when collapse lands.
+// ── Tree rows (T-159.22 / T-172 B6+B7) ──────────────────────────────────────────────────────────
+// Both trees collapse: container rows carry a chevron toggle (span, not a nested button — rows are
+// `<button>`s) + open/closed folder icons, and depth renders as border-l guide-line runs instead of
+// bare padding (the React `TreeView` look). The outliner/ORBAT collapsed sets start EMPTY (fully
+// expanded — the T-169 windowing smoke's totals depend on it); the palette seeds from
+// `CatalogNode::default_expanded` (only depth-0 faction folders open, `buildCatalogTree` rule 3).
 //
 // Rows are `<button>`s with a real `aria-label` — focusable, activatable, and the gates' DOM handle,
 // the `aria-label="Undo"` precedent above (NOT a test-only attribute).
 
-/// A tree row's shared recipe; `depth` indents like React's `TreeView` padding.
+/// A tree row's shared recipe; depth renders as leading guide-line spans (see `guide_spans`).
 const ROW: &str = "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
 const ROW_ACTIVE: &str = "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm transition-colors bg-primary/20 text-primary";
 
-fn indent(depth: usize) -> String {
-    format!("padding-left:{}px", depth * 12)
+/// One `w-3` guide span per depth level — the hierarchy guide lines (T-172 B7). `self-stretch`
+/// makes the border span the full row height inside the `items-center` flex row.
+fn guide_spans(depth: usize) -> AnyView {
+    (0..depth)
+        .map(|_| {
+            view! { <span class="w-3 shrink-0 self-stretch border-l border-white/10"></span> }
+        })
+        .collect::<Vec<_>>()
+        .into_any()
+}
+
+/// Chevron toggle for container rows (`expand_more` open / `chevron_right` closed) — a
+/// `role="button"` span so it can nest inside the row `<button>`; leaves get an alignment
+/// spacer. Clicking toggles the id in `collapsed` without firing the row action.
+fn chevron_or_spacer(
+    has_children: bool,
+    open: bool,
+    id: &str,
+    collapsed: RwSignal<std::collections::HashSet<String>>,
+) -> AnyView {
+    if !has_children {
+        return view! { <span class="size-4 shrink-0"></span> }.into_any();
+    }
+    let cid = id.to_string();
+    let icon = if open { "expand_more" } else { "chevron_right" };
+    view! {
+        <span
+            role="button"
+            tabindex="-1"
+            aria-expanded=if open { "true" } else { "false" }
+            class="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded text-outline transition-colors hover:bg-white/10 hover:text-on-surface"
+            on:click=move |ev| {
+                ev.stop_propagation();
+                collapsed
+                    .update(|c| {
+                        if !c.remove(&cid) {
+                            c.insert(cid.clone());
+                        }
+                    });
+            }
+        >
+            <MaterialIcon name=icon class="block text-sm" />
+        </span>
+    }
+    .into_any()
 }
 
 /// T-169 — window geometry. `ROW_H` is the flow height of one row (`px-1.5 py-1 text-label-sm`);
@@ -230,28 +273,39 @@ fn single_row(
     row: &FlatRow,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
+    collapsed: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
     let label = row.label.clone();
     let aria = row.label.clone();
     let id = row.id.clone();
     let depth = row.depth;
+    // Static per build — a chevron toggle bumps `collapsed`, which re-flattens + re-renders
+    // the slice (the virtual_tree Effect tracks it), so open state never goes stale.
+    let open = !collapsed.with_untracked(|c| c.contains(&row.id));
+    let toggle = chevron_or_spacer(row.has_children, open, &row.id, collapsed);
     match row.kind {
         NodeKind::Unfiled => view! {
-            <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+            <div class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
+                {guide_spans(depth)}
+                {toggle}
                 <MaterialIcon name="inbox" class="block text-sm" />
                 <span>{label}</span>
             </div>
         }
         .into_any(),
         NodeKind::Faction => view! {
-            <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+            <div class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
+                {guide_spans(depth)}
+                {toggle}
                 <MaterialIcon name="flag" class="block text-sm" />
                 <span class="truncate">{label}</span>
             </div>
         }
         .into_any(),
         NodeKind::Squad => view! {
-            <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+            <div class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+                {guide_spans(depth)}
+                {toggle}
                 <MaterialIcon name="groups" class="block text-sm" />
                 <span class="truncate">{label}</span>
             </div>
@@ -262,19 +316,21 @@ fn single_row(
                 let id = id.clone();
                 move || active_layer.get().as_deref() == Some(id.as_str())
             };
+            let folder_icon = if open { "folder_open" } else { "folder" };
             view! {
                 <button
                     type="button"
                     aria-label=aria
                     title="Make this the drop target"
-                    style=indent(depth)
                     class=move || if is_active() { ROW_ACTIVE } else { ROW }
                     on:click=move |_| {
                         #[cfg(target_arch = "wasm32")]
                         crate::editor_ops::set_active_layer(Some(id.clone()));
                     }
                 >
-                    <MaterialIcon name="folder" class="block text-sm" />
+                    {guide_spans(depth)}
+                    {toggle}
+                    <MaterialIcon name=folder_icon class="block text-sm" />
                     <span class="truncate">{label}</span>
                 </button>
             }
@@ -290,7 +346,6 @@ fn single_row(
                 <button
                     type="button"
                     aria-label=aria
-                    style=indent(depth)
                     class=move || if is_sel() { ROW_ACTIVE } else { ROW }
                     on:click=move |_| {
                         #[cfg(target_arch = "wasm32")]
@@ -305,6 +360,8 @@ fn single_row(
                         let _ = &id_dbl;
                     }
                 >
+                    {guide_spans(depth)}
+                    {toggle}
                     <MaterialIcon name="person" class="block text-sm" />
                     <span class="truncate">{label}</span>
                 </button>
@@ -350,13 +407,17 @@ fn virtual_tree(
     stats_key: &'static str,
     empty_msg: &'static str,
 ) -> AnyView {
-    // Flatten once per doc change (O(n), like the mutation itself); the scroll path only re-slices.
-    // Created ONCE per mount (this fn is called outside any reactive closure), so the Effect never
-    // leaks — it re-runs on `nodes` change, and the render `move ||` re-slices on `rev`/scroll.
+    // Per-tree collapse state (T-172 B6). Starts EMPTY = fully expanded, exactly the pre-collapse
+    // render — the T-169 windowing smoke's totals depend on the default-expanded boot state.
+    let collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
+    // Flatten once per doc/collapse change (O(n), like the mutation itself); the scroll path only
+    // re-slices. Created ONCE per mount (this fn is called outside any reactive closure), so the
+    // Effect never leaks — it re-runs on `nodes`/`collapsed` change, and the render `move ||`
+    // re-slices on `rev`/scroll.
     let flat = StoredValue::new(Vec::<FlatRow>::new());
     let rev = RwSignal::new(0u64);
     Effect::new(move |_| {
-        let f = flatten(&nodes.get());
+        let f = collapsed.with(|c| flatten_visible(&nodes.get(), c));
         flat.set_value(f);
         rev.update(|r| *r = r.wrapping_add(1));
     });
@@ -373,7 +434,12 @@ fn virtual_tree(
             if total <= VIRTUAL_SLOT_THRESHOLD {
                 set_outliner_stats(stats_key, total, total);
                 return view! {
-                    <div>{f.iter().map(|r| single_row(r, selected, active_layer)).collect::<Vec<_>>()}</div>
+                    <div>
+                        {f
+                            .iter()
+                            .map(|r| single_row(r, selected, active_layer, collapsed))
+                            .collect::<Vec<_>>()}
+                    </div>
                 }
                 .into_any();
             }
@@ -385,7 +451,7 @@ fn virtual_tree(
             let bottom = (total - end) as f64 * ROW_H;
             let rows: Vec<AnyView> = f[start..end]
                 .iter()
-                .map(|r| single_row(r, selected, active_layer))
+                .map(|r| single_row(r, selected, active_layer, collapsed))
                 .collect();
             view! {
                 <div
@@ -419,28 +485,60 @@ fn virtual_tree(
 /// synthesizes real pointer events into these handlers, where DnD would need `Input.setInterceptDrags`.
 /// The chrome host stops `pointerdown` propagation, so this press cannot also open a map gesture; the
 /// release is consumed by the container's `pointerup` (see `mission_editor`).
-fn palette_rows(nodes: &[CatalogNode], depth: usize) -> AnyView {
+fn palette_rows(
+    nodes: &[CatalogNode],
+    depth: usize,
+    collapsed: RwSignal<std::collections::HashSet<String>>,
+) -> AnyView {
     nodes
         .iter()
         .map(|n| {
-            let kids = palette_rows(&n.children, depth + 1);
             let label = n.label.clone();
             let aria = n.label.clone();
             match n.payload.clone() {
-                None => view! {
-                    <div style=indent(depth) class="flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
-                        <MaterialIcon name="folder" class="block text-sm" />
-                        <span class="truncate">{label}</span>
-                    </div>
-                    {kids}
+                None => {
+                    // Folder — collapsible (T-172 B6): chevron + open/closed icon; kids render
+                    // only while open. The whole palette re-renders on a toggle (the DockRight
+                    // closure tracks `collapsed`), so open state is read untracked here.
+                    let open = !collapsed.with_untracked(|c| c.contains(&n.id));
+                    let toggle =
+                        chevron_or_spacer(!n.children.is_empty(), open, &n.id, collapsed);
+                    let folder_icon = if open { "folder_open" } else { "folder" };
+                    let kids = if open {
+                        palette_rows(&n.children, depth + 1, collapsed)
+                    } else {
+                        ().into_any()
+                    };
+                    let cid = n.id.clone();
+                    view! {
+                        <div
+                            role="button"
+                            tabindex="-1"
+                            aria-label=aria
+                            class="flex cursor-pointer items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline transition-colors hover:text-on-surface"
+                            on:click=move |_| {
+                                collapsed
+                                    .update(|c| {
+                                        if !c.remove(&cid) {
+                                            c.insert(cid.clone());
+                                        }
+                                    });
+                            }
+                        >
+                            {guide_spans(depth)}
+                            {toggle}
+                            <MaterialIcon name=folder_icon class="block text-sm" />
+                            <span class="truncate">{label}</span>
+                        </div>
+                        {kids}
+                    }
+                    .into_any()
                 }
-                .into_any(),
                 Some(payload) => view! {
                     <button
                         type="button"
                         aria-label=aria
                         title="Drag onto the map to place"
-                        style=indent(depth)
                         class=ROW
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
@@ -451,6 +549,8 @@ fn palette_rows(nodes: &[CatalogNode], depth: usize) -> AnyView {
                             let _ = &payload;
                         }
                     >
+                        {guide_spans(depth)}
+                        <span class="size-4 shrink-0"></span>
                         <MaterialIcon name="person" class="block text-sm" />
                         <span class="truncate">{label}</span>
                     </button>
@@ -460,6 +560,17 @@ fn palette_rows(nodes: &[CatalogNode], depth: usize) -> AnyView {
         })
         .collect::<Vec<_>>()
         .into_any()
+}
+
+/// Collect the folder ids whose `default_expanded` is false — the palette's initial collapsed
+/// set (`buildCatalogTree` rule 3: only depth-0 faction folders start open). T-172 B6.
+fn collapsed_seed(nodes: &[CatalogNode], out: &mut std::collections::HashSet<String>) {
+    for n in nodes {
+        if n.payload.is_none() && !n.children.is_empty() && !n.default_expanded {
+            out.insert(n.id.clone());
+        }
+        collapsed_seed(&n.children, out);
+    }
 }
 
 /// Left dock — the live **Editor Layers** outliner (spec O1). Click a folder to make it the drop
@@ -498,6 +609,21 @@ pub fn DockLeft(
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
 #[component]
 pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> impl IntoView {
+    // Palette collapse state (T-172 B6), seeded ONCE from `default_expanded` when the catalog
+    // turns Ready (only depth-0 faction folders open — screen-05 parity); user toggles stick.
+    let palette_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
+    let seeded = StoredValue::new(false);
+    Effect::new(move |_| {
+        if seeded.get_value() {
+            return;
+        }
+        if let CatalogState::Ready(nodes) = catalog.get() {
+            let mut set = std::collections::HashSet::new();
+            collapsed_seed(&nodes, &mut set);
+            palette_collapsed.set(set);
+            seeded.set_value(true);
+        }
+    });
     view! {
         <aside class=DOCK_R>
             <div class="flex items-center justify-between">
@@ -532,7 +658,12 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                         view! { <p class="text-label-sm text-outline">"No placeable assets."</p> }
                             .into_any()
                     }
-                    CatalogState::Ready(nodes) => palette_rows(&nodes, 0),
+                    CatalogState::Ready(nodes) => {
+                        // Track the collapse set so a chevron toggle re-renders the tree
+                        // (palette_rows reads it untracked).
+                        palette_collapsed.track();
+                        palette_rows(&nodes, 0, palette_collapsed)
+                    }
                 }}
             </div>
         </aside>
