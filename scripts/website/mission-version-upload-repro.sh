@@ -3,12 +3,12 @@
 # mission-version-upload-repro.sh — isolate the mission-version upload path (T-060.1.4).
 #
 # Reproduces a large `POST /missions/:id/versions` directly against the dev API with curl,
-# bypassing the browser and the Vite proxy. Use it to split a Save-Version failure into
+# bypassing the browser and the Trunk proxy. Use it to split a Save-Version failure into
 # server-side vs browser-side:
 #
 #   * curl returns 201 at 140 MB  -> the server/middleware is fine; a browser ERR_NETWORK
-#                                     is client/axios/proxy side (or a STALE `make api` —
-#                                     `go run` does NOT hot-reload; restart it).
+#                                     is client/proxy side (or a STALE `make api` —
+#                                     `cargo run` does NOT hot-reload; restart it).
 #   * curl resets / 400 / 413     -> server-side. Check the `make api` log for the
 #                                     `CreateVersion: mission=… content_length=…` line and
 #                                     whether GlobalBodyLimit's 1 MB cap reached the route.

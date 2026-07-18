@@ -6,7 +6,7 @@ WEB := apps/website/api
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-backend ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -22,8 +22,8 @@ db-logs: ## Tail the Postgres logs
 	cd $(WEB) && $(COMPOSE) logs -f db
 
 seed: ## Apply data seeds (Discord role mappings + registry catalog) to the running DB
-	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/discord_roles.sql
-	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < internal/db/seeds/registry_dev.sql
+	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/discord_roles.sql
+	cd $(WEB) && $(COMPOSE) exec -T db psql -U tbd -d tbd_reforger < seeds/registry_dev.sql
 
 registry-import: ## Ingest the committed T-150 registry envelopes (items + compat) into the dev DB (T-068.9)
 	cd $(WEB) && cargo run --bin import-registry -- \
@@ -218,7 +218,7 @@ verify-no-node: ## T-165.10 hard gate — zero tracked .mjs/.cjs; node only as t
 # editorconfig (FMT-2) -> rust backend -> coding standards -> Leptos SPA -> schema; each
 # sub-target is a separate $(MAKE) so a non-zero recipe halts the run (fail-fast). Node-free
 # since T-165 — every gate is cargo/bash (Node exists solely as the enfusion-mcp runtime).
-ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` + `nvm use` first)
+ci-local: ## Full CI gate locally — mirrors ci.yml (run `make db-up` first)
 	$(MAKE) verify-editorconfig
 	$(MAKE) verify-no-python
 	$(MAKE) verify-no-node

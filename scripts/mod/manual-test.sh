@@ -32,31 +32,7 @@ else
   fail "missing packages/tbd-schema artifacts"
 fi
 
-# --- 2. Go unit tests ---
-section "Go build + handler tests"
-WEB="$WEB"
-export GOROOT="$WEB/.tools/go"
-export PATH="$GOROOT/bin:$PATH"
-export GOCACHE="$WEB/.tools/gocache"
-export GOMODCACHE="$WEB/.tools/gomodcache"
-
-if (cd "$WEB" && go build ./... >/dev/null 2>&1); then
-  pass "go build ./..."
-else
-  fail "go build ./..."
-fi
-
-if (cd "$WEB" && go vet ./... >/dev/null 2>&1); then
-  pass "go vet ./..."
-else
-  fail "go vet ./..."
-fi
-
-if (cd "$WEB" && go test ./internal/handlers/ >/dev/null 2>&1); then
-  pass "go test ./internal/handlers/"
-else
-  fail "go test ./internal/handlers/"
-fi
+# --- 2. Backend build/tests: gated at the repo root (`make ci-local` — Rust workspace) ---
 
 # --- 3. Config / env ---
 section "Config"
