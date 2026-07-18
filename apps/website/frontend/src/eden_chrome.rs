@@ -633,18 +633,34 @@ pub fn TopCommandStrip(
 // the `aria-label="Undo"` precedent above (NOT a test-only attribute).
 
 /// A tree row's shared recipe; depth renders as leading guide-line spans (see `guide_spans`).
-const ROW: &str = "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
-const ROW_ACTIVE: &str = "flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm transition-colors bg-primary/20 text-primary";
+const ROW: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
+const ROW_ACTIVE: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm transition-colors bg-primary/20 text-primary";
 
-/// One `w-3` guide span per depth level — the hierarchy guide lines (T-172 B7). `self-stretch`
-/// makes the border span the full row height inside the `items-center` flex row.
+/// Hierarchy guide lines (T-173 P7). The pre-T-173 approach put a `border-l` on each depth spacer,
+/// but `self-stretch` only spans the row **content box**, so the `py-1` padding broke the stem at
+/// every row boundary and `white/10` was barely visible. Now each level is a `w-px` line
+/// **absolutely** positioned over the full row border-box (`inset-y-0`): since the windowed rows
+/// stack flush (`ROW_H` == the border-box height), adjacent rows' lines meet → one continuous stem
+/// through a collapsed/expanded folder. `w-3` flex spacers still carry the indentation. Contrast is
+/// raised to `white/25` (Aegis-legal neutral). The row must be `relative` (added to ROW above).
 fn guide_spans(depth: usize) -> AnyView {
-    (0..depth)
-        .map(|_| {
-            view! { <span class="w-3 shrink-0 self-stretch border-l border-white/10"></span> }
+    let lines = (0..depth)
+        .map(|k| {
+            // Center of guide column k: left padding (0.375rem) + k columns (0.75rem) + half a
+            // column (0.375rem).
+            let left = format!("left:calc(0.375rem + {:.3}rem)", (k as f64) * 0.75 + 0.375);
+            view! {
+                <span
+                    class="pointer-events-none absolute inset-y-0 w-px bg-white/25"
+                    style=left
+                ></span>
+            }
         })
-        .collect::<Vec<_>>()
-        .into_any()
+        .collect::<Vec<_>>();
+    let spacers = (0..depth)
+        .map(|_| view! { <span class="w-3 shrink-0"></span> })
+        .collect::<Vec<_>>();
+    view! { {lines}{spacers} }.into_any()
 }
 
 /// Chevron toggle for container rows (`expand_more` open / `chevron_right` closed) — a
@@ -1445,13 +1461,147 @@ pub fn MissionSettingsDialog(open: RwSignal<bool>, doc_tick: RwSignal<u64>) -> i
                                 class="accent-primary"
                             />
                         </div>
-                        <p class="mt-2 text-label-sm normal-case text-outline">
-                            "Map style, grid, hillshade, and world-layer toggles arrive with the terrain render host."
-                        </p>
+                        {render_prefs_section(&env)}
                     </div>
                 </div>
             </div>
         })
+    }
+}
+
+/// T-173 P6 — the render-pref half of Mission Settings, restored from the React
+/// `MissionSettingsDialog`: basemap view (Satellite / Map), hillshade on/off + strength slider,
+/// grid, and the 12 world-layer toggles. Per-mission prefs (hillshade / grid) persist to
+/// `meta.environment`; per-user prefs (basemap view + layer toggles) persist to localStorage. Each
+/// control applies live to the map host (no reload). On the native view-shell these are inert
+/// (no engine), which is fine — the dialog is a wasm surface.
+fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let _ = env;
+        return ().into_any();
+    }
+    #[cfg(target_arch = "wasm32")]
+    {
+        use crate::world_layer_prefs as wlp;
+        let hillshade_on = env.show_hillshade;
+        let hillshade_pct = (env.hillshade_opacity * 100.0).round() as i64;
+        let grid_on = env.show_grid;
+        let basemap = wlp::load_basemap_view();
+        let prefs = wlp::load_prefs();
+        let sect = "text-label-sm uppercase tracking-wider text-outline";
+
+        let layer_rows = prefs
+            .rows()
+            .into_iter()
+            .map(|(key, on, label)| {
+                view! {
+                    <div class="flex items-center justify-between py-0.5">
+                        <span class="text-label-md text-on-surface-variant">{label}</span>
+                        <input
+                            type="checkbox"
+                            prop:checked=on
+                            on:change=move |ev| {
+                                let checked = event_target_checked(&ev);
+                                let mut p = wlp::load_prefs();
+                                p.set(key, checked);
+                                wlp::save_prefs(&p);
+                                crate::world_assets::refresh_world_layers();
+                            }
+                            class="accent-primary"
+                        />
+                    </div>
+                }
+            })
+            .collect::<Vec<_>>();
+
+        view! {
+            <div class="mt-2 flex flex-col gap-4 border-t border-outline-variant/30 pt-4">
+                <span class=sect>"Basemap"</span>
+                <div class="flex gap-2">
+                    {["satellite", "map"]
+                        .into_iter()
+                        .map(|v| {
+                            let active = basemap == v;
+                            let label = if v == "satellite" { "Satellite" } else { "Map" };
+                            view! {
+                                <button
+                                    type="button"
+                                    class=if active {
+                                        "flex-1 rounded-md border border-primary/60 bg-primary/20 px-2.5 py-1.5 text-label-md text-primary"
+                                    } else {
+                                        "flex-1 rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2.5 py-1.5 text-label-md text-on-surface-variant transition-colors hover:border-primary/40"
+                                    }
+                                    on:click=move |_| {
+                                        wlp::save_basemap_view(v);
+                                        crate::world_assets::apply_basemap_view(v);
+                                    }
+                                >
+                                    {label}
+                                </button>
+                            }
+                        })
+                        .collect::<Vec<_>>()}
+                </div>
+
+                <div class="flex items-center justify-between py-0.5">
+                    <span class="text-label-md text-on-surface-variant">"Show hillshade"</span>
+                    <input
+                        type="checkbox"
+                        prop:checked=hillshade_on
+                        on:change=move |ev| {
+                            let on = event_target_checked(&ev);
+                            crate::editor_ops::update_environment(
+                                serde_json::json!({ "showHillshade": on }).to_string(),
+                            );
+                            let op = crate::editor_ops::read_env().hillshade_opacity;
+                            crate::world_assets::apply_hillshade(on, op);
+                        }
+                        class="accent-primary"
+                    />
+                </div>
+                <label class="flex flex-col gap-1" class:opacity-40=move || !hillshade_on>
+                    <span class=sect>{move || format!("Hillshade strength — {hillshade_pct}%")}</span>
+                    <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="1"
+                        prop:disabled=!hillshade_on
+                        value=hillshade_pct.to_string()
+                        on:input=move |ev| {
+                            let pct: f64 = event_target_value(&ev).parse().unwrap_or(40.0);
+                            let op = (pct / 100.0).clamp(0.0, 1.0);
+                            crate::editor_ops::update_environment(
+                                serde_json::json!({ "hillshadeOpacity": op }).to_string(),
+                            );
+                            crate::world_assets::apply_hillshade(true, op);
+                        }
+                        class="accent-primary"
+                    />
+                </label>
+
+                <div class="flex items-center justify-between py-0.5">
+                    <span class="text-label-md text-on-surface-variant">"Grid"</span>
+                    <input
+                        type="checkbox"
+                        prop:checked=grid_on
+                        on:change=move |ev| {
+                            let on = event_target_checked(&ev);
+                            crate::editor_ops::update_environment(
+                                serde_json::json!({ "showGrid": on }).to_string(),
+                            );
+                            crate::world_assets::apply_grid(on);
+                        }
+                        class="accent-primary"
+                    />
+                </div>
+
+                <span class=sect>"World layers"</span>
+                <div class="flex flex-col gap-1">{layer_rows}</div>
+            </div>
+        }
+        .into_any()
     }
 }
 

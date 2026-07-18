@@ -2994,6 +2994,244 @@ pub async fn render_check(a: &RenderCheckArgs) -> Result<u8> {
     code
 }
 
+/// T-173 — in-page perf probe: rAF frame sampler + longtask observer + counter diffs around four
+/// scripted gesture scenarios (pan / zoom / settle-thrash / bench). Synthetic DOM events (not CDP
+/// `Input.*`): CDP round-trips can't sustain one-move-per-frame cadence, and the editor's
+/// capture-phase container listeners accept untrusted events. Returns one JSON string.
+const PERF_PROBE: &str = r#"(async () => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const raf = () => new Promise(r => requestAnimationFrame(r));
+  const canvas = document.querySelector('canvas');
+  if (!canvas) return JSON.stringify({ error: 'no canvas' });
+  const M = () => window.__mapAssets || {};
+  const counters = () => ({
+    icon: M().icon_lane_uploads || 0, poly: M().polygon_lane_uploads || 0,
+    strip: M().strip_lane_uploads || 0, bld: M().building_uploads || 0,
+    rev: M().buffers_revision || 0, glyphR: M().glyph_recomposes || 0, fillR: M().fill_recomposes || 0,
+  });
+  let frames = []; let sampling = true;
+  (async () => { await raf(); let p = performance.now();
+    while (sampling) { await raf(); const t = performance.now(); frames.push(t - p); p = t; } })();
+  let longtaskMs = 0;
+  try {
+    new PerformanceObserver(l => l.getEntries().forEach(e => { longtaskMs += e.duration; }))
+      .observe({ entryTypes: ['longtask'] });
+  } catch (e) {}
+  const statsOf = a => {
+    const s = [...a].sort((x, y) => x - y);
+    const avg = a.reduce((x, y) => x + y, 0) / Math.max(1, a.length);
+    return { frames: a.length, avg_fps: +(1000 / Math.max(0.01, avg)).toFixed(1),
+      p95_ms: +(s[Math.min(s.length - 1, Math.floor(s.length * 0.95))] || 0).toFixed(2),
+      max_ms: +(s[s.length - 1] || 0).toFixed(2), hitches: a.filter(x => x > 33.4).length };
+  };
+  const seg = async fn => {
+    frames = []; const c0 = counters(); const lt0 = longtaskMs;
+    await fn();
+    const f = frames.slice(); const c1 = counters();
+    const d = {}; for (const k of Object.keys(c0)) d[k] = c1[k] - c0[k];
+    return { ...statsOf(f), longtask_ms: +(longtaskMs - lt0).toFixed(1), counters: d };
+  };
+  const pev = (type, x, y, buttons, button) => canvas.dispatchEvent(new PointerEvent(type, {
+    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+    clientX: x, clientY: y, buttons, button }));
+  const wev = (x, y, dy) => canvas.dispatchEvent(new WheelEvent('wheel', {
+    bubbles: true, cancelable: true, clientX: x, clientY: y, deltaY: dy, deltaMode: 0 }));
+  const r = canvas.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+
+  window.__editorCamSet(6400, 6400, 0.5); await sleep(1500);
+  // warmup discard: sampler restarted by each seg()
+
+  const pan = await seg(async () => {
+    pev('pointerdown', cx, cy, 2, 2);
+    let x = cx, y = cy; const t0 = performance.now();
+    while (performance.now() - t0 < 6000) {
+      const ph = ((performance.now() - t0) / 1000) * (Math.PI / 2);
+      x = cx + 220 * Math.cos(ph); y = cy + 140 * Math.sin(ph);
+      pev('pointermove', x, y, 2, -1);
+      await raf();
+    }
+    pev('pointerup', x, y, 0, 2);
+    await sleep(1300);
+  });
+
+  const zoom = await seg(async () => {
+    for (let i = 0; i < 16; i++) { wev(cx, cy, -120); await sleep(150); }
+    for (let i = 0; i < 16; i++) { wev(cx, cy, 120); await sleep(150); }
+    await sleep(1300);
+  });
+
+  const urls = new Map(); let fetchTotal = 0;
+  const origFetch = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const u = String(typeof input === 'string' ? input : (input && input.url) || '');
+    if (u.includes('/objects/chunks/')) { fetchTotal++; urls.set(u, (urls.get(u) || 0) + 1); }
+    return origFetch(input, init);
+  };
+  for (let i = 0; i < 12; i++) {
+    const off = (i % 2) ? 800 : -800;
+    window.__editorCamSet(6400 + off, 6400 + off, 1.5);
+    await sleep(700);
+  }
+  const activeFetches = fetchTotal;
+  await sleep(3500);
+  const idleFetches = fetchTotal - activeFetches;
+  window.fetch = origFetch;
+  let dupes = 0; for (const n of urls.values()) if (n > 1) dupes += n - 1;
+
+  const bench = {};
+  if (typeof window.__editorBench === 'function') {
+    const cams = { town: [4870, 7760, 2], forest: [6400, 6400, 0.5], mid: [6400, 6400, -1], max: [4870, 7760, 4] };
+    for (const k of Object.keys(cams)) {
+      const c = cams[k];
+      window.__editorCamSet(c[0], c[1], c[2]); await sleep(1200);
+      try { bench[k] = JSON.parse(await window.__editorBench(200)); }
+      catch (e) { bench[k] = { error: String(e).slice(0, 120) }; }
+    }
+  }
+  sampling = false; await raf();
+  return JSON.stringify({
+    pan, zoom,
+    thrash: { chunk_fetches: activeFetches, duplicate_fetches: dupes, idle_fetches: idleFetches },
+    bench, render_cpu_ms_ema: (M().render_cpu_ms_ema || 0),
+  });
+})()"#;
+
+/// Pan-only rerun with dock `backdrop-filter` stripped — isolates the compositor blur cost
+/// (same env, same gesture; the delta vs the main run's pan row is the blur bill).
+const PERF_PROBE_NOBLUR_PAN: &str = r#"(async () => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const raf = () => new Promise(r => requestAnimationFrame(r));
+  const canvas = document.querySelector('canvas');
+  if (!canvas) return JSON.stringify({ error: 'no canvas' });
+  const st = document.createElement('style');
+  st.textContent = '*{backdrop-filter:none !important;-webkit-backdrop-filter:none !important;}';
+  document.head.appendChild(st);
+  let frames = []; let sampling = true;
+  (async () => { await raf(); let p = performance.now();
+    while (sampling) { await raf(); const t = performance.now(); frames.push(t - p); p = t; } })();
+  const pev = (type, x, y, buttons, button) => canvas.dispatchEvent(new PointerEvent(type, {
+    bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true,
+    clientX: x, clientY: y, buttons, button }));
+  const r = canvas.getBoundingClientRect();
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  window.__editorCamSet(6400, 6400, 0.5); await sleep(1200);
+  frames = [];
+  pev('pointerdown', cx, cy, 2, 2);
+  let x = cx, y = cy; const t0 = performance.now();
+  while (performance.now() - t0 < 6000) {
+    const ph = ((performance.now() - t0) / 1000) * (Math.PI / 2);
+    x = cx + 220 * Math.cos(ph); y = cy + 140 * Math.sin(ph);
+    pev('pointermove', x, y, 2, -1);
+    await raf();
+  }
+  pev('pointerup', x, y, 0, 2);
+  await sleep(1300);
+  sampling = false; await raf();
+  const a = frames; const s = [...a].sort((x2, y2) => x2 - y2);
+  const avg = a.reduce((x2, y2) => x2 + y2, 0) / Math.max(1, a.length);
+  st.remove();
+  return JSON.stringify({ frames: a.length, avg_fps: +(1000 / Math.max(0.01, avg)).toFixed(1),
+    p95_ms: +(s[Math.min(s.length - 1, Math.floor(s.length * 0.95))] || 0).toFixed(2),
+    max_ms: +(s[s.length - 1] || 0).toFixed(2), hitches: a.filter(x2 => x2 > 33.4).length });
+})()"#;
+
+/// T-173 perf smoke — boots the editor on the full map-assets set, runs [`PERF_PROBE`] +
+/// [`PERF_PROBE_NOBLUR_PAN`], prints every metric. `strict` turns the deterministic rows into
+/// gates (Phase-3 targets): duplicate/idle chunk fetches must be 0 and a steady pan must not
+/// move upload/recompose counters. FPS rows stay report-only (SwiftShader variance) except the
+/// G-B floor: bench fps_equiv ≥ 60 on every camera (checked only in strict mode).
+pub async fn smoke_perf(dist: &str, strict: bool) -> Result<u8> {
+    let path = EDIT_PATH;
+    let h = Harness::new(
+        dist,
+        5321,
+        9381,
+        Some(PathBuf::from("packages/map-assets")),
+        None,
+        &[],
+    )
+    .await?;
+    let run = async {
+        h.page.navigate(&h.url(path)).await?;
+        h.page
+            .wait_for("!!document.querySelector('canvas')", 80, 250)
+            .await?;
+        let ready = h
+            .page
+            .wait_for("typeof window.__editorCam === 'function'", 160, 250)
+            .await?;
+        let mut checks = Map::new();
+        let mut report = json!({});
+        if ready {
+            let settled = h
+                .page
+                .wait_for(
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.world_chunks_drawn > 0 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true)",
+                    400,
+                    250,
+                )
+                .await?;
+            checks.insert("settled".into(), json!(settled));
+            if settled {
+                // awaitPromise=true — both probes are async IIFEs resolving a JSON string.
+                let raw = h
+                    .page
+                    .evaluate(PERF_PROBE, true)
+                    .await?
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
+                let parsed: Value = serde_json::from_str(&raw).unwrap_or(json!({"error": raw}));
+                let noblur_raw = h
+                    .page
+                    .evaluate(PERF_PROBE_NOBLUR_PAN, true)
+                    .await?
+                    .as_str()
+                    .unwrap_or_default()
+                    .to_string();
+                let noblur: Value =
+                    serde_json::from_str(&noblur_raw).unwrap_or(json!({"error": noblur_raw}));
+                checks.insert("probe_ok".into(), json!(parsed.get("error").is_none()));
+                if strict {
+                    // G-D: the chunk-fetch thrash gates. A camera that jumps around and then idles
+                    // must never re-request a chunk it already has, nor fetch anything while idle.
+                    let dupes = parsed["thrash"]["duplicate_fetches"].as_i64().unwrap_or(-1);
+                    let idle = parsed["thrash"]["idle_fetches"].as_i64().unwrap_or(-1);
+                    checks.insert("S_dup_fetches_zero".into(), json!(dupes == 0));
+                    checks.insert("S_idle_fetches_zero".into(), json!(idle == 0));
+                    // G-B (potato proxy): CPU-encode fps-equivalent ≥ 60 for every camera. This is
+                    // the backend-independent encode ceiling (submit/raster is excluded — on the CI
+                    // SwiftShader path submit is software rasterization, not representative of even a
+                    // weak real GPU; the operator measures true GPU throughput on the 3070, G-A).
+                    let bench_ok = ["town", "forest", "mid", "max"]
+                        .iter()
+                        .all(|k| parsed["bench"][*k]["fps_equiv"].as_f64().unwrap_or(0.0) >= 60.0);
+                    checks.insert("S_bench_encode_60_floor".into(), json!(bench_ok));
+                }
+                report = json!({ "main": parsed, "noblur_pan": noblur });
+            }
+        }
+        checks.insert("panic_free".into(), json!(h.no_panics()));
+        let pass = ready
+            && h.no_panics()
+            && checks.values().all(|v| *v == json!(true))
+            && !checks.is_empty();
+        print_verdict(&json!({
+            "gate": if strict { "editor-perf-smoke-strict" } else { "editor-perf-smoke" },
+            "path": path,
+            "checks": checks,
+            "report": report,
+            "panics": h.panics_head(),
+            "pass": pass,
+        }));
+        Ok::<u8, anyhow::Error>(to_code(pass))
+    };
+    let code = run.await;
+    h.shutdown().await;
+    code
+}
+
 /// Dispatch one smoke by suite name. `dist`/`path` fall back to the Node defaults.
 pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -> Result<u8> {
     let dist = dist.unwrap_or_else(|| DIST_DEFAULT.to_string());
@@ -3018,6 +3256,8 @@ pub async fn run_smoke(name: &str, dist: Option<String>, path: Option<String>) -
         "virtual-outliner" => smoke_virtual_outliner(&dist, &path).await,
         "hydrate" => smoke_hydrate(&dist).await,
         "mutations" => smoke_mutations(&dist).await,
+        "perf" => smoke_perf(&dist, false).await,
+        "perf-strict" => smoke_perf(&dist, true).await,
         other => Err(anyhow!("unknown smoke '{other}' (see gate smoke --help)")),
     }
 }

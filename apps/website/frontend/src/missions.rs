@@ -181,8 +181,12 @@ pub fn MissionLibraryPage() -> impl IntoView {
     view! {
         <AuthGate>
             <div class="relative h-full w-full overflow-hidden">
+                // T-173 P4 — the glass tint is baked into the static background layer instead of a
+                // `backdrop-blur-xl` ON the scrollport (which re-blurred the whole page every scroll
+                // frame — the page-local twin of the T-172 A3 body bug).
                 <div class="bg-topo-map bg-grid-overlay absolute inset-0 z-0"></div>
-                <div class="custom-scrollbar relative z-10 h-full w-full overflow-y-auto bg-surface-glass backdrop-blur-xl">
+                <div class="absolute inset-0 z-0 bg-surface-glass"></div>
+                <div class="custom-scrollbar relative z-10 h-full w-full overflow-y-auto">
                     <div class="p-6 md:p-8">
                         {library_header(is_maker, scope_idx, open_create)}
                         <Suspense fallback=move || {
@@ -388,7 +392,7 @@ fn body(
                 })}
 
             // Unified search + filter toolbar (live signals — the Resource re-keys on change).
-            <div class="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-white/5 bg-black/20 p-2 backdrop-blur-md">
+            <div class="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-white/5 bg-black/40 p-2">
                 <input
                     type="search"
                     placeholder="Search operations..."
@@ -504,7 +508,7 @@ fn mission_card(m: MissionCard, open_preview: impl Fn(String) + Copy + 'static) 
                 />
                 <span class="absolute top-3 left-3">
                     <span class=format!(
-                        "{} border-white/10 bg-black/40 backdrop-blur-md",
+                        "{} border-white/10 bg-black/70",
                         badge_class("primary"),
                     )>{game_mode_label(&m.game_mode).to_string()}</span>
                 </span>
@@ -580,24 +584,30 @@ fn MissionDossierSheet(
     let is_maker = store.has_min_role(Role::MissionMaker);
     let is_admin = store.has_min_role(Role::Admin);
     let me = StoredValue::new(store.user.get_untracked().map(|u| u.discord_id));
+    // T-173 P5 — hold the heavy dossier DOM until the sheet's 300 ms slide finishes, so a fast
+    // local fetch can't land a large subtree mount mid-animation (the fetch itself starts
+    // immediately above; only the render is gated).
+    let anim_done = RwSignal::new(false);
+    #[cfg(target_arch = "wasm32")]
+    {
+        use leptos::prelude::set_timeout;
+        set_timeout(
+            move || anim_done.set(true),
+            std::time::Duration::from_millis(320),
+        );
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    anim_done.set(true);
 
     view! {
-        <Suspense fallback=move || {
-            // Indeterminate load gate (T-172 A7): label + sweeping bar while the dossier fetches.
-            view! {
-                <div class="flex h-full flex-col items-center justify-center gap-4 p-8">
-                    <p class="font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
-                        "Loading dossier…"
-                    </p>
-                    <div class="h-1 w-56 overflow-hidden rounded-full bg-surface-variant/40">
-                        <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
-                    </div>
-                </div>
-            }
-        }>
+        <Suspense fallback=dossier_loading>
             {move || {
-                mission
-                    .get()
+                let fetched = mission.get();
+                if !anim_done.get() {
+                    // Keep the load bar up through the slide even when the fetch beat it.
+                    return Some(dossier_loading().into_any());
+                }
+                fetched
                     .map(|opt| match opt {
                         Some(m) => {
                             let is_owner = me.get_value().as_deref()
@@ -621,6 +631,21 @@ fn MissionDossierSheet(
                     })
             }}
         </Suspense>
+    }
+}
+
+/// Indeterminate load gate (T-172 A7): label + sweeping bar while the dossier fetches — also
+/// shown through the sheet slide-in (T-173 P5 `anim_done` gate).
+fn dossier_loading() -> impl IntoView {
+    view! {
+        <div class="flex h-full flex-col items-center justify-center gap-4 p-8">
+            <p class="font-mono text-label-md tracking-widest text-on-surface-variant uppercase">
+                "Loading dossier…"
+            </p>
+            <div class="h-1 w-56 overflow-hidden rounded-full bg-surface-variant/40">
+                <div class="animate-mc-load-bar h-full w-1/4 rounded-full bg-primary"></div>
+            </div>
+        </div>
     }
 }
 
@@ -841,7 +866,7 @@ fn dossier_sheet_body(
                         <button
                             type="button"
                             on:click=goto_editor
-                            class="flex-1 bg-action/90 py-5 font-bold tracking-wide text-on-action backdrop-blur-md transition-colors hover:bg-action"
+                            class="flex-1 bg-action py-5 font-bold tracking-wide text-on-action transition-colors hover:bg-action/80"
                         >
                             "[ OPEN IN MISSION CREATOR ]"
                         </button>
@@ -850,7 +875,7 @@ fn dossier_sheet_body(
             <button
                 type="button"
                 on:click=toasts_planner
-                class="flex-1 border-t border-white/10 bg-surface-container-high/90 py-5 font-bold tracking-wide text-primary backdrop-blur-md transition-colors hover:bg-surface-container-highest"
+                class="flex-1 border-t border-white/10 bg-surface-container-high py-5 font-bold tracking-wide text-primary transition-colors hover:bg-surface-container-highest"
             >
                 "[ LAUNCH TACTICAL PLANNER ]"
             </button>

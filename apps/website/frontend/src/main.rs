@@ -91,6 +91,9 @@ mod server_control;
 mod server_intel;
 mod settings;
 mod split_pane;
+// T-173 P6 — per-user world-layer visibility prefs + basemap view (localStorage). Pure/native-
+// tested; the wasm host applies them to the residency + engine each settle.
+mod world_layer_prefs;
 // T-159.25 SSE consumer (useServerTelemetry port) — web-sys fetch/reader, wasm32-only.
 #[cfg(target_arch = "wasm32")]
 mod sse;

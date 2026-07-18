@@ -1772,12 +1772,21 @@ impl WorldResidency {
             .set_viewport(min_x, min_y, max_x, max_y, deck_zoom)
     }
 
-    /// Parse + insert one delivered `objects/chunks/{id}.json.gz`. Returns its instance count.
+    /// Parse + insert one delivered `objects/chunks/{id}.json.gz`. Returns its instance count
+    /// (0 for a legit-empty or shape-mismatched payload — the T-173 disposition stays in core;
+    /// this JS ABI keeps the pre-T-173 count shape).
     ///
     /// # Errors
     /// A `JsError` on a bad gzip/JSON payload.
     pub fn ingest_chunk_gz(&mut self, id: &str, bytes: &[u8]) -> Result<u32, JsError> {
-        self.inner.ingest_chunk_gz(id, bytes).map_err(world_err)
+        use map_engine_core::world::IngestOutcome;
+        self.inner
+            .ingest_chunk_gz(id, bytes)
+            .map(|o| match o {
+                IngestOutcome::Applied(n) => n,
+                IngestOutcome::ParsedEmpty | IngestOutcome::ShapeMismatch => 0,
+            })
+            .map_err(world_err)
     }
 
     /// Cache a requested-but-undelivered chunk as hydrated-empty (never re-requested).

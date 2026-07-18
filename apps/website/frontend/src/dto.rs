@@ -549,13 +549,34 @@ pub struct EventHub {
 /// The doc's terrain + environment fields, for the Mission Settings dialog. Pure data (no wasm
 /// deps), so it lives here in the always-compiled DTO module: the wasm `editor_ops::read_env`
 /// returns it, and the native `eden_chrome` view-shell fallback (`::default()`) needs it too.
-#[derive(Clone, Debug, PartialEq, Default)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct MissionEnv {
     pub terrain: String,
     pub time: String,
     pub weather: String,
     pub view_distance: i64,
     pub thermals: bool,
+    // T-173 P6 — render prefs restored from the React Mission Settings (per-mission, in
+    // `meta.environment`; the per-user basemap view + world-layer toggles live in localStorage —
+    // see `world_layer_prefs`). Defaults mirror the React `useDemLayer` OPACITY=0.4 + grid on.
+    pub show_hillshade: bool,
+    pub hillshade_opacity: f64,
+    pub show_grid: bool,
+}
+
+impl Default for MissionEnv {
+    fn default() -> Self {
+        Self {
+            terrain: String::new(),
+            time: String::new(),
+            weather: String::new(),
+            view_distance: 0,
+            thermals: false,
+            show_hillshade: true,
+            hillshade_opacity: 0.4,
+            show_grid: true,
+        }
+    }
 }
 
 #[cfg(test)]

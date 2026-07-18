@@ -6,7 +6,7 @@ WEB := apps/website/api
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -33,7 +33,10 @@ registry-import: ## Ingest the committed T-150 registry envelopes (items + compa
 api: ## Run the API (loads apps/website/api/.env; migrates on boot)
 	cd $(WEB) && cargo run --bin api
 
-leptos: ## Run the Leptos dev server on :3000 (trunk serve; /api proxies to :8080 — T-159.24)
+leptos: ## Run the Leptos dev server on :3000 in RELEASE profile (T-173 P8 — the operator day-to-day path; /api proxies to :8080)
+	cd apps/website/frontend && trunk serve --release
+
+leptos-debug: ## Debug-profile dev server on :3000 — fast rebuilds, unoptimized wasm (editor perf is NOT representative; T-173 P8)
 	cd apps/website/frontend && trunk serve
 
 leptos-build: ## Release-build the Leptos SPA into apps/website/frontend/dist

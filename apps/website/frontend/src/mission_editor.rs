@@ -479,6 +479,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                             register_self_checks(engine.clone());
                             register_editor_cam(engine.clone(), map_host.clone());
                             register_slot_stats(engine.clone());
+                            // T-173 P6 — let the Mission Settings render-pref controls reach the
+                            // live engine + host.
+                            crate::world_assets::register_render_ctx(
+                                engine.clone(),
+                                map_host.clone(),
+                            );
                             // T-159.16 — doc→engine bind (D5): with the atlas up, this first bind
                             // materializes + draws the seeded slot set.
                             let soa = doc.borrow().as_ref().map(|c| c.materialize());
@@ -639,6 +645,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let selection = selection.clone();
                 let container = container.clone();
                 let dem_grid = dem_grid.clone();
+                let map_host = map_host.clone();
                 move |ev: web_sys::PointerEvent| {
                     use crate::select_tool::{self as st, LeftGesture as LG};
                     let rect = container.get_bounding_client_rect();
@@ -688,6 +695,13 @@ pub fn MissionEditorPage() -> impl IntoView {
                             e.on_camera_changed(); // T-172 H5 — slot sizing/cluster gate
                         }
                         pan_px.set(Some((cx, cy)));
+                        // T-173 P1 — stream residency mid-drag: the debounce+max-latency arm fires a
+                        // (cheap, memo-gated) settle every ~250 ms during a continuous pan, so chunks
+                        // load as the camera crosses boundaries instead of only at pointer-up.
+                        crate::world_assets::schedule_camera_settle(
+                            map_host.clone(),
+                            engine.clone(),
+                        );
                         return;
                     }
                     // T-159.19 — LMB drag gesture. Own the gesture across the update (take → compute →
@@ -1248,8 +1262,12 @@ fn start_raf(
                         serde_json::from_str(&e.stats()).unwrap_or_default();
                     let chunks = stats["chunks"].as_u64().unwrap_or(0);
                     let glyphs = stats["tree_glyphs"].as_u64().unwrap_or(0);
+                    // T-173 — frame-cost cell: submitted-frame CPU EMA + its FPS-equivalent
+                    // (1000/ms — the off-vsync headroom number; rAF FPS stays vsync-capped).
+                    let rf_ms = stats["render_cpu_ms_ema"].as_f64().unwrap_or(0.0);
+                    let rf_eq = if rf_ms > 0.0 { 1000.0 / rf_ms } else { 0.0 };
                     debug_hud.set(format!(
-                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS",
+                        "z {:.2} · c{chunks} · glyph {glyphs} · {fps:.0} FPS · rf {rf_ms:.2}ms ({rf_eq:.0} eq)",
                         e.zoom()
                     ));
                     frames = 0;
@@ -1309,12 +1327,30 @@ fn register_self_checks(
         calibration.as_ref(),
     );
     let _ = js_sys::Reflect::set(&obj, &JsValue::from_str("texture"), texture.as_ref());
+    // T-173 — `window.__editorBench(n)` off-vsync frame-cost bench (perf gates G-A/G-B): resolves
+    // the engine's `render_bench` JSON. Registered here (not in `__selfChecks`) so the perf probe
+    // and the operator console both reach it by one name.
+    let bench = {
+        let engine = engine.clone();
+        Closure::wrap(Box::new(move |n: f64| {
+            engine
+                .borrow_mut()
+                .as_mut()
+                .map(|e| {
+                    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+                    e.render_bench(n.max(1.0) as u32)
+                })
+                .unwrap_or_else(|| js_sys::Promise::reject(&JsValue::from_str("engine not ready")))
+        }) as Box<dyn FnMut(f64) -> js_sys::Promise>)
+    };
     if let Some(win) = web_sys::window() {
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__selfChecks"), &obj);
+        let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__editorBench"), bench.as_ref());
     }
     // The harness reads these across the page lifetime; leak them (the engine leaks too).
     calibration.forget();
     texture.forget();
+    bench.forget();
 }
 
 /// Expose the camera view-state on `window.__editorCam()` for the headless pan smoke (T-159.15.2 /

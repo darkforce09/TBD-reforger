@@ -63,19 +63,21 @@ impl ForestMassHost {
         self.ready = true;
     }
 
-    pub async fn run_viewport(&mut self, engine: &EngineHandle, bridge: &BridgeHandle) {
+    /// One forest-mass settle pass. Returns whether it did real work (fetched or re-uploaded) so
+    /// `flush_viewport` can break its multi-pass loop when idle (T-173 P2).
+    pub async fn run_viewport(&mut self, engine: &EngineHandle, bridge: &BridgeHandle) -> bool {
         if !self.ready {
-            return;
+            return false;
         }
         let (bounds, zoom) = {
             let g = engine.borrow();
             let Some(e) = g.as_ref() else {
-                return;
+                return false;
             };
             (e.visible_bounds(), e.zoom())
         };
         if bounds.len() < 4 {
-            return;
+            return false;
         }
         let ids = chunk_ids_for_viewport(
             [bounds[0], bounds[1], bounds[2], bounds[3]],
@@ -84,6 +86,7 @@ impl ForestMassHost {
             0,
         );
         let key = ids.join(",");
+        let mut fetched = false;
         if key != self.last_key {
             self.last_key = key;
             self.touch_lru(&ids);
@@ -93,10 +96,12 @@ impl ForestMassHost {
                 .cloned()
                 .collect();
             if !missing.is_empty() {
+                fetched = true;
                 self.fetch_missing(missing).await;
             }
         }
-        self.push_composite(engine, bridge, zoom, &ids);
+        let pushed = self.push_composite(engine, bridge, zoom, &ids);
+        fetched || pushed
     }
 
     fn touch_lru(&mut self, ids: &[String]) {
@@ -138,18 +143,22 @@ impl ForestMassHost {
         bridge: &BridgeHandle,
         zoom: f64,
         ids: &[String],
-    ) {
+    ) -> bool {
         let fill_on = class_visible("forestFill", zoom);
         let outline_on = class_visible("forestOutline", zoom);
         let alpha = forest_fill_alpha(zoom);
         if !fill_on && !outline_on {
+            // Already hidden → nothing to do (avoids re-clearing every idle pass).
+            if self.pushed == (String::new(), u64::MAX, usize::MAX, false, false) {
+                return false;
+            }
             if let Some(e) = engine.borrow_mut().as_mut() {
                 e.clear_vector_lane(ROLE_FOREST_FILL);
                 e.clear_vector_lane(ROLE_FOREST_OUTLINE);
             }
             // Re-arm the memo so the next visible push uploads.
             self.pushed = (String::new(), u64::MAX, usize::MAX, false, false);
-            return;
+            return true;
         }
         // Skip identical re-uploads (T-172 H2): same viewport chunk set, same alpha band, same
         // number of resolved chunks, same class flags → the concatenated mesh is byte-identical.
@@ -162,7 +171,7 @@ impl ForestMassHost {
             outline_on,
         );
         if state == self.pushed {
-            return;
+            return false;
         }
         let mut pos = Vec::new();
         let mut col = Vec::new();
@@ -207,6 +216,7 @@ impl ForestMassHost {
             publish_engine(bridge, e);
         }
         self.pushed = state;
+        true
     }
 }
 

@@ -299,6 +299,88 @@ async fn load_unified_full(
     true
 }
 
+/// T-173 P6/H8 — restore the unified satellite lane as the visible basemap (opacity 1, no
+/// texture rebuild). Used when the operator switches the Mission Settings basemap radio back from
+/// Map to Satellite.
+pub fn show_satellite_basemap(engine: &EngineHandle) {
+    if let Some(e) = engine.borrow_mut().as_mut() {
+        e.set_lane_opacity(ROLE_BASEMAP, 1.0, true);
+    }
+}
+
+/// T-173 P6/H8 — load the stylized **Map** cartographic pyramid (`tiles/map/{z}/{x}/{y}.webp`)
+/// into the basemap lane as one stitched level. Picks the largest XYZ zoom whose stitched edge
+/// (`2^z · 256`) fits the GPU's `maxTextureDimension2D`, decodes every tile, and uploads via the
+/// same `tex_layer_*` path the satellite loader uses (single level, MODE_SINGLE). Returns false if
+/// the pyramid is absent (tiles not built locally) so the caller can fall back to satellite.
+pub async fn load_map_basemap(
+    engine: &EngineHandle,
+    terrain: &str,
+    terrain_w: f64,
+    terrain_h: f64,
+) -> bool {
+    let max_dim = {
+        let g = engine.borrow();
+        g.as_ref()
+            .map(|e| e.max_texture_dimension_2d())
+            .unwrap_or(8192)
+    };
+    // Largest z in [0, 6] with 2^z·256 ≤ max_dim (cap z4 = 4096² — the cartographic source res).
+    let mut z: u32 = 0;
+    for cand in 0..=4u32 {
+        if (1u32 << cand) * 256 <= max_dim {
+            z = cand;
+        }
+    }
+    let tiles_per_side = 1u32 << z;
+    let stitched = tiles_per_side * 256;
+    let webgl2 = {
+        let g = engine.borrow();
+        g.as_ref().map(|e| e.backend() == "webgl2").unwrap_or(true)
+    };
+
+    // Fetch + decode every tile of the chosen level before taking the engine borrow.
+    let mut decoded: Vec<(u32, u32, Decoded)> = Vec::new();
+    for ty in 0..tiles_per_side {
+        for tx in 0..tiles_per_side {
+            let url = format!("/map-assets/{terrain}/tiles/map/{z}/{tx}/{ty}.webp");
+            let Some(bytes) = fetch_bytes(&url).await else {
+                return false; // pyramid not built — caller falls back to satellite
+            };
+            let Some(d) = decode_webp(&bytes, webgl2).await else {
+                return false;
+            };
+            decoded.push((tx * 256, ty * 256, d));
+        }
+    }
+
+    let mut guard = engine.borrow_mut();
+    let Some(e) = guard.as_mut() else {
+        return false;
+    };
+    if e.tex_layer_begin(
+        ROLE_BASEMAP,
+        0.0,
+        0.0,
+        terrain_w,
+        terrain_h,
+        stitched,
+        stitched,
+        1,
+        MODE_SINGLE,
+    )
+    .is_err()
+    {
+        return false;
+    }
+    for (x, y, d) in decoded {
+        if !upload_decoded(e, ROLE_BASEMAP, 0, x, y, d) {
+            return false;
+        }
+    }
+    e.tex_layer_commit(ROLE_BASEMAP, 1.0, true).is_ok()
+}
+
 /// Load satellite for `terrain`. Preview via Range first; full unified unless `sat=preview`.
 ///
 /// Dev default is preview-only (`localhost` / `127.0.0.1` without `sat=full`) so `make leptos`

@@ -28,6 +28,16 @@ pub struct MapAssetsBridge {
     /// Residency-side packed count (CDP / verify-log).
     pub tree_glyph_packed: u32,
     pub heatmap_trees: bool,
+    // T-173 perf counters (gates G-C/G-D): engine upload-call totals + residency recompose
+    // totals + output-buffer revision. The perf probe diffs these across gesture windows.
+    pub icon_lane_uploads: u64,
+    pub polygon_lane_uploads: u64,
+    pub strip_lane_uploads: u64,
+    pub building_uploads: u64,
+    pub text_label_uploads: u64,
+    pub buffers_revision: u64,
+    pub glyph_recomposes: u64,
+    pub fill_recomposes: u64,
 }
 
 impl MapAssetsBridge {
@@ -89,6 +99,38 @@ impl MapAssetsBridge {
             JsValue::from_f64(f64::from(self.tree_glyph_packed)),
         );
         set("heatmap_trees", JsValue::from_bool(self.heatmap_trees));
+        set(
+            "icon_lane_uploads",
+            JsValue::from_f64(self.icon_lane_uploads as f64),
+        );
+        set(
+            "polygon_lane_uploads",
+            JsValue::from_f64(self.polygon_lane_uploads as f64),
+        );
+        set(
+            "strip_lane_uploads",
+            JsValue::from_f64(self.strip_lane_uploads as f64),
+        );
+        set(
+            "building_uploads",
+            JsValue::from_f64(self.building_uploads as f64),
+        );
+        set(
+            "text_label_uploads",
+            JsValue::from_f64(self.text_label_uploads as f64),
+        );
+        set(
+            "buffers_revision",
+            JsValue::from_f64(self.buffers_revision as f64),
+        );
+        set(
+            "glyph_recomposes",
+            JsValue::from_f64(self.glyph_recomposes as f64),
+        );
+        set(
+            "fill_recomposes",
+            JsValue::from_f64(self.fill_recomposes as f64),
+        );
         let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__mapAssets"), &obj);
     }
 
@@ -130,6 +172,39 @@ impl MapAssetsBridge {
         }
         if let Some(n) = v.get("atlas_bytes").and_then(|x| x.as_u64()) {
             self.atlas_bytes = n;
+        }
+        let u64f = |k: &str| v.get(k).and_then(serde_json::Value::as_u64);
+        if let Some(n) = u64f("icon_lane_uploads") {
+            self.icon_lane_uploads = n;
+        }
+        if let Some(n) = u64f("polygon_lane_uploads") {
+            self.polygon_lane_uploads = n;
+        }
+        if let Some(n) = u64f("strip_lane_uploads") {
+            self.strip_lane_uploads = n;
+        }
+        if let Some(n) = u64f("building_uploads") {
+            self.building_uploads = n;
+        }
+        if let Some(n) = u64f("text_label_uploads") {
+            self.text_label_uploads = n;
+        }
+    }
+
+    /// Merge the T-173 recompose counters from `residency.stats_json()`.
+    pub fn merge_residency_stats(&mut self, stats_json: &str) {
+        let Ok(v) = serde_json::from_str::<serde_json::Value>(stats_json) else {
+            return;
+        };
+        let u64f = |k: &str| v.get(k).and_then(serde_json::Value::as_u64);
+        if let Some(n) = u64f("buffers_revision") {
+            self.buffers_revision = n;
+        }
+        if let Some(n) = u64f("glyph_recomposes") {
+            self.glyph_recomposes = n;
+        }
+        if let Some(n) = u64f("fill_recomposes") {
+            self.fill_recomposes = n;
         }
     }
 }

@@ -183,13 +183,16 @@ pub fn Sheet(
     move || {
         open.get().then(|| {
             view! {
+                // T-173 P5 — no backdrop-filter on either overlay or the sliding panel: two
+                // stacked blurs recomputed per translate frame were the sheet-enter hitch. The
+                // scrim carries the dimming; the panel gets an opaque surface (same border stack).
                 <div
-                    class="animate-overlay-fade fixed inset-0 z-50 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+                    class="animate-overlay-fade fixed inset-0 z-50 bg-black/60 transition-opacity duration-300"
                     on:click=move |_| open.set(false)
                 ></div>
                 <div class=cn(
                     &[
-                        "glass animate-sheet-in fixed z-50 flex flex-col border-outline-variant/30 shadow-2xl outline-none transition-transform duration-300 ease-out inset-y-0 right-0 h-full w-[92vw] max-w-md border-l",
+                        "animate-sheet-in fixed z-50 flex flex-col border border-outline-variant/30 bg-surface-container shadow-2xl outline-none transition-transform duration-300 ease-out inset-y-0 right-0 h-full w-[92vw] max-w-md border-l",
                         class,
                     ],
                 )>

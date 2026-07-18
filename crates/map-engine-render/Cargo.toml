@@ -27,7 +27,7 @@ wgpu = { version = "29", default-features = false, features = ["webgpu", "webgl"
 wasm-bindgen = "0.2"
 wasm-bindgen-futures = "0.4"
 js-sys = "0.3"
-web-sys = { version = "0.3", features = ["HtmlCanvasElement", "Window", "ImageBitmap"] }
+web-sys = { version = "0.3", features = ["HtmlCanvasElement", "Window", "ImageBitmap", "Performance"] }
 console_error_panic_hook = "0.1"
 
 # Native-only test deps: the T-152.13 G3 no-blob gate parses committed label JSON.

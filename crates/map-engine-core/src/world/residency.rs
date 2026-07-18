@@ -114,6 +114,20 @@ fn norm(c: [u8; 4]) -> [f32; 4] {
     ]
 }
 
+/// T-173 P3 — disposition of one ingested chunk payload (see [`WorldResidency::ingest_chunk_gz`]).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum IngestOutcome {
+    /// Parsed + inserted with this many instances.
+    Applied(u32),
+    /// Well-formed chunk JSON with zero instances — stub kept, marked known-empty forever.
+    ParsedEmpty,
+    /// Payload did not match the chunk shape — counted toward the retry cap.
+    ShapeMismatch,
+}
+
+/// T-173 P3 — failed deliveries per chunk before an undelivered stub is cached.
+pub const FETCH_FAILURE_CAP: u8 = 3;
+
 /// Multi-chunk residency + LRU + world spatial index + building/glyph GPU-buffer composer.
 pub struct WorldResidency {
     manifest: Option<ObjectsManifest>,
@@ -155,6 +169,34 @@ pub struct WorldResidency {
     max_apply_ms: f64,
     frames_over_budget: u64,
     apply_budget_ms_last: f64,
+
+    /// T-173 P2 — bumps whenever resident chunk *content* changes (insert / invalidate / evict),
+    /// so the glyph memo below recomposes when a newly-ingested chunk enters the draw set even
+    /// though the viewport rect is unchanged.
+    content_epoch: u64,
+    /// T-173 P2 — hash of the last glyph/strip/density compose inputs (draw-id set, zoom, content
+    /// epoch, toggles, airfield/landmark state). `refresh_draw_set_and_glyphs` returns early on a
+    /// match instead of re-packing up to 150 k instances every `set_viewport`.
+    last_compose_key: u64,
+
+    /// T-173 P3 — chunks that parsed cleanly to **zero instances**: their stubs are never
+    /// evicted and never re-requested (the pre-T-173 host loop invalidated + refetched every
+    /// legit-empty chunk on every settle, forever). `invalidate_chunk` clears the mark.
+    known_empty: HashSet<String>,
+    /// T-173 P3 — per-chunk failed-delivery count (HTTP error / gzip / shape mismatch). Below
+    /// [`FETCH_FAILURE_CAP`] the id stays unresident so the next viewport pass retries; at cap an
+    /// undelivered stub is cached (evictable → a later re-pin after eviction retries fresh).
+    /// Cleared on successful apply and on every pin-key change.
+    fetch_failures: HashMap<String, u8>,
+
+    /// T-173 — monotonic output-buffer revision: bumps once per real recompose of any GPU-facing
+    /// buffer family (fills/outlines/strips/glyphs/density). The host skips its clone+upload pass
+    /// when the revision it last pushed is still current.
+    buffers_revision: u64,
+    /// T-173 — recompose counters (perf gates G-C/G-D): how many times the glyph/strip/density
+    /// pack ran vs how many times the building fill/outline compose ran.
+    glyph_recomposes: u64,
+    fill_recomposes: u64,
 
     fill_buf: Vec<f32>,
     outline_buf: Vec<f32>,
@@ -242,6 +284,13 @@ impl Default for WorldResidency {
             max_apply_ms: 0.0,
             frames_over_budget: 0,
             apply_budget_ms_last: 0.0,
+            content_epoch: 0,
+            last_compose_key: 0,
+            known_empty: HashSet::new(),
+            fetch_failures: HashMap::new(),
+            buffers_revision: 0,
+            glyph_recomposes: 0,
+            fill_recomposes: 0,
             fill_buf: Vec::new(),
             outline_buf: Vec::new(),
             strip_buf: Vec::new(),
@@ -286,6 +335,9 @@ impl WorldResidency {
             }
         }
         self.rebuild_glyph_lookup_from_prefabs();
+        // The atlas key→idx map is not part of the compose memo key (T-173 P2) — force a recompose
+        // so glyphs pick up the freshly-registered UV indices.
+        self.last_compose_key = 0;
         self.refresh_draw_set_and_glyphs();
     }
 
@@ -571,6 +623,9 @@ impl WorldResidency {
         self.pinned_ids = ids.clone();
         self.pinned_set = ids.iter().cloned().collect();
         self.pinned_key = key;
+        // New pin epoch → failed-delivery counters reset (a transient outage during one camera
+        // hold must not permanently cap chunks the operator pans back to; T-173 P3).
+        self.fetch_failures.clear();
         // Re-touch resident pinned ids in row-major order (bumps last_used, matching runViewport).
         for id in &ids {
             if self.chunks.contains_key(id) {
@@ -592,20 +647,53 @@ impl WorldResidency {
     }
 
     /// `applyChunk` — parse one delivered `objects/chunks/{id}.json.gz` and insert it into the
-    /// residency + spatial index. Returns the instance count. (The caller runs the per-frame
+    /// residency + spatial index. Returns the T-173 disposition. (The caller runs the per-frame
     /// budget loop; call [`Self::end_apply_frame`] after a frame that applied ≥1 chunk.)
     ///
+    /// Policy (T-173 P3 — replaces the host's invalidate/refetch paranoia loop):
+    /// - well-formed, `count > 0` → [`IngestOutcome::Applied`]; failure counter + empty mark clear
+    /// - well-formed, zero instances → stub + permanent `known_empty` mark ([`IngestOutcome::ParsedEmpty`])
+    /// - payload not chunk-shaped → counted toward [`FETCH_FAILURE_CAP`] ([`IngestOutcome::ShapeMismatch`])
+    ///
     /// # Errors
-    /// [`WorldError::Gzip`]/[`WorldError::Json`] on a bad payload.
-    pub fn ingest_chunk_gz(&mut self, id: &str, bytes: &[u8]) -> Result<u32, WorldError> {
+    /// [`WorldError::Gzip`]/[`WorldError::Json`] on a bad payload — the caller routes those to
+    /// [`Self::note_fetch_failure`] like an HTTP failure.
+    pub fn ingest_chunk_gz(&mut self, id: &str, bytes: &[u8]) -> Result<IngestOutcome, WorldError> {
         let raw = bytes_to_json(bytes)?;
-        let chunk = parse_chunk(id, &raw, &self.prefab_by_id).unwrap_or_else(|| WorldChunk {
-            id: id.to_string(),
-            ..Default::default()
-        });
-        let count = chunk.count;
-        self.insert_chunk(id, chunk);
-        Ok(count)
+        match parse_chunk(id, &raw, &self.prefab_by_id) {
+            Some(chunk) if chunk.count > 0 => {
+                let count = chunk.count;
+                self.insert_chunk(id, chunk);
+                self.known_empty.remove(id);
+                self.fetch_failures.remove(id);
+                Ok(IngestOutcome::Applied(count))
+            }
+            Some(chunk) => {
+                self.insert_chunk(id, chunk);
+                self.known_empty.insert(id.to_string());
+                self.fetch_failures.remove(id);
+                Ok(IngestOutcome::ParsedEmpty)
+            }
+            None => {
+                self.note_fetch_failure(id);
+                Ok(IngestOutcome::ShapeMismatch)
+            }
+        }
+    }
+
+    /// T-173 P3 — record a failed delivery (HTTP error, gzip/json corruption, shape mismatch).
+    /// Below [`FETCH_FAILURE_CAP`] the id is released from inflight so the next viewport pass
+    /// retries it; at the cap an undelivered stub is cached (the id stops thrashing; a later
+    /// eviction + re-pin retries fresh because pin-key changes clear the counters).
+    pub fn note_fetch_failure(&mut self, id: &str) {
+        let n = self.fetch_failures.entry(id.to_string()).or_insert(0);
+        *n += 1;
+        if *n >= FETCH_FAILURE_CAP {
+            self.fetch_failures.remove(id);
+            self.note_undelivered(id);
+        } else {
+            self.inflight.remove(id);
+        }
     }
 
     /// Cache a requested-but-undelivered chunk (missing/empty file) as hydrated-empty so it is
@@ -641,6 +729,7 @@ impl WorldResidency {
             .insert(id.to_string(), self.insert_counter);
         self.inflight.remove(id);
         self.chunks_applied += 1;
+        self.content_epoch += 1;
     }
 
     /// T-151.11.3 (B-04): start an ingest frame at `now_ms`. The per-frame budget policy
@@ -690,10 +779,12 @@ impl WorldResidency {
         if self.chunks.len() <= cap {
             return;
         }
+        // T-173 P3 — known-empty stubs are never evicted: they hold no instance data (≈free) and
+        // keeping them resident is what guarantees a legit-empty chunk is fetched at most once.
         let mut candidates: Vec<String> = self
             .chunks
             .keys()
-            .filter(|id| !self.pinned_set.contains(*id))
+            .filter(|id| !self.pinned_set.contains(*id) && !self.known_empty.contains(*id))
             .cloned()
             .collect();
         candidates.sort_by(|a, b| {
@@ -715,6 +806,7 @@ impl WorldResidency {
             self.building_counts.remove(&id);
             self.index.remove_chunk(&id);
             self.eviction_log.push(id);
+            self.content_epoch += 1;
         }
     }
 
@@ -764,6 +856,7 @@ impl WorldResidency {
     /// Recompose the building fill + outline GPU buffers from the pinned chunks, in **string-sorted
     /// id order** (matching the JS composite `[...pinned].sort()`).
     fn rebuild_buffers(&mut self) {
+        self.fill_recomposes += 1;
         // T-151.11.3 (P-04): toggle off ⇒ compose nothing (Deck hid the whole building lane).
         // T-152.21: below the footprint gate (BUILDING_MIN_ZOOM) draw no rectangles either, but
         // still refresh glyphs so importanceZoom landmark badges persist in that coarse band
@@ -991,6 +1084,27 @@ impl WorldResidency {
         self.strip_buf = pack_cartographic_strips(&acc);
     }
 
+    /// T-173 P2 — hash of every input the glyph/strip/density pack reads, so
+    /// `refresh_draw_set_and_glyphs` can skip an identical recompose. `draw_ids` must already be
+    /// set (sorted) before this is called. Zoom is hashed by bits (min-px sizing is continuous),
+    /// so any real camera move that changes glyph sizes still invalidates the memo.
+    fn compose_key(&self) -> u64 {
+        use std::hash::{Hash, Hasher};
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        self.draw_ids.hash(&mut h);
+        self.deck_zoom.to_bits().hash(&mut h);
+        self.content_epoch.hash(&mut h);
+        self.toggle_trees.hash(&mut h);
+        self.toggle_props.hash(&mut h);
+        self.toggle_buildings.hash(&mut h);
+        self.toggle_fences.hash(&mut h);
+        self.toggle_airfield.hash(&mut h);
+        // bbox / importance state changes the badge + airfield-icon set.
+        self.airfield_bbox.map(|b| b.map(f64::to_bits)).hash(&mut h);
+        self.min_importance_zoom.map(f64::to_bits).hash(&mut h);
+        h.finish()
+    }
+
     /// Strict visible rect → chunk ids ∩ pinned ∩ cells (Class S draw-set). No preload expand.
     /// [`DRAW_CULL_MARGIN_M`] is locked at 0 — do not expand `strict_bbox` before this call.
     #[must_use]
@@ -1013,6 +1127,15 @@ impl WorldResidency {
     /// Recompute `draw_ids` + density ladder + glyph buffers from `last_viewport`.
     fn refresh_draw_set_and_glyphs(&mut self) {
         self.draw_ids = self.draw_chunk_ids(self.last_viewport);
+        // T-173 P2 — memo: the glyph/strip/density pack is a pure function of the draw-id set,
+        // zoom (min-px sizing is continuous in zoom), resident-content epoch, the layer toggles,
+        // and the airfield/landmark state. Recompute the key; a match means the last-composed
+        // buffers are still correct — skip the ≤150 k-instance re-pack and don't bump the revision.
+        let key = self.compose_key();
+        if key == self.last_compose_key {
+            return;
+        }
+        self.last_compose_key = key;
         let chunk_size_m = self
             .manifest
             .as_ref()
@@ -1047,6 +1170,8 @@ impl WorldResidency {
         };
         self.rebuild_strip_buffers();
         self.rebuild_glyph_buffers();
+        self.glyph_recomposes += 1;
+        self.buffers_revision += 1;
     }
 
     /// Compose tree / prop / badge glyph instance buffers from **draw_ids** only.
@@ -1435,8 +1560,12 @@ impl WorldResidency {
             self.building_counts.remove(id);
             self.last_used.remove(id);
             self.inserted_seq.remove(id);
+            self.content_epoch += 1;
         }
         self.inflight.remove(id);
+        // Manual recovery path — the mark and the failure count both reset (T-173 P3).
+        self.known_empty.remove(id);
+        self.fetch_failures.remove(id);
     }
 
     /// Mark ids as in-flight (not yet resident). Used after `clear_inflight` when starting a
@@ -1464,7 +1593,7 @@ impl WorldResidency {
     #[must_use]
     pub fn stats_json(&self) -> String {
         format!(
-            "{{\"chunks_resident\":{},\"chunks_pinned\":{},\"chunks_applied\":{},\"apply_frames\":{},\"apply_budget_ms_last\":{},\"max_apply_ms\":{},\"frames_over_budget\":{},\"building_instances\":{},\"index_size\":{},\"inflight_count\":{},\"pin_settled\":{},\"chunks_draw\":{},\"exact_tree_count\":{},\"heatmap_trees\":{}}}",
+            "{{\"chunks_resident\":{},\"chunks_pinned\":{},\"chunks_applied\":{},\"apply_frames\":{},\"apply_budget_ms_last\":{},\"max_apply_ms\":{},\"frames_over_budget\":{},\"building_instances\":{},\"index_size\":{},\"inflight_count\":{},\"pin_settled\":{},\"chunks_draw\":{},\"exact_tree_count\":{},\"heatmap_trees\":{},\"buffers_revision\":{},\"glyph_recomposes\":{},\"fill_recomposes\":{},\"known_empty_count\":{}}}",
             self.chunks.len(),
             self.pinned_ids.len(),
             self.chunks_applied,
@@ -1479,7 +1608,18 @@ impl WorldResidency {
             self.draw_ids.len(),
             self.exact_tree_count,
             self.heatmap_trees,
+            self.buffers_revision,
+            self.glyph_recomposes,
+            self.fill_recomposes,
+            self.known_empty.len(),
         )
+    }
+
+    /// T-173 — monotonic revision of the GPU-facing output buffers (see field doc). Hosts compare
+    /// against their last-pushed value to skip redundant clone+upload passes.
+    #[must_use]
+    pub fn buffers_revision(&self) -> u64 {
+        self.buffers_revision
     }
 }
 
@@ -1561,6 +1701,10 @@ mod tests {
         c.rows_by_class.clear();
         c.rows_by_class
             .insert(class_code("tree"), (0..n as u32).collect());
+        // Real chunk-content changes only ever happen via `insert_chunk`, which bumps the epoch;
+        // this direct-mutation test helper must do the same so the T-173 P2 compose memo sees the
+        // change and recomposes (otherwise an identical-viewport `refresh` correctly memo-hits).
+        r.content_epoch += 1;
     }
 
     /// Everon-sized residency whose one prefab (id 0) is a tree with a real glyph atlas key, so
@@ -1599,6 +1743,108 @@ mod tests {
         let expected =
             chunk_ids_for_viewport([2000.0, 2000.0, 2200.0, 2200.0], r.terrain, 512.0, 0);
         assert_eq!(missing, expected);
+    }
+
+    // ── T-173 P2/P3 — compose memo + ingest disposition ─────────────────────────
+
+    /// The glyph memo skips recompose (revision stable) when nothing changed, and bumps on a real
+    /// content/zoom change.
+    #[test]
+    fn compose_memo_stable_then_bumps() {
+        let mut r = dense_forest_setup();
+        drive(&mut r, [2000.0, 2000.0, 2200.0, 2200.0]);
+        let rev0 = r.buffers_revision();
+        // Identical set_viewport → memo hit → no recompose, no revision bump.
+        r.set_viewport(2000.0, 2000.0, 2200.0, 2200.0, -2.0);
+        r.set_viewport(2000.0, 2000.0, 2200.0, 2200.0, -2.0);
+        assert_eq!(
+            r.buffers_revision(),
+            rev0,
+            "identical viewport must not recompose"
+        );
+        // A zoom change (glyph min-px sizing depends on it) must invalidate the memo.
+        r.set_viewport(2000.0, 2000.0, 2200.0, 2200.0, -1.0);
+        assert!(r.buffers_revision() > rev0, "zoom change must recompose");
+    }
+
+    /// A newly-ingested chunk in the draw set bumps the revision even though the viewport rect is
+    /// unchanged (content epoch is part of the memo key).
+    #[test]
+    fn compose_memo_invalidates_on_new_chunk() {
+        let mut r = setup();
+        // Pin a 2×2 area but deliver only some chunks, then deliver the rest under the same pin.
+        let missing = r.set_viewport(0.0, 0.0, 900.0, 900.0, -2.0);
+        assert!(missing.len() >= 2);
+        r.ingest_chunk_gz(&missing[0], &chunk_bytes(&missing[0]))
+            .unwrap();
+        r.end_apply_frame(0.0);
+        r.set_viewport(0.0, 0.0, 900.0, 900.0, -2.0);
+        let rev1 = r.buffers_revision();
+        r.ingest_chunk_gz(&missing[1], &chunk_bytes(&missing[1]))
+            .unwrap();
+        r.end_apply_frame(0.0);
+        r.set_viewport(0.0, 0.0, 900.0, 900.0, -2.0);
+        assert!(
+            r.buffers_revision() > rev1,
+            "a freshly-ingested chunk under the same pin must recompose"
+        );
+    }
+
+    /// A well-formed chunk with zero instances is marked known-empty: kept resident, never evicted,
+    /// never re-requested by a later same-key `set_viewport`.
+    #[test]
+    fn parsed_empty_chunk_is_known_empty_and_not_refetched() {
+        let mut r = setup();
+        let missing = r.set_viewport(0.0, 0.0, 200.0, 200.0, -2.0);
+        let id = missing[0].clone();
+        let out = r
+            .ingest_chunk_gz(&id, &gzip(r#"{"instances":[]}"#))
+            .unwrap();
+        assert_eq!(out, IngestOutcome::ParsedEmpty);
+        assert!(r.stats_json().contains("\"known_empty_count\":1"));
+        // Same pin → the empty chunk is resident, so it is NOT in the missing set again.
+        let again = r.set_viewport(0.0, 0.0, 200.0, 200.0, -2.0);
+        assert!(
+            !again.contains(&id),
+            "known-empty chunk must not be re-requested"
+        );
+    }
+
+    /// A payload that is not chunk-shaped is a `ShapeMismatch`, retried up to the cap, then cached
+    /// as an undelivered stub (stops thrashing).
+    #[test]
+    fn shape_mismatch_retries_to_cap_then_caches() {
+        let mut r = setup();
+        let missing = r.set_viewport(0.0, 0.0, 200.0, 200.0, -2.0);
+        let id = missing[0].clone();
+        for _ in 0..(FETCH_FAILURE_CAP - 1) {
+            let out = r.ingest_chunk_gz(&id, &gzip("{}")).unwrap();
+            assert_eq!(out, IngestOutcome::ShapeMismatch);
+            // Below the cap → not resident (will retry).
+            assert!(r.resident_instance_count(&id).is_none());
+        }
+        // The capping failure caches an (empty) stub so the id stops being re-requested.
+        r.ingest_chunk_gz(&id, &gzip("{}")).unwrap();
+        assert!(r.resident_instance_count(&id).is_some());
+        let again = r.set_viewport(0.0, 0.0, 200.0, 200.0, -2.0);
+        assert!(!again.contains(&id));
+    }
+
+    /// A new pin epoch resets the failure counters (a transient outage during one hold must not
+    /// permanently cap chunks the operator pans back to).
+    #[test]
+    fn fetch_failures_reset_on_new_pin_key() {
+        let mut r = setup();
+        let m0 = r.set_viewport(0.0, 0.0, 200.0, 200.0, -2.0);
+        let id = m0[0].clone();
+        r.ingest_chunk_gz(&id, &gzip("{}")).unwrap(); // 1 failure
+        // Pan far away (new pin key), then back — the counter reset means the id is requestable.
+        r.set_viewport(6000.0, 6000.0, 6200.0, 6200.0, -2.0);
+        let back = r.set_viewport(0.0, 0.0, 200.0, 200.0, -2.0);
+        assert!(
+            back.contains(&id),
+            "failure counter must reset across pin epochs"
+        );
     }
 
     /// T-151.4.1: aborted fetch clears inflight; same-key set_viewport re-requests undelivered.

@@ -43,6 +43,10 @@ struct SlotGpuBridge {
     drag_active: bool,
     drag_ids: Vec<String>,
     slots_lane_selection_only: bool,
+    /// T-173 H2 — cached supercluster index over the bound slot xy; rebuilt when the slot count
+    /// changes, queried per camera move while in cluster mode to feed the cluster disc lane.
+    cluster_index: Option<map_engine_core::spatial::cluster::ClusterIndex>,
+    cluster_built_len: usize,
 }
 
 /// Background clear — (51, 68, 85, 255)/255. The f64→f32→unorm8 chain error (< 1.2e-7) is
@@ -66,6 +70,14 @@ fn start() {
 
 fn now_ms() -> f64 {
     js_sys::Date::now()
+}
+
+/// Sub-ms monotonic clock for the T-173 bench (`performance.now()`; `Date.now` fallback keeps
+/// worker/edge contexts alive — 1 ms grain there, fine over a 500-frame window).
+fn perf_now_ms() -> f64 {
+    web_sys::window()
+        .and_then(|w| w.performance())
+        .map_or_else(now_ms, |p| p.now())
 }
 
 /// `Math.round` (half toward +∞) — must match the TS `deviceSize` helper bit-for-bit so the
@@ -1046,6 +1058,18 @@ pub struct RenderEngine {
     road_segments: u32,
     forest_polygons: u32,
     forest_outline_segments: u32,
+    /// T-173 — monotonic upload-call counters (perf gates G-C/G-D): how many times the host
+    /// invoked each upload family since engine creation (counted at entry — an early-returned
+    /// empty call is still host-side churn). A steady-state pan/zoom frame must not move any.
+    icon_lane_uploads: u64,
+    polygon_lane_uploads: u64,
+    strip_lane_uploads: u64,
+    building_uploads: u64,
+    text_label_uploads: u64,
+    /// T-173 — CPU cost of the last *submitted* `render()` (uniform write → submit+present) and
+    /// its exponential moving average (α=0.1). Damage-skipped frames don't touch either.
+    render_cpu_ms_last: f64,
+    render_cpu_ms_ema: f64,
     timer: Option<GpuTimer>,
     /// T-151.8 damage-driven render skip.
     damage: crate::damage::RenderDamage,
@@ -1431,6 +1455,13 @@ impl RenderEngine {
             road_segments: 0,
             forest_polygons: 0,
             forest_outline_segments: 0,
+            icon_lane_uploads: 0,
+            polygon_lane_uploads: 0,
+            strip_lane_uploads: 0,
+            building_uploads: 0,
+            text_label_uploads: 0,
+            render_cpu_ms_last: 0.0,
+            render_cpu_ms_ema: 0.0,
             timer,
             damage: crate::damage::RenderDamage::new(),
             submitted_last_frame: false,
@@ -1593,61 +1624,16 @@ impl RenderEngine {
     // `OrthoCameraJs` snapshots (gesture semantics require a camera frozen at gesture start;
     // a live engine unproject would feedback-loop during pan). `viewportFromEngine` deleted too.
 
-    /// Render one frame to the canvas. Steady-state CPU→GPU traffic is exactly the 64-byte
-    /// mvp uniform (the navigation invariant); instance data is static in GPU memory.
-    /// T-151.8: when `!dirty && !continuous`, skip surface acquire / encode / submit.
-    pub fn render(&mut self) -> Result<(), JsError> {
-        if !self.damage.begin_frame().submit {
-            self.uniform_bytes_last_frame = 0;
-            self.submitted_last_frame = false;
-            return Ok(());
-        }
-
-        let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
-        self.queue
-            .write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(&mvp));
-        // Steady-state: 64 B mvp. During T-061 drag the SlotDrag lane is live → +16 B delta uniform
-        // (written by `set_slot_drag_delta`; counted here so stats survive the frame).
-        let drag_live = self
-            .batches
-            .iter()
-            .any(|b| b.role == LaneRole::SlotDrag && b.visible);
-        self.uniform_bytes_last_frame = if drag_live { 64 + 16 } else { 64 };
-
-        use wgpu::CurrentSurfaceTexture as Cst;
-        let frame = match self.surface.get_current_texture() {
-            Cst::Success(f) | Cst::Suboptimal(f) => f,
-            Cst::Timeout | Cst::Occluded => {
-                // Surface not ready — keep dirty so the next rAF retries.
-                self.submitted_last_frame = false;
-                return Ok(());
-            }
-            Cst::Outdated | Cst::Lost => {
-                // Reconfigure + retry once — also self-heals the StrictMode canvas
-                // reconfiguration race (plan §S5 I3).
-                self.surface.configure(&self.device, &self.config);
-                match self.surface.get_current_texture() {
-                    Cst::Success(f) | Cst::Suboptimal(f) => f,
-                    other => {
-                        return Err(JsError::new(&format!(
-                            "surface-acquire-after-reconfigure: {other:?}"
-                        )));
-                    }
-                }
-            }
-            other => return Err(JsError::new(&format!("surface-acquire: {other:?}"))),
-        };
-        let view = frame
-            .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
-
-        let take_timing = self.timer.as_ref().is_some_and(|t| !t.in_flight.get());
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("frame"),
-            });
-
+    /// Encode the full scene (optional compute cull + the main color pass) into `encoder`,
+    /// targeting `view`. Shared by [`Self::render`] (surface target) and [`Self::render_bench`]
+    /// (offscreen target). Returns whether the WebGPU tree compute-cull ran (the caller kicks
+    /// its counter readback only on real presented frames).
+    fn encode_main_pass(
+        &mut self,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+        take_timing: bool,
+    ) -> bool {
         // T-151.8.1: WebGPU tree instance cull before the color pass.
         let do_compute_trees = self.compute_cull_trees
             && self.icon_cull.is_some()
@@ -1664,7 +1650,7 @@ impl RenderEngine {
                 world[3] - ANCHOR[1],
             ];
             if let Some(cull) = &mut self.icon_cull {
-                cull.encode_cull(&mut encoder, &self.device, &self.queue, frustum);
+                cull.encode_cull(encoder, &self.device, &self.queue, frustum);
             }
         }
 
@@ -1672,7 +1658,7 @@ impl RenderEngine {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("main"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view: &view,
+                    view,
                     resolve_target: None,
                     depth_slice: None,
                     ops: wgpu::Operations {
@@ -1738,6 +1724,150 @@ impl RenderEngine {
                 indirect_trees,
             );
         }
+        do_compute_trees
+    }
+
+    /// T-173 — off-vsync frame-cost bench (perf gates G-A/G-B). Encodes + submits `n` full-scene
+    /// frames into an offscreen target (no surface acquire, no present, damage ignored — the real
+    /// scene encodes every iteration). The reported **`fps_equiv = n·1000 / submit_wall_ms`** is
+    /// the CPU submit-throughput ceiling: the rate at which this machine can build+submit real
+    /// frames. On a GPU that keeps up (the 3070) it is the achievable frame rate; on SwiftShader
+    /// it is backend-CPU-bound but still a valid same-env A/B + potato lower bound. A **bounded**
+    /// (≤ `drain_ms`) fence drain follows only to keep GPU work from piling across bench cameras —
+    /// the number never waits on it, so this can't wedge the probe. WebGPU timestamp GPU-exec time
+    /// (the true GPU number for G-A) comes from the re-enabled `GpuTimer` on the live path.
+    pub fn render_bench(&mut self, n: u32) -> js_sys::Promise {
+        let n = n.clamp(1, 20_000);
+        let target = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("bench-target"),
+            size: wgpu::Extent3d {
+                width: self.config.width.max(1),
+                height: self.config.height.max(1),
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: self.config.format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+            view_formats: &[],
+        });
+        let view = target.create_view(&wgpu::TextureViewDescriptor::default());
+        let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+        // Per-frame CPU **encode** cost (build the command list) is measured separately from
+        // **submit** (GL replay + raster on the WebGL2/SwiftShader path; async on WebGPU). The
+        // fps_equiv is derived from encode — the backend-independent CPU ceiling that the ≤1 ms
+        // budget targets — while submit_avg exposes how much the software rasterizer adds under CI.
+        let mut cpu_ms: Vec<f64> = Vec::with_capacity(n as usize);
+        let mut submit_ms: Vec<f64> = Vec::with_capacity(n as usize);
+        let t_start = perf_now_ms();
+        for _ in 0..n {
+            let f0 = perf_now_ms();
+            self.queue
+                .write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(&mvp));
+            let mut encoder = self
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("bench-frame"),
+                });
+            self.encode_main_pass(&mut encoder, &view, false);
+            let cmd = encoder.finish();
+            let f1 = perf_now_ms();
+            self.queue.submit(Some(cmd));
+            let f2 = perf_now_ms();
+            cpu_ms.push(f1 - f0);
+            submit_ms.push(f2 - f1);
+        }
+        let submit_wall_ms = perf_now_ms() - t_start;
+        let submit_avg = submit_ms.iter().sum::<f64>() / submit_ms.len() as f64;
+        let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        {
+            let done = std::sync::Arc::clone(&done);
+            self.queue.on_submitted_work_done(move || {
+                done.store(true, std::sync::atomic::Ordering::SeqCst);
+            });
+        }
+        let mut sorted = cpu_ms.clone();
+        sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let avg = cpu_ms.iter().sum::<f64>() / cpu_ms.len() as f64;
+        let p95 = sorted[((sorted.len() as f64 * 0.95) as usize).min(sorted.len() - 1)];
+        let max = sorted[sorted.len() - 1];
+        // fps_equiv from CPU encode (the cross-backend ceiling); submit is the raster/GPU add-on.
+        let cpu_fps_equiv = 1000.0 / avg.max(0.0001);
+        wasm_bindgen_futures::future_to_promise(async move {
+            // Bounded drain (≤ 3 s) so GPU work doesn't pile across bench cameras. The rAF loop's
+            // `poll()` drives the fence; if it never signals (headless software backend) we bail —
+            // the reported number does NOT depend on this completing.
+            let drain_start = perf_now_ms();
+            while !done.load(std::sync::atomic::Ordering::SeqCst)
+                && perf_now_ms() - drain_start < 3_000.0
+            {
+                readback_sleep_ms(4).await;
+            }
+            let drained = done.load(std::sync::atomic::Ordering::SeqCst);
+            let total_wall_ms = perf_now_ms() - t_start;
+            Ok(JsValue::from_str(&format!(
+                "{{\"n\":{n},\"submit_wall_ms\":{submit_wall_ms:.3},\"total_wall_ms\":{total_wall_ms:.3},\"cpu_avg_ms\":{avg:.4},\"cpu_p95_ms\":{p95:.4},\"cpu_max_ms\":{max:.4},\"submit_avg_ms\":{submit_avg:.4},\"fps_equiv\":{cpu_fps_equiv:.1},\"drained\":{drained}}}"
+            )))
+        })
+    }
+
+    /// Render one frame to the canvas. Steady-state CPU→GPU traffic is exactly the 64-byte
+    /// mvp uniform (the navigation invariant); instance data is static in GPU memory.
+    /// T-151.8: when `!dirty && !continuous`, skip surface acquire / encode / submit.
+    pub fn render(&mut self) -> Result<(), JsError> {
+        if !self.damage.begin_frame().submit {
+            self.uniform_bytes_last_frame = 0;
+            self.submitted_last_frame = false;
+            return Ok(());
+        }
+        let frame_t0 = perf_now_ms();
+
+        let mvp = self.camera.wgpu_clip_matrix(ANCHOR[0], ANCHOR[1]);
+        self.queue
+            .write_buffer(&self.uniform_buf, 0, bytemuck::cast_slice(&mvp));
+        // Steady-state: 64 B mvp. During T-061 drag the SlotDrag lane is live → +16 B delta uniform
+        // (written by `set_slot_drag_delta`; counted here so stats survive the frame).
+        let drag_live = self
+            .batches
+            .iter()
+            .any(|b| b.role == LaneRole::SlotDrag && b.visible);
+        self.uniform_bytes_last_frame = if drag_live { 64 + 16 } else { 64 };
+
+        use wgpu::CurrentSurfaceTexture as Cst;
+        let frame = match self.surface.get_current_texture() {
+            Cst::Success(f) | Cst::Suboptimal(f) => f,
+            Cst::Timeout | Cst::Occluded => {
+                // Surface not ready — keep dirty so the next rAF retries.
+                self.submitted_last_frame = false;
+                return Ok(());
+            }
+            Cst::Outdated | Cst::Lost => {
+                // Reconfigure + retry once — also self-heals the StrictMode canvas
+                // reconfiguration race (plan §S5 I3).
+                self.surface.configure(&self.device, &self.config);
+                match self.surface.get_current_texture() {
+                    Cst::Success(f) | Cst::Suboptimal(f) => f,
+                    other => {
+                        return Err(JsError::new(&format!(
+                            "surface-acquire-after-reconfigure: {other:?}"
+                        )));
+                    }
+                }
+            }
+            other => return Err(JsError::new(&format!("surface-acquire: {other:?}"))),
+        };
+        let view = frame
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor::default());
+
+        let take_timing = self.timer.as_ref().is_some_and(|t| !t.in_flight.get());
+        let mut encoder = self
+            .device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: Some("frame"),
+            });
+        let do_compute_trees = self.encode_main_pass(&mut encoder, &view, take_timing);
         if take_timing && let Some(t) = &self.timer {
             encoder.resolve_query_set(&t.query_set, 0..2, &t.resolve_buf, 0);
             encoder.copy_buffer_to_buffer(&t.resolve_buf, 0, &t.read_buf, 0, 16);
@@ -1753,6 +1883,12 @@ impl RenderEngine {
         }
         self.damage.after_submit();
         self.submitted_last_frame = true;
+        self.render_cpu_ms_last = perf_now_ms() - frame_t0;
+        self.render_cpu_ms_ema = if self.render_cpu_ms_ema == 0.0 {
+            self.render_cpu_ms_last
+        } else {
+            self.render_cpu_ms_ema * 0.9 + self.render_cpu_ms_last * 0.1
+        };
         Ok(())
     }
 
@@ -1988,7 +2124,10 @@ impl RenderEngine {
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
                 "\"submitted_last_frame\":{},\"density_heatmap\":{},",
                 "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{},",
-                "\"compute_cull_gpu_sampled\":{}}}"
+                "\"compute_cull_gpu_sampled\":{},",
+                "\"icon_lane_uploads\":{},\"polygon_lane_uploads\":{},\"strip_lane_uploads\":{},",
+                "\"building_uploads\":{},\"text_label_uploads\":{},",
+                "\"render_cpu_ms_last\":{:.4},\"render_cpu_ms_ema\":{:.4}}}"
             ),
             self.backend_kind,
             self.stress_instances,
@@ -2031,6 +2170,13 @@ impl RenderEngine {
                 .map(|c| c.gpu_count_for_stats())
                 .unwrap_or(0),
             self.icon_cull.as_ref().is_some_and(|c| c.gpu_sampled.get()),
+            self.icon_lane_uploads,
+            self.polygon_lane_uploads,
+            self.strip_lane_uploads,
+            self.building_uploads,
+            self.text_label_uploads,
+            self.render_cpu_ms_last,
+            self.render_cpu_ms_ema,
         )
     }
 }
@@ -2609,6 +2755,7 @@ impl RenderEngine {
     /// center is converted to anchor-relative here (the single anchor source of truth). `chunk_count`
     /// is the resident chunks contributing (`stats().world_chunks_drawn`). Empty → drop the lane.
     pub fn upload_world_buildings(&mut self, fill: &[f32], chunk_count: u32, visible: bool) {
+        self.building_uploads += 1;
         const STRIDE: usize = 10;
         // T-151.4.1: empty + visible → sticky (keep prior lane). Mid-hydration empty uploads
         // used to wipe town buildings; the loader also guards, but belt-and-suspenders here.
@@ -2665,6 +2812,7 @@ impl RenderEngine {
     /// `LineList` output — 6 f32 per vertex in WORLD meters `[x, y, r, g, b, a]`; positions are
     /// converted to anchor-relative here. Empty → drop the lane.
     pub fn upload_world_building_outlines(&mut self, lines: &[f32], visible: bool) {
+        self.building_uploads += 1;
         const STRIDE: usize = 6;
         if lines.is_empty() || !lines.len().is_multiple_of(STRIDE) {
             self.remove_lane(LaneRole::WorldBuildingsOutline);
@@ -2703,6 +2851,7 @@ impl RenderEngine {
     /// Replace the `world-fences` strip lane (T-152.4). `packed` is flat `[x,y,r,g,b,a]…` triangle-list
     /// verts in WORLD meters (same layout as road strips).
     pub fn upload_world_fence_strips(&mut self, packed: &[f32], item_count: u32, visible: bool) {
+        self.strip_lane_uploads += 1;
         const STRIDE: usize = 6;
         if packed.is_empty() {
             if !visible {
@@ -2968,6 +3117,7 @@ impl RenderEngine {
 
     /// Upload height / cartographic text labels (20 B instances, `WorldLabels` lane).
     pub fn upload_text_labels(&mut self, bytes: &[u8], visible: bool) {
+        self.text_label_uploads += 1;
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
         if bytes.is_empty() || !visible {
@@ -3008,6 +3158,7 @@ impl RenderEngine {
 
     /// Upload town name labels (20 B instances, `WorldTownLabels` lane — above height labels).
     pub fn upload_town_labels(&mut self, bytes: &[u8], visible: bool) {
+        self.text_label_uploads += 1;
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
         if bytes.is_empty() || !visible {
@@ -3049,6 +3200,7 @@ impl RenderEngine {
 
     /// Upload road name labels (20 B instances, `WorldRoadLabels` — below town labels).
     pub fn upload_road_labels(&mut self, bytes: &[u8], visible: bool) {
+        self.text_label_uploads += 1;
         use wgpu::util::DeviceExt;
         const STRIDE: usize = 20;
         if bytes.is_empty() || !visible {
@@ -3092,6 +3244,7 @@ impl RenderEngine {
     /// T-151.8.1: on WebGPU, tree lane feeds compute cull (`VERTEX|STORAGE` + `draw_indirect`);
     /// WebGL2 keeps the direct IconInstanced path (chunk granularity).
     pub fn upload_icon_lane(&mut self, kind: u32, bytes: &[u8], visible: bool) {
+        self.icon_lane_uploads += 1;
         let role = match kind {
             0 => LaneRole::WorldTrees,
             1 => LaneRole::WorldProps,
@@ -3323,6 +3476,9 @@ impl RenderEngine {
     pub fn slots_bind_soa(&mut self, ids: Vec<String>, xy: &[f32]) {
         self.slot_bridge.last_ids = ids;
         self.slot_bridge.last_xy = xy.to_vec();
+        // T-173 H2 — slot positions changed → the cached cluster index is stale; drop it so the
+        // next cluster-mode camera move rebuilds from the new xy.
+        self.slot_bridge.cluster_index = None;
         if !self.slot_bridge.atlas_ready {
             return;
         }
@@ -3345,6 +3501,56 @@ impl RenderEngine {
         } else {
             self.rematerialize_slot_lane();
         }
+        // T-173 H2 — self-feed the cluster disc lane. The engine holds the bound slot xy, so it can
+        // build + query a supercluster index itself instead of waiting for a JS `set_cluster_markers`
+        // feed that the Leptos host never sent (the lane was dead at zoom ≤ −4 on > 500-slot missions).
+        self.feed_cluster_markers();
+    }
+
+    /// T-173 H2 — populate the cluster disc lane from the cached slot index for the current camera.
+    /// No-op (and lane cleared) when cluster mode is inactive.
+    fn feed_cluster_markers(&mut self) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let n = self.slot_bridge.last_ids.len();
+        #[allow(clippy::cast_possible_truncation)]
+        if !slots_gpu::cluster_mode(n as u32, self.zoom()) {
+            self.upload_cluster_lane(&[], false);
+            return;
+        }
+        // (Re)build the index only when the slot set size changed (cheap while merely panning).
+        if self.slot_bridge.cluster_index.is_none() || self.slot_bridge.cluster_built_len != n {
+            let world: Vec<(f64, f64)> = self
+                .slot_bridge
+                .last_xy
+                .chunks_exact(2)
+                .map(|c| (f64::from(c[0]), f64::from(c[1])))
+                .collect();
+            self.slot_bridge.cluster_index =
+                Some(map_engine_core::spatial::cluster::ClusterIndex::build(
+                    &world,
+                    EVERON_BOUNDS[2],
+                    EVERON_BOUNDS[3],
+                ));
+            self.slot_bridge.cluster_built_len = n;
+        }
+        let rect = self.camera.visible_world_rect();
+        let zoom = self.zoom();
+        let (xs, ys, counts) = {
+            let idx = self
+                .slot_bridge
+                .cluster_index
+                .as_ref()
+                .expect("built above");
+            let markers = idx.get_clusters(rect[0], rect[1], rect[2], rect[3], zoom);
+            let xs: Vec<f64> = markers.iter().map(|m| m.x).collect();
+            let ys: Vec<f64> = markers.iter().map(|m| m.y).collect();
+            let counts: Vec<u32> = markers.iter().map(|m| m.count).collect();
+            (xs, ys, counts)
+        };
+        let bytes = pack_cluster_instances(&xs, &ys, &counts);
+        self.upload_cluster_lane(&bytes, !bytes.is_empty());
     }
 
     /// Selection ids → full rematerialize (T-151.7.2). Empty = clear tint.
@@ -3404,16 +3610,17 @@ impl RenderEngine {
         #[allow(clippy::cast_possible_truncation)]
         let n = self.slot_bridge.last_ids.len() as u32;
         let cm = slots_gpu::cluster_mode(n, zoom);
-        if cm != self.slot_bridge.last_cluster_mode {
+        let mode_changed = cm != self.slot_bridge.last_cluster_mode;
+        if mode_changed {
             self.slot_bridge.last_cluster_mode = cm;
-            if !cm {
-                self.upload_cluster_lane(&[], false);
-            }
-            // Markers re-fed by TS when cluster_mode; still rematerialize slot lane.
             if !self.slot_bridge.drag_active {
                 self.rematerialize_slot_lane();
             }
         }
+        // T-173 H2 — (re)feed the cluster discs every camera move while in cluster mode (the marker
+        // set depends on the visible rect + zoom, not just the mode flip), and clear on exit. The
+        // engine self-feeds from its cached slot index — no JS `set_cluster_markers` needed.
+        self.feed_cluster_markers();
     }
 
     /// Cluster disc markers from FE supercluster (not ported this slice).
@@ -3821,6 +4028,7 @@ impl RenderEngine {
         item_count: u32,
         visible: bool,
     ) {
+        self.polygon_lane_uploads += 1;
         let Some(role_enum) = lane_role_from_u32(role) else {
             return;
         };
@@ -3886,6 +4094,7 @@ impl RenderEngine {
     /// `[x,y,r,g,b,a]…` world-meter verts (6 f32/vert, 3 verts/tri). Used for road casing/
     /// centerline (T-151.4 L2). `role`: 3 roads_casing, 4 roads.
     pub fn upload_strip_tris(&mut self, role: u32, packed: &[f32], item_count: u32, visible: bool) {
+        self.strip_lane_uploads += 1;
         const STRIDE: usize = 6;
         let Some(role_enum) = lane_role_from_u32(role) else {
             return;
@@ -4100,6 +4309,34 @@ impl RenderEngine {
                 self.remove_lane(LaneRole::MarqueeOutline);
             }
             self.set_vector_stat(r, 0);
+        }
+    }
+
+    /// T-173 P6 — flip a world-layer's lane visibility in place (no re-upload), keyed by the
+    /// cartographic layer name the Mission Settings dialog uses. Covers the lanes that draw from a
+    /// standing GPU buffer; residency-recomposed lanes (trees/props/buildings/fences/airfield) are
+    /// toggled through `WorldResidency` instead. Unknown keys are a no-op.
+    pub fn set_world_layer_visible(&mut self, key: &str, visible: bool) {
+        let roles: &[LaneRole] = match key {
+            "roads" => &[LaneRole::RoadsCasing, LaneRole::Roads],
+            "forest" => &[LaneRole::ForestFill, LaneRole::ForestOutline],
+            "contours" => &[LaneRole::Contours],
+            "sea" => &[LaneRole::Sea],
+            "airfield" => &[LaneRole::WorldAirfieldApron],
+            "heights" => &[LaneRole::WorldLabels],
+            "townLabels" => &[LaneRole::WorldTownLabels],
+            "roadNames" => &[LaneRole::WorldRoadLabels],
+            _ => return,
+        };
+        let mut changed = false;
+        for b in &mut self.batches {
+            if roles.contains(&b.role) && b.visible != visible {
+                b.visible = visible;
+                changed = true;
+            }
+        }
+        if changed {
+            self.damage.mark();
         }
     }
 

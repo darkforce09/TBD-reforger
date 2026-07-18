@@ -371,13 +371,39 @@ pub fn road_style(road_class: &str) -> Option<RoadStyle> {
 /// Min deckZoom gate per road class (mirror `lodGates.ts` MIN_ZOOM_GATES).
 #[must_use]
 pub fn road_class_visible(road_class: &str, deck_zoom: f64) -> bool {
-    let min = match road_class {
-        "highway_paved" | "road_paved" | "runway" => -6.0,
-        "road_dirt" | "track" => -2.0,
-        "path" => 4.0,
-        _ => return false,
-    };
-    deck_zoom >= min
+    deck_zoom >= road_class_min_zoom(road_class).unwrap_or(f64::INFINITY)
+}
+
+/// Min visible zoom for a road class — the single gate table shared by [`road_class_visible`] and
+/// [`road_class_signature`] so a road never composes with the wrong visibility set (T-173 P2).
+#[must_use]
+pub fn road_class_min_zoom(road_class: &str) -> Option<f64> {
+    match road_class {
+        "highway_paved" | "road_paved" | "runway" => Some(-6.0),
+        "road_dirt" | "track" => Some(-2.0),
+        "path" => Some(4.0),
+        _ => None,
+    }
+}
+
+/// T-173 P2 — bitmask of which road-class gate groups are visible at `deck_zoom`. The composed
+/// road mesh is identical for any two zooms with the same signature (widths are world-meters, so
+/// zoom enters `compose_roads_mesh` only through `road_class_visible`), so the host caches one
+/// packed mesh per signature (≤ 3 distinct values across the editor zoom range) instead of
+/// recomposing all 888 segments every 0.5-zoom band.
+#[must_use]
+pub fn road_class_signature(deck_zoom: f64) -> u8 {
+    let mut sig = 0u8;
+    if deck_zoom >= -6.0 {
+        sig |= 1;
+    }
+    if deck_zoom >= -2.0 {
+        sig |= 2;
+    }
+    if deck_zoom >= 4.0 {
+        sig |= 4;
+    }
+    sig
 }
 
 /// Compose casing + centerline strip vertices for one road segment.
@@ -502,6 +528,42 @@ mod tests {
         assert!(!road_class_visible("road_dirt", -2.1));
         assert!(!road_class_visible("path", 3.9));
         assert!(road_class_visible("path", 4.0));
+    }
+
+    /// T-173 P2 — the signature changes only at the gate boundaries and agrees with
+    /// `road_class_visible` for every class across a zoom sweep (single source of truth).
+    #[test]
+    fn road_signature_matches_visibility_and_boundaries() {
+        // Distinct values only at -6.0 / -2.0 / 4.0.
+        assert_eq!(road_class_signature(-7.0), 0);
+        assert_eq!(road_class_signature(-6.0), 1);
+        assert_eq!(road_class_signature(-2.0), 3);
+        assert_eq!(road_class_signature(3.9), 3);
+        assert_eq!(road_class_signature(4.0), 7);
+        // Agreement: equal signature ⇒ identical per-class visibility set.
+        let classes = [
+            "highway_paved",
+            "road_paved",
+            "runway",
+            "road_dirt",
+            "track",
+            "path",
+        ];
+        let mut z = -8.0;
+        while z <= 8.0 {
+            let sig = road_class_signature(z);
+            let sig2 = road_class_signature(z + 0.01);
+            if sig == sig2 {
+                for c in classes {
+                    assert_eq!(
+                        road_class_visible(c, z),
+                        road_class_visible(c, z + 0.01),
+                        "class {c} visibility diverged within signature {sig} at z={z}"
+                    );
+                }
+            }
+            z += 0.1;
+        }
     }
 
     /// T-152.5 G5: runway polish width = 20 m world at deckZoom=0.

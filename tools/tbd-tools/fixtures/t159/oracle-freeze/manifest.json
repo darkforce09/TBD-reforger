@@ -125,8 +125,10 @@
       "slug": "missions",
       "path": "/missions",
       "authed": true,
-      "bytes": 84005,
-      "sha256": "dc78f14dff1614e1e5277b424a4599d2d8df2ada39969b298ec28e5d71587bd1"
+      "bytes": 84607,
+      "sha256": "42ae50e5acec32c0c92c06304413a37125a21bd0d65b4808c58de0eccf186812",
+      "goldenSource": "leptos",
+      "acceptedDelta": "T-173 P4: /missions scrollport backdrop-blur-xl removed (per-frame re-blur caused scroll lag); glass tint moved to a static z-0 bg layer behind the composited scroller"
     },
     {
       "slug": "missionview",

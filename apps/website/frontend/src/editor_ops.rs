@@ -157,6 +157,18 @@ pub fn read_env() -> MissionEnv {
                     .and_then(|e| e.get("thermals"))
                     .and_then(serde_json::Value::as_bool)
                     .unwrap_or(false),
+                show_hillshade: env
+                    .and_then(|e| e.get("showHillshade"))
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(true),
+                hillshade_opacity: env
+                    .and_then(|e| e.get("hillshadeOpacity"))
+                    .and_then(serde_json::Value::as_f64)
+                    .unwrap_or(0.4),
+                show_grid: env
+                    .and_then(|e| e.get("showGrid"))
+                    .and_then(serde_json::Value::as_bool)
+                    .unwrap_or(true),
             })
         })
         .unwrap_or_default()

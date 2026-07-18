@@ -177,7 +177,11 @@ fn vs_icon(in: IconVsIn) -> IconVsOut {
     let rect = icon_u.uv[gi];
     var out: IconVsOut;
     out.pos = u.mvp * vec4<f32>(world, 0.0, 1.0);
-    out.uv = mix(rect.xy, rect.zw, in.unit);
+    // T-173 P10 — north-up: unit.y=1 is +y (top of screen), which must sample the TOP of the atlas
+    // glyph (v0). Without the `1.0 - unit.y` flip (which the basemap and text lanes already apply)
+    // every icon sampled upside-down — only visible on directional building badges; tree/prop/slot
+    // art is ~symmetric so it read fine.
+    out.uv = mix(rect.xy, rect.zw, vec2<f32>(in.unit.x, 1.0 - in.unit.y));
     let tr = f32(in.tint & 0xffu) / 255.0;
     let tg = f32((in.tint >> 8u) & 0xffu) / 255.0;
     let tb = f32((in.tint >> 16u) & 0xffu) / 255.0;

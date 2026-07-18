@@ -78,7 +78,10 @@ pub use obb::{
 };
 pub use prefab::{PrefabEntry, PrefabRow, build_prefab_maps, narrow_prefab_rows};
 pub use regions::{LandCoverRegion, parse_regions_payload};
-pub use residency::{APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, LRU_MIN_CHUNKS, WorldResidency};
+pub use residency::{
+    APPLY_BUDGET_MS, BUILDING_MIN_ZOOM, FETCH_FAILURE_CAP, IngestOutcome, LRU_MIN_CHUNKS,
+    WorldResidency,
+};
 pub use road_labels::{
     ROAD_NAME_DECLUTTER_BASE_M, ROAD_NAME_LONG_SEGMENT_M, ROAD_NAME_MAX_ON_SCREEN,
     ROAD_NAME_MIN_ZOOM_HIGHWAY, ROAD_NAME_MIN_ZOOM_SECONDARY, ROAD_NAME_OFFSET_M,
