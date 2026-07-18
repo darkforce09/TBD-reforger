@@ -108,36 +108,57 @@ const VEHICLES: &[Vehicle] = &[
 
 #[component]
 pub fn VehicleDatabasePage() -> impl IntoView {
-    // Default: search empty, selectedId = "btr-70".
-    let selected = &VEHICLES[0];
+    // Live selection + search (T-172 A5). Default: search empty, selectedId = "btr-70".
+    let selected_id = RwSignal::new(VEHICLES[0].id);
+    let search = RwSignal::new(String::new());
     view! {
         <crate::ui::AuthGate>
             <GlassSplit
                 master_width="18rem"
-                master_header=master_header().into_any()
-                master=vehicle_list("btr-70").into_any()
-                detail=dossier(selected).into_any()
+                master_header=master_header(search).into_any()
+                master=view! { {move || vehicle_list(selected_id, &search.get())} }.into_any()
+                detail=view! {
+                    {move || {
+                        dossier(
+                            VEHICLES
+                                .iter()
+                                .find(|v| v.id == selected_id.get())
+                                .unwrap_or(&VEHICLES[0]),
+                        )
+                    }}
+                }
+                    .into_any()
             />
         </crate::ui::AuthGate>
     }
 }
 
-fn master_header() -> impl IntoView {
+fn master_header(search: RwSignal<String>) -> impl IntoView {
     view! {
         <div class="w-full space-y-3">
             <p class="font-mono text-xs font-bold tracking-widest text-on-surface-variant uppercase">
                 "Vehicle Database"
             </p>
-            <SidebarSearch placeholder="Search assets..." />
+            <SidebarSearch placeholder="Search assets..." bind=search />
         </div>
     }
 }
 
-fn vehicle_list(selected_id: &'static str) -> impl IntoView {
+fn vehicle_list(selected_id: RwSignal<&'static str>, query: &str) -> impl IntoView {
+    let query = query.to_string();
     VEHICLE_FACTION_ORDER
         .iter()
         .filter_map(move |faction| {
-            let rows: Vec<&Vehicle> = VEHICLES.iter().filter(|v| v.faction == *faction).collect();
+            let rows: Vec<&Vehicle> = VEHICLES
+                .iter()
+                .filter(|v| v.faction == *faction)
+                .filter(|v| {
+                    crate::split_pane::search_matches(
+                        &query,
+                        &format!("{} {} {}", v.name, v.class, v.faction),
+                    )
+                })
+                .collect();
             if rows.is_empty() {
                 return None;
             }
@@ -150,9 +171,10 @@ fn vehicle_list(selected_id: &'static str) -> impl IntoView {
                         {rows
                             .into_iter()
                             .map(|v| {
+                                let id = v.id;
                                 view! {
                                     <ListDetailItem
-                                        active=v.id == selected_id
+                                        active=v.id == selected_id.get()
                                         title=view! { {v.name} }.into_any()
                                         preview=view! {
                                             <span class="font-mono uppercase text-outline">
@@ -160,6 +182,7 @@ fn vehicle_list(selected_id: &'static str) -> impl IntoView {
                                             </span>
                                         }
                                             .into_any()
+                                        on_click=Callback::new(move |()| selected_id.set(id))
                                     />
                                 }
                             })

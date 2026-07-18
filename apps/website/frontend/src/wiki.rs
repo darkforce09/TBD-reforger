@@ -66,7 +66,7 @@ No plan survives first contact. The point of Phases 1 and 2 is not a rigid scrip
 > [!WARNING]
 > When the plan breaks, the worst choice is to freeze and wait for perfect information. Make a decision, communicate it in one line, and keep the squad moving. Momentum beats hesitation in a 1-life fight."#;
 
-// Only the default (plan-timeline) body is rendered; the others' bodies are content-golden gated.
+// All five bodies ported from React doctrine.tsx (T-172 A4 — selection needs real articles).
 const MANUALS: &[Manual] = &[
     Manual {
         id: "plan-timeline",
@@ -80,28 +80,74 @@ const MANUALS: &[Manual] = &[
         category: "Leadership Fundamentals",
         title: "The Squad Leader Mindset",
         updated: "2026-06-15",
-        body: "",
+        body: r#"Your job is not to be the best shooter — it is to make the rest of the squad more effective than they would be alone. You fight with your radio and your map first, your rifle second. A squad lead who is heads-down in a firefight is a squad lead who has stopped leading.
+
+## What You Own
+
+- **The plan** — and making sure everyone understands the intent behind it.
+- **Tempo** — knowing when to push hard and when to slow down and reset.
+- **Information** — building the picture and pushing the relevant parts down.
+
+> [!TIP]
+> Position yourself where you can *see and influence*, not where the action is hottest. Usually that is just behind your lead element, with eyes on the objective.
+
+> [!CRITICAL]
+> Calm is contagious, and so is panic. The squad takes its emotional temperature from you — if you keep your voice level under fire, they will too."#,
     },
     Manual {
         id: "lead-decisions",
         category: "Leadership Fundamentals",
         title: "Decision-Making Under Pressure",
         updated: "2026-06-10",
-        body: "",
+        body: r#"In a 1-life fight you will rarely have complete information, and waiting for it is itself a decision — usually a bad one. Train yourself to act on a good-enough read of the situation.
+
+## A Fast Decision Loop
+
+- **Read** — what just changed, and what is the biggest threat right now?
+- **Decide** — pick the option that keeps initiative and protects the squad.
+- **Act** — give one clear order and commit; correct on the move.
+
+> [!WARNING]
+> A decent decision made now beats a perfect decision made too late. Indecision gets people killed faster than a wrong call you correct quickly."#,
     },
     Manual {
         id: "comms-dynamic",
         category: "Dynamic Communications Strategy",
         title: "Operating With Looted Radios",
         updated: "2026-06-16",
-        body: "",
+        body: r#"We do not use fixed frequencies. The enemy can loot a radio off a body and listen to everything you say — so our comms plan assumes the net is compromised from the start. Frequencies are randomized each match and treated as throwaway.
+
+## Assume You Are Being Heard
+
+- Distribute the match frequency in the staging area, never over an open channel.
+- If a member goes down in enemy territory, treat that frequency as **burned** and jump to your pre-agreed fallback.
+- Reference locations by features or a private grid-shift, not raw map grids the enemy can also read.
+- Keep transmissions short. Long, chatty traffic gives away your strength, intent, and rough position.
+
+> [!CRITICAL]
+> The moment a radio is lost behind enemy lines, every callsign and reference on that net is assumed compromised. Switch frequency and stop using any code words tied to it.
+
+> [!TIP]
+> Agree on a one-word **flash** signal before the op that means "the net is blown, jump to fallback now." One word, everyone moves, no debate on the radio."#,
     },
     Manual {
         id: "combat-formations",
         category: "Combat Formations & Maneuvers",
         title: "Fire & Movement",
         updated: "2026-06-05",
-        body: "",
+        body: r#"Everything in a gunfight comes down to one principle: one element fixes the enemy with fire while the other moves. If nobody is shooting, nobody should be moving in the open.
+
+## Bounding
+
+- Split into a **base of fire** and a **maneuver element** before you make contact, not during.
+- Short bounds between hard cover — stay up only as long as your buddy can realistically cover you.
+- The flank, not the frontal push, wins the position. Use fire to pin them in place while you get to their side.
+
+> [!WARNING]
+> Stay dispersed. In a 1-life fight, two operators caught in the same blast or burst is two permanent losses for the rest of the match.
+
+> [!TIP]
+> Read the terrain backwards from the objective: pick your support-by-fire position and your assault lane *before* you move, and the formation almost chooses itself."#,
     },
 ];
 
@@ -310,37 +356,66 @@ fn parse_tag(line: &str) -> Option<(&str, &str)> {
 
 /* ───────────────────────────────── page ───────────────────────────────── */
 
+/// Resolve the active manual from the `/wiki/:slug` route param — unknown/absent slug falls back
+/// to the first manual (the `/wiki` default, `plan-timeline`). T-172 A4 + H11.
+fn resolve_wiki_selection(slug: Option<&str>) -> &'static Manual {
+    slug.and_then(|s| MANUALS.iter().find(|m| m.id == s))
+        .unwrap_or(&MANUALS[0])
+}
+
 #[component]
 pub fn WikiPage() -> impl IntoView {
-    let active = &MANUALS[0]; // activeId = "plan-timeline"
+    // Selection derives from the route (deep-linkable; back/forward work); rows navigate.
+    let params = leptos_router::hooks::use_params_map();
+    let selected =
+        Memo::new(move |_| resolve_wiki_selection(params.read().get("slug").as_deref()).id);
+    let search = RwSignal::new(String::new());
     view! {
         <crate::ui::AuthGate>
             <GlassSplit
                 master_width="17rem"
-                master_header=master_header().into_any()
-                master=manual_index("plan-timeline").into_any()
-                detail=article(active).into_any()
+                master_header=master_header(search).into_any()
+                master=view! { {move || manual_index(selected.get(), &search.get())} }.into_any()
+                detail=view! {
+                    {move || {
+                        article(
+                            MANUALS.iter().find(|m| m.id == selected.get()).unwrap_or(&MANUALS[0]),
+                        )
+                    }}
+                }
+                    .into_any()
             />
         </crate::ui::AuthGate>
     }
 }
 
-fn master_header() -> impl IntoView {
+fn master_header(search: RwSignal<String>) -> impl IntoView {
     view! {
         <div class="w-full space-y-3">
             <p class="font-mono text-xs font-bold tracking-widest text-on-surface-variant uppercase">
                 "SOPs & Manuals"
             </p>
-            <SidebarSearch placeholder="Search manuals..." />
+            <SidebarSearch placeholder="Search manuals..." bind=search />
         </div>
     }
 }
 
-fn manual_index(active_id: &'static str) -> impl IntoView {
+fn manual_index(active_id: &'static str, query: &str) -> impl IntoView {
+    let query = query.to_string();
     CATEGORY_ORDER
         .iter()
         .filter_map(move |category| {
-            let rows: Vec<&Manual> = MANUALS.iter().filter(|m| m.category == *category).collect();
+            // React filters on `${title} ${category}` (case-insensitive substring).
+            let rows: Vec<&Manual> = MANUALS
+                .iter()
+                .filter(|m| m.category == *category)
+                .filter(|m| {
+                    crate::split_pane::search_matches(
+                        &query,
+                        &format!("{} {}", m.title, m.category),
+                    )
+                })
+                .collect();
             if rows.is_empty() {
                 return None;
             }
@@ -353,10 +428,17 @@ fn manual_index(active_id: &'static str) -> impl IntoView {
                         {rows
                             .into_iter()
                             .map(|m| {
+                                let id = m.id;
+                                // use_navigate is captured at view-build time (Router context is
+                                // live here); the callback just invokes the stored navigator.
+                                let navigate = leptos_router::hooks::use_navigate();
                                 view! {
                                     <ListDetailItem
                                         active=m.id == active_id
                                         title=view! { {m.title} }.into_any()
+                                        on_click=Callback::new(move |()| {
+                                            navigate(&format!("/wiki/{id}"), Default::default());
+                                        })
                                     />
                                 }
                             })
@@ -413,5 +495,25 @@ fn read_edit_toggle() -> impl IntoView {
                 "[ EDIT ]"
             </button>
         </div>
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{resolve_wiki_selection, MANUALS};
+
+    #[test]
+    fn slug_resolution() {
+        assert_eq!(resolve_wiki_selection(None).id, "plan-timeline");
+        assert_eq!(resolve_wiki_selection(Some("lead-role")).id, "lead-role");
+        assert_eq!(resolve_wiki_selection(Some("nope")).id, "plan-timeline");
+    }
+
+    #[test]
+    fn all_manuals_have_bodies() {
+        // T-172 A4: selection is only honest if every manual renders a real article.
+        for m in MANUALS {
+            assert!(!m.body.is_empty(), "{} body empty", m.id);
+        }
     }
 }

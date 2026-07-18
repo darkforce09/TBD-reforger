@@ -86,10 +86,12 @@ pub fn GlassSplit(
 }
 
 /// Search box used across the doctrine master panes. Ported from doctrine.tsx `SidebarSearch`.
+/// Pass `bind` to make it live (T-172): the input drives the signal, callers filter on it.
 #[component]
 pub fn SidebarSearch(
     #[prop(optional)] value: &'static str,
     placeholder: &'static str,
+    #[prop(optional)] bind: Option<RwSignal<String>>,
 ) -> impl IntoView {
     view! {
         <div class="relative w-full">
@@ -97,13 +99,45 @@ pub fn SidebarSearch(
                 name="search"
                 class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-base text-on-surface-variant"
             />
+            // Uncontrolled input: the signal mirrors the field (on:input), so the rendered
+            // attribute set stays byte-identical to the static version (V gate).
             <input
                 type="search"
                 value=value
                 placeholder=placeholder
+                on:input=move |ev| {
+                    if let Some(b) = bind {
+                        b.set(event_target_value(&ev));
+                    }
+                }
                 class="w-full rounded-lg border border-white/10 bg-black/30 py-2 pr-3 pl-9 text-sm text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary/50 focus:outline-none"
             />
         </div>
+    }
+}
+
+/// Case-insensitive substring match against a haystack built from a row's searchable fields.
+/// Empty/whitespace query matches everything (the doctrine pages' shared filter contract).
+pub fn search_matches(query: &str, haystack: &str) -> bool {
+    let q = query.trim().to_lowercase();
+    q.is_empty() || haystack.to_lowercase().contains(&q)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::search_matches;
+
+    #[test]
+    fn empty_query_matches_all() {
+        assert!(search_matches("", "anything"));
+        assert!(search_matches("   ", "anything"));
+    }
+
+    #[test]
+    fn case_insensitive_substring() {
+        assert!(search_matches("PLAN", "Timeline & Mission Planning"));
+        assert!(search_matches("timeline", "Timeline & Mission Planning"));
+        assert!(!search_matches("naval", "Timeline & Mission Planning"));
     }
 }
 

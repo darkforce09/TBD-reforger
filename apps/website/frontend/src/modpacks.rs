@@ -135,31 +135,49 @@ fn format_bytes(bytes: i64) -> String {
 
 #[component]
 pub fn ModpacksPage() -> impl IntoView {
-    let selected = &MOCK_MODPACKS[0];
+    // Live selection + search (T-172 A6).
+    let selected_id = RwSignal::new(MOCK_MODPACKS[0].id);
+    let search = RwSignal::new(String::new());
     view! {
         <crate::ui::AuthGate>
             <GlassSplit
                 master_width="18rem"
-                master_header=master_header().into_any()
-                master=pack_list(selected.id).into_any()
-                detail=dossier(selected).into_any()
+                master_header=master_header(search).into_any()
+                master=view! { {move || pack_list(selected_id, &search.get())} }.into_any()
+                detail=view! {
+                    {move || {
+                        dossier(
+                            MOCK_MODPACKS
+                                .iter()
+                                .find(|p| p.id == selected_id.get())
+                                .unwrap_or(&MOCK_MODPACKS[0]),
+                        )
+                    }}
+                }
+                    .into_any()
             />
         </crate::ui::AuthGate>
     }
 }
 
-fn master_header() -> impl IntoView {
+fn master_header(search: RwSignal<String>) -> impl IntoView {
     view! {
         <div class="w-full space-y-3">
             <h1 class="text-headline-sm tracking-wide text-on-surface uppercase">"Modpacks"</h1>
-            <SidebarSearch placeholder="Search packs & mods…" />
+            <SidebarSearch placeholder="Search packs & mods…" bind=search />
         </div>
     }
 }
 
-fn pack_list(selected_id: &'static str) -> impl IntoView {
+fn pack_list(selected_id: RwSignal<&'static str>, query: &str) -> impl IntoView {
+    let query = query.to_string();
     MOCK_MODPACKS
         .iter()
+        .filter(move |p| {
+            // React filters pack name + contained mod names.
+            let mods: String = p.mods.iter().map(|m| m.name).collect::<Vec<_>>().join(" ");
+            crate::split_pane::search_matches(&query, &format!("{} {mods}", p.name))
+        })
         .map(move |p| {
             // trailing is an optional-prop AnyView (Leptos strips the Option) — use an empty () view
             // for the non-current case (React passes `undefined`, i.e. nothing).
@@ -179,12 +197,14 @@ fn pack_list(selected_id: &'static str) -> impl IntoView {
                 </span>
             }
             .into_any();
+            let id = p.id;
             view! {
                 <ListDetailItem
-                    active=p.id == selected_id
+                    active=p.id == selected_id.get()
                     title=view! { {p.name} }.into_any()
                     trailing=trailing
                     preview=preview
+                    on_click=Callback::new(move |()| selected_id.set(id))
                 />
             }
         })
