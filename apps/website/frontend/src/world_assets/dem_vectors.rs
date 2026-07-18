@@ -11,6 +11,8 @@ use map_engine_core::geometry::sea_band::{build_sea_band_geometry, sea_fill_alph
 use map_engine_core::geometry::vector_compose::{compose_contour_hairlines, compose_sea_mesh};
 use map_engine_core::world::{class_visible, contour_interval_for_zoom};
 
+use std::rc::Rc;
+
 use crate::select_tool::EngineHandle;
 
 const ROLE_SEA: u32 = 0;
@@ -19,7 +21,9 @@ const CONTOUR_RGBA: [u8; 4] = [90, 70, 40, 180];
 const TERRAIN_M: f64 = 12_800.0;
 
 pub struct DemVectors {
-    grid: Option<DemVectorGrid>,
+    // Rc: `sync` runs on every camera settle — a plain clone deep-copied the ~10 MB grid each
+    // time (T-172 H3). The Rc is also shared out for cursor-Z sampling (T-172 B2).
+    grid: Option<Rc<DemVectorGrid>>,
     last_interval: f64,
     sea_built_alpha: f64,
 }
@@ -37,16 +41,21 @@ impl DemVectors {
         if self.grid.is_some() {
             return;
         }
-        self.grid = Some(downsample_dem_grid(
+        self.grid = Some(Rc::new(downsample_dem_grid(
             meters,
             width as usize,
             height as usize,
             DEM_VECTOR_GRID_FACTOR,
             TERRAIN_M,
             TERRAIN_M,
-        ));
+        )));
         self.last_interval = 0.0;
         self.sea_built_alpha = -1.0;
+    }
+
+    /// Shared handle to the retained grid (cursor-Z sampling, T-172 B2).
+    pub fn grid(&self) -> Option<Rc<DemVectorGrid>> {
+        self.grid.clone()
     }
 
     pub fn sync(&mut self, engine: &EngineHandle, zoom: f64) {

@@ -149,9 +149,9 @@ pub fn after_local_edit() {
     });
 }
 
-/// Re-read the HUD mirrors from the live doc + selection. For changes that don't touch the document
-/// (click / marquee select) or that replace it wholesale (the IDB restore swap), where the glyph
-/// rebind + persist of [`after_doc_change`] would be wrong or redundant.
+/// Re-read the HUD mirrors from the live doc + selection. For changes that replace the document
+/// wholesale (the mount seed, the IDB restore swap), where the glyph rebind + persist of
+/// [`after_doc_change`] would be wrong or redundant.
 pub fn refresh_hud() {
     HISTORY_CTX.with(|c| {
         let guard = c.borrow();
@@ -165,6 +165,22 @@ pub fn refresh_hud() {
             .map_or(0, MissionDocCore::slot_count);
         refresh_signals(ctx, obj);
     });
+}
+
+/// Selection-only refresh (click / marquee / outliner select / attributes open): pushes SEL and
+/// the dock highlight mirror WITHOUT rebuilding the outliner/ORBAT node trees. Rebuilding both
+/// trees (`refresh_docks`) on every click re-flattened O(n) rows per selection — the T-172 B8
+/// "selection feels laggy" root cause; the row highlight is already a fine-grained `is_sel`
+/// closure over `selected_ids`, so this is all a selection change needs.
+pub fn refresh_selection() {
+    HISTORY_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        ctx.sel_count.set(ctx.selection.borrow().len());
+    });
+    crate::editor_ops::refresh_selection_mirrors();
 }
 
 /// The one post-document-change sequence: materialize → prune the selection → rebind the engine

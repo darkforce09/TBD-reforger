@@ -408,7 +408,7 @@ pub fn open_attributes(id: String) {
         }
         ctx.attrs_open.set(Some(id));
     });
-    crate::mission_history::refresh_hud();
+    crate::mission_history::refresh_selection();
 }
 
 /// Close the modal (Esc / backdrop / close button).
@@ -711,6 +711,16 @@ pub fn refresh_docks() {
     });
 }
 
+/// Selection-only dock mirror: push `selected_ids` (the trees' fine-grained `is_sel` source)
+/// without rebuilding the node trees. Pairs with `mission_history::refresh_selection` (T-172 B8).
+pub fn refresh_selection_mirrors() {
+    OPS_CTX.with(|c| {
+        if let Some(ctx) = c.borrow().as_ref() {
+            ctx.selected_ids.set(ctx.selection.borrow().clone());
+        }
+    });
+}
+
 /// Outliner slot row → select it (replacing the selection), mirroring React: "selecting a slot
 /// selects it globally (no auto camera move)" (`EditorLayersSection.tsx:5`). Runs the same
 /// selection-only tail a map click does — no doc edit, so no rebind / persist / undo step.
@@ -727,10 +737,10 @@ pub fn select_slot(id: String) {
         // after `guard` drops before it (reverse declaration order).
         let mut eng = ctx.engine.borrow_mut();
         if let Some(e) = eng.as_mut() {
-            e.set_selection(ids); // tint lane (no-op until an atlas uploads)
+            e.set_selection(ids); // tint lane
         }
     });
-    crate::mission_history::refresh_hud(); // pushes SEL + calls `refresh_docks`
+    crate::mission_history::refresh_selection(); // SEL + dock highlight only — no tree rebuild
 }
 
 /// Outliner folder row → make it the drop target (React's `setActiveLayer`).

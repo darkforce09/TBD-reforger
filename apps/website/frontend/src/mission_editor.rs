@@ -819,11 +819,11 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 }
                                 let ids = selection.borrow().clone();
                                 if let Some(e) = engine.borrow_mut().as_mut() {
-                                    e.set_selection(ids); // tint lane (no-op until an atlas uploads)
+                                    e.set_selection(ids); // tint lane
                                 }
                                 // T-159.21 — SEL readout only: a click changes the selection, not the
-                                // document (no rebind / persist / undo step).
-                                crate::mission_history::refresh_hud();
+                                // document (no rebind / persist / undo step / tree rebuild).
+                                crate::mission_history::refresh_selection();
                             }
                         }
                         // T-159.19 M4/M5 — drag-move commit. Release capture; if it actually moved,
@@ -886,7 +886,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     e.set_selection(ids);
                                 }
                                 // T-159.21 — SEL readout only (selection change, not a doc edit).
-                                crate::mission_history::refresh_hud();
+                                crate::mission_history::refresh_selection();
                             }
                             if let Some(e) = engine.borrow_mut().as_mut() {
                                 e.upload_marquee(0.0, 0.0, 0.0, 0.0, false); // hide

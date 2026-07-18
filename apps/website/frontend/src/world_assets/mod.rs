@@ -60,8 +60,24 @@ pub fn new_host_handle() -> HostHandle {
 pub async fn bootstrap(engine: EngineHandle, terrain: String, host: HostHandle) {
     let mut mh = MapHost::new();
     let bridge = mh.bridge.clone();
+    let base = format!("/map-assets/{terrain}");
 
-    if let Some((meters, w, h, hs_w, hs_h)) = load_dem_and_hillshade(&engine, &terrain).await {
+    // One manifest fetch feeds both the DEM/hillshade and satellite paths (T-172 H4 — this was
+    // fetched twice), and the two loads run concurrently: the multi-MB satellite fetch overlaps
+    // the DEM decode + hillshade CPU work instead of waiting behind it (T-172 B1).
+    let manifest: Option<ManifestDem> = match fetch_bytes(&format!("{base}/manifest.json")).await {
+        Some(bytes) => serde_json::from_slice(&bytes).ok(),
+        None => None,
+    };
+    let dem_fut = async { load_dem_and_hillshade(&engine, &base, manifest.as_ref()?).await };
+    let sat_fut = async {
+        let (url, tw, th) = sat_url_from(manifest.as_ref()?, &base)?;
+        satellite::load_satellite(engine.clone(), &base, &url, tw, th, bridge.clone()).await;
+        Some(())
+    };
+    let (dem_res, _sat) = futures::join!(dem_fut, sat_fut);
+
+    if let Some((meters, w, h, hs_w, hs_h)) = dem_res {
         {
             let mut b = bridge.borrow_mut();
             b.hillshade_w = hs_w;
@@ -75,18 +91,6 @@ pub async fn bootstrap(engine: EngineHandle, terrain: String, host: HostHandle) 
 
     if let Some(e) = engine.borrow_mut().as_mut() {
         e.set_grid(TERRAIN_M, TERRAIN_M, true, true);
-    }
-
-    if let Some((url, tw, th)) = sat_url_for_terrain(&terrain).await {
-        satellite::load_satellite(
-            engine.clone(),
-            &format!("/map-assets/{terrain}"),
-            &url,
-            tw,
-            th,
-            bridge.clone(),
-        )
-        .await;
     }
 
     let _ = mh.world.init(&terrain).await;
@@ -197,11 +201,9 @@ struct UnifiedBlock {
 
 async fn load_dem_and_hillshade(
     engine: &EngineHandle,
-    terrain: &str,
+    base: &str,
+    manifest: &ManifestDem,
 ) -> Option<(Vec<f32>, u32, u32, u32, u32)> {
-    let base = format!("/map-assets/{terrain}");
-    let bytes = fetch_bytes(&format!("{base}/manifest.json")).await?;
-    let manifest: ManifestDem = serde_json::from_slice(&bytes).ok()?;
     let dem_bytes = fetch_bytes(&format!("{base}/{}", manifest.dem.path)).await?;
     let dem = decode_png_to_meters(&dem_bytes, manifest.dem.min_m, manifest.dem.max_m).ok()?;
     let hs = build_hillshade_image(&dem.meters, dem.width as usize, dem.height as usize);
@@ -221,12 +223,18 @@ async fn load_dem_and_hillshade(
     Some((dem.meters, dem.width, dem.height, w, h))
 }
 
-async fn sat_url_for_terrain(terrain: &str) -> Option<(String, f64, f64)> {
-    let base = format!("/map-assets/{terrain}");
-    let bytes = fetch_bytes(&format!("{base}/manifest.json")).await?;
-    let manifest: ManifestDem = serde_json::from_slice(&bytes).ok()?;
-    let u = manifest.tiles?.satellite?.unified?;
-    let url = u.url.or_else(|| u.path.map(|p| format!("{base}/{p}")))?;
+fn sat_url_from(manifest: &ManifestDem, base: &str) -> Option<(String, f64, f64)> {
+    let u = manifest
+        .tiles
+        .as_ref()?
+        .satellite
+        .as_ref()?
+        .unified
+        .as_ref()?;
+    let url = u
+        .url
+        .clone()
+        .or_else(|| u.path.as_ref().map(|p| format!("{base}/{p}")))?;
     let [_, _, max_x, max_y] = manifest.world_bounds;
     Some((url, max_x, max_y))
 }
