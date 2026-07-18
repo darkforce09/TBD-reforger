@@ -152,9 +152,66 @@ pub fn reduce_grid_2x(grid: &DemVectorGrid) -> DemVectorGrid {
     }
 }
 
+/// Bilinear elevation sample of the retained vector grid at world meters `(x, y)` — the
+/// cursor-Z source (T-172 B2). `None` outside the grid's world coverage. On the 8 m
+/// box-averaged cells this is sub-meter on ordinary slopes (a HUD readout, not survey data);
+/// full-res parity would retain the u16 raster and use `sample_elevation_meters`.
+#[must_use]
+pub fn sample_grid_meters(grid: &DemVectorGrid, x: f64, y: f64) -> Option<f64> {
+    if grid.cols == 0 || grid.rows == 0 || grid.cell_x <= 0.0 || grid.cell_y <= 0.0 {
+        return None;
+    }
+    let px = (x - grid.origin_x) / grid.cell_x;
+    let py = (y - grid.origin_y) / grid.cell_y;
+    if px < 0.0 || py < 0.0 || px > (grid.cols - 1) as f64 || py > (grid.rows - 1) as f64 {
+        return None;
+    }
+    Some(crate::dem::sample::bilinear_sample(
+        &grid.data, grid.cols, grid.rows, px, py,
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sample_grid_constant_and_bounds() {
+        let g = DemVectorGrid {
+            data: vec![5.0f32; 16],
+            cols: 4,
+            rows: 4,
+            cell_x: 10.0,
+            cell_y: 10.0,
+            origin_x: 0.0,
+            origin_y: 0.0,
+            max_elev_m: 5.0,
+        };
+        // Constant grid samples constant everywhere in coverage (corners + interior).
+        assert_eq!(sample_grid_meters(&g, 0.0, 0.0), Some(5.0));
+        assert_eq!(sample_grid_meters(&g, 30.0, 30.0), Some(5.0));
+        assert_eq!(sample_grid_meters(&g, 15.5, 22.3), Some(5.0));
+        // Out of coverage → None (grid spans [0, (cols-1)*cell] = [0, 30]).
+        assert_eq!(sample_grid_meters(&g, -0.1, 0.0), None);
+        assert_eq!(sample_grid_meters(&g, 0.0, 30.1), None);
+    }
+
+    #[test]
+    fn sample_grid_interpolates_linearly() {
+        // 2×1-row ramp 0..3 across x, constant in y.
+        let g = DemVectorGrid {
+            data: vec![0.0, 1.0, 2.0, 3.0, 0.0, 1.0, 2.0, 3.0],
+            cols: 4,
+            rows: 2,
+            cell_x: 8.0,
+            cell_y: 8.0,
+            origin_x: 0.0,
+            origin_y: 0.0,
+            max_elev_m: 3.0,
+        };
+        let v = sample_grid_meters(&g, 12.0, 4.0).unwrap(); // px = 1.5 → midway 1..2
+        assert!((v - 1.5).abs() < 1e-9);
+    }
 
     #[test]
     fn dims_and_factor() {

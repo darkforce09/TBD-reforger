@@ -50,7 +50,7 @@ pub fn MissionEditorPage() -> impl IntoView {
     let can_redo = RwSignal::new(false);
     let obj_count = RwSignal::new(0usize);
     let sel_count = RwSignal::new(0usize);
-    let cursor = RwSignal::new(None::<(f64, f64)>);
+    let cursor = RwSignal::new(None::<(f64, f64, Option<f64>)>);
 
     // T-159.22 — dock state. `outliner_nodes` / `selected_ids` are the same kind of pull-mirror as
     // OBJ/SEL above (pushed by `editor_ops::refresh_docks` from `mission_history::refresh_signals`,
@@ -198,6 +198,8 @@ pub fn MissionEditorPage() -> impl IntoView {
                 Rc::new(RefCell::new(None));
             // T-166 — shared map-asset host (camera-settle refresh after wheel/pan).
             let map_host = crate::world_assets::new_host_handle();
+            // T-172 B2 — DEM grid handle for the CUR Z sample (published by bootstrap).
+            let dem_grid = crate::world_assets::new_dem_grid_handle();
             let disposed = Arc::new(AtomicBool::new(false));
 
             // T-159.16 — MissionDoc host. Built + seeded + bridged synchronously (before the async
@@ -283,7 +285,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         }
                         let modk = ev.ctrl_key() || ev.meta_key();
                         let (cx, cy) = match cursor.get_untracked() {
-                            Some((x, y)) => (Some(x), Some(y)),
+                            Some((x, y, _)) => (Some(x), Some(y)),
                             None => (None, None),
                         };
                         // Each arm returns whether it acted; prevent the browser default once.
@@ -406,6 +408,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let doc = doc.clone();
                 let canvas = canvas.clone();
                 let map_host = map_host.clone();
+                let dem_grid = dem_grid.clone();
                 let (cw, ch) = (rect0.width(), rect0.height());
                 async move {
                     match map_engine_render::RenderEngine::create(canvas, force_webgl).await {
@@ -459,6 +462,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                                     engine.clone(),
                                     terrain,
                                     host,
+                                    dem_grid.clone(),
                                 ));
                             }
                         }
@@ -583,6 +587,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 let doc = doc.clone();
                 let selection = selection.clone();
                 let container = container.clone();
+                let dem_grid = dem_grid.clone();
                 move |ev: web_sys::PointerEvent| {
                     use crate::select_tool::{self as st, LeftGesture as LG};
                     let rect = container.get_bounding_client_rect();
@@ -614,7 +619,16 @@ pub fn MissionEditorPage() -> impl IntoView {
                     cursor.set(
                         world
                             .filter(|c| c[0].is_finite() && c[1].is_finite())
-                            .map(|c| (c[0], c[1])),
+                            .map(|c| {
+                                // T-172 B2 — DEM-fed Z beside X/Y; None (em-dash) until the grid
+                                // publishes or when the point is outside DEM coverage.
+                                let z = dem_grid.borrow().as_ref().and_then(|g| {
+                                    map_engine_core::dem::downsample::sample_grid_meters(
+                                        g, c[0], c[1],
+                                    )
+                                });
+                                (c[0], c[1], z)
+                            }),
                     );
                     if let Some((lx, ly)) = pan_px.get() {
                         let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
@@ -1096,7 +1110,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                     <crate::eden_chrome::DockRight catalog fm_open />
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
-                    <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count />
+                    <crate::eden_chrome::BottomToolbelt cursor sel_count obj_count selected_ids />
                 </div>
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture.

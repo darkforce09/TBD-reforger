@@ -32,6 +32,15 @@ const TERRAIN_M: f64 = 12_800.0;
 /// Shared host handle for camera-settle refresh.
 pub type HostHandle = Rc<RefCell<Option<MapHost>>>;
 
+/// Shared handle to the retained DEM vector grid — published once by `bootstrap`, read by the
+/// editor's pointer-move for the CUR Z readout (T-172 B2). Separate from `HostHandle` because
+/// `flush_viewport` takes the host out during async passes (the grid must stay reachable).
+pub type DemGridHandle = Rc<RefCell<Option<Rc<map_engine_core::dem::DemVectorGrid>>>>;
+
+pub fn new_dem_grid_handle() -> DemGridHandle {
+    Rc::new(RefCell::new(None))
+}
+
 pub struct MapHost {
     bridge: BridgeHandle,
     world: WorldHost,
@@ -57,7 +66,12 @@ pub fn new_host_handle() -> HostHandle {
 }
 
 /// Mount-time bootstrap: hillshade + sat + DEM vectors + world + forest, then first settle.
-pub async fn bootstrap(engine: EngineHandle, terrain: String, host: HostHandle) {
+pub async fn bootstrap(
+    engine: EngineHandle,
+    terrain: String,
+    host: HostHandle,
+    dem_out: DemGridHandle,
+) {
     let mut mh = MapHost::new();
     let bridge = mh.bridge.clone();
     let base = format!("/map-assets/{terrain}");
@@ -85,6 +99,7 @@ pub async fn bootstrap(engine: EngineHandle, terrain: String, host: HostHandle) 
         }
         publish(&bridge);
         mh.dem.ensure_grid(&meters, w, h);
+        *dem_out.borrow_mut() = mh.dem.grid();
         let zoom = engine.borrow().as_ref().map(|e| e.zoom()).unwrap_or(-2.0);
         mh.dem.sync(&engine, zoom);
     }
