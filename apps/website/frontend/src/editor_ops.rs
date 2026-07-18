@@ -247,6 +247,7 @@ pub fn center_on_selection() -> bool {
         let mut eng = ctx.engine.borrow_mut();
         if let Some(e) = eng.as_mut() {
             e.set_view(sx / n, sy / n, e.zoom()); // keep zoom, center on centroid
+            e.on_camera_changed(); // T-172 H5 — slot sizing/cluster gate
             true
         } else {
             false

@@ -805,12 +805,36 @@ pub async fn smoke_doc(dist: &str, path: &str) -> Result<u8> {
         } else {
             eprintln!("smoke_doc_editor: window.__missionDoc never appeared");
         }
+        // T-172 B4 — the slot glyph lane must be live: atlas uploaded at mount and the seeded
+        // SoA bound (the pre-T-172 editor never called ensure_slot_atlas → invisible slots).
+        let slot_stats: Value = {
+            let engine_up = h
+                .page
+                .wait_for("typeof window.__wgpuSlotStats === 'function'", 120, 250)
+                .await?;
+            if engine_up {
+                let raw = eval_str(&h.page, "window.__wgpuSlotStats()").await?;
+                serde_json::from_str(&raw).unwrap_or(Value::Null)
+            } else {
+                Value::Null
+            }
+        };
+        let atlas_ready = slot_stats["atlas_ready"].as_bool() == Some(true);
+        let lane_bound = slot_stats["slot_len"].as_i64() == Some(SEED_N);
         let seeded = slot_count == SEED_N;
-        let pass = ready && h.no_panics() && seeded && roundtrip_ok && encode_stable;
+        let pass = ready
+            && h.no_panics()
+            && seeded
+            && roundtrip_ok
+            && encode_stable
+            && atlas_ready
+            && lane_bound;
         print_verdict(&json!({
             "gate": "editor-doc-smoke", "path": path,
             "slotCount": slot_count, "seeded": seeded, "roundtripOk": roundtrip_ok,
             "encodeStable": encode_stable, "encodeHexLen": hex_len, "encodeHexHead": hex_head,
+            "slotAtlasReady": atlas_ready, "slotLaneBound": lane_bound,
+            "slotStats": slot_stats,
             "panics": h.panics_head(), "pass": pass,
         }));
         Ok::<u8, anyhow::Error>(to_code(pass))

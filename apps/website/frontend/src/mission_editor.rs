@@ -426,13 +426,27 @@ pub fn MissionEditorPage() -> impl IntoView {
                             // the WebGL2-fallback + future cull-counter readback honest.
                             eng.disable_frame_timing();
                             eng.set_continuous_render(false); // damage-driven, matches the prod oracle
+                                                              // T-172 B4 — upload the ring+disc slot atlas BEFORE the first SoA bind:
+                                                              // the whole slot lane (bind / selection tint / drag overlay) is gated on
+                                                              // `atlas_ready`, and no frontend ever called this — placed slots were
+                                                              // selectable but invisible. Pixels built in core (slotAtlas.ts parity).
+                            {
+                                let atlas = map_engine_core::slots_gpu::build_slot_atlas();
+                                if let Err(e) = eng.ensure_slot_atlas(
+                                    &atlas.rgba,
+                                    atlas.width,
+                                    atlas.height,
+                                    &atlas.uv,
+                                ) {
+                                    leptos::logging::error!("ensure_slot_atlas: {e:?}");
+                                }
+                            }
                             *engine.borrow_mut() = Some(eng);
                             register_self_checks(engine.clone());
                             register_editor_cam(engine.clone(), map_host.clone());
-                            // T-159.16 — optional doc→engine bind (D5). `slots_bind_soa` early-returns
-                            // while the slot atlas is unuploaded (the editor uploads none yet), so this
-                            // is a safe cache write that proves the SoA wire compiles + runs; the tiny
-                            // seeded slot set renders nothing until a later slice uploads the atlas.
+                            register_slot_stats(engine.clone());
+                            // T-159.16 — doc→engine bind (D5): with the atlas up, this first bind
+                            // materializes + draws the seeded slot set.
                             let soa = doc.borrow().as_ref().map(|c| c.materialize());
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
@@ -521,6 +535,9 @@ pub fn MissionEditorPage() -> impl IntoView {
                         if pan_px.get().is_some() {
                             pan_px.set(Some((ev.client_x() as f64, ev.client_y() as f64)));
                         }
+                        // T-172 H5 — keep the slot ring px→m sizing + cluster gate in step with
+                        // the camera (never called before; stale once the atlas exists).
+                        e.on_camera_changed();
                         crate::world_assets::schedule_camera_settle(
                             map_host.clone(),
                             engine.clone(),
@@ -634,6 +651,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         let (cx, cy) = (ev.client_x() as f64, ev.client_y() as f64);
                         if let Some(e) = engine.borrow_mut().as_mut() {
                             e.pan(cx - lx, cy - ly);
+                            e.on_camera_changed(); // T-172 H5 — slot sizing/cluster gate
                         }
                         pan_px.set(Some((cx, cy)));
                         return;
@@ -1259,6 +1277,7 @@ fn register_editor_cam(
         move |tx: f64, ty: f64, z: f64| {
             if let Some(e) = engine.borrow_mut().as_mut() {
                 e.set_view(tx, ty, z);
+                e.on_camera_changed(); // T-172 H5
             }
             // Immediate flush so smoke_fullmap A_trees_on does not race the 120 ms debounce.
             crate::world_assets::flush_viewport(map_host.clone(), engine.clone());
@@ -1271,6 +1290,27 @@ fn register_editor_cam(
     }
     cam.forget();
     cam_set.forget();
+}
+
+/// T-172 B4 — automated slot-lane proof hook: `window.__wgpuSlotStats()` returns the engine's
+/// `slot_stats_json` (atlas_ready / slot_len / cluster_mode / …) for the doc smoke.
+#[cfg(target_arch = "wasm32")]
+fn register_slot_stats(
+    engine: std::rc::Rc<std::cell::RefCell<Option<map_engine_render::RenderEngine>>>,
+) {
+    use wasm_bindgen::prelude::*;
+
+    let stats = Closure::wrap(Box::new(move || -> JsValue {
+        engine
+            .borrow()
+            .as_ref()
+            .map(|e| JsValue::from_str(&e.slot_stats_json()))
+            .unwrap_or_else(|| JsValue::from_str("null"))
+    }) as Box<dyn FnMut() -> JsValue>);
+    if let Some(win) = web_sys::window() {
+        let _ = js_sys::Reflect::set(&win, &JsValue::from_str("__wgpuSlotStats"), stats.as_ref());
+    }
+    stats.forget();
 }
 
 /// T-159.26 — the local-vs-server conflict payload the [`ConflictDialog`] offers to load. Un-gated

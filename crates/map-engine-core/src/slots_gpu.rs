@@ -238,6 +238,57 @@ pub fn selected_mask(ids: &[String], selected: &std::collections::HashSet<String
     ids.iter().map(|id| selected.contains(id)).collect()
 }
 
+/// Slot/cluster atlas dimensions — two 64 px cells side by side (ring | disc), the
+/// `slotAtlas.ts` contract the engine's UV table + pipeline were built against.
+pub const SLOT_ATLAS_W: u32 = 128;
+pub const SLOT_ATLAS_H: u32 = 64;
+/// Flat per-glyph UV table: minU,minV,maxU,maxV for ring (glyph 0) and disc (glyph 1).
+pub const SLOT_ATLAS_UV: [f32; 8] = [0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 1.0, 1.0];
+
+/// Procedurally built slot atlas pixels (T-172 B4). The engine's `ensure_slot_atlas` takes
+/// caller-built RGBA — the React app built this on a 2D canvas; the Leptos host builds it here.
+pub struct SlotAtlas {
+    /// `SLOT_ATLAS_W × SLOT_ATLAS_H` straight-alpha RGBA, white-on-alpha (tint multiplies).
+    pub rgba: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+    pub uv: [f32; 8],
+}
+
+/// Build the two-glyph atlas: glyph 0 = ring (outer r 24, inner r 10), glyph 1 = solid disc
+/// (r 26) — the `slotAtlas.ts` radii. 1 px analytic edge coverage stands in for canvas arc AA
+/// (visually equivalent at the 20–28 px render sizes).
+#[must_use]
+pub fn build_slot_atlas() -> SlotAtlas {
+    let (w, h) = (SLOT_ATLAS_W as usize, SLOT_ATLAS_H as usize);
+    let mut rgba = vec![0u8; w * h * 4];
+    // Coverage of a disc of radius `r` at distance `d`, with a 1 px linear edge.
+    let cov = |d: f64, r: f64| (r + 0.5 - d).clamp(0.0, 1.0);
+    for y in 0..h {
+        for x in 0..w {
+            let (cx, ring) = if x < 64 { (32.0, true) } else { (96.0, false) };
+            let dx = x as f64 + 0.5 - cx;
+            let dy = y as f64 + 0.5 - 32.0;
+            let d = (dx * dx + dy * dy).sqrt();
+            let a = if ring {
+                cov(d, 24.0) - cov(d, 10.0)
+            } else {
+                cov(d, 26.0)
+            };
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+            let a8 = (a.clamp(0.0, 1.0) * 255.0).round() as u8;
+            let i = (y * w + x) * 4;
+            rgba[i..i + 4].copy_from_slice(&[255, 255, 255, a8]);
+        }
+    }
+    SlotAtlas {
+        rgba,
+        width: SLOT_ATLAS_W,
+        height: SLOT_ATLAS_H,
+        uv: SLOT_ATLAS_UV,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -373,5 +424,29 @@ mod tests {
         assert_eq!(bytes.len(), SLOT_ICON_STRIDE);
         let x = f32::from_le_bytes(bytes[0..4].try_into().unwrap());
         assert!((x - 3.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn slot_atlas_shape_and_uv() {
+        let a = build_slot_atlas();
+        assert_eq!(a.rgba.len(), 128 * 64 * 4);
+        assert_eq!((a.width, a.height), (128, 64));
+        assert_eq!(a.uv, [0.0, 0.0, 0.5, 1.0, 0.5, 0.0, 1.0, 1.0]);
+    }
+
+    #[test]
+    fn slot_atlas_ring_and_disc_probes() {
+        let a = build_slot_atlas();
+        let alpha = |x: usize, y: usize| a.rgba[(y * 128 + x) * 4 + 3];
+        // Ring cell (center 32,32): hollow center, opaque band at r≈17, transparent outside r≈24.
+        assert_eq!(alpha(32, 32), 0, "ring center must be hollow");
+        assert_eq!(alpha(32 + 17, 32), 255, "ring band must be opaque");
+        assert_eq!(alpha(32 + 30, 32), 0, "outside ring must be transparent");
+        // Disc cell (center 96,32): opaque center and mid, transparent outside r≈26.
+        assert_eq!(alpha(96, 32), 255, "disc center must be opaque");
+        assert_eq!(alpha(96 + 20, 32), 255, "disc mid must be opaque");
+        assert_eq!(alpha(96 + 30, 32), 0, "outside disc must be transparent");
+        // White-on-alpha everywhere (tint multiplies).
+        assert_eq!(&a.rgba[0..3], &[255, 255, 255]);
     }
 }
