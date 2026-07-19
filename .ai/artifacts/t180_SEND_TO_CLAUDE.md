@@ -1,8 +1,7 @@
-# Send to Claude / Grok — T-180.9
+# T-180 — program complete
 
-**CWD:** repo root (`main`)
+All slices **T-180.0–.9** shipped. Last code: **T-180.9** @ `cba837b3` (tag **T-180.9**).
 
-Prompt: [`t180_9_arsenal_compile.md`](../../docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md)  
-or `./scripts/ticket prompt T-180`
+Verify: [`t180_9_verify_log.md`](t180_9_verify_log.md) · Hub: [`t180_orbat_eden_program.md`](../../docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md)
 
-**Now:** Open Arsenal + orbat[] loadout derive/compile truth (last T-180 slice).
+No further Claude Code prompt for T-180.

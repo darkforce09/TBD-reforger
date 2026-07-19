@@ -5735,8 +5735,7 @@
       "id": "T-180",
       "order": 1760,
       "program": "eden",
-      "status": "ready",
-      "active_slice": "T-180.9",
+      "status": "shipped",
       "surfaces": [
         "ORBAT",
         "RIGHT",
@@ -5753,7 +5752,7 @@
         "compiler"
       ],
       "title": "ORBAT + Eden placement program",
-      "summary": "ORBAT + Eden placement. .1\u2013.7 shipped \u00b7 **T-180.8 SHIPPED** @ cce240a5 (tag T-180.8) templates/vehicles. ACTIVE **T-180.9** arsenal + compile truth. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
+      "summary": "ORBAT + Eden placement program COMPLETE. .1\u2013.9 shipped \u00b7 **T-180.9 SHIPPED** @ cba837b3 (tag T-180.9) Open Arsenal + derive_orbat loadout. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Verify: .ai/artifacts/t180_9_verify_log.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
       "slices": [
         "T-180.0",
@@ -5863,7 +5862,9 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "cba837b3",
+          "notes": "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal\u2192attrs_tab=3; I1\u2013I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
         }
       },
       "depends_on": [

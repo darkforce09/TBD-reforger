@@ -128,7 +128,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-179**
+**Latest shipped:** **T-180**
 
 **ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 
@@ -162,6 +162,8 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 **T-177 — MC chrome + ORBAT dock cutover (T-071.0)** @ `e97a01c6` (tag **T-177**): YouTube elbow tree guides; grab cursor on palette leaves; menus above docks (`z-30`/`z-20`); left ORBAT removed; top-strip **ORBAT Manager** → `OrbatManagerDialog`. Gate harness: full Chrome headless + **`gate doctor`** — [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md). Verify: [`.ai/artifacts/t177_verify_log.md`](.ai/artifacts/t177_verify_log.md). **Next ORBAT:** T-071.1+.
 
 **T-178 — Density-shader forest + YouTube guides** @ `58d839c7` (tag **T-178**): island TBDD density texture + `fs_forest_density` (Nearest/`textureLoad`, iso 2.0, `fwidth` rim); progressive mesh fill retired; Class-R pins `1601`/`625`/`"density"`; Outliner label removed; continuous clickable guide stems. Verify: [`.ai/artifacts/t178_verify_log.md`](.ai/artifacts/t178_verify_log.md).
+
+**T-180 — ORBAT + Eden placement program COMPLETE** @ `cba837b3` (tag **T-180.9**): sides/leader/place→squad · map tint+leader lines · Eden chips · Stitch ORBAT Manager · templates/vehicles · Open Arsenal + `derive_orbat` loadout summary. Hub: [`t180_orbat_eden_program.md`](docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md). Verify: [`.ai/artifacts/t180_9_verify_log.md`](.ai/artifacts/t180_9_verify_log.md).
 
 **T-179 — Soft density canopy + MS outlines** @ `8f45ee83` (tag **T-179**): Linear soft `fs_forest_density` (corner UV + fwidth AA iso); `forest_bins_ok===625` arm gate + retries; one-shot MS hairlines role 6 (measured **99374** @ z=−1; smoke floor ≥50000). Verify: [`.ai/artifacts/t179_verify_log.md`](.ai/artifacts/t179_verify_log.md). Hub: [`t179_forest_canopy_fix.md`](docs/platform/t179_forest_canopy_fix.md).
 

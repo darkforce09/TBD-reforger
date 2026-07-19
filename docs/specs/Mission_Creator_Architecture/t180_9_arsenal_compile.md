@@ -129,9 +129,9 @@ make ci-local-leptos
 
 ## Acceptance
 
-- [ ] I1–I9 PASS with outputs in verify log  
-- [ ] Tag **T-180.9** · program complete note  
-- [ ] Cursor doc sync after ship  
+- [x] I1–I9 PASS with outputs in verify log  
+- [x] Tag **T-180.9** · program complete note  
+- [x] Cursor doc sync after ship  
 
 ---
 

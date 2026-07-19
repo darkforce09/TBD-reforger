@@ -1,6 +1,6 @@
 # T-180 — Claude Code / Grok handoff
 
-**Active:** **T-180.9** — [`t180_9_arsenal_compile.md`](../../docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md)
+**Status:** **PROGRAM COMPLETE** — all slices T-180.0–.9 shipped.
 
 ## Shipped
 
@@ -14,15 +14,12 @@
 | T-180.6 | `056c9a1a` |
 | T-180.7 | `e9c2406d` |
 | T-180.8 | `cce240a5` — [`t180_8_verify_log.md`](t180_8_verify_log.md) |
+| T-180.9 | `cba837b3` (tag **T-180.9**) — [`t180_9_verify_log.md`](t180_9_verify_log.md) |
 
-## Now
-
-Open Arsenal (Attributes tab 3) + `derive_orbat` / Export `orbat[].loadout` summary truth. Prompt in `t180_9_arsenal_compile.md`. **Last code slice** — then Cursor program-complete doc sync.
+## Done
 
 ```text
-.1–.8 ✓ → .9 (NOW) → program complete
+.1–.9 ✓ → program complete
 ```
 
-## Return
-
-SHA + tag `T-180.9` · `t180_9_verify_log.md` · Ready for Cursor doc sync · T-180 program complete
+Open Arsenal (Attributes tab 3) + `derive_orbat` / Export `orbat[].loadout` summary truth shipped. No further T-180 code slices.
