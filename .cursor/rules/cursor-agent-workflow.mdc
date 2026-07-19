@@ -9,6 +9,10 @@ These rules override helpfulness. When in doubt, **stop and ask** — do not gue
 
 **No deferrals without operator word:** [`.cursor/rules/no-silent-deferrals.mdc`](no-silent-deferrals.mdc) — **HARD.** Finish the whole ask. No "fold forward", self-authored Out-of-scope, or MVP-as-done. Soft plan wording is not a skip. Only an explicit user "defer X" / "skip X" authorizes a deferral (quote it).
 
+## Subagent models
+
+Locate/map code → cheap default + `cavecrew-investigator` — **not** Grok. Grok subagents OK for hard analysis or coding when asked. Full table: [`subagent-model-routing.mdc`](subagent-model-routing.mdc).
+
 ## Agent split (non-negotiable)
 
 | Agent | Owns | Must NOT |

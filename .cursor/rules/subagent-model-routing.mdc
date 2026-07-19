@@ -1,0 +1,48 @@
+---
+description: Cheap locate/mapping subagents vs expensive Grok — when to use which model
+alwaysApply: true
+---
+
+# Subagent model routing (HARD)
+
+Operator preference (2026-07-19): **do not burn Grok 4.5 on simple codebase mapping.** Composer / default / cavecrew is enough for path-finding. Grok is for hard reasoning and for **coding** subagents when delegated.
+
+This does **not** change the Cursor vs Claude Code app-code gate ([`cursor-agent-workflow.mdc`](cursor-agent-workflow.mdc)). It only routes **which model** a Task/subagent uses.
+
+## Default: cheap for locate / map / read
+
+Use **no explicit expensive model** (inherit parent / Composer-class) + prefer compressed locate agents:
+
+| Task | Subagent | Model |
+|------|----------|--------|
+| Where is X / what calls Y / list files / map a module | `cavecrew-investigator` (or `explore` if you need prose) | **Default — do NOT pass `cursor-grok-4.5-*`** |
+| Skim docs + registry for ticket leads | Main thread or cheap explore | Default |
+| Diff review one-liners | `cavecrew-reviewer` | Default |
+
+**Rule of thumb:** if the answer is mostly `path:line` tables, **Composer/default + cavecrew-investigator**. You were not wrong to question Grok for that — locate does not need it.
+
+## When Grok 4.5 *is* OK on a subagent
+
+Pass `model: cursor-grok-4.5-high-fast` (or the current Grok slug) **only** when:
+
+1. **Coding subagent** — operator asked Grok to implement / edit app or engine code in a delegated agent (still respect executor gate: Claude Code owns most app code unless operator overrides Cursor/Grok to write code).
+2. **Hard analysis** — architecture tradeoffs, multi-system root cause, UX/product judgment, ambiguous design choice where cheap locate already failed or is insufficient.
+3. **Operator explicitly names Grok** for that sub-task.
+
+## Forbidden (waste)
+
+```text
+❌ Grok subagent whose only job is "find forest_mass.rs" / "where is guide_spans"
+❌ Parallel Grok scouts for simple path maps when cavecrew-investigator would do
+❌ Defaulting every Task to Grok "to be safe"
+```
+
+```text
+✅ cavecrew-investigator (default model) → path:line table
+✅ Main / Composer reads those paths, then Grok (or Claude) only if coding/hard call remains
+✅ Grok coding agent in a *fresh* chat when operator is out of Claude tokens and asked for Grok
+```
+
+## Interaction with cavecrew
+
+Prefer `cavecrew-investigator` / `cavecrew-builder` / `cavecrew-reviewer` for compressed returns (locate → investigate first). **This rule adds: do not upgrade that locate step to Grok.**
