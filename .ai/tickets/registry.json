@@ -5736,7 +5736,7 @@
       "order": 1760,
       "program": "eden",
       "status": "ready",
-      "active_slice": "T-180.5",
+      "active_slice": "T-180.6",
       "surfaces": [
         "ORBAT",
         "RIGHT",
@@ -5753,7 +5753,7 @@
         "compiler"
       ],
       "title": "ORBAT + Eden placement program",
-      "summary": "ORBAT + Eden placement. .1\u2013.3 shipped \u00b7 **T-180.4 SHIPPED** @ 63e7ef00 (tag T-180.4) squad links. ACTIVE **T-180.5** Eden dock side chips. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
+      "summary": "ORBAT + Eden placement. .1\u2013.4 shipped \u00b7 **T-180.5 SHIPPED** @ 1324799c (tag T-180.5) Eden chips. ACTIVE **T-180.6** place/refile\u2194ORBAT sync. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
       "slices": [
         "T-180.0",
@@ -5823,7 +5823,9 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "1324799c",
+          "notes": "Tag T-180.5. apply_eden_chip\u2192active_side; objects_mode; E1\u2013E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
         },
         "T-180.6": {
           "targets": [
@@ -5831,7 +5833,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-180.7": {
           "targets": [

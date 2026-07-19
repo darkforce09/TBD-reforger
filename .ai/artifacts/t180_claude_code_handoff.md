@@ -1,25 +1,25 @@
 # T-180 — Claude Code / Grok handoff
 
-**Active:** **T-180.5** — [`t180_5_right_dock_side_chips.md`](../../docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md)  
-**Pins / hub:** `t180_class_r_pins.md` · `t180_orbat_eden_program.md`
+**Active:** **T-180.6** — [`t180_6_place_orbat_sync.md`](../../docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md)
 
 ## Shipped
 
-| Slice | SHA / tag |
-|-------|-----------|
+| Slice | SHA |
+|-------|-----|
 | T-180.1 | `aeb51209` |
 | T-180.2 | `83557768` |
 | T-180.3 | `19acc593` |
-| T-180.4 | `63e7ef00` — [`t180_4_verify_log.md`](t180_4_verify_log.md) · M-D1 pending |
+| T-180.4 | `63e7ef00` |
+| T-180.5 | `1324799c` — [`t180_5_verify_log.md`](t180_5_verify_log.md) |
 
 ## Now
 
-Eden side chips on DockRight (BLUFOR/OPFOR/INDFOR + Objects stub). Drive `active_side`. Prompt in `t180_5_right_dock_side_chips.md`.
+Place/refile ↔ ORBAT mirrors + squad lines via `move_slot_to_squad` only. Prompt in `t180_6_place_orbat_sync.md`.
 
 ```text
-.1–.4 ✓ → .5 (NOW) → .6 …
+.1–.5 ✓ → .6 (NOW) → .7 Stitch UI …
 ```
 
 ## Return
 
-SHA + tag `T-180.5` · `t180_5_verify_log.md` · Ready for T-180.6
+SHA + tag `T-180.6` · `t180_6_verify_log.md` · Ready for T-180.7

@@ -1,6 +1,6 @@
 # T-180 — ORBAT + Eden placement program (Class-R)
 
-**Status:** READY · **Active slice:** **T-180.5** (Eden dock side chips)  
+**Status:** READY · **Active slice:** **T-180.6** (place/refile ↔ ORBAT sync)  
 **Ticket:** T-180 · **Route:** `/missions/:id/edit` · **Branch:** `main`  
 **Depends on:** T-177 / T-071.0 (ORBAT Manager shell) · T-153 (Faction Library) · T-151 (wgpu map)  
 **Absorbs remaining intent of:** T-071.1+ · T-074 (side submode) · T-147 (squad leader lines) · vehicle bits of T-070  
@@ -11,7 +11,8 @@
 
 **Shipped:**
 - **T-180.1** @ `aeb51209` · **T-180.2** @ `83557768` · **T-180.3** @ `19acc593`
-- **T-180.4** @ `63e7ef00` (tag **T-180.4**) — [verify](../../../.ai/artifacts/t180_4_verify_log.md) · manual M-D1 operator-pending
+- **T-180.4** @ `63e7ef00` · **T-180.5** @ `1324799c` (tag **T-180.5**) — [verify](../../../.ai/artifacts/t180_5_verify_log.md)
+- Manuals pending: M-C1 · M-D1 · M-E1/M-E2
 
 Doc-core tests: `cargo test -p map-engine-core --features doc …`.
 
@@ -98,8 +99,8 @@ Vehicle { id, squadId?, resource/assetId, label?, position? }
 | **T-180.2** | Graph mutators + empty-squad GC | [`t180_2_graph_mutators.md`](t180_2_graph_mutators.md) | claude-code | **SHIPPED** @ `83557768` |
 | **T-180.3** | Map side tint | [`t180_3_map_side_tint.md`](t180_3_map_side_tint.md) | claude-code | **SHIPPED** @ `19acc593` |
 | **T-180.4** | Map leader→member lines | [`t180_4_squad_leader_lines.md`](t180_4_squad_leader_lines.md) | claude-code | **SHIPPED** @ `63e7ef00` |
-| **T-180.5** | Right dock Eden chips + Objects stub | [`t180_5_right_dock_side_chips.md`](t180_5_right_dock_side_chips.md) | claude-code | **ACTIVE** |
-| **T-180.6** | Place/refile ↔ ORBAT live sync | [`t180_6_place_orbat_sync.md`](t180_6_place_orbat_sync.md) | claude-code | queued |
+| **T-180.5** | Right dock Eden chips + Objects stub | [`t180_5_right_dock_side_chips.md`](t180_5_right_dock_side_chips.md) | claude-code | **SHIPPED** @ `1324799c` |
+| **T-180.6** | Place/refile ↔ ORBAT live sync | [`t180_6_place_orbat_sync.md`](t180_6_place_orbat_sync.md) | claude-code | **ACTIVE** |
 | **T-180.7** | Stitch ORBAT Manager UI | [`t180_7_orbat_manager_ui.md`](t180_7_orbat_manager_ui.md) | claude-code | queued |
 | **T-180.8** | Templates + vehicles | [`t180_8_templates_vehicles.md`](t180_8_templates_vehicles.md) | claude-code | queued |
 | **T-180.9** | Arsenal wire + compile truth | [`t180_9_arsenal_compile.md`](t180_9_arsenal_compile.md) | claude-code | queued |

@@ -33,9 +33,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-180 — ORBAT + Eden placement program
 
-- **Active slice:** `T-180.5`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md`
+- **Active slice:** `T-180.6`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md`
 - **Branch:** `main`
 - **Targets:** website, root
-- **Summary:** ORBAT + Eden placement. .1–.3 shipped · **T-180.4 SHIPPED** @ 63e7ef00 (tag T-180.4) squad links. ACTIVE **T-180.5** Eden dock side chips. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.
+- **Summary:** ORBAT + Eden placement. .1–.4 shipped · **T-180.5 SHIPPED** @ 1324799c (tag T-180.5) Eden chips. ACTIVE **T-180.6** place/refile↔ORBAT sync. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.
