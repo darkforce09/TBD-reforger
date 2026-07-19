@@ -1,0 +1,11 @@
+[toolchain]
+# T-177 — pin the WHOLE workspace toolchain. Before this only `apps/website/api/rust-toolchain.toml`
+# pinned a channel, so the gate harness (`tools/tbd-tools`) and the Trunk wasm build (run from the
+# repo root / `apps/website/frontend`) resolved to the floating rustup default — a silent drift
+# vector for the editor gate. Keep this in lockstep with `tools/tbd-tools/gate-env.json` and
+# `apps/website/api/rust-toolchain.toml`. Do NOT install via dnf/rpm-ostree on Bazzite — rustup
+# resolves this per-checkout.
+channel = "1.95.0"
+components = ["rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"

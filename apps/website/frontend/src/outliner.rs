@@ -242,6 +242,13 @@ pub struct FlatRow {
     /// True when the source node has children — drives the chevron + open/closed folder icon
     /// (T-172 B6/B7). A collapsed container still renders its own row; its subtree does not.
     pub has_children: bool,
+    /// T-177 A1 — YouTube-style guide continuation, one bool per guide column (`len == depth`):
+    /// `ancestors[k]` = "the vertical line at column k continues below this row." For `k < depth-1`
+    /// it's an ancestor spine (drawn iff that ancestor has a following sibling); `ancestors[depth-1]`
+    /// is this row's own connector, whose bit = `!is_last` (draw the elbow's tail down to the next
+    /// sibling, or trim it at the last child). Self-contained per row so the windowed slice needs no
+    /// sibling lookup. Roots (depth 0) get `[]` → no guides. See `eden_chrome::guide_spans`.
+    pub ancestors: Vec<bool>,
 }
 
 /// Flatten a tree to pre-order rows (parent before its children). Every node becomes exactly one
@@ -259,26 +266,42 @@ pub fn flatten_visible(
     collapsed: &std::collections::HashSet<String>,
 ) -> Vec<FlatRow> {
     let mut out = Vec::new();
+    // `prefix` = the parent row's `ancestors` vector (length == parent depth). A child's vector is
+    // the parent's + its own `!is_last` bit (T-177 A1); roots (depth 0) draw no guide column, so
+    // their own bit is dropped (`ancestors == []`) and it never propagates as a spine — a depth-1
+    // row's single column is its OWN elbow, not a root spine.
     fn walk(
         nodes: &[OutlinerNode],
         depth: usize,
+        prefix: &[bool],
         collapsed: &std::collections::HashSet<String>,
         out: &mut Vec<FlatRow>,
     ) {
-        for n in nodes {
+        let len = nodes.len();
+        for (i, n) in nodes.iter().enumerate() {
+            let is_last = i + 1 == len;
+            let ancestors: Vec<bool> = if depth == 0 {
+                Vec::new()
+            } else {
+                let mut v = Vec::with_capacity(depth);
+                v.extend_from_slice(prefix);
+                v.push(!is_last);
+                v
+            };
             out.push(FlatRow {
                 id: n.id.clone(),
                 label: n.label.clone(),
                 kind: n.kind,
                 depth,
                 has_children: !n.children.is_empty(),
+                ancestors: ancestors.clone(),
             });
             if !collapsed.contains(&n.id) {
-                walk(&n.children, depth + 1, collapsed, out);
+                walk(&n.children, depth + 1, &ancestors, collapsed, out);
             }
         }
     }
-    walk(nodes, 0, collapsed, &mut out);
+    walk(nodes, 0, &[], collapsed, &mut out);
     out
 }
 
@@ -464,6 +487,66 @@ mod tests {
         assert_eq!((flat[3].id.as_str(), flat[3].depth), ("root", 0));
         assert_eq!((flat[4].id.as_str(), flat[4].depth), ("kid", 1));
         assert_eq!((flat[5].id.as_str(), flat[5].depth), ("n0", 2));
+    }
+
+    /// T-177 A1 — the YouTube-guide continuation vector. `ancestors[k]` = "column k continues below
+    /// this row"; roots are `[]`, a non-last parent leads a child's vector with `true`, and last
+    /// children trim to `false`. Self-contained per row so the windowed slice needs no sibling peek.
+    #[test]
+    fn flatten_visible_computes_ancestor_continuation() {
+        fn node(id: &str, kind: NodeKind, children: Vec<OutlinerNode>) -> OutlinerNode {
+            OutlinerNode {
+                id: id.to_string(),
+                label: id.to_string(),
+                kind,
+                children,
+            }
+        }
+        // Root(+sib Root2) → [ChildA(+sib ChildB) → GrandA, ChildB(last) → Leaf]; Root2(last) → Leaf2.
+        let tree = vec![
+            node(
+                "Root",
+                NodeKind::Folder,
+                vec![
+                    node(
+                        "ChildA",
+                        NodeKind::Folder,
+                        vec![node("GrandA", NodeKind::Slot, vec![])],
+                    ),
+                    node(
+                        "ChildB",
+                        NodeKind::Folder,
+                        vec![node("Leaf", NodeKind::Slot, vec![])],
+                    ),
+                ],
+            ),
+            node(
+                "Root2",
+                NodeKind::Folder,
+                vec![node("Leaf2", NodeKind::Slot, vec![])],
+            ),
+        ];
+        let flat = flatten(&tree);
+        let by = |id: &str| flat.iter().find(|r| r.id == id).unwrap().ancestors.clone();
+        assert_eq!(by("Root"), Vec::<bool>::new(), "roots draw no guide column");
+        assert_eq!(
+            by("ChildA"),
+            vec![true],
+            "non-last child's own connector continues"
+        );
+        assert_eq!(
+            by("GrandA"),
+            vec![true, false],
+            "non-last parent spine (true) + last child (false)"
+        );
+        assert_eq!(by("ChildB"), vec![false], "last child trims its connector");
+        assert_eq!(
+            by("Leaf"),
+            vec![false, false],
+            "last-child parent spine blank + last child"
+        );
+        assert_eq!(by("Root2"), Vec::<bool>::new());
+        assert_eq!(by("Leaf2"), vec![false], "only child trims");
     }
 
     /// Dangling squad/slot ids are skipped, not rendered blank.

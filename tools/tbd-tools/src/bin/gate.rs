@@ -10,7 +10,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 use clap::{Parser, Subcommand};
-use tbd_tools::{serve, smokes, sroutes, vsuite};
+use tbd_tools::{doctor, serve, smokes, sroutes, vsuite};
 
 #[derive(Parser)]
 #[command(name = "gate", about = "T-159/T-165 CDP gate harness")]
@@ -51,6 +51,15 @@ enum Cmd {
     EditorSuite {
         #[arg(long)]
         dist: Option<String>,
+    },
+    /// T-177 — fail-fast editor-gate preflight: pins + RAM/orphans + a ~15 s liveness probe.
+    /// A prerequisite of `make leptos-gates`; a wedge fails here with a diagnosis, not a 130 s hang.
+    Doctor {
+        #[arg(long)]
+        dist: Option<String>,
+        /// Promote pin/env drift warnings to failures (versions must match `gate-env.json`).
+        #[arg(long)]
+        strict: bool,
     },
     /// R-auth single-flight refresh gate (gate_r_auth.mjs port; LEPTOS_DIST env respected)
     #[command(name = "r-auth")]
@@ -112,6 +121,7 @@ fn main() -> ExitCode {
             Cmd::SRoutes => sroutes::run(),
             Cmd::Smoke { name, dist, path } => smokes::run_smoke(&name, dist, path).await,
             Cmd::EditorSuite { dist } => smokes::editor_suite(dist).await,
+            Cmd::Doctor { dist, strict } => doctor::run(dist, strict).await,
             Cmd::RAuth { dist } => smokes::r_auth(dist).await,
             Cmd::RenderCheck {
                 dir,

@@ -622,7 +622,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             let bridge = h
                 .page
                 .wait_for(
-                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 36 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_polygons > 0 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_polygons > 0 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
                     400,
                     250,
                 )
@@ -640,7 +640,13 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             )
             .await?;
             let a_roads = eval_bool(&h.page, "window.__mapAssets.road_segments === 888").await?;
-            let a_lc = eval_bool(&h.page, "window.__mapAssets.landcover_polygons === 36").await?;
+            // T-177 — landcover lane is empty on Everon since **T-176 A2** dropped `forest`-kind
+            // regions (the 32 m wash) and Everon has no `field`/`waterBody` regions, so the composed
+            // mesh is 0 polygons (`world_host::push_landcover`). Was `=== 36`; that stale assertion
+            // went unnoticed because the chrome-headless-shell font crash killed the suite at
+            // `selfcheck` (see cdp.rs `find_chromium`). This asserts the lane stays empty (regression
+            // guard: a re-added wash → non-zero → red).
+            let a_lc = eval_bool(&h.page, "window.__mapAssets.landcover_polygons === 0").await?;
             let a_sea = eval_bool(&h.page, "window.__mapAssets.sea_polygons > 0").await?;
             let a_cont = eval_bool(&h.page, "window.__mapAssets.contour_segments > 0").await?;
             let a_bld = eval_bool(
@@ -700,7 +706,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 "pins": {
                     "sat_full_bytes": SAT_FULL_BYTES,
                     "roads": 888,
-                    "landcover": 36,
+                    "landcover": 0,
                     "default_zoom": -2.0,
                     "tree_glyph_min_zoom": 0.0,
                 },
@@ -1529,10 +1535,10 @@ pub async fn smoke_keyboard_settings(dist: &str, path: &str) -> Result<u8> {
             h.page
                 .wait_for("window.__editorSelection.count() === 1", 20, 250)
                 .await?;
-            key_chord(&h.page, "c", "KeyC", 2, 67).await?;
+            eval(&h.page, "window.dispatchEvent(new KeyboardEvent('keydown',{key:'c',code:'KeyC',ctrlKey:true,bubbles:true}))").await?;
             mouse(&h.page, "mouseMoved", 720.0, 470.0, json!({})).await?;
             let n_before = eval_i64(&h.page, "window.__missionDoc.slot_count()").await?;
-            key_chord(&h.page, "v", "KeyV", 2, 86).await?;
+            eval(&h.page, "window.dispatchEvent(new KeyboardEvent('keydown',{key:'v',code:'KeyV',ctrlKey:true,bubbles:true}))").await?;
             checks.insert(
                 "pasteAdded".into(),
                 json!(
@@ -2033,9 +2039,12 @@ pub async fn smoke_undo(dist: &str, raw_path: &str) -> Result<u8> {
                 "a6_chromeMounted".into(),
                 json!(eval_bool(&h.page, "!!document.querySelector('[aria-label=\"Undo\"]') &&\n        !!document.querySelector('[aria-label=\"Redo\"]')").await?),
             );
+            // T-177 B1 — the left dock is Editor Layers only (ORBAT moved to the top-strip modal),
+            // so the aside carrying "Editor Layers" must NOT contain "ORBAT"; the palette aside has
+            // "Factions"; and the ORBAT Manager button exists on the strip.
             checks.insert(
                 "a6_docksMounted".into(),
-                json!(eval_bool(&h.page, "(() => { const t = [...document.querySelectorAll('aside')]\n        .map((e) => e.textContent || '').join('|');\n        return t.includes('ORBAT') && t.includes('Editor Layers') && t.includes('Factions'); })()").await?),
+                json!(eval_bool(&h.page, "(() => { const asides = [...document.querySelectorAll('aside')].map((e) => e.textContent || ''); const left = asides.find((t) => t.includes('Editor Layers')); const hasFactions = asides.some((t) => t.includes('Factions')); const orbatBtn = !!document.querySelector('[aria-label=\"ORBAT Manager\"]'); return !!left && !left.includes('ORBAT') && hasFactions && orbatBtn; })()").await?),
             );
 
             d0 = digest().await?;
@@ -2364,15 +2373,33 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                     json!(docks1.contains("Layer 1") && docks1.contains("Unfiled (8)")),
                 );
 
-                // O3/O4/O5 (T-168) — the place minted a default squad; the ORBAT tree shows it,
-                // its slot leaf selects, and dbl-click opens Attributes (SEL-ORBAT-DBL-001).
+                // O3/O4/O5 (T-177 B1 / T-071.0) — the place minted a default squad. The ORBAT tree
+                // moved from the left dock into the top-strip ORBAT Manager modal, so open it, then
+                // assert the squad shows, its slot leaf selects, and dbl-click opens Attributes
+                // (SEL-ORBAT-DBL-001). Keep the modal open through o5.
+                eval(
+                    &h.page,
+                    "document.querySelector('[aria-label=\"ORBAT Manager\"]')?.dispatchEvent(new MouseEvent('click',{bubbles:true}))",
+                )
+                .await?;
+                // The modal's title h2 marks it mounted (avoids a read/leaf-lookup race).
+                const ORBAT_MODAL_OPEN: &str = "[...document.querySelectorAll('h2')].some(h => h.textContent === 'ORBAT Manager')";
+                h.page.wait_for(ORBAT_MODAL_OPEN, 40, 250).await?;
+                // The popup carries `glass`; scope the text read + leaf lookup to it.
+                let orbat_popup_text = eval_str(
+                    &h.page,
+                    "(() => { const h=[...document.querySelectorAll('h2')].find(h=>h.textContent==='ORBAT Manager'); const p=h&&h.closest('.glass'); return p?(p.textContent||''):''; })()",
+                )
+                .await?;
                 checks.insert(
                     "o3_orbatSquadMinted".into(),
-                    json!(docks1.contains("Squad 1 (1)") && docks1.contains("Faction 1")),
+                    json!(
+                        orbat_popup_text.contains("Squad 1 (1)")
+                            && orbat_popup_text.contains("Faction 1")
+                    ),
                 );
-                // The ORBAT slot leaf = the first slot button in the ORBAT div (the div right after
-                // the "ORBAT" h2, before "Editor Layers") of the left dock.
-                const ORBAT_LEAF: &str = "(() => { const d=[...document.querySelectorAll('aside')].find(a=>(a.textContent||'').includes('ORBAT')&&(a.textContent||'').includes('Editor Layers')); const o=d&&d.querySelector('div'); return o?o.querySelector('button[aria-label=\"US Rifleman\"]'):null; })()";
+                // The ORBAT slot leaf = the placeable role button inside the ORBAT Manager popup.
+                const ORBAT_LEAF: &str = "(() => { const h=[...document.querySelectorAll('h2')].find(h=>h.textContent==='ORBAT Manager'); const p=h&&h.closest('.glass'); return p?p.querySelector('button[aria-label=\"US Rifleman\"]'):null; })()";
                 eval(
                     &h.page,
                     &format!(
@@ -2397,12 +2424,23 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                     ),
                 )
                 .await?;
+                // MODAL_OPEN matches the Attributes h2 exactly, so the ORBAT Manager modal (h2
+                // "ORBAT Manager") never false-triggers this.
                 checks.insert(
                     "o5_orbatDblAttributes".into(),
                     json!(h.page.wait_for(MODAL_OPEN, 40, 250).await?),
                 );
-                // Close the modal so its overlay does not swallow the W1 wheel checks below.
+                // One Escape closes BOTH modals (Attributes + ui::Dialog each own a window-level Esc
+                // listener); SETTLE until neither is present so neither `fixed inset-0 z-50` backdrop
+                // covers the 700,500 canvas wheel point in W1.
                 key_chord(&h.page, "Escape", "Escape", 0, 27).await?;
+                h.page
+                    .wait_for(
+                        "![...document.querySelectorAll('h2')].some(h => h.textContent === 'Attributes' || h.textContent === 'ORBAT Manager')",
+                        40,
+                        250,
+                    )
+                    .await?;
             }
 
             // W1 — wheel over a dock must not zoom; over the canvas it must.
@@ -2529,6 +2567,21 @@ pub async fn smoke_virtual_outliner(dist: &str, path: &str) -> Result<u8> {
                 "v4_thresholdIs50".into(),
                 json!(eval_i64(&h.page, &stat("editorLayers", "threshold")).await? == 50),
             );
+            // T-177 B1 — the ORBAT tree now lives in the ORBAT Manager modal; open it so its windowed
+            // `virtual_tree` publishes `__outlinerStats.orbat` (it mounts already-populated after the
+            // seed_slots(80) above, so it windows immediately).
+            eval(
+                &h.page,
+                "document.querySelector('[aria-label=\"ORBAT Manager\"]')?.dispatchEvent(new MouseEvent('click',{bubbles:true}))",
+            )
+            .await?;
+            h.page
+                .wait_for(
+                    "[...document.querySelectorAll('h2')].some(h => h.textContent === 'ORBAT Manager')",
+                    40,
+                    250,
+                )
+                .await?;
             let orbat_windowed = format!(
                 "{} > 50 && {} < {}",
                 stat("orbat", "total"),

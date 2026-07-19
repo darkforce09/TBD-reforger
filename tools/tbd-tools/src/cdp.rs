@@ -24,7 +24,17 @@ pub async fn sleep_ms(ms: u64) {
     tokio::time::sleep(Duration::from_millis(ms)).await;
 }
 
-/// `CHROME_HEADLESS_SHELL` env → `~/.cache/ms-playwright` scan (same order as cdp.mjs).
+/// `CHROME_HEADLESS_SHELL` env → `~/.cache/ms-playwright` scan.
+///
+/// T-177 — prefer the **full `chrome` build over `chrome-headless-shell`**. The minimal headless
+/// shell ships a stubbed `SkFontMgr_FontConfigInterface` whose `onMatchFamilyStyleCharacter`
+/// (per-character font fallback) is a `FATAL: … "Not implemented"` (`SkFontMgr_FontConfigInterface.cpp:163`):
+/// the moment a page needs a fallback glyph — which the editor chrome does, env-dependently — the
+/// renderer aborts (SIGTRAP/SIGABRT), and the harness sees only a 130 s `Runtime.evaluate` hang
+/// (the process is dead, the WS never answers). The full `chrome --headless=new` (see [`launch`])
+/// has the complete font backend and does not crash. Fallback to the shell only if no full build
+/// exists (the shell still works for pages that never trigger fallback). Also note the playwright
+/// full-chrome path is `chrome-linux64/chrome` (not the old `chrome-linux/chrome`).
 pub fn find_chromium() -> Option<PathBuf> {
     if let Ok(p) = std::env::var("CHROME_HEADLESS_SHELL") {
         let p = PathBuf::from(p);
@@ -36,7 +46,7 @@ pub fn find_chromium() -> Option<PathBuf> {
     if !cache.exists() {
         return None;
     }
-    for prefix in ["chromium_headless_shell-", "chromium-"] {
+    for prefix in ["chromium-", "chromium_headless_shell-"] {
         let mut dirs: Vec<String> = std::fs::read_dir(&cache)
             .ok()?
             .filter_map(|e| e.ok())
@@ -47,8 +57,8 @@ pub fn find_chromium() -> Option<PathBuf> {
         dirs.reverse();
         for d in dirs {
             for rel in [
+                "chrome-linux64/chrome",
                 "chrome-headless-shell-linux64/chrome-headless-shell",
-                "chrome-linux/chrome",
             ] {
                 let bin = cache.join(&d).join(rel);
                 if bin.exists() {
@@ -58,6 +68,12 @@ pub fn find_chromium() -> Option<PathBuf> {
         }
     }
     None
+}
+
+/// True when the resolved chromium is the minimal `chrome-headless-shell` (which is always headless
+/// and ignores `--headless`); the full `chrome` build needs an explicit `--headless=new` ([`launch`]).
+pub fn is_headless_shell(bin: &std::path::Path) -> bool {
+    bin.to_string_lossy().contains("chrome-headless-shell")
 }
 
 fn dirs_home() -> Option<PathBuf> {
@@ -139,18 +155,22 @@ pub async fn launch(debug_port: u16, extra_args: &[String]) -> Result<Browser> {
     let user_data_dir =
         std::env::temp_dir().join(format!("tbd-cdp-{}-{debug_port}", std::process::id()));
     let _ = std::fs::remove_dir_all(&user_data_dir);
-    let mut args: Vec<String> = vec![
-        "--no-sandbox".into(),
-        "--disable-gpu-sandbox".into(),
-        format!("--remote-debugging-port={debug_port}"),
-        format!("--user-data-dir={}", user_data_dir.display()),
-        "--use-angle=swiftshader".into(),
-        "--enable-unsafe-swiftshader".into(),
-        "--enable-unsafe-webgpu".into(),
-        "--hide-scrollbars".into(),
-        "--force-device-scale-factor=1".into(),
-        "about:blank".into(),
-    ];
+    let mut args: Vec<String> = Vec::new();
+    // T-177 — the full `chrome` build must be told to run headless (the shell is always headless and
+    // ignores this). Without it the full binary tries to open a window and aborts. See `find_chromium`.
+    if !is_headless_shell(&chromium) {
+        args.push("--headless=new".into());
+    }
+    args.push("--no-sandbox".into());
+    args.push("--disable-gpu-sandbox".into());
+    args.push(format!("--remote-debugging-port={debug_port}"));
+    args.push(format!("--user-data-dir={}", user_data_dir.display()));
+    args.push("--use-angle=swiftshader".into());
+    args.push("--enable-unsafe-swiftshader".into());
+    args.push("--enable-unsafe-webgpu".into());
+    args.push("--hide-scrollbars".into());
+    args.push("--force-device-scale-factor=1".into());
+    args.push("about:blank".into());
     args.extend(extra_args.iter().cloned());
     let child = Command::new(&chromium)
         .args(&args)
@@ -291,7 +311,23 @@ pub async fn new_page(browser: &Browser, url: Option<&str>, init_scripts: &[&str
 }
 
 impl Page {
+    /// The suite default: [`Self::send_with_timeout`] at 130 s (see there).
     pub async fn send(&self, method: &str, params: Value) -> Result<Value> {
+        self.send_with_timeout(method, params, Duration::from_secs(130))
+            .await
+    }
+
+    /// A CDP call with an explicit per-call WS timeout (T-177). The suite default (130 s) sits just
+    /// past the 120 s server-side `Runtime.evaluate` timeout so a real slow eval still completes but
+    /// a wedged page main thread fails the smoke loudly instead of hanging `wait_for` — and the whole
+    /// suite — forever (T-166 safety net). The fail-fast `gate doctor` liveness probe passes a SHORT
+    /// timeout (via [`Self::evaluate_with_timeout`]) so a wedge surfaces in seconds with a diagnosis.
+    pub async fn send_with_timeout(
+        &self,
+        method: &str,
+        params: Value,
+        timeout: Duration,
+    ) -> Result<Value> {
         let id = {
             let mut n = self.shared.next_id.lock().await;
             *n += 1;
@@ -307,11 +343,7 @@ impl Page {
             .send(Message::text(frame))
             .await
             .context("cdp: ws send")?;
-        // Bounded wait (T-166 safety net): a wedged page main thread makes `Runtime.evaluate`
-        // never return, which would hang `wait_for` — and the whole suite — forever. 130 s sits
-        // just past the 120 s server-side `Runtime.evaluate` timeout so a real slow eval still
-        // completes, but a genuine wedge fails the smoke loudly instead of hanging.
-        let m = tokio::time::timeout(Duration::from_secs(130), rx)
+        let m = tokio::time::timeout(timeout, rx)
             .await
             .map_err(|_| anyhow!("cdp: ws call timed out ({method})"))?
             .context("cdp: ws closed mid-call")?;
@@ -380,15 +412,34 @@ impl Page {
         Ok(())
     }
 
-    /// `Runtime.evaluate` with `returnByValue` (Node's `evaluate`).
+    /// `Runtime.evaluate` with `returnByValue` (Node's `evaluate`) — the suite default (130 s WS /
+    /// 120 s server).
     pub async fn evaluate(&self, expression: &str, await_promise: bool) -> Result<Value> {
+        self.evaluate_with_timeout(expression, await_promise, Duration::from_secs(130))
+            .await
+    }
+
+    /// `evaluate` with an explicit WS timeout (T-177). The server-side `Runtime.evaluate` `timeout`
+    /// is set to match (clamped to `1000..=120000` ms) so the browser gives up in lockstep with the
+    /// client — used by the fail-fast `gate doctor` liveness probe (short timeout → a wedge surfaces
+    /// in seconds, not 130 s).
+    pub async fn evaluate_with_timeout(
+        &self,
+        expression: &str,
+        await_promise: bool,
+        timeout: Duration,
+    ) -> Result<Value> {
+        let server_ms = u64::try_from(timeout.as_millis())
+            .unwrap_or(120_000)
+            .clamp(1_000, 120_000);
         let r = self
-            .send(
+            .send_with_timeout(
                 "Runtime.evaluate",
                 json!({
                     "expression": expression, "awaitPromise": await_promise,
-                    "returnByValue": true, "timeout": 120000,
+                    "returnByValue": true, "timeout": server_ms,
                 }),
+                timeout,
             )
             .await?;
         if !r["exceptionDetails"].is_null() {

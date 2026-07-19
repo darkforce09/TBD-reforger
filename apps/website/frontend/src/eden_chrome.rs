@@ -182,6 +182,10 @@ pub fn TopCommandStrip(
     /// T-172 B9 — obj count for the Save dialog's size line.
     #[prop(optional)]
     obj_count: Option<RwSignal<usize>>,
+    /// T-177 B2 / T-071.0 — the ORBAT Manager modal's open flag (the top-strip button toggles it).
+    /// Disabled in the scaffold-only case, like `settings_open`.
+    #[prop(optional)]
+    orbat_open: Option<RwSignal<bool>>,
 ) -> impl IntoView {
     let open_menu = RwSignal::new(None::<usize>);
     let save_open = RwSignal::new(false);
@@ -314,6 +318,22 @@ pub fn TopCommandStrip(
                     })
                     .collect_view()}
             </div>
+            // T-177 B2 / T-071.0 — ORBAT Manager: opens the modal shell (browse/select the live
+            // faction → squad → slot tree). Sits right of the Environment menu. Disabled in the
+            // scaffold-only case (no `orbat_open` signal), mirroring the settings gear.
+            <button
+                type="button"
+                aria-label="ORBAT Manager"
+                class="rounded px-2 py-1 text-label-sm font-semibold text-primary transition-colors hover:bg-primary/15 disabled:opacity-30 disabled:hover:bg-transparent"
+                disabled=orbat_open.is_none()
+                on:click=move |_| {
+                    if let Some(o) = orbat_open {
+                        o.set(true);
+                    }
+                }
+            >
+                "ORBAT Manager"
+            </button>
             // Click-away scrim for an open menu (below the dropdowns' z-50).
             {move || {
                 open_menu
@@ -635,28 +655,69 @@ pub fn TopCommandStrip(
 /// A tree row's shared recipe; depth renders as leading guide-line spans (see `guide_spans`).
 const ROW: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface";
 const ROW_ACTIVE: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm transition-colors bg-primary/20 text-primary";
+/// T-177 A2 — the palette-leaf variant of [`ROW`]: adds `cursor-grab` (→ `cursor-grabbing` while
+/// pressed) so hovering a placeable role advertises the drag affordance. Folders keep `cursor-pointer`
+/// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place).
+const PALETTE_LEAF: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
 
-/// Hierarchy guide lines (T-173 P7). The pre-T-173 approach put a `border-l` on each depth spacer,
-/// but `self-stretch` only spans the row **content box**, so the `py-1` padding broke the stem at
-/// every row boundary and `white/10` was barely visible. Now each level is a `w-px` line
-/// **absolutely** positioned over the full row border-box (`inset-y-0`): since the windowed rows
-/// stack flush (`ROW_H` == the border-box height), adjacent rows' lines meet → one continuous stem
-/// through a collapsed/expanded folder. `w-3` flex spacers still carry the indentation. Contrast is
-/// raised to `white/25` (Aegis-legal neutral). The row must be `relative` (added to ROW above).
-fn guide_spans(depth: usize) -> AnyView {
-    let lines = (0..depth)
-        .map(|k| {
-            // Center of guide column k: left padding (0.375rem) + k columns (0.75rem) + half a
-            // column (0.375rem).
-            let left = format!("left:calc(0.375rem + {:.3}rem)", (k as f64) * 0.75 + 0.375);
+/// Hierarchy guide lines — YouTube-comment-style nested connectors (T-177 A1; supersedes the T-173 P7
+/// straight rails). `ancestors` comes from `FlatRow` (`len == depth`) and says, per guide column,
+/// whether that vertical line CONTINUES below this row. Columns `0..depth-1` are **ancestor spines**:
+/// a full `inset-y-0` hairline drawn only where the branch continues (`ancestors[k]`), so there is no
+/// orphan rail beneath a last child. The deepest column `depth-1` is THIS row's own connector — a
+/// rounded **elbow** (a `border-l`+`border-b`+`rounded-bl` box over the row's top half that curves the
+/// spine right into the chevron/icon) plus, only when this row has a following sibling
+/// (`ancestors[depth-1]`), a `top-1/2 bottom-0` tail down to the next sibling (else the spine trims at
+/// the last child — the YouTube look). Percentage heights (`h-1/2`/`top-1/2`) track `ROW_H`; the `w-3`
+/// spacers still carry the indentation. Rows stack flush (`ROW_H` == the border-box height), so a
+/// column's spans meet across rows into one continuous stem — the T-174 S3 per-row clip (no dock-tall
+/// rails) is preserved. `bg-white/25` / `border-white/25` = the same subtle Aegis-legal grey. The row
+/// must be `relative` (ROW already is). Column k center = left padding (0.375rem) + k·0.75rem + half
+/// a column (0.375rem).
+fn guide_spans(ancestors: &[bool]) -> AnyView {
+    let depth = ancestors.len();
+    if depth == 0 {
+        return ().into_any();
+    }
+    let col_left = |k: usize| format!("left:calc(0.375rem + {:.3}rem)", (k as f64) * 0.75 + 0.375);
+    let mut lines: Vec<AnyView> = Vec::new();
+    // Ancestor spines: full-height hairline only where that ancestor's branch continues.
+    for (k, cont) in ancestors.iter().enumerate().take(depth - 1) {
+        if *cont {
+            lines.push(
+                view! {
+                    <span
+                        class="pointer-events-none absolute inset-y-0 w-px bg-white/25"
+                        style=col_left(k)
+                    ></span>
+                }
+                .into_any(),
+            );
+        }
+    }
+    // This row's own connector: a rounded elbow over the top half, curving into the row.
+    let last = depth - 1;
+    lines.push(
+        view! {
+            <span
+                class="pointer-events-none absolute top-0 h-1/2 w-2 rounded-bl-[6px] border-b border-l border-white/25"
+                style=col_left(last)
+            ></span>
+        }
+        .into_any(),
+    );
+    // Tail to the next sibling — omitted at the last child so the spine stops (YouTube trim).
+    if ancestors[last] {
+        lines.push(
             view! {
                 <span
-                    class="pointer-events-none absolute inset-y-0 w-px bg-white/25"
-                    style=left
+                    class="pointer-events-none absolute top-1/2 bottom-0 w-px bg-white/25"
+                    style=col_left(last)
                 ></span>
             }
-        })
-        .collect::<Vec<_>>();
+            .into_any(),
+        );
+    }
     let spacers = (0..depth)
         .map(|_| view! { <span class="w-3 shrink-0"></span> })
         .collect::<Vec<_>>();
@@ -718,7 +779,8 @@ fn single_row(
     let label = row.label.clone();
     let aria = row.label.clone();
     let id = row.id.clone();
-    let depth = row.depth;
+    // T-177 A1 — per-row guide continuation (see `guide_spans`); replaces the bare `depth`.
+    let ancestors: &[bool] = &row.ancestors;
     // Static per build — a chevron toggle bumps `collapsed`, which re-flattens + re-renders
     // the slice (the virtual_tree Effect tracks it), so open state never goes stale.
     let open = !collapsed.with_untracked(|c| c.contains(&row.id));
@@ -726,7 +788,7 @@ fn single_row(
     match row.kind {
         NodeKind::Unfiled => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
-                {guide_spans(depth)}
+                {guide_spans(ancestors)}
                 {toggle}
                 <MaterialIcon name="inbox" class="block text-sm" />
                 <span>{label}</span>
@@ -735,7 +797,7 @@ fn single_row(
         .into_any(),
         NodeKind::Faction => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                {guide_spans(depth)}
+                {guide_spans(ancestors)}
                 {toggle}
                 <MaterialIcon name="flag" class="block text-sm" />
                 <span class="truncate">{label}</span>
@@ -744,7 +806,7 @@ fn single_row(
         .into_any(),
         NodeKind::Squad => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
-                {guide_spans(depth)}
+                {guide_spans(ancestors)}
                 {toggle}
                 <MaterialIcon name="groups" class="block text-sm" />
                 <span class="truncate">{label}</span>
@@ -768,7 +830,7 @@ fn single_row(
                         crate::editor_ops::set_active_layer(Some(id.clone()));
                     }
                 >
-                    {guide_spans(depth)}
+                    {guide_spans(ancestors)}
                     {toggle}
                     <MaterialIcon name=folder_icon class="block text-sm" />
                     <span class="truncate">{label}</span>
@@ -800,7 +862,7 @@ fn single_row(
                         let _ = &id_dbl;
                     }
                 >
-                    {guide_spans(depth)}
+                    {guide_spans(ancestors)}
                     {toggle}
                     <MaterialIcon name="person" class="block text-sm" />
                     <span class="truncate">{label}</span>
@@ -928,13 +990,27 @@ fn virtual_tree(
 fn palette_rows(
     nodes: &[CatalogNode],
     depth: usize,
+    // T-177 A1 — the parent row's guide-continuation vector (see `guide_spans`); `&[]` at the root.
+    prefix: &[bool],
     collapsed: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
+    let len = nodes.len();
     nodes
         .iter()
-        .map(|n| {
+        .enumerate()
+        .map(|(i, n)| {
             let label = n.label.clone();
             let aria = n.label.clone();
+            // T-177 A1 — same continuation rule as the outliner's `flatten_visible`: roots draw no
+            // column; every deeper row extends its parent's vector with its own `!is_last` bit.
+            let anc: Vec<bool> = if depth == 0 {
+                Vec::new()
+            } else {
+                let mut v = Vec::with_capacity(depth);
+                v.extend_from_slice(prefix);
+                v.push(i + 1 != len);
+                v
+            };
             match n.payload.clone() {
                 None => {
                     // Folder — collapsible (T-172 B6): chevron + open/closed icon; kids render
@@ -945,7 +1021,7 @@ fn palette_rows(
                         chevron_or_spacer(!n.children.is_empty(), open, &n.id, collapsed);
                     let folder_icon = if open { "folder_open" } else { "folder" };
                     let kids = if open {
-                        palette_rows(&n.children, depth + 1, collapsed)
+                        palette_rows(&n.children, depth + 1, &anc, collapsed)
                     } else {
                         ().into_any()
                     };
@@ -965,7 +1041,7 @@ fn palette_rows(
                                     });
                             }
                         >
-                            {guide_spans(depth)}
+                            {guide_spans(&anc)}
                             {toggle}
                             <MaterialIcon name=folder_icon class="block text-sm" />
                             <span class="truncate">{label}</span>
@@ -974,12 +1050,14 @@ fn palette_rows(
                     }
                     .into_any()
                 }
+                // T-177 A2 — a placeable role: PALETTE_LEAF adds `cursor-grab`/`active:cursor-grabbing`
+                // over ROW so hovering shows the drag affordance (folders keep `cursor-pointer`).
                 Some(payload) => view! {
                     <button
                         type="button"
                         aria-label=aria
                         title="Drag onto the map to place"
-                        class=ROW
+                        class=PALETTE_LEAF
                         on:pointerdown=move |_| {
                             #[cfg(target_arch = "wasm32")]
                             crate::editor_ops::begin_place(payload.clone());
@@ -989,7 +1067,7 @@ fn palette_rows(
                             let _ = &payload;
                         }
                     >
-                        {guide_spans(depth)}
+                        {guide_spans(&anc)}
                         <span class="size-4 shrink-0"></span>
                         <MaterialIcon name="person" class="block text-sm" />
                         <span class="truncate">{label}</span>
@@ -1016,14 +1094,13 @@ fn collapsed_seed(nodes: &[CatalogNode], out: &mut std::collections::HashSet<Str
 /// Left dock — the live **Editor Layers** outliner (spec O1). Click a folder to make it the drop
 /// target, a slot to select it (no camera move — React parity).
 ///
-/// T-168 — the ORBAT browse/select tree (faction → squad → slot) is live; squad MANAGEMENT
-/// (reparent/rename/delete) stays T-071. Slot leaves click-select + dbl-click → Attributes.
+/// T-177 B1 — the ORBAT browse/select tree moved OUT of this dock (the dual-tree split was bad UX)
+/// into the top-strip **ORBAT Manager** modal ([`OrbatManagerDialog`], the T-071.0 cutover). Squad
+/// MANAGEMENT (reparent/rename/delete) stays T-071.1+. This dock is now Editor Layers only.
 #[component]
 pub fn DockLeft(
     /// The Editor Layers tree, rebuilt from the doc at every mutation (`editor_ops::refresh_docks`).
     nodes: RwSignal<Vec<OutlinerNode>>,
-    /// T-168 — the ORBAT tree (faction/squad/slot), rebuilt alongside `nodes`.
-    orbat: RwSignal<Vec<OutlinerNode>>,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
 ) -> impl IntoView {
@@ -1051,12 +1128,6 @@ pub fn DockLeft(
             <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface">
                 "Outliner"
             </h2>
-            <h2 class="mt-3 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                "ORBAT"
-            </h2>
-            <div class="mt-1">
-                {virtual_tree(orbat, selected, active_layer, "orbat", "No squads yet — place a unit to build the ORBAT.")}
-            </div>
             <h2 class="mt-4 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 "Editor Layers"
             </h2>
@@ -1071,6 +1142,44 @@ pub fn DockLeft(
                 {strip_btn("settings", "Settings (visual only)", false)}
             </div>
         </aside>
+    }
+}
+
+/// T-177 B2 / T-071.0 — the **ORBAT Manager** modal shell. Opened from the top-strip ORBAT Manager
+/// button (`orbat_open`), it hosts the same live faction → squad → slot browse/select tree that used
+/// to sit in the left dock: a slot leaf click-selects it on the map and dbl-click opens Attributes
+/// (reused `single_row`), so the mission maker keeps full ORBAT visibility after the left tree's
+/// removal (the B1-not-a-regression bar). Squad MANAGEMENT (create / rename / reorder, move a slot
+/// between squads, slot numbering) is the next slices — **T-071.1+** — deliberately not in this shell.
+#[component]
+pub fn OrbatManagerDialog(
+    /// Open flag, toggled by the top-strip ORBAT Manager button (Esc / backdrop close via `Dialog`).
+    open: RwSignal<bool>,
+    /// The ORBAT tree (faction / squad / slot), rebuilt on every mutation by `editor_ops::refresh_docks`.
+    orbat: RwSignal<Vec<OutlinerNode>>,
+    selected: RwSignal<Vec<String>>,
+    active_layer: RwSignal<Option<String>>,
+) -> impl IntoView {
+    view! {
+        <crate::ui::Dialog
+            open
+            title="ORBAT Manager"
+            description="Browse factions, squads, and slots. Select a slot to highlight it on the map."
+            class="max-w-xl"
+        >
+            <div class="min-h-40">
+                {virtual_tree(
+                    orbat,
+                    selected,
+                    active_layer,
+                    "orbat",
+                    "No squads yet — place a unit to build the ORBAT.",
+                )}
+            </div>
+            <p class="mt-3 border-t border-outline-variant/20 pt-3 text-label-sm text-outline">
+                "Squad management — create, rename, reorder, move slots between squads — arrives in T-071.1."
+            </p>
+        </crate::ui::Dialog>
     }
 }
 
@@ -1175,7 +1284,7 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                                     // Track the collapse set so a chevron toggle re-renders the
                                     // tree (palette_rows reads it untracked).
                                     palette_collapsed.track();
-                                    palette_rows(&nodes, 0, palette_collapsed)
+                                    palette_rows(&nodes, 0, &[], palette_collapsed)
                                 } else {
                                     let filtered =
                                         crate::asset_catalog::filter_catalog(&nodes, &q);
@@ -1187,7 +1296,7 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                                         }
                                             .into_any()
                                     } else {
-                                        palette_rows(&filtered, 0, no_collapse)
+                                        palette_rows(&filtered, 0, &[], no_collapse)
                                     }
                                 }
                             }

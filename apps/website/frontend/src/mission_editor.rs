@@ -120,6 +120,8 @@ pub fn MissionEditorPage() -> impl IntoView {
     let settings_open = RwSignal::new(false);
     // T-167 — Faction Manager dialog toggle (launched from the Factions dock "Manage" button).
     let fm_open = RwSignal::new(false);
+    // T-177 B2 / T-071.0 — the ORBAT Manager modal open flag (top-strip button ↔ OrbatManagerDialog).
+    let orbat_open = RwSignal::new(false);
     // T-159.27 — the flat registry gear rows for the Attributes Arsenal tab (populated by the same
     // /registry fetch that builds the Factions palette). None until it lands.
     let registry_items = RwSignal::new(None::<Vec<crate::dto::RegistryItem>>);
@@ -1250,7 +1252,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                 class="pointer-events-none absolute inset-0 z-10"
                 on:pointerdown=|ev| ev.stop_propagation()
             >
-                <div class="absolute inset-x-0 top-0 h-12">
+                // T-177 A3 — raise the strip's stacking context above the docks (z-20) so its
+                // menu dropdowns (`z-50`, scoped to this subtree) paint OVER the left/right docks
+                // instead of behind them (the Environment-menu-clipped-by-Outliner bug).
+                <div class="absolute inset-x-0 top-0 z-30 h-12">
                     <crate::eden_chrome::TopCommandStrip
                         title=mission_id.clone()
                         can_undo
@@ -1261,17 +1266,17 @@ pub fn MissionEditorPage() -> impl IntoView {
                         settings_open
                         doc_tick
                         obj_count
+                        orbat_open
                     />
                 </div>
-                <div class="absolute bottom-0 left-0 top-12 w-64">
+                <div class="absolute bottom-0 left-0 top-12 z-20 w-64">
                     <crate::eden_chrome::DockLeft
                         nodes=outliner_nodes
-                        orbat=orbat_nodes
                         selected=selected_ids
                         active_layer
                     />
                 </div>
-                <div class="absolute bottom-0 right-0 top-12 w-80">
+                <div class="absolute bottom-0 right-0 top-12 z-20 w-80">
                     <crate::eden_chrome::DockRight catalog fm_open />
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
@@ -1303,6 +1308,14 @@ pub fn MissionEditorPage() -> impl IntoView {
                 <div class="pointer-events-auto">
                     <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />
                     <crate::faction_manager::FactionManagerDialog open=fm_open registry=registry_items />
+                    // T-177 B2 / T-071.0 — ORBAT Manager modal shell (browse/select the live ORBAT
+                    // faction → squad → slot tree relocated from the left dock).
+                    <crate::eden_chrome::OrbatManagerDialog
+                        open=orbat_open
+                        orbat=orbat_nodes
+                        selected=selected_ids
+                        active_layer
+                    />
                 </div>
                 // T-159.26 — local-vs-server conflict prompt (React's ConflictDialog). Renders only
                 // when `conflict` is Some (a divergent local doc on cold boot). Data-safety: the

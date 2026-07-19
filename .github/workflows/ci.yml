@@ -81,6 +81,7 @@ jobs:
         run: git lfs pull --include packages/map-assets/everon/dem/everon-dem-16bit.png
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
@@ -88,8 +89,9 @@ jobs:
 
   # --- website-frontend: the Rust/Leptos SPA — THE frontend after the T-159.29.3 React deletion ---
   # fmt + clippy(wasm32) + native tests + trunk release build. The editor S/V/R/T smokes + the
-  # frozen V-suite (make leptos-gates) need a cached headless chromium (the T-151 pattern) and run
-  # locally per stream; wiring them as a CI job is a follow-on.
+  # frozen V-suite (make leptos-gates) need a full chrome build + Postgres + map-assets LFS; they run
+  # in the dedicated **editor-gates.yml** workflow (nightly + on-demand + gate/editor-path PRs) — T-177
+  # closed the old "run locally per stream" gap. `gate doctor` fails those fast if the env drifts.
   website-frontend:
     name: website-frontend (Leptos SPA)
     runs-on: ubuntu-latest
@@ -98,6 +100,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
           components: rustfmt, clippy
           targets: wasm32-unknown-unknown
       - uses: Swatinem/rust-cache@v2
@@ -123,6 +126,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0" # T-177 — pin (matches root rust-toolchain.toml / gate-env.json)
       - uses: Swatinem/rust-cache@v2
       - name: validate contracts (TEST-3, xtask)
         run: cargo run -q -p xtask -- schema validate

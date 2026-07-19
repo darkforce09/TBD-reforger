@@ -1,0 +1,17 @@
+{
+  "_comment": "T-177 — pinned gate environment, validated by `gate doctor` (a prerequisite of `make leptos-gates`). This exists so the editor CDP smokes stop depending on unpinned external state: chromium was a floating playwright cache, the toolchain floated, and there was no committed runner (t151_10 D-06). Update these values DELIBERATELY when bumping the toolchain or chromium, in the same commit as the bump.",
+  "chromium": {
+    "playwright_build": "1228",
+    "version": "149.0.7827.55",
+    "note": "Use the FULL chrome build (chrome-linux64/chrome) + --headless=new, NOT chrome-headless-shell. The shell ships a stubbed Skia SkFontMgr_FontConfigInterface whose per-character font fallback is a FATAL 'Not implemented' (SkFontMgr_FontConfigInterface.cpp:163) — the editor chrome triggers it, the renderer core-dumps, and the harness saw only a 130 s Runtime.evaluate hang. See cdp.rs find_chromium / launch and docs/website/EDITOR_GATE_RUNBOOK.md."
+  },
+  "toolchain": {
+    "rustc": "1.95.0",
+    "trunk": "0.21.14",
+    "wasm_bindgen": "0.2.126"
+  },
+  "limits": {
+    "min_mem_available_mib": 1024,
+    "liveness_timeout_secs": 15
+  }
+}

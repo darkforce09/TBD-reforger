@@ -1,0 +1,111 @@
+name: editor-gates
+
+# T-177 — CI coverage for the editor CDP smokes + frozen V-suite (`make leptos-gates`), closing the
+# gap noted in ci.yml (they used to "run locally per stream; wiring them as a CI job is a follow-on").
+# Kept OUT of the required per-PR ci.yml (heavy: full map-assets LFS + a real Postgres + API + a
+# software-GL headless chrome), so it runs nightly + on demand, and on PRs that touch the gate or the
+# editor. This exists so gate-infra regressions are caught by machines, not discovered mid-ticket.
+#
+# NOTE: a new CI job — validate with a first manual `workflow_dispatch` run and iterate. The pinned
+# chromium version is kept in lockstep with tools/tbd-tools/gate-env.json (single source of truth for
+# the dev box; mirrored here because CI installs Chrome-for-Testing directly, Node-free).
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # nightly ~06:00 UTC
+  workflow_dispatch: {}
+  pull_request:
+    branches: [main]
+    paths:
+      - "apps/website/frontend/**"
+      - "tools/tbd-tools/**"
+      - "crates/map-engine-**"
+      - ".github/workflows/editor-gates.yml"
+
+concurrency:
+  group: editor-gates-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Keep in lockstep with tools/tbd-tools/gate-env.json → chromium.version.
+  CHROME_VERSION: "149.0.7827.55"
+
+jobs:
+  editor-gates:
+    name: editor-gates (leptos-gates in CI)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    services:
+      db:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: tbd
+          POSTGRES_PASSWORD: tbd
+          POSTGRES_DB: tbd_reforger
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tbd -d tbd_reforger"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      # The API (apps/website/api) reads these from the environment (config.rs); `.env` is not used in CI.
+      DATABASE_URL: postgres://tbd:tbd@localhost:5432/tbd_reforger?sslmode=disable
+      APP_ENV: development # exposes GET /auth/dev-login, which the hydrate/mutations smokes use
+      PORT: "8080"
+      JWT_SECRET: ci-editor-gates-secret
+      SERVICE_TOKEN: ci-service-token
+    steps:
+      - uses: actions/checkout@v7
+      - name: fetch map-assets (Everon — DEM + satellite + world objects for the fullmap/hillshade smokes)
+        run: git lfs pull --include "packages/map-assets/everon/**"
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.95.0" # matches root rust-toolchain.toml / gate-env.json
+          components: rustfmt, clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+      - name: install pinned full chrome (Chrome-for-Testing, Node-free — NOT chrome-headless-shell)
+        # The headless SHELL FATAL-crashes on per-character font fallback (see cdp.rs find_chromium);
+        # the full `chrome` build has the real font backend. find_chromium honors CHROME_HEADLESS_SHELL.
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 \
+            libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2t64 \
+            libpango-1.0-0 libcairo2 libgtk-3-0 fonts-liberation fonts-noto-core fonts-noto-color-emoji
+          url="https://storage.googleapis.com/chrome-for-testing-public/${CHROME_VERSION}/linux64/chrome-linux64.zip"
+          curl -fsSL "$url" -o /tmp/chrome.zip
+          unzip -q /tmp/chrome.zip -d "$HOME/cft"
+          echo "CHROME_HEADLESS_SHELL=$HOME/cft/chrome-linux64/chrome" >> "$GITHUB_ENV"
+      - name: migrate + seed the database (via the API on boot) and start the API
+        run: |
+          set -euo pipefail
+          cargo build -p website-api --bin api
+          (cargo run -q -p website-api --bin api > /tmp/api.log 2>&1 &) || true
+          for i in $(seq 1 60); do
+            if curl -fsS -m2 http://127.0.0.1:8080/healthz >/dev/null 2>&1; then echo "api up"; break; fi
+            sleep 1
+          done
+          curl -fsS -m2 http://127.0.0.1:8080/healthz || { echo "API never came up"; tail -40 /tmp/api.log; exit 1; }
+      - name: leptos release build
+        run: cargo run -q -p tbd-tools --bin gate -- serve --help >/dev/null 2>&1 || true # warm the gate bin
+      - name: gate doctor (fail-fast preflight)
+        run: make gate-doctor
+      - name: editor-suite + v-suite (make leptos-gates)
+        run: make leptos-gates
+      - name: upload smoke verdicts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: editor-gates-logs
+          path: /tmp/api.log
+          if-no-files-found: ignore

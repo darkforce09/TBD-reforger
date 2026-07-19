@@ -42,7 +42,10 @@ leptos-debug: ## Debug-profile dev server on :3000 — fast rebuilds, unoptimize
 leptos-build: ## Release-build the Leptos SPA into apps/website/frontend/dist
 	cd apps/website/frontend && trunk build --release
 
-leptos-gates: leptos-build ## T-159 editor smokes + the frozen V-suite against a fresh release dist
+gate-doctor: leptos-build ## T-177 fail-fast editor-gate preflight: chromium/toolchain pins + RAM/orphans + a ~15s editor liveness probe (a wedge fails here with a diagnosis, not a 130s hang)
+	cargo run -q -p tbd-tools --bin gate -- doctor
+
+leptos-gates: leptos-build gate-doctor ## T-159 editor smokes + the frozen V-suite against a fresh release dist (doctor runs first)
 	cargo run -q -p tbd-tools --bin gate -- editor-suite
 	cargo run -q -p tbd-tools --bin gate -- v-suite verify
 
