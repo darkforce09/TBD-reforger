@@ -3,6 +3,7 @@
 **Date:** 2026-07-19  
 **Slice:** [`t180_10_program_coherency.md`](../../docs/specs/Mission_Creator_Architecture/t180_10_program_coherency.md)  
 **Tag:** `T-180.10`  
+**Docs SHA:** `e267109e`  
 **Executor:** cursor-docs  
 **Report:** [`t180_10_coherency_report.md`](t180_10_coherency_report.md)
 
