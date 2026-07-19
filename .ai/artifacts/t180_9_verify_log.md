@@ -2,7 +2,9 @@
 
 **Date:** 2026-07-19  
 **Slice:** [`t180_9_arsenal_compile.md`](../../docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md)  
-**Tag:** `T-180.9`
+**Tag:** `T-180.9`  
+**Code SHA:** `cba837b3`  
+**Docs sync:** `bde31211`
 
 ## Shipped
 
