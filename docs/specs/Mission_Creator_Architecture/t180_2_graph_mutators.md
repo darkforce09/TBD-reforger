@@ -78,26 +78,41 @@ make ci-local-leptos
 
 ```
 Read CLAUDE.md first.
+
 Implement **T-180.2** — Graph mutators + empty-squad GC.
 
+═══ PREFLIGHT ═══
+  git status
+  ./scripts/ticket brief T-180
+
 ═══ READ ═══
-  t180_2_graph_mutators.md · t180_orbat_eden_program.md · handoff
-  crates/map-engine-core/src/doc/store.rs
+  1. .ai/artifacts/t180_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t180_class_r_pins.md
+  3. docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md
+  4. docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md
+  5. crates/map-engine-core/src/doc/store.rs
+  6. crates/map-engine-core/src/doc/place_orbat.rs (T-180.1 — preserve invariants)
 
 ═══ PROBLEM ═══
-  Need set_leader, move_slot_to_squad, rename/reorder, empty-squad GC, vehicleIds.
-  All later UI must call these — no parallel membership logic in Leptos.
+  Need move_slot_to_squad, rename/reorder, empty-squad GC, vehicleIds, add_vehicle.
+  set_leader exists from .1 — extend exclusivity tests. No parallel membership in Leptos.
+
+═══ SHIPPED ═══
+  T-180.1 @ aeb51209 — place_character_under_side, set_leader, callsign/rank, FactionRow.key
 
 ═══ LOCKED ═══
-  B-L1…B-L7 in spec (exclusive leader, GC, dense index, vehicle attach)
+  - Exclusive leader; empty squad deleted; dense index 0..n-1
+  - add_vehicle required (ABSENT pre-.2) — B8
+  - Do not reuse move_slot_to_layer as squad refile
+  - Core tests: cargo test -p map-engine-core --features doc …
 
 ═══ DO ═══
-  1. Mutators in store.rs
-  2. Tests B1–B7
-  3. t180_2_verify_log.md · tag T-180.2
+  1. Mutators in store.rs (+ add_vehicle)
+  2. Tests B1–B8
+  3. .ai/artifacts/t180_2_verify_log.md · tag T-180.2
 
 ═══ DO NOT ═══
-  Docs · Stitch UI · map lines · defer GC
+  Docs/registry · Stitch UI · map lines · defer GC · skip add_vehicle
 
 ═══ VERIFY ═══
   cargo test -p map-engine-core --features doc set_leader_exclusive
