@@ -33,9 +33,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-180 — ORBAT + Eden placement program
 
-- **Active slice:** `T-180.8`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md`
+- **Active slice:** `T-180.9`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md`
 - **Branch:** `main`
 - **Targets:** website, root
-- **Summary:** ORBAT + Eden placement. .1–.6 shipped · **T-180.7 SHIPPED** @ e9c2406d (tag T-180.7) Stitch ORBAT Manager. ACTIVE **T-180.8** templates + vehicles. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.
+- **Summary:** ORBAT + Eden placement. .1–.7 shipped · **T-180.8 SHIPPED** @ cce240a5 (tag T-180.8) templates/vehicles. ACTIVE **T-180.9** arsenal + compile truth. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.

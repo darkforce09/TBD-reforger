@@ -5736,7 +5736,7 @@
       "order": 1760,
       "program": "eden",
       "status": "ready",
-      "active_slice": "T-180.8",
+      "active_slice": "T-180.9",
       "surfaces": [
         "ORBAT",
         "RIGHT",
@@ -5753,7 +5753,7 @@
         "compiler"
       ],
       "title": "ORBAT + Eden placement program",
-      "summary": "ORBAT + Eden placement. .1\u2013.6 shipped \u00b7 **T-180.7 SHIPPED** @ e9c2406d (tag T-180.7) Stitch ORBAT Manager. ACTIVE **T-180.8** templates + vehicles. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
+      "summary": "ORBAT + Eden placement. .1\u2013.7 shipped \u00b7 **T-180.8 SHIPPED** @ cce240a5 (tag T-180.8) templates/vehicles. ACTIVE **T-180.9** arsenal + compile truth. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
       "slices": [
         "T-180.0",
@@ -5853,7 +5853,9 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "cce240a5",
+          "notes": "Tag T-180.8. apply_faction_library REPLACE; MissionVehicles lane; Apply/Save/Save as; Add Vehicle. Placement (6400,6400). Verify: .ai/artifacts/t180_8_verify_log.md. Manual M-H1..M-H4 operator-pending."
         },
         "T-180.9": {
           "targets": [
@@ -5861,7 +5863,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md",
-          "status": "queued"
+          "status": "ready"
         }
       },
       "depends_on": [

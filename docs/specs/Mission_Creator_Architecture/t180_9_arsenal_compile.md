@@ -164,7 +164,7 @@ Implement **T-180.9** — Open Arsenal + orbat[] compile/derive loadout truth.
   wired to the existing ArsenalTab for the selected slot. Standardization stays out.
 
 ═══ SHIPPED (do not reopen) ═══
-  T-180.1–.8 (graph, map, dock, Stitch UI, templates/vehicles)
+  T-180.1–.8 @ aeb51209 / 83557768 / 19acc593 / 63e7ef00 / 1324799c / 056c9a1a / e9c2406d / cce240a5
   T-068.10 Arsenal editor loadout on slots
   T-180.0 docs
 

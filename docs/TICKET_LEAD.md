@@ -12,7 +12,7 @@
 - **T-071** (710) — ORBAT Manager modal [ready] — ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6 (browse shell). Remaining authoring SUPERSEDED by T-180 (foundation→map lines→dock→Stitch→templates→compile). Hub: t071_orbat_manager_program.md → see t180_orbat_eden_program.md.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
-- **T-180** (1760) — ORBAT + Eden placement program [ready] — ORBAT + Eden placement. .1–.6 shipped · **T-180.7 SHIPPED** @ e9c2406d (tag T-180.7) Stitch ORBAT Manager. ACTIVE **T-180.8** templates + vehicles. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.
+- **T-180** (1760) — ORBAT + Eden placement program [ready] — ORBAT + Eden placement. .1–.7 shipped · **T-180.8 SHIPPED** @ cce240a5 (tag T-180.8) templates/vehicles. ACTIVE **T-180.9** arsenal + compile truth. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.
 
 ## Next queued (top 10)
 
