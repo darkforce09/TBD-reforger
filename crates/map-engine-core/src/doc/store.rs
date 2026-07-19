@@ -54,6 +54,8 @@ pub struct MissionDocCore {
     factions: MapRef,
     editor_layers: MapRef,
     meta: MapRef,
+    /// Root `vehicles` map (`vehiclesById` in [`Self::small_maps_json`]) — undo-scoped (T-180.2).
+    vehicles: MapRef,
     /// When true, mutators stamp `INIT` (untracked) instead of `LOCAL` — set around boot / hydrate /
     /// default-seeding so a load is not an undo step. Interior mutability: mutators take `&self`.
     init_mode: Cell<bool>,
@@ -71,6 +73,7 @@ impl MissionDocCore {
         let factions = doc.get_or_insert_map("factions");
         let editor_layers = doc.get_or_insert_map("editorLayers");
         let meta = doc.get_or_insert_map("meta");
+        let vehicles = doc.get_or_insert_map("vehicles");
 
         // capture_timeout_millis = 0 → every transaction is its own undo step. yrs extends the last
         // stack item only when `last_change > 0 && now - last_change < capture_timeout_millis`
@@ -99,6 +102,7 @@ impl MissionDocCore {
         undo_mgr.expand_scope(&doc, &factions);
         undo_mgr.expand_scope(&doc, &editor_layers);
         undo_mgr.expand_scope(&doc, &meta);
+        undo_mgr.expand_scope(&doc, &vehicles);
 
         Self {
             doc,
@@ -107,6 +111,7 @@ impl MissionDocCore {
             factions,
             editor_layers,
             meta,
+            vehicles,
             init_mode: Cell::new(false),
             undo_mgr,
         }
@@ -319,9 +324,9 @@ impl MissionDocCore {
     }
 
     /// Create a squad under a faction (mirrors `ydoc.addSquad` and `ensureDefaultSquad`'s squad).
-    /// Writes `{id, factionId, name, slotIds:[]}` + `callsign` only when `Some`; appends `id` to
-    /// `faction.squadIds` if the faction exists. Does **not** set `leaderSlotId` — callers use
-    /// [`Self::set_leader`] after the first slot joins (T-180.1).
+    /// Writes `{id, factionId, name, slotIds:[], vehicleIds:[]}` + `callsign` only when `Some`;
+    /// appends `id` to `faction.squadIds` if the faction exists. Does **not** set `leaderSlotId` —
+    /// callers use [`Self::set_leader`] after the first slot joins (T-180.1).
     pub fn add_squad(&self, id: &str, faction_id: &str, name: &str, callsign: Option<String>) {
         let mut txn = self.begin();
         let sq = self
@@ -333,15 +338,205 @@ impl MissionDocCore {
         }
         sq.insert(&mut txn, "name", name);
         sq.insert(&mut txn, "slotIds", Any::Array(Vec::new().into()));
+        sq.insert(&mut txn, "vehicleIds", Any::Array(Vec::new().into()));
         append_id(&mut txn, &self.factions, faction_id, "squadIds", id);
     }
 
-    /// Set (or overwrite) a squad's `leaderSlotId` (T-180.1). Exclusive-leader / promote-on-move
-    /// invariants land in T-180.2.
+    /// Set (or overwrite) a squad's `leaderSlotId` when `slot_id ∈ squad.slotIds` (T-180.1 / T-180.2
+    /// B-L1). No-op if the squad is missing or the slot is not a member.
     pub fn set_leader(&self, squad_id: &str, slot_id: &str) {
         let mut txn = self.begin();
+        set_leader_in_txn(&mut txn, &self.squads, squad_id, slot_id);
+    }
+
+    /// Rename a squad (T-180.2).
+    pub fn rename_squad(&self, squad_id: &str, name: &str) {
+        let mut txn = self.begin();
         if let Some(Out::YMap(sq)) = self.squads.get(&txn, squad_id) {
-            sq.insert(&mut txn, "leaderSlotId", slot_id);
+            sq.insert(&mut txn, "name", name);
+        }
+    }
+
+    /// Replace `faction.squadIds` with `squad_ids` filtered to squads that exist and belong to
+    /// that faction (T-180.2). Unknown / wrong-faction ids are dropped.
+    pub fn reorder_squads(&self, faction_id: &str, squad_ids: &[String]) {
+        let mut txn = self.begin();
+        if self.factions.get(&txn, faction_id).is_none() {
+            return;
+        }
+        let mut next: Vec<Any> = Vec::with_capacity(squad_ids.len());
+        for sid in squad_ids {
+            if let Some(Out::YMap(sq)) = self.squads.get(&txn, sid.as_str())
+                && let Some(Out::Any(Any::String(fid))) = sq.get(&txn, "factionId")
+                && fid.as_ref() == faction_id
+            {
+                next.push(Any::String(sid.as_str().into()));
+            }
+        }
+        if let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) {
+            f.insert(&mut txn, "squadIds", Any::Array(next.into()));
+        }
+    }
+
+    /// Move a slot from its current squad into `dest_squad_id` (T-180.2). Updates both `slotIds`
+    /// arrays, rewrites dense `index` 0..n-1, promotes/GC source leader, and ensures dest leader.
+    /// No-op if slot/dest missing or already in dest. **Not** [`Self::move_slot_to_layer`].
+    pub fn move_slot_to_squad(&self, slot_id: &str, dest_squad_id: &str) {
+        let mut txn = self.begin();
+        if self.squads.get(&txn, dest_squad_id).is_none() {
+            return;
+        }
+        let Some(Out::YMap(slot)) = self.slots.get(&txn, slot_id) else {
+            return;
+        };
+        let Some(Out::Any(Any::String(src))) = slot.get(&txn, "squadId") else {
+            return;
+        };
+        let source_squad_id = src.to_string();
+        if source_squad_id == dest_squad_id {
+            return;
+        }
+
+        let source_ids = read_id_array(&txn, &self.squads, &source_squad_id, "slotIds");
+        if !source_ids
+            .iter()
+            .any(|a| matches!(a, Any::String(s) if s.as_ref() == slot_id))
+        {
+            return;
+        }
+
+        let was_leader = matches!(
+            self.squads.get(&txn, source_squad_id.as_str()).and_then(|o| match o {
+                Out::YMap(sq) => sq.get(&txn, "leaderSlotId"),
+                _ => None,
+            }),
+            Some(Out::Any(Any::String(l))) if l.as_ref() == slot_id
+        );
+
+        let kept: Vec<Any> = source_ids
+            .iter()
+            .filter(|a| !matches!(a, Any::String(s) if s.as_ref() == slot_id))
+            .cloned()
+            .collect();
+        if let Some(Out::YMap(src_sq)) = self.squads.get(&txn, source_squad_id.as_str()) {
+            src_sq.insert(&mut txn, "slotIds", Any::Array(kept.clone().into()));
+        }
+
+        append_id(&mut txn, &self.squads, dest_squad_id, "slotIds", slot_id);
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, slot_id) {
+            slot.insert(&mut txn, "squadId", dest_squad_id);
+        }
+
+        rewrite_slot_indices(&mut txn, &self.slots, &self.squads, &source_squad_id);
+        rewrite_slot_indices(&mut txn, &self.slots, &self.squads, dest_squad_id);
+
+        if kept.is_empty() {
+            garbage_collect_squad_in_txn(
+                &mut txn,
+                &self.squads,
+                &self.factions,
+                &self.vehicles,
+                &source_squad_id,
+            );
+        } else if was_leader {
+            if let Some(Any::String(next)) = kept.first() {
+                set_leader_in_txn(&mut txn, &self.squads, &source_squad_id, next.as_ref());
+            }
+        }
+
+        ensure_leader_invariant_in_txn(
+            &mut txn,
+            &self.squads,
+            &self.factions,
+            &self.vehicles,
+            dest_squad_id,
+        );
+    }
+
+    /// Delete a squad and cascade its slots + attached vehicles (T-180.2).
+    pub fn remove_squad(&self, squad_id: &str) {
+        let mut txn = self.begin();
+        let slot_ids: Vec<String> = read_id_array(&txn, &self.squads, squad_id, "slotIds")
+            .iter()
+            .filter_map(|a| match a {
+                Any::String(s) => Some(s.to_string()),
+                _ => None,
+            })
+            .collect();
+        remove_slots_in_txn(
+            &mut txn,
+            &self.slots,
+            &self.squads,
+            &self.editor_layers,
+            &slot_ids,
+        );
+        garbage_collect_squad_in_txn(
+            &mut txn,
+            &self.squads,
+            &self.factions,
+            &self.vehicles,
+            squad_id,
+        );
+    }
+
+    /// Insert a vehicle row into `vehiclesById` (T-180.2 B-L8). Minimal shape:
+    /// `{id, resourceName}` + optional `position`.
+    pub fn add_vehicle(
+        &self,
+        id: &str,
+        resource_name: &str,
+        x: Option<f64>,
+        y: Option<f64>,
+        z: Option<f64>,
+        rotation: Option<f64>,
+    ) {
+        let mut txn = self.begin();
+        let v = self
+            .vehicles
+            .insert(&mut txn, id, MapPrelim::from([("id", id)]));
+        v.insert(&mut txn, "resourceName", resource_name);
+        if let (Some(x), Some(y)) = (x, y) {
+            v.insert(
+                &mut txn,
+                "position",
+                position_any(x, y, z.unwrap_or(0.0), rotation.unwrap_or(0.0)),
+            );
+        }
+    }
+
+    /// Attach an existing vehicle to a squad's `vehicleIds` and set `vehicle.squadId` (T-180.2).
+    pub fn attach_vehicle(&self, squad_id: &str, vehicle_id: &str) {
+        let mut txn = self.begin();
+        if self.squads.get(&txn, squad_id).is_none() || self.vehicles.get(&txn, vehicle_id).is_none()
+        {
+            return;
+        }
+        let existing = read_id_array(&txn, &self.squads, squad_id, "vehicleIds");
+        if existing
+            .iter()
+            .any(|a| matches!(a, Any::String(s) if s.as_ref() == vehicle_id))
+        {
+            // already attached — still ensure squadId is set
+        } else {
+            append_id(&mut txn, &self.squads, squad_id, "vehicleIds", vehicle_id);
+        }
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
+            v.insert(&mut txn, "squadId", squad_id);
+        }
+    }
+
+    /// Detach a vehicle from a squad's `vehicleIds` and clear `vehicle.squadId` (T-180.2).
+    /// The vehicle row remains in `vehiclesById`.
+    pub fn detach_vehicle(&self, squad_id: &str, vehicle_id: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(sq)) = self.squads.get(&txn, squad_id) {
+            let arr = read_id_array(&txn, &self.squads, squad_id, "vehicleIds");
+            let remove: HashSet<&str> = HashSet::from([vehicle_id]);
+            let kept = retain_ids(&arr, &remove);
+            sq.insert(&mut txn, "vehicleIds", Any::Array(kept.into()));
+        }
+        if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
+            v.remove(&mut txn, "squadId");
         }
     }
 
@@ -1025,6 +1220,102 @@ fn append_id(txn: &mut TransactionMut, map: &MapRef, key: &str, field: &str, id:
     }
 }
 
+/// Write `leaderSlotId` only when `slot_id` is in the squad's `slotIds` (T-180.2 B-L1).
+fn set_leader_in_txn(txn: &mut TransactionMut, squads: &MapRef, squad_id: &str, slot_id: &str) {
+    let ids = read_id_array(txn, squads, squad_id, "slotIds");
+    if !ids
+        .iter()
+        .any(|a| matches!(a, Any::String(s) if s.as_ref() == slot_id))
+    {
+        return;
+    }
+    if let Some(Out::YMap(sq)) = squads.get(txn, squad_id) {
+        sq.insert(txn, "leaderSlotId", slot_id);
+    }
+}
+
+/// Rewrite each member slot's `index` to dense `0..n-1` matching `slotIds` order (T-180.2 B-L3).
+fn rewrite_slot_indices(
+    txn: &mut TransactionMut,
+    slots: &MapRef,
+    squads: &MapRef,
+    squad_id: &str,
+) {
+    let ids = read_id_array(txn, squads, squad_id, "slotIds");
+    for (i, any) in ids.iter().enumerate() {
+        let Any::String(sid) = any else {
+            continue;
+        };
+        if let Some(Out::YMap(slot)) = slots.get(txn, sid.as_ref()) {
+            slot.insert(txn, "index", Any::BigInt(i as i64));
+        }
+    }
+}
+
+/// Delete vehicles listed on the squad, detach the squad from its faction, and remove the squad row.
+fn garbage_collect_squad_in_txn(
+    txn: &mut TransactionMut,
+    squads: &MapRef,
+    factions: &MapRef,
+    vehicles: &MapRef,
+    squad_id: &str,
+) {
+    if squads.get(txn, squad_id).is_none() {
+        return;
+    }
+    let faction_id = match squads.get(txn, squad_id).and_then(|o| match o {
+        Out::YMap(sq) => sq.get(txn, "factionId"),
+        _ => None,
+    }) {
+        Some(Out::Any(Any::String(f))) => f.to_string(),
+        _ => String::new(),
+    };
+    let vehicle_ids = read_id_array(txn, squads, squad_id, "vehicleIds");
+    for vid in &vehicle_ids {
+        if let Any::String(id) = vid {
+            vehicles.remove(txn, id.as_ref());
+        }
+    }
+    if !faction_id.is_empty()
+        && let Some(Out::YMap(f)) = factions.get(txn, faction_id.as_str())
+    {
+        let arr = read_id_array(txn, factions, faction_id.as_str(), "squadIds");
+        let remove: HashSet<&str> = HashSet::from([squad_id]);
+        let kept = retain_ids(&arr, &remove);
+        f.insert(txn, "squadIds", Any::Array(kept.into()));
+    }
+    squads.remove(txn, squad_id);
+}
+
+/// After mutations: empty squad → GC; else ensure `leaderSlotId ∈ slotIds` (promote to `[0]`).
+fn ensure_leader_invariant_in_txn(
+    txn: &mut TransactionMut,
+    squads: &MapRef,
+    factions: &MapRef,
+    vehicles: &MapRef,
+    squad_id: &str,
+) {
+    let ids = read_id_array(txn, squads, squad_id, "slotIds");
+    if ids.is_empty() {
+        garbage_collect_squad_in_txn(txn, squads, factions, vehicles, squad_id);
+        return;
+    }
+    let leader_ok = match squads.get(txn, squad_id).and_then(|o| match o {
+        Out::YMap(sq) => sq.get(txn, "leaderSlotId"),
+        _ => None,
+    }) {
+        Some(Out::Any(Any::String(l))) => ids
+            .iter()
+            .any(|a| matches!(a, Any::String(s) if s.as_ref() == l.as_ref())),
+        _ => false,
+    };
+    if !leader_ok
+        && let Some(Any::String(first)) = ids.first()
+    {
+        set_leader_in_txn(txn, squads, squad_id, first.as_ref());
+    }
+}
+
 /// Distance (m) a paste is offset from its originals when the cursor is off-map (`ydoc.PASTE_NUDGE`).
 const PASTE_NUDGE: f64 = 20.0;
 
@@ -1611,5 +1902,218 @@ mod tests {
         assert!(json.contains("Default Layer"), "{json}");
         assert!(!json.contains("\"root\""), "root deleted: {json}");
         assert!(!json.contains("\"child\""), "child deleted: {json}");
+    }
+
+    // ── T-180.2 ORBAT graph mutators (B1–B7) ───────────────────────────────────────────────────
+
+    fn orbat_fixture() -> MissionDocCore {
+        let doc = MissionDocCore::new();
+        doc.add_editor_layer("lyr", "Layer", None);
+        doc.add_faction("faction-BLUFOR", "BLUFOR", "BLUFOR");
+        doc.add_squad("sq-a", "faction-BLUFOR", "Alpha", None);
+        doc.add_squad("sq-b", "faction-BLUFOR", "Bravo", None);
+        doc
+    }
+
+    fn small_maps(doc: &MissionDocCore) -> serde_json::Value {
+        serde_json::from_str(&doc.small_maps_json()).expect("small_maps_json")
+    }
+
+    fn slots_map(doc: &MissionDocCore) -> serde_json::Value {
+        serde_json::from_str(&doc.slots_json()).expect("slots_json")
+    }
+
+    /// B1 — set_leader(B) after leader A ⇒ leaderSlotId=B only.
+    #[test]
+    fn set_leader_exclusive() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "a", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "b", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "a");
+        doc.set_leader("sq-a", "b");
+        let root = small_maps(&doc);
+        assert_eq!(root["squadsById"]["sq-a"]["leaderSlotId"], "b");
+        assert_ne!(root["squadsById"]["sq-a"]["leaderSlotId"], "a");
+    }
+
+    /// B2 — move last slot away ⇒ source squad key absent from squads map.
+    #[test]
+    fn empty_squad_garbage_collected() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "solo", "sq-a", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "solo");
+        doc.add_vehicle("v1", "Prefab/Vehicle.et", None, None, None, None);
+        doc.attach_vehicle("sq-a", "v1");
+        doc.move_slot_to_squad("solo", "sq-b");
+        let root = small_maps(&doc);
+        assert!(
+            root["squadsById"].get("sq-a").is_none(),
+            "empty source must be GC'd: {}",
+            root["squadsById"]
+        );
+        assert!(
+            root["vehiclesById"].get("v1").is_none(),
+            "vehicles attached only to GC'd squad must be deleted"
+        );
+        assert_eq!(slots_map(&doc)["solo"]["squadId"], "sq-b");
+    }
+
+    /// B3 — move_slot: source without id; dest with id; slot.squadId=dest.
+    #[test]
+    fn move_slot_bidirectional() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "m", "sq-a", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "keep", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "keep");
+        doc.move_slot_to_squad("m", "sq-b");
+        let root = small_maps(&doc);
+        let src_ids = root["squadsById"]["sq-a"]["slotIds"]
+            .as_array()
+            .expect("slotIds");
+        let dst_ids = root["squadsById"]["sq-b"]["slotIds"]
+            .as_array()
+            .expect("slotIds");
+        assert!(!src_ids.iter().any(|v| v == "m"));
+        assert!(dst_ids.iter().any(|v| v == "m"));
+        assert_eq!(slots_map(&doc)["m"]["squadId"], "sq-b");
+    }
+
+    /// B4 — after mutator fixture, every remaining squad has leader ∈ slotIds.
+    #[test]
+    fn leader_invariant_holds() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "a1", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "a2", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "a1");
+        doc.add_slot(
+            "b1", "sq-b", "lyr", 0, "Rifleman", None, None, 3.0, 3.0, 0.0, 0.0,
+        );
+        doc.move_slot_to_squad("a1", "sq-b");
+        doc.set_leader("sq-b", "a1");
+        let root = small_maps(&doc);
+        let squads = root["squadsById"].as_object().expect("squadsById");
+        for (sid, sq) in squads {
+            let slot_ids = sq["slotIds"].as_array().expect("slotIds");
+            assert!(
+                !slot_ids.is_empty(),
+                "empty squad {sid} should have been GC'd"
+            );
+            let leader = sq["leaderSlotId"].as_str().expect("leaderSlotId");
+            assert!(
+                slot_ids.iter().any(|v| v.as_str() == Some(leader)),
+                "squad {sid}: leader {leader} not in {slot_ids:?}"
+            );
+        }
+    }
+
+    /// B5 — move leader away with members left ⇒ remaining[0] is leader.
+    #[test]
+    fn move_leader_promotes_next() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "lead", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "next", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "tail", "sq-a", "lyr", 2, "Medic", None, None, 3.0, 3.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "lead");
+        doc.move_slot_to_squad("lead", "sq-b");
+        let root = small_maps(&doc);
+        assert_eq!(root["squadsById"]["sq-a"]["leaderSlotId"], "next");
+        let ids = root["squadsById"]["sq-a"]["slotIds"]
+            .as_array()
+            .expect("slotIds");
+        assert_eq!(ids[0], "next");
+    }
+
+    /// B6 — add_vehicle + attach then detach vehicleIds.
+    #[test]
+    fn attach_vehicle_roundtrip() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "s", "sq-a", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "s");
+        doc.add_vehicle(
+            "veh-1",
+            "Prefabs/Vehicles/Wheeled/M113/M113.et",
+            Some(10.0),
+            Some(20.0),
+            Some(0.0),
+            Some(90.0),
+        );
+        doc.attach_vehicle("sq-a", "veh-1");
+        let root = small_maps(&doc);
+        let vids = root["squadsById"]["sq-a"]["vehicleIds"]
+            .as_array()
+            .expect("vehicleIds");
+        assert!(vids.iter().any(|v| v == "veh-1"));
+        assert_eq!(root["vehiclesById"]["veh-1"]["squadId"], "sq-a");
+        assert_eq!(
+            root["vehiclesById"]["veh-1"]["resourceName"],
+            "Prefabs/Vehicles/Wheeled/M113/M113.et"
+        );
+        doc.detach_vehicle("sq-a", "veh-1");
+        let root = small_maps(&doc);
+        let vids = root["squadsById"]["sq-a"]["vehicleIds"]
+            .as_array()
+            .expect("vehicleIds");
+        assert!(!vids.iter().any(|v| v == "veh-1"));
+        assert!(
+            root["vehiclesById"].get("veh-1").is_some(),
+            "detach must keep the vehicle row"
+        );
+        assert!(root["vehiclesById"]["veh-1"].get("squadId").is_none());
+    }
+
+    /// B7 — dense index rewrite 0..n-1 after move.
+    #[test]
+    fn slot_indices_dense_after_move() {
+        let doc = orbat_fixture();
+        doc.add_slot(
+            "a0", "sq-a", "lyr", 0, "Rifleman", None, None, 1.0, 1.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "a1", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
+        );
+        doc.add_slot(
+            "a2", "sq-a", "lyr", 2, "Rifleman", None, None, 3.0, 3.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-a", "a0");
+        doc.add_slot(
+            "b0", "sq-b", "lyr", 0, "Rifleman", None, None, 4.0, 4.0, 0.0, 0.0,
+        );
+        doc.set_leader("sq-b", "b0");
+        // Move middle member out of sq-a → remaining must reindex densely.
+        doc.move_slot_to_squad("a1", "sq-b");
+        let slots = slots_map(&doc);
+        let root = small_maps(&doc);
+        for (sq_id, key) in [("sq-a", "sq-a"), ("sq-b", "sq-b")] {
+            let ids = root["squadsById"][key]["slotIds"]
+                .as_array()
+                .unwrap_or_else(|| panic!("{sq_id} slotIds"));
+            for (i, id_val) in ids.iter().enumerate() {
+                let sid = id_val.as_str().expect("id str");
+                let idx = slots[sid]["index"].as_i64().expect("index");
+                assert_eq!(idx, i as i64, "{sq_id}/{sid} index");
+            }
+        }
     }
 }
