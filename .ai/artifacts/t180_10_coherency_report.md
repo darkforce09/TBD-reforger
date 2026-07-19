@@ -89,8 +89,9 @@
 | ID | Issue | Disposition |
 |----|-------|-------------|
 | P2-1 | Spec prose sometimes said `mission/place_orbat.rs` | Paths corrected in pins/hub; historical verify logs OK |
-| P2-2 | `attributes.rs` module header may still say Arsenal stub | Comment-only; leave (Cursor no app code) |
+| P2-2 | `attributes.rs` module header said Arsenal stub | **Fixed** (header reflects live Arsenal + `open_arsenal` tab 3) |
 | P2-3 | Operator manuals M-* pending | Residual — not FAIL |
+| P2-4 | T-168 summary pointed management at T-071 | **Fixed** (registry summary → T-180) |
 
 ---
 

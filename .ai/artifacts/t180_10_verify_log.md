@@ -42,7 +42,11 @@ verify-t180: ALL PASS
 
 - Operator manuals M-C1…M-I3
 - L8 Standardization (operator deferred)
-- P2-2 `attributes.rs` module header comment (no app-code Cursor edit)
+
+## Follow-up (P2 closed)
+
+- `attributes.rs` module header — Arsenal live / `open_arsenal` tab 3
+- T-168 registry summary — no longer points management at T-071
 
 ## Return
 

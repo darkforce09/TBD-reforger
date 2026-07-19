@@ -2,10 +2,10 @@
 //! `t159_23_attributes_modal.md`). Opened by dbl-clicking a slot on the map or activating an
 //! outliner row (multi-select suppresses — A1); Esc / backdrop / ✕ close. Tabs: **Transform**
 //! (X/Y/Z/Rotation NumberFields committing on blur/Enter via `update_slot_position`, plus a Stance
-//! select) and **Identity** (Role/Tag TextFields committing per input like the React `TextField`,
-//! with a readonly Squad) live; **States** is the React trait stub; **Arsenal** is a disabled stub
-//! (A3 — the Forge rides T-159.27). Commits run `editor_ops::attrs_update_*` → `after_local_edit`
-//! (rebind + persist + one undo step per commit — A4).
+//! select), **Identity** (Role/Tag TextFields + readonly Squad), **States** (trait stub), and
+//! **Arsenal** (live loadout editor — T-068.10 / T-180.9; `open_arsenal` selects tab index 3).
+//! Commits run `editor_ops::attrs_update_*` → `after_local_edit` (rebind + persist + one undo
+//! step per commit — A4).
 //!
 //! The field values re-read from the doc on every `doc_ver` bump, so an undo while the modal is
 //! open refreshes the fields — and if the slot itself was undone away, the modal closes.

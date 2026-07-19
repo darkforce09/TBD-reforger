@@ -5357,7 +5357,7 @@
         "state"
       ],
       "title": "Leptos ORBAT tree in the left dock",
-      "summary": "SHIPPED @ tag T-168: the ORBAT stub header is replaced with a live faction\u2192squad\u2192slot browse/select tree (`build_orbat` in outliner.rs; NodeKind::Faction/Squad added). Placement now mints a default faction+squad (`ensure_default_squad`, place-mint) so slots join an ORBAT squad; slot leaves click-select + dbl-click\u2192Attributes (SEL-ORBAT-DBL-001, reusing outliner_rows). Browse/select only \u2014 squad MANAGEMENT stays T-071. smoke_outliner_palette extended o3/o4/o5 (squad minted, leaf selects, dbl-click\u2192Attributes); build_orbat unit-tested.",
+      "summary": "SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad \u2014 superseded by T-180 place\u2192new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested.",
       "slices": [],
       "depends_on": [
         "T-159"
