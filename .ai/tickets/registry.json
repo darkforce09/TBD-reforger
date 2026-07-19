@@ -5675,7 +5675,7 @@
         "perf"
       ],
       "title": "Forest load consistency + YouTube guides + Outliner label",
-      "summary": "SHIPPED @ tag T-178 / 8b7d5661. A1 island TBDD density texture + fs_forest_density (Nearest, iso 2.0, fwidth rim; pins 1601/625/density); progressive mesh fill retired. A2 Outliner label removed. A3 continuous YouTube spines. A4 data-guide-toggle. Verify: .ai/artifacts/t178_verify_log.md. Hub: docs/platform/t178_forest_guides_chrome.md.",
+      "summary": "SHIPPED @ tag T-178 / 58d839c7. A1 island TBDD density texture + fs_forest_density (Nearest, iso 2.0, fwidth rim; pins 1601/625/density); progressive mesh fill retired. A2 Outliner label removed. A3 continuous YouTube spines. A4 data-guide-toggle. Verify: .ai/artifacts/t178_verify_log.md. Hub: docs/platform/t178_forest_guides_chrome.md.",
       "slices": [],
       "depends_on": [
         "T-177"

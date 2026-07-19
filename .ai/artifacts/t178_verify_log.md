@@ -1,6 +1,6 @@
 # T-178 — verify log (density-shader forest + YouTube guides)
 
-**Branch:** `main` · **Base:** T-177 `e97a01c6` · **Hygiene:** `61be15a4` · **Commit:**  · **Executor:** Cursor/Grok (operator override — Claude tokens exhausted)
+**Branch:** `main` · **Base:** T-177 `e97a01c6` · **Hygiene:** `61be15a4` · **Commit:** `58d839c7` · **Executor:** Cursor/Grok (operator override — Claude tokens exhausted)
 
 ## Result
 
