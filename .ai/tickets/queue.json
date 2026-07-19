@@ -37,7 +37,7 @@
       "id": "T-180",
       "title": "ORBAT + Eden placement program",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md",
       "branch": "main"
     }
   ]

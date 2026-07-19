@@ -112,36 +112,57 @@ Read CLAUDE.md first.
 
 Implement **T-180.8** — Templates Apply/Save (T-153) + squad vehicles.
 
+═══ PREFLIGHT ═══
+  git status
+  ./scripts/ticket brief T-180
+
 ═══ READ ═══
-  t180_8_templates_vehicles.md · t153_faction_library.md · hub · handoff
-  apps/website/frontend/src/faction_manager.rs · dto FactionDoc
-  packages/tbd-schema/schema/faction-library.schema.json
+  1. .ai/artifacts/t180_claude_code_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t180_class_r_pins.md
+  3. docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md
+  4. docs/specs/Mission_Creator_Architecture/t153_faction_library.md
+  5. packages/tbd-schema/schema/faction-library.schema.json
+  6. apps/website/frontend/src/orbat_manager.rs (template shell from .7)
+  7. apps/website/frontend/src/faction_manager.rs · FactionDoc DTOs
+  8. crates/map-engine-core add_vehicle / attach_vehicle (T-180.2)
 
 ═══ PROBLEM ═══
-  Stitch Apply Template + Save + Add Vehicle. Materialize library → mission side
-  (replace). Vehicles attach + map presence. Rust-pure apply for Class-R tests.
+  Stitch Apply Template + Save/Save as + Add Vehicle.
+  Materialize library → mission side (REPLACE not merge). Vehicles attach + map
+  presence. Pure Rust apply for Class-R tests (H-L7b).
+
+═══ SHIPPED ═══
+  T-180.1–.7 @ aeb51209 / 83557768 / 19acc593 / 63e7ef00 / 1324799c / 056c9a1a / e9c2406d
 
 ═══ LOCKED ═══
-  - Replace not merge (H9)
-  - Confirm before Apply
-  - First/SL role = leader
-  - CIV excluded from dropdown
-  - No dead Add Vehicle
+  - Template list = GET /api/v1/factions filtered side==active tab; CIV excluded (H7/H-L8)
+  - Apply = replace all under side after confirm; Cancel = noop (H5)
+  - Materialize in map-engine-core (H1–H4, H9) — not FE-only
+  - First role or /Squad Leader/i → leaderSlotId
+  - Role loadout JSON → slot; library vehicles → vehicleIds + vehiclesById
+  - Add Vehicle → add_vehicle + attach + visible map glyph (no dead button)
+  - Save / Save as via Faction Library API
 
 ═══ DO ═══
-  1. apply_faction Rust + tests H1–H4, H9
-  2. UI Apply/Save/Save as + confirm
-  3. Add Vehicle attach + map
-  4. verify log · tag T-180.8
+  1. apply_faction (or replace_side_orbat) Rust + tests H1–H4, H9
+  2. ORBAT Manager: template select, Apply confirm, Save/Save as
+  3. Add Vehicle picker + attach + map presence
+  4. Gates H1–H9 · .ai/artifacts/t180_8_verify_log.md · tag T-180.8
 
 ═══ DO NOT ═══
-  Docs · merge-on-apply · skip map presence · CIV in ORBAT templates
+  Docs/registry · merge-on-apply · skip map vehicle presence · CIV in dropdown
+  · Standardization · arsenal/compile (.9)
 
 ═══ VERIFY ═══
   cargo test -p map-engine-core apply_faction_
+  cargo test -p map-engine-core --features doc apply_faction_ 2>/dev/null || true
+  cargo test -p website-frontend --lib
   make test-it
   make ci-local-leptos
 
+═══ MANUAL ═══
+  M-H1..M-H4 Apply / Save as / Add Vehicle / cancel
+
 ═══ RETURN ═══
-  SHA + tag T-180.8 · Ready for T-180.9
+  SHA + tag T-180.8 · verify log · Ready for T-180.9
 ```
