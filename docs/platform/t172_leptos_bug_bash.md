@@ -1,6 +1,6 @@
 # T-172 — Leptos SPA + Mission Creator bug bash
 
-**Status:** `ready` · **Executor:** Claude Code · **Branch:** `main`  
+**Status:** SHIPPED @ tag **T-172** / `e08884f4` · residual perf → **T-173** · **Branch:** `main`  
 **Scope:** `apps/website/frontend/**` (+ `crates/map-engine-*` / `tools/tbd-tools` only if required for render/glyph/forest fixes). **Not** `apps/mod/`. **Not** T-170 prod flip.  
 **Operator evidence:** [`.ai/artifacts/t172_operator_screens/`](../../.ai/artifacts/t172_operator_screens/) + babble 2026-07-18.
 

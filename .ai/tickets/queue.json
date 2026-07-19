@@ -27,10 +27,10 @@
       "branch": "t-151-wgpu-spike"
     },
     {
-      "id": "T-172",
-      "title": "Leptos SPA + Mission Creator bug bash",
+      "id": "T-178",
+      "title": "Forest load consistency + YouTube guides + Outliner label",
       "status": "ready",
-      "spec": "docs/platform/t172_leptos_bug_bash.md",
+      "spec": "docs/platform/t178_forest_guides_chrome.md",
       "branch": "main"
     }
   ]

@@ -1,10 +1,14 @@
 # T-071 — ORBAT Manager (web program)
 
-**Status:** **READY** — T-092 spawn/compile **shipped** @ `a73224f2` (wb_play + REST E2E PASS 2026-07-04).  
+**Status:** **READY** (T-071.1+) — **T-071.0 SHIPPED** via **T-177** @ `e97a01c6` (tag **T-177**).  
 **Ticket:** T-071 · **Route:** `/missions/:id/edit` · **Registry:** [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [`eden/gap_analysis.md`](eden/gap_analysis.md) · [`ux_spec.md`](ux_spec.md)
 
-**Map gate:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md)
+**T-071.0 (done):** left Outliner → Editor Layers only; top-strip **ORBAT Manager** → `OrbatManagerDialog` browse/select shell (select + dbl-click→Attributes). Spec/verify: [`t177_mc_chrome_orbat_cutover.md`](../../platform/t177_mc_chrome_orbat_cutover.md) · [`.ai/artifacts/t177_verify_log.md`](../../../.ai/artifacts/t177_verify_log.md).
+
+**Next:** **T-071.1** squad CRUD · **T-071.2** slot numbering/export order · **T-071.3–.4** logos/standardizations/per-slot Arsenal.
+
+**Map gate:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) — **cleared**.
 
 ---
 
@@ -39,13 +43,13 @@ Phase 1 Virtual Arsenal (test NPC only) stays shipped. **Do not** resume T-068 P
 
 ---
 
-## Honest status (2026-06)
+## Honest status (2026-07-19)
 
-**Web ORBAT is not built.** Event attach/inline claim (T-008–T-010) ≠ Eden ORBAT Manager.
+**T-071.0 browse shell is live** (T-177). Full Eden ORBAT authoring (CRUD / export order / logos) is still **T-071.1+**. Event attach/inline claim (T-008–T-010) ≠ that remaining work.
 
 | Surface | Exists | Missing |
 |---------|--------|---------|
-| Mission Creator | Read-only Faction → Squad → Slot tree; default squads on drop | Squad names, numbering, order, ORBAT Manager modal, logos, standardizations |
+| Mission Creator | Top-strip **ORBAT Manager** modal (browse/select/Attributes); left = Editor Layers only | Squad CRUD, numbering, export order, logos, standardizations (**T-071.1+**) |
 | Event Hub | Auto-materialize ORBAT; inline claim | Full slotting-screen parity; **T-118** admin polish |
 | Compiler / mod | `orbat[]` + editor graph; **GET /compiled** + flatten @ T-092 | Slot order, loadout blocks (T-068.11+) |
 
@@ -53,12 +57,12 @@ Phase 1 Virtual Arsenal (test NPC only) stays shipped. **Do not** resume T-068 P
 
 ## Slice ladder
 
-| Slice | Focus |
-|-------|-------|
-| **T-071.0** | Modal shell; left sidebar → Editor Layers only |
-| **T-071.1** | Squad CRUD; move slot between squads |
-| **T-071.2** | Slot numbering + slotting order in export |
-| **T-071.3–.4** | Logos, standardizations, per-slot Arsenal link |
+| Slice | Focus | Status |
+|-------|-------|--------|
+| **T-071.0** | Modal shell; left sidebar → Editor Layers only | ✅ via **T-177** @ `e97a01c6` |
+| **T-071.1** | Squad CRUD; move slot between squads | next |
+| **T-071.2** | Slot numbering + slotting order in export | queued |
+| **T-071.3–.4** | Logos, standardizations, per-slot Arsenal link | queued |
 
 Executor: **claude-code**. Docs: **cursor-docs** when activated.
 

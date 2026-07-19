@@ -25,6 +25,10 @@ make db-up
 make api
 
 # 3. Leptos Trunk SPA on :3000 (proxies /api + /map-assets → :8080)
+#    T-173: make leptos = trunk serve --release (day-to-day / perf-honest).
+#    Fast rebuilds only: make leptos-debug (unoptimized wasm — do not judge FPS).
+#    T-174: satellite = preview→full progressive by default (sharp TBDS).
+#           ?sat=preview = Range-only (gates / fast local); ?sat=full is a no-op.
 make leptos
 ```
 
@@ -145,6 +149,12 @@ make map-cartographic-everon
 make map-cartographic-verify
 ```
 
+**Mission Settings → Map basemap (T-173):** the Satellite/Map radio is live. **Map** view needs the cartographic tile pyramid from `make map-cartographic-everon`; when those tiles are absent the host **falls back to satellite** (not a broken toggle).
+
+**Satellite load (T-174):** day-to-day `make leptos` upgrades preview→full TBDS automatically (no `?sat=full`). Use `?sat=preview` only for Range-only / fast iteration (same as CI gates). Density-heatmap green glow is removed.
+
+**Forest canopy (T-176):** island forest highlight is **8 m TBDD canopy mass** (not the old 32 m Path B landcover forest wash). Clearings stay open. Retune tightness: `CANOPY_KERNEL_RADIUS_CELLS` / `CANOPY_MASS_ISO`, then `cargo run -p tbd-tools --bin world -- redensify --terrain everon` (committed-chunk path; no Workbench).
+
 See [`packages/map-assets/README.md`](../../packages/map-assets/README.md). **Ops:** ImageMagick spill → `/var/tmp`.
 
 **Verify:**
@@ -159,7 +169,7 @@ make verify-terrain-strict
 ## Notes
 
 - A fresh DB only has Discord role mappings + registry smoke rows (`make seed` → `apps/website/api/seeds/`).
-- Frontend: `make ci-local-leptos`; full editor gates: `make leptos-gates`.
+- Frontend: `make ci-local-leptos`; full editor gates: `make leptos-gates` (see [`EDITOR_GATE_RUNBOOK.md`](EDITOR_GATE_RUNBOOK.md) — `gate doctor` preflight, full Chrome `--headless=new`, toolchain **1.95.0**).
 - Integration tests: `make test-it` (needs `make db-up`).
 
 ## Mock data (optional, not run by `make seed`)

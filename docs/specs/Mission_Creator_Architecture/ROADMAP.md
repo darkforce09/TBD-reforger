@@ -12,7 +12,7 @@
 ### Recommended next work (auto-generated)
 
 - **T-068** — Virtual Arsenal (registry + loadout export) (ready)
-- **T-071** — ORBAT Manager modal (queued)
+- **T-071** — ORBAT Manager modal (ready)
 - **T-072** — Ctrl multi-place (queued)
 - **T-073** — Shift + map rotation (queued)
 - **T-074** — Faction submode / catalog filter (queued)
@@ -186,7 +186,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 
 ### Editor shell & routing
 - Lazy route `/missions/:id/edit` (`mission_maker+`, full-bleed)
-- Aegis glass UI: top strip, left sidebar (ORBAT + Editor Layers), right asset palette, bottom toolbelt
+- Aegis glass UI: top strip (+ **ORBAT Manager**), left sidebar (**Editor Layers** only — T-177), right asset palette, bottom toolbelt; YouTube-style tree connectors
 - Mission Settings dialog (time, weather, view distance, thermals)
 - Attributes modal (Identity / Transform editable / States stub / **Arsenal dumb loadout @ T-068.4**)
 
@@ -405,9 +405,9 @@ Hub: [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
 | Area | Status | Ticket |
 |------|--------|--------|
-| MC left ORBAT tree | **Partial** — read-only mirror; default squads on drop | **T-071** |
+| MC left ORBAT tree | **Removed** (T-177 / T-071.0) — Editor Layers only | — |
 | Squad names / numbering / order / membership | **Not built** | **T-071.1–T-071.2** |
-| ORBAT Manager modal | **Not built** | **T-071** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| ORBAT Manager modal | **Browse/select shell** (T-177 / T-071.0) — CRUD next | **T-071.1+** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | Event slotting UX + admin | **Partial** | **T-118** |
 | Mod slot picker (verify kits) | **Not built** | **T-068.13** (production LOBBY UI; requires **T-092.2**) |
 
@@ -424,7 +424,7 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 | **T-068** | Virtual Arsenal — through **T-068.10**; **T-068.11** compiled loadout next | **Active T-068.11** — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
 | **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Deferred** (data lane first — **T-150**) — [`t069_markers_on_map.md`](t069_markers_on_map.md) |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
-| **T-071** | ORBAT Manager modal — squad names, numbering, membership, slotting order, logos, arsenal | **Queued — blocked on T-092** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| **T-071** | ORBAT Manager — **.0** ✅ via T-177; **.1+** squad CRUD / export order / logos | **Ready (.1 next)** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
 | **T-072** | Ctrl multi-place | **Queued** |
 | **T-073** | Shift + map rotation | **Queued** |
 | **T-074** | Faction submode / catalog filter | **Queued** |

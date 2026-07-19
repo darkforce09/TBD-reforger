@@ -44,14 +44,15 @@ leaderboards, doctrine wiki, CMS, and admin tooling.
 Everything is configured in `apps/website/api/.env` (`APP_ENV=development`, DB on port 5434). Cargo lives at `~/.cargo/bin`; the root `Makefile` prepends it (plus `~/go/bin` for the editorconfig-checker binary only).
 
 ```bash
-make db-up        # start local Postgres (podman/docker compose), port 5434
-make api          # run the Rust API on :8080 (cargo run --bin api; migrates on boot)
-make leptos       # run the Leptos dev server on :3000 (trunk serve; proxies /api -> :8080)
-make test-it      # Rust integration tests (needs db-up; sets TEST_DATABASE_URL)
-make db-down      # stop Postgres (keeps volume)
+make db-up         # start local Postgres (podman/docker compose), port 5434
+make api           # run the Rust API on :8080 (cargo run --bin api; migrates on boot)
+make leptos        # Leptos on :3000 — trunk serve --release (T-173 P8; day-to-day perf path)
+make leptos-debug  # debug wasm rebuilds only — editor FPS NOT representative
+make test-it       # Rust integration tests (needs db-up; sets TEST_DATABASE_URL)
+make db-down       # stop Postgres (keeps volume)
 ```
 
-Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release build); full editor gates: `make leptos-gates`.
+Frontend checks: `make ci-local-leptos` (fmt + clippy wasm32 + cargo test + trunk release build); full editor gates: `make leptos-gates` (T-177: runs **`gate doctor`** first — see [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md); full Chrome `--headless=new`, not `chrome-headless-shell`). Toolchain pin: root [`rust-toolchain.toml`](rust-toolchain.toml) (**1.95.0**). Editor HUD shows `rf <ms>`; console `window.__editorBench(500)` for local pan/zoom encode samples (T-173).
 
 ### Dev login (no Discord needed)
 `APP_ENV=development` exposes `GET /api/v1/auth/dev-login?role=admin|mission_maker|enlisted`.
@@ -127,13 +128,13 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-171**
+**Latest shipped:** **T-177**
 
 **ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
-- **T-071** — ORBAT Manager modal (`queued`)
+- **T-071** — ORBAT Manager modal (`ready`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
 - **T-074** — Faction submode / catalog filter (`queued`)
@@ -147,6 +148,18 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.
 
 **T-171 — website nest + hygiene** @ `2421b335` (tag **T-171**): `apps/website/{api,frontend}` layout; pkgs `website-api` / `website-frontend`; seeds at `api/seeds/`; fixture convention crate-local; map-assets via API `/map-assets` + `make lfs-dem`/`lfs-sat`. CI job ids `rust-backend`→`website-api`, `website-leptos`→`website-frontend`. Conventions pin: [`WHERE_DOES_X_GO.md`](docs/platform/WHERE_DOES_X_GO.md). Docs pass: T-171.docs.
+
+**T-172 — Leptos SPA + MC bug bash** @ `e08884f4` (tag **T-172**): shell dead-clicks + reactive nav/drawer; library/wiki/vehicles/modpacks selection; CUR Z; translucent forest; visible slots; 3D Arsenal; chrome parity. Verify: [`.ai/artifacts/t172_verify_log.md`](.ai/artifacts/t172_verify_log.md).
+
+**T-173 — Leptos MC performance + fidelity** @ `dddf3158` (tag **T-173**): `make leptos` = `trunk serve --release` (`leptos-debug` for fast iter); pan streaming settle + zoom compose memo; thrash-free residency; library/sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; clusters/labels/airfield on Leptos host. Verify: [`.ai/artifacts/t173_verify_log.md`](.ai/artifacts/t173_verify_log.md). Operator G-A: HUD `rf` + `window.__editorBench(500)`.
+
+**T-174 — MC sat sharpness + heatmap removal + dock guides** @ `bbb99526` (tag **T-174**): localhost sat preview→full progressive (dropped `sat_dev_preview_default`; `?sat=preview` = gate/fast; `?sat=full` no-op); density-heatmap glow excised (LOD rung kept); guide stems clip to rows (no dock rails). Verify: [`.ai/artifacts/t174_verify_log.md`](.ai/artifacts/t174_verify_log.md).
+
+**T-175 — MC interaction + LOD + pan/zoom perf** @ `b90deac8` (tag **T-175**): sticky tree GPU clear; concurrent forest fetch; readable contours; floor-aware zoom memo; cold-slot rebind; place ghost + live drag preview; O(delta) selection tint; `BootPhase` loading overlay; hunt H1–H6. Verify: [`.ai/artifacts/t175_verify_log.md`](.ai/artifacts/t175_verify_log.md).
+
+**T-176 — Forest canopy mass + place ghost + zoom+pan** @ `a5940fad` (tag **T-176**): forest highlight = **8 m TBDD canopy mass** (box blur + `CANOPY_MASS_ISO`); **32 m landcover forest wash removed**; `push_landcover` after `set_viewport`; `SlotPlacePreview` bound to slot atlas; `CAMERA_GESTURE` defers DEM/forest recompute during pan. Retune: `tbd-tools world redensify --terrain everon`. Verify: [`.ai/artifacts/t176_verify_log.md`](.ai/artifacts/t176_verify_log.md).
+
+**T-177 — MC chrome + ORBAT dock cutover (T-071.0)** @ `e97a01c6` (tag **T-177**): YouTube elbow tree guides; grab cursor on palette leaves; menus above docks (`z-30`/`z-20`); left ORBAT removed; top-strip **ORBAT Manager** → `OrbatManagerDialog`. Gate harness: full Chrome headless + **`gate doctor`** — [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md). Verify: [`.ai/artifacts/t177_verify_log.md`](.ai/artifacts/t177_verify_log.md). **Next ORBAT:** T-071.1+.
 
 **Workspace restructure (2026-06-26, `2a51d66`):** monorepo reorganized into the
 `apps/` + `packages/` + unified `docs/` + `scripts/` + hidden `.ai/` layout (see

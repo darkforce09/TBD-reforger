@@ -1,5 +1,5 @@
 {
-  "next_id": 173,
+  "next_id": 179,
   "tickets": [
     {
       "id": "T-001",
@@ -1491,7 +1491,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager modal \u2014 squad names, numbering, membership, slotting order. **Deferred** \u2014 operator **map-first lane** until **T-090** ships (T-092 gate cleared @ `a73224f2`). Hub: t071_orbat_manager_program.md.",
+      "summary": "ORBAT Manager program. **T-071.0 SHIPPED via T-177** @ e97a01c6 — left ORBAT removed; top-strip ORBAT Manager → OrbatManagerDialog browse/select shell. **Next: T-071.1** squad CRUD · .2 slot numbering/export · .3–.4 logos/standardizations/Arsenal. Hub: t071_orbat_manager_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -1500,13 +1500,14 @@
         "T-071.4"
       ],
       "depends_on": [
-        "T-092"
+        "T-092",
+        "T-177"
       ],
       "unblocks": [
         "T-068",
         "T-069"
       ],
-      "status": "queued",
+      "status": "ready",
       "implements": [
         "LEFT-ORBAT-001",
         "CONN-GROUP-001",
@@ -5474,13 +5475,15 @@
         "state"
       ],
       "title": "Leptos SPA + Mission Creator bug bash",
-      "summary": "Operator bug bash after T-166–T-171: fix seeded shell/MC bugs (dead user menu, stuck nav highlight, dead narrow sidebar hamburger, non-selecting Wiki/Vehicles/Modpacks, lag, invisible slots, opaque forests, CUR Z, tree chrome, T-154 3D Arsenal, React chrome gaps) AND mandatory Claude bug hunt (Phase 0 Found-by-hunt H1…Hn + mid-pass) — all inventory rows fixed in-ticket. Screens: .ai/artifacts/t172_operator_screens/. Hub: docs/platform/t172_leptos_bug_bash.md. Not mod. Not T-170.",
+      "summary": "SHIPPED @ tag T-172 / e08884f4. Operator matrix A1–A9/B1–B10 + hunt H1–H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0. Operator 2026-07-18: ticket good enough — residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish → T-173. Verify: .ai/artifacts/t172_verify_log.md. Hub: docs/platform/t172_leptos_bug_bash.md.",
       "slices": [],
       "depends_on": [
         "T-171"
       ],
-      "unblocks": [],
-      "status": "ready",
+      "unblocks": [
+        "T-173"
+      ],
+      "status": "shipped",
       "implements": [],
       "user_story": "As an operator I can use the local Leptos site and Mission Creator without dead clicks, invisible units, highlighter forests, or a missing 3D Arsenal.",
       "route": "/",
@@ -5491,6 +5494,204 @@
         "website"
       ],
       "spec": "docs/platform/t172_leptos_bug_bash.md"
+    },
+    {
+      "id": "T-173",
+      "order": 1700,
+      "program": "platform",
+      "surfaces": [
+        "MAP",
+        "SHELL",
+        "TOP",
+        "LEFT",
+        "RIGHT"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "title": "Leptos SPA + Mission Creator performance pass",
+      "summary": "SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md.",
+      "slices": [],
+      "depends_on": [
+        "T-172"
+      ],
+      "unblocks": [],
+      "status": "shipped",
+      "implements": [],
+      "user_story": "As a mission maker I pan/zoom and scroll smoother than the old React editor, with full Mission Settings render toggles and correct fence/building glyphs.",
+      "route": "/missions/:id/edit",
+      "stream": "web-platform",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t173_leptos_perf_pass.md"
+    },
+    {
+      "id": "T-174",
+      "order": 1710,
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "LEFT",
+        "RIGHT",
+        "TOP"
+      ],
+      "impact": [
+        "ui",
+        "perf"
+      ],
+      "title": "MC sat sharpness + heatmap off + dock guide rails",
+      "summary": "SHIPPED @ tag T-174 / bbb99526. S1: localhost sat preview→full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op. S2: density-heatmap glow removed end-to-end (no toggle); heatmap_trees LOD kept. S3: guide stems clip to rows — no dock rails. Verify: .ai/artifacts/t174_verify_log.md. Hub: docs/platform/t174_mc_sat_heatmap_guides.md.",
+      "slices": [],
+      "depends_on": [
+        "T-173"
+      ],
+      "unblocks": [],
+      "status": "shipped",
+      "implements": [],
+      "user_story": "As a mission maker I see a sharp satellite map without a green tree heatmap wash, and the outliner/palette do not show full-height guide rails.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t174_mc_sat_heatmap_guides.md"
+    },
+    {
+      "id": "T-175",
+      "order": 1720,
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "RIGHT",
+        "TOP"
+      ],
+      "impact": [
+        "perf",
+        "ui"
+      ],
+      "title": "MC interaction + LOD unpack + pan/zoom perf",
+      "summary": "SHIPPED @ tag T-175 / b90deac8. A1 sticky trees (empty clear all roles + lane_off); A2 concurrent forest fetch; A3 contours [188,150,100,235]; A4–A5 floor-aware glyph memo; B1 cold-slot rebind; B2 SlotPlacePreview; B3 damage.mark drag delta; B4 O(delta) tint; B5 BootPhase overlay; hunt H1–H6. Verify: .ai/artifacts/t175_verify_log.md. Hub: docs/platform/t175_mc_interaction_lod_perf.md.",
+      "slices": [],
+      "depends_on": [
+        "T-174"
+      ],
+      "unblocks": [],
+      "status": "shipped",
+      "implements": [],
+      "user_story": "As a mission maker I see a loading bar while the editor boots, pan/zoom without stutter, see trees unpack and forest settle promptly, read contours, place/drag with live previews, and get correct slot positions on first load.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t175_mc_interaction_lod_perf.md"
+    },
+    {
+      "id": "T-176",
+      "order": 1730,
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "RIGHT"
+      ],
+      "impact": [
+        "ui",
+        "perf"
+      ],
+      "title": "Forest wash fidelity + place ghost + zoom+pan stutter",
+      "summary": "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview↔slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md.",
+      "slices": [],
+      "depends_on": [
+        "T-175"
+      ],
+      "unblocks": [],
+      "status": "shipped",
+      "implements": [],
+      "user_story": "As a mission maker I see forest highlight tight to real trees without a zoom ritual, a live place ghost when dragging from the palette, and smooth zoom+pan.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t176_forest_place_ghost_zoompan.md"
+    },
+    {
+      "id": "T-177",
+      "order": 1740,
+      "program": "eden",
+      "surfaces": [
+        "TOP",
+        "LEFT",
+        "RIGHT",
+        "ORBAT"
+      ],
+      "impact": [
+        "ui"
+      ],
+      "title": "MC chrome UX + ORBAT dock cutover (T-071.0)",
+      "summary": "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1–B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md.",
+      "slices": [],
+      "depends_on": [
+        "T-176"
+      ],
+      "unblocks": [
+        "T-071"
+      ],
+      "status": "shipped",
+      "implements": [
+        "LEFT-ORBAT-001"
+      ],
+      "user_story": "As a mission maker I use Editor Layers only on the left, open ORBAT Manager from the top strip, see YouTube-style tree lines, grab-cursor on assets, and menus that paint above the docks.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t177_mc_chrome_orbat_cutover.md"
+    },
+    {
+      "id": "T-178",
+      "order": 1750,
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "LEFT",
+        "RIGHT"
+      ],
+      "impact": [
+        "ui",
+        "perf"
+      ],
+      "title": "Forest load consistency + YouTube guides + Outliner label",
+      "summary": "Post T-177: (A1) forest canopy loads inconsistently / chunky 512m tiles — coherent draw (shader/precompose/settle); (A2) remove left Outliner label; (A3) continuous YouTube spines (no elbow gaps); (A4) click guide line to expand/collapse. Screens: .ai/artifacts/t178_operator_screens/. UX audit: t178_mc_ux_audit.md. Hub: docs/platform/t178_forest_guides_chrome.md. Not T-071.1 / not mod.",
+      "slices": [],
+      "depends_on": [
+        "T-177"
+      ],
+      "unblocks": [],
+      "status": "ready",
+      "implements": [],
+      "user_story": "As a mission maker I see consistent forest canopy, a single Editor Layers title, and continuous clickable YouTube-style tree guides.",
+      "route": "/missions/:id/edit",
+      "stream": "mission-creator",
+      "branch": "main",
+      "executor": "claude-code",
+      "targets": [
+        "website"
+      ],
+      "spec": "docs/platform/t178_forest_guides_chrome.md"
     }
   ]
 }

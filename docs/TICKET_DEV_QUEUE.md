@@ -14,6 +14,14 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** website, shared, root, mod
 - **Summary:** Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
 
+## T-071 — ORBAT Manager modal
+
+- **Slice spec:** ``
+- **Program hub:** ``
+- **Branch:** `ticket/T-071`
+- **Targets:** website
+- **Summary:** ORBAT Manager program. **T-071.0 SHIPPED via T-177** @ e97a01c6 — left ORBAT removed; top-strip ORBAT Manager → OrbatManagerDialog browse/select shell. **Next: T-071.1** squad CRUD · .2 slot numbering/export · .3–.4 logos/standardizations/Arsenal. Hub: t071_orbat_manager_program.md.
+
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.6`
@@ -23,10 +31,10 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 
-## T-172 — Leptos SPA + Mission Creator bug bash
+## T-178 — Forest load consistency + YouTube guides + Outliner label
 
-- **Slice spec:** `docs/platform/t172_leptos_bug_bash.md`
-- **Program hub:** `docs/platform/t172_leptos_bug_bash.md`
+- **Slice spec:** `docs/platform/t178_forest_guides_chrome.md`
+- **Program hub:** `docs/platform/t178_forest_guides_chrome.md`
 - **Branch:** `main`
 - **Targets:** website
-- **Summary:** Operator bug bash after T-166–T-171: fix seeded shell/MC bugs (dead user menu, stuck nav highlight, dead narrow sidebar hamburger, non-selecting Wiki/Vehicles/Modpacks, lag, invisible slots, opaque forests, CUR Z, tree chrome, T-154 3D Arsenal, React chrome gaps) AND mandatory Claude bug hunt (Phase 0 Found-by-hunt H1…Hn + mid-pass) — all inventory rows fixed in-ticket. Screens: .ai/artifacts/t172_operator_screens/. Hub: docs/platform/t172_leptos_bug_bash.md. Not mod. Not T-170.
+- **Summary:** Post T-177: (A1) forest canopy loads inconsistently / chunky 512m tiles — coherent draw (shader/precompose/settle); (A2) remove left Outliner label; (A3) continuous YouTube spines (no elbow gaps); (A4) click guide line to expand/collapse. Screens: .ai/artifacts/t178_operator_screens/. UX audit: t178_mc_ux_audit.md. Hub: docs/platform/t178_forest_guides_chrome.md. Not T-071.1 / not mod.

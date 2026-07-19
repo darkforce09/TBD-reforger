@@ -14,7 +14,8 @@ Web suite for the TBD Arma Reforger milsim community: Discord auth, event/ORBAT 
 ```bash
 make db-up    # Postgres on :5434
 make api      # Axum API on :8080
-make leptos   # Trunk SPA on :3000
+make leptos        # Trunk SPA on :3000 (release — T-173)
+make leptos-debug  # debug wasm only (not for judging FPS)
 ```
 
 - **FRONTEND_URL** (dev callback): `http://127.0.0.1:3000`

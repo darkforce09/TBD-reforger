@@ -1,17 +1,27 @@
 # Mission Editor (2D Canvas)
 
-> **Live (T-151 / T-159 / T-171):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
+> **Live (T-151 / T-159 / T-171 / T-172 / T-173 / T-174 / T-175 / T-176 / T-177):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk **`--release`** via `make leptos`). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
+>
+> **T-173 shipped:** Mission Settings restore (basemap Satellite/Map, hillshade on/off + strength, grid, 12 world-layer toggles); continuous outliner/palette guide stems; fence/pier/rail strips on zoom-in; upright building badges; slot clusters + town/road/height labels + airfield apron/glyphs on the Leptos host; library scroll + dossier sheet de-blurred; pan streaming settle + zoom compose memo. Day-to-day: `make leptos` (release). Debug trap: `make leptos-debug`.
+>
+> **T-174 shipped:** Satellite loads preview→full progressive on localhost (sharp TBDS; `?sat=preview` = Range-only for gates/fast iter; `?sat=full` no-op). Density-heatmap green glow **removed** (LOD rung kept — forest mass / glyph budget). Dock guide stems clip to tree rows (no full-height rails).
+>
+> **T-175 shipped:** `BootPhase` loading overlay until hydrate + world settle; cold-load slot rebind; palette **place ghost** + live **slot drag preview**; O(delta) selection tint; trees unpack on zoom-out (GPU empty clear); concurrent forest fetch; readable DEM contours (`CONTOUR_RGBA` lightened); floor-aware zoom glyph memo.
+>
+> **T-176 shipped:** Forest highlight = **8 m TBDD canopy mass** (clearings as holes); loose **32 m landcover forest wash removed**. Place ghost bound to slot atlas (visible for whole palette→map drag). Zoom+pan: `CAMERA_GESTURE` defers DEM/forest recompute. Retune density: `cargo run -p tbd-tools --bin world -- redensify --terrain everon`.
+>
+> **T-177 shipped (T-071.0):** YouTube-style tree connectors (spine + elbow); grab cursor on placeable assets; top menus above docks; left **ORBAT removed** (Editor Layers only); top-strip **ORBAT Manager** → `OrbatManagerDialog`. Squad CRUD = **T-071.1+**.
 
 ## Status
 
-`in-progress`
+`shipped` (editor shell live; ongoing feature tickets T-068 / T-071 / …)
 
 ## Summary
 
 - **What:** Full-bleed tactical map editor (wgpu) for placing entities, ORBAT layers, and compiling mission versions.
 - **Why:** Mission makers author `json_payload` for the mission library and event ORBAT materialization.
 - **Route:** `/missions/:id/edit`
-- **Live source:** `apps/website/frontend/src/mission_editor.rs` + the editor modules (`select_tool`/`outliner`/`attributes`/`arsenal`/`eden_chrome`/…) on the wgpu engine (`crates/map-engine-render`); route in `apps/website/frontend/src/router.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3)
+- **Live source:** `apps/website/frontend/src/mission_editor.rs` + editor modules (`select_tool`/`outliner`/`attributes`/`arsenal`/`eden_chrome`/`world_assets`/`world_layer_prefs`/…) on wgpu (`crates/map-engine-render`); route in `apps/website/frontend/src/router.rs` (T-159 Leptos rewrite — React deleted at T-159.29.3; T-173 render prefs + world lanes)
 - **Stitch reference:** none
 - **Min role:** `mission_maker` (owner or admin)
 - **Blueprint ref:** [Mission Creator ROADMAP](../../../specs/Mission_Creator_Architecture/ROADMAP.md), [feature inventory](../../../specs/Mission_Creator_Architecture/feature_inventory.md)
@@ -22,7 +32,7 @@
 |---|---------|------|----------------|---------|-------------|
 | 1 | Map viewport | canvas | Tactical grid + entities | Primary editor surface | Y.Doc + Deck.gl |
 | 2 | Top strip | bar | Title, undo/redo, time/weather scrubber, settings, Export | Command chrome; Undo/Redo buttons + **keyboard shortcuts** (Cmd/Ctrl+Z, Cmd/Ctrl+Shift+Z, Ctrl+Y) (T-052) | Mission metadata |
-| 3 | Left dock | panel | Editor Layers (+ ORBAT tree until **T-071** removes duplicate) | Outliner / drop target | `editorLayers` map |
+| 3 | Left dock | panel | **Editor Layers** only (ORBAT removed at T-177 / T-071.0) | Outliner / drop target | `editorLayers` map |
 | 4 | Right dock | panel | Asset Palette tabs + **Asset Browser search** | Drag assets to map; **search filters the Factions tree by name** (T-055) | **`GET /api/v1/registry`** → `useRegistry` + `buildCatalogTree` (T-068.3); 8 NATO characters @ current seed |
 | 5 | Toolbelt | bar | Select, Ruler, LoS + X/Y/Z readout + **OBJ/SEL counts** (T-058) | Map tools; CUR/SEL coords; **OBJ** = total slots, **SEL** = selected count; **FpsCounter dev-only** (T-122 T12) | Tool state + `slotsById` + selection |
 | 6 | Inspector | panel | Slot fields on double-click | `AttributesModal` opens from **map dbl-click**, **ORBAT** slot row, or **Editor Layers** slot row (T-054); **Transform X/Y/Z/rotation editable** (T-049); **Arsenal tab** — 4 gear dropdowns + Download loadout JSON for character slots (T-068.4) | Selected slot + `GET /registry` |
