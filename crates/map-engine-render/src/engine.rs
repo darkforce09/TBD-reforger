@@ -1007,9 +1007,10 @@ fn draw_batches<'a>(
                     // against the world glyph atlas (wrong UVs → invisible), or was `continue`d when
                     // that atlas is `None` on a cold map — the ghost only appeared after drop (which
                     // routes through `Slots`). Drag-move preview (`SlotDrag`) already worked.
-                    LaneRole::Slots | LaneRole::Clusters | LaneRole::SlotPlacePreview => {
-                        slot_base_bind
-                    }
+                    LaneRole::Slots
+                    | LaneRole::Clusters
+                    | LaneRole::SlotPlacePreview
+                    | LaneRole::MissionVehicles => slot_base_bind,
                     _ => glyph_atlas_bind,
                 };
                 let Some(atlas_bg) = atlas_bg else {
@@ -2192,6 +2193,15 @@ impl RenderEngine {
                 _ => 0,
             })
             .sum();
+        let mission_vehicles: u32 = self
+            .batches
+            .iter()
+            .filter(|b| b.role == LaneRole::MissionVehicles)
+            .map(|b| match &b.payload {
+                BatchPayload::IconInstanced { count, .. } => *count,
+                _ => 0,
+            })
+            .sum();
         format!(
             concat!(
                 "{{\"backend\":\"{}\",\"instances\":{},\"chunks\":{},\"gpu_bytes\":{},",
@@ -2205,6 +2215,7 @@ impl RenderEngine {
                 "\"forest_density_w\":{},\"forest_density_h\":{},\"forest_bins_ok\":{},\"forest_mode\":\"{}\",",
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"text_labels_drawn\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
+                "\"mission_vehicles\":{},",
                 "\"submitted_last_frame\":{},",
                 "\"compute_cull\":{},\"compute_cull_cpu_count\":{},\"compute_cull_gpu_count\":{},",
                 "\"compute_cull_gpu_sampled\":{},",
@@ -2245,6 +2256,7 @@ impl RenderEngine {
             slot_instances,
             slot_drag_instances,
             cluster_instances,
+            mission_vehicles,
             self.submitted_last_frame,
             self.compute_cull_trees && self.icon_cull.is_some(),
             self.icon_cull
@@ -4243,11 +4255,27 @@ impl RenderEngine {
         self.upload_slot_role_lane(LaneRole::Clusters, bytes, visible);
     }
 
+    /// T-180.8 — bind mission vehicle discs from interleaved world `xy` (`[x0,y0,…]`).
+    /// Empty clears the lane. Does not enter the slot pick/SoA bridge.
+    pub fn vehicles_bind(&mut self, xy: &[f32]) {
+        if !self.slot_bridge.atlas_ready {
+            return;
+        }
+        let bytes = slots_gpu::pack_vehicle_instances(xy);
+        let vis = !bytes.is_empty();
+        if !vis {
+            self.remove_lane(LaneRole::MissionVehicles);
+            return;
+        }
+        self.upload_slot_role_lane(LaneRole::MissionVehicles, &bytes, true);
+    }
+
     /// Drop slots + drag + cluster lanes.
     fn clear_slot_lanes(&mut self) {
         self.remove_lane(LaneRole::Slots);
         self.remove_lane(LaneRole::SlotDrag);
         self.remove_lane(LaneRole::Clusters);
+        self.remove_lane(LaneRole::MissionVehicles);
     }
 
     fn upload_slot_role_lane(&mut self, role: LaneRole, bytes: &[u8], visible: bool) {

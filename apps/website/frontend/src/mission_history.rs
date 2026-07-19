@@ -202,6 +202,7 @@ pub fn rebind_engine_from_doc() {
             e.set_selection(ids);
             if let Some(doc) = ctx.doc.borrow().as_ref() {
                 upload_squad_links(e, doc, &soa);
+                e.vehicles_bind(&doc.vehicle_xy_flat());
             }
         }
         refresh_signals(ctx, soa.ids.len());
@@ -253,6 +254,7 @@ fn after_doc_change(ctx: &HistoryCtx) {
         e.set_selection(ids);
         if let Some(doc) = ctx.doc.borrow().as_ref() {
             upload_squad_links(e, doc, &soa);
+            e.vehicles_bind(&doc.vehicle_xy_flat());
         }
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));

@@ -26,10 +26,13 @@ use std::cell::{Cell, RefCell};
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_engine_core::doc::place_character_under_side;
-use map_engine_core::doc::MissionDocCore;
-use map_engine_core::doc::NONE_IDX;
+use map_engine_core::doc::{
+    apply_faction_library, FactionLibraryInput, FactionLibraryRole, FactionLibraryVehicle,
+    MissionDocCore, APPLY_ANCHOR_X, APPLY_ANCHOR_Y, NONE_IDX,
+};
 
 use crate::asset_catalog::PlacePayload;
+use crate::dto::{FactionDoc, FactionRole, FactionVehicle};
 use crate::mission_doc::DocHandle;
 use crate::outliner::{build_outliner, LayerRow, OutlinerNode, SlotRow};
 use crate::select_tool::{EngineHandle, SelectionHandle};
@@ -1204,6 +1207,186 @@ pub fn orbat_rename_squad(squad_id: String, name: String) -> bool {
         crate::mission_history::after_local_edit();
     }
     did
+}
+
+/// T-180.8 — REPLACE-apply a Faction Library doc onto `side` (H-L2 / H-L7b).
+pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let layer_id = ensure_layer(ctx, core);
+        let input = FactionLibraryInput {
+            name: doc.name,
+            roles: doc
+                .roles
+                .into_iter()
+                .map(|r| FactionLibraryRole {
+                    role: r.role,
+                    tag: r.tag,
+                    character: r.character,
+                    loadout: r.loadout,
+                })
+                .collect(),
+            vehicles: doc
+                .vehicles
+                .into_iter()
+                .map(|v| FactionLibraryVehicle {
+                    vehicle: v.vehicle,
+                    label: v.label,
+                })
+                .collect(),
+        };
+        apply_faction_library(core, &side, &layer_id, &input).is_ok()
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// T-180.8 — `add_vehicle` + `attach_vehicle` with map position (H-L7 / H8).
+pub fn orbat_add_vehicle(squad_id: String, resource_name: String) -> Option<String> {
+    if resource_name.trim().is_empty() {
+        return None;
+    }
+    let id = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return None;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return None;
+        };
+        let sq = squad_rows(core).into_iter().find(|s| s.id == squad_id)?;
+        let n = sq.vehicle_ids.len();
+        let vehicle_id = mint_id(ctx, core);
+        // Place near squad leader / first slot, else Everon center.
+        let (x, y) = squad_anchor_xy(core, &sq).unwrap_or((APPLY_ANCHOR_X, APPLY_ANCHOR_Y));
+        let x = x + 30.0 + 20.0 * n as f64;
+        let y = y - 30.0;
+        core.add_vehicle(
+            &vehicle_id,
+            &resource_name,
+            Some(x),
+            Some(y),
+            Some(0.0),
+            Some(0.0),
+        );
+        core.attach_vehicle(&squad_id, &vehicle_id);
+        Some(vehicle_id)
+    });
+    if id.is_some() {
+        crate::mission_history::after_local_edit();
+    }
+    id
+}
+
+/// T-180.8 — inverse of Apply: build a FactionDoc from the live side graph (Save / Save as).
+pub fn faction_doc_from_side(side: &str) -> Option<FactionDoc> {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        Some(faction_doc_from_side_core(core, side))
+    })
+}
+
+fn faction_doc_from_side_core(core: &MissionDocCore, side: &str) -> FactionDoc {
+    let factions = faction_rows(core);
+    let squads = squad_rows(core);
+    let faction = factions.iter().find(|f| f.key == side);
+    let name = faction
+        .map(|f| f.name.clone())
+        .filter(|n| !n.is_empty())
+        .unwrap_or_else(|| side.to_string());
+    let squad_ids: Vec<String> = faction.map(|f| f.squad_ids.clone()).unwrap_or_default();
+    let Ok(slots_root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
+        return FactionDoc {
+            side: side.into(),
+            name,
+            ..Default::default()
+        };
+    };
+    let Ok(small) = serde_json::from_str::<serde_json::Value>(&core.small_maps_json()) else {
+        return FactionDoc {
+            side: side.into(),
+            name,
+            ..Default::default()
+        };
+    };
+    let mut roles = Vec::new();
+    let mut vehicles = Vec::new();
+    for sid in &squad_ids {
+        let Some(sq) = squads.iter().find(|s| s.id == *sid) else {
+            continue;
+        };
+        for slot_id in &sq.slot_ids {
+            let Some(slot) = slots_root.get(slot_id) else {
+                continue;
+            };
+            roles.push(FactionRole {
+                role: slot
+                    .get("role")
+                    .and_then(|r| r.as_str())
+                    .unwrap_or("Rifleman")
+                    .to_string(),
+                tag: slot
+                    .get("tag")
+                    .and_then(|t| t.as_str())
+                    .map(str::to_string)
+                    .filter(|s| !s.is_empty()),
+                character: slot
+                    .get("assetId")
+                    .and_then(|a| a.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                loadout: slot.get("loadout").cloned(),
+            });
+        }
+        for vid in &sq.vehicle_ids {
+            let Some(v) = small.get("vehiclesById").and_then(|m| m.get(vid)) else {
+                continue;
+            };
+            vehicles.push(FactionVehicle {
+                vehicle: v
+                    .get("resourceName")
+                    .and_then(|r| r.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                label: None,
+            });
+        }
+    }
+    FactionDoc {
+        side: side.into(),
+        name,
+        emblem: None,
+        roles,
+        vehicles,
+    }
+}
+
+fn squad_anchor_xy(core: &MissionDocCore, sq: &crate::outliner::SquadRow) -> Option<(f64, f64)> {
+    let anchor_id = if !sq.leader_slot_id.is_empty() {
+        sq.leader_slot_id.clone()
+    } else {
+        sq.slot_ids.first()?.clone()
+    };
+    let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
+        return None;
+    };
+    let pos = root.get(&anchor_id)?.get("position")?;
+    let x = pos.get("x")?.as_f64()?;
+    let y = pos.get("y")?.as_f64()?;
+    Some((x, y))
 }
 
 /// Patch inspector fields: role/tag via `update_slot`, callsign/rank via `update_slot_identity`.

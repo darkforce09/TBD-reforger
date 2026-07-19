@@ -145,6 +145,21 @@ pub fn pack_one_slot(x: f32, y: f32, selected: bool) -> [u8; SLOT_ICON_STRIDE] {
     arr
 }
 
+/// T-180.8 — pack mission vehicle discs (tactical yellow, distinct from slot rings).
+/// `xy` is interleaved `[x0,y0,…]` in world meters. Empty → empty buffer.
+#[must_use]
+pub fn pack_vehicle_instances(xy: &[f32]) -> Vec<u8> {
+    let n = xy.len() / 2;
+    let mut out = Vec::with_capacity(n * SLOT_ICON_STRIDE);
+    let tint = pack_rgba_u32(SLOT_SELECTED_RGBA);
+    for i in 0..n {
+        let x = xy[i * 2];
+        let y = xy[i * 2 + 1];
+        pack_icon_instance(&mut out, x, y, SLOT_RING_PX, SLOT_GLYPH_DISC, tint);
+    }
+    out
+}
+
 /// Pack cluster disc markers: parallel `xs`/`ys`/`counts` (world meters).
 #[must_use]
 pub fn pack_cluster_instances(xs: &[f64], ys: &[f64], counts: &[u32]) -> Vec<u8> {
@@ -362,6 +377,21 @@ mod tests {
         assert_eq!(SLOT_ICON_STRIDE, 20);
         let one = pack_one_slot(1.5, -2.5, false);
         assert_eq!(one.len(), 20);
+    }
+
+    /// H8 — vehicle discs use yellow disc glyph (distinct from slot rings).
+    #[test]
+    fn pack_vehicle_instances_disc_yellow() {
+        let xy = [6400.0_f32, 6370.0];
+        let bytes = pack_vehicle_instances(&xy);
+        assert_eq!(bytes.len(), SLOT_ICON_STRIDE);
+        let size = f32::from_le_bytes(bytes[8..12].try_into().unwrap());
+        assert!((size - SLOT_RING_PX).abs() < 1e-6);
+        let glyph = u16::from_le_bytes(bytes[14..16].try_into().unwrap());
+        assert_eq!(glyph, SLOT_GLYPH_DISC);
+        let tint = u32::from_le_bytes(bytes[16..20].try_into().unwrap());
+        assert_eq!(tint, pack_rgba_u32(SLOT_SELECTED_RGBA));
+        assert!(pack_vehicle_instances(&[]).is_empty());
     }
 
     #[test]

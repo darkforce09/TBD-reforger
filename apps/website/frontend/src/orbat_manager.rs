@@ -1,7 +1,8 @@
-//! T-180.7 — Stitch ORBAT Manager on live mission-doc graph.
+//! T-180.7 / T-180.8 — Stitch ORBAT Manager on live mission-doc graph.
 //!
 //! Visual structure from `.ai/artifacts/t180_stitch_orbat_modal/`; data from `MissionDocCore` only
-//! (G7). Operator L8 kit-complement UI omitted (G4). Template Apply → T-180.8; Arsenal tab-3 → T-180.9.
+//! (G7). Operator L8 kit-complement UI omitted (G4). Templates Apply/Save + Add Vehicle (T-180.8);
+//! Arsenal tab-3 → T-180.9.
 #![allow(dead_code, unused_variables)]
 
 use std::collections::{HashMap, HashSet};
@@ -9,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 use leptos::prelude::*;
 use map_engine_core::slot_line::format_slot_line;
 
+use crate::dto::{FactionDoc, RegistryItem, UserFaction};
 use crate::outliner::{
     filter_orbat_squads_by_side_key, flatten_visible, FlatRow, NodeKind, OutlinerNode,
     ORBAT_MANAGER_DIALOG_CLASS, ORBAT_MANAGER_EMPTY, VIRTUAL_SLOT_THRESHOLD,
@@ -23,20 +25,64 @@ const ROW_H: f64 = 32.0;
 const CONTAINER_H: f64 = 480.0;
 const OVERSCAN: usize = 8;
 
-/// T-180.7 — Stitch ORBAT Manager dialog (replaces the T-177 `max-w-xl` browse shell).
+/// H5 — Apply only runs when the confirm dialog returns true (Cancel = noop).
+#[must_use]
+pub fn apply_confirm_allows(confirmed: bool) -> bool {
+    confirmed
+}
+
+/// H7 / H-L8 — template dropdown options for the active ORBAT side (excludes CIV + other sides).
+#[must_use]
+pub fn template_options_for_side<'a>(
+    library: &'a [UserFaction],
+    side: &str,
+) -> Vec<&'a UserFaction> {
+    library
+        .iter()
+        .filter(|f| f.side == side && f.side != "CIV" && side != "CIV")
+        .collect()
+}
+
+/// Kind-filtered registry vehicle options (same drop rules as Faction Manager).
+#[must_use]
+pub fn registry_vehicle_options(items: &[RegistryItem]) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = items
+        .iter()
+        .filter(|it| it.kind == "vehicle" && it.r#abstract != Some(true) && it.variant_of.is_none())
+        .map(|it| (it.resource_name.clone(), it.display_name.clone()))
+        .collect();
+    out.sort_by(|a, b| a.1.cmp(&b.1));
+    out
+}
+
+/// H6 helper — roles.len for a FactionDoc built from a side (Save inverse pin).
+#[must_use]
+pub fn faction_doc_role_count(doc: &FactionDoc) -> usize {
+    doc.roles.len()
+}
+
+/// T-180.7 / T-180.8 — Stitch ORBAT Manager dialog (replaces the T-177 `max-w-xl` browse shell).
 #[component]
 pub fn OrbatManagerDialog(
     open: RwSignal<bool>,
     orbat: RwSignal<Vec<OutlinerNode>>,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
+    /// Registry for Add Vehicle picker (kind==vehicle).
+    #[prop(optional)]
+    registry: Option<RwSignal<Option<Vec<RegistryItem>>>>,
 ) -> impl IntoView {
     let _ = active_layer; // kept for mount API parity with T-177
+    let registry = registry.unwrap_or_else(|| RwSignal::new(None));
     let side_tab = RwSignal::new(String::from("BLUFOR"));
     let search = RwSignal::new(String::new());
     let collapsed = RwSignal::new(HashSet::<String>::new());
     let rename_squad = RwSignal::new(Option::<String>::None);
     let rename_draft = RwSignal::new(String::new());
+    let library = RwSignal::new(Vec::<UserFaction>::new());
+    let selected_template = RwSignal::new(String::new()); // UserFaction.id
+    let add_vehicle_squad = RwSignal::new(Option::<String>::None);
+    let status = RwSignal::new(String::new());
 
     // Esc closes (Faction Manager / suite Dialog behavior).
     let esc = window_event_listener(leptos::ev::keydown, move |ev| {
@@ -45,6 +91,27 @@ pub fn OrbatManagerDialog(
         }
     });
     on_cleanup(move || esc.remove());
+
+    #[cfg(target_arch = "wasm32")]
+    let auth = expect_context::<crate::auth::AuthStore>();
+
+    // Load faction library whenever the dialog opens.
+    #[cfg(target_arch = "wasm32")]
+    {
+        Effect::new(move |_| {
+            if !open.get() {
+                return;
+            }
+            leptos::task::spawn_local(async move {
+                if let Ok(r) =
+                    crate::client::api_get::<crate::dto::FactionListResponse>(auth, "/factions")
+                        .await
+                {
+                    library.set(r.data);
+                }
+            });
+        });
+    }
 
     move || {
         if !open.get() {
@@ -139,24 +206,189 @@ pub fn OrbatManagerDialog(
                     </button>
                 </div>
 
-                // Template bar (shell — Apply completes in T-180.8)
+                // Template bar — Apply / Save / Save as (T-180.8)
                 <div class="flex h-12 shrink-0 items-center gap-3 border-b border-white/5 bg-surface-container-low px-4">
                     <MaterialIcon name="folder_open" class="text-on-surface-variant text-[18px]" />
                     <div class="relative max-w-md flex-1">
-                        <select
-                            class="w-full appearance-none rounded border border-border-subtle bg-surface-dim px-3 py-1.5 font-code-md text-code-md text-on-surface"
-                            disabled
-                        >
-                            <option>"Load Predefined ORBAT…"</option>
-                        </select>
+                        {
+                            let lib_snap = library.get();
+                            let opts: Vec<(String, String)> = template_options_for_side(&lib_snap, &side)
+                                .into_iter()
+                                .map(|f| (f.id.clone(), format!("{} ({})", f.name, f.side)))
+                                .collect();
+                            let sel = selected_template.get();
+                            view! {
+                                <select
+                                    class="w-full appearance-none rounded border border-border-subtle bg-surface-dim px-3 py-1.5 font-code-md text-code-md text-on-surface"
+                                    prop:value=sel.clone()
+                                    on:change=move |ev| selected_template.set(event_target_value(&ev))
+                                >
+                                    <option value="">"Load Predefined ORBAT…"</option>
+                                    {opts.into_iter().map(|(id, label)| {
+                                        view! { <option value=id>{label}</option> }
+                                    }).collect_view()}
+                                </select>
+                            }
+                        }
                     </div>
                     <button
                         type="button"
-                        disabled
-                        class="cursor-not-allowed rounded bg-primary/40 px-4 py-1.5 font-label-sm text-label-sm text-on-primary opacity-60"
-                        title="Template Apply ships in T-180.8"
+                        class="rounded bg-primary px-4 py-1.5 font-label-sm text-label-sm text-on-primary hover:brightness-110"
+                        on:click=move |_| {
+                            let side = side_tab.get_untracked();
+                            let tid = selected_template.get_untracked();
+                            if tid.is_empty() {
+                                status.set("Select a template first.".into());
+                                return;
+                            }
+                            let Some(uf) = library
+                                .get_untracked()
+                                .into_iter()
+                                .find(|f| f.id == tid)
+                            else {
+                                status.set("Template not found.".into());
+                                return;
+                            };
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                let msg = format!(
+                                    "Replace all ORBAT under {side} with \"{}\"?",
+                                    uf.name
+                                );
+                                let confirmed = web_sys::window()
+                                    .and_then(|w| w.confirm_with_message(&msg).ok())
+                                    .unwrap_or(false);
+                                if !apply_confirm_allows(confirmed) {
+                                    status.set("Apply cancelled.".into());
+                                    return;
+                                }
+                                if crate::editor_ops::orbat_apply_faction(side, uf.doc) {
+                                    status.set("Template applied.".into());
+                                } else {
+                                    status.set("Apply failed.".into());
+                                }
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            {
+                                let _ = (side, uf);
+                            }
+                        }
                     >"APPLY TEMPLATE"</button>
+                    <button
+                        type="button"
+                        class="rounded border border-border-subtle px-3 py-1.5 font-label-sm text-label-sm text-on-surface hover:bg-surface-variant"
+                        title="Update selected library faction from this side"
+                        on:click=move |_| {
+                            let side = side_tab.get_untracked();
+                            let tid = selected_template.get_untracked();
+                            if tid.is_empty() {
+                                status.set("Select a template to Save.".into());
+                                return;
+                            }
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                let Some(mut doc) = crate::editor_ops::faction_doc_from_side(&side)
+                                else {
+                                    status.set("No mission doc.".into());
+                                    return;
+                                };
+                                if let Some(uf) = library
+                                    .get_untracked()
+                                    .into_iter()
+                                    .find(|f| f.id == tid)
+                                {
+                                    doc.name = uf.name;
+                                }
+                                let body = serde_json::to_value(&doc).unwrap_or_default();
+                                leptos::task::spawn_local(async move {
+                                    match crate::client::api_put::<UserFaction>(
+                                        auth,
+                                        &format!("/factions/{tid}"),
+                                        body,
+                                    )
+                                    .await
+                                    {
+                                        Ok(_) => {
+                                            status.set("Saved.".into());
+                                            if let Ok(r) = crate::client::api_get::<
+                                                crate::dto::FactionListResponse,
+                                            >(auth, "/factions")
+                                            .await
+                                            {
+                                                library.set(r.data);
+                                            }
+                                        }
+                                        Err(_) => status.set("Save failed.".into()),
+                                    }
+                                });
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = side;
+                        }
+                    >"Save"</button>
+                    <button
+                        type="button"
+                        class="rounded border border-border-subtle px-3 py-1.5 font-label-sm text-label-sm text-on-surface hover:bg-surface-variant"
+                        title="Save current side ORBAT as a new library faction"
+                        on:click=move |_| {
+                            let side = side_tab.get_untracked();
+                            #[cfg(target_arch = "wasm32")]
+                            {
+                                let Some(mut doc) = crate::editor_ops::faction_doc_from_side(&side)
+                                else {
+                                    status.set("No mission doc.".into());
+                                    return;
+                                };
+                                let default_name = doc.name.clone();
+                                let name = web_sys::window()
+                                    .and_then(|w| {
+                                        w.prompt_with_message_and_default(
+                                            "Save as faction name:",
+                                            &default_name,
+                                        )
+                                        .ok()
+                                        .flatten()
+                                    })
+                                    .unwrap_or_default();
+                                let name = name.trim().to_string();
+                                if name.is_empty() {
+                                    status.set("Save as cancelled.".into());
+                                    return;
+                                }
+                                doc.name = name;
+                                doc.side = side;
+                                let body = serde_json::to_value(&doc).unwrap_or_default();
+                                leptos::task::spawn_local(async move {
+                                    match crate::client::api_post::<UserFaction>(
+                                        auth, "/factions", body,
+                                    )
+                                    .await
+                                    {
+                                        Ok(f) => {
+                                            selected_template.set(f.id.clone());
+                                            status.set("Saved as new faction.".into());
+                                            if let Ok(r) = crate::client::api_get::<
+                                                crate::dto::FactionListResponse,
+                                            >(auth, "/factions")
+                                            .await
+                                            {
+                                                library.set(r.data);
+                                            }
+                                        }
+                                        Err(_) => {
+                                            status.set(
+                                                "Save as failed (name already used?).".into(),
+                                            );
+                                        }
+                                    }
+                                });
+                            }
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = side;
+                        }
+                    >"Save as"</button>
                     <div class="ml-auto flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant">
+                        <span class="max-w-[12rem] truncate text-primary/80">{move || status.get()}</span>
                         <span>"Total Entities: "<span class="font-code-md text-primary">{entity_count}</span></span>
                         <span class="text-white/20">"|"</span>
                         <span>"Vehicles: "<span class="font-code-md text-tactical-yellow">{vehicle_count}</span></span>
@@ -212,15 +444,38 @@ pub fn OrbatManagerDialog(
                         </div>
 
                         <div class="custom-scrollbar min-h-0 flex-1 overflow-hidden p-2">
-                            {tree_panel(
-                                squad_nodes,
-                                detail_by_id.clone(),
-                                vehicle_by_squad.clone(),
-                                selected,
-                                collapsed,
-                                rename_squad,
-                                rename_draft,
-                            )}
+                            {
+                                let mut veh_opts = registry_vehicle_options(
+                                    &registry.get().unwrap_or_default(),
+                                );
+                                if let Some(uf) = library
+                                    .get()
+                                    .into_iter()
+                                    .find(|f| f.id == selected_template.get())
+                                {
+                                    for v in uf.doc.vehicles {
+                                        if !v.vehicle.is_empty()
+                                            && !veh_opts.iter().any(|(r, _)| r == &v.vehicle)
+                                        {
+                                            let label = v
+                                                .label
+                                                .unwrap_or_else(|| v.vehicle.clone());
+                                            veh_opts.push((v.vehicle, label));
+                                        }
+                                    }
+                                }
+                                tree_panel(
+                                    squad_nodes,
+                                    detail_by_id.clone(),
+                                    vehicle_by_squad.clone(),
+                                    selected,
+                                    collapsed,
+                                    rename_squad,
+                                    rename_draft,
+                                    add_vehicle_squad,
+                                    veh_opts,
+                                )
+                            }
                         </div>
 
                         <div class="shrink-0 border-t border-white/5 bg-surface-container-low p-3">
@@ -354,6 +609,8 @@ fn tree_panel(
     collapsed: RwSignal<HashSet<String>>,
     rename_squad: RwSignal<Option<String>>,
     rename_draft: RwSignal<String>,
+    add_vehicle_squad: RwSignal<Option<String>>,
+    vehicle_options: Vec<(String, String)>,
 ) -> AnyView {
     let flat = StoredValue::new(Vec::<FlatRow>::new());
     let rev = RwSignal::new(0u64);
@@ -371,6 +628,7 @@ fn tree_panel(
     let scroll_top = RwSignal::new(0.0_f64);
     let detail_by_id = StoredValue::new(detail_by_id);
     let vehicle_by_squad = StoredValue::new(vehicle_by_squad);
+    let vehicle_options = StoredValue::new(vehicle_options);
 
     (move || {
         rev.track();
@@ -398,6 +656,8 @@ fn tree_panel(
                                     rename_draft,
                                     detail_by_id.get_value(),
                                     vehicle_by_squad.get_value(),
+                                    add_vehicle_squad,
+                                    vehicle_options.get_value(),
                                 )
                             })
                             .collect::<Vec<_>>()}
@@ -454,12 +714,16 @@ fn stitch_row(
     rename_draft: RwSignal<String>,
     detail_by_id: HashMap<String, SlotDetail>,
     vehicle_by_squad: HashMap<String, usize>,
+    add_vehicle_squad: RwSignal<Option<String>>,
+    vehicle_options: Vec<(String, String)>,
 ) -> AnyView {
     match row.kind {
         NodeKind::Squad => {
             let id = row.id.clone();
             let id_drop = id.clone();
             let id_add = id.clone();
+            let id_veh = id.clone();
+            let id_veh_pick = id.clone();
             let id_rm = id.clone();
             let id_ren = id.clone();
             let label = row.label.clone();
@@ -473,6 +737,8 @@ fn stitch_row(
             };
             let vids = vehicle_by_squad.get(&id).copied().unwrap_or(0);
             let renaming = rename_squad.get_untracked().as_deref() == Some(id.as_str());
+            let picking_vehicle = add_vehicle_squad.get_untracked().as_deref() == Some(id.as_str());
+            let vehicle_options = vehicle_options.clone();
             view! {
                 <div class="group flex flex-col rounded border border-border-subtle bg-surface-container-low">
                     <div
@@ -544,9 +810,12 @@ fn stitch_row(
                             </button>
                             <button
                                 type="button"
-                                title="Add Vehicle (T-180.8)"
-                                disabled
-                                class="cursor-not-allowed rounded p-1 text-on-surface-variant opacity-50"
+                                title="Add Vehicle"
+                                class="rounded p-1 text-on-surface-variant hover:text-tactical-yellow"
+                                on:click=move |ev| {
+                                    ev.stop_propagation();
+                                    add_vehicle_squad.set(Some(id_veh.clone()));
+                                }
                             >
                                 <MaterialIcon name="car_rental" class="text-[16px]" />
                             </button>
@@ -576,6 +845,48 @@ fn stitch_row(
                             </button>
                         </div>
                     </div>
+                    {if picking_vehicle {
+                        let opts = vehicle_options.clone();
+                        view! {
+                            <div
+                                class="flex items-center gap-2 border-t border-white/5 bg-surface-dim px-2 py-1.5"
+                                on:click=move |ev| ev.stop_propagation()
+                            >
+                                <select
+                                    class="min-w-0 flex-1 rounded border border-border-subtle bg-surface-container px-2 py-1 font-code-md text-[11px] text-on-surface"
+                                    on:change=move |ev| {
+                                        let resource = event_target_value(&ev);
+                                        if resource.is_empty() {
+                                            return;
+                                        }
+                                        #[cfg(target_arch = "wasm32")]
+                                        {
+                                            let _ = crate::editor_ops::orbat_add_vehicle(
+                                                id_veh_pick.clone(),
+                                                resource,
+                                            );
+                                        }
+                                        add_vehicle_squad.set(None);
+                                    }
+                                >
+                                    <option value="">"Pick vehicle…"</option>
+                                    {opts.into_iter().map(|(res, label)| {
+                                        view! { <option value=res.clone()>{label}</option> }
+                                    }).collect_view()}
+                                </select>
+                                <button
+                                    type="button"
+                                    class="rounded px-2 py-1 text-label-sm text-on-surface-variant hover:text-on-surface"
+                                    on:click=move |ev| {
+                                        ev.stop_propagation();
+                                        add_vehicle_squad.set(None);
+                                    }
+                                >"Cancel"</button>
+                            </div>
+                        }.into_any()
+                    } else {
+                        view! { <span></span> }.into_any()
+                    }}
                 </div>
             }
             .into_any()
@@ -879,6 +1190,23 @@ fn set_orbat_stats(_total: usize, _rendered: usize) {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::dto::{FactionDoc, FactionRole, FactionVehicle, UserFaction};
+
+    fn uf(id: &str, side: &str, name: &str) -> UserFaction {
+        UserFaction {
+            id: id.into(),
+            owner_id: "o".into(),
+            side: side.into(),
+            name: name.into(),
+            doc: FactionDoc {
+                side: side.into(),
+                name: name.into(),
+                ..Default::default()
+            },
+            created_at: String::new(),
+            updated_at: String::new(),
+        }
+    }
 
     #[test]
     fn g1_dialog_class_near_fullscreen() {
@@ -896,5 +1224,101 @@ mod tests {
             "G2 Make SL must call set_leader path"
         );
         assert!(src.contains("set_leader") || src.contains("orbat_set_leader"));
+    }
+
+    /// H5 — Cancel path never allows apply.
+    #[test]
+    fn apply_cancel_noop() {
+        assert!(!apply_confirm_allows(false));
+        assert!(apply_confirm_allows(true));
+        let src = include_str!("orbat_manager.rs");
+        assert!(
+            src.contains("apply_confirm_allows(confirmed)"),
+            "Apply must gate on confirm"
+        );
+        assert!(
+            src.contains("orbat_apply_faction"),
+            "Apply must call editor_ops path"
+        );
+    }
+
+    /// H6 — Save inverse roles.len matches authored slot count.
+    #[test]
+    fn save_faction_roles_match_side() {
+        let doc = FactionDoc {
+            side: "BLUFOR".into(),
+            name: "Alpha".into(),
+            emblem: None,
+            roles: vec![
+                FactionRole {
+                    role: "SL".into(),
+                    tag: None,
+                    character: "c1".into(),
+                    loadout: None,
+                },
+                FactionRole {
+                    role: "Rifleman".into(),
+                    tag: None,
+                    character: "c2".into(),
+                    loadout: None,
+                },
+            ],
+            vehicles: vec![FactionVehicle {
+                vehicle: "v1".into(),
+                label: None,
+            }],
+        };
+        assert_eq!(faction_doc_role_count(&doc), 2);
+        assert_eq!(doc.roles.len(), 2);
+    }
+
+    /// H7 / H-L8 — CIV + other sides excluded from dropdown.
+    #[test]
+    fn template_options_exclude_civ_and_other_sides() {
+        let lib = vec![
+            uf("1", "BLUFOR", "US 1980s"),
+            uf("2", "OPFOR", "Soviet"),
+            uf("3", "CIV", "Civilians"),
+            uf("4", "INDFOR", "FIA"),
+        ];
+        let blu = template_options_for_side(&lib, "BLUFOR");
+        assert_eq!(blu.len(), 1);
+        assert_eq!(blu[0].id, "1");
+        assert!(blu.iter().all(|f| f.side != "CIV"));
+        let opf = template_options_for_side(&lib, "OPFOR");
+        assert_eq!(opf.len(), 1);
+        assert_eq!(opf[0].name, "Soviet");
+        let civ_tab = template_options_for_side(&lib, "CIV");
+        assert!(civ_tab.is_empty(), "CIV never a template side");
+    }
+
+    /// H8 — Add Vehicle wiring present (not a disabled stub).
+    #[test]
+    fn orbat_add_vehicle_increases_vehicle_ids() {
+        let src = include_str!("orbat_manager.rs");
+        assert!(
+            src.contains("orbat_add_vehicle"),
+            "Add Vehicle must call orbat_add_vehicle"
+        );
+        assert!(
+            !src.contains(
+                "title=\"Add Vehicle (T-180.8)\"\n                                disabled"
+            ),
+            "Add Vehicle must not stay disabled"
+        );
+        let ops = include_str!("editor_ops.rs");
+        assert!(
+            ops.contains("pub fn orbat_add_vehicle"),
+            "ops mutator must exist"
+        );
+        assert!(
+            ops.contains("add_vehicle") && ops.contains("attach_vehicle"),
+            "ops must call core add+attach"
+        );
+        let hist = include_str!("mission_history.rs");
+        assert!(
+            hist.contains("vehicles_bind"),
+            "map presence: vehicles_bind on doc change"
+        );
     }
 }

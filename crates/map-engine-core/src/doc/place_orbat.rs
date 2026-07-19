@@ -304,8 +304,7 @@ mod tests {
         assert_eq!(ids.len(), before + 1);
         assert!(ids.iter().any(|v| v == "n1"));
         assert_eq!(
-            root["squadsById"][&squad_id]["leaderSlotId"],
-            first,
+            root["squadsById"][&squad_id]["leaderSlotId"], first,
             "add role must not steal SL"
         );
         // Still one squad under BLUFOR.

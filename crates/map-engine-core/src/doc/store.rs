@@ -360,6 +360,14 @@ impl MissionDocCore {
         f.insert(&mut txn, "squadIds", Any::Array(Vec::new().into()));
     }
 
+    /// Overwrite a faction's display `name` (T-180.8 Apply — library name onto `faction-{SIDE}`).
+    pub fn set_faction_name(&self, faction_id: &str, name: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(f)) = self.factions.get(&txn, faction_id) {
+            f.insert(&mut txn, "name", name);
+        }
+    }
+
     /// Create a squad under a faction (mirrors `ydoc.addSquad` and `ensureDefaultSquad`'s squad).
     /// Writes `{id, factionId, name, slotIds:[], vehicleIds:[]}` + `callsign` only when `Some`;
     /// appends `id` to `faction.squadIds` if the faction exists. Does **not** set `leaderSlotId` —
@@ -475,10 +483,8 @@ impl MissionDocCore {
                 &self.vehicles,
                 &source_squad_id,
             );
-        } else if was_leader {
-            if let Some(Any::String(next)) = kept.first() {
-                set_leader_in_txn(&mut txn, &self.squads, &source_squad_id, next.as_ref());
-            }
+        } else if was_leader && let Some(Any::String(next)) = kept.first() {
+            set_leader_in_txn(&mut txn, &self.squads, &source_squad_id, next.as_ref());
         }
 
         ensure_leader_invariant_in_txn(
@@ -576,6 +582,29 @@ impl MissionDocCore {
         if let Some(Out::YMap(v)) = self.vehicles.get(&txn, vehicle_id) {
             v.remove(&mut txn, "squadId");
         }
+    }
+
+    /// Flat `[x0,y0,x1,y1,…]` for every vehicle that has a `position` (T-180.8 map bind).
+    /// Order is map-iteration order (not pick-indexed — vehicles stay off the slot SoA).
+    #[must_use]
+    pub fn vehicle_xy_flat(&self) -> Vec<f32> {
+        let txn = self.doc.transact();
+        let mut out = Vec::new();
+        for (_id, out_v) in self.vehicles.iter(&txn) {
+            let Out::YMap(v) = out_v else {
+                continue;
+            };
+            if v.get(&txn, "position").is_none() {
+                continue;
+            }
+            let (x, y, _, _) = read_position(&txn, &v);
+            #[allow(clippy::cast_possible_truncation)]
+            {
+                out.push(x as f32);
+                out.push(y as f32);
+            }
+        }
+        out
     }
 
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).

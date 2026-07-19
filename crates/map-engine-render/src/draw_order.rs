@@ -42,6 +42,8 @@ pub enum LaneRole {
     WorldTownLabels,
     /// T-180.4 — squad leader→member hairline links (under slot rings).
     SquadLinks,
+    /// T-180.8 — mission vehicle discs (under slot rings; pick-safe, separate from Slots).
+    MissionVehicles,
     /// W6 mission slot rings.
     Slots,
     /// T-175 B2 — palette place-preview ghost (single translucent ring under the cursor while
@@ -87,12 +89,13 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldTownLabels => 20,
         LaneRole::Grid => 21,
         LaneRole::SquadLinks => 22,
-        LaneRole::Slots => 23,
-        LaneRole::SlotPlacePreview => 24,
-        LaneRole::SlotDrag => 25,
-        LaneRole::Clusters => 26,
-        LaneRole::Marquee => 27,
-        LaneRole::MarqueeOutline => 28,
+        LaneRole::MissionVehicles => 23,
+        LaneRole::Slots => 24,
+        LaneRole::SlotPlacePreview => 25,
+        LaneRole::SlotDrag => 26,
+        LaneRole::Clusters => 27,
+        LaneRole::Marquee => 28,
+        LaneRole::MarqueeOutline => 29,
     }
 }
 
@@ -163,6 +166,13 @@ mod lane_order_pins {
         assert!(lane_order(L::SquadLinks) < lane_order(L::Slots));
     }
 
+    /// T-180.8: vehicle discs above squad links, under slot rings.
+    #[test]
+    fn mission_vehicles_sit_between_squad_links_and_slots() {
+        assert!(lane_order(L::MissionVehicles) > lane_order(L::SquadLinks));
+        assert!(lane_order(L::MissionVehicles) < lane_order(L::Slots));
+    }
+
     #[test]
     fn marquee_lanes_are_topmost_fill_then_border() {
         let max_non_marquee = [
@@ -186,6 +196,7 @@ mod lane_order_pins {
             L::WorldTownLabels,
             L::Grid,
             L::SquadLinks,
+            L::MissionVehicles,
             L::Slots,
             L::SlotPlacePreview,
             L::SlotDrag,

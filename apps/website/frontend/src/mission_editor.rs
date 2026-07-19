@@ -1329,6 +1329,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                         orbat=orbat_nodes
                         selected=selected_ids
                         active_layer
+                        registry=registry_items
                     />
                 </div>
                 // T-159.26 — local-vs-server conflict prompt (React's ConflictDialog). Renders only
