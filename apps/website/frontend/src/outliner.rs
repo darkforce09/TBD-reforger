@@ -77,9 +77,15 @@ pub struct OutlinerNode {
     pub label: String,
     pub kind: NodeKind,
     pub children: Vec<OutlinerNode>,
+    /// T-180.6 — true when this slot is `squad.leaderSlotId` (ORBAT SL badge; never from `tag`).
+    pub is_leader: bool,
 }
 
 fn slot_node(s: &SlotRow) -> OutlinerNode {
+    slot_node_leader(s, false)
+}
+
+fn slot_node_leader(s: &SlotRow, is_leader: bool) -> OutlinerNode {
     OutlinerNode {
         id: s.id.clone(),
         label: if s.role.is_empty() {
@@ -89,6 +95,7 @@ fn slot_node(s: &SlotRow) -> OutlinerNode {
         },
         kind: NodeKind::Slot,
         children: Vec::new(),
+        is_leader,
     }
 }
 
@@ -116,6 +123,7 @@ pub fn build_outliner(layers: &[LayerRow], slots: &[SlotRow]) -> Vec<OutlinerNod
             label: format!("Unfiled ({})", unfiled.len()),
             kind: NodeKind::Unfiled,
             children: unfiled.into_iter().map(slot_node).collect(),
+            is_leader: false,
         });
     }
 
@@ -159,6 +167,7 @@ fn build_layer<'a>(
         label: layer.name.clone(),
         kind: NodeKind::Folder,
         children,
+        is_leader: false,
     }
 }
 
@@ -183,6 +192,8 @@ pub struct SquadRow {
     pub faction_id: String,
     /// Ordered slot ids in this squad (`squad.slotIds`).
     pub slot_ids: Vec<String>,
+    /// T-180.6 — `squad.leaderSlotId` (empty when absent); drives ORBAT SL badge.
+    pub leader_slot_id: String,
 }
 
 /// Build the ORBAT browse tree: faction → squad → slot, in doc order (`squadIds` / `slotIds`).
@@ -211,13 +222,17 @@ pub fn build_orbat(
                     .slot_ids
                     .iter()
                     .filter_map(|id| slot_by_id(id))
-                    .map(slot_node)
+                    .map(|s| {
+                        let is_leader = !sq.leader_slot_id.is_empty() && s.id == sq.leader_slot_id;
+                        slot_node_leader(s, is_leader)
+                    })
                     .collect();
                 OutlinerNode {
                     id: sq.id.clone(),
                     label: format!("{} ({})", sq.name, slot_children.len()),
                     kind: NodeKind::Squad,
                     children: slot_children,
+                    is_leader: false,
                 }
             })
             .collect();
@@ -226,6 +241,7 @@ pub fn build_orbat(
             label: f.name.clone(),
             kind: NodeKind::Faction,
             children: squad_nodes,
+            is_leader: false,
         });
     }
     out
@@ -253,6 +269,8 @@ pub struct FlatRow {
     pub ancestors: Vec<bool>,
     /// T-178 A4 — owner id per guide column (`len == depth`); `guide_ids[k]` toggles on guide click.
     pub guide_ids: Vec<String>,
+    /// T-180.6 — copied from [`OutlinerNode::is_leader`] for the windowed SL badge.
+    pub is_leader: bool,
 }
 
 /// Flatten a tree to pre-order rows (parent before its children). Every node becomes exactly one
@@ -303,6 +321,7 @@ pub fn flatten_visible(
                 has_children: !n.children.is_empty(),
                 ancestors: ancestors.clone(),
                 guide_ids: guide_ids.clone(),
+                is_leader: n.is_leader,
             });
             if !collapsed.contains(&n.id) {
                 let mut child_ids = guide_ids;
@@ -452,12 +471,13 @@ mod tests {
             squad_ids: squads.iter().map(|s| (*s).to_string()).collect(),
         }
     }
-    fn squad(id: &str, name: &str, faction: &str, slots: &[&str]) -> SquadRow {
+    fn squad(id: &str, name: &str, faction: &str, slots: &[&str], leader: &str) -> SquadRow {
         SquadRow {
             id: id.into(),
             name: name.into(),
             faction_id: faction.into(),
             slot_ids: slots.iter().map(|s| (*s).to_string()).collect(),
+            leader_slot_id: leader.into(),
         }
     }
 
@@ -471,7 +491,7 @@ mod tests {
     #[test]
     fn orbat_nests_faction_squad_slot_in_order() {
         let factions = vec![faction("f1", "US Army", &["sq1"])];
-        let squads = vec![squad("sq1", "Alpha", "f1", &["s1", "s0"])];
+        let squads = vec![squad("sq1", "Alpha", "f1", &["s1", "s0"], "s1")];
         let slots = vec![slot("s0", "Rifleman"), slot("s1", "Squad Leader")];
         let tree = build_orbat(&factions, &squads, &slots);
         assert_eq!(tree.len(), 1);
@@ -484,6 +504,41 @@ mod tests {
         let ids: Vec<&str> = sq.children.iter().map(|n| n.id.as_str()).collect();
         assert_eq!(ids, ["s1", "s0"]);
         assert!(sq.children.iter().all(|n| n.kind == NodeKind::Slot));
+    }
+
+    /// F3 — place-shaped rows (one side faction, two minted squads) both appear in the ORBAT tree.
+    #[test]
+    fn orbat_includes_two_squads_after_place_shaped_rows() {
+        let factions = vec![faction(
+            "faction-BLUFOR",
+            "BLUFOR",
+            &["squad-BLUFOR-1", "squad-BLUFOR-2"],
+        )];
+        let squads = vec![
+            squad("squad-BLUFOR-1", "Squad 1", "faction-BLUFOR", &["a"], "a"),
+            squad("squad-BLUFOR-2", "Squad 2", "faction-BLUFOR", &["b"], "b"),
+        ];
+        let slots = vec![slot("a", "Rifleman"), slot("b", "Rifleman")];
+        let tree = build_orbat(&factions, &squads, &slots);
+        assert_eq!(tree.len(), 1);
+        let sq_ids: Vec<&str> = tree[0].children.iter().map(|n| n.id.as_str()).collect();
+        assert_eq!(sq_ids, ["squad-BLUFOR-1", "squad-BLUFOR-2"]);
+    }
+
+    /// F-L6 — SL badge flag from `leaderSlotId` only (not role / tag text).
+    #[test]
+    fn orbat_sl_badge_from_leader_slot_id() {
+        let factions = vec![faction("f1", "BLUFOR", &["sq1"])];
+        let squads = vec![squad("sq1", "Alpha", "f1", &["s0", "s1"], "s0")];
+        // Role text looks like a tag — must not drive is_leader.
+        let slots = vec![slot("s0", "Rifleman"), slot("s1", "SL")];
+        let tree = build_orbat(&factions, &squads, &slots);
+        let kids = &tree[0].children[0].children;
+        assert!(kids.iter().find(|n| n.id == "s0").unwrap().is_leader);
+        assert!(!kids.iter().find(|n| n.id == "s1").unwrap().is_leader);
+        let flat = flatten(&tree);
+        assert!(flat.iter().find(|r| r.id == "s0").unwrap().is_leader);
+        assert!(!flat.iter().find(|r| r.id == "s1").unwrap().is_leader);
     }
 
     /// Flatten is pre-order (parent before children) with correct depths, one row per node.
@@ -518,6 +573,7 @@ mod tests {
                 label: id.to_string(),
                 kind,
                 children,
+                is_leader: false,
             }
         }
         // Root(+sib Root2) → [ChildA(+sib ChildB) → GrandA, ChildB(last) → Leaf]; Root2(last) → Leaf2.
@@ -579,7 +635,7 @@ mod tests {
     #[test]
     fn orbat_skips_dangling_ids() {
         let factions = vec![faction("f1", "US Army", &["ghostSquad", "sq1"])];
-        let squads = vec![squad("sq1", "Alpha", "f1", &["ghostSlot", "s0"])];
+        let squads = vec![squad("sq1", "Alpha", "f1", &["ghostSlot", "s0"], "s0")];
         let tree = build_orbat(&factions, &squads, &[slot("s0", "Rifleman")]);
         assert_eq!(tree[0].children.len(), 1, "ghost squad skipped");
         assert_eq!(tree[0].children[0].children.len(), 1, "ghost slot skipped");

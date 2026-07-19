@@ -19,7 +19,7 @@ use leptos::prelude::*;
 
 use crate::asset_catalog::{CatalogNode, CatalogState};
 use crate::outliner::{flatten_visible, FlatRow, NodeKind, OutlinerNode, VIRTUAL_SLOT_THRESHOLD};
-use crate::ui::MaterialIcon;
+use crate::ui::{badge_class, MaterialIcon};
 
 // ── Chrome insets (CSS px) ───────────────────────────────────────────────────────────────────────
 // These ARE the source the Tailwind utilities in `mission_editor`'s view are written from, and
@@ -810,17 +810,20 @@ const CONTAINER_H: f64 = 420.0;
 const OVERSCAN: usize = 6;
 
 /// Render ONE flattened outliner row (no recursion — the windowed list draws a flat slice).
-/// Header kinds (Unfiled / Faction / Squad) are inert; Folder → active-layer, Slot → select +
-/// dbl-click→Attributes (SEL-ORBAT-DBL-001).
+/// Header kinds (Unfiled / Faction) are inert; Squad is a refile drop target when `orbat_refile`;
+/// Folder → active-layer; Slot → select + dbl-click→Attributes (SEL-ORBAT-DBL-001).
 fn single_row(
     row: &FlatRow,
     selected: RwSignal<Vec<String>>,
     active_layer: RwSignal<Option<String>>,
     collapsed: RwSignal<std::collections::HashSet<String>>,
+    // T-180.6 — when true, slot pointerdown arms refile; squad pointerup completes it.
+    orbat_refile: bool,
 ) -> AnyView {
     let label = row.label.clone();
     let aria = row.label.clone();
     let id = row.id.clone();
+    let is_leader = row.is_leader;
     // T-177/T-178 — per-row guide continuation + click-to-toggle owners.
     let ancestors: &[bool] = &row.ancestors;
     let guide_ids: &[String] = &row.guide_ids;
@@ -828,6 +831,14 @@ fn single_row(
     // the slice (the virtual_tree Effect tracks it), so open state never goes stale.
     let open = !collapsed.with_untracked(|c| c.contains(&row.id));
     let toggle = chevron_or_spacer(row.has_children, open, &row.id, collapsed);
+    let sl_badge = if is_leader {
+        view! {
+            <span class=badge_class("primary") data-sl-badge="true">"SL"</span>
+        }
+        .into_any()
+    } else {
+        ().into_any()
+    };
     match row.kind {
         NodeKind::Unfiled => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
@@ -847,15 +858,40 @@ fn single_row(
             </div>
         }
         .into_any(),
-        NodeKind::Squad => view! {
-            <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
-                {guide_spans(ancestors, guide_ids, collapsed)}
-                {toggle}
-                <MaterialIcon name="groups" class="block text-sm" />
-                <span class="truncate">{label}</span>
-            </div>
+        NodeKind::Squad => {
+            let dest = id.clone();
+            if orbat_refile {
+                view! {
+                    <div
+                        class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant"
+                        title="Drop a slot here to refile into this squad"
+                        on:pointerup=move |ev| {
+                            ev.stop_propagation();
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor_ops::complete_refile_onto_squad(dest.clone());
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &dest;
+                        }
+                    >
+                        {guide_spans(ancestors, guide_ids, collapsed)}
+                        {toggle}
+                        <MaterialIcon name="groups" class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </div>
+                }
+                .into_any()
+            } else {
+                view! {
+                    <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
+                        {guide_spans(ancestors, guide_ids, collapsed)}
+                        {toggle}
+                        <MaterialIcon name="groups" class="block text-sm" />
+                        <span class="truncate">{label}</span>
+                    </div>
+                }
+                .into_any()
+            }
         }
-        .into_any(),
         NodeKind::Folder => {
             let is_active = {
                 let id = id.clone();
@@ -887,6 +923,7 @@ fn single_row(
                 move || selected.get().iter().any(|s| s == &id)
             };
             let id_dbl = id.clone();
+            let id_refile = id.clone();
             view! {
                 <button
                     type="button"
@@ -904,11 +941,20 @@ fn single_row(
                         #[cfg(not(target_arch = "wasm32"))]
                         let _ = &id_dbl;
                     }
+                    on:pointerdown=move |_| {
+                        if orbat_refile {
+                            #[cfg(target_arch = "wasm32")]
+                            crate::editor_ops::begin_refile(id_refile.clone());
+                            #[cfg(not(target_arch = "wasm32"))]
+                            let _ = &id_refile;
+                        }
+                    }
                 >
                     {guide_spans(ancestors, guide_ids, collapsed)}
                     {toggle}
                     <MaterialIcon name="person" class="block text-sm" />
                     <span class="truncate">{label}</span>
+                    {sl_badge}
                 </button>
             }
             .into_any()
@@ -951,6 +997,8 @@ fn virtual_tree(
     active_layer: RwSignal<Option<String>>,
     stats_key: &'static str,
     empty_msg: &'static str,
+    // T-180.6 — enable ORBAT slot→squad pointer-refile in this tree.
+    orbat_refile: bool,
 ) -> AnyView {
     // Per-tree collapse state (T-172 B6). Starts EMPTY = fully expanded, exactly the pre-collapse
     // render — the T-169 windowing smoke's totals depend on the default-expanded boot state.
@@ -982,7 +1030,7 @@ fn virtual_tree(
                     <div>
                         {f
                             .iter()
-                            .map(|r| single_row(r, selected, active_layer, collapsed))
+                            .map(|r| single_row(r, selected, active_layer, collapsed, orbat_refile))
                             .collect::<Vec<_>>()}
                     </div>
                 }
@@ -996,7 +1044,7 @@ fn virtual_tree(
             let bottom = (total - end) as f64 * ROW_H;
             let rows: Vec<AnyView> = f[start..end]
                 .iter()
-                .map(|r| single_row(r, selected, active_layer, collapsed))
+                .map(|r| single_row(r, selected, active_layer, collapsed, orbat_refile))
                 .collect();
             view! {
                 <div
@@ -1177,7 +1225,14 @@ pub fn DockLeft(
                 "Editor Layers"
             </h2>
             <div class="mt-1">
-                {virtual_tree(nodes, selected, active_layer, "editorLayers", "No objects placed yet.")}
+                {virtual_tree(
+                    nodes,
+                    selected,
+                    active_layer,
+                    "editorLayers",
+                    "No objects placed yet.",
+                    false,
+                )}
             </div>
             <div class="mt-auto flex items-center justify-between border-t border-outline-variant/20 pt-2">
                 {strip_btn("account_tree", "Hierarchy (visual only)", true)}
@@ -1190,12 +1245,9 @@ pub fn DockLeft(
     }
 }
 
-/// T-177 B2 / T-071.0 — the **ORBAT Manager** modal shell. Opened from the top-strip ORBAT Manager
-/// button (`orbat_open`), it hosts the same live faction → squad → slot browse/select tree that used
-/// to sit in the left dock: a slot leaf click-selects it on the map and dbl-click opens Attributes
-/// (reused `single_row`), so the mission maker keeps full ORBAT visibility after the left tree's
-/// removal (the B1-not-a-regression bar). Squad MANAGEMENT (create / rename / reorder, move a slot
-/// between squads, slot numbering) is the next slices — **T-071.1+** — deliberately not in this shell.
+/// T-177 B2 / T-180.6 — the **ORBAT Manager** modal shell. Live faction → squad → slot tree:
+/// select / dbl-click→Attributes, drag a slot onto another squad to refile (core `move_slot_to_squad`
+/// + GC). Full Stitch chrome (tabs / inspector / Apply) is **T-180.7**.
 #[component]
 pub fn OrbatManagerDialog(
     /// Open flag, toggled by the top-strip ORBAT Manager button (Esc / backdrop close via `Dialog`).
@@ -1209,20 +1261,28 @@ pub fn OrbatManagerDialog(
         <crate::ui::Dialog
             open
             title="ORBAT Manager"
-            description="Browse factions, squads, and slots. Select a slot to highlight it on the map."
+            description="Browse factions, squads, and slots. Drag a slot onto a squad to refile it."
             class="max-w-xl"
         >
-            <div class="min-h-40">
+            <div
+                class="min-h-40"
+                on:pointerup=move |_| {
+                    // After squad-row `complete_refile` (target phase), this clears a miss-drop.
+                    #[cfg(target_arch = "wasm32")]
+                    crate::editor_ops::cancel_refile();
+                }
+            >
                 {virtual_tree(
                     orbat,
                     selected,
                     active_layer,
                     "orbat",
                     "No squads yet — place a unit to build the ORBAT.",
+                    true,
                 )}
             </div>
             <p class="mt-3 border-t border-outline-variant/20 pt-3 text-label-sm text-outline">
-                "Squad management — create, rename, reorder, move slots between squads — arrives in T-071.1."
+                "Drag a slot onto another squad to refile. Full ORBAT Manager chrome arrives in T-180.7."
             </p>
         </crate::ui::Dialog>
     }

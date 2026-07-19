@@ -207,6 +207,51 @@ mod tests {
         assert!(squad_ids.iter().any(|v| v == &s2));
     }
 
+    /// F4 — place×3 same side, refile two into the first ⇒ 1 squad, 2 leader→member segments.
+    #[test]
+    fn refile_merge_two_link_segments() {
+        use crate::squad_links::build_squad_link_segments;
+        use std::collections::HashMap;
+
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let (_, s1, a) = place_character_under_side(
+            &doc, "BLUFOR", "a", "lyr", "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
+        )
+        .expect("p1");
+        let (_, s2, b) = place_character_under_side(
+            &doc, "BLUFOR", "b", "lyr", "Rifleman", None, None, 10.0, 0.0, 0.0, 0.0,
+        )
+        .expect("p2");
+        let (_, s3, c) = place_character_under_side(
+            &doc, "BLUFOR", "c", "lyr", "Rifleman", None, None, 20.0, 0.0, 0.0, 0.0,
+        )
+        .expect("p3");
+        doc.move_slot_to_squad(&b, &s1);
+        doc.move_slot_to_squad(&c, &s1);
+
+        let root = small(&doc);
+        let squad_ids = root["factionsById"]["faction-BLUFOR"]["squadIds"]
+            .as_array()
+            .expect("squadIds");
+        assert_eq!(squad_ids.len(), 1, "merged to one squad: {squad_ids:?}");
+        assert_eq!(squad_ids[0], s1);
+        assert!(root["squadsById"].get(&s2).is_none(), "s2 GC'd");
+        assert!(root["squadsById"].get(&s3).is_none(), "s3 GC'd");
+
+        let mut xy = HashMap::new();
+        xy.insert(a.clone(), (0.0_f32, 0.0_f32));
+        xy.insert(b.clone(), (10.0_f32, 0.0_f32));
+        xy.insert(c.clone(), (20.0_f32, 0.0_f32));
+        let verts = build_squad_link_segments(&doc.squad_link_inputs(), &xy);
+        assert_eq!(
+            verts.len() / 12,
+            2,
+            "size-3 squad ⇒ 2 segments; verts={}",
+            verts.len()
+        );
+    }
+
     /// A5 — invalid side ⇒ Err and no mutation.
     #[test]
     fn place_rejects_invalid_side() {
