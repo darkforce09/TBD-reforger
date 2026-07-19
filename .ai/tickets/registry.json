@@ -5736,7 +5736,7 @@
       "order": 1760,
       "program": "eden",
       "status": "ready",
-      "active_slice": "T-180.2",
+      "active_slice": "T-180.3",
       "surfaces": [
         "ORBAT",
         "RIGHT",
@@ -5753,7 +5753,7 @@
         "compiler"
       ],
       "title": "ORBAT + Eden placement program",
-      "summary": "ORBAT + Eden placement. **T-180.1 SHIPPED** @ aeb51209 (tag T-180.1) \u2014 place_character_under_side + leaderSlotId + FactionRow.key. ACTIVE **T-180.2** graph mutators/GC. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Verify: .ai/artifacts/t180_1_verify_log.md.",
+      "summary": "ORBAT + Eden placement. **T-180.1** @ aeb51209 \u00b7 **T-180.2 SHIPPED** @ 83557768 (tag T-180.2) \u2014 mutators/GC/add_vehicle. ACTIVE **T-180.3** map side tint. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
       "slices": [
         "T-180.0",
@@ -5793,7 +5793,9 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "83557768",
+          "notes": "Tag T-180.2. set_leader hardened; move_slot_to_squad+GC; rename/reorder/remove_squad; add_vehicle/attach/detach; vehicleIds; B1\u2013B8. Verify: .ai/artifacts/t180_2_verify_log.md."
         },
         "T-180.3": {
           "targets": [
@@ -5801,7 +5803,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-180.4": {
           "targets": [
