@@ -254,12 +254,19 @@ impl MissionDocCore {
                 Some(t) => tags.intern(&t),
                 None => NONE_IDX,
             });
-            soa.squad_idx
-                .push(squads.intern(read_str(&txn, &slot, "squadId").as_deref().unwrap_or("")));
+            let squad_id = read_str(&txn, &slot, "squadId").unwrap_or_default();
+            soa.squad_idx.push(squads.intern(&squad_id));
             soa.layer_idx.push(match slot_layer.get(id) {
                 Some(l) => layers.intern(l),
                 None => NONE_IDX,
             });
+            // T-180.3 — slot → squad.factionId → faction.key (missing hop → BLUFOR).
+            soa.side_keys.push(resolve_slot_side_key(
+                &txn,
+                &self.squads,
+                &self.factions,
+                &squad_id,
+            ));
         }
 
         soa.roles = roles.words;
@@ -507,7 +514,8 @@ impl MissionDocCore {
     /// Attach an existing vehicle to a squad's `vehicleIds` and set `vehicle.squadId` (T-180.2).
     pub fn attach_vehicle(&self, squad_id: &str, vehicle_id: &str) {
         let mut txn = self.begin();
-        if self.squads.get(&txn, squad_id).is_none() || self.vehicles.get(&txn, vehicle_id).is_none()
+        if self.squads.get(&txn, squad_id).is_none()
+            || self.vehicles.get(&txn, vehicle_id).is_none()
         {
             return;
         }
@@ -1235,12 +1243,7 @@ fn set_leader_in_txn(txn: &mut TransactionMut, squads: &MapRef, squad_id: &str, 
 }
 
 /// Rewrite each member slot's `index` to dense `0..n-1` matching `slotIds` order (T-180.2 B-L3).
-fn rewrite_slot_indices(
-    txn: &mut TransactionMut,
-    slots: &MapRef,
-    squads: &MapRef,
-    squad_id: &str,
-) {
+fn rewrite_slot_indices(txn: &mut TransactionMut, slots: &MapRef, squads: &MapRef, squad_id: &str) {
     let ids = read_id_array(txn, squads, squad_id, "slotIds");
     for (i, any) in ids.iter().enumerate() {
         let Any::String(sid) = any else {
@@ -1309,9 +1312,7 @@ fn ensure_leader_invariant_in_txn(
             .any(|a| matches!(a, Any::String(s) if s.as_ref() == l.as_ref())),
         _ => false,
     };
-    if !leader_ok
-        && let Some(Any::String(first)) = ids.first()
-    {
+    if !leader_ok && let Some(Any::String(first)) = ids.first() {
         set_leader_in_txn(txn, squads, squad_id, first.as_ref());
     }
 }
@@ -1488,6 +1489,34 @@ fn read_stance<T: ReadTxn>(txn: &T, slot: &MapRef) -> u8 {
         Some("crouch") => STANCE_CROUCH,
         Some("prone") => STANCE_PRONE,
         _ => STANCE_STAND,
+    }
+}
+
+/// T-180.3 — resolve faction side key for a squad id (`BLUFOR` when any hop is missing).
+fn resolve_slot_side_key<T: ReadTxn>(
+    txn: &T,
+    squads: &MapRef,
+    factions: &MapRef,
+    squad_id: &str,
+) -> String {
+    if squad_id.is_empty() {
+        return String::from("BLUFOR");
+    }
+    let Some(Out::YMap(sq)) = squads.get(txn, squad_id) else {
+        return String::from("BLUFOR");
+    };
+    let Some(faction_id) = read_str(txn, &sq, "factionId") else {
+        return String::from("BLUFOR");
+    };
+    if faction_id.is_empty() {
+        return String::from("BLUFOR");
+    }
+    let Some(Out::YMap(f)) = factions.get(txn, faction_id.as_str()) else {
+        return String::from("BLUFOR");
+    };
+    match read_str(txn, &f, "key") {
+        Some(k) if !k.is_empty() => k,
+        _ => String::from("BLUFOR"),
     }
 }
 
@@ -1927,9 +1956,7 @@ mod tests {
     #[test]
     fn set_leader_exclusive() {
         let doc = orbat_fixture();
-        doc.add_slot(
-            "a", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0,
-        );
+        doc.add_slot("a", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0);
         doc.add_slot(
             "b", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
         );
@@ -1992,9 +2019,7 @@ mod tests {
     #[test]
     fn leader_invariant_holds() {
         let doc = orbat_fixture();
-        doc.add_slot(
-            "a1", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0,
-        );
+        doc.add_slot("a1", "sq-a", "lyr", 0, "SL", None, None, 1.0, 1.0, 0.0, 0.0);
         doc.add_slot(
             "a2", "sq-a", "lyr", 1, "Rifleman", None, None, 2.0, 2.0, 0.0, 0.0,
         );

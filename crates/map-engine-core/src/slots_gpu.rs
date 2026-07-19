@@ -18,12 +18,39 @@ pub const SLOT_RING_PX: f32 = 20.0;
 /// Selected ring size in CSS pixels.
 pub const SLOT_SELECTED_PX: f32 = 28.0;
 
-/// Aegis primary `#adc6ff` full alpha.
-pub const SLOT_PRIMARY_RGBA: [u8; 4] = [173, 198, 255, 255];
+/// T-180.3 — BLUFOR side tint (`#adc6ff`).
+pub const SIDE_BLUFOR_RGBA: [u8; 4] = [173, 198, 255, 255];
+/// T-180.3 — OPFOR side tint (`#f87171`).
+pub const SIDE_OPFOR_RGBA: [u8; 4] = [248, 113, 113, 255];
+/// T-180.3 — INDFOR side tint (`#22c55e`).
+pub const SIDE_INDFOR_RGBA: [u8; 4] = [34, 197, 94, 255];
+/// Aegis primary `#adc6ff` full alpha (= BLUFOR).
+pub const SLOT_PRIMARY_RGBA: [u8; 4] = SIDE_BLUFOR_RGBA;
 /// Tactical yellow `#facc15` full alpha.
 pub const SLOT_SELECTED_RGBA: [u8; 4] = [250, 204, 21, 255];
 /// Cluster disc primary with Deck alpha 235.
 pub const CLUSTER_DISC_RGBA: [u8; 4] = [173, 198, 255, 235];
+
+/// Map faction `key` → unselected ring RGBA. Unknown / empty → BLUFOR (C-L4).
+#[must_use]
+pub fn side_rgba(key: &str) -> [u8; 4] {
+    match key {
+        "BLUFOR" => SIDE_BLUFOR_RGBA,
+        "OPFOR" => SIDE_OPFOR_RGBA,
+        "INDFOR" => SIDE_INDFOR_RGBA,
+        _ => SIDE_BLUFOR_RGBA,
+    }
+}
+
+/// Flatten side keys → packed RGBA8 bytes for the engine slot bind (T-180.3).
+#[must_use]
+pub fn side_tints_rgba_bytes(side_keys: &[String]) -> Vec<u8> {
+    let mut out = Vec::with_capacity(side_keys.len() * 4);
+    for k in side_keys {
+        out.extend_from_slice(&side_rgba(k));
+    }
+    out
+}
 
 /// T-065: cluster mode only when placed slots exceed this.
 pub const CLUSTER_SLOT_THRESHOLD: u32 = 500;
@@ -72,15 +99,14 @@ pub fn pack_icon_instance(
 }
 
 /// Pack slot rings from interleaved `xy` (`[x0,y0,…]`, length `2·n`).
-/// `selected[i]` true → yellow + 28 px, else primary + 20 px.
+/// `selected[i]` true → yellow + 28 px, else `side_tints[i]` (or BLUFOR if short) + 20 px.
 ///
 /// # Panics
-/// Never; short `selected` is treated as all unselected beyond its length.
+/// Never; short `selected` / `side_tints` pad as unselected / BLUFOR.
 #[must_use]
-pub fn pack_slot_instances(xy: &[f32], selected: &[bool]) -> Vec<u8> {
+pub fn pack_slot_instances(xy: &[f32], selected: &[bool], side_tints: &[[u8; 4]]) -> Vec<u8> {
     let n = xy.len() / 2;
     let mut out = Vec::with_capacity(n * SLOT_ICON_STRIDE);
-    let primary = pack_rgba_u32(SLOT_PRIMARY_RGBA);
     let sel = pack_rgba_u32(SLOT_SELECTED_RGBA);
     for i in 0..n {
         let x = xy[i * 2];
@@ -89,11 +115,19 @@ pub fn pack_slot_instances(xy: &[f32], selected: &[bool]) -> Vec<u8> {
         let (size, tint) = if is_sel {
             (SLOT_SELECTED_PX, sel)
         } else {
-            (SLOT_RING_PX, primary)
+            let rgba = side_tints.get(i).copied().unwrap_or(SIDE_BLUFOR_RGBA);
+            (SLOT_RING_PX, pack_rgba_u32(rgba))
         };
         pack_icon_instance(&mut out, x, y, size, SLOT_GLYPH_RING, tint);
     }
     out
+}
+
+/// Pack rings from faction side keys (T-180.3). Maps each key via [`side_rgba`].
+#[must_use]
+pub fn pack_rings(xy: &[f32], selected: &[bool], side_keys: &[&str]) -> Vec<u8> {
+    let tints: Vec<[u8; 4]> = side_keys.iter().map(|k| side_rgba(k)).collect();
+    pack_slot_instances(xy, selected, &tints)
 }
 
 /// Pack a single slot instance at world `(x,y)` with selection flag.
@@ -221,13 +255,20 @@ pub fn selected_row_patch() -> [u8; 12] {
     p
 }
 
-/// T-175 B4 — 12 B **unselected** row patch: `[size=20 px, yaw=0, glyph=0, tint=Aegis-primary]`.
+/// T-175 B4 / T-180.3 — 12 B **unselected** row patch for a concrete side tint:
+/// `[size=20 px, yaw=0, glyph=0, tint=rgba]`.
 #[must_use]
-pub fn unselected_row_patch() -> [u8; 12] {
+pub fn unselected_row_patch_for(rgba: [u8; 4]) -> [u8; 12] {
     let mut p = [0u8; 12];
     p[0..4].copy_from_slice(&SLOT_RING_PX.to_le_bytes());
-    p[8..12].copy_from_slice(&pack_rgba_u32(SLOT_PRIMARY_RGBA).to_le_bytes());
+    p[8..12].copy_from_slice(&pack_rgba_u32(rgba).to_le_bytes());
     p
+}
+
+/// Unselected patch with BLUFOR tint (compat / default when side unknown).
+#[must_use]
+pub fn unselected_row_patch() -> [u8; 12] {
+    unselected_row_patch_for(SIDE_BLUFOR_RGBA)
 }
 
 /// Pack drag overlay instances for the given drag ids (lookup by id → row in `ids`/`xy`).
@@ -327,7 +368,7 @@ mod tests {
     fn pack_count_matches_xy() {
         let xy = [0.0_f32, 0.0, 100.0, 200.0, 300.0, 400.0];
         let sel = [false, true, false];
-        let bytes = pack_slot_instances(&xy, &sel);
+        let bytes = pack_slot_instances(&xy, &sel, &[]);
         assert_eq!(bytes.len(), 3 * SLOT_ICON_STRIDE);
         // row 1 selected → size 28
         let size1 = f32::from_le_bytes(bytes[20 + 8..20 + 12].try_into().unwrap());
@@ -340,6 +381,70 @@ mod tests {
         assert_eq!(
             u32::from_le_bytes(bytes[16..20].try_into().unwrap()),
             pack_rgba_u32(SLOT_PRIMARY_RGBA)
+        );
+    }
+
+    /// C1 — exact locked RGBA triples; pairwise distinct.
+    #[test]
+    fn side_tint_three_distinct() {
+        assert_eq!(SIDE_BLUFOR_RGBA, [173, 198, 255, 255]);
+        assert_eq!(SIDE_OPFOR_RGBA, [248, 113, 113, 255]);
+        assert_eq!(SIDE_INDFOR_RGBA, [34, 197, 94, 255]);
+        assert_eq!(SLOT_SELECTED_RGBA, [250, 204, 21, 255]);
+        assert_eq!(SLOT_PRIMARY_RGBA, SIDE_BLUFOR_RGBA);
+        assert_ne!(SIDE_BLUFOR_RGBA, SIDE_OPFOR_RGBA);
+        assert_ne!(SIDE_BLUFOR_RGBA, SIDE_INDFOR_RGBA);
+        assert_ne!(SIDE_OPFOR_RGBA, SIDE_INDFOR_RGBA);
+    }
+
+    /// C2 — selected always yellow regardless of side key.
+    #[test]
+    fn selected_overrides_side_tint() {
+        let xy = [10.0_f32, 20.0];
+        let bytes = pack_rings(&xy, &[true], &["OPFOR"]);
+        let tint = u32::from_le_bytes(bytes[16..20].try_into().unwrap());
+        assert_eq!(tint, pack_rgba_u32(SLOT_SELECTED_RGBA));
+        let size = f32::from_le_bytes(bytes[8..12].try_into().unwrap());
+        assert!((size - SLOT_SELECTED_PX).abs() < 1e-6);
+    }
+
+    /// C3 — three sides → three distinct packed tint u32.
+    #[test]
+    fn pack_rings_side_tints() {
+        let xy = [0.0_f32, 0.0, 1.0, 1.0, 2.0, 2.0];
+        let bytes = pack_rings(&xy, &[false, false, false], &["BLUFOR", "OPFOR", "INDFOR"]);
+        assert_eq!(bytes.len(), 3 * SLOT_ICON_STRIDE);
+        let t0 = u32::from_le_bytes(bytes[16..20].try_into().unwrap());
+        let t1 = u32::from_le_bytes(bytes[20 + 16..20 + 20].try_into().unwrap());
+        let t2 = u32::from_le_bytes(bytes[40 + 16..40 + 20].try_into().unwrap());
+        assert_eq!(t0, pack_rgba_u32(SIDE_BLUFOR_RGBA));
+        assert_eq!(t1, pack_rgba_u32(SIDE_OPFOR_RGBA));
+        assert_eq!(t2, pack_rgba_u32(SIDE_INDFOR_RGBA));
+        assert_ne!(t0, t1);
+        assert_ne!(t0, t2);
+        assert_ne!(t1, t2);
+    }
+
+    /// C4 — missing / unknown side → BLUFOR.
+    #[test]
+    fn missing_side_defaults_blufor() {
+        assert_eq!(side_rgba(""), SIDE_BLUFOR_RGBA);
+        assert_eq!(side_rgba("UNKNOWN"), SIDE_BLUFOR_RGBA);
+        let xy = [0.0_f32, 0.0, 1.0, 1.0];
+        // short side_keys → second row pads BLUFOR
+        let bytes = pack_rings(&xy, &[false, false], &["OPFOR"]);
+        let t0 = u32::from_le_bytes(bytes[16..20].try_into().unwrap());
+        let t1 = u32::from_le_bytes(bytes[20 + 16..20 + 20].try_into().unwrap());
+        assert_eq!(t0, pack_rgba_u32(SIDE_OPFOR_RGBA));
+        assert_eq!(t1, pack_rgba_u32(SIDE_BLUFOR_RGBA));
+        let bytes2 = pack_rings(&xy, &[false, false], &["", "UNKNOWN"]);
+        assert_eq!(
+            u32::from_le_bytes(bytes2[16..20].try_into().unwrap()),
+            pack_rgba_u32(SIDE_BLUFOR_RGBA)
+        );
+        assert_eq!(
+            u32::from_le_bytes(bytes2[20 + 16..20 + 20].try_into().unwrap()),
+            pack_rgba_u32(SIDE_BLUFOR_RGBA)
         );
     }
 

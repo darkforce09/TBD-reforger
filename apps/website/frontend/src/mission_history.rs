@@ -193,7 +193,8 @@ pub fn rebind_engine_from_doc() {
         }
         let ids = ctx.selection.borrow().clone();
         if let Some(e) = ctx.engine.borrow_mut().as_mut() {
-            e.slots_bind_soa(soa.ids.clone(), &soa.xy);
+            let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
+            e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
             e.set_selection(ids);
         }
         refresh_signals(ctx, soa.ids.len());
@@ -240,7 +241,8 @@ fn after_doc_change(ctx: &HistoryCtx) {
     let ids = ctx.selection.borrow().clone();
     if let Some(e) = ctx.engine.borrow_mut().as_mut() {
         e.set_drag(Vec::new(), 0.0, 0.0); // clear any live drag overlay
-        e.slots_bind_soa(soa.ids.clone(), &soa.xy);
+        let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
+        e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
         e.set_selection(ids);
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));

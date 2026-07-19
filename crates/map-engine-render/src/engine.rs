@@ -23,9 +23,9 @@ use std::rc::Rc;
 
 use map_engine_core::camera::OrthoCamera;
 use map_engine_core::slots_gpu::{
-    self, DragGpuPhase, SLOT_ICON_STRIDE, classify_drag_transition, hide_slot_row_patch,
-    pack_cluster_instances, pack_drag_overlay, pack_selection_only, pack_slot_instances,
-    selected_mask, selected_row_patch, unselected_row_patch,
+    self, DragGpuPhase, SIDE_BLUFOR_RGBA, SLOT_ICON_STRIDE, classify_drag_transition,
+    hide_slot_row_patch, pack_cluster_instances, pack_drag_overlay, pack_selection_only,
+    pack_slot_instances, selected_mask, selected_row_patch, unselected_row_patch_for,
 };
 use wasm_bindgen::prelude::*;
 
@@ -38,6 +38,8 @@ struct SlotGpuBridge {
     atlas_ready: bool,
     last_ids: Vec<String>,
     last_xy: Vec<f32>,
+    /// T-180.3 — per-row unselected side tint (parallel to `last_ids`).
+    last_side_tints: Vec<[u8; 4]>,
     selected_ids: HashSet<String>,
     last_cluster_mode: bool,
     drag_active: bool,
@@ -3638,10 +3640,27 @@ impl RenderEngine {
     }
 
     /// Bind SoA snapshot from MissionDoc (called via wasm free fn `bind_mission_doc`).
-    /// Does **not** retain the doc — only caches ids + xy until the next bind.
-    pub fn slots_bind_soa(&mut self, ids: Vec<String>, xy: &[f32]) {
+    /// Does **not** retain the doc — only caches ids + xy + side tints until the next bind.
+    /// `side_tints_rgba` is flat RGBA8 (`4·n` bytes); short / missing rows pad BLUFOR (T-180.3).
+    pub fn slots_bind_soa(&mut self, ids: Vec<String>, xy: &[f32], side_tints_rgba: &[u8]) {
+        let n = ids.len();
+        let mut tints = Vec::with_capacity(n);
+        for i in 0..n {
+            let o = i * 4;
+            if o + 4 <= side_tints_rgba.len() {
+                tints.push([
+                    side_tints_rgba[o],
+                    side_tints_rgba[o + 1],
+                    side_tints_rgba[o + 2],
+                    side_tints_rgba[o + 3],
+                ]);
+            } else {
+                tints.push(SIDE_BLUFOR_RGBA);
+            }
+        }
         self.slot_bridge.last_ids = ids;
         self.slot_bridge.last_xy = xy.to_vec();
+        self.slot_bridge.last_side_tints = tints;
         // T-173 H2 — slot positions changed → the cached cluster index is stale; drop it so the
         // next cluster-mode camera move rebuilds from the new xy.
         self.slot_bridge.cluster_index = None;
@@ -3771,7 +3790,13 @@ impl RenderEngine {
             let patch = if *now {
                 selected_row_patch()
             } else {
-                unselected_row_patch()
+                let rgba = self
+                    .slot_bridge
+                    .last_side_tints
+                    .get(*row)
+                    .copied()
+                    .unwrap_or(SIDE_BLUFOR_RGBA);
+                unselected_row_patch_for(rgba)
             };
             #[allow(clippy::cast_possible_truncation)]
             let off = (row * SLOT_ICON_STRIDE + 8) as u32;
@@ -4047,7 +4072,11 @@ impl RenderEngine {
             self.upload_slot_lane(&bytes, vis);
             self.slot_bridge.slots_lane_selection_only = true;
         } else {
-            let bytes = pack_slot_instances(&self.slot_bridge.last_xy, &mask);
+            let bytes = pack_slot_instances(
+                &self.slot_bridge.last_xy,
+                &mask,
+                &self.slot_bridge.last_side_tints,
+            );
             let vis = !self.slot_bridge.last_ids.is_empty();
             self.upload_slot_lane(&bytes, vis);
             self.slot_bridge.slots_lane_selection_only = false;

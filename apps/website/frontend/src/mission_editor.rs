@@ -543,7 +543,10 @@ pub fn MissionEditorPage() -> impl IntoView {
                             if let (Some(soa), Some(e)) =
                                 (soa.as_ref(), engine.borrow_mut().as_mut())
                             {
-                                e.slots_bind_soa(soa.ids.clone(), &soa.xy);
+                                let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(
+                                    &soa.side_keys,
+                                );
+                                e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
                             }
                             // T-175 B1 — engine is mounted + first-bound. If the IDB restore + hydrate
                             // already settled, rebind now from the settled doc (the first bind above

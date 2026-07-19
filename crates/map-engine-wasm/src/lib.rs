@@ -127,7 +127,8 @@ pub fn px_to_m_at_zoom(deck_zoom: f64) -> f32 {
 #[must_use]
 pub fn pack_slot_instances(xy: &[f32], selected: Vec<u8>) -> Vec<u8> {
     let sel: Vec<bool> = selected.iter().map(|&b| b != 0).collect();
-    map_engine_core::slots_gpu::pack_slot_instances(xy, &sel)
+    // All-BLUFOR when caller omits sides (wasm test/parity path).
+    map_engine_core::slots_gpu::pack_slot_instances(xy, &sel, &[])
 }
 
 /// Drag phase: 0=idle 1=start 2=delta 3=restart 4=end.
@@ -833,7 +834,8 @@ pub struct MissionDoc {
 #[wasm_bindgen]
 pub fn bind_mission_doc(engine: &mut RenderEngine, doc: &mut MissionDoc) {
     doc.refresh();
-    engine.slots_bind_soa(doc.soa.ids.clone(), &doc.soa.xy);
+    let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&doc.soa.side_keys);
+    engine.slots_bind_soa(doc.soa.ids.clone(), &doc.soa.xy, &tints);
 }
 
 #[wasm_bindgen]

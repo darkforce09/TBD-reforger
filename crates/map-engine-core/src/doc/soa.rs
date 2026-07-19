@@ -34,6 +34,8 @@ pub struct SlotSoa {
     pub tag_idx: Vec<u32>,
     pub squad_idx: Vec<u32>,
     pub layer_idx: Vec<u32>,
+    /// Faction side key per row (`BLUFOR` / `OPFOR` / `INDFOR`); missing hops → `"BLUFOR"` (T-180.3).
+    pub side_keys: Vec<String>,
     /// Interned dictionaries (first-seen order); a `*_idx` value indexes into the matching one.
     pub roles: Vec<String>,
     pub tags: Vec<String>,
