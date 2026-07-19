@@ -1132,7 +1132,7 @@ fn inspector_panel(inspector: Option<SlotDetail>, selected: RwSignal<Vec<String>
                 class="flex w-full items-center justify-center gap-2 rounded border border-outline-variant bg-surface-container py-2 font-label-md text-on-surface hover:border-primary hover:bg-surface-variant"
                 on:click=move |_| {
                     #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::open_attributes(id_ars.clone());
+                    crate::editor_ops::open_arsenal(id_ars.clone());
                 }
             >
                 <MaterialIcon name="backpack" class="text-[18px]" />
@@ -1319,6 +1319,44 @@ mod tests {
         assert!(
             hist.contains("vehicles_bind"),
             "map presence: vehicles_bind on doc change"
+        );
+    }
+
+    /// I7 — OPEN ARSENAL opens Attributes on tab 3 (Arsenal), not Identity-only open_attributes.
+    #[test]
+    fn open_arsenal_selects_arsenal_tab() {
+        let ops = include_str!("editor_ops.rs");
+        assert!(
+            ops.contains("pub fn open_arsenal"),
+            "open_arsenal must exist"
+        );
+        assert!(
+            ops.contains("attrs_tab.set(3)"),
+            "open_arsenal must select Arsenal tab index 3"
+        );
+        let mgr = include_str!("orbat_manager.rs");
+        assert!(
+            mgr.contains("open_arsenal(id_ars"),
+            "OPEN ARSENAL button must call open_arsenal"
+        );
+        // The Arsenal button path must not fall back to Identity-default open_attributes.
+        let ars_idx = mgr
+            .find("OPEN ARSENAL")
+            .expect("OPEN ARSENAL label present");
+        let window_start = ars_idx.saturating_sub(400);
+        let window = &mgr[window_start..ars_idx];
+        assert!(
+            window.contains("open_arsenal"),
+            "click handler near OPEN ARSENAL must call open_arsenal"
+        );
+        assert!(
+            !window.contains("open_attributes"),
+            "OPEN ARSENAL must not call open_attributes (Identity default)"
+        );
+        let attrs = include_str!("attributes.rs");
+        assert!(
+            attrs.contains(r#"["Transform", "Identity", "States", "Arsenal"]"#),
+            "TABS[3] must be Arsenal"
         );
     }
 }

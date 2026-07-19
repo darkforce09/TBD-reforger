@@ -60,6 +60,9 @@ struct OpsCtx {
     /// T-159.26 — the Attributes modal's open slot id (`None` = closed). The dbl-click pick and the
     /// outliner activate set it; the modal component reads it reactively.
     attrs_open: RwSignal<Option<String>>,
+    /// T-180.9 — Attributes tab index (`TABS[3] == "Arsenal"`). Lifted so [`open_arsenal`] can
+    /// select the Arsenal tab; [`open_attributes`] leaves it alone.
+    attrs_tab: RwSignal<usize>,
     /// T-159.26 — reactive doc-change tick (the modal's re-read trigger; `doc_ver` is non-reactive).
     doc_tick: RwSignal<u64>,
     /// The in-flight palette drag: `Some` between a leaf `pointerdown` and the canvas `pointerup`.
@@ -99,6 +102,7 @@ pub fn set_ctx(
     orbat_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
     attrs_open: RwSignal<Option<String>>,
+    attrs_tab: RwSignal<usize>,
     doc_tick: RwSignal<u64>,
 ) {
     OPS_CTX.with(|c| {
@@ -113,6 +117,7 @@ pub fn set_ctx(
             orbat_nodes,
             selected_ids,
             attrs_open,
+            attrs_tab,
             doc_tick,
             pending: RefCell::new(None),
             next_id: Cell::new(0),
@@ -453,6 +458,7 @@ pub fn paste_at_cursor(cx: Option<f64>, cy: Option<f64>) -> bool {
 
 /// Open Attributes for `id` — the React dbl-click contract (A1): a multi-selection (>1) suppresses
 /// the open. Selects the slot (replace) so the modal, SEL readout, and tint agree.
+/// Leaves the Attributes tab index alone (default Identity until the user changes it).
 pub fn open_attributes(id: String) {
     OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -468,6 +474,29 @@ pub fn open_attributes(id: String) {
         if let Some(e) = eng.as_mut() {
             e.set_selection(ids);
         }
+        ctx.attrs_open.set(Some(id));
+    });
+    crate::mission_history::refresh_selection();
+}
+
+/// T-180.9 — Open Attributes on the Arsenal tab (`TABS[3]`) for `id`. Same multi-select suppress
+/// and selection replace as [`open_attributes`].
+pub fn open_arsenal(id: String) {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return;
+        };
+        if ctx.selection.borrow().len() > 1 {
+            return;
+        }
+        *ctx.selection.borrow_mut() = vec![id.clone()];
+        let ids = ctx.selection.borrow().clone();
+        let mut eng = ctx.engine.borrow_mut();
+        if let Some(e) = eng.as_mut() {
+            e.set_selection(ids);
+        }
+        ctx.attrs_tab.set(3);
         ctx.attrs_open.set(Some(id));
     });
     crate::mission_history::refresh_selection();

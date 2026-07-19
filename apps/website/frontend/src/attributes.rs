@@ -20,6 +20,8 @@ const TABS: [&str; 4] = ["Transform", "Identity", "States", "Arsenal"];
 #[component]
 pub fn AttributesModal(
     attrs_open: RwSignal<Option<String>>,
+    /// T-180.9 — tab index shared with OpsCtx (`open_arsenal` sets 3 = Arsenal).
+    attrs_tab: RwSignal<usize>,
     doc_tick: RwSignal<u64>,
     /// T-159.27 — flat registry gear rows for the Arsenal tab.
     registry_items: RwSignal<Option<Vec<crate::dto::RegistryItem>>>,
@@ -37,19 +39,17 @@ pub fn AttributesModal(
         });
         on_cleanup(move || esc.remove());
     }
-    // T-167 — the active tab lives HERE (not in `modal_view`), so a doc change (a loadout pick
-    // bumps `doc_tick`, re-running this closure and rebuilding the body) no longer snaps the user
-    // back to Identity. Without this, every Arsenal pick kicked you off the Arsenal tab.
-    let tab = RwSignal::new(1usize);
+    // T-167 / T-180.9 — tab lives on OpsCtx (passed in) so `open_arsenal` can select Arsenal and
+    // a doc change (loadout pick bumps `doc_tick`) no longer snaps back to Identity.
     move || {
         let id = attrs_open.get()?;
         let _ = doc_tick.get(); // re-read fields on every doc change (undo/redo/drag)
         #[cfg(not(target_arch = "wasm32"))]
-        let _ = (&id, registry_items, compat, tab);
+        let _ = (&id, registry_items, compat, attrs_tab);
         #[cfg(target_arch = "wasm32")]
         {
             match crate::editor_ops::read_attrs(&id) {
-                Some(attrs) => Some(modal_view(attrs, registry_items, compat, tab)),
+                Some(attrs) => Some(modal_view(attrs, registry_items, compat, attrs_tab)),
                 None => {
                     // Slot undone away while open → close (React's `slot &&` render guard).
                     crate::editor_ops::close_attributes();

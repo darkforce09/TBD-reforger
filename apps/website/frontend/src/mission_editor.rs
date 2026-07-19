@@ -120,6 +120,8 @@ pub fn MissionEditorPage() -> impl IntoView {
     // T-159.26 — Attributes modal: the open slot id + a doc-change tick the modal re-reads on
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
     let attrs_open = RwSignal::new(None::<String>);
+    // T-180.9 — Attributes tab (1 = Identity default; `open_arsenal` sets 3 = Arsenal).
+    let attrs_tab = RwSignal::new(1usize);
     let doc_tick = RwSignal::new(0u64);
     let settings_open = RwSignal::new(false);
     // T-167 — Faction Manager dialog toggle (launched from the Factions dock "Manage" button).
@@ -324,6 +326,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 orbat_nodes,
                 selected_ids,
                 attrs_open,
+                attrs_tab,
                 doc_tick,
             );
 
@@ -1317,7 +1320,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 // T-159.26 — Attributes modal (fixed overlay; no DOM while closed). Inside the
                 // chrome subtree so its pointerdowns never open a map gesture.
                 <div class="pointer-events-auto">
-                    <crate::attributes::AttributesModal attrs_open doc_tick registry_items compat />
+                    <crate::attributes::AttributesModal attrs_open attrs_tab doc_tick registry_items compat />
                 </div>
                 <div class="pointer-events-auto">
                     <crate::eden_chrome::MissionSettingsDialog open=settings_open doc_tick />

@@ -239,6 +239,7 @@ mod tests {
     fn export_orbat_is_faction_then_squad_then_index_sorted() {
         let p = compile_payload(&small_maps(), &slots(), true);
         // faction array order (fa=BLUFOR, fb=OPFOR) → each squad → slots sorted by index asc.
+        // Slots in this fixture have no loadout key → empty strings (I3).
         assert_eq!(
             p["orbat"],
             json!([
@@ -255,6 +256,45 @@ mod tests {
                 }
             ])
         );
+    }
+
+    /// I6 — Export injects derived summary when editor slots carry loadout.summary.
+    #[test]
+    fn compile_export_orbat_loadout() {
+        let slots = json!({
+            "z1": {
+                "id": "z1", "index": 0, "role": "Rifleman", "tag": "",
+                "loadout": {
+                    "primary": "{AAA}Rifle_M16A2.et",
+                    "summary": "M16A2 \u{00b7} ACOG"
+                }
+            }
+        })
+        .to_string();
+        let small = json!({
+            "meta": Value::Null,
+            "factionsById": {
+                "fa": { "key": "BLUFOR", "squadIds": ["s1"] }
+            },
+            "squadsById": {
+                "s1": { "id": "s1", "callsign": "Alpha", "name": "1st", "slotIds": ["z1"] }
+            },
+            "loadoutsById": {},
+            "itemsById": {},
+            "objectivesById": {},
+            "vehiclesById": {},
+            "markersById": {},
+            "editorLayersById": {}
+        })
+        .to_string();
+        let p = compile_payload(&small, &slots, true);
+        assert_eq!(
+            p["orbat"][0]["slots"][0]["loadout"],
+            json!("M16A2 \u{00b7} ACOG")
+        );
+        // Save path still omits top-level orbat.
+        let save = compile_payload(&small, &slots, false);
+        assert!(save.get("orbat").is_none());
     }
 
     #[test]

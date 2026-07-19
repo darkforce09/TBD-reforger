@@ -5,6 +5,7 @@
 use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 /// One ordered, distinct slot in a squad: a role + loadout + optional tag.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,9 +46,51 @@ pub fn parse_orbat_template(payload: &[u8]) -> Vec<OrbatSquadTemplate> {
     derive_orbat_from_editor(payload)
 }
 
+/// Human-readable kit string for Event/Export `orbat[].slots[].loadout`.
+/// Prefers embedded `summary`; else joins display names of `primary` + `launcher` with `" + "`.
+fn loadout_summary_from_value(lo: Option<&Value>) -> String {
+    let Some(lo) = lo.filter(|v| !v.is_null()) else {
+        return String::new();
+    };
+    if let Some(s) = lo.get("summary").and_then(Value::as_str) {
+        let t = s.trim();
+        if !t.is_empty() {
+            return t.to_string();
+        }
+    }
+    let primary = lo
+        .get("primary")
+        .and_then(Value::as_str)
+        .map(display_resource)
+        .filter(|s| !s.is_empty());
+    let launcher = lo
+        .get("launcher")
+        .and_then(Value::as_str)
+        .map(display_resource)
+        .filter(|s| !s.is_empty());
+    [primary, launcher]
+        .into_iter()
+        .flatten()
+        .collect::<Vec<_>>()
+        .join(" + ")
+}
+
+/// Basename after last `/` or `}`, then strip trailing `.et`.
+fn display_resource(resource: &str) -> String {
+    let base = resource
+        .rsplit(['/', '}'])
+        .next()
+        .unwrap_or(resource)
+        .trim();
+    base.strip_suffix(".et")
+        .unwrap_or(base)
+        .to_string()
+}
+
 /// Reconstruct the ORBAT from the editor graph, mirroring `compile.ts` order EXACTLY:
 /// factions in array order → each `squadIds` → resolve squad → each `slotIds` →
-/// resolve slots → sort by `index` ascending. `loadout` is always `""`.
+/// resolve slots → sort by `index` ascending. `loadout` is the slot summary (or
+/// primary+launcher rebuild) when present; `""` when absent.
 pub fn derive_orbat_from_editor(payload: &[u8]) -> Vec<OrbatSquadTemplate> {
     #[derive(Deserialize, Default)]
     #[serde(default)]
@@ -82,6 +125,7 @@ pub fn derive_orbat_from_editor(payload: &[u8]) -> Vec<OrbatSquadTemplate> {
         index: i64,
         role: String,
         tag: String,
+        loadout: Option<Value>,
     }
 
     let Ok(e) = serde_json::from_slice::<Ep>(payload) else {
@@ -111,7 +155,7 @@ pub fn derive_orbat_from_editor(payload: &[u8]) -> Vec<OrbatSquadTemplate> {
                 .iter()
                 .map(|r| OrbatSlotTemplate {
                     role: r.role.clone(),
-                    loadout: String::new(),
+                    loadout: loadout_summary_from_value(r.loadout.as_ref()),
                     tag: r.tag.clone(),
                 })
                 .collect();
@@ -171,13 +215,76 @@ mod tests {
         assert_eq!(alpha.squad, "Alpha 1-1");
         let roles: Vec<&str> = alpha.slots.iter().map(|s| s.role.as_str()).collect();
         assert_eq!(roles, ["Squad Leader", "Combat Medic", "Rifleman"]);
-        assert!(alpha.slots.iter().all(|s| s.loadout.is_empty()));
         assert_eq!(alpha.slots[1].tag, "MED");
         let bravo = &got[1];
         assert_eq!(bravo.squad, "Bravo 1-1");
         assert_eq!(bravo.callsign, "");
         assert_eq!(bravo.slots.len(), 1);
         assert_eq!(bravo.slots[0].role, "Team Leader");
+    }
+
+    #[test]
+    fn derive_fills_loadout_from_summary() {
+        // Middle-dot in summary must not live in a `br#` literal (non-ASCII ban).
+        let p = format!(
+            r#"{{
+            "editor": {{
+                "factions":[{{"key":"BLUFOR","squadIds":["sq"]}}],
+                "squads":[{{"id":"sq","name":"Alpha","slotIds":["s0"]}}],
+                "slots":[{{
+                    "id":"s0","index":0,"role":"Rifleman","tag":"",
+                    "loadout":{{"primary":"{{AAA}}Rifle_M16A2.et","summary":"M16A2 {} ACOG"}}
+                }}]
+            }}
+        }}"#,
+            '\u{00b7}'
+        );
+        let got = parse_orbat_template(p.as_bytes());
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].slots.len(), 1);
+        assert_eq!(got[0].slots[0].loadout, "M16A2 \u{00b7} ACOG");
+    }
+
+    #[test]
+    fn derive_fills_loadout_from_weapons() {
+        let p = br#"{
+            "editor": {
+                "factions":[{"key":"BLUFOR","squadIds":["sq"]}],
+                "squads":[{"id":"sq","name":"Alpha","slotIds":["s0"]}],
+                "slots":[{
+                    "id":"s0","index":0,"role":"Rifleman","tag":"",
+                    "loadout":{
+                        "primary":"{AAA}Rifle_M16A2.et",
+                        "launcher":"PrefabLibrary/Weapons/Launchers/Launcher_M72A3.et"
+                    }
+                }]
+            }
+        }"#;
+        let got = parse_orbat_template(p);
+        assert_eq!(got.len(), 1);
+        let lo = &got[0].slots[0].loadout;
+        assert!(lo.contains("Rifle_M16A2"), "primary token: {lo}");
+        assert!(lo.contains("Launcher_M72A3"), "launcher token: {lo}");
+        assert!(
+            lo.find("Rifle_M16A2").unwrap() < lo.find("Launcher_M72A3").unwrap(),
+            "primary before launcher: {lo}"
+        );
+        assert!(lo.contains(" + "), "separator: {lo}");
+        assert_eq!(lo, "Rifle_M16A2 + Launcher_M72A3");
+    }
+
+    #[test]
+    fn derive_empty_loadout_when_absent() {
+        let p = br#"{
+            "editor": {
+                "factions":[{"key":"BLUFOR","squadIds":["sq"]}],
+                "squads":[{"id":"sq","name":"Alpha","slotIds":["s0"]}],
+                "slots":[{"id":"s0","index":0,"role":"Rifleman","tag":""}]
+            }
+        }"#;
+        let got = parse_orbat_template(p);
+        assert_eq!(got.len(), 1);
+        assert_eq!(got[0].slots[0].loadout, "");
     }
 
     #[test]
