@@ -948,7 +948,7 @@ fn draw_batches<'a>(
                 pass.draw(0..4, 0..*count);
             }
             BatchPayload::Textured(l) => {
-                // T-178 — ForestFill uses density FS + Nearest-bound tex; sat/hillshade stay Linear.
+                // T-179 — ForestFill uses density FS + Linear-bound tex; sat/hillshade stay Linear.
                 let pipe = if batch.role == LaneRole::ForestFill {
                     forest_density_pipeline
                 } else {
@@ -1066,8 +1066,8 @@ pub struct RenderEngine {
     sampler: wgpu::Sampler,
     /// Nearest sampler for crisp glyph atlas pixels.
     icon_sampler: wgpu::Sampler,
-    /// T-178 — Nearest sampler for density count textures (Linear would corrupt RG-packed u16).
-    nearest_sampler: wgpu::Sampler,
+    /// T-179 — Linear sampler for density count textures (bilinear between corners).
+    density_sampler: wgpu::Sampler,
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     pub(crate) unit_quad_buf: wgpu::Buffer,
@@ -1115,6 +1115,10 @@ pub struct RenderEngine {
     /// T-178 — island density texture dims (0 until uploaded).
     forest_density_w: u32,
     forest_density_h: u32,
+    /// T-179 — successful TBDD bins stitched before arm (must be 625 on Everon).
+    forest_bins_ok: u32,
+    /// Uploaded MS outline segment count (stats report 0 when outline LOD off).
+    forest_outline_segments_stored: u32,
     /// T-178 — `"density"` once canopy tex is committed, else empty.
     forest_mode: String,
     /// T-173 — monotonic upload-call counters (perf gates G-C/G-D): how many times the host
@@ -1401,13 +1405,13 @@ impl RenderEngine {
             mipmap_filter: wgpu::MipmapFilterMode::Nearest,
             ..wgpu::SamplerDescriptor::default()
         });
-        let nearest_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("forest-density-nearest"),
+        let density_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("forest-density-linear"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
             mipmap_filter: wgpu::MipmapFilterMode::Nearest,
             ..wgpu::SamplerDescriptor::default()
         });
@@ -1497,7 +1501,7 @@ impl RenderEngine {
             text_pipeline_layout,
             sampler,
             icon_sampler,
-            nearest_sampler,
+            density_sampler,
             uniform_buf,
             bind_group,
             unit_quad_buf,
@@ -1524,6 +1528,8 @@ impl RenderEngine {
             landcover_polygons: 0,
             forest_density_w: 0,
             forest_density_h: 0,
+            forest_bins_ok: 0,
+            forest_outline_segments_stored: 0,
             forest_mode: String::new(),
             contour_segments: 0,
             road_segments: 0,
@@ -2194,7 +2200,7 @@ impl RenderEngine {
                 "\"world_chunks_drawn\":{},",
                 "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
-                "\"forest_density_w\":{},\"forest_density_h\":{},\"forest_mode\":\"{}\",",
+                "\"forest_density_w\":{},\"forest_density_h\":{},\"forest_bins_ok\":{},\"forest_mode\":\"{}\",",
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"text_labels_drawn\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
                 "\"submitted_last_frame\":{},",
@@ -2227,6 +2233,7 @@ impl RenderEngine {
             self.forest_outline_segments,
             self.forest_density_w,
             self.forest_density_h,
+            self.forest_bins_ok,
             self.forest_mode,
             tree_glyphs,
             prop_glyphs,
@@ -2801,11 +2808,11 @@ impl RenderEngine {
         self.remove_lane(role_enum);
     }
 
-    /// T-178 — upload the island density RGBA8 texture (RG = u16 tree count) and commit a
-    /// `ForestFill` textured batch drawn with `fs_forest_density` + Nearest sampling.
+    /// T-179 — upload island density as RGBA8 (count in R) + Linear `fs_forest_density`.
+    /// `rgba` must be row-padded (`bytes_per_row` multiple of 256).
     ///
     /// # Errors
-    /// Zero dims or `rgba` length ≠ `tex_w * tex_h * 4`.
+    /// Zero dims, bad `bytes_per_row`, or length mismatch.
     #[allow(clippy::too_many_arguments)]
     pub fn forest_density_upload(
         &mut self,
@@ -2816,15 +2823,21 @@ impl RenderEngine {
         tex_w: u32,
         tex_h: u32,
         rgba: &[u8],
+        bytes_per_row: u32,
+        bins_ok: u32,
     ) -> Result<(), JsError> {
         if tex_w == 0 || tex_h == 0 {
             return Err(JsError::new(
                 "forest_density_upload: zero texture dimensions",
             ));
         }
-        let want = (tex_w as usize)
+        if bytes_per_row < tex_w * 4 || !bytes_per_row.is_multiple_of(256) {
+            return Err(JsError::new(
+                "forest_density_upload: bytes_per_row must be ≥ tex_w*4 and 256-aligned",
+            ));
+        }
+        let want = (bytes_per_row as usize)
             .checked_mul(tex_h as usize)
-            .and_then(|n| n.checked_mul(4))
             .ok_or_else(|| JsError::new("forest_density_upload: size overflow"))?;
         if rgba.len() != want {
             return Err(JsError::new("forest_density_upload: rgba length mismatch"));
@@ -2848,7 +2861,7 @@ impl RenderEngine {
             rgba,
             wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(tex_w * 4),
+                bytes_per_row: Some(bytes_per_row),
                 rows_per_image: Some(tex_h),
             },
             wgpu::Extent3d {
@@ -2858,7 +2871,7 @@ impl RenderEngine {
             },
         );
         let rect = lanes::world_rect_rel([min_x, min_y], [max_x, max_y]);
-        // tint: r = outline_on, a = fill_alpha (updated by forest_density_set_params).
+        // tint.a = fill_alpha (updated by forest_density_set_params).
         let inst = scene::QuadInstance {
             min: [rect[0], rect[1]],
             max: [rect[2], rect[3]],
@@ -2883,7 +2896,7 @@ impl RenderEngine {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&self.nearest_sampler),
+                    resource: wgpu::BindingResource::Sampler(&self.density_sampler),
                 },
             ],
         });
@@ -2893,7 +2906,7 @@ impl RenderEngine {
             instances,
             mode: BasemapMode::Single,
             tiles: 1,
-            bytes: u64::from(tex_w) * u64::from(tex_h) * 4,
+            bytes: u64::from(bytes_per_row) * u64::from(tex_h),
         };
         self.upsert_lane(
             LaneRole::ForestFill,
@@ -2905,14 +2918,14 @@ impl RenderEngine {
         );
         self.forest_density_w = tex_w;
         self.forest_density_h = tex_h;
+        self.forest_bins_ok = bins_ok;
         self.forest_mode = "density".into();
         self.forest_polygons = 625;
         self.forest_outline_segments = 0;
         Ok(())
     }
 
-    /// T-178 — update density canopy LOD params without re-uploading the texture.
-    /// `tint.r` = outline_on (0/1), `tint.a` = fill_alpha.
+    /// T-179 — update fill α / visibility and ForestOutline lane visibility (real MS hairlines).
     pub fn forest_density_set_params(
         &mut self,
         fill_alpha: f32,
@@ -2922,12 +2935,10 @@ impl RenderEngine {
         if self.forest_mode != "density" {
             return;
         }
-        let outline_on = if outline_visible { 1.0f32 } else { 0.0 };
-        let color = [outline_on, 0.0, 0.0, fill_alpha.clamp(0.0, 1.0)];
-        let visible = fill_visible || outline_visible;
+        let color = [0.0, 0.0, 0.0, fill_alpha.clamp(0.0, 1.0)];
         let target = self.batches.iter_mut().find_map(|b| {
             if b.role == LaneRole::ForestFill {
-                b.visible = visible;
+                b.visible = fill_visible;
                 if let BatchPayload::Textured(l) = &b.payload {
                     return Some(l.instances.clone());
                 }
@@ -2939,15 +2950,33 @@ impl RenderEngine {
                 .write_buffer(&buf, 16, bytemuck::cast_slice(&color));
             self.damage.mark();
         }
+        for b in &mut self.batches {
+            if b.role == LaneRole::ForestOutline {
+                b.visible = outline_visible && self.forest_outline_segments_stored > 0;
+            }
+        }
         self.forest_polygons = if fill_visible { 625 } else { 0 };
-        self.forest_outline_segments = if outline_visible { 1 } else { 0 };
+        self.forest_outline_segments = if outline_visible {
+            self.forest_outline_segments_stored
+        } else {
+            0
+        };
+        self.damage.mark();
     }
 
-    /// T-178 — drop the density canopy lane.
+    /// T-179 — record uploaded MS outline segment count (stats gate via set_params).
+    pub fn forest_outline_set_stored(&mut self, segments: u32) {
+        self.forest_outline_segments_stored = segments;
+    }
+
+    /// T-178 — drop the density canopy lane (+ outline).
     pub fn forest_density_clear(&mut self) {
         self.remove_lane(LaneRole::ForestFill);
+        self.remove_lane(LaneRole::ForestOutline);
         self.forest_density_w = 0;
         self.forest_density_h = 0;
+        self.forest_bins_ok = 0;
+        self.forest_outline_segments_stored = 0;
         self.forest_mode.clear();
         self.forest_polygons = 0;
         self.forest_outline_segments = 0;

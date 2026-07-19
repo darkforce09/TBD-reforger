@@ -64,44 +64,27 @@ fn fs_textured(in: TexVsOut) -> @location(0) vec4<f32> {
     return textureSample(tex, samp, in.uv) * in.tint;
 }
 
-// ── Forest density canopy (T-178) ──────────────────────────────────────────────────────────────
-// Island TBDD tree counts packed as RGBA8 RG=u16 LE. `tint.a` = fill_alpha; `tint.r` = outline_on
-// (0/1). Nearest via textureLoad — Linear would corrupt the packed count.
+// ── Forest density canopy (T-179) ──────────────────────────────────────────────────────────────
+// Island TBDD tree counts in RGBA8.R (×255 recovers). Linear + corner UVs + fwidth AA iso.
+// Hairline MS outlines are role-6; `tint.a` = fill_alpha only.
 @fragment
 fn fs_forest_density(in: TexVsOut) -> @location(0) vec4<f32> {
     let iso = 2.0;
     let fill_rgb = vec3<f32>(34.0 / 255.0, 120.0 / 255.0, 60.0 / 255.0);
-    let outline_rgb = vec3<f32>(24.0 / 255.0, 90.0 / 255.0, 45.0 / 255.0);
-    let outline_a = 230.0 / 255.0;
     let fill_alpha = in.tint.a;
-    let outline_on = in.tint.r;
 
-    let dims = vec2<i32>(textureDimensions(tex));
-    let tc = vec2<i32>(
-        clamp(i32(floor(in.uv.x * f32(dims.x))), 0, dims.x - 1),
-        clamp(i32(floor(in.uv.y * f32(dims.y))), 0, dims.y - 1)
-    );
-    let t = textureLoad(tex, tc, 0);
-    let count = round(t.r * 255.0) + round(t.g * 255.0) * 256.0;
-
-    let inside = count >= iso;
-    var out_rgb = fill_rgb;
-    var out_a = 0.0;
-    if inside {
-        out_a = fill_alpha;
-    }
-    let edge = fwidth(select(0.0, 1.0, inside));
-    if outline_on > 0.5 {
-        let rim = smoothstep(0.0, 1.0, edge * 2.0);
-        if rim > 0.05 {
-            out_rgb = mix(out_rgb, outline_rgb, rim);
-            out_a = max(out_a, outline_a * rim);
-        }
-    }
+    let dims = vec2<f32>(textureDimensions(tex));
+    let n = dims.x;
+    let uv = in.uv * ((n - 1.0) / n) + vec2<f32>(0.5 / n);
+    let count = textureSample(tex, samp, uv).r * 255.0;
+    let d = count - iso;
+    let w = max(fwidth(d), 1e-4);
+    let cover = smoothstep(-w, w, d);
+    let out_a = fill_alpha * cover;
     if out_a < 0.001 {
         discard;
     }
-    return vec4<f32>(out_rgb, out_a);
+    return vec4<f32>(fill_rgb, out_a);
 }
 
 // ── Polyline (W1 grid) ────────────────────────────────────────────────────────────────────────

@@ -1,6 +1,6 @@
 # Mission Editor (2D Canvas)
 
-> **Live (T-151 / T-159 / T-171 / T-172 / T-173 / T-174 / T-175 / T-176 / T-177 / T-178):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk **`--release`** via `make leptos`). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
+> **Live (T-151 / T-159 / T-171 / T-172 / T-173 / T-174 / T-175 / T-176 / T-177 / T-178 / T-179):** wgpu via `map-engine-render` + Leptos at `apps/website/frontend/src/mission_editor.rs` (yrs doc core, Trunk **`--release`** via `make leptos`). Element Inventory / milestones below retain React-era nouns (Deck.gl, Y.Doc, Vite, `React.memo`) as **ship history** — not the live stack.
 >
 > **T-173 shipped:** Mission Settings restore (basemap Satellite/Map, hillshade on/off + strength, grid, 12 world-layer toggles); continuous outliner/palette guide stems; fence/pier/rail strips on zoom-in; upright building badges; slot clusters + town/road/height labels + airfield apron/glyphs on the Leptos host; library scroll + dossier sheet de-blurred; pan streaming settle + zoom compose memo. Day-to-day: `make leptos` (release). Debug trap: `make leptos-debug`.
 >
@@ -12,7 +12,8 @@
 >
 > **T-177 shipped (T-071.0):** YouTube-style tree connectors (spine + elbow); grab cursor on placeable assets; top menus above docks; left **ORBAT removed** (Editor Layers only); top-strip **ORBAT Manager** → `OrbatManagerDialog`. Squad CRUD = **T-071.1+**.
 >
-> **T-178 shipped:** Forest canopy = island **TBDD density texture** + `fs_forest_density` (Nearest/`textureLoad`, hard iso 2.0, `fwidth` rim at outline LOD); progressive 512 m mesh fill retired. Dual **"Outliner"** label removed; continuous clickable YouTube guide stems (`data-guide-toggle`). Verify: [`.ai/artifacts/t178_verify_log.md`](../../../.ai/artifacts/t178_verify_log.md).
+> **T-178 shipped:** Forest canopy = island **TBDD density texture** + `fs_forest_density`; progressive 512 m mesh fill retired. Dual **"Outliner"** label removed; continuous clickable YouTube guide stems (`data-guide-toggle`). Verify: [`.ai/artifacts/t178_verify_log.md`](../../../.ai/artifacts/t178_verify_log.md).
+> **T-179 shipped:** Soft Linear density fill (corner UV + fwidth AA iso; hard Nearest path gone) + `forest_bins_ok === 625` arm gate + real MS outline hairlines (role 6; measured **99374** @ z=−1). Verify: [`.ai/artifacts/t179_verify_log.md`](../../../.ai/artifacts/t179_verify_log.md).
 
 ## Status
 

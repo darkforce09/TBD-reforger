@@ -24,6 +24,8 @@ pub struct MapAssetsBridge {
     /// T-178 — island density texture dims / mode.
     pub forest_density_w: u32,
     pub forest_density_h: u32,
+    /// T-179 — successful density bins stitched (Everon Class-R pin 625).
+    pub forest_bins_ok: u32,
     pub forest_mode: String,
     pub world_building_instances: u32,
     pub world_chunks_drawn: u32,
@@ -91,6 +93,10 @@ impl MapAssetsBridge {
         set(
             "forest_density_h",
             JsValue::from_f64(f64::from(self.forest_density_h)),
+        );
+        set(
+            "forest_bins_ok",
+            JsValue::from_f64(f64::from(self.forest_bins_ok)),
         );
         set("forest_mode", JsValue::from_str(&self.forest_mode));
         set(
@@ -177,6 +183,9 @@ impl MapAssetsBridge {
         }
         if let Some(n) = u32f("forest_density_h") {
             self.forest_density_h = n;
+        }
+        if let Some(n) = u32f("forest_bins_ok") {
+            self.forest_bins_ok = n;
         }
         if let Some(m) = v.get("forest_mode").and_then(|x| x.as_str()) {
             self.forest_mode = m.to_string();

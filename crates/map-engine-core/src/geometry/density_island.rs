@@ -61,6 +61,43 @@ pub fn pack_island_rgba_yflip(island: &[u16]) -> Vec<u8> {
     out
 }
 
+/// Bytes-per-row alignment required by `wgpu`/`WebGPU` texture uploads.
+#[must_use]
+pub fn align_bytes_per_row(unpadded: u32) -> u32 {
+    (unpadded + 255) & !255
+}
+
+/// T-179 — Y-flip pack as RGBA8Unorm with tree count in R (`min(c,255)`); G=B=0, A=255.
+/// Linear-sampleable on WebGPU + WebGL2. Returns `(bytes, bytes_per_row)` padded to 256 B.
+/// Shader recovers `count = sample.r * 255`. Everon max tree channel ≪ 255.
+#[must_use]
+pub fn pack_island_r8_yflip(island: &[u16]) -> (Vec<u8>, u32) {
+    assert_eq!(island.len(), ISLAND_CORNERS * ISLAND_CORNERS);
+    let bpr = align_bytes_per_row((ISLAND_CORNERS as u32) * 4);
+    let mut out = vec![0u8; (bpr as usize) * ISLAND_CORNERS];
+    for gy in 0..ISLAND_CORNERS {
+        let tex_row = (ISLAND_CORNERS - 1) - gy;
+        for gx in 0..ISLAND_CORNERS {
+            let c = island[gy * ISLAND_CORNERS + gx].min(255) as u8;
+            let o = (tex_row * bpr as usize) + gx * 4;
+            out[o] = c;
+            out[o + 1] = 0;
+            out[o + 2] = 0;
+            out[o + 3] = 255;
+        }
+    }
+    (out, bpr)
+}
+
+/// Corner-correct UV for Linear sampling of an `N×N` corner grid spanning the unit square.
+/// Texel centers sit on corners: `uv * (N-1)/N + 0.5/N`.
+#[must_use]
+pub fn corner_sample_uv(uv: [f32; 2], n: f32) -> [f32; 2] {
+    let s = (n - 1.0) / n;
+    let o = 0.5 / n;
+    [uv[0] * s + o, uv[1] * s + o]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -118,5 +155,26 @@ mod tests {
             EVERON_DENSITY_BINS as usize
         );
         assert_eq!(25 * CHUNK_CELLS + 1, ISLAND_CORNERS);
+    }
+
+    #[test]
+    fn pack_r8_yflip_north_is_tex_row_zero() {
+        let mut island = vec![0u16; ISLAND_CORNERS * ISLAND_CORNERS];
+        island[0] = 11;
+        island[(ISLAND_CORNERS - 1) * ISLAND_CORNERS] = 22;
+        let (bytes, bpr) = pack_island_r8_yflip(&island);
+        assert_eq!(bpr, align_bytes_per_row(1601 * 4));
+        assert_eq!(bytes[0], 22); // north-west
+        let o = (ISLAND_CORNERS - 1) * bpr as usize;
+        assert_eq!(bytes[o], 11); // south-west
+    }
+
+    #[test]
+    fn corner_sample_uv_centers() {
+        let n = 1601.0;
+        let z = corner_sample_uv([0.0, 0.0], n);
+        assert!((z[0] - 0.5 / n).abs() < 1e-6);
+        let one = corner_sample_uv([1.0, 1.0], n);
+        assert!((one[0] - (1.0 - 0.5 / n)).abs() < 1e-6);
     }
 }

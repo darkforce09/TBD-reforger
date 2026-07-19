@@ -76,6 +76,8 @@ struct Builder {
     origin_y: f64,
     cell_m: f64,
     iso: f64,
+    /// T-179 — skip fill ring buffers (outline hairlines only).
+    outline_only: bool,
 }
 
 impl Builder {
@@ -86,14 +88,16 @@ impl Builder {
         if ring.len() < 3 {
             return;
         }
-        self.start_indices.push(self.vertex_count);
-        for p in &ring {
-            self.positions.push(p.x as f32);
-            self.positions.push(p.y as f32);
+        if !self.outline_only {
+            self.start_indices.push(self.vertex_count);
+            for p in &ring {
+                self.positions.push(p.x as f32);
+                self.positions.push(p.y as f32);
+            }
+            self.positions.push(ring[0].x as f32);
+            self.positions.push(ring[0].y as f32);
+            self.vertex_count += ring.len() as u32 + 1;
         }
-        self.positions.push(ring[0].x as f32);
-        self.positions.push(ring[0].y as f32);
-        self.vertex_count += ring.len() as u32 + 1;
         let n = ring.len();
         for k in 0..n {
             let a = ring[k];
@@ -219,9 +223,46 @@ pub fn forest_mass_from_corners(
         origin_y,
         cell_m,
         iso,
+        outline_only: false,
     };
+    march_into(&mut b, corners, cols, rows, iso);
+    ForestMassGeometry {
+        fill_positions: b.positions,
+        fill_start_indices: b.start_indices,
+        outline_segments: b.segments,
+    }
+}
+
+/// T-179 — outline iso segments only (no fill ring buffers). Same march as
+/// [`forest_mass_from_corners`].
+#[must_use]
+pub fn forest_outline_segments_from_corners(
+    corners: &[u16],
+    cols: usize,
+    rows: usize,
+    origin_x: f64,
+    origin_y: f64,
+    cell_m: f64,
+    iso: f64,
+) -> Vec<f32> {
+    let mut b = Builder {
+        positions: Vec::new(),
+        start_indices: Vec::new(),
+        segments: Vec::new(),
+        vertex_count: 0,
+        origin_x,
+        origin_y,
+        cell_m,
+        iso,
+        outline_only: true,
+    };
+    march_into(&mut b, corners, cols, rows, iso);
+    b.segments
+}
+
+fn march_into(b: &mut Builder, corners: &[u16], cols: usize, rows: usize, iso: f64) {
     if cols < 2 || rows < 2 {
-        return ForestMassGeometry::default();
+        return;
     }
     for j in 0..rows - 1 {
         for i in 0..cols - 1 {
@@ -235,11 +276,6 @@ pub fn forest_mass_from_corners(
             }
             b.march_cell(i, j, v00, v10, v11, v01);
         }
-    }
-    ForestMassGeometry {
-        fill_positions: b.positions,
-        fill_start_indices: b.start_indices,
-        outline_segments: b.segments,
     }
 }
 
@@ -268,6 +304,18 @@ mod tests {
         assert!(g.fill_positions.is_empty());
         assert!(g.fill_start_indices.is_empty());
         assert!(g.outline_segments.is_empty());
+    }
+
+    #[test]
+    fn outline_only_emits_segments_without_fill() {
+        // One cell with a single high corner → crossings → outline segs, no fill rings when
+        // using the outline-only entry.
+        let mut corners = vec![0u16; 4];
+        corners[0] = 5;
+        let segs =
+            forest_outline_segments_from_corners(&corners, 2, 2, 0.0, 0.0, 8.0, CANOPY_MASS_ISO);
+        assert!(!segs.is_empty());
+        assert_eq!(segs.len() % 4, 0);
     }
 
     #[test]

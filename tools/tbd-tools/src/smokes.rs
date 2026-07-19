@@ -622,8 +622,8 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             let bridge = h
                 .page
                 .wait_for(
-                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_mode === 'density' && window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601 && window.__mapAssets.forest_polygons === 625 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
-                    480,
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_mode === 'density' && window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601 && window.__mapAssets.forest_bins_ok === 625 && window.__mapAssets.forest_polygons === 625 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
+                    720,
                     250,
                 )
                 .await?;
@@ -654,7 +654,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 "window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0",
             )
             .await?;
-            // T-178 — density canopy: Class-R equality pins (soft >0 banned).
+            // T-179 — density canopy: Class-R equality pins (soft >0 banned for bins/dims).
             let a_density_dims = eval_bool(
                 &h.page,
                 "window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601",
@@ -662,6 +662,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             .await?;
             let a_density_mode =
                 eval_bool(&h.page, "window.__mapAssets.forest_mode === 'density'").await?;
+            let a_bins = eval_bool(&h.page, "window.__mapAssets.forest_bins_ok === 625").await?;
             let a_forest = eval_bool(&h.page, "window.__mapAssets.forest_polygons === 625").await?;
             let a_outline_boot =
                 eval_bool(&h.page, "window.__mapAssets.forest_outline_segments === 0").await?;
@@ -681,12 +682,13 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             checks.insert("A_bld".into(), json!(a_bld));
             checks.insert("A_density_dims".into(), json!(a_density_dims));
             checks.insert("A_density_mode".into(), json!(a_density_mode));
+            checks.insert("A_bins".into(), json!(a_bins));
             checks.insert("A_forest".into(), json!(a_forest));
             checks.insert("A_outline_boot".into(), json!(a_outline_boot));
             checks.insert("A_atlas".into(), json!(a_atlas));
             checks.insert("A_trees_off".into(), json!(a_trees_off));
 
-            // T-178 — outline rim armed at z=-1 (forestOutline LOD band).
+            // T-179 — real MS outline hairlines armed at z=-1 (not fake segments===1).
             let outline_set = eval_bool(
                 &h.page,
                 "typeof window.__editorCamSet === 'function' && (window.__editorCamSet(6400, 6400, -1.0), true)",
@@ -697,11 +699,21 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             let a_outline_probe = h
                 .page
                 .wait_for(
-                    "typeof window.__mapAssets === 'object' && window.__mapAssets.forest_outline_segments === 1 && window.__mapAssets.forest_density_w === 1601",
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.forest_outline_segments > 0 && window.__mapAssets.forest_density_w === 1601",
                     80,
                     250,
                 )
                 .await?;
+            let outline_segs_at_probe = eval_i64(
+                &h.page,
+                "window.__mapAssets.forest_outline_segments || 0",
+            )
+            .await
+            .unwrap_or(0);
+            // T-179 floor from this checkout fullmap: 99374 segments @ z=-1 (MS hairlines).
+            // Soft `> 0` alone can false-green a stub flag; require a real polyline count.
+            const OUTLINE_SEGS_FLOOR: i64 = 50_000;
+            let a_outline_probe = a_outline_probe && outline_segs_at_probe >= OUTLINE_SEGS_FLOOR;
             checks.insert("A_outline_probe".into(), json!(a_outline_probe));
             // Restore island zoom before tree probe.
             let _ = eval_bool(
@@ -747,6 +759,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                     "landcover": 0,
                     "forest_density": 1601,
                     "forest_bins": 625,
+                    "forest_outline_segments_at_z_neg1": outline_segs_at_probe,
                     "default_zoom": -2.0,
                     "tree_glyph_min_zoom": 0.0,
                 },

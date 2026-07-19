@@ -187,7 +187,7 @@ Spec: [`t057_map_performance_hotfix.md`](t057_map_performance_hotfix.md) (shippe
 ### Editor shell & routing
 - Lazy route `/missions/:id/edit` (`mission_maker+`, full-bleed)
 - Aegis glass UI: top strip (+ **ORBAT Manager**), left sidebar (**Editor Layers** only — T-177/T-178), right asset palette, bottom toolbelt; continuous clickable YouTube-style tree guides (T-178)
-- Forest canopy: island TBDD density shader (`fs_forest_density`) — T-178; no progressive mesh fill / no 32 m landcover forest wash
+- Forest canopy: island TBDD density shader (`fs_forest_density`) — T-178/T-179 (Linear soft fill + MS outline hairlines; `bins_ok===625`); no progressive mesh fill / no 32 m landcover forest wash
 - Mission Settings dialog (time, weather, view distance, thermals)
 - Attributes modal (Identity / Transform editable / States stub / **Arsenal dumb loadout @ T-068.4**)
 
