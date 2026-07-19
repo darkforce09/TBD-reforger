@@ -40,6 +40,8 @@ pub enum LaneRole {
     WorldRoadLabels,
     /// T-152.8 town name labels (above road + height labels, below grid).
     WorldTownLabels,
+    /// T-180.4 — squad leader→member hairline links (under slot rings).
+    SquadLinks,
     /// W6 mission slot rings.
     Slots,
     /// T-175 B2 — palette place-preview ghost (single translucent ring under the cursor while
@@ -84,12 +86,13 @@ pub fn lane_order(role: LaneRole) -> u8 {
         LaneRole::WorldRoadLabels => 19,
         LaneRole::WorldTownLabels => 20,
         LaneRole::Grid => 21,
-        LaneRole::Slots => 22,
-        LaneRole::SlotPlacePreview => 23,
-        LaneRole::SlotDrag => 24,
-        LaneRole::Clusters => 25,
-        LaneRole::Marquee => 26,
-        LaneRole::MarqueeOutline => 27,
+        LaneRole::SquadLinks => 22,
+        LaneRole::Slots => 23,
+        LaneRole::SlotPlacePreview => 24,
+        LaneRole::SlotDrag => 25,
+        LaneRole::Clusters => 26,
+        LaneRole::Marquee => 27,
+        LaneRole::MarqueeOutline => 28,
     }
 }
 
@@ -105,6 +108,7 @@ pub fn lane_role_from_u32(role: u32) -> Option<LaneRole> {
         5 => LaneRole::ForestFill,
         6 => LaneRole::ForestOutline,
         7 => LaneRole::Marquee,
+        9 => LaneRole::SquadLinks,
         _ => return None,
     })
 }
@@ -146,9 +150,17 @@ mod lane_order_pins {
         assert!(lane_order(L::Grid) > lane_order(L::WorldTownLabels));
         assert!(lane_order(L::Grid) > lane_order(L::WorldTrees));
         assert!(lane_order(L::Grid) > lane_order(L::WorldProps));
+        assert!(lane_order(L::Grid) < lane_order(L::SquadLinks));
         assert!(lane_order(L::Grid) < lane_order(L::Slots));
         assert!(lane_order(L::Grid) < lane_order(L::SlotDrag));
         assert!(lane_order(L::Grid) < lane_order(L::Clusters));
+    }
+
+    /// T-180.4: squad leader lines draw above the grid, under slot rings.
+    #[test]
+    fn squad_links_sit_between_grid_and_slots() {
+        assert!(lane_order(L::SquadLinks) > lane_order(L::Grid));
+        assert!(lane_order(L::SquadLinks) < lane_order(L::Slots));
     }
 
     #[test]
@@ -173,6 +185,7 @@ mod lane_order_pins {
             L::WorldRoadLabels,
             L::WorldTownLabels,
             L::Grid,
+            L::SquadLinks,
             L::Slots,
             L::SlotPlacePreview,
             L::SlotDrag,

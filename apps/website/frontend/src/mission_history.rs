@@ -19,17 +19,21 @@
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
 use leptos::prelude::{RwSignal, Set};
+use map_engine_core::doc::{MissionDocCore, SlotSoa};
+use map_engine_core::squad_links::build_squad_link_segments;
+use map_engine_render::RenderEngine;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use map_engine_core::doc::MissionDocCore;
-
 use crate::mission_doc::DocHandle;
 use crate::select_tool::{EngineHandle, SelectionHandle};
+
+/// T-180.4 — hairline role for squad leader→member lines (`lane_role_from_u32(9)`).
+const ROLE_SQUAD_LINKS: u32 = 9;
 
 /// Everything a history command needs, shared from `mission_editor::on_load`. `doc` is the same
 /// `Rc` the IDB restore swaps into, so undo/redo always see the live document. The four signals are
@@ -196,6 +200,9 @@ pub fn rebind_engine_from_doc() {
             let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
             e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
             e.set_selection(ids);
+            if let Some(doc) = ctx.doc.borrow().as_ref() {
+                upload_squad_links(e, doc, &soa);
+            }
         }
         refresh_signals(ctx, soa.ids.len());
     });
@@ -244,11 +251,29 @@ fn after_doc_change(ctx: &HistoryCtx) {
         let tints = map_engine_core::slots_gpu::side_tints_rgba_bytes(&soa.side_keys);
         e.slots_bind_soa(soa.ids.clone(), &soa.xy, &tints);
         e.set_selection(ids);
+        if let Some(doc) = ctx.doc.borrow().as_ref() {
+            upload_squad_links(e, doc, &soa);
+        }
     }
     ctx.doc_ver.set(ctx.doc_ver.get().saturating_add(1));
     ctx.dirty.set(true); // T-159.26 — a committed edit is unsaved work
     crate::yrs_persist::schedule_edit_persist(ctx.doc.clone(), &ctx.mission_id);
     refresh_signals(ctx, soa.ids.len());
+}
+
+/// T-180.4 — thin dirty→upload: collect inputs from doc, geometry in core, hairline role 9.
+fn upload_squad_links(e: &mut RenderEngine, doc: &MissionDocCore, soa: &SlotSoa) {
+    let mut xy_by_slot: HashMap<String, (f32, f32)> = HashMap::with_capacity(soa.ids.len());
+    for (i, id) in soa.ids.iter().enumerate() {
+        let x = soa.xy[i * 2];
+        let y = soa.xy[i * 2 + 1];
+        xy_by_slot.insert(id.clone(), (x, y));
+    }
+    let inputs = doc.squad_link_inputs();
+    let verts = build_squad_link_segments(&inputs, &xy_by_slot);
+    #[allow(clippy::cast_possible_truncation)]
+    let segment_count = (verts.len() / 12) as u32;
+    e.upload_hairline_segments(ROLE_SQUAD_LINKS, &verts, segment_count, true);
 }
 
 /// Push the doc/selection state onto the HUD signals. `MissionDocCore` has no change subscription,

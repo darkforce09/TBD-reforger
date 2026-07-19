@@ -18,6 +18,7 @@ use yrs::{
 };
 
 use super::soa::{Interner, NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
+use crate::squad_links::SquadLinkInput;
 
 /// Fixed, deterministic client id — so `encode_state` and the undo/redo sequence are reproducible
 /// (parity for criteria 3/4). A client-id clash with an incoming peer update is harmless: `yrs`
@@ -274,6 +275,35 @@ impl MissionDocCore {
         soa.squads = squads.words;
         soa.layers = layers.words;
         soa
+    }
+
+    /// T-180.4 — collect per-squad leader / members / side for [`crate::squad_links::build_squad_link_segments`].
+    /// No segment math here — geometry stays in `squad_links`.
+    #[must_use]
+    pub fn squad_link_inputs(&self) -> Vec<SquadLinkInput> {
+        let txn = self.doc.transact();
+        let mut out = Vec::new();
+        for (squad_id, out_v) in self.squads.iter(&txn) {
+            let Out::YMap(sq) = out_v else {
+                continue;
+            };
+            let leader_slot_id = read_str(&txn, &sq, "leaderSlotId").unwrap_or_default();
+            let member_slot_ids: Vec<String> =
+                read_id_array(&txn, &self.squads, squad_id, "slotIds")
+                    .iter()
+                    .filter_map(|a| match a {
+                        Any::String(s) => Some(s.to_string()),
+                        _ => None,
+                    })
+                    .collect();
+            let side = resolve_slot_side_key(&txn, &self.squads, &self.factions, squad_id);
+            out.push(SquadLinkInput {
+                leader_slot_id,
+                member_slot_ids,
+                side,
+            });
+        }
+        out
     }
 
     /// Add a slot with full fidelity — the complete `Slot` map, appended to `squad.slotIds` and

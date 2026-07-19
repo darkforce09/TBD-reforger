@@ -4426,7 +4426,7 @@ impl RenderEngine {
     }
 
     /// Upload hairline LineList segments: flat `[x,y,r,g,b,a]…` (6 f32/vert, 2 verts/segment).
-    /// `role`: 2 contours, 6 forest_outline.
+    /// `role`: 2 contours, 6 forest_outline, 9 squad_links (T-180.4).
     pub fn upload_hairline_segments(
         &mut self,
         role: u32,
