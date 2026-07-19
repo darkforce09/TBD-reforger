@@ -1,8 +1,8 @@
-# Send to Claude / Grok — T-180.4
+# Send to Claude / Grok — T-180.5
 
 **CWD:** repo root (`main`)
 
-Copy prompt from [`t180_4_squad_leader_lines.md`](../../docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md)  
+Prompt: [`t180_5_right_dock_side_chips.md`](../../docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md)  
 or `./scripts/ticket prompt T-180`
 
-**Now:** squad leader→member map lines.
+**Now:** Eden dock side chips + Objects stub.
