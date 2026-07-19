@@ -1228,10 +1228,103 @@ pub fn OrbatManagerDialog(
     }
 }
 
+// ── T-180.5 — Eden side chips (no F1–F6, no CIV) ─────────────────────────────────────────────────
+
+/// Ordered chip labels the DockRight row iterates. Gate E1/E5 pin this exact list.
+pub const EDEN_SIDE_CHIPS: &[&str] = &["BLUFOR", "OPFOR", "INDFOR", "Objects"];
+
+/// Empty-state copy when the Objects chip is active (E3 / E-L3).
+pub const OBJECTS_COMING_SOON: &str = "Objects coming soon…";
+
+/// Which Eden chip is selected (side place vs Objects stub).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EdenChip {
+    Blufor,
+    Opfor,
+    Indfor,
+    Objects,
+}
+
+impl EdenChip {
+    /// Chip row label / `aria-label`.
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Blufor => "BLUFOR",
+            Self::Opfor => "OPFOR",
+            Self::Indfor => "INDFOR",
+            Self::Objects => "Objects",
+        }
+    }
+
+    /// Tailwind fill class (Aegis tokens matching map SIDE_* / tactical-yellow).
+    pub const fn fill_class(self) -> &'static str {
+        match self {
+            Self::Blufor => "bg-primary",
+            Self::Opfor => "bg-error-alert",
+            Self::Indfor => "bg-success",
+            Self::Objects => "bg-tactical-yellow",
+        }
+    }
+
+    /// Parse a chip label from [`EDEN_SIDE_CHIPS`].
+    pub fn from_label(label: &str) -> Option<Self> {
+        match label {
+            "BLUFOR" => Some(Self::Blufor),
+            "OPFOR" => Some(Self::Opfor),
+            "INDFOR" => Some(Self::Indfor),
+            "Objects" => Some(Self::Objects),
+            _ => None,
+        }
+    }
+}
+
+/// Apply a chip click to the shared place signals (same `active_side` OpsCtx / `place_at` read).
+///
+/// Side chips clear Objects mode and set the place side. Objects sets `objects_mode` only (leaves
+/// `active_side` unchanged so flipping back restores the last side).
+pub fn apply_eden_chip(
+    chip: EdenChip,
+    active_side: RwSignal<String>,
+    objects_mode: RwSignal<bool>,
+) {
+    match chip {
+        EdenChip::Objects => objects_mode.set(true),
+        EdenChip::Blufor => {
+            objects_mode.set(false);
+            active_side.set(String::from("BLUFOR"));
+        }
+        EdenChip::Opfor => {
+            objects_mode.set(false);
+            active_side.set(String::from("OPFOR"));
+        }
+        EdenChip::Indfor => {
+            objects_mode.set(false);
+            active_side.set(String::from("INDFOR"));
+        }
+    }
+}
+
+/// Whether the chip row should show `chip` as selected given current side + objects mode.
+pub fn eden_chip_selected(chip: EdenChip, active_side: &str, objects_mode: bool) -> bool {
+    match chip {
+        EdenChip::Objects => objects_mode,
+        EdenChip::Blufor => !objects_mode && active_side == "BLUFOR",
+        EdenChip::Opfor => !objects_mode && active_side == "OPFOR",
+        EdenChip::Indfor => !objects_mode && active_side == "INDFOR",
+    }
+}
+
 /// Right dock — the **Factions** palette (spec O2), off the live `GET /api/v1/registry`. Leaves drag
 /// onto the map to place their slot. `fm_open` toggles the T-167 Faction Manager dialog.
+///
+/// T-180.5 — Eden side chips above search drive `active_side` / Objects stub.
 #[component]
-pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> impl IntoView {
+pub fn DockRight(
+    catalog: RwSignal<CatalogState>,
+    fm_open: RwSignal<bool>,
+    active_side: RwSignal<String>,
+    objects_mode: RwSignal<bool>,
+) -> impl IntoView {
     // Palette collapse state (T-172 B6), seeded ONCE from `default_expanded` when the catalog
     // turns Ready (only depth-0 faction folders open — screen-05 parity); user toggles stick.
     let palette_collapsed = RwSignal::new(std::collections::HashSet::<String>::new());
@@ -1294,6 +1387,52 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                     <p class="mt-0.5 text-label-sm normal-case text-outline">
                         "Drag a role onto the map to place its slot."
                     </p>
+                    // T-180.5 — Eden side chips above search (E-L4). No F1–F6 row, no CIV.
+                    <div
+                        class="mt-2 flex items-center gap-1.5"
+                        role="group"
+                        aria-label="Eden side"
+                    >
+                        {EDEN_SIDE_CHIPS
+                            .iter()
+                            .filter_map(|label| EdenChip::from_label(label))
+                            .map(|chip| {
+                                let fill = chip.fill_class();
+                                view! {
+                                    <button
+                                        type="button"
+                                        aria-label=chip.label()
+                                        aria-pressed=move || {
+                                            eden_chip_selected(
+                                                chip,
+                                                &active_side.get(),
+                                                objects_mode.get(),
+                                            )
+                                        }
+                                        class=move || {
+                                            let selected = eden_chip_selected(
+                                                chip,
+                                                &active_side.get(),
+                                                objects_mode.get(),
+                                            );
+                                            if selected {
+                                                format!(
+                                                    "{fill} h-5 w-8 shrink-0 rounded-sm ring-2 ring-offset-1 ring-offset-surface-container-lowest ring-white/90 opacity-100"
+                                                )
+                                            } else {
+                                                format!(
+                                                    "{fill} h-5 w-8 shrink-0 rounded-sm opacity-45 transition-opacity hover:opacity-75"
+                                                )
+                                            }
+                                        }
+                                        on:click=move |_| {
+                                            apply_eden_chip(chip, active_side, objects_mode)
+                                        }
+                                    />
+                                }
+                            })
+                            .collect_view()}
+                    </div>
                     <input
                         type="search"
                         aria-label="Search assets"
@@ -1302,46 +1441,54 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                         on:input=move |ev| search.set(event_target_value(&ev))
                     />
                     <div class="mt-2">
-                        {move || match catalog.get() {
-                            CatalogState::Loading => {
-                                view! {
-                                    <p class="text-label-sm text-outline">"Loading assets…"</p>
+                        {move || {
+                            if objects_mode.get() {
+                                return view! {
+                                    <p class="text-label-sm text-outline">{OBJECTS_COMING_SOON}</p>
                                 }
-                                    .into_any()
+                                    .into_any();
                             }
-                            CatalogState::Failed => {
-                                view! {
-                                    <p class="text-label-sm text-outline">
-                                        "Could not load the catalog."
-                                    </p>
+                            match catalog.get() {
+                                CatalogState::Loading => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">"Loading assets…"</p>
+                                    }
+                                        .into_any()
                                 }
-                                    .into_any()
-                            }
-                            CatalogState::Ready(nodes) if nodes.is_empty() => {
-                                view! {
-                                    <p class="text-label-sm text-outline">"No placeable assets."</p>
+                                CatalogState::Failed => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">
+                                            "Could not load the catalog."
+                                        </p>
+                                    }
+                                        .into_any()
                                 }
-                                    .into_any()
-                            }
-                            CatalogState::Ready(nodes) => {
-                                let q = search.get();
-                                if q.trim().is_empty() {
-                                    // Track the collapse set so a chevron toggle re-renders the
-                                    // tree (palette_rows reads it untracked).
-                                    palette_collapsed.track();
-                                    palette_rows(&nodes, 0, &[], &[], palette_collapsed)
-                                } else {
-                                    let filtered =
-                                        crate::asset_catalog::filter_catalog(&nodes, &q);
-                                    if filtered.is_empty() {
-                                        view! {
-                                            <p class="text-label-sm text-outline">
-                                                "No assets match."
-                                            </p>
-                                        }
-                                            .into_any()
+                                CatalogState::Ready(nodes) if nodes.is_empty() => {
+                                    view! {
+                                        <p class="text-label-sm text-outline">"No placeable assets."</p>
+                                    }
+                                        .into_any()
+                                }
+                                CatalogState::Ready(nodes) => {
+                                    let q = search.get();
+                                    if q.trim().is_empty() {
+                                        // Track the collapse set so a chevron toggle re-renders the
+                                        // tree (palette_rows reads it untracked).
+                                        palette_collapsed.track();
+                                        palette_rows(&nodes, 0, &[], &[], palette_collapsed)
                                     } else {
-                                        palette_rows(&filtered, 0, &[], &[], no_collapse)
+                                        let filtered =
+                                            crate::asset_catalog::filter_catalog(&nodes, &q);
+                                        if filtered.is_empty() {
+                                            view! {
+                                                <p class="text-label-sm text-outline">
+                                                    "No assets match."
+                                                </p>
+                                            }
+                                                .into_any()
+                                        } else {
+                                            palette_rows(&filtered, 0, &[], &[], no_collapse)
+                                        }
                                     }
                                 }
                             }
@@ -1761,7 +1908,11 @@ fn render_prefs_section(env: &crate::dto::MissionEnv) -> AnyView {
 
 #[cfg(test)]
 mod tests {
-    use super::{hhmm_to_minutes, minutes_to_hhmm};
+    use super::{
+        apply_eden_chip, eden_chip_selected, hhmm_to_minutes, minutes_to_hhmm, EdenChip,
+        EDEN_SIDE_CHIPS, OBJECTS_COMING_SOON,
+    };
+    use leptos::prelude::*;
 
     #[test]
     fn time_scrubber_roundtrip() {
@@ -1775,5 +1926,61 @@ mod tests {
         for m in [0u32, 1, 59, 60, 719, 1439] {
             assert_eq!(hhmm_to_minutes(&minutes_to_hhmm(m)), Some(m));
         }
+    }
+
+    /// E1 + E5 — exact chip list; no CIV; no F-key labels in the chip row source of truth.
+    #[test]
+    fn eden_side_chips_labels_no_civ() {
+        assert_eq!(EDEN_SIDE_CHIPS, &["BLUFOR", "OPFOR", "INDFOR", "Objects"]);
+        assert_eq!(EDEN_SIDE_CHIPS.len(), 4);
+        assert!(!EDEN_SIDE_CHIPS.iter().any(|c| *c == "CIV"));
+        for label in EDEN_SIDE_CHIPS {
+            assert!(
+                !label.starts_with('F') || label == &"Objects",
+                "F1–F6 mode row banned: {label}"
+            );
+            // F1…F6 are two-char labels like "F1" — none of our chips match.
+            assert!(!matches!(*label, "F1" | "F2" | "F3" | "F4" | "F5" | "F6"));
+        }
+    }
+
+    /// E2 — OPFOR chip writes the same side string `place_at` / OpsCtx read.
+    #[test]
+    fn apply_eden_chip_opfor_sets_active_side() {
+        let active_side = RwSignal::new(String::from("BLUFOR"));
+        let objects_mode = RwSignal::new(true);
+        apply_eden_chip(EdenChip::Opfor, active_side, objects_mode);
+        assert_eq!(active_side.get_untracked(), "OPFOR");
+        assert!(!objects_mode.get_untracked());
+        assert!(eden_chip_selected(
+            EdenChip::Opfor,
+            &active_side.get_untracked(),
+            objects_mode.get_untracked()
+        ));
+    }
+
+    /// E3 — Objects empty-state copy is pinned; chip flips objects_mode without clobbering side.
+    #[test]
+    fn objects_chip_empty_copy_and_mode() {
+        assert_eq!(OBJECTS_COMING_SOON, "Objects coming soon…");
+        let active_side = RwSignal::new(String::from("OPFOR"));
+        let objects_mode = RwSignal::new(false);
+        apply_eden_chip(EdenChip::Objects, active_side, objects_mode);
+        assert!(objects_mode.get_untracked());
+        assert_eq!(
+            active_side.get_untracked(),
+            "OPFOR",
+            "Objects must leave last side intact"
+        );
+        assert!(eden_chip_selected(
+            EdenChip::Objects,
+            &active_side.get_untracked(),
+            objects_mode.get_untracked()
+        ));
+        assert!(!eden_chip_selected(
+            EdenChip::Opfor,
+            &active_side.get_untracked(),
+            objects_mode.get_untracked()
+        ));
     }
 }

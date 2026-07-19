@@ -46,6 +46,8 @@ struct OpsCtx {
     active_layer: RwSignal<Option<String>>,
     /// T-180.1 — active Eden side for place (`BLUFOR`/`OPFOR`/`INDFOR`). Chips write this in T-180.5.
     active_side: RwSignal<String>,
+    /// T-180.5 — Objects chip stub: when true, [`begin_place`] / [`place_at`] no-op.
+    objects_mode: RwSignal<bool>,
     /// Dock mirrors — `MissionDocCore` has no change subscription, so these are pushed from
     /// [`refresh_docks`] at every mutation site, like the OBJ/SEL readouts.
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
@@ -89,6 +91,7 @@ pub fn set_ctx(
     selection: SelectionHandle,
     active_layer: RwSignal<Option<String>>,
     active_side: RwSignal<String>,
+    objects_mode: RwSignal<bool>,
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
     orbat_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
@@ -102,6 +105,7 @@ pub fn set_ctx(
             selection,
             active_layer,
             active_side,
+            objects_mode,
             outliner_nodes,
             orbat_nodes,
             selected_ids,
@@ -814,9 +818,15 @@ pub fn set_active_layer(id: Option<String>) {
 
 /// Palette leaf `pointerdown` → arm a place. Consumed by [`place_at`] on a canvas release, or
 /// dropped by [`cancel_pending`] on a release over chrome.
+///
+/// T-180.5 — no-op while the Objects chip is active (stub catalog; place must not panic).
 pub fn begin_place(payload: PlacePayload) {
     OPS_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
+            if ctx.objects_mode.get_untracked() {
+                *ctx.pending.borrow_mut() = None;
+                return;
+            }
             *ctx.pending.borrow_mut() = Some(payload);
         }
     });
@@ -909,6 +919,11 @@ pub fn place_at(x: f64, y: f64) -> bool {
         let Some(ctx) = guard.as_ref() else {
             return false;
         };
+        // T-180.5 — Objects stub: drop any armed place and do not mint.
+        if ctx.objects_mode.get_untracked() {
+            *ctx.pending.borrow_mut() = None;
+            return false;
+        }
         let Some(payload) = ctx.pending.borrow_mut().take() else {
             return false;
         };

@@ -114,8 +114,8 @@ pub fn MissionEditorPage() -> impl IntoView {
     let active_layer = RwSignal::new(None::<String>);
     // T-180.1 — Eden place side (chips write this in T-180.5); default BLUFOR.
     let active_side = RwSignal::new(String::from("BLUFOR"));
-    #[cfg(not(target_arch = "wasm32"))]
-    let _ = active_side;
+    // T-180.5 — Objects chip stub (place no-op while true).
+    let objects_mode = RwSignal::new(false);
     let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
     // T-159.26 — Attributes modal: the open slot id + a doc-change tick the modal re-reads on
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
@@ -319,6 +319,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 selection.clone(),
                 active_layer,
                 active_side,
+                objects_mode,
                 outliner_nodes,
                 orbat_nodes,
                 selected_ids,
@@ -1285,7 +1286,12 @@ pub fn MissionEditorPage() -> impl IntoView {
                     />
                 </div>
                 <div class="absolute bottom-0 right-0 top-12 z-20 w-80">
-                    <crate::eden_chrome::DockRight catalog fm_open />
+                    <crate::eden_chrome::DockRight
+                        catalog
+                        fm_open
+                        active_side
+                        objects_mode
+                    />
                 </div>
                 <div class="absolute bottom-5 left-1/2 -translate-x-1/2">
                     <crate::eden_chrome::BottomToolbelt
