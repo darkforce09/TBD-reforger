@@ -5736,7 +5736,7 @@
       "order": 1760,
       "program": "eden",
       "status": "ready",
-      "active_slice": "T-180.3",
+      "active_slice": "T-180.4",
       "surfaces": [
         "ORBAT",
         "RIGHT",
@@ -5753,7 +5753,7 @@
         "compiler"
       ],
       "title": "ORBAT + Eden placement program",
-      "summary": "ORBAT + Eden placement. **T-180.1** @ aeb51209 \u00b7 **T-180.2 SHIPPED** @ 83557768 (tag T-180.2) \u2014 mutators/GC/add_vehicle. ACTIVE **T-180.3** map side tint. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
+      "summary": "ORBAT + Eden placement. .1@.aeb51209 \u00b7 .2@83557768 \u00b7 **T-180.3 SHIPPED** @ 19acc593 (tag T-180.3) side tint. ACTIVE **T-180.4** squad leader lines. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
       "slices": [
         "T-180.0",
@@ -5803,7 +5803,9 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md",
-          "status": "ready"
+          "status": "shipped",
+          "shipped_at": "19acc593",
+          "notes": "Tag T-180.3. SIDE_* RGBA + pack_rings side_tints; SlotSoa.side_keys; engine bind; C1\u2013C4. Verify: .ai/artifacts/t180_3_verify_log.md. Manual M-C1 operator-pending."
         },
         "T-180.4": {
           "targets": [
@@ -5811,7 +5813,7 @@
           ],
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md",
-          "status": "queued"
+          "status": "ready"
         },
         "T-180.5": {
           "targets": [

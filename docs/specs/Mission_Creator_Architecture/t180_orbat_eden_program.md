@@ -1,6 +1,6 @@
 # T-180 — ORBAT + Eden placement program (Class-R)
 
-**Status:** READY · **Active slice:** **T-180.3** (map side tint)  
+**Status:** READY · **Active slice:** **T-180.4** (squad leader→member map lines)  
 **Ticket:** T-180 · **Route:** `/missions/:id/edit` · **Branch:** `main`  
 **Depends on:** T-177 / T-071.0 (ORBAT Manager shell) · T-153 (Faction Library) · T-151 (wgpu map)  
 **Absorbs remaining intent of:** T-071.1+ · T-074 (side submode) · T-147 (squad leader lines) · vehicle bits of T-070  
@@ -12,6 +12,7 @@
 **Shipped:**
 - **T-180.1** @ `aeb51209` (tag **T-180.1**) — [verify](../../../.ai/artifacts/t180_1_verify_log.md)
 - **T-180.2** @ `83557768` (tag **T-180.2**) — [verify](../../../.ai/artifacts/t180_2_verify_log.md)
+- **T-180.3** @ `19acc593` (tag **T-180.3**) — [verify](../../../.ai/artifacts/t180_3_verify_log.md) · manual M-C1 operator-pending
 
 Doc-core tests: `cargo test -p map-engine-core --features doc …`.
 
@@ -96,8 +97,8 @@ Vehicle { id, squadId?, resource/assetId, label?, position? }
 | **T-180.0** | Program hub + Class-R pins + slice specs | this file + [`t180_class_r_pins.md`](t180_class_r_pins.md) | cursor-docs | **shipped (docs)** |
 | **T-180.1** | Foundation: leaderSlotId, sides, callsign/rank, place→new squad | [`t180_1_foundation_schema.md`](t180_1_foundation_schema.md) | claude-code | **SHIPPED** @ `aeb51209` |
 | **T-180.2** | Graph mutators + empty-squad GC | [`t180_2_graph_mutators.md`](t180_2_graph_mutators.md) | claude-code | **SHIPPED** @ `83557768` |
-| **T-180.3** | Map side tint | [`t180_3_map_side_tint.md`](t180_3_map_side_tint.md) | claude-code | **ACTIVE** |
-| **T-180.4** | Map leader→member lines | [`t180_4_squad_leader_lines.md`](t180_4_squad_leader_lines.md) | claude-code | queued |
+| **T-180.3** | Map side tint | [`t180_3_map_side_tint.md`](t180_3_map_side_tint.md) | claude-code | **SHIPPED** @ `19acc593` |
+| **T-180.4** | Map leader→member lines | [`t180_4_squad_leader_lines.md`](t180_4_squad_leader_lines.md) | claude-code | **ACTIVE** |
 | **T-180.5** | Right dock Eden chips + Objects stub | [`t180_5_right_dock_side_chips.md`](t180_5_right_dock_side_chips.md) | claude-code | queued |
 | **T-180.6** | Place/refile ↔ ORBAT live sync | [`t180_6_place_orbat_sync.md`](t180_6_place_orbat_sync.md) | claude-code | queued |
 | **T-180.7** | Stitch ORBAT Manager UI | [`t180_7_orbat_manager_ui.md`](t180_7_orbat_manager_ui.md) | claude-code | queued |

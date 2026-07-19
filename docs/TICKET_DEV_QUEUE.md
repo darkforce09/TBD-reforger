@@ -33,9 +33,9 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-180 — ORBAT + Eden placement program
 
-- **Active slice:** `T-180.3`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md`
+- **Active slice:** `T-180.4`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md`
 - **Program hub:** `docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md`
 - **Branch:** `main`
 - **Targets:** website, root
-- **Summary:** ORBAT + Eden placement. **T-180.1** @ aeb51209 · **T-180.2 SHIPPED** @ 83557768 (tag T-180.2) — mutators/GC/add_vehicle. ACTIVE **T-180.3** map side tint. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.
+- **Summary:** ORBAT + Eden placement. .1@.aeb51209 · .2@83557768 · **T-180.3 SHIPPED** @ 19acc593 (tag T-180.3) side tint. ACTIVE **T-180.4** squad leader lines. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md.

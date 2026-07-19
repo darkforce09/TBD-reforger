@@ -1,9 +1,8 @@
-# Send to Claude / Grok — T-180.3
+# Send to Claude / Grok — T-180.4
 
-**CWD:** `/home/Samuel/Projects/TBD-Reforger` (`main`)
+**CWD:** repo root (`main`)
 
-1. [`.ai/artifacts/t180_claude_code_handoff.md`](t180_claude_code_handoff.md)
-2. Prompt in [`t180_3_map_side_tint.md`](../../docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md)
-3. Or `./scripts/ticket prompt T-180`
+Copy prompt from [`t180_4_squad_leader_lines.md`](../../docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md)  
+or `./scripts/ticket prompt T-180`
 
-**Now:** map side tint (exact RGBA in pins).
+**Now:** squad leader→member map lines.
