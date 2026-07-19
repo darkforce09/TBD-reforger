@@ -123,45 +123,60 @@ Read CLAUDE.md first.
 Implement **T-180.7** — Stitch ORBAT Manager UI on live data.
 
 ═══ PREFLIGHT ═══
+  git status
   ./scripts/ticket brief T-180
 
 ═══ READ ═══
   1. .ai/artifacts/t180_claude_code_handoff.md
-  2. docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md
-  3. docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md
-  4. .ai/artifacts/t180_stitch_orbat_modal/screen.png
-  5. .ai/artifacts/t180_stitch_orbat_modal/code.html
-  6. .ai/artifacts/t180_stitch_orbat_modal/DESIGN.md
-  7. apps/website/frontend/src/eden_chrome.rs OrbatManagerDialog
-  8. store mutators from T-180.2 (set_leader, add_squad, move_slot, …)
+  2. docs/specs/Mission_Creator_Architecture/t180_class_r_pins.md
+  3. docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md
+  4. docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md (L1–L10; L8 Standardization omit)
+  5. .ai/artifacts/t180_stitch_orbat_modal/screen.png
+  6. .ai/artifacts/t180_stitch_orbat_modal/code.html
+  7. .ai/artifacts/t180_stitch_orbat_modal/DESIGN.md
+  8. apps/website/frontend/src/eden_chrome.rs OrbatManagerDialog
+  9. apps/website/frontend/src/editor_ops.rs (refile_slot, after_local_edit — T-180.6)
+  10. crates/map-engine-core mutators (set_leader, add_squad, move_slot_to_squad, …)
 
 ═══ PROBLEM ═══
-  Narrow browse shell. Rebuild to Stitch layout on LIVE graph. No mock ORBAT.
-  Omit Standardization. Templates Apply full wire can finish in .8 but shell OK.
+  Narrow browse shell (max-w-xl). Rebuild to Stitch layout on LIVE graph.
+  No mock ORBAT. Omit Standardization (operator L8). Template Apply full wire → .8;
+  Open Arsenal full wire → .9 if attrs seam hard (button OK in .7).
+
+═══ SHIPPED ═══
+  T-180.1–.6 @ aeb51209 / 83557768 / 19acc593 / 63e7ef00 / 1324799c / 056c9a1a
 
 ═══ LOCKED ═══
-  - Visual authority = stitch artifacts
-  - Live data only (G7)
-  - SL via leaderSlotId
-  - No Standardization (G4)
-  - Near-fullscreen not max-w-xl-only (G1)
+  - Visual authority = stitch artifacts (structure; not pixel-perfect compulsory)
+  - Live data only (G7) — empty doc ⇒ empty-state, not Stitch sample strings
+  - SL via leaderSlotId / set_leader (G2); do not overwrite MED/ENG tag
+  - No Standardization / IFAK / Grenade Complement (G4)
+  - Near-fullscreen width — not max-w-xl-only (G1/G9)
+  - Side tabs filter by FactionRow.key (G8)
+  - Add Slot / Add Squad / Remove / rename / search / inspector callsign/rank/role
+  - Template dropdown shell OK; Apply completes in .8
+  - Add Vehicle shell→.8; vehicle badge if vehicleIds non-empty
 
 ═══ DO ═══
-  1. Prefer new orbat_manager.rs module from code.html structure
-  2. format_slot_line + tests G3
-  3. Wire Add Squad/Role, Make SL, rename, search, side tabs
-  4. Inspector callsign/rank/role; OPEN ARSENAL button (full wire .9 OK if attrs hard)
-  5. Gates G1–G8 · t180_7_verify_log.md · tag T-180.7
+  1. Prefer new apps/website/frontend/src/orbat_manager.rs from code.html; thin eden_chrome export
+  2. format_slot_line (+ tests G3) — prefer Rust in map-engine-core
+  3. Wire Add Squad/Role, Make SL, rename, remove, search, side tabs, refile (reuse .6)
+  4. Inspector; OPEN ARSENAL button (navigate .9 OK if hard)
+  5. Gates G1–G9 · .ai/artifacts/t180_7_verify_log.md · tag T-180.7
 
 ═══ DO NOT ═══
-  Docs/registry · mock Stitch sample as SoT · Standardization · skip gates
+  Docs/registry · mock Stitch sample as SoT · Standardization · FE membership fork
+  · skip gates · implement full T-153 Apply (.8) / compile loadout (.9)
 
 ═══ VERIFY ═══
+  cargo test -p map-engine-core format_slot_line
+  cargo test -p website-frontend --lib
   make ci-local-leptos
-  cargo test format_slot_line || cargo test -p map-engine-core format_slot_line
+  rg -n 'max-w-xl' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs | head
+  rg -ni 'standardization|IFAK|Grenade Complement' apps/website/frontend/src/orbat_manager.rs apps/website/frontend/src/eden_chrome.rs && exit 1 || true
 
 ═══ MANUAL ═══
-  M-G1..M-G4 vs screen.png
+  M-G1..M-G4 vs .ai/artifacts/t180_stitch_orbat_modal/screen.png
 
 ═══ RETURN ═══
   SHA + tag T-180.7 · verify log · Ready for T-180.8

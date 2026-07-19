@@ -1,8 +1,8 @@
-# Send to Claude / Grok — T-180.6
+# Send to Claude / Grok — T-180.7
 
 **CWD:** repo root (`main`)
 
-Prompt: [`t180_6_place_orbat_sync.md`](../../docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md)  
+Prompt: [`t180_7_orbat_manager_ui.md`](../../docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md)  
 or `./scripts/ticket prompt T-180`
 
-**Now:** place/refile ↔ ORBAT + lines sync.
+**Now:** Stitch ORBAT Manager UI on live data (omit Standardization).
