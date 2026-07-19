@@ -12,42 +12,34 @@
 ### Recommended next work (auto-generated)
 
 - **T-068** — Virtual Arsenal (registry + loadout export) (ready)
-- **T-071** — ORBAT Manager modal (ready)
 - **T-072** — Ctrl multi-place (queued)
 - **T-073** — Shift + map rotation (queued)
-- **T-074** — Faction submode / catalog filter (queued)
 - **T-075** — Spacebar flyTo vs widget (queued)
 - **T-090** — Map visualization program (ready)
 - **T-114** — Slot roster enforcement + production slot picker (queued)
 - **T-115** — Capture win condition (queued)
 - **T-116** — Results POST to backend (queued)
+- **T-117** — Mission upload + validation UI (queued)
+- **T-118** — Event ORBAT + identity linking UI (queued)
 <!-- ticket-sync:next:end -->
 
 ---
 
-## Current strategy (locked — 2026-06-28)
+## Current strategy (updated — 2026-07-19)
 
-**Map-verify gate:** Ship **T-090 / T-091 / T-092** (aligned tiles, DEM, mod-native compile + spawn Y/yaw) **before** T-071 ORBAT baseline and T-068 Phase 2 loadout. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
+**ORBAT + Eden placement:** **[T-180](t180_orbat_eden_program.md) COMPLETE** through **T-180.9** @ `cba837b3` (Stitch ORBAT Manager, side chips, map tint/lines, templates/vehicles, Open Arsenal + derive loadout). Coherency: **T-180.10** · `make verify-t180`. **T-071.1+ / T-074 / T-147** absorbed — do not re-implement.
 
-**Cartographic fidelity (parallel worktree):** **T-152** — Reforger-familiar icons, fence/pier/bridge, airfield, height/town/road labels. Hub: [`t152_map_cartographic_fidelity_program.md`](t152_map_cartographic_fidelity_program.md) · worktree `TBD-T-152` / `ticket/T-152` (Grok 4.5 code; parallel with T-068 on `main`).
+**Map-verify gate:** **T-091 / T-092 shipped**; T-090 continues as map engine lane. Hub: [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md).
 
-| Active now | Blocked until map gate |
-|------------|-------------------------|
-| **T-090.3.0** Workbench export spike (active) → **T-090.1** basemap | **T-071** ORBAT Manager |
-| **T-090.2–.9** typed world objects + **forests (.8)** + **interaction (.9)** → export → Z audit → Deck-zoom render | **T-068.7+** loadout Phase 2 |
-| **T-092** mod mission compile (ready) | |
-| **Shipped** | **T-090.0** + **T-090.0.1** + **T-090.0.2** (map-object schemas + goldens + verify) · **T-091** @ `dde589e` |
-| **Deferred idea** | **T-129** building floor selector (not T-090) |
+**Next loadout path:** **T-068** (active T-068.11+) → **T-068.13** LOBBY picker — no longer blocked on T-071.
 
 **T-068 Phase 1 shipped** — registry + dumb loadout + **test NPC** equip only.
 
 ### Execution order (recommended)
 
-1. **T-090 → T-091 → T-092** — map + spawn parity ([`t092_spawn_transform_program.md`](t092_spawn_transform_program.md))
-2. **T-071.0–.2** — web ORBAT ([`t071_orbat_manager_program.md`](t071_orbat_manager_program.md))
-3. **T-068.13** — production mod LOBBY slot picker
-4. **T-068.7–.14** — loadout Phase 2 on **human player**
-5. **T-069+** — markers, vehicles, … after full **T-068** ship
+1. **T-068.11–.14** — compiled loadout + player equip + LOBBY picker ([`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md))
+2. **T-069+** — markers and remaining Eden backlog (see TICKET_LEAD)
+3. Map polish / T-090 residual as needed
 
 See [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) for registry queue.
 
@@ -402,17 +394,17 @@ Hub: [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
 
 ## ORBAT — web status (honest)
 
-**Most ORBAT work is still ahead.** T-008–T-010 shipped **Event attach + inline slot claim + squad hold** — not Eden-grade mission ORBAT authoring.
+**Mission Creator ORBAT authoring shipped via T-180** (hub [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md)). T-008–T-010 remain Event attach + inline claim. Standardization UI deferred (T-180 L8).
 
 | Area | Status | Ticket |
 |------|--------|--------|
 | MC left ORBAT tree | **Removed** (T-177 / T-071.0) — Editor Layers only | — |
-| Squad names / numbering / order / membership | **Not built** | **T-071.1–T-071.2** |
-| ORBAT Manager modal | **Browse/select shell** (T-177 / T-071.0) — CRUD next | **T-071.1+** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| Squad graph / place / refile / SL / lines / dock chips | **Shipped** | **T-180.1–.6** |
+| ORBAT Manager (Stitch) + templates/vehicles + Open Arsenal | **Shipped** | **T-180.7–.9** |
 | Event slotting UX + admin | **Partial** | **T-118** |
-| Mod slot picker (verify kits) | **Not built** | **T-068.13** (production LOBBY UI; requires **T-092.2**) |
+| Mod slot picker (verify kits) | **Not built** | **T-068.13** (requires **T-092.2** ✓) |
 
-**T-068.13** requires compiled mod `slots[]` (**T-092.2**). **T-071.2** improves squad labels in export but is not required for picker v1.
+**T-068.13** requires compiled mod `slots[]` (**T-092.2** ✓). Gate: `make verify-t180`.
 
 ---
 
@@ -425,10 +417,10 @@ Required to place **real objects**, not just generic slots. **Queue and dependen
 | **T-068** | Virtual Arsenal — through **T-068.10**; **T-068.11** compiled loadout next | **Active T-068.11** — [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) |
 | **T-069** | Markers on map — `addMarker`, render, select, move, delete | **Deferred** (data lane first — **T-150**) — [`t069_markers_on_map.md`](t069_markers_on_map.md) |
 | **T-070** | Vehicles placeable — `addVehicle`, map layer, drop creates correct kind | **Queued** |
-| **T-071** | ORBAT Manager — **.0** ✅ via T-177; **.1+** squad CRUD / export order / logos | **Ready (.1 next)** — [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md) |
+| **T-071** | ORBAT Manager — **.0** ✅ via T-177; **.1+** via **T-180** | **Shipped / superseded** — [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md) |
 | **T-072** | Ctrl multi-place | **Queued** |
 | **T-073** | Shift + map rotation | **Queued** |
-| **T-074** | Faction submode / catalog filter | **Queued** |
+| **T-074** | Faction submode / catalog filter | **Absorbed by T-180.5** (deferred) |
 | **T-075** | Spacebar flyTo vs widget | **Queued** |
 | **T-076** | Vehicle crew UI | **Queued** |
 | **T-077+** | Compositions, triggers, waypoints, … | **Queued** — see TICKET_LEAD |
@@ -485,22 +477,20 @@ Local IndexedDB + manual save  Autosave + semver versions
 
 ## Recommended program order
 
-**Active strategy: map-verify gate** (see §Current strategy). **T-090 → T-091 → T-092** before T-071 and T-068 Phase 2.
+**Active strategy:** T-180 ORBAT complete · continue **T-068** loadout Phase 2 · map residual on T-090 as needed.
 
 | Phase | Deliverable | Depends on |
 |-------|-------------|------------|
 | **1** | Terrain wired, title hydrate, numeric X/Y | — ✅ **T-049** |
 | **1b** | Scale program T-057–T-067 | — ✅ shipped |
-| **2** | **T-090** aligned tiles + manifest | Workbench export |
-| **3** | **T-091** DEM + Z on place/move | T-090 manifest |
-| **4** | **T-092** mod compile + spawn Y/yaw | T-091 |
-| **5** | **T-071** ORBAT Manager | T-092 |
-| **6** | **T-068.13–.14** player loadout + LOBBY picker | T-071.2 + T-092.2 |
-| **7** | **T-069+** markers, vehicles, … | Full **T-068** ship |
+| **2–4** | **T-090 / T-091 / T-092** map + spawn | — ✅ **T-091/T-092**; T-090 residual |
+| **5** | **T-180** ORBAT + Eden placement | T-092 ✅ · **COMPLETE** @ `cba837b3` |
+| **6** | **T-068.11–.14** player loadout + LOBBY picker | T-092.2 ✅ |
+| **7** | **T-069+** markers, … | Full **T-068** ship |
 | **8** | **T-110** terrain base @ scale | T-090/T-091 |
-| **9** | Full item matrix + compiler loadouts (T-068.7–.14) | T-092 + T-071.2 |
+| **9** | Full item matrix + compiler loadouts (T-068.7–.14) | T-092 |
 
-Phases **2–4** = **map + accurate positions (tiles, DEM, mod spawn).** Phases **5–6** = **ORBAT + player loadout path.** Phase **7+** = **Eden entity backlog.** Phase **8** = **terrain props at millions scale.**
+Phases **5** = **ORBAT (done).** Phases **6+** = **player loadout + Eden backlog.**
 
 ---
 

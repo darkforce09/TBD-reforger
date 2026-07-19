@@ -14,14 +14,6 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Targets:** website, shared, root, mod
 - **Summary:** Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
 
-## T-071 — ORBAT Manager modal
-
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
-- **Branch:** `ticket/T-071`
-- **Targets:** website
-- **Summary:** ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6 (browse shell). Remaining authoring SUPERSEDED by T-180 (foundation→map lines→dock→Stitch→templates→compile). Hub: t071_orbat_manager_program.md → see t180_orbat_eden_program.md.
-
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.6`

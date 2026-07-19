@@ -14,6 +14,7 @@
 
 - **T-069** (deferred) — Markers on map [MAP, MRK] — Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.
 - **T-070** (idea) — Vehicles placeable [MAP, VEH, RIGHT] — Drag vehicles from palette onto map with crew hooks.
+- **T-074** (deferred) — Faction submode / catalog filter [RIGHT] — ABSORBED by T-180.5 @ 1324799c (Eden side chips on DockRight). Do not implement separately. Was: Faction submode / catalog filter.
 - **T-076** (idea) — Vehicle crew UI [VEH, ATTR] — Crew panel and boarding UI for placed vehicles.
 - **T-077** (idea) — Alt + empty vehicle [MAP, VEH] — Alt-click to enter empty vehicle placement mode.
 - **T-078** (deferred) — Custom compositions [COMP] — Save and place custom entity compositions.
@@ -23,6 +24,7 @@
 - **T-082** (deferred) — Full attribute fields [ATTR] — Complete Attributes modal field parity with Eden.
 - **T-083** (deferred) — Top menu bar [TOP] — Eden-style top menu bar with file/edit/view stubs.
 - **T-084** (deferred) — Classname / mod prefix search [RIGHT] — Classname-prefix search in asset browser.
+- **T-147** (deferred) — Simplified Squad Connections [MAP, ORBAT] — ABSORBED by T-180.4 @ 63e7ef00 (squad leader→member map lines). Do not implement separately. Was: Simplified Squad Connections.
 - **T-149** (idea) — Forest Mass Polygon Smoothing [MAP] — Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography.
 - **T-158** (idea) — Editor shell UX consolidation [SHELL, TOP] — Consolidate Settings buttons, wire up top bar, remove redundant Assets tab.
 - **T-131** (idea) — Route planner tool [MAP, UI] — MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.

@@ -1,6 +1,8 @@
 # T-180 — ORBAT + Eden placement program (Class-R)
 
-**Status:** SHIPPED (program complete) · **Last slice:** **T-180.9** @ `cba837b3` (tag **T-180.9**)  
+**Status:** SHIPPED (program complete + coherency) · **Last slice:** **T-180.10** · **Code tip:** **T-180.9** @ `cba837b3` · **Gate:** `make verify-t180`  
+
+
 **Ticket:** T-180 · **Route:** `/missions/:id/edit` · **Branch:** `main`  
 **Depends on:** T-177 / T-071.0 (ORBAT Manager shell) · T-153 (Faction Library) · T-151 (wgpu map)  
 **Absorbs remaining intent of:** T-071.1+ · T-074 (side submode) · T-147 (squad leader lines) · vehicle bits of T-070  
@@ -14,8 +16,9 @@
 - **T-180.4** @ `63e7ef00` · **T-180.5** @ `1324799c` · **T-180.6** @ `056c9a1a`
 - **T-180.7** @ `e9c2406d` · **T-180.8** @ `cce240a5` (tag **T-180.8**) — [verify](../../../.ai/artifacts/t180_8_verify_log.md)
 - **T-180.9** @ `cba837b3` (tag **T-180.9**) — [verify](../../../.ai/artifacts/t180_9_verify_log.md) Open Arsenal + `derive_orbat` loadout
+- **T-180.10** coherency — [report](../../../.ai/artifacts/t180_10_coherency_report.md) · [verify](../../../.ai/artifacts/t180_10_verify_log.md) · `make verify-t180`
 - Placement pin (Apply/Add Vehicle): Everon `(6400, 6400)`
-- Manuals pending: M-C1 · M-D1 · M-E1/M-E2 · M-F1 · M-G1..M-G4 · M-H1..M-H4 · M-I1..M-I3
+- Manuals pending (operator): M-C1 · M-D1 · M-E1/M-E2 · M-F1 · M-G1..M-G4 · M-H1..M-H4 · M-I1..M-I3
 
 Doc-core tests: `cargo test -p map-engine-core --features doc …`.
 
@@ -77,19 +80,22 @@ Slot    { id, squadId, index, role, tag?, callsign?, rank?, assetId?, loadout?, 
 Vehicle { id, squadId?, resource/assetId, label?, position? }
 ```
 
-**Where it lives today (measured):**
+**Where it lives today (post-ship measured — T-180.1–.9):**
 
-| Concept | Today | Gap |
-|---------|-------|-----|
-| Faction | [`store.rs:311-318`](../../../crates/map-engine-core/src/doc/store.rs) `add_faction` — `{id,key,name,squadIds}` | key not forced to side enum; place uses `faction-1` |
-| Squad | [`store.rs:324-336`](../../../crates/map-engine-core/src/doc/store.rs) — `{id,factionId,name,slotIds}` + optional callsign | **no `leaderSlotId`**, no `vehicleIds` |
-| Slot | [`store.rs:276-307`](../../../crates/map-engine-core/src/doc/store.rs) — role/tag/assetId/position | **no callsign/rank** on slot |
-| Place | [`editor_ops.rs:903-960`](../../../apps/website/frontend/src/editor_ops.rs) `ensure_default_squad` → `faction-1`/`squad-1` | must become place→new squad under **active side** |
-| Ring tint | [`slots_gpu.rs:22-24,83-90`](../../../crates/map-engine-core/src/slots_gpu.rs) primary `#adc6ff` / selected yellow | no per-side colors |
-| Map lines | hairline `LineList` in render crate for world/grid only | **no** entity hierarchy lines |
-| ORBAT UI | [`eden_chrome.rs:1200`](../../../apps/website/frontend/src/eden_chrome.rs) `OrbatManagerDialog` browse shell | no CRUD / Stitch layout |
-| Dock | [`eden_chrome.rs:1234`](../../../apps/website/frontend/src/eden_chrome.rs) `DockRight` — Factions/Vehicles/Markers + search | **no** side chips |
-| Compile | [`orbat.rs`](../../../crates/map-engine-core/src/mission/orbat.rs) `loadout_summary_from_value` (T-180.9) | **closed** — Event/Export get summary |
+| Concept | Live path | Status |
+|---------|-----------|--------|
+| Faction | `faction-{SIDE}` rows; `FactionRow.key` preserved | **closed** (.1) |
+| Squad | `leaderSlotId` + `vehicleIds` + mutators/GC | **closed** (.1/.2) |
+| Slot | `callsign` / `rank` + embedded `loadout` | **closed** (.1/.9) |
+| Place | [`doc/place_orbat.rs`](../../../crates/map-engine-core/src/doc/place_orbat.rs) → mint squad under `active_side`; `ensure_default_squad` **gone** | **closed** (.1/.5) |
+| Ring tint | [`slots_gpu.rs`](../../../crates/map-engine-core/src/slots_gpu.rs) SIDE_* RGBA | **closed** (.3) |
+| Map lines | [`squad_links.rs`](../../../crates/map-engine-core/src/squad_links.rs) + `mission_history` upload role 9 | **closed** (.4) |
+| ORBAT UI | [`orbat_manager.rs`](../../../apps/website/frontend/src/orbat_manager.rs) Stitch shell + live mutators | **closed** (.7) |
+| Dock | Eden chips BLUFOR/OPFOR/INDFOR/Objects | **closed** (.5) |
+| Templates / vehicles | [`doc/apply_faction.rs`](../../../crates/map-engine-core/src/doc/apply_faction.rs) REPLACE + MissionVehicles lane | **closed** (.8) |
+| Compile | [`orbat.rs`](../../../crates/map-engine-core/src/mission/orbat.rs) `loadout_summary_from_value` | **closed** (.9) |
+
+**Residual (not code gaps):** operator manuals M-C1…M-I3 · L8 Standardization (operator deferred) · Event lobby polish **T-118** · faction logos (not in T-180).
 
 ---
 
@@ -107,6 +113,7 @@ Vehicle { id, squadId?, resource/assetId, label?, position? }
 | **T-180.7** | Stitch ORBAT Manager UI | [`t180_7_orbat_manager_ui.md`](t180_7_orbat_manager_ui.md) | claude-code | **SHIPPED** @ `e9c2406d` |
 | **T-180.8** | Templates + vehicles | [`t180_8_templates_vehicles.md`](t180_8_templates_vehicles.md) | claude-code | **SHIPPED** @ `cce240a5` |
 | **T-180.9** | Arsenal wire + compile truth | [`t180_9_arsenal_compile.md`](t180_9_arsenal_compile.md) | claude-code | **SHIPPED** @ `cba837b3` |
+| **T-180.10** | Program coherency checker | [`t180_10_program_coherency.md`](t180_10_program_coherency.md) | cursor-docs | **SHIPPED** |
 
 ---
 
@@ -125,6 +132,7 @@ Full pin ledger: [`t180_class_r_pins.md`](t180_class_r_pins.md). Per-slice specs
 | .7 | G1–G8 | near-fullscreen ≠ max-w-xl-only · `format_slot_line_*` · `set_leader` · no Standardization · no hardcoded Stitch L85A3 as SoT |
 | .8 | H1–H9 | `cargo test -p map-engine-core apply_faction_` · `add_vehicle` exists · replace-not-merge · `make test-it` |
 | .9 | I1–I9 | `derive_fills_loadout_from_summary` · no `String::new()` hardcode · invert `orbat.rs:174` · `open_arsenal` → Attributes tab **3** · `compile.rs:248` fixtures updated |
+| .10 | J1–J7 | `make verify-t180` · coherency report · hub/pins/ROADMAP absorb cleanup |
 
 ---
 

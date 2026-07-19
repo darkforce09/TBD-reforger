@@ -64,10 +64,10 @@
 | T-150 | 685 | shipped | eden | Universal Enfusion registry + compat export | SHIPPED @ 9107bf4e (tag T-150; schema e358777a). 1880 items / 4012 edges; mod-agnostic scanner. OPEN: ammo_in_mag. Verify: .ai/artifacts/t150_verify_log.md. Next: T-068.9 ingest. |
 | T-069 | 690 | deferred | eden | Markers on map | Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md. |
 | T-070 | 700 | idea | eden | Vehicles placeable | Drag vehicles from palette onto map with crew hooks. |
-| T-071 | 710 | ready | eden | ORBAT Manager modal | ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6 (browse shell). Remaining authoring SUPERSEDED by T-180 (foundation→map lines→dock→Stitch→templates→compile). Hub: t071_orbat_manager_program.md → see t180_orbat_eden_program.md. |
+| T-071 | 710 | shipped | eden | ORBAT Manager modal | ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6. Remaining authoring SHIPPED via T-180.1–.9 @ cba837b3 (supersedes T-071.1+). Hub: t180_orbat_eden_program.md. Do not implement T-071.1–.4 separately. |
 | T-072 | 720 | queued | eden | Ctrl multi-place | Hold Ctrl to place multiple copies without re-selecting asset. |
 | T-073 | 730 | queued | eden | Shift + map rotation | Shift-drag and map rotation widget for placed entities. |
-| T-074 | 740 | queued | eden | Faction submode / catalog filter | ABSORBED by T-180.5 (Eden side chips on DockRight). Do not implement separately. Was: Faction submode / catalog filter. |
+| T-074 | 740 | deferred | eden | Faction submode / catalog filter | ABSORBED by T-180.5 @ 1324799c (Eden side chips on DockRight). Do not implement separately. Was: Faction submode / catalog filter. |
 | T-075 | 750 | queued | eden | Spacebar flyTo vs widget | Spacebar centers selection; resolve flyTo vs transform widget conflict. |
 | T-076 | 760 | idea | eden | Vehicle crew UI | Crew panel and boarding UI for placed vehicles. |
 | T-077 | 770 | idea | eden | Alt + empty vehicle | Alt-click to enter empty vehicle placement mode. |
@@ -92,11 +92,11 @@
 | T-096 | 960 | deferred | backend | Live game-server telemetry bridge | Bridge live game-server events into telemetry ingest. |
 | T-110 | 1100 | deferred | infra | Terrain base + sparse deltas | Binary terrain base layer plus sparse delta props for 1M+ map objects. |
 | T-113 | 1130 | shipped | infra | Monorepo migration (M0–M3) | Merge website + mod into TBD-Reforger; unified ticketing; path rewrites. |
-| T-114 | 1140 | queued | platform | Slot roster enforcement + production slot picker | Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-071). After T-068.13 production LOBBY picker + T-118. |
+| T-114 | 1140 | queued | platform | Slot roster enforcement + production slot picker | Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-180 shipped). After T-068.13 production LOBBY picker + T-118. |
 | T-115 | 1150 | queued | platform | Capture win condition | Real side victory via capture / hold / elimination objective. |
 | T-116 | 1160 | queued | platform | Results POST to backend | Game server posts match results; visible on event page. |
 | T-117 | 1170 | queued | platform | Mission upload + validation UI | Web UI for mission upload and schema validation (API exists). |
-| T-118 | 1180 | queued | platform | Event ORBAT + identity linking UI | Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. **Complements T-071** (mission authoring ORBAT) — neither is production-complete today. |
+| T-118 | 1180 | queued | platform | Event ORBAT + identity linking UI | Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. Complements mission ORBAT authoring (**T-180** shipped) — Event lobby polish still open. |
 | T-119 | 1190 | queued | platform | Framework MVP remainder | Loadouts, safe start, boundary, admin commands for M1 gate. |
 | T-120 | 1200 | queued | infra | Staging soak + golden mission smoke | Pinned game/mod version soak; golden-mission smoke on staging server. |
 | T-121 | 1210 | deferred | infra | Terrain DEM export automation | Follow-ons: Arland re-export, optional game-mode heightmap fallback. MCP hardening shipped @ e7e7232 (mcp-call/daemon/consume/selftest). Core GetSurfaceY plugin shipped in T-091.0. Spec: t121_terrain_dem_export_automation.md. |
@@ -111,7 +111,7 @@
 | T-130 | 1300 | shipped | platform | Fable audit — remainder (OPEN + PARTIAL) | Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md. |
 | T-144 | 1440 | shipped | infra | Arma 3 map architecture study | A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md. |
 | T-146 | 1470 | queued | eden | Asset Browser Data Wiring | Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred. |
-| T-147 | 1480 | queued | eden | Simplified Squad Connections | ABSORBED by T-180.4 (squad leader→member map lines). Do not implement separately. Was: Simplified Squad Connections. |
+| T-147 | 1480 | deferred | eden | Simplified Squad Connections | ABSORBED by T-180.4 @ 63e7ef00 (squad leader→member map lines). Do not implement separately. Was: Simplified Squad Connections. |
 | T-148 | 1490 | queued | eden | Shift+Drag Rotation Tool | Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction. |
 | T-149 | 1490 | idea | eden | Forest Mass Polygon Smoothing | Upgrade the V1 blocky Path B forest hulls. Increase the density grid resolution (e.g., down to 8m) and apply a curve-smoothing algorithm (like Chaikin's) to the marching squares output so the forest edges look like natural, curved cartography. |
 | T-145 | 1495 | shipped | Platform | Rust/Wasm Doc Core (Yjs replacement) | Rewrite the Go backend to Rust (Axum + sqlx) and move the mission document core into a Rust/wasm yrs doc. The F1->F4 flip made the yrs wasm doc authoritative and removed yjs + y-indexeddb from the app. |
@@ -142,7 +142,7 @@
 | T-177 | 1740 | shipped | eden | MC chrome UX + ORBAT dock cutover (T-071.0) | SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1–B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md. |
 | T-178 | 1750 | shipped | eden | Forest load consistency + YouTube guides + Outliner label | SHIPPED @ tag T-178 / 58d839c7. A1 island TBDD density texture + fs_forest_density (Nearest, iso 2.0, fwidth rim; pins 1601/625/density); progressive mesh fill retired. A2 Outliner label removed. A3 continuous YouTube spines. A4 data-guide-toggle. Verify: .ai/artifacts/t178_verify_log.md. Hub: docs/platform/t178_forest_guides_chrome.md. |
 | T-179 | 1751 | shipped | eden | Fix blocky / holed density canopy | SHIPPED @ tag T-179 / 8f45ee83. A bins_ok===625 + retry; B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso); C one-shot MS hairlines role 6 (real forest_outline_segments; measured 99374 @ z=-1); D fullmap A_bins + outline floor ≥50000. Verify: .ai/artifacts/t179_verify_log.md. Hub: docs/platform/t179_forest_canopy_fix.md. |
-| T-180 | 1760 | shipped | eden | ORBAT + Eden placement program | ORBAT + Eden placement program COMPLETE. .1–.9 shipped · **T-180.9 SHIPPED** @ cba837b3 (tag T-180.9) Open Arsenal + derive_orbat loadout. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Verify: .ai/artifacts/t180_9_verify_log.md. |
+| T-180 | 1760 | shipped | eden | ORBAT + Eden placement program | ORBAT + Eden placement program COMPLETE. .1–.9 @ cba837b3 · **T-180.10** coherency (make verify-t180). Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Report: .ai/artifacts/t180_10_coherency_report.md. |
 | T-111 | — | idea | scale | Lazy chunk residency @ 1M | T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred. |
 | T-112 | — | idea | scale | GPU viewport cull (DataFilterExtension) | Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile. |
 | T-131 | — | idea | eden | Route planner tool | MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5. |

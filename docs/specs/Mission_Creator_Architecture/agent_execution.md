@@ -46,7 +46,7 @@ isProject: false
 ```
 Read CLAUDE.md first. Mission Creator shell T-033–T-040 is DONE. **T-068 Phase 1 shipped**.
 **Active slice: T-090.3.0** — Workbench export spike (claude-code); **T-090.1** aligned basemap **queued** until 3.0 K1–K7 PASS. **T-091 shipped** @ `dde589e` (`.0`/`6d96339`, `.1`/`2c56c2e`, `.2`/`dde589e`). **T-091.0 shipped** @ `6d96339` — do NOT redo plugin/export.
-**T-068 Phase 2 paused.** Program order: **T-090.3.0 → T-090.1 → T-092** → T-071 → T-068.13.
+**T-068 Phase 2 active (T-068.11+).** ORBAT authoring done via **T-180**. Program order: T-092 ✓ → **T-180 ✓** → **T-068.11–.14**.
 Read t091_1_dem_loader.md ONLY for implementation. Hub t090_091_map_terrain_program.md for context.
 **T-057–T-067 shipped.** Do not `./scripts/ticket done T-068` until T-068.14.
 ```
@@ -213,8 +213,8 @@ flowchart LR
 **Known regression (T-057 — resolved):** ~~~100–200 slots + pan → ~9 fps~~ Fixed T-057: cursor off render path, no hover pick, pan rAF-coalesce. Manual acceptance: ≥55 fps @ 200+ via `FpsCounter`.
 
 **Open Eden gaps (active after T-060..T-067 scale milestones — see [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`):**
-- **Queued Eden (T-068–T-071):** asset registry + palette (**T-068**), markers (**T-069**), vehicles (**T-070**), **ORBAT Manager modal** (**T-071** — remove duplicate left ORBAT tree; faction/squad/slot authoring, slotting order, standardizations, logos, arsenal).
-- **Queued Eden feel (T-072–T-077):** Ctrl multi-place, Shift/map rotate, faction submode, Space conflict, vehicle crew, empty-vehicle Alt place. *(**T-052** undo keyboard; **T-056** copy/paste; **T-055** asset search; **T-054** Attributes entry; **T-053** additive select — shipped.)*
+- **Queued Eden (T-068+):** asset registry + palette / loadout Phase 2 (**T-068**), markers (**T-069**), remaining vehicles polish (**T-070** residual). **ORBAT Manager + Eden placement shipped via T-180** (absorbs T-071.1+ / T-074 / T-147).
+- **Queued Eden feel (T-072–T-077):** Ctrl multi-place, Shift/map rotate, Space conflict, vehicle crew, empty-vehicle Alt place. *(Faction submode → T-180.5 chips. **T-052** undo; **T-056** copy/paste; **T-055** asset search; **T-054** Attributes; **T-053** additive select — shipped.)*
 - **Deferred Eden (T-078+):** compositions, triggers/waypoints/systems, connection/sync, transform widget + snap grids, full attribute fields, menu bar, classname search (**T-084**).
 - **Deferred infra:** DEM + Z (**T-091**), aligned map tiles (**T-090**), terrain base (**T-110**), ruler/LoS/viewshed (after **T-091**).
 
@@ -313,8 +313,8 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 |-------|----------|
 | **Visual target** | **Arma 3 Eden Editor** layout + interactions, **modernized with Aegis glass** (macOS). Not HTML mockups. |
 | **Platform chrome** | **Hide** platform `Sidebar` + `TopNav` on `/missions/:id/edit` — true fullscreen Eden-style editor (dedicated layout escape in `AppLayout` or editor wrapper). |
-| **Left sidebar** | **Editor Layers only** in the left scroll (workflow folders — select, reparent, dbl-click → Attributes). **No duplicate ORBAT tree** on the left (**T-071**). Stub sections for Waypoints/Zones/Logic until **T-079+**. *Until T-071 ships:* both ORBAT + Editor Layers remain in one virtualized list (T-064). |
-| **ORBAT Manager** (T-071) | Modal opened from **Top Command Strip** — single surface for all-side faction/squad/slot authoring, **Event slotting-screen order** (squad/slot index, not map X/Y), standardizations (e.g. Megacore/Uniform presets), faction logos, and per-slot **arsenal**. Editor Layers stays the map-workflow outliner. |
+| **Left sidebar** | **Editor Layers only** (T-177 / T-071.0). No duplicate ORBAT tree. Stub sections for Waypoints/Zones/Logic until **T-079+**. |
+| **ORBAT Manager** (T-180) | Stitch near-fullscreen modal from **Top Command Strip** — live side/squad/slot authoring, templates (T-153 Apply/Save), vehicles, Open Arsenal. **No Standardization UI** (L8 deferred). Hub: [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md). |
 | **Right palette** | **Docked flush right** — mirror left sidebar (~`w-80` / 320px), full height below top bar, no floating gap. Map sits between two glass panels. |
 | **Inspector** | Asset Palette always visible. **Attributes modal on double-click only** (no right-panel inspector swap). |
 | **Map pan** | **Middle-mouse or right-drag** = pan/zoom. **Left-drag on empty map** = marquee box-select. |
@@ -357,9 +357,10 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 | **T-090.1.1.1 land-cover** (2026-07-04, **shipped** @ `018ea70d`) | L1 SAP masks + pre-upscale tint (`build-landcover-mask.mjs`); TGA monochrome finding logged. **`make map-cartographic-everon`** ~2 min. Spec: [`t090_1_1_1_map_landcover_compose.md`](t090_1_1_1_map_landcover_compose.md). |
 | **T-092 spawn + compile** (2026-07-04, **shipped** @ `a73224f2`) | **T-092.1** @ `4eefc169`: schema 1.2 optional `y`, spawn policy + logs. **T-092.2**: flatten TS/Go, `GET /api/v1/missions/:id/compiled`, mod loader v1 + `X-Service-Token`. wb_play + REST E2E **PASS** @ `452ce501`. **Unblocks T-071.** OBS-1 roster deploy → T-068.13/T-071; OBS-2 `TBD_MissionList` legacy path. Verify logs in `.ai/artifacts/t092_*`. |
 | **T-090.1.1 Map cartographic view** (2026-07-03, **shipped** @ `6e06e679`) | G1-A base + water + `.topo` roads; **`make map-cartographic-everon`**. Spec: [`t090_1_1_map_cartographic_view.md`](t090_1_1_map_cartographic_view.md). |
-| **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2 paused** until **T-071.2 + T-068.13** (T-092 gate cleared). |
-| **Web ORBAT status** (2026-06) | **Partial only.** Event attach + inline claim (**T-008–T-010**); MC left tree read-only. **T-071 deferred** (map-first lane; unblocked by **T-092**). Hub: [`t071_orbat_manager_program.md`](t071_orbat_manager_program.md). |
-| **Phase order** | … **T-090 single lane** until done. **Active: T-090.3** export. **T-071/T-068 deferred.** Phase 2 VA after map: **T-071.2 + T-068.13**. … |
+| **Virtual Arsenal Phase 1** (2026-06-27, **T-068.6 PASS**) | **Proved:** registry API → Factions palette → Arsenal download → profile JSON → mod **wear on a non-player test NPC**. **Phase 2:** **T-068.11+** (ORBAT authoring no longer blocking — **T-180** complete). |
+| **Web ORBAT status** (2026-06) | Historical: Partial only / T-071 deferred. **Superseded 2026-07-19 by T-180 row below.** |
+| **T-180 ORBAT + Eden** (2026-07-19, **COMPLETE** @ `cba837b3`) | Foundation → tint/lines → Eden chips → Stitch ORBAT Manager → templates/vehicles → Open Arsenal + `derive_orbat` loadout. Absorbs T-071.1+ / T-074 / T-147. Coherency **T-180.10** · `make verify-t180`. Hub: [`t180_orbat_eden_program.md`](t180_orbat_eden_program.md). Residual: manuals M-* · L8 Standardization deferred · Event polish **T-118**. |
+| **Phase order** | … Map gate cleared (T-091/T-092). **ORBAT authoring done (T-180).** Next: **T-068.11+** loadout Phase 2 → **T-068.13** LOBBY picker. … |
 | **Drag perf — good enough** (2026-06) | T-061 closed Eden-blocking drag @ ~360k. T-062 closed everyday edit bindings @ ~360k. T-063 closed pick/marquee @ ~367k. T-064 closed outliner @ ~367k. T-065 closed extreme-zoom clusters. T-066 closed worker compile. **T-067** closed bulk-paste patch + deferred CPU cull. Do **not** pursue **T-094** / release repack collapse until **T-068+** milestones unless regression. See ROADMAP §Deferred mega optimizations. |
 | **Mission title hydrate** (T-049) | On editor load the **PostgreSQL mission row** (`title`, `terrain`, time/weather) hydrates `meta` via `applyMissionRowMeta` (INIT_ORIGIN) — including new missions whose `json_payload` is `{}`. **No PATCH-back** in T-049 (**T-089** deferred); Save Version still compiles payload only. |
 | **Eden completeness** | Eden parity checklist = `eden/interactions.md`, `eden/ui_anatomy.md`, `eden/attributes.md`, `eden/gap_analysis.md` + scrape artifacts. Read `eden/ui_anatomy.md` / `eden/attributes.md` before implementing UI/attrs. Implement queued tickets from [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) and `eden/gap_analysis.md`. Feature status lives in `feature_inventory.md` + `reference/feds_schema.md`; new TBD features → FEDS row in `feature_inventory.md`. Wiki cache = `eden/wiki_manifest.yaml` + `artifacts/eden-wiki/`; regenerate via `node scripts/tools/scrape-eden-wiki.mjs` when the wiki updates. |
@@ -368,8 +369,8 @@ per-phase budgets incl. the P10 residency model (N11). New slices **T-090.0.2** 
 
 ## Agent rules (mandatory)
 
-1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **single lane T-090**; **T-090.3** active; **T-071/T-068 deferred**. Then this file, then `engineering_plan.md` §0–§2.
-2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). **T-068+** Eden backlog is active.
+1. **Read first:** [`CLAUDE.md`](../../../CLAUDE.md) §Status — **T-180 ORBAT COMPLETE**; active loadout lane **T-068**. Then this file, then `engineering_plan.md` §0–§2.
+2. **Planning:** `ROADMAP.md` + [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md). Do **not** reopen T-071.1+ / T-074 / T-147 — use T-180.
 3. **Verify gate** after every phase:
    ```bash
    cd frontend && npm run build && npm run lint

@@ -1,7 +1,8 @@
-# T-180 — program complete
+# Send to Claude / Grok — T-180
 
-All slices **T-180.0–.9** shipped. Last code: **T-180.9** @ `cba837b3` (tag **T-180.9**).
+**Status:** PROGRAM COMPLETE (+ T-180.10 coherency). No further T-180 code slices.
 
-Verify: [`t180_9_verify_log.md`](t180_9_verify_log.md) · Hub: [`t180_orbat_eden_program.md`](../../docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md)
+Gate: `make verify-t180`  
+Report: [`.ai/artifacts/t180_10_coherency_report.md`](t180_10_coherency_report.md)
 
-No further Claude Code prompt for T-180.
+If a future regression appears, run `make verify-t180` first; only file a new ticket if a P0 lock breaks.

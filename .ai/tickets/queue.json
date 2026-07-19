@@ -13,13 +13,6 @@
       "branch": "ticket/T-068"
     },
     {
-      "id": "T-071",
-      "title": "ORBAT Manager modal",
-      "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md",
-      "branch": "ticket/T-071"
-    },
-    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",

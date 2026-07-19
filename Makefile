@@ -6,7 +6,7 @@ WEB := apps/website/api
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -145,6 +145,9 @@ verify-doc-layout: ## DOCUMENTATION_STANDARDS §8.2: no markdown spec trees unde
 #   go install github.com/editorconfig-checker/editorconfig-checker/v3/cmd/editorconfig-checker@latest
 verify-editorconfig: ## FMT-2: run editorconfig-checker from repo root (CODING_STANDARDS §7)
 	editorconfig-checker
+
+verify-t180: ## T-180.10 Class-R coherency gate (ORBAT + Eden locks A–I)
+	@bash scripts/verify-t180-coherency.sh
 
 verify-terrain: ## Manifest + anchor verify (stub mode OK for Arland-only)
 	cargo run -q -p xtask -- schema terrain-manifest --terrain everon
