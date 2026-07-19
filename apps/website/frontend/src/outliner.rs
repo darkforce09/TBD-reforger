@@ -168,6 +168,8 @@ fn build_layer<'a>(
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FactionRow {
     pub id: String,
+    /// Side / faction key (`BLUFOR` / `OPFOR` / `INDFOR`) — T-180.1; must not be dropped.
+    pub key: String,
     pub name: String,
     /// Ordered squad ids under this faction (`faction.squadIds`).
     pub squad_ids: Vec<String>,
@@ -445,6 +447,7 @@ mod tests {
     fn faction(id: &str, name: &str, squads: &[&str]) -> FactionRow {
         FactionRow {
             id: id.into(),
+            key: name.into(), // tests use name as display; key mirrors for row shape
             name: name.into(),
             squad_ids: squads.iter().map(|s| (*s).to_string()).collect(),
         }

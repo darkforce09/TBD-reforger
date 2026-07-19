@@ -6,20 +6,16 @@
 //! them through a `thread_local` [`OpsCtx`] set from `mission_editor::on_load` — exactly how the
 //! Undo button reaches the undo stack.
 //!
-//! **Placement mints a default squad + layer** (React's `ensureDefaultSquad` +
-//! `ensureDefaultLayer`, T-168). [`ensure_default_squad`] reuses the first existing squad, else
-//! lazily mints the default faction + squad; [`ensure_layer`] resolves / lazily mints the default
-//! layer. Both are minted under the LOCAL origin so they are **undoable** — a boot-time
-//! faction/squad/layer would break the save/export gate, which asserts the graph is empty at boot
-//! (`smoke_save_export_editor` uses the seed only, so nothing is minted there). The placed slot
-//! joins the squad (`squad.slotIds`) and the layer (`layer.entityIds`); the ORBAT tree derives
-//! from the squads (`build_orbat`). Seed slots still carry a dangling `squadId` with no squad in
-//! the map (`store.rs:369`) — they list under Unfiled / no ORBAT squad until placed-through.
+//! **Placement (T-180.1):** each `place_at` calls
+//! [`map_engine_core::doc::place_character_under_side`] under [`OpsCtx::active_side`] (default
+//! `BLUFOR`), which ensures `faction-{SIDE}`, mints a **new** squad, adds the slot as sole member /
+//! leader, and files it under the resolved layer ([`ensure_layer`]). Layer mint stays LOCAL so it is
+//! **undoable** — a boot-time layer would break the save/export gate (`smoke_save_export_editor`
+//! uses the seed only). The ORBAT tree derives from squads (`build_orbat`). Seed slots still carry a
+//! dangling `squadId` with no squad in the map — they list under Unfiled until placed-through.
 //!
-//! Consequence, recorded in the verify log: the **first** place is up to **three** undo steps
-//! (layer, faction+squad, slot) since `add_editor_layer` / `add_faction`+`add_squad` / `add_slot`
-//! are separate core transactions where React's `ydoc.addSlot` wraps them in one `transact`; every
-//! later place is one step.
+//! Consequence: the **first** place is multiple undo steps (layer + faction + squad + slot + leader
+//! are separate core transactions); every later place under an existing layer/faction is fewer.
 //!
 //! **Borrow discipline** (the `mission_history` rule): each `pub fn` opens exactly one `OPS_CTX`
 //! borrow; doc `borrow_mut`s are scoped so they drop before `mission_history::after_local_edit`
@@ -29,6 +25,7 @@
 use std::cell::{Cell, RefCell};
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
+use map_engine_core::doc::place_character_under_side;
 use map_engine_core::doc::MissionDocCore;
 use map_engine_core::doc::NONE_IDX;
 
@@ -40,12 +37,6 @@ use crate::select_tool::{EngineHandle, SelectionHandle};
 /// The lazily-minted default layer (React's `ensureDefaultLayer`).
 const DEFAULT_LAYER_ID: &str = "layer-1";
 const DEFAULT_LAYER_NAME: &str = "Layer 1";
-/// T-168 — the lazily-minted default faction + squad (React's `ensureDefaultSquad`), so a placed
-/// slot always joins an ORBAT squad instead of the pre-T-168 `squadId=""`.
-const DEFAULT_FACTION_ID: &str = "faction-1";
-const DEFAULT_FACTION_NAME: &str = "Faction 1";
-const DEFAULT_SQUAD_ID: &str = "squad-1";
-const DEFAULT_SQUAD_NAME: &str = "Squad 1";
 
 struct OpsCtx {
     doc: DocHandle,
@@ -53,6 +44,8 @@ struct OpsCtx {
     selection: SelectionHandle,
     /// The drop target folder (React's `activeLayerId`). `None` ⇒ the place path resolves one.
     active_layer: RwSignal<Option<String>>,
+    /// T-180.1 — active Eden side for place (`BLUFOR`/`OPFOR`/`INDFOR`). Chips write this in T-180.5.
+    active_side: RwSignal<String>,
     /// Dock mirrors — `MissionDocCore` has no change subscription, so these are pushed from
     /// [`refresh_docks`] at every mutation site, like the OBJ/SEL readouts.
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
@@ -95,6 +88,7 @@ pub fn set_ctx(
     engine: EngineHandle,
     selection: SelectionHandle,
     active_layer: RwSignal<Option<String>>,
+    active_side: RwSignal<String>,
     outliner_nodes: RwSignal<Vec<OutlinerNode>>,
     orbat_nodes: RwSignal<Vec<OutlinerNode>>,
     selected_ids: RwSignal<Vec<String>>,
@@ -107,6 +101,7 @@ pub fn set_ctx(
             engine,
             selection,
             active_layer,
+            active_side,
             outliner_nodes,
             orbat_nodes,
             selected_ids,
@@ -667,6 +662,11 @@ fn faction_rows(core: &MissionDocCore) -> Vec<crate::outliner::FactionRow> {
             let o = v.as_object()?;
             Some(crate::outliner::FactionRow {
                 id: o.get("id")?.as_str()?.to_string(),
+                key: o
+                    .get("key")
+                    .and_then(|k| k.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
                 name: o
                     .get("name")
                     .and_then(|n| n.as_str())
@@ -873,7 +873,7 @@ fn ensure_layer(ctx: &OpsCtx, core: &MissionDocCore) -> String {
     DEFAULT_LAYER_ID.to_string()
 }
 
-/// T-169 smoke hook — bulk-add `n` slots under the default layer + squad, then refresh the docks,
+/// T-169 smoke hook — bulk-add `n` slots (each a new squad under BLUFOR), then refresh the docks,
 /// so the virtual-outliner gate can push a tree past [`crate::outliner::VIRTUAL_SLOT_THRESHOLD`]
 /// without 50 palette drags. Not on any UI path (the `__missionDoc` bridge exposes it for the gate).
 pub fn debug_seed_slots(n: u32) {
@@ -887,45 +887,22 @@ pub fn debug_seed_slots(n: u32) {
             return;
         };
         let layer_id = ensure_layer(ctx, core);
-        let squad_id = ensure_default_squad(core);
         for _ in 0..n {
             let id = mint_id(ctx, core);
-            core.add_slot(
-                &id, &squad_id, &layer_id, 0, "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
+            let _ = place_character_under_side(
+                core, "BLUFOR", &id, &layer_id, "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
             );
         }
     });
     crate::mission_history::after_local_edit();
 }
 
-/// T-168 — resolve the squad a placed slot joins (React's `ensureDefaultSquad`): reuse the first
-/// existing squad, else lazily mint the default faction + squad. Returns the squad id.
-fn ensure_default_squad(core: &MissionDocCore) -> String {
-    if let Some(first) = squad_rows(core).first() {
-        return first.id.clone();
-    }
-    // No squad yet — mint the default faction (if absent) then the default squad under it.
-    if !faction_rows(core)
-        .iter()
-        .any(|f| f.id == DEFAULT_FACTION_ID)
-    {
-        core.add_faction(DEFAULT_FACTION_ID, DEFAULT_FACTION_ID, DEFAULT_FACTION_NAME);
-    }
-    core.add_squad(
-        DEFAULT_SQUAD_ID,
-        DEFAULT_FACTION_ID,
-        DEFAULT_SQUAD_NAME,
-        None,
-    );
-    DEFAULT_SQUAD_ID.to_string()
-}
-
-/// Commit an armed place at a **world** position: file a slot under the resolved layer, select it,
-/// and run the shared post-change tail. Returns `false` when nothing was armed.
+/// Commit an armed place at a **world** position: mint a new squad under [`OpsCtx::active_side`],
+/// file the slot as sole member / leader, select it, and run the shared post-change tail. Returns
+/// `false` when nothing was armed.
 ///
 /// `z = 0.0` / `rotation = 0.0` match the T-159.19 drag commit's DEM-not-ready case (React's
-/// `terrainZ` on the flat map). `index: 0` is the ordinal within the slot's squad — inert here,
-/// since no squad is minted (see the module docs).
+/// `terrainZ` on the flat map).
 pub fn place_at(x: f64, y: f64) -> bool {
     let placed = OPS_CTX.with(|c| {
         let guard = c.borrow();
@@ -943,13 +920,13 @@ pub fn place_at(x: f64, y: f64) -> bool {
                 return false;
             };
             let layer_id = ensure_layer(ctx, core);
-            let squad_id = ensure_default_squad(core); // T-168 place-mint
+            let side = ctx.active_side.get_untracked();
             let id = mint_id(ctx, core);
-            core.add_slot(
+            if place_character_under_side(
+                core,
+                &side,
                 &id,
-                &squad_id,
                 &layer_id,
-                0,
                 &payload.role,
                 None,
                 Some(payload.asset_id),
@@ -957,7 +934,11 @@ pub fn place_at(x: f64, y: f64) -> bool {
                 y,
                 0.0,
                 0.0,
-            );
+            )
+            .is_err()
+            {
+                return false;
+            }
             id
         };
         *ctx.selection.borrow_mut() = vec![id];

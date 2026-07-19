@@ -8,8 +8,10 @@
 //! per-slot maps whose `position` is a plain JSON object (a `yrs` `Any::Map`), plus a root
 //! `editorLayers` map whose `entityIds` arrays give each slot its Outliner folder.
 
+mod place_orbat;
 mod soa;
 mod store;
 
+pub use place_orbat::{PlaceOrbatError, place_character_under_side};
 pub use soa::{NONE_IDX, STANCE_CROUCH, STANCE_PRONE, STANCE_STAND, SlotSoa};
 pub use store::MissionDocCore;

@@ -112,6 +112,10 @@ pub fn MissionEditorPage() -> impl IntoView {
     let orbat_nodes = RwSignal::new(Vec::<crate::outliner::OutlinerNode>::new());
     let selected_ids = RwSignal::new(Vec::<String>::new());
     let active_layer = RwSignal::new(None::<String>);
+    // T-180.1 — Eden place side (chips write this in T-180.5); default BLUFOR.
+    let active_side = RwSignal::new(String::from("BLUFOR"));
+    #[cfg(not(target_arch = "wasm32"))]
+    let _ = active_side;
     let catalog = RwSignal::new(crate::asset_catalog::CatalogState::Loading);
     // T-159.26 — Attributes modal: the open slot id + a doc-change tick the modal re-reads on
     // (`doc_ver` is a plain Rc<Cell>, not reactive; refresh_docks bumps this signal instead).
@@ -314,6 +318,7 @@ pub fn MissionEditorPage() -> impl IntoView {
                 engine.clone(),
                 selection.clone(),
                 active_layer,
+                active_side,
                 outliner_nodes,
                 orbat_nodes,
                 selected_ids,

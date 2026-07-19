@@ -320,7 +320,8 @@ impl MissionDocCore {
 
     /// Create a squad under a faction (mirrors `ydoc.addSquad` and `ensureDefaultSquad`'s squad).
     /// Writes `{id, factionId, name, slotIds:[]}` + `callsign` only when `Some`; appends `id` to
-    /// `faction.squadIds` if the faction exists.
+    /// `faction.squadIds` if the faction exists. Does **not** set `leaderSlotId` — callers use
+    /// [`Self::set_leader`] after the first slot joins (T-180.1).
     pub fn add_squad(&self, id: &str, faction_id: &str, name: &str, callsign: Option<String>) {
         let mut txn = self.begin();
         let sq = self
@@ -333,6 +334,15 @@ impl MissionDocCore {
         sq.insert(&mut txn, "name", name);
         sq.insert(&mut txn, "slotIds", Any::Array(Vec::new().into()));
         append_id(&mut txn, &self.factions, faction_id, "squadIds", id);
+    }
+
+    /// Set (or overwrite) a squad's `leaderSlotId` (T-180.1). Exclusive-leader / promote-on-move
+    /// invariants land in T-180.2.
+    pub fn set_leader(&self, squad_id: &str, slot_id: &str) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(sq)) = self.squads.get(&txn, squad_id) {
+            sq.insert(&mut txn, "leaderSlotId", slot_id);
+        }
     }
 
     /// Overwrite a slot's `position` (mirrors `slot.set('position', {...})`).
@@ -397,6 +407,31 @@ impl MissionDocCore {
             }
             if let Some(s) = stance {
                 slot.insert(&mut txn, "stance", s);
+            }
+        }
+    }
+
+    /// Set or clear optional slot identity fields `callsign` / `rank` (T-180.1). `Some(non-empty)`
+    /// inserts; `None` or empty string removes the key (same omit semantics as `tag` on
+    /// [`Self::add_slot`]).
+    pub fn update_slot_identity(&self, id: &str, callsign: Option<String>, rank: Option<String>) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+            match callsign.filter(|s| !s.is_empty()) {
+                Some(c) => {
+                    slot.insert(&mut txn, "callsign", c);
+                }
+                None => {
+                    slot.remove(&mut txn, "callsign");
+                }
+            }
+            match rank.filter(|s| !s.is_empty()) {
+                Some(r) => {
+                    slot.insert(&mut txn, "rank", r);
+                }
+                None => {
+                    slot.remove(&mut txn, "rank");
+                }
             }
         }
     }
