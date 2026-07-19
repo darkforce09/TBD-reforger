@@ -16,11 +16,11 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-071 — ORBAT Manager modal
 
-- **Slice spec:** ``
-- **Program hub:** ``
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md`
 - **Branch:** `ticket/T-071`
 - **Targets:** website
-- **Summary:** ORBAT Manager program. **T-071.0 SHIPPED via T-177** @ e97a01c6 — left ORBAT removed; top-strip ORBAT Manager → OrbatManagerDialog browse/select shell. **Next: T-071.1** squad CRUD · .2 slot numbering/export · .3–.4 logos/standardizations/Arsenal. Hub: t071_orbat_manager_program.md.
+- **Summary:** ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6 (browse shell). Remaining authoring SUPERSEDED by T-180 (foundation→map lines→dock→Stitch→templates→compile). Hub: t071_orbat_manager_program.md → see t180_orbat_eden_program.md.
 
 ## T-090 — Map visualization program
 
@@ -30,3 +30,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-180 — ORBAT + Eden placement program
+
+- **Active slice:** `T-180.2`
+- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md`
+- **Program hub:** `docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md`
+- **Branch:** `main`
+- **Targets:** website, root
+- **Summary:** ORBAT + Eden placement. **T-180.1 SHIPPED** @ aeb51209 (tag T-180.1) — place_character_under_side + leaderSlotId + FactionRow.key. ACTIVE **T-180.2** graph mutators/GC. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Verify: .ai/artifacts/t180_1_verify_log.md.

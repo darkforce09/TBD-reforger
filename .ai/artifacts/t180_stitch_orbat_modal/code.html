@@ -1,0 +1,339 @@
+<!DOCTYPE html><html lang="en" class="dark"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"><script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script><script id="tailwind-config">try{
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "error-container": "#93000a",
+                        "secondary-fixed": "#d8e2ff",
+                        "surface-variant": "#2f3445",
+                        "success-muted": "#064e3b",
+                        "tertiary": "#c3e7ff",
+                        "tertiary-fixed-dim": "#7cd0ff",
+                        "surface-bright": "#333949",
+                        "inverse-on-surface": "#2a3040",
+                        "on-tertiary-container": "#005979",
+                        "inverse-primary": "#455e90",
+                        "on-secondary": "#002e6a",
+                        "surface-container-low": "#151b2b",
+                        "surface-container": "#191f2f",
+                        "error": "#ffb4ab",
+                        "secondary": "#adc6ff",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "inverse-surface": "#dde2f7",
+                        "on-background": "#dde2f7",
+                        "secondary-container": "#0566d9",
+                        "on-tertiary": "#00344a",
+                        "on-secondary-container": "#e6ecff",
+                        "on-surface": "#dde2f7",
+                        "on-secondary-fixed": "#001a42",
+                        "error-alert": "#f87171",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-container": "#7bd0ff",
+                        "primary-container": "#adc6ff",
+                        "primary": "#d8e2ff",
+                        "surface-tint": "#adc6ff",
+                        "tactical-yellow": "#facc15",
+                        "on-tertiary-fixed-variant": "#004c69",
+                        "surface-container-high": "#242a3a",
+                        "on-primary-fixed": "#001a42",
+                        "primary-fixed": "#d8e2ff",
+                        "on-primary-container": "#385283",
+                        "tertiary-fixed": "#c4e7ff",
+                        "on-primary-fixed-variant": "#2c4677",
+                        "on-primary": "#122f5f",
+                        "outline-variant": "#44474f",
+                        "on-error": "#690005",
+                        "surface-dim": "#0d1322",
+                        "on-surface-variant": "#c4c6d0",
+                        "surface-glass": "rgba(31, 41, 55, 0.7)",
+                        "surface": "#0d1322",
+                        "on-tertiary-fixed": "#001e2c",
+                        "background": "#0d1322",
+                        "surface-container-highest": "#2f3445",
+                        "border-subtle": "#374151",
+                        "primary-fixed-dim": "#adc6ff",
+                        "surface-container-lowest": "#080e1d",
+                        "outline": "#8e909a",
+                        "on-secondary-fixed-variant": "#004395"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-sm": "0.5rem",
+                        "stack-lg": "2rem",
+                        "margin-mobile": "1rem",
+                        "stack-md": "1rem",
+                        "gutter": "1.5rem",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "headline-sm": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "code-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0.01em", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "code-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["30px", { "lineHeight": "38px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    }catch(_e){}</script></head><body class="bg-background text-on-background h-screen w-full overflow-hidden flex flex-col font-body-md selection:bg-secondary-container/50">
+
+    <!-- Header Section -->
+    <header class="flex-none border-b border-white/10 bg-surface-container/50 backdrop-blur-sm z-10">
+        <!-- Brand & Context -->
+        <div class="h-14 px-4 flex items-center justify-between border-b border-white/5">
+            <div class="flex items-center gap-3">
+                <span class="material-symbols-outlined text-primary text-[20px]">account_tree</span>
+                <span class="font-headline-sm text-headline-sm tracking-tighter">ORBAT MANAGER</span>
+            </div>
+            
+            <!-- Force Selection (Segmented Control) -->
+            <div class="flex p-0.5 bg-surface-dim rounded border border-white/10">
+                <button class="px-4 py-1.5 font-label-sm text-label-sm rounded bg-secondary-container/30 text-primary border border-primary/30 transition-colors">BLUFOR</button>
+                <button class="px-4 py-1.5 font-label-sm text-label-sm rounded text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-colors">OPFOR</button>
+                <button class="px-4 py-1.5 font-label-sm text-label-sm rounded text-on-surface-variant hover:bg-surface-variant hover:text-on-surface transition-colors">INDFOR</button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                 
+                <button class="p-1.5 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded transition-colors" title="Close">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Templates Bar -->
+        <div class="h-12 px-4 flex items-center gap-3 bg-surface-container-low">
+            <span class="material-symbols-outlined text-on-surface-variant text-[18px]">folder_open</span>
+            <div class="flex-1 max-w-md relative">
+                <select class="w-full bg-surface-dim border border-border-subtle text-on-surface font-code-md text-code-md rounded px-3 py-1.5 appearance-none focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                    <option>Load Predefined ORBAT: US 1980s (Motorized)</option>
+                    <option>Load Predefined ORBAT: US Modern (Mechanized)</option>
+                    <option>Load Predefined ORBAT: UK Royal Marines</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none text-[16px]">arrow_drop_down</span>
+            </div>
+            <button class="px-4 py-1.5 bg-primary text-on-primary font-label-sm text-label-sm rounded hover:bg-primary-fixed transition-colors">APPLY TEMPLATE</button>
+            
+            <div class="ml-auto flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+                <span class="">Total Entities: <span class="font-code-md text-primary">124</span></span>
+                <span class="text-white/20">|</span>
+                <span class="">Vehicles: <span class="font-code-md text-tactical-yellow">12</span></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- Center / Left Panel: ORBAT Tree -->
+        <section class="flex-1 flex flex-col border-r border-white/10 bg-background relative z-0">
+            
+            <!-- Toolbar -->
+            <div class="h-10 px-4 flex items-center justify-between border-b border-white/5 bg-surface-container-lowest">
+                 <div class="flex items-center gap-2">
+                    <button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded transition-colors" title="Expand All">
+                        <span class="material-symbols-outlined text-[16px]">unfold_more</span>
+                    </button>
+                    <button class="p-1 text-on-surface-variant hover:text-on-surface hover:bg-surface-variant rounded transition-colors" title="Collapse All">
+                        <span class="material-symbols-outlined text-[16px]">unfold_less</span>
+                    </button>
+                 </div>
+                 
+                 <div class="relative w-64">
+                     <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+                     <input type="text" placeholder="Search entities..." class="w-full bg-surface-dim border border-border-subtle text-on-surface font-code-md text-[12px] rounded pl-7 pr-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                 </div>
+            </div>
+
+            <!-- Tree Content -->
+            <div class="flex-1 overflow-y-auto p-2 space-y-1">
+                
+                <!-- Squad Group: Alpha 1-1 -->
+                <div class="bg-surface-container-low border border-border-subtle rounded flex flex-col group">
+                    <!-- Squad Header -->
+                    <div class="flex items-center px-2 py-1.5 hover:bg-surface-variant/50 cursor-pointer">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[16px] cursor-grab mr-1 opacity-0 group-hover:opacity-100 transition-opacity">drag_indicator</span>
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] mr-1">arrow_drop_down</span>
+                        <span class="material-symbols-outlined text-secondary text-[16px] mr-2">group</span>
+                        <span class="font-label-sm text-label-sm text-on-surface flex-1">Alpha 1-1</span>
+                        
+                        <!-- Attachments Indicator -->
+                        <div class="flex items-center gap-1 bg-surface-dim px-2 py-0.5 rounded border border-white/5 mr-3">
+                            <span class="material-symbols-outlined text-tactical-yellow text-[14px]">directions_car</span>
+                            <span class="font-code-md text-[11px] text-on-surface-variant">M113 APC</span>
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="p-1 text-on-surface-variant hover:text-primary rounded transition-colors" title="Add Slot">
+                                <span class="material-symbols-outlined text-[16px]">person_add</span>
+                            </button>
+                             <button class="p-1 text-on-surface-variant hover:text-tactical-yellow rounded transition-colors" title="Add Vehicle">
+                                <span class="material-symbols-outlined text-[16px]">car_rental</span>
+                            </button>
+                            <button class="p-1 text-on-surface-variant hover:text-error-alert rounded transition-colors ml-1" title="Remove Squad">
+                                <span class="material-symbols-outlined text-[16px]">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Squad Children (Slots) -->
+                    <div class="pl-9 pr-2 pb-2 space-y-0.5 border-t border-white/5 pt-1 bg-surface-container-lowest/50">
+                        
+                        <!-- Slot Item (Selected State) -->
+                        <div class="flex items-center px-2 py-1 rounded bg-secondary-container/20 border border-primary/30 group/slot cursor-pointer"><span class="material-symbols-outlined text-on-surface-variant text-[14px] cursor-grab mr-2 opacity-0 group-hover/slot:opacity-100">drag_indicator</span><span class="material-symbols-outlined text-primary text-[14px] mr-2">military_tech</span><span class="font-code-md text-[12px] text-primary mr-2">1:</span><span class="font-label-md text-label-md text-on-surface flex-1">Squad Leader <span class="font-code-md text-[11px] opacity-80">(L85A3 + GL)</span></span><div class="flex items-center gap-2 opacity-0 group-hover/slot:opacity-100"><button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[14px]">edit</span></button><button class="text-on-surface-variant hover:text-error-alert"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div>
+                        
+                        <!-- Slot Item -->
+                        <div class="flex items-center px-2 py-1 rounded hover:bg-surface-variant/30 border border-transparent group/slot cursor-pointer"><span class="material-symbols-outlined text-on-surface-variant text-[14px] cursor-grab mr-2 opacity-0 group-hover/slot:opacity-100">drag_indicator</span><span class="material-symbols-outlined text-on-surface-variant text-[14px] mr-2">local_hospital</span><span class="font-code-md text-[12px] text-on-surface-variant mr-2">2:</span><span class="font-label-md text-label-md text-on-surface-variant flex-1 group-hover/slot:text-on-surface transition-colors">Medic <span class="font-code-md text-[11px]">(L85A3) | MED</span></span><div class="flex items-center gap-2 opacity-0 group-hover/slot:opacity-100"><button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[14px]">edit</span></button><button class="text-on-surface-variant hover:text-error-alert"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div>
+
+                         <!-- Slot Item -->
+                         <div class="flex items-center px-2 py-1 rounded hover:bg-surface-variant/30 border border-transparent group/slot cursor-pointer"><span class="material-symbols-outlined text-on-surface-variant text-[14px] cursor-grab mr-2 opacity-0 group-hover/slot:opacity-100">drag_indicator</span><span class="material-symbols-outlined text-on-surface-variant text-[14px] mr-2">person</span><span class="font-code-md text-[12px] text-on-surface-variant mr-2">3:</span><span class="font-label-md text-label-md text-on-surface-variant flex-1 group-hover/slot:text-on-surface transition-colors">Rifleman (AT) <span class="font-code-md text-[11px]">(L85A3 + NLAW)</span></span><div class="flex items-center gap-2 opacity-0 group-hover/slot:opacity-100"><button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[14px]">edit</span></button><button class="text-on-surface-variant hover:text-error-alert"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div>
+                       
+                        <!-- Add Slot Inline -->
+                        <div class="flex items-center px-2 py-1 rounded hover:bg-surface-variant/30 border border-transparent group/slot cursor-pointer"><span class="material-symbols-outlined text-on-surface-variant text-[14px] cursor-grab mr-2 opacity-0 group-hover/slot:opacity-100">drag_indicator</span><span class="material-symbols-outlined text-on-surface-variant text-[14px] mr-2">person</span><span class="font-code-md text-[12px] text-on-surface-variant mr-2">4:</span><span class="font-label-md text-label-md text-on-surface-variant flex-1 group-hover/slot:text-on-surface transition-colors">Autorifleman <span class="font-code-md text-[11px]">(L110 5.56)</span></span><div class="flex items-center gap-2 opacity-0 group-hover/slot:opacity-100"><button class="text-on-surface-variant hover:text-primary"><span class="material-symbols-outlined text-[14px]">edit</span></button><button class="text-on-surface-variant hover:text-error-alert"><span class="material-symbols-outlined text-[14px]">close</span></button></div></div><div class="flex items-center px-2 py-1 mt-1 ml-6 cursor-pointer text-on-surface-variant hover:text-primary transition-colors">
+                            <span class="material-symbols-outlined text-[14px] mr-2">add</span>
+                            <span class="font-label-sm text-[11px]">Add Role</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                 <!-- Squad Group: Bravo 1-2 (Collapsed state example) -->
+                 <div class="bg-surface-container-low border border-border-subtle rounded flex flex-col group opacity-80 hover:opacity-100 transition-opacity">
+                    <div class="flex items-center px-2 py-1.5 hover:bg-surface-variant/50 cursor-pointer">
+                        <span class="material-symbols-outlined text-on-surface-variant text-[16px] cursor-grab mr-1 opacity-0 group-hover:opacity-100 transition-opacity">drag_indicator</span>
+                        <span class="material-symbols-outlined text-on-surface-variant text-[18px] mr-1 -rotate-90">arrow_drop_down</span>
+                        <span class="material-symbols-outlined text-secondary text-[16px] mr-2">group</span>
+                        <span class="font-label-sm text-label-sm text-on-surface flex-1">Bravo 1-2</span>
+                        <span class="font-code-md text-[11px] text-on-surface-variant mr-3">8 Slots</span>
+                        <div class="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="p-1 text-on-surface-variant hover:text-primary rounded transition-colors"><span class="material-symbols-outlined text-[16px]">person_add</span></button>
+                            <button class="p-1 text-on-surface-variant hover:text-tactical-yellow rounded transition-colors"><span class="material-symbols-outlined text-[16px]">car_rental</span></button>
+                            <button class="p-1 text-on-surface-variant hover:text-error-alert rounded transition-colors ml-1"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Bottom Action Area -->
+            <div class="p-3 border-t border-white/5 bg-surface-container-low">
+                <button class="w-full py-2 border border-outline-variant border-dashed text-on-surface-variant rounded font-label-sm text-label-sm hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">add_circle</span>
+                    ADD SQUAD / GROUP
+                </button>
+            </div>
+            
+        </section>
+
+        <!-- Right Panel: Inspector -->
+        <aside class="w-[320px] bg-surface-glass backdrop-blur-xl border-l border-white/10 flex flex-col z-10 shadow-2xl relative">
+            
+            <!-- Panel Header-->
+            <div class="h-10 px-4 border-b border-white/10 flex items-center gap-2 bg-surface-container/80">
+                <span class="material-symbols-outlined text-primary text-[18px]">manage_accounts</span>
+                <h2 class="font-label-sm text-label-sm uppercase tracking-widest text-on-surface flex-1">Slot Inspector</h2>
+                <button class="text-on-surface-variant hover:text-on-surface" title="Dock/Undock">
+                    <span class="material-symbols-outlined text-[16px]">dock_to_right</span>
+                </button>
+            </div>
+            
+            <!-- Panel Content (Slot Context) -->
+            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+                
+                <!-- Identification -->
+                <div class="space-y-3">
+                     <div class="flex justify-between items-center">
+                        <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Entity Type</span>
+                        <span class="font-code-md text-[11px] text-primary bg-primary/10 px-1.5 py-0.5 rounded">Infantry</span>
+                     </div>
+                     
+                     <div class="space-y-1">
+                        <label class="font-label-sm text-[11px] text-on-surface-variant">Assigned Role</label>
+                        <input type="text" value="Squad Leader" class="w-full bg-surface-dim border border-border-subtle text-on-surface font-label-md text-label-md rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                     </div>
+                     
+                     <div class="flex gap-2">
+                        <div class="space-y-1 flex-1">
+                            <label class="font-label-sm text-[11px] text-on-surface-variant">Callsign</label>
+                            <input type="text" value="SL-1" class="w-full bg-surface-dim border border-border-subtle text-on-surface font-code-md text-code-md rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                        </div>
+                        <div class="space-y-1 flex-1">
+                            <label class="font-label-sm text-[11px] text-on-surface-variant">Rank</label>
+                            <select class="w-full bg-surface-dim border border-border-subtle text-on-surface font-label-md text-label-md rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                                <option>SGT</option>
+                                <option>SSG</option>
+                                <option>CPL</option>
+                            </select>
+                        </div>
+                     </div>
+                </div>
+                
+                <hr class="border-white/5">
+                
+                <!-- Loadout / Arsenal -->
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <label class="font-label-sm text-[11px] text-on-surface-variant uppercase tracking-wider">Loadout</label>
+                        <span class="font-code-md text-[10px] text-on-surface-variant">42.5 kg</span>
+                    </div>
+                    
+                    <button class="w-full py-2 bg-surface-container border border-outline-variant rounded flex items-center justify-center gap-2 hover:bg-surface-variant hover:border-primary transition-colors text-on-surface font-label-md">
+                        <span class="material-symbols-outlined text-[18px]">backpack</span>
+                        OPEN ARSENAL
+                    </button>
+                    
+                    <!-- Standardization Templates -->
+                    <div class="bg-surface-dim p-3 rounded border border-white/5 space-y-3">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="material-symbols-outlined text-[14px] text-tactical-yellow">warning</span>
+                            <span class="font-label-sm text-[10px] text-tactical-yellow tracking-wider">STANDARDIZATION</span>
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="font-label-sm text-[10px] text-on-surface-variant">Medical Kit Template</label>
+                            <select class="w-full bg-surface-container border border-border-subtle text-on-surface font-label-sm text-[12px] rounded px-2 py-1 focus:outline-none">
+                                <option>Standard IFAK</option>
+                                <option>Medic Bag (Heavy)</option>
+                                <option>None</option>
+                            </select>
+                        </div>
+                        
+                        <div class="space-y-1">
+                            <label class="font-label-sm text-[10px] text-on-surface-variant">Grenade Complement</label>
+                            <select class="w-full bg-surface-container border border-border-subtle text-on-surface font-label-sm text-[12px] rounded px-2 py-1 focus:outline-none">
+                                <option>2x Frag, 2x Smoke Wht</option>
+                                <option>4x Frag</option>
+                                <option>4x Smoke (Mixed)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="border-white/5">
+                
+                <!-- Vehicle Context (Simulated hidden state, shown for completeness based on prompt) -->
+                <!-- 
+                <div class="space-y-3 opacity-50">
+                     <span class="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider block">Vehicle Context</span>
+                     <button class="w-full py-1.5 border border-outline-variant rounded font-label-sm text-[12px] text-on-surface-variant hover:border-primary hover:text-primary transition-colors flex justify-center items-center gap-2">
+                        <span class="material-symbols--></div></aside></main></body></html>

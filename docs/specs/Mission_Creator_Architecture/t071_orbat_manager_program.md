@@ -6,7 +6,7 @@
 
 **T-071.0 (done):** left Outliner → Editor Layers only; top-strip **ORBAT Manager** → `OrbatManagerDialog` browse/select shell (select + dbl-click→Attributes). Spec/verify: [`t177_mc_chrome_orbat_cutover.md`](../../platform/t177_mc_chrome_orbat_cutover.md) · [`.ai/artifacts/t177_verify_log.md`](../../../.ai/artifacts/t177_verify_log.md).
 
-**Next:** **T-071.1** squad CRUD · **T-071.2** slot numbering/export order · **T-071.3–.4** logos/standardizations/per-slot Arsenal.
+**Superseded for remaining work:** **[T-180](t180_orbat_eden_program.md)** owns T-071.1+ intent plus side chips, map leader lines, templates/vehicles, compile truth (Class-R slice ladder T-180.1–.9). Do **not** implement thin T-071.1 in parallel.
 
 **Map gate:** [`t090_091_map_terrain_program.md`](t090_091_map_terrain_program.md) · [`t092_spawn_transform_program.md`](t092_spawn_transform_program.md) — **cleared**.
 

@@ -13,6 +13,13 @@
       "branch": "ticket/T-068"
     },
     {
+      "id": "T-071",
+      "title": "ORBAT Manager modal",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md",
+      "branch": "ticket/T-071"
+    },
+    {
       "id": "T-090",
       "title": "Map visualization program",
       "status": "ready",
@@ -25,6 +32,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
+    },
+    {
+      "id": "T-180",
+      "title": "ORBAT + Eden placement program",
+      "status": "ready",
+      "spec": "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md",
+      "branch": "main"
     }
   ]
 }

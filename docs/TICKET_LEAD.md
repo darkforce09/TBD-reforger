@@ -9,15 +9,16 @@
 ## Ready
 
 - **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
-- **T-071** (710) — ORBAT Manager modal [ready] — ORBAT Manager program. **T-071.0 SHIPPED via T-177** @ e97a01c6 — left ORBAT removed; top-strip ORBAT Manager → OrbatManagerDialog browse/select shell. **Next: T-071.1** squad CRUD · .2 slot numbering/export · .3–.4 logos/standardizations/Arsenal. Hub: t071_orbat_manager_program.md.
+- **T-071** (710) — ORBAT Manager modal [ready] — ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6 (browse shell). Remaining authoring SUPERSEDED by T-180 (foundation→map lines→dock→Stitch→templates→compile). Hub: t071_orbat_manager_program.md → see t180_orbat_eden_program.md.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
+- **T-180** (1760) — ORBAT + Eden placement program [ready] — ORBAT + Eden placement. **T-180.1 SHIPPED** @ aeb51209 (tag T-180.1) — place_character_under_side + leaderSlotId + FactionRow.key. ACTIVE **T-180.2** graph mutators/GC. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Verify: .ai/artifacts/t180_1_verify_log.md.
 
 ## Next queued (top 10)
 
 - **T-072** (720) — Ctrl multi-place [queued] — Hold Ctrl to place multiple copies without re-selecting asset.
 - **T-073** (730) — Shift + map rotation [queued] — Shift-drag and map rotation widget for placed entities.
-- **T-074** (740) — Faction submode / catalog filter [queued] — Faction submode tabs and catalog filtering in asset browser.
+- **T-074** (740) — Faction submode / catalog filter [queued] — ABSORBED by T-180.5 (Eden side chips on DockRight). Do not implement separately. Was: Faction submode / catalog filter.
 - **T-075** (750) — Spacebar flyTo vs widget [queued] — Spacebar centers selection; resolve flyTo vs transform widget conflict.
 - **T-114** (1140) — Slot roster enforcement + production slot picker [queued] — Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-071). After T-068.13 production LOBBY picker + T-118.
 - **T-115** (1150) — Capture win condition [queued] — Real side victory via capture / hold / elimination objective.
@@ -33,4 +34,9 @@ flowchart LR
   T067[T-067] --> T068[T-068]
   T092[T-092] --> T071[T-071]
   T177[T-177] --> T071[T-071]
+  T180[T-180] --> T074[T-074]
+  T068[T-068] --> T153[T-153]
+  T177[T-177] --> T180[T-180]
+  T153[T-153] --> T180[T-180]
+  T151[T-151] --> T180[T-180]
 ```

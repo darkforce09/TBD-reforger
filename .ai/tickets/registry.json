@@ -1,5 +1,5 @@
 {
-  "next_id": 179,
+  "next_id": 181,
   "tickets": [
     {
       "id": "T-001",
@@ -1491,7 +1491,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager program. **T-071.0 SHIPPED via T-177** @ e97a01c6 — left ORBAT removed; top-strip ORBAT Manager → OrbatManagerDialog browse/select shell. **Next: T-071.1** squad CRUD · .2 slot numbering/export · .3–.4 logos/standardizations/Arsenal. Hub: t071_orbat_manager_program.md.",
+      "summary": "ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6 (browse shell). Remaining authoring SUPERSEDED by T-180 (foundation\u2192map lines\u2192dock\u2192Stitch\u2192templates\u2192compile). Hub: t071_orbat_manager_program.md \u2192 see t180_orbat_eden_program.md.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -1505,7 +1505,8 @@
       ],
       "unblocks": [
         "T-068",
-        "T-069"
+        "T-069",
+        "T-180"
       ],
       "status": "ready",
       "implements": [
@@ -1521,7 +1522,8 @@
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "spec": "docs/specs/Mission_Creator_Architecture/t071_orbat_manager_program.md"
     },
     {
       "id": "T-072",
@@ -1579,14 +1581,17 @@
         "ui"
       ],
       "title": "Faction submode / catalog filter",
-      "summary": "Faction submode tabs and catalog filtering in asset browser.",
+      "summary": "ABSORBED by T-180.5 (Eden side chips on DockRight). Do not implement separately. Was: Faction submode / catalog filter.",
       "route": "/missions/:id/edit",
       "branch": "ticket/T-074",
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "depends_on": [
+        "T-180"
+      ]
     },
     {
       "id": "T-075",
@@ -3848,13 +3853,16 @@
       "status": "queued",
       "program": "eden",
       "title": "Simplified Squad Connections",
-      "summary": "Visual 2D lines linking soldiers exclusively to a Squad Leader to define squad hierarchies. Interconnected with the ORBAT Manager modal data.",
+      "summary": "ABSORBED by T-180.4 (squad leader\u2192member map lines). Do not implement separately. Was: Simplified Squad Connections.",
       "surfaces": [
         "MAP",
         "ORBAT"
       ],
       "impact": [
         "ui"
+      ],
+      "depends_on": [
+        "T-180"
       ]
     },
     {
@@ -5378,7 +5386,7 @@
         "state"
       ],
       "title": "Leptos VirtualOutliner at mission scale",
-      "summary": "SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`; eden_chrome renders each dock tree via `virtual_tree` — eager below the threshold, a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows. Applies to BOTH Editor Layers and ORBAT; `window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate. New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects. `__missionDoc.seed_slots(n)` smoke hook added to push past the threshold.",
+      "summary": "SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`; eden_chrome renders each dock tree via `virtual_tree` \u2014 eager below the threshold, a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows. Applies to BOTH Editor Layers and ORBAT; `window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate. New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects. `__missionDoc.seed_slots(n)` smoke hook added to push past the threshold.",
       "slices": [],
       "depends_on": [
         "T-159"
@@ -5475,7 +5483,7 @@
         "state"
       ],
       "title": "Leptos SPA + Mission Creator bug bash",
-      "summary": "SHIPPED @ tag T-172 / e08884f4. Operator matrix A1–A9/B1–B10 + hunt H1–H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0. Operator 2026-07-18: ticket good enough — residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish → T-173. Verify: .ai/artifacts/t172_verify_log.md. Hub: docs/platform/t172_leptos_bug_bash.md.",
+      "summary": "SHIPPED @ tag T-172 / e08884f4. Operator matrix A1\u2013A9/B1\u2013B10 + hunt H1\u2013H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0. Operator 2026-07-18: ticket good enough \u2014 residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish \u2192 T-173. Verify: .ai/artifacts/t172_verify_log.md. Hub: docs/platform/t172_leptos_bug_bash.md.",
       "slices": [],
       "depends_on": [
         "T-171"
@@ -5511,7 +5519,7 @@
         "ui"
       ],
       "title": "Leptos SPA + Mission Creator performance pass",
-      "summary": "SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md.",
+      "summary": "SHIPPED @ tag T-173 / dddf3158. P1\u2013P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (\u221271% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md.",
       "slices": [],
       "depends_on": [
         "T-172"
@@ -5544,7 +5552,7 @@
         "perf"
       ],
       "title": "MC sat sharpness + heatmap off + dock guide rails",
-      "summary": "SHIPPED @ tag T-174 / bbb99526. S1: localhost sat preview→full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op. S2: density-heatmap glow removed end-to-end (no toggle); heatmap_trees LOD kept. S3: guide stems clip to rows — no dock rails. Verify: .ai/artifacts/t174_verify_log.md. Hub: docs/platform/t174_mc_sat_heatmap_guides.md.",
+      "summary": "SHIPPED @ tag T-174 / bbb99526. S1: localhost sat preview\u2192full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op. S2: density-heatmap glow removed end-to-end (no toggle); heatmap_trees LOD kept. S3: guide stems clip to rows \u2014 no dock rails. Verify: .ai/artifacts/t174_verify_log.md. Hub: docs/platform/t174_mc_sat_heatmap_guides.md.",
       "slices": [],
       "depends_on": [
         "T-173"
@@ -5576,7 +5584,7 @@
         "ui"
       ],
       "title": "MC interaction + LOD unpack + pan/zoom perf",
-      "summary": "SHIPPED @ tag T-175 / b90deac8. A1 sticky trees (empty clear all roles + lane_off); A2 concurrent forest fetch; A3 contours [188,150,100,235]; A4–A5 floor-aware glyph memo; B1 cold-slot rebind; B2 SlotPlacePreview; B3 damage.mark drag delta; B4 O(delta) tint; B5 BootPhase overlay; hunt H1–H6. Verify: .ai/artifacts/t175_verify_log.md. Hub: docs/platform/t175_mc_interaction_lod_perf.md.",
+      "summary": "SHIPPED @ tag T-175 / b90deac8. A1 sticky trees (empty clear all roles + lane_off); A2 concurrent forest fetch; A3 contours [188,150,100,235]; A4\u2013A5 floor-aware glyph memo; B1 cold-slot rebind; B2 SlotPlacePreview; B3 damage.mark drag delta; B4 O(delta) tint; B5 BootPhase overlay; hunt H1\u2013H6. Verify: .ai/artifacts/t175_verify_log.md. Hub: docs/platform/t175_mc_interaction_lod_perf.md.",
       "slices": [],
       "depends_on": [
         "T-174"
@@ -5607,7 +5615,7 @@
         "perf"
       ],
       "title": "Forest wash fidelity + place ghost + zoom+pan stutter",
-      "summary": "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview↔slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md.",
+      "summary": "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview\u2194slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md.",
       "slices": [],
       "depends_on": [
         "T-175"
@@ -5639,7 +5647,7 @@
         "ui"
       ],
       "title": "MC chrome UX + ORBAT dock cutover (T-071.0)",
-      "summary": "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1–B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md.",
+      "summary": "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1\u2013B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md.",
       "slices": [],
       "depends_on": [
         "T-176"
@@ -5705,7 +5713,7 @@
         "perf"
       ],
       "title": "Fix blocky / holed density canopy",
-      "summary": "SHIPPED @ tag T-179 / 8f45ee83. A bins_ok===625 + retry; B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso); C one-shot MS hairlines role 6 (real forest_outline_segments; measured 99374 @ z=-1); D fullmap A_bins + outline floor ≥50000. Verify: .ai/artifacts/t179_verify_log.md. Hub: docs/platform/t179_forest_canopy_fix.md.",
+      "summary": "SHIPPED @ tag T-179 / 8f45ee83. A bins_ok===625 + retry; B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso); C one-shot MS hairlines role 6 (real forest_outline_segments; measured 99374 @ z=-1); D fullmap A_bins + outline floor \u226550000. Verify: .ai/artifacts/t179_verify_log.md. Hub: docs/platform/t179_forest_canopy_fix.md.",
       "slices": [],
       "depends_on": [
         "T-178"
@@ -5722,6 +5730,160 @@
         "website"
       ],
       "spec": "docs/platform/t179_forest_canopy_fix.md"
+    },
+    {
+      "id": "T-180",
+      "order": 1760,
+      "program": "eden",
+      "status": "ready",
+      "active_slice": "T-180.2",
+      "surfaces": [
+        "ORBAT",
+        "RIGHT",
+        "MAP",
+        "TOP",
+        "VEH",
+        "CONN",
+        "ATTR"
+      ],
+      "impact": [
+        "ui",
+        "state",
+        "schema",
+        "compiler"
+      ],
+      "title": "ORBAT + Eden placement program",
+      "summary": "ORBAT + Eden placement. **T-180.1 SHIPPED** @ aeb51209 (tag T-180.1) \u2014 place_character_under_side + leaderSlotId + FactionRow.key. ACTIVE **T-180.2** graph mutators/GC. Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Verify: .ai/artifacts/t180_1_verify_log.md.",
+      "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
+      "slices": [
+        "T-180.0",
+        "T-180.1",
+        "T-180.2",
+        "T-180.3",
+        "T-180.4",
+        "T-180.5",
+        "T-180.6",
+        "T-180.7",
+        "T-180.8",
+        "T-180.9"
+      ],
+      "slice_plan": {
+        "T-180.0": {
+          "targets": [
+            "root"
+          ],
+          "executor": "cursor-docs",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
+          "status": "shipped",
+          "notes": "Hub + per-slice specs + t180_class_r_pins.md (measured packages/RGBA/APIs) + stitch artifacts"
+        },
+        "T-180.1": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_1_foundation_schema.md",
+          "status": "shipped",
+          "shipped_at": "aeb51209",
+          "notes": "Tag T-180.1. Core place_orbat + set_leader + callsign/rank; FE active_side; A1\u2013A5 + A3 rg; ci-local-leptos. Verify: .ai/artifacts/t180_1_verify_log.md. Note: cargo test needs --features doc."
+        },
+        "T-180.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md",
+          "status": "ready"
+        },
+        "T-180.3": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md",
+          "status": "queued"
+        },
+        "T-180.4": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md",
+          "status": "queued"
+        },
+        "T-180.5": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md",
+          "status": "queued"
+        },
+        "T-180.6": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md",
+          "status": "queued"
+        },
+        "T-180.7": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md",
+          "status": "queued"
+        },
+        "T-180.8": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_8_templates_vehicles.md",
+          "status": "queued"
+        },
+        "T-180.9": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "spec": "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md",
+          "status": "queued"
+        }
+      },
+      "depends_on": [
+        "T-177",
+        "T-153",
+        "T-151"
+      ],
+      "unblocks": [
+        "T-068",
+        "T-070"
+      ],
+      "implements": [
+        "LEFT-ORBAT-001",
+        "CONN-GROUP-001",
+        "RIGHT-SUBMODE-001",
+        "API-ORBAT-001"
+      ],
+      "user_story": "As a mission maker I place units by side, see squad-leader lines on the map, and author the full ORBAT in a Stitch manager that saves/loads templates and compiles cleanly.",
+      "acceptance": [
+        "Each T-180.N Class-R gate table PASS before next slice",
+        "Place mints new squad under active side with leaderSlotId",
+        "Map: side tint + leader\u2192member lines only",
+        "Dock: BLUFOR/OPFOR/INDFOR + Objects stub",
+        "Stitch ORBAT Manager on live data; templates via T-153",
+        "derive_orbat fills loadout; no standardization UI this program"
+      ],
+      "route": "/missions/:id/edit",
+      "branch": "main",
+      "stream": "mission-creator",
+      "targets": [
+        "website",
+        "root"
+      ],
+      "executor": "claude-code"
     }
   ]
 }
