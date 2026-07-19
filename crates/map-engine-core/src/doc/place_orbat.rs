@@ -252,6 +252,72 @@ mod tests {
         );
     }
 
+    /// G5 — add_squad under a side increases squadsById count for that faction.
+    #[test]
+    fn orbat_add_squad_increases_count_under_side() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        doc.add_faction("faction-OPFOR", "OPFOR", "OPFOR");
+        let before = small(&doc)["factionsById"]["faction-OPFOR"]["squadIds"]
+            .as_array()
+            .map(|a| a.len())
+            .unwrap_or(0);
+        doc.add_squad("squad-OPFOR-1", "faction-OPFOR", "Squad 1", None);
+        let after = small(&doc)["factionsById"]["faction-OPFOR"]["squadIds"]
+            .as_array()
+            .expect("squadIds")
+            .len();
+        assert_eq!(after, before + 1);
+        assert!(small(&doc)["squadsById"].get("squad-OPFOR-1").is_some());
+    }
+
+    /// G6 — add_slot into an existing squad increases slotIds (not a new squad via place).
+    #[test]
+    fn orbat_add_role_increases_squad_slot_ids() {
+        let doc = MissionDocCore::new();
+        layer(&doc);
+        let (_, squad_id, first) = place_character_under_side(
+            &doc, "BLUFOR", "n0", "lyr", "Rifleman", None, None, 0.0, 0.0, 0.0, 0.0,
+        )
+        .expect("place");
+        let before = small(&doc)["squadsById"][&squad_id]["slotIds"]
+            .as_array()
+            .expect("slotIds")
+            .len();
+        doc.add_slot(
+            "n1",
+            &squad_id,
+            "lyr",
+            before as u32,
+            "Medic",
+            Some("MED".into()),
+            None,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+        );
+        let root = small(&doc);
+        let ids = root["squadsById"][&squad_id]["slotIds"]
+            .as_array()
+            .expect("slotIds");
+        assert_eq!(ids.len(), before + 1);
+        assert!(ids.iter().any(|v| v == "n1"));
+        assert_eq!(
+            root["squadsById"][&squad_id]["leaderSlotId"],
+            first,
+            "add role must not steal SL"
+        );
+        // Still one squad under BLUFOR.
+        assert_eq!(
+            root["factionsById"]["faction-BLUFOR"]["squadIds"]
+                .as_array()
+                .expect("squadIds")
+                .len(),
+            1
+        );
+    }
+
     /// A5 — invalid side ⇒ Err and no mutation.
     #[test]
     fn place_rejects_invalid_side() {

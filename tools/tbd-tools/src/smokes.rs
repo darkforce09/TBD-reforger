@@ -2480,12 +2480,13 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                 checks.insert(
                     "o3_orbatSquadMinted".into(),
                     json!(
-                        orbat_popup_text.contains("Squad 1 (1)")
-                            && orbat_popup_text.contains("Faction 1")
+                        // T-180.1 place mints faction-BLUFOR / "Squad N"; T-180.7 side tabs show BLUFOR.
+                        orbat_popup_text.contains("Squad 1")
+                            && orbat_popup_text.contains("BLUFOR")
                     ),
                 );
-                // The ORBAT slot leaf = the placeable role button inside the ORBAT Manager popup.
-                const ORBAT_LEAF: &str = "(() => { const h=[...document.querySelectorAll('h2')].find(h=>h.textContent==='ORBAT Manager'); const p=h&&h.closest('.glass'); return p?p.querySelector('button[aria-label=\"US Rifleman\"]'):null; })()";
+                // The ORBAT slot leaf = role aria-label inside the ORBAT Manager popup (div[role=button] OK).
+                const ORBAT_LEAF: &str = "(() => { const h=[...document.querySelectorAll('h2')].find(h=>h.textContent==='ORBAT Manager'); const p=h&&h.closest('.glass'); return p?p.querySelector('[aria-label=\"US Rifleman\"]'):null; })()";
                 eval(
                     &h.page,
                     &format!(

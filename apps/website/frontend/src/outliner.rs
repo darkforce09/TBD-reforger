@@ -194,6 +194,8 @@ pub struct SquadRow {
     pub slot_ids: Vec<String>,
     /// T-180.6 — `squad.leaderSlotId` (empty when absent); drives ORBAT SL badge.
     pub leader_slot_id: String,
+    /// T-180.7 — `squad.vehicleIds` (badge when non-empty; attach wiring in T-180.8).
+    pub vehicle_ids: Vec<String>,
 }
 
 /// Build the ORBAT browse tree: faction → squad → slot, in doc order (`squadIds` / `slotIds`).
@@ -246,6 +248,33 @@ pub fn build_orbat(
     }
     out
 }
+
+/// T-180.7 — filter ORBAT tree to squads under factions whose [`FactionRow::key`] equals `side_key`.
+/// Uses **key**, never name substring (G8). Returns squad nodes only (side tabs replace faction headers).
+#[must_use]
+pub fn filter_orbat_squads_by_side_key(
+    factions: &[FactionRow],
+    squads: &[SquadRow],
+    slots: &[SlotRow],
+    side_key: &str,
+) -> Vec<OutlinerNode> {
+    let tree = build_orbat(factions, squads, slots);
+    let matching_faction_ids: std::collections::HashSet<&str> = factions
+        .iter()
+        .filter(|f| f.key == side_key)
+        .map(|f| f.id.as_str())
+        .collect();
+    tree.into_iter()
+        .filter(|n| matching_faction_ids.contains(n.id.as_str()))
+        .flat_map(|f| f.children)
+        .collect()
+}
+
+/// G1 — near-fullscreen dialog class list (Faction Manager pattern; not `ui::Dialog` / `max-w-xl`).
+pub const ORBAT_MANAGER_DIALOG_CLASS: &str = "glass animate-dialog-in fixed top-1/2 left-1/2 z-50 flex h-[min(800px,90vh)] w-[min(1100px,95vw)] max-w-6xl -translate-x-1/2 -translate-y-1/2 flex-col rounded-xl shadow-2xl outline-none";
+
+/// G7 — empty-state when the filtered side has no squads (never Stitch sample strings).
+pub const ORBAT_MANAGER_EMPTY: &str = "No squads on this side yet — place a unit or add a squad.";
 
 /* ───────────────────────────── T-169 — flattened rows for windowing ───────────────────────────── */
 
@@ -478,6 +507,7 @@ mod tests {
             faction_id: faction.into(),
             slot_ids: slots.iter().map(|s| (*s).to_string()).collect(),
             leader_slot_id: leader.into(),
+            vehicle_ids: Vec::new(),
         }
     }
 
@@ -640,6 +670,60 @@ mod tests {
         assert_eq!(tree[0].children.len(), 1, "ghost squad skipped");
         assert_eq!(tree[0].children[0].children.len(), 1, "ghost slot skipped");
         assert_eq!(tree[0].children[0].children[0].id, "s0");
+    }
+
+    /// G1 — dialog class is near-fullscreen (`w-[min(` / `max-w-6xl`), not `max-w-xl`-only.
+    #[test]
+    fn orbat_manager_dialog_class_near_fullscreen() {
+        assert!(
+            ORBAT_MANAGER_DIALOG_CLASS.contains("w-[min(")
+                || ORBAT_MANAGER_DIALOG_CLASS.contains("max-w-6xl")
+                || ORBAT_MANAGER_DIALOG_CLASS.contains("max-w-4xl"),
+            "{ORBAT_MANAGER_DIALOG_CLASS}"
+        );
+        assert!(
+            !ORBAT_MANAGER_DIALOG_CLASS.contains("max-w-xl"),
+            "max-w-xl must not be the width constraint"
+        );
+    }
+
+    /// G7 — empty factions ⇒ empty filtered tree (no Stitch sample SoT).
+    #[test]
+    fn orbat_manager_empty_doc_empty_tree() {
+        let filtered = filter_orbat_squads_by_side_key(&[], &[], &[], "BLUFOR");
+        assert!(filtered.is_empty());
+        assert!(!ORBAT_MANAGER_EMPTY.contains("L85A3"));
+        assert!(!ORBAT_MANAGER_EMPTY.contains("US 1980s"));
+    }
+
+    /// G8 — OPFOR tab filters by FactionRow.key, not name substring.
+    #[test]
+    fn orbat_side_tab_filters_by_faction_key() {
+        let factions = vec![
+            FactionRow {
+                id: "faction-OPFOR".into(),
+                key: "OPFOR".into(),
+                name: "Enemy Force BLUFOR-looking".into(), // name must not match BLUFOR tab
+                squad_ids: vec!["sq-op".into()],
+            },
+            FactionRow {
+                id: "faction-BLUFOR".into(),
+                key: "BLUFOR".into(),
+                name: "OPFOR string in name".into(), // name must not match OPFOR tab
+                squad_ids: vec!["sq-blu".into()],
+            },
+        ];
+        let squads = vec![
+            squad("sq-op", "Op Squad", "faction-OPFOR", &["a"], "a"),
+            squad("sq-blu", "Blu Squad", "faction-BLUFOR", &["b"], "b"),
+        ];
+        let slots = vec![slot("a", "Rifleman"), slot("b", "Rifleman")];
+        let opfor = filter_orbat_squads_by_side_key(&factions, &squads, &slots, "OPFOR");
+        assert_eq!(opfor.len(), 1);
+        assert_eq!(opfor[0].id, "sq-op");
+        let blufor = filter_orbat_squads_by_side_key(&factions, &squads, &slots, "BLUFOR");
+        assert_eq!(blufor.len(), 1);
+        assert_eq!(blufor[0].id, "sq-blu");
     }
 
     /// T-172 B6 — collapse hides the subtree, keeps the container row, and `has_children` is

@@ -1245,48 +1245,9 @@ pub fn DockLeft(
     }
 }
 
-/// T-177 B2 / T-180.6 — the **ORBAT Manager** modal shell. Live faction → squad → slot tree:
-/// select / dbl-click→Attributes, drag a slot onto another squad to refile (core `move_slot_to_squad`
-/// + GC). Full Stitch chrome (tabs / inspector / Apply) is **T-180.7**.
-#[component]
-pub fn OrbatManagerDialog(
-    /// Open flag, toggled by the top-strip ORBAT Manager button (Esc / backdrop close via `Dialog`).
-    open: RwSignal<bool>,
-    /// The ORBAT tree (faction / squad / slot), rebuilt on every mutation by `editor_ops::refresh_docks`.
-    orbat: RwSignal<Vec<OutlinerNode>>,
-    selected: RwSignal<Vec<String>>,
-    active_layer: RwSignal<Option<String>>,
-) -> impl IntoView {
-    view! {
-        <crate::ui::Dialog
-            open
-            title="ORBAT Manager"
-            description="Browse factions, squads, and slots. Drag a slot onto a squad to refile it."
-            class="max-w-xl"
-        >
-            <div
-                class="min-h-40"
-                on:pointerup=move |_| {
-                    // After squad-row `complete_refile` (target phase), this clears a miss-drop.
-                    #[cfg(target_arch = "wasm32")]
-                    crate::editor_ops::cancel_refile();
-                }
-            >
-                {virtual_tree(
-                    orbat,
-                    selected,
-                    active_layer,
-                    "orbat",
-                    "No squads yet — place a unit to build the ORBAT.",
-                    true,
-                )}
-            </div>
-            <p class="mt-3 border-t border-outline-variant/20 pt-3 text-label-sm text-outline">
-                "Drag a slot onto another squad to refile. Full ORBAT Manager chrome arrives in T-180.7."
-            </p>
-        </crate::ui::Dialog>
-    }
-}
+/// T-180.7 — Stitch ORBAT Manager (near-fullscreen live graph). Implementation lives in
+/// [`crate::orbat_manager`]; re-exported so `mission_editor` mount path stays stable.
+pub use crate::orbat_manager::OrbatManagerDialog;
 
 // ── T-180.5 — Eden side chips (no F1–F6, no CIV) ─────────────────────────────────────────────────
 

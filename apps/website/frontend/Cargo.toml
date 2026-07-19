@@ -14,6 +14,8 @@ console_error_panic_hook = "0.1"
 futures = "0.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# T-180.7 — `format_slot_line` on native + wasm (wasm32 block below adds doc/mission/png/world).
+map-engine-core = { path = "../../../crates/map-engine-core", default-features = false }
 gloo-net = "0.6"
 js-sys = "0.3"
 wasm-bindgen = "0.2"

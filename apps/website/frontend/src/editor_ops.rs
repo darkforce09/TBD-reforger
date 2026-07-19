@@ -711,6 +711,7 @@ fn squad_rows(core: &MissionDocCore) -> Vec<crate::outliner::SquadRow> {
                     .and_then(|l| l.as_str())
                     .unwrap_or_default()
                     .to_string(),
+                vehicle_ids: str_array(o.get("vehicleIds")),
             })
         })
         .collect()
@@ -910,6 +911,330 @@ pub fn debug_seed_slots(n: u32) {
         }
     });
     crate::mission_history::after_local_edit();
+}
+
+/* ───────────────────────── T-180.7 — ORBAT Manager mutators ───────────────────────── */
+
+/// Slot fields the ORBAT Manager inspector / `format_slot_line` need (from `slots_json`).
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct OrbatSlotDetail {
+    pub id: String,
+    pub role: String,
+    pub tag: String,
+    pub callsign: String,
+    pub rank: String,
+    pub index: u32,
+    pub squad_id: String,
+    pub summary: String,
+    pub primary: String,
+    pub launcher: String,
+}
+
+/// Snapshot of squads/factions/slot details for the ORBAT Manager (one doc read).
+#[derive(Clone, Debug, Default)]
+pub struct OrbatManagerSnapshot {
+    pub factions: Vec<crate::outliner::FactionRow>,
+    pub squads: Vec<crate::outliner::SquadRow>,
+    pub slots: Vec<OrbatSlotDetail>,
+}
+
+/// Read live ORBAT rows + per-slot loadout/identity for the Stitch manager (G7 live data).
+pub fn orbat_manager_snapshot() -> OrbatManagerSnapshot {
+    OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return OrbatManagerSnapshot::default();
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return OrbatManagerSnapshot::default();
+        };
+        OrbatManagerSnapshot {
+            factions: faction_rows(core),
+            squads: squad_rows(core),
+            slots: slot_details(core),
+        }
+    })
+}
+
+fn slot_details(core: &MissionDocCore) -> Vec<OrbatSlotDetail> {
+    let Ok(root) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) else {
+        return Vec::new();
+    };
+    let Some(map) = root.as_object() else {
+        return Vec::new();
+    };
+    map.values()
+        .filter_map(|v| {
+            let o = v.as_object()?;
+            let lo = o.get("loadout").and_then(|l| l.as_object());
+            Some(OrbatSlotDetail {
+                id: o.get("id")?.as_str()?.to_string(),
+                role: o
+                    .get("role")
+                    .and_then(|r| r.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                tag: o
+                    .get("tag")
+                    .and_then(|t| t.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                callsign: o
+                    .get("callsign")
+                    .and_then(|c| c.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                rank: o
+                    .get("rank")
+                    .and_then(|r| r.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                index: o
+                    .get("index")
+                    .and_then(|i| i.as_u64().or_else(|| i.as_i64().map(|n| n as u64)))
+                    .unwrap_or(0) as u32,
+                squad_id: o
+                    .get("squadId")
+                    .and_then(|s| s.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                summary: lo
+                    .and_then(|m| m.get("summary"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                primary: lo
+                    .and_then(|m| m.get("primary"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+                launcher: lo
+                    .and_then(|m| m.get("launcher"))
+                    .and_then(|s| s.as_str())
+                    .unwrap_or_default()
+                    .to_string(),
+            })
+        })
+        .collect()
+}
+
+fn ensure_side_faction(core: &MissionDocCore, side: &str) -> String {
+    let faction_id = format!("faction-{side}");
+    let factions = faction_rows(core);
+    if !factions.iter().any(|f| f.id == faction_id) {
+        core.add_faction(&faction_id, side, side);
+    }
+    faction_id
+}
+
+fn mint_squad_id_for_side(core: &MissionDocCore, side: &str) -> String {
+    let existing: std::collections::HashSet<String> =
+        squad_rows(core).into_iter().map(|s| s.id).collect();
+    let mut n: u32 = 1;
+    loop {
+        let id = format!("squad-{side}-{n}");
+        if !existing.contains(&id) {
+            return id;
+        }
+        n = n.saturating_add(1);
+    }
+}
+
+/// G5 — add an empty squad under `side` (`BLUFOR`/`OPFOR`/`INDFOR`).
+pub fn orbat_add_squad(side: String) -> Option<String> {
+    let id = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return None;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return None;
+        };
+        if !matches!(side.as_str(), "BLUFOR" | "OPFOR" | "INDFOR") {
+            return None;
+        }
+        let faction_id = ensure_side_faction(core, &side);
+        let squad_id = mint_squad_id_for_side(core, &side);
+        let ordinal = faction_rows(core)
+            .iter()
+            .find(|f| f.id == faction_id)
+            .map(|f| f.squad_ids.len())
+            .unwrap_or(0);
+        let name = format!("Squad {}", ordinal + 1);
+        core.add_squad(&squad_id, &faction_id, &name, None);
+        Some(squad_id)
+    });
+    if id.is_some() {
+        crate::mission_history::after_local_edit();
+    }
+    id
+}
+
+/// G6 — add a role (slot) into an existing squad; default role Rifleman. Not `place_character_under_side`.
+pub fn orbat_add_slot(squad_id: String, role: String) -> Option<String> {
+    let id = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return None;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return None;
+        };
+        let sq = squad_rows(core).into_iter().find(|s| s.id == squad_id)?;
+        let index = sq.slot_ids.len() as u32;
+        let layer_id = ensure_layer(ctx, core);
+        let slot_id = mint_id(ctx, core);
+        let role = if role.trim().is_empty() {
+            "Rifleman".to_string()
+        } else {
+            role
+        };
+        core.add_slot(
+            &slot_id, &squad_id, &layer_id, index, &role, None, None, 0.0, 0.0, 0.0, 0.0,
+        );
+        if sq.leader_slot_id.is_empty() {
+            core.set_leader(&squad_id, &slot_id);
+        }
+        Some(slot_id)
+    });
+    if id.is_some() {
+        crate::mission_history::after_local_edit();
+    }
+    id
+}
+
+/// G2 — Make SL via core `set_leader` (does not overwrite MED/ENG tag).
+pub fn orbat_set_leader(squad_id: String, slot_id: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.set_leader(&squad_id, &slot_id);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Remove a slot (cascade detach); GC empty squad; promote leader when needed.
+pub fn orbat_remove_slot(slot_id: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        let detail = slot_details(core)
+            .into_iter()
+            .find(|s| s.id == slot_id)
+            .unwrap_or_default();
+        let squad_id = detail.squad_id.clone();
+        if squad_id.is_empty() {
+            return false;
+        }
+        let sq = squad_rows(core).into_iter().find(|s| s.id == squad_id);
+        let was_leader = sq.as_ref().is_some_and(|s| s.leader_slot_id == slot_id);
+        let remaining: Vec<String> = sq
+            .map(|s| s.slot_ids.into_iter().filter(|id| id != &slot_id).collect())
+            .unwrap_or_default();
+        core.remove_slots(vec![slot_id]);
+        if remaining.is_empty() {
+            core.remove_squad(&squad_id);
+        } else if was_leader {
+            if let Some(next) = remaining.first() {
+                core.set_leader(&squad_id, next);
+            }
+        }
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Remove a squad and its slots.
+pub fn orbat_remove_squad(squad_id: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.remove_squad(&squad_id);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Rename a squad.
+pub fn orbat_rename_squad(squad_id: String, name: String) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        core.rename_squad(&squad_id, &name);
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
+}
+
+/// Patch inspector fields: role/tag via `update_slot`, callsign/rank via `update_slot_identity`.
+pub fn orbat_update_slot_fields(
+    slot_id: String,
+    role: Option<String>,
+    tag: Option<String>,
+    callsign: Option<String>,
+    rank: Option<String>,
+) -> bool {
+    let did = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let Some(ctx) = guard.as_ref() else {
+            return false;
+        };
+        let d = ctx.doc.borrow();
+        let Some(core) = d.as_ref() else {
+            return false;
+        };
+        if role.is_some() || tag.is_some() {
+            core.update_slot(&slot_id, role, tag, None);
+        }
+        if callsign.is_some() || rank.is_some() {
+            core.update_slot_identity(&slot_id, callsign, rank);
+        }
+        true
+    });
+    if did {
+        crate::mission_history::after_local_edit();
+    }
+    did
 }
 
 /* ───────────────────────── T-180.6 — ORBAT refile (core move only) ───────────────────────── */

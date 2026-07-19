@@ -36,6 +36,8 @@ mod editor_ops;
 mod eden_chrome;
 // T-167 — Faction Manager dialog (FactionManagerDialog.tsx / T-153 port; /factions CRUD).
 mod faction_manager;
+// T-180.7 — Stitch ORBAT Manager on live graph (thin re-export from eden_chrome).
+mod orbat_manager;
 // T-159.17 warm editor session — sessionStorage marker; wasm32-only (uses web-sys/js-sys), gated
 // like the doc host below.
 #[cfg(target_arch = "wasm32")]
