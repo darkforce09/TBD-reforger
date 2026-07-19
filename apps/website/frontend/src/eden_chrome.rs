@@ -660,64 +660,106 @@ const ROW_ACTIVE: &str = "relative flex w-full items-center gap-1.5 rounded px-1
 /// and outliner slots keep the plain [`ROW`] default (only palette leaves are drag-to-place).
 const PALETTE_LEAF: &str = "relative flex w-full items-center gap-1.5 rounded px-1.5 py-1 text-left text-label-sm text-on-surface-variant transition-colors hover:bg-white/10 hover:text-on-surface cursor-grab active:cursor-grabbing";
 
-/// Hierarchy guide lines — YouTube-comment-style nested connectors (T-177 A1; supersedes the T-173 P7
-/// straight rails). `ancestors` comes from `FlatRow` (`len == depth`) and says, per guide column,
-/// whether that vertical line CONTINUES below this row. Columns `0..depth-1` are **ancestor spines**:
-/// a full `inset-y-0` hairline drawn only where the branch continues (`ancestors[k]`), so there is no
-/// orphan rail beneath a last child. The deepest column `depth-1` is THIS row's own connector — a
-/// rounded **elbow** (a `border-l`+`border-b`+`rounded-bl` box over the row's top half that curves the
-/// spine right into the chevron/icon) plus, only when this row has a following sibling
-/// (`ancestors[depth-1]`), a `top-1/2 bottom-0` tail down to the next sibling (else the spine trims at
-/// the last child — the YouTube look). Percentage heights (`h-1/2`/`top-1/2`) track `ROW_H`; the `w-3`
-/// spacers still carry the indentation. Rows stack flush (`ROW_H` == the border-box height), so a
-/// column's spans meet across rows into one continuous stem — the T-174 S3 per-row clip (no dock-tall
-/// rails) is preserved. `bg-white/25` / `border-white/25` = the same subtle Aegis-legal grey. The row
-/// must be `relative` (ROW already is). Column k center = left padding (0.375rem) + k·0.75rem + half
-/// a column (0.375rem).
-fn guide_spans(ancestors: &[bool]) -> AnyView {
+/// Hierarchy guide lines — continuous YouTube spines (T-178 A3/A4; supersedes T-177 L-hooks).
+/// `ancestors` / `guide_ids` both have `len == depth`. Continuous `w-px` stems + mid-row stub;
+/// click toggles the column owner (`guide_ids[k]`).
+fn guide_spans(
+    ancestors: &[bool],
+    guide_ids: &[String],
+    collapsed: RwSignal<std::collections::HashSet<String>>,
+) -> AnyView {
     let depth = ancestors.len();
     if depth == 0 {
         return ().into_any();
     }
+    debug_assert_eq!(guide_ids.len(), depth);
     let col_left = |k: usize| format!("left:calc(0.375rem + {:.3}rem)", (k as f64) * 0.75 + 0.375);
     let mut lines: Vec<AnyView> = Vec::new();
-    // Ancestor spines: full-height hairline only where that ancestor's branch continues.
-    for (k, cont) in ancestors.iter().enumerate().take(depth - 1) {
+    let make_toggle = |id: String, collapsed: RwSignal<std::collections::HashSet<String>>| {
+        move |ev: web_sys::MouseEvent| {
+            ev.stop_propagation();
+            collapsed.update(|c| {
+                if !c.remove(&id) {
+                    c.insert(id.clone());
+                }
+            });
+        }
+    };
+    // Ancestor spines: full-height hairline where the branch continues.
+    for (k, cont) in ancestors.iter().enumerate().take(depth.saturating_sub(1)) {
         if *cont {
+            let id = guide_ids.get(k).cloned().unwrap_or_default();
+            let left = col_left(k);
+            let on_click = make_toggle(id.clone(), collapsed);
             lines.push(
                 view! {
                     <span
-                        class="pointer-events-none absolute inset-y-0 w-px bg-white/25"
-                        style=col_left(k)
+                        role="button"
+                        tabindex="-1"
+                        data-guide-toggle=id.clone()
+                        aria-label=format!("Toggle {id}")
+                        class="absolute inset-y-0 w-px cursor-pointer bg-white/25"
+                        style=left
+                        on:click=on_click
                     ></span>
                 }
                 .into_any(),
             );
         }
     }
-    // This row's own connector: a rounded elbow over the top half, curving into the row.
     let last = depth - 1;
-    lines.push(
-        view! {
-            <span
-                class="pointer-events-none absolute top-0 h-1/2 w-2 rounded-bl-[6px] border-b border-l border-white/25"
-                style=col_left(last)
-            ></span>
-        }
-        .into_any(),
-    );
-    // Tail to the next sibling — omitted at the last child so the spine stops (YouTube trim).
+    let id = guide_ids.get(last).cloned().unwrap_or_default();
+    let left = col_left(last);
+    // Continuous stem: full height if sibling continues, else top-half only (last child).
     if ancestors[last] {
+        let on_click = make_toggle(id.clone(), collapsed);
         lines.push(
             view! {
                 <span
-                    class="pointer-events-none absolute top-1/2 bottom-0 w-px bg-white/25"
-                    style=col_left(last)
+                    role="button"
+                    tabindex="-1"
+                    data-guide-toggle=id.clone()
+                    aria-label=format!("Toggle {id}")
+                    class="absolute inset-y-0 w-px cursor-pointer bg-white/25"
+                    style=left.clone()
+                    on:click=on_click
+                ></span>
+            }
+            .into_any(),
+        );
+    } else {
+        let on_click = make_toggle(id.clone(), collapsed);
+        lines.push(
+            view! {
+                <span
+                    role="button"
+                    tabindex="-1"
+                    data-guide-toggle=id.clone()
+                    aria-label=format!("Toggle {id}")
+                    class="absolute top-0 h-1/2 w-px cursor-pointer bg-white/25"
+                    style=left.clone()
+                    on:click=on_click
                 ></span>
             }
             .into_any(),
         );
     }
+    // Mid-row horizontal stub into the row content.
+    let on_click = make_toggle(id.clone(), collapsed);
+    lines.push(
+        view! {
+            <span
+                role="button"
+                tabindex="-1"
+                data-guide-toggle=id.clone()
+                aria-label=format!("Toggle {id}")
+                class="absolute top-1/2 h-px w-2 cursor-pointer bg-white/25"
+                style=left
+                on:click=on_click
+            ></span>
+        }
+        .into_any(),
+    );
     let spacers = (0..depth)
         .map(|_| view! { <span class="w-3 shrink-0"></span> })
         .collect::<Vec<_>>();
@@ -779,8 +821,9 @@ fn single_row(
     let label = row.label.clone();
     let aria = row.label.clone();
     let id = row.id.clone();
-    // T-177 A1 — per-row guide continuation (see `guide_spans`); replaces the bare `depth`.
+    // T-177/T-178 — per-row guide continuation + click-to-toggle owners.
     let ancestors: &[bool] = &row.ancestors;
+    let guide_ids: &[String] = &row.guide_ids;
     // Static per build — a chevron toggle bumps `collapsed`, which re-flattens + re-renders
     // the slice (the virtual_tree Effect tracks it), so open state never goes stale.
     let open = !collapsed.with_untracked(|c| c.contains(&row.id));
@@ -788,7 +831,7 @@ fn single_row(
     match row.kind {
         NodeKind::Unfiled => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-outline">
-                {guide_spans(ancestors)}
+                {guide_spans(ancestors, guide_ids, collapsed)}
                 {toggle}
                 <MaterialIcon name="inbox" class="block text-sm" />
                 <span>{label}</span>
@@ -797,7 +840,7 @@ fn single_row(
         .into_any(),
         NodeKind::Faction => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
-                {guide_spans(ancestors)}
+                {guide_spans(ancestors, guide_ids, collapsed)}
                 {toggle}
                 <MaterialIcon name="flag" class="block text-sm" />
                 <span class="truncate">{label}</span>
@@ -806,7 +849,7 @@ fn single_row(
         .into_any(),
         NodeKind::Squad => view! {
             <div class="relative flex items-center gap-1.5 px-1.5 py-1 text-label-sm text-on-surface-variant">
-                {guide_spans(ancestors)}
+                {guide_spans(ancestors, guide_ids, collapsed)}
                 {toggle}
                 <MaterialIcon name="groups" class="block text-sm" />
                 <span class="truncate">{label}</span>
@@ -830,7 +873,7 @@ fn single_row(
                         crate::editor_ops::set_active_layer(Some(id.clone()));
                     }
                 >
-                    {guide_spans(ancestors)}
+                    {guide_spans(ancestors, guide_ids, collapsed)}
                     {toggle}
                     <MaterialIcon name=folder_icon class="block text-sm" />
                     <span class="truncate">{label}</span>
@@ -862,7 +905,7 @@ fn single_row(
                         let _ = &id_dbl;
                     }
                 >
-                    {guide_spans(ancestors)}
+                    {guide_spans(ancestors, guide_ids, collapsed)}
                     {toggle}
                     <MaterialIcon name="person" class="block text-sm" />
                     <span class="truncate">{label}</span>
@@ -992,6 +1035,8 @@ fn palette_rows(
     depth: usize,
     // T-177 A1 — the parent row's guide-continuation vector (see `guide_spans`); `&[]` at the root.
     prefix: &[bool],
+    // T-178 A4 — ancestor ids for guide click (`len == depth`).
+    id_prefix: &[String],
     collapsed: RwSignal<std::collections::HashSet<String>>,
 ) -> AnyView {
     let len = nodes.len();
@@ -1011,6 +1056,7 @@ fn palette_rows(
                 v.push(i + 1 != len);
                 v
             };
+            let gids = id_prefix.to_vec();
             match n.payload.clone() {
                 None => {
                     // Folder — collapsible (T-172 B6): chevron + open/closed icon; kids render
@@ -1020,8 +1066,10 @@ fn palette_rows(
                     let toggle =
                         chevron_or_spacer(!n.children.is_empty(), open, &n.id, collapsed);
                     let folder_icon = if open { "folder_open" } else { "folder" };
+                    let mut child_ids = gids.clone();
+                    child_ids.push(n.id.clone());
                     let kids = if open {
-                        palette_rows(&n.children, depth + 1, &anc, collapsed)
+                        palette_rows(&n.children, depth + 1, &anc, &child_ids, collapsed)
                     } else {
                         ().into_any()
                     };
@@ -1041,7 +1089,7 @@ fn palette_rows(
                                     });
                             }
                         >
-                            {guide_spans(&anc)}
+                            {guide_spans(&anc, &gids, collapsed)}
                             {toggle}
                             <MaterialIcon name=folder_icon class="block text-sm" />
                             <span class="truncate">{label}</span>
@@ -1067,7 +1115,7 @@ fn palette_rows(
                             let _ = &payload;
                         }
                     >
-                        {guide_spans(&anc)}
+                        {guide_spans(&anc, &gids, collapsed)}
                         <span class="size-4 shrink-0"></span>
                         <MaterialIcon name="person" class="block text-sm" />
                         <span class="truncate">{label}</span>
@@ -1126,9 +1174,6 @@ pub fn DockLeft(
     view! {
         <aside class=DOCK_L>
             <h2 class="text-label-sm font-semibold uppercase tracking-wide text-on-surface">
-                "Outliner"
-            </h2>
-            <h2 class="mt-4 text-label-sm font-semibold uppercase tracking-wide text-on-surface-variant">
                 "Editor Layers"
             </h2>
             <div class="mt-1">
@@ -1284,7 +1329,7 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                                     // Track the collapse set so a chevron toggle re-renders the
                                     // tree (palette_rows reads it untracked).
                                     palette_collapsed.track();
-                                    palette_rows(&nodes, 0, &[], palette_collapsed)
+                                    palette_rows(&nodes, 0, &[], &[], palette_collapsed)
                                 } else {
                                     let filtered =
                                         crate::asset_catalog::filter_catalog(&nodes, &q);
@@ -1296,7 +1341,7 @@ pub fn DockRight(catalog: RwSignal<CatalogState>, fm_open: RwSignal<bool>) -> im
                                         }
                                             .into_any()
                                     } else {
-                                        palette_rows(&filtered, 0, &[], no_collapse)
+                                        palette_rows(&filtered, 0, &[], &[], no_collapse)
                                     }
                                 }
                             }

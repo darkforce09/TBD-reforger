@@ -1,9 +1,9 @@
 # T-178 — Forest load consistency + YouTube guides polish + Outliner label
 
-**Status:** `ready` · **Executor:** Claude Code *(operator may run in a **fresh Cursor chat on Grok 4.5** — Claude tokens exhausted; same prompt)* · **Branch:** `main`  
+**Status:** `done` · **Tag:** **T-178** · **Executor:** Cursor/Grok (operator override) · **Branch:** `main`  
 **Depends on:** T-177 (shipped)  
-**Scope:** `apps/website/frontend/**`, `crates/map-engine-*` if forest GPU/shader needs it. Prefer **one coherent canopy draw** over visible 512 m progressive tiles. **Not** `apps/mod/`. **Not** T-071.1 CRUD.  
-**Evidence:** [`.ai/artifacts/t178_operator_screens/`](../../.ai/artifacts/t178_operator_screens/) · UX audit [`.ai/artifacts/t178_mc_ux_audit.md`](../../.ai/artifacts/t178_mc_ux_audit.md)
+**Scope:** `apps/website/frontend/**`, `crates/map-engine-*`. **Shipped A1:** island TBDD density texture + `fs_forest_density` (not sticky mesh). **Not** `apps/mod/`. **Not** T-071.1 CRUD.  
+**Evidence:** [`.ai/artifacts/t178_operator_screens/`](../../.ai/artifacts/t178_operator_screens/) · UX audit [`.ai/artifacts/t178_mc_ux_audit.md`](../../.ai/artifacts/t178_mc_ux_audit.md) · Verify [`.ai/artifacts/t178_verify_log.md`](../../.ai/artifacts/t178_verify_log.md)
 
 **No silent deferrals** of A1–A4. Soft “shader later / fold forward” forbidden unless operator says `defer X`.
 

@@ -622,8 +622,8 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             let bridge = h
                 .page
                 .wait_for(
-                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_polygons > 0 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
-                    400,
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.hillshadeW > 0 && window.__mapAssets.road_segments === 888 && window.__mapAssets.landcover_polygons === 0 && window.__mapAssets.sea_polygons > 0 && window.__mapAssets.contour_segments > 0 && window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0 && window.__mapAssets.forest_mode === 'density' && window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601 && window.__mapAssets.forest_polygons === 625 && (window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true) && window.__mapAssets.tree_glyphs === 0",
+                    480,
                     250,
                 )
                 .await?;
@@ -654,7 +654,17 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                 "window.__mapAssets.world_building_instances > 0 && window.__mapAssets.world_chunks_drawn > 0",
             )
             .await?;
-            let a_forest = eval_bool(&h.page, "window.__mapAssets.forest_polygons > 0").await?;
+            // T-178 — density canopy: Class-R equality pins (soft >0 banned).
+            let a_density_dims = eval_bool(
+                &h.page,
+                "window.__mapAssets.forest_density_w === 1601 && window.__mapAssets.forest_density_h === 1601",
+            )
+            .await?;
+            let a_density_mode =
+                eval_bool(&h.page, "window.__mapAssets.forest_mode === 'density'").await?;
+            let a_forest = eval_bool(&h.page, "window.__mapAssets.forest_polygons === 625").await?;
+            let a_outline_boot =
+                eval_bool(&h.page, "window.__mapAssets.forest_outline_segments === 0").await?;
             let a_atlas = eval_bool(
                 &h.page,
                 "window.__mapAssets.atlas_bytes > 0 || window.__mapAssets.glyphAtlas === true",
@@ -669,9 +679,37 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             checks.insert("A_sea".into(), json!(a_sea));
             checks.insert("A_cont".into(), json!(a_cont));
             checks.insert("A_bld".into(), json!(a_bld));
+            checks.insert("A_density_dims".into(), json!(a_density_dims));
+            checks.insert("A_density_mode".into(), json!(a_density_mode));
             checks.insert("A_forest".into(), json!(a_forest));
+            checks.insert("A_outline_boot".into(), json!(a_outline_boot));
             checks.insert("A_atlas".into(), json!(a_atlas));
             checks.insert("A_trees_off".into(), json!(a_trees_off));
+
+            // T-178 — outline rim armed at z=-1 (forestOutline LOD band).
+            let outline_set = eval_bool(
+                &h.page,
+                "typeof window.__editorCamSet === 'function' && (window.__editorCamSet(6400, 6400, -1.0), true)",
+            )
+            .await?;
+            checks.insert("A_outline_probe_set".into(), json!(outline_set));
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            let a_outline_probe = h
+                .page
+                .wait_for(
+                    "typeof window.__mapAssets === 'object' && window.__mapAssets.forest_outline_segments === 1 && window.__mapAssets.forest_density_w === 1601",
+                    80,
+                    250,
+                )
+                .await?;
+            checks.insert("A_outline_probe".into(), json!(a_outline_probe));
+            // Restore island zoom before tree probe.
+            let _ = eval_bool(
+                &h.page,
+                "typeof window.__editorCamSet === 'function' && (window.__editorCamSet(6400, 6400, -2.0), true)",
+            )
+            .await?;
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
 
             // Zoom probe ≥ 0 → tree glyphs on. Use z=2 (not 0): at island-center z=0 the
             // exact-count heatmap rung (INSTANCE_BUDGET) clears tree glyphs by design — smoke would
@@ -699,7 +737,7 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
             let pass = ready
                 && h.no_panics()
                 && checks.values().all(|v| *v == json!(true))
-                && checks.len() >= 12;
+                && checks.len() >= 16;
             print_verdict(&json!({
                 "gate": "editor-fullmap-smoke",
                 "path": path,
@@ -707,6 +745,8 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                     "sat_full_bytes": SAT_FULL_BYTES,
                     "roads": 888,
                     "landcover": 0,
+                    "forest_density": 1601,
+                    "forest_bins": 625,
                     "default_zoom": -2.0,
                     "tree_glyph_min_zoom": 0.0,
                 },
@@ -890,12 +930,12 @@ pub async fn smoke_pan(dist: &str, path: &str) -> Result<u8> {
             mouse(&h.page, "mousePressed", 720.0, 450.0, rmb.clone()).await?;
             mouse(&h.page, "mouseMoved", 680.0, 450.0, held.clone()).await?;
             cam_b1 = cam().await?;
-            mouse(
+            // Mid-pan zoom via synthetic WheelEvent on the canvas (same delivery path as
+            // `smoke_editor`). CDP `mouseWheel` while RMB is held does not reliably reach the
+            // container capture listener on the pinned Chrome — `zoomChanged` stays false.
+            eval(
                 &h.page,
-                "mouseWheel",
-                680.0,
-                450.0,
-                json!({ "deltaX": 0, "deltaY": -600 }),
+                "(()=>{const c=document.querySelector('canvas');if(!c)return 0;const r=c.getBoundingClientRect();c.dispatchEvent(new WheelEvent('wheel',{deltaY:-600,clientX:r.left+r.width/2,clientY:r.top+r.height/2,bubbles:true,cancelable:true}));return 1})()",
             )
             .await?;
             cam_b2 = cam().await?;
@@ -2039,12 +2079,11 @@ pub async fn smoke_undo(dist: &str, raw_path: &str) -> Result<u8> {
                 "a6_chromeMounted".into(),
                 json!(eval_bool(&h.page, "!!document.querySelector('[aria-label=\"Undo\"]') &&\n        !!document.querySelector('[aria-label=\"Redo\"]')").await?),
             );
-            // T-177 B1 — the left dock is Editor Layers only (ORBAT moved to the top-strip modal),
-            // so the aside carrying "Editor Layers" must NOT contain "ORBAT"; the palette aside has
-            // "Factions"; and the ORBAT Manager button exists on the strip.
+            // T-177 B1 / T-178 A2 — left dock is Editor Layers only (no Outliner label, no ORBAT);
+            // palette has Factions; ORBAT Manager on the strip.
             checks.insert(
                 "a6_docksMounted".into(),
-                json!(eval_bool(&h.page, "(() => { const asides = [...document.querySelectorAll('aside')].map((e) => e.textContent || ''); const left = asides.find((t) => t.includes('Editor Layers')); const hasFactions = asides.some((t) => t.includes('Factions')); const orbatBtn = !!document.querySelector('[aria-label=\"ORBAT Manager\"]'); return !!left && !left.includes('ORBAT') && hasFactions && orbatBtn; })()").await?),
+                json!(eval_bool(&h.page, "(() => { const asides = [...document.querySelectorAll('aside')].map((e) => e.textContent || ''); const left = asides.find((t) => t.includes('Editor Layers')); const hasFactions = asides.some((t) => t.includes('Factions')); const orbatBtn = !!document.querySelector('[aria-label=\"ORBAT Manager\"]'); return !!left && !left.includes('ORBAT') && !left.includes('Outliner') && hasFactions && orbatBtn; })()").await?),
             );
 
             d0 = digest().await?;
@@ -2291,6 +2330,40 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                 json!(docks0.contains("Unfiled (8)") && count0 == 8),
             );
 
+            // T-178 A4 — guide click toggles expand/collapse. Slot rows carry
+            // `data-guide-toggle` for Unfiled; after collapse Unfiled is depth-0 (no guide), so
+            // re-expand via the chevron (`aria-expanded=false`) before later o2 row-select.
+            let guide_ok = eval_bool(
+                &h.page,
+                "(() => { const left = [...document.querySelectorAll('aside')].find((a) => (a.textContent || '').includes('Editor Layers')); const g = left && left.querySelector('[data-guide-toggle]'); if (!g) return false; g.dispatchEvent(new MouseEvent('click', { bubbles: true })); return true; })()",
+            )
+            .await?;
+            let collapsed = h
+                .page
+                .wait_for(
+                    "(() => { const left = [...document.querySelectorAll('aside')].find((a) => (a.textContent || '').includes('Editor Layers')); return !!left && left.querySelectorAll('[aria-label=\"Rifleman\"]').length === 0; })()",
+                    40,
+                    50,
+                )
+                .await?;
+            let _ = eval_bool(
+                &h.page,
+                "(() => { const left = [...document.querySelectorAll('aside')].find((a) => (a.textContent || '').includes('Editor Layers')); const chev = left && left.querySelector('[aria-expanded=\"false\"]'); if (chev) chev.dispatchEvent(new MouseEvent('click', { bubbles: true })); return !!chev; })()",
+            )
+            .await?;
+            let restored = h
+                .page
+                .wait_for(
+                    "(() => { const left = [...document.querySelectorAll('aside')].find((a) => (a.textContent || '').includes('Editor Layers')); return !!left && left.querySelectorAll('[aria-label=\"Rifleman\"]').length >= 8; })()",
+                    40,
+                    50,
+                )
+                .await?;
+            checks.insert(
+                "a4_guideToggle".into(),
+                json!(guide_ok && collapsed && restored),
+            );
+
             // O2 — clicking the first Unfiled row selects exactly s0.
             click_selector(&h.page, "aside [aria-label=\"Rifleman\"]").await?;
             first_row_ids = eval(&h.page, "JSON.parse(window.__editorSelection.ids())").await?;
@@ -2476,7 +2549,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
         }
 
         let registry_hits = *hits.lock().unwrap();
-        let pass = ready0 && ready && palette_ready && h.no_panics() && checks_pass(&checks, 18);
+        let pass = ready0 && ready && palette_ready && h.no_panics() && checks_pass(&checks, 19);
         let placed = placed_row.as_ref().map(|r| {
             json!({
                 "id": r.first(), "xBits": r.get(1).and_then(|v| v.parse::<u32>().ok()),

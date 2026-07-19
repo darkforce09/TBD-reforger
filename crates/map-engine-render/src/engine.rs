@@ -442,8 +442,43 @@ pub(crate) fn create_textured_pipeline(
     shader: &wgpu::ShaderModule,
     format: wgpu::TextureFormat,
 ) -> wgpu::RenderPipeline {
+    create_textured_pipeline_with_fs(
+        device,
+        layout,
+        shader,
+        format,
+        "fs_textured",
+        "textured-quad",
+    )
+}
+
+/// T-178 — same streams as [`create_textured_pipeline`] but `fs_forest_density` (iso + rim).
+pub(crate) fn create_forest_density_pipeline(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+) -> wgpu::RenderPipeline {
+    create_textured_pipeline_with_fs(
+        device,
+        layout,
+        shader,
+        format,
+        "fs_forest_density",
+        "forest-density",
+    )
+}
+
+fn create_textured_pipeline_with_fs(
+    device: &wgpu::Device,
+    layout: &wgpu::PipelineLayout,
+    shader: &wgpu::ShaderModule,
+    format: wgpu::TextureFormat,
+    fs_entry: &str,
+    label: &str,
+) -> wgpu::RenderPipeline {
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("textured-quad"),
+        label: Some(label),
         layout: Some(layout),
         vertex: wgpu::VertexState {
             module: shader,
@@ -464,7 +499,7 @@ pub(crate) fn create_textured_pipeline(
         },
         fragment: Some(wgpu::FragmentState {
             module: shader,
-            entry_point: Some("fs_textured"),
+            entry_point: Some(fs_entry),
             compilation_options: wgpu::PipelineCompilationOptions::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format,
@@ -865,6 +900,7 @@ fn draw_batches<'a>(
     unit_quad_buf: &'a wgpu::Buffer,
     quad_pipeline: &'a wgpu::RenderPipeline,
     textured_pipeline: &'a wgpu::RenderPipeline,
+    forest_density_pipeline: &'a wgpu::RenderPipeline,
     line_pipeline: &'a wgpu::RenderPipeline,
     building_pipeline: &'a wgpu::RenderPipeline,
     polygon_pipeline: &'a wgpu::RenderPipeline,
@@ -912,7 +948,13 @@ fn draw_batches<'a>(
                 pass.draw(0..4, 0..*count);
             }
             BatchPayload::Textured(l) => {
-                pass.set_pipeline(textured_pipeline);
+                // T-178 — ForestFill uses density FS + Nearest-bound tex; sat/hillshade stay Linear.
+                let pipe = if batch.role == LaneRole::ForestFill {
+                    forest_density_pipeline
+                } else {
+                    textured_pipeline
+                };
+                pass.set_pipeline(pipe);
                 pass.set_bind_group(0, bind_group, &[]);
                 pass.set_bind_group(1, &l.bind_group, &[]);
                 pass.set_vertex_buffer(0, unit_quad_buf.slice(..));
@@ -1002,6 +1044,8 @@ pub struct RenderEngine {
     /// `self_check` quad path are untouched.
     tex_bind_group_layout: wgpu::BindGroupLayout,
     textured_pipeline: wgpu::RenderPipeline,
+    /// T-178 — island density canopy (`fs_forest_density`).
+    forest_density_pipeline: wgpu::RenderPipeline,
     line_pipeline: wgpu::RenderPipeline,
     /// W3 world-building fill pipeline (rotated OBB quads). Additive — the outline reuses
     /// `line_pipeline` unchanged.
@@ -1022,6 +1066,8 @@ pub struct RenderEngine {
     sampler: wgpu::Sampler,
     /// Nearest sampler for crisp glyph atlas pixels.
     icon_sampler: wgpu::Sampler,
+    /// T-178 — Nearest sampler for density count textures (Linear would corrupt RG-packed u16).
+    nearest_sampler: wgpu::Sampler,
     uniform_buf: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     pub(crate) unit_quad_buf: wgpu::Buffer,
@@ -1066,6 +1112,11 @@ pub struct RenderEngine {
     road_segments: u32,
     forest_polygons: u32,
     forest_outline_segments: u32,
+    /// T-178 — island density texture dims (0 until uploaded).
+    forest_density_w: u32,
+    forest_density_h: u32,
+    /// T-178 — `"density"` once canopy tex is committed, else empty.
+    forest_mode: String,
     /// T-173 — monotonic upload-call counters (perf gates G-C/G-D): how many times the host
     /// invoked each upload family since engine creation (counted at entry — an early-returned
     /// empty call is still host-side churn). A steady-state pan/zoom frame must not move any.
@@ -1227,6 +1278,8 @@ impl RenderEngine {
             });
         let textured_pipeline =
             create_textured_pipeline(&device, &textured_pipeline_layout, &shader, format);
+        let forest_density_pipeline =
+            create_forest_density_pipeline(&device, &textured_pipeline_layout, &shader, format);
         let line_pipeline = create_line_pipeline(&device, &pipeline_layout, &shader, format);
         // W3 world-building fill pipeline (group-0 camera only, like the quad/line pipelines).
         let building_pipeline =
@@ -1348,6 +1401,16 @@ impl RenderEngine {
             mipmap_filter: wgpu::MipmapFilterMode::Nearest,
             ..wgpu::SamplerDescriptor::default()
         });
+        let nearest_sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("forest-density-nearest"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
+            ..wgpu::SamplerDescriptor::default()
+        });
 
         use wgpu::util::DeviceExt;
         let unit_quad_buf = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -1421,6 +1484,7 @@ impl RenderEngine {
             surface_pipeline,
             tex_bind_group_layout,
             textured_pipeline,
+            forest_density_pipeline,
             line_pipeline,
             building_pipeline,
             polygon_pipeline,
@@ -1433,6 +1497,7 @@ impl RenderEngine {
             text_pipeline_layout,
             sampler,
             icon_sampler,
+            nearest_sampler,
             uniform_buf,
             bind_group,
             unit_quad_buf,
@@ -1457,6 +1522,9 @@ impl RenderEngine {
             world_chunks_drawn: 0,
             sea_polygons: 0,
             landcover_polygons: 0,
+            forest_density_w: 0,
+            forest_density_h: 0,
+            forest_mode: String::new(),
             contour_segments: 0,
             road_segments: 0,
             forest_polygons: 0,
@@ -1717,6 +1785,7 @@ impl RenderEngine {
                 &self.unit_quad_buf,
                 &self.surface_pipeline,
                 &self.textured_pipeline,
+                &self.forest_density_pipeline,
                 &self.line_pipeline,
                 &self.building_pipeline,
                 &self.polygon_pipeline,
@@ -2125,6 +2194,7 @@ impl RenderEngine {
                 "\"world_chunks_drawn\":{},",
                 "\"sea_polygons\":{},\"landcover_polygons\":{},\"contour_segments\":{},",
                 "\"road_segments\":{},\"forest_polygons\":{},\"forest_outline_segments\":{},",
+                "\"forest_density_w\":{},\"forest_density_h\":{},\"forest_mode\":\"{}\",",
                 "\"tree_glyphs\":{},\"prop_glyphs\":{},\"badge_glyphs\":{},\"text_labels_drawn\":{},\"atlas_bytes\":{},",
                 "\"slot_instances\":{},\"slot_drag_instances\":{},\"cluster_instances\":{},",
                 "\"submitted_last_frame\":{},",
@@ -2155,6 +2225,9 @@ impl RenderEngine {
             self.road_segments,
             self.forest_polygons,
             self.forest_outline_segments,
+            self.forest_density_w,
+            self.forest_density_h,
+            self.forest_mode,
             tree_glyphs,
             prop_glyphs,
             badge_glyphs,
@@ -2319,6 +2392,8 @@ impl RenderEngine {
                 immediate_size: 0,
             });
         let textured = create_textured_pipeline(&self.device, &tex_layout, &self.shader, fmt);
+        let forest_density =
+            create_forest_density_pipeline(&self.device, &tex_layout, &self.shader, fmt);
         let line = create_line_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
         let building =
             create_building_pipeline(&self.device, &self.pipeline_layout, &self.shader, fmt);
@@ -2354,6 +2429,7 @@ impl RenderEngine {
             &bind_group,
             &quad,
             &textured,
+            &forest_density,
             &line,
             &building,
             &polygon,
@@ -2374,6 +2450,7 @@ impl RenderEngine {
         bind_group: &wgpu::BindGroup,
         quad: &wgpu::RenderPipeline,
         textured: &wgpu::RenderPipeline,
+        forest_density: &wgpu::RenderPipeline,
         line: &wgpu::RenderPipeline,
         building: &wgpu::RenderPipeline,
         polygon: &wgpu::RenderPipeline,
@@ -2436,6 +2513,7 @@ impl RenderEngine {
                 &self.unit_quad_buf,
                 quad,
                 textured,
+                forest_density,
                 line,
                 building,
                 polygon,
@@ -2721,6 +2799,158 @@ impl RenderEngine {
             LaneRole::Hillshade
         };
         self.remove_lane(role_enum);
+    }
+
+    /// T-178 — upload the island density RGBA8 texture (RG = u16 tree count) and commit a
+    /// `ForestFill` textured batch drawn with `fs_forest_density` + Nearest sampling.
+    ///
+    /// # Errors
+    /// Zero dims or `rgba` length ≠ `tex_w * tex_h * 4`.
+    #[allow(clippy::too_many_arguments)]
+    pub fn forest_density_upload(
+        &mut self,
+        min_x: f64,
+        min_y: f64,
+        max_x: f64,
+        max_y: f64,
+        tex_w: u32,
+        tex_h: u32,
+        rgba: &[u8],
+    ) -> Result<(), JsError> {
+        if tex_w == 0 || tex_h == 0 {
+            return Err(JsError::new(
+                "forest_density_upload: zero texture dimensions",
+            ));
+        }
+        let want = (tex_w as usize)
+            .checked_mul(tex_h as usize)
+            .and_then(|n| n.checked_mul(4))
+            .ok_or_else(|| JsError::new("forest_density_upload: size overflow"))?;
+        if rgba.len() != want {
+            return Err(JsError::new("forest_density_upload: rgba length mismatch"));
+        }
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("forest-density"),
+            size: wgpu::Extent3d {
+                width: tex_w,
+                height: tex_h,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba8Unorm,
+            usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        self.queue.write_texture(
+            texture.as_image_copy(),
+            rgba,
+            wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(tex_w * 4),
+                rows_per_image: Some(tex_h),
+            },
+            wgpu::Extent3d {
+                width: tex_w,
+                height: tex_h,
+                depth_or_array_layers: 1,
+            },
+        );
+        let rect = lanes::world_rect_rel([min_x, min_y], [max_x, max_y]);
+        // tint: r = outline_on, a = fill_alpha (updated by forest_density_set_params).
+        let inst = scene::QuadInstance {
+            min: [rect[0], rect[1]],
+            max: [rect[2], rect[3]],
+            color: [0.0, 0.0, 0.0, 0.35],
+        };
+        use wgpu::util::DeviceExt;
+        let instances = self
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("forest-density-quad"),
+                contents: bytemuck::cast_slice(&[inst]),
+                usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            });
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let bind_group = self.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: Some("forest-density"),
+            layout: &self.tex_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&self.nearest_sampler),
+                },
+            ],
+        });
+        let lane = TexLane {
+            texture,
+            bind_group,
+            instances,
+            mode: BasemapMode::Single,
+            tiles: 1,
+            bytes: u64::from(tex_w) * u64::from(tex_h) * 4,
+        };
+        self.upsert_lane(
+            LaneRole::ForestFill,
+            Batch {
+                role: LaneRole::ForestFill,
+                visible: true,
+                payload: BatchPayload::Textured(lane),
+            },
+        );
+        self.forest_density_w = tex_w;
+        self.forest_density_h = tex_h;
+        self.forest_mode = "density".into();
+        self.forest_polygons = 625;
+        self.forest_outline_segments = 0;
+        Ok(())
+    }
+
+    /// T-178 — update density canopy LOD params without re-uploading the texture.
+    /// `tint.r` = outline_on (0/1), `tint.a` = fill_alpha.
+    pub fn forest_density_set_params(
+        &mut self,
+        fill_alpha: f32,
+        fill_visible: bool,
+        outline_visible: bool,
+    ) {
+        if self.forest_mode != "density" {
+            return;
+        }
+        let outline_on = if outline_visible { 1.0f32 } else { 0.0 };
+        let color = [outline_on, 0.0, 0.0, fill_alpha.clamp(0.0, 1.0)];
+        let visible = fill_visible || outline_visible;
+        let target = self.batches.iter_mut().find_map(|b| {
+            if b.role == LaneRole::ForestFill {
+                b.visible = visible;
+                if let BatchPayload::Textured(l) = &b.payload {
+                    return Some(l.instances.clone());
+                }
+            }
+            None
+        });
+        if let Some(buf) = target {
+            self.queue
+                .write_buffer(&buf, 16, bytemuck::cast_slice(&color));
+            self.damage.mark();
+        }
+        self.forest_polygons = if fill_visible { 625 } else { 0 };
+        self.forest_outline_segments = if outline_visible { 1 } else { 0 };
+    }
+
+    /// T-178 — drop the density canopy lane.
+    pub fn forest_density_clear(&mut self) {
+        self.remove_lane(LaneRole::ForestFill);
+        self.forest_density_w = 0;
+        self.forest_density_h = 0;
+        self.forest_mode.clear();
+        self.forest_polygons = 0;
+        self.forest_outline_segments = 0;
     }
 
     /// Build the procedural grid lane for a `width × height` terrain (T-151.1 L7). `over_hillshade`

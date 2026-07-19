@@ -320,7 +320,9 @@ pub fn flush_viewport(host: HostHandle, engine: EngineHandle) {
             // Multi-pass hydration still works: pass N ingests what pass N-1 fetched, and each of
             // those passes reports `did_work=true` until the viewport is fully resident.
             let did_world = h.world.run_viewport(&engine, &h.bridge).await;
-            let did_forest = if gesture {
+            // T-178 — after the island tex is up, LOD params are cheap: run during gesture so
+            // outline/α update mid-pan. Never start the 625-bin boot mid-gesture (blocks input).
+            let did_forest = if gesture && !h.forest.is_uploaded() {
                 false
             } else {
                 h.forest.run_viewport(&engine, &h.bridge).await

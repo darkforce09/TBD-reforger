@@ -7,6 +7,7 @@
 //! (meter-width road casing/centerline).
 
 pub mod contours;
+pub mod density_island;
 pub mod forest_mass;
 pub mod polyline_strip;
 pub mod sea_band;

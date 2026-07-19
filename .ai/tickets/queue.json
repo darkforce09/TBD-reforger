@@ -25,13 +25,6 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
-    },
-    {
-      "id": "T-178",
-      "title": "Forest load consistency + YouTube guides + Outliner label",
-      "status": "ready",
-      "spec": "docs/platform/t178_forest_guides_chrome.md",
-      "branch": "main"
     }
   ]
 }

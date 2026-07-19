@@ -21,6 +21,10 @@ pub struct MapAssetsBridge {
     pub contour_segments: u32,
     pub forest_polygons: u32,
     pub forest_outline_segments: u32,
+    /// T-178 — island density texture dims / mode.
+    pub forest_density_w: u32,
+    pub forest_density_h: u32,
+    pub forest_mode: String,
     pub world_building_instances: u32,
     pub world_chunks_drawn: u32,
     pub tree_glyphs: u32,
@@ -80,6 +84,15 @@ impl MapAssetsBridge {
             "forest_outline_segments",
             JsValue::from_f64(f64::from(self.forest_outline_segments)),
         );
+        set(
+            "forest_density_w",
+            JsValue::from_f64(f64::from(self.forest_density_w)),
+        );
+        set(
+            "forest_density_h",
+            JsValue::from_f64(f64::from(self.forest_density_h)),
+        );
+        set("forest_mode", JsValue::from_str(&self.forest_mode));
         set(
             "world_building_instances",
             JsValue::from_f64(f64::from(self.world_building_instances)),
@@ -158,6 +171,15 @@ impl MapAssetsBridge {
         }
         if let Some(n) = u32f("forest_outline_segments") {
             self.forest_outline_segments = n;
+        }
+        if let Some(n) = u32f("forest_density_w") {
+            self.forest_density_w = n;
+        }
+        if let Some(n) = u32f("forest_density_h") {
+            self.forest_density_h = n;
+        }
+        if let Some(m) = v.get("forest_mode").and_then(|x| x.as_str()) {
+            self.forest_mode = m.to_string();
         }
         if let Some(n) = u32f("world_building_instances") {
             self.world_building_instances = n;

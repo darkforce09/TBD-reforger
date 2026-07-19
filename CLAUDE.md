@@ -128,7 +128,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 ## Status
 
 <!-- ticket-sync:status:start -->
-**Latest shipped:** **T-177**
+**Latest shipped:** **T-178**
 
 **ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
 
@@ -160,6 +160,8 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 **T-176 — Forest canopy mass + place ghost + zoom+pan** @ `a5940fad` (tag **T-176**): forest highlight = **8 m TBDD canopy mass** (box blur + `CANOPY_MASS_ISO`); **32 m landcover forest wash removed**; `push_landcover` after `set_viewport`; `SlotPlacePreview` bound to slot atlas; `CAMERA_GESTURE` defers DEM/forest recompute during pan. Retune: `tbd-tools world redensify --terrain everon`. Verify: [`.ai/artifacts/t176_verify_log.md`](.ai/artifacts/t176_verify_log.md).
 
 **T-177 — MC chrome + ORBAT dock cutover (T-071.0)** @ `e97a01c6` (tag **T-177**): YouTube elbow tree guides; grab cursor on palette leaves; menus above docks (`z-30`/`z-20`); left ORBAT removed; top-strip **ORBAT Manager** → `OrbatManagerDialog`. Gate harness: full Chrome headless + **`gate doctor`** — [`EDITOR_GATE_RUNBOOK.md`](docs/website/EDITOR_GATE_RUNBOOK.md). Verify: [`.ai/artifacts/t177_verify_log.md`](.ai/artifacts/t177_verify_log.md). **Next ORBAT:** T-071.1+.
+
+**T-178 — Density-shader forest + YouTube guides** @  (tag **T-178**): island TBDD density texture + `fs_forest_density` (Nearest/`textureLoad`, iso 2.0, `fwidth` rim); progressive mesh fill retired; Class-R pins `1601`/`625`/`"density"`; Outliner label removed; continuous clickable guide stems. Verify: [`.ai/artifacts/t178_verify_log.md`](.ai/artifacts/t178_verify_log.md).
 
 **Workspace restructure (2026-06-26, `2a51d66`):** monorepo reorganized into the
 `apps/` + `packages/` + unified `docs/` + `scripts/` + hidden `.ai/` layout (see
