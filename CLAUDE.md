@@ -163,7 +163,7 @@ T-005..T-007 between T-004 and T-008 are documentation/seed only; the status bel
 
 **T-178 — Density-shader forest + YouTube guides** @ `58d839c7` (tag **T-178**): island TBDD density texture + `fs_forest_density` (Nearest/`textureLoad`, iso 2.0, `fwidth` rim); progressive mesh fill retired; Class-R pins `1601`/`625`/`"density"`; Outliner label removed; continuous clickable guide stems. Verify: [`.ai/artifacts/t178_verify_log.md`](.ai/artifacts/t178_verify_log.md).
 
-**T-179 — Soft density canopy + MS outlines** @ `e7e178c1` (tag **T-179**): Linear soft `fs_forest_density` (corner UV + fwidth AA iso); `forest_bins_ok===625` arm gate + retries; one-shot MS hairlines role 6 (measured **99374** @ z=−1; smoke floor ≥50000). Verify: [`.ai/artifacts/t179_verify_log.md`](.ai/artifacts/t179_verify_log.md). Hub: [`t179_forest_canopy_fix.md`](docs/platform/t179_forest_canopy_fix.md).
+**T-179 — Soft density canopy + MS outlines** @ `8f45ee83` (tag **T-179**): Linear soft `fs_forest_density` (corner UV + fwidth AA iso); `forest_bins_ok===625` arm gate + retries; one-shot MS hairlines role 6 (measured **99374** @ z=−1; smoke floor ≥50000). Verify: [`.ai/artifacts/t179_verify_log.md`](.ai/artifacts/t179_verify_log.md). Hub: [`t179_forest_canopy_fix.md`](docs/platform/t179_forest_canopy_fix.md).
 
 **Workspace restructure (2026-06-26, `2a51d66`):** monorepo reorganized into the
 `apps/` + `packages/` + unified `docs/` + `scripts/` + hidden `.ai/` layout (see

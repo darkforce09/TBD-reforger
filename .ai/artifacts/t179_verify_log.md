@@ -1,6 +1,6 @@
 # T-179 — verify log (soft density canopy + MS outlines)
 
-**Branch:** `main` · **Base:** T-178 `58d839c7` · **Commit:** `e7e178c1` · **Executor:** Cursor/Grok (operator override)  
+**Branch:** `main` · **Base:** T-178 `58d839c7` · **Commit:** `8f45ee83` · **Executor:** Cursor/Grok (operator override)  
 **Hub:** [`docs/platform/t179_forest_canopy_fix.md`](../../docs/platform/t179_forest_canopy_fix.md)
 
 ## Result
