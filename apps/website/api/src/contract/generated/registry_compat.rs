@@ -74,13 +74,13 @@ pub struct Addon {
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub vanilla: ::std::option::Option<bool>,
 }
-///Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character.
+///Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear, default-cargo item); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character; character_default_cargo item->character (evidence TargetStorage=<path> from SCR_InventoryStorageManagerComponent InitialInventoryItems).
 ///
 /// <details><summary>JSON schema</summary>
 ///
 /// ```json
 ///{
-///  "description": "Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character.",
+///  "description": "Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear, default-cargo item); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character; character_default_cargo item->character (evidence TargetStorage=<path> from SCR_InventoryStorageManagerComponent InitialInventoryItems).",
 ///  "type": "object",
 ///  "required": [
 ///    "edge_type",
@@ -98,7 +98,8 @@ pub struct Addon {
 ///        "mag_in_vehicle_weapon",
 ///        "ammo_in_vehicle_weapon",
 ///        "character_default_loadout",
-///        "character_default_weapon"
+///        "character_default_weapon",
+///        "character_default_cargo"
 ///      ]
 ///    },
 ///    "evidence": {
@@ -141,7 +142,8 @@ pub struct Edge {
 ///    "mag_in_vehicle_weapon",
 ///    "ammo_in_vehicle_weapon",
 ///    "character_default_loadout",
-///    "character_default_weapon"
+///    "character_default_weapon",
+///    "character_default_cargo"
 ///  ]
 ///}
 /// ```
@@ -175,6 +177,8 @@ pub enum EdgeEdgeType {
     CharacterDefaultLoadout,
     #[serde(rename = "character_default_weapon")]
     CharacterDefaultWeapon,
+    #[serde(rename = "character_default_cargo")]
+    CharacterDefaultCargo,
 }
 impl ::std::fmt::Display for EdgeEdgeType {
     fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
@@ -187,6 +191,7 @@ impl ::std::fmt::Display for EdgeEdgeType {
             Self::AmmoInVehicleWeapon => f.write_str("ammo_in_vehicle_weapon"),
             Self::CharacterDefaultLoadout => f.write_str("character_default_loadout"),
             Self::CharacterDefaultWeapon => f.write_str("character_default_weapon"),
+            Self::CharacterDefaultCargo => f.write_str("character_default_cargo"),
         }
     }
 }
@@ -202,6 +207,7 @@ impl ::std::str::FromStr for EdgeEdgeType {
             "ammo_in_vehicle_weapon" => Ok(Self::AmmoInVehicleWeapon),
             "character_default_loadout" => Ok(Self::CharacterDefaultLoadout),
             "character_default_weapon" => Ok(Self::CharacterDefaultWeapon),
+            "character_default_cargo" => Ok(Self::CharacterDefaultCargo),
             _ => Err("invalid value".into()),
         }
     }

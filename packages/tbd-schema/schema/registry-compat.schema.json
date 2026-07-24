@@ -40,7 +40,7 @@
     },
     "edge": {
       "type": "object",
-      "description": "Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character.",
+      "description": "Directed compatibility edge. from_node = the item that goes in/on (magazine, ammo, optic, attachment, gear, default-cargo item); to_node = the host that accepts it (weapon, magazine, vehicle weapon, character). Per edge_type: mag_in_weapon mag->weapon; ammo_in_mag ammo->magazine; optic_on_weapon optic->weapon; attachment_on_weapon attachment->weapon; mag_in_vehicle_weapon mag->vehicle weapon prefab; ammo_in_vehicle_weapon ammo->vehicle weapon prefab; character_default_loadout gear item->character; character_default_cargo item->character (evidence TargetStorage=<path> from SCR_InventoryStorageManagerComponent InitialInventoryItems).",
       "required": ["from_node", "to_node", "edge_type"],
       "additionalProperties": false,
       "properties": {
@@ -56,7 +56,8 @@
             "mag_in_vehicle_weapon",
             "ammo_in_vehicle_weapon",
             "character_default_loadout",
-            "character_default_weapon"
+            "character_default_weapon",
+            "character_default_cargo"
           ]
         },
         "evidence": {

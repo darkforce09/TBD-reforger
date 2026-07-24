@@ -92,6 +92,10 @@ pub async fn ensure_modpack(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> 
 const COUNT_ITEMS: &str = "SELECT count(*) FROM registry_items WHERE modpack_id = $1";
 const COUNT_COMPAT: &str = "SELECT count(*) FROM registry_compat WHERE modpack_id = $1";
 
+/// Full compat-edge identity: `(from_node, to_node, edge_type, evidence-canonical)`
+/// — evidence '' ≡ NULL, matching `idx_registry_compat_edge` (T-068.15.1).
+type CompatKey = (String, String, String, String);
+
 async fn count_rows(
     tx: &mut sqlx::PgConnection,
     sql: &'static str,
@@ -174,32 +178,45 @@ pub async fn import_items(
             .iter()
             .map(|(_, it)| it.variant_of.as_ref().map(|v| v.to_string()))
             .collect();
+        // T-068.15.1 cargo grid (schema `minimum: 1` ⇒ generated NonZeroU64).
+        let grid_ws: Vec<Option<i32>> = chunk
+            .iter()
+            .map(|(_, it)| it.cargo_grid_w.map(|v| v.get() as i32))
+            .collect();
+        let grid_hs: Vec<Option<i32>> = chunk
+            .iter()
+            .map(|(_, it)| it.cargo_grid_h.map(|v| v.get() as i32))
+            .collect();
         affected += sqlx::query(
             "INSERT INTO registry_items \
                (modpack_id, resource_name, display_name, category, kind, icon_url, sort_order, \
                 \"abstract\", arsenal_type, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, addon, \
-                variant_of, created_at, updated_at) \
+                variant_of, cargo_grid_w, cargo_grid_h, created_at, updated_at) \
              SELECT $1, u.rn, u.dn, u.cat, u.kind, u.icon, u.ord, \
-                    u.abs, u.aty, u.wkg, u.vcm, u.mwkg, u.mvcm, u.addon, u.varof, now(), now() \
+                    u.abs, u.aty, u.wkg, u.vcm, u.mwkg, u.mvcm, u.addon, u.varof, u.cgw, u.cgh, now(), now() \
              FROM UNNEST($2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::bigint[], \
                          $8::boolean[], $9::text[], $10::float8[], $11::float8[], $12::float8[], $13::float8[], $14::text[], \
-                         $15::text[]) \
-               AS u(rn, dn, cat, kind, icon, ord, abs, aty, wkg, vcm, mwkg, mvcm, addon, varof) \
+                         $15::text[], $16::int4[], $17::int4[]) \
+               AS u(rn, dn, cat, kind, icon, ord, abs, aty, wkg, vcm, mwkg, mvcm, addon, varof, cgw, cgh) \
              ON CONFLICT (modpack_id, resource_name) DO UPDATE SET \
                display_name = EXCLUDED.display_name, category = EXCLUDED.category, \
                kind = EXCLUDED.kind, sort_order = EXCLUDED.sort_order, \
                \"abstract\" = EXCLUDED.\"abstract\", arsenal_type = EXCLUDED.arsenal_type, \
                weight_kg = EXCLUDED.weight_kg, volume_cm3 = EXCLUDED.volume_cm3, \
                max_weight_kg = EXCLUDED.max_weight_kg, max_volume_cm3 = EXCLUDED.max_volume_cm3, \
-               addon = EXCLUDED.addon, variant_of = EXCLUDED.variant_of, updated_at = now() \
+               addon = EXCLUDED.addon, variant_of = EXCLUDED.variant_of, \
+               cargo_grid_w = EXCLUDED.cargo_grid_w, cargo_grid_h = EXCLUDED.cargo_grid_h, \
+               updated_at = now() \
              WHERE (registry_items.display_name, registry_items.category, registry_items.kind, \
                     registry_items.sort_order, registry_items.\"abstract\", registry_items.arsenal_type, \
                     registry_items.weight_kg, registry_items.volume_cm3, registry_items.max_weight_kg, \
-                    registry_items.max_volume_cm3, registry_items.addon, registry_items.variant_of) \
+                    registry_items.max_volume_cm3, registry_items.addon, registry_items.variant_of, \
+                    registry_items.cargo_grid_w, registry_items.cargo_grid_h) \
                IS DISTINCT FROM \
                    (EXCLUDED.display_name, EXCLUDED.category, EXCLUDED.kind, EXCLUDED.sort_order, \
                     EXCLUDED.\"abstract\", EXCLUDED.arsenal_type, EXCLUDED.weight_kg, EXCLUDED.volume_cm3, \
-                    EXCLUDED.max_weight_kg, EXCLUDED.max_volume_cm3, EXCLUDED.addon, EXCLUDED.variant_of)",
+                    EXCLUDED.max_weight_kg, EXCLUDED.max_volume_cm3, EXCLUDED.addon, EXCLUDED.variant_of, \
+                    EXCLUDED.cargo_grid_w, EXCLUDED.cargo_grid_h)",
         )
         .bind(modpack)
         .bind(&rns)
@@ -216,6 +233,8 @@ pub async fn import_items(
         .bind(&max_volumes)
         .bind(&addons)
         .bind(&variant_ofs)
+        .bind(&grid_ws)
+        .bind(&grid_hs)
         .execute(&mut *tx)
         .await?
         .rows_affected();
@@ -246,10 +265,13 @@ pub async fn import_items(
 }
 
 /// Ingest a T-150 compat envelope. Idempotent: upsert by `(modpack_id, from_node,
-/// to_node, edge_type)`; only `evidence` is updatable, guarded by `IS DISTINCT
-/// FROM` (no-op re-run touches zero rows). Empty-string evidence is stored as
-/// NULL (canonical form: NULL ≡ '' ≡ absent). `prune` deletes modpack edges
-/// absent from the envelope.
+/// to_node, edge_type, COALESCE(evidence, ''))` — T-068.15.1 widened the key so the
+/// same item in different storages (`TargetStorage=Pants/…` vs `Vest/…`) keeps
+/// distinct rows. The scanner emits `character_default_cargo` once per
+/// `PrefabsToSpawn` entry (duplicates = quantity); identical edges aggregate into
+/// `qty` here, guarded by `IS DISTINCT FROM` (no-op re-run touches zero rows).
+/// Empty-string evidence is stored as NULL (canonical form: NULL ≡ '' ≡ absent).
+/// `prune` deletes modpack edges absent from the envelope.
 pub async fn import_compat(
     pool: &PgPool,
     raw: &[u8],
@@ -268,62 +290,80 @@ pub async fn import_compat(
         total: env.edges.len() as u64,
         ..Default::default()
     };
-    // Last-wins dedupe by the edge key (duplicate keys in one statement abort
-    // ON CONFLICT DO UPDATE).
-    let mut by_key: BTreeMap<(String, String, String), &registry_compat::Edge> = BTreeMap::new();
+    // Aggregate by the full edge identity (evidence canonical: '' ≡ NULL). Duplicate
+    // envelope edges are the scanner's quantity signal (one per PrefabsToSpawn entry,
+    // T-068.15.1) — count them into qty instead of last-wins dropping (duplicate keys
+    // in one statement would abort ON CONFLICT DO UPDATE).
+    let mut by_key: BTreeMap<CompatKey, (&registry_compat::Edge, i32)> = BTreeMap::new();
     for e in &env.edges {
         let ty = wire_str(&e.edge_type);
         *counts.histogram.entry(ty.clone()).or_insert(0) += 1;
-        by_key.insert((e.from_node.to_string(), e.to_node.to_string(), ty), e);
+        let ev = e.evidence.clone().unwrap_or_default();
+        by_key
+            .entry((e.from_node.to_string(), e.to_node.to_string(), ty, ev))
+            .and_modify(|slot| slot.1 += 1)
+            .or_insert((e, 1));
     }
     counts.unique = by_key.len() as u64;
 
     let mut tx = pool.begin().await?;
     let before = count_rows(&mut tx, COUNT_COMPAT, modpack).await?;
 
-    let entries: Vec<((String, String, String), &registry_compat::Edge)> =
-        by_key.into_iter().collect();
+    let entries: Vec<(CompatKey, (&registry_compat::Edge, i32))> = by_key.into_iter().collect();
     let mut affected = 0u64;
     for chunk in entries.chunks(CHUNK) {
-        let froms: Vec<String> = chunk.iter().map(|((f, _, _), _)| f.clone()).collect();
-        let tos: Vec<String> = chunk.iter().map(|((_, t, _), _)| t.clone()).collect();
-        let types: Vec<String> = chunk.iter().map(|((_, _, ty), _)| ty.clone()).collect();
+        let froms: Vec<String> = chunk.iter().map(|((f, _, _, _), _)| f.clone()).collect();
+        let tos: Vec<String> = chunk.iter().map(|((_, t, _, _), _)| t.clone()).collect();
+        let types: Vec<String> = chunk.iter().map(|((_, _, ty, _), _)| ty.clone()).collect();
         let evs: Vec<Option<String>> = chunk
             .iter()
-            .map(|(_, e)| e.evidence.clone().filter(|s| !s.is_empty()))
+            .map(|((_, _, _, ev), _)| Some(ev.clone()).filter(|s| !s.is_empty()))
             .collect();
+        let qtys: Vec<i32> = chunk.iter().map(|(_, (_, q))| *q).collect();
         affected += sqlx::query(
             "INSERT INTO registry_compat \
-               (modpack_id, from_node, to_node, edge_type, evidence, created_at, updated_at) \
-             SELECT $1, u.f, u.t, u.ty, u.ev, now(), now() \
-             FROM UNNEST($2::text[], $3::text[], $4::text[], $5::text[]) AS u(f, t, ty, ev) \
-             ON CONFLICT (modpack_id, from_node, to_node, edge_type) DO UPDATE SET \
-               evidence = EXCLUDED.evidence, updated_at = now() \
-             WHERE registry_compat.evidence IS DISTINCT FROM EXCLUDED.evidence",
+               (modpack_id, from_node, to_node, edge_type, evidence, qty, created_at, updated_at) \
+             SELECT $1, u.f, u.t, u.ty, u.ev, u.q, now(), now() \
+             FROM UNNEST($2::text[], $3::text[], $4::text[], $5::text[], $6::int4[]) \
+               AS u(f, t, ty, ev, q) \
+             ON CONFLICT (modpack_id, from_node, to_node, edge_type, COALESCE(evidence, '')) \
+             DO UPDATE SET qty = EXCLUDED.qty, updated_at = now() \
+             WHERE registry_compat.qty IS DISTINCT FROM EXCLUDED.qty",
         )
         .bind(modpack)
         .bind(&froms)
         .bind(&tos)
         .bind(&types)
         .bind(&evs)
+        .bind(&qtys)
         .execute(&mut *tx)
         .await?
         .rows_affected();
     }
 
     if prune {
-        let froms: Vec<String> = entries.iter().map(|((f, _, _), _)| f.clone()).collect();
-        let tos: Vec<String> = entries.iter().map(|((_, t, _), _)| t.clone()).collect();
-        let types: Vec<String> = entries.iter().map(|((_, _, ty), _)| ty.clone()).collect();
+        let froms: Vec<String> = entries.iter().map(|((f, _, _, _), _)| f.clone()).collect();
+        let tos: Vec<String> = entries.iter().map(|((_, t, _, _), _)| t.clone()).collect();
+        let types: Vec<String> = entries
+            .iter()
+            .map(|((_, _, ty, _), _)| ty.clone())
+            .collect();
+        let evs: Vec<Option<String>> = entries
+            .iter()
+            .map(|((_, _, _, ev), _)| Some(ev.clone()).filter(|s| !s.is_empty()))
+            .collect();
         counts.pruned = sqlx::query(
             "DELETE FROM registry_compat rc WHERE rc.modpack_id = $1 AND NOT EXISTS ( \
-               SELECT 1 FROM UNNEST($2::text[], $3::text[], $4::text[]) AS u(f, t, ty) \
-               WHERE u.f = rc.from_node AND u.t = rc.to_node AND u.ty = rc.edge_type)",
+               SELECT 1 FROM UNNEST($2::text[], $3::text[], $4::text[], $5::text[]) \
+                 AS u(f, t, ty, ev) \
+               WHERE u.f = rc.from_node AND u.t = rc.to_node AND u.ty = rc.edge_type \
+                 AND COALESCE(u.ev, '') = COALESCE(rc.evidence, ''))",
         )
         .bind(modpack)
         .bind(&froms)
         .bind(&tos)
         .bind(&types)
+        .bind(&evs)
         .execute(&mut *tx)
         .await?
         .rows_affected();

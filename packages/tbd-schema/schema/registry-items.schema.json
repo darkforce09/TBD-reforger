@@ -114,6 +114,16 @@
           "minimum": 0,
           "description": "Container volume capacity (storage component MaxCumulativeVolume, cm³) for items that ARE containers. Absent when the prefab relies on the engine class default — never guessed. Feeds the later cargo-budget slice."
         },
+        "cargo_grid_w": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Inventory UI grid width in cells for container items. Derived from MaxCumulativeVolume with VOLUME_PER_CELL_CM3=50 and fixed width 4: cargo_grid_w=4; cells=ceil(max_volume_cm3/50); cargo_grid_h=max(3, ceil(cells/4)). Matches SCR_InventoryStorageBaseUI garment panel layout."
+        },
+        "cargo_grid_h": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Inventory UI grid height in cells for container items. Derived from MaxCumulativeVolume with VOLUME_PER_CELL_CM3=50 and fixed width 4: cargo_grid_w=4; cells=ceil(max_volume_cm3/50); cargo_grid_h=max(3, ceil(cells/4)). Matches SCR_InventoryStorageBaseUI garment panel layout."
+        },
         "variant_of": {
           "type": "string",
           "pattern": "^\\{[0-9A-F]{16}\\}[A-Za-z0-9/_.\\- ()']+$",

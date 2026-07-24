@@ -590,6 +590,7 @@ mod tests {
             to_node: to.into(),
             edge_type: ty.into(),
             evidence: String::new(),
+            qty: 1,
             created_at: String::new(),
             updated_at: String::new(),
         }
@@ -610,6 +611,8 @@ mod tests {
             volume_cm3: None,
             max_weight_kg: None,
             max_volume_cm3: None,
+            cargo_grid_w: None,
+            cargo_grid_h: None,
             addon: None,
             variant_of: None,
             sort_order: 0,

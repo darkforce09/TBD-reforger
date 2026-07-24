@@ -39,6 +39,8 @@ class TBD_RegistryScanItem
 	float volumeCm3 = -1;      // ItemPhysicalAttributes.ItemVolume (cm3)
 	float maxWeightKg = -1;    // container storage m_fMaxWeight (kg)
 	float maxVolumeCm3 = -1;   // container storage MaxCumulativeVolume (cm3)
+	int cargoGridW = -1;       // T-068.15.1: inventory UI grid width (cells)
+	int cargoGridH = -1;       // T-068.15.1: inventory UI grid height (cells)
 	string ruleId;         // census rule that classified this item (tier counters + verify log)
 	string variantOf;      // T-068.10.5: immediate base weapon when this is a factory config
 	string meshRef;        // leaf-most MeshObject.Object (variant rule: camo = materials only)
@@ -56,6 +58,10 @@ class TBD_RegistryScanItem
 	ref array<string> vehicleWeaponRefs = {}; // WeaponSlotComponent.WeaponTemplate targets (canonical)
 	ref array<string> loadoutPrefabs = {};    // BaseLoadoutManagerComponent LoadoutSlotInfo.Prefab targets
 	ref array<string> defaultWeaponRefs = {}; // character WeaponSlotComponent.WeaponTemplate targets (canonical)
+	// T-068.15.1: InitialInventoryItems PrefabsToSpawn entries (item ResourceName) + matching
+	// TargetStorage path evidence strings (parallel arrays, same length).
+	ref array<string> defaultCargoItems = {};
+	ref array<string> defaultCargoTargets = {};
 }
 
 //! One derived compat edge (registry-compat.schema.json $defs/edge).
@@ -438,7 +444,20 @@ class TBD_RegistryScanner
 	//------------------------------------------------------------------------------------------------
 	//! ItemPhysicalAttributes (weight/volume, leaf override wins — buckets are most-derived-first)
 	//! + container capacity vars off storage components. Absent stays -1 (omitted from JSON).
+	//! T-068.15.1: capacity prefers the UNIVERSAL storage — the inventory panel source
+	//! (SCR_InventoryStorageBaseUI reads the garment's SCR_UniversalInventoryStorageComponent).
+	//! Garments like the BDU jacket also carry a nested SCR_EquipmentStorageComponent
+	//! (flashlight slot) whose resolved MaxCumulativeVolume (1000) otherwise shadows the
+	//! panel value (800) by map iteration order. The fallback pass keeps non-Universal
+	//! containers (crates, vehicle trunks, arsenals) exported as before.
 	protected void ReadPhysAttrs(map<string, ref array<BaseContainer>> comps, TBD_RegistryScanItem item)
+	{
+		ReadPhysAttrsPass(comps, item, true);
+		ReadPhysAttrsPass(comps, item, false);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void ReadPhysAttrsPass(map<string, ref array<BaseContainer>> comps, TBD_RegistryScanItem item, bool universalPass)
 	{
 		// Single inner loop per outer entry — a second foreach over the same (write-protected)
 		// map-value variable is rejected by the Enforce compiler.
@@ -446,6 +465,11 @@ class TBD_RegistryScanner
 		{
 			bool isInvItem = cls.EndsWith("InventoryItemComponent");
 			bool isStorage = cls.EndsWith("StorageComponent");
+			if (universalPass)
+			{
+				isInvItem = false;
+				isStorage = cls.EndsWith("UniversalInventoryStorageComponent");
+			}
 			if (!isInvItem && !isStorage)
 				continue;
 			foreach (BaseContainer comp : bucket)
@@ -534,6 +558,7 @@ class TBD_RegistryScanner
 		bool hasTurretWeaponSlot = HasComp(comps, "WeaponSlotComponent");
 
 		ReadPhysAttrs(comps, item);
+		DeriveCargoGrid(item);
 
 		// R0 — vehicles / characters / magazines keep their T-150 rules.
 		if (isVehicle)
@@ -553,6 +578,8 @@ class TBD_RegistryScanner
 			// Component — a DIFFERENT suffix (a default RGD5 is a default weapon too).
 			CollectResourceVarValues(comps, "WeaponSlotComponent", "WeaponTemplate", item.defaultWeaponRefs);
 			CollectResourceVarValues(comps, "GrenadeSlotComponent", "WeaponTemplate", item.defaultWeaponRefs);
+			// T-068.15.1: InitialInventoryItems → character_default_cargo edges.
+			CollectInitialCargo(comps, item.defaultCargoItems, item.defaultCargoTargets);
 			return true;
 		}
 
@@ -858,6 +885,66 @@ class TBD_RegistryScanner
 					string canonical = ResolveCanonical(prefab);
 					if (!canonical.IsEmpty() && outPrefabs.Find(canonical) == -1)
 						outPrefabs.Insert(canonical);
+				}
+			}
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-068.15.1: UI grid from MaxCumulativeVolume (spike: 50 cm³/cell, width 4, min height 3).
+	//! Matches SCR_InventoryStorageBaseUI defaults + BDU blouse/trousers screenshot Class-R.
+	protected void DeriveCargoGrid(TBD_RegistryScanItem item)
+	{
+		if (item.maxVolumeCm3 < 0)
+			return;
+		float vol = item.maxVolumeCm3;
+		int cells = Math.Ceil(vol / 50.0);
+		if (cells < 1)
+			cells = 1;
+		item.cargoGridW = 4;
+		int h = Math.Ceil(cells / 4.0);
+		if (h < 3)
+			h = 3;
+		item.cargoGridH = h;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-068.15.1: SCR_InventoryStorageManagerComponent.InitialInventoryItems → cargo seed.
+	//! Parallel arrays: each PrefabsToSpawn entry + its TargetStorage path (evidence).
+	protected void CollectInitialCargo(map<string, ref array<BaseContainer>> comps, notnull array<string> outItems, notnull array<string> outTargets)
+	{
+		foreach (string cls, array<BaseContainer> bucket : comps)
+		{
+			if (!cls.EndsWith("InventoryStorageManagerComponent"))
+				continue;
+			foreach (BaseContainer mgr : bucket)
+			{
+				BaseContainerList inits = mgr.GetObjectArray("InitialInventoryItems");
+				if (!inits)
+					continue;
+				for (int i = 0, n = inits.Count(); i < n; i++)
+				{
+					BaseContainer init = inits.Get(i);
+					if (!init)
+						continue;
+					string target;
+					init.Get("TargetStorage", target);
+					if (target.IsEmpty())
+						target = "(unnamed)";
+					// PrefabsToSpawn is a ResourceName[] (may use +{ } append on leaf prefabs).
+					array<string> spawnList = {};
+					if (!init.Get("PrefabsToSpawn", spawnList) || spawnList.IsEmpty())
+						continue;
+					foreach (string s : spawnList)
+					{
+						if (s.IsEmpty())
+							continue;
+						string canonical = ResolveCanonical(s);
+						if (canonical.IsEmpty())
+							continue;
+						outItems.Insert(canonical);
+						outTargets.Insert(target);
+					}
 				}
 			}
 		}
@@ -1533,6 +1620,24 @@ class TBD_RegistryScanner
 					}
 					EmitEdge(weaponRn, host.resourceName, "character_default_weapon", "CharacterWeaponSlotComponent.WeaponTemplate");
 				}
+				// T-068.15.1: InitialInventoryItems (one edge per PrefabsToSpawn entry = qty).
+				// Dedup key includes index so identical mags in the same pouch still count.
+				int cargoN = host.defaultCargoItems.Count();
+				for (int c = 0; c < cargoN; c++)
+				{
+					string cargoRn = host.defaultCargoItems[c];
+					string targetPath = "(unnamed)";
+					if (c < host.defaultCargoTargets.Count())
+						targetPath = host.defaultCargoTargets[c];
+					int cIdx;
+					if (!m_ItemIndexByRn.Find(cargoRn, cIdx))
+					{
+						m_iDroppedEndpoints++;
+						continue;
+					}
+					EmitEdgeUnique(cargoRn, host.resourceName, "character_default_cargo",
+						"TargetStorage=" + targetPath, c);
+				}
 			}
 		}
 	}
@@ -1544,7 +1649,23 @@ class TBD_RegistryScanner
 		if (m_EmittedKeys.Contains(key))
 			return;
 		m_EmittedKeys.Insert(key, true);
+		AppendEdge(fromNode, toNode, edgeType, evidence);
+	}
 
+	//------------------------------------------------------------------------------------------------
+	//! Like EmitEdge but uniqueness includes seq (cargo multiplicity / qty).
+	protected void EmitEdgeUnique(string fromNode, string toNode, string edgeType, string evidence, int seq)
+	{
+		string key = edgeType + "|" + fromNode + "|" + toNode + "|" + seq.ToString() + "|" + evidence;
+		if (m_EmittedKeys.Contains(key))
+			return;
+		m_EmittedKeys.Insert(key, true);
+		AppendEdge(fromNode, toNode, edgeType, evidence);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void AppendEdge(string fromNode, string toNode, string edgeType, string evidence)
+	{
 		TBD_RegistryEdge edge = new TBD_RegistryEdge();
 		edge.fromNode = fromNode;
 		edge.toNode = toNode;

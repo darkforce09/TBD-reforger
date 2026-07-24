@@ -20,6 +20,11 @@ packages/map-assets/**/tiles/
 # scripts/mod npm deps (enfusion-mcp — install via npm ci in scripts/mod/)
 scripts/mod/node_modules/
 
+# Local enfusion-mcp IDE config (machine paths — see docs/mod/CLAUDE-CODE-START.md)
+.cursor/mcp.json
+.mcp.json
+apps/mod/.cursor/mcp.json
+
 # Cargo workspace build dir (T-145: the workspace root owns /target for every member crate).
 /target/
 /target-ci/

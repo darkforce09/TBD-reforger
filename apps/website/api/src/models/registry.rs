@@ -8,6 +8,11 @@ use uuid::Uuid;
 
 use crate::models::serde_helpers::go_time;
 
+/// Serde default for [`RegistryCompatEdge::qty`] — a row predating T-068.15.1 is one edge.
+fn default_edge_qty() -> i32 {
+    1
+}
+
 /// One placeable/equipable engine item in a modpack's flat catalog. Unique per
 /// `(modpack_id, resource_name)`; `kind` holds the registry-items schema kind
 /// vocabulary (v3, T-068.10.2) as plain text — new kinds need no model/DDL change.
@@ -41,6 +46,12 @@ pub struct RegistryItem {
     /// Container volume capacity (MaxCumulativeVolume, cm³) when the item is a container.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub max_volume_cm3: Option<f64>,
+    /// Inventory UI grid width in cells (T-068.15.1; scanner-derived, VOLUME_PER_CELL=50, w=4).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub cargo_grid_w: Option<i32>,
+    /// Inventory UI grid height in cells (T-068.15.1; h = max(3, ceil(cells/4))).
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub cargo_grid_h: Option<i32>,
     /// Addon ID this prefab was scanned from (joins the envelope addons[] scan set).
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub addon: Option<String>,
@@ -58,8 +69,9 @@ pub struct RegistryItem {
 
 /// One directed compatibility edge: `from_node` is the item that goes in/on,
 /// `to_node` the host that accepts it. Unique per `(modpack_id, from_node,
-/// to_node, edge_type)`; `edge_type` holds the registry-compat schema edge
-/// vocabulary as plain text — new edge families need no model/DDL change.
+/// to_node, edge_type, COALESCE(evidence, ''))` (T-068.15.1); `edge_type` holds
+/// the registry-compat schema edge vocabulary as plain text — new edge families
+/// need no model/DDL change.
 ///
 /// @contract registry-compat.schema.json#/$defs/edge
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
@@ -71,6 +83,11 @@ pub struct RegistryCompatEdge {
     pub edge_type: String,
     #[serde(skip_serializing_if = "String::is_empty", default)]
     pub evidence: String,
+    /// Edge multiplicity (T-068.15.1): the scanner emits `character_default_cargo`
+    /// once per `PrefabsToSpawn` entry; the importer aggregates duplicates here.
+    /// 1 for every other edge family.
+    #[serde(default = "default_edge_qty")]
+    pub qty: i32,
     #[serde(with = "go_time")]
     pub created_at: DateTime<Utc>,
     /// Feeds the weak ETag (max updated_at).

@@ -83,7 +83,7 @@ pub async fn list_registry(
         "SELECT id, modpack_id, resource_name, display_name, category, \
          COALESCE(icon_url, '') AS icon_url, kind, \
          \"abstract\", arsenal_type, weight_kg, volume_cm3, max_weight_kg, max_volume_cm3, addon, \
-         variant_of, sort_order, \
+         variant_of, cargo_grid_w, cargo_grid_h, sort_order, \
          COALESCE(created_at, '0001-01-01 00:00:00+00'::timestamptz) AS created_at, \
          COALESCE(updated_at, '0001-01-01 00:00:00+00'::timestamptz) AS updated_at \
          FROM registry_items WHERE modpack_id = $1 \
@@ -133,7 +133,7 @@ pub async fn list_registry_compat(
         Some(ty) => {
             sqlx::query_as(
                 "SELECT id, modpack_id, from_node, to_node, edge_type, \
-                 COALESCE(evidence, '') AS evidence, created_at, updated_at \
+                 COALESCE(evidence, '') AS evidence, qty, created_at, updated_at \
                  FROM registry_compat WHERE modpack_id = $1 AND edge_type = $2 \
                  ORDER BY edge_type ASC, from_node ASC, to_node ASC",
             )
@@ -145,7 +145,7 @@ pub async fn list_registry_compat(
         None => {
             sqlx::query_as(
                 "SELECT id, modpack_id, from_node, to_node, edge_type, \
-                 COALESCE(evidence, '') AS evidence, created_at, updated_at \
+                 COALESCE(evidence, '') AS evidence, qty, created_at, updated_at \
                  FROM registry_compat WHERE modpack_id = $1 \
                  ORDER BY edge_type ASC, from_node ASC, to_node ASC",
             )

@@ -295,6 +295,12 @@ pub struct RegistryItem {
     pub max_weight_kg: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_volume_cm3: Option<f64>,
+    /// Inventory UI grid width in cells (T-068.15.1 capacity export; absent = no readable capacity).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cargo_grid_w: Option<i64>,
+    /// Inventory UI grid height in cells (T-068.15.1).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cargo_grid_h: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub addon: Option<String>,
     /// Factory attachment/camo configuration of a base weapon (T-068.10.5).
@@ -329,8 +335,17 @@ pub struct RegistryCompatEdge {
     pub edge_type: String,
     #[serde(default)]
     pub evidence: String,
+    /// Edge multiplicity (T-068.15.1): duplicate `character_default_cargo` scanner
+    /// emissions aggregate here; 1 for every other family (and for pre-.15.1 payloads).
+    #[serde(default = "default_edge_qty")]
+    pub qty: i64,
     pub created_at: String,
     pub updated_at: String,
+}
+
+/// Serde default for [`RegistryCompatEdge::qty`] — an edge without the field counts once.
+fn default_edge_qty() -> i64 {
+    1
 }
 
 /// `GET /registry/compat` — the compat edge list + cache identity (mirrors `RegistryResponse`).

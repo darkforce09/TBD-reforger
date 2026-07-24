@@ -100,6 +100,16 @@ pub struct Addon {
 ///      "description": "SCR_EArsenalItemType flag name (e.g. RIFLE, NON_LETHAL_THROWABLE) when the item appears in a faction EntityCatalog SCR_ArsenalItem entry (Tier-B classification metadata). Absent when no catalog entry exists.",
 ///      "type": "string"
 ///    },
+///    "cargo_grid_h": {
+///      "description": "Inventory UI grid height in cells for container items. Derived from MaxCumulativeVolume with VOLUME_PER_CELL_CM3=50 and fixed width 4: cargo_grid_w=4; cells=ceil(max_volume_cm3/50); cargo_grid_h=max(3, ceil(cells/4)). Matches SCR_InventoryStorageBaseUI garment panel layout.",
+///      "type": "integer",
+///      "minimum": 1.0
+///    },
+///    "cargo_grid_w": {
+///      "description": "Inventory UI grid width in cells for container items. Derived from MaxCumulativeVolume with VOLUME_PER_CELL_CM3=50 and fixed width 4: cargo_grid_w=4; cells=ceil(max_volume_cm3/50); cargo_grid_h=max(3, ceil(cells/4)). Matches SCR_InventoryStorageBaseUI garment panel layout.",
+///      "type": "integer",
+///      "minimum": 1.0
+///    },
 ///    "category": {
 ///      "description": "Slash-delimited browse path, e.g. NATO/Rifleman.",
 ///      "type": "string",
@@ -195,6 +205,12 @@ pub struct Item {
     ///SCR_EArsenalItemType flag name (e.g. RIFLE, NON_LETHAL_THROWABLE) when the item appears in a faction EntityCatalog SCR_ArsenalItem entry (Tier-B classification metadata). Absent when no catalog entry exists.
     #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
     pub arsenal_type: ::std::option::Option<::std::string::String>,
+    ///Inventory UI grid height in cells for container items. Derived from MaxCumulativeVolume with VOLUME_PER_CELL_CM3=50 and fixed width 4: cargo_grid_w=4; cells=ceil(max_volume_cm3/50); cargo_grid_h=max(3, ceil(cells/4)). Matches SCR_InventoryStorageBaseUI garment panel layout.
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub cargo_grid_h: ::std::option::Option<::std::num::NonZeroU64>,
+    ///Inventory UI grid width in cells for container items. Derived from MaxCumulativeVolume with VOLUME_PER_CELL_CM3=50 and fixed width 4: cargo_grid_w=4; cells=ceil(max_volume_cm3/50); cargo_grid_h=max(3, ceil(cells/4)). Matches SCR_InventoryStorageBaseUI garment panel layout.
+    #[serde(default, skip_serializing_if = "::std::option::Option::is_none")]
+    pub cargo_grid_w: ::std::option::Option<::std::num::NonZeroU64>,
     ///Slash-delimited browse path, e.g. NATO/Rifleman.
     pub category: ItemCategory,
     pub display_name: ItemDisplayName,

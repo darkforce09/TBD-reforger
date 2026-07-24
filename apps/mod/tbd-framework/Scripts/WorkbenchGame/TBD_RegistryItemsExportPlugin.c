@@ -148,6 +148,10 @@ class TBD_RegistryItemsExportPlugin : WorkbenchPlugin
 				Emit(",\n      \"max_weight_kg\": " + it.maxWeightKg.ToString());
 			if (it.maxVolumeCm3 >= 0)
 				Emit(",\n      \"max_volume_cm3\": " + it.maxVolumeCm3.ToString());
+			if (it.cargoGridW > 0)
+				Emit(",\n      \"cargo_grid_w\": " + it.cargoGridW.ToString());
+			if (it.cargoGridH > 0)
+				Emit(",\n      \"cargo_grid_h\": " + it.cargoGridH.ToString());
 			if (!it.addonId.IsEmpty())
 				Emit(",\n      \"addon\": \"" + TBD_ExportJson.Escape(it.addonId) + "\"");
 			if (!it.variantOf.IsEmpty())

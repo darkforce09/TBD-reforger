@@ -178,13 +178,26 @@ async fn db_items(pool: &PgPool, mp: Uuid) -> BTreeSet<(String, String, String, 
 }
 
 /// Full-row snapshot (ids + timestamps) — byte-level idempotency evidence (G2).
+/// evidence joins the ORDER BY (and qty the row) since T-068.15.1 widened the
+/// edge key: several rows can share (from, to, type).
+#[allow(clippy::type_complexity)]
 async fn db_edge_snapshot(
     pool: &PgPool,
     mp: Uuid,
-) -> Vec<(Uuid, String, String, String, Option<String>, String, String)> {
+) -> Vec<(
+    Uuid,
+    String,
+    String,
+    String,
+    Option<String>,
+    i32,
+    String,
+    String,
+)> {
     sqlx::query_as(
-        "SELECT id, from_node, to_node, edge_type, evidence, created_at::text, updated_at::text \
-         FROM registry_compat WHERE modpack_id = $1 ORDER BY from_node, to_node, edge_type",
+        "SELECT id, from_node, to_node, edge_type, evidence, qty, created_at::text, updated_at::text \
+         FROM registry_compat WHERE modpack_id = $1 \
+         ORDER BY from_node, to_node, edge_type, evidence",
     )
     .bind(mp)
     .fetch_all(pool)
@@ -228,25 +241,50 @@ async fn registry_compat_ingest_api_worker_gates() {
     let cc = import_compat(&pool, &compat_raw, Some(mp), false)
         .await
         .expect("compat");
-    // T-068.10.2 census-gated envelope (see .ai/artifacts/t068_10_2_census.md):
-    // 1,857 items (23 predicted drops from the 1,880 T-150 set) / 4,685 edges
-    // (+character_default_weapon family; 16 mag edges moved to the vehicle family
-    // with the statics reclassification).
+    // T-068.10.2 census-gated envelope (see .ai/artifacts/t068_10_2_census.md),
+    // re-exported at T-068.15.1: 1,857 items (23 predicted drops from the 1,880
+    // T-150 set) / 20,908 raw edges = the untouched 4,685 legacy set + 16,223
+    // character_default_cargo emissions (one per InitialInventoryItems
+    // PrefabsToSpawn entry — duplicates are the qty signal). The importer
+    // aggregates duplicates per (from, to, type, evidence): 10,604 unique rows
+    // (4,685 legacy + 5,919 cargo).
     assert_eq!(
         (ci.total, ci.unique, ci.inserted, ci.updated),
         (1857, 1857, 1857, 0)
     );
     assert_eq!(
         (cc.total, cc.unique, cc.inserted, cc.updated),
-        (4685, 4685, 4685, 0)
+        (20908, 10604, 10604, 0)
     );
 
-    // G10 — importer histograms equal envelope histograms.
+    // G10 — importer histograms equal envelope histograms (raw counts, pre-aggregation).
     assert_eq!(ci.histogram, histogram(&items_env, "items", "kind"));
     assert_eq!(cc.histogram, histogram(&compat_env, "edges", "edge_type"));
     assert_eq!(cc.histogram["mag_in_weapon"], 529);
     assert_eq!(cc.histogram["mag_in_vehicle_weapon"], 134);
     assert_eq!(cc.histogram["character_default_weapon"], 673);
+    assert_eq!(cc.histogram["character_default_cargo"], 16223);
+
+    // T-068.15.1 — multiplicity conservation: DB qty sums back to the raw
+    // envelope edge count, and duplicate emissions survive as qty > 1.
+    let (qty_sum, max_qty): (i64, i32) = sqlx::query_as(
+        "SELECT sum(qty)::int8, max(qty) FROM registry_compat WHERE modpack_id = $1",
+    )
+    .bind(mp)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(qty_sum, 20908, "qty conservation: sum(qty) == raw edges");
+    assert!(max_qty > 1, "at least one aggregated cargo edge (qty > 1)");
+    // Grid columns land on items (1,257 = every row with a readable max_volume_cm3).
+    let grids: i64 = sqlx::query_scalar(
+        "SELECT count(*) FROM registry_items WHERE modpack_id = $1 AND cargo_grid_w IS NOT NULL",
+    )
+    .bind(mp)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(grids, 1257, "cargo_grid coverage");
 
     // G1 — ingest bijection: DB row-set ≡ envelope set (items + edges).
     assert_eq!(db_items(&pool, mp).await, envelope_items(&items_env));
@@ -271,7 +309,7 @@ async fn registry_compat_ingest_api_worker_gates() {
     let (st, body) = get(&app, &compat_uri, &maker, None).await;
     assert_eq!(st, StatusCode::OK);
     assert_eq!(body["modpack_id"], TEST_MP);
-    assert_eq!(body["data"].as_array().unwrap().len(), 4685);
+    assert_eq!(body["data"].as_array().unwrap().len(), 10604);
     assert_eq!(
         api_edge_set(&body),
         envelope_edges(&compat_env),
@@ -443,10 +481,15 @@ async fn registry_compat_ingest_api_worker_gates() {
         json!({"from_node": rn(9), "to_node": rn(13), "edge_type": "ammo_in_vehicle_weapon", "evidence": "SynShell"}),
         json!({"from_node": rn(6), "to_node": rn(0), "edge_type": "character_default_loadout", "evidence": "SynSlot"}),
     ];
+    // T-068.15.1 — duplicate emissions (the scanner's cargo qty signal) must
+    // aggregate, not last-wins: ship the first edge three times in one envelope.
+    let mut syn_edges_raw = syn_edges.clone();
+    syn_edges_raw.push(syn_edges[0].clone());
+    syn_edges_raw.push(syn_edges[0].clone());
     let syn_compat_env = json!({
         "registryCompatVersion": "1",
         "modpackId": TEST_MP2,
-        "edges": syn_edges,
+        "edges": syn_edges_raw,
     });
 
     let si = import_items(
@@ -466,6 +509,20 @@ async fn registry_compat_ingest_api_worker_gates() {
     .await
     .expect("synthetic compat");
     assert_eq!((si.inserted, sc.inserted), (16, 7));
+    // 9 raw edges (7 distinct + 2 duplicates of the first) aggregate to qty=3.
+    assert_eq!(
+        (sc.total, sc.unique),
+        (9, 7),
+        "duplicates aggregate, not drop"
+    );
+    let syn_qty: i32 = sqlx::query_scalar(
+        "SELECT qty FROM registry_compat WHERE modpack_id = $1 AND edge_type = 'mag_in_weapon'",
+    )
+    .bind(mp2)
+    .fetch_one(&pool)
+    .await
+    .unwrap();
+    assert_eq!(syn_qty, 3, "duplicate emissions land as qty");
     assert_eq!(
         db_items(&pool, mp2).await,
         envelope_items(&syn_items_env),
@@ -503,9 +560,10 @@ async fn registry_compat_ingest_api_worker_gates() {
     let sp = import_compat(&pool, &serde_json::to_vec(&subset_env).unwrap(), None, true)
         .await
         .unwrap();
+    // updated=1: the kept mag edge drops from qty 3 (triplicate import) back to 1.
     assert_eq!(
         (sp.inserted, sp.updated, sp.pruned),
-        (0, 0, 5),
+        (0, 1, 5),
         "G9 prune counts"
     );
     assert_eq!(
@@ -521,7 +579,7 @@ async fn registry_compat_ingest_api_worker_gates() {
         etag,
         "G9: MP1 ETag unchanged"
     );
-    assert_eq!(body3["data"].as_array().unwrap().len(), 4685);
+    assert_eq!(body3["data"].as_array().unwrap().len(), 10604);
 
     // Invalid envelope is rejected before SQL (schema gate).
     let bad = json!({"registryCompatVersion": "1", "modpackId": TEST_MP2, "edges": [
