@@ -3,22 +3,25 @@
 //! framework owns this player and vanilla must stand down.
 enum TBD_EDeployResult
 {
-	DEPLOYED,  //!< Spawn requested this call.
-	ALREADY,   //!< A spawn request is already in flight / completed for this player.
-	RETRY,     //!< Transient precondition (slots/roster/spawn-point) — retry shortly.
-	FAILED,    //!< Permanent failure (kit/Rpl/RequestSpawn) — logged ERROR, no vanilla body.
+	DEPLOYED,  //!< Bound to the slot body this call.
+	ALREADY,   //!< This player is already bound.
+	RETRY,     //!< Transient precondition (bodies/roster/controller) — retry shortly.
+	FAILED,    //!< Permanent failure (kit resolve / body spawn) — logged ERROR, no vanilla body.
 	NOT_MINE,  //!< Client side or no framework mission — vanilla may handle it.
 }
 
-[ComponentEditorProps(category: "TBD/Framework", description: "Server-only: slot assignment + per-slot SCR_SpawnPoint entities from mission JSON.")]
+[ComponentEditorProps(category: "TBD/Framework", description: "Server-only: slot-body materialization + claim/bind deploy from mission JSON.")]
 class TBD_SpawnManagerClass : SCR_BaseGameModeComponentClass {}
 
-//! Builds one SCR_SpawnPoint per mission slots[] entry at exact JSON coordinates.
-//! Assigns each player a slot (roster identity → slotId, else round-robin).
-//! @authority server — the whole manager runs server-side (slot build + assignment + deploy).
+//! Slot-body materialization (operator-approved synthesis of CRF + PlayableSelector):
+//! at mission load, one numbered slot BODY per compiled slots[] entry is spawned at
+//! the exact JSON transform (kit prefab, AI disabled, Arsenal loadout applied) and
+//! stands in the world through the lobby. Deploy = claim + bind the player onto the
+//! pre-materialized body via SCR_PlayerController.SetInitialMainEntity — the vanilla
+//! RequestSpawn pipeline (measured source of the double-spawn class) is never used.
+//! @authority server — the whole manager runs server-side.
 class TBD_SpawnManager : SCR_BaseGameModeComponent
 {
-	protected const ResourceName SPAWN_POINT_PREFAB = "{E7F4D5562F48DDE4}Prefabs/MP/Spawning/SpawnPoint_Base.et";
 
 	//! Vertical offset (m) added to the resolved ground/JSON height so the character
 	//! capsule sits feet-on-ground. Measured on a human character spawn in wb_play
@@ -38,22 +41,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected bool m_bAutoDeploy;
 
 	protected ref map<int, ref TBD_MissionSlotStruct> m_mPlayerSlot;
-	protected ref map<string, SCR_SpawnPoint> m_mSlotSpawnPoints;
+	//! Slot key (uid-else-id) → the materialized slot body standing in the world.
+	protected ref map<string, IEntity> m_mSlotBodies;
 	protected int m_iRoundRobin;
-	protected bool m_bSlotSpawnPointsBuilt;
-	protected ref set<int> m_sDeployRequested;
+	protected bool m_bSlotBodiesMaterialized;
+	protected ref map<int, bool> m_mDeployRequested;
 	//! A1 — pull-path retry bookkeeping (transient RETRY results; cap = 20 × 500 ms).
 	protected ref map<int, int> m_mRetryCount;
 	//! A1 — watchdog: players whose requested spawn has been observed to materialize.
-	protected ref set<int> m_sSpawnSeen;
-	//! A2 — per-spawn equip idempotency: last entity each player was equipped on.
-	protected ref map<int, EntityID> m_mLastEquippedEntity;
-	//! A2 — last body delivered per player. The vanilla spawn pipeline (measured:
-	//! run4 vs run2 of the determinism gate) can fire OnPlayerSpawned TWICE for one
-	//! RequestSpawn with DIFFERENT bodies ~1 s apart — the abandoned first body is
-	//! the operator's "kitted AI next to me" + ground litter. Superseded LIVE bodies
-	//! are reaped; dead ones stay (corpses are gameplay).
-	protected ref map<int, IEntity> m_mLastBody;
+	protected ref map<int, bool> m_mSpawnSeen;
 	//! A6 — identityId → slot key, so a reconnect reclaims the same slot (dedicated
 	//! servers reuse numeric playerIds; identity is the durable key).
 	protected ref map<string, string> m_mIdentityReclaim;
@@ -69,12 +65,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		s_Instance = this;
 		m_mPlayerSlot = new map<int, ref TBD_MissionSlotStruct>();
-		m_mSlotSpawnPoints = new map<string, SCR_SpawnPoint>();
-		m_sDeployRequested = new set<int>();
+		m_mSlotBodies = new map<string, IEntity>();
+		m_mDeployRequested = new map<int, bool>();
 		m_mRetryCount = new map<int, int>();
-		m_sSpawnSeen = new set<int>();
-		m_mLastEquippedEntity = new map<int, EntityID>();
-		m_mLastBody = new map<int, IEntity>();
+		m_mSpawnSeen = new map<int, bool>();
 		m_mIdentityReclaim = new map<string, string>();
 	}
 
@@ -85,9 +79,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	bool AreSlotSpawnPointsBuilt()
+	bool AreSlotBodiesMaterialized()
 	{
-		return m_bSlotSpawnPointsBuilt;
+		return m_bSlotBodiesMaterialized;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -151,9 +145,38 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	SCR_SpawnPoint GetSpawnPointForSlot(string slotId)
+	//! The materialized body standing on a slot (null when never materialized).
+	IEntity GetSlotBody(string slotKey)
 	{
-		return m_mSlotSpawnPoints.Get(slotId);
+		return m_mSlotBodies.Get(slotKey);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! PS-shaped server claim guard (backend for the T-068.13 picker): a slot can be
+	//! claimed when unclaimed, already ours, or its previous claimant disconnected.
+	//! Rejected when a DIFFERENT live player holds it. Round-robin/roster auto-claim
+	//! goes through AssignSlotForPlayer as before.
+	bool ClaimSlot(int playerId, string slotKey)
+	{
+		TBD_MissionSlotStruct slot = TBD_MissionLoader.GetSlotById(slotKey);
+		if (!slot)
+			return false;
+
+		foreach (int otherId, TBD_MissionSlotStruct assigned : m_mPlayerSlot)
+		{
+			if (!assigned || assigned.Key() != slot.Key() || otherId == playerId)
+				continue;
+			// Slot held by another CONNECTED player → reject (first-come guard).
+			if (GetGame().GetPlayerManager().GetPlayerController(otherId))
+			{
+				Print(string.Format("[TBD][Spawn] claim rejected player=%1 slot=%2 (held by player %3)", playerId, slot.Key(), otherId));
+				return false;
+			}
+		}
+
+		m_mPlayerSlot.Set(playerId, slot);
+		Print(string.Format("[TBD][Spawn] claim player=%1 slot=%2", playerId, slot.Key()));
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -169,90 +192,158 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Authority-only: one SCR_SpawnPoint per mission slots[] at exact JSON coordinates.
-	void BuildMissionSlotSpawnPoints()
+	//! Authority-only: materialize one slot BODY per mission slots[] entry at the exact
+	//! JSON transform — kit prefab, AI disabled (CRF pattern), Arsenal loadout applied.
+	//! The numbered lineup stands in the world through the lobby; deploy binds onto it.
+	void MaterializeSlotBodies()
 	{
-		if (m_bSlotSpawnPointsBuilt)
+		if (m_bSlotBodiesMaterialized)
 			return;
 
 		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
 		if (!slots || slots.IsEmpty())
 		{
-			Print("[TBD] SpawnManager: no mission slots — cannot build spawn points.", LogLevel.ERROR);
-			return;
-		}
-
-		Resource resource = Resource.Load(SPAWN_POINT_PREFAB);
-		if (!resource || !resource.IsValid())
-		{
-			Print("[TBD] SpawnManager: spawn point prefab failed to load.", LogLevel.ERROR);
+			Print("[TBD] SpawnManager: no mission slots — cannot materialize bodies.", LogLevel.ERROR);
 			return;
 		}
 
 		int built = 0;
+		int loadouts = 0;
+		int number = 0;
 		foreach (TBD_MissionSlotStruct slot : slots)
 		{
 			if (!slot)
 				continue;
+			number++;
 
-			string engineKey = EngineFactionKey(slot.faction);
-			if (engineKey.IsEmpty())
+			IEntity body = SpawnSlotBody(slot, number);
+			if (!body)
 				continue;
 
-			float x = slot.x;
-			float z = slot.z;
-
-			// Spawn height policy (T-092.1): explicit JSON y wins, else live terrain
-			// surface; both get the measured capsule offset on top.
-			float surfaceY = GetGame().GetWorld().GetSurfaceY(x, z);
-			float spawnY = surfaceY;
-			float delta = 0;
-			string jsonYLabel = "-";
-			if (slot.HasJsonY())
-			{
-				spawnY = slot.y;
-				delta = Math.AbsFloat(slot.y - surfaceY);
-				jsonYLabel = slot.y.ToString();
-				if (delta > MAX_Y_DELTA_M)
-					Print(string.Format("[TBD][Spawn] slot=%1 jsonY=%2 deviates %3 m from surfaceY=%4 (> %5 m) — stale DEM or mis-authored slot?",
-						slot.id, slot.y, delta, surfaceY, MAX_Y_DELTA_M), LogLevel.WARNING);
-			}
-			spawnY += CAPSULE_GROUND_OFFSET_M;
-
-			vector pos = Vector(x, spawnY, z);
-
-			EntitySpawnParams params = new EntitySpawnParams();
-			params.TransformMode = ETransformMode.WORLD;
-			Math3D.MatrixIdentity4(params.Transform);
-			params.Transform[3] = pos;
-
-			// Apply heading from JSON (yaw around Y)
-			float yawRad = slot.headingDeg * Math.DEG2RAD;
-			params.Transform[0] = Vector(Math.Cos(yawRad), 0, Math.Sin(yawRad));
-			params.Transform[2] = Vector(-Math.Sin(yawRad), 0, Math.Cos(yawRad));
-
-			IEntity ent = GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
-			SCR_SpawnPoint sp = SCR_SpawnPoint.Cast(ent);
-			if (!sp)
-			{
-				Print("[TBD] SpawnManager: failed to spawn SCR_SpawnPoint for " + slot.id, LogLevel.ERROR);
-				continue;
-			}
-
-			sp.SetFactionKey(engineKey);
-			m_mSlotSpawnPoints.Insert(slot.Key(), sp); // B1 — durable key (uid-else-id)
+			m_mSlotBodies.Set(slot.Key(), body);
 			built++;
-			Print(string.Format("[TBD] SpawnManager: built slot spawn %1 (%2) kit %3 at %4", slot.id, engineKey, slot.kit, pos.ToString()));
-			Print(string.Format("[TBD][Spawn] slot=%1 Y=%2 jsonY=%3 surfaceY=%4 delta=%5 heading=%6",
-				slot.id, spawnY, jsonYLabel, surfaceY, delta, slot.headingDeg));
+			if (slot.loadout)
+				loadouts++;
 		}
 
 		if (built > 0)
+			m_bSlotBodiesMaterialized = true;
+
+		Print(string.Format("[TBD][Slots] materialized %1 bodies (%2 loadouts applied)", built, loadouts));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Spawn one slot body at the slot's JSON transform: kit prefab → AI off →
+	//! Arsenal loadout (when authored). Also the respawn path (fresh body per life —
+	//! operator-locked). Returns null on kit/prefab failure (logged ERROR).
+	protected IEntity SpawnSlotBody(TBD_MissionSlotStruct slot, int number)
+	{
+		bool kitOk;
+		ResourceName prefab = TBD_Registry.Resolve(slot.kit, kitOk);
+		if (!kitOk || prefab.IsEmpty())
 		{
-			// A1: no deploy wave here — spawn points existing is not a deploy trigger.
-			// The single push wave fires on LOBBY (roster settled by then, A5), and the
-			// pull path handles everyone else.
-			m_bSlotSpawnPointsBuilt = true;
+			Print("[TBD] SpawnManager: kit resolve failed: " + slot.kit, LogLevel.ERROR);
+			return null;
+		}
+
+		Resource resource = Resource.Load(prefab);
+		if (!resource || !resource.IsValid())
+		{
+			Print("[TBD] SpawnManager: kit prefab failed to load: " + prefab, LogLevel.ERROR);
+			return null;
+		}
+
+		float x = slot.x;
+		float z = slot.z;
+
+		// Spawn height policy (T-092.1): explicit JSON y wins, else live terrain
+		// surface; both get the measured capsule offset on top.
+		float surfaceY = GetGame().GetWorld().GetSurfaceY(x, z);
+		float spawnY = surfaceY;
+		float delta = 0;
+		string jsonYLabel = "-";
+		if (slot.HasJsonY())
+		{
+			spawnY = slot.y;
+			delta = Math.AbsFloat(slot.y - surfaceY);
+			jsonYLabel = slot.y.ToString();
+			if (delta > MAX_Y_DELTA_M)
+				Print(string.Format("[TBD][Spawn] slot=%1 jsonY=%2 deviates %3 m from surfaceY=%4 (> %5 m) — stale DEM or mis-authored slot?",
+					slot.id, slot.y, delta, surfaceY, MAX_Y_DELTA_M), LogLevel.WARNING);
+		}
+		spawnY += CAPSULE_GROUND_OFFSET_M;
+
+		vector pos = Vector(x, spawnY, z);
+
+		EntitySpawnParams params = new EntitySpawnParams();
+		params.TransformMode = ETransformMode.WORLD;
+		Math3D.MatrixIdentity4(params.Transform);
+		params.Transform[3] = pos;
+
+		// Apply heading from JSON (yaw around Y)
+		float yawRad = slot.headingDeg * Math.DEG2RAD;
+		params.Transform[0] = Vector(Math.Cos(yawRad), 0, Math.Sin(yawRad));
+		params.Transform[2] = Vector(-Math.Sin(yawRad), 0, Math.Cos(yawRad));
+
+		IEntity body = GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
+		if (!body)
+		{
+			Print("[TBD] SpawnManager: failed to spawn slot body for " + slot.id, LogLevel.ERROR);
+			return null;
+		}
+
+		// CRF pattern: deactivate once + next-frame re-check. No repeating hammer —
+		// created-at-load bodies don't fight the PS parked-AI reactivation bug.
+		DisableBodyAI(body);
+
+		Print(string.Format("[TBD][Slots] Slot-%1 %2 (%3) kit %4 at %5",
+			number, slot.Key(), slot.id, slot.kit, pos.ToString()));
+		Print(string.Format("[TBD][Spawn] slot=%1 Y=%2 jsonY=%3 surfaceY=%4 delta=%5 heading=%6",
+			slot.id, spawnY, jsonYLabel, surfaceY, delta, slot.headingDeg));
+
+		if (slot.loadout)
+		{
+			PruneDoneLoadoutApps();
+			TBD_LoadoutApplication app = new TBD_LoadoutApplication(body, slot.loadout, "[TBD][Loadout][Slot]", slot.id);
+			m_aLoadoutApps.Insert(app);
+			app.Run();
+		}
+
+		return body;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! CRF_PlayerCharacter.DisableAI port: deactivate the agent + one next-frame re-check.
+	protected void DisableBodyAI(IEntity body)
+	{
+		AIControlComponent aiComponent = AIControlComponent.Cast(body.FindComponent(AIControlComponent));
+		if (!aiComponent)
+			return;
+
+		AIAgent agent = aiComponent.GetAIAgent();
+		if (agent)
+			agent.DeactivateAI();
+
+		GetGame().GetCallqueue().Call(DisableBodyAIRecheck, aiComponent);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void DisableBodyAIRecheck(AIControlComponent aiComponent)
+	{
+		if (!aiComponent)
+			return;
+		AIAgent agent = aiComponent.GetAIAgent();
+		if (agent)
+			agent.DeactivateAI();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected void PruneDoneLoadoutApps()
+	{
+		for (int i = m_aLoadoutApps.Count() - 1; i >= 0; i--)
+		{
+			if (m_aLoadoutApps[i].IsDone())
+				m_aLoadoutApps.Remove(i);
 		}
 	}
 
@@ -269,7 +360,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
-		if (!m_bSlotSpawnPointsBuilt)
+		if (!m_bSlotBodiesMaterialized)
 			return;
 
 		GetGame().GetCallqueue().CallLater(DeployAllConnectedPlayers, 250, false);
@@ -295,22 +386,23 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Authority: assign slot + request spawn at mission JSON position with kit prefab.
 	//! @authority server — back-compat bool wrapper over DeployPlayerEx; true only when
-	//! a spawn was requested by THIS call.
+	//! a bind happened in THIS call.
 	bool DeployPlayer(int playerId)
 	{
 		return DeployPlayerEx(playerId) == TBD_EDeployResult.DEPLOYED;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Authority: assign slot + request spawn at mission JSON position with kit prefab.
-	//! Tri-state spawn-authority contract (A1): NOT_MINE is the only result that may
-	//! reach vanilla spawn; ALREADY/FAILED mean "vanilla stands down"; RETRY = transient.
+	//! Authority: claim the player's slot and BIND them onto its pre-materialized body
+	//! via SCR_PlayerController.SetInitialMainEntity — the CRF/PlayableSelector-proven
+	//! takeover; the vanilla RequestSpawn pipeline (measured double-spawn source) is
+	//! never used. Tri-state spawn-authority contract (A1): NOT_MINE is the only
+	//! result that may reach vanilla spawn; ALREADY/FAILED mean "vanilla stands down".
 	//! @authority server
 	TBD_EDeployResult DeployPlayerEx(int playerId)
 	{
-		// Authority only — slot assignment + spawn run on the server.
+		// Authority only — slot assignment + binding run on the server.
 		if (RplSession.Mode() == RplMode.Client)
 			return TBD_EDeployResult.NOT_MINE;
 
@@ -318,10 +410,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!TBD_MissionLoader.IsLoaded() || !TBD_MissionLoader.IsValid())
 			return TBD_EDeployResult.NOT_MINE;
 
-		if (!m_bSlotSpawnPointsBuilt || !TBD_RosterLoader.IsLoaded())
+		if (!m_bSlotBodiesMaterialized || !TBD_RosterLoader.IsLoaded())
 			return TBD_EDeployResult.RETRY;
 
-		if (m_sDeployRequested.Contains(playerId))
+		if (m_mDeployRequested.Contains(playerId))
 			return TBD_EDeployResult.ALREADY;
 
 		AssignSlotForPlayer(playerId);
@@ -330,64 +422,73 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!slot)
 			return TBD_EDeployResult.RETRY;
 
-		SCR_SpawnPoint sp = GetSpawnPointForSlot(slot.Key());
-		if (!sp)
+		// Body must exist and be alive; a dead one (previous life) is replaced by a
+		// fresh dressed body at the slot transform — the corpse stays where it fell.
+		IEntity body = m_mSlotBodies.Get(slot.Key());
+		if (!body || IsBodyDead(body))
 		{
-			Print("[TBD] SpawnManager: no spawn point for slot " + slot.id, LogLevel.ERROR);
+			body = SpawnSlotBody(slot, 0);
+			if (!body)
+				return TBD_EDeployResult.FAILED;
+			m_mSlotBodies.Set(slot.Key(), body);
+			Print(string.Format("[TBD][Slots] rematerialized body for slot %1 (respawn)", slot.Key()));
+		}
+
+		SCR_PlayerController pc = SCR_PlayerController.Cast(
+			GetGame().GetPlayerManager().GetPlayerController(playerId));
+		if (!pc)
+		{
+			Print("[TBD] SpawnManager: no player controller for player " + playerId, LogLevel.ERROR);
 			return TBD_EDeployResult.RETRY;
 		}
 
-		bool kitOk;
-		ResourceName prefab = TBD_Registry.Resolve(slot.kit, kitOk);
-		if (!kitOk || prefab.IsEmpty())
+		SCR_PlayerFactionAffiliationComponent factionComp = SCR_PlayerFactionAffiliationComponent.Cast(
+			pc.FindComponent(SCR_PlayerFactionAffiliationComponent));
+		if (factionComp)
 		{
-			Print("[TBD] SpawnManager: kit resolve failed: " + slot.kit, LogLevel.ERROR);
-			return TBD_EDeployResult.FAILED;
+			string engineKey = EngineFactionKey(slot.faction);
+			factionComp.SetAffiliatedFactionByKey(engineKey);
 		}
 
-		PlayerController pc = GetGame().GetPlayerManager().GetPlayerController(playerId);
-		if (pc)
-		{
-			SCR_PlayerFactionAffiliationComponent factionComp = SCR_PlayerFactionAffiliationComponent.Cast(
-				pc.FindComponent(SCR_PlayerFactionAffiliationComponent));
-			if (factionComp)
-			{
-				string engineKey = EngineFactionKey(slot.faction);
-				factionComp.SetAffiliatedFactionByKey(engineKey);
-			}
-		}
+		// The takeover (CRF_PlayerHelper.AssignCharacterToPlayer mirror): bind is
+		// unconditional; the spawn-notify below is our own hook (equip idempotency,
+		// spawn-seen, census) + the vanilla data collector, both of which the
+		// bypassed vanilla pipeline would normally drive.
+		pc.SetInitialMainEntity(body);
 
-		RplComponent rpl = RplComponent.Cast(sp.FindComponent(RplComponent));
-		if (!rpl)
-		{
-			Print("[TBD] SpawnManager: spawn point missing RplComponent for " + slot.id, LogLevel.ERROR);
-			return TBD_EDeployResult.FAILED;
-		}
-
-		SCR_RespawnComponent respawn = SCR_RespawnComponent.SGetPlayerRespawnComponent(playerId);
-		if (!respawn)
-		{
-			Print("[TBD] SpawnManager: no respawn component for player " + playerId, LogLevel.ERROR);
-			return TBD_EDeployResult.RETRY;
-		}
-
-		SCR_SpawnPointSpawnData data = new SCR_SpawnPointSpawnData(prefab, rpl.Id());
-		if (!respawn.RequestSpawn(data))
-		{
-			Print("[TBD] SpawnManager: RequestSpawn failed for slot " + slot.id, LogLevel.ERROR);
-			return false;
-		}
-
-		m_sDeployRequested.Insert(playerId);
-		Print(string.Format("[TBD] SpawnManager: spawn requested player %1 slot %2 kit %3", playerId, slot.id, slot.kit));
+		m_mDeployRequested.Set(playerId, true);
 		m_mRetryCount.Remove(playerId);
-		m_sSpawnSeen.Remove(playerId);
-		// A2: the transform log + Arsenal equip now fire from OnPlayerSpawned with the
-		// ACTUAL spawned entity — no fixed timers, no GetPlayerControlledEntity polling.
-		// A1 watchdog: if the requested spawn never materializes, re-arm so the next
-		// pull attempt can deploy instead of wedging on ALREADY forever.
+		m_mSpawnSeen.Remove(playerId);
+		Print(string.Format("[TBD] SpawnManager: bound player %1 to slot %2 body (kit %3)", playerId, slot.Key(), slot.kit));
+
+		NotifySpawnedManually(playerId, body);
+
+		// A1 watchdog: if control never materializes, re-arm so the next pull
+		// attempt can deploy instead of wedging on ALREADY forever.
 		GetGame().GetCallqueue().CallLater(CheckSpawnArrived, 10000, false, playerId);
 		return TBD_EDeployResult.DEPLOYED;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! SetInitialMainEntity bypasses the vanilla spawn pipeline, so nothing fires the
+	//! usual spawn notifications (the CRF finding). Drive our own hook directly.
+	//! (CRF also notifies its own MODDED data collector here — vanilla
+	//! SCR_DataCollectorComponent has no such entry point; stats integration is a
+	//! future slice if the platform ever consumes vanilla session stats.)
+	protected void NotifySpawnedManually(int playerId, IEntity body)
+	{
+		OnPlayerSpawnedHook(playerId, body);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! True when a materialized body is destroyed/dead (corpse — respawn replaces it).
+	protected static bool IsBodyDead(IEntity body)
+	{
+		ChimeraCharacter character = ChimeraCharacter.Cast(body);
+		if (!character)
+			return true;
+		CharacterControllerComponent ccc = character.GetCharacterController();
+		return ccc && ccc.IsDead();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -414,77 +515,27 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! A2 — the deterministic equip trigger: fires with the entity the player actually
-	//! received (every spawn, including respawns — the operator-locked re-equip rule).
+	//! Spawn-notify sink: fired by NotifySpawnedManually on every bind (and by the
+	//! vanilla invoker for any non-framework spawn). Bookkeeping only — dressing is
+	//! owned by materialization (SpawnSlotBody dresses both initial and respawn
+	//! bodies), so no equip runs here; the reaper died with the vanilla RequestSpawn
+	//! pipeline (nothing can double-spawn any more).
 	//! @authority server
 	protected void OnPlayerSpawnedHook(int playerId, IEntity controlledEntity)
 	{
 		if (RplSession.Mode() == RplMode.Client || !controlledEntity)
 			return;
 
-		m_sSpawnSeen.Insert(playerId);
-
-		// A2 — reap a superseded LIVE body (vanilla double-spawn): the player just got
-		// a NEW body while the previous one is alive and abandoned. Dead bodies stay
-		// (death → respawn keeps the corpse).
-		IEntity prev;
-		if (m_mLastBody.Find(playerId, prev) && prev && prev != controlledEntity)
-		{
-			bool dead = false;
-			ChimeraCharacter prevChar = ChimeraCharacter.Cast(prev);
-			if (prevChar)
-			{
-				CharacterControllerComponent ccc = prevChar.GetCharacterController();
-				dead = ccc && ccc.IsDead();
-			}
-			if (!dead)
-			{
-				// Abort any in-flight equip on the doomed body BEFORE deleting it —
-				// its verify would otherwise fire against a dead handle (measured
-				// in determinism-gate run 1).
-				foreach (TBD_LoadoutApplication app : m_aLoadoutApps)
-				{
-					if (!app.IsDone() && app.GetCharacter() == prev)
-						app.Cancel("body superseded");
-				}
-				Print(string.Format("[TBD][Spawn] reaping superseded body player=%1 (vanilla double-spawn)", playerId), LogLevel.WARNING);
-				SCR_EntityHelper.DeleteEntityAndChildren(prev);
-			}
-		}
-		m_mLastBody.Set(playerId, controlledEntity);
-
+		m_mSpawnSeen.Set(playerId, true);
 		GetGame().GetCallqueue().CallLater(LogDeployedTransform, 500, false, playerId);
 		ScheduleCensus();
-
-		TBD_MissionSlotStruct slot = GetAssignedSlot(playerId);
-		if (!slot || !slot.loadout)
-			return; // kit-only slot — Phase-1 semantics, deliberate silent skip
-
-		// Per-spawn idempotency: equip each body exactly once (respawn = new entity id).
-		EntityID entId = controlledEntity.GetID();
-		EntityID last;
-		if (m_mLastEquippedEntity.Find(playerId, last) && last == entId)
-			return;
-		m_mLastEquippedEntity.Set(playerId, entId);
-
-		// Prune completed applications before starting a new one (strong-ref hygiene).
-		for (int i = m_aLoadoutApps.Count() - 1; i >= 0; i--)
-		{
-			if (m_aLoadoutApps[i].IsDone())
-				m_aLoadoutApps.Remove(i);
-		}
-
-		Print(string.Format("[TBD][Loadout][Player] applying loadout player=%1 slot=%2", playerId, slot.id));
-		TBD_LoadoutApplication app = new TBD_LoadoutApplication(controlledEntity, slot.loadout, "[TBD][Loadout][Player]", slot.id);
-		m_aLoadoutApps.Insert(app);
-		app.Run();
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! A6 — death re-arms the deploy guard; the slot assignment survives, so the
-	//! vanilla respawn flow (pull path) redeploys the SAME slot and the spawn hook
-	//! re-equips the new body. (1.7 component virtual takes SCR_InstigatorContextData
-	//! — the CRF Rally precedent.)
+	//! A6 — death re-arms the deploy guard; the slot assignment survives, so the next
+	//! deploy finds the slot body dead and REMATERIALIZES a fresh dressed one at the
+	//! slot transform (operator-locked re-equip-every-spawn; corpse stays). (1.7
+	//! component virtual takes SCR_InstigatorContextData — the CRF Rally precedent.)
 	//! @authority server
 	override void OnPlayerKilled(notnull SCR_InstigatorContextData instigatorContextData)
 	{
@@ -497,9 +548,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (playerId <= 0)
 			return;
 
-		m_sDeployRequested.Remove(playerId);
+		m_mDeployRequested.Remove(playerId);
 		m_mRetryCount.Remove(playerId);
-		m_sSpawnSeen.Remove(playerId);
+		m_mSpawnSeen.Remove(playerId);
 		Print(string.Format("[TBD][Spawn] player=%1 killed — re-armed for respawn (slot retained)", playerId));
 	}
 
@@ -524,11 +575,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		}
 
 		m_mPlayerSlot.Remove(playerId);
-		m_sDeployRequested.Remove(playerId);
+		m_mDeployRequested.Remove(playerId);
 		m_mRetryCount.Remove(playerId);
-		m_sSpawnSeen.Remove(playerId);
-		m_mLastEquippedEntity.Remove(playerId);
-		m_mLastBody.Remove(playerId);
+		m_mSpawnSeen.Remove(playerId);
 		Print(string.Format("[TBD][Spawn] player=%1 disconnected — state cleared, slot reclaim recorded", playerId));
 	}
 
@@ -553,7 +602,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		array<int> players = {};
 		int playerCount = GetGame().GetPlayerManager().GetPlayers(players);
-		Print(string.Format("[TBD][Audit] characters=%1 players=%2", m_iCensusCount, playerCount));
+		Print(string.Format("[TBD][Audit] characters=%1 bodies=%2 players=%3", m_iCensusCount, m_mSlotBodies.Count(), playerCount));
 		m_bCensusScheduled = false;
 	}
 
@@ -599,13 +648,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! Spawn-seen is marked by the transform log today (A2 moves it to OnPlayerSpawned).
 	protected void CheckSpawnArrived(int playerId)
 	{
-		if (m_sSpawnSeen.Contains(playerId))
+		if (m_mSpawnSeen.Contains(playerId))
 			return;
 		if (GetGame().GetPlayerManager().GetPlayerControlledEntity(playerId))
 			return;
 
 		Print(string.Format("[TBD][Spawn] watchdog player=%1 — spawn request never materialized, re-arming", playerId), LogLevel.WARNING);
-		m_sDeployRequested.Remove(playerId);
+		m_mDeployRequested.Remove(playerId);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -620,7 +669,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			Print(string.Format("[TBD][Spawn] deployed player=%1 — no controlled entity yet (spawn pending?)", playerId), LogLevel.WARNING);
 			return;
 		}
-		m_sSpawnSeen.Insert(playerId);
+		m_mSpawnSeen.Set(playerId, true);
 
 		vector org = ent.GetOrigin();
 		float surfaceY = GetGame().GetWorld().GetSurfaceY(org[0], org[2]);

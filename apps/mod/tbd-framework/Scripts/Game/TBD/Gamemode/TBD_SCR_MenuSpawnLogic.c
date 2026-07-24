@@ -14,7 +14,7 @@ modded class SCR_MenuSpawnLogic
 	override bool GetWaitForSpawnPoints()
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		if (sm && (!sm.AreSlotSpawnPointsBuilt() || !TBD_RosterLoader.IsLoaded()))
+		if (sm && (!sm.AreSlotBodiesMaterialized() || !TBD_RosterLoader.IsLoaded()))
 			return true;
 
 		return super.GetWaitForSpawnPoints();
@@ -25,7 +25,7 @@ modded class SCR_MenuSpawnLogic
 	override void OnPlayerAuditSuccess_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
-		if (sm && sm.AreSlotSpawnPointsBuilt())
+		if (sm && sm.AreSlotBodiesMaterialized())
 			sm.AssignSlotForPlayer(playerId);
 
 		super.OnPlayerAuditSuccess_S(playerId);

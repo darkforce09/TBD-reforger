@@ -102,7 +102,7 @@ normalize() {
 #  - "swapped area=": vanilla RANDOMIZES kit cosmetic variants per spawn (measured:
 #    Jacket_US_BDU vs _rolledup), so swap-vs-skip flips while the final worn item
 #    (GEAR-ENSURED line) is identical.
-extract() { grep -E "\[TBD\]\[Spawn\]|\[TBD\]\[Loadout\]|\[TBD\]\[Audit\]|Stage →|spawn requested|assigned slot|Mission loaded|Roster" "$1" | grep -vE "application cancelled|reaping superseded|deployed player=|swapped area=" ; }
+extract() { grep -E "\[TBD\]\[Spawn\]|\[TBD\]\[Slots\]|\[TBD\]\[Loadout\]|\[TBD\]\[Audit\]|Stage →|bound player|assigned slot|Mission loaded|Roster" "$1" | grep -vE "application cancelled|deployed player=|swapped area=" ; }
 
 fail=0
 declare -a DIGESTS
@@ -120,7 +120,7 @@ for i in $(seq 1 "$RUNS"); do
   while [ "$waited" -lt "$TIMEOUT" ]; do
     sleep 5; waited=$((waited + 5))
     NEW="$(tail -n +"$((MARK + 1))" "$LOG" 2>/dev/null)"
-    if echo "$NEW" | grep -qE "loadout pass complete|\[TBD\]\[Audit\]"; then done_flag=1; break; fi
+    if echo "$NEW" | grep -qE "\[TBD\]\[Audit\]"; then done_flag=1; break; fi
   done
   # settle a moment for trailing lines (census fires after the pass line)
   sleep 8
@@ -138,23 +138,30 @@ for i in $(seq 1 "$RUNS"); do
 
   # per-run assertions
   if grep -qE "path=vanilla-fallthrough" "$RAW"; then echo "FAIL run $i: vanilla fall-through"; fail=1; fi
-  if grep -qE "SCRIPT[[:space:]]*\(E\).*\[TBD\]" "$RAW"; then
-    echo "FAIL run $i: [TBD] error lines:"; grep -E "SCRIPT[[:space:]]*\(E\).*\[TBD\]" "$RAW" | head -5
+  # ANY script error fails the run — VM exceptions carry no [TBD] tag but their
+  # stack traces implicate our code (measured: set.Remove-by-index crash was
+  # invisible to a [TBD]-only grep for multiple gate runs).
+  if grep -qE "SCRIPT[[:space:]]*\(E\)|Virtual Machine Exception" "$RAW"; then
+    echo "FAIL run $i: script error lines:"; grep -E "SCRIPT[[:space:]]*\(E\)|Virtual Machine Exception" "$RAW" | head -5
     fail=1
   fi
-  # exactly one spawn request per player
-  DUP=$(grep -oE "spawn requested player [0-9]+" "$RAW" | sort | uniq -c | awk '$1 > 1' | head -3)
-  if [ -n "$DUP" ]; then echo "FAIL run $i: duplicate spawn requests:"; echo "$DUP"; fail=1; fi
+  # exactly one bind per player
+  DUP=$(grep -oE "bound player [0-9]+" "$RAW" | sort | uniq -c | awk '$1 > 1' | head -3)
+  if [ -n "$DUP" ]; then echo "FAIL run $i: duplicate binds:"; echo "$DUP"; fail=1; fi
   # every issued gear line resolves to a good outcome
   BAD_GEAR=$(grep -E "\[TBD\]\[Loadout\].*(FAILED|not worn)" "$RAW" | head -3)
   if [ -n "$BAD_GEAR" ]; then echo "FAIL run $i: gear failures:"; echo "$BAD_GEAR"; fail=1; fi
-  # census (A2+): characters == players
-  CENSUS=$(grep -oE "\[TBD\]\[Audit\] characters=[0-9]+ players=[0-9]+" "$RAW" | tail -1)
+  # materialization model: characters in world == materialized slot bodies
+  CENSUS=$(grep -oE "\[TBD\]\[Audit\] characters=[0-9]+ bodies=[0-9]+ players=[0-9]+" "$RAW" | tail -1)
   if [ -n "$CENSUS" ]; then
     C=$(echo "$CENSUS" | grep -oE "characters=[0-9]+" | cut -d= -f2)
-    P=$(echo "$CENSUS" | grep -oE "players=[0-9]+" | cut -d= -f2)
-    if [ "$C" != "$P" ]; then echo "FAIL run $i: census mismatch $CENSUS (orphan bodies?)"; fail=1; fi
+    B=$(echo "$CENSUS" | grep -oE "bodies=[0-9]+" | cut -d= -f2)
+    if [ "$C" != "$B" ]; then echo "FAIL run $i: census mismatch $CENSUS (stray/missing bodies?)"; fail=1; fi
+  else
+    echo "FAIL run $i: no census line"; fail=1
   fi
+  # materialization happened
+  if ! grep -qE "\[TBD\]\[Slots\] materialized [1-9]" "$RAW"; then echo "FAIL run $i: no materialization line"; fail=1; fi
 
   DIGESTS[$i]=$(sha256sum "$NORM" | cut -d' ' -f1)
   echo "run $i digest ${DIGESTS[$i]:0:12} ($(wc -l < "$NORM") lines)"

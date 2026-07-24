@@ -69,7 +69,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
 		if (sm)
-			sm.BuildMissionSlotSpawnPoints();
+			sm.MaterializeSlotBodies();
 
 		// A5 (determinism): the roster fetch must SETTLE before LOBBY so slot
 		// assignment is a pure function of settled state — the old same-tick
