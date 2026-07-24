@@ -22,6 +22,13 @@ use crate::mission::kit::load_kit_aliases;
 #[serde(rename_all = "camelCase")]
 pub struct ModSlot {
     pub id: String,
+    /// Stable slot identity (B1): the editor doc's slot id, carried verbatim so the
+    /// identity survives recompiles — `id` above is DERIVED (faction:callsign:role:
+    /// occurrence) and shifts under role renames/reorders/deletes. Spawn points,
+    /// rosters and logs should key on `uid`; `id` stays the human-readable label.
+    /// (Named `uid`, not `ref` — `ref` is an EnforceScript keyword and the mod
+    /// struct field names must equal the JSON keys.)
+    pub uid: String,
     pub faction: String,
     pub group_callsign: String,
     pub role: String,
@@ -49,9 +56,12 @@ pub struct ModSlotLoadout {
 }
 
 /// Fixed gear ResourceNames — the v1 mod-reader shape, same derivation the
-/// loadout-export schema documents: jacket→uniform, armoredVest else vest→vest,
-/// headCover→helmet, weapons[0] primary slot → primary/optic/magazine. Empty
-/// slots are omitted, never empty strings.
+/// loadout-export schema documents: jacket→uniform, **armoredVest else vest→vest
+/// (known collapse: a chest rig layered under a plate carrier loses the rig —
+/// single-vest rule, documented)**, headCover→helmet, weapons[0] primary slot →
+/// primary/optic/magazine; A3 widens with pants/boots/handwear/backpack so an
+/// Arsenal-authored slot arrives complete. Empty slots are omitted, never empty
+/// strings.
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModSlotGear {
@@ -67,6 +77,14 @@ pub struct ModSlotGear {
     pub vest: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub helmet: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pants: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub boots: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub handwear: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub backpack: Option<String>,
 }
 
 impl ModSlotGear {
@@ -77,6 +95,10 @@ impl ModSlotGear {
             && self.uniform.is_none()
             && self.vest.is_none()
             && self.helmet.is_none()
+            && self.pants.is_none()
+            && self.boots.is_none()
+            && self.handwear.is_none()
+            && self.backpack.is_none()
     }
 }
 
@@ -328,6 +350,10 @@ fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
         uniform: wear_key("jacket"),
         vest: wear_key("armoredVest").or_else(|| wear_key("vest")),
         helmet: wear_key("headCover"),
+        pants: wear_key("pants"),
+        boots: wear_key("boots"),
+        handwear: wear_key("handwear"),
+        backpack: wear_key("backpack"),
         ..ModSlotGear::default()
     };
     if let Some(primary) = lo
@@ -462,6 +488,7 @@ pub fn flatten_to_mod_document(
 
                 doc_slots.push(ModSlot {
                     id: format!("{faction_key}:{callsign}:{}:{occurrence}", sl.role),
+                    uid: sl.id.clone(),
                     faction: faction_key.clone(),
                     group_callsign: callsign.clone(),
                     role: sl.role.clone(),
@@ -704,8 +731,13 @@ mod tests {
         assert_eq!(orbat_count, doc.slots.len() as i64);
         assert_eq!(doc.meta.player_range, [1, 64]);
 
-        // T-068.11 — s1: full gear + cargo. armoredVest wins over vest; jacket→uniform;
-        // headCover→helmet; weapons[0] triple; malformed cargo row (empty container) drops.
+        // B1 — uid carries the editor slot id verbatim (identity thread).
+        let uids: Vec<&str> = doc.slots.iter().map(|s| s.uid.as_str()).collect();
+        assert_eq!(uids, ["s1", "s2", "s3", "s4"]);
+
+        // T-068.11/A3 — s1: full gear + cargo. armoredVest wins over vest; jacket→uniform;
+        // headCover→helmet; pants copied (A3), null boots omitted; weapons[0] triple;
+        // malformed cargo row (empty container) drops.
         let lo = doc.slots[0].loadout.as_ref().expect("s1 loadout");
         let g = lo.gear.as_ref().expect("s1 gear");
         assert_eq!(
@@ -715,7 +747,9 @@ mod tests {
                 g.magazine.as_deref(),
                 g.uniform.as_deref(),
                 g.vest.as_deref(),
-                g.helmet.as_deref()
+                g.helmet.as_deref(),
+                g.pants.as_deref(),
+                g.boots.as_deref()
             ),
             (
                 Some("res://m16"),
@@ -723,7 +757,9 @@ mod tests {
                 Some("res://stanag"),
                 Some("res://bdu_blouse"),
                 Some("res://pasgt"),
-                Some("res://helmet")
+                Some("res://helmet"),
+                Some("res://bdu_pants"),
+                None
             )
         );
         assert_eq!(lo.cargo.len(), 2);

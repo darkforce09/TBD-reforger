@@ -9,6 +9,9 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	[RplProp(onRplName: "OnStageReplicated")]
 	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING;
 
+	//! A5 — roster settle ticks elapsed (500 ms cadence; 4 = the 2 s force-settle deadline).
+	protected int m_iRosterSettleTicks;
+
 	//------------------------------------------------------------------------------------------------
 	void TBD_FrameworkManager(IEntityComponentSource src, IEntity ent, IEntity parent)
 	{
@@ -68,7 +71,32 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (sm)
 			sm.BuildMissionSlotSpawnPoints();
 
+		// A5 (determinism): the roster fetch must SETTLE before LOBBY so slot
+		// assignment is a pure function of settled state — the old same-tick
+		// BeginLoad()+SetStage(LOBBY) let the 250 ms deploy wave race the REST
+		// round-trip (roster vs round-robin flipped run-to-run).
 		TBD_RosterLoader.BeginLoad();
+		m_iRosterSettleTicks = 0;
+		GetGame().GetCallqueue().CallLater(TickRosterSettle, 500, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! A5 — wait for the roster to settle (loaded or failed), force-settle at the 2 s
+	//! deadline, then enter LOBBY exactly once.
+	protected void TickRosterSettle()
+	{
+		m_iRosterSettleTicks++;
+
+		if (!TBD_RosterLoader.IsLoaded() && m_iRosterSettleTicks < 4)
+			return;
+
+		GetGame().GetCallqueue().Remove(TickRosterSettle);
+
+		if (!TBD_RosterLoader.IsLoaded())
+			TBD_RosterLoader.ForceSettle();
+
+		Print(string.Format("[TBD][Spawn] roster settled=%1 assignments=%2",
+			TBD_RosterLoader.GetSettleReason(), TBD_RosterLoader.GetAssignmentCount()));
 
 		SetStage(TBD_EGameStage.LOBBY);
 	}

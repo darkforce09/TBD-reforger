@@ -10,6 +10,10 @@ class TBD_SlotGearStruct
 	string uniform;  //!< Jacket/uniform ResourceName.
 	string vest;     //!< Vest ResourceName (armoredVest wins in the compiler).
 	string helmet;   //!< Head cover ResourceName.
+	string pants;    //!< Pants ResourceName (A3 — wear map arrives complete).
+	string boots;    //!< Boots ResourceName (A3).
+	string handwear; //!< Gloves ResourceName (A3).
+	string backpack; //!< Worn backpack ResourceName (A3).
 }
 
 //! One container cargo row (loadout-export v2 {container,item,qty}).
@@ -40,7 +44,8 @@ class TBD_MissionSlotStruct
 	//! doubles as the presence flag (standard JSON cannot carry NaN/Infinity).
 	static const float Y_ABSENT = -1000000;
 
-	string id;            //!< Stable slot id: {faction}:{groupCallsign}:{role}:{index}.
+	string id;            //!< Human-readable label: {faction}:{groupCallsign}:{role}:{index} — DERIVED each compile.
+	string uid;           //!< Stable slot identity (B1): the editor doc slot id, survives recompiles. Empty on pre-B1 documents.
 	string faction;       //!< Faction key (matches mission factions[].key).
 	string groupCallsign; //!< Owning squad callsign.
 	string role;          //!< Role label within the squad.
@@ -56,5 +61,15 @@ class TBD_MissionSlotStruct
 	bool HasJsonY()
 	{
 		return y != Y_ABSENT;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! B1 — the durable key for spawn points / rosters / logs: uid when present
+	//! (survives recompiles), else the derived display id (pre-B1 documents).
+	string Key()
+	{
+		if (!uid.IsEmpty())
+			return uid;
+		return id;
 	}
 }

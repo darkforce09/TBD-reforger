@@ -14,11 +14,42 @@ class TBD_RosterLoader
 	protected static bool s_Loaded;
 	protected static bool s_LoadInFlight;
 	protected static ref RestCallback s_RestCallback;
+	//! A5 — how the loader settled ("loaded"/"unconfigured"/"failed"/"timeout"/"empty"),
+	//! for the deterministic `[TBD][Spawn] roster settled=…` breadcrumb.
+	protected static string s_SettleReason = "pending";
 
 	//------------------------------------------------------------------------------------------------
 	static bool IsLoaded()
 	{
 		return s_Loaded;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static string GetSettleReason()
+	{
+		return s_SettleReason;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static int GetAssignmentCount()
+	{
+		if (!s_IdentityToSlot)
+			return 0;
+		return s_IdentityToSlot.Count();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! A5 — deadline force-settle (stage machine hit its 2 s roster budget with the
+	//! fetch still in flight). Mirrors the error path: empty assignments, round-robin.
+	//! A late REST response after this is ignored for determinism (s_Loaded guards).
+	static void ForceSettle()
+	{
+		if (s_Loaded)
+			return;
+		s_IdentityToSlot = new map<string, string>();
+		s_Loaded = true;
+		s_SettleReason = "timeout";
+		Print("[TBD] RosterLoader: settle deadline hit with fetch in flight — round-robin slots only.", LogLevel.WARNING);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -45,6 +76,7 @@ class TBD_RosterLoader
 		{
 			Print("[TBD] RosterLoader: eventId not configured — using round-robin slot assignment.", LogLevel.WARNING);
 			s_Loaded = true;
+			s_SettleReason = "unconfigured";
 			s_IdentityToSlot = new map<string, string>();
 			return;
 		}
@@ -53,6 +85,7 @@ class TBD_RosterLoader
 		{
 			Print("[TBD] RosterLoader: backend not configured — round-robin slots only.", LogLevel.WARNING);
 			s_Loaded = true;
+			s_SettleReason = "unconfigured";
 			s_IdentityToSlot = new map<string, string>();
 			return;
 		}
@@ -101,6 +134,9 @@ class TBD_RosterLoader
 	//------------------------------------------------------------------------------------------------
 	protected static void OnFetchSuccess(RestCallback cb)
 	{
+		// A5: a response landing after ForceSettle must not mutate settled state.
+		if (s_Loaded)
+			return;
 		s_LoadInFlight = false;
 		s_IdentityToSlot = new map<string, string>();
 
@@ -144,15 +180,20 @@ class TBD_RosterLoader
 		}
 
 		s_Loaded = true;
+		s_SettleReason = "loaded";
 		Print(string.Format("[TBD] Roster loaded (%1 assignments).", s_IdentityToSlot.Count()));
 	}
 
 	//------------------------------------------------------------------------------------------------
 	protected static void OnFetchError(RestCallback cb)
 	{
+		// A5: a response landing after ForceSettle must not mutate settled state.
+		if (s_Loaded)
+			return;
 		s_LoadInFlight = false;
 		s_IdentityToSlot = new map<string, string>();
 		s_Loaded = true;
+		s_SettleReason = "failed";
 		Print("[TBD] RosterLoader: fetch failed — round-robin slots only.", LogLevel.WARNING);
 	}
 }

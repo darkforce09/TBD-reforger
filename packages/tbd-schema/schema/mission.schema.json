@@ -214,7 +214,12 @@
         "id": {
           "type": "string",
           "minLength": 1,
-          "description": "Stable slot id: {faction}:{groupCallsign}:{role}:{index}"
+          "description": "Human-readable slot label: {faction}:{groupCallsign}:{role}:{index}. DERIVED each compile — shifts under role renames/reorders/deletes; key durable references on uid instead."
+        },
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable slot identity (B1): the editor document's slot id, carried verbatim so the identity survives recompiles and ORBAT edits. Spawn points, rosters and logs key on this. Optional for pre-B1 documents. (Named uid, not ref — ref is an EnforceScript keyword.)"
         },
         "faction": { "$ref": "#/$defs/factionKey" },
         "groupCallsign": { "type": "string", "minLength": 1 },
@@ -237,7 +242,7 @@
           "properties": {
             "gear": {
               "type": "object",
-              "description": "Fixed gear ResourceNames (the v1 mod-reader shape, same derivation as loadout-export: jacket→uniform, armoredVest else vest→vest, headCover→helmet, weapons[0] primary slot → primary/optic/magazine). Empty slots are omitted, never empty strings.",
+              "description": "Fixed gear ResourceNames (derivation: jacket→uniform, armoredVest else vest→vest — single-vest collapse, documented —, headCover→helmet, weapons[0] primary slot → primary/optic/magazine; pants/boots/handwear/backpack copied verbatim since A3 so an Arsenal-authored slot arrives complete). Empty slots are omitted, never empty strings.",
               "additionalProperties": false,
               "properties": {
                 "primary": { "type": "string", "minLength": 1 },
@@ -245,7 +250,11 @@
                 "magazine": { "type": "string", "minLength": 1 },
                 "uniform": { "type": "string", "minLength": 1 },
                 "vest": { "type": "string", "minLength": 1 },
-                "helmet": { "type": "string", "minLength": 1 }
+                "helmet": { "type": "string", "minLength": 1 },
+                "pants": { "type": "string", "minLength": 1 },
+                "boots": { "type": "string", "minLength": 1 },
+                "handwear": { "type": "string", "minLength": 1 },
+                "backpack": { "type": "string", "minLength": 1 }
               }
             },
             "cargo": {

@@ -135,6 +135,9 @@ mod tests {
 
         assert_eq!(doc.meta.player_range, [1, 64]);
 
+        // B1 — uid carries the editor slot id (identity thread through the API route).
+        assert_eq!(doc.slots[0].uid, "s1");
+
         // T-068.11 — compiled slots carry the loadout block (gear derivation +
         // verbatim cargo); loadout-less slots omit the key.
         let lo = doc.slots[0].loadout.as_ref().expect("s1 loadout");

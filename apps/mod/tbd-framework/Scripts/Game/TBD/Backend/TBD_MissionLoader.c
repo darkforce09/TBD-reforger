@@ -124,7 +124,8 @@ class TBD_MissionLoader
 
 		foreach (TBD_MissionSlotStruct slot : slots)
 		{
-			if (slot && slot.id == slotId)
+			// B1 — uid-aware lookup: durable uid matches first, display id stays valid.
+			if (slot && (slot.id == slotId || (!slot.uid.IsEmpty() && slot.uid == slotId)))
 				return slot;
 		}
 
@@ -393,6 +394,7 @@ class TBD_MissionLoader
 		}
 
 		ref set<string> seen = new set<string>();
+		ref set<string> seenUid = new set<string>();
 		foreach (TBD_MissionSlotStruct slot : s_Mission.slots)
 		{
 			if (!slot || slot.id.IsEmpty())
@@ -408,6 +410,17 @@ class TBD_MissionLoader
 			}
 
 			seen.Insert(slot.id);
+
+			// B1 — uid (when present) is the durable spawn/roster key: must be unique too.
+			if (!slot.uid.IsEmpty())
+			{
+				if (seenUid.Contains(slot.uid))
+				{
+					Print("[TBD] Mission duplicate slot uid: " + slot.uid, LogLevel.ERROR);
+					return false;
+				}
+				seenUid.Insert(slot.uid);
+			}
 		}
 
 		return true;
