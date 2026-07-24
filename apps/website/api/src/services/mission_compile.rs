@@ -54,10 +54,15 @@ mod tests {
           {"id": "sq2", "factionId": "f2", "name": "Grom", "slotIds": ["s4"]}
         ],
         "slots": [
-          {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270}},
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270},
+           "loadout": {"version": 2,
+             "wear": {"headCover": "res://helmet", "jacket": "res://bdu_blouse", "vest": "res://chest_rig", "armoredVest": "res://pasgt"},
+             "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []}],
+             "cargo": [{"container": "vest", "item": "res://stanag", "qty": 4}]}},
           {"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "position": {"x": 4836.9, "y": 6626.5, "z": 142.5, "rotation": 450}},
           {"id": "s3", "squadId": "sq1", "index": 2, "role": "TL", "position": {"x": 4831.2, "y": 6628.8, "z": 0, "rotation": 0}},
-          {"id": "s4", "squadId": "sq2", "index": 0, "role": "RFL", "assetId": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et", "position": {"x": 6010, "y": 7211.5, "z": 0, "rotation": 90}}
+          {"id": "s4", "squadId": "sq2", "index": 0, "role": "RFL", "assetId": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et", "position": {"x": 6010, "y": 7211.5, "z": 0, "rotation": 90},
+           "loadout": {"version": 2, "cargo": [{"container": "backpack", "item": "res://ak_mag", "qty": 40}]}}
         ],
         "editorLayers": []
       }
@@ -130,7 +135,22 @@ mod tests {
 
         assert_eq!(doc.meta.player_range, [1, 64]);
 
-        // G6: the compiled document validates against mission.schema.json.
+        // T-068.11 — compiled slots carry the loadout block (gear derivation +
+        // verbatim cargo); loadout-less slots omit the key.
+        let lo = doc.slots[0].loadout.as_ref().expect("s1 loadout");
+        let g = lo.gear.as_ref().expect("s1 gear");
+        assert_eq!(g.uniform.as_deref(), Some("res://bdu_blouse"));
+        assert_eq!(g.vest.as_deref(), Some("res://pasgt")); // armoredVest wins
+        assert_eq!(lo.cargo[0].qty, 4);
+        assert!(doc.slots[1].loadout.is_none());
+        assert_eq!(
+            doc.slots[3].loadout.as_ref().unwrap().cargo[0].qty,
+            40,
+            "cargo qty verbatim"
+        );
+
+        // G6: the compiled document (incl. the T-068.11 loadout block) validates
+        // against mission.schema.json.
         let bytes = serde_json::to_vec(&doc).unwrap();
         let details = validate_mission_document(&bytes).expect("schema compiles");
         assert!(details.is_empty(), "schema violations: {details:?}");

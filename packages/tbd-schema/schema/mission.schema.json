@@ -229,7 +229,41 @@
           "type": "number",
           "description": "Optional spawn height, metres ASL (schemaVersion 1.2). Maps from the editor's position.z. Absent → the loader uses terrain surface Y."
         },
-        "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 }
+        "headingDeg": { "type": "number", "minimum": 0, "maximum": 360 },
+        "loadout": {
+          "type": "object",
+          "description": "Optional per-slot Arsenal loadout (T-068.11), flattened from the editor SlotLoadoutV2. Additive data: JsonLoadContext readers ignore unknown keys, so this ships WITHOUT a schemaVersion bump (the mod loader allowlists 1.1/1.2); T-068.12 reads it to equip the human player. The kit alias stays authoritative for the base character — loadout layers on top.",
+          "additionalProperties": false,
+          "properties": {
+            "gear": {
+              "type": "object",
+              "description": "Fixed gear ResourceNames (the v1 mod-reader shape, same derivation as loadout-export: jacket→uniform, armoredVest else vest→vest, headCover→helmet, weapons[0] primary slot → primary/optic/magazine). Empty slots are omitted, never empty strings.",
+              "additionalProperties": false,
+              "properties": {
+                "primary": { "type": "string", "minLength": 1 },
+                "optic": { "type": "string", "minLength": 1 },
+                "magazine": { "type": "string", "minLength": 1 },
+                "uniform": { "type": "string", "minLength": 1 },
+                "vest": { "type": "string", "minLength": 1 },
+                "helmet": { "type": "string", "minLength": 1 }
+              }
+            },
+            "cargo": {
+              "type": "array",
+              "description": "Container cargo rows ({container,item,qty} — the loadout-export v2 shape), copied verbatim from the editor cargo (T-068.15.2). Omitted when empty.",
+              "items": {
+                "type": "object",
+                "required": ["container", "item", "qty"],
+                "additionalProperties": false,
+                "properties": {
+                  "container": { "type": "string", "minLength": 1 },
+                  "item": { "type": "string", "minLength": 1 },
+                  "qty": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "radioPlan": {

@@ -31,6 +31,63 @@ pub struct ModSlot {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<f64>,
     pub heading_deg: f64,
+    /// Optional Arsenal loadout (T-068.11) — omitted when the editor slot carries none.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub loadout: Option<ModSlotLoadout>,
+}
+
+/// Per-slot loadout block (mission.schema.json `slot.loadout`): fixed gear + container
+/// cargo, derived from the editor `SlotLoadoutV2`. Kit alias stays the base character;
+/// this layers on top (T-068.12 equips it onto the spawned player).
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModSlotLoadout {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gear: Option<ModSlotGear>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub cargo: Vec<ModSlotCargo>,
+}
+
+/// Fixed gear ResourceNames — the v1 mod-reader shape, same derivation the
+/// loadout-export schema documents: jacket→uniform, armoredVest else vest→vest,
+/// headCover→helmet, weapons[0] primary slot → primary/optic/magazine. Empty
+/// slots are omitted, never empty strings.
+#[derive(Debug, Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModSlotGear {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub primary: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub optic: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub magazine: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uniform: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vest: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub helmet: Option<String>,
+}
+
+impl ModSlotGear {
+    fn is_empty(&self) -> bool {
+        self.primary.is_none()
+            && self.optic.is_none()
+            && self.magazine.is_none()
+            && self.uniform.is_none()
+            && self.vest.is_none()
+            && self.helmet.is_none()
+    }
+}
+
+/// One container cargo row (`{container, item, qty}` — loadout-export v2), copied
+/// verbatim from the editor cargo.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModSlotCargo {
+    pub container: String,
+    pub item: String,
+    pub qty: i64,
 }
 
 #[derive(Debug, Serialize)]
@@ -188,6 +245,8 @@ struct SlotIn {
     role: String,
     asset_id: String,
     position: PositionIn,
+    /// The editor `SlotLoadoutV2` dict (T-068.10/.15.2) — mapped by [`mod_slot_loadout`].
+    loadout: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Default, Clone, serde::Deserialize)]
@@ -249,6 +308,67 @@ fn mission_doc_id(id: &str) -> String {
         .filter(|c| c.is_ascii_lowercase() || c.is_ascii_digit())
         .collect();
     format!("msn_{}", if hex.is_empty() { "editor" } else { &hex })
+}
+
+/// Map an editor `SlotLoadoutV2` dict onto the compiled loadout block. Empty
+/// strings and malformed cargo rows drop (the editor tolerance); an all-empty
+/// result returns `None` so the whole `loadout` key is omitted. Gear derivation
+/// is the locked loadout-export rule: jacket→uniform, armoredVest else
+/// vest→vest, headCover→helmet, weapons[0] primary slot → primary/optic/magazine.
+fn mod_slot_loadout(lo: &serde_json::Value) -> Option<ModSlotLoadout> {
+    let non_empty = |v: Option<&serde_json::Value>| {
+        v.and_then(serde_json::Value::as_str)
+            .filter(|s| !s.is_empty())
+            .map(String::from)
+    };
+    let wear = lo.get("wear");
+    let wear_key = |k: &str| non_empty(wear.and_then(|w| w.get(k)));
+
+    let mut gear = ModSlotGear {
+        uniform: wear_key("jacket"),
+        vest: wear_key("armoredVest").or_else(|| wear_key("vest")),
+        helmet: wear_key("headCover"),
+        ..ModSlotGear::default()
+    };
+    if let Some(primary) = lo
+        .get("weapons")
+        .and_then(serde_json::Value::as_array)
+        .and_then(|ws| {
+            ws.iter().find(|w| {
+                w.get("slotIndex").and_then(serde_json::Value::as_i64) == Some(0)
+                    && w.get("slotType").and_then(serde_json::Value::as_str) == Some("primary")
+            })
+        })
+    {
+        gear.primary = non_empty(primary.get("weapon"));
+        gear.optic = non_empty(primary.get("optic"));
+        gear.magazine = non_empty(primary.get("magazine"));
+    }
+
+    let cargo: Vec<ModSlotCargo> = lo
+        .get("cargo")
+        .and_then(serde_json::Value::as_array)
+        .map(|rows| {
+            rows.iter()
+                .filter_map(|r| {
+                    Some(ModSlotCargo {
+                        container: non_empty(r.get("container"))?,
+                        item: non_empty(r.get("item"))?,
+                        qty: r
+                            .get("qty")
+                            .and_then(serde_json::Value::as_i64)
+                            .filter(|q| *q >= 1)?,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+
+    let gear = (!gear.is_empty()).then_some(gear);
+    if gear.is_none() && cargo.is_empty() {
+        return None;
+    }
+    Some(ModSlotLoadout { gear, cargo })
 }
 
 fn normalize_heading(rotation: f64) -> f64 {
@@ -350,6 +470,7 @@ pub fn flatten_to_mod_document(
                     z,
                     y,
                     heading_deg: normalize_heading(sl.position.rotation),
+                    loadout: sl.loadout.as_ref().and_then(mod_slot_loadout),
                 });
 
                 if !centroids.contains_key(&faction_key) {
@@ -515,10 +636,19 @@ mod tests {
           {"id": "sq2", "factionId": "f2", "name": "Grom", "slotIds": ["s4"]}
         ],
         "slots": [
-          {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270}},
+          {"id": "s1", "squadId": "sq1", "index": 0, "role": "SL", "assetId": "{84029128FA6F6BB9}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_GL.et", "position": {"x": 4839.2, "y": 6620.8, "z": 0, "rotation": 270},
+           "loadout": {"version": 2,
+             "wear": {"headCover": "res://helmet", "jacket": "res://bdu_blouse", "vest": "res://chest_rig", "armoredVest": "res://pasgt", "pants": "res://bdu_pants", "boots": null},
+             "weapons": [{"slotIndex": 0, "slotType": "primary", "weapon": "res://m16", "optic": "res://acog", "magazine": "res://stanag", "attachments": []}],
+             "cargo": [{"container": "vest", "item": "res://stanag", "qty": 4},
+                       {"container": "pants", "item": "res://bandage", "qty": 2},
+                       {"container": "", "item": "res://dropped", "qty": 1}]}},
           {"id": "s2", "squadId": "sq1", "index": 1, "role": "TL", "position": {"x": 4836.9, "y": 6626.5, "z": 142.5, "rotation": 450}},
-          {"id": "s3", "squadId": "sq1", "index": 2, "role": "TL", "position": {"x": 4831.2, "y": 6628.8, "z": 0, "rotation": 0}},
-          {"id": "s4", "squadId": "sq2", "index": 0, "role": "RFL", "assetId": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et", "position": {"x": 6010, "y": 7211.5, "z": 0, "rotation": 90}}
+          {"id": "s3", "squadId": "sq1", "index": 2, "role": "TL", "position": {"x": 4831.2, "y": 6628.8, "z": 0, "rotation": 0},
+           "loadout": {"version": 2, "wear": {"jacket": ""}, "weapons": [], "cargo": []}},
+          {"id": "s4", "squadId": "sq2", "index": 0, "role": "RFL", "assetId": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et", "position": {"x": 6010, "y": 7211.5, "z": 0, "rotation": 90},
+           "loadout": {"version": 2, "wear": {}, "weapons": [],
+             "cargo": [{"container": "backpack", "item": "res://ak_mag", "qty": 40}]}}
         ],
         "editorLayers": []
       }
@@ -573,6 +703,69 @@ mod tests {
             .sum();
         assert_eq!(orbat_count, doc.slots.len() as i64);
         assert_eq!(doc.meta.player_range, [1, 64]);
+
+        // T-068.11 — s1: full gear + cargo. armoredVest wins over vest; jacket→uniform;
+        // headCover→helmet; weapons[0] triple; malformed cargo row (empty container) drops.
+        let lo = doc.slots[0].loadout.as_ref().expect("s1 loadout");
+        let g = lo.gear.as_ref().expect("s1 gear");
+        assert_eq!(
+            (
+                g.primary.as_deref(),
+                g.optic.as_deref(),
+                g.magazine.as_deref(),
+                g.uniform.as_deref(),
+                g.vest.as_deref(),
+                g.helmet.as_deref()
+            ),
+            (
+                Some("res://m16"),
+                Some("res://acog"),
+                Some("res://stanag"),
+                Some("res://bdu_blouse"),
+                Some("res://pasgt"),
+                Some("res://helmet")
+            )
+        );
+        assert_eq!(lo.cargo.len(), 2);
+        assert_eq!(
+            (lo.cargo[0].container.as_str(), lo.cargo[0].qty),
+            ("vest", 4)
+        );
+        // s2 (no loadout) + s3 (all-empty loadout) omit the key entirely on the wire.
+        assert!(doc.slots[1].loadout.is_none() && doc.slots[2].loadout.is_none());
+        let wire = serde_json::to_value(&doc).unwrap();
+        assert!(wire["slots"][1].get("loadout").is_none());
+        assert!(wire["slots"][2].get("loadout").is_none());
+        // s4: cargo-only loadout → gear key omitted, cargo verbatim (qty 40 preserved).
+        let lo4 = doc.slots[3].loadout.as_ref().expect("s4 loadout");
+        assert!(lo4.gear.is_none());
+        assert_eq!(
+            (lo4.cargo[0].item.as_str(), lo4.cargo[0].qty),
+            ("res://ak_mag", 40)
+        );
+        assert!(wire["slots"][3]["loadout"].get("gear").is_none());
+        assert_eq!(wire["slots"][3]["loadout"]["cargo"][0]["qty"], 40);
+    }
+
+    #[test]
+    fn slot_loadout_mapper_edge_cases() {
+        // vest falls back when armoredVest is absent/empty.
+        let lo = serde_json::json!({"wear": {"vest": "res://rig", "armoredVest": ""}});
+        let m = mod_slot_loadout(&lo).expect("gear");
+        assert_eq!(m.gear.unwrap().vest.as_deref(), Some("res://rig"));
+        // Non-primary weapons never feed gear; empty strings drop; qty<1 drops.
+        let lo = serde_json::json!({
+            "wear": {"jacket": ""},
+            "weapons": [{"slotIndex": 1, "slotType": "primary", "weapon": "res://rpg"}],
+            "cargo": [{"container": "vest", "item": "res://mag", "qty": 0}]
+        });
+        assert!(mod_slot_loadout(&lo).is_none());
+        // Cargo-only survives without gear.
+        let lo =
+            serde_json::json!({"cargo": [{"container": "pants", "item": "res://b", "qty": 1}]});
+        let m = mod_slot_loadout(&lo).expect("cargo-only");
+        assert!(m.gear.is_none());
+        assert_eq!(m.cargo.len(), 1);
     }
 
     #[test]
