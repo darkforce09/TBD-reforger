@@ -145,6 +145,16 @@ for i in $(seq 1 "$RUNS"); do
     echo "FAIL run $i: script error lines:"; grep -E "SCRIPT[[:space:]]*\(E\)|Virtual Machine Exception" "$RAW" | head -5
     fail=1
   fi
+  # Vanilla respawn/faction churn (measured 2026-07-24: 138 engine "has switched from
+  # faction" lines at ~1 s, cycling US/USSR/FIA/CIV, because the vanilla spawn logic hunted
+  # a spawn point that slot bodies had replaced). Our own deploy sets affiliation once, so a
+  # healthy run emits 0-1 lines; 3 is headroom. The post-census check is the sharp one — a
+  # switch after the audit line means the hunt loop is alive again.
+  CHURN=$(grep -c "has switched from faction" "$RAW")
+  if [ "${CHURN:-0}" -gt 3 ]; then echo "FAIL run $i: faction churn ($CHURN switch lines)"; fail=1; fi
+  if sed -n "/\[TBD\]\[Audit\]/,\$p" "$RAW" | grep -q "has switched from faction"; then
+    echo "FAIL run $i: faction switch AFTER census — churn loop alive"; fail=1
+  fi
   # exactly one bind per player
   DUP=$(grep -oE "bound player [0-9]+" "$RAW" | sort | uniq -c | awk '$1 > 1' | head -3)
   if [ -n "$DUP" ]; then echo "FAIL run $i: duplicate binds:"; echo "$DUP"; fail=1; fi

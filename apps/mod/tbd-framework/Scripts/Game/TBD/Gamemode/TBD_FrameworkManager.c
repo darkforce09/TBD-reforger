@@ -25,6 +25,21 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! True when the CURRENTLY loaded world runs the TBD framework — the guard every
+	//! vanilla-suppressing modded class asks before standing vanilla down. Resolved off
+	//! the live game mode rather than s_Instance because statics outlive a world inside
+	//! one Workbench process (measured landmine), which would leave a stale instance
+	//! claiming ownership of a plain vanilla world.
+	static bool IsFrameworkWorld()
+	{
+		SCR_BaseGameMode gm = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
+		if (!gm)
+			return false;
+
+		return gm.FindComponent(TBD_FrameworkManager) != null;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	TBD_EGameStage GetStage()
 	{
 		return m_Stage;

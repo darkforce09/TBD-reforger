@@ -16,9 +16,11 @@ class TBD_SpawnManagerClass : SCR_BaseGameModeComponentClass {}
 //! Slot-body materialization (operator-approved synthesis of CRF + PlayableSelector):
 //! at mission load, one numbered slot BODY per compiled slots[] entry is spawned at
 //! the exact JSON transform (kit prefab, AI disabled, Arsenal loadout applied) and
-//! stands in the world through the lobby. Deploy = claim + bind the player onto the
-//! pre-materialized body via SCR_PlayerController.SetInitialMainEntity — the vanilla
-//! RequestSpawn pipeline (measured source of the double-spawn class) is never used.
+//! stands in the world through the lobby. Deploy = claim + hand the player onto the
+//! pre-materialized body through vanilla's POSSESS spawn request: it takes over an
+//! entity that already exists, so it never creates the second body that the
+//! body-creating spawn requests did (the measured double-spawn class), while still
+//! running the vanilla finalize the client needs to leave the loading screen.
 //! @authority server — the whole manager runs server-side.
 class TBD_SpawnManager : SCR_BaseGameModeComponent
 {
@@ -39,6 +41,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! the pull path (SCR_MenuSpawnLogic → DeployPlayerEx) is the production entry.
 	[Attribute("1", desc: "Auto-deploy all connected players on LOBBY (PIE/dev wave; slot picker turns this off).")]
 	protected bool m_bAutoDeploy;
+
+	//! Pause between death and the automatic redeploy. Vanilla's deploy menu used to be
+	//! what put a killed player back in the world; with it stood down (see
+	//! TBD_SCR_RespawnSystemComponent) the framework owns that too, and the delay is the
+	//! respawn beat — long enough for the kill to read as a death, not a teleport.
+	[Attribute("5000", desc: "Delay (ms) between death and automatic redeploy (auto-deploy worlds only).")]
+	protected int m_iRedeployDelayMs;
 
 	protected ref map<int, ref TBD_MissionSlotStruct> m_mPlayerSlot;
 	//! Slot key (uid-else-id) → the materialized slot body standing in the world.
@@ -180,6 +189,26 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Engine faction key a materialized body was built with (kit prefab affiliation) —
+	//! the fallback when a mission faction key has no mapping above.
+	protected string BodyFactionKey(IEntity body)
+	{
+		if (!body)
+			return string.Empty;
+
+		FactionAffiliationComponent affiliation = FactionAffiliationComponent.Cast(
+			body.FindComponent(FactionAffiliationComponent));
+		if (!affiliation)
+			return string.Empty;
+
+		Faction faction = affiliation.GetDefaultAffiliatedFaction();
+		if (!faction)
+			return string.Empty;
+
+		return faction.GetFactionKey();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Engine faction key for mission faction key.
 	string EngineFactionKey(string missionFactionKey)
 	{
@@ -187,6 +216,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		{
 			case "blufor": return "US";
 			case "opfor": return "USSR";
+			case "indfor": return "FIA";
+			case "civ": return "CIV";
 		}
 		return string.Empty;
 	}
@@ -446,22 +477,53 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			pc.FindComponent(SCR_PlayerFactionAffiliationComponent));
 		if (factionComp)
 		{
+			// Mission key first; if it maps to nothing (modded kit faction, unmapped side)
+			// fall back to whatever faction the body itself was built as, so the player is
+			// never registered under an empty key.
 			string engineKey = EngineFactionKey(slot.faction);
-			factionComp.SetAffiliatedFactionByKey(engineKey);
+			if (engineKey.IsEmpty())
+				engineKey = BodyFactionKey(body);
+
+			if (!engineKey.IsEmpty())
+			{
+				factionComp.SetAffiliatedFactionByKey(engineKey);
+				// Vanilla only learns about the affiliation through the manager (the
+				// PlayableSelector finalize); without it the player is faction-correct
+				// locally but invisible to faction-keyed vanilla systems.
+				SCR_FactionManager fm = SCR_FactionManager.Cast(GetGame().GetFactionManager());
+				if (fm)
+					fm.UpdatePlayerFaction_S(factionComp);
+			}
+			else
+			{
+				Print(string.Format("[TBD][Spawn] slot=%1 faction=%2 has no engine mapping — affiliation left untouched",
+					slot.id, slot.faction), LogLevel.WARNING);
+			}
 		}
 
-		// The takeover (CRF_PlayerHelper.AssignCharacterToPlayer mirror): bind is
-		// unconditional; the spawn-notify below is our own hook (equip idempotency,
-		// spawn-seen, census) + the vanilla data collector, both of which the
-		// bypassed vanilla pipeline would normally drive.
-		pc.SetInitialMainEntity(body);
+		// The takeover. Preferred route is vanilla's POSSESS spawn request: it is the
+		// engine's own "this player takes over an entity that already exists" path, so it
+		// creates no second body (the double-spawn class stays fixed) while running the
+		// full spawn finalize — including the client-side notification the loading screen
+		// waits on. A raw SetInitialMainEntity possesses the body and gives it a camera,
+		// but the client is never told a spawn happened and sits on the loading screen
+		// forever (measured 2026-07-25). SetInitialMainEntity stays as the fallback for
+		// when the request component is missing or refuses.
+		bool possessed = PossessSlotBody(pc, body, playerId);
+		if (!possessed)
+			pc.SetInitialMainEntity(body);
 
 		m_mDeployRequested.Set(playerId, true);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 		Print(string.Format("[TBD] SpawnManager: bound player %1 to slot %2 body (kit %3)", playerId, slot.Key(), slot.kit));
 
-		NotifySpawnedManually(playerId, body);
+		// Announce the spawn ourselves ONLY on the fallback route. The possess pipeline
+		// fires the game mode's spawn invoker itself, and our hook is subscribed to it —
+		// self-announcing there notified every listener twice (measured: two
+		// "deployed player=" diagnostics per bind).
+		if (!possessed)
+			NotifySpawnedManually(playerId, body);
 
 		// A1 watchdog: if control never materializes, re-arm so the next pull
 		// attempt can deploy instead of wedging on ALREADY forever.
@@ -470,14 +532,76 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Hand the player to its slot body through vanilla's possess spawn request.
+	//! Returns false when the route is unavailable, so the caller can fall back.
+	protected bool PossessSlotBody(SCR_PlayerController pc, IEntity body, int playerId)
+	{
+		SCR_PossessSpawnRequestComponent request = SCR_PossessSpawnRequestComponent.Cast(
+			pc.FindComponent(SCR_PossessSpawnRequestComponent));
+		if (!request)
+		{
+			Print(string.Format("[TBD][Spawn] player=%1 has no possess request component — falling back to direct bind", playerId), LogLevel.WARNING);
+			return false;
+		}
+
+		SCR_PossessSpawnData data = SCR_PossessSpawnData.FromEntity(body);
+		if (!data)
+		{
+			Print(string.Format("[TBD][Spawn] player=%1 possess data build failed — falling back to direct bind", playerId), LogLevel.WARNING);
+			return false;
+		}
+
+		if (!request.RequestRespawn(data))
+		{
+			Print(string.Format("[TBD][Spawn] player=%1 possess request refused — falling back to direct bind", playerId), LogLevel.WARNING);
+			return false;
+		}
+
+		Print(string.Format("[TBD][Spawn] player=%1 possess request accepted", playerId));
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! FALLBACK ROUTE ONLY (the possess pipeline announces its own spawns).
 	//! SetInitialMainEntity bypasses the vanilla spawn pipeline, so nothing fires the
-	//! usual spawn notifications (the CRF finding). Drive our own hook directly.
+	//! usual spawn notifications (the CRF finding). Fire the game mode's own invoker
+	//! rather than calling our hook directly: our hook is subscribed to it (OnPostInit),
+	//! so our bookkeeping still runs exactly once, and the vanilla listeners that assume
+	//! a spawn always announces itself finally hear it too (the PlayableSelector finalize).
+	//! Server-side only — a dedicated server also needs the client-side invoke, which is
+	//! the named follow-up in the verify log.
 	//! (CRF also notifies its own MODDED data collector here — vanilla
 	//! SCR_DataCollectorComponent has no such entry point; stats integration is a
 	//! future slice if the platform ever consumes vanilla session stats.)
 	protected void NotifySpawnedManually(int playerId, IEntity body)
 	{
-		OnPlayerSpawnedHook(playerId, body);
+		// Fire only once the player ACTUALLY controls the body: SetInitialMainEntity hands
+		// over asynchronously, and listeners that react to a spawn (the client-side ones
+		// that take the player off the loading screen among them) check the controlled
+		// entity and bail when it is still null. PlayableSelector fires from
+		// OnControlledEntityChanged for the same reason.
+		FinalizeSpawnWhenControlled(playerId, 0);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Poll until possession lands (200 ms × 25 = 5 s ceiling), then announce the spawn.
+	protected void FinalizeSpawnWhenControlled(int playerId, int attempt)
+	{
+		IEntity controlled = GetGame().GetPlayerManager().GetPlayerControlledEntity(playerId);
+		if (!controlled)
+		{
+			if (attempt < 25)
+				GetGame().GetCallqueue().CallLater(FinalizeSpawnWhenControlled, 200, false, playerId, attempt + 1);
+			else
+				Print(string.Format("[TBD][Spawn] player=%1 never took control of its body — spawn not announced", playerId), LogLevel.WARNING);
+			return;
+		}
+
+		SCR_BaseGameMode gm = SCR_BaseGameMode.Cast(GetOwner());
+		if (gm)
+			gm.GetOnPlayerSpawned().Invoke(playerId, controlled);
+		else
+			OnPlayerSpawnedHook(playerId, controlled);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -552,6 +676,30 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 		Print(string.Format("[TBD][Spawn] player=%1 killed — re-armed for respawn (slot retained)", playerId));
+
+		// Re-arming alone used to be enough because the vanilla deploy menu asked again;
+		// it is stood down now, so the framework drives the next life itself.
+		if (m_bAutoDeploy)
+			GetGame().GetCallqueue().CallLater(RedeployAfterDeath, m_iRedeployDelayMs, false, playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Puts a killed player back on his slot: DeployPlayerEx finds the slot body dead and
+	//! rematerializes a fresh dressed one (re-equip every spawn — operator-locked; the
+	//! corpse stays where it fell).
+	//! @authority server
+	protected void RedeployAfterDeath(int playerId)
+	{
+		if (!GetGame().GetPlayerManager().GetPlayerController(playerId))
+			return;  // Disconnected during the respawn beat.
+
+		if (m_mDeployRequested.Contains(playerId))
+			return;  // Already back in the world by another path.
+
+		TBD_EDeployResult r = DeployPlayerEx(playerId);
+		Print(string.Format("[TBD][Spawn] path=redeploy player=%1 result=%2", playerId, typename.EnumToString(TBD_EDeployResult, r)));
+		if (r == TBD_EDeployResult.RETRY)
+			ScheduleDeployRetry(playerId);
 	}
 
 	//------------------------------------------------------------------------------------------------

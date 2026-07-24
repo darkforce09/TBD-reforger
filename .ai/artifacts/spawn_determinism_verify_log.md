@@ -126,3 +126,173 @@ The gate surfaced (and the fixes absorbed) three real engine behaviors along the
 
 Mint tickets + tags for: A1+A2+A3+B1 (mod+compiler commit) and B2 (editor commit);
 docs sync per this log.
+---
+
+# Addendum — slot-body materialization: possess-route deploy + vanilla stand-down
+
+**Date:** 2026-07-25 · **Executor:** Fable 5 / Claude Code · **Branch:** `main` ·
+**Baseline:** `f4b25440` (slot-body materialization, compile-pending) ·
+**Tickets/tags:** for Cursor to mint
+
+Closes the three defects the materialization handoff left open, plus one found during
+verification. Architecture unchanged (bodies materialized from compiled JSON at mission
+load, one per slot, dressed before the lobby); what changed is how the player is handed
+onto a body, and how much of vanilla is allowed to run.
+
+## Compile receipt (the set→map conversion in f4b25440 had never been compiled)
+
+Fresh Workbench boot, `Compiling Game scripts` section: **zero errors**
+(`Module: Game; loaded 5651x files; 11055x classes`, engine 1.7.0.54, "Game successfully
+created"). The `set<int>` → `map<int,bool>` conversion is confirmed good: the two
+`Index out of bounds` VM exceptions at `TBD_SpawnManager.c:461` ← `:381` that fired every
+run before are **gone** in every session since.
+
+## Defect 1 — `set.Remove()` by index · FIXED (compile-confirmed)
+
+Nothing further; the conversion shipped in `f4b25440`, this program only proved it.
+
+## Defect 2 — automatic faction cycling · ROOT-CAUSED + FIXED
+
+**Root cause (measured, not inferred).** The churn is emitted by vanilla
+`SCR_PlayerFactionAffiliationComponent`, not by any TBD code — the only TBD faction write
+is one `SetAffiliatedFactionByKey` per bind. Session `logs_2026-07-24_18-48-37` and a
+reproduction on 2026-07-25 both show it starting ~9 ms after slot materialization,
+**before** the first VM exception and **before** the bind, then continuing unbroken for
+minutes after a successful bind — which **falsifies handoff Lead 1** (the VM exceptions
+were not the cause; with them fixed the churn was unchanged at 13 switches / 9 after
+census). Each newly-visited faction drags one `PlayableGroup.et` spawn plus a
+`Formation of group … not found in SCR_AIWorld` warning behind it — 4 distinct factions,
+4 groups, so the groups are downstream, not the driver.
+
+The driver is handoff **Lead 2**: with slot bodies replacing spawn points there are zero
+`SCR_SpawnPoint` entities, so once vanilla registers the player it hunts for a faction it
+can spawn him on and never finds one — re-rolling roughly once a second, forever.
+`TBD_SCR_MenuSpawnLogic.OnPlayerAuditSuccess_S` was feeding that hunt directly: its
+materialized-guard is still false at audit time (audit ~1.1 s before materialization), so
+it fell through to `super` every run.
+
+**Fix.** New `TBD_SCR_RespawnSystemComponent.c` (`modded class SCR_RespawnSystemComponent`)
+swallows `OnPlayerRegistered_S` / `OnPlayerAuditSuccess_S`, and `TBD_SCR_MenuSpawnLogic`
+stops calling `super` on those two hooks. Vanilla never learns the player exists, so the
+hunt never starts. **Measured: 13 switch lines → 0, and 0 after the census line.**
+
+Every override is guarded on the new `TBD_FrameworkManager.IsFrameworkWorld()` (resolved
+off the live game mode, not a static, because statics outlive a world inside one Workbench
+process). PlayableSelector's equivalents are unconditional — they are a total conversion;
+this mod loads world-globally and must stay inert on plain vanilla worlds.
+
+**Deliberately NOT overridden:** `IsRespawnEnabled()` / `IsFactionChangeAllowed()`.
+Reporting respawn "off" reads well but makes the authority reject our own possess request
+(`CanRequestSpawn_S` consults it). They were in the first working build and were removed
+once the possess route landed; the churn stayed at 0 without them, which also confirms
+registration suppression — not the policy getters — is what fixes it.
+
+## Defect 3 — `EngineFactionKey` gaps · FIXED
+
+`indfor` → `FIA` and `civ` → `CIV` added (compiled keys are `blufor/opfor/indfor/civ` from
+the flatten `slug_key`; all four engine keys are proven present by the churn log itself).
+Added a fallback: when a mission key maps to nothing, the body's own
+`FactionAffiliationComponent.GetDefaultAffiliatedFaction()` key is used, and the write is
+skipped entirely (with a WARNING) rather than registering the player under `""`. Also
+added `SCR_FactionManager.UpdatePlayerFaction_S` after the affiliation write — without it
+the player is faction-correct locally but invisible to faction-keyed vanilla systems.
+
+## Defect 4 (found during verification) — client pinned on the loading screen · FIXED
+
+**Not in the handoff; found because the operator was watching.** After the churn fix the
+player was bound, possessed, and had a live `PlayerCamera` — server-side state was
+perfect, census `characters=1 bodies=1 players=1` — yet the client sat on the vanilla
+loading screen. Instrumented runs showed `pmControlled=set localPc=set localControlled=set
+localMain=set camera=PlayerCamera topMenu=none`: possession genuinely worked and **no menu
+was open**, so nothing script-side was holding an overlay.
+
+**Root cause.** `SCR_PlayerController.SetInitialMainEntity` possesses the body and gives it
+a camera, but it is not a spawn: it never runs the vanilla spawn finalize, so the
+client-side "player spawned locally" notification (`SCR_RespawnComponent`'s chain,
+`SGetOnLocalPlayerSpawned`) never fires and the loading screen is never released. This is
+why the earlier architecture — which used the vanilla spawn pipeline — never showed it.
+
+Two cheaper levers were tried first and are recorded as **negative results**: forcing
+`GetWaitForSpawnPoints()` to false on framework worlds (correct on its own merits — vanilla
+would otherwise wait forever for spawn points that no longer exist — and kept), and
+retiming our own `GetOnPlayerSpawned()` invoke to fire only once possession lands (also
+kept, on the fallback path). Neither released the screen.
+
+**Fix.** Deploy now goes through vanilla's own **possess** spawn request —
+`SCR_PossessSpawnData.FromEntity(body)` + `SCR_PossessSpawnRequestComponent.RequestRespawn`
+— the engine's designed "this player takes over an entity that already exists" path. It
+creates no entity, so the double-spawn class stays fixed (census remains
+`characters == bodies`), while running the full finalize the client waits on.
+`SetInitialMainEntity` remains as the fallback when the request component is missing or
+refuses, and each outcome logs. Because the possess pipeline fires the spawn invoker
+itself, our self-announce now runs **only** on the fallback route — self-announcing on both
+notified every listener twice (measured: two `deployed player=` lines per bind).
+
+**Operator receipt:** in-world, first person, dressed, at the slot transform, no loading
+screen (screenshot, 2026-07-25 01:00).
+
+## Player controller prefab (new)
+
+`Prefabs/Systems/TBD_PlayerController.et` (+`.meta`), wired via `PlayerControllerPrefab` on
+`TBD_GameMode.et` together with `m_bAutoPlayerRespawn 0` / `m_bAllowFactionChange 0`.
+It inherits vanilla `DefaultPlayerControllerMP.et` and disables exactly the two
+**body-creating** request components — `SCR_FreeSpawnRequestComponent` and
+`SCR_SpawnPointRespawnRequestComponent` — while leaving `SCR_RespawnComponent` and
+`SCR_PossessSpawnRequestComponent` enabled, because the possess route is now the deploy
+path. Vanilla therefore cannot spawn a body on a framework world, but can still hand a
+player to one that exists. Proof it is live: the session spawns
+`{1A1ABD939E1E8423}Prefabs/Systems/TBD_PlayerController.et` where it previously spawned
+vanilla `{225E51284CC95CFA}…DefaultPlayerControllerMP.et`.
+
+Component-instance GUIDs are vanilla facts; PlayableSelector was used as a design
+reference only, never as a source of code.
+
+## Death → redeploy (new)
+
+With the vanilla deploy menu stood down, nothing re-deployed a killed player: `OnPlayerKilled`
+re-armed the guard and then nobody asked again. It now schedules `RedeployAfterDeath` after
+`m_iRedeployDelayMs` (new attribute, default 5000), gated on `m_bAutoDeploy`, guarded on
+still-connected and not-already-deployed. `DeployPlayerEx` finds the slot body dead and
+rematerializes a fresh dressed one — re-equip every spawn, operator-locked; the corpse stays.
+
+## Harness
+
+`scripts/mod/tbd-spawn-determinism.sh` gains two per-run assertions: total
+`has switched from faction` lines > 3 fails the run, and **any** such line after the
+`[TBD][Audit]` census line fails it (the sharp signal — a switch after census means the hunt
+loop is alive). A healthy run emits 0.
+
+## Gate — INCOMPLETE (2/5), not a pass
+
+The 5-run gate was **stopped after run 2 at the operator's request** (the harness restarts
+Workbench every run and they needed the machine). What the two completed runs show:
+
+- **run1 / run2 digests byte-identical** — `6abcbdd84e02`, 21 canonical lines each
+- census `characters=1 bodies=1 players=1` both runs (materialization model holds:
+  characters == bodies, so the possess route created nothing)
+- **zero** `SCRIPT (E)` / Virtual Machine Exception lines
+- **zero** `has switched from faction` lines — the new churn assertions pass
+- `possess request accepted` and `vanilla respawn system suppressed (framework world)`
+  present in both
+
+**This is not the required 5/5 and must not be read as one.** To close it:
+`bash scripts/mod/tbd-spawn-determinism.sh 5` (~15 min, restarts Workbench per run).
+
+Digest moved from the prior program's `3e31fd8cf7c6` (18 lines) to `6abcbdd84e02`
+(21 lines) — expected: `+possess request accepted`, `+vanilla respawn system suppressed`,
+`+cargo` lines now under the slot tag, and the old vanilla-pipeline lines gone. The gate
+compares runs against each other, not against a stored golden, so it re-baselines itself.
+
+## Named follow-ups (no silent deferrals)
+
+- **Dedicated-server client-side spawn invoke.** Our fallback-path invoke is server-side
+  only; PlayableSelector RPCs theirs to the client as well. Not exercised in PIE
+  (single process), and the possess route makes it moot on the primary path — but it is
+  the fallback's known gap on a real server.
+- **Dedicated / JIP pass** (playerId reuse, real audit, reconnect reclaim) — PIE cannot
+  exercise these. Pre-existing item, still open.
+- **T-068.13 lobby / slot picker** — `ClaimSlot` is the ready backend; `m_bAutoDeploy`
+  turns the PIE wave off when the picker lands.
+- **Operator manual receipt still outstanding:** death → redeploy (grenade at feet →
+  fresh dressed body at the slot after ~5 s, corpse remains). PIE logs cannot prove the
+  player-death path.

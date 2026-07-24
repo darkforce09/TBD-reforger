@@ -10,4 +10,7 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
   SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
   }
  }
+ PlayerControllerPrefab "{1A1ABD939E1E8423}Prefabs/Systems/TBD_PlayerController.et"
+ m_bAutoPlayerRespawn 0
+ m_bAllowFactionChange 0
 }
