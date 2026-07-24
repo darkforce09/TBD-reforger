@@ -7,13 +7,14 @@
  *
  * T-068.5.1 — VISUAL FIX: the previous pass used SCR_InventoryStorageManagerComponent.TryInsertItem,
  * which returns true while the item sits in storage (not worn) → character spawned naked despite
- * "equip OK" logs. The wear path now uses the real equip APIs and a deferred worn-verify gate:
- *   - clothing (uniform/vest/helmet): SCR_InventoryStorageManagerComponent.EquipCloth(item) (void),
- *     verified via SCR_CharacterInventoryStorageComponent.GetClothFromArea(<LoadoutAreaType>).
- *   - primary weapon: SCR_InventoryStorageManagerComponent.EquipWeapon(item),
- *     verified via SCR_CharacterInventoryStorageComponent.GetCurrentWeapon() (owner == item).
- * "equip OK" is logged ONLY after worn-verify; an inserted-but-not-worn item logs FAILED and is
- * deleted. Verify is deferred one CallLater tick because EquipCloth/EquipWeapon settle async.
+ * "equip OK" logs. The wear path uses the real equip APIs and a deferred worn-verify gate.
+ *
+ * T-068.12 — the equip/verify/cargo machinery moved to the shared
+ * TBD_LoadoutApplication (TBD_LoadoutEquipHelper.c) so this dev harness and the
+ * SpawnManager PLAYER path run identical code; this component keeps only the
+ * $profile file read, the v1 contract guards, and the test-NPC spawn. Its log
+ * lines are tagged [TBD][Loadout][TestNPC] (the player path logs
+ * [TBD][Loadout][Player]) so E2E evidence is unambiguous.
  *
  * Server-only, dev-gated. Wired onto Prefabs/Systems/TBD_GameMode.et so a Workbench wb_play of
  * Missions/TBD_Dev_POC.conf runs it. Spawn @ 6400/6400 = the TBD_Dev_POC game-mode coords (the
@@ -44,17 +45,6 @@ class TBD_LoadoutExportStruct
 }
 
 //------------------------------------------------------------------------------------------------
-//! One issued equip awaiting its deferred worn-verify pass.
-class TBD_PendingEquip
-{
-	string label;
-	string resName;
-	IEntity item;
-	bool isWeapon;
-	typename areaType; // LoadoutAreaType subclass for clothing; ignored for weapon
-}
-
-//------------------------------------------------------------------------------------------------
 class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 {
 	protected static const string LOADOUT_PATH = "$profile:TBD_LoadoutTest.json";
@@ -71,7 +61,7 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 	vector m_vSpawnOrigin;
 
 	protected IEntity m_Character;
-	protected ref array<ref TBD_PendingEquip> m_aPending = {};
+	protected ref TBD_LoadoutApplication m_App; // strong ref until its settle tick completes
 
 	//------------------------------------------------------------------------------------------------
 	//! @authority server — the dev equip test spawns and dresses the test NPC server-side only.
@@ -137,15 +127,18 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 			return;
 		}
 
-		// --- A2-A5: issue each equip (worn-verify is deferred below) ---------------------------
-		m_aPending.Clear();
-		IssueEquip("primary", doc.gear.primary, true,  LoadoutAreaType); // areaType unused for weapon
-		IssueEquip("uniform", doc.gear.uniform, false, LoadoutJacketArea);
-		IssueEquip("vest",    doc.gear.vest,    false, LoadoutVestArea);
-		IssueEquip("helmet",  doc.gear.helmet,  false, LoadoutHeadCoverArea);
+		// --- A2-A5: run the shared application (equip → settle tick → worn-verify) -----------
+		// v1 gear maps 1:1 onto the T-068.11 gear block; no cargo in the v1 file contract.
+		TBD_SlotGearStruct gear = new TBD_SlotGearStruct();
+		gear.primary = doc.gear.primary;
+		gear.uniform = doc.gear.uniform;
+		gear.vest = doc.gear.vest;
+		gear.helmet = doc.gear.helmet;
+		TBD_SlotLoadoutStruct loadout = new TBD_SlotLoadoutStruct();
+		loadout.gear = gear;
 
-		// EquipCloth/EquipWeapon settle asynchronously — verify next tick.
-		GetGame().GetCallqueue().CallLater(VerifyEquips, 1000, false);
+		m_App = new TBD_LoadoutApplication(m_Character, loadout, "[TBD][Loadout][TestNPC]", "loadout-test");
+		m_App.Run();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -175,163 +168,4 @@ class TBD_LoadoutEquipComponent : SCR_BaseGameModeComponent
 		return ent;
 	}
 
-	//------------------------------------------------------------------------------------------------
-	//! Spawn the gear item and hand it to the equip API. Worn-verify happens later in VerifyEquips.
-	protected void IssueEquip(string label, string resName, bool isWeapon, typename areaType)
-	{
-		if (resName.IsEmpty())
-		{
-			Print(string.Format("[TBD][Loadout] %1: skipped (empty slot)", label));
-			return; // documented skip, not a FAIL
-		}
-
-		SCR_InventoryStorageManagerComponent mgr = SCR_InventoryStorageManagerComponent.Cast(
-			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
-		if (!mgr)
-		{
-			Print(string.Format("[TBD][Loadout] %1 FAILED: character has no inventory manager (%2)", label, resName), LogLevel.ERROR);
-			return;
-		}
-
-		Resource resource = Resource.Load(resName);
-		if (!resource || !resource.IsValid())
-		{
-			Print(string.Format("[TBD][Loadout] %1 FAILED to load %2", label, resName), LogLevel.ERROR);
-			return;
-		}
-
-		// Spawn the item entity at the character, then issue the real equip.
-		EntitySpawnParams params = new EntitySpawnParams();
-		params.TransformMode = ETransformMode.WORLD;
-		Math3D.MatrixIdentity4(params.Transform);
-		params.Transform[3] = m_Character.GetOrigin();
-
-		IEntity item = GetGame().SpawnEntityPrefab(resource, GetGame().GetWorld(), params);
-		if (!item)
-		{
-			Print(string.Format("[TBD][Loadout] %1 FAILED to spawn item %2", label, resName), LogLevel.ERROR);
-			return;
-		}
-
-		if (isWeapon)
-			mgr.EquipWeapon(item);
-		else
-			mgr.EquipCloth(item);
-
-		TBD_PendingEquip pending = new TBD_PendingEquip();
-		pending.label = label;
-		pending.resName = resName;
-		pending.item = item;
-		pending.isWeapon = isWeapon;
-		pending.areaType = areaType;
-		m_aPending.Insert(pending);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! True if entity's parent chain roots at the given character (attached/worn, not loose).
-	protected bool IsRootedOn(IEntity entity, IEntity root)
-	{
-		IEntity cur = entity;
-		while (cur)
-		{
-			if (cur == root)
-				return true;
-			cur = cur.GetParent();
-		}
-		return false;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Deferred: confirm each issued item is actually WORN before logging equip OK.
-	protected void VerifyEquips()
-	{
-		SCR_CharacterInventoryStorageComponent charStorage;
-		if (m_Character)
-			charStorage = SCR_CharacterInventoryStorageComponent.Cast(
-				m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
-
-		if (!charStorage)
-		{
-			Print("[TBD][Loadout] FAILED: character has no SCR_CharacterInventoryStorageComponent (cannot verify worn state)", LogLevel.ERROR);
-			return;
-		}
-
-		foreach (TBD_PendingEquip p : m_aPending)
-		{
-			bool worn = false;
-			string detail;
-
-			if (p.isWeapon)
-			{
-				// SCR_CharacterInventoryStorageComponent.GetCurrentWeapon is protected — use the
-				// public BaseWeaponManagerComponent on the character instead.
-				IEntity wornEnt;
-				BaseWeaponManagerComponent weaponMgr = BaseWeaponManagerComponent.Cast(
-					m_Character.FindComponent(BaseWeaponManagerComponent));
-				if (weaponMgr)
-				{
-					BaseWeaponComponent weapon = weaponMgr.GetCurrentWeapon();
-					if (weapon)
-						wornEnt = weapon.GetOwner();
-				}
-				// Accept either: the equipped item is the current weapon, OR it is rooted on the
-				// character (slung in a weapon slot, not loose in the world / a vicinity drop).
-				worn = (wornEnt && wornEnt == p.item) || IsRootedOn(p.item, m_Character);
-				detail = "weapon";
-				if (wornEnt)
-					detail = "weapon=" + wornEnt.GetID().ToString();
-			}
-			else
-			{
-				// Clothing area typenames vary per item (a plate carrier reports
-				// LoadoutArmoredVestSlotArea, not LoadoutVestArea), so search the expected area first
-				// then the other body areas — a single fixed typename would false-FAIL (Amendment 3).
-				// GetClothFromArea is the proven worn signal; IsRootedOn is a safety fallback.
-				bool foundArea = false;
-				string foundName;
-				array<typename> candidates = {
-					p.areaType,
-					LoadoutJacketArea, LoadoutVestArea, LoadoutArmoredVestSlotArea,
-					LoadoutHeadCoverArea, LoadoutCoverArea, LoadoutBackpackArea
-				};
-				foreach (typename area : candidates)
-				{
-					if (charStorage.GetClothFromArea(area) == p.item)
-					{
-						foundArea = true;
-						foundName = area.ToString();
-						break;
-					}
-				}
-
-				if (foundArea)
-				{
-					worn = true;
-					detail = foundName + " ent=" + p.item.GetID().ToString();
-				}
-				else if (IsRootedOn(p.item, m_Character))
-				{
-					worn = true;
-					detail = "rooted on character (no matching loadout area)";
-				}
-				else
-				{
-					detail = "not in any loadout area";
-				}
-			}
-
-			if (worn)
-			{
-				Print(string.Format("[TBD][Loadout] %1 equip OK %2 [%3]", p.label, p.resName, detail));
-			}
-			else
-			{
-				Print(string.Format("[TBD][Loadout] %1 FAILED (not worn) %2 [%3]", p.label, p.resName, detail), LogLevel.ERROR);
-				if (p.item)
-					SCR_EntityHelper.DeleteEntityAndChildren(p.item);
-			}
-		}
-
-		Print("[TBD][Loadout] equip pass complete");
-	}
 }

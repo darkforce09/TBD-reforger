@@ -24,6 +24,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected int m_iRoundRobin;
 	protected bool m_bSlotSpawnPointsBuilt;
 	protected ref set<int> m_sDeployRequested;
+	//! T-068.12 — strong refs to in-flight loadout applications (CallLater holds none);
+	//! session-scale accumulation, cleared with the component.
+	protected ref array<ref TBD_LoadoutApplication> m_aLoadoutApps = {};
 
 	//------------------------------------------------------------------------------------------------
 	void TBD_SpawnManager(IEntityComponentSource src, IEntity ent, IEntity parent)
@@ -302,7 +305,45 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_sDeployRequested.Insert(playerId);
 		Print(string.Format("[TBD] SpawnManager: spawn requested player %1 slot %2 kit %3", playerId, slot.id, slot.kit));
 		GetGame().GetCallqueue().CallLater(LogDeployedTransform, 3000, false, playerId);
+		// T-068.12 — layer the slot's compiled Arsenal loadout (gear + cargo) onto the
+		// HUMAN player once the spawn settles (same 3 s seam as the transform log).
+		GetGame().GetCallqueue().CallLater(EquipSlotLoadout, 3000, false, playerId, 0);
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-068.12 — apply the assigned slot's compiled `loadout` block (mission JSON,
+	//! T-068.11) onto the spawned player character via the shared T-068.5.1 equip
+	//! path (TBD_LoadoutApplication: EquipCloth/EquipWeapon → worn-verify → cargo
+	//! TryInsertItemInStorage). Bounded retry while the controlled entity is still
+	//! replicating (the LogDeployedTransform "spawn pending" case). No loadout
+	//! block = kit-only slot (Phase-1 semantics — silent skip is the contract).
+	//! @authority server
+	protected void EquipSlotLoadout(int playerId, int attempt)
+	{
+		TBD_MissionSlotStruct slot = GetAssignedSlot(playerId);
+		if (!slot || !slot.loadout)
+			return;
+
+		IEntity ent = GetGame().GetPlayerManager().GetPlayerControlledEntity(playerId);
+		if (!ent)
+		{
+			if (attempt < 5)
+			{
+				GetGame().GetCallqueue().CallLater(EquipSlotLoadout, 2000, false, playerId, attempt + 1);
+			}
+			else
+			{
+				Print(string.Format("[TBD][Loadout][Player] gave up waiting for controlled entity player=%1 slot=%2",
+					playerId, slot.id), LogLevel.ERROR);
+			}
+			return;
+		}
+
+		Print(string.Format("[TBD][Loadout][Player] applying loadout player=%1 slot=%2", playerId, slot.id));
+		TBD_LoadoutApplication app = new TBD_LoadoutApplication(ent, slot.loadout, "[TBD][Loadout][Player]", slot.id);
+		m_aLoadoutApps.Insert(app);
+		app.Run();
 	}
 
 	//------------------------------------------------------------------------------------------------

@@ -82,9 +82,7 @@ fn display_resource(resource: &str) -> String {
         .next()
         .unwrap_or(resource)
         .trim();
-    base.strip_suffix(".et")
-        .unwrap_or(base)
-        .to_string()
+    base.strip_suffix(".et").unwrap_or(base).to_string()
 }
 
 /// Reconstruct the ORBAT from the editor graph, mirroring `compile.ts` order EXACTLY:
