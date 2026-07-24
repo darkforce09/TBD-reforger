@@ -569,6 +569,28 @@ impl MissionDocCore {
         }
     }
 
+    /// B2 — delete a vehicle row entirely: detach from its squad (if any) and remove
+    /// it from `vehiclesById` ([`Self::detach_vehicle`] alone leaves the row orphaned).
+    pub fn remove_vehicle(&self, vehicle_id: &str) {
+        let mut txn = self.begin();
+        let squad_id = match self.vehicles.get(&txn, vehicle_id) {
+            Some(Out::YMap(v)) => match v.get(&txn, "squadId") {
+                Some(Out::Any(Any::String(s))) => Some(s.to_string()),
+                _ => None,
+            },
+            _ => return,
+        };
+        if let Some(sid) = squad_id {
+            if let Some(Out::YMap(sq)) = self.squads.get(&txn, &sid) {
+                let arr = read_id_array(&txn, &self.squads, &sid, "vehicleIds");
+                let remove: HashSet<&str> = HashSet::from([vehicle_id]);
+                let kept = retain_ids(&arr, &remove);
+                sq.insert(&mut txn, "vehicleIds", Any::Array(kept.into()));
+            }
+        }
+        self.vehicles.remove(&mut txn, vehicle_id);
+    }
+
     /// Detach a vehicle from a squad's `vehicleIds` and clear `vehicle.squadId` (T-180.2).
     /// The vehicle row remains in `vehiclesById`.
     pub fn detach_vehicle(&self, squad_id: &str, vehicle_id: &str) {
@@ -669,6 +691,40 @@ impl MissionDocCore {
             }
             if let Some(s) = stance {
                 slot.insert(&mut txn, "stance", s);
+            }
+        }
+    }
+
+    /// B2 — mutate an existing slot's role/tag/character in place (ORBAT Apply mutate
+    /// semantics: the slot id — and with it every downstream `uid` reference — survives
+    /// the re-apply). `tag` / `asset_id`: `Some(non-empty)` sets, `None`/empty clears
+    /// (library rows are authoritative on Apply). Position, stance and identity fields
+    /// are deliberately untouched — an operator-moved slot stays where it was moved.
+    pub fn update_slot_role_character(
+        &self,
+        id: &str,
+        role: &str,
+        tag: Option<String>,
+        asset_id: Option<String>,
+    ) {
+        let mut txn = self.begin();
+        if let Some(Out::YMap(slot)) = self.slots.get(&txn, id) {
+            slot.insert(&mut txn, "role", role);
+            match tag.filter(|s| !s.is_empty()) {
+                Some(t) => {
+                    slot.insert(&mut txn, "tag", t);
+                }
+                None => {
+                    slot.remove(&mut txn, "tag");
+                }
+            }
+            match asset_id.filter(|s| !s.is_empty()) {
+                Some(a) => {
+                    slot.insert(&mut txn, "assetId", a);
+                }
+                None => {
+                    slot.remove(&mut txn, "assetId");
+                }
             }
         }
     }

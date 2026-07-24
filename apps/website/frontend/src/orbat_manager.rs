@@ -120,6 +120,16 @@ pub fn OrbatManagerDialog(
         // Track orbat rebuilds from `after_local_edit`.
         let _tree = orbat.get();
         let snap = read_snapshot();
+        // B2 — informational player-cap indicator: authored slots may exceed 128 by
+        // design (the cap is on concurrent PLAYERS, server-enforced), so this warns
+        // by color only and never blocks.
+        let total_slots = snap.slots.len();
+        let cap_label = format!("{total_slots} slots · server cap 128 players");
+        let cap_cls = if total_slots > 128 {
+            "rounded border border-error-alert/40 bg-error/10 px-2 py-0.5 font-mono text-label-sm tabular-nums normal-case text-error-alert"
+        } else {
+            "rounded border border-outline-variant/40 bg-surface-variant/30 px-2 py-0.5 font-mono text-label-sm tabular-nums normal-case text-on-surface-variant"
+        };
         let side = side_tab.get();
         let q = search.get().trim().to_lowercase();
         let mut squad_nodes = if snap.factions.is_empty() {
@@ -175,6 +185,7 @@ pub fn OrbatManagerDialog(
                     <div class="flex items-center gap-3">
                         <MaterialIcon name="account_tree" class="text-primary text-[20px]" />
                         <h2 class="text-headline-sm tracking-tighter text-on-surface">"ORBAT Manager"</h2>
+                        <span data-orbat-cap class=cap_cls>{cap_label}</span>
                     </div>
                     <div class="flex rounded border border-white/10 bg-surface-dim p-0.5">
                         {SIDES.iter().map(|&s| {
