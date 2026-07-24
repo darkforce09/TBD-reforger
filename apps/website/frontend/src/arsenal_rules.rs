@@ -578,6 +578,181 @@ pub fn index_by_name(items: &[RegistryItem]) -> HashMap<String, &RegistryItem> {
         .collect()
 }
 
+// ---- T-068.15.2 — cargo (SlotLoadoutV2.cargo[], loadout-export v2 shape) ----
+
+/// One cargo row on `SlotLoadoutV2.cargo[]` (`{container, item, qty}` — the
+/// loadout-export v2 skeleton, volume/weight budget model, no grid cells).
+#[derive(Clone, Debug, PartialEq)]
+pub struct CargoRow {
+    pub container: String,
+    pub item: String,
+    pub qty: i64,
+}
+
+/// Wear keys that are cargo containers (capacity readout + cargo groups).
+/// `armoredVest` shares the `vest` container key on the cargo side (spike lock:
+/// container = first `TargetStorage=` path segment, and the engine emits `Vest/…`).
+pub const CARGO_CONTAINERS: &[&str] = &["vest", "pants", "jacket", "backpack"];
+
+/// Wear rows whose picked garment carries a capacity readout.
+pub const CAPACITY_KEYS: &[&str] = &["vest", "armoredVest", "jacket", "pants", "backpack"];
+
+/// Map a `character_default_cargo` evidence string (`TargetStorage=<path>`) to its
+/// Arsenal container key: first path segment `Pants…`→pants, `Jacket…`→jacket,
+/// `Vest…`→vest, `Back…`→backpack (spike lock). `None` = unknown segment (skipped).
+pub fn cargo_container_from_evidence(evidence: &str) -> Option<&'static str> {
+    let path = evidence.strip_prefix("TargetStorage=")?;
+    let seg = path.split('/').next().unwrap_or("").to_ascii_lowercase();
+    if seg.starts_with("pants") {
+        Some("pants")
+    } else if seg.starts_with("jacket") {
+        Some("jacket")
+    } else if seg.starts_with("vest") {
+        Some("vest")
+    } else if seg.starts_with("back") {
+        Some("backpack")
+    } else {
+        None
+    }
+}
+
+/// Per-character default cargo from the RAW compat edge rows (the `CompatGraph`
+/// drops evidence + qty, so the seed map is built beside it). Aggregated by
+/// (container, item) with qty summed; deterministic container/item order.
+pub fn cargo_defaults_by_character(edges: &[RegistryCompatEdge]) -> HashMap<String, Vec<CargoRow>> {
+    let mut by_char: HashMap<String, BTreeMap<(String, String), i64>> = HashMap::new();
+    for e in edges {
+        if e.edge_type != "character_default_cargo" {
+            continue;
+        }
+        let Some(container) = cargo_container_from_evidence(&e.evidence) else {
+            continue;
+        };
+        *by_char
+            .entry(e.to_node.clone())
+            .or_default()
+            .entry((container.to_string(), e.from_node.clone()))
+            .or_insert(0) += e.qty;
+    }
+    by_char
+        .into_iter()
+        .map(|(rn, m)| {
+            let rows = m
+                .into_iter()
+                .map(|((container, item), qty)| CargoRow {
+                    container,
+                    item,
+                    qty,
+                })
+                .collect();
+            (rn, rows)
+        })
+        .collect()
+}
+
+/// Read `cargo[]` off a `SlotLoadoutV2` JSON → `(rows, key_present)`. A present key —
+/// `[]`, `null` (normalized to no rows), or rows — is **user state** (seed-ineligible);
+/// malformed rows are dropped, not errors.
+pub fn cargo_from_loadout(loadout_json: Option<&str>) -> (Vec<CargoRow>, bool) {
+    let Some(json) = loadout_json else {
+        return (Vec::new(), false);
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
+        return (Vec::new(), false);
+    };
+    let Some(c) = v.get("cargo") else {
+        return (Vec::new(), false);
+    };
+    let rows = c
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|r| {
+                    Some(CargoRow {
+                        container: r.get("container")?.as_str()?.to_string(),
+                        item: r.get("item")?.as_str()?.to_string(),
+                        qty: r.get("qty")?.as_i64().filter(|q| *q >= 1)?,
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    (rows, true)
+}
+
+/// `cargo[]` as the canonical JSON array (loadout-export v2 row shape).
+pub fn cargo_rows_json(rows: &[CargoRow]) -> serde_json::Value {
+    serde_json::Value::Array(
+        rows.iter()
+            .map(|r| serde_json::json!({ "container": r.container, "item": r.item, "qty": r.qty }))
+            .collect(),
+    )
+}
+
+/// T-068.15.2 seed rule: eligible only when the loadout has **no `cargo` key** (or no
+/// loadout at all); once seeded the writer always emits the key, so a user-cleared
+/// list sticks. Returns the new loadout JSON when the seed applies.
+pub fn seed_cargo(loadout_json: Option<&str>, defaults: &[CargoRow]) -> Option<String> {
+    if defaults.is_empty() {
+        return None;
+    }
+    let (_, key_present) = cargo_from_loadout(loadout_json);
+    if key_present {
+        return None;
+    }
+    let mut v = loadout_json
+        .and_then(|j| serde_json::from_str::<serde_json::Value>(j).ok())
+        .unwrap_or_else(|| {
+            let mut wear = serde_json::Map::new();
+            for k in WEAR_PICK_KEYS {
+                wear.insert((*k).to_string(), serde_json::Value::Null);
+            }
+            serde_json::json!({ "version": 2, "wear": wear, "weapons": [] })
+        });
+    if !v.is_object() {
+        return None;
+    }
+    v["cargo"] = cargo_rows_json(defaults);
+    Some(v.to_string())
+}
+
+/// Warn-only cargo budget for one container group vs the picked garment's capacity
+/// (absent capacity ⇒ no warning — never invented).
+pub struct CargoBudget {
+    pub weight: f64,
+    pub volume: f64,
+    pub max_weight: Option<f64>,
+    pub max_volume: Option<f64>,
+}
+
+impl CargoBudget {
+    pub fn over(&self) -> bool {
+        self.max_weight.is_some_and(|m| self.weight > m)
+            || self.max_volume.is_some_and(|m| self.volume > m)
+    }
+}
+
+pub fn cargo_budget(
+    idx: &HashMap<String, &RegistryItem>,
+    garment: Option<&RegistryItem>,
+    rows: &[CargoRow],
+) -> CargoBudget {
+    let mut weight = 0.0;
+    let mut volume = 0.0;
+    for r in rows {
+        if let Some(it) = idx.get(r.item.as_str()) {
+            weight += it.weight_kg.unwrap_or(0.0) * r.qty as f64;
+            volume += it.volume_cm3.unwrap_or(0.0) * r.qty as f64;
+        }
+    }
+    CargoBudget {
+        weight,
+        volume,
+        max_weight: garment.and_then(|g| g.max_weight_kg),
+        max_volume: garment.and_then(|g| g.max_volume_cm3),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -769,5 +944,147 @@ mod tests {
             format_loadout_weight(&loadout_weight(&p2, &idx)),
             "3.4 kg · 1 item"
         );
+    }
+
+    // ---- T-068.15.2 cargo ----
+
+    fn cargo_edge(item: &str, character: &str, target: &str, n: usize) -> Vec<RegistryCompatEdge> {
+        (0..n)
+            .map(|_| {
+                let mut e = edge(item, character, "character_default_cargo");
+                e.evidence = format!("TargetStorage={target}");
+                e
+            })
+            .collect()
+    }
+
+    #[test]
+    fn cargo_container_mapping_follows_spike_lock() {
+        assert_eq!(
+            cargo_container_from_evidence("TargetStorage=Pants/Pants_US_BDU.et"),
+            Some("pants")
+        );
+        assert_eq!(
+            cargo_container_from_evidence("TargetStorage=Jacket_US_BDU.et"),
+            Some("jacket")
+        );
+        assert_eq!(
+            cargo_container_from_evidence("TargetStorage=Vest_PASGT/MagPouch/x.et"),
+            Some("vest")
+        );
+        assert_eq!(
+            cargo_container_from_evidence("TargetStorage=Back/Backpack_ALICE.et"),
+            Some("backpack")
+        );
+        // Unknown segment or non-TargetStorage evidence → skipped, never guessed.
+        assert_eq!(
+            cargo_container_from_evidence("TargetStorage=Helmet/x.et"),
+            None
+        );
+        assert_eq!(cargo_container_from_evidence("LoadoutSlotInfo"), None);
+    }
+
+    #[test]
+    fn cargo_defaults_aggregate_by_container_item() {
+        let mut edges = cargo_edge("mag_stanag", "char_us_rfl", "Vest/Pouch1/x.et", 3);
+        edges.extend(cargo_edge(
+            "mag_stanag",
+            "char_us_rfl",
+            "Vest/Pouch2/x.et",
+            2,
+        ));
+        edges.extend(cargo_edge("bandage", "char_us_rfl", "Pants/Pants.et", 1));
+        edges.extend(cargo_edge("bandage", "char_other", "Pants/Pants.et", 1));
+        edges.push(edge("mag_stanag", "rifle", "mag_in_weapon")); // other family ignored
+        let map = cargo_defaults_by_character(&edges);
+        assert_eq!(
+            map["char_us_rfl"],
+            vec![
+                CargoRow {
+                    container: "pants".into(),
+                    item: "bandage".into(),
+                    qty: 1
+                },
+                CargoRow {
+                    container: "vest".into(),
+                    item: "mag_stanag".into(),
+                    qty: 5
+                },
+            ]
+        );
+        assert_eq!(map["char_other"].len(), 1);
+    }
+
+    #[test]
+    fn seed_only_when_cargo_key_absent() {
+        let defaults = vec![CargoRow {
+            container: "vest".into(),
+            item: "mag".into(),
+            qty: 2,
+        }];
+        // No loadout at all → minimal V2 shell + cargo.
+        let seeded = seed_cargo(None, &defaults).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&seeded).unwrap();
+        assert_eq!(v["version"], 2);
+        assert_eq!(v["wear"].as_object().unwrap().len(), WEAR_PICK_KEYS.len());
+        assert_eq!(v["cargo"][0]["qty"], 2);
+        // Loadout without the key → key added, rest preserved.
+        let lo = r#"{"version":2,"wear":{"vest":"v1"},"weapons":[]}"#;
+        let seeded = seed_cargo(Some(lo), &defaults).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&seeded).unwrap();
+        assert_eq!(v["wear"]["vest"], "v1");
+        assert_eq!(v["cargo"].as_array().unwrap().len(), 1);
+        // Present key — populated, empty, or null — is user state: never reseeded.
+        for user in [
+            r#"{"version":2,"cargo":[{"container":"vest","item":"x","qty":9}]}"#,
+            r#"{"version":2,"cargo":[]}"#,
+            r#"{"version":2,"cargo":null}"#,
+        ] {
+            assert!(seed_cargo(Some(user), &defaults).is_none());
+        }
+        // No defaults → nothing to seed.
+        assert!(seed_cargo(None, &[]).is_none());
+    }
+
+    #[test]
+    fn cargo_roundtrip_and_budget() {
+        let rows = vec![
+            CargoRow {
+                container: "vest".into(),
+                item: "mag".into(),
+                qty: 4,
+            },
+            CargoRow {
+                container: "pants".into(),
+                item: "bandage".into(),
+                qty: 2,
+            },
+        ];
+        let json = format!(r#"{{"version":2,"cargo":{}}}"#, cargo_rows_json(&rows));
+        let (parsed, present) = cargo_from_loadout(Some(&json));
+        assert!(present);
+        assert_eq!(parsed, rows);
+        // Malformed rows drop; qty < 1 drops.
+        let (parsed, present) = cargo_from_loadout(Some(
+            r#"{"cargo":[{"container":"vest"},{"container":"v","item":"i","qty":0}]}"#,
+        ));
+        assert!(present && parsed.is_empty());
+
+        let mut mag = item("mag", "Mag", "magazine");
+        mag.weight_kg = Some(0.5);
+        mag.volume_cm3 = Some(60.0);
+        let mut vest = item("vest_rn", "Vest", "gear_vest");
+        vest.max_weight_kg = Some(5.0);
+        vest.max_volume_cm3 = Some(200.0);
+        let items = vec![mag, vest];
+        let idx = index_by_name(&items);
+        let vest_ref = *idx.get("vest_rn").unwrap();
+        let b = cargo_budget(&idx, Some(vest_ref), &rows[..1]);
+        assert!((b.weight - 2.0).abs() < 1e-9 && (b.volume - 240.0).abs() < 1e-9);
+        assert!(b.over(), "240 cm³ > 200 cm³ capacity");
+        // Absent capacity → warn-only stays silent.
+        let no_cap = item("nc", "NoCap", "gear_vest");
+        let b2 = cargo_budget(&idx, Some(&no_cap), &rows[..1]);
+        assert!(!b2.over());
     }
 }

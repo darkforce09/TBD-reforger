@@ -154,17 +154,23 @@ pub fn loadout_to_picks(loadout_json: Option<&str>) -> std::collections::HashMap
     picks
 }
 
-/// `picksToLoadout` — build the canonical `SlotLoadoutV2` from the picks. All-empty → `None` (clear
-/// the doc field). Wear map + weapons array; primary re-emits its sticky `optic`/`magazine` (String
-/// or null) and the always-empty `attachments` (React hardcodes `[]` until the attachments slice).
-/// `names` resolves `resource_name` → `display_name` for the `summary` (falls back to the raw name).
+/// `picksToLoadout` — build the canonical `SlotLoadoutV2` from the picks. All-empty (picks AND
+/// cargo) → `None` (clear the doc field). Wear map + weapons array; primary re-emits its sticky
+/// `optic`/`magazine` (String or null) and the always-empty `attachments` (React hardcodes `[]`
+/// until the attachments slice). `cargo`: `Some(rows)` re-emits the key verbatim on every persist
+/// (the commit fires on each pick change; dropping it would wipe seeded rows) — `Some(&[])`
+/// included, since key presence is the T-068.15.2 "user state" marker that stops re-seeding a
+/// cleared list. `None` = the slot never had the key and cargo was untouched: stay key-less so a
+/// later seed can still fire. `names` resolves `resource_name` → `display_name` for the `summary`.
 pub fn picks_to_loadout(
     picks: &std::collections::HashMap<String, String>,
     names: &std::collections::HashMap<String, String>,
+    cargo: Option<&[rules::CargoRow]>,
 ) -> Option<String> {
-    if ROWS
-        .iter()
-        .all(|r| picks.get(r.key).map(String::is_empty).unwrap_or(true))
+    if cargo.is_none_or(|c| c.is_empty())
+        && ROWS
+            .iter()
+            .all(|r| picks.get(r.key).map(String::is_empty).unwrap_or(true))
     {
         return None;
     }
@@ -209,6 +215,9 @@ pub fn picks_to_loadout(
         "wear": wear,
         "weapons": weapons,
     });
+    if let Some(rows) = cargo {
+        loadout["cargo"] = rules::cargo_rows_json(rows);
+    }
     if !summary.is_empty() {
         loadout["summary"] = serde_json::Value::String(summary);
     }
@@ -228,15 +237,26 @@ pub fn ArsenalTab(
     /// The compat edge feed (optic/magazine rows + validation).
     compat: RwSignal<CompatFeed>,
 ) -> impl IntoView {
+    // T-068.15.2 — open-time cargo seed for pre-existing slots (place/apply already
+    // seed at their own hooks): only fires when the loadout has no `cargo` key and
+    // the character has `character_default_cargo` defaults; returns the seeded JSON
+    // so this render uses it without a re-read.
+    #[cfg(target_arch = "wasm32")]
+    let loadout_json = crate::editor_ops::seed_slot_cargo(&slot_id).or(loadout_json);
     let id = StoredValue::new(slot_id);
     // Reactive picks so the doll, weight, validation, and dependent edge rows all re-render live.
     let picks = RwSignal::new(loadout_to_picks(loadout_json.as_deref()));
+    // Cargo rows + whether the loadout carries the `cargo` key (the "user state" marker —
+    // absent means a later seed may still fire, so persists stay key-less until touched).
+    let (cargo0, cargo_present0) = rules::cargo_from_loadout(loadout_json.as_deref());
+    let cargo = RwSignal::new(cargo0);
+    let cargo_present = RwSignal::new(cargo_present0);
     // The rail/doll active region (highlighted row + hotspot). Default to the primary weapon.
     let active_key = RwSignal::new("primary".to_string());
     #[cfg(not(target_arch = "wasm32"))]
-    let _ = id;
+    let _ = (id, cargo_present);
 
-    // Persist the current picks as the canonical V2 loadout (one undo step). wasm-only.
+    // Persist the current picks + cargo as the canonical V2 loadout (one undo step). wasm-only.
     let persist = move |map: &HashMap<String, String>, items: &[RegistryItem]| {
         #[cfg(target_arch = "wasm32")]
         {
@@ -244,10 +264,17 @@ pub fn ArsenalTab(
                 .iter()
                 .map(|it| (it.resource_name.clone(), it.display_name.clone()))
                 .collect();
-            crate::editor_ops::set_loadout(&id.get_value(), picks_to_loadout(map, &names));
+            let rows = cargo.get_untracked();
+            let rows = cargo_present.get_untracked().then_some(rows.as_slice());
+            crate::editor_ops::set_loadout(&id.get_value(), picks_to_loadout(map, &names, rows));
         }
         #[cfg(not(target_arch = "wasm32"))]
         let _ = (map, items);
+    };
+    // Cargo edits mark the key present, then persist through the same path.
+    let persist_cargo = move |items: &[RegistryItem]| {
+        cargo_present.set(true);
+        persist(&picks.get_untracked(), items);
     };
 
     // T-172 B10 — full screen-04 Smart Forge layout (operator-confirmed scope): region icon
@@ -305,14 +332,47 @@ pub fn ArsenalTab(
                                 };
                                 view! { <span class=cls data-compat-badge>{label}</span> }
                             }}
-                            {move || {
-                                let its = items.get_value();
-                                let idx = index_by_name(&its);
-                                let w = format_loadout_weight(&loadout_weight(&picks.get(), &idx));
-                                view! {
-                                    <p class="font-mono text-label-sm tabular-nums normal-case text-on-surface-variant">{w}</p>
-                                }
-                            }}
+                            <div class="flex items-center gap-3">
+                                // T-068.15.2 — per-container capacity readout (registry-only:
+                                // max kg + grid W×H; absent values simply don't render).
+                                {move || {
+                                    let key = active_key.get();
+                                    if !rules::CAPACITY_KEYS.contains(&key.as_str()) {
+                                        return ().into_any();
+                                    }
+                                    let rn = picks.with(|m| m.get(key.as_str()).cloned()).filter(|v| !v.is_empty());
+                                    let Some(rn) = rn else { return ().into_any() };
+                                    let its = items.get_value();
+                                    let idx = index_by_name(&its);
+                                    let Some(it) = idx.get(rn.as_str()) else { return ().into_any() };
+                                    let mut parts: Vec<String> = Vec::new();
+                                    if let Some(kg) = it.max_weight_kg {
+                                        parts.push(format!("max {kg} kg"));
+                                    }
+                                    if let (Some(w), Some(h)) = (it.cargo_grid_w, it.cargo_grid_h) {
+                                        parts.push(format!("{w}\u{00d7}{h} grid"));
+                                    }
+                                    if parts.is_empty() {
+                                        return ().into_any();
+                                    }
+                                    view! {
+                                        <span
+                                            data-capacity-badge
+                                            class="rounded border border-outline-variant/40 bg-surface-variant/30 px-2 py-0.5 font-mono text-label-sm tabular-nums normal-case text-on-surface-variant"
+                                        >
+                                            {parts.join(" · ")}
+                                        </span>
+                                    }.into_any()
+                                }}
+                                {move || {
+                                    let its = items.get_value();
+                                    let idx = index_by_name(&its);
+                                    let w = format_loadout_weight(&loadout_weight(&picks.get(), &idx));
+                                    view! {
+                                        <p class="font-mono text-label-sm tabular-nums normal-case text-on-surface-variant">{w}</p>
+                                    }
+                                }}
+                            </div>
                         </div>
                         <div class="grid h-[52vh] min-h-0 grid-cols-[44px_230px_minmax(0,1fr)_230px] gap-3">
                             // Region icon rail (14, RAIL order).
@@ -459,6 +519,14 @@ pub fn ArsenalTab(
                                 {move || compat_panel(picks, active_key, compat, names, items, pick_item)}
                             </div>
                         </div>
+                        // T-068.15.2 — container cargo editor (SlotLoadoutV2.cargo[]; seeded from
+                        // character_default_cargo; warn-only weight/volume budget).
+                        <div
+                            data-cargo-editor
+                            class="custom-scrollbar max-h-[22vh] overflow-y-auto rounded-lg border border-outline-variant/20 bg-surface-container-lowest/40 p-2.5"
+                        >
+                            {move || cargo_panel(cargo, picks, items, names, persist_cargo)}
+                        </div>
                         // Bottom: validation verdict + loadout download.
                         <div class="flex items-center justify-between">
                             {move || {
@@ -498,7 +566,9 @@ pub fn ArsenalTab(
                                             .iter()
                                             .map(|it| (it.resource_name.clone(), it.display_name.clone()))
                                             .collect();
-                                        let json = picks_to_loadout(&map, &names)
+                                        let rows = cargo.get_untracked();
+                                        let rows = cargo_present.get_untracked().then_some(rows.as_slice());
+                                        let json = picks_to_loadout(&map, &names, rows)
                                             .unwrap_or_else(|| "{\"version\":2,\"wear\":{},\"weapons\":[]}".to_string());
                                         let _ = crate::mission_commands::download_json("loadout-export.json", &json);
                                     }
@@ -509,13 +579,171 @@ pub fn ArsenalTab(
                             </button>
                         </div>
                         <p class="text-label-sm normal-case text-outline">
-                            "Equipment items (binoculars, radios, medical, glasses) get their rows with the equipment/cargo slices — the registry already classifies them."
+                            "Container cargo (mags, medical, throwables) lives in the Cargo panel above — seeded from the character's engine defaults. Dedicated equipment wear rows (binoculars, radios, glasses) come with the equipment slice."
                         </p>
                     }.into_any()
                 }
             }}
         </div>
     }
+}
+
+/// Registry kinds offered by the cargo "add" picker (worn/held gear stays on the wear
+/// and weapon rows — cargo is what goes *inside* containers).
+const CARGO_ADD_KINDS: &[&str] = &[
+    "magazine",
+    "ammo",
+    "gear_item",
+    "gear_throwable",
+    "gear_explosive",
+];
+
+/// The worn garment backing a cargo container key (`vest` accepts the armoredVest row).
+fn cargo_garment(picks: &HashMap<String, String>, container: &str) -> Option<String> {
+    let direct = picks.get(container).filter(|v| !v.is_empty()).cloned();
+    if container == "vest" {
+        return direct.or_else(|| picks.get("armoredVest").filter(|v| !v.is_empty()).cloned());
+    }
+    direct
+}
+
+/// T-068.15.2 — the per-container cargo editor: rows (name × qty, stepper, remove),
+/// an add picker, and the warn-only budget vs the garment's registry capacity.
+fn cargo_panel(
+    cargo: RwSignal<Vec<rules::CargoRow>>,
+    picks: RwSignal<HashMap<String, String>>,
+    items: StoredValue<Vec<RegistryItem>>,
+    names: StoredValue<HashMap<String, String>>,
+    on_change: impl Fn(&[RegistryItem]) + Copy + 'static,
+) -> AnyView {
+    let its = items.get_value();
+    let idx = index_by_name(&its);
+    let rows_now = cargo.get();
+    let picks_now = picks.get();
+
+    // Add-picker options: eligible kinds, concrete (non-abstract, non-variant), name-sorted.
+    let mut addable: Vec<(String, String)> = its
+        .iter()
+        .filter(|it| CARGO_ADD_KINDS.contains(&it.kind.as_str()))
+        .filter(|it| !it.r#abstract.unwrap_or(false) && it.variant_of.is_none())
+        .map(|it| (it.resource_name.clone(), it.display_name.clone()))
+        .collect();
+    addable.sort_by(|a, b| a.1.cmp(&b.1));
+    let addable = StoredValue::new(addable);
+
+    let groups = rules::CARGO_CONTAINERS
+        .iter()
+        .map(|container| {
+            let container: &'static str = container;
+            let garment_rn = cargo_garment(&picks_now, container);
+            let rows: Vec<(usize, rules::CargoRow)> = rows_now
+                .iter()
+                .enumerate()
+                .filter(|(_, r)| r.container == container)
+                .map(|(i, r)| (i, r.clone()))
+                .collect();
+            if garment_rn.is_none() && rows.is_empty() {
+                return ().into_any();
+            }
+            let garment_item = garment_rn.as_deref().and_then(|rn| idx.get(rn).copied());
+            let garment_label = garment_rn
+                .as_ref()
+                .map(|rn| names.with_value(|n| n.get(rn).cloned().unwrap_or_else(|| rn.clone())))
+                .unwrap_or_else(|| "no garment worn".to_string());
+            let only_rows: Vec<rules::CargoRow> = rows.iter().map(|(_, r)| r.clone()).collect();
+            let budget = rules::cargo_budget(&idx, garment_item, &only_rows);
+            let budget_line = match (budget.max_weight, budget.max_volume) {
+                (None, None) if only_rows.is_empty() => None,
+                _ => {
+                    let kg = match budget.max_weight {
+                        Some(m) => format!("{:.1} / {m} kg", budget.weight),
+                        None => format!("{:.1} kg", budget.weight),
+                    };
+                    let vol = match budget.max_volume {
+                        Some(m) => format!("{:.0} / {m} cm³", budget.volume),
+                        None => format!("{:.0} cm³", budget.volume),
+                    };
+                    Some((format!("{kg} · {vol}"), budget.over()))
+                }
+            };
+            view! {
+                <div class="mb-2 last:mb-0" data-cargo-container=container>
+                    <div class="flex items-center justify-between px-1">
+                        <span class="text-label-sm font-semibold uppercase tracking-wider text-on-surface">
+                            {container} " — " <span class="normal-case font-normal text-on-surface-variant">{garment_label}</span>
+                        </span>
+                        {budget_line.map(|(text, over)| {
+                            let cls = if over {
+                                "font-mono text-label-sm tabular-nums normal-case text-error-alert"
+                            } else {
+                                "font-mono text-label-sm tabular-nums normal-case text-outline"
+                            };
+                            view! { <span class=cls data-cargo-budget=container>{text}</span> }
+                        })}
+                    </div>
+                    {rows.into_iter().map(|(i, r)| {
+                        let label = names.with_value(|n| n.get(&r.item).cloned().unwrap_or_else(|| r.item.clone()));
+                        let qty = r.qty;
+                        view! {
+                            <div class="flex items-center justify-between gap-2 rounded px-2 py-0.5 hover:bg-white/5">
+                                <span class="truncate text-label-sm normal-case text-on-surface-variant">{label}</span>
+                                <span class="flex shrink-0 items-center gap-1">
+                                    <button type="button" aria-label="Fewer" class="rounded px-1 font-mono text-label-sm text-outline hover:bg-white/10 hover:text-on-surface"
+                                        on:click=move |_| {
+                                            cargo.update(|c| { if let Some(r) = c.get_mut(i) { r.qty = (r.qty - 1).max(1); } });
+                                            on_change(&items.get_value());
+                                        }
+                                    >"−"</button>
+                                    <span class="min-w-[2ch] text-center font-mono text-label-sm tabular-nums text-on-surface">{qty}</span>
+                                    <button type="button" aria-label="More" class="rounded px-1 font-mono text-label-sm text-outline hover:bg-white/10 hover:text-on-surface"
+                                        on:click=move |_| {
+                                            cargo.update(|c| { if let Some(r) = c.get_mut(i) { r.qty += 1; } });
+                                            on_change(&items.get_value());
+                                        }
+                                    >"+"</button>
+                                    <button type="button" aria-label="Remove" class="rounded px-1 font-mono text-label-sm text-outline hover:bg-white/10 hover:text-error"
+                                        on:click=move |_| {
+                                            cargo.update(|c| { c.remove(i); });
+                                            on_change(&items.get_value());
+                                        }
+                                    >"✕"</button>
+                                </span>
+                            </div>
+                        }
+                    }).collect_view()}
+                    <select
+                        class="mt-0.5 w-full rounded-md border border-outline-variant/40 bg-surface-container-lowest/60 px-2 py-1 text-label-sm text-on-surface-variant outline-none focus:border-primary/60"
+                        aria-label=format!("Add cargo to {container}")
+                        prop:value=""
+                        on:change=move |ev| {
+                            let rn = event_target_value(&ev);
+                            if rn.is_empty() { return; }
+                            cargo.update(|c| {
+                                if let Some(row) = c.iter_mut().find(|r| r.container == container && r.item == rn) {
+                                    row.qty += 1;
+                                } else {
+                                    c.push(rules::CargoRow { container: container.to_string(), item: rn.clone(), qty: 1 });
+                                }
+                            });
+                            on_change(&items.get_value());
+                        }
+                    >
+                        <option value="" selected>"+ Add item…"</option>
+                        {addable.with_value(|a| a.iter().map(|(rn, label)| {
+                            view! { <option value=rn.clone()>{label.clone()}</option> }
+                        }).collect_view())}
+                    </select>
+                </div>
+            }
+            .into_any()
+        })
+        .collect_view();
+
+    view! {
+        <p class="px-1 pb-1 font-mono text-[10px] tracking-widest text-outline uppercase">"Cargo"</p>
+        {groups}
+    }
+    .into_any()
 }
 
 /// The center doll: `ArsenalDoll` (wgpu) with the SVG `paper_doll` as the create-error fallback
@@ -832,9 +1060,55 @@ mod tests {
 
     #[test]
     fn all_empty_picks_clear_the_field() {
-        assert!(picks_to_loadout(&HashMap::new(), &names()).is_none());
+        assert!(picks_to_loadout(&HashMap::new(), &names(), None).is_none());
         // An unknown (non-row) key alone still counts as empty — no row is set.
-        assert!(picks_to_loadout(&picks(&[("optic", "res://acog")]), &names()).is_none());
+        assert!(picks_to_loadout(&picks(&[("optic", "res://acog")]), &names(), None).is_none());
+        // A present-but-empty cargo key alone is still "all empty" → clear.
+        assert!(picks_to_loadout(&HashMap::new(), &names(), Some(&[])).is_none());
+        // Non-empty cargo alone keeps the loadout alive (wear all-null shell).
+        let rows = vec![rules::CargoRow {
+            container: "vest".into(),
+            item: "res://mag_stanag".into(),
+            qty: 3,
+        }];
+        let lo = picks_to_loadout(&HashMap::new(), &names(), Some(&rows)).expect("cargo-only");
+        let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
+        assert_eq!(v["cargo"][0]["container"], "vest");
+        assert_eq!(v["cargo"][0]["qty"], 3);
+        assert_eq!(v["wear"].as_object().unwrap().len(), 8);
+    }
+
+    #[test]
+    fn cargo_key_presence_follows_user_state() {
+        let p = picks(&[("primary", "res://rifle_m16")]);
+        // Untouched cargo (None) → no key: a later seed may still fire.
+        let lo = picks_to_loadout(&p, &names(), None).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
+        assert!(v.get("cargo").is_none());
+        // Touched-but-cleared (Some empty) → key persists as [] and round-trips as
+        // present (the anti-reseed marker).
+        let lo = picks_to_loadout(&p, &names(), Some(&[])).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
+        assert_eq!(v["cargo"], serde_json::json!([]));
+        let (rows, present) = rules::cargo_from_loadout(Some(&lo));
+        assert!(present && rows.is_empty());
+        // Seeded rows survive a pick-edit persist verbatim.
+        let seeded = rules::seed_cargo(
+            Some(&picks_to_loadout(&p, &names(), None).unwrap()),
+            &[rules::CargoRow {
+                container: "pants".into(),
+                item: "res://mag_stanag".into(),
+                qty: 2,
+            }],
+        )
+        .expect("seeds");
+        let (rows, present) = rules::cargo_from_loadout(Some(&seeded));
+        assert!(present);
+        let resaved = picks_to_loadout(&loadout_to_picks(Some(&seeded)), &names(), Some(&rows))
+            .expect("resave");
+        let v: serde_json::Value = serde_json::from_str(&resaved).unwrap();
+        assert_eq!(v["cargo"][0]["item"], "res://mag_stanag");
+        assert_eq!(v["cargo"][0]["qty"], 2);
     }
 
     #[test]
@@ -846,6 +1120,7 @@ mod tests {
                 ("headCover", "res://helmet_pasgt"),
             ]),
             &names(),
+            None,
         )
         .expect("non-empty");
         let v: serde_json::Value = serde_json::from_str(&lo).unwrap();
@@ -874,7 +1149,7 @@ mod tests {
             ("headCover", "res://helmet_pasgt"),
             ("vest", "res://vest_m88"),
         ]);
-        let lo = picks_to_loadout(&p, &names()).unwrap();
+        let lo = picks_to_loadout(&p, &names(), None).unwrap();
         let back = loadout_to_picks(Some(&lo));
         for k in ["primary", "launcher", "headCover", "vest"] {
             assert_eq!(back.get(k), p.get(k), "key {k} lost on round-trip");
@@ -899,7 +1174,7 @@ mod tests {
             back.get("magazine").map(String::as_str),
             Some("res://mag_stanag")
         );
-        let resaved = picks_to_loadout(&back, &names()).unwrap();
+        let resaved = picks_to_loadout(&back, &names(), None).unwrap();
         let v: serde_json::Value = serde_json::from_str(&resaved).unwrap();
         assert_eq!(v["weapons"][0]["optic"], "res://acog");
         assert_eq!(v["weapons"][0]["magazine"], "res://mag_stanag");

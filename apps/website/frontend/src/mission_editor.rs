@@ -216,10 +216,18 @@ pub fn MissionEditorPage() -> impl IntoView {
                 )
                 .await
                 {
-                    Ok(r) => compat.set(CompatFeed {
-                        status: CompatStatus::Ready,
-                        graph: CompatGraph::from_edges(&r.data),
-                    }),
+                    Ok(r) => {
+                        // T-068.15.2 — the CompatGraph drops evidence/qty, so the
+                        // character → default-cargo seed map is built from the raw
+                        // rows here and handed to the editor_ops seed hooks.
+                        crate::editor_ops::set_cargo_defaults(
+                            crate::arsenal_rules::cargo_defaults_by_character(&r.data),
+                        );
+                        compat.set(CompatFeed {
+                            status: CompatStatus::Ready,
+                            graph: CompatGraph::from_edges(&r.data),
+                        });
+                    }
                     Err(_) => compat.set(CompatFeed {
                         status: CompatStatus::Unavailable,
                         graph: CompatGraph::default(),

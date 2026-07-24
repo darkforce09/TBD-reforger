@@ -23,6 +23,7 @@
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::{Cell, RefCell};
+use std::collections::HashMap;
 
 use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_engine_core::doc::place_character_under_side;
@@ -594,6 +595,67 @@ pub fn read_loadout(id: &str) -> Option<String> {
         }
         Some(lo.to_string())
     })
+}
+
+thread_local! {
+    /// T-068.15.2 — per-character default cargo (registry `character_default_cargo`
+    /// edges, aggregated). Filled by the editor's compat fetch; consumed by the
+    /// seed hooks (place / apply-kit / Arsenal open).
+    static CARGO_DEFAULTS: RefCell<HashMap<String, Vec<crate::arsenal_rules::CargoRow>>> =
+        RefCell::new(HashMap::new());
+}
+
+/// Install the character → default-cargo map (from the `/registry/compat` fetch).
+pub fn set_cargo_defaults(map: HashMap<String, Vec<crate::arsenal_rules::CargoRow>>) {
+    CARGO_DEFAULTS.with(|c| *c.borrow_mut() = map);
+}
+
+/// Seed one slot's cargo inside an already-open doc borrow (shared by the place /
+/// apply-kit hooks — the caller owns the history tail). Seeds only when the
+/// character has defaults and the loadout carries no `cargo` key.
+fn seed_cargo_in_core(
+    core: &MissionDocCore,
+    id: &str,
+    asset_id: &str,
+    loadout: Option<&str>,
+) -> bool {
+    let defaults = CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned());
+    let Some(defaults) = defaults else {
+        return false;
+    };
+    match crate::arsenal_rules::seed_cargo(loadout, &defaults) {
+        Some(json) => {
+            core.update_slot_loadout(id, Some(json));
+            true
+        }
+        None => false,
+    }
+}
+
+/// Arsenal-open seed (pre-.15.2 slots): own ctx scope + history tail. Returns the
+/// seeded loadout JSON so the caller can render it without a re-read.
+pub fn seed_slot_cargo(id: &str) -> Option<String> {
+    let seeded = OPS_CTX.with(|c| {
+        let guard = c.borrow();
+        let ctx = guard.as_ref()?;
+        let d = ctx.doc.borrow();
+        let core = d.as_ref()?;
+        let map: serde_json::Value = serde_json::from_str(&core.slots_json()).ok()?;
+        let slot = map.get(id)?;
+        let asset_id = slot.get("assetId")?.as_str().filter(|s| !s.is_empty())?;
+        let loadout = slot
+            .get("loadout")
+            .filter(|l| !l.is_null())
+            .map(|l| l.to_string());
+        let defaults = CARGO_DEFAULTS.with(|c| c.borrow().get(asset_id).cloned())?;
+        let json = crate::arsenal_rules::seed_cargo(loadout.as_deref(), &defaults)?;
+        core.update_slot_loadout(id, Some(json.clone()));
+        Some(json)
+    });
+    if seeded.is_some() {
+        crate::mission_history::after_local_edit();
+    }
+    seeded
 }
 
 /// Set/clear a slot's `loadout` (Arsenal commit) + the shared tail (one undo step). `None`/empty
@@ -1271,7 +1333,31 @@ pub fn orbat_apply_faction(side: String, doc: FactionDoc) -> bool {
                 })
                 .collect(),
         };
-        apply_faction_library(core, &side, &layer_id, &input).is_ok()
+        let ok = apply_faction_library(core, &side, &layer_id, &input).is_ok();
+        if ok {
+            // T-068.15.2 — seed default cargo after a kit apply. Cargo-key-absent
+            // slots only, so user edits and library-carried cargo[] are preserved;
+            // same borrow scope ⇒ one undo step with the apply.
+            if let Ok(map) = serde_json::from_str::<serde_json::Value>(&core.slots_json()) {
+                if let Some(obj) = map.as_object() {
+                    for (sid, slot) in obj {
+                        let Some(rn) = slot
+                            .get("assetId")
+                            .and_then(|v| v.as_str())
+                            .filter(|s| !s.is_empty())
+                        else {
+                            continue;
+                        };
+                        let lo = slot
+                            .get("loadout")
+                            .filter(|l| !l.is_null())
+                            .map(|l| l.to_string());
+                        seed_cargo_in_core(core, sid, rn, lo.as_deref());
+                    }
+                }
+            }
+        }
+        ok
     });
     if did {
         crate::mission_history::after_local_edit();
@@ -1527,6 +1613,7 @@ pub fn place_at(x: f64, y: f64) -> bool {
             let layer_id = ensure_layer(ctx, core);
             let side = ctx.active_side.get_untracked();
             let id = mint_id(ctx, core);
+            let asset_id = payload.asset_id.clone();
             if place_character_under_side(
                 core,
                 &side,
@@ -1544,6 +1631,9 @@ pub fn place_at(x: f64, y: f64) -> bool {
             {
                 return false;
             }
+            // T-068.15.2 — a fresh placement has no loadout: seed the character's
+            // default cargo (same borrow scope ⇒ same undo step as the place).
+            seed_cargo_in_core(core, &id, &asset_id, None);
             id
         };
         *ctx.selection.borrow_mut() = vec![id];
