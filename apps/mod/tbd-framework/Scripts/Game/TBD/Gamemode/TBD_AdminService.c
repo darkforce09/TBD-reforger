@@ -36,9 +36,21 @@ enum TBD_EAdminAction
 //! @authority server — every function that mutates state refuses outright off the authority.
 class TBD_AdminService
 {
-	//! "<playerId>|<surface>" -> a refusal has already taken a slot in the bounded audit ring for
-	//! this pair. See NoteDeniedAccess.
-	protected static ref map<string, bool> s_mDeniedSeen;
+	//! "<playerId>|<surface>" -> how many times that pair has been refused. See NoteDeniedAccess.
+	//!
+	//! T-181.30 — this was a `map<string, bool>` whose comment said an entry meant "a refusal has
+	//! already taken a slot in the bounded audit ring for this pair". That stopped being true the
+	//! moment the ring rolled that entry off, and the map — never reset, never bounded — kept
+	//! asserting it for the rest of the process. The practical effect was that refusals gradually
+	//! stopped appearing in the trail at all, silently, on exactly the long-running server where
+	//! the trail matters most. A count says something that stays true.
+	protected static ref map<string, int> s_mDeniedCount;
+
+	//! T-181.30 — ceiling on that map, following the same reasoning as `TBD_MarkerData.MAX_LOG_STATES`:
+	//! playerIds are recycled and there is no disconnect hook here, so a long session would otherwise
+	//! accumulate rows forever. Dropping the whole table costs one extra ring entry and one extra
+	//! console line per pair still active, which is a much smaller price than an unbounded static.
+	protected static const int MAX_DENIED_KEYS = 256;
 
 	//------------------------------------------------------------------------------------------------
 	//! THE permission question. Server-side, resolved from the vanilla listed-admin manager.
@@ -321,30 +333,70 @@ class TBD_AdminService
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Someone who is not an admin touched an admin surface. Records it — once per player per
-	//! surface in the bounded on-screen trail, every single time in the console.
+	//! Someone who is not an admin touched an admin surface.
 	//!
-	//! The split exists because the ring is small and the refusal paths are the ones an attacker
-	//! controls: an unauthorised client can poll the snapshot every 3 s or macro `#tbd` forever,
-	//! and if each attempt took a ring slot it could flush the real actions out of the admin's
-	//! view. The console keeps the complete record; the screen keeps the first of each kind.
+	//! The refusal paths are the ones an attacker controls — an unauthorised client can poll the
+	//! snapshot every 3 s or macro `#tbd` forever — so this is the one audit path that has to
+	//! assume hostile input. Three separate bounds, because they fail in three different ways:
+	//!
+	//!   1. THE RING cannot be flushed: `TBD_AdminAudit.RecordUnauthorised` holds these to
+	//!      `MAX_UNAUTHORISED_ENTRIES` slots, so real admin actions keep a guaranteed 48. This is
+	//!      the load-bearing one, and it is the one T-181.30 added — de-duplication alone bounded a
+	//!      single client while ten of them could still evict everything.
+	//!   2. THE CONSOLE grows logarithmically, not linearly: the first attempt for a pair is
+	//!      recorded, then only decade milestones (10th, 100th, 1000th …), each carrying the running
+	//!      count. WHAT IS TRADED: per-attempt timestamps for repeats. What is kept: who, which
+	//!      surface, and how many times — which is what an incident review actually asks. The old
+	//!      behaviour wrote one WARNING per attempt forever, which an attacker sets the volume of.
+	//!   3. THE MAP is bounded by `MAX_DENIED_KEYS` and dropped wholesale when it overflows.
 	//! @authority server
 	static void NoteDeniedAccess(int playerId, string surface)
 	{
 		string text = string.Format("REFUSED %1 by %2 — not on the server admin list", surface, Label(playerId));
 
-		if (!s_mDeniedSeen)
-			s_mDeniedSeen = new map<string, bool>();
+		if (!s_mDeniedCount)
+			s_mDeniedCount = new map<string, int>();
+
+		if (s_mDeniedCount.Count() > MAX_DENIED_KEYS)
+			s_mDeniedCount.Clear();
 
 		string key = string.Format("%1|%2", playerId, surface);
-		if (s_mDeniedSeen.Contains(key))
+
+		int seen = 0;
+		s_mDeniedCount.Find(key, seen);
+		seen++;
+		s_mDeniedCount.Set(key, seen);
+
+		if (seen == 1)
 		{
-			TBD_AdminAudit.Note(text);
+			TBD_AdminAudit.RecordUnauthorised(text);
 			return;
 		}
 
-		s_mDeniedSeen.Set(key, true);
-		TBD_AdminAudit.Record(text, true);
+		if (IsRepeatMilestone(seen))
+			TBD_AdminAudit.Note(string.Format("%1 (x%2)", text, seen));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.30 — is this repeat count one worth a console line? Exact powers of ten: 10, 100, 1000, …
+	//!
+	//! Divides DOWN rather than multiplying a running decade up: the multiplying version overflows
+	//! int on a long enough attack and then loops on a negative bound, which is a hang on the one
+	//! code path an attacker sets the iteration count of. Dividing terminates in log10(count) steps
+	//! for every input.
+	//! @authority server
+	protected static bool IsRepeatMilestone(int count)
+	{
+		if (count < 10)
+			return false;
+
+		int n = count;
+		while (n % 10 == 0)
+		{
+			n = n / 10;
+		}
+
+		return n == 1;
 	}
 
 	// ── The powers. Protected: the gate above is the only way in. ───────────────────────────
