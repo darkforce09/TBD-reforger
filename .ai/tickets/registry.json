@@ -6016,7 +6016,8 @@
         "T-181.27",
         "T-181.28",
         "T-181.29",
-        "T-181.30"
+        "T-181.30",
+        "T-181.31"
       ],
       "slice_plan": {
         "T-181.0": {
@@ -6265,8 +6266,8 @@
             "shared"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "Found by the T-181.10 slice agent, outside its scope: NO golden mission in packages/tbd-schema/golden-missions/ carries a slot `loadout` block, so schema CI never exercises the JSON-loadout path that T-181.10 just built. Add a fixture with gear + cargo so the contract is regression-tested rather than only compile-checked."
+          "status": "shipped",
+          "notes": "Golden fixtures @ bae5d1d1. slot-loadout-coverage.json is the FIRST golden to carry a slot loadout block (all 10 gear refs, cargo at the schema minimum, the primary/optic/magazine triple T-181.10 fixed, plus a no-loadout control); resource names are real vanilla GUIDs from the registry export, not invented. empty-warning-fields.json carries every empty the SCHEMA actually permits. Goldens are globbed (xtask/src/schema_gates.rs:1316) so both are auto-discovered — 4/4 PASS. Twelve negative-control mutants each failed with the exact expected message, proving the loadout fixture reaches the loadout $defs rather than passing vacuously. DISPROVED THE BRIEF'S PREMISE by measurement — see T-181.26 and T-181.31."
         },
         "T-181.21": {
           "targets": [
@@ -6314,7 +6315,7 @@
           ],
           "executor": "claude-code",
           "status": "ready",
-          "notes": "REWRITTEN after the wave-3 verifier disproved the original filing. (a) The original claim — Record3(\"S\",group,role,kit) breaks 'where kit is frequently empty' — is WRONG: slot.kit is schema-required and a validator ERROR, so a kit-less mission never becomes valid and that record is unreachable. (b) The REAL exposures are validator-WARNING fields that a running mission may legally carry: meta.name, meta.terrain, groupCallsign, role. (c) WORST CASE is not a clean drop: in TBD_BriefingData.c:555 a dropped `G` record leaves `current` pointing at the PREVIOUS group, so its roles render under the WRONG CALLSIGN — the only place in the program where wrong data is displayed rather than missing. (d) SCOPE WAS TOO NARROW: the lobby parses TBD_SpawnManager.BuildSlotRoster() (TBD_SpawnManager.c:577) which is emitted RAW and UNSANITISED, guarded by f.Count()>=6 at TBD_LobbyData.c:347/:431 — an empty groupCallsign or role makes an entire SEAT INVISIBLE AND UNCLAIMABLE in the picker. That is the invariant-touching case and the original ticket did not name the file. FIX: one sentinel convention across all three wire formats PLUS pack/sanitise at TBD_SpawnManager.c:577 — or settle Split's behaviour on one live run and delete two of the three conventions. Neither golden mission can surface this (18/18 slots complete), so a fixture with empty warning-fields is part of the fix."
+          "notes": "REWRITTEN A THIRD TIME — each revision corrected the previous one, and this one rests on a measurement rather than an argument. The premise BOTH earlier versions accepted is FALSE: meta.name, meta.terrain, slot.groupCallsign and slot.role are schema ERRORS when empty (minLength:1, and a pattern on terrain — verified directly in mission.schema.json), not warnings. 'Warning' is only TBD_MissionValidator's RUNTIME severity; the mod validator is strictly MORE PERMISSIVE than the schema that produced the document. So a schema-valid mission can never carry those four empty, and no golden fixture can cover them. THE EXPOSURE IS STILL REAL, for a sharper reason: a document that BYPASSED schema validation can reach the mod. Confirmed at apps/website/api/src/handlers/missions.rs:820 — the /compiled endpoint calls flatten_to_mod_document and serves the result WITHOUT validating it; validate_mission_document exists only inside #[cfg(test)]. The WRITE path is guarded (validate_mission_editor_payload on save at :319 and :587); the READ path that feeds the mod is not. CONSEQUENCE: the mod-side defensive layer is LOAD-BEARING, not redundant. Fix stays as scoped — one sentinel convention across the three wire formats plus pack/sanitise at TBD_SpawnManager.c:577 — but the justification is 'the server can hand us an unvalidated document', not 'a legal mission has empty fields'. See T-181.31 for closing it at the source."
         },
         "T-181.27": {
           "targets": [
@@ -6347,6 +6348,14 @@
           "executor": "claude-code",
           "status": "ready",
           "notes": "Small truth-in-comments + hardening from the wave-3 verifier. (1) TBD_MissionBrowser.c:13-20 claims 'two blocks are measured to compile and interoperate; three are not' — a THIRD modded SCR_PlayerController block (TBD_LobbyController.c:29) landed in the same wave, so the comment now misinforms. The verifier proved all three merge statically with a negative-controlled probe. (2) TBD_BriefingData.c:231 assigns m_sFactionKey without Sanitise() while every neighbouring field sanitises. (3) TBD_AdminService audit: NoteDeniedAccess takes a ring slot per (playerId,surface) and one client reaches ~5 surfaces, so ~10 unauthorised clients still evict every real action from the 60-entry ring; s_mDeniedSeen is a never-reset static. (4) Unbounded console warn per refused RPC (no data leak, log volume only)."
+        },
+        "T-181.31": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "The /compiled endpoint does not validate what it serves. apps/website/api/src/handlers/missions.rs:820 calls flatten_to_mod_document and returns the result straight to the mod; contract::validate_mission_document is only ever called from #[cfg(test)] (services/mission_compile.rs:37, validate.rs:137). The write path IS guarded — validate_mission_editor_payload runs on save at :319/:587 — so the gap is specifically the read path that the game server consumes. Found by the T-181.20 fixture agent while disproving T-181.26's premise. Validate the flattened document against mission.schema.json before serving (or explain why flatten cannot produce an invalid document, which would make the mod-side sentinel work optional rather than load-bearing). Cheap, and it turns a class of runtime mod bug into a 500 at the source."
         }
       },
       "active_slice": "T-181.15",

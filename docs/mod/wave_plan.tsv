@@ -26,3 +26,4 @@ wave	slice	title	owns
 6	T-181.28	Briefing JIP catch-up (push-only has no late-join path)	Scripts/Game/TBD/UI/TBD_BriefingController.c
 7	T-181.29	Lobby raise must skip already-deployed players	Scripts/Game/TBD/UI/Lobby/**
 7	T-181.30	Truth-in-comments + audit-ring hardening	Scripts/Game/TBD/Gamemode/**
+7	T-181.31	Validate the /compiled document before serving it to the mod	apps/website/api/src/handlers/missions.rs
