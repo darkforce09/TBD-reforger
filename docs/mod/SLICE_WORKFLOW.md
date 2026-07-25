@@ -181,7 +181,7 @@ legal, not stylistic.** Read the row before you read the code.
 | Lane | Licence | You may | You may NOT | Missing? |
 |---|---|---|---|---|
 | `apps/mod/vanilla_reference` | Bohemia game source, carved by `enf carve` | read for behaviour, cite | commit it, ship it | **REFUSE** — tree not handed over |
-| `apps/mod/crf_framework` | **Arma Public License** | read, cite (`@idx crf#Symbol`), design-mirror | copy code, reuse asset GUIDs, vendor it | **REFUSE** — tree not handed over |
+| `apps/mod/crf_framework` | **Arma Public License** | read, cite (`@idx crf#OnPlayerAuditSuccess`), design-mirror | copy code, reuse asset GUIDs, vendor it | **REFUSE** — tree not handed over |
 | `apps/mod/playable_selector` | **NONE AT ALL** | read to understand *design* | copy **a single line**, adapt, redistribute | **WARN** — tree still handed over |
 
 **"No licence" is worse than APL, not better.** APL at least grants terms. PlayableSelector ships
