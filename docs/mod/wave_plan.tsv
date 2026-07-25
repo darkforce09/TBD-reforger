@@ -27,3 +27,4 @@
 10	T-181.41	Re-home the worn-kit audit (lost coverage when .32 fixed the loadout census)	Scripts/Game/TBD/Gamemode/TBD_LoadoutEquip*.c
 10	T-181.42	Lobby wire: bijective sentinel + boot-time self-check	Scripts/Game/TBD/UI/Lobby/**
 10	T-181.43	Schema pattern: forbid tab/CR/LF in authored slot strings	packages/tbd-schema/**
+11	T-181.44	Save-time control-char check + surface /compiled rejection reasons	crates/map-engine-core + apps/website
