@@ -1,19 +1,27 @@
 //! T-181.12 — where the spectator lifecycle is hosted.
 //!
-//! Spectator is a **client** feature: a camera, a roster screen, and a poll of the local player's
-//! own body. It needs a place on the client that starts with the world and dies with it, and in
-//! this codebase that place is a component on the game mode prefab — the same seat
-//! `TBD_FrameworkManager`, `TBD_SpawnManager` and `TBD_LoadoutEquipComponent` already occupy.
+//! Spectator has two halves and this component owns both:
+//!   * CLIENT — a camera, a roster screen, and a poll of the local player's own body
+//!     (`TBD_SpectatorController`).
+//!   * SERVER — the streaming host, the inert dummy a dead player possesses so the engine keeps
+//!     sending them a world to look at (`TBD_SpectatorHost`, T-181.24).
 //!
-//! Deliberately NOT a `modded class SCR_PlayerController`: `TBD_MissionBrowser.c` already mods
-//! that class for the admin keybinds, and a second `modded class` block for the same class in the
-//! same addon is a collision waiting to happen. Deliberately NOT a bare `GameSystem` either —
-//! auto-registration of a scripted system is not something the headless compile lane can prove,
-//! and an unprovable lifecycle is exactly what this program refuses to ship.
+//! Both need a place that starts with the world and dies with it, and in this codebase that place
+//! is a component on the game mode prefab — the same seat `TBD_FrameworkManager`,
+//! `TBD_SpawnManager` and `TBD_LoadoutEquipComponent` already occupy.
 //!
-//! All this class does is start and stop `TBD_SpectatorController`. Every decision lives there;
-//! this is the socket, not the logic.
-[ComponentEditorProps(category: "TBD/Framework", description: "TBD spectator — free camera, follow, and the unit list a dead player lives in.")]
+//! Deliberately NOT a `modded class SCR_PlayerController` lifecycle: `TBD_MissionBrowser.c`,
+//! `TBD_BriefingController.c` and `TBD_LobbyController.c` already mod that class, and piling a
+//! lifecycle on top of it would add a fourth. (T-181.24 does add one more `modded` block, in
+//! `TBD_SpectatorHost.c`, but only as an RPC transport — the same narrow use the other three make
+//! of it, and for the same reason: the player controller is the only entity a client OWNS and can
+//! therefore send a `RplRcver.Server` message on.) Deliberately NOT a bare `GameSystem` either —
+//! auto-registration of a scripted system is not something the headless compile lane can prove, and
+//! an unprovable lifecycle is exactly what this program refuses to ship.
+//!
+//! All this class does is start and stop the two managers. Every decision lives in them; this is
+//! the socket, not the logic.
+[ComponentEditorProps(category: "TBD/Framework", description: "TBD spectator — free camera, follow, the unit list a dead player lives in, and the server-side streaming host that keeps the world around their camera loaded.")]
 class TBD_SpectatorComponentClass : SCR_BaseGameModeComponentClass {}
 
 class TBD_SpectatorComponent : SCR_BaseGameModeComponent
@@ -23,15 +31,47 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 	//! controller polls, so it cannot miss a death that happened while it was waiting.
 	static const int START_DELAY_MS = 2000;
 
+	//! T-181.24 — the kill switch. Possession is the most invasive thing this mod does to a player
+	//! controller, so there is exactly one attribute that makes the whole streaming host stand down
+	//! and leaves the spectator behaving as it did before T-181.24 (camera works, streaming stays
+	//! anchored to the corpse).
+	[Attribute("1", desc: "Give a dead player an inert entity to possess so the server keeps streaming the world around their spectator camera. Off = the camera still works, but flying far from your corpse shows an empty world.")]
+	protected bool m_bStreamingHost;
+
+	//! T-181.24 — leave EMPTY. The built-in host is spawned BY TYPENAME with no prefab, which is
+	//! what lets it work before the Workbench pass that `resourceDatabase.rdb` is waiting on.
+	//! Set this only if a live test proves a REPLICATED host is required (see the
+	//! `SpawnHostEntity` header in `TBD_SpectatorHost.c`), and only to a prefab whose root class is
+	//! `TBD_SpectatorHostEntity`. A character prefab is REFUSED at runtime, loudly — that would be a
+	//! second door into the world and ONE LIFE says there is only one.
+	[Attribute("", desc: "Optional prefab for the spectator streaming host. EMPTY = the built-in prefab-free host (no resourceDatabase.rdb dependency). A character prefab is refused at runtime.", params: "et")]
+	protected ResourceName m_sHostPrefab;
+
+	//! T-181.24 — how far a spectator may steer their own streaming origin from where they died.
+	//!
+	//! 0 (the default) is unlimited, because watching the AO is the entire point of a spectator
+	//! camera. The cost of unlimited is stated plainly in the `TBD_SpectatorHost` header: it is the
+	//! engine's replication range that stops a MODIFIED client from seeing the enemy, and this
+	//! feature moves that range on request. An operator who cares more about that than about
+	//! spectator reach sets a number here.
+	[Attribute("0", desc: "Max metres a spectator may steer their streaming host from their own death position. 0 = unlimited.")]
+	protected float m_fHostMaxRangeM;
+
 	//------------------------------------------------------------------------------------------------
-	//! @authority client — the server has no camera and nothing to spectate with.
+	//! Two halves, two guards, and on a LISTEN HOST both of them fire — which is the point of
+	//! testing them separately rather than with one `if/else`.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
 
-		// A dedicated server has no workspace at all (measured — see TBD_UILayouts). That is the
-		// cleanest available "am I a machine with a screen" test, and it is the one the rest of
-		// the UI framework already trusts.
+		// SERVER half. Authority is the only place that may spawn or possess anything, and a
+		// dedicated server reaches this line while a client never does.
+		if (m_bStreamingHost && RplSession.Mode() != RplMode.Client)
+			TBD_SpectatorHost.Start(m_sHostPrefab, m_fHostMaxRangeM);
+
+		// CLIENT half. A dedicated server has no workspace at all (measured — see TBD_UILayouts).
+		// That is the cleanest available "am I a machine with a screen" test, and it is the one the
+		// rest of the UI framework already trusts.
 		if (!GetGame().GetWorkspace())
 			return;
 
@@ -39,11 +79,16 @@ class TBD_SpectatorComponent : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Statics outlive a world inside one process (measured landmine in this codebase), so the
-	//! controller MUST be torn down here or the next round starts holding a camera that belongs to
-	//! a world that no longer exists.
+	//! Statics outlive a world inside one process (measured landmine in this codebase), so both
+	//! managers MUST be torn down here or the next round starts holding a camera — and a possessed
+	//! dummy — that belong to a world that no longer exists.
 	override void OnDelete(IEntity owner)
 	{
+		// Unconditional, unlike the arming above: `m_bStreamingHost` is a live attribute and a
+		// shutdown that only ran when it was set would leak every host if it were ever flipped off
+		// mid-session. `Shutdown` is a no-op when nothing was started.
+		TBD_SpectatorHost.Shutdown();
+
 		if (GetGame().GetWorkspace())
 		{
 			GetGame().GetCallqueue().Remove(TBD_SpectatorController.Start);
