@@ -130,7 +130,7 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-180**
 
-**ACTIVE NOW:** **T-068** — T-068.11 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`.
+**ACTIVE NOW:** **T-068** — T-068.14 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`.
 
 **Next (by order):**
 - **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
@@ -298,17 +298,22 @@ list (next slice when filed).
   operator-pending. Verify: [`.ai/artifacts/t151_0_verify_log.md`](.ai/artifacts/t151_0_verify_log.md).
   Spec: [`t151_0_wasm_merge_dual_mount.md`](docs/specs/Mission_Creator_Architecture/t151_0_wasm_merge_dual_mount.md).
 
-### T-068 — Virtual Arsenal (ACTIVE T-068.11)
+### T-068 — Virtual Arsenal (ACTIVE T-068.13)
 
 See [`t068_virtual_arsenal_program.md`](docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md)
-· **T-068.10** @ `3bc0bd24` (Forge + editor loadout) · verify
-[`.ai/artifacts/t068_10_verify_log.md`](.ai/artifacts/t068_10_verify_log.md).
-**ACTIVE:** **T-068.11** compiled mod loadout block —
-[`t068_11_compiler_loadout_export.md`](docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md)
-· handoff [`.ai/artifacts/t068_11_claude_code_handoff.md`](.ai/artifacts/t068_11_claude_code_handoff.md).
-Then **T-068.12** player equip. Markers (**T-069**) deferred.
+· cargo hub [`t068_15_cargo_program.md`](docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md).
 
-**Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). **Boundary:** web loadout-export → profile JSON → mod dresses a **non-player test NPC** @ game-mode spawn — **not** the joining human player until **T-068.12** (compiler data @ **T-068.11**).
+**Cargo ladder shipped (Fable 5, 2026-07-24):**
+- **T-068.15.1** @ `85acbb13` — grids + `character_default_cargo` + qty ingest · [verify](.ai/artifacts/t068_15_1_verify_log.md)
+- **T-068.15.2** @ `4fb156b7` — Arsenal capacity + cargo UI + seed · [verify](.ai/artifacts/t068_15_2_verify_log.md)
+- **T-068.11** @ `c66494c6` — compiled `slot.loadout {gear,cargo[]}` · [verify](.ai/artifacts/t068_11_verify_log.md)
+- **T-068.12** @ `0be53e16` — player equip + InsertItem · [verify](.ai/artifacts/t068_12_verify_log.md)
+
+**ACTIVE:** **T-068.13** LOBBY / production slot picker · then **T-068.14** Phase-2 E2E.
+Operator residual from .12: M2 dressed-player screenshot; optional M4 NPC toggle.
+Markers (**T-069**) deferred.
+
+**Phase 1 shipped @ 2026-06-27** (E2E **T-068.6 PASS**). Player loadout path now live through **T-068.12**.
 
 **T-068 program (Phase 1 — shipped slices):**
 - **T-068.0.1** JSON schemas + golden fixtures @ `2487d59` — `registry-items` + `loadout-export` in `packages/tbd-schema/`. Spec: [`t068_0_1_registry_schemas.md`](docs/specs/Mission_Creator_Architecture/t068_0_1_registry_schemas.md).
@@ -320,7 +325,7 @@ Then **T-068.12** player equip. Markers (**T-069**) deferred.
 - **T-068.5.1** Visual wear on test NPC @ `b233b11` (tag **T-068.5.1**) — `EquipCloth`/`EquipWeapon` + worn-verify; kit visible on **NPC**, not player. Spec: [`t068_5_1_visual_equip_fix.md`](docs/specs/Mission_Creator_Architecture/t068_5_1_visual_equip_fix.md).
 - **T-068.6** Phase 1 E2E gate **PASS** @ 2026-06-27 — E1–E12; Phase 2 approved. Spec: [`t068_6_phase1_e2e_gate.md`](docs/specs/Mission_Creator_Architecture/t068_6_phase1_e2e_gate.md).
 
-**Phase 2 next:** **T-068.11** compiled loadout → **T-068.12** mod **player** loadout → **T-068.13** production LOBBY slot picker → **T-068.14** E2E. **ORBAT authoring done via T-180** (hub [`t180_orbat_eden_program.md`](docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md); `make verify-t180`). Do **not** `./scripts/ticket done T-068` until **T-068.14**.
+**Phase 2 next:** **T-068.13** production LOBBY slot picker → **T-068.14** E2E. **ORBAT authoring done via T-180**. Do **not** `./scripts/ticket done T-068` until **T-068.14**.
 
 **Done (shipped):**
 - T-145 **Rust/Wasm doc core (Yjs replacement)** — backend Go→Rust (Axum + sqlx) + the mission document core moved into a Rust/wasm `yrs` doc. **Flip F1→F4 complete:** the `yrs` wasm doc behind `WasmMissionDoc` is the sole document core; **yjs + y-indexeddb removed** from the app. Commits F3 `a335cc23` · F3.1 `06fab65c` · F4 `a228ed98`. **Pivot:** the world-object zero-copy port (kickoff `.ai/artifacts/t145_world_zerocopy_kickoff.md`) is **superseded by the wgpu render-engine spike (T-151)** — Deck.gl `IconLayer` can't take binary buffers, so world objects can't reach zero-copy render through Deck; a pure wgpu/wasm engine replaces it.

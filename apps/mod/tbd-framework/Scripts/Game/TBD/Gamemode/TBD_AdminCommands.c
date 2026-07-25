@@ -90,7 +90,57 @@ class TBD_AdminCommands
 			return;
 		}
 
-		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh");
+		//! T-181.11.1 — the one-life escape hatch. TBD events are one life, so a player who dies
+		//! is out; this exists for GLITCH deaths only (fell through terrain, killed by a broken
+		//! prop). Rematerializes a fresh dressed body on their own slot and writes an audit line.
+		//! Permission is the vanilla admin list, already checked in OnNewMessage above.
+		if (sub == "respawn")
+		{
+			if (parts.Count() < 3)
+			{
+				Reply(chat, senderId, "Usage: #tbd respawn <playerId>   (one-life glitch recovery)");
+				return;
+			}
+			TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+			if (!sm)
+			{
+				Reply(chat, senderId, "TBD: spawn manager not ready.");
+				return;
+			}
+			int target = parts[2].ToInt();
+			if (target <= 0)
+			{
+				Reply(chat, senderId, "TBD: bad playerId '" + parts[2] + "'.");
+				return;
+			}
+			TBD_EDeployResult r = sm.AdminRespawn(target, senderId.ToString());
+			Reply(chat, senderId, string.Format("TBD: respawn player=%1 -> %2",
+				target, typename.EnumToString(TBD_EDeployResult, r)));
+			return;
+		}
+
+		//! Who has spent their life — the roster an admin needs before using `respawn`.
+		if (sub == "dead")
+		{
+			TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+			if (!sm)
+			{
+				Reply(chat, senderId, "TBD: spawn manager not ready.");
+				return;
+			}
+			array<int> ids = new array<int>();
+			GetGame().GetPlayerManager().GetPlayers(ids);
+			string line = "TBD dead:";
+			foreach (int id : ids)
+			{
+				if (sm.IsPlayerDead(id))
+					line += " " + id.ToString();
+			}
+			Reply(chat, senderId, line);
+			return;
+		}
+
+		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | respawn <playerId> | dead");
 	}
 
 	//------------------------------------------------------------------------------------------------

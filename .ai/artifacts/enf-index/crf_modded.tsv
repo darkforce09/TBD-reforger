@@ -1,0 +1,79 @@
+modded_class	vanilla_base	file	line
+SCR_DamageManagerComponent		Scripts/Game/GameMode/Specials/GunGame/VanillaOverrides/CRF_SCR_DamageManagerComponent.c	1
+SCR_EquipWeaponAction		Scripts/Game/GameMode/Specials/GunGame/VanillaOverrides/CRF_SCR_EquipWeaponAction.c	1
+SCR_EquipWeaponHolsterAction		Scripts/Game/GameMode/Specials/GunGame/VanillaOverrides/CRF_SCR_EquipWeaponHolsterAction.c	1
+SCR_InventoryMenuUI		Scripts/Game/GameMode/Specials/GunGame/VanillaOverrides/CRF_SCR_InventoryMenuUI.c	1
+SCR_InventoryStorageManagerComponent	ScriptedInventoryStorageManagerComponent	Scripts/Game/GameMode/Specials/GunGame/VanillaOverrides/CRF_SCR_InventoryStorageManagerComponent.c	1
+SCR_PickUpItemAction		Scripts/Game/GameMode/Specials/GunGame/VanillaOverrides/CRF_SCR_PickUpItemAction.c	1
+SCR_MapMenuUI		Scripts/Game/GameMode/Specials/Looter/VanillaOverrides/CRF_SCR_MapMenuUI.c	1
+CRF_PlayerRplToOwnerManager		Scripts/Game/GameMode/Specials/PropHunt/VanillaOverrides/CRF_PropHunt_PlayerRplToOwnerManager.c	22
+SCR_DamageManagerComponent		Scripts/Game/GameMode/Specials/PropHunt/VanillaOverrides/CRF_PropHunt_SCR_DamageManagerComponent.c	25
+SCR_BaseGameMode		Scripts/Game/Systems/Components/LeadershipArsenal/CRF_LeadersArsenal.c	26
+SCR_BaseGameMode		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	1
+ACE_Carrying_BaseUserAction		Scripts/Game/Systems/ModdedOverrides/ACE/CRF_ACE_Carrying_BaseUserAction.c	1
+SCR_CharacterControllerComponent		Scripts/Game/Systems/ModdedOverrides/ACE/CRF_ACE_Carrying_SCR_CharacterControllerComponent.c	1
+Bacon_PlaySoundComponent		Scripts/Game/Systems/ModdedOverrides/Bacon/CRF_Bacon_PlaySoundComponent.c	1
+CVON_VONGameModeComponent		Scripts/Game/Systems/ModdedOverrides/CRF_CVON_GamemodeOverride.c	7
+SCR_NoiseFilterEffect		Scripts/Game/Systems/ModdedOverrides/CRF_SCR_NoiseFilterEffect.c	1
+CSI_HUD		Scripts/Game/Systems/ModdedOverrides/CSI/CRF_CSI_HUD.c	1
+SCR_GroupsManagerComponent		Scripts/Game/Systems/ModdedOverrides/CVON/CRF_CVON_GroupsManagerComponent.c	1
+CVON_RadioComponent		Scripts/Game/Systems/ModdedOverrides/CVON/CRF_CVON_RadioComponent.c	1
+SCR_VONController		Scripts/Game/Systems/ModdedOverrides/CVON/CRF_CVON_VONController.c	1
+CVON_VONGameModeComponent		Scripts/Game/Systems/ModdedOverrides/CVON/CRF_CVON_VONGameModeComponent.c	1
+GC_SuppressionSystem		Scripts/Game/Systems/ModdedOverrides/GC/CRF_GC_SuppressionSystem.c	1
+LM_SuppressionScreenEffect		Scripts/Game/Systems/ModdedOverrides/LM/CRF_LM_SuppressionScreenEffect.c	2
+ParachuteComponent		Scripts/Game/Systems/ModdedOverrides/Parachute/CRF_ParachuteComponent.c	2
+SCR_ListBoxComponent		Scripts/Game/Systems/UI/CustomListbox/CRF_SCR_ListBoxComponent.c	1
+SCR_ListBoxElementComponent		Scripts/Game/Systems/UI/CustomListbox/CRF_SCR_ListBoxElementComponent.c	1
+SCR_PopUpNotification	GenericEntity	Scripts/Game/Systems/UI/HUDs/CRF_PopUpNotification.c	3
+SCR_MapMarkersUI		Scripts/Game/Systems/UI/MapMarkers/CRF_MapMarker.c	1
+EditorMenuUI		Scripts/Game/Systems/UI/Menus/CRF_EditorMenuUI.c	1
+SCR_MapLightUI		Scripts/Game/Systems/UI/Menus/CRF_SCR_MapLightUI.c	2
+SCR_AIGetCombatMoveRequestParameters_ChangeStance		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_AIGroupInfoComponent.c	1
+SCR_AIGroup		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_AIGroups.c	1
+SCR_BaseCompartmentManagerComponent		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_BaseCompartmentManagerComponent.c	1
+SCR_Faction		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_Faction.c	1
+SCR_FactionCallsignInfo		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_FactionCallsignInfo.c	2
+SCR_CallsignInfo		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_FactionCallsignInfo.c	12
+SCR_FactionManager		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_FactionManager.c	2
+SCR_ItemPlacementComponent	ScriptComponent	Scripts/Game/Systems/VanillaOverrides/CRF_SCR_ItemPlacementComponent.c	2
+SCR_MissionHeader		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_MissionHeader.c	1
+SCR_PossessSpawnHandlerComponent		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_PossessSpawnHandlerComponent.c	1
+SCR_SeizingComponent		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_SeizingComponent.c	1
+SCR_TimeAndWeatherHandlerComponent		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_TimeAndWeatherHandlerComponent.c	1
+Vehicle		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_Vehicle.c	1
+SCR_CharacterStaminaComponent	CharacterStaminaComponent	Scripts/Game/Systems/VanillaOverrides/Character/CRF_SCR_CharacterStaminaComponent.c	1
+SCR_MeleeComponent		Scripts/Game/Systems/VanillaOverrides/Character/CRF_SCR_MeleeComponent.c	1
+SCR_DataCollectorComponent		Scripts/Game/Systems/VanillaOverrides/DataCollector/CRF_SCR_DataCollectorComponent.c	4
+SCR_DataCollectorModule		Scripts/Game/Systems/VanillaOverrides/DataCollector/CRF_SCR_DataCollectorModule.c	6
+SCR_CharacterInventoryStorageComponent		Scripts/Game/Systems/VanillaOverrides/Inventory/CRF_SCR_CharacterInventoryStorageComponent.c	1
+SCR_InventoryMenuUI		Scripts/Game/Systems/VanillaOverrides/Inventory/CRF_SCR_InventoryMenuUI.c	1
+SCR_InventoryStorageManagerComponent	ScriptedInventoryStorageManagerComponent	Scripts/Game/Systems/VanillaOverrides/Inventory/CRF_SCR_InventoryStorageManagerComponent.c	1
+SCR_OpenStorageAction	SCR_InventoryAction	Scripts/Game/Systems/VanillaOverrides/Inventory/CRF_SCR_OpenStorageAction.c	1
+SCR_OpenVehicleStorageAction	SCR_InventoryAction	Scripts/Game/Systems/VanillaOverrides/Inventory/CRF_SCR_OpenStorageAction.c	31
+SCR_CharacterDamageManagerComponent		Scripts/Game/Systems/VanillaOverrides/Managers/CRF_SCR_CharacterDamageManagerComponent.c	6
+SCR_EditorManagerEntity		Scripts/Game/Systems/VanillaOverrides/Managers/CRF_SCR_EditorManagerEntity.c	1
+SCR_GroupsManagerComponent		Scripts/Game/Systems/VanillaOverrides/Managers/CRF_SCR_GroupsManagerComponent.c	1
+SCR_MapMarkerManagerComponent		Scripts/Game/Systems/VanillaOverrides/Managers/CRF_SCR_MapMarkerManagerComponent.c	3
+SCR_VehicleDamageManagerComponent		Scripts/Game/Systems/VanillaOverrides/Managers/CRF_SCR_VehicleDamageManagerComponent.c	1
+SCR_MapMenuUI		Scripts/Game/Systems/VanillaOverrides/MapBriefing/CRF_SCR_MapMenuUI.c	6
+SCR_SpawnRequestComponent		Scripts/Game/Systems/VanillaOverrides/Respawn/CRF_SCR_SpawnRequestComponent.c	19
+SCR_BaseGameMode	BaseGameMode	Scripts/Game/Systems/VanillaOverrides/Settings/CRF_SettingsEnforcement.c	110
+SCR_VideoSettingsSubMenu	SCR_SettingsSubMenuBase	Scripts/Game/Systems/VanillaOverrides/Settings/CRF_SettingsEnforcement.c	122
+SCR_ChatPanel	SCR_ScriptedWidgetComponent	Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_ChatPanel.c	1
+SCR_EditorPingInfoDisplay		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_EditorPingInfoDisplay.c	1
+SCR_GameOverScreenManagerComponent		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_GameOverScreenManagerComponent.c	5
+SCR_InventoryMenuUI		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_InventoryMenuUI.c	1
+SCR_MapMarkerBase		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_MapMarkerBase.c	1
+SCR_MapMarkerSquadLeaderComponent	SCR_MapMarkerDynamicWComponent	Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_MapMarkerSquadLeaderComponent.c	1
+SCR_PlayerControllerCommandingComponent		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_MapMarkersUI.c	1
+SCR_NTTextBase	SCR_NTElementBase	Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_NTTextBase.c	3
+SCR_NotificationSenderComponent		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_NotificationSenderComponent.c	1
+SCR_NotificationsComponent		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_NotificationsComponent.c	1
+SCR_PlayerTeleportFeedbackUIComponent		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_PlayerTeleportFeedbackUIComponent.c	1
+SCR_PlayerTeleportedFeedbackComponent		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_PlayerTeleportedFeedbackComponent.c	1
+SCR_MapMarkerSquadLeader		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_SquadLeaderMarkers.c	2
+SCR_WeaponInfo		Scripts/Game/Systems/VanillaOverrides/UI/CRF_SCR_WeaponInfo.c	1
+SCR_VoNComponent		Scripts/Game/Systems/VanillaOverrides/VON/CRF_SCR_VONComponent.c	1
+SCR_VONController		Scripts/Game/Systems/VanillaOverrides/VON/CRF_SCR_VONController.c	1
+SCR_VonDisplay		Scripts/Game/Systems/VanillaOverrides/VON/CRF_SCR_VONDisplay.c	1

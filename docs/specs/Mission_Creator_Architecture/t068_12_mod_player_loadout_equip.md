@@ -1,15 +1,17 @@
 # T-068.12 — Mod player loadout equip on spawn
 
 **Ticket:** T-068 · **Slice:** T-068.12  
-**Status:** Spec ready — **paused** (requires **T-068.11** + map gate)  
-**Executor:** claude-code (+ MCP / Workbench verify)  
-**Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md)
+**Status:** **SHIPPED** @ `0be53e16` (tag **T-068.12**) ·  
+**Executor:** claude-code / Fable 5 (+ MCP / Workbench verify) ·  
+**Verify:** [`.ai/artifacts/t068_12_verify_log.md`](../../../.ai/artifacts/t068_12_verify_log.md) ·  
+**Authority:** [`t068_virtual_arsenal_program.md`](t068_virtual_arsenal_program.md) ·  
+**Operator residual:** M2 dressed-player screenshot; optional M4 NPC toggle
 
 ---
 
 ## In one sentence
 
-When a **human player** deploys on an assigned mission slot, apply that slot's compiled **loadout gear** (ResourceNames) using the proven **T-068.5.1** equip path — not the isolated test-NPC harness.
+When a **human player** deploys on an assigned mission slot, apply that slot's compiled **loadout gear** (ResourceNames) and **cargo[]** (container items via `InsertItem`) using the proven **T-068.5.1** equip path — not the isolated test-NPC harness.
 
 ---
 
@@ -22,10 +24,12 @@ Phase 1 (`TBD_LoadoutEquipComponent`) dresses a **server-spawned test NPC** from
 ## Goal
 
 1. Extend mission slot JSON contract (compiled mission / schema) with optional structured loadout block per slot, e.g. `loadout.gear.{primary,uniform,vest,helmet}` as ResourceName strings (aligned with **T-068.11** compiler output).
-2. Parse loadout on `TBD_MissionLoader` into `TBD_MissionSlotStruct` (or companion struct).
-3. After successful player spawn for a slot, run shared equip logic (extract from `TBD_LoadoutEquipComponent` — `EquipCloth` / `EquipWeapon` + worn-verify) on the **player character entity**, not a dev NPC.
-4. Log lines clearly tagged `[TBD][Loadout][Player]` vs `[TBD][Loadout][TestNPC]` so E2E evidence is unambiguous.
-5. Empty/null gear slots = skip (same as Phase 1).
+2. Parse **`loadout.cargo[]`** (`{container, item, qty}`) from compiled JSON (T-068.11 + T-068.15 chain).
+3. Parse loadout on `TBD_MissionLoader` into `TBD_MissionSlotStruct` (or companion struct).
+4. After successful player spawn for a slot, run shared equip logic (extract from `TBD_LoadoutEquipComponent` — `EquipCloth` / `EquipWeapon` + worn-verify) on the **player character entity**, not a dev NPC.
+5. After wear/weapons equip, **`InsertItem`** each cargo row into the matching container storage on the player (resolve `container` key → storage component; same API family as T-068.5.1 storage path).
+6. Log lines clearly tagged `[TBD][Loadout][Player]` vs `[TBD][Loadout][TestNPC]` so E2E evidence is unambiguous.
+7. Empty/null gear slots or empty cargo = skip (same as Phase 1).
 
 ---
 
@@ -44,7 +48,8 @@ Phase 1 (`TBD_LoadoutEquipComponent`) dresses a **server-spawned test NPC** from
 |----------|--------|
 | Equip API | Reuse **T-068.5.1** — `EquipCloth` / `EquipWeapon` + deferred worn-verify |
 | Subject | **Human player character** after `DeployPlayer` / respawn completes |
-| Data source | Per-slot block in **compiled mission JSON** (from **T-068.11**), not profile file |
+| Data source | Per-slot block in **compiled mission JSON** (from **T-068.11**, including `cargo[]`), not profile file |
+| Cargo equip | `SCR_InventoryStorageManagerComponent.InsertItem` (or proven T-068.5.1 storage API) into resolved container |
 | Dev harness | Keep `TBD_LoadoutEquipComponent` test-NPC path for manual JSON experiments |
 
 ---
@@ -97,18 +102,53 @@ bash scripts/mod/tbd-dev-bootstrap.sh
 
 ## Depends on / Unblocks
 
-- **Depends on:** T-068.11 (compiler emits per-slot loadout block)
+- **Depends on:** T-068.11 (compiler emits per-slot loadout gear + cargo), T-068.15.1 + T-068.15.2 (cargo data path)
 - **Unblocks:** T-068.13 (slot picker can target slots that carry loadouts), T-068.14 (Phase 2 E2E)
 
 ---
 
-## Claude Code prompt — T-068.12
+## Claude Code prompt — T-068.12 (copy-paste)
+
+Authority: this spec + program handoff. **Do not edit docs/registry/CLAUDE** (verify log OK).
 
 ```
-Read CLAUDE.md §Status. Active slice: T-068.12.
-Implement ONLY docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md
-Do not edit documentation. Branch: ticket/T-068
-Requires T-068.11 compiler output in compiled mission JSON for test fixture.
-Verify: tbd-dev-bootstrap.sh + wb_play; M1–M4 + screenshot of PLAYER wear
-Return: verify paste A1–A4 + log excerpt tagged [Loadout][Player]
+Read CLAUDE.md first. Work on main at repo root.
+
+Implement **T-068.12** — Mod player loadout equip + InsertItem cargo.
+
+═══ PREFLIGHT ═══
+  cd /var/home/Samuel/Projects/TBD-Reforger
+  git rev-parse T-068.11
+  bash scripts/mod/tbd-dev-bootstrap.sh
+
+═══ READ ═══
+  1. .ai/artifacts/t068_15_fable_program_handoff.md
+  2. docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md
+  3. .ai/artifacts/t068_11_verify_log.md
+  4. TBD_LoadoutEquipComponent / T-068.5.1 equip path
+  5. TBD_SpawnManager DeployPlayer
+  6. .cursor/rules/no-silent-deferrals.mdc
+
+═══ PROBLEM ═══
+  Compiled slots have gear+cargo but DeployPlayer still spawns kit-alias only —
+  human players never get Arsenal wear or container contents.
+
+═══ DO ═══
+  - Parse loadout.gear + loadout.cargo[] into mission slot structs
+  - Post-spawn equip player via T-068.5.1 EquipCloth/EquipWeapon path
+  - InsertItem cargo into resolved container storages
+  - Logs [TBD][Loadout][Player] · keep test-NPC harness
+  - Verify log + tag T-068.12
+
+═══ DO NOT ═══
+  - Slot picker UI (T-068.13)
+  - Edit docs/registry
+  - Silent deferral of cargo InsertItem
+
+═══ VERIFY ═══
+  tbd-dev-bootstrap + wb_play; M1–M4; screenshot of PLAYER (not NPC)
+  .ai/artifacts/t068_12_verify_log.md
+
+═══ RETURN ═══
+  SHA + tag T-068.12 · log excerpt [Loadout][Player] · cargo InsertItem proof
 ```

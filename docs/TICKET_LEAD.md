@@ -8,9 +8,10 @@
 
 ## Ready
 
-- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
+- **T-068** (680) — Virtual Arsenal (registry + loadout export) [ready] — Cargo ladder shipped (T-068.15.1 @ 85acbb13 → .15.2 @ 4fb156b7 → T-068.11 @ c66494c6 → T-068.12 @ 0be53e16). T-068.13 LOBBY picker moved to T-181.9.1; LOBBY slot picker → T-068.14 Phase-2 E2E. Hub: t068_virtual_arsenal_program.md + t068_15_cargo_program.md.
 - **T-090** (900) — Map visualization program [ready] — Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
 - **T-151** (1500) — WebGPU (wgpu/wasm) render engine spike - replace Deck.gl [ready] — wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.
+- **T-181** (1810) — TBD Framework — Arma-3-parity event mod (factory + spine) [ready] — Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13.
 
 ## Next queued (top 10)
 
@@ -30,4 +31,5 @@
 ```mermaid
 flowchart LR
   T067[T-067] --> T068[T-068]
+  T068[T-068] --> T181[T-181]
 ```

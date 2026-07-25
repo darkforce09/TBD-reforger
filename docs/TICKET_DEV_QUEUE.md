@@ -5,15 +5,6 @@
 
 Only `ready` tickets with `executor: claude-code` (or active slice).
 
-## T-068 — Virtual Arsenal (registry + loadout export)
-
-- **Active slice:** `T-068.11`
-- **Slice spec:** `docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md`
-- **Program hub:** `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`
-- **Branch:** `ticket/T-068`
-- **Targets:** website, shared, root, mod
-- **Summary:** Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block → T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.
-
 ## T-090 — Map visualization program
 
 - **Active slice:** `T-090.6`
@@ -22,3 +13,12 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 - **Branch:** `ticket/T-090`
 - **Targets:** root, website
 - **Summary:** Map Engine v2 through sea-band + contours @ `bd481cf1`. **Active:** **T-090.5.5** tree/veg/prop glyphs. Single lane.
+
+## T-181 — TBD Framework — Arma-3-parity event mod (factory + spine)
+
+- **Active slice:** `T-181.7`
+- **Slice spec:** `docs/mod/t181_event_mod_program.md`
+- **Program hub:** `docs/mod/t181_event_mod_program.md`
+- **Branch:** `main`
+- **Targets:** mod, root, shared, website
+- **Summary:** Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13.

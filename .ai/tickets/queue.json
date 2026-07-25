@@ -9,7 +9,7 @@
       "id": "T-068",
       "title": "Virtual Arsenal (registry + loadout export)",
       "status": "ready",
-      "spec": "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md",
+      "spec": "docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md",
       "branch": "ticket/T-068"
     },
     {
@@ -25,6 +25,13 @@
       "status": "ready",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike"
+    },
+    {
+      "id": "T-181",
+      "title": "TBD Framework \u2014 Arma-3-parity event mod (factory + spine)",
+      "status": "ready",
+      "spec": "docs/mod/t181_event_mod_program.md",
+      "branch": "main"
     }
   ]
 }

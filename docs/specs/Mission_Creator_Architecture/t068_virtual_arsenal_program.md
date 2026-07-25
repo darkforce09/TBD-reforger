@@ -1,27 +1,40 @@
 # T-068 — Virtual Arsenal (registry + loadout export)
 
 **Status:** **Phase 1 shipped**. **T-150** @ `9107bf4e` · **T-068.9** @ `d41418e5` ·
-**T-068.10** @ `3bc0bd24` (Smart Forge + per-slot loadout in **editor** doc). **ACTIVE:**
-**T-068.11** — compiled mod document loadout block (feeds **T-068.12**).  
-**Git tags:** **T-068.10** @ `3bc0bd24`. Full ticket ships @ **T-068.14**.  
+**T-068.10** @ `3bc0bd24` (Smart Forge + per-slot loadout in **editor** doc). **Cargo ladder
+shipped:** **T-068.15.1** @ `85acbb13` → **T-068.15.2** @ `4fb156b7` → **T-068.11** @
+`c66494c6` → **T-068.12** @ `0be53e16`. **ACTIVE:** **T-068.13** LOBBY slot picker →
+**T-068.14** Phase-2 E2E.  
+**Git tags:** **T-068.12** @ `0be53e16` (latest cargo). Full ticket ships @ **T-068.14**.  
 **Authority:** [MC ROADMAP](ROADMAP.md) · [`docs/TICKET_LEAD.md`](../../TICKET_LEAD.md) · [`.ai/tickets/registry.json`](../../../.ai/tickets/registry.json)
 
 **Prerequisites:** **T-067** shipped. Dev-login `mission_maker+`; `/missions/:id/edit`.
 
 ---
 
-## Resume here (2026-07-11)
+## Resume here (2026-07-24)
 
-**T-068.10 done** (editor loadout + Arsenal). **Next:** **T-068.11** — emit gear on
-**compiled** `/missions/:id/compiled` slots for mod spawn equip.
+**Cargo ladder complete** (Fable 5). Verify:
+[`.15.1`](../../../.ai/artifacts/t068_15_1_verify_log.md) ·
+[`.15.2`](../../../.ai/artifacts/t068_15_2_verify_log.md) ·
+[`.11`](../../../.ai/artifacts/t068_11_verify_log.md) ·
+[`.12`](../../../.ai/artifacts/t068_12_verify_log.md).
+
+**ACTIVE:** **T-068.13** — production LOBBY slot picker. Then **T-068.14** Phase-2 E2E
+(do not `ticket done T-068` until then).
+
+**Operator residual (T-068.12):** M2 dressed-player screenshot; optional M4 NPC-toggle run.
 
 ```text
 T-150 export                 ✓
 T-068.9 ingest + worker      ✓ @ d41418e5
 T-068.10 Forge + editor loadout ✓ @ 3bc0bd24
-  → T-068.11 compiled mod loadout block  ← ACTIVE
-  → T-068.12 mod player equip
-  → T-068.13 LOBBY picker · T-068.14 E2E
+  → T-068.15.1 cargo export     ✓ @ 85acbb13
+  → T-068.15.2 Arsenal cargo UI ✓ @ 4fb156b7
+  → T-068.11 compiled loadout   ✓ @ c66494c6
+  → T-068.12 player equip+cargo ✓ @ 0be53e16
+  → T-068.13 LOBBY picker       ← ACTIVE
+  → T-068.14 E2E
 ```
 
 | Gate | Ticket | Spec |
@@ -29,9 +42,12 @@ T-068.10 Forge + editor loadout ✓ @ 3bc0bd24
 | Universal export | **T-150** ✓ | [`t150_universal_registry_export.md`](t150_universal_registry_export.md) |
 | Ingest + worker | **T-068.9** ✓ | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) |
 | Smart Forge + editor loadout | **T-068.10** ✓ | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) |
-| Compiled mod loadout | **T-068.11** | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) |
-| Player equip on spawn | **T-068.12** | [`t068_12_mod_player_loadout_equip.md`](t068_12_mod_player_loadout_equip.md) |
-| Mod slot picker | **T-068.13** | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
+| Cargo export | **T-068.15.1** ✓ | [`t068_15_1_cargo_capacity_export.md`](t068_15_1_cargo_capacity_export.md) |
+| Arsenal cargo UI | **T-068.15.2** ✓ | [`t068_15_2_arsenal_cargo_ui.md`](t068_15_2_arsenal_cargo_ui.md) |
+| Compiled mod loadout | **T-068.11** ✓ | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) |
+| Player equip on spawn | **T-068.12** ✓ | [`t068_12_mod_player_loadout_equip.md`](t068_12_mod_player_loadout_equip.md) |
+| Mod slot picker | **T-068.13** ← | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) |
+| Phase-2 E2E | **T-068.14** | (human gate) |
 
 **Ops:** `make registry-import` · see [`DEV_RUNBOOK.md`](../../website/DEV_RUNBOOK.md) §Registry.
 
@@ -106,12 +122,15 @@ Per-slice spec paths live here only — **`slice_plan` in registry has no `spec`
 | T-068.8 | claude-code | [`t068_8_workbench_compat_export.md`](t068_8_workbench_compat_export.md) | §Verification gate A1–A5 + MCP |
 | T-068.9 | claude-code | [`t068_9_registry_worker_ingest.md`](t068_9_registry_worker_ingest.md) | §Verification gate A1–A5 + W1–W3 |
 | T-068.10 | claude-code | [`t068_10_smart_forge_ui.md`](t068_10_smart_forge_ui.md) | §Verification gate A1–A5 |
+| T-068.15 | cursor-docs | [`t068_15_cargo_program.md`](t068_15_cargo_program.md) | Hub + slice ladder |
+| T-068.15.1 | claude-code | [`t068_15_1_cargo_capacity_export.md`](t068_15_1_cargo_capacity_export.md) | §Class-R C1–C3 + validate |
+| T-068.15.2 | claude-code | [`t068_15_2_arsenal_cargo_ui.md`](t068_15_2_arsenal_cargo_ui.md) | Capacity + cargo UI |
 | T-068.11 | claude-code | [`t068_11_compiler_loadout_export.md`](t068_11_compiler_loadout_export.md) | §Verification gate A1–A4 + R1–R4 |
 | T-068.12 | claude-code | [`t068_12_mod_player_loadout_equip.md`](t068_12_mod_player_loadout_equip.md) | §M1–M4 + player screenshot |
 | T-068.13 | claude-code | [`t068_13_mod_slotting_screen_poc.md`](t068_13_mod_slotting_screen_poc.md) | §S1–S5 + slot picker screenshot |
 | T-068.14 | human | [`t068_14_phase2_e2e_gate.md`](t068_14_phase2_e2e_gate.md) | P1–P8 sign-off → `ticket done T-068` |
 
-**Active slice:** **T-068.11** (compiled mod loadout). **T-068.10** shipped @ `3bc0bd24`.
+**Active slice:** **T-068.15.1** (cargo export). **T-068.10** shipped @ `3bc0bd24`.
 
 **Shipped slices (Phase 1):**
 

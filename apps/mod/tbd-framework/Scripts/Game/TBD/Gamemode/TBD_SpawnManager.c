@@ -49,6 +49,18 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	[Attribute("5000", desc: "Delay (ms) between death and automatic redeploy (auto-deploy worlds only).")]
 	protected int m_iRedeployDelayMs;
 
+	//! T-181.11 — ONE LIFE. Operator-locked for TBD events: death is terminal, the slot stays
+	//! claimed (nobody else takes your seat, and a reconnect still finds you), and the only way
+	//! back into the world is an admin acting on a glitch death. Deliberate divergence from CRF,
+	//! which is wave/ticket respawn. Turn OFF for PIE/dev worlds so the auto-deploy wave keeps
+	//! working while iterating. See docs/mod/TBD_MOD_DESIGN.md §2.
+	[Attribute("1", desc: "ONE LIFE: death is terminal; only an admin can put a player back in.")]
+	protected bool m_bOneLife;
+
+	//! Players who have used their life. A map, not a set: Enfusion `set`/`array` Remove is BY
+	//! INDEX (measured landmine) whereas map.Remove is by key, which is what this needs.
+	protected ref map<int, bool> m_mDeadPlayers;
+
 	protected ref map<int, ref TBD_MissionSlotStruct> m_mPlayerSlot;
 	//! Slot key (uid-else-id) → the materialized slot body standing in the world.
 	protected ref map<string, IEntity> m_mSlotBodies;
@@ -78,6 +90,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mDeployRequested = new map<int, bool>();
 		m_mRetryCount = new map<int, int>();
 		m_mSpawnSeen = new map<int, bool>();
+		m_mDeadPlayers = new map<int, bool>();
 		m_mIdentityReclaim = new map<string, string>();
 	}
 
@@ -171,6 +184,16 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!slot)
 			return false;
 
+		// T-181.9 — ONE LIFE integrity. Without this a dead player could take a fresh slot and
+		// be back in the fight, which defeats the whole model. Their own slot stays assigned to
+		// them (see OnPlayerKilled), so this costs a live player nothing; only an admin
+		// (AdminRespawn) can return someone to the world.
+		if (m_bOneLife && IsPlayerDead(playerId))
+		{
+			Print(string.Format("[TBD][Spawn] claim rejected player=%1 slot=%2 (one life spent)", playerId, slot.Key()), LogLevel.WARNING);
+			return false;
+		}
+
 		foreach (int otherId, TBD_MissionSlotStruct assigned : m_mPlayerSlot)
 		{
 			if (!assigned || assigned.Key() != slot.Key() || otherId == playerId)
@@ -186,6 +209,89 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mPlayerSlot.Set(playerId, slot);
 		Print(string.Format("[TBD][Spawn] claim player=%1 slot=%2", playerId, slot.Key()));
 		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.9 — give a slot back while still in the lobby, so a player can change their mind
+	//! before deploying.
+	//!
+	//! Refused once the life is spent: under ONE LIFE the slot is deliberately retained for a
+	//! dead player (it is their seat, and releasing it would both recycle it to someone else and
+	//! let the dead player re-claim elsewhere). Also refused after deploy — you are in the world,
+	//! the seat is yours.
+	//! @authority server
+	bool ReleaseSlot(int playerId)
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return false;
+
+		if (!m_mPlayerSlot.Contains(playerId))
+			return false;
+
+		if (m_bOneLife && IsPlayerDead(playerId))
+		{
+			Print(string.Format("[TBD][Spawn] release rejected player=%1 (one life spent — slot retained)", playerId), LogLevel.WARNING);
+			return false;
+		}
+
+		if (m_mDeployRequested.Contains(playerId))
+		{
+			Print(string.Format("[TBD][Spawn] release rejected player=%1 (already deployed)", playerId), LogLevel.WARNING);
+			return false;
+		}
+
+		TBD_MissionSlotStruct slot = m_mPlayerSlot.Get(playerId);
+		m_mPlayerSlot.Remove(playerId);
+		string key;
+		if (slot)
+			key = slot.Key();
+		Print(string.Format("[TBD][Spawn] release player=%1 slot=%2", playerId, key));
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.9 — the lobby's view of the roster: one line per mission slot with who holds it and
+	//! whether it can still be taken. This is the data the slot picker (T-181.9.1) binds to, kept
+	//! deliberately as plain text so the authority side is testable from the server log long
+	//! before any widget exists.
+	//!
+	//! Format: `<slotKey>\t<faction>\t<group>\t<role>\t<state>\t<holderPlayerId>`
+	//! state: OPEN | HELD | DEAD  (DEAD = holder spent their life; the seat is not recyclable)
+	array<string> BuildSlotRoster()
+	{
+		array<string> roster = {};
+		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
+		if (!slots)
+			return roster;
+
+		foreach (TBD_MissionSlotStruct slot : slots)
+		{
+			if (!slot)
+				continue;
+
+			int holder = -1;
+			foreach (int playerId, TBD_MissionSlotStruct assigned : m_mPlayerSlot)
+			{
+				if (assigned && assigned.Key() == slot.Key())
+				{
+					holder = playerId;
+					break;
+				}
+			}
+
+			string state = "OPEN";
+			if (holder > 0)
+			{
+				if (IsPlayerDead(holder))
+					state = "DEAD";
+				else
+					state = "HELD";
+			}
+
+			roster.Insert(string.Format("%1\t%2\t%3\t%4\t%5\t%6",
+				slot.Key(), slot.faction, slot.groupCallsign, slot.role, state, holder));
+		}
+		return roster;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -675,12 +781,105 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mDeployRequested.Remove(playerId);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
+
+		// T-181.11 — ONE LIFE: death is terminal. The slot deliberately STAYS claimed so the
+		// seat is not recycled and a reconnecting player still resolves to it. Only
+		// AdminRespawn() can clear this.
+		if (m_bOneLife)
+		{
+			m_mDeadPlayers.Set(playerId, true);
+			Print(string.Format("[TBD][Spawn] player=%1 KILLED — one life spent, slot retained, awaiting admin", playerId));
+			return;
+		}
+
 		Print(string.Format("[TBD][Spawn] player=%1 killed — re-armed for respawn (slot retained)", playerId));
 
 		// Re-arming alone used to be enough because the vanilla deploy menu asked again;
 		// it is stood down now, so the framework drives the next life itself.
 		if (m_bAutoDeploy)
 			GetGame().GetCallqueue().CallLater(RedeployAfterDeath, m_iRedeployDelayMs, false, playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.11 — has this player spent their one life?
+	bool IsPlayerDead(int playerId)
+	{
+		return m_mDeadPlayers && m_mDeadPlayers.Contains(playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.11 — how many of a faction are still alive. The primitive a side-eliminated win
+	//! condition (T-181.13) reads; counts CLAIMED slots, so a player who never deployed still
+	//! counts as alive and cannot silently end the round.
+	int CountAliveForFaction(string factionKey)
+	{
+		int alive;
+		foreach (int playerId, TBD_MissionSlotStruct slot : m_mPlayerSlot)
+		{
+			if (!slot || slot.faction != factionKey)
+				continue;
+			if (!IsPlayerDead(playerId))
+				alive++;
+		}
+		return alive;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.11 — how many slots of a faction are claimed at all (alive or dead). The win
+	//! evaluator needs this to tell "eliminated" apart from "nobody ever played this side" —
+	//! without it, an unfielded faction would end the round the instant it started.
+	int CountClaimedForFaction(string factionKey)
+	{
+		int claimed;
+		foreach (int playerId, TBD_MissionSlotStruct slot : m_mPlayerSlot)
+		{
+			if (slot && slot.faction == factionKey)
+				claimed++;
+		}
+		return claimed;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.11.1 — ADMIN RESPAWN. The escape hatch for a glitch death: clears the one-life
+	//! mark and rematerializes a fresh dressed body on the player's own slot (re-equip every
+	//! spawn — operator-locked; the old corpse stays where it fell).
+	//!
+	//! Deliberately NOT a normal respawn path: it is server-authority only, refuses players who
+	//! are not actually dead, and writes an audit line so every use is visible in the log. The
+	//! caller is responsible for permission (see TBD_AdminCommands).
+	//! @authority server
+	TBD_EDeployResult AdminRespawn(int playerId, string byAdmin = "unknown")
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return TBD_EDeployResult.NOT_MINE;
+
+		if (!IsPlayerDead(playerId))
+		{
+			Print(string.Format("[TBD][Admin] respawn REFUSED player=%1 by=%2 — not dead", playerId, byAdmin), LogLevel.WARNING);
+			return TBD_EDeployResult.ALREADY;
+		}
+
+		if (!GetGame().GetPlayerManager().GetPlayerController(playerId))
+		{
+			Print(string.Format("[TBD][Admin] respawn REFUSED player=%1 by=%2 — disconnected", playerId, byAdmin), LogLevel.WARNING);
+			return TBD_EDeployResult.FAILED;
+		}
+
+		m_mDeadPlayers.Remove(playerId);
+		m_mDeployRequested.Remove(playerId);
+		m_mRetryCount.Remove(playerId);
+		m_mSpawnSeen.Remove(playerId);
+
+		TBD_EDeployResult r = DeployPlayerEx(playerId);
+		Print(string.Format("[TBD][Admin] respawn player=%1 by=%2 result=%3",
+			playerId, byAdmin, typename.EnumToString(TBD_EDeployResult, r)));
+
+		if (r == TBD_EDeployResult.RETRY)
+			ScheduleDeployRetry(playerId);
+		else if (r == TBD_EDeployResult.FAILED)
+			m_mDeadPlayers.Set(playerId, true);  // stay dead rather than silently limbo
+
+		return r;
 	}
 
 	//------------------------------------------------------------------------------------------------

@@ -63,6 +63,18 @@ class TBD_MissionOrbatFactionStruct
 	ref array<ref TBD_MissionOrbatGroupStruct> groups;
 }
 
+//! T-181.13 — how the round ends, straight from the mission JSON.
+//! `endOn` values are the schema enum: time_limit | all_objectives_captured |
+//! faction_eliminated | objective_destroyed | hold_expired. TBD one-life events evaluate
+//! `faction_eliminated` today; the others are parsed and ignored until their slice lands, so
+//! an authored mission never silently loses a condition it declared.
+//! @contract mission.schema.json#/$defs/winConditions
+class TBD_MissionWinConditionsStruct
+{
+	string mode;               //!< Free-form mode label from the editor.
+	ref array<string> endOn;   //!< One or more end triggers.
+}
+
 //! Full mission document parsed from the backend — the canonical contract the loader
 //! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
@@ -75,6 +87,7 @@ class TBD_MissionDocumentStruct
 	ref array<ref TBD_MissionZoneStruct> zones;               //!< Spawn/objective/boundary zones.
 	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat; //!< ORBAT keyed by faction.
 	ref array<ref TBD_MissionSlotStruct> slots;               //!< Flattened spawn slots (schema 1.1).
+	ref TBD_MissionWinConditionsStruct winConditions;         //!< T-181.13 round-end triggers.
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -142,6 +155,23 @@ class TBD_MissionLoader
 	static string GetRawJson()
 	{
 		return s_RawJson;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.13 — true when the mission declared this end trigger. Missions authored before
+	//! winConditions existed simply have none, so callers get `false` and the round runs until
+	//! an admin ends it rather than ending unexpectedly.
+	static bool HasEndTrigger(string trigger)
+	{
+		if (!s_Mission || !s_Mission.winConditions || !s_Mission.winConditions.endOn)
+			return false;
+
+		foreach (string t : s_Mission.winConditions.endOn)
+		{
+			if (t == trigger)
+				return true;
+		}
+		return false;
 	}
 
 	//------------------------------------------------------------------------------------------------

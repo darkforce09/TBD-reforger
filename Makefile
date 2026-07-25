@@ -6,7 +6,7 @@ WEB := apps/website/api
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -130,6 +130,36 @@ schema-codegen: ## Regenerate Rust contract types from packages/tbd-schema/schem
 
 verify-citations: ## Verify @contract citations (DOCUMENTATION_STANDARDS §10; T-165.1 Rust port)
 	cargo run -q -p xtask -- schema citations
+
+enf-index: ## T-181.2 rebuild the CRF symbol index (.ai/artifacts/enf-index/crf_*.tsv)
+	cargo run -q -p tbd-tools --bin enf -- index crf --root apps/mod/crf_framework --out .ai/artifacts/enf-index
+
+enf-carve: ## T-181.3 carve vanilla Enfusion source from the game paks (~6min; output GITIGNORED, BI copyright)
+	cargo run -q -p tbd-tools --bin enf -- carve --game "$$HOME/.local/share/Steam/steamapps/common/Arma Reforger" --out apps/mod/vanilla_reference
+	cargo run -q -p tbd-tools --bin enf -- index vanilla --root apps/mod/vanilla_reference --out .ai/artifacts/enf-index
+
+enf-apidoc: ## T-181.3.1 mirror + parse BI's official Script API (7,990 classes; fills what carving cannot reach)
+	bash scripts/mod/fetch-vanilla-api.sh
+	cargo run -q -p tbd-tools --bin enf -- apidoc
+
+verify-oracle: ## T-181.4 every @idx citation in docs/mod must resolve against a generated index
+	cargo run -q -p tbd-tools --bin enf -- citations
+
+verify-no-crf-leak: ## T-181.4 fail if CRF (APL) code or asset GUIDs leak into the production mod
+	bash scripts/mod/verify-no-crf-leak.sh
+
+verify-capability: ## T-181.2.1 every CRF capability must carry a TBD verdict (fails on UNTRIAGED)
+	cargo run -q -p tbd-tools --bin enf -- capability
+
+mod-compile: ## T-181.1 Enfusion compile gate — native headless server, ~1.3s, no Workbench/Proton/GPU
+	bash scripts/mod/compile.sh
+
+mod-compile-selftest: ## T-181.1 prove the compile gate still catches a broken .c (expects exit 1)
+	@if bash scripts/mod/compile.sh --selftest; then \
+		echo "SELFTEST FAIL: gate returned 0 on deliberately broken source"; exit 1; \
+	else \
+		echo "SELFTEST OK: gate correctly rejected broken source"; \
+	fi
 
 verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
 	$(MAKE) verify-doc-layout

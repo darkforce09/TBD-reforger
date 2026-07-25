@@ -1,5 +1,5 @@
 {
-  "next_id": 181,
+  "next_id": 182,
   "tickets": [
     {
       "id": "T-001",
@@ -1166,13 +1166,14 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Through T-068.10 shipped (3bc0bd24): Forge + editor loadout. ACTIVE T-068.11 compiled mod loadout block \u2192 T-068.12 player equip. Hub: t068_virtual_arsenal_program.md.",
+      "summary": "Cargo ladder shipped (T-068.15.1 @ 85acbb13 → .15.2 @ 4fb156b7 → T-068.11 @ c66494c6 → T-068.12 @ 0be53e16). T-068.13 LOBBY picker moved to T-181.9.1; LOBBY slot picker → T-068.14 Phase-2 E2E. Hub: t068_virtual_arsenal_program.md + t068_15_cargo_program.md.",
       "depends_on": [
         "T-067"
       ],
       "unblocks": [
         "T-069",
-        "T-070"
+        "T-070",
+        "T-181"
       ],
       "implements": [
         "RIGHT-CAT-001"
@@ -1201,6 +1202,9 @@
         "T-068.10.6",
         "T-068.10.7",
         "T-068.10.8",
+        "T-068.15",
+        "T-068.15.1",
+        "T-068.15.2",
         "T-068.11",
         "T-068.12",
         "T-068.13",
@@ -1317,29 +1321,38 @@
             "shared"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
+          "shipped_at": "c66494c6",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_11_compiler_loadout_export.md",
-          "notes": "UNPARKED 2026-07-18: T-167 shipped the Smart Arsenal proper (SVG paper-doll + compat optic/mag + weight + Faction Manager) at tag T-167, the operator prereq. Re-scoped: compiled mod document loadout gear only (editor embed done in T-068.10). Feeds T-068.12. Handoff: .ai/artifacts/t068_11_claude_code_handoff.md"
+          "notes": "SHIPPED @ c66494c6 (tag T-068.11). Compiled slot loadout {gear,cargo[]} via Rust flatten; no schemaVersion bump. Verify: .ai/artifacts/t068_11_verify_log.md"
         },
         "T-068.12": {
           "targets": [
             "mod",
             "shared"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "0be53e16",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_12_mod_player_loadout_equip.md",
+          "notes": "SHIPPED @ 0be53e16 (tag T-068.12). TBD_LoadoutApplication shared path; player equip + cargo InsertItem live WB. Operator residual: M2 screenshot + optional M4 NPC toggle. Verify: .ai/artifacts/t068_12_verify_log.md"
         },
         "T-068.13": {
           "targets": [
             "mod"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "cancelled",
+          "notes": "SUPERSEDED by T-181.9.1 (TBD lobby / slot picker). Scope MOVED, not dropped — the picker ships inside the T-181 event-mod program on the new gamemode state machine, with macOS-methodology UI on Aegis tokens. ClaimSlot in TBD_SpawnManager is already the backend it binds to. See docs/mod/t181_event_mod_program.md."
         },
         "T-068.14": {
           "targets": [
             "mod",
             "website"
           ],
-          "executor": "human"
+          "executor": "human",
+          "status": "queued",
+          "notes": "Phase-2 E2E gate — do not ticket-done T-068 until this passes. Satisfied by T-181.16 (dedicated server + 2 real clients)."
         },
         "T-068.10.2": {
           "executor": "claude-code",
@@ -1415,9 +1428,43 @@
           "shipped_at": "574fc63d",
           "spec": "docs/specs/Mission_Creator_Architecture/t068_10_8_arsenal_ux_pass2.md",
           "notes": "Mode D pass 2 after operator screenshot review: Arsenal opens with zero scrolling (modal pinned h-[85vh], flex chain, panes scroll internally); A3-style vertical slot rail (RAIL_REGIONS, 14 keys, completeness-gated) shares activeKey with the doll; doll is text-free (labels moved to rail/list/context/caption). 3D doll deferred to T-154 (Rust/wgpu, operator call - no three.js). SHIPPED @ 574fc63d (tag T-068.10.8). T-068.11 remains PARKED."
+        },
+        "T-068.15": {
+          "targets": [
+            "mod",
+            "shared",
+            "website"
+          ],
+          "executor": "cursor-docs",
+          "status": "shipped",
+          "shipped_at": "0be53e16",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_15_cargo_program.md",
+          "notes": "Meta hub — cargo ladder complete through T-068.12. Specs under t068_15_*.md."
+        },
+        "T-068.15.1": {
+          "targets": [
+            "mod",
+            "shared",
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "85acbb13",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_15_1_cargo_capacity_export.md",
+          "notes": "SHIPPED @ 85acbb13 (tag T-068.15.1). 1257 grids; 16223 cargo edges; qty conservation; ReadPhysAttrs two-pass (flashlight shadow fix). Verify: .ai/artifacts/t068_15_1_verify_log.md"
+        },
+        "T-068.15.2": {
+          "targets": [
+            "website"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "shipped_at": "4fb156b7",
+          "spec": "docs/specs/Mission_Creator_Architecture/t068_15_2_arsenal_cargo_ui.md",
+          "notes": "SHIPPED @ 4fb156b7 (tag T-068.15.2). Capacity badge + cargo editor + seed. Verify: .ai/artifacts/t068_15_2_verify_log.md"
         }
       },
-      "active_slice": "T-068.11"
+      "active_slice": "T-068.14"
     },
     {
       "id": "T-069",
@@ -1434,7 +1481,7 @@
         "schema"
       ],
       "title": "Markers on map",
-      "summary": "Parked \u2014 data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
+      "summary": "Parked — data lane first (T-150 universal registry/compat). Spec: t069_markers_on_map.md.",
       "depends_on": [
         "T-151"
       ],
@@ -1491,7 +1538,7 @@
         "compiler"
       ],
       "title": "ORBAT Manager modal",
-      "summary": "ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6. Remaining authoring SHIPPED via T-180.1\u2013.9 @ cba837b3 (supersedes T-071.1+). Hub: t180_orbat_eden_program.md. Do not implement T-071.1\u2013.4 separately.",
+      "summary": "ORBAT Manager. T-071.0 SHIPPED via T-177 @ e97a01c6. Remaining authoring SHIPPED via T-180.1–.9 @ cba837b3 (supersedes T-071.1+). Hub: t180_orbat_eden_program.md. Do not implement T-071.1–.4 separately.",
       "slices": [
         "T-071.0",
         "T-071.1",
@@ -2374,7 +2421,7 @@
         "schema"
       ],
       "title": "DEM + auto Z",
-      "summary": "T-091 complete @ dde589e \u2014 DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md.",
+      "summary": "T-091 complete @ dde589e — DEM export (.0), loader (.1), Z UX (.2). Hub: t090_091_map_terrain_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_091_map_terrain_program.md",
       "slices": [
         "T-091.0",
@@ -2441,7 +2488,7 @@
         "compiler"
       ],
       "title": "Spawn transform parity + mod mission compile",
-      "summary": "T-092 complete @ `a73224f2` \u2014 schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
+      "summary": "T-092 complete @ `a73224f2` — schema 1.2 optional `y`, spawn policy (T-092.1 @ `4eefc169`), flatten + GET /api/v1/missions/:id/compiled (T-092.2). wb_play E2E PASS 2026-07-04. Unblocks T-071 + T-068.13. Hub: t092_spawn_transform_program.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t092_spawn_transform_program.md",
       "slices": [
         "T-092.0",
@@ -2609,7 +2656,7 @@
     {
       "id": "T-111",
       "title": "Lazy chunk residency @ 1M",
-      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md \u00a7Deferred.",
+      "summary": "T-067.1: evict cold chunks from slotsById; load from Y.Doc on viewport enter; worker compile without full pickMapSnapshot @ 1M. Spec: t067_spatial_chunks.md §Deferred.",
       "program": "scale",
       "surfaces": [
         "MAP",
@@ -2676,7 +2723,7 @@
       "impact": [
         "schema"
       ],
-      "title": "Monorepo migration (M0\u2013M3)",
+      "title": "Monorepo migration (M0–M3)",
       "summary": "Merge website + mod into TBD-Reforger; unified ticketing; path rewrites.",
       "milestone": "M1"
     },
@@ -2792,7 +2839,7 @@
         "api"
       ],
       "title": "Event ORBAT + identity linking UI",
-      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. Complements mission ORBAT authoring (**T-180** shipped) \u2014 Event lobby polish still open.",
+      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. Complements mission ORBAT authoring (**T-180** shipped) — Event lobby polish still open.",
       "milestone": "M1"
     },
     {
@@ -2893,7 +2940,7 @@
         "docs"
       ],
       "title": "Codebase audit hotfix (single bundle)",
-      "summary": "Shipped @ f131770 (tag T-122) \u2014 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
+      "summary": "Shipped @ f131770 (tag T-122) — 37/41 audit findings; T1/T3/T8/T15 deferred. Spec: docs/platform/CODEBASE_AUDIT_2026.md.",
       "spec": "docs/platform/audit/t122_codebase_audit_hotfix.md",
       "depends_on": [],
       "unblocks": [],
@@ -2922,7 +2969,7 @@
         "ci"
       ],
       "title": "Documentation standards rollout (full program)",
-      "summary": "Shipped @ 169e47d \u2014 full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0\u2013.6. Hub: t123_documentation_standards_rollout.md.",
+      "summary": "Shipped @ 169e47d — full DOCUMENTATION_STANDARDS.md program: in-code @contract/@route/@authority tags (Go/TS/Enfusion), schema codegen (Go+TS via make schema-codegen), Go-side editor-payload validation in CreateVersion, contracts.yml CI gates. Slices T-123.0–.6. Hub: t123_documentation_standards_rollout.md.",
       "spec": "docs/platform/t123_documentation_standards_rollout.md",
       "slices": [
         "T-123.0",
@@ -3024,7 +3071,7 @@
         "infra"
       ],
       "title": "Dependency & toolchain upgrade (latest everything)",
-      "summary": "Shipped @ cd11db0 \u2014 FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
+      "summary": "Shipped @ cd11db0 — FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
       "spec": "docs/platform/t124_dependency_upgrade.md",
       "slices": [
         "T-124.1",
@@ -3089,7 +3136,7 @@
         "api"
       ],
       "title": "Coding standards + 11/10 enforcement",
-      "summary": "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0\u2013.6. Hub: t125_coding_standards_enforcement.md.",
+      "summary": "CODING_STANDARDS.md + full CI enforcement shipped @ e21dac3 (tag T-125.5): golangci, strict TS, GO-7 route-match, verify-* scripts, ENF-4, editorconfig + Prettier (FMT-2/3). Program complete T-125.0–.6. Hub: t125_coding_standards_enforcement.md.",
       "spec": "docs/platform/t125_coding_standards_enforcement.md",
       "slices": [
         "T-125.0",
@@ -3194,8 +3241,8 @@
         "ui",
         "security"
       ],
-      "title": "Fable audit \u2014 security + auth follow-up",
-      "summary": "Shipped @ 4a47688e (tag T-126): S1\u2013S6 \u2014 export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
+      "title": "Fable audit — security + auth follow-up",
+      "summary": "Shipped @ 4a47688e (tag T-126): S1–S6 — export canViewMission, atomic refresh + family revoke, ORBAT slot race 409, banned refresh 403, frontend setTokens/bootstrap. Verify: .ai/artifacts/t126_verify_log.md. Spec: docs/platform/t126_audit_security_followup.md.",
       "spec": "docs/platform/t126_audit_security_followup.md",
       "shipped_at": "4a47688e",
       "depends_on": [],
@@ -3222,8 +3269,8 @@
       "impact": [
         "ui"
       ],
-      "title": "Fable audit \u2014 Mission Creator UX fixes",
-      "summary": "Shipped @ 0515aabb (tag T-127): U1\u2013U5 MC UX \u2014 conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
+      "title": "Fable audit — Mission Creator UX fixes",
+      "summary": "Shipped @ 0515aabb (tag T-127): U1–U5 MC UX — conflict IDB persist, export toasts, basemap coerce, folder delete confirm, ORBAT 409 messages. Verify: .ai/artifacts/t127_verify_log.md.",
       "spec": "docs/platform/t127_mc_ux_audit_fixes.md",
       "shipped_at": "0515aabb",
       "depends_on": [
@@ -3253,8 +3300,8 @@
       "impact": [
         "docs"
       ],
-      "title": "Fable audit \u2014 doc link repair + staging honesty",
-      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126\u2192T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
+      "title": "Fable audit — doc link repair + staging honesty",
+      "summary": "Shipped (tag T-128): P0 handoff/ticket link depths, STAGING-SERVER + MILESTONES + build-plan T-092 gate honesty (deploy smoke skip-guarded), apps/mod + apps/website README monorepo rewrite, orphan frontend/docs deleted, floor picker T-126→T-129 renumber, extended docs/** link sweep. Log: .ai/artifacts/t128_doc_link_repair_log.md. Spec: docs/platform/t128_doc_link_repair.md.",
       "spec": "docs/platform/t128_doc_link_repair.md",
       "depends_on": [
         "T-127"
@@ -3288,7 +3335,7 @@
         "security",
         "docs"
       ],
-      "title": "Fable audit \u2014 remainder (OPEN + PARTIAL)",
+      "title": "Fable audit — remainder (OPEN + PARTIAL)",
       "summary": "Shipped @ 90c9f261 (tag T-130). Batch 1: backend hygiene, Discord, CI. Batch 2: mod exporters, MC UX, mission archive/delete. T-130.7 doc nits. Hub: docs/platform/t130_fable_audit_remainder.md.",
       "spec": "docs/platform/t130_fable_audit_remainder.md",
       "depends_on": [
@@ -3391,7 +3438,7 @@
         "ui"
       ],
       "title": "Building floor selector",
-      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 \u2014 requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
+      "summary": "Per-building floor slice in Mission Creator map (which floor am I editing?). Deferred from T-090 — requires multi-floor metadata + clip/render. Depends on T-090.5. (Renumbered from T-126 id.)",
       "spec": "docs/specs/Mission_Creator_Architecture/t090_eden_map_reference.md",
       "slices": [],
       "depends_on": [
@@ -3404,7 +3451,7 @@
     {
       "id": "T-131",
       "title": "Route planner tool",
-      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap \u2014 promote after T-090.5.",
+      "summary": "MC tool: plan routes on exported road graph (waypoints, distance, elevation). Not runtime convoy AI. North star gap — promote after T-090.5.",
       "program": "eden",
       "stream": "mission-creator",
       "targets": [
@@ -3535,7 +3582,7 @@
     {
       "id": "T-136",
       "title": "3D AAR / OCAP-style replay",
-      "summary": "Post-event replay: telemetry ingest \u2192 timeline \u2192 map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
+      "summary": "Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.",
       "program": "platform",
       "stream": "web-platform",
       "targets": [
@@ -3587,7 +3634,7 @@
     {
       "id": "T-138",
       "title": "One-command self-host install",
-      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) \u2014 fork-friendly community install story.",
+      "summary": "Single script: deps check, .env, db-up, migrate, seed, optional map-assets fetch (git lfs pull for DEM+bundle; optional GitHub Release tarball for tile pyramids after slim-LFS @ 2026-07) — fork-friendly community install story.",
       "program": "infra",
       "stream": "infra",
       "targets": [
@@ -3612,7 +3659,7 @@
     {
       "id": "T-139",
       "title": "Lobby loadout visual preview",
-      "summary": "In-game lobby: kit preview (icon grid \u2192 2D mannequin \u2192 stretch 3D). After T-068.13 production slot picker.",
+      "summary": "In-game lobby: kit preview (icon grid → 2D mannequin → stretch 3D). After T-068.13 production slot picker.",
       "program": "platform",
       "stream": "mod-framework",
       "targets": [
@@ -3688,7 +3735,7 @@
     {
       "id": "T-142",
       "title": "MC shell layout polish",
-      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility \u2014 layout UX without full T-082 field parity.",
+      "summary": "Toolbelt placement, Attributes modal grouping, stub tool visibility — layout UX without full T-082 field parity.",
       "program": "eden",
       "stream": "mission-creator",
       "targets": [
@@ -3710,8 +3757,8 @@
     },
     {
       "id": "T-143",
-      "title": "Perfect water \u2014 exact hydrology + water placement guard",
-      "summary": "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads \u2014 full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable \u2014 missions get playtested.",
+      "title": "Perfect water — exact hydrology + water placement guard",
+      "summary": "Far-future polish on the T-090.1.2.5.x water composite (operator: good-enough 2026-07-03, ship @ 1c07d97a). (a) Exact water geometry: Eden.ent water entities via Workbench export or pak-codec crack (zlib/zstd/brotli/LZ4 all fail today), .Rivers/*_flow.edds placements, PWLN/Eden.smap leads — full trail in .ai/artifacts/t090_1_2_5_2_source_spike.json; replaces the appearance classifier with pixel-perfect ocean/lake/river masks. (b) Editor placement guard: block/warn placing units in ocean or large water bodies in the Mission Creator (ship the water mask to the frontend alongside the DEM). Minor mask misses acceptable — missions get playtested.",
       "program": "infra",
       "surfaces": [
         "MAP",
@@ -3752,7 +3799,7 @@
         "infra"
       ],
       "title": "Arma 3 map architecture study",
-      "summary": "A3 2D Arcade map architecture study @ `b1949182` \u2014 live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
+      "summary": "A3 2D Arcade map architecture study @ `b1949182` — live GLandscape draw, no basemap tiles; pivot T-090 to export+vectors. Report: .ai/artifacts/t144_arma3_map_architecture_report.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t144_arma3_map_architecture_study.md",
       "slices": [
         "T-144.0",
@@ -3830,7 +3877,7 @@
       "status": "queued",
       "program": "eden",
       "title": "Asset Browser Data Wiring",
-      "summary": "Hook up T-150 registry items (vehicles/crates/\u2026) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
+      "summary": "Hook up T-150 registry items (vehicles/crates/…) to Asset Browser for map drag-place. Unblocked by T-150; after or parallel T-068.9 ingest preferred.",
       "surfaces": [
         "RIGHT",
         "MAP"
@@ -3853,7 +3900,7 @@
       "status": "deferred",
       "program": "eden",
       "title": "Simplified Squad Connections",
-      "summary": "ABSORBED by T-180.4 @ 63e7ef00 (squad leader\u2192member map lines). Do not implement separately. Was: Simplified Squad Connections.",
+      "summary": "ABSORBED by T-180.4 @ 63e7ef00 (squad leader→member map lines). Do not implement separately. Was: Simplified Squad Connections.",
       "surfaces": [
         "MAP",
         "ORBAT"
@@ -3918,7 +3965,7 @@
       "id": "T-151",
       "order": 1500,
       "title": "WebGPU (wgpu/wasm) render engine spike - replace Deck.gl",
-      "summary": "wgpu Mission Creator engine: W0\u2013W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1\u2013.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
+      "summary": "wgpu Mission Creator engine: W0–W9 shipped @ c4831451 (T-151.9); W10 audit T-151.10/10.1 shipped; W11 remediations T-151.11.1–.6 complete @ 8237cda6. Operator sign-off + polish next. Hub: t151_wgpu_engine_program.md. Worktree tbd-reforger-wgpu-spike/. D5 LANGUAGE GATE.",
       "program": "Platform",
       "surfaces": [
         "MAP"
@@ -4079,7 +4126,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_9_deck_retirement.md",
           "status": "shipped",
           "shipped_at": "c4831451",
-          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma \u2192 devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
+          "notes": "Always WgpuTacticalMap; Deck runtime deleted; deck.gl+luma → devDependencies; vitest 281; dist Deck-free. Verify: .ai/artifacts/t151_9_verify_log.md"
         },
         "T-151.10": {
           "targets": [
@@ -4090,7 +4137,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t151_10_fable_program_audit.md",
           "status": "shipped",
           "shipped_at": "6adbd4bf",
-          "notes": "Fable 5 full-program audit W0\u2013W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
+          "notes": "Fable 5 full-program audit W0–W9. Tracker: .ai/artifacts/t151_10_fable_audit_report.md. Verify: .ai/artifacts/t151_10_verify_log.md"
         },
         "T-151.10.1": {
           "targets": [
@@ -4220,7 +4267,7 @@
       "id": "T-152",
       "order": 1520,
       "title": "Map cartographic fidelity (glyphs, text, labels)",
-      "summary": "Map cartographic fidelity COMPLETE @ merge. .12\u2013.21 shipped; .18/.19 deferred; T-152.22 operator GO 2026-07-14. Hub: t152_map_cartographic_fidelity_program.md.",
+      "summary": "Map cartographic fidelity COMPLETE @ merge. .12–.21 shipped; .18/.19 deferred; T-152.22 operator GO 2026-07-14. Hub: t152_map_cartographic_fidelity_program.md.",
       "program": "infra",
       "surfaces": [
         "MAP"
@@ -4375,7 +4422,7 @@
           "executor": "human",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_10_e2e_cartographic_gate.md",
           "status": "shipped",
-          "notes": "Automated G1\u2013G7/G9\u2013G10 PASS @ T-152.10; operator O1\u2013O12 PENDING; merge readiness doc shipped."
+          "notes": "Automated G1–G7/G9–G10 PASS @ T-152.10; operator O1–O12 PENDING; merge readiness doc shipped."
         },
         "T-152.11": {
           "targets": [
@@ -4384,7 +4431,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_11_operator_fidelity_audit.md",
           "status": "shipped",
-          "notes": "Audit report @ a8a7a22c (tag T-152.11); D1\u2013D13 ledger zero DONE; fix matrix \u2192 remediation ladder T-152.12\u2013.22."
+          "notes": "Audit report @ a8a7a22c (tag T-152.11); D1–D13 ledger zero DONE; fix matrix → remediation ladder T-152.12–.22."
         },
         "T-152.12": {
           "targets": [
@@ -4402,7 +4449,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_13_text_atlas_fidelity.md",
           "status": "shipped",
-          "notes": "Shipped @ 2240148d (tag T-152.13) + T-152.13.1 @ fe81b676 (halo + 20px floor). Verify 494b0838 \u2014 M1/M2 operator PASS. Spleen 16\u00d732 in 32px cells; render 40/40; wasm +4 KiB."
+          "notes": "Shipped @ 2240148d (tag T-152.13) + T-152.13.1 @ fe81b676 (halo + 20px floor). Verify 494b0838 — M1/M2 operator PASS. Spleen 16×32 in 32px cells; render 40/40; wasm +4 KiB."
         },
         "T-152.14": {
           "targets": [
@@ -4411,7 +4458,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_14_tree_zoom_guarantee.md",
           "status": "shipped",
-          "notes": "Shipped @ 9cc13714 (tag T-152.14) area-fraction budget + hysteresis + forest_fill_effective. Hotfix T-152.14.1 @ 75ccf5b1: ATLAS_GLYPH_COUNT 28\u219232 + CI guards A\u2013D \u2014 icon lanes dark since T-152.10 (29th glyph vs hardcoded 28). Verify t152_14_verify_log.md; M1/M2 operator pending on .14 core."
+          "notes": "Shipped @ 9cc13714 (tag T-152.14) area-fraction budget + hysteresis + forest_fill_effective. Hotfix T-152.14.1 @ 75ccf5b1: ATLAS_GLYPH_COUNT 28→32 + CI guards A–D — icon lanes dark since T-152.10 (29th glyph vs hardcoded 28). Verify t152_14_verify_log.md; M1/M2 operator pending on .14 core."
         },
         "T-152.15": {
           "targets": [
@@ -4420,7 +4467,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_15_fence_pier_bridge_visibility.md",
           "status": "shipped",
-          "notes": "Shipped @ 9518680e (tag T-152.15). Fence z\u22651.5 + STRIP_MIN_PX; yaw from obb_corners; 2,299/2,299 pier strips; Path A synthetic rails (288); strips_visible() TS gate. Verify t152_15_verify_log.md; M1\u2013M3 operator PASS good enough 2026-07-13."
+          "notes": "Shipped @ 9518680e (tag T-152.15). Fence z≥1.5 + STRIP_MIN_PX; yaw from obb_corners; 2,299/2,299 pier strips; Path A synthetic rails (288); strips_visible() TS gate. Verify t152_15_verify_log.md; M1–M3 operator PASS good enough 2026-07-13."
         },
         "T-152.16": {
           "targets": [
@@ -4430,7 +4477,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_16_height_markers_visible.md",
           "status": "shipped",
-          "notes": "Shipped @ 2a1c96e5 (tag T-152.16). 26-row sidecar (23 named + 3 DEM), band [\u22122,+3], 80 m floor; G6 fresh contour waiver. Verify t152_16_verify_log.md; M1/M2 browser pending."
+          "notes": "Shipped @ 2a1c96e5 (tag T-152.16). 26-row sidecar (23 named + 3 DEM), band [−2,+3], 80 m floor; G6 fresh contour waiver. Verify t152_16_verify_log.md; M1/M2 browser pending."
         },
         "T-152.17": {
           "targets": [
@@ -4440,7 +4487,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_17_town_label_correctness.md",
           "status": "shipped",
-          "notes": "Shipped @ 45e4d247 (tag T-152.17). Settlement-only town lane (23 @ z=\u22122); fade [2,3]; band min \u22124.5; engine remove_lane fix; Highstone peak/required 8\u21927. Verify t152_17_verify_log.md; operator looks good 2026-07-13."
+          "notes": "Shipped @ 45e4d247 (tag T-152.17). Settlement-only town lane (23 @ z=−2); fade [2,3]; band min −4.5; engine remove_lane fix; Highstone peak/required 8→7. Verify t152_17_verify_log.md; operator looks good 2026-07-13."
         },
         "T-152.18": {
           "targets": [
@@ -4451,7 +4498,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_18_icon_extract_retry.md",
           "status": "deferred",
-          "notes": "DEFERRED 2026-07-13 \u2014 operator: no icons to extract from Workbench; slice skipped. T-152.2 redraw art retained. Verify t152_18_verify_log.md (skip record). D2 extract remedy waived this pass."
+          "notes": "DEFERRED 2026-07-13 — operator: no icons to extract from Workbench; slice skipped. T-152.2 redraw art retained. Verify t152_18_verify_log.md (skip record). D2 extract remedy waived this pass."
         },
         "T-152.19": {
           "targets": [
@@ -4462,7 +4509,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_19_workbench_one_button_export.md",
           "status": "deferred",
-          "notes": "DEFERRED 2026-07-13 \u2014 operator: Workbench label/road extract not needed now; revisit future. Path B sidecars retained. Verify t152_19_verify_log.md (skip record)."
+          "notes": "DEFERRED 2026-07-13 — operator: Workbench label/road extract not needed now; revisit future. Path B sidecars retained. Verify t152_19_verify_log.md (skip record)."
         },
         "T-152.20": {
           "targets": [
@@ -4480,7 +4527,7 @@
           "executor": "claude-code",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_21_landmark_early_visibility.md",
           "status": "shipped",
-          "notes": "Shipped @ d5c746df (tag T-152.21). importanceZoom wired; 44 badges @ z=\u22122 (was 0); residency band fix; landmarkVisible deleted. Verify t152_21_verify_log.md; M1/M2 buffer-proven, GPU visual operator-pending."
+          "notes": "Shipped @ d5c746df (tag T-152.21). importanceZoom wired; 44 badges @ z=−2 (was 0); residency band fix; landmarkVisible deleted. Verify t152_21_verify_log.md; M1/M2 buffer-proven, GPU visual operator-pending."
         },
         "T-152.22": {
           "targets": [
@@ -4490,7 +4537,7 @@
           "executor": "human",
           "spec": "docs/specs/Mission_Creator_Architecture/t152_22_e2e_regate_operator.md",
           "status": "shipped",
-          "notes": "Shipped 2026-07-14 \u2014 operator GO (bulk O1\u2013O12 PASS; screenshot pack + extended master re-suite waived with dated quotes). Verify t152_22_verify_log.md. Merge ticket/T-152 \u2192 main next."
+          "notes": "Shipped 2026-07-14 — operator GO (bulk O1–O12 PASS; screenshot pack + extended master re-suite waived with dated quotes). Verify t152_22_verify_log.md. Merge ticket/T-152 → main next."
         }
       },
       "route": "/missions/:id/edit"
@@ -4706,8 +4753,8 @@
     {
       "id": "T-159",
       "order": 1570,
-      "title": "Leptos UI rewrite (React SPA \u2192 Rust)",
-      "summary": "SHIPPED @ merge df181120 (branch tip 50bba633, tags T-159.15.1\u2013.29.3): Leptos SPA rewrite complete + React app DELETED (.29.3, operator go). Frozen V-oracle 25/25 + 15 CDP smokes + census pin in cargo. Residual: prod default flip (SPA_DIST_DIR + OAuth origin + soak) operator-gated. Hub: docs/platform/t159_leptos_ui_program.md.",
+      "title": "Leptos UI rewrite (React SPA → Rust)",
+      "summary": "SHIPPED @ merge df181120 (branch tip 50bba633, tags T-159.15.1–.29.3): Leptos SPA rewrite complete + React app DELETED (.29.3, operator go). Frozen V-oracle 25/25 + 15 CDP smokes + census pin in cargo. Residual: prod default flip (SPA_DIST_DIR + OAuth origin + soak) operator-gated. Hub: docs/platform/t159_leptos_ui_program.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -4772,7 +4819,7 @@
           ],
           "executor": "claude-code",
           "status": "shipped",
-          "notes": "Aegis shell \u2014 absorbed into page-migration arc on branch."
+          "notes": "Aegis shell — absorbed into page-migration arc on branch."
         },
         "T-159.3": {
           "targets": [
@@ -4780,7 +4827,7 @@
           ],
           "executor": "claude-code",
           "status": "shipped",
-          "notes": "Auth + refresh \u2014 shipped on branch."
+          "notes": "Auth + refresh — shipped on branch."
         },
         "T-159.4": {
           "targets": [
@@ -4900,7 +4947,7 @@
           "status": "shipped",
           "shipped_at": "ce73c5bc",
           "spec": "docs/platform/t159_22_1_undo_granularity.md",
-          "notes": "No core defect \u2014 CDP keyChord double-fire. Gate rebased + undo_depth. Verify: .ai/artifacts/t159_22_1_verify_log.md"
+          "notes": "No core defect — CDP keyChord double-fire. Gate rebased + undo_depth. Verify: .ai/artifacts/t159_22_1_verify_log.md"
         },
         "T-159.23": {
           "targets": [
@@ -4917,7 +4964,7 @@
       "id": "T-160",
       "order": 1575,
       "title": "wgpu GpuTimer readback err-path (unmap / in_flight)",
-      "summary": "Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally \u2014 latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing.",
+      "summary": "Found during T-159.15.1: GpuTimer map_async err-path unmaps only on res.is_ok() but clears in_flight unconditionally — latent double-map when HUD/timer returns. Editor currently uses disable_frame_timing(). Fix in map-engine-render when re-enabling frame timing.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -4938,8 +4985,8 @@
     {
       "id": "T-161",
       "order": 1580,
-      "title": "Ticket CLI: Python \u2192 Rust xtask",
-      "summary": "SHIPPED: Python ticket CLI \u2192 Rust xtask (Grok 4.5). scripts/ticket \u2192 cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md.",
+      "title": "Ticket CLI: Python → Rust xtask",
+      "summary": "SHIPPED: Python ticket CLI → Rust xtask (Grok 4.5). scripts/ticket → cargo xtask; verify t161_1..4_verify_log.md. Hub: docs/platform/t161_ticket_xtask_program.md.",
       "program": "platform",
       "surfaces": [
         "DATA",
@@ -5025,8 +5072,8 @@
     {
       "id": "T-162",
       "order": 1590,
-      "title": "Eradicate remaining Python \u2192 Rust xtask",
-      "summary": "SHIPPED: eradicate remaining Python \u2192 Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: docs/platform/t162_python_eradication.md.",
+      "title": "Eradicate remaining Python → Rust xtask",
+      "summary": "SHIPPED: eradicate remaining Python → Rust xtask (MCP/debug/repro). verify-no-python + mcp-call-selftest 19/19. Hub: docs/platform/t162_python_eradication.md.",
       "program": "platform",
       "surfaces": [
         "DATA",
@@ -5068,7 +5115,7 @@
           "executor": "cursor-docs",
           "status": "shipped",
           "spec": "docs/platform/t162_python_eradication.md",
-          "notes": "MCP consume/socket-send/probe-sock \u2192 xtask; flip mcp-call/daemon/selftest."
+          "notes": "MCP consume/socket-send/probe-sock → xtask; flip mcp-call/daemon/selftest."
         },
         "T-162.2": {
           "targets": [
@@ -5102,8 +5149,8 @@
     {
       "id": "T-163",
       "order": 1600,
-      "title": "Merge integration: t-159 + t-161 \u2192 main",
-      "summary": "SHIPPED: both worktree branches merged to main (t-159 @ df181120 clean, t-161 @ 3cec57ee 6-conflict resolution). xtask dead-React-reference purge (10 lines), V13 web\u2192leptos, template fixes, T-152.5 compose_roads caller restored (map-engine-wasm compiled on no head since), registry truth (T-159 shipped, T-154 order). Verify: .ai/artifacts/t163_merge_verify_log.md.",
+      "title": "Merge integration: t-159 + t-161 → main",
+      "summary": "SHIPPED: both worktree branches merged to main (t-159 @ df181120 clean, t-161 @ 3cec57ee 6-conflict resolution). xtask dead-React-reference purge (10 lines), V13 web→leptos, template fixes, T-152.5 compose_roads caller restored (map-engine-wasm compiled on no head since), registry truth (T-159 shipped, T-154 order). Verify: .ai/artifacts/t163_merge_verify_log.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -5125,7 +5172,7 @@
       "id": "T-164",
       "order": 1610,
       "title": "Post-merge green sweep: CI green + registry hygiene + doc truth",
-      "summary": "SHIPPED: all 6 red CI jobs fixed (citation #/$defs/gear, backend cargo fmt, map-engine LFS DEM pull, editorconfig sap-seam+vendor exclude, Trunk tailwindcss 4.3.2 pin); ticket check exit 0 (T-147/148/149 fields, T-145/T-151 vocab recode); T-090.1.2.6 remote tag force-pushed to shipped commit; verify-t152-cartographic wasm step retired-skip; operational doc truth (CLAUDE.md Rust backend, Makefile tidy removal, DEV_RUNBOOK, CODING_STANDARDS retired gates, 23 page docs Live source \u2192 Leptos modules). Verify: .ai/artifacts/t164_verify_log.md.",
+      "summary": "SHIPPED: all 6 red CI jobs fixed (citation #/$defs/gear, backend cargo fmt, map-engine LFS DEM pull, editorconfig sap-seam+vendor exclude, Trunk tailwindcss 4.3.2 pin); ticket check exit 0 (T-147/148/149 fields, T-145/T-151 vocab recode); T-090.1.2.6 remote tag force-pushed to shipped commit; verify-t152-cartographic wasm step retired-skip; operational doc truth (CLAUDE.md Rust backend, Makefile tidy removal, DEV_RUNBOOK, CODING_STANDARDS retired gates, 23 page docs Live source → Leptos modules). Verify: .ai/artifacts/t164_verify_log.md.",
       "program": "platform",
       "surfaces": [
         "SHELL",
@@ -5295,7 +5342,7 @@
         "state"
       ],
       "title": "Leptos editor full map (satellite + world objects)",
-      "summary": "SHIPPED: Leptos W1\u2013W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md.",
+      "summary": "SHIPPED: Leptos W1–W5 map-asset host (TBDS sat + hillshade + DEM sea/contours + WorldStore/Residency buildings + TBDD forest + glyph atlas). Gate serve Range/206; smoke_fullmap Class-R matrix green. Verify: .ai/artifacts/t166_verify_log.md.",
       "slices": [],
       "depends_on": [
         "T-159"
@@ -5325,7 +5372,7 @@
         "state"
       ],
       "title": "Leptos smart Arsenal port (paper-doll + compat Forge)",
-      "summary": "Port the shipped React Smart Arsenal (T-068.10.2\u2013.10.8) into the Leptos Arsenal tab: compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges), clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane. The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`); `SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes. Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md.",
+      "summary": "Port the shipped React Smart Arsenal (T-068.10.2–.10.8) into the Leptos Arsenal tab: compat-filtered optic/magazine rows off `GET /registry/compat` (T-150 edges live in DB: 1,880 items / 4,012 edges), clickable paper-doll (Mode D, t068_10_7/t068_10_8), weight/validation, Faction Manager pane. The Leptos tab is the dumb-dropdown tier only (fold documented at `apps/website-leptos/src/arsenal.rs:7-11`); `SlotLoadoutV2` persistence is already the same, so rows/panels add without doc changes. Specs: t068_10_smart_forge_ui.md, t068_10_3_forge_picker_ux.md, t068_10_6_arsenal_expanded_modal.md, t068_10_7_arsenal_paper_doll.md, t068_10_8_arsenal_ux_pass2.md.",
       "slices": [],
       "depends_on": [
         "T-159"
@@ -5357,7 +5404,7 @@
         "state"
       ],
       "title": "Leptos ORBAT tree in the left dock",
-      "summary": "SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad \u2014 superseded by T-180 place\u2192new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested.",
+      "summary": "SHIPPED @ tag T-168: left-dock ORBAT browse/select tree (`build_orbat`; NodeKind::Faction/Squad). Historical note: early place minted via ensure_default_squad — superseded by T-180 place→new-squad under active_side. Squad management / Stitch ORBAT Manager completed by T-180 (not a remaining T-071 task). smoke_outliner_palette o3/o4/o5; build_orbat unit-tested.",
       "slices": [],
       "depends_on": [
         "T-159"
@@ -5387,7 +5434,7 @@
         "state"
       ],
       "title": "Leptos VirtualOutliner at mission scale",
-      "summary": "SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`; eden_chrome renders each dock tree via `virtual_tree` \u2014 eager below the threshold, a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows. Applies to BOTH Editor Layers and ORBAT; `window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate. New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects. `__missionDoc.seed_slots(n)` smoke hook added to push past the threshold.",
+      "summary": "SHIPPED @ tag T-169 (T-064 parity): outliner.rs gains `flatten` (pre-order rows) + `VIRTUAL_SLOT_THRESHOLD=50`; eden_chrome renders each dock tree via `virtual_tree` — eager below the threshold, a fixed-height scroll container drawing only the visible slice (+overscan) between spacer divs above it, so a mission-scale tree never builds N DOM rows. Applies to BOTH Editor Layers and ORBAT; `window.__outlinerStats.{editorLayers,orbat} = {total,rendered,threshold}` for the gate. New smoke_virtual_outliner (6/6): eager==total below, rendered<total above, threshold 50, both trees windowed, windowed row still selects. `__missionDoc.seed_slots(n)` smoke hook added to push past the threshold.",
       "slices": [],
       "depends_on": [
         "T-159"
@@ -5417,7 +5464,7 @@
         "state"
       ],
       "title": "Prod default flip to Leptos SPA",
-      "summary": "Make the Leptos SPA the production default: set `SPA_DIST_DIR` to the trunk release dist in the prod env, move the Discord OAuth redirect origin, staging soak, then flip. OPERATOR-GATED (env + Discord app settings are operator-held); claude-code prepares configs/runbook + verifies the staging soak gates. Runbook anchor: docs/website/DEV_RUNBOOK.md \u00a7SPA serving; T-159 finish program left this as the sole operator-gated residual.",
+      "summary": "Make the Leptos SPA the production default: set `SPA_DIST_DIR` to the trunk release dist in the prod env, move the Discord OAuth redirect origin, staging soak, then flip. OPERATOR-GATED (env + Discord app settings are operator-held); claude-code prepares configs/runbook + verifies the staging soak gates. Runbook anchor: docs/website/DEV_RUNBOOK.md §SPA serving; T-159 finish program left this as the sole operator-gated residual.",
       "slices": [],
       "depends_on": [
         "T-159"
@@ -5484,7 +5531,7 @@
         "state"
       ],
       "title": "Leptos SPA + Mission Creator bug bash",
-      "summary": "SHIPPED @ tag T-172 / e08884f4. Operator matrix A1\u2013A9/B1\u2013B10 + hunt H1\u2013H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0. Operator 2026-07-18: ticket good enough \u2014 residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish \u2192 T-173. Verify: .ai/artifacts/t172_verify_log.md. Hub: docs/platform/t172_leptos_bug_bash.md.",
+      "summary": "SHIPPED @ tag T-172 / e08884f4. Operator matrix A1–A9/B1–B10 + hunt H1–H11 fixed; leptos-gates 18/18 + v-suite 25/25; ci-local 0. Operator 2026-07-18: ticket good enough — residual MC pan/zoom stutter, Mission Library scroll/sheet lag, missing Mission Settings render prefs, tree guide-line polish → T-173. Verify: .ai/artifacts/t172_verify_log.md. Hub: docs/platform/t172_leptos_bug_bash.md.",
       "slices": [],
       "depends_on": [
         "T-171"
@@ -5520,7 +5567,7 @@
         "ui"
       ],
       "title": "Leptos SPA + Mission Creator performance pass",
-      "summary": "SHIPPED @ tag T-173 / dddf3158. P1\u2013P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (\u221271% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md.",
+      "summary": "SHIPPED @ tag T-173 / dddf3158. P1–P10 + H1/H2/H5/H6: release-default make leptos; pan/zoom streaming settle + compose memo (−71% zoom block); thrash-free residency; library scroll + sheet de-blur; Mission Settings basemap/hillshade/grid + 12 world toggles; continuous tree guides; fence/pier/rail strips; upright building badges; density/clusters/labels/airfield bridged. Verify: .ai/artifacts/t173_verify_log.md. Operator G-A: HUD rf + window.__editorBench(500) on RTX. Hub: docs/platform/t173_leptos_perf_pass.md.",
       "slices": [],
       "depends_on": [
         "T-172"
@@ -5553,7 +5600,7 @@
         "perf"
       ],
       "title": "MC sat sharpness + heatmap off + dock guide rails",
-      "summary": "SHIPPED @ tag T-174 / bbb99526. S1: localhost sat preview\u2192full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op. S2: density-heatmap glow removed end-to-end (no toggle); heatmap_trees LOD kept. S3: guide stems clip to rows \u2014 no dock rails. Verify: .ai/artifacts/t174_verify_log.md. Hub: docs/platform/t174_mc_sat_heatmap_guides.md.",
+      "summary": "SHIPPED @ tag T-174 / bbb99526. S1: localhost sat preview→full progressive (dropped sat_dev_preview_default); ?sat=preview = gate/fast Range-only; ?sat=full no-op. S2: density-heatmap glow removed end-to-end (no toggle); heatmap_trees LOD kept. S3: guide stems clip to rows — no dock rails. Verify: .ai/artifacts/t174_verify_log.md. Hub: docs/platform/t174_mc_sat_heatmap_guides.md.",
       "slices": [],
       "depends_on": [
         "T-173"
@@ -5585,7 +5632,7 @@
         "ui"
       ],
       "title": "MC interaction + LOD unpack + pan/zoom perf",
-      "summary": "SHIPPED @ tag T-175 / b90deac8. A1 sticky trees (empty clear all roles + lane_off); A2 concurrent forest fetch; A3 contours [188,150,100,235]; A4\u2013A5 floor-aware glyph memo; B1 cold-slot rebind; B2 SlotPlacePreview; B3 damage.mark drag delta; B4 O(delta) tint; B5 BootPhase overlay; hunt H1\u2013H6. Verify: .ai/artifacts/t175_verify_log.md. Hub: docs/platform/t175_mc_interaction_lod_perf.md.",
+      "summary": "SHIPPED @ tag T-175 / b90deac8. A1 sticky trees (empty clear all roles + lane_off); A2 concurrent forest fetch; A3 contours [188,150,100,235]; A4–A5 floor-aware glyph memo; B1 cold-slot rebind; B2 SlotPlacePreview; B3 damage.mark drag delta; B4 O(delta) tint; B5 BootPhase overlay; hunt H1–H6. Verify: .ai/artifacts/t175_verify_log.md. Hub: docs/platform/t175_mc_interaction_lod_perf.md.",
       "slices": [],
       "depends_on": [
         "T-174"
@@ -5616,7 +5663,7 @@
         "perf"
       ],
       "title": "Forest wash fidelity + place ghost + zoom+pan stutter",
-      "summary": "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview\u2194slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md.",
+      "summary": "SHIPPED @ tag T-176 / a5940fad. A1 landcover after set_viewport; A2 8m TBDD canopy mass + drop forest-kind landcover wash (clearings=holes); B1 SlotPlacePreview↔slot atlas; B2 CAMERA_GESTURE defers DEM/forest recompute. Verify: .ai/artifacts/t176_verify_log.md. Hub: docs/platform/t176_forest_place_ghost_zoompan.md.",
       "slices": [],
       "depends_on": [
         "T-175"
@@ -5648,7 +5695,7 @@
         "ui"
       ],
       "title": "MC chrome UX + ORBAT dock cutover (T-071.0)",
-      "summary": "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1\u2013B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md.",
+      "summary": "SHIPPED @ tag T-177 / e97a01c6. A1 YouTube elbow guides; A2 grab on PALETTE_LEAF; A3 strip z-30 / docks z-20; B1–B2 T-071.0 OrbatManagerDialog + left ORBAT removed. Gate doctor + full Chrome headless (leptos-gates 20/20). Verify: .ai/artifacts/t177_verify_log.md. Hub: docs/platform/t177_mc_chrome_orbat_cutover.md.",
       "slices": [],
       "depends_on": [
         "T-176"
@@ -5714,7 +5761,7 @@
         "perf"
       ],
       "title": "Fix blocky / holed density canopy",
-      "summary": "SHIPPED @ tag T-179 / 8f45ee83. A bins_ok===625 + retry; B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso); C one-shot MS hairlines role 6 (real forest_outline_segments; measured 99374 @ z=-1); D fullmap A_bins + outline floor \u226550000. Verify: .ai/artifacts/t179_verify_log.md. Hub: docs/platform/t179_forest_canopy_fix.md.",
+      "summary": "SHIPPED @ tag T-179 / 8f45ee83. A bins_ok===625 + retry; B Linear soft fs_forest_density (RGBA8 count-in-R, corner UV, fwidth AA iso); C one-shot MS hairlines role 6 (real forest_outline_segments; measured 99374 @ z=-1); D fullmap A_bins + outline floor ≥50000. Verify: .ai/artifacts/t179_verify_log.md. Hub: docs/platform/t179_forest_canopy_fix.md.",
       "slices": [],
       "depends_on": [
         "T-178"
@@ -5753,7 +5800,7 @@
         "compiler"
       ],
       "title": "ORBAT + Eden placement program",
-      "summary": "ORBAT + Eden placement program COMPLETE. .1\u2013.9 @ cba837b3 \u00b7 **T-180.10** coherency (make verify-t180). Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Report: .ai/artifacts/t180_10_coherency_report.md.",
+      "summary": "ORBAT + Eden placement program COMPLETE. .1–.9 @ cba837b3 · **T-180.10** coherency (make verify-t180). Pins: t180_class_r_pins.md. Hub: t180_orbat_eden_program.md. Report: .ai/artifacts/t180_10_coherency_report.md.",
       "spec": "docs/specs/Mission_Creator_Architecture/t180_orbat_eden_program.md",
       "slices": [
         "T-180.0",
@@ -5786,7 +5833,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_1_foundation_schema.md",
           "status": "shipped",
           "shipped_at": "aeb51209",
-          "notes": "Tag T-180.1. Core place_orbat + set_leader + callsign/rank; FE active_side; A1\u2013A5 + A3 rg; ci-local-leptos. Verify: .ai/artifacts/t180_1_verify_log.md. Note: cargo test needs --features doc."
+          "notes": "Tag T-180.1. Core place_orbat + set_leader + callsign/rank; FE active_side; A1–A5 + A3 rg; ci-local-leptos. Verify: .ai/artifacts/t180_1_verify_log.md. Note: cargo test needs --features doc."
         },
         "T-180.2": {
           "targets": [
@@ -5796,7 +5843,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_2_graph_mutators.md",
           "status": "shipped",
           "shipped_at": "83557768",
-          "notes": "Tag T-180.2. set_leader hardened; move_slot_to_squad+GC; rename/reorder/remove_squad; add_vehicle/attach/detach; vehicleIds; B1\u2013B8. Verify: .ai/artifacts/t180_2_verify_log.md."
+          "notes": "Tag T-180.2. set_leader hardened; move_slot_to_squad+GC; rename/reorder/remove_squad; add_vehicle/attach/detach; vehicleIds; B1–B8. Verify: .ai/artifacts/t180_2_verify_log.md."
         },
         "T-180.3": {
           "targets": [
@@ -5806,7 +5853,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_3_map_side_tint.md",
           "status": "shipped",
           "shipped_at": "19acc593",
-          "notes": "Tag T-180.3. SIDE_* RGBA + pack_rings side_tints; SlotSoa.side_keys; engine bind; C1\u2013C4. Verify: .ai/artifacts/t180_3_verify_log.md. Manual M-C1 operator-pending."
+          "notes": "Tag T-180.3. SIDE_* RGBA + pack_rings side_tints; SlotSoa.side_keys; engine bind; C1–C4. Verify: .ai/artifacts/t180_3_verify_log.md. Manual M-C1 operator-pending."
         },
         "T-180.4": {
           "targets": [
@@ -5816,7 +5863,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_4_squad_leader_lines.md",
           "status": "shipped",
           "shipped_at": "63e7ef00",
-          "notes": "Tag T-180.4. squad_links.rs D1\u2013D6; LaneRole::SquadLinks=9; wire dirty upload. Verify: .ai/artifacts/t180_4_verify_log.md. Manual M-D1 operator-pending."
+          "notes": "Tag T-180.4. squad_links.rs D1–D6; LaneRole::SquadLinks=9; wire dirty upload. Verify: .ai/artifacts/t180_4_verify_log.md. Manual M-D1 operator-pending."
         },
         "T-180.5": {
           "targets": [
@@ -5826,7 +5873,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_5_right_dock_side_chips.md",
           "status": "shipped",
           "shipped_at": "1324799c",
-          "notes": "Tag T-180.5. apply_eden_chip\u2192active_side; objects_mode; E1\u2013E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
+          "notes": "Tag T-180.5. apply_eden_chip→active_side; objects_mode; E1–E5; catalog unfiltered E-L2b. Verify: .ai/artifacts/t180_5_verify_log.md. Manual M-E1/M-E2 operator-pending."
         },
         "T-180.6": {
           "targets": [
@@ -5836,7 +5883,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_6_place_orbat_sync.md",
           "status": "shipped",
           "shipped_at": "056c9a1a",
-          "notes": "Tag T-180.6. refile_slot\u2192move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1\u2013F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
+          "notes": "Tag T-180.6. refile_slot→move_slot_to_squad; OrbatManager pointer-refile; SL badge; F1–F5. Verify: .ai/artifacts/t180_6_verify_log.md. Manual M-F1 operator-pending."
         },
         "T-180.7": {
           "targets": [
@@ -5846,7 +5893,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_7_orbat_manager_ui.md",
           "status": "shipped",
           "shipped_at": "e9c2406d",
-          "notes": "Tag T-180.7. orbat_manager.rs Stitch shell; format_slot_line; live mutators; OPEN ARSENAL\u2192open_attributes; template/vehicle shell. Verify: .ai/artifacts/t180_7_verify_log.md. Manual M-G1..M-G4 operator-pending."
+          "notes": "Tag T-180.7. orbat_manager.rs Stitch shell; format_slot_line; live mutators; OPEN ARSENAL→open_attributes; template/vehicle shell. Verify: .ai/artifacts/t180_7_verify_log.md. Manual M-G1..M-G4 operator-pending."
         },
         "T-180.8": {
           "targets": [
@@ -5866,7 +5913,7 @@
           "spec": "docs/specs/Mission_Creator_Architecture/t180_9_arsenal_compile.md",
           "status": "shipped",
           "shipped_at": "cba837b3",
-          "notes": "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal\u2192attrs_tab=3; I1\u2013I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
+          "notes": "Tag T-180.9. Sl.loadout + loadout_summary_from_value; open_arsenal→attrs_tab=3; I1–I9. Verify: .ai/artifacts/t180_9_verify_log.md. Manual M-I1..M-I3 operator-pending. Program complete."
         },
         "T-180.10": {
           "targets": [
@@ -5875,7 +5922,7 @@
           "executor": "cursor-docs",
           "spec": "docs/specs/Mission_Creator_Architecture/t180_10_program_coherency.md",
           "status": "shipped",
-          "notes": "Coherency report + make verify-t180 + doc/registry remediations. Zero P0 \u2192 no 10.1. Verify: .ai/artifacts/t180_10_verify_log.md"
+          "notes": "Coherency report + make verify-t180 + doc/registry remediations. Zero P0 → no 10.1. Verify: .ai/artifacts/t180_10_verify_log.md"
         }
       },
       "depends_on": [
@@ -5897,7 +5944,7 @@
       "acceptance": [
         "Each T-180.N Class-R gate table PASS before next slice",
         "Place mints new squad under active side with leaderSlotId",
-        "Map: side tint + leader\u2192member lines only",
+        "Map: side tint + leader→member lines only",
         "Dock: BLUFOR/OPFOR/INDFOR + Objects stub",
         "Stitch ORBAT Manager on live data; templates via T-153",
         "derive_orbat fills loadout; no standardization UI this program"
@@ -5908,6 +5955,321 @@
       "targets": [
         "website",
         "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-181",
+      "order": 1810,
+      "program": "platform",
+      "status": "ready",
+      "surfaces": [
+        "DATA",
+        "ATTR",
+        "RIGHT"
+      ],
+      "impact": [
+        "ui",
+        "state",
+        "schema",
+        "api",
+        "compiler"
+      ],
+      "title": "TBD Framework — Arma-3-parity event mod (factory + spine)",
+      "summary": "Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13.",
+      "spec": "docs/mod/t181_event_mod_program.md",
+      "slices": [
+        "T-181.0",
+        "T-181.1",
+        "T-181.2",
+        "T-181.2.1",
+        "T-181.3",
+        "T-181.3.1",
+        "T-181.3.2",
+        "T-181.3.3",
+        "T-181.4",
+        "T-181.5",
+        "T-181.6",
+        "T-181.7",
+        "T-181.8",
+        "T-181.8.1",
+        "T-181.9",
+        "T-181.9.1",
+        "T-181.9.2",
+        "T-181.10",
+        "T-181.11",
+        "T-181.11.1",
+        "T-181.11.2",
+        "T-181.12",
+        "T-181.13",
+        "T-181.13.1",
+        "T-181.14",
+        "T-181.15",
+        "T-181.16"
+      ],
+      "slice_plan": {
+        "T-181.0": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "scripts/lib/hostrun.sh — agent shell is a debian:12 container; builds/game binaries route to the host. CORRECTED an earlier misdiagnosis that xtask was glibc-broken; it never was."
+        },
+        "T-181.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "scripts/mod/compile.sh + make mod-compile/-selftest. Native ArmaReforgerServer; no Workbench/Proton/GPU. Measured 780ms compile, 1.3s gate (was 90-120s + a human click)."
+        },
+        "T-181.2": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "enf bin in tools/tbd-tools; 266 files / 71,606 LOC / 3,359 symbols / 119 RplProps / 78 modded overrides -> .ai/artifacts/enf-index/crf_*.tsv."
+        },
+        "T-181.2.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "docs/mod/capability_verdicts.tsv + make verify-capability. 57 capabilities, zero untriaged. A forgotten CRF capability is now a build error."
+        },
+        "T-181.3": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "enf carve + index vanilla + make enf-carve. PARTIAL BY NATURE: only a subset of vanilla script ships uncompressed. Got 610 files / 41,958 LOC / 1,106 declarations (882 SCR_*) — AI/behaviour-tree, camera, actions, UI components, WB plugins. SCR_BaseGameMode / SCR_PossessSpawnData / SCR_PossessSpawnRequestComponent / SCR_RespawnSystemComponent / ChimeraMenuBase are ABSENT as plaintext (compressed) — recorded as known-missing in docs/mod/vanilla_carve_coverage.md, not faked. Output gitignored (BI copyright); only the derived index is committed. Follow-up: inflate compressed pak blocks via PakVfs and re-carve."
+        },
+        "T-181.4": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "docs/mod/TBD_MOD_DESIGN.md (north star) + enf citations + make verify-oracle + make verify-no-crf-leak. 14 @idx citations resolve; injecting the hallucinated 'RequestSlotChange' makes it exit 1. Leak gate allows CRF_ in comments (attribution) and treats vanilla GUIDs as engine facts — both false-positive classes measured and handled."
+        },
+        "T-181.5": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "workbench",
+          "status": "queued",
+          "notes": "DEPRIORITISED: make mod-compile (native, 1.3s) removed most of the reason to open Workbench at all. Only world/prefab authoring and PIE visual checks still need it. Do this when a slice actually requires the editor."
+        },
+        "T-181.6": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "claude-code slices only; verify must exit 0 incl. mod-compile; never auto-ship; Workbench lockfile."
+        },
+        "T-181.7": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Capability row 0 — blocks every screen."
+        },
+        "T-181.8": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "MOSTLY ALREADY BUILT — the factory caught this before a rewrite. TBD_FrameworkManager already has enum TBD_EGameStage{LOADING,LOBBY,BRIEFING,SAFE_START,LIVE,END,DEBRIEF}, a replicated [RplProp(onRplName:\"OnStageReplicated\")] m_Stage, SetStage()+Replication.BumpMe(), and IsFrameworkWorld(). Remaining gap is stage CONTENT: BRIEFING and SAFE_START are enum-only (no logic)."
+        },
+        "T-181.8.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Slotting depends on it."
+        },
+        "T-181.9": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "Slotting authority completed. ClaimSlot already existed (PS-shaped first-come guard). Added: ReleaseSlot (lobby-only change-of-mind; refused once deployed), BuildSlotRoster (per-slot key/faction/group/role/state/holder as TSV — the data T-181.9.1's picker binds to, deliberately plain text so authority is testable from the server log before any widget exists; state = OPEN|HELD|DEAD), and a ONE-LIFE INTEGRITY FIX: ClaimSlot and ReleaseSlot now both refuse a dead player. Without it a dead player could release their slot and claim a fresh one, bypassing one life entirely. Landmine caught by the compile gate in 1.3s: `out` is a RESERVED KEYWORD in Enfusion (out-param modifier) and cannot be a variable name."
+        },
+        "T-181.9.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "macOS methodology + Aegis tokens. SUPERSEDES T-068.13."
+        },
+        "T-181.9.2": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Mission read + per-side plan view."
+        },
+        "T-181.10": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Per-slot loadout from the compiled mission document; re-equip every spawn."
+        },
+        "T-181.11": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "ONE LIFE in TBD_SpawnManager: m_bOneLife attribute (default on), m_mDeadPlayers map, OnPlayerKilled now terminal — slot STAYS claimed so the seat is not recycled and reconnect still resolves. Added IsPlayerDead() and CountAliveForFaction() (the primitive T-181.13 side-eliminated needs; counts claimed slots so a never-deployed player cannot silently end the round). m_bAutoDeploy path retained for PIE."
+        },
+        "T-181.11.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "AdminRespawn(playerId, byAdmin) — server-authority only, refuses non-dead and disconnected players, re-materializes a dressed body on the player's own slot, writes an audit line, and re-marks dead on FAILED rather than leaving limbo. Chat: `#tbd respawn <playerId>` and `#tbd dead`. Permission reuses vanilla SCR_PlayerListedAdminManagerComponent.IsPlayerOnAdminList (so T-181.11.1 permissions were already HAVE)."
+        },
+        "T-181.11.2": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Respawn/reset gear/teleport/broadcast/heal/live settings + audit log."
+        },
+        "T-181.12": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Free cam / follow / unit list — mandatory under one-life."
+        },
+        "T-181.13": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "JSON-driven round end. TBD_MissionWinConditionsStruct {mode, endOn[]} added to the mission document (@contract mission.schema.json#/$defs/winConditions) + TBD_MissionLoader.HasEndTrigger(). TickWinConditions in TBD_FrameworkManager (2s, armed only on LIVE and only if the mission declared faction_eliminated). Guards: ignores factions with 0 claimed slots (unfielded != eliminated), requires >=2 contesting factions (a solo test cannot end the round), unregisters itself off LIVE. time_limit and the other three enum triggers parse but are not evaluated yet — declared, not silently dropped."
+        },
+        "T-181.13.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Round summary only; rich AAR is DEFERRED by operator word."
+        },
+        "T-181.14": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Fail fast on a bad mission JSON."
+        },
+        "T-181.15": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "playerId reuse, reconnect slot reclaim (alive or dead)."
+        },
+        "T-181.16": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "human",
+          "status": "queued",
+          "notes": "Dedicated server + 2 real clients, full loop."
+        },
+        "T-181.3.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "Official BI Script API mirror + parser (enf apidoc, scripts/mod/fetch-vanilla-api.sh, make enf-apidoc). 7,990 classes indexed. CLOSES the T-181.3 gap: SCR_BaseGameMode/PossessSpawnData/PossessSpawnRequestComponent/RespawnSystemComponent/ChimeraMenuBase all resolve with full member lists incl. `static SCR_PossessSpawnData FromEntity(notnull IEntity)`. Signatures only, no bodies — CRF stays the behavioural oracle. Operator's suggestion that the data exists online was correct."
+        },
+        "T-181.3.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "enf extract — pulls vanilla scripts BY REAL PATH from the pak FILE table (operator asked 'what about the MCP?' — the MCP's game_browse DOES list them; its game_read fails). Fixed PakVfs to fall back zlib->raw deflate. Result: 2,483/6,495 scripts extracted (all the UNCOMPRESSED ones); combined vanilla index now 2,099 files / 72,226 LOC / 1,659 declarations. BARRIER: the 4,012 compressed entries use a codec that is neither zlib nor deflate, with no method flag (all-zero method bytes). enfusion-mcp only calls inflateSync so it cannot read them either — that error is why vanilla source looked unavailable. Follow-up T-181.3.3: identify the codec (LZ4 block is the hypothesis) to unlock the gameplay layer."
+        },
+        "T-181.3.3": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "SOLVED — but not by cracking the codec. Operator found arexplorer.zeroy.com: a Doxygen build of the SAME game version (1.7.0.54) with SOURCE_BROWSER on, 6,495 *_source.html pages exactly matching the pak script count, each with FULL METHOD BODIES. Built scripts/mod/fetch-vanilla-source.sh (curated by default, cached, rate-limited — it is one person's site) + `enf source` (Doxygen page -> real .c, incl. name demangling _s_c_r___base_game_mode_8c -> SCR_BaseGameMode.c). Vanilla index now 2,116 files / 88,670 LOC / 1,702 decls. SCR_BaseGameMode, SCR_RespawnSystemComponent, ChimeraMenuBase, SCR_SpawnRequestComponent all resolve to real source. The pak-codec RE is now MOOT — negative results retained in docs/mod/vanilla_carve_coverage.md only so nobody repeats them."
+        }
+      },
+      "active_slice": "T-181.7",
+      "depends_on": [
+        "T-068"
+      ],
+      "unblocks": [],
+      "user_story": "As an event host I load a TBD mission from JSON, players slot in a TBD-styled lobby, read the briefing, deploy into their JSON-defined body and loadout, live one life, and the round resolves on a JSON-defined win condition.",
+      "acceptance": [
+        "make mod-compile exits 0 on clean source and non-zero with file:line on a broken .c, with no Workbench",
+        "make verify-capability reports zero UNTRIAGED CRF capabilities",
+        "enf lookup resolves a real symbol to file:line and returns NOT FOUND for an invented one",
+        "A player joins, slots, reads the briefing, deploys with the JSON loadout, dies once terminally, and an admin can respawn them",
+        "A JSON-defined win condition ends the round"
+      ],
+      "branch": "main",
+      "stream": "mod-framework",
+      "targets": [
+        "mod",
+        "root",
+        "shared",
+        "website"
       ],
       "executor": "claude-code"
     }

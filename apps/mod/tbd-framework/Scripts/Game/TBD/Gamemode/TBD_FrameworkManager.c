@@ -135,6 +135,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		if (stage == TBD_EGameStage.LOBBY)
 			OnEnterLobby();
+		else if (stage == TBD_EGameStage.LIVE)
+			OnEnterLive();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -142,6 +144,80 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	{
 		// Preload the available-mission list so admins can browse/switch immediately.
 		TBD_MissionListLoader.Refresh();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.13 — start watching for the round to end. Only armed if the mission actually
+	//! declared `faction_eliminated`; a mission that declared nothing runs until an admin ends
+	//! it rather than ending on its own.
+	//! @authority server
+	protected void OnEnterLive()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (!TBD_MissionLoader.HasEndTrigger("faction_eliminated"))
+		{
+			Print("[TBD][Win] no faction_eliminated trigger in mission — round runs until admin ends it");
+			return;
+		}
+
+		// 2 s cadence: an elimination is not time-critical, and this walks every claimed slot.
+		GetGame().GetCallqueue().CallLater(TickWinConditions, 2000, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Ends the round when a playable faction has no living claimed slots left.
+	//!
+	//! Guards that matter under ONE LIFE: it only fires while LIVE, it ignores factions that
+	//! never had anyone claim in (0 claimed != eliminated, otherwise an unplayed side would end
+	//! the round at kickoff), and it needs at least two factions with players so a solo test
+	//! session does not instantly end.
+	//! @authority server
+	protected void TickWinConditions()
+	{
+		if (m_Stage != TBD_EGameStage.LIVE)
+		{
+			GetGame().GetCallqueue().Remove(TickWinConditions);
+			return;
+		}
+
+		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
+		array<ref TBD_MissionFactionStruct> factions = TBD_MissionLoader.GetFactions();
+		if (!sm || !factions)
+			return;
+
+		int contesting;      // factions that had at least one claimed slot
+		int stillAlive;      // ...of those, how many still have a living player
+		string lastAlive;
+
+		foreach (TBD_MissionFactionStruct f : factions)
+		{
+			if (!f || f.key.IsEmpty())
+				continue;
+
+			int claimed = sm.CountClaimedForFaction(f.key);
+			if (claimed == 0)
+				continue;      // never fielded — cannot be "eliminated"
+
+			contesting++;
+			if (sm.CountAliveForFaction(f.key) > 0)
+			{
+				stillAlive++;
+				lastAlive = f.key;
+			}
+		}
+
+		if (contesting < 2)
+			return;            // need a real contest before anyone can win
+
+		if (stillAlive > 1)
+			return;
+
+		GetGame().GetCallqueue().Remove(TickWinConditions);
+		Print(string.Format("[TBD][Win] faction_eliminated — winner=%1 (%2 factions contested)",
+			lastAlive, contesting));
+		SetStage(TBD_EGameStage.END);
 	}
 
 	//------------------------------------------------------------------------------------------------

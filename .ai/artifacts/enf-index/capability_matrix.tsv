@@ -1,0 +1,58 @@
+capability	verdict	files	loc	symbols	note
+CRF game modes	SKIP	35	14957	661	lowercase tree: Rally
+Player controller / RPC	BUILD	10	4309	266	authority + owner RPC split
+Spectator	BUILD	7	4104	130	unit list + labels
+AO / play area / zones + markers	LATER	23	3463	229	mission JSON zones[]; poly-zone + out-of-bounds effects
+Admin menu	BUILD	2	2592	111	respawn/reset gear/teleport/broadcast/heal/live settings
+Replication backbone	BUILD	2	2537	153	thinner than CRF's broadcast manager
+Arsenal / supply	PARTIAL	11	2414	95	T-068
+Loadouts	REPLACE	2	2137	58	CRF uses 520 .conf gearscripts; TBD drives from mission JSON
+Lobby / slot picker UI	BUILD	1	2051	79	macOS methodology + Aegis tokens; supersedes T-068.13
+AAR / statistics	DEFERRED	7	1969	96	video AAR vehicle tracking
+Enums / config containers	BUILD	15	1946	138	shared attribute helpers
+HUD elements	LATER	9	1873	59	
+Battle royale zone	SKIP	2	1755	44	
+Vehicle depot	LATER	2	1643	57	
+Map staging	LATER	3	1479	51	pre-mission staging area
+Helpers layer	BUILD	11	1289	65	grow as needed; do not port wholesale
+CRF Workbench plugins	SKIP	7	1206	46	TBD has its own under apps/mod/tbd-framework/Scripts/WorkbenchGame
+Radio / VON frequency plan	LATER	7	1104	38	vanilla VON override
+Parachutes	SKIP	3	1099	63	
+Gamemode state machine	BUILD	2	1075	44	InitilizePlayer: pre-spawned character -> DisableAI -> faction -> assign -> notify
+Spawn / respawn	BUILD	2	1065	52	the file that revealed the vanilla POSSESS pipeline (slot_materialization_handoff.md)
+Briefing screen	BUILD	2	1020	46	map-based briefing UI
+UI framework (listbox)	BUILD	4	969	63	reusable list widget — blocks every screen
+Persistence / save-load	SKIP	5	891	41	one-life events do not need round persistence
+Logging	BUILD	1	888	27	thin
+Safestart / warmup	BUILD	1	839	26	weapons safe + damage off until go
+Mortar strike controller	SKIP	2	771	42	
+Slot lottery	SKIP	1	735	24	
+Lobby / slotting authority	BUILD	1	725	44	claim/release/lock; per-side counts from mission JSON
+Vanilla UI overrides	LATER	14	717	48	
+Mission validation	BUILD	2	680	25	mission header override
+Faction / groups	BUILD	5	616	30	faction registry
+Misc world entities	SKIP	6	609	40	tracers, satchels
+CRF documentation samples	SKIP	1	540	21	sample/helper snippets, not shipped code
+Vanilla overrides (damage/groups)	BUILD	5	526	24	safestart damage-off lives here
+World actions	SKIP	6	524	25	CRF objective seizing
+Deploy / respawn UI	BUILD	2	517	34	one-life variant
+Core entities	BUILD	7	484	38	gamemode + character entities
+Community tags	SKIP	1	426	19	CRF-community specific
+Airdrop	SKIP	1	408	22	
+UI framework (menu stack)	LATER	2	370	22	pause menu integration
+Misc components	SKIP	4	355	19	
+Third-party mod bridges	SKIP	9	337	28	ACE/Bacon/CSI/GC/LM — TBD takes no workshop dependencies
+Inventory overrides	LATER	4	248	14	
+Vehicle overrides	LATER	2	203	10	
+Vehicle spawning	LATER	2	178	15	
+Character overrides	LATER	3	147	14	stamina/melee tuning
+Forward deploy	SKIP	1	142	12	
+Server settings enforcement	LATER	1	132	4	force client settings for fairness
+Vanilla overrides (spawn)	BUILD	1	108	3	possess path; TBD already has TBD_SpawnManager
+Admin permissions	BUILD	1	98	9	gates the admin menu
+CRF editor tooling	SKIP	1	84	8	TBD authors missions on the website, not in-game
+Gamemode timers	BUILD	1	79	8	phase countdowns
+Garbage collection	LATER	1	73	6	corpse/wreck cleanup — matters for one-life events
+Nuke	SKIP	1	58	6	
+Rally points	SKIP	1	25	3	TBD slots come from mission JSON
+Environment (time/weather)	LATER	1	17	4	mission JSON environment{}

@@ -1,0 +1,120 @@
+class	prop	on_rpl_name	file	line
+CRF_FrontlineGamemodeManager	m_bGameStarted		Scripts/Game/GameMode/FrontLine/CRF_Frontline_Game.c	52
+CRF_HighValueTargetGamemodeManager	m_aHvtPositions	SyncTransponderPositions	Scripts/Game/GameMode/High Value Target/CRF_HighValueTarget_Game.c	149
+CRF_HighValueTargetGamemodeManager	m_sDeadHVTHint	OnDeadHVTHintReplicated	Scripts/Game/GameMode/High Value Target/CRF_HighValueTarget_Game.c	153
+CRF_InsDestructiveComponent	m_bIsActiveReplicated	OnActiveStateReplicated	Scripts/Game/GameMode/Insurgency/CRF_InsDesctrucitveComponent.c	20
+CRF_InsDestructiveComponent	m_bIsDestroyedReplicated	OnDestroyedStateReplicated	Scripts/Game/GameMode/Insurgency/CRF_InsDesctrucitveComponent.c	23
+CRF_InsurgencyGamemodeManager	m_ObjCachesRplID		Scripts/Game/GameMode/Insurgency/CRF_Insurgency_Game.c	18
+CRF_InsurgencyGamemodeManager	m_ObjDestroyedCachesRplID		Scripts/Game/GameMode/Insurgency/CRF_Insurgency_Game.c	21
+CRF_InsurgencyGamemodeManager	m_iCurrentPhase		Scripts/Game/GameMode/Insurgency/CRF_Insurgency_Game.c	24
+CRF_InsurgencyGamemodeManager	m_iTimePhaseZoneReveals		Scripts/Game/GameMode/Insurgency/CRF_Insurgency_Game.c	27
+CRF_RushGamemodeManager	m_sReplicatedDestroyedMCOM	OnMCOMDestroyedReplicated	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	125
+CRF_RushGamemodeManager	m_bZone1AlphaDestroyed		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	128
+CRF_RushGamemodeManager	m_bZone1BetaDestroyed		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	131
+CRF_RushGamemodeManager	m_bZone2AlphaDestroyed		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	134
+CRF_RushGamemodeManager	m_bZone2BetaDestroyed		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	137
+CRF_RushGamemodeManager	m_bZone3AlphaDestroyed		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	140
+CRF_RushGamemodeManager	m_bZone3BetaDestroyed		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	143
+CRF_RushGamemodeManager	m_bZone1AlphaPlanted		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	148
+CRF_RushGamemodeManager	m_bZone1BetaPlanted		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	151
+CRF_RushGamemodeManager	m_bZone2AlphaPlanted		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	154
+CRF_RushGamemodeManager	m_bZone2BetaPlanted		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	157
+CRF_RushGamemodeManager	m_bZone3AlphaPlanted		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	160
+CRF_RushGamemodeManager	m_bZone3BetaPlanted		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	163
+CRF_RushGamemodeManager	m_bCountdownActive		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	168
+CRF_RushGamemodeManager	m_sMessageContent	ShowMessage	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	189
+CRF_RushGamemodeManager	m_sSoundString	PlaySound	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	193
+CRF_RushGamemodeManager	m_bPlayPlantingSound	PlayPlantingSoundClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	196
+CRF_RushGamemodeManager	m_bStopPlantingSound	StopPlantingSoundClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	199
+CRF_RushGamemodeManager	m_bPlayDefuseSound	PlayDefuseSoundClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	202
+CRF_RushGamemodeManager	m_bStopDefuseSound	StopDefuseSoundClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	205
+CRF_RushGamemodeManager	m_bPlayBombSound	PlayBombSoundClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	208
+CRF_RushGamemodeManager	m_bStopBombSound	StopBombSoundClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	211
+CRF_RushGamemodeManager	m_sDestroyedMCOMString	MCOMDestroyedClient	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	214
+CRF_RushGamemodeManager	m_b3DMarkersInitialized	Update3DMarkersFromReplication	Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	219
+CRF_RushGamemodeManager	m_bZone1AlphaMarkerVisible		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	222
+CRF_RushGamemodeManager	m_bZone1BetaMarkerVisible		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	225
+CRF_RushGamemodeManager	m_bZone2AlphaMarkerVisible		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	228
+CRF_RushGamemodeManager	m_bZone2BetaMarkerVisible		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	231
+CRF_RushGamemodeManager	m_bZone3AlphaMarkerVisible		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	234
+CRF_RushGamemodeManager	m_bZone3BetaMarkerVisible		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	237
+CRF_RushGamemodeManager	m_vZone1AlphaPosition		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	241
+CRF_RushGamemodeManager	m_vZone1BetaPosition		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	244
+CRF_RushGamemodeManager	m_vZone2AlphaPosition		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	247
+CRF_RushGamemodeManager	m_vZone2BetaPosition		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	250
+CRF_RushGamemodeManager	m_vZone3AlphaPosition		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	253
+CRF_RushGamemodeManager	m_vZone3BetaPosition		Scripts/Game/GameMode/Rush/CRF_Rush_Game.c	256
+CRF_SearchAndDestroyGamemodeManager	m_sMessageContent	ShowMessage	Scripts/Game/GameMode/Search And Destroy/CRF_S&D_Game.c	36
+CRF_SearchAndDestroyGamemodeManager	m_SoundString	PlaySound	Scripts/Game/GameMode/Search And Destroy/CRF_S&D_Game.c	40
+CRF_SearchAndDestroyGamemodeManager	m_sDestroyedBombSiteString	SiteDestroyedClient	Scripts/Game/GameMode/Search And Destroy/CRF_S&D_Game.c	43
+CRF_SearchAndDestroyGamemodeManager	aSitePlanted		Scripts/Game/GameMode/Search And Destroy/CRF_S&D_Game.c	46
+CRF_SearchAndDestroyGamemodeManager	bSitePlanted		Scripts/Game/GameMode/Search And Destroy/CRF_S&D_Game.c	49
+CRF_SearchAndDestroyGamemodeManager	countDownActive		Scripts/Game/GameMode/Search And Destroy/CRF_S&D_Game.c	52
+CRF_SpawnCountDown	m_wGameStartBase		Scripts/Game/GameMode/Specials/CRF_SpawnCountdown.c	11
+CRF_GunGame	m_aSpawnPointBuffer		Scripts/Game/GameMode/Specials/GunGame/CRF_GunGame.c	90
+CRF_PropHuntGamemode	m_ePhase	OnPhaseChanged	Scripts/Game/GameMode/Specials/PropHunt/CRF_PropHunt.c	101
+CRF_PropHuntGamemode	m_iCurrentRound		Scripts/Game/GameMode/Specials/PropHunt/CRF_PropHunt.c	104
+CRF_PropHuntGamemode	m_fPhaseTimer		Scripts/Game/GameMode/Specials/PropHunt/CRF_PropHunt.c	107
+CRF_PropHuntGamemode	m_iPropsWins		Scripts/Game/GameMode/Specials/PropHunt/CRF_PropHunt.c	110
+CRF_PropHuntGamemode	m_iHuntersWins		Scripts/Game/GameMode/Specials/PropHunt/CRF_PropHunt.c	113
+CRF_SupplyExtractionGamemodeManager	m_sMessageContent	ShowMessage	Scripts/Game/GameMode/Supply Extraction/CRF_SupplyExtractionGame.c	55
+CRF_BattleRoyaleComponent	countDownActive		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	119
+CRF_BattleRoyaleComponent	m_sMessageContent	ShowMessage	Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	122
+CRF_BattleRoyaleComponent	m_sTimerText		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	125
+CRF_BattleRoyaleComponent	m_sStageText		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	128
+CRF_BattleRoyaleComponent	m_iCurrentTimer		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	131
+CRF_BattleRoyaleComponent	m_iAlivePlayerCount		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	134
+CRF_BattleRoyaleComponent	m_iSelectedZoneIndex		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	154
+CRF_BattleRoyaleComponent	m_iCurrentStage		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	157
+CRF_BattleRoyaleComponent	m_bBattleRoyaleActive		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	160
+CRF_BattleRoyaleComponent	m_sCurrentActiveBoundary		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	169
+CRF_BattleRoyaleComponent	m_iCurrentBoundaryState		Scripts/Game/Systems/Components/BattleRoyale/CRF_BattleRoyaleComponent.c	172
+CRF_ParachuteBackpackComponent	m_IsUsed	OnUsedChanged	Scripts/Game/Systems/Components/CRF_Parachutes/CRF_ParachuteBackpackComponent.c	9
+CRF_ParachutePlayerComponent	m_IsDeployed	OnDeployStateChanged	Scripts/Game/Systems/Components/CRF_Parachutes/CRF_ParachutePlayerComponent.c	22
+CRF_ParachutePlayerComponent	m_DeployedChuteRplId	OnDeployStateChanged	Scripts/Game/Systems/Components/CRF_Parachutes/CRF_ParachutePlayerComponent.c	25
+CRF_ParachutePlayerComponent	m_ChuteSlotId		Scripts/Game/Systems/Components/CRF_Parachutes/CRF_ParachutePlayerComponent.c	28
+CRF_SupplyArsenalComponent	m_iTotalSupply		Scripts/Game/Systems/Components/Entities/CRF_SupplyArsnealComponent.c	20
+SCR_BaseGameMode	m_bIsLeadersArsenalEnabled		Scripts/Game/Systems/Components/LeadershipArsenal/CRF_LeadersArsenal.c	29
+CRF_MapStagingComponent	countDownActive		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	125
+CRF_MapStagingComponent	m_sMessageContent	ShowMessage	Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	128
+CRF_MapStagingComponent	m_sTimerText		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	131
+CRF_MapStagingComponent	m_sSoundToPlay		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	134
+CRF_MapStagingComponent	m_sStageText		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	137
+CRF_MapStagingComponent	m_iCurrentStage		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	141
+CRF_MapStagingComponent	m_iCurrentTimer		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	144
+CRF_MapStagingComponent	m_bStagingActive		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	147
+CRF_MapStagingComponent	m_aReplicatedBoundaryNames		Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	156
+CRF_MapStagingComponent	m_aReplicatedBoundaryStates	OnBoundaryStatesChanged	Scripts/Game/Systems/Components/Map/CRF_MapStagingComponent.c	159
+CRF_VehicleDepot	m_aVehicleSpawnUses		Scripts/Game/Systems/Components/VehicleDepot/CRF_VehicleDepot.c	92
+CRF_VehicleDepot	m_iAggregatedSupplies		Scripts/Game/Systems/Components/VehicleDepot/CRF_VehicleDepot.c	96
+CRF_Gamemode	m_iBLUFORTickets		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	94
+CRF_Gamemode	m_iOPFORTickets		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	97
+CRF_Gamemode	m_iINDFORTickets		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	100
+CRF_Gamemode	m_iCIVTickets		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	103
+CRF_Gamemode	m_OPFORGearScriptSettings		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	135
+CRF_Gamemode	m_INDFORGearScriptSettings		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	139
+CRF_Gamemode	m_CIVILIANGearScriptSettings		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	143
+CRF_Gamemode	m_GamemodeState	OnGamemodeStateChanged	Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	153
+CRF_Gamemode	m_SlottingState		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	156
+CRF_Gamemode	m_vGenericSpawn		Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	171
+CRF_RespawnManager	m_iRespawnWaveCurrentTime	WaveRespawnTimer	Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	12
+CRF_RespawnManager	m_iBLUFORTickets		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	17
+CRF_RespawnManager	m_iOPFORTickets		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	19
+CRF_RespawnManager	m_iINDFORTickets		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	21
+CRF_RespawnManager	m_iCIVTickets		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	23
+CRF_RespawnManager	m_iLocalTimeToRespawn		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	29
+CRF_SafestartManager	m_bSafeStartEnabled	OnSafeStartChange	Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SafestartManager.c	11
+CRF_SafestartManager	m_aFactionsStatusArray		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SafestartManager.c	15
+CRF_SafestartManager	m_bKillRedundantUnitsBool		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SafestartManager.c	19
+CRF_SafestartManager	m_iSafeStartTimeRemaining		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SafestartManager.c	22
+CRF_SafestartManager	m_bCountdownMode		Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SafestartManager.c	25
+CRF_PermissionManager	m_aModerators		Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_PermissionManager.c	6
+CRF_PermissionManager	m_aDonators		Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_PermissionManager.c	9
+CRF_GameTimerManager	m_sServerWorldTime		Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_GameTimerManager.c	6
+CRF_GameTimerManager	m_iTimeMissionEnds		Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_GameTimerManager.c	9
+CRF_MenuManager	m_aVONChannels		Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_MenuManager.c	11
+CRF_MenuManager	m_iChannelChanges		Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_MenuManager.c	14
+Vehicle	m_bShouldAddAmmo		Scripts/Game/Systems/VanillaOverrides/CRF_SCR_Vehicle.c	6
+CRF_VAAR_GamemodeComponent	m_fTimer		Scripts/Game/Systems/vaar/CRF_VAAR_GamemodeComponent.c	15
+CRF_RallyGamemodeComponent	m_sReplicatedStandings		scripts/Game/GameMode/Rally/CRF_RallyGamemodeComponent.c	158
+CRF_RallyGamemodeComponent	m_bRaceActive	OnRaceActiveChanged	scripts/Game/GameMode/Rally/CRF_RallyGamemodeComponent.c	161

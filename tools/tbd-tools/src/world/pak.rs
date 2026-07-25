@@ -18,6 +18,8 @@ struct FileEntry {
     compressed_len: u32,
     decompressed_len: u32,
     compressed: bool,
+    /// Raw method/level bytes from the entry record — used to identify the second codec.
+    method: [u8; 6],
 }
 
 struct FileRef {
@@ -146,6 +148,8 @@ fn parse_pak_index(pak_path: &Path) -> Result<(Vec<(String, FileEntry)>, u64)> {
             let decompressed_len = u32le(buf, *offset + 8);
             // skip unknown u32 + unk2 u16
             let compressed = buf[*offset + 18] != 0;
+            let mut method = [0u8; 6];
+            method.copy_from_slice(&buf[*offset + 12..*offset + 18]);
             // skip compression_level u8 + timestamp u32
             *offset += 24;
             let path = if prefix.is_empty() {
@@ -160,6 +164,7 @@ fn parse_pak_index(pak_path: &Path) -> Result<(Vec<(String, FileEntry)>, u64)> {
                     compressed_len,
                     decompressed_len,
                     compressed,
+                    method,
                 },
             ));
         }
@@ -245,15 +250,76 @@ impl PakVfs {
         let mut buf = vec![0u8; read_len];
         f.read_exact(&mut buf).context("truncated pak read")?;
         if r.entry.compressed {
-            let mut out = Vec::with_capacity(r.entry.decompressed_len as usize);
-            flate2::read::ZlibDecoder::new(&buf[..]).read_to_end(&mut out)?;
-            Ok(out)
+            Ok(inflate_entry(&buf, r.entry.decompressed_len as usize, virtual_path)?)
         } else {
             Ok(buf)
         }
     }
 
+    /// Diagnostic: (method bytes, compressed flag) for one path.
+    pub fn entry_method(&self, virtual_path: &str) -> Option<([u8; 6], bool)> {
+        self.index
+            .get(&normalize_path(virtual_path))
+            .map(|r| (r.entry.method, r.entry.compressed))
+    }
+
+    /// T-181.3.3 — raw (still-compressed) entry bytes + expected decompressed length.
+    /// Codec identification only; normal reads go through `read_file`.
+    pub fn read_raw(&self, virtual_path: &str) -> Result<(Vec<u8>, u32)> {
+        use std::io::{Seek, SeekFrom};
+        let norm = normalize_path(virtual_path);
+        let r = self
+            .index
+            .get(&norm)
+            .ok_or_else(|| anyhow!("File not found in pak: {virtual_path}"))?;
+        let read_len = if r.entry.compressed {
+            r.entry.compressed_len
+        } else {
+            r.entry.decompressed_len
+        } as usize;
+        let mut f = std::fs::File::open(&r.pak_path)?;
+        f.seek(SeekFrom::Start(r.data_start + u64::from(r.entry.offset)))?;
+        let mut buf = vec![0u8; read_len];
+        f.read_exact(&mut buf)?;
+        Ok((buf, r.entry.decompressed_len))
+    }
+
     pub fn all_file_paths(&self) -> Vec<&str> {
         self.index.keys().map(String::as_str).collect()
     }
+}
+
+/// Inflate one pak entry, tolerating both zlib-wrapped and RAW deflate streams.
+///
+/// T-181.3.2 — why this is not just `ZlibDecoder`: script entries (`scripts/**/*.c`) are stored
+/// as **raw deflate with no zlib header**, so a zlib-only reader fails them with
+/// `incorrect header check`. That single error is why the vanilla source was believed to be
+/// unavailable — `enfusion-mcp`'s `game_read` hits it too, even though its `game_browse`
+/// happily lists `scripts/Game/GameMode/SCR_BaseGameMode.c` at 84 KB. Non-script assets in the
+/// same archives *are* zlib-wrapped, so both paths are needed.
+///
+/// Order matters: try zlib first (the common case), fall back to raw.
+fn inflate_entry(buf: &[u8], decompressed_len: usize, what: &str) -> Result<Vec<u8>> {
+    let mut out = Vec::with_capacity(decompressed_len);
+    if flate2::read::ZlibDecoder::new(buf)
+        .read_to_end(&mut out)
+        .is_ok()
+    {
+        return Ok(out);
+    }
+    out.clear();
+    out.reserve(decompressed_len);
+    if flate2::read::DeflateDecoder::new(buf)
+        .read_to_end(&mut out)
+        .is_ok()
+    {
+        return Ok(out);
+    }
+    let head: Vec<String> = buf.iter().take(12).map(|b| format!("{b:02x}")).collect();
+    anyhow::bail!(
+        "inflate failed as zlib and raw deflate: {what} (clen={} dlen={} head={})",
+        buf.len(),
+        decompressed_len,
+        head.join(" ")
+    );
 }

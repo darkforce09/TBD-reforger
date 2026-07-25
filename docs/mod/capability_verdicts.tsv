@@ -1,0 +1,112 @@
+# T-181.2.1 — TBD verdict for every CRF capability. HAND-AUTHORED; product judgement.
+#
+# Reforger ships no lobby, briefing, slotting, respawn, spectator or admin tooling. CRF is a
+# working framework that covers that ground, so every CRF source file must carry an explicit
+# TBD verdict here. `enf capability` fails when any file matches no rule (UNTRIAGED) — that
+# is how a forgotten subsystem becomes a build error instead of a surprise before an event.
+#
+# LONGEST PREFIX WINS, so a broad directory rule can be overridden by a specific file.
+# Verdicts: BUILD | HAVE | PARTIAL | REPLACE | LATER | SKIP | DEFERRED
+#   DEFERRED means out of scope BY OPERATOR WORD — see docs/mod/TBD_MOD_DESIGN.md §Deferrals.
+#
+prefix	capability	verdict	note
+# ── spine: the event loop ────────────────────────────────────────────────────────────────
+Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SlottingManager.c	Lobby / slotting authority	BUILD	claim/release/lock; per-side counts from mission JSON
+Scripts/Game/Systems/Core/Managers/Gamemode/CRF_RespawnManager.c	Spawn / respawn	BUILD	TBD is ONE LIFE; CRF is wave/ticket. Diverges deliberately.
+Scripts/Game/Systems/Core/Managers/Gamemode/CRF_SafestartManager.c	Safestart / warmup	BUILD	weapons safe + damage off until go
+Scripts/Game/Systems/Core/Entities/CRF_Gamemode.c	Gamemode state machine	BUILD	LOBBY->BRIEF->SAFESTART->LIVE->END
+Scripts/Game/Systems/Core/Entities/Characters/CRF_SpectatorCharacter.c	Spectator	BUILD	mandatory under one-life
+Scripts/Game/Systems/Core/Entities/CRF_SpectatorCamera.c	Spectator	BUILD	free cam / follow
+Scripts/Game/Systems/UI/Menus/Spectator	Spectator	BUILD	unit list + labels
+Scripts/Game/Systems/UI/Menus/CRF_SlottingMenu.c	Lobby / slot picker UI	BUILD	macOS methodology + Aegis tokens; supersedes T-068.13
+Scripts/Game/Systems/UI/Menus/CRF_BriefingMenu.c	Briefing screen	BUILD	declares class CRF_PreviewMenu (not CRF_BriefingMenu)
+Scripts/Game/Systems/UI/Menus/CRF_RespawnMenu.c	Deploy / respawn UI	BUILD	one-life variant
+Scripts/Game/Systems/UI/Menus/CRF_AdminMenuUI.c	Admin menu	BUILD	respawn/reset gear/teleport/broadcast/heal/live settings
+Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_AdminMenuManager.c	Admin menu	BUILD	action audit log + help tickets
+Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_PermissionManager.c	Admin permissions	BUILD	gates the admin menu
+Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_MissionValidatorManager.c	Mission validation	BUILD	fail fast on a bad mission JSON
+Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_LoggingManager.c	Logging	BUILD	thin
+Scripts/Game/Systems/Core/Managers/Gamemode/Replication	Replication backbone	BUILD	thinner than CRF's broadcast manager
+Scripts/Game/Systems/Core/Managers/PlayerController	Player controller / RPC	BUILD	authority + owner RPC split
+Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_GameTimerManager.c	Gamemode timers	BUILD	phase countdowns
+Scripts/Game/Systems/UI/CustomListbox	UI framework (listbox)	BUILD	reusable list widget — blocks every screen
+Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_MenuManager.c	UI framework (menu stack)	BUILD	focus/visibility; blocks every screen
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_Faction.c	Faction / groups	BUILD	callsigns + colors; slotting depends on it
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_FactionManager.c	Faction / groups	BUILD	faction registry
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_FactionCallsignInfo.c	Faction / groups	BUILD	squad callsigns
+Scripts/Game/Systems/VanillaOverrides/Managers	Vanilla overrides (damage/groups)	BUILD	safestart damage-off lives here
+Scripts/Game/Systems/VanillaOverrides/Respawn	Vanilla overrides (spawn)	BUILD	possess path; TBD already has TBD_SpawnManager
+Scripts/Game/Systems/Core/Containers & Configs	Enums / config containers	BUILD	CRF_Enums.c holds CRF_EGamemodeState
+Scripts/Game/Systems/Core/Helpers	Helpers layer	BUILD	grow as needed; do not port wholesale
+Scripts/Game/Systems/Core/Entities	Core entities	BUILD	gamemode + character entities
+# ── loadouts: CRF .conf gearscript replaced by TBD mission JSON ──────────────────────────
+Scripts/Game/Systems/Core/Managers/Gamemode/Gearscript	Loadouts	REPLACE	CRF uses 520 .conf gearscripts; TBD drives from mission JSON
+Scripts/Game/Systems/UI/Menus/CRF_SupplyArsenal.c	Arsenal / supply	PARTIAL	T-068 covers registry + arsenal
+Scripts/Game/Systems/UI/Menus/CRF_SightArsenal.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_MiniArsenal.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/Components/SightArsenal	Arsenal / supply	PARTIAL	T-068
+# ── wanted, not on the critical path ─────────────────────────────────────────────────────
+Scripts/Game/Systems/UI/MapMarkers	AO / play area / zones + markers	LATER	mission JSON zones[]; poly-zone + out-of-bounds effects
+Scripts/Game/Systems/Components/Map	Map staging	LATER	pre-mission staging area
+Scripts/Game/Systems/UI/HUDs	HUD elements	LATER	timers, hints, notifications
+Scripts/Game/Systems/UI/Actions	World actions	LATER
+Scripts/Game/Systems/VanillaOverrides/UI	Vanilla UI overrides	LATER
+Scripts/Game/Systems/VanillaOverrides/Inventory	Inventory overrides	LATER
+Scripts/Game/Systems/VanillaOverrides/Character	Character overrides	LATER	stamina/melee tuning
+Scripts/Game/Systems/Components/VehicleDepot	Vehicle depot	LATER
+Scripts/Game/Systems/Components/VehicleSpawning	Vehicle spawning	LATER
+# ── deferred by operator word ────────────────────────────────────────────────────────────
+Scripts/Game/Systems/UI/Menus/CRF_AARMenu.c	AAR / statistics	DEFERRED	"we have to record everything. That's very complex."
+Scripts/Game/Systems/vaar	AAR / statistics	DEFERRED	video AAR vehicle tracking
+Scripts/Game/Systems/VanillaOverrides/DataCollector	AAR / statistics	DEFERRED	stat collection feeds the deferred AAR
+# ── radio: capability wanted, CRF's implementation is not usable ─────────────────────────
+Scripts/Game/Systems/ModdedOverrides/CVON	Radio / VON frequency plan	LATER	CRF depends on the external CVON workshop mod; TBD must NOT. Reimplement from mission JSON radioPlan.nets[].
+Scripts/Game/Systems/VanillaOverrides/VON	Radio / VON frequency plan	LATER	vanilla VON override
+# ── out of scope ─────────────────────────────────────────────────────────────────────────
+Scripts/Game/GameMode	CRF game modes	SKIP	Rush/S&D/Insurgency/FrontLine/Raid/HVT/PropHunt/GunGame/Looter — TBD ships one event mode
+scripts/Game/GameMode	CRF game modes	SKIP	lowercase tree: Rally
+Scripts/Game/Systems/Persistence	Persistence / save-load	SKIP	one-life events do not need round persistence
+Scripts/Game/Systems/Components/CRF_Parachutes	Parachutes	SKIP
+Scripts/Game/Systems/Components/Airdrop	Airdrop	SKIP
+Scripts/Game/Systems/Components/BattleRoyale	Battle royale zone	SKIP
+Scripts/Game/Systems/Components/Nuke	Nuke	SKIP
+Scripts/Game/Systems/Components/RallyPoints	Rally points	SKIP	TBD slots come from mission JSON
+Scripts/Game/Systems/Components/Entities	Misc world entities	SKIP	tracers, satchels
+Scripts/Game/Entities	Mortar strike controller	SKIP
+Scripts/Game/Systems/ModdedOverrides	Third-party mod bridges	SKIP	ACE/Bacon/CSI/GC/LM — TBD takes no workshop dependencies
+Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_ForwardDeployManager.c	Forward deploy	SKIP
+Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_PersistenceManager.c	Persistence / save-load	SKIP
+scripts/Game/Systems/Components/Lottery	Slot lottery	SKIP
+scripts/Game/Systems/Components/Misc	Misc components	SKIP
+Scripts/WorkbenchGame	CRF Workbench plugins	SKIP	TBD has its own under apps/mod/tbd-framework/Scripts/WorkbenchGame
+!Docs	CRF documentation samples	SKIP	sample/helper snippets, not shipped code
+# ── added after the UNTRIAGED gate caught them (this is the mechanism working) ───────────
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_PossessSpawnHandlerComponent.c	Spawn / respawn	BUILD	the file that revealed the vanilla POSSESS pipeline (slot_materialization_handoff.md)
+Scripts/Game/Systems/Core/Managers/Gamemode/CRF_GamemodeManager.c	Gamemode state machine	BUILD	InitilizePlayer: pre-spawned character -> DisableAI -> faction -> assign -> notify
+Scripts/Game/Systems/VanillaOverrides/MapBriefing	Briefing screen	BUILD	map-based briefing UI
+Scripts/Game/Systems/Core/Managers/Gamemode/UI/CRF_GroupLeaderMarkerManager.c	AO / play area / zones + markers	LATER	squad-leader markers
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_AIGroups.c	Faction / groups	BUILD	group entity override; slotting depends on it
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_AIGroupInfoComponent.c	Faction / groups	BUILD	group info/callsign
+Scripts/Game/Systems/UI/Menus/CRF_CharacterLoading.c	Deploy / respawn UI	BUILD	loading/among-the-dead screen
+Scripts/Game/Systems/UI/Menus/CRF_PauseMenuUI.c	UI framework (menu stack)	LATER	pause menu integration
+Scripts/Game/Systems/UI/Menus/CRF_MiniArsenalCategoryButton.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_MiniArsenalItemButton.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_SightArsenalItemButton.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_SupplyArsenalVehicle.c	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_SupplyNotification.c	HUD elements	LATER
+Scripts/Game/Systems/Components/LeadershipArsenal	Arsenal / supply	PARTIAL	T-068
+Scripts/Game/Systems/UI/Menus/CRF_SCR_MapLightUI.c	HUD elements	LATER	map light
+Scripts/Game/Systems/UI/Menus/CRF_EditorMenuUI.c	CRF editor tooling	SKIP	TBD authors missions on the website, not in-game
+Scripts/Game/CRF_Define.c	Enums / config containers	BUILD	compile-time defines
+Scripts/Game/Systems/VanillaOverrides/CRF_Attributes.c	Enums / config containers	BUILD	shared attribute helpers
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_MissionHeader.c	Mission validation	BUILD	mission header override
+Scripts/Game/Systems/VanillaOverrides/Settings/CRF_SettingsEnforcement.c	Server settings enforcement	LATER	force client settings for fairness
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_TimeAndWeatherHandlerComponent.c	Environment (time/weather)	LATER	mission JSON environment{}
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_Vehicle.c	Vehicle overrides	LATER
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_BaseCompartmentManagerComponent.c	Vehicle overrides	LATER	seat/compartment rules
+Scripts/Game/Systems/VanillaOverrides/Actions	World actions	LATER
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_ItemPlacementComponent.c	World actions	LATER	item placement
+Scripts/Game/Systems/VanillaOverrides/CRF_SCR_SeizingComponent.c	World actions	SKIP	CRF objective seizing
+Scripts/Game/Systems/Components/Character/CRF_BushMovementComponent.c	Character overrides	SKIP
+Scripts/Game/Systems/Core/Managers/Gamemode/CRF_CommunityTagManager.c	Community tags	SKIP	CRF-community specific
+Scripts/Game/Systems/Core/Managers/Gamemode/Misc/CRF_GarbageManager.c	Garbage collection	LATER	corpse/wreck cleanup — matters for one-life events
