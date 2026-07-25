@@ -192,6 +192,11 @@ modded class SCR_PlayerController
 	//------------------------------------------------------------------------------------------------
 	//! CLIENT (owner) -> SERVER. On a listen host the caller is already the authority, so build in
 	//! place instead of RPCing ourselves.
+	//!
+	//! The payload built here is handed over WHOLE — it never goes through `Serialise` / `Parse` /
+	//! `AdoptOrders`, so the orders arrays `BuildForPlayer` filled are already on it. That is the
+	//! same short-circuit the rest of this payload takes, so the two topologies cannot diverge on
+	//! orders without diverging on everything else too.
 	void TBD_RequestBriefing()
 	{
 		if (RplSession.Mode() == RplMode.Client)
@@ -220,15 +225,29 @@ modded class SCR_PlayerController
 		TBD_BriefingPayload payload = TBD_BriefingService.BuildForPlayer(playerId);
 		string wire = TBD_BriefingService.Serialise(payload);
 
-		Rpc(TBD_RpcDo_Briefing, wire);
+		Rpc(TBD_RpcDo_Briefing, wire,
+			payload.m_aSituation, payload.m_aMission, payload.m_aExecution);
 	}
 
 	//! @authority owner — executes on the requesting client only (RplRcver.Owner).
+	//!
+	//! ── T-181.27: why the orders are three ARRAYS and not three more wire records ────────
+	//! Everything in `wire` is a short structured field that survives being flattened. The written
+	//! orders are free prose: newlines are part of the author's meaning, and any delimiter we chose
+	//! could legitimately occur in the text. Carrying them as `array<string>` parameters means
+	//! there is no delimiter to collide with and no dependence on `string.Split`'s empty-token
+	//! behaviour — a RUNTIME property nothing on this lane can settle, and the fragility T-181.26
+	//! exists to put a sentinel under. Element i is paragraph i; an empty array is "this side
+	//! authored none", which is also what an absent key and a blank string produce.
+	//!
+	//! This is T-181.19's precedent (`TBD_RpcDo_Markers`), for the same reason.
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
-	protected void TBD_RpcDo_Briefing(string wire)
+	protected void TBD_RpcDo_Briefing(string wire, array<string> situation, array<string> mission, array<string> execution)
 	{
-		TBD_BriefingClient.Accept(TBD_BriefingService.Parse(wire));
+		TBD_BriefingPayload payload = TBD_BriefingService.Parse(wire);
+		TBD_BriefingService.AdoptOrders(payload, situation, mission, execution);
+		TBD_BriefingClient.Accept(payload);
 	}
 
 	// ── Readiness ───────────────────────────────────────────────────────────────────────────
