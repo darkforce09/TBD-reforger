@@ -38,6 +38,13 @@ modded class SCR_ChatComponent
 		if (!msg.StartsWith("#tbd"))
 			return;
 
+		// T-181.35 — `#tbd link <code>` is PLAYER-facing and must be reached BEFORE the admin gate
+		// below. It is the only path that ever writes `users.arma_id`, and without it the results
+		// POST joins on nothing: the endpoint returns 200 while attendance, stat recompute and the
+		// leaderboard all silently do nothing.
+		if (TBD_IdentityLink.TryHandleChat(this, msg, senderId))
+			return;
+
 		// One permission oracle for every admin surface — the vanilla listed-admin manager, asked
 		// through TBD_AdminService so chat and the menu can never drift apart on who counts as an
 		// admin.
