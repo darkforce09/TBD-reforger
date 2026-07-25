@@ -28,3 +28,4 @@
 10	T-181.42	Lobby wire: bijective sentinel + boot-time self-check	Scripts/Game/TBD/UI/Lobby/**
 10	T-181.43	Schema pattern: forbid tab/CR/LF in authored slot strings	packages/tbd-schema/**
 11	T-181.44	Save-time control-char check + surface /compiled rejection reasons	crates/map-engine-core + apps/website
+11	T-181.45	.meta sidecars for the 10 action .conf files (keybinds)	apps/mod/tbd-framework/Configs/**

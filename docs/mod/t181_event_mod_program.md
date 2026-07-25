@@ -338,6 +338,33 @@ picker can open would ship a mod nobody can deploy into.
   `ps -o pid,etime -p <pid>` saw it immediately both times. **Confirm a process is dead with `ps`
   against the specific PID.** The first occurrence is recorded below; the second was the command
   center trusting its own earlier "confirmed gone".
+- **A modded menu preset needs a `MenuConfigs` entry in `addon.gproj` — the rdb was NEVER the
+  blocker.** This program spent a long stretch believing `GUI (E): Menu preset '<name>' not found!`
+  was a stale `resourceDatabase.rdb`, and gated five screens plus a whole slice behind an operator
+  Workbench pass on that basis. The operator ran it, and the evidence killed the theory: the rdb
+  rewrote (8,791 bytes), `chimeraMenus.conf` registered, its `.meta` GUID matched the reference —
+  and all five presets still failed. The actual cause is that vanilla's `ArmaReforger.gproj` carries
+  an explicit list, and ours had **empty** `GameProjectConfig` blocks, so the config was a
+  registered resource that `MenuManager` never read:
+  ```
+  GameProjectConfig PC {
+   MenuManagerSettings MenuManagerSettings {
+    MenuConfigs {
+     "{C747AFB6B750CE9A}Configs/System/chimeraMenus.conf"   <- vanilla's, MUST be repeated
+     "{7BD1A70000000703}Configs/System/chimeraMenus.conf"   <- ours
+    }
+   }
+  }
+  ```
+  Two things measured the hard way while fixing it:
+  - `MenuManagerSettings` is a **direct child of `GameProjectConfig`**, sibling to `DefaultSettings`.
+    Nesting it inside `DefaultSettings` gives `INIT (E): Unknown keyword/data 'MenuManagerSettings'`.
+  - **A mod's `MenuConfigs` REPLACES vanilla's list, it does not extend it.** Listing only ours took
+    the error count from 5 to **59** — every vanilla menu broke. That 59 was the useful signal: it
+    proved the config was finally being read. Listing both took it to **0**.
+  `.conf` and `.layout` files still need a `.meta` sidecar to register at all — 10 action `.conf`
+  files under `Configs/System/Actions/` still lack one (`resource not registered: Setting null
+  GUID`), which is the spectator/admin KEYBINDS, a separate problem from the screens.
 - **`GetGame().GetWorkspace()` is NON-NULL on a HEADLESS DEDICATED SERVER** (engine 1.7.0.54,
   measured T-181.28). It is therefore **not** a dedicated-server test, and shipped code used it as
   one: `TBD_LobbyStage.Start()` gates on `if (!GetGame().GetWorkspace()) return;`, so on a headless

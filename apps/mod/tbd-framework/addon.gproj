@@ -7,8 +7,20 @@ GameProject {
  }
  Configurations {
   GameProjectConfig PC {
+   MenuManagerSettings MenuManagerSettings {
+    MenuConfigs {
+     "{C747AFB6B750CE9A}Configs/System/chimeraMenus.conf"
+     "{7BD1A70000000703}Configs/System/chimeraMenus.conf"
+    }
+   }
   }
   GameProjectConfig HEADLESS {
+   MenuManagerSettings MenuManagerSettings {
+    MenuConfigs {
+     "{C747AFB6B750CE9A}Configs/System/chimeraMenus.conf"
+     "{7BD1A70000000703}Configs/System/chimeraMenus.conf"
+    }
+   }
   }
  }
 }
