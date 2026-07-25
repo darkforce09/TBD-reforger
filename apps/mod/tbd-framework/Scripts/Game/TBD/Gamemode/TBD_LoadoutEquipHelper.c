@@ -31,6 +31,17 @@
  *    that ends up with no jacket and/or no pants is an ERROR naming the slot, so a bad kit
  *    prefab or a bad loadout can never quietly ship a naked player.
  *
+ * T-181.41 — THE NAKEDNESS GUARD GETS A REAL ANCHOR.
+ *  The guard above was written to catch a bad KIT PREFAB, and until now it only ever reached
+ *  a kit-only body BY ACCIDENT: `if (slot.loadout)` is always true under JsonLoadContext's
+ *  ref-field over-allocation, so every slot looked like it carried a JSON loadout and every
+ *  slot therefore got an application whose tail happened to run the audit. T-181.32 fixed that
+ *  presence test correctly and the guard stopped covering its own use case — measured on
+ *  golden-missions/bridgehead-at-levie.json, which is "0 with a JSON loadout, 18 kit-only".
+ *  `RunKitWornAudit` is the public entry point that re-homes it onto the kit-only path, and it
+ *  POLLS to decency rather than firing once after a chosen delay, because a false NAKED is a
+ *  TBD-owned script ERROR and those hard-fail world-boot.sh for everyone.
+ *
  * The whole file is server-authority code: it spawns entities and mutates inventories.
  * @authority server
  */
@@ -74,6 +85,57 @@ class TBD_LoadoutApplication : Managed
 	protected const int WEAPON_TICK_MS = 250;
 	protected const int WEAPON_MAX_ATTEMPTS = 4;
 
+	// T-181.41 — AUDIT-ONLY MODE (kit-only slots). See RunKitWornAudit.
+	//
+	// THE ANCHOR, MEASURED — kit clothing is present SYNCHRONOUSLY.
+	// The real question this slice had to answer was "what signal says the body has finished
+	// dressing?", because auditing early emits a false NAKED, and a TBD-owned script ERROR is a
+	// hard fail in world-boot.sh. The answer is not a timer at all: it is `SpawnEntityPrefab`
+	// RETURNING. Measured on a live boot of golden-missions/bridgehead-at-levie.json (engine
+	// 1.7.0.54), reading the decency areas in the same statement sequence as the spawn, before
+	// any CallLater:
+	//
+	//     17 of 18 slot bodies:  storageComp=1 jacket=1 pants=1     <- t = 0 ms, already dressed
+	//      1 of 18 (control):    storageComp=1 jacket=0 pants=0     <- deliberately bare prefab
+	//
+	// Every one of the 17 also read decent on the first 25 ms poll tick, and the 1 stayed bare
+	// for all 100 of them. So there is no async settle on this path to wait for, and the reason
+	// is structural rather than lucky: kit clothing is baked into the PREFAB's entity hierarchy,
+	// it is not applied by the async EquipCloth call the A2 rework had to poll for. That is the
+	// same fact that makes IssueEquip's empty-ResourceName early-return leave kit clothing intact.
+	//
+	// WHY POLL AT ALL, THEN. Because the requirement is 0 ms and the cost of insurance is also
+	// ~0: the happy path exits on the first tick and never schedules a second. A poll that stops
+	// the instant the body is decent CANNOT accuse a body that was merely still dressing — it can
+	// only be LATE, and lateness is bounded. Reading once and reporting would trade a free
+	// guarantee for a bet on an unobserved slow case (a future engine build, a modded kit), and
+	// losing that bet breaks the gate for every slice, not just this one.
+	//
+	// THE DEADLINE IS 1 s (4 x 250 ms), bounded from BOTH sides:
+	//   * Lower — measured need is 0 ms across 17/17 real kits, on two independent readings
+	//     (synchronous, and a 25 ms tick). 1 s is 40x the first observation point.
+	//   * Upper — the verdict has to land inside world-boot's capture window or the guard is not
+	//     gated at all, and that window is SHORT. Bodies materialise ~3.0 s after the
+	//     `mission result=` line the harness polls for, and the server is killed ~3.0 s after
+	//     THAT (poll granularity 0.5 s + TBD_WORLDBOOT_SETTLE, default 4 s, + engine shutdown).
+	//     Two independent boots: run A bodies at +2.947 s, `Game destroyed` +2.985 s later; run B
+	//     (the negative control) bodies at +2.983 s, NAKED at exactly +1.000 s, `Game destroyed`
+	//     +2.968 s. So the 3 s deadline this started with is not merely "tight" — in run B it
+	//     would have fired 32 ms AFTER the capture ended and the NAKED verdict would simply not
+	//     exist. 1 s left 1.97 s of margin. That margin is TBD_WORLDBOOT_SETTLE; if the settle is
+	//     ever shortened below ~2 s, this deadline has to come down with it or the guard silently
+	//     stops being a guard again.
+	//   * It is also exactly the grace this file already gives its other fast-settling class
+	//     (WEAPON_TICK_MS x WEAPON_MAX_ATTEMPTS), so it is not a fresh invented number.
+	//
+	// PROVEN TO FAIL, not just to pass — and re-proven independently rather than taken on trust:
+	// pointing kit:us_sl at a bare `Character_US_Base.et` ({520EC961A090BBD5}) put out
+	// `NAKED after kit spawn` on exactly that slot, left the other 17 clean, and drove
+	// world-boot.sh to FAIL on its TBD-script-error check. A guard that has only ever been seen
+	// to pass is not a guard.
+	protected const int AUDIT_TICK_MS = 250;
+	protected const int AUDIT_MAX_ATTEMPTS = 4;
+
 	protected IEntity m_Character;
 	protected ref TBD_SlotLoadoutStruct m_Loadout;
 	protected string m_sTag;    // "[TBD][Loadout][Slot]" / "[TBD][Loadout][TestNPC]"
@@ -81,6 +143,12 @@ class TBD_LoadoutApplication : Managed
 	protected ref array<ref TBD_PendingEquip> m_aPending = {};
 	protected ref array<ref TBD_PendingEquip> m_aVerified = {};
 	protected bool m_bDone;
+
+	//! T-181.41 — audit-only mode: no equips were issued, only the kit prefab dressed this body.
+	protected bool m_bAuditOnly;
+	//! The kit alias the body was spawned from ("kit:sov_rifleman"). Named in the failure line
+	//! because on a kit-only slot the KIT is the thing an operator has to go and fix.
+	protected string m_sKit;
 
 	// --- T-181.10 accounting: what the JSON asked for vs what the character got --------
 	protected ref array<ref TBD_PendingWeaponItem> m_aWeaponPending = {};
@@ -138,7 +206,12 @@ class TBD_LoadoutApplication : Managed
 		}
 		m_aPending.Clear();
 		m_aWeaponPending.Clear();
-		Print(string.Format("%1 slot=%2 loadout application cancelled (%3)", m_sTag, m_sLabel, reason));
+		// T-181.41 — an audit-only pass never issued an equip, so calling it a cancelled loadout
+		// application would send an operator hunting for gear that was never asked for.
+		if (m_bAuditOnly)
+			Print(string.Format("%1 slot=%2 kit worn-audit stood down (%3)", m_sTag, m_sLabel, reason));
+		else
+			Print(string.Format("%1 slot=%2 loadout application cancelled (%3)", m_sTag, m_sLabel, reason));
 		m_bDone = true;
 	}
 
@@ -919,6 +992,12 @@ class TBD_LoadoutApplication : Managed
 	//! the pass ends by looking at what the character is actually wearing. A body with no
 	//! jacket and/or no pants is an ERROR naming the slot — a naked or half-dressed player
 	//! must never leave this code silently.
+	//!
+	//! Called from FinishRest, i.e. AFTER the equip verify loop has drained (up to 6 x 500 ms)
+	//! and the weapon phase has settled. That is why this one reads the areas ONCE and needs no
+	//! poll of its own: by the time it runs, anything still moving has already been failed and
+	//! deleted by name. The kit-only path has no such wait in front of it and therefore polls —
+	//! see AuditTick.
 	protected void AuditWorn()
 	{
 		SCR_CharacterInventoryStorageComponent charStorage = SCR_CharacterInventoryStorageComponent.Cast(
@@ -929,6 +1008,15 @@ class TBD_LoadoutApplication : Managed
 			return;
 		}
 
+		ReportWornAudit(charStorage, "after loadout pass", "kit prefab and JSON loadout both left the body bare");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.41 — THE decision, in one place, so "naked" means the same thing on both paths and
+	//! there is exactly one set of words for it. `context` says WHEN the reading was taken and
+	//! `cause` says who is on the hook for it; everything else is identical.
+	protected void ReportWornAudit(notnull SCR_CharacterInventoryStorageComponent charStorage, string context, string cause)
+	{
 		bool jacket = charStorage.GetClothFromArea(LoadoutJacketArea) != null;
 		bool pants = charStorage.GetClothFromArea(LoadoutPantsArea) != null;
 		bool boots = charStorage.GetClothFromArea(LoadoutBootsArea) != null;
@@ -941,13 +1029,150 @@ class TBD_LoadoutApplication : Managed
 
 		if (!jacket && !pants)
 		{
-			Print(string.Format("%1 slot=%2 NAKED after loadout pass — no jacket and no pants worn (kit prefab and JSON loadout both left the body bare)",
-				m_sTag, m_sLabel), LogLevel.ERROR);
+			Print(string.Format("%1 slot=%2 NAKED %3 — no jacket and no pants worn (%4)",
+				m_sTag, m_sLabel, context, cause), LogLevel.ERROR);
 			return;
 		}
 
-		Print(string.Format("%1 slot=%2 HALF-DRESSED after loadout pass — jacket=%3 pants=%4 boots=%5",
-			m_sTag, m_sLabel, jacket, pants, boots), LogLevel.ERROR);
+		Print(string.Format("%1 slot=%2 HALF-DRESSED %3 — jacket=%4 pants=%5 boots=%6 (%7)",
+			m_sTag, m_sLabel, context, jacket, pants, boots, cause), LogLevel.ERROR);
+	}
+
+	//====================================================================================
+	// T-181.41 — KIT-ONLY WORN AUDIT
+	//====================================================================================
+
+	//------------------------------------------------------------------------------------------------
+	//! PUBLIC ENTRY POINT for a slot whose JSON authors no loadout at all.
+	//!
+	//! WHY THIS EXISTS. AuditWorn was written (T-181.10) to catch exactly one thing: a bad KIT
+	//! PREFAB that spawns a player naked. It only ever ran as the tail of a JSON loadout pass,
+	//! and it only ever reached kit-only bodies because of a BUG — `if (slot.loadout)` is always
+	//! true under JsonLoadContext's over-allocation, so every slot looked like it carried a JSON
+	//! loadout and every slot got a (mostly empty) application whose tail ran the audit.
+	//! T-181.32 fixed that test correctly, and the side effect was that the guard stopped
+	//! covering the one case it was written for: `bridgehead-at-levie` reports
+	//! "0 with a JSON loadout, 18 kit-only", and not one of those 18 bodies was being looked at.
+	//!
+	//! This is the audit's real anchor rather than a bug: the body is dressed by its kit and
+	//! nothing else, so the kit is solely responsible and is named in the failure.
+	//!
+	//! GATED FOR REAL, AND WITHOUT A CLIENT. Do not assume — as this program did — that dressing a
+	//! body needs a player. TBD_SpawnManager materialises the whole slot lineup at MISSION START,
+	//! not on join, and SpawnSlotBody is its ONLY body-creation call site, so
+	//! `world-boot.sh --mission=<golden>` builds and audits every body with zero players
+	//! connected. Measured on bridgehead-at-levie: 18/18 bodies, each
+	//! `worn-audit jacket=1 pants=1 boots=1 kit=… (settled on attempt 1 of 4, 250 ms)`. That makes
+	//! this one of the few things in this file proven END-TO-END by the boot gate instead of
+	//! compile-only — and it is exactly why a false NAKED here would break that gate for every
+	//! other slice, not just this one.
+	//!
+	//! CANCELLATION / THE `ScriptCallQueue.Remove` HAZARD. Deliberately none of this slice's
+	//! business, because the object is a TBD_LoadoutApplication registered in the SpawnManager's
+	//! m_aLoadoutApps like any other: CancelLoadoutAppsFor(body) already cancels it when the body
+	//! is superseded or released to vanilla teardown, PruneDoneLoadoutApps already reaps it, and
+	//! every tick re-checks m_bDone and m_Character first. The T-181.15 hazard — one
+	//! ScriptCallQueue.Remove cancelling every player's pending callback — is sidestepped
+	//! entirely rather than re-solved: NOTHING here is ever removed from the call queue, and the
+	//! deferred callback carries no raw playerId to go stale. It carries the body itself, and a
+	//! body is not recycled the way a numeric id is.
+	//!
+	//! The one lifetime caveat, stated rather than glossed over. `CallLater` holds NO reference to
+	//! this object (T-068.12, and it is why m_aLoadoutApps exists), so Cancel() -> m_bDone ->
+	//! PruneDoneLoadoutApps() can in principle drop the last strong ref while a tick is still
+	//! queued. That shape PREDATES this slice and is shared with VerifyTick; what the audit path
+	//! changes is the exposure, and it changes it DOWNWARD — an audit-only pass is pending for
+	//! 250 ms (measured: it settles on attempt 1, always) where an equip pass is pending for up to
+	//! 3 s. Reaching it needs a body cancelled inside one tick of being spawned, which needs a
+	//! live client and therefore CANNOT be exercised from world-boot: it is unproven either way
+	//! from this lane, and is recorded here rather than claimed solved. Anyone lengthening
+	//! AUDIT_TICK_MS / AUDIT_MAX_ATTEMPTS is widening that window in the same edit.
+	//! @authority server
+	void RunKitWornAudit(string kit)
+	{
+		if (m_bDone)
+			return;
+
+		m_bAuditOnly = true;
+		m_sKit = kit;
+
+		if (!m_Character)
+		{
+			m_bDone = true;
+			return;
+		}
+
+		GetGame().GetCallqueue().CallLater(AuditTick, AUDIT_TICK_MS, false, 1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Poll the decency areas until the body is dressed or the deadline expires.
+	//!
+	//! THE POINT OF POLLING RATHER THAN WAITING. A false NAKED is worse than no audit: it is a
+	//! TBD-owned script ERROR, and those are a hard fail in world-boot.sh, so an audit that cries
+	//! wolf breaks the gate for every future slice. A single reading after a chosen delay is a bet
+	//! on that delay. A poll is not: it reports success the instant the body IS decent, so it can
+	//! never accuse a body that was merely still dressing. The only thing the deadline buys is how
+	//! long a genuinely-naked body stays unreported, and 1 s of that costs nothing.
+	//!
+	//! In practice — measured — this returns on attempt 1 every time, because kit clothing is
+	//! already there synchronously (see AUDIT_TICK_MS). The loop is insurance, not a wait.
+	//!
+	//! The OK line carries the attempt it settled on precisely so this stops being an argument:
+	//! if a future engine build starts dressing bodies slower, the number climbs in the log long
+	//! before it reaches the deadline and breaks anything.
+	protected void AuditTick(int attempt)
+	{
+		if (m_bDone)
+			return;
+		if (!m_Character)
+		{
+			// Body reaped between ticks — a clean stand-down, not a nakedness finding.
+			Cancel("body superseded");
+			return;
+		}
+
+		SCR_CharacterInventoryStorageComponent charStorage = SCR_CharacterInventoryStorageComponent.Cast(
+			m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
+
+		// A character with no storage component YET is indistinguishable from one that will never
+		// have one, so it is retried like any other not-yet-decent state and only reported at the
+		// deadline. Reporting it on tick 1 would be the same early-accusation bug in another coat.
+		bool decent = false;
+		if (charStorage)
+		{
+			decent = charStorage.GetClothFromArea(LoadoutJacketArea) != null
+				&& charStorage.GetClothFromArea(LoadoutPantsArea) != null;
+		}
+
+		if (decent)
+		{
+			bool boots = charStorage.GetClothFromArea(LoadoutBootsArea) != null;
+			Print(string.Format("%1 slot=%2 worn-audit jacket=1 pants=1 boots=%3 kit=%4 (settled on attempt %5 of %6, %7 ms)",
+				m_sTag, m_sLabel, boots, m_sKit, attempt, AUDIT_MAX_ATTEMPTS, attempt * AUDIT_TICK_MS));
+			m_bDone = true;
+			return;
+		}
+
+		if (attempt < AUDIT_MAX_ATTEMPTS)
+		{
+			GetGame().GetCallqueue().CallLater(AuditTick, AUDIT_TICK_MS, false, attempt + 1);
+			return;
+		}
+
+		// Deadline reached and still not decent — this is the finding the guard exists for.
+		if (!charStorage)
+		{
+			Print(string.Format("%1 slot=%2 worn-audit SKIPPED — character has no SCR_CharacterInventoryStorageComponent after %3 ms (kit %4)",
+				m_sTag, m_sLabel, AUDIT_MAX_ATTEMPTS * AUDIT_TICK_MS, m_sKit), LogLevel.ERROR);
+			m_bDone = true;
+			return;
+		}
+
+		ReportWornAudit(charStorage,
+			string.Format("after kit spawn (%1 ms, no JSON loadout authored)", AUDIT_MAX_ATTEMPTS * AUDIT_TICK_MS),
+			string.Format("kit %1 dressed the body itself and this is what it produced — fix the kit prefab or author a loadout", m_sKit));
+		m_bDone = true;
 	}
 
 	//------------------------------------------------------------------------------------------------
