@@ -17,6 +17,12 @@
 //! is a different cost class from the thing the O(1) note refuses, and the cost is paid where the
 //! walk already exists.
 //!
+//! MEASURED (2026-07-25, release, 367k slots / 2k squads / 65.7 MB payload — the T-060.1.3 scale):
+//! `serde_json` parse **615.6 ms**, this scan **34.5 ms** — **5.6%** of a parse that has to happen
+//! anyway, on the largest mission the editor has ever saved. Re-measure by parsing a payload of
+//! that shape and timing `scan_editor_payload` against the parse it follows; if the ratio ever
+//! stops being a rounding error, the reachability shortcut below is the first thing to revisit.
+//!
 //! ## What is scanned, and why exactly these fields
 //!
 //! Only strings that [`crate::mission::flatten::flatten_to_mod_document`] copies into a
@@ -206,10 +212,12 @@ impl Findings {
                 } else {
                     String::new()
                 };
+                // Kept to one readable line: this string is shown to the AUTHOR, in the editor's
+                // Save dialog. Where, what, and which compiled field — the schema reference and
+                // the roster-wire mechanics live in this module's docs, not in their face.
                 format!(
-                    "{}: {} contains {} — mission.schema.json#/$defs/wireSafeString forbids it in \
-                     the compiled {}, so this mission would compile and then be rejected at \
-                     GET /missions/:id/compiled{}",
+                    "{}: {} contains {} — control characters break the in-game roster and are \
+                     rejected when the mission compiles (reaches {}){}",
                     r.location,
                     quote_value(&r.value),
                     describe(r.byte),

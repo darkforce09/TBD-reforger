@@ -61,8 +61,8 @@ fn sha256_file(p: &Path) -> String {
 
 /// Build the index for `root` and write `<prefix>_*.tsv` into `out_dir`.
 pub fn build(root: &Path, out_dir: &Path, prefix: &str) -> Result<Stats> {
-    let files =
-        collect_sources(root).with_context(|| format!("collecting .c under {}", root.display()))?;
+    let files = collect_sources(root)
+        .with_context(|| format!("collecting .c under {}", root.display()))?;
 
     let mut symbols_tsv = String::from("symbol\tkind\tfile\tline\tend_line\tloc\tparent\tbase\n");
     let mut files_tsv = String::from("file\tloc\tclasses\tmethods\tsha256\n");

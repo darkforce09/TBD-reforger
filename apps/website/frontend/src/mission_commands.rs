@@ -108,7 +108,18 @@ pub fn export_now(version: &str) {
 /// Save a new immutable version (React `saveVersion`): compile with `orbat` omitted (the server
 /// re-derives), POST `{semver, editor_notes, payload}` to `/missions/:id/versions`, and reflect the
 /// outcome in `status`. 409 = dup semver, 413 = too large, 401 = not signed in.
-pub fn save_now(semver: String, notes: String, status: RwSignal<String>) {
+///
+/// T-181.44 — a 400 from `create_version` carries the *list* of things wrong with the payload
+/// (schema violations plus the wire-safety findings), and this used to collapse all of it into
+/// "Save failed (400)". `findings` takes the per-problem lines so the dialog can name them; the
+/// headline stays short because `status` is also rendered in the top strip.
+pub fn save_now(
+    semver: String,
+    notes: String,
+    status: RwSignal<String>,
+    findings: RwSignal<Vec<String>>,
+) {
+    findings.set(Vec::new());
     let Some(snap) = snapshot() else {
         status.set("Editor not ready".to_string());
         return;
@@ -135,7 +146,16 @@ pub fn save_now(semver: String, notes: String, status: RwSignal<String>) {
             Err((409, _)) => status.set(format!("Version {semver} already exists")),
             Err((413, _)) => status.set("Payload too large".to_string()),
             Err((401, _)) => status.set("Sign in to save".to_string()),
-            Err((s, _)) => status.set(format!("Save failed ({s})")),
+            Err((s, msg)) => {
+                let (head, rows) = crate::client::split_error_lines(msg.as_deref());
+                let head = head.filter(|h| !h.is_empty());
+                status.set(match (&head, rows.len()) {
+                    (Some(h), 0) => format!("Save rejected ({s}): {h}"),
+                    (Some(h), n) => format!("Save rejected ({s}): {h} — {n} problem(s) below"),
+                    (None, _) => format!("Save failed ({s})"),
+                });
+                findings.set(rows);
+            }
         }
     });
 }

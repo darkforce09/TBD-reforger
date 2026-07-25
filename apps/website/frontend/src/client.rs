@@ -17,6 +17,61 @@ pub type ApiErr = (u16, Option<String>);
 /// A pending request: resolves to `Ok(T)` or `Err((status, backend_error))`.
 pub type Req<T> = LocalBoxFuture<'static, Result<T, ApiErr>>;
 
+/// Findings folded into an error message before the tail is summarised. The backend already caps
+/// its own list (20); this is the second cap, sized for a dialog a human reads rather than a log.
+pub const MAX_ERROR_DETAILS: usize = 6;
+
+/// Pull the human-readable failure out of a backend error body: `{"error": …}` plus, when the
+/// handler sent one, the `details` array that says *why*.
+///
+/// T-181.44 — `details` was being dropped on the floor. `create_version` answers 400 with the exact
+/// list of things wrong with the payload and `/compiled` answers 500 with the schema findings; a
+/// client that keeps only `error` turns both into "invalid mission payload", which names a verdict
+/// and not a cause. Only a `details` that is an **array of strings** is folded in — `field_tools`
+/// sends a partial mortar solution object there, and that is a payload for the caller to render,
+/// not prose.
+///
+/// Extra findings arrive as `\n`-separated lines so [`ApiErr`] keeps its shape and every existing
+/// caller compiles unchanged; [`split_error_lines`] is the reader.
+#[allow(dead_code)]
+pub fn error_body_message(body: &serde_json::Value) -> Option<String> {
+    let error = body.get("error")?.as_str()?;
+    let details: Vec<&str> = body
+        .get("details")
+        .and_then(serde_json::Value::as_array)
+        .map(|rows| {
+            rows.iter()
+                .filter_map(serde_json::Value::as_str)
+                .collect::<Vec<&str>>()
+        })
+        .unwrap_or_default();
+    if details.is_empty() {
+        return Some(error.to_string());
+    }
+
+    let shown = details.len().min(MAX_ERROR_DETAILS);
+    let mut out = String::from(error);
+    for d in &details[..shown] {
+        out.push('\n');
+        out.push_str(d);
+    }
+    if details.len() > shown {
+        out.push_str(&format!("\n… and {} more", details.len() - shown));
+    }
+    Some(out)
+}
+
+/// Split an [`error_body_message`] back into its headline and its findings.
+#[allow(dead_code)]
+pub fn split_error_lines(msg: Option<&str>) -> (Option<String>, Vec<String>) {
+    let Some(m) = msg else {
+        return (None, Vec::new());
+    };
+    let mut lines = m.split('\n');
+    let head = lines.next().map(str::to_string);
+    (head, lines.map(str::to_string).collect())
+}
+
 /// `apiErrorMessage` (pages/events.tsx): the backend's error string, first letter capitalized,
 /// else the caller's fallback.
 #[allow(dead_code)]
@@ -150,12 +205,13 @@ mod wasm_client {
                                 None => resp.json::<T>().await.map_err(|_| (0u16, None)),
                             }
                         } else {
-                            // Surface the backend's `{"error": …}` string (T-127 U5 toasts).
+                            // Surface the backend's `{"error": …}` string (T-127 U5 toasts) and,
+                            // since T-181.44, the `details` findings behind it.
                             let msg = resp
                                 .json::<serde_json::Value>()
                                 .await
                                 .ok()
-                                .and_then(|v| v.get("error")?.as_str().map(str::to_string));
+                                .and_then(|v| super::error_body_message(&v));
                             Err((status, msg))
                         }
                     }
@@ -409,5 +465,46 @@ mod tests {
         ));
         assert_eq!(out, Err((500, None)));
         assert_eq!(refreshes.get(), 0, "non-401 never refreshes");
+    }
+
+    // T-181.44 — the reason a rejection is diagnosable at all. Before this the client kept only
+    // `error`, so a 400 listing four bad callsigns arrived as "invalid mission payload".
+    #[test]
+    fn details_ride_along_with_the_error_string() {
+        let body = serde_json::json!({
+            "error": "invalid mission payload",
+            "details": ["/editor/squads/0/callsign: bad", "/editor/slots/9/role: bad"],
+        });
+        let msg = error_body_message(&body).expect("message");
+        let (head, rows) = split_error_lines(Some(&msg));
+        assert_eq!(head.as_deref(), Some("invalid mission payload"));
+        assert_eq!(rows.len(), 2);
+        assert!(rows[0].starts_with("/editor/squads/0/callsign:"));
+    }
+
+    #[test]
+    fn a_long_findings_list_is_capped_and_the_tail_is_counted() {
+        let details: Vec<String> = (0..MAX_ERROR_DETAILS + 4)
+            .map(|i| format!("f{i}"))
+            .collect();
+        let body = serde_json::json!({"error": "invalid mission payload", "details": details});
+        let (_, rows) = split_error_lines(error_body_message(&body).as_deref());
+        assert_eq!(rows.len(), MAX_ERROR_DETAILS + 1);
+        assert_eq!(rows[MAX_ERROR_DETAILS], "… and 4 more");
+    }
+
+    // `field_tools` puts a partial mortar SOLUTION in `details`. That is a payload for the caller
+    // to render, not prose, and folding it into the message would be gibberish.
+    #[test]
+    fn non_string_details_are_left_alone() {
+        let body = serde_json::json!({
+            "error": "target out of range",
+            "details": {"range": 812.0, "charge": 3},
+        });
+        assert_eq!(
+            error_body_message(&body).as_deref(),
+            Some("target out of range")
+        );
+        assert!(error_body_message(&serde_json::json!({"detail": "x"})).is_none());
     }
 }

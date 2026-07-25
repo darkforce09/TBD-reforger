@@ -61,9 +61,7 @@ fn strip_line_number(s: &str) -> &str {
 pub fn parse_page(html: &str) -> Vec<String> {
     let mut out = Vec::new();
     for chunk in html.split("<div class=\"line\"").skip(1) {
-        let Some(start) = chunk.find('>') else {
-            continue;
-        };
+        let Some(start) = chunk.find('>') else { continue };
         let rest = &chunk[start + 1..];
         // Lines are flat divs; the first closing tag ends this line's content.
         let end = rest.find("</div>").unwrap_or(rest.len());
@@ -104,12 +102,8 @@ fn demangle(page: &str) -> Option<String> {
 
 /// Parse every cached page in `src` into `.c` files under `out`.
 pub fn build(src: &Path, out: &Path) -> Result<SourceStats> {
-    let rd = std::fs::read_dir(src).with_context(|| {
-        format!(
-            "reading {} — run scripts/mod/fetch-vanilla-source.sh first",
-            src.display()
-        )
-    })?;
+    let rd = std::fs::read_dir(src)
+        .with_context(|| format!("reading {} — run scripts/mod/fetch-vanilla-source.sh first", src.display()))?;
     let mut pages: Vec<_> = rd
         .flatten()
         .map(|e| e.path())
@@ -173,16 +167,8 @@ mod tests {
 <div class="line"><span class="lineno">  155</span>    {</div>"#;
         let lines = parse_page(html);
         assert_eq!(lines.len(), 2);
-        assert!(
-            lines[0].contains("protected void Foo()"),
-            "got {:?}",
-            lines[0]
-        );
-        assert!(
-            !lines[0].contains("154"),
-            "line number leaked: {:?}",
-            lines[0]
-        );
+        assert!(lines[0].contains("protected void Foo()"), "got {:?}", lines[0]);
+        assert!(!lines[0].contains("154"), "line number leaked: {:?}", lines[0]);
         assert_eq!(lines[1].trim(), "{");
     }
 }

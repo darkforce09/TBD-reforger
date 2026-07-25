@@ -96,7 +96,10 @@ fn strip_line_comment(s: &str) -> &str {
 /// Parse `Name : Base` / `Name: Base` / `Name` from a declaration remainder.
 fn split_name_base(rest: &str) -> (String, String) {
     let rest = rest.trim();
-    let head: &str = rest.split(['{', '<']).next().unwrap_or(rest);
+    let head: &str = rest
+        .split(['{', '<'])
+        .next()
+        .unwrap_or(rest);
     match head.split_once(':') {
         Some((n, b)) => (
             n.trim().to_string(),

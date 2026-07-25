@@ -391,6 +391,90 @@ async fn compiled_document_is_schema_validated_before_serving() {
     );
 }
 
+/// T-181.44 — the T-181.42 callsign, end to end, through the real routes.
+///
+/// A squad callsign of `AL<TAB>PHA` was a mission the write side accepted with a 201 and the read
+/// side then refused with a 500 that only an API log ever saw. The author got no signal at all;
+/// the operator got "the server is still running the previous mission". This asserts the whole
+/// inversion: the SAVE is now refused, with a 400 that names the field, the value and the
+/// character — and, because a save that never happened cannot be served, the follow-up `/compiled`
+/// still returns the last GOOD version rather than a 500.
+///
+/// It fails on base at the very first assertion: `create_version` answered 201.
+#[tokio::test]
+async fn control_character_in_a_callsign_is_refused_at_save_not_at_fetch() {
+    let Some((app, tok)) = app_and_token("mission_maker").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = Some(tok.as_str());
+    let create =
+        r#"{"title":"Wire Op","terrain":"everon","game_mode":"pve_coop","max_players":16}"#;
+    let (st, b) = call(&app, "POST", "/api/v1/missions", t, None, Some(create)).await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let id = json(&b)["id"].as_str().unwrap().to_string();
+    let versions = format!("/api/v1/missions/{id}/versions");
+    let compiled = format!("/api/v1/missions/{id}/compiled");
+
+    // A clean save first, so the mission has something servable to fall back to. (0.1.0 is taken:
+    // POST /missions seeds an initial version.)
+    let good = r#"{"semver":"0.2.0","payload":{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"ALPHA","slotIds":["s1"]}],
+        "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL",
+            "position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],
+        "editorLayers":[]}}}"#;
+    let (st, b) = call(&app, "POST", &versions, t, None, Some(good)).await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+
+    // Same mission, one TAB in the callsign. `\t` here is the JSON escape, so the stored value
+    // carries a real control character — exactly what an editor paste can produce.
+    let bad = r#"{"semver":"0.3.0","payload":{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"AL\tPHA","slotIds":["s1"]}],
+        "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL",
+            "position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],
+        "editorLayers":[]}}}"#;
+    let (st, b) = call(&app, "POST", &versions, t, None, Some(bad)).await;
+    assert_eq!(
+        st,
+        StatusCode::BAD_REQUEST,
+        "the save must be refused: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let err = json(&b);
+    assert_eq!(err["error"], "invalid mission payload");
+    let details = err["details"].as_array().expect("details array");
+    let named = details
+        .iter()
+        .filter_map(Value::as_str)
+        .find(|d| d.starts_with("/editor/squads/0/callsign:"))
+        .unwrap_or_else(|| panic!("no finding naming the field: {details:?}"));
+    assert!(
+        named.contains("TAB (U+0009)") && named.contains(r#""AL\tPHA""#),
+        "the finding must name the character and echo the value: {named}"
+    );
+
+    // The refused save left no version behind, so the game server still gets the last good one —
+    // no 500, and nothing for the mod to fail over to a stale cache for.
+    let (st, b) = call(
+        &app,
+        "GET",
+        &compiled,
+        None,
+        Some("test-service-token"),
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "the last good version must still serve: {}",
+        String::from_utf8_lossy(&b)
+    );
+    assert_eq!(json(&b)["slots"][0]["groupCallsign"], "ALPHA");
+}
+
 #[tokio::test]
 async fn enlisted_cannot_create_mission() {
     let Some((app, tok)) = app_and_token("enlisted").await else {

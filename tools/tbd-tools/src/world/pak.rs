@@ -250,11 +250,7 @@ impl PakVfs {
         let mut buf = vec![0u8; read_len];
         f.read_exact(&mut buf).context("truncated pak read")?;
         if r.entry.compressed {
-            Ok(inflate_entry(
-                &buf,
-                r.entry.decompressed_len as usize,
-                virtual_path,
-            )?)
+            Ok(inflate_entry(&buf, r.entry.decompressed_len as usize, virtual_path)?)
         } else {
             Ok(buf)
         }

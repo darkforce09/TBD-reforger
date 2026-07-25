@@ -190,6 +190,10 @@ pub fn TopCommandStrip(
     let open_menu = RwSignal::new(None::<usize>);
     let save_open = RwSignal::new(false);
     let save_notes = RwSignal::new(String::new());
+    // T-181.44 — per-problem lines from a rejected Save (`details` from the 400). Local to the
+    // strip because the Save dialog is the only place they are read; `save_status` stays a
+    // one-liner because it also renders in the strip itself.
+    let save_findings = RwSignal::new(Vec::<String>::new());
     #[cfg(target_arch = "wasm32")]
     {
         let esc = window_event_listener(leptos::ev::keydown, move |ev| {
@@ -619,6 +623,24 @@ pub fn TopCommandStrip(
                                     <p class="min-h-4 font-mono text-xs text-on-surface-variant">
                                         {move || save_status.get()}
                                     </p>
+                                    // T-181.44 — the backend's `details`, one row each. Before
+                                    // this the author saw "Save failed (400)" and nothing else,
+                                    // and a control character in a callsign only ever surfaced as
+                                    // a /compiled 500 in an API log they never read.
+                                    {move || {
+                                        let rows = save_findings.get();
+                                        (!rows.is_empty())
+                                            .then(|| {
+                                                view! {
+                                                    <ul class="max-h-32 list-disc space-y-1 overflow-y-auto rounded border border-error/40 bg-error/5 py-1 pl-5 pr-2 font-mono text-[11px] leading-snug text-error">
+                                                        {rows
+                                                            .into_iter()
+                                                            .map(|r| view! { <li>{r}</li> })
+                                                            .collect_view()}
+                                                    </ul>
+                                                }
+                                            })
+                                    }}
                                     <button
                                         type="button"
                                         class="self-end rounded bg-primary px-4 py-1.5 text-xs font-medium text-on-primary"
@@ -628,6 +650,7 @@ pub fn TopCommandStrip(
                                                 save_semver.get_untracked(),
                                                 save_notes.get_untracked(),
                                                 save_status,
+                                                save_findings,
                                             );
                                         }
                                     >
