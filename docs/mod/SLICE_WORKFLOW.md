@@ -18,6 +18,7 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
        │                       ↓ all three complete
        ├──────────── merge all three to main
        ├──────────── DELETE the worktrees (disk!)
+       ├──────────── PUSH main to GitHub
        ├──────────── aggressive VERIFY agent on merged main
        └──────────── verify green → dispatch wave N+1 automatically
 ```
@@ -32,14 +33,19 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
    worktrees fill the disk — this is an operator instruction, not a preference.
 4. **Then run an aggressive verify agent** against merged `main`. It is adversarial: its job is to
    find what the slice agents got wrong, not to confirm they were right.
-5. **Verify green → automatically dispatch the next wave.** Do not wait to be asked.
-6. **Batch waves by file-disjointness.** The parallelism limit is file collisions, not Workbench.
+5. **Push to GitHub after every wave** (`wave.sh land` does it). Work must not be trapped on one
+   machine. `git-lfs` is installed on neither the container nor the host and the `pre-push` hook
+   exits 2 without it, so the push uses `--no-verify` — but ONLY after confirming no commit
+   touches `packages/map-assets/**` (the only LFS-tracked path). If one does, `wave.sh push`
+   refuses rather than leaving the remote pointing at LFS objects that were never uploaded.
+6. **Verify green → automatically dispatch the next wave.** Do not wait to be asked.
+7. **Batch waves by file-disjointness.** The parallelism limit is file collisions, not Workbench.
    `TBD_SpawnManager.c` and `TBD_FrameworkManager.c` are the contended files — never give two
    concurrent agents write access to the same one. Worktrees make edits *safe* (no clobbering) but
    they do **not** prevent merge conflicts, so disjointness still matters.
-7. **Agents never self-ship.** They implement, compile-verify, report. The command center owns
+8. **Agents never self-ship.** They implement, compile-verify, report. The command center owns
    `.ai/tickets/registry.json` and every status transition.
-8. **Agents must leave their tree compiling green** and must put throwaway API probes in `/tmp`,
+9. **Agents must leave their tree compiling green** and must put throwaway API probes in `/tmp`,
    never in the mod tree. (A dead agent once left `ZZ_Probe.c` in `Scripts/Game/TBD/UI/` and broke
    the build for everyone.)
 
@@ -72,7 +78,7 @@ The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_P
 
 **The loop, end to end:**
 `wave.sh prep N` → dispatch 3 slice agents → `wave.sh status` until all READY → `wave.sh land`
-(merge + gate + reap) → dispatch the verify agent → fix any BLOCKER → `wave.sh prep N+1`.
+(merge → gate → reap → **push**) → dispatch the verify agent → fix any BLOCKER → `wave.sh prep N+1`.
 
 ## Worktree mechanics
 
