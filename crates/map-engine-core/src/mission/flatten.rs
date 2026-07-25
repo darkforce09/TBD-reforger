@@ -344,6 +344,22 @@ fn slug_key(raw: &str, fallback: &str) -> String {
     }
 }
 
+/// The compiled document's `meta.terrain` — the ONE definition, because the mod
+/// routes worlds on it. `TBD_FrameworkManager.SelectMissionByNumber` compares the
+/// mission-list entry's `terrain` against the loaded document's `meta.terrain` and
+/// feeds it to `TBD_ScenarioRouter.GetScenarioForTerrain`; a list that said
+/// `"Everon"` where the document says `"everon"` would restart the scenario it was
+/// already on, or fail to find one at all. `GET /api/v1/ingest/missions` therefore
+/// calls THIS rather than re-deriving the slug (T-181.51).
+pub fn mission_terrain_key(terrain: &str, custom_terrain_name: &str) -> String {
+    let raw = if terrain == "custom" && !custom_terrain_name.is_empty() {
+        custom_terrain_name
+    } else {
+        terrain
+    };
+    slug_key(raw, "everon")
+}
+
 /// Reduce the mission UUID to the schema's `^msn_[a-z0-9]+$` id space.
 fn mission_doc_id(id: &str) -> String {
     let hex: String = id
@@ -624,10 +640,7 @@ pub fn flatten_to_mod_document(
         mission.max_players
     };
 
-    let mut terrain = mission.terrain.clone();
-    if terrain == "custom" && !mission.custom_terrain_name.is_empty() {
-        terrain = mission.custom_terrain_name.clone();
-    }
+    let terrain = mission_terrain_key(&mission.terrain, &mission.custom_terrain_name);
 
     let meta = ModMeta {
         id: mission_doc_id(&mission.id),
@@ -638,7 +651,7 @@ pub fn flatten_to_mod_document(
             mission.title.chars().take(META_NAME_MAX_CHARS).collect()
         },
         author: mission.author.clone(),
-        terrain: slug_key(&terrain, "everon"),
+        terrain,
         template_id: "editor_v1".to_string(),
         player_range: [1, max_players],
     };

@@ -10,7 +10,9 @@
 use crate::models::Mission;
 use map_engine_core::mission::flatten::{self, MissionMeta};
 
-pub use map_engine_core::mission::flatten::{CompileError, ModMissionDocument};
+pub use map_engine_core::mission::flatten::{
+    CompileError, ModMissionDocument, ModSlot, mission_terrain_key,
+};
 
 /// Build the compiled mod mission document from a mission row + its version payload. Thin wrapper
 /// over the shared [`map_engine_core::mission::flatten::flatten_to_mod_document`].
@@ -225,7 +227,10 @@ mod tests {
         let one = flatten_to_mod_document(&m, payload_with("RFL", "Alpha", "A", "s1").as_bytes())
             .expect("compiles");
         assert!(
-            !one.win_conditions.end_on.iter().any(|t| t == "faction_eliminated"),
+            !one.win_conditions
+                .end_on
+                .iter()
+                .any(|t| t == "faction_eliminated"),
             "one-sided mission must not declare faction_eliminated: {:?}",
             one.win_conditions.end_on
         );
@@ -233,7 +238,10 @@ mod tests {
 
         let two = flatten_to_mod_document(&m, payload_two_sides().as_bytes()).expect("compiles");
         assert!(
-            two.win_conditions.end_on.iter().any(|t| t == "faction_eliminated"),
+            two.win_conditions
+                .end_on
+                .iter()
+                .any(|t| t == "faction_eliminated"),
             "two-sided mission must still declare faction_eliminated: {:?}",
             two.win_conditions.end_on
         );
