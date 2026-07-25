@@ -204,7 +204,17 @@ that is not a correctness problem. Absence is loud, and design work that would h
 fails the build on a `CRF_` **or** `PS_` identifier in `apps/mod/tbd-framework/**`, and on any
 oracle-only asset GUID reused in ours. Comments naming an oracle are allowed and encouraged —
 citing what you design-mirrored is the practice we want; it is the prefix in *code* that fails.
-Adding a new oracle lane without adding it to that gate is a liability, not a convenience.
+
+**The other half of the gate is the deploy.** `scripts/mod/deploy-staging.sh` `--exclude`s every
+lane from the rsync. The staging server only ever runs `apps/mod/tbd-framework`, so an oracle on
+that box is pure licence exposure for zero benefit — and unlike a worktree, the main checkout holds
+these as *real directories*, so a missing exclude ships the whole tree. Measured at T-181.52: only
+`crf_framework` was excluded, and every deploy was rsyncing **3,797** carved Bohemia source files
+to staging.
+
+**Adding an oracle lane means three edits, not one:** the link step in `slice-worktree.sh`, the
+prefix in `verify-no-crf-leak.sh`, and the `--exclude` in `deploy-staging.sh`. A lane missing any
+of the three is a liability, not a convenience.
 
 ## The environment fact every prompt must carry
 

@@ -134,12 +134,21 @@ if [ "$DRY_RUN" -eq 0 ]; then
 fi
 
 echo "==> rsync to $TBD_REMOTE_DIR"
+# T-181.52 — EXCLUDE EVERY ORACLE LANE, not just CRF. These are read-only reference trees; the
+# server only ever runs apps/mod/tbd-framework (see the addon symlink below), so shipping them is
+# pure licence exposure for zero benefit. crf_framework was already excluded, but vanilla_reference
+# and playable_selector were NOT — and in the MAIN checkout (which is what deploys) they are real
+# directories, not the worktree symlinks, so ~30 MB of carved Bohemia game source was being rsynced
+# to staging on every deploy. playable_selector has NO LICENCE AT ALL, so copying it to a server is
+# redistribution we have no permission for. Anyone adding a fourth oracle lane adds it here too.
 if [ "$DRY_RUN" -eq 1 ]; then
   echo "[dry-run] rsync -avz --delete ... $TBD_SSH_HOST:$TBD_REMOTE_DIR/"
 else
   rsync_to_remote -avz --delete \
     --exclude=.git/ \
     --exclude=apps/mod/crf_framework/ \
+    --exclude=apps/mod/vanilla_reference/ \
+    --exclude=apps/mod/playable_selector/ \
     --exclude=apps/mod/Tbd_framework/ \
     --exclude=apps/mod/.local-test-profile/ \
     --exclude='**/node_modules/' \

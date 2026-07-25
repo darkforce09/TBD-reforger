@@ -793,8 +793,18 @@ class TBD_LoadoutApplication : Managed
 				if (PrefabOf(item) == p.resName)
 					continue; // already the requested magazine — nothing is in the way
 
-				Print(string.Format("%1 slot=%2 magazine swapping out the weapon's own %3 for %4",
-					m_sTag, m_sLabel, PrefabOf(item), p.resName), LogLevel.WARNING);
+				// T-181.52: NOT A FAULT — do not put this back to WARNING either. Reaching here means
+				// the deterministic swap is doing exactly the job it exists for: the weapon shipped
+				// with its own magazine, the JSON asked for a different one, so the incumbent is
+				// evicted and the requested magazine is re-issued below. Together with the
+				// first-attempt "declined" line in IssueWeaponItem(), this completes a sequence that
+				// ENDS IN SUCCESS, and the whole sequence is now logged at normal level. That is the
+				// point: a fully successful magazine issue must produce NO `SCRIPT (W):` at all, so
+				// any (W) the operator still sees in this sequence is a REAL fault worth chasing.
+				// The genuine failures stay loud — Degrade()/Fail() at the bottom of
+				// WeaponVerifyTick when the retry is exhausted.
+				Print(string.Format("%1 slot=%2 magazine deterministic swap: evicting the weapon's own %3 so the mission's %4 can take the well — intended, not a problem",
+					m_sTag, m_sLabel, PrefabOf(item), p.resName));
 				SCR_EntityHelper.DeleteEntityAndChildren(item);
 				cleared = true;
 			}
