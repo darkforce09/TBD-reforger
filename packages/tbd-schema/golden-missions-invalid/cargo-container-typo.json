@@ -1,0 +1,85 @@
+{
+  "$comment": "T-181.34 negative golden. Identical to a valid document except slots[0].loadout.cargo[0].container reads 'vets' instead of 'vest'. Before the enum this validated clean and then degraded at runtime: TBD_LoadoutEquipHelper.GarmentForContainer returned null for the unknown key, InsertCargo fell through to TryInsertItem anywhere, and six magazines silently landed somewhere other than the vest. See README.md for the wrapper format — this is NOT a mission document.",
+  "mustFail": {
+    "gate": "schema",
+    "at": "/slots/0/loadout/cargo/0/container",
+    "because": "an unknown container key must be rejected at author time; at runtime it degrades to an any-storage insert instead of failing"
+  },
+  "document": {
+    "schemaVersion": "1.1",
+    "meta": {
+      "id": "msn_bad001",
+      "name": "NEGATIVE FIXTURE — bad cargo container",
+      "terrain": "everon",
+      "templateId": "attack_defend_v1",
+      "playerRange": [2, 2]
+    },
+    "factions": [
+      { "key": "blufor", "displayName": "US Army", "presetId": "preset:us_army_82nd", "tickets": 0 },
+      { "key": "opfor", "displayName": "Soviet Army", "presetId": "preset:sov_vdv", "tickets": 0 }
+    ],
+    "orbat": {
+      "blufor": {
+        "groups": [
+          {
+            "callsign": "Ranger",
+            "type": "rifle_squad",
+            "roles": [{ "slot": "RFL", "kit": "kit:us_rifleman", "count": 1 }]
+          }
+        ]
+      },
+      "opfor": {
+        "groups": [
+          {
+            "callsign": "Ural",
+            "type": "rifle_squad",
+            "roles": [{ "slot": "RFL", "kit": "kit:sov_rifleman", "count": 1 }]
+          }
+        ]
+      }
+    },
+    "zones": [
+      {
+        "id": "sp_blufor",
+        "type": "spawn",
+        "faction": "blufor",
+        "shape": { "circle": { "x": 3210.0, "z": 9140.0, "r": 100 } }
+      }
+    ],
+    "flow": { "briefingSeconds": 60, "safeStartSeconds": 60, "timeLimitSeconds": 600, "jip": "disabled" },
+    "winConditions": { "mode": "points_then_attrition", "endOn": ["time_limit"] },
+    "slots": [
+      {
+        "id": "blufor:Ranger:RFL:0",
+        "uid": "slot_bad_container",
+        "faction": "blufor",
+        "groupCallsign": "Ranger",
+        "role": "RFL",
+        "kit": "kit:us_rifleman",
+        "x": 3205.4,
+        "z": 9135.2,
+        "headingDeg": 45,
+        "loadout": {
+          "cargo": [
+            {
+              "container": "vets",
+              "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+              "qty": 6
+            }
+          ]
+        }
+      },
+      {
+        "id": "opfor:Ural:RFL:0",
+        "uid": "slot_bad_container_op",
+        "faction": "opfor",
+        "groupCallsign": "Ural",
+        "role": "RFL",
+        "kit": "kit:sov_rifleman",
+        "x": 3624.7,
+        "z": 9484.3,
+        "headingDeg": 225
+      }
+    ]
+  }
+}

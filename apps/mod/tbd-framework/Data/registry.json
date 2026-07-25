@@ -31,6 +31,11 @@
       "displayName": "US Automatic Rifleman"
     },
     {
+      "alias": "kit:us_medic",
+      "guid": "{C9E4FEAF5AAC8D8C}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et",
+      "displayName": "US Medic"
+    },
+    {
       "alias": "preset:sov_vdv",
       "guid": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et",
       "displayName": "Soviet VDV (POC — preset resolves to rifleman until TBD-Content)"

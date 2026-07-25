@@ -1200,6 +1200,109 @@ pub fn flatten_orbat_slots(path: &str, in_place: bool) -> Result<u8> {
     Ok(0)
 }
 
+/* ────────────────── kit alias ↔ spawn registry cross-reference (T-181.34/.36) ────────────────── */
+
+// WHY THIS IS A GATE AND NOT A SCHEMA ENUM
+// ---------------------------------------
+// `mission.schema.json` types a slot kit as `^kit:[a-z0-9_]+$`. That checks the SHAPE. Whether the
+// alias exists is a registry question, and the registry (`apps/mod/tbd-framework/Data/registry.json`)
+// is generated/extensible content — a closed enum in the contract would have to be re-cut every time
+// a kit is added, would go stale silently, and would reject valid missions authored against a newer
+// registry. So the vocabulary check belongs HERE: same corpus, build time, reading the very file the
+// game server resolves against.
+//
+// Cost of not having it, measured: `slot-loadout-coverage.json` referenced `kit:us_medic`, which no
+// registry entry defined. `make schema-validate` passed it. A real server boot rejected the mission
+// and parked the server in LOADING (T-181.36). TBD_MissionValidator.CheckSlotKit already does this
+// exact comparison at runtime; this is the same check moved to where it is cheap.
+
+/// Kit aliases a committed golden references that the spawn registry provably cannot resolve.
+///
+/// FAIL-CLOSED with a documented escape — the same discipline `world-boot.sh` uses for vanilla
+/// script noise. Anything not listed here fails, so a NEW dangling alias is a regression. Add a row
+/// only with a reason saying why the registry cannot legitimately gain the entry; "it is broken
+/// today" is not a reason, it is a bug to fix.
+const KNOWN_UNRESOLVABLE_KITS: &[(&str, &str)] = &[
+    // `last-stand-at-montfort` is a British-army scenario and Arma Reforger vanilla ships no UK
+    // faction at all, so these cannot be added to the vanilla registry honestly — they need a
+    // content modset this repo does not have. They are ORBAT-template-only (that document is
+    // schemaVersion 1.0 with no `slots[]`), so TBD_MissionValidator never resolves them today; they
+    // go live the moment the ORBAT is flattened to slots, which is why they are listed rather than
+    // quietly skipped.
+    ("last-stand-at-montfort.json", "kit:uk_sl"),
+    ("last-stand-at-montfort.json", "kit:uk_rifleman"),
+    ("last-stand-at-montfort.json", "kit:uk_gpmg"),
+    ("last-stand-at-montfort.json", "kit:uk_at"),
+];
+
+/// Every `kit:` alias a mission document references, as `(JSON pointer, alias)`.
+///
+/// Both sites are the same contract one step apart: `slots[].kit` is what TBD_MissionValidator
+/// resolves at boot, and `orbat[].groups[].roles[].kit` is what the flatten turns INTO `slots[].kit`.
+/// Checking only the first would let a dangling alias sit in a 1.0 document until someone compiles it.
+fn mission_kit_refs(doc: &Value) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for (i, s) in doc["slots"].as_array().into_iter().flatten().enumerate() {
+        if let Some(k) = s.get("kit").and_then(Value::as_str) {
+            out.push((format!("/slots/{i}/kit"), k.to_string()));
+        }
+    }
+    for (fk, fv) in doc["orbat"].as_object().into_iter().flatten() {
+        for (gi, g) in fv["groups"].as_array().into_iter().flatten().enumerate() {
+            for (ri, r) in g["roles"].as_array().into_iter().flatten().enumerate() {
+                if let Some(k) = r.get("kit").and_then(Value::as_str) {
+                    out.push((
+                        format!("/orbat/{fk}/groups/{gi}/roles/{ri}/kit"),
+                        k.to_string(),
+                    ));
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Every `preset:` alias a mission references, as `(JSON pointer, alias)`.
+fn mission_preset_refs(doc: &Value) -> Vec<(String, String)> {
+    doc["factions"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .enumerate()
+        .filter_map(|(i, f)| {
+            f.get("presetId")
+                .and_then(Value::as_str)
+                .map(|p| (format!("/factions/{i}/presetId"), p.to_string()))
+        })
+        .collect()
+}
+
+/// `kit:` references in `doc` that no registry entry defines, as `(pointer, alias)`.
+fn dangling_kits(doc: &Value, aliases: &HashSet<String>) -> Vec<(String, String)> {
+    mission_kit_refs(doc)
+        .into_iter()
+        .filter(|(_, k)| !aliases.contains(k))
+        .collect()
+}
+
+/// The alias set the game server actually resolves against.
+///
+/// Read straight out of the mod's `Data/registry.json` rather than a mirror, so the gate cannot
+/// drift from the thing it is gating. Returns the path too, for an honest provenance line.
+fn spawn_registry_aliases(root: &Path) -> Result<(PathBuf, HashSet<String>)> {
+    let p = root.join("apps/mod/tbd-framework/Data/registry.json");
+    let doc = read_json(&p)?;
+    let set: HashSet<String> = doc["entries"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(|e| e.get("alias").and_then(Value::as_str))
+        .map(str::to_string)
+        .collect();
+    anyhow::ensure!(!set.is_empty(), "{}: no entries[].alias", p.display());
+    Ok((p, set))
+}
+
 /* ─────────────────────────── validate (T-165.2 — the validate.mjs core) ─────────────────────────── */
 
 /// The full contract-validation suite (port of `packages/tbd-schema/scripts/validate.mjs`):
@@ -1316,6 +1419,231 @@ pub fn validate_all() -> Result<u8> {
     let missions_dir = sroot.join("golden-missions");
     for f in sorted_json_files(&missions_dir)? {
         check(&f, &v_mission, &read_json(&missions_dir.join(&f))?);
+    }
+
+    // ── T-181.36 — kit alias ↔ spawn registry cross-reference ────────────────────────────────
+    // The check mission.schema.json structurally cannot do; see the KNOWN_UNRESOLVABLE_KITS
+    // header for why a closed enum would be the wrong answer.
+    println!("Kit alias registry cross-reference (T-181.36):");
+    let (reg_path, reg_aliases) = spawn_registry_aliases(&root)?;
+    println!(
+        "  note  {} alias(es) from {}",
+        reg_aliases.len(),
+        reg_path
+            .strip_prefix(&root)
+            .unwrap_or(&reg_path)
+            .to_string_lossy()
+    );
+    let allow_kits: HashSet<(&str, &str)> = KNOWN_UNRESOLVABLE_KITS.iter().copied().collect();
+    for f in sorted_json_files(&missions_dir)? {
+        let doc = read_json(&missions_dir.join(&f))?;
+        let bad: Vec<(String, String)> = dangling_kits(&doc, &reg_aliases)
+            .into_iter()
+            .filter(|(_, k)| !allow_kits.contains(&(f.as_str(), k.as_str())))
+            .collect();
+        let waived = dangling_kits(&doc, &reg_aliases).len() - bad.len();
+        if bad.is_empty() {
+            let note = if waived > 0 {
+                format!(" ({waived} waived — see KNOWN_UNRESOLVABLE_KITS)")
+            } else {
+                String::new()
+            };
+            println!("  PASS  {f}{note}");
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  {f}");
+            for (ptr, alias) in &bad {
+                println!(
+                    "        {ptr} -> '{alias}' is not defined in the spawn registry — \
+                     TBD_SpawnManager would fail this slot permanently and the mission is rejected"
+                );
+            }
+        }
+
+        // `preset:` is reported, not failed. Nothing in the mod resolves a preset alias today
+        // (TBD_MissionValidator only checks presetId for emptiness, and no spawn path reads it),
+        // so failing on it would be enforcing a rule the runtime does not have. It is printed so
+        // the debt is visible the moment presets DO become load-bearing.
+        let bad_presets: Vec<String> = mission_preset_refs(&doc)
+            .into_iter()
+            .filter(|(_, p)| !reg_aliases.contains(p))
+            .map(|(ptr, p)| format!("{ptr} -> '{p}'"))
+            .collect();
+        if !bad_presets.is_empty() {
+            println!(
+                "  note  {f}: {} preset alias(es) not in the registry (not fatal — no mod code \
+                 resolves preset: yet): {}",
+                bad_presets.len(),
+                bad_presets.join(", ")
+            );
+        }
+    }
+
+    // ── T-181.36 — kit-aliases.json must mirror the registry it claims to be generated from ──
+    // `packages/tbd-schema/registry/kit-aliases.json` is the INVERSE table (ResourceName -> alias)
+    // that the mission-compile flatten uses, and its own header says it is generated from the mod
+    // registry. Nothing enforced that. A kit added to one and not the other does not error: the
+    // flatten silently falls back to the faction default kit, so an authored medic compiles into a
+    // rifleman. Two definitions and no enforcement is exactly how they drift.
+    println!("kit-aliases.json <-> spawn registry mirror (T-181.36):");
+    {
+        let ka_path = sroot.join("registry/kit-aliases.json");
+        let ka = read_json(&ka_path)?;
+        let reg_doc = read_json(&reg_path)?;
+        let reg_kits: BTreeMap<String, String> = reg_doc["entries"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|e| {
+                let a = e.get("alias").and_then(Value::as_str)?;
+                a.starts_with("kit:")
+                    .then(|| (a.to_string(), e["guid"].as_str().unwrap_or("").to_string()))
+            })
+            .collect();
+        let ka_kits: BTreeMap<String, String> = ka["kits"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|k| {
+                Some((
+                    k.get("alias").and_then(Value::as_str)?.to_string(),
+                    k["resourceName"].as_str().unwrap_or("").to_string(),
+                ))
+            })
+            .collect();
+        let mut bad = Vec::new();
+        for (alias, guid) in &reg_kits {
+            match ka_kits.get(alias) {
+                None => bad.push(format!(
+                    "{alias} is in the registry but missing from kit-aliases.json — the flatten \
+                     would compile it to the faction default kit instead"
+                )),
+                Some(rn) if rn != guid => bad.push(format!(
+                    "{alias} resolves to a different prefab in each file:\n          registry      {guid}\n          kit-aliases   {rn}"
+                )),
+                Some(_) => {}
+            }
+        }
+        for alias in ka_kits.keys() {
+            if !reg_kits.contains_key(alias) {
+                bad.push(format!(
+                    "{alias} is in kit-aliases.json but not in the registry — a mission compiled \
+                     with it would be rejected at boot"
+                ));
+            }
+        }
+        // The per-faction fallbacks are what a slot degrades TO, so a dangling one is worse than
+        // a dangling kit: it fails silently for every unmapped slot at once.
+        for (fk, fv) in ka["factionDefaults"].as_object().into_iter().flatten() {
+            for key in ["kit", "preset"] {
+                let Some(alias) = fv.get(key).and_then(Value::as_str) else {
+                    continue;
+                };
+                if !reg_aliases.contains(alias) {
+                    bad.push(format!(
+                        "factionDefaults.{fk}.{key} = '{alias}' does not resolve in the registry — \
+                         every slot that falls back to it would fail"
+                    ));
+                }
+            }
+        }
+        if bad.is_empty() {
+            println!("  PASS  kit-aliases.json ({} kits, in sync)", ka_kits.len());
+        } else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  kit-aliases.json");
+            for b in &bad {
+                println!("        {b}");
+            }
+        }
+    }
+
+    // ── T-181.34 — negative goldens: fixtures the gate is REQUIRED to reject ─────────────────
+    // A vocabulary nobody tests is not enforced. Delete the `container` enum from
+    // mission.schema.json and every positive golden still passes; these are what notice.
+    // Each fixture is a wrapper, not a mission — see golden-missions-invalid/README.md.
+    println!("Negative goldens (must FAIL — T-181.34):");
+    let neg_dir = sroot.join("golden-missions-invalid");
+    for f in sorted_json_files(&neg_dir)? {
+        let w = read_json(&neg_dir.join(&f))?;
+        let (Some(gate), Some(at), Some(doc)) = (
+            w["mustFail"]["gate"].as_str(),
+            w["mustFail"]["at"].as_str(),
+            w.get("document"),
+        ) else {
+            failures.set(failures.get() + 1);
+            println!("  FAIL  {f} — malformed fixture (need mustFail.gate, mustFail.at, document)");
+            continue;
+        };
+
+        // A finding "at or below" the declared pointer. Requiring ALL findings to match is what
+        // pins the fixture to its reason — a fixture that failed on an unrelated typo elsewhere
+        // would otherwise be a false green that outlives the check it was written for.
+        let at_or_below = |p: &str| p == at || p.starts_with(&format!("{at}/"));
+        let schema_errs: Vec<String> = v_mission
+            .iter_errors(doc)
+            .map(|e| e.instance_path().to_string())
+            .collect();
+
+        let verdict: Result<String, Vec<String>> = match gate {
+            "schema" => {
+                if schema_errs.is_empty() {
+                    Err(vec![
+                        "mission.schema.json ACCEPTED it — the check this fixture pins is gone"
+                            .to_string(),
+                    ])
+                } else if let Some(off) = schema_errs
+                    .iter()
+                    .find(|p| !at_or_below(p))
+                    .map(String::as_str)
+                {
+                    Err(vec![format!(
+                        "rejected, but for the wrong reason: error at '{off}', expected '{at}'"
+                    )])
+                } else {
+                    Ok(format!("mission.schema.json rejects {at}"))
+                }
+            }
+            "registry" => {
+                let dangling = dangling_kits(doc, &reg_aliases);
+                if !schema_errs.is_empty() {
+                    // The fixture must isolate the registry check. If the schema also rejects it,
+                    // a green here would not prove the cross-reference works.
+                    Err(vec![format!(
+                        "expected a registry-only failure but mission.schema.json also rejects it at {}",
+                        schema_errs.join(", ")
+                    )])
+                } else if dangling.is_empty() {
+                    Err(vec![
+                        "the registry cross-reference ACCEPTED it — the check is gone, or the \
+                         alias was added to the registry"
+                            .to_string(),
+                    ])
+                } else if let Some((off, _)) =
+                    dangling.iter().find(|(p, _)| !at_or_below(p)).cloned()
+                {
+                    Err(vec![format!(
+                        "rejected, but for the wrong reason: dangling alias at '{off}', expected '{at}'"
+                    )])
+                } else {
+                    Ok(format!("registry cross-reference rejects {at}"))
+                }
+            }
+            other => Err(vec![format!(
+                "unknown mustFail.gate '{other}' (expected 'schema' or 'registry')"
+            )]),
+        };
+
+        match verdict {
+            Ok(how) => println!("  PASS  {f} — correctly rejected ({how})"),
+            Err(why) => {
+                failures.set(failures.get() + 1);
+                println!("  FAIL  {f} — must fail but did not, or failed wrongly");
+                for w in why {
+                    println!("        {w}");
+                }
+            }
+        }
     }
 
     println!("Registry:");
