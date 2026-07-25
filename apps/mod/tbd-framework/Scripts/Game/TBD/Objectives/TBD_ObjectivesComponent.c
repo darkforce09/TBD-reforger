@@ -648,10 +648,13 @@ class TBD_ObjectivesComponent : SCR_BaseGameModeComponent
 
 		objective.m_iHoldMarkIndex = objective.m_iHoldMarkIndex + 1;
 
+		// Rounded into an int FIRST — see TBD_Objective.HoldStatusText for why.
+		int whole = Math.Round(remaining);
+
 		string msg = "TBD: ";
 		msg += objective.DisplayName();
 		msg += " -- ";
-		msg += Math.Round(remaining).ToString();
+		msg += whole.ToString();
 		msg += "s of the hold remain (";
 		msg += objective.m_sFaction;
 		msg += ").";

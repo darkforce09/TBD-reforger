@@ -440,8 +440,13 @@ class TBD_Objective
 		if (m_bComplete)
 			return "HELD";
 
+		// Rounded into an int FIRST, then stringified. `Math.Round(...).ToString()` would render a
+		// float's full precision ("600.000000") in a line a player reads at a glance; the same
+		// two-step is what `TBD_PlayAreaComponent.WarnPlayer` does with its countdown.
+		int remaining = Math.Round(HoldRemaining());
+
 		string text = "hold ";
-		text += Math.Round(HoldRemaining()).ToString();
+		text += remaining.ToString();
 		text += "s left";
 		if (m_bHoldPaused)
 			text += " (PAUSED)";
