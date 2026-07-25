@@ -1076,6 +1076,17 @@ class TBD_LoadoutApplication : Managed
 	//! entirely rather than re-solved: NOTHING here is ever removed from the call queue, and the
 	//! deferred callback carries no raw playerId to go stale. It carries the body itself, and a
 	//! body is not recycled the way a numeric id is.
+	//!
+	//! The one lifetime caveat, stated rather than glossed over. `CallLater` holds NO reference to
+	//! this object (T-068.12, and it is why m_aLoadoutApps exists), so Cancel() -> m_bDone ->
+	//! PruneDoneLoadoutApps() can in principle drop the last strong ref while a tick is still
+	//! queued. That shape PREDATES this slice and is shared with VerifyTick; what the audit path
+	//! changes is the exposure, and it changes it DOWNWARD — an audit-only pass is pending for
+	//! 250 ms (measured: it settles on attempt 1, always) where an equip pass is pending for up to
+	//! 3 s. Reaching it needs a body cancelled inside one tick of being spawned, which needs a
+	//! live client and therefore CANNOT be exercised from world-boot: it is unproven either way
+	//! from this lane, and is recorded here rather than claimed solved. Anyone lengthening
+	//! AUDIT_TICK_MS / AUDIT_MAX_ATTEMPTS is widening that window in the same edit.
 	//! @authority server
 	void RunKitWornAudit(string kit)
 	{
