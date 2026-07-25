@@ -289,6 +289,17 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! it was refused but not why; this carries the why to them instead of only to the console.
 	protected string m_sLastStageRefusal;
 
+	//! T-181.38 — the round clock is not running. Negative rather than 0 for the same reason
+	//! `TBD_SafestartManager.NOT_RUNNING` is: a 0 would read as "about to expire".
+	protected static const int ROUND_CLOCK_OFF = -1;
+
+	//! T-181.38 — seconds left on the authored round clock (`flow.timeLimitSeconds`), or
+	//! ROUND_CLOCK_OFF. SERVER-SIDE ONLY, and deliberately not an `RplProp`: a replicated clock
+	//! needs a client read-out, and every TBD screen is blocked behind the `resourceDatabase.rdb`
+	//! regeneration. Players are told by chat broadcast instead, which needs no menu preset and
+	//! works on a dedicated server today. See the slice report for the upgrade path.
+	protected int m_iRoundSecondsRemaining = ROUND_CLOCK_OFF;
+
 	//------------------------------------------------------------------------------------------------
 	void TBD_FrameworkManager(IEntityComponentSource src, IEntity ent, IEntity parent)
 	{
@@ -368,6 +379,10 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			queue.Remove(TickLoading);
 			queue.Remove(TickRosterSettle);
 			queue.Remove(TickWinConditions);
+			// T-181.38 — the round clock is the longest-lived timer here (up to
+			// flow.timeLimitSeconds — 90 minutes on bridgehead), so it is by far the most likely to
+			// still be pending across an in-process scenario restart.
+			queue.Remove(TickRoundClock);
 		}
 
 		super.OnDelete(owner);
@@ -451,6 +466,11 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		GetGame().GetCallqueue().Remove(TickLoading);
 
+		// T-181.38 — BEFORE anything else consumes the document, and before the stage machine
+		// leaves LOADING. `flow.safeStartSeconds` in particular has to reach TBD_SafestartManager
+		// while it is still impossible for SAFE_START to have been entered.
+		ApplyMissionFlow();
+
 		TBD_Registry.Load();
 
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
@@ -485,6 +505,184 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			TBD_RosterLoader.GetSettleReason(), TBD_RosterLoader.GetAssignmentCount()));
 
 		SetStage(TBD_EGameStage.LOBBY);
+	}
+
+	// ══ T-181.38 — THE `flow` BLOCK ═══════════════════════════════════════════════════════════
+	//
+	// `flow` is the mission's own statement of how the event is PACED: how long the brief runs, how
+	// long the warmup runs, how long the round runs, and who may still join. Every golden mission
+	// authors all four fields and, until this slice, the block was not in
+	// `TBD_MissionDocumentStruct` at all — so all four were silently discarded. "JSON is the
+	// contract" (TBD_MOD_DESIGN.md §2) is exactly what that failed.
+	//
+	// Each field is put where it actually acts, and nowhere else:
+	//   * safeStartSeconds -> handed to TBD_SafestartManager through its EXISTING configured-seconds
+	//                         seam, the same one `#tbd safestart <seconds>` drives.
+	//   * timeLimitSeconds -> a round clock armed at LIVE, ending the round through SetStage(END) —
+	//                         the SAME path faction_eliminated uses. There is exactly one way to end
+	//                         a round and this slice does not add a second.
+	//   * jip              -> resolved here, ENFORCED at the JIP door in TBD_SpawnManager (owned by
+	//                         another slice; see TBD_MissionFlow.AllowsJoinAtStage and the report).
+	//   * briefingSeconds  -> announced on entering BRIEFING. Advisory: nothing auto-advances that
+	//                         stage today and this slice does not invent it. See OnEnterBriefing.
+
+	//------------------------------------------------------------------------------------------------
+	//! Read the mission's `flow` block and put each field into force. Runs ONCE per mission load.
+	//!
+	//! ══ EVERY TEST HERE IS ON CONTENT, NEVER ON NULL ═══════════════════════════════════════════
+	//! `JsonLoadContext` ALLOCATES `doc.flow` even when the JSON has no `flow` key at all (measured
+	//! 2026-07-25; see the landmine header on `TBD_MissionShapeStruct`), so `if (doc.flow)` is
+	//! ALWAYS TRUE. `golden-missions/empty-warning-fields.json` authors a literal `"flow": {}` and
+	//! must behave IDENTICALLY to a mission with no flow key at all — and both must leave today's
+	//! behaviour exactly as it was. `TBD_MissionFlowStruct.ABSENT` is what makes that possible, and
+	//! it is also what keeps an authored `0` (which for `timeLimitSeconds` means "no limit" — a
+	//! statement, not silence) distinguishable from "the author said nothing".
+	//!
+	//! Every field is reported on its own line whether it was authored or not, because the failure
+	//! this slice exists to fix was INVISIBLE: the hardcoded 300 s safestart happened to match
+	//! bridgehead's authored 300 by coincidence, so no log anywhere would have told an operator that
+	//! montfort's authored 180 was being ignored.
+	//! @authority server
+	protected void ApplyMissionFlow()
+	{
+		string source;
+
+		int briefing = TBD_MissionFlow.ResolveSeconds(TBD_MissionFlow.RawBriefingSeconds(), source);
+		ReportSeconds("briefingSeconds", briefing, source, "no briefing timer exists in this build");
+
+		ApplySafeStartSeconds();
+
+		int limit = TBD_MissionFlow.ResolveSeconds(TBD_MissionFlow.RawTimeLimitSeconds(), source);
+		ReportSeconds("timeLimitSeconds", limit, source, "no time limit");
+
+		ReportJip();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One `[TBD][Flow]` line per duration field, naming the SOURCE of the value in force.
+	//!
+	//! The source label is the entire point of this function. A number on its own cannot tell an
+	//! operator whether the mission was honoured or ignored — and for safestart the two produced the
+	//! identical number on the one mission anybody had tested with.
+	//! @authority server
+	protected void ReportSeconds(string field, int value, string source, string defaultLabel)
+	{
+		if (source == TBD_MissionFlow.SRC_INVALID)
+		{
+			TBD_Log.Error(TBD_MissionFlow.CH_FLOW, string.Format(
+				"flow.%1 is NEGATIVE in the mission document (schema declares minimum 0) — ignored, default in force: %2",
+				field, defaultLabel));
+			return;
+		}
+
+		if (source == TBD_MissionFlow.SRC_DEFAULT)
+		{
+			TBD_Log.Event(TBD_MissionFlow.CH_FLOW, string.Format(
+				"flow.%1=<absent> (default: %2)", field, defaultLabel));
+			return;
+		}
+
+		TBD_Log.Event(TBD_MissionFlow.CH_FLOW, string.Format("flow.%1=%2 (authored)", field, value));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Hand `flow.safeStartSeconds` to TBD_SafestartManager.
+	//!
+	//! ── Through the existing seam, not by reaching into that file ───────────────────────────────
+	//! `AdminSetSeconds` is the same entry point `#tbd safestart <seconds>` already drives, so an
+	//! authored length and an admin-typed length now travel an identical path and get an identical
+	//! bounds check (MIN_COUNTDOWN_SECONDS..MAX_COUNTDOWN_SECONDS). That file belongs to another
+	//! slice; using its published seam is what makes this a change of ZERO lines there.
+	//!
+	//! ── Why the manager's own words are logged rather than ours ─────────────────────────────────
+	//! "We called the setter" is not evidence that the setter took — the same reasoning
+	//! `TBD_SafestartManager.RestoreOne` applies when it READS BACK `IsDamageHandlingEnabled()`. So
+	//! the reply string is logged verbatim and `StatusLine()` is then read back, which quotes
+	//! `m_iConfiguredSeconds` through `FormatClock`. The `next arm = M:SS` in that line is the
+	//! manager reporting what it is actually holding.
+	//!
+	//! ── An authored value the manager REFUSES ───────────────────────────────────────────────────
+	//! `AdminSetSeconds` rejects anything outside 5..3600, which includes an authored `0`. That is
+	//! reported at ERROR with the manager's own reason attached, and the previous value stays in
+	//! force. It is NOT clamped: silently running a 300 s safestart when the author asked for 0 is
+	//! precisely the failure this slice exists to end, and quietly substituting 5 for 0 would be the
+	//! same crime with a smaller number.
+	//! @authority server
+	protected void ApplySafeStartSeconds()
+	{
+		string source;
+		int seconds = TBD_MissionFlow.ResolveSeconds(TBD_MissionFlow.RawSafeStartSeconds(), source);
+
+		TBD_SafestartManager safestart = TBD_SafestartManager.GetInstance();
+		if (!safestart)
+		{
+			// Not an error: SetStage already REFUSES SAFE_START outright on a world with no
+			// safestart component, so there is no countdown for this value to be the length of.
+			TBD_Log.Warn(TBD_MissionFlow.CH_FLOW,
+				"flow.safeStartSeconds not applied — TBD_SafestartManager is not on this game mode (SAFE_START is refused on this world anyway).");
+			return;
+		}
+
+		string defaultLabel = string.Format("%1s (TBD_SafestartManager.DEFAULT_COUNTDOWN_SECONDS)",
+			TBD_SafestartManager.DEFAULT_COUNTDOWN_SECONDS);
+
+		if (source != TBD_MissionFlow.SRC_AUTHORED)
+		{
+			ReportSeconds("safeStartSeconds", seconds, source, defaultLabel);
+			TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "safestart", safestart.StatusLine());
+			return;
+		}
+
+		bool applied = false;
+		string reply = safestart.AdminSetSeconds(seconds, applied);
+
+		if (!applied)
+		{
+			// Built in appended steps, not one long format chain: that is the measured
+			// "Formula too complex" landmine, and its misleading second diagnostic.
+			string refused = string.Format("flow.safeStartSeconds=%1 (authored) REFUSED by TBD_SafestartManager", seconds);
+			refused += " — " + reply;
+			refused += " The authored length is NOT in force.";
+			TBD_Log.Error(TBD_MissionFlow.CH_FLOW, refused);
+			TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "safestart", safestart.StatusLine());
+			return;
+		}
+
+		TBD_Log.Event(TBD_MissionFlow.CH_FLOW, string.Format("flow.safeStartSeconds=%1 (authored)", seconds));
+		// Read-back, not a claim: this line is TBD_SafestartManager quoting its own
+		// m_iConfiguredSeconds. `next arm = 3:00` is 180 authored seconds, in force.
+		TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "safestart", safestart.StatusLine());
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Report the resolved JIP policy and the stages it permits a join in.
+	//!
+	//! The permitted-stage list is derived from `AllowsJoinAtStage` rather than written out a second
+	//! time, so this line cannot describe a rule the code does not implement.
+	//! @authority server
+	protected void ReportJip()
+	{
+		string raw = TBD_MissionFlow.RawJip();
+		string permitted = TBD_MissionFlow.JoinsPermittedLabel();
+
+		if (raw.IsEmpty())
+		{
+			TBD_Log.Event(TBD_MissionFlow.CH_FLOW, string.Format(
+				"flow.jip=<absent> (default: %1) joins-permitted=%2",
+				TBD_MissionFlow.JipPolicyName(), permitted));
+			return;
+		}
+
+		if (!TBD_MissionFlow.IsKnownPolicyString(raw))
+		{
+			TBD_Log.Error(TBD_MissionFlow.CH_FLOW, string.Format(
+				"flow.jip='%1' is not a value this build understands — falling back to '%2'. joins-permitted=%3",
+				raw, TBD_MissionFlow.JipPolicyName(), permitted));
+			return;
+		}
+
+		TBD_Log.Event(TBD_MissionFlow.CH_FLOW, string.Format(
+			"flow.jip=%1 (authored) joins-permitted=%2", raw, permitted));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -540,6 +738,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		if (stage == TBD_EGameStage.LOBBY)
 			OnEnterLobby();
+		else if (stage == TBD_EGameStage.BRIEFING)
+			OnEnterBriefing();
 		else if (stage == TBD_EGameStage.LIVE)
 			OnEnterLive();
 	}
@@ -552,15 +752,77 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-181.13 — start watching for the round to end. Only armed if the mission actually
-	//! declared `faction_eliminated`; a mission that declared nothing runs until an admin ends
-	//! it rather than ending on its own.
+	//! T-181.38 — `flow.briefingSeconds`, made VISIBLE to the people who act on it.
+	//!
+	//! ══ WHY THIS DOES NOT AUTO-ADVANCE THE STAGE ═══════════════════════════════════════════════
+	//! Honestly: BRIEFING HAS NO TIMER IN THIS BUILD, and this slice does not invent one. Nothing
+	//! anywhere advances BRIEFING today — an admin does, with `#tbd stage next`. Turning an authored
+	//! duration into an automatic transition would be three separate behaviour changes nobody asked
+	//! for:
+	//!   1. it takes round pacing away from the admin running the event;
+	//!   2. the stage it would advance INTO is SAFE_START, which `SetStage` can legitimately REFUSE
+	//!      (T-181.17: no safestart component on the world; T-181.32: the host cannot carry ONE
+	//!      LIFE) — an automatic advance would then either strand the round or, worse, look like it
+	//!      worked;
+	//!   3. a briefing is over when the side has finished planning, which is not a number.
+	//! So the authored length is ANNOUNCED — it now reaches the admin and the players instead of
+	//! being discarded — and the stage machine is left exactly as it was.
+	//!
+	//! The seam to change that decision is one `CallLater` in this method; it is written up in the
+	//! slice report rather than left half-built here.
+	//! @authority server
+	protected void OnEnterBriefing()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		int seconds = TBD_MissionFlow.BriefingSeconds();
+		if (seconds == TBD_MissionFlow.UNSET)
+			return;
+
+		if (seconds == 0)
+		{
+			TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "briefing",
+				"authoredSeconds=0 — the mission asks for no briefing pause; advance when ready");
+			return;
+		}
+
+		string clock = TBD_SafestartManager.FormatClock(seconds);
+		TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "briefing", string.Format(
+			"authoredSeconds=%1 (%2) — ADVISORY, no auto-advance; an admin advances with '#tbd stage next'",
+			seconds, clock));
+
+		string msg = "[TBD] BRIEFING — the mission allows ";
+		msg += clock;
+		msg += " for orders. Read your side's brief now.";
+		Broadcast(msg);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Everything that starts when the round starts.
+	//!
+	//! T-181.38 — the end conditions are armed INDEPENDENTLY. Before this slice `OnEnterLive`
+	//! returned early when the mission did not declare `faction_eliminated`, so a mission declaring
+	//! only `time_limit` (`golden-missions/empty-warning-fields.json` declares exactly `time_limit`
+	//! + `all_objectives_captured`) entered LIVE with nothing at all watching it, and could never
+	//! end except by an admin.
 	//! @authority server
 	protected void OnEnterLive()
 	{
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
+		ArmFactionEliminated();
+		ArmRoundClock();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.13 — start watching for a side to be wiped out. Only armed if the mission actually
+	//! declared `faction_eliminated`; a mission that declared nothing runs until an admin ends
+	//! it rather than ending on its own.
+	//! @authority server
+	protected void ArmFactionEliminated()
+	{
 		if (!TBD_MissionLoader.HasEndTrigger("faction_eliminated"))
 		{
 			Print("[TBD][Win] no faction_eliminated trigger in mission — round runs until admin ends it");
@@ -568,7 +830,196 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		}
 
 		// 2 s cadence: an elimination is not time-critical, and this walks every claimed slot.
+		GetGame().GetCallqueue().Remove(TickWinConditions);
 		GetGame().GetCallqueue().CallLater(TickWinConditions, 2000, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.38 — start the authored round clock. Armed at LIVE, NOT at LOADING: the clock measures
+	//! the ROUND, and the lobby, brief and warmup that precede it are not the round.
+	//!
+	//! Because it hangs off the LIVE transition it is also automatically subject to every guard
+	//! `SetStage` applies — including T-181.32's one-life identity gate. A round refused entry to
+	//! LIVE never starts its clock, which is correct.
+	//!
+	//! ══ BOTH HALVES ARE REQUIRED, AND EITHER ONE ALONE IS REPORTED ═════════════════════════════
+	//! `winConditions.endOn` is the mission's own statement of HOW the round may end — the exact
+	//! list `faction_eliminated` is already gated on — and `flow.timeLimitSeconds` is HOW LONG. The
+	//! clock arms only when the mission said both, because:
+	//!   * a duration with no `time_limit` trigger would end a round on a condition the author never
+	//!     declared;
+	//!   * a `time_limit` trigger with no duration cannot end anything, and a round that quietly
+	//!     runs forever is the exact failure this slice exists to fix.
+	//! Neither half alone is guessed at, and neither is silent: both mismatches are WARNINGs naming
+	//! the mission's own fields. All four goldens author both halves consistently, so this is a
+	//! guard against a future producer bug rather than a live workaround.
+	//!
+	//! An authored `0` is NOT "absent" — the schema's `minimum: 0` makes it a legal, deliberate
+	//! statement that this mission has no time limit, and it is logged as exactly that.
+	//! @authority server
+	protected void ArmRoundClock()
+	{
+		m_iRoundSecondsRemaining = ROUND_CLOCK_OFF;
+		GetGame().GetCallqueue().Remove(TickRoundClock);
+
+		int limit = TBD_MissionFlow.TimeLimitSeconds();
+		bool declared = TBD_MissionLoader.HasEndTrigger("time_limit");
+
+		if (!declared)
+		{
+			if (limit > 0)
+			{
+				TBD_Log.Warn(TBD_MissionFlow.CH_FLOW, string.Format(
+					"flow.timeLimitSeconds=%1 is authored but winConditions.endOn does not declare 'time_limit' — clock NOT armed, this round will not end on time.",
+					limit));
+			}
+			return;
+		}
+
+		if (limit == TBD_MissionFlow.UNSET)
+		{
+			TBD_Log.Warn(TBD_MissionFlow.CH_FLOW,
+				"winConditions.endOn declares 'time_limit' but flow.timeLimitSeconds is not authored — this round CANNOT end on time.");
+			return;
+		}
+
+		if (limit == 0)
+		{
+			TBD_Log.Event(TBD_MissionFlow.CH_FLOW,
+				"flow.timeLimitSeconds=0 (authored) — an explicit NO LIMIT; the round will not end on time.");
+			return;
+		}
+
+		m_iRoundSecondsRemaining = limit;
+		GetGame().GetCallqueue().CallLater(TickRoundClock, 1000, true);
+
+		string clock = TBD_SafestartManager.FormatClock(limit);
+		TBD_Log.Kv(TBD_MissionFlow.CH_FLOW, "time_limit",
+			string.Format("armed seconds=%1 (%2) at stage=LIVE", limit, clock));
+
+		string msg = "[TBD] ROUND TIME LIMIT: ";
+		msg += clock;
+		msg += ". The round ends when it expires.";
+		Broadcast(msg);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.38 — the round clock. 1 Hz, mirroring `TBD_SafestartManager.TickCountdown`, which is
+	//! this framework's established cadence for a player-visible countdown (ENF-1: not a per-frame
+	//! path — 5400 ticks across the whole of bridgehead's 90-minute round).
+	//!
+	//! It disarms itself the instant the round is no longer LIVE, so an admin ending the round early
+	//! or restarting it to LOBBY cannot leave a clock running that later ends a round which already
+	//! ended. `ScriptCallQueue.Remove` cancels BY FUNCTION, which is exactly right here: there is
+	//! one round clock per world.
+	//! @authority server
+	protected void TickRoundClock()
+	{
+		if (m_Stage != TBD_EGameStage.LIVE)
+		{
+			GetGame().GetCallqueue().Remove(TickRoundClock);
+			m_iRoundSecondsRemaining = ROUND_CLOCK_OFF;
+			return;
+		}
+
+		m_iRoundSecondsRemaining--;
+
+		if (m_iRoundSecondsRemaining > 0)
+		{
+			if (IsRoundClockMilestone(m_iRoundSecondsRemaining))
+			{
+				string warn = "[TBD] ROUND TIME REMAINING: ";
+				warn += TBD_SafestartManager.FormatClock(m_iRoundSecondsRemaining);
+				warn += ".";
+				Broadcast(warn);
+			}
+			return;
+		}
+
+		GetGame().GetCallqueue().Remove(TickRoundClock);
+		m_iRoundSecondsRemaining = ROUND_CLOCK_OFF;
+
+		// The same `[TBD][Win]` prefix the elimination path uses, so one grep finds every way a
+		// round has ever ended.
+		Print("[TBD][Win] time_limit — authored round clock expired");
+		Broadcast("[TBD] TIME. The round is over.");
+
+		// THE SAME END PATH `faction_eliminated` uses. This slice adds a new REASON for a round to
+		// end, never a second way of ending one: every guard, log line and subsystem fan-out inside
+		// SetStage applies identically.
+		SetStage(TBD_EGameStage.END);
+
+		// SetStage can legitimately REFUSE a transition (T-181.17's safestart guard, T-181.32's
+		// one-life identity gate). Neither gates END today, but the clock has already disarmed
+		// itself by this point, so a refused END must not be left looking like a completed round.
+		if (m_Stage != TBD_EGameStage.END)
+		{
+			TBD_Log.Error(TBD_MissionFlow.CH_FLOW,
+				"time limit expired but the END transition was REFUSED — the round is still running: " + m_sLastStageRefusal);
+		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.38 — when players are told how long is left. Sparse: chat is the durable channel and so
+	//! also the one that becomes noise fastest (same reasoning, and the same ladder from ten minutes
+	//! down, as `TBD_SafestartManager.IsChatMilestone`).
+	static bool IsRoundClockMilestone(int seconds)
+	{
+		if (seconds == 1800)
+			return true;
+		if (seconds == 900)
+			return true;
+		if (seconds == 600)
+			return true;
+		if (seconds == 300)
+			return true;
+		if (seconds == 120)
+			return true;
+		if (seconds == 60)
+			return true;
+		if (seconds == 30)
+			return true;
+		if (seconds == 10)
+			return true;
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Server -> every connected player's chat feed.
+	//!
+	//! Duplicated from `TBD_SafestartManager.Broadcast` rather than shared, deliberately: that
+	//! method is `protected` on a component this slice does not own, and under ONE LIFE a round
+	//! clock that ends somebody's event without ever having warned them is not acceptable. Chat is
+	//! also the only player-facing channel that works TODAY — every TBD screen is blocked behind the
+	//! `resourceDatabase.rdb` regeneration, and a chat line needs no menu preset. If a third caller
+	//! ever appears, lift this into a shared helper; two is not yet a pattern.
+	//! @authority server
+	protected void Broadcast(string text)
+	{
+		// Authority only — the server is the only machine that should be telling everyone anything.
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		Print("[TBD][Flow] broadcast: " + text, LogLevel.NORMAL);
+
+		PlayerManager players = GetGame().GetPlayerManager();
+		if (!players)
+			return;
+
+		array<int> ids = {};
+		int count = players.GetPlayers(ids);
+		for (int i = 0; i < count; i++)
+		{
+			PlayerController controller = players.GetPlayerController(ids[i]);
+			if (!controller)
+				continue;
+
+			SCR_ChatComponent chat = SCR_ChatComponent.Cast(controller.FindComponent(SCR_ChatComponent));
+			if (!chat)
+				continue;
+
+			chat.SendPrivateMessage(text, ids[i]);
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
