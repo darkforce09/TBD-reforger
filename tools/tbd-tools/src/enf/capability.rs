@@ -61,7 +61,11 @@ pub fn load_rules(path: &Path) -> Result<Vec<Rule>> {
         }
         let f: Vec<&str> = line.split('\t').collect();
         if f.len() < 3 {
-            anyhow::bail!("{}:{}: need prefix\\tcapability\\tverdict[\\tnote]", path.display(), i + 1);
+            anyhow::bail!(
+                "{}:{}: need prefix\\tcapability\\tverdict[\\tnote]",
+                path.display(),
+                i + 1
+            );
         }
         let verdict = f[2].trim().to_string();
         if !VERDICTS.contains(&verdict.as_str()) {

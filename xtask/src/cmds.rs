@@ -227,9 +227,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "CONSUME: sampleElevation/isDemReady/isDemDegraded from tactical-map/dem — do not redo loader"
             );
-            println!(
-                "PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091"
-            );
+            println!("PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091");
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
             println!(
                 "MANUAL: M1 CUR Z >5m; M3 Save z=123.456; M5/M6 toggles; M7 degraded; M8 Attributes X→Z re-sample"
@@ -245,9 +243,7 @@ pub fn cmd_brief(_root: &Path, registry: &Value, id: &str) -> Result<()> {
             println!(
                 "REFERENCE (port, do not re-run): packages/tbd-schema/scripts/lib/dem-sample.mjs"
             );
-            println!(
-                "PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091"
-            );
+            println!("PREFLIGHT: make lfs-dem && ./scripts/ticket brief T-091");
             println!("VERIFY: make ci-local-leptos && make verify-terrain-strict");
         }
         _ => {

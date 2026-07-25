@@ -16,7 +16,10 @@ use tbd_tools::enf::{apidoc, capability, carve, citations, index, source};
 use tbd_tools::world::pak::PakVfs;
 
 #[derive(Parser)]
-#[command(name = "enf", about = "T-181 Enfusion oracle: index + query CRF and vanilla scripts")]
+#[command(
+    name = "enf",
+    about = "T-181 Enfusion oracle: index + query CRF and vanilla scripts"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -147,12 +150,19 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
         }
         Cmd::Carve { game, out } => {
             if !game.join("addons").is_dir() {
-                anyhow::bail!("{} has no addons/ — expected an Arma Reforger install", game.display());
+                anyhow::bail!(
+                    "{} has no addons/ — expected an Arma Reforger install",
+                    game.display()
+                );
             }
             let st = carve::carve(&game, &out)?;
             println!("carved {} pak(s) -> {}", st.paks, out.display());
             println!("  blobs >=2KB   {}", st.blobs_seen);
-            println!("  kept as script {}  ({:.1} MB)", st.blobs_kept, st.bytes_kept as f64 / 1e6);
+            println!(
+                "  kept as script {}  ({:.1} MB)",
+                st.blobs_kept,
+                st.bytes_kept as f64 / 1e6
+            );
             println!("  cross-pak dupes {}", st.duplicates);
             if st.blobs_kept == 0 {
                 eprintln!("enf: carved nothing — pak layout may have changed");
@@ -175,13 +185,21 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
         }
         Cmd::Citations { docs, index_dir } => {
             let rep = citations::verify(&docs, &index_dir)?;
-            println!("checked {} citation(s) across {} doc(s)", rep.checked, rep.docs);
+            println!(
+                "checked {} citation(s) across {} doc(s)",
+                rep.checked, rep.docs
+            );
             if !rep.unresolved.is_empty() {
                 eprintln!("\nUNRESOLVED CITATIONS:");
                 for (c, why) in &rep.unresolved {
-                    eprintln!("  {}:{}: @idx {}#{} — {}", c.file, c.line, c.lane, c.symbol, why);
+                    eprintln!(
+                        "  {}:{}: @idx {}#{} — {}",
+                        c.file, c.line, c.lane, c.symbol, why
+                    );
                 }
-                eprintln!("\nEither the symbol does not exist (the claim is wrong) or the index is stale");
+                eprintln!(
+                    "\nEither the symbol does not exist (the claim is wrong) or the index is stale"
+                );
                 eprintln!("(rebuild: make enf-index / make enf-carve / make enf-apidoc).");
                 return Ok(ExitCode::from(1));
             }
@@ -196,7 +214,11 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
                 .filter(|p| p.starts_with(&prefix) && p.ends_with(".c"))
                 .map(|s| s.to_string())
                 .collect();
-            println!("{} script(s) in the pak file table under '{}'", paths.len(), prefix);
+            println!(
+                "{} script(s) in the pak file table under '{}'",
+                paths.len(),
+                prefix
+            );
             let _ = std::fs::remove_dir_all(&out);
             let (mut ok, mut failed, mut bytes) = (0usize, 0usize, 0u64);
             let mut first_err = String::new();
@@ -227,12 +249,20 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             println!("  -> {}", out.display());
             // Identify the second codec: compare entry method bytes for a file that
             // inflated against one that did not.
-            let mut good = None; let mut bad = None;
+            let mut good = None;
+            let mut bad = None;
             for p in &paths {
                 let m = vfs.entry_method(p);
-                if vfs.read_file(p).is_ok() { if good.is_none() { good = m.map(|x| (p.clone(), x)); } }
-                else if bad.is_none() { bad = m.map(|x| (p.clone(), x)); }
-                if good.is_some() && bad.is_some() { break; }
+                if vfs.read_file(p).is_ok() {
+                    if good.is_none() {
+                        good = m.map(|x| (p.clone(), x));
+                    }
+                } else if bad.is_none() {
+                    bad = m.map(|x| (p.clone(), x));
+                }
+                if good.is_some() && bad.is_some() {
+                    break;
+                }
             }
             if let (Some((gp, (gm, gc))), Some((bp, (bm, bc)))) = (good, bad) {
                 println!("  OK   {gp}\n       method={gm:02x?} compressed={gc}");
@@ -247,7 +277,11 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             let vfs = PakVfs::open_default()?;
             let (raw, dlen) = vfs.read_raw(&path)?;
             std::fs::write(&out, &raw)?;
-            println!("{path}\n  compressed_len {} -> decompressed_len {}", raw.len(), dlen);
+            println!(
+                "{path}\n  compressed_len {} -> decompressed_len {}",
+                raw.len(),
+                dlen
+            );
             println!("  wrote {}", out.display());
             Ok(ExitCode::SUCCESS)
         }
@@ -276,7 +310,10 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             }
             Ok(ExitCode::SUCCESS)
         }
-        Cmd::Capability { index_dir, verdicts } => {
+        Cmd::Capability {
+            index_dir,
+            verdicts,
+        } => {
             let rules = capability::load_rules(&verdicts)?;
             let rep = capability::build(
                 &index_dir.join("crf_files.tsv"),
@@ -288,7 +325,10 @@ fn run(cli: Cli) -> anyhow::Result<ExitCode> {
             print!("{}", rep.matrix_tsv);
             println!("\n{} capabilities -> {}", rep.capabilities, out.display());
             if !rep.untriaged.is_empty() {
-                eprintln!("\nUNTRIAGED ({} files with no TBD verdict):", rep.untriaged.len());
+                eprintln!(
+                    "\nUNTRIAGED ({} files with no TBD verdict):",
+                    rep.untriaged.len()
+                );
                 for f in rep.untriaged.iter().take(40) {
                     eprintln!("  {f}");
                 }

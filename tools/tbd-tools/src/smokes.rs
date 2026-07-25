@@ -704,12 +704,10 @@ pub async fn smoke_fullmap(dist: &str, map_assets: &str) -> Result<u8> {
                     250,
                 )
                 .await?;
-            let outline_segs_at_probe = eval_i64(
-                &h.page,
-                "window.__mapAssets.forest_outline_segments || 0",
-            )
-            .await
-            .unwrap_or(0);
+            let outline_segs_at_probe =
+                eval_i64(&h.page, "window.__mapAssets.forest_outline_segments || 0")
+                    .await
+                    .unwrap_or(0);
             // T-179 floor from this checkout fullmap: 99374 segments @ z=-1 (MS hairlines).
             // Soft `> 0` alone can false-green a stub flag; require a real polyline count.
             const OUTLINE_SEGS_FLOOR: i64 = 50_000;
@@ -2481,8 +2479,7 @@ pub async fn smoke_outliner_palette(dist: &str, path: &str) -> Result<u8> {
                     "o3_orbatSquadMinted".into(),
                     json!(
                         // T-180.1 place mints faction-BLUFOR / "Squad N"; T-180.7 side tabs show BLUFOR.
-                        orbat_popup_text.contains("Squad 1")
-                            && orbat_popup_text.contains("BLUFOR")
+                        orbat_popup_text.contains("Squad 1") && orbat_popup_text.contains("BLUFOR")
                     ),
                 );
                 // The ORBAT slot leaf = role aria-label inside the ORBAT Manager popup (div[role=button] OK).

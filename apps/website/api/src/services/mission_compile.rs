@@ -223,6 +223,83 @@ mod tests {
         );
     }
 
+    /// The load-bearing invariant of the T-181.44 save-time scan, pinned against the REAL compiler
+    /// and the REAL schema rather than a restatement of either: for every authored string, the
+    /// save-time scan fires **exactly** when compiling that payload would produce a
+    /// `wireSafeString` violation.
+    ///
+    /// `⟸` (no false negatives) is the one that makes the `/compiled` 500 unreachable for this
+    /// cause. `⟹` (no false positives) is what makes the save-time 400 trustworthy — it is why the
+    /// scan mirrors flatten's fallback chains instead of checking every string it can find: a bad
+    /// squad `name` that a non-empty `callsign` shadows never reaches the wire, so rejecting the
+    /// save on it would be a gate crying wolf.
+    ///
+    /// Both directions break if flatten changes which authored field it reads. That is the point.
+    #[test]
+    fn save_scan_agrees_with_the_compiled_schema() {
+        let m = fixture_mission();
+
+        // Each case is a payload + one authored defect (or none). `\\t` here is the two-character
+        // JSON escape, so the parsed value carries a real TAB — the T-181.42 callsign exactly.
+        let cases: Vec<(&str, String)> = vec![
+            ("clean", payload_with("RFL", "Alpha", "Alpha 1-1", "s1")),
+            ("tab in role", payload_with("S\\tL", "Alpha", "A", "s1")),
+            (
+                "tab in callsign",
+                payload_with("RFL", "AL\\tPHA", "A", "s1"),
+            ),
+            // callsign wins, so the bad `name` is never read: must be clean on BOTH sides.
+            (
+                "shadowed squad name",
+                payload_with("RFL", "Alpha", "A\\tB", "s1"),
+            ),
+            // callsign blank → flatten reads `name`, so now it does reach the wire.
+            ("read squad name", payload_with("RFL", "", "A\\tB", "s1")),
+            (
+                "newline in slot id",
+                payload_with("RFL", "Alpha", "A", "s\\n1"),
+            ),
+            (
+                "DEL in faction name",
+                payload_with("RFL", "Alpha", "A", "s1").replace("US Army", "US\\u007fArmy"),
+            ),
+        ];
+
+        let (mut fired, mut clean) = (0, 0);
+        for (name, payload) in cases {
+            let parsed: serde_json::Value =
+                serde_json::from_str(&payload).unwrap_or_else(|e| panic!("{name}: {e}"));
+            let scan = map_engine_core::mission::wire_safety::scan_editor_payload(&parsed);
+
+            // Only the wireSafeString findings — the schema rejects other things (a blank uid, a
+            // bad kit alias) for reasons this scan is not responsible for.
+            let compiled: Vec<String> = findings_for(&m, &payload)
+                .into_iter()
+                .filter(|d| d.contains(r"^[^\x00-\x1F\x7F]*$"))
+                .collect();
+
+            assert_eq!(
+                scan.is_empty(),
+                compiled.is_empty(),
+                "{name}: save-time scan and compiled-document schema disagree.\n  \
+                 scan: {scan:?}\n  compiled: {compiled:?}"
+            );
+            if compiled.is_empty() {
+                clean += 1
+            } else {
+                fired += 1
+            }
+        }
+
+        // An `A == B` assertion over cases that never fire is a green that proves nothing — e.g. if
+        // the filter substring above stopped matching the schema's pattern. Both sides must occur.
+        assert!(
+            fired >= 4,
+            "only {fired} case(s) reached the schema pattern"
+        );
+        assert!(clean >= 2, "only {clean} case(s) compiled clean");
+    }
+
     #[test]
     fn empty_editor_is_no_slots() {
         let m = fixture_mission();
