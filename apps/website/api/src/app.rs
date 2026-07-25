@@ -209,6 +209,18 @@ fn api_routes(dev: bool, version_limit: usize) -> Router<AppState> {
             "/ingest/match-results",
             post(handlers::telemetry::ingest_match_results),
         )
+        // Game-server reads (service-token). Deliberately NOT the member-tier `/missions`
+        // + `/event-missions/{emid}/orbat` handlers: both are scoped to the CALLING USER
+        // (owner/bookmark filters, the caller's own registration state) and a service
+        // token has no "me" — see the handler docs (T-181.51).
+        .route(
+            "/ingest/missions",
+            get(handlers::missions::ingest_list_missions),
+        )
+        .route(
+            "/ingest/events/{id}/roster",
+            get(handlers::events::ingest_event_roster),
+        )
         // Admin — personnel + server control.
         .route("/admin/users", get(handlers::admin::list_users))
         .route(

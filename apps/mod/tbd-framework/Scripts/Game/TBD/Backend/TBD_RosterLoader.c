@@ -1,15 +1,38 @@
 //! Game roster response: identityId → slotId assignments for an event.
+//!
+//! The keys are camelCase on the wire (not the platform's usual snake_case) because
+//! `JsonLoadContext` binds JSON keys onto these field names, and a key this class does not
+//! declare is silently invisible rather than an error. The backend renames to match — see
+//! `ingest_event_roster` in `apps/website/api/src/handlers/events.rs`.
+//!
+//! `assignments` is keyed on `users.arma_id`, which is the SAME string
+//! `TBD_SpawnManager.PlayerBindKey` produces and `TBD_PlayerIdentity.GetArmaId` puts on the
+//! wire at link time — the raw engine identity uuid. If those two ever drift apart the map
+//! matches nobody and every player falls silently to round-robin seating, which is exactly
+//! the failure T-181.51 fixed; change the shape in `TBD_PlayerIdentity`, never here.
+//!
+//! The VALUE is the compiled mission slot's `uid` (the durable editor slot id), which is what
+//! `TBD_MissionLoader.GetSlotById` resolves. It is not the website's `orbat_slots` UUID — the
+//! backend pairs the two before answering, because that UUID exists nowhere in the compiled
+//! document and would resolve to null, i.e. round-robin again.
 class TBD_RosterResponseStruct
 {
 	string eventId;
+	//! Informational only (this file never reads it): the backend fills it only when the
+	//! event holds exactly one mission, since the roster covers the whole event.
 	string missionId;
 	ref map<string, string> assignments;
 }
 
-//! Fetches and caches GET /api/game/events/{eventId}/roster for slot enforcement.
-//! @route GET /api/game/events/{eventId}/roster
+//! Fetches and caches the event roster for slot enforcement.
+//! @route GET /api/v1/ingest/events/{id}/roster (service-token tier; `X-Service-Token`)
 class TBD_RosterLoader
 {
+	//! `%1` = the configured event id. Under `/ingest/` with the other service-token routes;
+	//! the member-tier `/event-missions/{emid}/orbat` is not usable here because it answers
+	//! per event MISSION and is scoped to the calling user's own registration state.
+	protected static const string ROSTER_PATH = "/api/v1/ingest/events/%1/roster";
+
 	protected static ref map<string, string> s_IdentityToSlot;
 	protected static bool s_Loaded;
 	protected static bool s_LoadInFlight;
@@ -124,9 +147,14 @@ class TBD_RosterLoader
 		s_RestCallback.SetOnError(OnFetchError);
 
 		string token = TBD_BackendConfig.GetServerToken();
-		ctx.SetHeaders(string.Format("Authorization, Bearer %1,Accept,application/json", token));
+		// T-181.51 — the game-server tier is `X-Service-Token`, NOT an Authorization bearer
+		// (`ServiceAuth`, apps/website/api/src/middleware/auth.rs, reads only that header). This
+		// pointed at `/api/game/events/{id}/roster`, a route that has never existed, so the 404
+		// masked the auth bug underneath: fixing the URL alone would have turned it into a 401.
+		// Same "Key,Value,Key,Value" comma form the three working loaders use.
+		ctx.SetHeaders(string.Format("X-Service-Token,%1,Accept,application/json", token));
 
-		string path = string.Format("/api/game/events/%1/roster", eventId);
+		string path = string.Format(ROSTER_PATH, eventId);
 		Print("[TBD] Fetching roster for event " + eventId);
 		ctx.GET(s_RestCallback, path);
 	}
