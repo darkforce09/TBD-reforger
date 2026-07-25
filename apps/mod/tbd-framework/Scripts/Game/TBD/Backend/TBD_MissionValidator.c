@@ -731,8 +731,12 @@ class TBD_MissionValidator
 
 	//------------------------------------------------------------------------------------------------
 	//! Zones are light-touch: only a faction reference that does not exist is fatal. A spawn zone
-	//! without a circle is a warning because polygon shapes are deliberately not modelled yet
-	//! (TBD_MissionShapeStruct parses circle only).
+	//! the loader cannot place from is a warning.
+	//!
+	//! T-181.18 — this comment used to claim polygon shapes were "deliberately not modelled yet".
+	//! They are modelled now. `GetSpawnZoneForFaction` still places from a CIRCLE, so the warning
+	//! below is specifically "no circle with a real radius", which a polygon-only spawn zone also
+	//! trips — correctly, since the loader cannot place from it.
 	protected static void CheckZones(TBD_MissionDocumentStruct mission, map<string, bool> declaredFactions)
 	{
 		if (!mission.zones || mission.zones.IsEmpty())
@@ -762,8 +766,14 @@ class TBD_MissionValidator
 			if (!zone.faction.IsEmpty() && declaredFactions.Count() > 0 && !declaredFactions.Contains(zone.faction))
 				AddError(subject, string.Format("faction '%1' is not declared in factions[]", zone.faction));
 
-			if (zone.type == ZONE_SPAWN && (!zone.shape || !zone.shape.circle))
-				AddWarning(subject, "spawn zone has no circle shape — TBD_MissionLoader.GetSpawnZoneForFaction cannot use it");
+			// CONTENT, not non-null. `JsonLoadContext` allocates a nested `ref` field whether or
+			// not the JSON key was present, so `zone.shape.circle` is ALWAYS non-null and the old
+			// `!zone.shape.circle` test could NEVER fire — this warning was unreachable, and a
+			// polygon-only spawn zone sailed through it into GetSpawnZoneForFaction, which would
+			// have placed the faction at the map corner (0,0). See the landmine on
+			// TBD_MissionShapeStruct in TBD_MissionLoader.c.
+			if (zone.type == ZONE_SPAWN && (!zone.shape || !zone.shape.circle || zone.shape.circle.r <= 0))
+				AddWarning(subject, "spawn zone has no circle with a usable radius — TBD_MissionLoader.GetSpawnZoneForFaction cannot place from it");
 		}
 	}
 

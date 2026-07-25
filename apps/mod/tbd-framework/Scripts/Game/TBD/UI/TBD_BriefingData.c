@@ -382,19 +382,28 @@ class TBD_BriefingService
 			if (!isOwn && !isShared)
 				continue; // the other side's ground — not ours to show
 
-			// Polygon zones parse to a null circle (only `circle` is modelled in
-			// TBD_MissionShapeStruct), so a boundary contributes its name but no coordinates.
-			string detail;
-			if (zone.shape && zone.shape.circle)
+			// T-181.18 — BOTH claims in the comment that used to sit here were wrong, and the
+			// code below followed them. Polygon zones do NOT parse to a null circle:
+			// `JsonLoadContext` allocates a nested `ref` field whether or not the JSON key was
+			// present, so `zone.shape.circle` is ALWAYS non-null and this branch was ALWAYS
+			// taken — a polygon-only boundary rendered as the literal "0, 0 · r0" rather than
+			// falling through to "area". And polygons are modelled as of T-181.18, so there are
+			// real vertices to describe. Test CONTENT, never non-null; see the landmine on
+			// TBD_MissionShapeStruct in TBD_MissionLoader.c.
+			string detail = "area";
+			if (zone.shape)
 			{
-				detail = string.Format("%1, %2 · r%3",
-					Math.Round(zone.shape.circle.x),
-					Math.Round(zone.shape.circle.z),
-					Math.Round(zone.shape.circle.r));
-			}
-			else
-			{
-				detail = "area";
+				if (zone.shape.circle && zone.shape.circle.r > 0)
+				{
+					detail = string.Format("%1, %2 · r%3",
+						Math.Round(zone.shape.circle.x),
+						Math.Round(zone.shape.circle.z),
+						Math.Round(zone.shape.circle.r));
+				}
+				else if (zone.shape.polygon && zone.shape.polygon.Count() > 0)
+				{
+					detail = string.Format("area · %1 pts", zone.shape.polygon.Count());
+				}
 			}
 
 			payload.m_aZones.Insert(new TBD_BriefingZone(PrettyZoneTitle(zone), detail, isOwn));

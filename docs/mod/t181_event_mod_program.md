@@ -274,6 +274,22 @@ picker can open would ship a mod nobody can deploy into.
   does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
 - **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
   which is how the spectator camera avoids the rdb blocker entirely.
+- **`JsonLoadContext` ALLOCATES a nested `ref <class>` field even when the JSON key is ABSENT — so
+  a null check is NOT a presence test.** Measured 2026-07-25 on a live boot against
+  `golden-missions/bridgehead-at-levie.json`: zone `z4` authors a polygon and **no** circle, yet
+  `shape.circle` came back non-null with `x=0 z=0 r=0`; zone `z5` authors no `rules` key at all, yet
+  `rules` came back non-null full of sentinels. **`if (shape.circle)` is always true and tells you
+  nothing.** The only reliable presence tests are a **scalar sentinel** (`circle.r > 0`) or a
+  **container count** (`polygon.Count() > 0`).
+  This is not theoretical — it had already produced three latent bugs in shipped code, all of the
+  same shape, all fixed:
+  - `GetSpawnZoneForFaction` would have placed a faction at the map corner `(0,0)` for a
+    polygon-only spawn zone;
+  - `TBD_MissionValidator`'s warning about exactly that case was **unreachable**, so nothing caught it;
+  - `TBD_BriefingData` rendered a polygon boundary as the literal `"0, 0 · r0"` instead of `"area"`.
+  Any new struct added to `TBD_MissionLoader.c` needs the same treatment. Related dead guards that
+  can never fire for this reason (harmless today, filed under T-181.30): `if (!mission.meta)` in the
+  validator and `if (!doc.winConditions)` in `TBD_BriefingData`.
 - **In `mission.schema.json`, `required` does NOT mean non-empty.** Most string fields declare no
   `minLength`, so a key can be present and blank and still validate. `$defs/marker` requires all
   four of `x/z/icon/label`, yet `golden-missions/empty-warning-fields.json` ships a committed
