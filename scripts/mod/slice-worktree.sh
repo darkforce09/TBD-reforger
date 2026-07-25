@@ -12,6 +12,15 @@
 #   bash scripts/mod/slice-worktree.sh reap
 set -euo pipefail
 
+# The repo uses Git LFS for map assets (packages/map-assets DEM/sat). git-lfs is NOT installed
+# in the agent container, so a normal checkout dies with "git-lfs filter-process: not found".
+# Slice agents work on mod scripts and never touch those assets, so skip the smudge filter:
+# LFS files stay as small pointer files, which also keeps each worktree cheap on disk.
+export GIT_LFS_SKIP_SMUDGE=1
+# GIT_LFS_SKIP_SMUDGE alone is not enough: git still tries to SPAWN the filter process, which
+# does not exist. Neutralise the filter config for our own git calls instead.
+GIT=(git -c filter.lfs.smudge= -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.required=false)
+
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 BASE=".ai/artifacts/worktrees"
@@ -41,10 +50,22 @@ case "$cmd" in
     mkdir -p "$BASE"
     # Branch from the CURRENT main tip so the agent gets the committed factory.
     if git show-ref --verify --quiet "refs/heads/$branch"; then
-      git worktree add "$dir" "$branch"
+      "${GIT[@]}" worktree add "$dir" "$branch"
     else
-      git worktree add -b "$branch" "$dir" main
+      "${GIT[@]}" worktree add -b "$branch" "$dir" main
     fi
+    # The oracle sources are GITIGNORED, so a fresh worktree has neither. Without them an
+    # agent cannot query CRF or read vanilla source and will fall back on training-data guesses
+    # about Enfusion — which are wrong. Link them from the main tree (read-only reference; no
+    # disk cost, no risk of a slice mutating them).
+    for ref in crf_framework vanilla_reference; do
+      if [ -d "$ROOT/apps/mod/$ref" ]; then
+        ln -sfn "$ROOT/apps/mod/$ref" "$dir/apps/mod/$ref"
+        echo "  linked oracle: apps/mod/$ref"
+      else
+        echo "  WARNING: $ROOT/apps/mod/$ref missing — agents in this tree lose that oracle lane" >&2
+      fi
+    done
     echo "worktree: $ROOT/$dir   branch: $branch"
     ;;
 

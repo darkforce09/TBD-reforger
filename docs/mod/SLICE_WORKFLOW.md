@@ -50,6 +50,30 @@ program deviates: slices run on `slice/T-181.x` branches in worktrees and merge 
 That is an explicit operator decision for T-181 because parallel agents cannot share one tree.
 Everything still lands on `main` — no long-lived branches, no PRs.
 
+## Run it programmatically
+
+The cycle is DATA + SCRIPT, not memory. A fresh session — or one resuming after a context
+compaction — recovers full state with one command:
+
+```bash
+bash scripts/mod/wave.sh status    # which wave, which trees ready, what is blocking, what to do
+bash scripts/mod/wave.sh prep 2    # create worktrees for wave 2
+bash scripts/mod/wave.sh land      # merge all complete slices -> run gate -> reap trees
+bash scripts/mod/wave.sh gate      # the full verification suite on its own
+```
+
+`land` is deliberately conservative: it refuses to merge a dirty worktree (uncommitted slice work
+would be lost), runs the full gate AFTER merging so a bad slice is caught on `main` immediately, and
+only reaps the trees once the gate is green.
+
+Wave membership lives in [`wave_plan.tsv`](wave_plan.tsv) — waves 1–4 are already planned, batched
+by file-disjointness with an explicit `owns` column so write-conflicts are visible before dispatch.
+The post-merge adversarial reviewer is [`VERIFY_AGENT_PROMPT.md`](VERIFY_AGENT_PROMPT.md).
+
+**The loop, end to end:**
+`wave.sh prep N` → dispatch 3 slice agents → `wave.sh status` until all READY → `wave.sh land`
+(merge + gate + reap) → dispatch the verify agent → fix any BLOCKER → `wave.sh prep N+1`.
+
 ## Worktree mechanics
 
 ```bash
