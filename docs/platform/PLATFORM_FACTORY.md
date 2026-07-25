@@ -108,13 +108,19 @@ to the slice's own diff against `main`.
 7. **Agents never self-ship.** They implement, gate-verify, and report. The command center owns
    `.ai/tickets/registry.json` and every status transition.
 8. **Agents leave their tree green** and put throwaway probes in `/tmp`, never in the source tree.
-9. **EVERY agent runs on Opus 5** — slice agents, verifiers, throwaway research agents alike.
-   Operator instruction. Pass `model: "opus"` explicitly on every dispatch. Do not downgrade to
-   work around 529s, rate limits, latency or cost; retry instead.
-10. **`owns` is load-bearing and partly derived.** 75 of the 114 rows were built from file
-    citations in the ticket summary; **39 fell back to their area's default directory**. Those are
-    deliberately over-broad — they will serialise more than necessary rather than risk a collision.
-    Narrow a row before dispatching its wave, and re-run `--repack`.
+9. **EVERY agent runs on Opus 5 — no exceptions, restated 2026-07-26.**
+   Slice agents, adversarial verifiers, fix agents, throwaway research agents alike. Pass
+   `model: "opus"` **explicitly** on every single dispatch — never rely on inheritance, because a
+   default can change underneath you and the downgrade is silent.
+   **Do not downgrade to work around 529s, rate limits, latency or cost. Retry instead.** A
+   rate-limited Opus agent is parked and resumed; a Sonnet fallback is a quality regression that
+   lands in `main` and nobody notices until the morning.
+   Operator instruction, given twice: *"I don't want you to use Sonnet for any of the agents… I
+   don't care what it is. Always use Opus five for the agents."*
+10. **`owns` is load-bearing.** It is the only thing preventing two concurrent agents colliding on
+    one file. All 113 rows were narrowed to real file paths by hand on 2026-07-26 from the original
+    audit citations — **zero directory-level claims remain**. Do not widen a row back to a
+    directory to "make it fit"; re-run `--repack` instead.
 
 ## The backlog
 
