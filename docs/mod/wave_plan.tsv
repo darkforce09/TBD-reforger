@@ -31,3 +31,7 @@
 11	T-181.45	.meta sidecars for the 10 action .conf files (keybinds)	apps/mod/tbd-framework/Configs/**
 11	T-181.46	Operator: fix the live mission so it validates (opfor has no slots)	mission data
 11	T-181.47	Rebuild the UI layout foundation on the CRF idiom (align + SizeLayout)	apps/mod/tbd-framework/UI/**
+12	T-181.49	Lobby raise path: self-healing arm, static reset, log every guard	apps/mod/tbd-framework/Scripts/Game/TBD/UI/**
+12	T-181.50	Pre-slot ghost body + kill the vanilla loading placeholder	apps/mod/tbd-framework/Prefabs/** + Gamemode/TBD_SCR_RespawnSystemComponent.c
+12	T-181.51	Service-token ingest routes (mission list + roster) + mod loader headers	apps/website/api/** + Scripts/Game/TBD/Backend/**
+12	T-181.52	Log-noise demote + link the PlayableSelector oracle lane	scripts/mod/** + Gamemode/TBD_LoadoutEquipComponent.c
