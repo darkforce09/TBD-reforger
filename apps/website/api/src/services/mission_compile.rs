@@ -159,6 +159,70 @@ mod tests {
         assert!(details.is_empty(), "schema violations: {details:?}");
     }
 
+    /// One squad, one slot, with the editor fields under test left to the caller.
+    fn payload_with(role: &str, callsign: &str, squad_name: &str, slot_id: &str) -> String {
+        format!(
+            r#"{{"editor":{{
+                "factions":[{{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}}],
+                "squads":[{{"id":"sq1","factionId":"f1","callsign":"{callsign}","name":"{squad_name}","slotIds":["{slot_id}"]}}],
+                "slots":[{{"id":"{slot_id}","squadId":"sq1","index":0,"role":"{role}",
+                    "position":{{"x":100,"y":200,"z":0,"rotation":0}}}}],
+                "editorLayers":[]}}}}"#
+        )
+    }
+
+    fn findings_for(m: &Mission, payload: &str) -> Vec<String> {
+        let doc = flatten_to_mod_document(m, payload.as_bytes()).expect("compiles");
+        let bytes = serde_json::to_vec(&doc).unwrap();
+        validate_mission_document(&bytes).expect("schema compiles")
+    }
+
+    // T-181.31 — the editor payload schema leaves `editor.slots[]` unconstrained on
+    // purpose (O(1) validation on 100k-slot missions), so these blanks reach the
+    // compile. `role` and `groupCallsign` are display labels the mod only warns about,
+    // so the compile substitutes rather than emitting a document we would reject —
+    // otherwise turning the /compiled gate on would hard-fail missions that load today.
+    #[test]
+    fn blank_role_and_callsign_still_compile_to_a_valid_document() {
+        let m = fixture_mission();
+        let details = findings_for(&m, &payload_with("", "", "", "s1"));
+        assert!(details.is_empty(), "schema violations: {details:?}");
+
+        let doc = flatten_to_mod_document(&m, payload_with("", "", "", "s1").as_bytes()).unwrap();
+        assert_eq!(doc.slots[0].role, "unassigned");
+        // No callsign and no name → the squad id, so two unnamed squads keep distinct
+        // slot ids (a duplicate id is a hard error in TBD_MissionValidator).
+        assert_eq!(doc.slots[0].group_callsign, "sq1");
+        assert_eq!(doc.slots[0].id, "blufor:sq1:unassigned:0");
+    }
+
+    #[test]
+    fn long_title_truncates_to_the_schema_maximum() {
+        let mut m = fixture_mission();
+        m.title = "T".repeat(200);
+        let details = findings_for(&m, &payload_with("RFL", "Alpha", "A", "s1"));
+        assert!(details.is_empty(), "schema violations: {details:?}");
+
+        let doc = flatten_to_mod_document(&m, payload_with("RFL", "Alpha", "A", "s1").as_bytes())
+            .unwrap();
+        assert_eq!(doc.meta.name.chars().count(), 120);
+    }
+
+    /// The gate has to have something real to catch. A slot that lost its `id`
+    /// compiles to `uid: ""`, which `mission.schema.json` rejects — and unlike the
+    /// display labels above this one is NOT substituted, because `uid` is the durable
+    /// slot identity the mod keys spawn points, rosters and logs on. Inventing one
+    /// would be worse than refusing to serve the document.
+    #[test]
+    fn blank_slot_uid_is_a_schema_violation() {
+        let m = fixture_mission();
+        let details = findings_for(&m, &payload_with("RFL", "Alpha", "A", ""));
+        assert!(
+            details.iter().any(|d| d.contains("/slots/0/uid")),
+            "expected a uid finding, got {details:?}"
+        );
+    }
+
     #[test]
     fn empty_editor_is_no_slots() {
         let m = fixture_mission();

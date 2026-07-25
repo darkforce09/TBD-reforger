@@ -2,6 +2,8 @@
 //! `handlers/missions_compiled.go`. The `/compiled` route runs the Phase 8 flatten
 //! engine live (gate G6 end-to-end).
 
+use std::collections::HashSet;
+
 use axum::extract::rejection::JsonRejection;
 use axum::extract::{Path, Query, State};
 use axum::http::{StatusCode, header};
@@ -13,7 +15,7 @@ use serde_json::{Value, json};
 use sqlx::{PgPool, Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::contract::validate_mission_editor_payload;
+use crate::contract::{validate_mission_document, validate_mission_editor_payload};
 use crate::error::ApiError;
 use crate::handlers::{is_unique_violation, load_mission};
 use crate::middleware::{AuthUser, MissionMakerUser, ServiceAuth};
@@ -797,15 +799,86 @@ pub async fn export_mission(
         .into_response())
 }
 
+/// Cap on the schema findings echoed to the caller. Every constraint in
+/// `mission.schema.json` under `slots[]` is per-slot, so one systematic defect on a
+/// large mission yields one finding per slot — without a cap the error body can
+/// dwarf the document it is complaining about. The full count always ships, and the
+/// full list always reaches the server log.
+const MAX_REPORTED_FINDINGS: usize = 20;
+
+/// Serialize the compiled document and hold it to `mission.schema.json` before it can
+/// reach the mod.
+///
+/// The document is the entire website↔mod interface (TBD_MOD_DESIGN §2, "JSON is the
+/// contract"), and it is **generated** — the caller is a game server that supplied
+/// nothing but an id and can do nothing about a violation. So a violation is a
+/// server-side defect and answers **500**, not 4xx: it is either bad stored editor
+/// data or a flatten bug, and this handler cannot tell those apart. Reporting the
+/// latter as a client/state error would let a real compile regression hide as "your
+/// mission is misconfigured".
+///
+/// Returns the validated bytes so the response body is byte-identical to what was
+/// checked — re-serializing a validated value would leave a gap for the two to drift.
+///
+/// @contract mission.schema.json#/
+fn validated_compiled_body(
+    mission_id: &str,
+    doc: &ModMissionDocument,
+) -> Result<Vec<u8>, ApiError> {
+    let body =
+        serde_json::to_vec(doc).map_err(|_| ApiError::internal("could not compile mission"))?;
+
+    let findings = validate_mission_document(&body).map_err(|e| {
+        tracing::error!(mission = %mission_id, error = %e, "mission schema failed to compile");
+        ApiError::internal("mission validation unavailable")
+    })?;
+    if findings.is_empty() {
+        return Ok(body);
+    }
+
+    // The schema reaches `slots[]` through both the top-level `properties` and the
+    // per-schemaVersion `allOf` branch, so every slot finding arrives twice — and a
+    // systematic defect produces one pair per slot, so this has to stay O(n) (a
+    // `Vec::contains` scan here is quadratic on a 100k-slot mission).
+    let mut seen: HashSet<String> = HashSet::with_capacity(findings.len());
+    let unique: Vec<String> = findings
+        .into_iter()
+        .filter(|f| seen.insert(f.clone()))
+        .collect();
+
+    // The mod's own error path (TBD_MissionLoader.OnBackendFetchError) discards the
+    // response body and fails over to its cached copy, so this log line — not the
+    // JSON below — is what an operator actually reads.
+    tracing::error!(
+        mission = %mission_id,
+        findings = unique.len(),
+        detail = %unique.join("; "),
+        "compiled mission document violates mission.schema.json",
+    );
+
+    let shown: Vec<&String> = unique.iter().take(MAX_REPORTED_FINDINGS).collect();
+    Err(ApiError::with_details(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "compiled mission failed schema validation",
+        json!({
+            "schema": "mission.schema.json",
+            "findingCount": unique.len(),
+            "findings": shown,
+        }),
+    ))
+}
+
 /// `GET /api/v1/missions/:id/compiled` — the canonical mod document (service-token).
-/// Runs the Phase 8 flatten engine live (gate G6 end-to-end).
+/// Runs the Phase 8 flatten engine live (gate G6 end-to-end), then holds the result to
+/// `mission.schema.json` before serving it — see [`validated_compiled_body`].
 ///
 /// @route GET /api/v1/missions/:id/compiled
+/// @contract mission.schema.json#/
 pub async fn get_compiled_mission(
     State(state): State<AppState>,
     _svc: ServiceAuth,
     Path(id): Path<String>,
-) -> Result<Json<ModMissionDocument>, ApiError> {
+) -> Result<Response, ApiError> {
     let m = load(&state.pool, &id).await?;
     let Some(vid) = m.current_version_id else {
         return Err(ApiError::conflict("no saved version to compile"));
@@ -817,11 +890,13 @@ pub async fn get_compiled_mission(
     let Some(v) = v else {
         return Err(ApiError::conflict("no saved version to compile"));
     };
-    match flatten_to_mod_document(&m, v.json_payload.0.get().as_bytes()) {
-        Ok(doc) => Ok(Json(doc)),
-        Err(CompileError::NoSlots) => Err(ApiError::conflict("no placed slots")),
-        Err(CompileError::Parse(_)) => Err(ApiError::internal("could not compile mission")),
-    }
+    let doc = match flatten_to_mod_document(&m, v.json_payload.0.get().as_bytes()) {
+        Ok(doc) => doc,
+        Err(CompileError::NoSlots) => return Err(ApiError::conflict("no placed slots")),
+        Err(CompileError::Parse(_)) => return Err(ApiError::internal("could not compile mission")),
+    };
+    let body = validated_compiled_body(&id, &doc)?;
+    Ok(([(header::CONTENT_TYPE, "application/json")], body).into_response())
 }
 
 // --- shared ---

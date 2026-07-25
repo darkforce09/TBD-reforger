@@ -281,6 +281,116 @@ async fn mission_lifecycle_and_compiled() {
     assert_eq!(json(&b)["error"], "no placed slots");
 }
 
+/// T-181.31 — `/compiled` holds the flattened document to `mission.schema.json`
+/// before serving it. The document is the whole website↔mod interface, and the mod
+/// hard-fails on a violation with the reason visible only in the game console; the
+/// website used to answer 200 regardless.
+///
+/// Both halves matter: a well-formed mission must still be served (the gate must not
+/// be over-eager), and a slot that lost its `id` — which compiles to `uid: ""`, a
+/// `minLength: 1` violation the deliberately-unconstrained editor-payload schema
+/// cannot catch on write — must be refused with a diagnostic that names it.
+#[tokio::test]
+async fn compiled_document_is_schema_validated_before_serving() {
+    let Some((app, tok)) = app_and_token("mission_maker").await else {
+        eprintln!("skip: TEST_DATABASE_URL unset");
+        return;
+    };
+    let t = Some(tok.as_str());
+    let create =
+        r#"{"title":"Gate Op","terrain":"everon","game_mode":"pve_coop","max_players":16}"#;
+    let (st, b) = call(&app, "POST", "/api/v1/missions", t, None, Some(create)).await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+    let id = json(&b)["id"].as_str().unwrap().to_string();
+
+    // A well-formed mission still compiles and is served verbatim.
+    let good = r#"{"semver":"0.2.0","payload":{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A 1-1","slotIds":["s1"]}],
+        "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"SL",
+            "position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],
+        "editorLayers":[]}}}"#;
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{id}/versions"),
+        t,
+        None,
+        Some(good),
+    )
+    .await;
+    assert_eq!(st, StatusCode::CREATED, "{}", String::from_utf8_lossy(&b));
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{id}/compiled"),
+        None,
+        Some("test-service-token"),
+        None,
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::OK,
+        "valid mission must still be served: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let doc = json(&b);
+    assert_eq!(doc["slots"][0]["uid"], "s1");
+    assert_eq!(doc["slots"][0]["role"], "SL");
+
+    // Same mission, a slot that lost its id → `uid: ""` → schema-invalid.
+    let bad = r#"{"semver":"0.3.0","payload":{"editor":{
+        "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]}],
+        "squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A 1-1","slotIds":[""]}],
+        "slots":[{"id":"","squadId":"sq1","index":0,"role":"SL",
+            "position":{"x":4839.2,"y":6620.8,"z":0,"rotation":270}}],
+        "editorLayers":[]}}}"#;
+    let (st, b) = call(
+        &app,
+        "POST",
+        &format!("/api/v1/missions/{id}/versions"),
+        t,
+        None,
+        Some(bad),
+    )
+    .await;
+    assert_eq!(
+        st,
+        StatusCode::CREATED,
+        "the write side cannot catch this: {}",
+        String::from_utf8_lossy(&b)
+    );
+
+    let (st, b) = call(
+        &app,
+        "GET",
+        &format!("/api/v1/missions/{id}/compiled"),
+        None,
+        Some("test-service-token"),
+        None,
+    )
+    .await;
+    // 500, not 4xx: the document is server-generated and the caller — a game server
+    // that sent nothing but an id — can do nothing about it.
+    assert_eq!(
+        st,
+        StatusCode::INTERNAL_SERVER_ERROR,
+        "schema-invalid document must not be served: {}",
+        String::from_utf8_lossy(&b)
+    );
+    let err = json(&b);
+    assert_eq!(err["error"], "compiled mission failed schema validation");
+    assert_eq!(err["details"]["schema"], "mission.schema.json");
+    assert!(err["details"]["findingCount"].as_u64().unwrap() >= 1);
+    let findings = err["details"]["findings"].as_array().unwrap();
+    assert!(
+        findings.iter().any(|f| f.as_str().unwrap().contains("uid")),
+        "the diagnostic must name what is wrong, got {findings:?}"
+    );
+}
+
 #[tokio::test]
 async fn enlisted_cannot_create_mission() {
     let Some((app, tok)) = app_and_token("enlisted").await else {
