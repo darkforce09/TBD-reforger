@@ -167,7 +167,13 @@ class TBD_IdentityLink
 		if (parts.Count() < 2)
 			return false;
 
-		if (parts[1] != "link")
+		// Case-folded so `#tbd Link` works. `ToLower()` MUTATES IN PLACE and returns a COUNT
+		// (measured) — so this is a statement, never `x = x.ToLower()`, and it runs on a
+		// `string.Format` copy so it can never reach back into `parts`. The CODE is deliberately
+		// not folded: it is the backend's token, not ours to normalise.
+		string sub = string.Format("%1", parts[1]);
+		sub.ToLower();
+		if (sub != "link")
 			return false;
 
 		string arg;
@@ -180,7 +186,9 @@ class TBD_IdentityLink
 			return true;
 		}
 
-		if (arg == "status")
+		string argLower = string.Format("%1", arg);
+		argLower.ToLower();
+		if (argLower == "status")
 		{
 			ReplyLines(chat, senderId, StatusLines(senderId));
 			return true;
@@ -246,8 +254,11 @@ class TBD_IdentityLink
 	//! call, and it answers 404 for wrong/used/expired.
 	protected static void Submit(SCR_ChatComponent chat, int playerId, string rawCode)
 	{
-		string code = rawCode;
-		code.Trim();
+		// `Trim()` is the ONE member of that family that genuinely RETURNS a string rather than
+		// mutating in place and returning a count (measured, and the distinction is exactly
+		// backwards from `Replace`/`ToUpper`/`ToLower` two functions up). So this is an
+		// assignment — written as a bare `code.Trim();` it would silently do nothing.
+		string code = rawCode.Trim();
 
 		if (code.IsEmpty())
 		{
