@@ -275,8 +275,6 @@ class TBD_FrameworkManagerClass : SCR_BaseGameModeComponentClass {}
 
 class TBD_FrameworkManager : SCR_BaseGameModeComponent
 {
-	protected static TBD_FrameworkManager s_Instance;
-
 	//! @replicated m_Stage — server-owned; clients react in OnStageReplicated (onRplName hook).
 	[RplProp(onRplName: "OnStageReplicated")]
 	protected TBD_EGameStage m_Stage = TBD_EGameStage.LOADING;
@@ -301,23 +299,35 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	protected int m_iRoundSecondsRemaining = ROUND_CLOCK_OFF;
 
 	//------------------------------------------------------------------------------------------------
-	void TBD_FrameworkManager(IEntityComponentSource src, IEntity ent, IEntity parent)
-	{
-		s_Instance = this;
-	}
-
-	//------------------------------------------------------------------------------------------------
+	//! The framework manager on the CURRENTLY loaded world, or null if this world has none.
+	//!
+	//! T-181.30 — this used to be `return s_Instance;` off a constructor-set static, which is the
+	//! exact shape `IsFrameworkWorld()` below carries a paragraph explaining why it must never use.
+	//! Statics outlive a world inside one process (measured landmine, and `SelectMissionByNumber`
+	//! restarts the scenario in-process, so it is reachable here), which left a stale manager from a
+	//! dead world answering for a live one. The static is now gone entirely rather than left unread:
+	//! a field that does not exist cannot be stale-read by the next edit.
+	//!
+	//! Safe at every call site because none of them can run before the game-mode entity is complete:
+	//! all 11 are ticks, RPC/chat handlers, stage transitions or per-player builds. The earliest is
+	//! `TickLoading`, itself a `CallLater` registered in `OnPostInit`. `PrintComponentRollCall` —
+	//! `CallLater(…, 0)` from that same `OnPostInit`, so strictly earlier than any of them — already
+	//! resolves its siblings by `FindComponent` on this entity and `world-boot.sh` asserts the
+	//! resulting `=ok` line, which is the runtime proof that the lookup resolves this early.
 	static TBD_FrameworkManager GetInstance()
 	{
-		return s_Instance;
+		SCR_BaseGameMode gameMode = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
+		if (!gameMode)
+			return null;
+
+		return TBD_FrameworkManager.Cast(gameMode.FindComponent(TBD_FrameworkManager));
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! True when the CURRENTLY loaded world runs the TBD framework — the guard every
 	//! vanilla-suppressing modded class asks before standing vanilla down. Resolved off
-	//! the live game mode rather than s_Instance because statics outlive a world inside
-	//! one Workbench process (measured landmine), which would leave a stale instance
-	//! claiming ownership of a plain vanilla world.
+	//! the live game mode for the reason spelled out on GetInstance() above; it predates
+	//! that fix and is why the house idiom was already available to copy.
 	static bool IsFrameworkWorld()
 	{
 		SCR_BaseGameMode gm = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
@@ -691,6 +701,20 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority server — mutates the replicated m_Stage and calls Replication.BumpMe() to push it.
 	void SetStage(TBD_EGameStage stage)
 	{
+		// T-181.30 — clear the refusal reason FIRST, before the same-stage early-out.
+		//
+		// It used to be cleared further down, past that early-out, which made it stale-readable:
+		// `TBD_AdminService.AdvanceStage` detects a refusal by comparing the stage either side of
+		// this call and then reads `GetLastStageRefusal()` for the why. A no-op command (`#tbd stage
+		// LOBBY` while already in LOBBY) leaves the stage unchanged, so it takes that same
+		// "REFUSED" branch — and with the old ordering it replayed whatever reason a genuinely
+		// refused transition had left behind minutes earlier, as if it were the reason for THIS
+		// command. Empty is the truthful answer there: nothing refused it, it was already the stage.
+		//
+		// Every early-out below either sets its own reason or is a genuine no-op, so clearing here
+		// cannot erase a reason that is still current.
+		m_sLastStageRefusal = string.Empty;
+
 		if (m_Stage == stage)
 			return;
 
@@ -714,7 +738,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (!m_sLastStageRefusal.IsEmpty())
 			return;
 
-		m_sLastStageRefusal = string.Empty;
 		TBD_EGameStage previous = m_Stage;
 		m_Stage = stage;
 		Replication.BumpMe();

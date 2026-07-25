@@ -69,18 +69,24 @@
 //!
 //! ══ SAFESTART — THE DELIBERATE DECISION ═════════════════════════════════════════════════════
 //! `TBD_SafestartManager.CollectProtectables` sweeps `PlayerManager.GetPlayerControlledEntity`,
-//! which IS the host once it is possessed, so the host WILL be swept into `m_mHeld` — and
-//! `TBD_SafestartManager.Restore` does not restore each body's prior value, it forces
-//! `EnableDamageHandling(true)` on everything it held.
+//! which IS the host once it is possessed, so the host WILL be swept into `m_mHeld`.
 //!
 //! **The decision: let it be swept, and make the sweep provably inert instead of hiding from it.**
 //! `ApplyTo` only touches `SCR_CharacterDamageManagerComponent`, `CharacterControllerComponent` and
 //! `EventHandlerManagerComponent`; `RestoreOne` early-returns `true` when there is no damage
 //! manager. A host that is refused unless it has none of those is therefore a no-op on both ends —
-//! it costs one map entry and nothing else. Hiding it instead would have meant editing
-//! `TBD_SafestartManager.c`, which this slice does not own, and would have left the hazard live for
-//! any future entity that reaches that sweep. Making the host structurally unprotectable fixes it
-//! for good. (Compile-verified reasoning over the real source of both files; not runtime-observed.)
+//! it costs one map entry and nothing else, and it can never be the body that fails restore
+//! verification and starts safestart's ERROR-spamming watchdog. Making the host structurally
+//! unprotectable fixes that for good rather than per-path.
+//! (Compile-verified reasoning over the real source of both files; not runtime-observed.)
+//!
+//! **T-181.30 — the ORIGINAL justification for this is now stale, and is corrected here rather
+//! than quietly deleted.** This block used to say `Restore()` "does not restore each body's prior
+//! value, it forces `EnableDamageHandling(true)` on everything it held", so a swept host would
+//! come out of SAFE_START damageable. **T-181.33 fixed that**: safestart now records each body's
+//! damage-handling value before its first mutation and hands back *that*, not `true`
+//! (`TBD_SafestartHold.m_bDamageWasEnabled`, `RestoreOne`). The decision above survives intact
+//! because it never actually rested on that bug — see `IsAcceptableHost` for the reason that does.
 //!
 //! ══ WHAT THIS COSTS — READ BEFORE SHIPPING AN EVENT ═════════════════════════════════════════
 //! `TBD_SpectatorTargets` documents that its faction restriction is a DISCIPLINE measure and that
@@ -257,8 +263,12 @@ class TBD_SpectatorHost
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Does this player hold a streaming host right now? Public so a live run can be read from the
-	//! log rather than inferred, and so `TBD_SpawnManager` can say so in its own lines.
+	//! Does this player hold a streaming host right now?
+	//!
+	//! T-181.30 — this used to claim it was public "so `TBD_SpawnManager` can say so in its own
+	//! lines". `TBD_SpawnManager` has never called it. Kept because `Reconcile` genuinely needs it
+	//! (below), not because anything outside this file does; if that internal caller ever goes away,
+	//! so should this.
 	static bool HasHost(int playerId)
 	{
 		if (!s_mHosts)
@@ -663,8 +673,27 @@ class TBD_SpectatorHost
 	//! die, or to be stood back up.
 	//!
 	//! It also stops an operator from turning `m_sHostPrefab` into a second door by pointing it at a
-	//! character prefab. That would otherwise hand every dead player a fresh, damage-handling-on
-	//! (safestart re-enables it — see the header) body, which is precisely a respawn.
+	//! character prefab. That would otherwise hand every dead player a fresh, damageable body, which
+	//! is precisely a respawn.
+	//!
+	//! T-181.30 — WHY THE DAMAGE-MANAGER REFUSAL IS STILL RIGHT, on a rationale that is actually
+	//! true. It used to cite safestart: `Restore()` force-enabled damage handling on everything it
+	//! swept, so a host with a damage manager "would come out of SAFE_START damageable". T-181.33
+	//! made safestart save and restore the prior value, so that specific sentence is now false. The
+	//! guard is unchanged because the real reason never needed it:
+	//!
+	//!   * A dead player POSSESSES this entity. Anything carrying a damage manager can be damaged
+	//!     and destroyed, and under ONE LIFE an entity a dead player controls that can be killed is
+	//!     a second death path — while one that can be healed back up is respawn-shaped. Refusing
+	//!     the component makes that structurally impossible instead of path-dependent, which is the
+	//!     entire point of this function.
+	//!   * It also keeps the host a provable no-op through safestart's whole arm/lift cycle: with no
+	//!     damage manager, `RestoreOne` takes its `!damage` early return, so the host can never be
+	//!     the entity whose restore fails verification and pins the watchdog at ERROR.
+	//!
+	//! Note the refusal is deliberately BROADER than the sweep: this tests `DamageManagerComponent`,
+	//! while safestart only ever touches `SCR_CharacterDamageManagerComponent`. That was true before
+	//! T-181.33 as well — another sign the safestart framing was never what carried this guard.
 	//! @authority server
 	protected static bool IsAcceptableHost(notnull IEntity host, int playerId)
 	{
@@ -673,7 +702,7 @@ class TBD_SpectatorHost
 		if (ChimeraCharacter.Cast(host))
 			refusal = "it is a ChimeraCharacter — a character can be killed, and a killed character spends a life";
 		else if (host.FindComponent(DamageManagerComponent))
-			refusal = "it carries a DamageManagerComponent — safestart's Restore() force-enables damage handling on everything it swept, so this would come out of SAFE_START damageable";
+			refusal = "it carries a DamageManagerComponent — a dead player would be possessing something that can be damaged, destroyed or healed, which is a second death path under ONE LIFE";
 		else if (host.FindComponent(CharacterControllerComponent))
 			refusal = "it carries a CharacterControllerComponent — that is a playable body, not an anchor";
 

@@ -10,15 +10,33 @@
 //! same reason the two above it do: `RplRcver.Owner` delivers to exactly one client, which is
 //! what makes a targeted, non-broadcast reply possible.
 //!
-//! It is NOT a third `modded class SCR_PlayerController` block. Two already exist in this addon
-//! (here, and `TBD_BriefingController.c` from T-181.9.2). **Two blocks are measured to compile
-//! and interoperate; three are not.** The spectator slice (T-181.12) hit the same question and
-//! answered it by hosting on a game-mode component instead — that route is unavailable here,
-//! because a game-mode component has no per-client owner and so no way to answer one admin
-//! privately. Extending the block that already exists costs nothing and adds no unmeasured
-//! behaviour, so this file gains the methods and the logic stays in `TBD_AdminService` /
-//! `TBD_AdminSnapshotService`. The rule "one modded SCR_PlayerController per addon" is the reason
-//! these are here rather than in the UI folder with the rest of the admin screen.
+//! It does not add a `modded class SCR_PlayerController` block; it extends the one below.
+//!
+//! ── T-181.30 — THE COUNT IN THIS COMMENT WAS WRONG AND IS WORTH CORRECTING CAREFULLY ─────────
+//! This used to read "Two already exist in this addon (here, and `TBD_BriefingController.c`)" and
+//! "**Two blocks are measured to compile and interoperate; three are not.**" Both statements are
+//! now false. There are **SIX** such blocks in the addon as of today — this file,
+//! `TBD_BriefingController.c`, `TBD_LobbyController.c`, `TBD_SpectatorHost.c`,
+//! `TBD_MarkerController.c`, `TBD_RadioController.c` — and the program has re-measured static
+//! coexistence at N=2, 3, 5 and 6.
+//!
+//! **What is actually known is narrower than either the old claim or the new count suggests**, and
+//! the authority is the Landmines section of `docs/mod/t181_event_mod_program.md`, not this header:
+//!   * N blocks COMPILE and methods declared in one are callable from the others. Measured to N=6.
+//!   * RUNTIME coexistence has NEVER been observed. `world-boot.sh` boots with zero players and
+//!     every one of these blocks only does anything once a client connects. "Compiles" is not
+//!     "works", and settling this is the first job of T-181.25 on a real dedicated server.
+//!
+//! So the reason to keep extending this block rather than adding a seventh is unchanged, but it is
+//! blast-radius minimisation, NOT a measured two-block ceiling: this file already overrides a
+//! vanilla method, so folding the admin transport in here adds no new override and no new
+//! `modded enum ChimeraMenuPreset` entry.
+//!
+//! The spectator slice (T-181.12) hit the same question and answered it by hosting on a game-mode
+//! component instead — that route is unavailable here, because a game-mode component has no
+//! per-client owner and so no way to answer one admin privately. So this file gains the methods and
+//! the logic stays in `TBD_AdminService` / `TBD_AdminSnapshotService`; that is why they live here
+//! rather than in the UI folder with the rest of the admin screen.
 modded class SCR_PlayerController
 {
 	//! Client-side cache of the last received mission list (display lines).
