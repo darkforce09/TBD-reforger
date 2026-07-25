@@ -100,38 +100,21 @@ FrameWidgetClass {
       }
      }
      {
-      ImageWidgetClass "{7BD1A7000000071D}" {
-       Name "Background"
-       Slot ButtonWidgetSlot "{7BD1A7000000071E}" {
-        Anchor 0 0 1 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 0
-        OffsetTop 0
-        SizeX 0
-        OffsetRight 0
-        SizeY 0
-        OffsetBottom 0
-       }
-       Color 0 0 0 0
-      }
-      TextWidgetClass "{7BD1A7000000071F}" {
-       Name "Label"
-       Slot ButtonWidgetSlot "{7BD1A70000000720}" {
-        Anchor 0 0 1 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 10
-        OffsetTop 10
-        SizeX 0
-        OffsetRight 0
-        SizeY 0
-        OffsetBottom 8
-       }
-       Color 0.678 0.776 1 1
-       Text "BACK"
-       "Font Size" 14
-       "Horizontal Alignment" Center
+      OverlayWidgetClass "{7BD1A7000000071D}" {
+        Name "ButtonBody"
+        {
+         ImageWidgetClass {
+          Name "Background"
+          Color 0 0 0 0
+         }
+         TextWidgetClass "{7BD1A7000000071F}" {
+          Name "Label"
+         Color 0.678 0.776 1 1
+         Text "BACK"
+         "Font Size" 14
+         "Horizontal Alignment" Center
+         }
+        }
       }
      }
     }
@@ -264,38 +247,21 @@ FrameWidgetClass {
       }
      }
      {
-      ImageWidgetClass "{7BD1A70000000733}" {
-       Name "Background"
-       Slot ButtonWidgetSlot "{7BD1A70000000734}" {
-        Anchor 0 0 1 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 0
-        OffsetTop 0
-        SizeX 0
-        OffsetRight 0
-        SizeY 0
-        OffsetBottom 0
-       }
-       Color 0.231 0.510 0.965 1
-      }
-      TextWidgetClass "{7BD1A70000000735}" {
-       Name "Label"
-       Slot ButtonWidgetSlot "{7BD1A70000000736}" {
-        Anchor 0 0 1 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 15
-        OffsetTop 15
-        SizeX 0
-        OffsetRight 0
-        SizeY 0
-        OffsetBottom 13
-       }
-       Color 1 1 1 1
-       Text ""
-       "Font Size" 16
-       "Horizontal Alignment" Center
+      OverlayWidgetClass "{7BD1A70000000733}" {
+        Name "ButtonBody"
+        {
+         ImageWidgetClass {
+          Name "Background"
+          Color 0.231 0.510 0.965 1
+         }
+         TextWidgetClass "{7BD1A70000000735}" {
+          Name "Label"
+         Color 1 1 1 1
+         Text ""
+         "Font Size" 16
+         "Horizontal Alignment" Center
+         }
+        }
       }
      }
     }
