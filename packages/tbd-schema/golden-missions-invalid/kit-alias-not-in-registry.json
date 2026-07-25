@@ -1,0 +1,76 @@
+{
+  "$comment": "T-181.36 negative golden — the regression that shipped. slots[0].kit is a well-formed kit: alias that no entry in apps/mod/tbd-framework/Data/registry.json defines. mission.schema.json cannot catch this and must not try: kit aliases come from a generated, extensible registry, so a closed enum in the contract would go stale the moment content is added. The registry cross-reference gate catches it instead. This document is deliberately schema-VALID — if the schema ever started rejecting it the gate says so, because that would mean somebody closed the kit vocabulary. See README.md for the wrapper format.",
+  "mustFail": {
+    "gate": "registry",
+    "at": "/slots/0/kit",
+    "because": "an unresolvable slot kit is a permanent per-slot spawn failure — TBD_MissionValidator rejects the whole mission and the server sits in LOADING (T-181.36)"
+  },
+  "document": {
+    "schemaVersion": "1.1",
+    "meta": {
+      "id": "msn_bad002",
+      "name": "NEGATIVE FIXTURE — kit alias not in the spawn registry",
+      "terrain": "everon",
+      "templateId": "attack_defend_v1",
+      "playerRange": [2, 2]
+    },
+    "factions": [
+      { "key": "blufor", "displayName": "US Army", "presetId": "preset:us_army_82nd", "tickets": 0 },
+      { "key": "opfor", "displayName": "Soviet Army", "presetId": "preset:sov_vdv", "tickets": 0 }
+    ],
+    "orbat": {
+      "blufor": {
+        "groups": [
+          {
+            "callsign": "Ranger",
+            "type": "rifle_squad",
+            "roles": [{ "slot": "RFL", "kit": "kit:us_rifleman", "count": 1 }]
+          }
+        ]
+      },
+      "opfor": {
+        "groups": [
+          {
+            "callsign": "Ural",
+            "type": "rifle_squad",
+            "roles": [{ "slot": "RFL", "kit": "kit:sov_rifleman", "count": 1 }]
+          }
+        ]
+      }
+    },
+    "zones": [
+      {
+        "id": "sp_blufor",
+        "type": "spawn",
+        "faction": "blufor",
+        "shape": { "circle": { "x": 3210.0, "z": 9140.0, "r": 100 } }
+      }
+    ],
+    "flow": { "briefingSeconds": 60, "safeStartSeconds": 60, "timeLimitSeconds": 600, "jip": "disabled" },
+    "winConditions": { "mode": "points_then_attrition", "endOn": ["time_limit"] },
+    "slots": [
+      {
+        "id": "blufor:Ranger:RFL:0",
+        "uid": "slot_unknown_kit",
+        "faction": "blufor",
+        "groupCallsign": "Ranger",
+        "role": "RFL",
+        "kit": "kit:us_no_such_kit",
+        "x": 3205.4,
+        "z": 9135.2,
+        "headingDeg": 45
+      },
+      {
+        "id": "opfor:Ural:RFL:0",
+        "uid": "slot_unknown_kit_op",
+        "faction": "opfor",
+        "groupCallsign": "Ural",
+        "role": "RFL",
+        "kit": "kit:sov_rifleman",
+        "x": 3624.7,
+        "z": 9484.3,
+        "headingDeg": 225
+      }
+    ]
+  }
+}

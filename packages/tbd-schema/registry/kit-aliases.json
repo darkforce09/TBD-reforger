@@ -19,6 +19,10 @@
       "resourceName": "{5B1996C05B1E51A4}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_AR.et"
     },
     {
+      "alias": "kit:us_medic",
+      "resourceName": "{C9E4FEAF5AAC8D8C}Prefabs/Characters/Factions/BLUFOR/US_Army/Character_US_Medic.et"
+    },
+    {
       "alias": "kit:sov_rifleman",
       "resourceName": "{DCB41B3746FDD1BE}Prefabs/Characters/Factions/OPFOR/USSR_Army/Character_USSR_Rifleman.et"
     },

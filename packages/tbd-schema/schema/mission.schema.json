@@ -86,6 +86,11 @@
       "description": "Registry alias resolved by the framework registry to a prefab GUID.",
       "pattern": "^(kit|comp|veh|preset|layer|prop|item):[a-z0-9_]+$"
     },
+    "cargoContainer": {
+      "type": "string",
+      "description": "Worn container a cargo row is inserted into. CLOSED vocabulary (T-181.34) — unlike kit:/preset: aliases these four are fixed by the ENGINE's worn-garment areas, not by extensible content, so an enum here can never fight the registry. TBD_LoadoutEquipHelper.GarmentForContainer maps exactly these to LoadoutVestArea (+ LoadoutArmoredVestSlotArea), LoadoutJacketArea, LoadoutPantsArea and LoadoutBackpackArea, and the Arsenal UI offers exactly these (arsenal_rules.rs CARGO_CONTAINERS). Before this enum a typo validated clean and then DEGRADED at runtime: GarmentForContainer returned null and InsertCargo fell through to TryInsertItem anywhere, so the cargo silently landed in the wrong place instead of failing. armoredVest is deliberately NOT a key — it shares the vest container (single-vest collapse).",
+      "enum": ["vest", "pants", "jacket", "backpack"]
+    },
     "factionKey": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$"
@@ -265,7 +270,7 @@
                 "required": ["container", "item", "qty"],
                 "additionalProperties": false,
                 "properties": {
-                  "container": { "type": "string", "minLength": 1 },
+                  "container": { "$ref": "#/$defs/cargoContainer" },
                   "item": { "type": "string", "minLength": 1 },
                   "qty": { "type": "integer", "minimum": 1 }
                 }

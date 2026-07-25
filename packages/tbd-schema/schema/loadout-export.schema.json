@@ -50,7 +50,7 @@
             "required": ["container", "item", "qty"],
             "additionalProperties": false,
             "properties": {
-              "container": { "type": "string", "minLength": 1 },
+              "container": { "$ref": "#/$defs/cargoContainer" },
               "item": { "type": "string", "minLength": 1 },
               "qty": { "type": "integer", "minimum": 1 }
             }
@@ -61,6 +61,11 @@
     }
   ],
   "$defs": {
+    "cargoContainer": {
+      "type": "string",
+      "description": "Worn container a cargo row is inserted into. CLOSED vocabulary, kept byte-identical to mission.schema.json#/$defs/cargoContainer — this file is the editor-side export and that one is the game-server contract, so the two drifting is exactly the failure T-181.34 exists to stop. The four keys are fixed by the engine's worn-garment areas (TBD_LoadoutEquipHelper.GarmentForContainer) and mirrored by the Arsenal UI (arsenal_rules.rs CARGO_CONTAINERS); armoredVest shares the vest container.",
+      "enum": ["vest", "pants", "jacket", "backpack"]
+    },
     "slot": {
       "description": "Enfusion ResourceName for the equipped item, or null when the slot is empty.",
       "type": ["string", "null"]
