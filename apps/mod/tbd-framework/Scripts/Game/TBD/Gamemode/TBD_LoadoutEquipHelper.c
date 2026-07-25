@@ -115,16 +115,24 @@ class TBD_LoadoutApplication : Managed
 	//   * Lower — measured need is 0 ms across 17/17 real kits, on two independent readings
 	//     (synchronous, and a 25 ms tick). 1 s is 40x the first observation point.
 	//   * Upper — the verdict has to land inside world-boot's capture window or the guard is not
-	//     gated at all. MEASURED: on a default run the slot bodies spawn at T+3.0 s of the
-	//     `mission result=` line the harness polls for, and the server is killed 3.13 s later. A
-	//     3 s deadline raced that kill and the NAKED verdict was lost — caught by the negative
-	//     control below, not by reasoning. 1 s leaves ~3x margin.
+	//     gated at all, and that window is SHORT. Bodies materialise ~3.0 s after the
+	//     `mission result=` line the harness polls for, and the server is killed ~3.0 s after
+	//     THAT (poll granularity 0.5 s + TBD_WORLDBOOT_SETTLE, default 4 s, + engine shutdown).
+	//     Two independent boots: run A bodies at +2.947 s, `Game destroyed` +2.985 s later; run B
+	//     (the negative control) bodies at +2.983 s, NAKED at exactly +1.000 s, `Game destroyed`
+	//     +2.968 s. So the 3 s deadline this started with is not merely "tight" — in run B it
+	//     would have fired 32 ms AFTER the capture ended and the NAKED verdict would simply not
+	//     exist. 1 s left 1.97 s of margin. That margin is TBD_WORLDBOOT_SETTLE; if the settle is
+	//     ever shortened below ~2 s, this deadline has to come down with it or the guard silently
+	//     stops being a guard again.
 	//   * It is also exactly the grace this file already gives its other fast-settling class
 	//     (WEAPON_TICK_MS x WEAPON_MAX_ATTEMPTS), so it is not a fresh invented number.
 	//
-	// PROVEN TO FAIL, not just to pass: pointing kit:us_sl at a bare `Character_US_Base.et`
-	// produced `NAKED after kit spawn` on exactly that slot, the other 17 stayed clean, and
-	// world-boot.sh went to FAIL. A guard that has only ever been seen to pass is not a guard.
+	// PROVEN TO FAIL, not just to pass — and re-proven independently rather than taken on trust:
+	// pointing kit:us_sl at a bare `Character_US_Base.et` ({520EC961A090BBD5}) put out
+	// `NAKED after kit spawn` on exactly that slot, left the other 17 clean, and drove
+	// world-boot.sh to FAIL on its TBD-script-error check. A guard that has only ever been seen
+	// to pass is not a guard.
 	protected const int AUDIT_TICK_MS = 250;
 	protected const int AUDIT_MAX_ATTEMPTS = 4;
 
@@ -1048,6 +1056,16 @@ class TBD_LoadoutApplication : Managed
 	//!
 	//! This is the audit's real anchor rather than a bug: the body is dressed by its kit and
 	//! nothing else, so the kit is solely responsible and is named in the failure.
+	//!
+	//! GATED FOR REAL, AND WITHOUT A CLIENT. Do not assume — as this program did — that dressing a
+	//! body needs a player. TBD_SpawnManager materialises the whole slot lineup at MISSION START,
+	//! not on join, and SpawnSlotBody is its ONLY body-creation call site, so
+	//! `world-boot.sh --mission=<golden>` builds and audits every body with zero players
+	//! connected. Measured on bridgehead-at-levie: 18/18 bodies, each
+	//! `worn-audit jacket=1 pants=1 boots=1 kit=… (settled on attempt 1 of 4, 250 ms)`. That makes
+	//! this one of the few things in this file proven END-TO-END by the boot gate instead of
+	//! compile-only — and it is exactly why a false NAKED here would break that gate for every
+	//! other slice, not just this one.
 	//!
 	//! CANCELLATION / THE `ScriptCallQueue.Remove` HAZARD. Deliberately none of this slice's
 	//! business, because the object is a TBD_LoadoutApplication registered in the SpawnManager's
