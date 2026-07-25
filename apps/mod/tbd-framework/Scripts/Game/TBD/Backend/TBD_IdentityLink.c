@@ -503,11 +503,17 @@ class TBD_IdentityLink
 	//!   5xx                                       — the website broke
 	//!   no code at all                            — never reached the website
 	//!
-	//! Distinguishing them needs the HTTP status, and `RestCallback.GetHttpCode()` is what gives
-	//! it (probe-proved; the failing control in the same run was
-	//! `RestCallback.GetHttpCodeThatDoesNotExist` -> `Undefined function`). Matching on the
-	//! response body text would work today and break the first time someone rewords an error
-	//! string, so the body is logged for the operator and never parsed.
+	//! Distinguishing them needs the HTTP STATUS, and `RestCallback.GetHttpCode()` is what gives
+	//! it. Compile-proved (the failing control in the same run was
+	//! `RestCallback.GetHttpCodeThatDoesNotExist` -> `Undefined function`) and then RUNTIME-proved:
+	//! a real boot drove six requests at a capture endpoint mirroring the backend's rules and got
+	//! `HTTP_CODE_200 / 409 / 404 / 401 / 400 / NULL` back, each landing on its own branch.
+	//!
+	//! **Never match on the response TEXT.** Two reasons, and the second is measured:
+	//!   1. it breaks the first time someone rewords a backend error string;
+	//!   2. on a transport failure `GetData()` returns the REQUEST body, not a response — measured
+	//!      on that same run, where a dead-port POST came back carrying our own payload verbatim.
+	//!      A body-text matcher would have been reading its own request.
 	protected static void HandleFailure(HttpCode code, ERestResult result, string body)
 	{
 		string reason = typename.EnumToString(HttpCode, code);
@@ -553,9 +559,14 @@ class TBD_IdentityLink
 		{
 			// No HTTP status at all: DNS, connection refused, TLS, or the request never left.
 			// `ERestResult` says which, and it goes in the log rather than at the player.
+			//
+			// The body is deliberately DROPPED here. Measured on the live run: with no response to
+			// return, `GetData()` hands back the REQUEST — so logging it would print the player's
+			// link code into console.log while claiming it was the website's answer. Neither half
+			// of that is acceptable.
 			player = TAG + "could not reach the website (network). Your code was not used — try again in a moment.";
 			ReplyAsync(player);
-			FinishQuiet(reason + "/" + typename.EnumToString(ERestResult, result), body);
+			FinishQuiet(reason + "/" + typename.EnumToString(ERestResult, result), "(no response)");
 			return;
 		}
 
