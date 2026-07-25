@@ -72,19 +72,26 @@ others; the pak-compression codec was never cracked and no longer needs to be.
 
 ## Stage 2 — the mod spine
 
-**Shipped:** gamemode state machine (mostly pre-existing) · one-life death model · admin respawn ·
-JSON win conditions · slotting authority (claim/release/roster + one-life integrity).
+**The event loop exists end to end in code:**
+`LOBBY (slot picker) → BRIEFING → deploy → ONE LIFE → death → SPECTATOR → admin respawn → JSON win condition → END`
 
-**In flight (wave 1, parallel agents):** UI framework · JSON loadouts · mission validation.
+| Shipped | |
+|---|---|
+| gamemode state machine · one-life death model · admin respawn · JSON win conditions | wave 0 |
+| UI framework · JSON loadouts · mission validation | wave 1 |
+| one-life hardening (possess route + durable identity) · spectator · briefing | wave 2 |
+| lobby slot picker (supersedes T-068.13) · admin menu · mission-doc parser | wave 3 |
+| JIP/reconnect hardening · golden fixtures | wave 4 |
 
-**Remaining:** lobby/slot picker UI → briefing screen → spectator → JIP/reconnect → E2E gate.
+**Queued** — waves 5–7: spectator streaming host · AO poly-zones · map markers · results POST ·
+briefing ORDERS section · briefing JIP catch-up · lobby raise fix · wire-format sentinel ·
+`/compiled` endpoint validation.
 
-`T-181.5` (Workbench `-gproj`) is **deprioritised** — the native compile lane removed most of the
-reason to open Workbench. `T-181.6` (auto-runner) is superseded in practice by the command-center +
-slice-agent model below.
+**Retired, not built:** `T-181.5` (Workbench `-gproj`) — the native compile lane removed the need.
+`T-181.6` (auto-runner) — superseded by the command-center + slice-agent model below.
 
-Stages are **dependency-gated, not calendar-gated**: a stage ends when its gate goes green, and
-the next starts immediately. `./scripts/ticket next` is authoritative.
+**Everything above is COMPILE-VERIFIED, not runtime-verified.** No screen has ever opened (see
+§The Workbench pass) and no behavioural claim has been observed. That is the honest state.
 
 ## Execution model — command center + slice agents
 
@@ -193,6 +200,18 @@ picker can open would ship a mod nobody can deploy into.
   nowhere. Prefer `->` on anything load-bearing rather than risk a tofu box.
 - **Duplicate `switch` case labels compile CLEAN** — so a switch cannot be used to prove enum
   values are distinct, and any probe built on one is worthless without a failing negative control.
+- **`ScriptCallQueue.Remove` cancels by FUNCTION, not by arguments.** You cannot cancel one
+  player's pending `CallLater` without cancelling everyone's. Any deferred callback carrying a raw
+  `playerId` therefore survives that player's disconnect — and on a dedicated server the id is
+  recycled. Measured worst case: `RedeployAfterDeath` would have DEPLOYED a fresh joiner into a dead
+  player's slot. Stamp a connection epoch on every deferred per-player callback.
+- **Enfusion DOES compile-check `CallLater` callback arity** (negative control: `Not enough
+  parameters in callback 'Three'`). So re-threading a deferred callback's signature is genuinely
+  compile-verified, not compile-silent — a rare piece of good news.
+- **`SCR_BaseGameMode.OnPlayerDisconnected` DELETES the disconnecting player's controlled entity** —
+  i.e. our materialized slot body. `SCR_ReconnectComponent` would reserve it instead, but the
+  matching re-apply hangs off the join path TBD swallows, so the reservation is never honoured and
+  expiry deletes the body up to 120 s later.
 - **THERE IS NO TERNARY OPERATOR.** `cond ? a : b` fails with `Broken expression (missing ';'?)`
   pointing at the whole statement and never mentioning `?`.
 - **A `class X : SomeClass {}` component descriptor may need a trailing `;`** — without it the NEXT

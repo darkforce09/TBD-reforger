@@ -38,6 +38,11 @@ hands you nothing. **That gap is the program.**
   NAME hash. Durable-across-reconnect and collision-free are therefore mutually exclusive there.
   TBD chooses durable (a same-name reconnect keeps its spent life) and shouts the cost once at
   WARNING: a name change buys a fresh life, and two players sharing a name share one life.
+  **What a reconnect restores (accepted limit).** The player's SEAT and a fresh dressed body at the
+  slot transform — NOT their position or inventory at the moment they dropped. Vanilla's reservation
+  path (`SCR_ReconnectComponent` → `SCR_SpawnLogic.ResolveReconnection`) hangs off the join hook TBD
+  deliberately swallows, so honouring it means re-implementing that machinery. Out of scope; stated
+  so nobody reports it as a bug.
 - **JSON is the contract.** Missions, slots, loadouts, objectives, zones and radio plan all come
   from the compiled mission document. No `.conf` gearscript concept — CRF's 520 gearscript files
   are replaced by per-slot loadout data.
