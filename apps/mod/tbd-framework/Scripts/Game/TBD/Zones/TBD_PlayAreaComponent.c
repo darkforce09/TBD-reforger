@@ -72,19 +72,16 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 	//! `TICK_MS` as seconds, so the accumulators read in the same units the rules are authored in.
 	static const float TICK_SECONDS = 1.0;
 
-	protected static TBD_PlayAreaComponent s_Instance;
-
 	protected ref map<int, ref TBD_PlayAreaViolation> m_mViolations;
 
 	//! Latches for the once-per-world informational lines, so a 1 Hz tick cannot spam the log.
 	protected bool m_bAnnouncedNoBoundary;
 	protected bool m_bAnnouncedArmed;
 
-	//------------------------------------------------------------------------------------------------
-	static TBD_PlayAreaComponent GetInstance()
-	{
-		return s_Instance;
-	}
+	//! T-181.30 — same latch shape for the stood-down line, which is per-PLAYER per-tick and would
+	//! otherwise write one ERROR per connected player per second. Cleared the moment a manager is
+	//! seen again, so a genuine second occurrence still gets said.
+	protected bool m_bAnnouncedNoSpawnManager;
 
 	//------------------------------------------------------------------------------------------------
 	//! @authority server — the play area is enforced where the mission document lives. Clients hold
@@ -94,7 +91,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 	{
 		super.OnPostInit(owner);
 
-		s_Instance = this;
 		m_mViolations = new map<int, ref TBD_PlayAreaViolation>();
 
 		if (RplSession.Mode() == RplMode.Client)
@@ -118,8 +114,6 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 		TBD_ZoneRegistry.Clear();
 		if (m_mViolations)
 			m_mViolations.Clear();
-
-		s_Instance = null;
 
 		super.OnDelete(owner);
 	}
@@ -234,10 +228,36 @@ class TBD_PlayAreaComponent : SCR_BaseGameModeComponent
 			return;
 		}
 
+		// T-181.30 — FAIL CLOSED with no spawn manager, matching `TBD_SpectatorHost.Tick` on the
+		// IDENTICAL condition. This used to read `if (spawn && spawn.IsPlayerDead(playerId))`, so a
+		// null manager short-circuited the guard and fell through to full enforcement against
+		// whatever the player controls — which for a dead spectator is their STREAMING HOST. The
+		// result was a dead player being told "ONE LIFE: you will be killed" for flying the free cam
+		// out of the AO. (No second death followed: `KillForViolation` refuses a body with no damage
+		// manager, and `IsAcceptableHost` guarantees the host has none. The message was the bug.)
+		//
+		// Without the manager we cannot tell a spent life from a living player, and therefore cannot
+		// tell a real body from a spectator host. "Cannot tell" must not resolve to "warn them, then
+		// kill them" — the same reasoning, and the same direction, that `TBD_SpectatorHost` already
+		// applies. The sibling failing closed while this one failed open was the asymmetry.
+		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
+		if (!spawn)
+		{
+			if (!m_bAnnouncedNoSpawnManager)
+			{
+				m_bAnnouncedNoSpawnManager = true;
+				Print("[TBD][playarea] enforcement STOOD DOWN — framework world with no TBD_SpawnManager (cannot tell a dead player from a live one, so a spectator's streaming host would be policed as a body)", LogLevel.ERROR);
+			}
+
+			m_mViolations.Remove(playerId);
+			return;
+		}
+
+		m_bAnnouncedNoSpawnManager = false;
+
 		// A spent life is already out of the event; hounding a corpse about the AO would be noise
 		// at best and, with penalty=kill, an attempt to kill someone who is already dead.
-		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
-		if (spawn && spawn.IsPlayerDead(playerId))
+		if (spawn.IsPlayerDead(playerId))
 		{
 			m_mViolations.Remove(playerId);
 			return;

@@ -10,12 +10,16 @@
 //! is a component on the game mode prefab — the same seat `TBD_FrameworkManager`,
 //! `TBD_SpawnManager` and `TBD_LoadoutEquipComponent` already occupy.
 //!
-//! Deliberately NOT a `modded class SCR_PlayerController` lifecycle: `TBD_MissionBrowser.c`,
-//! `TBD_BriefingController.c` and `TBD_LobbyController.c` already mod that class, and piling a
-//! lifecycle on top of it would add a fourth. (T-181.24 does add one more `modded` block, in
-//! `TBD_SpectatorHost.c`, but only as an RPC transport — the same narrow use the other three make
-//! of it, and for the same reason: the player controller is the only entity a client OWNS and can
-//! therefore send a `RplRcver.Server` message on.) Deliberately NOT a bare `GameSystem` either —
+//! Deliberately NOT a `modded class SCR_PlayerController` lifecycle. T-181.30 — there are **six**
+//! such blocks in the addon today (`TBD_MissionBrowser.c`, `TBD_BriefingController.c`,
+//! `TBD_LobbyController.c`, `TBD_SpectatorHost.c`, `TBD_MarkerController.c`,
+//! `TBD_RadioController.c`); this header used to say three, and the number keeps moving, so treat
+//! the Landmines section of `docs/mod/t181_event_mod_program.md` as the count of record rather than
+//! any file header. What matters here is unchanged and is not about the count: every one of those
+//! blocks is a narrow RPC transport (`TBD_SpectatorHost.c` included), because the player controller
+//! is the only entity a client OWNS and can therefore send a `RplRcver.Server` message on. A
+//! LIFECYCLE on top of that is a different and much wider thing, and it belongs on the game mode.
+//! Deliberately NOT a bare `GameSystem` either —
 //! auto-registration of a scripted system is not something the headless compile lane can prove, and
 //! an unprovable lifecycle is exactly what this program refuses to ship.
 //!
