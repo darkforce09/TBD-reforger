@@ -6373,7 +6373,7 @@
           ],
           "executor": "claude-code",
           "status": "ready",
-          "notes": "Lobby picker opens on top of already-deployed players. Raise() is unconditional by design ('gating the initial open would mean the picker silently never appears'), but m_bAutoDeploy=1 deploys everyone 250ms into LOBBY, and the screen only self-closes on TBD_LobbyClient.IsDeployed() which the server-side wave never sets. PREDICTED TO BE THE FIRST THING VISIBLE on the first live test after the Workbench rdb pass and before the m_bAutoDeploy flip — i.e. exactly the sequence the program doc prescribes. Fix EITHER by flipping m_bAutoDeploy in the same sitting as the rdb pass, OR by having the initial raise skip a player who already controls an entity."
+          "notes": "Lobby picker opens on top of already-deployed players. Raise() is unconditional by design ('gating the initial open would mean the picker silently never appears'), but m_bAutoDeploy=1 deploys everyone 250ms into LOBBY, and the screen only self-closes on TBD_LobbyClient.IsDeployed() which the server-side wave never sets. PREDICTED TO BE THE FIRST THING VISIBLE on the first live test after the Workbench rdb pass and before the m_bAutoDeploy flip — i.e. exactly the sequence the program doc prescribes. Fix EITHER by flipping m_bAutoDeploy in the same sitting as the rdb pass, OR by having the initial raise skip a player who already controls an entity. || STILL BLOCKED — do not read T-181.25 as unblocking this. That slice proved the menu PRESET RESOLVES (5 'not found' errors -> 0), which is necessary and NOT sufficient. Nothing has rendered the screen, so it is still unknown whether the layout draws, whether the picker is usable, and whether the six modded SCR_PlayerController blocks coexist at runtime. This slice's fix depends on OBSERVING the behaviour it is meant to correct (the picker opening on top of already-deployed players), so an agent would still be guessing. Waits on a real load-in."
         },
         "T-181.30": {
           "targets": [
@@ -6502,6 +6502,14 @@
           "executor": "claude-code",
           "status": "ready",
           "notes": "Add .meta sidecars for the 10 action .conf files so the spectator/admin KEYBINDS register. From the operator's Workbench log: Configs/System/ActionContext/TBD_BrowserContext.conf and TBD_SpectatorContext.conf, and Configs/System/Actions/TBD_{AdminMenu,MissionCycle,MissionLoad,SpecFree,SpecNext,SpecPrev,SpecRoster,SpecView}.conf all report 'resource not registered: Setting null GUID'. Data/backend.example.json and Data/registry.json do too — check whether those need one or are read by path (TBD_Registry's profile fallback works today, so registry.json may be fine unregistered). chimeraMenus.conf and both .layout files DO have .meta sidecars and register correctly, so copy that shape — see UI/layouts/TBD_ScreenShell.layout.meta. NOTE the GUID in a .meta is the resource's identity: TBD_ScreenShell.layout.meta declares {7BD1A70000000701} and chimeraMenus.conf references exactly that, so any GUID invented here must be unique and must match wherever it is referenced. Separate from the screens, which T-181.25 unblocked via addon.gproj MenuConfigs."
+        },
+        "T-181.46": {
+          "targets": [
+            "root"
+          ],
+          "executor": "human",
+          "status": "ready",
+          "notes": "BLOCKS THE FIRST LOAD-IN. The operator's live mission (6d291619-8182-4164-866d-4e165a5516af) is REJECTED by the validator, so the server parks in LOADING and nothing can be observed. From their Workbench log: ERROR 'winConditions.endOn[1] declares faction_eliminated but only 1 faction(s) actually have slots', plus WARNING 'faction:opfor declared but has no slots — nobody can play this side'. T-181.37's check is CORRECT here: a one-sided PvP round genuinely cannot resolve on faction_eliminated. The fix is AUTHORING, not code — either give opfor slots in the Mission Creator, or drop faction_eliminated from that mission's winConditions.endOn. Until one of those happens, no screen, no spawn and no behavioural claim can be observed, so this gates T-181.16 and T-181.29. Worth checking in the same pass: the same log also carried WARNING 'slots — terrain bounds unavailable at validation time — slot positions were NOT range-checked', so slot positions went unvalidated on that load."
         }
       },
       "active_slice": "T-181.15",
