@@ -6012,7 +6012,11 @@
         "T-181.23",
         "T-181.24",
         "T-181.25",
-        "T-181.26"
+        "T-181.26",
+        "T-181.27",
+        "T-181.28",
+        "T-181.29",
+        "T-181.30"
       ],
       "slice_plan": {
         "T-181.0": {
@@ -6286,7 +6290,7 @@
           ],
           "executor": "claude-code",
           "status": "shipped",
-          "notes": "Parser gaps @ 94e72e3d. briefings/markers/zone label/ORBAT callsign+slot+kit all added, every field name verified against mission.schema.json rather than assumed. CAUGHT AN ERROR IN ITS BRIEF: wiring only OnStageReplicated would have regressed the LISTEN HOST, because onRplName fires only on the proxy and on a listen host authority IS the local player — so both the callback and the authority setter now call one guarded helper. Poll deleted. schema-validate's golden missions still PASS; that target's overall exit 2 is a pre-existing LFS/DEM issue, proved on a clean tree."
+          "notes": "Parser gaps @ 94e72e3d. briefings/markers/zone label/ORBAT callsign+slot+kit all added, every field name verified against mission.schema.json rather than assumed. CAUGHT AN ERROR IN ITS BRIEF: wiring only OnStageReplicated would have regressed the LISTEN HOST, because onRplName fires only on the proxy and on a listen host authority IS the local player — so both the callback and the authority setter now call one guarded helper. Poll deleted. schema-validate's golden missions still PASS; that target's overall exit 2 is a pre-existing LFS/DEM issue, proved on a clean tree. || CORRECTION (wave-3 verifier, confirmed independently): the headline deliverable is DEAD CODE. GetBriefingForFaction() has ZERO callers; TBD_MissionBriefingStruct/TBD_MissionMarkerStruct/ORBAT callsign+slot+kit are referenced nowhere outside their declarations; TBD_BriefingPayload has no situation/mission/execution fields and TBD_BriefingScreen has no ORDERS section. Only zone `label` is actually consumed. The parse layer landed; the briefing screen STILL shows structure without orders. My earlier note said 'all added', which was true of the structs and misleading about the outcome. Consuming it is T-181.27."
         },
         "T-181.24": {
           "targets": [
@@ -6310,7 +6314,39 @@
           ],
           "executor": "claude-code",
           "status": "ready",
-          "notes": "CONFIRMED BY TWO INDEPENDENT AGENTS. `string.Split`'s empty-token behaviour is native, absent from every oracle, and a RUNTIME property no compile probe can settle. Both T-181.9.1 (lobby) and T-181.11.2 (admin) hit it and each designed around it — lobby with a `~` sentinel, admin with a leading `.` marker so no field is ever empty. TBD_BriefingService (merged) did NOT, and has TWO exposures: the `M` record serialises mission name / terrain / factionKey / factionName positionally, and `Record3(\"S\", group, role, kit)` is parsed with `f.Count() >= 4` while `kit` is frequently empty — if Split drops empty tokens, 'YOUR SEAT' vanishes for every kit-less slot and the header fields shift. Fix: adopt one sentinel convention across all three wire formats. Settle Split's actual behaviour with ONE live run rather than three defensive designs."
+          "notes": "REWRITTEN after the wave-3 verifier disproved the original filing. (a) The original claim — Record3(\"S\",group,role,kit) breaks 'where kit is frequently empty' — is WRONG: slot.kit is schema-required and a validator ERROR, so a kit-less mission never becomes valid and that record is unreachable. (b) The REAL exposures are validator-WARNING fields that a running mission may legally carry: meta.name, meta.terrain, groupCallsign, role. (c) WORST CASE is not a clean drop: in TBD_BriefingData.c:555 a dropped `G` record leaves `current` pointing at the PREVIOUS group, so its roles render under the WRONG CALLSIGN — the only place in the program where wrong data is displayed rather than missing. (d) SCOPE WAS TOO NARROW: the lobby parses TBD_SpawnManager.BuildSlotRoster() (TBD_SpawnManager.c:577) which is emitted RAW and UNSANITISED, guarded by f.Count()>=6 at TBD_LobbyData.c:347/:431 — an empty groupCallsign or role makes an entire SEAT INVISIBLE AND UNCLAIMABLE in the picker. That is the invariant-touching case and the original ticket did not name the file. FIX: one sentinel convention across all three wire formats PLUS pack/sanitise at TBD_SpawnManager.c:577 — or settle Split's behaviour on one live run and delete two of the three conventions. Neither golden mission can surface this (18/18 slots complete), so a fixture with empty warning-fields is part of the fix."
+        },
+        "T-181.27": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Consume the briefing prose that T-181.23 parsed but nothing reads. Add situation/mission/execution (+markers) to TBD_BriefingPayload, serialise them, and render an ORDERS section in TBD_BriefingScreen via TBD_MissionLoader.GetBriefingForFaction(). This is what makes the briefing screen a BRIEFING rather than a structure dump — the operator named it as an Arma-3 parity feature. Keep side discipline: prose is per-faction and must stay server-filtered like the rest of the payload."
+        },
+        "T-181.28": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Briefing has no JIP catch-up. T-181.23 deleted the 500ms poll and made it push-only, but NotifyLocalStageUI silently drops the notification when GetPlayerController() is null, and m_TBD_LastStage starts at LOADING per controller. So a client joining/reconnecting while the round sits in BRIEFING may never see it. This is the NORMAL case, not an edge: BRIEFING is admin-driven only, so rounds sit there. The lobby kept its poll and is JIP-safe; the briefing is not. Fix: a catch-up read of GetStage() when the local controller first appears (not a reinstated poll)."
+        },
+        "T-181.29": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Lobby picker opens on top of already-deployed players. Raise() is unconditional by design ('gating the initial open would mean the picker silently never appears'), but m_bAutoDeploy=1 deploys everyone 250ms into LOBBY, and the screen only self-closes on TBD_LobbyClient.IsDeployed() which the server-side wave never sets. PREDICTED TO BE THE FIRST THING VISIBLE on the first live test after the Workbench rdb pass and before the m_bAutoDeploy flip — i.e. exactly the sequence the program doc prescribes. Fix EITHER by flipping m_bAutoDeploy in the same sitting as the rdb pass, OR by having the initial raise skip a player who already controls an entity."
+        },
+        "T-181.30": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Small truth-in-comments + hardening from the wave-3 verifier. (1) TBD_MissionBrowser.c:13-20 claims 'two blocks are measured to compile and interoperate; three are not' — a THIRD modded SCR_PlayerController block (TBD_LobbyController.c:29) landed in the same wave, so the comment now misinforms. The verifier proved all three merge statically with a negative-controlled probe. (2) TBD_BriefingData.c:231 assigns m_sFactionKey without Sanitise() while every neighbouring field sanitises. (3) TBD_AdminService audit: NoteDeniedAccess takes a ring slot per (playerId,surface) and one client reaches ~5 surfaces, so ~10 unauthorised clients still evict every real action from the 60-entry ring; s_mDeniedSeen is a never-reset static. (4) Unbounded console warn per refused RPC (no data leak, log volume only)."
         }
       },
       "active_slice": "T-181.15",

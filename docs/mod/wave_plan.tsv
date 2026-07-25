@@ -22,3 +22,7 @@ wave	slice	title	owns
 5	T-181.19	Map markers from mission JSON	Scripts/Game/TBD/Markers/** (new)
 6	T-181.13.1	Thin end-of-round results POST	Scripts/Game/TBD/Backend/** (new)
 6	T-181.26	Briefing wire-format sentinel (string.Split empty-token fragility)	Scripts/Game/TBD/UI/TBD_BriefingData.c
+6	T-181.27	Briefing ORDERS section (consume the prose T-181.23 parsed)	Scripts/Game/TBD/UI/TBD_Briefing*.c
+6	T-181.28	Briefing JIP catch-up (push-only has no late-join path)	Scripts/Game/TBD/UI/TBD_BriefingController.c
+7	T-181.29	Lobby raise must skip already-deployed players	Scripts/Game/TBD/UI/Lobby/**
+7	T-181.30	Truth-in-comments + audit-ring hardening	Scripts/Game/TBD/Gamemode/**
