@@ -106,7 +106,7 @@ of claiming it:
 |---|---|
 | `bash scripts/mod/compile.sh` | the Enfusion actually compiles (~1.3 s, no Workbench) |
 | `enf lookup <Symbol>` | the API being called genuinely exists |
-| `make verify-no-crf-leak` | no Arma-Public-License code leaked into prod |
+| `make verify-no-crf-leak` | no oracle code leaked into prod — CRF (Arma Public License) **and** PlayableSelector (no licence at all); see SLICE_WORKFLOW.md §Oracle lanes |
 | `make verify-capability` | no capability silently forgotten |
 | `make verify-oracle` | no invented `file:line` in docs |
 
