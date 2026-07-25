@@ -51,10 +51,21 @@
 //! where they fell. Fly the camera far enough and the world will be empty — not because the
 //! camera is broken, but because those entities were never sent to this machine. That is why
 //! `TBD_SpectatorTargets` reports a "not in view" count instead of pretending the roster is short.
-//! CRF works around this by giving the spectator a real, physics-disabled character entity to
-//! possess, so the streaming origin moves with them. Doing that here means possessing an entity,
-//! which is `TBD_SpawnManager` / `TBD_SCR_RespawnSystemComponent` territory — see the hook
-//! requested in this slice's report rather than an edit across the line.
+//!
+//! **T-181.24 addresses this** with `TBD_SpectatorHost`: the SERVER gives a dead player an inert,
+//! damage-free `TBD_SpectatorHostEntity` to possess and this class reports the camera position to
+//! it (`ReportCameraToHost` below, ~2/s, unreliable, 12 bytes), so the streaming origin travels
+//! with the view. CRF reaches the same place with a physics-disabled CHARACTER; TBD deliberately
+//! does not, because a character can be killed and a killed character spends a life — the full
+//! argument is in the `TBD_SpectatorHostEntity` header.
+//!
+//! Two consequences for the code below, both load-bearing:
+//!   * `TBD_SpectatorTargets.IsAlive` returns FALSE for a streaming host. Without that, a
+//!     spectator whose own controlled entity became the host would be read as ALIVE by `Tick`,
+//!     `Leave()` would tear the camera down, and the player would be left driving an invisible
+//!     dummy with no view and no way back. It is the single most important client-side guard here.
+//!   * The "not in view" count is still honest and still needed: the host improves what is streamed
+//!     around the CAMERA, it does not make everything on the server visible.
 class TBD_SpectatorController
 {
 	//! Fast enough that death -> camera is imperceptible, slow enough to be free.
@@ -71,6 +82,16 @@ class TBD_SpectatorController
 	static const float ENTRY_BACK_M   = 4.0;
 	static const float ENTRY_PITCH_DEG = -18.0;
 
+	//! T-181.24 — one camera report every N ticks. 2 x 250 ms = twice a second, which is fast enough
+	//! that the streaming origin never falls far behind a camera doing 18 m/s and slow enough to be
+	//! free. Sent unreliable: a dropped sample is corrected by the next one, whereas a reliable
+	//! channel would queue and replay stale positions after a stall.
+	static const int HOST_REPORT_EVERY_TICKS = 2;
+
+	//! Do not spend a packet on jitter. Below this the server would refuse the move anyway
+	//! (`TBD_SpectatorHost.MIN_MOVE_M`), so the message is not sent in the first place.
+	static const float HOST_REPORT_MIN_MOVE_M = 2.0;
+
 	protected static TBD_SpectatorCamera s_Camera;
 	protected static CameraBase s_PreviousCamera;
 
@@ -78,6 +99,13 @@ class TBD_SpectatorController
 	protected static bool s_bHadLife;
 	protected static bool s_bListenersRegistered;
 	protected static int s_iNoBodyMs;
+
+	//! T-181.24 — camera-report bookkeeping. `s_bHostReported` exists so the FIRST report is always
+	//! sent: comparing against a zeroed `s_vHostReported` would silently swallow it for anyone who
+	//! died near the map origin.
+	protected static int s_iHostReportTicks;
+	protected static bool s_bHostReported;
+	protected static vector s_vHostReported;
 
 	//! Who we are following, or -1. Kept as a player id rather than an entity so the follow
 	//! survives the target's entity being re-created under it.
@@ -167,6 +195,7 @@ class TBD_SpectatorController
 		s_iFollowPlayerId = -1;
 		s_bFirstPerson = false;
 		s_PreviousCamera = null;
+		ResetHostReporting();
 
 		if (s_aCycleTargets)
 			s_aCycleTargets.Clear();
@@ -216,6 +245,7 @@ class TBD_SpectatorController
 		{
 			ValidateFollow();
 			UpdateInputOwnership();
+			ReportCameraToHost();
 			return;
 		}
 
@@ -280,6 +310,7 @@ class TBD_SpectatorController
 		s_bActive = true;
 		s_iFollowPlayerId = -1;
 		s_bFirstPerson = false;
+		ResetHostReporting();
 
 		Print("[TBD][spectator] entered — one life spent, free camera live.");
 
@@ -321,6 +352,7 @@ class TBD_SpectatorController
 		s_bActive = false;
 		s_iFollowPlayerId = -1;
 		s_bFirstPerson = false;
+		ResetHostReporting();
 
 		Print("[TBD][spectator] left — back in the world.");
 	}
@@ -479,6 +511,52 @@ class TBD_SpectatorController
 
 		int top = TBD_MenuStack.TopPreset();
 		s_Camera.SetInputEnabled(top == -1 || top == ChimeraMenuPreset.TBD_Spectator);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.24 — tell the server where to keep our streaming origin.
+	//!
+	//! CLIENT ONLY, and deliberately fire-and-forget: this class never learns whether a host exists.
+	//! That is not laziness, it is the same reasoning that made this a poll rather than a hook — the
+	//! authority owns whether a dead player gets a host (`TBD_SpectatorHost.Tick`), it can withdraw
+	//! one at any moment, and a client-side mirror of that decision would be a second source of
+	//! truth that could disagree with it. A report that lands with no host is dropped by the
+	//! authority in three lines and costs nothing.
+	//!
+	//! On a listen host `TBD_ReportSpectatorCamera` short-circuits straight into the authority
+	//! rather than RPC-ing to itself, so both topologies run one code path.
+	protected static void ReportCameraToHost()
+	{
+		if (!s_Camera)
+			return;
+
+		s_iHostReportTicks++;
+		if (s_iHostReportTicks < HOST_REPORT_EVERY_TICKS)
+			return;
+
+		s_iHostReportTicks = 0;
+
+		vector position = s_Camera.GetPosition();
+		if (s_bHostReported && vector.Distance(position, s_vHostReported) < HOST_REPORT_MIN_MOVE_M)
+			return;
+
+		SCR_PlayerController controller = SCR_PlayerController.Cast(GetGame().GetPlayerController());
+		if (!controller)
+			return;
+
+		s_bHostReported = true;
+		s_vHostReported = position;
+		controller.TBD_ReportSpectatorCamera(position);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.24 — forget where we last told the server we were, so the next entry always sends a
+	//! first report instead of suppressing it as "no movement since last round".
+	protected static void ResetHostReporting()
+	{
+		s_iHostReportTicks = 0;
+		s_bHostReported = false;
+		s_vHostReported = vector.Zero;
 	}
 
 	//------------------------------------------------------------------------------------------------

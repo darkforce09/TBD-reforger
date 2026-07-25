@@ -140,10 +140,21 @@ class TBD_SpectatorTargets
 				// Connected, but their character is not on this machine. We cannot know whether
 				// they are alive, whose side they are on, or where they are — so we cannot offer
 				// them as a target, only count them.
+				//
+				// T-181.24 makes this count slightly noisier and that is accepted, not overlooked.
+				// A dead player possessing the built-in (server-only, unreplicated) streaming host
+				// resolves to null here where their corpse might previously have resolved to a
+				// visibly-dead body, so they now land in `notInView` instead of being skipped
+				// silently. Fixing it would mean shipping the server's dead-list to every client —
+				// a second source of truth for a question this class deliberately answers from what
+				// the client can see. A slightly high "not in view" is the honest error direction:
+				// it over-reports "there may be more out there", never under-reports it.
 				notInView++;
 				continue;
 			}
 
+			// A streaming host is not a person. `IsAlive` refuses it (see the T-181.24 block there),
+			// which is what keeps a dead player's anchor out of everybody else's roster.
 			if (!IsAlive(entity))
 				continue;
 
@@ -191,9 +202,30 @@ class TBD_SpectatorTargets
 	//------------------------------------------------------------------------------------------------
 	//! Alive, from the character controller. A destroyed damage state is the fallback for anything
 	//! that is not a character (a spectator could be watching a manned turret).
+	//!
+	//! ── T-181.24: A STREAMING HOST IS NEVER ALIVE, AND THIS IS THE GUARD THAT MATTERS MOST ──────
+	//! A dead player possesses a `TBD_SpectatorHostEntity` so the server keeps streaming the world
+	//! around their camera. That dummy has no character controller and no damage manager, so the
+	//! `return true` at the bottom of this function — the "anything we cannot classify is alive"
+	//! fallback, which is right for a turret — would call it ALIVE. Two things would break, both
+	//! badly:
+	//!
+	//!   1. `TBD_SpectatorController.Tick` asks this about the LOCAL controlled entity. A spectator
+	//!      whose own host answered "alive" would be read as back in the world: `Leave()` would tear
+	//!      down the camera and hand the view to a body that does not exist, leaving the player
+	//!      driving an invisible dummy with no camera and no way out. Then the next tick would see
+	//!      "alive" again, so it would never recover.
+	//!   2. Every OTHER spectator would see the dead player as a living, followable target — and
+	//!      following one would point their camera at an invisible nothing.
+	//!
+	//! Checked FIRST, ahead of every other test, because it must hold no matter what components a
+	//! future host prefab happens to carry.
 	static bool IsAlive(IEntity entity)
 	{
 		if (!entity)
+			return false;
+
+		if (TBD_SpectatorHostEntity.IsHost(entity))
 			return false;
 
 		SCR_CharacterControllerComponent controller = SCR_CharacterControllerComponent.Cast(entity.FindComponent(SCR_CharacterControllerComponent));

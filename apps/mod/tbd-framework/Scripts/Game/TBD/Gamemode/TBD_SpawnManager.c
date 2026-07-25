@@ -353,6 +353,35 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.24 — the connection epoch, for state HELD ACROSS TIME rather than parked in the
+	//! callqueue.
+	//!
+	//! T-181.15 introduced epochs because `ScriptCallQueue.Remove` cancels BY FUNCTION, so a
+	//! deferred per-player callback cannot be cancelled for one player and survives their
+	//! disconnect. A per-player RECORD kept in a map has the identical hazard wearing a different
+	//! hat — a row left under a recycled number hands a fresh joiner the previous occupant's
+	//! belongings — so `TBD_SpectatorHost` stamps every streaming-host record with this and retires
+	//! any record whose stamp has moved on. One mechanism, one definition of "still the same
+	//! person", borrowed rather than reinvented.
+	//!
+	//! These two are the ONLY public surface added for it. Deliberately read-only: nothing outside
+	//! this class can open, close or advance an epoch.
+	//! @authority server
+	int ConnectionEpochFor(int playerId)
+	{
+		return EnsureConnectEpoch(playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.24 — is the player sitting on `playerId` right now the same one this epoch was taken
+	//! for? False after they disconnect, and false for whoever is later handed that recycled number.
+	//! @authority server
+	bool IsConnectionCurrent(int playerId, int epoch)
+	{
+		return IsSameConnection(playerId, epoch);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! T-181.21 — is this slot already somebody else's seat?
 	//!
 	//! Three kinds of holder block a slot; only the first existed before:
@@ -1503,6 +1532,25 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// our own deploy would be the first casualty of the backstop.
 		// T-181.22 — the ticket names `body`, so it authorizes a takeover of THAT entity and
 		// nothing else, and the possess handler spends it as soon as vanilla hands it over.
+		//
+		// ── T-181.24: DROP THE SPECTATOR STREAMING HOST FIRST ──────────────────────────────────
+		// A spectating dead player is possessing an inert `TBD_SpectatorHostEntity` so the server
+		// keeps streaming the world around their camera. Releasing it here — and here specifically,
+		// at the point of no return, AFTER every refusal above has been passed — is what keeps this
+		// slice from changing the deploy path at all:
+		//   * released before possession, `SCR_PlayerController` is back to `IsPossessing() == false`
+		//     with the corpse as its controlled entity, which is byte-for-byte the state every line
+		//     below (and the whole vanilla possess pipeline) was written against;
+		//   * released only at the point of no return, a DENIED / RETRY / FAILED attempt never costs
+		//     a spectator their streaming anchor for nothing — an admin respawn that comes back
+		//     RETRY leaves them watching the battle, not staring at an empty world;
+		//   * it can only ever fire on the ADMIN path in practice, because a spent life is the sole
+		//     precondition for having a host and DENIED is the sole answer a spent life gets from
+		//     the guard above unless `adminOverride` is set.
+		// The reconcile tick in TBD_SpectatorHost is the backstop if this is ever missed: it retires
+		// any host whose owner is no longer dead.
+		TBD_SpectatorHost.ReleaseFor(playerId, "deploying — the player is going back into a real body");
+
 		AuthorizeSpawn(playerId, body);
 		bool possessed = PossessSlotBody(pc, body, playerId);
 		if (!possessed)
@@ -2079,6 +2127,28 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		if (RplSession.Mode() == RplMode.Client)
 			return;
+
+		// ── T-181.24: DROP THE SPECTATOR STREAMING HOST BEFORE ANYTHING ELSE LOOKS AT THIS PLAYER ─
+		// FIRST, on purpose, and the ordering is the whole point rather than tidiness.
+		//
+		// `SCR_BaseGameMode.OnPlayerDisconnected` dispatches to us and only THEN — still inside the
+		// same function — reaches the disconnecting player's CONTROLLED ENTITY and deletes it. If a
+		// dead player is possessing a streaming host at that instant, their controlled entity is the
+		// HOST, not their corpse. Two things would go wrong if we left it that way:
+		//   * `ForgetBodyVanillaIsAboutToTake` compares the controlled entity to the slot body,
+		//     would see the host instead, and would silently do nothing — so the whole T-181.15
+		//     argument it encodes (vanilla is about to take this body away, stop trusting the handle)
+		//     would quietly stop applying to the one case it was written for;
+		//   * the host itself would be deleted by vanilla out from under `TBD_SpectatorHost`, whose
+		//     record would then point at nothing.
+		// Releasing here restores the corpse as the controlled entity, so every line below runs
+		// against exactly the world it did before this slice existed. `ReleaseFor` is a no-op for a
+		// player who has no host, which is every living player.
+		//
+		// ONE LIFE is untouched by this: it hands the VIEW back to a corpse and deletes an inert
+		// dummy. It does not clear `m_mDeadPlayers`, does not touch the seat, and cannot produce a
+		// live body — a reconnecting player still meets the spent life and is still DENIED.
+		TBD_SpectatorHost.ReleaseFor(playerId, "player disconnected");
 
 		// Resolve the durable key BEFORE the engine finishes tearing the player down — after
 		// that the identity lookup stops answering and only the cache can.
