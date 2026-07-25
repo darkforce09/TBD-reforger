@@ -137,6 +137,24 @@ Recorded here because CLAUDE.md forbids silent deferrals.
 - **Radio/VON is wanted but not via CRF's route** — CRF depends on the external CVON workshop
   mod; TBD must not. Reimplement from `radioPlan.nets[]`.
 
+## 6b. Open decisions awaiting operator word
+
+Listed, not silently resolved. Each has a default in force so nothing is blocked.
+
+- **Spectator streaming range vs competitive integrity — `m_fHostMaxRangeM`, default `0`
+  (unlimited).** T-181.24 gives a dead player an inert entity to anchor network streaming, so the
+  free cam sees a world that is actually loaded. That is the feature. The side effect is that
+  streaming range is now *steerable by a spectating client*, and `TBD_SpectatorTargets`'s faction
+  filter was explicitly documented as discipline whose real backstop is "the engine's own
+  replication range". A **modified** client could therefore pull the enemy AO into scope where
+  previously it would have flown into an empty world. The default is unlimited because seeing the
+  AO is the entire point of spectating; setting `m_fHostMaxRangeM` to a finite value trades
+  spectator usefulness for a harder integrity floor. The slice agent declined to choose and was
+  right to: this is an event-integrity call, not an engineering one.
+  - Worth weighing against: one life means spectators are *players who are out*, not neutral
+    observers, and this is the group with the most motive. Against that, TBD events are a known
+    community, not a public server.
+
 ## 7. How to work here
 
 1. **Query before designing** — `enf lookup`, `enf dirs`, `capability_matrix.tsv`.

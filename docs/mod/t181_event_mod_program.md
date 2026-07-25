@@ -153,6 +153,23 @@ found!`, so none of these can open: `TBD_UIShell`, `TBD_Spectator`, `TBD_UIBrief
 (+ admin). Non-script resources (`.conf`, `.layout`) are invisible to the engine until the rdb is
 rewritten; `.c` files are directory-scanned and are NOT affected.
 
+**Measured inventory (2026-07-25)** — `resourceDatabase.rdb` is 4,513 bytes and knows about
+**4 of the 14** non-script resources in the addon. The 10 it cannot see:
+
+| Missing from rdb | Gates |
+|---|---|
+| `Configs/System/chimeraMenus.conf` | all five menu presets |
+| `UI/layouts/TBD_ScreenShell.layout`, `TBD_ListRow.layout` | every screen's widgets |
+| `Configs/System/ActionContext/TBD_SpectatorContext.conf` | spectator input context |
+| `Configs/System/Actions/TBD_Spec{Free,Next,Prev,Roster,View}.conf` | spectator keybinds |
+| `Configs/System/Actions/TBD_AdminMenu.conf` | admin menu keybind |
+
+It does contain `TBD_GameMode.et` and `TBD_PlayerController.et`, which is exactly why the game mode
+wires up fine today while no screen can open. This is also why wave 5 deliberately avoided authoring
+new `.et`/`.conf`/`.layout` files: the spectator streaming host is prefab-free
+(`GetGame().SpawnEntity(typename, …)`) and markers ride the vanilla placed-marker system, so
+**neither of those slices is gated on this pass**.
+
 **Settles** — T-181.25: whether four separate `modded enum ChimeraMenuPreset` blocks produce
 distinct values (unprovable from the compile lane), and whether three `modded class
 SCR_PlayerController` blocks coexist at runtime.
