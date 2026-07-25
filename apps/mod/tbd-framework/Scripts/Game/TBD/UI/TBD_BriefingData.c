@@ -30,6 +30,21 @@
 //! **Fail closed:** a player with no assigned slot has no faction, and gets an empty briefing
 //! that says so. Unknown side is never treated as "show everything".
 //!
+//! ── T-181.27: the WRITTEN ORDERS obey exactly the same three properties ─────────────────
+//! `briefings` is `map<string, TBD_MissionBriefingStruct>` keyed by faction, so `situation` /
+//! `mission` / `execution` are side-scoped intelligence in the same sense the ORBAT is — and more
+//! sensitive in practice, because prose states intent. `golden-missions/bridgehead-at-levie.json`
+//! is the proof by example: BLUFOR is told *"Alpha advances from the western treeline under MG
+//! support"* while OPFOR is told *"Grom defends the eastern bank and the checkpoint"*. Shipping
+//! both to both sides and filtering in the widget would hand each side the other's scheme of
+//! manoeuvre at the one bridge that decides the round.
+//!
+//! `BuildOrders` therefore reads `TBD_MissionLoader.GetBriefingForFaction(own.faction)` and
+//! nothing else. **A client asking for the other side's orders cannot phrase the question** —
+//! `TBD_RpcAsk_Briefing()` still takes no arguments, so there is nowhere to put a faction, and the
+//! answer is whatever the server's own `GetAssignedSlot` says the caller is. No slot means no
+//! side, which means no orders: `BuildForPlayer` returns before `BuildOrders` is ever reached.
+//!
 //! ── Why the ORBAT is derived from `slots[]`, not from `orbat` ───────────────────────────────
 //! This started as a limitation and is now a deliberate choice. T-181.23 modelled the missing
 //! `callsign` / `type` / `slot` / `kit` keys on `TBD_MissionOrbatGroupStruct` and
@@ -147,6 +162,17 @@ class TBD_BriefingPayload
 	ref array<ref TBD_BriefingGroup> m_aGroups;
 	ref array<ref TBD_BriefingZone> m_aZones;
 
+	// ── T-181.27 — their WRITTEN ORDERS ───────────────────────────────────────────
+	//! One entry per authored PARAGRAPH, in document order. Empty means "this side authored none",
+	//! which is the same rendering outcome as "the key was absent" and as "the key was blank" —
+	//! three legal states, one honest answer: show nothing at all, never a blank heading.
+	//!
+	//! Paragraphs rather than one blob because the wire cannot carry a newline (see the note above
+	//! `SplitLines`), and because a row-based list wants discrete units anyway.
+	ref array<string> m_aSituation;
+	ref array<string> m_aMission;
+	ref array<string> m_aExecution;
+
 	// ── How the round ends. Not faction-specific: both sides play the same win condition, so
 	//    there is nothing to filter here.
 	string m_sWinMode;
@@ -163,12 +189,35 @@ class TBD_BriefingPayload
 		m_aGroups = {};
 		m_aZones = {};
 		m_aEndConditions = {};
+		m_aSituation = {};
+		m_aMission = {};
+		m_aExecution = {};
 	}
 
 	//------------------------------------------------------------------------------------------------
 	bool IsAvailable()
 	{
 		return m_sUnavailableReason.IsEmpty();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! True when this side authored at least one paragraph of orders.
+	//!
+	//! A CONTENT test on purpose. The arrays are allocated in the constructor and are therefore
+	//! never null, so a null test here would be one of the dead guards this file already carries a
+	//! warning about — it would read as a presence check while always being true.
+	bool HasOrders()
+	{
+		return OrderParagraphCount() > 0;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	int OrderParagraphCount()
+	{
+		int n = m_aSituation.Count();
+		n += m_aMission.Count();
+		n += m_aExecution.Count();
+		return n;
 	}
 }
 
@@ -190,6 +239,30 @@ class TBD_BriefingService
 
 	protected static const string FIELD_SEP = "\t";
 	protected static const string LINE_SEP = "\n";
+
+	//! T-181.27 — bounds on one side's written orders. The schema puts no `maxLength` on any of
+	//! the three fields, so a pathological document could otherwise push an unbounded string down a
+	//! reliable channel. Both caps are generous next to a real OPORD (a full Arma 3 briefing runs
+	//! well under 2,000 bytes) and neither is ever applied SILENTLY — see `WarnOnce`.
+	//!
+	//! BYTES, not characters: `string.Length()` was measured returning 3 for `"…"` and 2 for `"·"`.
+	//! Accented prose therefore spends the budget slightly faster than its glyph count suggests,
+	//! which errs on the safe side for a reliable channel.
+	protected static const int MAX_ORDER_CHARS = 6000;
+	protected static const int MAX_ORDER_PARAGRAPHS = 16;
+
+	//! Smallest remaining budget worth spending on a paragraph. Below this the field is dropped
+	//! whole (and warned about) instead of rendering a stub too short to mean anything.
+	protected static const int MIN_ORDER_TAIL = 24;
+
+	//! Truncation warnings already emitted, keyed `faction|field`. A briefing is re-requested every
+	//! time the screen opens, so an ungated warn would let one over-long mission fill the console.
+	//! Same defect `TBD_MarkerService.ShouldLog` exists to avoid, and the same fix.
+	protected static ref map<string, bool> s_mWarned;
+
+	//! Ceiling on that table. Bounded by (factions x 3 fields) in practice; dropped wholesale rather
+	//! than leaked if a long session of mission switches ever grows it past this.
+	protected static const int MAX_WARN_STATES = 64;
 
 	// ── SERVER ──────────────────────────────────────────────────────────────────────────────
 
@@ -236,11 +309,106 @@ class TBD_BriefingService
 		payload.m_sOwnKit = Sanitise(own.kit);
 
 		BuildKit(payload, own);
+		BuildOrders(payload, own.faction);
 		BuildOrbat(payload, doc, own);
 		BuildZones(payload, doc, own.faction);
 		BuildEndConditions(payload, doc);
 
 		return payload;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.27 — the WRITTEN ORDERS for the reader's side, and no other side's.
+	//!
+	//! ── Why this is the same side-discipline boundary as the ORBAT ──────────────────────
+	//! `briefings` is keyed by faction exactly like `orbat`, so orders are SIDE-SCOPED
+	//! INTELLIGENCE — "Grom defends the eastern bank and the checkpoint" is precisely what BLUFOR
+	//! must not read. The key handed to `GetBriefingForFaction` is `own.faction`, resolved from
+	//! `TBD_SpawnManager.GetAssignedSlot(playerId)` on the server. The other side's prose is never
+	//! read out of the document, so it never enters the payload, the RPC or the screen.
+	//!
+	//! ── The three legal empty states, all rendering nothing ──────────────────────────
+	//! `briefing` declares NO `required` in the schema, so every field is optional and `required`
+	//! would not have meant non-empty even if it were there:
+	//!   1. no `briefings` block at all        -> `GetBriefingForFaction` returns null;
+	//!   2. a block with no entry for our side -> `GetBriefingForFaction` returns null;
+	//!   3. an entry with the key absent, or present and blank -> empty string.
+	//! `golden-missions/empty-warning-fields.json` ships states 2 and 3 side by side: `opfor` is
+	//! `{}` and `blufor` has `situation`/`mission`/`execution` all `""`. All of them must produce
+	//! ZERO paragraphs, so the screen emits no section and therefore no blank heading.
+	//!
+	//! Note what is NOT tested here: nullness of a nested `ref` field. `GetBriefingForFaction`
+	//! returns null from a MAP LOOKUP MISS, which is a real signal; the struct's own string fields
+	//! are then tested for CONTENT, never for null. `JsonLoadContext` allocates a nested `ref`
+	//! whether or not the key was present, so a null test on one is always false and tells you
+	//! nothing — the landmine documented on `TBD_MissionShapeStruct`.
+	//! @authority server
+	protected static void BuildOrders(TBD_BriefingPayload payload, string factionKey)
+	{
+		TBD_MissionBriefingStruct briefing = TBD_MissionLoader.GetBriefingForFaction(factionKey);
+		if (!briefing)
+			return; // this mission authored no orders for this side. Legal, and not an error.
+
+		// One shared budget across the three fields so a single pathological paragraph cannot
+		// crowd out the other two sections, and the whole block stays bounded on a reliable channel.
+		int budget = MAX_ORDER_CHARS;
+		budget = AppendParagraphs(payload.m_aSituation, briefing.situation, budget, factionKey, "situation");
+		budget = AppendParagraphs(payload.m_aMission, briefing.mission, budget, factionKey, "mission");
+		AppendParagraphs(payload.m_aExecution, briefing.execution, budget, factionKey, "execution");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Split one authored field into display paragraphs, and return what is left of the budget.
+	//!
+	//! Blank paragraphs are dropped — an author's double newline between paragraphs is a separator,
+	//! not an empty line to render.
+	protected static int AppendParagraphs(array<string> destination, string raw, int budget, string factionKey, string field)
+	{
+		if (raw.IsEmpty())
+			return budget; // CONTENT test: absent key and authored-blank are the same thing here.
+
+		array<string> parts = SplitLines(raw);
+		int kept = 0;
+
+		foreach (string part : parts)
+		{
+			string paragraph = TrimSpaces(Sanitise(part));
+			if (paragraph.IsEmpty())
+				continue;
+
+			if (kept >= MAX_ORDER_PARAGRAPHS)
+			{
+				WarnOnce(factionKey, field, string.Format(
+					"faction '%1' authored more than %2 paragraphs of %3; the rest are not shown.",
+					factionKey, MAX_ORDER_PARAGRAPHS, field));
+				break;
+			}
+
+			// Not `budget <= 0`: a handful of bytes left would render the field as a meaningless
+			// stub ("Alp…" was observed in a probe log). Below a useful remainder, drop the rest of
+			// the field and say so, rather than showing a fragment that reads like corruption.
+			if (budget < MIN_ORDER_TAIL)
+			{
+				WarnOnce(factionKey, field, string.Format(
+					"faction '%1' orders exceed the %2-byte budget; %3 was cut short.",
+					factionKey, MAX_ORDER_CHARS, field));
+				break;
+			}
+
+			if (paragraph.Length() > budget)
+			{
+				paragraph = ClipToWord(paragraph, budget) + "…";
+				WarnOnce(factionKey, field, string.Format(
+					"faction '%1' orders exceed the %2-byte budget; %3 was truncated.",
+					factionKey, MAX_ORDER_CHARS, field));
+			}
+
+			destination.Insert(paragraph);
+			budget -= paragraph.Length();
+			kept++;
+		}
+
+		return budget;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -457,6 +625,10 @@ class TBD_BriefingService
 	//!   `Z` zone      title / detail / isOwn
 	//!   `W` win mode  label
 	//!   `E` end-on    one declared round-end trigger
+	//!
+	//! The WRITTEN ORDERS are deliberately absent from this record set — they ride parallel
+	//! `array<string>` RPC parameters instead. See `AdoptOrders` for why free prose must not be
+	//! put through a delimited format.
 	static string Serialise(TBD_BriefingPayload payload)
 	{
 		if (!payload)
@@ -582,6 +754,52 @@ class TBD_BriefingService
 		return payload;
 	}
 
+	//------------------------------------------------------------------------------------------------
+	//! T-181.27 — attach the orders arrays a client just received to the payload it just parsed.
+	//!
+	//! ── Why orders do NOT ride the delimited wire above ─────────────────────────────
+	//! Everything `Serialise` carries is a short structured field that `Sanitise` can safely flatten
+	//! — a callsign, a role, a rounded coordinate. Orders are the opposite: free prose, authored by
+	//! a human, containing newlines by design and any punctuation at all. Pushing that through a
+	//! tab-and-newline record format would mean flattening the author's paragraph breaks into
+	//! spaces AND resting the result on `string.Split`'s unproven empty-token behaviour — the exact
+	//! fragility T-181.26 exists to put a sentinel under. Adding the single most delimiter-hostile
+	//! payload in the mod to that format, in the same wave, would be a choice rather than an
+	//! oversight.
+	//!
+	//! So orders travel as three `array<string>` RPC parameters instead. There is no delimiter, so
+	//! there is nothing to escape and nothing to mis-split: element i is paragraph i, an empty array
+	//! means no orders, and the author's paragraph breaks survive intact. This is T-181.19's
+	//! parallel-array precedent (`TBD_RpcDo_Markers`), taken for the same reason it was taken there.
+	//!
+	//! The arrays are COPIED rather than adopted by reference: they belong to the RPC call frame,
+	//! and the payload outlives it on `TBD_BriefingClient`.
+	static void AdoptOrders(TBD_BriefingPayload payload, array<string> situation, array<string> mission, array<string> execution)
+	{
+		if (!payload)
+			return;
+
+		CopyInto(payload.m_aSituation, situation);
+		CopyInto(payload.m_aMission, mission);
+		CopyInto(payload.m_aExecution, execution);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! A null `source` is a real state here — it is what an RPC parameter is when the sender had
+	//! nothing to send — and is not the dead nested-`ref` null test the header warns about.
+	protected static void CopyInto(array<string> destination, array<string> source)
+	{
+		destination.Clear();
+
+		if (!source)
+			return;
+
+		foreach (string line : source)
+		{
+			destination.Insert(line);
+		}
+	}
+
 	// ── Helpers ─────────────────────────────────────────────────────────────────────────────
 
 	//------------------------------------------------------------------------------------------------
@@ -663,6 +881,146 @@ class TBD_BriefingService
 		clean.Replace(LINE_SEP, " ");
 		clean.Replace("\r", " ");
 		return clean;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Break a string on newlines WITHOUT using `string.Split`.
+	//!
+	//! ── Why this is hand-rolled ───────────────────────────────────────────────
+	//! `string.Split`'s empty-token behaviour is a RUNTIME property: no compile probe on this lane
+	//! can settle it and no oracle documents it. Orders are free prose — the one input most likely
+	//! to contain a leading newline, a double newline between paragraphs, or a trailing one — so
+	//! "does Split emit an empty token, or swallow it?" would decide whether paragraphs land in the
+	//! right order, and it is a question this lane cannot answer.
+	//!
+	//! This loop has no such state. It uses only `IndexOf` / `Substring` / `Length`, all three of
+	//! which are already load-bearing in shipped code (`PrettyResourceName` below), and its output
+	//! is fully determined: N newlines always yield exactly N+1 parts, empty ones included. The
+	//! caller drops the blank parts explicitly, which is a decision rather than an inherited
+	//! behaviour.
+	//!
+	//! Terminating: each iteration removes at least the character at `nl`, so `rest` strictly
+	//! shrinks. `MAX_LINE_SCAN` is a belt-and-braces stop, not the mechanism.
+	protected static array<string> SplitLines(string raw)
+	{
+		array<string> parts = {};
+		string rest = raw;
+
+		for (int guard = 0; guard < MAX_LINE_SCAN; guard++)
+		{
+			int nl = rest.IndexOf(LINE_SEP);
+			if (nl < 0)
+			{
+				parts.Insert(rest);
+				return parts;
+			}
+
+			parts.Insert(rest.Substring(0, nl));
+			rest = rest.Substring(nl + 1, rest.Length() - nl - 1);
+		}
+
+		return parts;
+	}
+
+	//! Hard stop for `SplitLines`. A field with more newlines than this is pathological; the
+	//! paragraph cap would have discarded the tail anyway.
+	protected static const int MAX_LINE_SCAN = 512;
+
+	//------------------------------------------------------------------------------------------------
+	//! Strip leading and trailing SPACES.
+	//!
+	//! ── `string.Trim()` does exist. This is still hand-rolled, deliberately ───────────────
+	//! MEASURED T-181.27, with negative controls, because `string` is a native type and neither
+	//! index covers it:
+	//!   * a bogus method errors  -> `Undefined function 'string.ZZ…'`, so silence means EXISTS;
+	//!   * `string x = s.Trim();`      compiles;
+	//!   * `array<string> x = s.Trim();` FAILS  -> the return is neither void nor a container;
+	//!   * `string x = s.Replace(a,b);` FAILS, and so do `ToUpper()` / `ToLower()` -> those three
+	//!     really do return the documented COUNT;
+	//!   * `int n = <a string>;` compiles but `string s = <an int>;` does NOT — Enfusion coerces
+	//!     string->int implicitly and never the other way. That asymmetry is what makes
+	//!     `string x = s.Foo();` the DISCRIMINATING test and `int n = s.Foo();` a useless one.
+	//! Together: `Trim()` returns a real string and is NOT a member of the mutate-in-place family.
+	//!
+	//! What no probe on this lane can settle is WHICH characters it strips — spaces only, or
+	//! tabs/newlines/other Unicode whitespace too. That is a runtime property, and orders are the
+	//! one input where it would matter. So this keeps a splitter whose behaviour is fully
+	//! determined: it runs AFTER `Sanitise` has already turned tabs and carriage returns into
+	//! spaces, so testing for the single space character is provably sufficient.
+	protected static string TrimSpaces(string value)
+	{
+		int length = value.Length();
+
+		int first = 0;
+		while (first < length && value.Substring(first, 1) == " ")
+		{
+			first++;
+		}
+
+		int last = length - 1;
+		while (last >= first && value.Substring(last, 1) == " ")
+		{
+			last--;
+		}
+
+		if (last < first)
+			return string.Empty;
+
+		return value.Substring(first, last - first + 1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Cut `value` to at most `limit` BYTES, preferring the last word boundary.
+	//!
+	//! ── Why a word boundary, and not just `Substring(0, limit)` ───────────────────────
+	//! MEASURED T-181.27 on a live boot: **`string.Length()` counts BYTES and `Substring` is
+	//! byte-indexed**, not character-indexed. `"…".Length()` is 3, `"·".Length()` is 2, and
+	//! `"café latte".Substring(0, 4)` returns `caf` plus the FIRST BYTE of `é` — a broken UTF-8
+	//! sequence that renders as a replacement glyph. A blind cut at a byte offset can therefore
+	//! sever a multi-byte character, and Everon place names are exactly the accented prose that
+	//! would hit it.
+	//!
+	//! Backing off to the last space fixes that for free: 0x20 cannot appear inside a multi-byte
+	//! UTF-8 sequence, so a cut at a space is always on a character boundary. It also reads better
+	//! — orders are truncated at a word, not mid-syllable.
+	//!
+	//! The fallback (no space within the limit — one unbroken 6,000-byte token) keeps the blind
+	//! cut, because refusing to truncate would be worse than one malformed trailing glyph.
+	protected static string ClipToWord(string value, int limit)
+	{
+		if (limit <= 0)
+			return string.Empty;
+
+		if (value.Length() <= limit)
+			return value;
+
+		string head = value.Substring(0, limit);
+
+		int lastSpace = head.LastIndexOf(" ");
+		if (lastSpace > 0)
+			return head.Substring(0, lastSpace);
+
+		return head;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Warn once per faction+field. Truncating a player's orders is never silent, and never spammy.
+	protected static void WarnOnce(string factionKey, string field, string message)
+	{
+		if (!s_mWarned)
+			s_mWarned = new map<string, bool>();
+
+		if (s_mWarned.Count() > MAX_WARN_STATES)
+			s_mWarned.Clear();
+
+		string key = factionKey + "|" + field;
+
+		bool seen;
+		if (s_mWarned.Find(key, seen))
+			return;
+
+		s_mWarned.Set(key, true);
+		TBD_Log.Warn(CH_BRIEFING, message);
 	}
 
 	//------------------------------------------------------------------------------------------------

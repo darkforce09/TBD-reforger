@@ -9,6 +9,15 @@
 //!   │  YOUR SEAT                                                 │  <- section
 //!   │    Alpha · SL                              kit:us_sl   +   │  <- pick to disclose kit
 //!   │                                                            │
+//!   │  SITUATION                                                 │  <- T-181.27 written orders
+//!   │    Soviet airborne forces hold the Levie bridge crossing.  │
+//!   │  MISSION                                                   │
+//!   │    Seize and hold Levie Bridge before the time limit       │
+//!   │    expires.                                                │  <- wrapped, not clipped
+//!   │  EXECUTION                                                 │
+//!   │    Alpha advances from the western treeline under MG       │
+//!   │    support.                                                │
+//!   │                                                            │
 //!   │  ORBAT — US ARMY                              9 seats      │  <- section
 //!   │    ALPHA                              9 seats · YOURS  -   │  <- own squad, pre-expanded
 //!   │      SL                                       x1 · YOU     │
@@ -62,6 +71,20 @@ class TBD_BriefingScreen : TBD_ShellScreen
 	protected static const int TAG_OWN_SEAT = 1;
 	//! Group rows are TAG_GROUP_BASE + index, so a tag decodes to a group without a lookup table.
 	protected static const int TAG_GROUP_BASE = 100;
+
+	//! T-181.27 — width of one rendered line of orders prose, in BYTES.
+	//!
+	//! Bytes rather than characters because that is what `string.Length()` actually returns —
+	//! measured on a live boot: `"…".Length()` is 3 and `"·".Length()` is 2. Accented prose
+	//! therefore wraps a little earlier than 64 glyphs, which is the harmless direction to err.
+	//!
+	//! **The number itself is an ESTIMATE and cannot be verified from this lane.** Measuring it
+	//! needs a rendered frame and nothing here returns one — the screen has never opened (the
+	//! `resourceDatabase.rdb` blocker at the foot of this file). It is deliberately conservative:
+	//! erring short costs one extra row per paragraph, while erring long would clip words off the
+	//! right edge of a row whose width nothing here can query. The first operator pass on the real
+	//! screen is where this gets its true value.
+	protected static const int ORDERS_WRAP_WIDTH = 64;
 
 	protected ref TBD_BriefingPayload m_Payload;
 
@@ -196,11 +219,61 @@ class TBD_BriefingScreen : TBD_ShellScreen
 		}
 
 		EmitOwnSeat(list);
+		EmitOrders(list);
 		EmitOrbat(list);
 		EmitZones(list);
 		EmitEndConditions(list);
 
 		list.EndUpdate();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.27 — the written orders, in the order an OPORD is read: what is happening, what we
+	//! must achieve, how we are to do it. This is the Arma 3 briefing text the screen exists for;
+	//! everything around it is structure.
+	//!
+	//! Placed after YOUR SEAT and before the ORBAT deliberately: the reader wants to know who they
+	//! are, then the plan, then the detail of who is with them.
+	//!
+	//! ── Empty is not a heading ──────────────────────────────────────────────────
+	//! Each of the three is INDEPENDENTLY optional — `briefing` declares no `required` in the
+	//! schema, and `required` would not have meant non-empty even if it did. A mission may author
+	//! `mission` and nothing else. Each section is emitted only when it has content, so an
+	//! unauthored field costs exactly zero rows: no heading, no blank line, no trace. A side with
+	//! no orders at all shows nothing here and the screen reads as if the section were never
+	//! designed.
+	//!
+	//! Nothing is filtered at this point and nothing needs to be. The payload was built for one
+	//! faction on the server, so the other side's orders are not in this process to render.
+	protected void EmitOrders(TBD_ListBox list)
+	{
+		EmitOrderSection(list, "SITUATION", m_Payload.m_aSituation);
+		EmitOrderSection(list, "MISSION", m_Payload.m_aMission);
+		EmitOrderSection(list, "EXECUTION", m_Payload.m_aExecution);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One heading and its prose, or nothing at all. A CONTENT test — the arrays are allocated by
+	//! `TBD_BriefingPayload`'s constructor and are never null, so a null test here would always be
+	//! false and would read as a presence check while being none.
+	protected void EmitOrderSection(TBD_ListBox list, string heading, array<string> paragraphs)
+	{
+		if (paragraphs.Count() == 0)
+			return;
+
+		list.AddSection(heading);
+
+		foreach (string paragraph : paragraphs)
+		{
+			array<string> wrapped = WrapText(paragraph, ORDERS_WRAP_WIDTH);
+
+			foreach (string line : wrapped)
+			{
+				// Inert: prose is to be read, not picked. The whole line goes in the title column
+				// because the detail column is a right-aligned value slot, not a second text lane.
+				list.AddItem("    " + line, string.Empty, TAG_INERT, TBD_EUIState.NORMAL, false);
+			}
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -406,6 +479,99 @@ class TBD_BriefingScreen : TBD_ShellScreen
 			return false;
 
 		return m_aGroupExpanded[index];
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Greedy word wrap into rows of at most `width` bytes.
+	//!
+	//! ── Hand-rolled, and not on `string.Split` ──────────────────────────────────
+	//! Same reason as `TBD_BriefingService.SplitLines`: `Split`'s empty-token behaviour is a
+	//! runtime property this lane cannot settle, and prose is full of double spaces. This loop
+	//! skips empty words EXPLICITLY, so it produces identical output whether `Split` would have
+	//! emitted them or swallowed them — the ambiguity is defused rather than inherited. It uses
+	//! only `IndexOf` / `Substring` / `Length`, all already load-bearing in shipped code.
+	//!
+	//! A word longer than the whole line is hard-split rather than dropped or allowed to overflow:
+	//! a resource path or a coordinate string pasted into orders still renders every character.
+	//! **Known edge, stated rather than hidden:** `Substring` is byte-indexed (measured), so that
+	//! hard split can sever a multi-byte character and cost one replacement glyph. It needs a
+	//! single unbroken 64-byte token to trigger, which prose does not contain; the budget
+	//! truncation on the server, which real text CAN reach, backs off to a space for this reason
+	//! (`TBD_BriefingService.ClipToWord`). Splitting beats the alternatives — dropping the token
+	//! loses data, and letting it overflow hands it to a widget whose clipping nothing here can
+	//! observe.
+	//!
+	//! Terminating: every iteration consumes at least one byte of `rest` (an empty word is only
+	//! produced by a separator that was itself consumed), so `rest` strictly shrinks.
+	protected array<string> WrapText(string text, int width)
+	{
+		array<string> lines = {};
+
+		// A width this small would make the hard-split loop below degenerate. Nothing sane reaches
+		// it; the guard is here so that a future retune cannot turn a constant into a hang.
+		if (text.IsEmpty() || width < 8)
+		{
+			lines.Insert(text);
+			return lines;
+		}
+
+		string line;
+		string rest = text;
+
+		while (!rest.IsEmpty())
+		{
+			string word;
+
+			int space = rest.IndexOf(" ");
+			if (space < 0)
+			{
+				word = rest;
+				rest = string.Empty;
+			}
+			else
+			{
+				word = rest.Substring(0, space);
+				rest = rest.Substring(space + 1, rest.Length() - space - 1);
+			}
+
+			if (word.IsEmpty())
+				continue; // a run of spaces — collapse it, do not emit a blank row
+
+			while (word.Length() > width)
+			{
+				if (!line.IsEmpty())
+				{
+					lines.Insert(line);
+					line = string.Empty;
+				}
+
+				lines.Insert(word.Substring(0, width));
+				word = word.Substring(width, word.Length() - width);
+			}
+
+			if (line.IsEmpty())
+			{
+				line = word;
+				continue;
+			}
+
+			int projected = line.Length() + 1;
+			projected += word.Length();
+
+			if (projected <= width)
+			{
+				line = line + " " + word;
+				continue;
+			}
+
+			lines.Insert(line);
+			line = word;
+		}
+
+		if (!line.IsEmpty())
+			lines.Insert(line);
+
+		return lines;
 	}
 
 	//------------------------------------------------------------------------------------------------
