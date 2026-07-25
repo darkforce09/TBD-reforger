@@ -133,6 +133,10 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 
 		Print("[TBD] Stage → " + typename.EnumToString(TBD_EGameStage, stage));
 
+		// Authority path for the local UI. onRplName does NOT fire on authority, so a listen host
+		// needs this explicit call; a dedicated server no-ops inside it. See NotifyLocalStageUI().
+		NotifyLocalStageUI();
+
 		if (stage == TBD_EGameStage.LOBBY)
 			OnEnterLobby();
 		else if (stage == TBD_EGameStage.LIVE)
@@ -307,7 +311,37 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority client — onRpl hook for m_Stage (RplProp onRplName); runs on clients on replication.
 	void OnStageReplicated()
 	{
-		// Client-side UI reacts to stage changes here.
+		NotifyLocalStageUI();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.23 — hand the current stage to THIS machine's local player UI, if it has one.
+	//!
+	//! Called from two places on purpose, because either one alone is wrong:
+	//!   • `OnStageReplicated()` — the PROXY path. `[RplProp(onRplName:)]` fires only on the proxy
+	//!     (TBD_MOD_DESIGN.md §5), so this is how a dedicated-server client hears about a stage
+	//!     change at all.
+	//!   • `SetStage()` — the AUTHORITY path. On a listen host the authority IS the player, and
+	//!     authority never receives its own onRplName callback. Without this call the host's
+	//!     briefing screen would never open — which is exactly the regression the 500 ms poll this
+	//!     replaces was papering over, since a poll reads `GetStage()` on both topologies.
+	//!
+	//! A DEDICATED server no-ops here: it has no workspace and no local player controller, so both
+	//! guards below fail and nothing happens. The server-side stage machine is untouched — this
+	//! method only ever drives local UI, and never feeds back into replication.
+	protected void NotifyLocalStageUI()
+	{
+		// No workspace = dedicated server. It must never try to drive a menu.
+		if (!GetGame().GetWorkspace())
+			return;
+
+		SCR_PlayerController pc = SCR_PlayerController.Cast(GetGame().GetPlayerController());
+		if (!pc)
+			return;
+
+		// Idempotent on the receiving side: TBD_OnStageChanged acts on TRANSITIONS only, so a
+		// redundant replication callback cannot re-open the briefing or wipe a received payload.
+		pc.TBD_OnStageChanged(m_Stage);
 	}
 
 	//------------------------------------------------------------------------------------------------

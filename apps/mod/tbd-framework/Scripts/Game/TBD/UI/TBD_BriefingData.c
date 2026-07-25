@@ -31,14 +31,17 @@
 //! that says so. Unknown side is never treated as "show everything".
 //!
 //! ── Why the ORBAT is derived from `slots[]`, not from `orbat` ───────────────────────────────
-//! `TBD_MissionDocumentStruct.orbat` is parsed, but `TBD_MissionOrbatGroupStruct` carries only
-//! `roles`, and `TBD_MissionOrbatRoleStruct` carries only `count` — the JSON's `callsign`,
-//! `slot` and `kit` keys are not modelled. Rendering from it would produce a nameless list.
+//! This started as a limitation and is now a deliberate choice. T-181.23 modelled the missing
+//! `callsign` / `type` / `slot` / `kit` keys on `TBD_MissionOrbatGroupStruct` and
+//! `TBD_MissionOrbatRoleStruct`, so rendering from `orbat` would no longer produce the nameless
+//! list it once would have.
 //!
-//! `slots[]` is the flattened form and carries `faction`, `groupCallsign`, `role`, `kit` and the
-//! loadout in full. Deriving from it is not a workaround: it is the stronger source, because it
-//! is the same array `TBD_SpawnManager` spawns from. The briefing therefore shows what will
-//! actually exist in the world, not what a parallel block claims.
+//! Deriving from `slots[]` is still correct, for a reason that never depended on what was
+//! modelled: `slots[]` is the FLATTENED form carrying `faction`, `groupCallsign`, `role`, `kit`
+//! and the loadout in full, and it is the same array `TBD_SpawnManager` actually spawns from.
+//! The briefing therefore shows what will exist in the world, not what a parallel block claims —
+//! and the two can legitimately disagree, which is precisely what `TBD_MissionValidator`'s
+//! ORBAT/slots parity check exists to catch.
 
 //! One role line inside a group: "RFL ×4", flagged when the reader's own seat sits on it.
 class TBD_BriefingRole
@@ -399,13 +402,17 @@ class TBD_BriefingService
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! `objective_capture` + id `z3` -> "Objective capture — z3".
+	//! The authored name when the mission gave one ("Levie Bridge"), else the honest fallback built
+	//! from type + id ("Objective capture — z3").
 	//!
-	//! The mission JSON carries a human `label` on objective zones ("Levie Bridge"), but
-	//! `TBD_MissionZoneStruct` does not model that key, so it is unavailable here. See the hook
-	//! noted in the slice report; until it lands, the authored type and id are the honest answer.
+	//! T-181.23 modelled `label` on `TBD_MissionZoneStruct`, so the human name the mission author
+	//! actually wrote is finally reachable here. The key stays OPTIONAL in the schema — spawn and
+	//! boundary zones routinely omit it — so the type+id fallback is kept, not replaced.
 	protected static string PrettyZoneTitle(TBD_MissionZoneStruct zone)
 	{
+		if (!zone.label.IsEmpty())
+			return Sanitise(zone.label);
+
 		string label = Humanise(zone.type);
 		if (zone.id.IsEmpty())
 			return label;
