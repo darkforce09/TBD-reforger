@@ -130,6 +130,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		line += RollCallEntry(owner, TBD_SpectatorComponent, "Spectator", missing);
 		line += RollCallEntry(owner, TBD_LobbyComponent, "Lobby", missing);
 		line += RollCallEntry(owner, TBD_PlayAreaComponent, "PlayArea", missing);
+		line += RollCallEntry(owner, TBD_MarkerComponent, "Markers", missing);
 
 		// PrintFormat, not Print: `Print(someLocalVariable)` emits the DECLARATION
 		// (`string line = '…'`) rather than the value, which made the log line awkward to match
