@@ -9,6 +9,8 @@ SCR_BaseGameMode	m_fTimeElapsed		Source/SCR_BaseGameMode.c	203
 SCR_BaseGameMode	m_bAllowControls		Source/SCR_BaseGameMode.c	206
 SCR_BaseGameMode	m_bIsHosted		Source/SCR_BaseGameMode.c	213
 SCR_BaseGameMode	m_aDisabledResourceTypes	OnResourceTypeEnabledChanged	Source/SCR_BaseGameMode.c	242
+SCR_ChimeraCharacter	m_bRecruitable		Source/SCR_ChimeraCharacter.c	45
+SCR_ChimeraCharacter	m_bIsRecruited		Source/SCR_ChimeraCharacter.c	51
 SCR_FactionManager	m_aPlayerFactionInfo	OnPlayerFactionInfoChanged	Source/SCR_FactionManager.c	22
 SCR_PlayerController	m_MainEntityID	OnRplMainEntityFromID	Source/SCR_PlayerController.c	56
 SCR_PlayerController	m_bIsPossessing		Source/SCR_PlayerController.c	60

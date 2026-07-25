@@ -101,6 +101,17 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | Does my change compile? | `bash scripts/mod/compile.sh` — ~1.3 s, native server, **no Workbench** |
 | Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
 
+**Two kinds of Enfusion class, two different oracles** — know which you are asking about:
+
+| Kind | Example | Where it lives | How to check it |
+|---|---|---|---|
+| **Scripted** | `SCR_BaseGameMode`, `SCR_PlayerController` | shipped `.c` source | `enf lookup` / `rg apps/mod/vanilla_reference/Source/` |
+| **Native engine** | `BaseWorld`, `Widget`, `IEntity` | compiled into the engine — **no source, not in any index** | `compile.sh --probe=/tmp/p` — the ONLY way |
+
+A native symbol returning `NOT FOUND` from `enf lookup` does **not** mean it doesn't exist. That
+confused a slice agent into thinking `BaseWorld.GetBoundBox` was unavailable; a probe proved it is
+real. When the index is silent about something that looks engine-level, probe before concluding.
+
 **Do NOT** let an agent rely on training-data knowledge of Enfusion. It is a niche language and the
 model's priors are wrong. An agent asked to summarise one CRF file invented four APIs that do not
 exist (`RequestSlotChange`, `ReleaseSlot`, `GetInstance`, a wrong base class). That incident is why
