@@ -357,6 +357,11 @@ class TBD_IdentityLink
 	//------------------------------------------------------------------------------------------------
 	//! Start the next request if nothing is outstanding. Every completion path ends by calling
 	//! this, so the queue always drains.
+	//!
+	//! `SendConfirm` can complete SYNCHRONOUSLY (no backend, no RestApi, no context), which makes
+	//! `Pump -> SendConfirm -> Finish -> Pump` recursive. It is bounded: each pass removes exactly
+	//! one entry and nothing can enqueue from inside the cycle, so depth can never exceed
+	//! `MAX_QUEUE`.
 	protected static void Pump()
 	{
 		if (s_InFlight)
