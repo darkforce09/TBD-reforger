@@ -1,5 +1,5 @@
 {
-  "next_id": 296,
+  "next_id": 298,
   "tickets": [
     {
       "id": "T-001",
@@ -1152,7 +1152,7 @@
       "id": "T-068",
       "order": 680,
       "program": "eden",
-      "status": "ready",
+      "status": "deferred",
       "surfaces": [
         "RIGHT",
         "ATTR",
@@ -1166,7 +1166,7 @@
         "compiler"
       ],
       "title": "Virtual Arsenal (registry + loadout export)",
-      "summary": "Cargo ladder shipped (T-068.15.1 @ 85acbb13 → .15.2 @ 4fb156b7 → T-068.11 @ c66494c6 → T-068.12 @ 0be53e16). T-068.13 LOBBY picker moved to T-181.9.1; LOBBY slot picker → T-068.14 Phase-2 E2E. Hub: t068_virtual_arsenal_program.md + t068_15_cargo_program.md.",
+      "summary": "Cargo ladder shipped (T-068.15.1 @ 85acbb13 → .15.2 @ 4fb156b7 → T-068.11 @ c66494c6 → T-068.12 @ 0be53e16). T-068.13 LOBBY picker moved to T-181.9.1; LOBBY slot picker → T-068.14 Phase-2 E2E. Hub: t068_virtual_arsenal_program.md + t068_15_cargo_program.md. BLOCKED: the only remaining slice is T-068.14 (executor: human) — a live two-client E2E on a dedicated server. Not agent-actionable; moved off `ready` on 2026-07-26 so the fleet does not pick it up.",
       "depends_on": [
         "T-067"
       ],
@@ -1225,65 +1225,75 @@
             "shared",
             "root"
           ],
-          "executor": "cursor-docs"
+          "executor": "cursor-docs",
+          "status": "shipped"
         },
         "T-068.0.1": {
           "targets": [
             "shared",
             "root"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.1": {
           "targets": [
             "mod",
             "shared"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.2": {
           "targets": [
             "website"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.3": {
           "targets": [
             "website"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.4": {
           "targets": [
             "website"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.5": {
           "targets": [
             "mod"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.5.1": {
           "targets": [
             "mod"
           ],
-          "executor": "claude-code"
+          "executor": "claude-code",
+          "status": "shipped"
         },
         "T-068.6": {
           "targets": [
             "mod",
             "website"
           ],
-          "executor": "human"
+          "executor": "human",
+          "status": "shipped"
         },
         "T-068.7": {
           "targets": [
             "shared",
             "root"
           ],
-          "executor": "cursor-docs"
+          "executor": "cursor-docs",
+          "status": "shipped"
         },
         "T-068.8": {
           "targets": [
@@ -1464,7 +1474,7 @@
           "notes": "SHIPPED @ 4fb156b7 (tag T-068.15.2). Capacity badge + cargo editor + seed. Verify: .ai/artifacts/t068_15_2_verify_log.md"
         }
       },
-      "active_slice": "T-068.14"
+      "active_slice": null
     },
     {
       "id": "T-069",
@@ -1620,7 +1630,7 @@
       "id": "T-074",
       "order": 740,
       "program": "eden",
-      "status": "deferred",
+      "status": "cancelled",
       "surfaces": [
         "RIGHT"
       ],
@@ -1628,7 +1638,7 @@
         "ui"
       ],
       "title": "Faction submode / catalog filter",
-      "summary": "ABSORBED by T-180.5 @ 1324799c (Eden side chips on DockRight). Do not implement separately. Was: Faction submode / catalog filter.",
+      "summary": "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.5 per its own summary, but left deferred so it still appears in status sweeps.",
       "route": "/missions/:id/edit",
       "branch": "ticket/T-074",
       "stream": "mission-creator",
@@ -1949,7 +1959,7 @@
       "id": "T-089",
       "order": 890,
       "program": "platform",
-      "status": "deferred",
+      "status": "cancelled",
       "surfaces": [
         "TOP",
         "DATA"
@@ -1959,7 +1969,7 @@
         "ui"
       ],
       "title": "Mission title PATCH sync",
-      "summary": "PATCH mission title to server on edit (absorbs former T-051 scope).",
+      "summary": "CANCELLED — merged into T-192. T-192 states 'no editor path PATCHes the row'; this ticket IS that PATCH. Run separately and either orphans the other: T-192 alone could make flatten read the doc and strand this forever; this alone adds a PATCH that T-192 then bypasses.",
       "route": "/missions/:id/edit",
       "branch": "ticket/T-089",
       "stream": "web-platform",
@@ -2590,7 +2600,7 @@
       "id": "T-095",
       "order": 950,
       "program": "backend",
-      "status": "deferred",
+      "status": "cancelled",
       "surfaces": [
         "DATA"
       ],
@@ -2599,7 +2609,7 @@
         "schema"
       ],
       "title": "Per-handler API reference doc",
-      "summary": "Complete docs/backend/api.md per-handler reference.",
+      "summary": "CANCELLED (2026-07-26 audit). Target file does not exist: docs/website/backend/api.md and docs/backend/api.md are both absent, and docs/website/backend/ROADMAP.md:3 marks the whole Go-era doc tree SUPERSEDED by T-145/T-171.",
       "route": "/api/v1",
       "branch": "ticket/T-095",
       "stream": "web-platform",
@@ -2686,7 +2696,7 @@
     {
       "id": "T-112",
       "title": "GPU viewport cull (DataFilterExtension)",
-      "summary": "Stable IconLayer buffer + viewport bounds shader uniform; pan costs nothing; selection overlay for off-screen picks. Replaces deferred CPU chunk cull (T-067.0.1). @deck.gl/extensions in lockfile.",
+      "summary": "CANCELLED (2026-07-26 audit). DataFilterExtension is a Deck.gl API with ZERO code hits repo-wide; @deck.gl/extensions is in no lockfile; Deck was retired at T-151.9.",
       "program": "scale",
       "surfaces": [
         "MAP"
@@ -2694,7 +2704,7 @@
       "impact": [
         "perf"
       ],
-      "status": "idea",
+      "status": "cancelled",
       "depends_on": [
         "T-067"
       ],
@@ -2705,7 +2715,8 @@
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "order": 1500
     },
     {
       "id": "T-113",
@@ -2736,7 +2747,7 @@
         "mod"
       ],
       "executor": "workbench",
-      "status": "queued",
+      "status": "shipped",
       "surfaces": [
         "DATA",
         "UI"
@@ -2747,7 +2758,7 @@
         "ui"
       ],
       "title": "Slot roster enforcement + production slot picker",
-      "summary": "Production in-game slot picker synced to event roster API + identity-linked claims. **Not** full web ORBAT (T-180 shipped). After T-068.13 production LOBBY picker + T-118.",
+      "summary": "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: slot picker T-181.9.1 (56ad6d16, supersedes T-068.13), roster enforcement TBD_RosterLoader.c via T-181.51, identity-linked claims TBD_IdentityLink.c via T-181.35. Residual is runtime proof only = T-181.16 (executor: human).",
       "milestone": "M1",
       "depends_on": [
         "T-068.13",
@@ -2763,7 +2774,7 @@
         "mod"
       ],
       "executor": "workbench",
-      "status": "queued",
+      "status": "shipped",
       "surfaces": [
         "DATA"
       ],
@@ -2771,7 +2782,7 @@
         "schema"
       ],
       "title": "Capture win condition",
-      "summary": "Real side victory via capture / hold / elimination objective.",
+      "summary": "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.39: TBD_ObjectiveRegistry.c (956 lines) implements capture/destroy/hold-until with end triggers wired through TBD_ObjectivesComponent.c:761 -> EvaluateEndTriggers -> SetStage(END).",
       "milestone": "M1",
       "depends_on": []
     },
@@ -2793,7 +2804,7 @@
         "api"
       ],
       "title": "Results POST to backend",
-      "summary": "Game server posts match results; visible on event page.",
+      "summary": "SPLIT 2026-07-26. Mod half SHIPPED: TBD_ResultsReporter.c (682 lines, T-181.13.1) POSTs to /api/v1/ingest/match-results. Website half OPEN and folded into T-232 — event_hub.rs renders no result/outcome/match data at all. This row now tracks only the website half.",
       "milestone": "M1",
       "depends_on": [
         "T-115"
@@ -2839,7 +2850,7 @@
         "api"
       ],
       "title": "Event ORBAT + identity linking UI",
-      "summary": "Event-side slotting UX completion: manual ORBAT assignment, roster admin, Discord/game identity linking. Complements mission ORBAT authoring (**T-180** shipped) — Event lobby polish still open.",
+      "summary": "SPLIT 2026-07-26. DONE: identity-link UI (settings.rs:6-9,74-94, T-159.25) and the ORBAT selector (event_hub.rs:520-572, T-159.25a). OPEN residual is tracked by T-226 (PATCH /events/{id} has no caller), T-284 (clear_slot unreachable, admin cannot free a claimed slot) and T-231 (identity last mile). This row is a pointer, not work.",
       "milestone": "M1"
     },
     {
@@ -2851,7 +2862,7 @@
         "mod"
       ],
       "executor": "workbench",
-      "status": "queued",
+      "status": "shipped",
       "surfaces": [
         "DATA"
       ],
@@ -2859,7 +2870,7 @@
         "schema"
       ],
       "title": "Framework MVP remainder",
-      "summary": "Loadouts, safe start, boundary, admin commands for M1 gate.",
+      "summary": "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181: loadouts (TBD_LoadoutEquipComponent.c, T-068.12), safe start (TBD_SafestartManager.c 1143 lines, T-181.17/.33), boundary (TBD_ZoneRegistry.c + TBD_PlayAreaComponent.c, T-181.18), admin commands (TBD_AdminCommands.c + AdminService + AdminScreen, T-181.11.2). All four M1 items present.",
       "milestone": "M1"
     },
     {
@@ -3061,7 +3072,7 @@
         "website"
       ],
       "executor": "claude-code",
-      "status": "shipped",
+      "status": "cancelled",
       "surfaces": [
         "DATA"
       ],
@@ -3071,7 +3082,7 @@
         "infra"
       ],
       "title": "Dependency & toolchain upgrade (latest everything)",
-      "summary": "Shipped @ cd11db0 — FE npm (vitest 4.1.9, deck.gl 9.3.5), Go modules (gin 1.12, gorm 1.31, pgx 5.10), Go 1.26, Node 26 (.nvmrc), Postgres 18 dev image. Five commits on main. Hub: t124_dependency_upgrade.md.",
+      "summary": "CANCELLED — falsely shipped. Every dependency it upgraded has since been deleted: FE npm (vitest/deck.gl/vite) died with the React tree at 50bba633; Go modules (gin/gorm/pgx) died with the Go backend at c05ddbc9; Node eradicated at T-165. Only survivors are .nvmrc=26 and postgres:18-alpine. Its own spec doc still links a dead apps/website/go.mod.",
       "spec": "docs/platform/t124_dependency_upgrade.md",
       "slices": [
         "T-124.1",
@@ -3530,14 +3541,14 @@
     {
       "id": "T-134",
       "title": "In-game marker system (mod)",
-      "summary": "Runtime Enfusion markers: readable styles, briefing sync, admin placement. Distinct from T-069 editor markers on 2D map.",
+      "summary": "SHIPPED (closed 2026-07-26 by audit). Delivered by T-181.19: five-file replicated marker pipeline (TBD_MarkerData/Icons/Client/Component/Controller.c), side-scoped, capped at 64.",
       "program": "platform",
       "stream": "mod-framework",
       "targets": [
         "mod"
       ],
       "executor": "workbench",
-      "status": "idea",
+      "status": "shipped",
       "surfaces": [
         "MAP",
         "UI"
@@ -3551,7 +3562,8 @@
         "T-092"
       ],
       "spec": "docs/platform/tbd_north_star_backlog.md",
-      "branch": "ticket/T-134"
+      "branch": "ticket/T-134",
+      "order": 1500
     },
     {
       "id": "T-135",
@@ -3650,9 +3662,7 @@
         "deps",
         "ci"
       ],
-      "depends_on": [
-        "T-124"
-      ],
+      "depends_on": [],
       "spec": "docs/platform/tbd_north_star_backlog.md",
       "branch": "ticket/T-138"
     },
@@ -3897,10 +3907,10 @@
     {
       "id": "T-147",
       "order": 1480,
-      "status": "deferred",
+      "status": "cancelled",
       "program": "eden",
       "title": "Simplified Squad Connections",
-      "summary": "ABSORBED by T-180.4 @ 63e7ef00 (squad leader→member map lines). Do not implement separately. Was: Simplified Squad Connections.",
+      "summary": "CANCELLED (2026-07-26 audit). Already ABSORBED by T-180.4 per its own summary, but left deferred so it still appears in status sweeps.",
       "surfaces": [
         "MAP",
         "ORBAT"
@@ -3916,10 +3926,10 @@
     {
       "id": "T-148",
       "order": 1490,
-      "status": "queued",
+      "status": "cancelled",
       "program": "eden",
       "title": "Shift+Drag Rotation Tool",
-      "summary": "Hold Shift and drag the mouse to rotate a selected unit's 2D facing direction.",
+      "summary": "CANCELLED — exact duplicate of T-073 (Shift + map rotation). Both were queued with identical scope.",
       "surfaces": [
         "MAP"
       ],
@@ -3974,7 +3984,7 @@
         "perf",
         "ui"
       ],
-      "status": "ready",
+      "status": "shipped",
       "shipped_at": "c4831451",
       "spec": "docs/specs/Mission_Creator_Architecture/t151_wgpu_engine_program.md",
       "branch": "t-151-wgpu-spike",
@@ -5962,7 +5972,7 @@
       "id": "T-181",
       "order": 1810,
       "program": "platform",
-      "status": "ready",
+      "status": "deferred",
       "surfaces": [
         "DATA",
         "ATTR",
@@ -5976,7 +5986,7 @@
         "compiler"
       ],
       "title": "TBD Framework — Arma-3-parity event mod (factory + spine)",
-      "summary": "Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13.",
+      "summary": "Rebuild the Arma 3 mission workflow inside Reforger: website Mission Creator = Eden, compiled mission JSON = the .pbo, and the mod supplies everything Reforger does NOT ship (lobby, briefing, slotting, spawn, spectator, admin). Stage 1 FACTORY shipped: host-aware execution, a 1.3s headless Enfusion compile gate on the native dedicated server (no Workbench), a mechanical CRF symbol index (266 files / 71,606 LOC), and a capability matrix whose UNTRIAGED gate turns a forgotten capability into a build error. Stage 2 is the TBD-owned event spine (ONE LIFE + admin respawn; macOS-methodology UI on Aegis tokens). CRF is an Arma-Public-License ORACLE — indexed, never vendored. ABSORBS T-068.13. BLOCKED: the only remaining slice is T-181.16 (executor: human) — a live two-client E2E on a dedicated server. Not agent-actionable; moved off `ready` on 2026-07-26 so the fleet does not pick it up.",
       "spec": "docs/mod/t181_event_mod_program.md",
       "slices": [
         "T-181.0",
@@ -6000,15 +6010,19 @@
         "T-181.11",
         "T-181.11.1",
         "T-181.11.2",
-        "T-181.21",
-        "T-181.22",
         "T-181.12",
         "T-181.13",
         "T-181.13.1",
         "T-181.14",
         "T-181.15",
         "T-181.16",
+        "T-181.17",
+        "T-181.17.1",
+        "T-181.18",
+        "T-181.19",
         "T-181.20",
+        "T-181.21",
+        "T-181.22",
         "T-181.23",
         "T-181.24",
         "T-181.25",
@@ -6017,7 +6031,30 @@
         "T-181.28",
         "T-181.29",
         "T-181.30",
-        "T-181.31"
+        "T-181.31",
+        "T-181.32",
+        "T-181.33",
+        "T-181.34",
+        "T-181.35",
+        "T-181.36",
+        "T-181.37",
+        "T-181.38",
+        "T-181.39",
+        "T-181.40",
+        "T-181.41",
+        "T-181.42",
+        "T-181.43",
+        "T-181.44",
+        "T-181.45",
+        "T-181.46",
+        "T-181.47",
+        "T-181.48",
+        "T-181.49",
+        "T-181.50",
+        "T-181.51",
+        "T-181.52",
+        "T-181.53",
+        "T-181.54"
       ],
       "slice_plan": {
         "T-181.0": {
@@ -6577,7 +6614,7 @@
           "notes": "Correct a mission-loader warning that told the operator a falsehood, and add scripts/mod/test-mission.sh. OPERATOR-REPORTED LIVE: staging a golden produced 'RUNNING A CACHED MISSION - this is the last document the backend served successfully, NOT THE ONE CONFIGURED'. That last clause can NEVER be true: LoadFromProfileFile reads $profile:missions/<missionId>.json, so the file is KEYED BY the configured id and the mission identity always matches. What can differ is the VERSION. Worse, it labelled a deliberate stage as a fault. MEASURED discriminator against the live API: a golden's msn_* id returns 400 {invalid id} because the API validates the id SHAPE before lookup, while a valid-but-absent uuid returns 404 {mission not found} - so 400 means this id was never a backend mission and the disk file is intended, not stale. Loader now threads the http code into TryProfileFallbackAfterRestFailure and branches: 400 -> event-level 'staged on disk' note (plus the no-schema-validation caveat), anything else -> the stale-VERSION warning. NOT VERIFIABLE BY THE GATE: world-boot --mission= forces backendUrl='' so it never takes the REST error path; the branch is confirmed on the operator's next live reload."
         }
       },
-      "active_slice": "T-181.15",
+      "active_slice": null,
       "depends_on": [
         "T-068"
       ],
@@ -6603,7 +6640,7 @@
     {
       "id": "T-182",
       "title": "Arsenal silently drops three of four weapon slots at compile",
-      "summary": "mod_slot_loadout (flatten.rs:381-393) reads only slotIndex==0 and slotType==primary. Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear has no fields for them. The player spawns without them with no warning. Also armoredVest||vest collapses a chest rig under a plate carrier.",
+      "summary": "Arsenal silently drops three of four weapon slots at compile. mod_slot_loadout (crates/map-engine-core/src/mission/flatten.rs:397-410) reads only slotIndex==0 && slotType==\"primary\". Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear (flatten.rs:67-88) has no fields for them. The player spawns without them with no warning. SCOPE LOCKED 2026-07-26: fix ONLY the three missing weapon slots. DO NOT touch the armoredVest||vest collapse — mission.schema.json:91 states armoredVest is deliberately NOT a key because it shares the vest container (T-181.34). Reversing that is an operator decision and it has been declined.",
       "program": "eden",
       "surfaces": [
         "ARS"
@@ -6622,7 +6659,7 @@
     {
       "id": "T-183",
       "title": "INDFOR squads spawn as US Army bodies",
-      "summary": "kit-aliases.json:38-42 has no indfor entry and fallbackFaction is blufor. kit.rs:53-60 falls back, kit.rs:107-110 has a test asserting unknown maps to blufor, and flatten.rs:455 consumes it — while the mod assigns engine faction FIA.",
+      "summary": "INDFOR squads spawn as US Army bodies. packages/tbd-schema/registry/kit-aliases.json:39-42 has only blufor/opfor with fallbackFaction=blufor; kit.rs:52-57 falls back, kit.rs:107-110 has a test asserting it, and flatten.rs:471 consumes it — while the mod assigns engine faction FIA. CONSTRAINT (T-181.36): kit: gets a build-time GATE, not an enum. Adding an indfor alias WITHOUT a matching row in apps/mod/tbd-framework/Data/registry.json will FAIL xtask schema validate closed. Add both, or the gate stops the wave.",
       "program": "eden",
       "surfaces": [
         "ARS"
@@ -6641,7 +6678,7 @@
     {
       "id": "T-184",
       "title": "Single-faction missions compile clean then hard-reject in game",
-      "summary": "flatten.rs:657 unconditionally emits winConditions.endOn=[time_limit,faction_eliminated], but flatten.rs:567-582 pads a zero-slot stub faction when only one is authored. TBD_MissionValidator.c:809-813 raises a blocking ERROR when faction_eliminated is declared with fewer than 2 slot-bearing factions, so the server never leaves LOADING. All four goldens are two-faction, so nothing catches it.",
+      "summary": "CANCELLED — premise fixed by T-181.46 (c4fabcb2, 2026-07-25 19:09), 43 minutes after this ticket was filed. flatten.rs:617-635 now derives endOn from flattened slots and only emits faction_eliminated when >=2 factions actually hold slots, which is exactly the zero-slot-stub case described here.",
       "program": "eden",
       "surfaces": [
         "DATA"
@@ -6649,7 +6686,7 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "cancelled",
       "order": 2020,
       "stream": "mission-creator",
       "targets": [
@@ -6699,7 +6736,7 @@
     {
       "id": "T-187",
       "title": "Fix setup-server-profile.sh — it copies a golden that does not exist",
-      "summary": "scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions.",
+      "summary": "scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions. ALSO (merged from T-252): :31 reads GAME_SERVER_TOKENS but apps/website/api/src/config.rs:89 reads SERVICE_TOKEN — fix both in one pass. Related stale docs: deploy.env.example references a docker-compose.staging.yml that does not exist.",
       "program": "eden",
       "surfaces": [
         "MOD"
@@ -6795,7 +6832,7 @@
     {
       "id": "T-192",
       "title": "Mission settings never reach the compiled document and are silently reverted",
-      "summary": "The dialog writes meta.environment.{time,weather} into the CRDT doc (eden_chrome.rs:1707-1765) but flatten reads the DB missions row instead (mission_compile.rs:24-29). No editor path PATCHes the row, and apply_row_meta overwrites the doc from the row on every hydrate. The author's edit is dropped on the wire and lost locally on reload.",
+      "summary": "The dialog writes meta.environment.{time,weather} into the CRDT doc (eden_chrome.rs:1707-1765) but flatten reads the DB missions row instead (mission_compile.rs:24-29). No editor path PATCHes the row, and apply_row_meta overwrites the doc from the row on every hydrate. The author's edit is dropped on the wire and lost locally on reload. MERGED FROM T-089: this ticket owns BOTH halves — add the PATCH /missions/{id} path that writes time_of_day/weather back to the missions row, AND make the compile path read the authored value. Do not ship one without the other.",
       "program": "eden",
       "surfaces": [
         "ATTR"
@@ -6834,7 +6871,7 @@
     {
       "id": "T-194",
       "title": "Seed a populated content golden — root cause of every dead page",
-      "summary": "Every fixture in frontend/tests/fixtures/api/ is empty, so the gates only ever prove the empty state renders. That is exactly why the populated branches were never written and why the server_fps mismatch shipped. Build a seeded golden database and capture populated fixtures first; the page tickets below depend on it.",
+      "summary": "Seed a populated content golden. CORRECTED 2026-07-26: the earlier claim that EVERY fixture is empty was wrong — 9 of 22 carry real rows (GET__registry.json 7,802 B, GET__missions__*, GET__events__*, GET__me.json, GET__dashboard.json, GET__modpacks*, GET__admin__users.json, GET__me__link__status.json). 11 ARE empty, and those are the ones whose pages were shipped with only an empty-state branch. DO NOT DELETE the populated fixtures. Add rows for the empty ones (servers, events, announcements, leaderboards, audit-logs, vehicle-database, me/deployments) and capture populated goldens so the dead-page tickets have something to render.",
       "program": "platform",
       "surfaces": [
         "SHELL"
@@ -7026,7 +7063,7 @@
     {
       "id": "T-204",
       "title": "Emit mission flow and winConditions instead of hardcoding them",
-      "summary": "flatten.rs:649-658 hardcodes briefingSeconds=600, safeStartSeconds=300, timeLimitSeconds=5400, jip=until_safestart_end, mode=attrition. Every website mission gets identical pacing. timeLimitSeconds is the owner's mission duration.",
+      "summary": "Emit mission flow instead of hardcoding it. RE-SCOPED 2026-07-26 to compiler-only: T-181.38 made the MOD parse and honour the flow block, so the consumer is ready and waiting. flatten.rs:682-688 still hardcodes briefing_seconds=600, safe_start_seconds=300, time_limit_seconds=5400, jip=until_safestart_end. timeLimitSeconds is the operator's mission duration. NOTE: the winConditions half of the original title is already handled by T-181.46 — do not touch endOn.",
       "program": "eden",
       "surfaces": [
         "DATA"
@@ -7141,7 +7178,7 @@
     {
       "id": "T-210",
       "title": "In-game admin mission switch calls a route that does not exist",
-      "summary": "TBD_MissionListLoader.c:99 calls GET /api/missions, but the API only nests under /api/v1.",
+      "summary": "CANCELLED — premise fixed by T-181.51. TBD_MissionListLoader.c:38 now calls /api/v1/ingest/missions; the /api/missions path this ticket describes no longer exists.",
       "program": "infra",
       "surfaces": [
         "DATA"
@@ -7149,7 +7186,7 @@
       "impact": [
         "infra"
       ],
-      "status": "idea",
+      "status": "cancelled",
       "order": 2280,
       "stream": "infra",
       "targets": [
@@ -7547,7 +7584,7 @@
     {
       "id": "T-231",
       "title": "Identity linking last mile",
-      "summary": "TBD_IdentityLink.c shipped at T-181.35 and the website side is complete, but it has never been exercised by a live player on a dedicated server, the code is typed in public chat and cannot be suppressed, and existing match_player_stats rows with a null discord_id are never backfilled after a later link. Needs an in-game UI field, an E2E gate and a backfill job.",
+      "summary": "Identity linking last mile. CORRECTED 2026-07-26: T-181.35 landed AND was driven end-to-end against the live backend (be31ac7b) — code minted, POSTed from the mod, users.arma_id written, code consumed, audit row created, replay 404'd, match_player_stats.discord_id populated, total_deployments 0->1. Three genuinely open items remain: (a) the attendance UPDATE needs a non-empty event_id resolving to a registration; (b) the link code is typed in PUBLIC chat and cannot be suppressed — needs an in-game UI field; (c) match_player_stats rows with a NULL discord_id are never backfilled after a later link.",
       "program": "platform",
       "surfaces": [
         "DATA"
@@ -7947,7 +7984,7 @@
     {
       "id": "T-252",
       "title": "Stale docs that would break a real deploy",
-      "summary": "HOME_SERVER.md instructs npm ci and npm run build (Node was eradicated at T-165) and points at the wrong .env path. deploy.env.example names GAME_SERVER_TOKENS while the code reads SERVICE_TOKEN, and references a docker-compose.staging.yml that does not exist. CLAUDE.md says Discord credentials are blank; they are populated. The backend ROADMAP still lists Go filenames.",
+      "summary": "CANCELLED — merged into T-187. Both edit scripts/mod/setup-server-profile.sh: :38 copies a golden that does not exist, :31 reads GAME_SERVER_TOKENS while the code reads SERVICE_TOKEN. One file, one agent.",
       "program": "infra",
       "surfaces": [
         "DATA"
@@ -7955,7 +7992,7 @@
       "impact": [
         "infra"
       ],
-      "status": "idea",
+      "status": "cancelled",
       "order": 2700,
       "stream": "infra",
       "targets": [
@@ -8783,6 +8820,44 @@
       "stream": "mission-creator",
       "targets": [
         "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-296",
+      "title": "TBD_ResultsReporter banner now contradicts shipped code",
+      "summary": "TBD_ResultsReporter.c:23, :28-29 and :422-423 still state that identity linking is unimplemented and that 'there is no #tbd link command'. T-181.35 landed TBD_IdentityLink.c (780 lines) at 17:46 on 2026-07-25 and the command exists. The :422-423 line prints once per round into the operator log, so it actively misleads whoever reads the round output. Correct all three sites to describe what the results POST actually does today.",
+      "program": "infra",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2296,
+      "stream": "infra",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-297",
+      "title": "cargo fmt --all is ungated — 12 files drifted",
+      "summary": "tools/tbd-tools and xtask are workspace members (Cargo.toml:8-16) but no gate covers their formatting: Makefile:80 wasm-ci scopes to map-engine crates, Makefile:105 rust-fmt cds into apps/website/api, Makefile:284 ci-local-leptos scopes to website-frontend, and ci.yml:55 runs cargo fmt --check under working-directory apps/website/api. Nobody runs cargo fmt --all. Result: 12 files / 32 hunks are unformatted on main. Format them and add an --all check to the workspace gate so it cannot drift again.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2297,
+      "stream": "infra",
+      "targets": [
+        "root"
       ],
       "executor": "claude-code"
     }

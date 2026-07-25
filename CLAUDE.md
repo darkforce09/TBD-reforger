@@ -127,22 +127,32 @@ Do **not** hand-edit generated `docs/TICKET_*.md` or the `<!-- ticket-sync:statu
 
 ## Status
 
+> **ACTIVE PROGRAM (2026-07-26): the platform factory — T-182…T-297.**
+> Process: [`docs/platform/PLATFORM_FACTORY.md`](docs/platform/PLATFORM_FACTORY.md) ·
+> wave plan: [`docs/platform/wave_plan.tsv`](docs/platform/wave_plan.tsv).
+> **T-181 is complete** (54 slices; the mod boots, all five screens open, objectives/radio/
+> play-area/briefings/markers all run). Both **T-068** and **T-181** are `deferred` because their
+> only remaining slice is `executor: human` — a live two-client E2E on a dedicated server. Do not
+> pick either up; they are not agent-actionable.
+> The generated block below is derived from the registry and lags this note by design — it reports
+> the lowest-ordered `ready` program, not the program in flight.
+
 <!-- ticket-sync:status:start -->
 **Latest shipped:** **T-180**
 
-**ACTIVE NOW:** **T-068** — T-068.14 (Virtual Arsenal (registry + loadout export)). Slice spec: `docs/specs/Mission_Creator_Architecture/t068_virtual_arsenal_program.md`.
+**ACTIVE NOW:** **T-090** — T-090.6 (Map visualization program). Slice spec: `docs/specs/Mission_Creator_Architecture/t090_6_geometry_placement_audit.md`.
 
 **Next (by order):**
-- **T-068** — Virtual Arsenal (registry + loadout export) (`ready`)
 - **T-072** — Ctrl multi-place (`queued`)
 - **T-073** — Shift + map rotation (`queued`)
 - **T-075** — Spacebar flyTo vs widget (`queued`)
 - **T-090** — Map visualization program (`ready`)
-- **T-114** — Slot roster enforcement + production slot picker (`queued`)
-- **T-115** — Capture win condition (`queued`)
 - **T-116** — Results POST to backend (`queued`)
 - **T-117** — Mission upload + validation UI (`queued`)
 - **T-118** — Event ORBAT + identity linking UI (`queued`)
+- **T-120** — Staging soak + golden mission smoke (`queued`)
+- **T-146** — Asset Browser Data Wiring (`queued`)
+- **T-170** — Prod default flip to Leptos SPA (`queued`)
 <!-- ticket-sync:status:end -->
 
 T-005..T-007 between T-004 and T-008 are documentation/seed only; the status below is current.

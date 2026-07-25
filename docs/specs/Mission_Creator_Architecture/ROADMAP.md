@@ -11,16 +11,16 @@
 <!-- ticket-sync:next:start -->
 ### Recommended next work (auto-generated)
 
-- **T-068** — Virtual Arsenal (registry + loadout export) (ready)
 - **T-072** — Ctrl multi-place (queued)
 - **T-073** — Shift + map rotation (queued)
 - **T-075** — Spacebar flyTo vs widget (queued)
 - **T-090** — Map visualization program (ready)
-- **T-114** — Slot roster enforcement + production slot picker (queued)
-- **T-115** — Capture win condition (queued)
 - **T-116** — Results POST to backend (queued)
 - **T-117** — Mission upload + validation UI (queued)
 - **T-118** — Event ORBAT + identity linking UI (queued)
+- **T-120** — Staging soak + golden mission smoke (queued)
+- **T-146** — Asset Browser Data Wiring (queued)
+- **T-170** — Prod default flip to Leptos SPA (queued)
 <!-- ticket-sync:next:end -->
 
 ---

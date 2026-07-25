@@ -8,12 +8,12 @@ Scheduling detail: [`docs/mod/MILESTONES.md`](mod/MILESTONES.md).
 ## M1
 
 - [x] **T-113** — Monorepo migration (M0–M3) (`shipped`)
-- [ ] **T-114** — Slot roster enforcement + production slot picker (`queued`)
-- [ ] **T-115** — Capture win condition (`queued`)
+- [x] **T-114** — Slot roster enforcement + production slot picker (`shipped`)
+- [x] **T-115** — Capture win condition (`shipped`)
 - [ ] **T-116** — Results POST to backend (`queued`)
 - [ ] **T-117** — Mission upload + validation UI (`queued`)
 - [ ] **T-118** — Event ORBAT + identity linking UI (`queued`)
-- [ ] **T-119** — Framework MVP remainder (`queued`)
+- [x] **T-119** — Framework MVP remainder (`shipped`)
 - [ ] **T-120** — Staging soak + golden mission smoke (`queued`)
 
 ## M2
