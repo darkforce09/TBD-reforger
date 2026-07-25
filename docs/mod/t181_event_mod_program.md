@@ -290,6 +290,15 @@ picker can open would ship a mod nobody can deploy into.
   Any new struct added to `TBD_MissionLoader.c` needs the same treatment. Related dead guards that
   can never fire for this reason (harmless today, filed under T-181.30): `if (!mission.meta)` in the
   validator and `if (!doc.winConditions)` in `TBD_BriefingData`.
+  - **Does this also affect `ref array<>` / `ref map<>`? Behaviourally it does not matter, so do not
+    spend a runtime experiment on it.** Audited all eight container null-tests in the tree
+    (`orbat`, `factions`, `slots`, `zones`, `endOn`, `briefings`, `markers`): every one is either
+    paired with `IsEmpty()` or falls straight through to a `foreach`. An allocated-empty container
+    and a null one therefore produce **identical behaviour** at every site — return 0 vs iterate
+    nothing and return 0. The danger is specific to `ref <class>` with SCALAR fields, where an
+    all-zeros object is indistinguishable from authored data (`circle` with `r=0` reading as a real
+    circle at the map origin). T-181.19's assumption that `markers` is null when absent is safe
+    either way for this reason.
 - **In `mission.schema.json`, `required` does NOT mean non-empty.** Most string fields declare no
   `minLength`, so a key can be present and blank and still validate. `$defs/marker` requires all
   four of `x/z/icon/label`, yet `golden-missions/empty-warning-fields.json` ships a committed
