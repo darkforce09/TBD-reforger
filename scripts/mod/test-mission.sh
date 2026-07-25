@@ -8,10 +8,17 @@
 # discipline, or the one-life path. The golden fixtures can: bridgehead-at-levie is 18 seats,
 # 9 blufor / 9 opfor, and is already the mission the wave gate boots.
 #
-# A golden is loaded through TBD_MissionLoader's PROFILE FALLBACK: the backend is tried first,
-# 404s (the id is not in the DB), and OnBackendFetchError -> TryProfileFallbackAfterRestFailure
-# reads $profile:missions/<id>.json. So a red `backend refused the mission fetch — http=404` line
-# in the log is this working as designed, not a fault.
+# A golden is loaded through TBD_MissionLoader's PROFILE FALLBACK: the backend is tried first and
+# OnBackendFetchError -> TryProfileFallbackAfterRestFailure reads $profile:missions/<id>.json. So a
+# red `backend refused the mission fetch — http=400` line is this working as designed, not a fault.
+#
+# It is 400, NOT 404, and the difference carries meaning (measured against the live API):
+#   msn_8f3a2c          -> 400 {"error":"invalid id"}      the API rejects the id SHAPE, so this was
+#                                                          never a backend mission -> staged on disk
+#   <valid uuid, absent> -> 404 {"error":"mission not found"}  a real id the backend refused -> the
+#                                                          profile copy may be a STALE VERSION
+# TBD_MissionLoader branches its log on exactly that, so the operator is never told a deliberate
+# stage is a stale cache.
 #
 # CAVEAT worth knowing before you trust a green run: the profile path applies NO json-schema
 # validation — only TBD_MissionValidator, which is strictly more permissive. A golden staged this
@@ -40,10 +47,10 @@ mid = json.load(open(cfg))["missionId"]
 local = os.path.join(prof, "missions", mid + ".json")
 # Do NOT infer the load source from this file existing. The mod caches every SUCCESSFUL backend
 # fetch to exactly this path, so a backend mission has one too. The real discriminator is whether
-# the id is a uuid the DB knows: a golden's `msn_*` id 404s and falls back, a uuid does not.
+# the id is a uuid at all: a golden's `msn_*` id is rejected 400 on shape and falls back to disk.
 looks_golden = mid.startswith("msn_")
 print(f"  missionId = {mid}")
-print("  loads via: profile fallback (backend will 404 — expected)" if looks_golden
+print("  loads via: profile fallback (backend answers 400 invalid-id — expected)" if looks_golden
       else "  loads via: backend /compiled (schema-validated)")
 if os.path.exists(local):
     d = json.load(open(local))

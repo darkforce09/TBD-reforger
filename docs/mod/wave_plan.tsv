@@ -36,3 +36,4 @@
 12	T-181.51	Service-token ingest routes (mission list + roster) + mod loader headers	apps/website/api/** + Scripts/Game/TBD/Backend/**
 12	T-181.52	Log-noise demote + link the PlayableSelector oracle lane	scripts/mod/** + Gamemode/TBD_LoadoutEquipComponent.c
 13	T-181.53	Delete the pre-slot ghost; keep the camera (ghost never worked, modal assert)	apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_PreSlot*
+13	T-181.54	Fix the false "not the one configured" claim + mission switcher	apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionLoader.c + scripts/mod

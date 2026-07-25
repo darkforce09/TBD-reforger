@@ -6567,6 +6567,14 @@
           "executor": "claude-code",
           "status": "shipped",
           "notes": "Delete the pre-slot ghost; keep the pre-slot camera. OPERATOR-CONFIRMED LIVE 2026-07-25 20:5x: the ghost never worked - CELL_ALTITUDE_M=100000 (taken from PlayableSelector) is outside Everon's world bounds, so the engine raised a MODAL 'Entity out of world bounds' assertion at TBD_PreSlotBody.c:669 SpawnGhostEntity AND refused the control transfer ('the engine did not transfer control to the ghost - rolled back'). The session then ran end to end anyway: camera UP, picker OPEN, claim, DEPLOY, groundDelta=0.011. So the ghost's value was defensive and unproven while its cost was a modal dialog mid-mission, which would be fatal in a live event. T-181.50's own header already called the ghost 'the smaller half' and the camera 'the actual black screen' fix - the live run confirmed it. Keep: TBD_PreSlotCamera.c and the vanilla loading-placeholder teardown (both confirmed working in the same log)."
+        },
+        "T-181.54": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "Correct a mission-loader warning that told the operator a falsehood, and add scripts/mod/test-mission.sh. OPERATOR-REPORTED LIVE: staging a golden produced 'RUNNING A CACHED MISSION - this is the last document the backend served successfully, NOT THE ONE CONFIGURED'. That last clause can NEVER be true: LoadFromProfileFile reads $profile:missions/<missionId>.json, so the file is KEYED BY the configured id and the mission identity always matches. What can differ is the VERSION. Worse, it labelled a deliberate stage as a fault. MEASURED discriminator against the live API: a golden's msn_* id returns 400 {invalid id} because the API validates the id SHAPE before lookup, while a valid-but-absent uuid returns 404 {mission not found} - so 400 means this id was never a backend mission and the disk file is intended, not stale. Loader now threads the http code into TryProfileFallbackAfterRestFailure and branches: 400 -> event-level 'staged on disk' note (plus the no-schema-validation caveat), anything else -> the stale-VERSION warning. NOT VERIFIABLE BY THE GATE: world-boot --mission= forces backendUrl='' so it never takes the REST error path; the branch is confirmed on the operator's next live reload."
         }
       },
       "active_slice": "T-181.15",

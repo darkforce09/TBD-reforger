@@ -276,6 +276,13 @@ class TBD_MissionLoader
 	//! marker still clear 1024 — the whole point is that this line SURVIVES.
 	protected static const int ERROR_BODY_LOG_MAX_BYTES = 900;
 
+	//! T-181.54 — the one status that means "this id was never a backend mission". The API validates
+	//! the id's SHAPE before looking anything up, so a non-uuid (a golden's `msn_*`) comes back 400
+	//! `{"error":"invalid id"}` rather than 404. That distinguishes a mission deliberately staged on
+	//! disk from a stale cache, which is the difference between a normal run and a real fault.
+	//! MEASURED against the live API 2026-07-25, not assumed: 400 for `msn_8f3a2c`.
+	protected static const int HTTP_BAD_REQUEST = 400;
+
 	protected static ref TBD_MissionDocumentStruct s_Mission;
 	protected static string s_RawJson;
 	protected static bool s_Loaded;
@@ -522,13 +529,14 @@ class TBD_MissionLoader
 		if (data.IsEmpty())
 		{
 			Print("[TBD] Backend returned empty mission body.", LogLevel.ERROR);
-			TryProfileFallbackAfterRestFailure();
+			// 0 = the backend ANSWERED, so this is not a shape rejection; a cache here may be stale.
+			TryProfileFallbackAfterRestFailure(0);
 			return;
 		}
 
 		if (!ParseMissionJson(data))
 		{
-			TryProfileFallbackAfterRestFailure();
+			TryProfileFallbackAfterRestFailure(0);
 			return;
 		}
 
@@ -561,7 +569,7 @@ class TBD_MissionLoader
 		TBD_Log.Error(TBD_Log.CH_MISSION, string.Format(
 			"backend refused the mission fetch — http=%1 body=%2", httpCode, FetchFailureBody(cb.GetData())));
 
-		TryProfileFallbackAfterRestFailure();
+		TryProfileFallbackAfterRestFailure(httpCode);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -580,18 +588,42 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
-	protected static void TryProfileFallbackAfterRestFailure()
+	//! @param httpCode the status the backend answered with, or 0 when there was no HTTP failure
+	//!        (unreachable API, empty body, unparseable document). It selects the message below,
+	//!        so pass the real code — a wrong one mislabels a deliberate stage as a stale cache.
+	protected static void TryProfileFallbackAfterRestFailure(int httpCode)
 	{
 		string missionId = TBD_BackendConfig.GetMissionId();
 		if (LoadFromProfileFile(missionId))
 		{
 			s_Loaded = true;
-			// T-181.44 — name what the operator is actually looking at. The cache holds whatever
-			// the backend last served SUCCESSFULLY, so a refused fetch silently leaves the server
-			// hosting the PREVIOUS mission. That is the reported symptom; say it here, next to the
-			// reason, instead of logging an indistinguishable `source=profile`.
-			TBD_Log.Warn(TBD_Log.CH_MISSION,
-				"RUNNING A CACHED MISSION — this is the last document the backend served successfully, not the one configured. Fix the failure logged above and restart the server.");
+
+			// T-181.44 — name what the operator is actually looking at, instead of an
+			// indistinguishable `source=profile`. T-181.54 CORRECTS what that message claimed.
+			//
+			// The old text said the document is "not the one configured". That is NEVER true:
+			// `LoadFromProfileFile` reads `$profile:missions/<missionId>.json`, so the file is
+			// KEYED BY the configured id and the mission identity always matches. What can differ
+			// is the document's VERSION — a cache holds whatever the backend last served for that
+			// id, which may be older than what it would serve now.
+			//
+			// And there is a second, entirely legitimate way to arrive here that the old text
+			// mislabelled as a fault: a mission STAGED on disk on purpose (a golden via
+			// `scripts/mod/test-mission.sh`, or `world-boot.sh --mission=`). A golden's `msn_*` id
+			// is not a uuid, so the backend rejects its SHAPE with 400 before ever looking for it.
+			// That is the discriminator — a 400 means this id was never a backend mission, so the
+			// profile file is the intended source, not a stale leftover.
+			if (httpCode == HTTP_BAD_REQUEST)
+			{
+				TBD_Log.Event(TBD_Log.CH_MISSION,
+					"loaded a mission STAGED ON DISK — the backend rejected this id's shape (400), so it was never a backend mission and this file is the intended source. NOTE: this path applies NO json-schema validation, only the more permissive TBD_MissionValidator.");
+			}
+			else
+			{
+				TBD_Log.Warn(TBD_Log.CH_MISSION,
+					"RUNNING A CACHED MISSION — same mission id as configured, but this document is whatever the backend last served for it and may be an OLDER VERSION. Fix the failure logged above and restart the server.");
+			}
+
 			LogLoaded("profile-fallback");
 		}
 		else
