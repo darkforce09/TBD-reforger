@@ -19,7 +19,16 @@ set -euo pipefail
 export GIT_LFS_SKIP_SMUDGE=1
 # GIT_LFS_SKIP_SMUDGE alone is not enough: git still tries to SPAWN the filter process, which
 # does not exist. Neutralise the filter config for our own git calls instead.
-GIT=(git -c filter.lfs.smudge= -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.required=false)
+#
+# `core.hooksPath=/dev/null` is load-bearing, not tidiness. The repo's post-checkout / post-merge
+# hooks are LFS hooks, and without git-lfs installed they exit non-zero — which makes
+# `git worktree add` return 2 EVEN THOUGH THE WORKTREE WAS CREATED SUCCESSFULLY. Combined with
+# `set -e` at the top of this script, that killed `new` immediately after the tree appeared and
+# before the oracle symlinks were made, silently, with a real-looking "Preparing worktree" line as
+# the last output. Every worktree this factory produced was missing crf_framework and
+# vanilla_reference, so slice agents lost both proof lanes and had nothing to check Enfusion
+# claims against. Measured: exit 2 with hooks, exit 0 without.
+GIT=(git -c core.hooksPath=/dev/null -c filter.lfs.smudge= -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.required=false)
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -46,26 +55,45 @@ case "$cmd" in
     fi
     dir="$BASE/$slice"
     branch="slice/$slice"
-    if [ -d "$dir" ]; then echo "already exists: $dir"; exit 0; fi
-    mkdir -p "$BASE"
-    # Branch from the CURRENT main tip so the agent gets the committed factory.
-    if git show-ref --verify --quiet "refs/heads/$branch"; then
-      "${GIT[@]}" worktree add "$dir" "$branch"
+    # An existing tree is NOT skipped outright — it falls through to the oracle link step, which
+    # is idempotent. Early-returning here is what made the missing-oracle bug unrepairable: the
+    # trees existed, so every subsequent `new`/`prep` said "already exists" and changed nothing.
+    if [ -d "$dir" ]; then
+      echo "already exists: $dir (re-checking oracles)"
     else
-      "${GIT[@]}" worktree add -b "$branch" "$dir" main
+      mkdir -p "$BASE"
+      # Branch from the CURRENT main tip so the agent gets the committed factory.
+      if git show-ref --verify --quiet "refs/heads/$branch"; then
+        "${GIT[@]}" worktree add "$dir" "$branch"
+      else
+        "${GIT[@]}" worktree add -b "$branch" "$dir" main
+      fi
     fi
     # The oracle sources are GITIGNORED, so a fresh worktree has neither. Without them an
     # agent cannot query CRF or read vanilla source and will fall back on training-data guesses
     # about Enfusion — which are wrong. Link them from the main tree (read-only reference; no
     # disk cost, no risk of a slice mutating them).
+    missing_oracle=0
     for ref in crf_framework vanilla_reference; do
-      if [ -d "$ROOT/apps/mod/$ref" ]; then
-        ln -sfn "$ROOT/apps/mod/$ref" "$dir/apps/mod/$ref"
-        echo "  linked oracle: apps/mod/$ref"
+      if [ ! -d "$ROOT/apps/mod/$ref" ]; then
+        echo "  WARNING: $ROOT/apps/mod/$ref missing on main — cannot link that oracle lane" >&2
+        missing_oracle=1
+        continue
+      fi
+      ln -sfn "$ROOT/apps/mod/$ref" "$dir/apps/mod/$ref"
+      # Verify rather than trust. This whole block used to be unreachable and nothing noticed,
+      # because nobody checked the result — the agents just quietly lost their proof lanes.
+      if [ -d "$dir/apps/mod/$ref" ]; then
+        echo "  oracle ok: apps/mod/$ref"
       else
-        echo "  WARNING: $ROOT/apps/mod/$ref missing — agents in this tree lose that oracle lane" >&2
+        echo "  ERROR: failed to link apps/mod/$ref into $dir" >&2
+        missing_oracle=1
       fi
     done
+    if [ "$missing_oracle" -ne 0 ]; then
+      echo "REFUSING: $dir has no usable oracle lane — an agent here would guess at Enfusion." >&2
+      exit 1
+    fi
     echo "worktree: $ROOT/$dir   branch: $branch"
     ;;
 
