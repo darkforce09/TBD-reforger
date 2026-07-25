@@ -234,7 +234,10 @@ class TBD_MissionLoader
 		}
 
 		if (LoadFromProfileFile(missionId))
+		{
 			s_Loaded = true;
+			LogLoaded("profile");
+		}
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -299,7 +302,7 @@ class TBD_MissionLoader
 		string missionId = TBD_BackendConfig.GetMissionId();
 		CacheToProfile(missionId, data);
 		s_Loaded = true;
-		Print("[TBD] Mission loaded from backend: " + s_Mission.meta.name);
+		LogLoaded("backend");
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -317,11 +320,11 @@ class TBD_MissionLoader
 		if (LoadFromProfileFile(missionId))
 		{
 			s_Loaded = true;
-			Print("[TBD] Mission loaded from profile fallback.");
+			LogLoaded("profile");
 		}
 		else
 		{
-			Print("[TBD] Mission load failed (REST + profile). Server stays in LOADING.", LogLevel.ERROR);
+			TBD_Log.Error(TBD_Log.CH_MISSION, "load failed (REST + profile) — server stays in LOADING");
 		}
 	}
 
@@ -381,18 +384,15 @@ class TBD_MissionLoader
 			return false;
 		}
 
-		// The mod only ever loads PUBLISHED missions, which always carry the content-hash
-		// meta.id assigned at publish time. meta.id is optional in the schema only for
-		// pre-publish hand-written drafts, which never reach this loader — so requiring it
-		// here is intentional, not a contract mismatch with mission.schema.json (T-122 M11).
-		if (!s_Mission.meta || s_Mission.meta.id.IsEmpty())
-		{
-			Print("[TBD] Mission JSON missing meta.id.", LogLevel.ERROR);
-			s_Mission = null;
-			return false;
-		}
-
-		if (!ValidateMissionSlots())
+		// T-181.14 — one validation pass over the whole document. It reports EVERY problem
+		// (never just the first) as its own [TBD][Validate] line, then blocks on errors. The
+		// meta.id, slots-required, orbat-parity and duplicate-key checks that used to live in
+		// this file moved into TBD_MissionValidator so a broken mission surfaces all of its
+		// faults in a single reload instead of one per fix.
+		//
+		// Blocking here is the fail-fast: s_Valid stays false, so TBD_FrameworkManager never
+		// leaves LOADING and nobody is stranded in a half-built lobby.
+		if (!TBD_MissionValidator.Run(s_Mission))
 		{
 			s_Mission = null;
 			return false;
@@ -403,85 +403,15 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! schemaVersion 1.1/1.2 requires non-empty slots[] matching ORBAT instance count.
-	protected static bool ValidateMissionSlots()
+	//! T-181.14 — one structured line per successful load:
+	//! `[TBD][Mission] loaded id=… name='…' slots=… source=…`.
+	protected static void LogLoaded(string source)
 	{
-		if (!s_Mission.schemaVersion || (s_Mission.schemaVersion != "1.1" && s_Mission.schemaVersion != "1.2"))
-			return true;
+		int slotCount = 0;
+		if (s_Mission.slots)
+			slotCount = s_Mission.slots.Count();
 
-		if (!s_Mission.slots || s_Mission.slots.IsEmpty())
-		{
-			Print(string.Format("[TBD] Mission schemaVersion %1 requires non-empty slots[].", s_Mission.schemaVersion), LogLevel.ERROR);
-			return false;
-		}
-
-		int expected = CountOrbatInstances();
-		int actual = s_Mission.slots.Count();
-		if (expected > 0 && actual != expected)
-		{
-			Print(string.Format("[TBD] Mission slots count mismatch: orbat=%1 slots=%2", expected, actual), LogLevel.ERROR);
-			return false;
-		}
-
-		ref set<string> seen = new set<string>();
-		ref set<string> seenUid = new set<string>();
-		foreach (TBD_MissionSlotStruct slot : s_Mission.slots)
-		{
-			if (!slot || slot.id.IsEmpty())
-			{
-				Print("[TBD] Mission slot missing id.", LogLevel.ERROR);
-				return false;
-			}
-
-			if (seen.Contains(slot.id))
-			{
-				Print("[TBD] Mission duplicate slot id: " + slot.id, LogLevel.ERROR);
-				return false;
-			}
-
-			seen.Insert(slot.id);
-
-			// B1 — uid (when present) is the durable spawn/roster key: must be unique too.
-			if (!slot.uid.IsEmpty())
-			{
-				if (seenUid.Contains(slot.uid))
-				{
-					Print("[TBD] Mission duplicate slot uid: " + slot.uid, LogLevel.ERROR);
-					return false;
-				}
-				seenUid.Insert(slot.uid);
-			}
-		}
-
-		return true;
-	}
-
-	//------------------------------------------------------------------------------------------------
-	protected static int CountOrbatInstances()
-	{
-		int total = 0;
-		if (!s_Mission.orbat)
-			return total;
-
-		foreach (string factionKey, TBD_MissionOrbatFactionStruct faction : s_Mission.orbat)
-		{
-			if (!faction || !faction.groups)
-				continue;
-
-			foreach (TBD_MissionOrbatGroupStruct group : faction.groups)
-			{
-				if (!group || !group.roles)
-					continue;
-
-				foreach (TBD_MissionOrbatRoleStruct role : group.roles)
-				{
-					if (role)
-						total += role.count;
-				}
-			}
-		}
-
-		return total;
+		TBD_Log.MissionLoaded(s_Mission.meta.id, s_Mission.meta.name, slotCount, source);
 	}
 
 	//------------------------------------------------------------------------------------------------
