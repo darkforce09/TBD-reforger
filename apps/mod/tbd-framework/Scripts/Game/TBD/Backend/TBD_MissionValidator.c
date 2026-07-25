@@ -233,6 +233,14 @@ class TBD_MissionValidator
 	//! Mission header. meta.id is optional in the schema only for pre-publish hand-written
 	//! drafts, which never reach this loader — the mod loads PUBLISHED missions, which always
 	//! carry the content-hash id assigned at publish time (T-122 M11).
+	//!
+	//! T-181.13.1 — truth in comments: the `!mission.meta` guard below CANNOT fire for a document
+	//! that simply omits `meta`, because `meta` is a `ref <class>` and `JsonLoadContext` allocates
+	//! it regardless (see CheckSlotLoadout for the measurement). It is deliberately left in place —
+	//! unlike the loadout case it costs nothing and is not misleading, and the per-field emptiness
+	//! checks below are the CONTENT tests that actually catch an absent meta block: `meta.id` empty
+	//! is already a blocking ERROR, so a mission with no header is still rejected, with three
+	//! specific findings instead of one general one. That is a better report, not a worse one.
 	protected static void CheckMeta(TBD_MissionDocumentStruct mission)
 	{
 		if (!mission.meta)
@@ -495,27 +503,90 @@ class TBD_MissionValidator
 
 	//------------------------------------------------------------------------------------------------
 	//! Optional per-slot Arsenal loadout (T-068.11). The kit prefab stays authoritative for the
-	//! base character, so an empty gear block is loud but not fatal; a malformed cargo row is a
+	//! base character, so a loadout that carries nothing is not fatal; a malformed cargo row is a
 	//! schema violation and blocks.
+	//!
+	//! ══ T-181.13.1 — MAJOR BUG FIX: this function used to test non-null ════════════════════════
+	//! `slot.loadout` (TBD_MissionSlotStruct) and `loadout.gear` (TBD_SlotLoadoutStruct) are
+	//! `ref <class>` fields, and `JsonLoadContext` ALLOCATES a nested `ref <class>` even when the
+	//! JSON key is ABSENT — see the landmine block on `TBD_MissionShapeStruct` in
+	//! TBD_MissionLoader.c, and `TBD_SpawnManager.HasAuthoredLoadout`, which fixed the identical
+	//! bug in the slot-body census at T-181.32. So `if (!loadout) return;` never returned and
+	//! `if (loadout.gear)` was always true. Consequences, all measured on live world boots:
+	//!   * every slot that authored NO loadout at all was reported as "loadout.gear is present but
+	//!     every gear ref is empty". `golden-missions/bridgehead-at-levie.json`, whose 18 slots
+	//!     carry no `loadout` key, booted to `mission result=PASS errors=0 warnings=18` — all 18
+	//!     of them this one warning;
+	//!   * the `else if (!hasCargo)` branch under it was UNREACHABLE dead code;
+	//!   * across the four goldens 27 warnings were emitted and 2 were correct.
+	//!
+	//! ── What is actually observable (measured 2026-07-25, instrumented boot) ────────────────────
+	//! A temporary `[TBDPROBE]` dump over `s_Mission.slots` immediately after `ctx.ReadValue`:
+	//!
+	//!   bridgehead-at-levie   — 0 of 18 slots author `loadout`
+	//!       every slot:  loadoutNull=0  gearNull=0  gearRefs=0  cargoNull=1
+	//!   empty-warning-fields  — 4 of 7 author `loadout`; two of those author `"cargo": []`
+	//!       the two authoring `cargo`:   cargoNull=0  cargoCount=0
+	//!       the other five:              cargoNull=1
+	//!
+	//! Two facts follow, and the SECOND ONE IS NEW to this program:
+	//!   1. a `ref <class>` field is allocated whether or not the key was authored (third
+	//!      independent confirmation);
+	//!   2. **a `ref array<>` field is NOT.** `loadout.cargo` came back non-null on exactly the
+	//!      slots whose JSON authored a `cargo` key and null on every slot that did not — both
+	//!      polarities in one run, which is its own negative control. A container's NON-NULLNESS is
+	//!      therefore a genuine presence test, even though its emptiness is not.
+	//!
+	//! ── The rule this function now follows ──────────────────────────────────────────────────────
+	//! GEAR PRESENCE IS UNOBSERVABLE. An absent `gear` key and an authored `gear: {}` both parse to
+	//! a non-null struct holding ten empty strings, and there is no scalar sentinel to hang a
+	//! presence test on. So this never claims gear is "present" again — it COUNTS REFS, which is
+	//! the same content test `TBD_SpawnManager.HasAuthoredLoadout` settled on.
+	//!
+	//! A loadout with zero gear refs and no `cargo` key is therefore indistinguishable from having
+	//! no loadout at all, AND behaves identically (the slot falls back to the bare kit prefab). It
+	//! gets no warning — that is the normal, legal shape of every loadout-less slot in every
+	//! mission. The website compiler cannot even emit an empty block: `mod_slot_loadout` in
+	//! `crates/map-engine-core/src/mission/flatten.rs` returns `None` when gear and cargo are both
+	//! empty, skips `gear` when all ten fields are empty, and skips `cargo` when the vec is empty.
+	//!
+	//! The one authored-but-empty case that IS provable is a `cargo` key that parsed to zero rows
+	//! while gear carries nothing: non-null `cargo` proves the block was authored, and nothing is in
+	//! it. That is precisely what the old dead branch was written to say, so the message survives —
+	//! and it is now reachable. It cannot fire on a compiled mission, so on a real mission it means
+	//! the JSON was hand-edited.
+	//!
+	//! If fact 2 ever stops holding, `bridgehead-at-levie` lights up again with 18 warnings and the
+	//! `.world-boot-warning-baseline` ratchet fails the wave gate. That is the intended backstop.
 	protected static void CheckSlotLoadout(string subject, TBD_MissionSlotStruct slot)
 	{
 		TBD_SlotLoadoutStruct loadout = slot.loadout;
 		if (!loadout)
+			return;      // cannot fire today (see above); kept because a null deref would be worse.
+
+		int gearRefs = CountGearRefs(loadout.gear);
+
+		// CONTENT, not non-null — but note the asymmetry proved above: for a CONTAINER, non-null
+		// does mean "the key was authored". Count() is what says whether anything is in it.
+		bool cargoAuthored = false;
+		int cargoRows = 0;
+		if (loadout.cargo)
+		{
+			cargoAuthored = true;
+			cargoRows = loadout.cargo.Count();
+		}
+
+		if (gearRefs == 0 && cargoRows == 0)
+		{
+			// Only provable when `cargo` was authored. Without it there is nothing to distinguish
+			// this slot from one that never had a loadout, so saying anything would be noise.
+			if (cargoAuthored)
+				AddWarning(subject, "loadout is present but carries neither gear nor cargo — the slot falls back to the bare kit prefab");
+
 			return;
-
-		bool hasCargo = loadout.cargo && !loadout.cargo.IsEmpty();
-
-		if (loadout.gear)
-		{
-			if (CountGearRefs(loadout.gear) == 0)
-				AddWarning(subject, "loadout.gear is present but every gear ref is empty — the slot falls back to the bare kit prefab");
-		}
-		else if (!hasCargo)
-		{
-			AddWarning(subject, "loadout is present but carries neither gear nor cargo");
 		}
 
-		if (!hasCargo)
+		if (cargoRows == 0)
 			return;
 
 		foreach (int c, TBD_SlotCargoStruct row : loadout.cargo)
@@ -541,8 +612,16 @@ class TBD_MissionValidator
 
 	//------------------------------------------------------------------------------------------------
 	//! How many of the ten fixed gear slots actually carry a ResourceName.
+	//!
+	//! Null-safe and CONTENT-based on purpose: `gear` is a `ref <class>`, so it is non-null even on a
+	//! slot whose JSON never mentioned it (see CheckSlotLoadout). This count is the only thing that
+	//! separates an authored gear block from an allocated-empty one, so it is the only test callers
+	//! are allowed to use. The null guard is defence against a future caller, not a live case.
 	protected static int CountGearRefs(TBD_SlotGearStruct gear)
 	{
+		if (!gear)
+			return 0;
+
 		int refs = 0;
 
 		if (!gear.primary.IsEmpty())
@@ -655,19 +734,36 @@ class TBD_MissionValidator
 	//! CONTESTING factions, so a one-sided mission does not actually end at kickoff — it just
 	//! never ends, which looks identical to a broken win condition from the server console.
 	//! Catching it here turns that mystery into an authoring error before anyone joins.
+	//!
+	//! T-181.13.1 — CONTENT, not non-null, here too. `mission.winConditions` is a `ref <class>`, so
+	//! `JsonLoadContext` allocates it whether or not the document authored the key (same landmine as
+	//! `slot.loadout` above): the old `if (!conditions)` guard could NEVER fire, so a mission that
+	//! declared no win conditions at all got two vaguer findings (empty mode + empty endOn) instead
+	//! of the one precise "absent" line this check was written to give. Both fields carrying nothing
+	//! is the observable form of "no block".
 	protected static void CheckWinConditions(TBD_MissionDocumentStruct mission, map<string, int> slotsPerFaction)
 	{
 		TBD_MissionWinConditionsStruct conditions = mission.winConditions;
-		if (!conditions)
+
+		bool hasMode = false;
+		bool hasEndOn = false;
+		if (conditions)
 		{
-			AddWarning("winConditions", "absent — the round has no end trigger and runs until an admin ends it");
+			hasMode = !conditions.mode.IsEmpty();
+			if (conditions.endOn)
+				hasEndOn = !conditions.endOn.IsEmpty();
+		}
+
+		if (!hasMode && !hasEndOn)
+		{
+			AddWarning("winConditions", "absent or empty — the round has no end trigger and runs until an admin ends it");
 			return;
 		}
 
-		if (conditions.mode.IsEmpty())
+		if (!hasMode)
 			AddWarning("winConditions.mode", "empty — the round has no declared mode label");
 
-		if (!conditions.endOn || conditions.endOn.IsEmpty())
+		if (!hasEndOn)
 		{
 			AddWarning("winConditions.endOn", "empty — the round has no end trigger and runs until an admin ends it");
 			return;

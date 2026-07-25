@@ -573,6 +573,13 @@ class TBD_MissionLoader
 		}
 
 		s_Valid = true;
+
+		// T-181.13.1 — a valid mission document is the earliest moment an end-of-round results
+		// report could mean anything, and this is a server-only path (BeginLoad is reached only
+		// after TBD_FrameworkManager.OnPostInit returns early for RplMode.Client). Arm() is
+		// idempotent, so the REST-then-profile fallback calling this twice is harmless.
+		TBD_ResultsReporter.Arm();
+
 		return true;
 	}
 
