@@ -27,14 +27,26 @@ class TBD_LobbyComponent : SCR_BaseGameModeComponent
 	static const int START_DELAY_MS = 2000;
 
 	//------------------------------------------------------------------------------------------------
-	//! @authority client — the server has no workspace and nothing to draw a picker on.
+	//! @authority any — the self-check below is deliberately unconditional; the picker start is not.
 	override void OnPostInit(IEntity owner)
 	{
 		super.OnPostInit(owner);
 
-		// A dedicated server has no workspace at all (measured — see TBD_UILayouts). That is the
-		// cleanest available "am I a machine with a screen" test, and it is the one the rest of the
-		// UI framework already trusts.
+		// ── T-181.42: arm the lobby wire self-check at BOOT ──────────────────────────────────
+		// FIRST, and before every early return in this method, because being armed at boot is the
+		// entire point. MEASURED (T-181.26): `world-boot.sh --mission=` runs with ZERO players, so
+		// `TBD_LobbyService.BuildForPlayer` / `Serialise` / `Parse` and every lobby RPC never
+		// execute under the gate. A self-check armed lazily on first use is therefore INVISIBLE to
+		// the gate; one armed here is gated, because this component sits on `TBD_GameMode.et` and
+		// its `OnPostInit` runs on every world boot including a headless zero-player one.
+		//
+		// It costs microseconds, allocates one throwaway roster, and is once-per-process — the
+		// guard lives at `SelfCheckWire`'s own entry, not here, so a second caller cannot double it.
+		TBD_LobbyService.SelfCheckWire();
+
+		// NOT a dedicated-server test — `GetGame().GetWorkspace()` is non-null on a headless
+		// dedicated server (measured; see `TBD_LobbyStage.Raise`, which carries the evidence and the
+		// real guard). Kept as a cheap "is there a GUI subsystem at all" filter only.
 		if (!GetGame().GetWorkspace())
 			return;
 

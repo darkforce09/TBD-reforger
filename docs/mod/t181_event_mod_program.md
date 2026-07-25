@@ -326,6 +326,18 @@ picker can open would ship a mod nobody can deploy into.
   fabricate `Foo.BarThatDoesNotExist()` alongside the real call and require the fake to error.
   Two separate slices have now had to correct this program's probe guidance; treat every probe
   technique here as provisional until its control has failed in the same run.
+- **On a TRANSPORT failure, `RestCallback.GetData()` returns YOUR OWN REQUEST BODY, not a response.**
+  Measured (T-181.35): a POST to a dead port came back carrying the request payload verbatim. So any
+  body-text matcher is reading its own request — and naively logging it prints the player's secret
+  link code into `console.log` labelled as the website's answer. **Branch on
+  `RestCallback.GetHttpCode()`**, which does return the real HTTP status at runtime (verified for
+  200/409/404/401/400, and `HTTP_CODE_NULL` for transport failure), and drop the body on the
+  no-status branch.
+- **`pgrep` through the host bridge FALSE-NEGATIVES — and this has now bitten twice.** An
+  `ArmaReforgerServer` orphan was reported gone by `pgrep -a` and was still running 4 h 18 m later;
+  `ps -o pid,etime -p <pid>` saw it immediately both times. **Confirm a process is dead with `ps`
+  against the specific PID.** The first occurrence is recorded below; the second was the command
+  center trusting its own earlier "confirmed gone".
 - **`GetGame().GetWorkspace()` is NON-NULL on a HEADLESS DEDICATED SERVER** (engine 1.7.0.54,
   measured T-181.28). It is therefore **not** a dedicated-server test, and shipped code used it as
   one: `TBD_LobbyStage.Start()` gates on `if (!GetGame().GetWorkspace()) return;`, so on a headless

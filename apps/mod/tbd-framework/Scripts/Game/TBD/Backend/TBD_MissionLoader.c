@@ -633,6 +633,13 @@ class TBD_MissionLoader
 		// idempotent, so the REST-then-profile fallback calling this twice is harmless.
 		TBD_ResultsReporter.Arm();
 
+		// T-181.35 — the OTHER half of the same contract. The results POST can only join on
+		// `users.arma_id`, and nothing writes that column until a player confirms a link code in
+		// game. Armed on the same server-only path, for the same reason, and idempotent for the
+		// same reason. Arming also puts one line in every boot's log saying whether linking can
+		// work on this host at all.
+		TBD_IdentityLink.Arm();
+
 		return true;
 	}
 

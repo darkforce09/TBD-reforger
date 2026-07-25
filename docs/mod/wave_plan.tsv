@@ -26,3 +26,4 @@
 10	T-181.40	Radio plan from radioPlan.nets[] (replace the stub)	Scripts/Game/TBD/Radio/**
 10	T-181.41	Re-home the worn-kit audit (lost coverage when .32 fixed the loadout census)	Scripts/Game/TBD/Gamemode/TBD_LoadoutEquip*.c
 10	T-181.42	Lobby wire: bijective sentinel + boot-time self-check	Scripts/Game/TBD/UI/Lobby/**
+10	T-181.43	Schema pattern: forbid tab/CR/LF in authored slot strings	packages/tbd-schema/**
