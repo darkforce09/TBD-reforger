@@ -118,7 +118,7 @@ to the slice's own diff against `main`.
 
 ## The backlog
 
-114 tickets, **T-182 → T-295**, all filed as `idea` so this program cannot start itself while
+**113 runnable tickets, T-182 → T-297**, all `idea` so this program cannot start itself while
 T-181 is live. Promote to `queued`/`ready` as you dispatch.
 
 | Area | Tickets | Where |
@@ -140,7 +140,36 @@ T-181 is live. Promote to `queued`/`ready` as you dispatch.
 
 **Sizes: 50 S · 43 M · 16 L · 5 XL.** 15 are priority-0 — live bugs, not features.
 
-15 waves, packed 8-wide by disjointness in priority order. Wave 1 is entirely priority-0.
+**15 waves, all 8 wide except the last.** Wave 1 is entirely priority-0; wave 15 is T-290 alone.
+Verified mechanically: zero intra-wave file collisions, zero directory-level `owns` claims, every
+`DEPS` ordering constraint satisfied.
+
+Three cancelled before the run because T-181 fixed or absorbed them: **T-184** (single-faction
+hard-reject, fixed by T-181.46 43 minutes after the audit filed it), **T-210** (dead mission-list
+route, fixed by T-181.51), **T-252** (merged into T-187 — same file).
+
+The five most contended files are sequenced across waves rather than shared within one:
+`flatten.rs` and `doc/store.rs` (9 tickets each), `eden_chrome.rs` (6),
+`api/src/handlers/events.rs` and `mission/compile.rs` (5 each).
+
+### Token budget
+
+Measured from the 2026-07-25 transcripts: **93.1M non-cache-read tokens per 5-hour window**, 73% of
+it cache *creation* — which is roughly fixed per agent, because every agent re-creates the system
+prompt plus the 88 KB `CLAUDE.md`. True cost per agent ≈ **824k**, about 4-5× what the reported
+`subagent_tokens` figure suggests.
+
+| | |
+|---|--:|
+| 113 ticket agents (400k S / 700k M / 1.2M L / 2.0M XL) | 78.1M |
+| 15 wave verifiers @ 600k | 9.0M |
+| +20% retry / self-heal | 17.4M |
+| **Total** | **104.5M** |
+| **Windows** (93.1M each) | **1.12** |
+
+Concurrency does not change the budget, only how fast it is spent — which is why 8 beats 4: fewer,
+wider waves means fewer verifier runs. Expect exactly one park at the rate limit, then a short
+finish after the reset.
 
 ## Sequencing note
 

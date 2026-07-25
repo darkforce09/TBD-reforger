@@ -25,6 +25,30 @@ REGISTRY = os.path.join(ROOT, '.ai/tickets/registry.json')
 # to integrate in one sitting. Eight is the working compromise — raise it if you are keeping up.
 MAX_CONCURRENT = int(os.environ.get('TBD_MAX_CONCURRENT', '8'))
 
+# Ordering constraints that file-disjointness cannot express. Each of these is a case where two
+# tickets touch DIFFERENT files but one still has to land first, so the collision computation alone
+# would happily run them together and produce a broken tree.
+#
+#   T-273 -> T-237 -> T-238  `ticket check` is inside the wave gate. T-237 wires it to validate
+#                            against schema.json, and schema.json is a month stale — every one of
+#                            the 113 tickets violates it today. Land T-237 first and the gate goes
+#                            red on the whole registry, failing every subsequent wave.
+#   T-241 -> zones consumers The doc has no `zones` root at all. Four tickets would each invent a
+#                            different one; T-241 declares the vocabulary once.
+#   T-222 -> sync consumers  CLIENT_ID is hardcoded to 1. Any sync transport that lands first
+#                            corrupts documents on every multi-peer merge.
+#   T-257 -> undo consumers  `objectives`/`markers` are cleared by hydrate but not undo-scoped, so
+#                            both features would ship non-undoable.
+#   T-186 -> T-209 -> T-251  test lane, then CI wiring, then deploy.
+#   T-290 LAST               it annotates fields as non-consumed that five earlier tickets build.
+DEPS = {
+    'T-237': ['T-273'], 'T-238': ['T-273', 'T-237'],
+    'T-201': ['T-241'], 'T-211': ['T-241'], 'T-212': ['T-241', 'T-257'], 'T-275': ['T-241'],
+    'T-190': ['T-222'], 'T-295': ['T-222'], 'T-213': ['T-257'],
+    'T-209': ['T-186'], 'T-251': ['T-209'],
+}
+RUN_LAST = {'T-290'}
+
 
 def plan_rows():
     if not os.path.exists(PLAN):
@@ -58,10 +82,15 @@ def collides(a, b):
     return False
 
 
-def pack(cands, already=()):
-    """Greedy maximum disjoint set, honouring plan order (which is priority order)."""
+def pack(cands, already=(), landed=frozenset(), enforce_deps=True):
+    """Greedy maximum disjoint set, honouring plan order (which is priority order) and DEPS."""
     chosen, used = [], list(already)
     for c in cands:
+        if enforce_deps:
+            if c['id'] in RUN_LAST:
+                continue
+            if any(d not in landed for d in DEPS.get(c['id'], ())):
+                continue
         if any(collides(c['owns'], u) for u in used):
             continue
         chosen.append(c)
@@ -78,14 +107,25 @@ def repack():
     rows = [r for r in plan_rows() if not shipped(r['id'], reg)]
     done = [r for r in plan_rows() if shipped(r['id'], reg)]
     waves, remaining, n = [], list(rows), 0
+    landed = set()
+    last = [r for r in remaining if r['id'] in RUN_LAST]
+    remaining = [r for r in remaining if r['id'] not in RUN_LAST]
     while remaining:
         n += 1
-        w = pack(remaining)
-        if not w:                      # everything left collides with everything: emit singly
-            w = [remaining[0]]
+        w = pack(remaining, landed=landed)
+        if not w:
+            # Everything left is either colliding or dep-blocked. Take the first whose deps are
+            # satisfied; if none are, the DEPS table has a cycle and that is a bug worth shouting about.
+            free = [r for r in remaining if all(d in landed for d in DEPS.get(r['id'], ()))]
+            if not free:
+                sys.exit(f"DEPS deadlock: {[r['id'] for r in remaining][:8]} — check the DEPS table")
+            w = [free[0]]
         for r in w:
             remaining.remove(r)
+            landed.add(r['id'])
         waves.append(w)
+    for r in last:                     # RUN_LAST tickets get their own trailing wave
+        waves.append([r])
     out = ["# Platform wave plan — WHICH tickets run together, and in what order.",
            "# Columns: wave <TAB> ticket <TAB> title <TAB> owns (semicolon-separated paths)",
            "# Waves are packed by FILE-DISJOINTNESS in priority order.",
