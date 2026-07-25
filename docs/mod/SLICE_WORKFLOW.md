@@ -27,8 +27,24 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
 
 1. **One worktree per slice.** `T-181.7` gets one worktree. **Sub-slices stay in the parent's
    worktree** — `T-181.7.1`, `T-181.7.2` are the same slice's work, not new trees.
-2. **Three worktrees at a time.** Not more. Disk is the constraint (~131 GB free, repo `.git`
-   1.7 GB shared across worktrees).
+2. **As many concurrent slices as are FILE-DISJOINT — computed, not guessed.**
+   ```bash
+   python3 scripts/mod/slice-collisions.py                        # max concurrent set
+   python3 scripts/mod/slice-collisions.py T-181.32 T-181.27      # what can join those in flight
+   ```
+   This rule used to say "three, not more, disk is the constraint". **That was wrong on the
+   measurement.** A worktree is ~81 MB fresh and ~500 MB warm; six cost 3.0 GB against 129 GB free,
+   so twenty would cost ~10 GB. Disk was never close to binding, and capping at three left the
+   program running at roughly half its available width.
+   The real limit is the one rule 7 always stated: **file collisions**. Worktrees make concurrent
+   edits *safe* (no clobbering) but do not prevent merge conflicts, so two agents must never own
+   overlapping paths. That is a mechanical property of the `owns` column, so it is computed.
+   Two costs that DO scale with width, and neither justifies three:
+   - **Shared-file merges.** Every slice adding a component touches `TBD_GameMode.et` and the
+     roll-call in `TBD_FrameworkManager`. Wave 5 hit that at N=3. The conflicts are additive and
+     trivial to resolve, but they are O(N).
+   - **Integration attention.** Each agent returns a dense report the command center must actually
+     read and act on. That is the real ceiling, and it is a lot higher than three.
 3. **Merge only when all three complete**, then **delete the worktrees immediately**. Leftover
    worktrees fill the disk — this is an operator instruction, not a preference.
 4. **Then run an aggressive verify agent** against merged `main`. It is adversarial: its job is to
