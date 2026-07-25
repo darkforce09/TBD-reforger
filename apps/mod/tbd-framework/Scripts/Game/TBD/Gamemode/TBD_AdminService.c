@@ -238,6 +238,89 @@ class TBD_AdminService
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — `#tbd identity [status|override <phrase>|enforce]`.
+	//!
+	//! ONE LIFE is a promise about a PERSON, and a dedicated server with no backend identity has no
+	//! concept of a person — it hands out `player:<id>`, a lease on a NUMBER. `TBD_SpawnManager`
+	//! therefore refuses SAFE_START/LIVE on such a host. That is right for an event and wrong for a
+	//! legitimate test session, so this is the documented way out.
+	//!
+	//! ── Why the override is shaped like this ────────────────────────────────────────────────────
+	//! It is a WAIVER, not a setting, and everything about the shape follows from that:
+	//!   * `status` changes nothing and is readable by any admin — during an event "can this host
+	//!     even enforce one life" has to be answerable in one command, exactly like `#tbd safestart
+	//!     status`.
+	//!   * `override` demands an exact phrase (`TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE`) as a
+	//!     separate argument. A yes/no flag, or a `--force`, is something an admin can fat-finger
+	//!     while trying to do something else; a literal sentence naming the consequence is not.
+	//!   * Both outcomes — signed AND refused — hit `TBD_AdminAudit`. A waiver nobody can prove was
+	//!     signed is not a waiver, and a refused attempt is exactly the thing a post-event dispute
+	//!     needs to be able to see.
+	//!   * `enforce` re-arms it, with no phrase required. Putting a safety rail BACK never needs
+	//!     ceremony.
+	//! The waiver only unblocks the STAGE GATE. It does not touch ONE LIFE itself, the one-life
+	//! boundary in `DeployPlayerInternal`, or the mode-3 mark handling in `OnPlayerDisconnected` —
+	//! it buys permission to start a round that the host cannot enforce, and says so every time it
+	//! lets a stage through.
+	//! @authority server
+	static string Identity(int callerId, string arg, string confirm, out bool ok)
+	{
+		ok = false;
+
+		// Authority only — the waiver and the census are server-owned, and off the authority
+		// vanilla's GetPlayerIdentityId returns NULL_UUID for everybody, so a client build would
+		// read a census that is pure noise.
+		if (RplSession.Mode() == RplMode.Client)
+			return "TBD: admin actions execute on the server only.";
+
+		if (!IsAdmin(callerId))
+		{
+			NoteDeniedAccess(callerId, "action 'identity'");
+			return "TBD: refused — you are not a listed server admin.";
+		}
+
+		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
+		if (!spawn)
+			return "TBD: spawn manager not on this game mode — ONE LIFE is not enforced here at all (see the roll-call).";
+
+		string request = arg;
+		if (request.IsEmpty())
+			request = "status";
+
+		if (request == "status")
+		{
+			ok = true;
+			return spawn.IdentityStatusLine();
+		}
+
+		if (request == "enforce")
+		{
+			spawn.RequireDurableIdentity(Label(callerId));
+			ok = true;
+			TBD_AdminAudit.Record(string.Format("%1 re-armed ONE LIFE identity enforcement", Label(callerId)), false);
+			return "TBD: identity enforcement re-armed — SAFE_START/LIVE are refused again while any connected player is on a NUMERIC key.";
+		}
+
+		if (request == "override")
+		{
+			if (!spawn.AcceptNonDurableIdentity(Label(callerId), confirm))
+			{
+				TBD_AdminAudit.Record(string.Format("%1 identity override REFUSED — wrong or missing confirmation phrase",
+					Label(callerId)), true);
+				return string.Format("TBD: refused. This waives ONE LIFE on a host that cannot enforce it, so it needs the phrase verbatim: '#tbd identity override %1'.",
+					TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE);
+			}
+
+			ok = true;
+			TBD_AdminAudit.Record(string.Format("%1 WAIVED ONE LIFE enforcement (no durable player identity on this host)",
+				Label(callerId)), false);
+			return "TBD: ONE LIFE enforcement WAIVED. SAFE_START/LIVE may now be entered, deaths will NOT survive a reconnect, and every stage this lets through says so in the log. '#tbd identity enforce' undoes it.";
+		}
+
+		return string.Format("Usage: #tbd identity [status|override %1|enforce]", TBD_SpawnManager.IDENTITY_OVERRIDE_PHRASE);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Someone who is not an admin touched an admin surface. Records it — once per player per
 	//! surface in the bounded on-screen trail, every single time in the console.
 	//!

@@ -193,8 +193,34 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! override, or the retry would be refused by the very guard the admin is overriding.
 	protected ref map<int, bool> m_mAdminRespawnPending;
 
-	//! T-181.21 — one-time warning latch for "this server issues no player identities".
-	protected bool m_bIdentityDegradedLogged;
+	//! T-181.21 — warning latch for "this server issues no durable player identities".
+	//!
+	//! T-181.32 — KEYED ON THE MODE, and that is the whole fix. It used to be ONE session-wide
+	//! bool covering BOTH degraded modes, so a single mode-2 (`00bbbddd-` name hash) event silenced
+	//! mode 3 (`player:<id>` numeric lease) for the rest of the session — and mode 3 is the strictly
+	//! worse one, the one whose operator mitigation is completely different (mode 2: tell people not
+	//! to rename mid-event; mode 3: fix the dedicated server's backend config). The louder warning
+	//! was being suppressed by the quieter one.
+	//!
+	//! A map rather than two bools so KeyModeLabel() stays the single vocabulary: a mode that gets
+	//! added later latches correctly without touching this.
+	protected ref map<string, bool> m_mIdentityDegradedLogged;
+
+	//! T-181.32 — has an admin explicitly ACCEPTED running with non-durable player keys?
+	//!
+	//! This is not a convenience toggle, it is a signed waiver. Refusing SAFE_START/LIVE outright on
+	//! a host that cannot carry ONE LIFE is correct for an event and would brick a legitimate test
+	//! session, so the escape hatch exists — but it costs an exact confirmation phrase, it is
+	//! admin-only, it is written to TBD_AdminAudit, and every stage it lets through re-announces
+	//! itself at WARNING. Session-scoped on purpose: a fresh world starts enforcing again.
+	protected bool m_bIdentityOverride;
+	//! Who signed it (TBD_AdminService.Label form), for the banner and the status line.
+	protected string m_sIdentityOverrideBy;
+
+	//! T-181.32 — one-shot latch for "somebody joined on a NUMERIC key after the round was already
+	//! past the identity gate". See NoteLateNonDurableJoin: the gate can only measure the players
+	//! who are connected when it runs, so this is the honest report of the one case it cannot.
+	protected bool m_bLateNonDurableJoinWarned;
 
 	//! T-181.21 — how long an authorized spawn ticket stays open. It only has to cover the
 	//! request RPC hop: SCR_SpawnHandlerComponent consults CanRequestSpawn_S from
@@ -202,6 +228,14 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! finalize (vanilla SCR_SpawnHandlerComponent.c). Seconds is already generous; the ticket
 	//! is normally closed earlier, by OnPlayerSpawnedHook.
 	protected const int SPAWN_AUTH_WINDOW_MS = 5000;
+
+	//! T-181.32 — the exact phrase an admin must type to accept an unenforceable ONE LIFE.
+	//!
+	//! Deliberately unmistakable, deliberately not a yes/no, and deliberately a separate word from
+	//! the subcommand, so no plausible typo or tab-completion produces it. It names the CONSEQUENCE
+	//! ("no one life"), not the mechanism, because that is what the admin is actually agreeing to.
+	//! It carries no spaces: `#tbd` arguments are split on " ".
+	static const string IDENTITY_OVERRIDE_PHRASE = "I-ACCEPT-NO-ONE-LIFE";
 
 	//! T-181.15 — grace between a player's audit and the JIP deploy attempt. Matches the LOBBY
 	//! wave's own 250 ms settle (ScheduleDeployAllConnectedPlayers) so both entry paths give the
@@ -292,6 +326,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mAdminRespawnPending = new map<int, bool>();
 		m_mConnectEpoch = new map<int, int>();
 		m_mSeenKeys = new map<string, bool>();
+		m_mIdentityDegradedLogged = new map<string, bool>();
 		m_eStage = TBD_EGameStage.LOADING;
 	}
 
@@ -803,7 +838,12 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 			m_mSlotBodies.Set(slot.Key(), body);
 			built++;
-			if (slot.loadout)
+			// T-181.32 — CONTENT, not non-null. `if (slot.loadout)` was always true (see
+			// HasAuthoredLoadout), so this census reported every slot as carrying a JSON loadout
+			// and `kitOnly` was structurally unreachable. Measured on a live boot of
+			// golden-missions/bridgehead-at-levie.json, whose 18 slots author no loadout key at
+			// all: "materialized 18/18 bodies — 18 with a JSON loadout, 0 kit-only".
+			if (HasAuthoredLoadout(slot.loadout))
 				loadouts++;
 			else
 				kitOnly++;
@@ -891,7 +931,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		Print(string.Format("[TBD][Spawn] slot=%1 Y=%2 jsonY=%3 surfaceY=%4 delta=%5 heading=%6",
 			slot.id, spawnY, jsonYLabel, surfaceY, delta, slot.headingDeg));
 
-		if (slot.loadout)
+		// T-181.32 — only when the JSON actually asks for something. This used to be
+		// `if (slot.loadout)`, which is always true, so EVERY body on EVERY spawn built a
+		// TBD_LoadoutApplication, ran it, and got a deferred 500 ms verify tick for a loadout with
+		// nothing in it. Measured: 36 `[TBD][Loadout][Slot] … gear=0/0 cargo=0/0` lines on a boot of
+		// a mission that authors no loadouts at all. Nothing was DAMAGED by it — IssueEquip
+		// early-returns on an empty ResourceName, so the kit prefab's own clothing survives
+		// (`worn-audit jacket=1 pants=1 boots=1`) — but it is wasted per-body work on every single
+		// life, and a log full of empty passes hides the ones that matter.
+		if (HasAuthoredLoadout(slot.loadout))
 		{
 			PruneDoneLoadoutApps();
 			TBD_LoadoutApplication app = new TBD_LoadoutApplication(body, slot.loadout, "[TBD][Loadout][Slot]", slot.id);
@@ -900,6 +948,57 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		}
 
 		return body;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — does this slot ACTUALLY author a loadout? `if (slot.loadout)` is not that
+	//! question and never was.
+	//!
+	//! THE LANDMINE: `JsonLoadContext` ALLOCATES a nested `ref <class>` field even when the JSON key
+	//! is ABSENT, so a null check is NOT a presence test. `TBD_MissionSlotStruct.loadout` and
+	//! `TBD_SlotLoadoutStruct.gear` are both `ref <class>`, so both come back non-null — full of
+	//! empty strings — for a slot whose JSON has no `loadout` key at all. The only reliable presence
+	//! tests are a SCALAR SENTINEL or a CONTAINER COUNT; this uses both.
+	//!
+	//! MEASURED, not reasoned: `golden-missions/bridgehead-at-levie.json` ships 18 slots and not one
+	//! of them carries a `loadout` key. Before this function the boot printed "18 with a JSON
+	//! loadout, 0 kit-only" and built 18 empty loadout applications.
+	//!
+	//! `ref array<>` (cargo) is a different case and is handled the same way for the same reason:
+	//! allocated-empty and null are behaviourally identical here because `IsEmpty()` answers both.
+	//!
+	//! Deliberately duplicates the field walk in `TBD_LoadoutApplication.CountGear`, which is
+	//! `protected` and lives in a file this slice does not own. One extra ten-line walk beats
+	//! widening another class's surface across a slice boundary; if a gear field is ever added,
+	//! both must learn about it.
+	protected static bool HasAuthoredLoadout(TBD_SlotLoadoutStruct loadout)
+	{
+		if (!loadout)
+			return false;
+
+		// Container count — a cargo row is authored content even with no gear at all.
+		if (loadout.cargo && !loadout.cargo.IsEmpty())
+			return true;
+
+		TBD_SlotGearStruct gear = loadout.gear;
+		if (!gear)
+			return false;
+
+		// Scalar sentinels, one per line rather than one `||` chain: a long boolean chain is the
+		// same shape as the measured "Formula too complex" landmine, and its second diagnostic is a
+		// misleading "Incompatible parameter". Not worth finding out.
+		if (!gear.primary.IsEmpty())  return true;
+		if (!gear.optic.IsEmpty())    return true;
+		if (!gear.magazine.IsEmpty()) return true;
+		if (!gear.uniform.IsEmpty())  return true;
+		if (!gear.vest.IsEmpty())     return true;
+		if (!gear.helmet.IsEmpty())   return true;
+		if (!gear.pants.IsEmpty())    return true;
+		if (!gear.boots.IsEmpty())    return true;
+		if (!gear.handwear.IsEmpty()) return true;
+		if (!gear.backpack.IsEmpty()) return true;
+
+		return false;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -976,12 +1075,33 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! The T-181.21 comment described two, and the one it described as loud never fired on the
 	//! host most likely to hit it. Vanilla SCR_PlayerIdentityUtils.GetPlayerIdentityId is:
 	//!
-	//!     string uid = GetGame().GetBackendApi().GetPlayerIdentityId(playerId);
-	//!     if (uid.IsEmpty() && RplSession.Mode() != RplMode.Dedicated)
-	//!         uid = string.Format("00bbbddd-%1-%2-%3-%4%5", ...);   // Hash() of GetPlayerName()
+	//!     if (playerId <= 0)            return UUID.NULL_UUID;          // :6-7
+	//!     if (!Replication.IsServer())  return UUID.NULL_UUID;          // :9-15, diag: "can only be
+	//!                                                                  //   used on the server and
+	//!                                                                  //   after OnPlayerAuditSuccess"
+	//!     string uid = GetGame().GetBackendApi().GetPlayerIdentityId(playerId);   // :17
+	//!     if (uid.IsEmpty() && RplSession.Mode() != RplMode.Dedicated)             // :18-20
+	//!         uid = string.Format("00bbbddd-%1-%2-%3-%4%5", ...);   // :31, Hash() of GetPlayerName()
+	//!     // else (i.e. Dedicated AND empty) -> Debug.Error("Dedicated server is not correctly
+	//!     //   configured to connect to the BI backend. See ...Server_Config#publicAddress")   // :37
 	//!
 	//! so it does not fail on a listen/hosted server — it SYNTHESIZES a uuid from the player's
 	//! display NAME and returns a perfectly well-formed, non-null UUID.
+	//!
+	//! T-181.32 — THREE things the older transcription of this left out, all of which change what
+	//! the modes MEAN, and all read out of apps/mod/vanilla_reference/Source/SCR_PlayerIdentityUtils.c:
+	//!   * The TWO early returns above. `playerId <= 0` and off-authority both yield mode 3 for
+	//!     reasons that have nothing to do with the backend, so "mode 3" is not a synonym for
+	//!     "misconfigured server" at every call site — only at the ones that ask on the authority
+	//!     about a real connected player.
+	//!   * There is a TIMING PRECONDITION. Vanilla's own diagnostic says the identity is valid only
+	//!     "after OnPlayerAuditSuccess" — so asking earlier (OnPlayerConnected / OnPlayerRegistered)
+	//!     returns nothing even on a perfectly healthy dedicated server. Every call site in this
+	//!     file is at or after that hook, or in OnPlayerDisconnected where the cache covers it.
+	//!     Moving one earlier would silently manufacture mode 3. Do not.
+	//!   * Vanilla itself CLASSIFIES `Dedicated && empty` as a misconfiguration and names the fix
+	//!     (publicAddress). That is the evidence behind T-181.32's stage gate: mode 3 on a dedicated
+	//!     server is not a supported operating state, so the framework refuses to pretend it is.
 	//!
 	//!   1. BACKEND identity (correctly configured dedicated server). Durable. The event case.
 	//!   2. SYNTHESIZED `00bbbddd-…` identity (listen / hosted / local host). Stable only while
@@ -995,9 +1115,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//!   3. `player:<id>` fallback — a MISCONFIGURED DEDICATED server (backend uid empty and no
 	//!      synthesis, because Mode() == Dedicated), or a player already being torn down with no
 	//!      cached key. Not durable at all; a rejoin buys a fresh life. Also logged loudly.
+	//!      NOT local PIE — see above: a PIE/listen host is not Dedicated, so it lands in mode 2.
 	//!
 	//! Only mode 1 is acceptable for an event. Modes 2 and 3 are both announced rather than
 	//! papered over — that is the whole point of this block.
+	//!
+	//! T-181.32 — and mode 3 is now REFUSED, not merely announced. Announcing an unenforceable
+	//! ONE LIFE at WARNING put the burden on somebody noticing a log line during an event; the
+	//! identity gate (StageRefusalFor) turns it into a stage the round cannot enter without an
+	//! admin explicitly signing for it. See the T-181.32 block above IsSyntheticIdentity.
 	protected string PlayerBindKey(int playerId)
 	{
 		UUID identity = SCR_PlayerIdentityUtils.GetPlayerIdentityId(playerId);
@@ -1007,7 +1133,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			if (!identityId.IsEmpty())
 			{
 				if (IsSyntheticIdentity(identityId))
-					NoteIdentityDegraded(playerId, "this host issues NAME-DERIVED identities (vanilla's 00bbbddd- peer-tool fallback, listen/hosted server), so changing your display name buys a fresh life and two players sharing a name share one life and one seat");
+					NoteIdentityDegraded(playerId, "NAME-HASH", "this host issues NAME-DERIVED identities (vanilla's 00bbbddd- peer-tool fallback, listen/hosted server), so changing your display name buys a fresh life and two players sharing a name share one life and one seat");
 
 				m_mBindKeyCache.Set(playerId, identityId);
 				return identityId;
@@ -1020,14 +1146,17 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (m_mBindKeyCache.Find(playerId, cached))
 			return cached;
 
-		NoteIdentityDegraded(playerId, "this host issues NO identity at all (misconfigured dedicated server, or local PIE), so ONE LIFE is only as durable as the numeric playerId and a reconnect buys a fresh life");
+		NoteIdentityDegraded(playerId, "NUMERIC", "this host issues NO identity at all — a DEDICATED server that is not registered with the BI backend (vanilla's own diagnostic names the server config's publicAddress), or a player already being torn down. NOTE: this is NOT what local PIE looks like — a PIE/listen host is not Dedicated, so vanilla synthesizes a name hash there instead. ONE LIFE is only as durable as the numeric playerId and a reconnect buys a fresh life");
 		return string.Format("player:%1", playerId);
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! T-181.22 — vanilla stamps every SYNTHESIZED identity with this prefix
-	//! (SCR_PlayerIdentityUtils.c:33 — `string.Format("00bbbddd-%1-%2-%3-%4%5", ...)`), which makes
+	//! (SCR_PlayerIdentityUtils.c:31 — `string.Format("00bbbddd-%1-%2-%3-%4%5", ...)`), which makes
 	//! it the one reliable way to tell a real backend uuid from a name hash.
+	//! T-181.32 — the citation used to read `:33`; re-read against
+	//! apps/mod/vanilla_reference/Source/SCR_PlayerIdentityUtils.c it is `:31` (`:32` is the
+	//! `uid.ToLower();` that follows). The prefix itself is unchanged.
 	protected bool IsSyntheticIdentity(string key)
 	{
 		return key.StartsWith("00bbbddd-");
@@ -1076,12 +1205,326 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! T-181.22 — `why` names which of the two degraded modes this is, because the operator's
 	//! mitigation differs (mode 2: tell people not to rename mid-event; mode 3: fix the server's
 	//! backend config — see the publicAddress note in vanilla SCR_PlayerIdentityUtils).
-	protected void NoteIdentityDegraded(int playerId, string why)
+	//!
+	//! T-181.32 — LATCHED PER MODE, not per session. The latch used to be one bool covering both
+	//! degraded modes, so the two calls below competed for it: whichever fired first silenced the
+	//! other for the rest of the session. That is exactly backwards for the case that matters — a
+	//! single mode-2 event (name hash, survivable, documented as an accepted cost in
+	//! TBD_MOD_DESIGN.md §2) permanently swallowed every mode-3 warning (numeric lease, ONE LIFE
+	//! structurally unenforceable, the thing this whole slice exists to make loud).
+	//!
+	//! `mode` is a KeyModeLabel() value, so the vocabulary is shared with the JIP verdict line and
+	//! the identity status line rather than invented here.
+	protected void NoteIdentityDegraded(int playerId, string mode, string why)
 	{
-		if (m_bIdentityDegradedLogged)
+		if (m_mIdentityDegradedLogged.Contains(mode))
 			return;
-		m_bIdentityDegradedLogged = true;
-		Print(string.Format("[TBD][Spawn] player=%1 has NO durable identity — %2. Expected on a local/listen host; NOT acceptable for an event server.", playerId, why), LogLevel.WARNING);
+		m_mIdentityDegradedLogged.Set(mode, true);
+
+		// T-181.32 — the verdict is now PER MODE too, not one shared sentence. The old suffix
+		// ("Expected on a local/listen host; NOT acceptable for an event server") is true of a name
+		// hash and actively misleading about a numeric key on a dedicated box, where it is not
+		// "expected" anywhere — vanilla's own diagnostic calls that state a misconfiguration.
+		// Telling an operator their broken event server is behaving as expected is worse than
+		// saying nothing.
+		string verdict = "Expected on a local/listen host; NOT acceptable for an event server.";
+		if (mode == "NUMERIC")
+			verdict = "This is NOT a supported state: vanilla itself reports a dedicated server with no backend identity as a MISCONFIGURATION. SAFE_START/LIVE are refused until it is fixed — run '#tbd identity' for the verdict and the escape hatch.";
+
+		Print(string.Format("[TBD][Spawn] player=%1 has NO durable identity (keyMode=%2) — %3. %4", playerId, mode, why, verdict), LogLevel.WARNING);
+	}
+
+	// ══ T-181.32 — THE IDENTITY GATE ═══════════════════════════════════════════════════════════
+	//
+	// WHAT THIS IS NOT. It is not a re-litigation of the mode-3 fail-open in OnPlayerDisconnected
+	// (search "THE `player:<id>` RESIDUAL, CLOSED"). That code chooses between two unavoidable
+	// errors — keep the death mark and a fresh joiner handed the recycled id is DEAD ON ARRIVAL,
+	// or drop it and a returning player may buy a fresh life. It drops it, which is right, because
+	// in mode 3 a reconnector is overwhelmingly issued a DIFFERENT number, so the mark never
+	// followed them anyway. That reasoning stands and nothing here changes it.
+	//
+	// WHAT THIS IS. The gap is one level up. Mode 3 was treated as degraded-but-playable, and it
+	// is not playable — not for a real event. ONE LIFE is a promise about a PERSON, and mode 3 has
+	// no concept of a person: `player:<id>` is a LEASE ON A NUMBER. There is no clever bookkeeping
+	// that recovers durable identity from a host that never issued any, so the honest response is
+	// not a better fallback, it is to refuse to start and say why.
+	//
+	// WHERE IT BITES. SAFE_START and LIVE, because those are the stages where a life can actually
+	// be spent. LOBBY and BRIEFING stay open so an operator can see the roster, read the refusal
+	// and fix the server without the round being unusable.
+	//
+	// WHY THE CHECK IS A LIVE SCAN AND NOT A LATCH. A session-sticky "we once saw a numeric key"
+	// flag would be a FALSE POSITIVE generator, and the reason is documented three screens down in
+	// OnPlayerAuditSuccess: vanilla's own TODO fires the audit at REGISTRATION, before the identity
+	// is available, so a perfectly good backend server can hand out one transient `player:<id>` per
+	// join and then upgrade it on the second audit. Latching on that would refuse LIVE on a
+	// correctly-configured server — the exact opposite of the intent. Scanning the players who are
+	// connected AT THE MOMENT OF THE TRANSITION reads the state after any such upgrade, is
+	// self-healing, and costs one map lookup per player once per stage change.
+	//
+	// THE HOLE IT CANNOT CLOSE, stated rather than hidden: the scan can only measure players who
+	// are CONNECTED when it runs. An admin who advances to LIVE on an empty server and lets people
+	// in afterwards is not covered by it. NoteLateNonDurableJoin is the honest report of that case
+	// — a loud latched WARNING at the join door, log-only. It deliberately does NOT refuse the
+	// deploy: AdminRespawn is the only door back into the world and DeployPlayerInternal is the
+	// only door in, and this slice adds neither a second death path nor a second way in.
+	// ═══════════════════════════════════════════════════════════════════════════════════════════
+
+	//! Log channel for the identity gate. A local constant rather than an edit to `TBD_Log`'s
+	//! vocabulary — `TBD_AdminAudit.CH_ADMIN` set that precedent so two slices in one wave do not
+	//! collide on that single enum block for no benefit.
+	static const string CH_IDENTITY = "Identity";
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — is this a stage where a life can actually be spent?
+	//!
+	//! SAFE_START counts even though damage is off in it: it is the stage an event enters to hold
+	//! everyone still before the round, players are in bodies, and TBD_SafestartManager lifts into
+	//! LIVE from it — so blocking only LIVE would mean the round assembles under a promise the host
+	//! cannot keep and then trips the gate at the worst possible moment.
+	protected static bool RequiresDurableIdentity(TBD_EGameStage stage)
+	{
+		return stage == TBD_EGameStage.SAFE_START || stage == TBD_EGameStage.LIVE;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — how the CONNECTED players' bind keys resolve right now.
+	//!
+	//! Routed through PlayerBindKey and KeyModeLabel so there is still exactly one definition of
+	//! "who is this player" and one vocabulary for the answer. Returns the count on a NUMERIC
+	//! (`player:<id>`) key — the mode that makes ONE LIFE unenforceable — and fills `numericPlayers`
+	//! with the offending ids so an admin can be told WHO rather than only HOW MANY.
+	//! @authority server
+	int CensusIdentityModes(out int connectedOut, out int nameHashOut, notnull array<int> numericPlayers)
+	{
+		connectedOut = 0;
+		nameHashOut = 0;
+		numericPlayers.Clear();
+
+		PlayerManager players = GetGame().GetPlayerManager();
+		if (!players)
+			return 0;
+
+		array<int> ids = {};
+		int count = players.GetPlayers(ids);
+		connectedOut = count;
+
+		int numeric = 0;
+		for (int i = 0; i < count; i++)
+		{
+			string mode = KeyModeLabel(PlayerBindKey(ids[i]));
+			if (mode == "NUMERIC")
+			{
+				numeric++;
+				numericPlayers.Insert(ids[i]);
+			}
+			else if (mode == "NAME-HASH")
+			{
+				nameHashOut++;
+			}
+		}
+		return numeric;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — THE HOOK `TBD_FrameworkManager.SetStage` CALLS. Empty string = the stage may be
+	//! entered; anything else is the reason it may not, already logged as a banner.
+	//!
+	//! Static, and it resolves the instance itself, so the caller is two lines and needs no
+	//! null-dance. A MISSING TBD_SpawnManager returns empty — deliberately. If the manager is not
+	//! on the game mode then ONE LIFE is not enforced by anything at all, which is a strictly worse
+	//! problem than this gate can express, and it already has an owner: PrintComponentRollCall
+	//! reports it at ERROR and `world-boot.sh` fails the wave gate on it. Blocking every stage
+	//! transition here would bury that diagnosis under a misleading one.
+	//! @authority server
+	static string StageRefusalFor(TBD_EGameStage stage)
+	{
+		if (!RequiresDurableIdentity(stage))
+			return string.Empty;
+
+		if (!s_Instance)
+			return string.Empty;
+
+		return s_Instance.IdentityRefusalFor(stage);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — the body of the gate. See the block comment above for why this is a live scan.
+	//! @authority server
+	protected string IdentityRefusalFor(TBD_EGameStage stage)
+	{
+		// Authority only, and this one is not boilerplate. Vanilla's GetPlayerIdentityId returns
+		// UUID.NULL_UUID outright when `!Replication.IsServer()` (SCR_PlayerIdentityUtils.c:9-15),
+		// so off the authority EVERY player resolves to a `player:<id>` key and the gate would
+		// refuse a stage it has no business judging.
+		if (RplSession.Mode() == RplMode.Client)
+			return string.Empty;
+
+		// ONE LIFE off means there is no invariant to protect and nothing to refuse. An operator
+		// who deliberately turned it off has already made this call; blocking them would be the
+		// gate inventing a policy nobody asked for.
+		if (!m_bOneLife)
+			return string.Empty;
+
+		int connected;
+		int nameHash;
+		array<int> numericPlayers = {};
+		int numeric = CensusIdentityModes(connected, nameHash, numericPlayers);
+
+		if (numeric == 0)
+		{
+			// Honest about what could NOT be checked. Zero players is not a pass — it is an
+			// unanswered question, and the answer arrives one join later (NoteLateNonDurableJoin).
+			if (connected == 0)
+				Print(string.Format("[TBD][%1] stage=%2 identity gate INCONCLUSIVE — no players connected, so the host's key mode cannot be observed yet. It is checked again on every transition, and a NUMERIC join after this point is reported at WARNING.",
+					CH_IDENTITY, typename.EnumToString(TBD_EGameStage, stage)), LogLevel.WARNING);
+			return string.Empty;
+		}
+
+		string stageName = typename.EnumToString(TBD_EGameStage, stage);
+		string who = FormatPlayerIdList(numericPlayers);
+
+		// The waiver. Checked AFTER the census on purpose, so this line only ever appears when the
+		// override genuinely mattered — an override that silently covers nothing teaches an operator
+		// that it is harmless.
+		if (m_bIdentityOverride)
+		{
+			TBD_Log.Banner(CH_IDENTITY, string.Format("%1 ENTERED WITH ONE LIFE UNENFORCEABLE — admin override by %2 covers %3 player(s) on a NUMERIC key (%4). Deaths on this host do NOT survive a reconnect.",
+				stageName, m_sIdentityOverrideBy, numeric, who), false);
+			Print(string.Format("[TBD][%1] override=%2 stage=%3 numeric=%4 connected=%5 — proceeding under an explicitly accepted waiver",
+				CH_IDENTITY, m_sIdentityOverrideBy, stageName, numeric, connected), LogLevel.WARNING);
+			return string.Empty;
+		}
+
+		// Built in appended steps, never one chain: a long `+`/format chain is the measured
+		// "Formula too complex" landmine, and its second diagnostic is a misleading
+		// "Incompatible parameter" that sends you hunting a type error that does not exist.
+		string why = string.Format("ONE LIFE cannot be enforced on this host, so %1 is refused. %2 of %3 connected player(s) resolve to a NUMERIC 'player:<id>' key (%4)",
+			stageName, numeric, connected, who);
+		why = why + " — that is a lease on a NUMBER, not an identity, so a death does not survive a reconnect and a recycled id can hand a dead man's number to a new joiner.";
+		why = why + " CAUSE: this dedicated server returned no backend identity for them (vanilla synthesizes a name-hash uuid only when the session is NOT Dedicated, so there is no fallback here).";
+		why = why + " FIX: vanilla names it itself — 'Dedicated server is not correctly configured to connect to the BI backend', see the server config's publicAddress/publicPort. Launching with -config is what registers the backend room at all. Fix it and try again; the gate re-checks on every transition.";
+		why = why + string.Format(" To run anyway and accept that ONE LIFE is unenforceable: '#tbd identity override %1'.", IDENTITY_OVERRIDE_PHRASE);
+
+		TBD_Log.Banner(CH_IDENTITY, string.Format("%1 REFUSED — %2 of %3 connected player(s) have NO durable identity (%4). ONE LIFE would be a promise this host cannot keep.",
+			stageName, numeric, connected, who), true);
+		Print(string.Format("[TBD][%1] %2", CH_IDENTITY, why), LogLevel.ERROR);
+		return why;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — `3,7,11` (capped, so a full server cannot produce a 60-id line in chat).
+	protected static string FormatPlayerIdList(notnull array<int> ids)
+	{
+		if (ids.IsEmpty())
+			return "none";
+
+		string joined;
+		int shown = ids.Count();
+		if (shown > 6)
+			shown = 6;
+
+		for (int i = 0; i < shown; i++)
+		{
+			if (i > 0)
+				joined = joined + ",";
+			joined = joined + ids[i].ToString();
+		}
+
+		if (ids.Count() > shown)
+			joined = joined + string.Format(",…+%1", ids.Count() - shown);
+
+		return "player=" + joined;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — sign the waiver. Returns true only when the exact phrase was given.
+	//!
+	//! Idempotent and revocable (RequireDurableIdentity). Session-scoped: it lives on the component,
+	//! so a scenario restart starts enforcing again — a waiver that silently outlived the round it
+	//! was signed for would be worse than no gate at all.
+	//! @authority server
+	bool AcceptNonDurableIdentity(string byAdmin, string phrase)
+	{
+		if (phrase != IDENTITY_OVERRIDE_PHRASE)
+			return false;
+
+		m_bIdentityOverride = true;
+		m_sIdentityOverrideBy = byAdmin;
+
+		TBD_Log.Banner(CH_IDENTITY, string.Format("ONE LIFE ENFORCEMENT WAIVED by %1 — SAFE_START/LIVE may now be entered on a host with no durable player identity. Deaths will NOT survive a reconnect.",
+			byAdmin), true);
+		return true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — tear the waiver up. Always allowed: re-arming a safety rail needs no ceremony.
+	//! @authority server
+	void RequireDurableIdentity(string byAdmin)
+	{
+		m_bIdentityOverride = false;
+		m_sIdentityOverrideBy = string.Empty;
+		Print(string.Format("[TBD][%1] one-life identity enforcement RE-ARMED by %2 — SAFE_START/LIVE are refused again while any connected player is on a NUMERIC key.",
+			CH_IDENTITY, byAdmin));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	bool IsIdentityOverrideActive()
+	{
+		return m_bIdentityOverride;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — "can this host run a real event" in ONE greppable line, answerable mid-event
+	//! without SSHing to the server. Mirrors TBD_SafestartManager.StatusLine's job.
+	//! @authority server
+	string IdentityStatusLine()
+	{
+		int connected;
+		int nameHash;
+		array<int> numericPlayers = {};
+		int numeric = CensusIdentityModes(connected, nameHash, numericPlayers);
+
+		string oneLife = "OFF";
+		if (m_bOneLife)
+			oneLife = "ON";
+
+		string gate = "OPEN";
+		if (numeric > 0 && m_bOneLife && !m_bIdentityOverride)
+			gate = "BLOCKED";
+
+		string waiver = "none";
+		if (m_bIdentityOverride)
+			waiver = m_sIdentityOverrideBy;
+
+		// Appended in steps — the measured "Formula too complex" limit was hit at nine fields.
+		string line = string.Format("TBD identity: oneLife=%1 gate=%2 connected=%3", oneLife, gate, connected);
+		line = line + string.Format(" backend=%1 nameHash=%2 numeric=%3", connected - nameHash - numeric, nameHash, numeric);
+		line = line + string.Format(" waiver=%1 (%2)", waiver, FormatPlayerIdList(numericPlayers));
+
+		if (gate == "BLOCKED")
+			line = line + string.Format(" — SAFE_START/LIVE refused; fix the server's backend identity, or '#tbd identity override %1'.", IDENTITY_OVERRIDE_PHRASE);
+
+		return line;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.32 — the hole the stage gate cannot close, reported instead of hidden.
+	//!
+	//! The gate measures the players connected when it runs. Somebody joining on a NUMERIC key
+	//! AFTER the round is already at SAFE_START/LIVE therefore walks past it. Log-only and latched
+	//! once per session: refusing the deploy here would be a second policy boundary competing with
+	//! DeployPlayerInternal (the one-life boundary), and stranding a late joiner on a loading screen
+	//! is a worse outcome than an event admin reading a warning.
+	//! @authority server
+	protected void NoteLateNonDurableJoin(int playerId)
+	{
+		if (m_bLateNonDurableJoinWarned)
+			return;
+		m_bLateNonDurableJoinWarned = true;
+
+		TBD_Log.Banner(CH_IDENTITY, string.Format("player=%1 joined at stage %2 on a NUMERIC key — the identity gate ran before they connected, so it could not see them. ONE LIFE IS NOT ENFORCEABLE for this player.",
+			playerId, typename.EnumToString(TBD_EGameStage, m_eStage)), true);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1159,6 +1602,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			seenBefore = m_mSeenKeys.Contains(bindKey);
 			m_mSeenKeys.Set(bindKey, true);
 		}
+
+		// T-181.32 — the identity gate could not have seen this player: it scans the players who
+		// are CONNECTED when a stage transition runs, and this one arrived afterwards. Report it,
+		// once, if the round is already somewhere a life can be spent. Log-only by design — see
+		// NoteLateNonDurableJoin for why this must not refuse the deploy.
+		if (m_bOneLife && !IsIdentityKey(bindKey) && RequiresDurableIdentity(m_eStage))
+			NoteLateNonDurableJoin(playerId);
 
 		bool reclaimed = ReclaimDepartedSeat(playerId, bindKey);
 		bool lifeSpent = IsBindKeyDead(bindKey);
@@ -1935,7 +2385,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// PlayerBindKey already warns for both degraded modes; this is the belt-and-braces call
 		// for a key that arrived from the cache and so skipped the live resolve.
 		if (!IsDurableKey(bindKey))
-			NoteIdentityDegraded(playerId, "the key this death was recorded against is not durable, so it may not survive a reconnect");
+			NoteIdentityDegraded(playerId, KeyModeLabel(bindKey), "the key this death was recorded against is not durable, so it may not survive a reconnect");
 	}
 
 	//------------------------------------------------------------------------------------------------
