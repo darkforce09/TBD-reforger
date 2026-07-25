@@ -196,6 +196,49 @@ mod tests {
         assert_eq!(doc.slots[0].id, "blufor:sq1:unassigned:0");
     }
 
+    /// Two factions, each holding one slot — the case where elimination CAN resolve.
+    fn payload_two_sides() -> String {
+        r#"{"editor":{
+            "factions":[{"id":"f1","key":"BLUFOR","name":"US Army","squadIds":["sq1"]},
+                        {"id":"f2","key":"OPFOR","name":"USSR","squadIds":["sq2"]}],
+            "squads":[{"id":"sq1","factionId":"f1","callsign":"Alpha","name":"A","slotIds":["s1"]},
+                      {"id":"sq2","factionId":"f2","callsign":"Grom","name":"G","slotIds":["s2"]}],
+            "slots":[{"id":"s1","squadId":"sq1","index":0,"role":"RFL",
+                        "position":{"x":100,"y":200,"z":0,"rotation":0}},
+                     {"id":"s2","squadId":"sq2","index":0,"role":"RFL",
+                        "position":{"x":300,"y":400,"z":0,"rotation":0}}],
+            "editorLayers":[]}}"#
+            .to_string()
+    }
+
+    // T-181.46 — the editor never authors winConditions, so this is synthesized here. It used
+    // to declare `faction_eliminated` unconditionally, which made EVERY single-faction mission
+    // unloadable: TBD_MissionValidator rejects the document outright ("declares
+    // faction_eliminated but only 1 faction(s) actually have slots — no second side can ever be
+    // eliminated"), the server parks in LOADING, and the author has no way to fix it because the
+    // field is not theirs to edit. Counted over the flattened SLOTS, not `factions`, because a
+    // faction can be declared with no seats — which is exactly the shape that surfaced it.
+    #[test]
+    fn faction_eliminated_is_only_declared_when_two_sides_hold_slots() {
+        let m = fixture_mission();
+
+        let one = flatten_to_mod_document(&m, payload_with("RFL", "Alpha", "A", "s1").as_bytes())
+            .expect("compiles");
+        assert!(
+            !one.win_conditions.end_on.iter().any(|t| t == "faction_eliminated"),
+            "one-sided mission must not declare faction_eliminated: {:?}",
+            one.win_conditions.end_on
+        );
+        assert!(one.win_conditions.end_on.iter().any(|t| t == "time_limit"));
+
+        let two = flatten_to_mod_document(&m, payload_two_sides().as_bytes()).expect("compiles");
+        assert!(
+            two.win_conditions.end_on.iter().any(|t| t == "faction_eliminated"),
+            "two-sided mission must still declare faction_eliminated: {:?}",
+            two.win_conditions.end_on
+        );
+    }
+
     #[test]
     fn long_title_truncates_to_the_schema_maximum() {
         let mut m = fixture_mission();

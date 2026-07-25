@@ -599,6 +599,25 @@ pub fn flatten_to_mod_document(
         });
     }
 
+    // `faction_eliminated` is only declared when at least two factions actually HOLD SLOTS. The
+    // mod's validator rejects the document outright otherwise ("declares faction_eliminated but
+    // only 1 faction(s) actually have slots — no second side can ever be eliminated"), and since
+    // the editor never authors winConditions, an unconditional default made EVERY single-faction
+    // mission unloadable with no way for the author to fix it. Counted over the FLATTENED SLOTS
+    // rather than `factions`, because a faction can be declared with no seats — which is exactly
+    // the case that triggered this (an operator's live mission declared opfor with zero slots).
+    // Computed here rather than inline below because the struct literal moves `doc_slots`.
+    let end_on = {
+        let mut sides: Vec<&str> = doc_slots.iter().map(|s| s.faction.as_str()).collect();
+        sides.sort_unstable();
+        sides.dedup();
+        let mut triggers = vec!["time_limit".to_string()];
+        if sides.len() >= 2 {
+            triggers.push("faction_eliminated".to_string());
+        }
+        triggers
+    };
+
     let max_players = if mission.max_players < 1 {
         (doc_slots.len() as i64).max(1)
     } else {
@@ -654,7 +673,15 @@ pub fn flatten_to_mod_document(
         },
         win_conditions: ModWinConditions {
             mode: "attrition".to_string(),
-            end_on: vec!["time_limit".to_string(), "faction_eliminated".to_string()],
+            // `faction_eliminated` is only declared when at least two factions actually HOLD
+            // SLOTS. The mod's validator rejects the document outright otherwise ("declares
+            // faction_eliminated but only 1 faction(s) actually have slots — no second side can
+            // ever be eliminated"), and since the editor never authors winConditions, an
+            // unconditional default made EVERY single-faction mission unloadable with no way for
+            // the author to fix it. Counted over the flattened slots rather than `factions`,
+            // because a faction can be declared with no seats — which is exactly the case that
+            // triggered this.
+            end_on,
         },
     })
 }
