@@ -1,7 +1,8 @@
 ButtonWidgetClass {
  Name "Row"
- Slot LayoutSlot "{7BD1A70000000750}" {
+ Slot AlignableSlot "{7BD1A70000000750}" {
   HorizontalAlign 3
+  VerticalAlign 3
   Padding 0 0 0 2
  }
  Color 1 1 1 0
@@ -13,12 +14,13 @@ ButtonWidgetClass {
   SizeLayoutWidgetClass "{7BD1A70000000752}" {
    Name "RowBody"
    Slot ButtonWidgetSlot "{7BD1A70000000753}" {
+    HorizontalAlign 3
    }
    AllowHeightOverride 1
    HeightOverride 44
    {
-    FrameWidgetClass "{7BD1A70000000754}" {
-     Name "RowFrame"
+    OverlayWidgetClass "{7BD1A70000000754}" {
+     Name "RowSurface"
      Slot AlignableSlot "{7BD1A70000000755}" {
       HorizontalAlign 3
       VerticalAlign 3
@@ -26,70 +28,60 @@ ButtonWidgetClass {
      {
       ImageWidgetClass "{7BD1A70000000756}" {
        Name "Background"
-       Slot FrameWidgetSlot "{7BD1A70000000757}" {
-        Anchor 0 0 1 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 0
-        OffsetTop 0
-        SizeX 0
-        OffsetRight 0
-        SizeY 0
-        OffsetBottom 0
+       Slot OverlayWidgetSlot "{7BD1A70000000757}" {
+        HorizontalAlign 3
+        VerticalAlign 3
        }
        Color 0 0 0 0
       }
       ImageWidgetClass "{7BD1A70000000758}" {
        Name "Accent"
-       Slot FrameWidgetSlot "{7BD1A70000000759}" {
-        Anchor 0 0 0 1
-        PositionX 0
-        OffsetLeft 0
-        PositionY 0
-        OffsetTop 0
-        SizeX 3
-        OffsetRight -3
-        SizeY 0
-        OffsetBottom 0
+       Slot OverlayWidgetSlot "{7BD1A70000000759}" {
+        HorizontalAlign 0
+        VerticalAlign 3
        }
        Color 0 0 0 0
+       Size 3 44
       }
-      TextWidgetClass "{7BD1A7000000075A}" {
-       Name "Title"
-       Slot FrameWidgetSlot "{7BD1A7000000075B}" {
-        Anchor 0 0 1 1
-        PositionX 20
-        OffsetLeft 20
-        PositionY 11
-        OffsetTop 11
-        SizeX 0
-        OffsetRight 260
-        SizeY 0
-        OffsetBottom 11
+      HorizontalLayoutWidgetClass "{7BD1A7000000075A}" {
+       Name "RowContent"
+       Slot OverlayWidgetSlot "{7BD1A7000000075B}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+        Padding 20 0 20 0
        }
-       Color 0.867 0.886 0.969 1
-       Text ""
-       "Font Size" 16
-       Clipping True
-      }
-      TextWidgetClass "{7BD1A7000000075C}" {
-       Name "Detail"
-       Slot FrameWidgetSlot "{7BD1A7000000075D}" {
-        Anchor 1 0 1 1
-        PositionX -240
-        OffsetLeft -240
-        PositionY 12
-        OffsetTop 12
-        SizeX 220
-        OffsetRight -20
-        SizeY 0
-        OffsetBottom 12
+       {
+        TextWidgetClass "{7BD1A7000000075C}" {
+         Name "Title"
+         Slot LayoutSlot "{7BD1A7000000075D}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+          SizeMode Fill
+          FillWeight 1
+         }
+         Clipping True
+         Color 0.867 0.886 0.969 1
+         Text ""
+         "Font Size" 16
+         "Vertical Alignment" Center
+         Wrap 0
+        }
+        TextWidgetClass "{7BD1A7000000075E}" {
+         Name "Detail"
+         Slot LayoutSlot "{7BD1A7000000075F}" {
+          HorizontalAlign 2
+          VerticalAlign 3
+          Padding 16 0 0 0
+         }
+         Clipping True
+         Color 0.769 0.776 0.816 1
+         Text ""
+         "Font Size" 14
+         "Horizontal Alignment" Right
+         "Vertical Alignment" Center
+         Wrap 0
+        }
        }
-       Color 0.769 0.776 0.816 1
-       Text ""
-       "Font Size" 14
-       "Horizontal Alignment" Right
-       Clipping True
       }
      }
     }

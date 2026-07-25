@@ -24,9 +24,9 @@ FrameWidgetClass {
     OffsetLeft 240
     PositionY 120
     OffsetTop 120
-    SizeX 0
+    SizeX -480
     OffsetRight 240
-    SizeY 0
+    SizeY -240
     OffsetBottom 120
    }
    {
@@ -49,48 +49,54 @@ FrameWidgetClass {
      Name "Title"
      Slot FrameWidgetSlot "{7BD1A70000000717}" {
       Anchor 0 0 1 0
-      PositionX 40
-      OffsetLeft 40
-      PositionY 32
-      OffsetTop 32
-      SizeX 0
-      OffsetRight 280
-      SizeY 40
-      OffsetBottom -72
+      PositionX 48
+      OffsetLeft 48
+      PositionY 40
+      OffsetTop 40
+      SizeX -368
+      OffsetRight 320
+      SizeY 44
+      OffsetBottom -84
      }
+     Clipping True
      Color 0.867 0.886 0.969 1
      Text "TBD FRAMEWORK"
      "Font Size" 30
+     "Vertical Alignment" Center
+     Wrap 0
     }
     TextWidgetClass "{7BD1A70000000718}" {
      Name "Subtitle"
      Slot FrameWidgetSlot "{7BD1A70000000719}" {
       Anchor 0 0 1 0
-      PositionX 40
-      OffsetLeft 40
-      PositionY 80
-      OffsetTop 80
-      SizeX 0
-      OffsetRight 280
+      PositionX 48
+      OffsetLeft 48
+      PositionY 88
+      OffsetTop 88
+      SizeX -368
+      OffsetRight 320
       SizeY 26
-      OffsetBottom -106
+      OffsetBottom -114
      }
+     Clipping True
      Color 0.769 0.776 0.816 1
      Text ""
      "Font Size" 16
+     "Vertical Alignment" Center
+     Wrap 0
     }
     ButtonWidgetClass "{7BD1A7000000071A}" {
      Name "BackAction"
      Slot FrameWidgetSlot "{7BD1A7000000071B}" {
       Anchor 1 0 1 0
-      PositionX -184
-      OffsetLeft -184
-      PositionY 36
-      OffsetTop 36
-      SizeX 144
-      OffsetRight -40
-      SizeY 40
-      OffsetBottom -76
+      PositionX -208
+      OffsetLeft -208
+      PositionY 44
+      OffsetTop 44
+      SizeX 160
+      OffsetRight 48
+      SizeY 44
+      OffsetBottom -88
      }
      Color 1 1 1 0
      components {
@@ -101,20 +107,34 @@ FrameWidgetClass {
      }
      {
       OverlayWidgetClass "{7BD1A7000000071D}" {
-        Name "ButtonBody"
-        {
-         ImageWidgetClass {
-          Name "Background"
-          Color 0 0 0 0
+       Name "BackBody"
+       Slot ButtonWidgetSlot "{7BD1A70000000736}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        ImageWidgetClass "{7BD1A7000000071E}" {
+         Name "Background"
+         Slot OverlayWidgetSlot "{7BD1A70000000737}" {
+          HorizontalAlign 3
+          VerticalAlign 3
          }
-         TextWidgetClass "{7BD1A7000000071F}" {
-          Name "Label"
+         Color 0 0 0 0
+        }
+        TextWidgetClass "{7BD1A7000000071F}" {
+         Name "Label"
+         Slot OverlayWidgetSlot "{7BD1A70000000738}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
          Color 0.678 0.776 1 1
          Text "BACK"
          "Font Size" 14
          "Horizontal Alignment" Center
-         }
+         "Vertical Alignment" Center
+         Wrap 0
         }
+       }
       }
      }
     }
@@ -122,14 +142,14 @@ FrameWidgetClass {
      Name "HeaderRule"
      Slot FrameWidgetSlot "{7BD1A70000000722}" {
       Anchor 0 0 1 0
-      PositionX 40
-      OffsetLeft 40
-      PositionY 128
-      OffsetTop 128
-      SizeX 0
-      OffsetRight 40
+      PositionX 48
+      OffsetLeft 48
+      PositionY 136
+      OffsetTop 136
+      SizeX -96
+      OffsetRight 48
       SizeY 2
-      OffsetBottom -130
+      OffsetBottom -138
      }
      Color 0.267 0.278 0.310 1
     }
@@ -137,14 +157,14 @@ FrameWidgetClass {
      Name "List"
      Slot FrameWidgetSlot "{7BD1A70000000724}" {
       Anchor 0 0 1 1
-      PositionX 40
-      OffsetLeft 40
-      PositionY 152
-      OffsetTop 152
-      SizeX 0
-      OffsetRight 40
-      SizeY 0
-      OffsetBottom 128
+      PositionX 48
+      OffsetLeft 48
+      PositionY 162
+      OffsetTop 162
+      SizeX -96
+      OffsetRight 48
+      SizeY -298
+      OffsetBottom 136
      }
      components {
       TBD_ListBox "{7BD1A70000000725}" {
@@ -171,6 +191,7 @@ FrameWidgetClass {
          Name "Content"
          Slot AlignableSlot "{7BD1A70000000729}" {
           HorizontalAlign 3
+          VerticalAlign 0
          }
         }
        }
@@ -185,12 +206,15 @@ FrameWidgetClass {
         OffsetTop 24
         SizeX 0
         OffsetRight 0
-        SizeY 26
-        OffsetBottom -50
+        SizeY 36
+        OffsetBottom -60
        }
+       Clipping True
        Color 0.769 0.776 0.816 1
        Text "Nothing here yet."
        "Font Size" 16
+       "Vertical Alignment" Center
+       Wrap 0
       }
      }
     }
@@ -198,14 +222,14 @@ FrameWidgetClass {
      Name "FooterRule"
      Slot FrameWidgetSlot "{7BD1A7000000072D}" {
       Anchor 0 1 1 1
-      PositionX 40
-      OffsetLeft 40
-      PositionY -104
-      OffsetTop -104
-      SizeX 0
-      OffsetRight 40
+      PositionX 48
+      OffsetLeft 48
+      PositionY -112
+      OffsetTop -112
+      SizeX -96
+      OffsetRight 48
       SizeY 2
-      OffsetBottom -102
+      OffsetBottom 110
      }
      Color 0.267 0.278 0.310 1
     }
@@ -213,31 +237,34 @@ FrameWidgetClass {
      Name "Status"
      Slot FrameWidgetSlot "{7BD1A7000000072F}" {
       Anchor 0 1 1 1
-      PositionX 40
-      OffsetLeft 40
-      PositionY -74
-      OffsetTop -74
-      SizeX 0
+      PositionX 48
+      OffsetLeft 48
+      PositionY -84
+      OffsetTop -84
+      SizeX -408
       OffsetRight 360
-      SizeY 26
-      OffsetBottom -48
+      SizeY 36
+      OffsetBottom 48
      }
+     Clipping True
      Color 0.769 0.776 0.816 1
      Text ""
      "Font Size" 16
+     "Vertical Alignment" Center
+     Wrap 0
     }
     ButtonWidgetClass "{7BD1A70000000730}" {
      Name "PrimaryAction"
      Slot FrameWidgetSlot "{7BD1A70000000731}" {
       Anchor 1 1 1 1
-      PositionX -280
-      OffsetLeft -280
-      PositionY -84
-      OffsetTop -84
+      PositionX -288
+      OffsetLeft -288
+      PositionY -92
+      OffsetTop -92
       SizeX 240
-      OffsetRight -40
+      OffsetRight 48
       SizeY 52
-      OffsetBottom -32
+      OffsetBottom 40
      }
      Color 1 1 1 0
      components {
@@ -248,20 +275,34 @@ FrameWidgetClass {
      }
      {
       OverlayWidgetClass "{7BD1A70000000733}" {
-        Name "ButtonBody"
-        {
-         ImageWidgetClass {
-          Name "Background"
-          Color 0.231 0.510 0.965 1
+       Name "PrimaryBody"
+       Slot ButtonWidgetSlot "{7BD1A70000000739}" {
+        HorizontalAlign 3
+        VerticalAlign 3
+       }
+       {
+        ImageWidgetClass "{7BD1A70000000734}" {
+         Name "Background"
+         Slot OverlayWidgetSlot "{7BD1A7000000073A}" {
+          HorizontalAlign 3
+          VerticalAlign 3
          }
-         TextWidgetClass "{7BD1A70000000735}" {
-          Name "Label"
+         Color 0.231 0.510 0.965 1
+        }
+        TextWidgetClass "{7BD1A70000000735}" {
+         Name "Label"
+         Slot OverlayWidgetSlot "{7BD1A7000000073B}" {
+          HorizontalAlign 3
+          VerticalAlign 3
+         }
          Color 1 1 1 1
          Text ""
          "Font Size" 16
          "Horizontal Alignment" Center
-         }
+         "Vertical Alignment" Center
+         Wrap 0
         }
+       }
       }
      }
     }
