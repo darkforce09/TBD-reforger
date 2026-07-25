@@ -383,25 +383,6 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-181.50 — has a deploy been REQUESTED for this player? Read by `TBD_PreSlotBody` so a
-	//! pre-slot ghost is never handed to somebody whose real body is already in flight.
-	//!
-	//! Deliberately "requested", not "arrived", and the distinction is the whole reason this is
-	//! public rather than inferred from the controlled entity: a possess request runs through the
-	//! vanilla pipeline asynchronously, so there is a real window in which the player has committed
-	//! to a slot and still controls nothing. Handing them an anchor inside that window would be a
-	//! second entity change landing in the middle of vanilla's finalize.
-	//!
-	//! Note this is exactly the latch `DeployPlayerEx` reports ALREADY for, and it is re-armed on
-	//! death, on disconnect and by the `CheckSpawnArrived` watchdog — so a deploy that silently
-	//! never lands does not strand the player without an anchor forever.
-	//! @authority server
-	bool HasDeployRequested(int playerId)
-	{
-		return m_mDeployRequested && m_mDeployRequested.Contains(playerId);
-	}
-
-	//------------------------------------------------------------------------------------------------
 	//! T-181.15 — the epoch a deferred callback must quote to still be talking about the same
 	//! person. 0 means "nobody is connected under that number", which no live epoch ever equals
 	//! (m_iConnectEpochSeq is pre-incremented), so an unknown id fails the check.
@@ -2190,23 +2171,6 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		m_mDeployRequested.Set(playerId, true);
 
-		// ── T-181.50: THE PRE-SLOT GHOST, RETIRED IN THE RIGHT ORDER ───────────────────────────
-		// A player who reached here from the picker was controlling an inert `TBD_PreSlotBody` ghost
-		// a moment ago. This does NOT delete it — it marks it, and the reconcile in TBD_PreSlotBody
-		// collects it once it can SEE the player controlling a real body.
-		//
-		// The ordering is deliberate and is PlayableSelector's (PS_PlayableManager.c:258-275, read as
-		// a design mirror): the real body is taken over FIRST and the ghost's deletion trails behind
-		// it, so the player is never controller-less. Releasing it here instead would be worse on our
-		// path than on theirs, because the takeover above went through vanilla's POSSESS request and
-		// is therefore ASYNCHRONOUS — there is a real window between the request being accepted and
-		// the finalize assigning the body, and a player with nothing at all in that window is exactly
-		// the black screen this slice exists to remove.
-		//
-		// Placed AFTER the deploy latch is set so the two agree: HasDeployRequested is what stops the
-		// ghost being re-issued a second later if the assignment has not landed yet.
-		TBD_PreSlotBody.NoteDeployRequested(playerId);
-
 		// T-181.10 — this body is now spoken for. A later deploy by anyone else on this slot
 		// sees the mismatch and materializes a fresh dressed body instead of inheriting it.
 		m_mBodyBoundTo.Set(slot.Key(), bindKey);
@@ -2800,23 +2764,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// live body — a reconnecting player still meets the spent life and is still DENIED.
 		TBD_SpectatorHost.ReleaseFor(playerId, "player disconnected");
 
-		// ── T-181.50: AND THE PRE-SLOT GHOST, FOR THE SAME REASON AND AT THE SAME MOMENT ────────
-		// A player who quit from the lobby without ever picking a slot is controlling an inert
-		// `TBD_PreSlotBody` ghost right now. Vanilla is about to delete their controlled entity —
-		// `SCR_BaseGameMode.OnPlayerDisconnected` dispatches to us and only THEN, still inside the
-		// same function, reaches `RplComponent.DeleteRplEntity(character, false)`
-		// (vanilla_reference/Source/SCR_BaseGameMode.c:849-851) — so leaving it would hand our record
-		// a destroyed entity and let the delete happen behind our back.
-		//
-		// This is also the leak PlayableSelector has and we must not inherit: their disconnect path
-		// deliberately keeps the ghost alive for the reconnect window (PS_GameModeCoop.c:568-583) and
-		// nothing else ever deletes it, so a player who leaves for good leaves a ghost behind for the
-		// rest of the round. Ours goes with them.
-		//
-		// ONE LIFE is untouched: this deletes an inert entity that holds no slot and has never been a
-		// life. `ForgetBodyVanillaIsAboutToTake` below is unaffected either way — it compares the
-		// controlled entity against the slot body, and a ghost was never one.
-		TBD_PreSlotBody.ReleaseFor(playerId, "player disconnected");
+		// T-181.53 — a second release used to sit here, for the T-181.50 pre-slot ghost, on exactly
+		// the reasoning above. The ghost is gone (see `TBD_PreSlotCamera.c`'s header for why), and a
+		// player who quits from the lobby without picking a slot now controls NOTHING, so there is
+		// nothing to hand back. The spectator release above is the pre-existing T-181.24 one and is
+		// unrelated to that — do not read its neighbour's deletion as a reason to touch it.
 
 		// Resolve the durable key BEFORE the engine finishes tearing the player down — after
 		// that the identity lookup stops answering and only the cache can.

@@ -1,10 +1,11 @@
 //! T-181.50 — THE PRE-SLOT CAMERA: what a player actually looks at while they wait for a slot.
+//! T-181.53 — and, since the pre-slot ghost was deleted, the WHOLE of the pre-slot answer.
 //!
 //! ── THIS IS THE HALF THAT FIXES THE BLACK SCREEN ────────────────────────────────────────────
-//! The ghost in `TBD_PreSlotBody.c` satisfies the SERVER. This satisfies the SCREEN, and it is not
-//! a nicety — without it the operator sees black no matter how many anchors the server hands out.
-//! The reason is worth spelling out because the two oracles differ here and following either one
-//! literally would leave the defect in place:
+//! T-181.50 shipped two halves: a server-side ghost body (`TBD_PreSlotBody.c`) that gave a
+//! connected-but-unslotted player something to control, and this camera. Only this one ever worked.
+//! The reason it was always the load-bearing half is worth spelling out, because the two oracles
+//! differ here and following either one literally would leave the defect in place:
 //!
 //!   * PlayableSelector's ghost is a real `SCR_ChimeraCharacter`
 //!     (`PS_GameModeCoop.c:730` spawning `Prefabs/InitialPlayer_Version2.et`), so it arrives with
@@ -12,31 +13,65 @@
 //!     picker then draws an opaque background over the view
 //!     (`UI/Lobby/CoopLobby.layout:5`), and `PS_PlayableControllerComponent.c:621-632` pins the
 //!     current camera to the ghost's cell each frame — so what is behind their menu is empty sky
-//!     100 km up, which is fine because nothing shows through.
-//!   * OUR ghost is a bare `GenericEntity` (`TBD_SpectatorHostEntity`), chosen for ONE LIFE reasons
-//!     argued at length in `TBD_PreSlotBody.c` and in T-181.24's own header. It has NO camera
-//!     handler. A player controlling it and nothing else has no view at all.
+//!     100 km up, which is fine because nothing shows through. **PS GETS A CAMERA FOR FREE BECAUSE
+//!     THEIR GHOST IS A CHARACTER.**
+//!   * OURS was a bare `GenericEntity` (`TBD_SpectatorHostEntity`), chosen for ONE LIFE reasons
+//!     argued at length in T-181.24's own header — a character can be shot, counted alive and
+//!     killed, and none of those are things a lobby placeholder may be. It had NO camera handler.
+//!     A player controlling it and nothing else has no view at all.
 //!
-//! So we owe the player a camera outright. Having to supply one anyway, we point it somewhere
+//! So we owed the player a camera outright whether or not the ghost existed, and the ghost bought
+//! only the server-side half of the problem. Having to supply a camera anyway, we point it somewhere
 //! useful — an overlook of the terrain rather than empty sky — which is CRF's idea rather than
 //! PlayableSelector's: `CRF_PlayerMenuManager.c:29-40` puts the briefing and slotting menus over a
 //! slow automatic orbit of the AO centre (read as an oracle; the geometry constants below are ours).
 //!
+//! ── THERE IS NO PRE-SLOT BODY. IT WAS TRIED. READ THIS BEFORE BUILDING ANOTHER ONE ──────────
+//! A pre-slot body was written (T-181.50) and deleted (T-181.53) on the same day, on operator
+//! instruction, after a live Workbench session settled it. Two facts from that run:
+//!
+//!   1. **THE GHOST NEVER WORKED.** It spawned its anchor 100 km up — an altitude lifted verbatim
+//!      from PlayableSelector's lattice — which is OUTSIDE Everon's world bounds. The engine raised
+//!      a MODAL ASSERTION DIALOG (`enf_entity.cpp:280`, "Entity out of world bounds. Type
+//!      'GenericEntity'") from the ghost's spawn helper, and then refused the control transfer
+//!      outright: `player=1 has NO pre-slot ghost — the engine did not transfer control to the ghost
+//!      — rolled back, the player stays bodyless`. The verbatim assertion and stack are in the
+//!      T-181.53 commit message; they are deliberately NOT reproduced here, so that a grep for the
+//!      deleted spawn helper or its altitude constant stays a meaningful "is it really gone" check.
+//!   2. **AND THE SESSION RAN END TO END ANYWAY, BODYLESS.** In the same log: `pre-slot camera UP —
+//!      no body yet, overlooking <6120.51, 157.306, 6277.02>` → picker OPEN → `claim ok player=1
+//!      slot=s1` → `deploy player=1 result=DEPLOYED` → `pre-slot camera DOWN — the player controls a
+//!      body now` → `[TBD][Spawn] deployed … groundDelta=0.0114822`.
+//!
+//! So the ghost's value was defensive and unproven — nothing in this mod was ever observed to need
+//! `GetPlayerControlledEntity` to be non-null — while its cost was a modal dialog in the middle of a
+//! mission, which is fatal in a one-life event. The operator chose deletion over clamping the
+//! altitude. **BODYLESS + THIS CAMERA IS THE CONFIGURATION THAT IS PROVEN TO WORK.**
+//!
+//! A later slice that genuinely needs a pre-slot body owes three things before writing one: place it
+//! INSIDE the world bounds, show the assertion is gone in a live run rather than in a headless boot
+//! (the zero-player harness never saw it), and say what it buys that this camera does not.
+//!
 //! ── WHY IT DEPENDS ON NOTHING ───────────────────────────────────────────────────────────────
-//! Deliberately: no mission data, no roster, no stage, no replicated ghost, no new input resource
+//! Deliberately: no mission data, no roster, no stage, no controlled entity, no new input resource
 //! and no widget. Three reasons, all of them about not being fragile in the exact way the defect
-//! was:
+//! was — and reason 2 is the one that made this file survive T-181.53 unchanged while the other
+//! half was deleted out from under it:
 //!   1. `Scripts/Game/TBD/UI/**` belongs to T-181.49 in parallel. A camera that needed the lobby to
 //!      tell it anything would be a second thing that can silently fail to arm.
-//!   2. The ghost is typename-spawned and therefore server-only, so a client cannot see it. A
-//!      camera that resolved its position FROM the controlled entity would still be black.
+//!   2. IT NEVER READ THE PRE-SLOT BODY. A camera that resolved its position FROM the controlled
+//!      entity would have been black on both counts: the ghost was typename-spawned and therefore
+//!      server-only so a client could not see it, and since T-181.53 there is no controlled entity
+//!      on any machine at all. This one does not care, and that is why deleting the server half cost
+//!      it nothing.
 //!   3. The terrain and the static world geometry on it are part of the world file, not network
 //!      state, so an overlook renders with no replication at all. (Dynamic replicated entities near
-//!      the focus may not be streamed to a client whose anchor is 100 km up. Stated as a known
+//!      the focus may not be streamed to a client that holds no anchor entity. Stated as a known
 //!      limitation, not discovered later: an empty-looking valley behind the picker is expected.)
 //!
 //! The single condition is "the local player controls nothing", which is precisely the state the
-//! operator reported and needs neither authority nor mission state to evaluate.
+//! operator reported, is now the NORMAL pre-slot state rather than a defect, and needs neither
+//! authority nor mission state to evaluate.
 //!
 //! ── WHAT A LATER SLICE WOULD CHANGE ─────────────────────────────────────────────────────────
 //! `ResolveFocus` uses the centre of the world bound box because that is the only focus point a
