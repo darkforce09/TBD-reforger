@@ -1,0 +1,99 @@
+ButtonWidgetClass {
+ Name "Row"
+ Slot LayoutSlot "{7BD1A70000000750}" {
+  HorizontalAlign 3
+  Padding 0 0 0 2
+ }
+ Color 1 1 1 0
+ components {
+  TBD_ListBoxRow "{7BD1A70000000751}" {
+  }
+ }
+ {
+  SizeLayoutWidgetClass "{7BD1A70000000752}" {
+   Name "RowBody"
+   Slot ButtonWidgetSlot "{7BD1A70000000753}" {
+   }
+   AllowHeightOverride 1
+   HeightOverride 44
+   {
+    FrameWidgetClass "{7BD1A70000000754}" {
+     Name "RowFrame"
+     Slot AlignableSlot "{7BD1A70000000755}" {
+      HorizontalAlign 3
+      VerticalAlign 3
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000756}" {
+       Name "Background"
+       Slot FrameWidgetSlot "{7BD1A70000000757}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0 0 0 0
+      }
+      ImageWidgetClass "{7BD1A70000000758}" {
+       Name "Accent"
+       Slot FrameWidgetSlot "{7BD1A70000000759}" {
+        Anchor 0 0 0 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 3
+        OffsetRight -3
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0 0 0 0
+      }
+      TextWidgetClass "{7BD1A7000000075A}" {
+       Name "Title"
+       Slot FrameWidgetSlot "{7BD1A7000000075B}" {
+        Anchor 0 0 1 1
+        PositionX 20
+        OffsetLeft 20
+        PositionY 11
+        OffsetTop 11
+        SizeX 0
+        OffsetRight 260
+        SizeY 0
+        OffsetBottom 11
+       }
+       Color 0.867 0.886 0.969 1
+       Text ""
+       "Font Size" 16
+       Clipping True
+      }
+      TextWidgetClass "{7BD1A7000000075C}" {
+       Name "Detail"
+       Slot FrameWidgetSlot "{7BD1A7000000075D}" {
+        Anchor 1 0 1 1
+        PositionX -240
+        OffsetLeft -240
+        PositionY 12
+        OffsetTop 12
+        SizeX 220
+        OffsetRight -20
+        SizeY 0
+        OffsetBottom 12
+       }
+       Color 0.769 0.776 0.816 1
+       Text ""
+       "Font Size" 14
+       "Horizontal Alignment" Right
+       Clipping True
+      }
+     }
+    }
+   }
+  }
+ }
+}
