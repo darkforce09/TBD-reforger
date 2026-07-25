@@ -892,9 +892,12 @@ class TBD_MissionValidator
 		string zoneType;
 		TBD_EObjectiveKind kind = ObjectiveKindFor(trigger, zoneType);
 
-		// Cannot fire today: IsKnownEndTrigger admits exactly five values and the four above are
-		// all handled. Kept because the alternative — assuming the fifth branch is total — is how a
-		// future sixth trigger would be silently reported as reachable.
+		// Cannot fire today: IsKnownEndTrigger admits exactly five values, two are handled above and
+		// the other three all map to a kind. It is kept because the alternative — treating "not an
+		// objective trigger" as impossible — is exactly how a SIXTH trigger, added to the schema and
+		// to IsKnownEndTrigger but not here, would be silently reported as reachable. Returning TRUE
+		// is the deliberate choice: an unknown trigger is not evidence that the round cannot end, so
+		// it must not drag the roll-up below into claiming that.
 		if (kind == TBD_EObjectiveKind.NONE)
 			return true;
 
