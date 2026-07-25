@@ -9,6 +9,7 @@
 //!   #tbd respawn <playerId>   — the one-life escape hatch (T-181.11.1)
 //!   #tbd deploy  <playerId>   — put a live player with no body into the world (T-181.11.2)
 //!   #tbd stage [next|<NAME>]  — force the stage machine (T-181.11.2)
+//!   #tbd safestart [status|go|<seconds>] — warmup phase: is damage off, end it, set its length (T-181.17)
 //!   #tbd audit                — replay the admin audit trail (T-181.11.2)
 //!   #tbd menu                 — raise the admin screen on the caller's client (T-181.11.2)
 //!
@@ -171,6 +172,20 @@ class TBD_AdminCommands
 			return;
 		}
 
+		//! T-181.17 — the warmup phase. `status` answers "is damage actually off right now" in one
+		//! command; `go` ends it early; a number sets/extends the countdown. Entering SAFE_START at
+		//! all is still `#tbd stage` — this controls the phase, it does not start it.
+		if (sub == "safestart")
+		{
+			string safestartArg = "status";
+			if (parts.Count() > 2)
+				safestartArg = parts[2];
+
+			bool safestartOk;
+			Reply(chat, senderId, TBD_AdminService.Safestart(senderId, safestartArg, safestartOk));
+			return;
+		}
+
 		//! T-181.11.2 — who did what to whom, newest first. The same trail the admin screen
 		//! renders, readable without the screen.
 		if (sub == "audit")
@@ -210,7 +225,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | audit | menu");
+		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | audit | menu");
 	}
 
 	//------------------------------------------------------------------------------------------------

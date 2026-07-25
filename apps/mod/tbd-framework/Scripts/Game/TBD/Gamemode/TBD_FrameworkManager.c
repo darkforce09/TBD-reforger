@@ -12,6 +12,11 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! A5 — roster settle ticks elapsed (500 ms cadence; 4 = the 2 s force-settle deadline).
 	protected int m_iRosterSettleTicks;
 
+	//! T-181.17 — why the last SetStage() refused, or empty. `TBD_AdminService.AdvanceStage`
+	//! detects a refusal by comparing the stage either side of the call, which tells an admin THAT
+	//! it was refused but not why; this carries the why to them instead of only to the console.
+	protected string m_sLastStageRefusal;
+
 	//------------------------------------------------------------------------------------------------
 	void TBD_FrameworkManager(IEntityComponentSource src, IEntity ent, IEntity parent)
 	{
@@ -43,6 +48,14 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	TBD_EGameStage GetStage()
 	{
 		return m_Stage;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.17 — the reason the last stage transition was refused, or empty if it was not.
+	//! Read by the admin surfaces so "stage unchanged" comes with the why attached.
+	string GetLastStageRefusal()
+	{
+		return m_sLastStageRefusal;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -123,13 +136,43 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (m_Stage == stage)
 			return;
 
+		// T-181.17 — SAFE_START is a PROMISE that nobody can be hurt. If the component that keeps
+		// that promise is not on this world's game mode, entering the stage would announce a
+		// safestart that does not exist — and under ONE LIFE the first negligent discharge ends
+		// somebody's event. Refuse the transition and say why, loudly. The admin can still take
+		// the round straight to LIVE (`#tbd stage LIVE`), which is honest about being unprotected.
+		if (stage == TBD_EGameStage.SAFE_START && !TBD_SafestartManager.GetInstance())
+		{
+			m_sLastStageRefusal = "SAFE_START has no enforcement on this world (TBD_SafestartManager is missing from the game mode prefab) — go straight to LIVE with '#tbd stage LIVE', and warn players that weapons are hot.";
+			TBD_Log.Banner(TBD_Log.CH_SAFESTART,
+				"SAFE_START REFUSED — TBD_SafestartManager is not on the game mode; nothing would enforce damage-off",
+				true);
+			return;
+		}
+
+		m_sLastStageRefusal = string.Empty;
+		TBD_EGameStage previous = m_Stage;
 		m_Stage = stage;
 		Replication.BumpMe();
+
+		// T-181.14 left this hook for whoever owned this file; T-181.17 owns it now. Logged
+		// BEFORE the subsystem fan-out so the transition line precedes whatever the subsystems
+		// say about it. The legacy `[TBD] Stage` line below is kept verbatim — README.md and
+		// STAGING-SERVER.md quote it.
+		TBD_Log.Stage(previous, stage);
+
 		TBD_RadioBridgeStub.OnStageChanged(stage);
 
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
 		if (sm)
 			sm.OnStageChanged(stage);
+
+		// T-181.17 — EVERY transition, not just the interesting ones: SAFE_START arms the
+		// safestart and anything else lifts it, so an admin jumping SAFE_START -> END cannot
+		// strand the server with damage off. See TBD_SafestartManager.OnStageChanged.
+		TBD_SafestartManager safestart = TBD_SafestartManager.GetInstance();
+		if (safestart)
+			safestart.OnStageChanged(stage);
 
 		Print("[TBD] Stage → " + typename.EnumToString(TBD_EGameStage, stage));
 

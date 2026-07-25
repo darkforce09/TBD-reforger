@@ -177,6 +177,67 @@ class TBD_AdminService
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.17 — `#tbd safestart [status|go|<seconds>]`. Public for the same reason `ForceStage`
+	//! is: chat needs an argument form the menu's single-button actions cannot express. Gated and
+	//! audited identically, so it is another door into the same locked room, not a way around it.
+	//!
+	//! `status` is deliberately readable by any admin without changing anything — during a live
+	//! event "is damage actually off right now" is a question that has to be answerable in one
+	//! command, not inferred from the server console.
+	//! @authority server
+	static string Safestart(int callerId, string arg, out bool ok)
+	{
+		ok = false;
+
+		// Authority only — the countdown and every damage mutation are server-owned; a client
+		// build reaching here would half-run them locally and protect nobody.
+		if (RplSession.Mode() == RplMode.Client)
+			return "TBD: admin actions execute on the server only.";
+
+		if (!IsAdmin(callerId))
+		{
+			NoteDeniedAccess(callerId, "action 'safestart'");
+			return "TBD: refused — you are not a listed server admin.";
+		}
+
+		TBD_SafestartManager safestart = TBD_SafestartManager.GetInstance();
+		if (!safestart)
+			return "TBD: safestart manager not on this game mode — SAFE_START cannot be enforced here.";
+
+		string request = arg;
+		if (request.IsEmpty())
+			request = "status";
+
+		if (request == "status")
+		{
+			ok = true;
+			return safestart.StatusLine();
+		}
+
+		if (request == "go")
+		{
+			if (!safestart.IsArmed())
+				return "TBD: safestart is not running — nothing to end.";
+
+			safestart.GoLive(string.Format("admin %1", Label(callerId)));
+			ok = true;
+			TBD_AdminAudit.Record(string.Format("%1 ended safestart early", Label(callerId)), false);
+			return "TBD: safestart ended — weapons live.";
+		}
+
+		int seconds = request.ToInt();
+		if (seconds <= 0)
+			return "Usage: #tbd safestart [status|go|<seconds>]";
+
+		bool applied = false;
+		string reply = safestart.AdminSetSeconds(seconds, applied);
+		ok = applied;
+		TBD_AdminAudit.Record(string.Format("%1 set safestart length to %2s -> %3",
+			Label(callerId), seconds, applied), !applied);
+		return reply;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! Someone who is not an admin touched an admin surface. Records it — once per player per
 	//! surface in the bounded on-screen trail, every single time in the console.
 	//!
@@ -326,6 +387,14 @@ class TBD_AdminService
 		{
 			TBD_AdminAudit.Record(string.Format("%1 stage '%2' -> REFUSED, still %3",
 				Label(callerId), request, fromName), true);
+
+			// T-181.17 — a transition can now be refused for a REASON rather than only for being
+			// unparseable (SAFE_START with no enforcement behind it). Carry that reason to the
+			// admin; "not a stage" would send them hunting a typo that is not there.
+			string why = framework.GetLastStageRefusal();
+			if (!why.IsEmpty())
+				return string.Format("TBD: stage unchanged (%1). %2", fromName, why);
+
 			return string.Format("TBD: stage unchanged (%1). '%2' is not a stage, or the round is already at the last one.",
 				fromName, request);
 		}
