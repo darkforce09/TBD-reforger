@@ -398,7 +398,13 @@ class TBD_LobbyService
 		// `TBD_SpawnManager` itself all ask it the same question. It is also the SERVER-side twin of
 		// `SCR_PlayerController.GetLocalControlledEntity()`, which `TBD_LobbyStage.Tick` (T-181.28)
 		// already calls the reliable half of its re-raise guard.
-		roster.m_bInWorld = players && players.GetPlayerControlledEntity(playerId) != null;
+		// Written as a guarded assignment rather than `players && ... != null` deliberately: the
+		// field already defaults to false, so the guard is complete, and this is character-for-
+		// character the idiom `TBD_AdminData` (:270) uses for the same question. A `&&` whose left
+		// operand is a class ref compiles here, but "compiles" and "means what it reads as" are
+		// different claims in this language and only one of them is worth resting a screen on.
+		if (players)
+			roster.m_bInWorld = players.GetPlayerControlledEntity(playerId) != null;
 
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
 		if (!doc || !TBD_MissionLoader.IsValid())
