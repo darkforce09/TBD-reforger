@@ -6005,7 +6005,8 @@
         "T-181.13.1",
         "T-181.14",
         "T-181.15",
-        "T-181.16"
+        "T-181.16",
+        "T-181.20"
       ],
       "slice_plan": {
         "T-181.0": {
@@ -6248,6 +6249,14 @@
           "executor": "claude-code",
           "status": "shipped",
           "notes": "SOLVED — but not by cracking the codec. Operator found arexplorer.zeroy.com: a Doxygen build of the SAME game version (1.7.0.54) with SOURCE_BROWSER on, 6,495 *_source.html pages exactly matching the pak script count, each with FULL METHOD BODIES. Built scripts/mod/fetch-vanilla-source.sh (curated by default, cached, rate-limited — it is one person's site) + `enf source` (Doxygen page -> real .c, incl. name demangling _s_c_r___base_game_mode_8c -> SCR_BaseGameMode.c). Vanilla index now 2,116 files / 88,670 LOC / 1,702 decls. SCR_BaseGameMode, SCR_RespawnSystemComponent, ChimeraMenuBase, SCR_SpawnRequestComponent all resolve to real source. The pak-codec RE is now MOOT — negative results retained in docs/mod/vanilla_carve_coverage.md only so nobody repeats them."
+        },
+        "T-181.20": {
+          "targets": [
+            "shared"
+          ],
+          "executor": "claude-code",
+          "status": "queued",
+          "notes": "Found by the T-181.10 slice agent, outside its scope: NO golden mission in packages/tbd-schema/golden-missions/ carries a slot `loadout` block, so schema CI never exercises the JSON-loadout path that T-181.10 just built. Add a fixture with gear + cargo so the contract is regression-tested rather than only compile-checked."
         }
       },
       "active_slice": "T-181.7",

@@ -12,6 +12,8 @@
 #   bash scripts/mod/compile.sh              # compile the mod, report errors
 #   bash scripts/mod/compile.sh --selftest   # ALSO prove the gate still catches a broken file
 #   bash scripts/mod/compile.sh --keep-logs  # leave the run dir in place for inspection
+#   bash scripts/mod/compile.sh --probe=/tmp/p  # ALSO compile a throwaway addon of .c files —
+#                                               # the API-existence oracle, kept OUT of the mod tree
 #
 # Exit 0 = compiled clean.  Exit 1 = compile errors (printed as file:line).  Exit 2 = harness error.
 #
@@ -40,10 +42,12 @@ MAX_WAIT="${TBD_COMPILE_TIMEOUT:-180}"
 
 SELFTEST=0
 KEEP_LOGS=0
+PROBE_DIR=""
 for a in "$@"; do
   case "$a" in
     --selftest)  SELFTEST=1 ;;
     --keep-logs) KEEP_LOGS=1 ;;
+    --probe=*)   PROBE_DIR="${a#*=}" ;;
     -h|--help)   sed -n '2,30p' "$0"; exit 0 ;;
     *) echo "compile.sh: unknown arg '$a'" >&2; exit 2 ;;
   esac
@@ -133,6 +137,36 @@ BROKEN
   ADDONS="$ADDONS,TBD_CompileSelfTest"
 fi
 
+# --probe=<dir>: stage an arbitrary directory of .c files as a throwaway addon and compile it
+# alongside the mod. This is the API-existence oracle: call a suspected Enfusion API, compile,
+# read the error. Both wave-1 slice agents independently hand-rolled this, which is why it is
+# now first-class. Probes MUST live outside the mod tree (SLICE_WORKFLOW.md) — this makes that
+# easy instead of tempting.
+if [ -n "$PROBE_DIR" ]; then
+  [ -d "$PROBE_DIR" ] || { echo "compile.sh: --probe dir not found: $PROBE_DIR" >&2; exit 2; }
+  mkdir -p "$RUN_DIR/addons/tbd-probe/Scripts/Game"
+  cat > "$RUN_DIR/addons/tbd-probe/addon.gproj" <<'GPROJ'
+GameProject {
+ ID "TBD_ApiProbe"
+ GUID "C0FFEE0000000002"
+ TITLE "TBD API Probe"
+ Dependencies {
+  "58D0FB3206B6F859"
+ }
+ Configurations {
+  GameProjectConfig PC {
+  }
+  GameProjectConfig HEADLESS {
+  }
+ }
+}
+GPROJ
+  cp "$PROBE_DIR"/*.c "$RUN_DIR/addons/tbd-probe/Scripts/Game/" 2>/dev/null || {
+    echo "compile.sh: no .c files in $PROBE_DIR" >&2; exit 2; }
+  ADDONS="$ADDONS,TBD_ApiProbe"
+  echo "    (probing $(ls -1 "$PROBE_DIR"/*.c 2>/dev/null | wc -l) file(s) from $PROBE_DIR)"
+fi
+
 echo "==> compiling tbd-framework (native headless server, no Workbench)"
 # `setsid` makes the shell a process-group leader and `exec` preserves that PID, so
 # $PIDFILE holds the PGID that kill_run() signals. RUN_DIR is on a filesystem both sides see.
@@ -189,7 +223,8 @@ if [ "$verdict" = fail ] || { [ -n "$errlog" ] && grep -q "SCRIPT    (E):" "$err
   : >"$ours"; : >"$cascade"
   while IFS= read -r line; do
     p="${line%%:*}"
-    if [ -e "$MOD_SRC/$p" ] || [ -e "$RUN_DIR/addons/tbd-selftest/$p" ]; then
+    if [ -e "$MOD_SRC/$p" ] || [ -e "$RUN_DIR/addons/tbd-selftest/$p" ] \
+       || [ -e "$RUN_DIR/addons/tbd-probe/$p" ]; then
       echo "$line" >>"$ours"
     else
       echo "$line" >>"$cascade"

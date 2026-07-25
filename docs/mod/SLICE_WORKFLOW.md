@@ -99,7 +99,7 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | Fetch more vanilla source | `bash scripts/mod/fetch-vanilla-source.sh <File.c>` — **polite: one person's site, never `--all`** |
 | How does a working framework do it? | `rg <pat> apps/mod/crf_framework/` — CRF, Arma Public License, **reference only** |
 | Does my change compile? | `bash scripts/mod/compile.sh` — ~1.3 s, native server, **no Workbench** |
-| Is it a probe, not real code? | write it under `/tmp`, compile, delete. Never in the mod tree. |
+| Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
 
 **Do NOT** let an agent rely on training-data knowledge of Enfusion. It is a niche language and the
 model's priors are wrong. An agent asked to summarise one CRF file invented four APIs that do not

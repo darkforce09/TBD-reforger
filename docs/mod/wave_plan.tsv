@@ -23,3 +23,4 @@ wave	slice	title	owns
 4	T-181.17	Safestart / warmup + damage-off	TBD_FrameworkManager.c
 4	T-181.18	AO / play area poly-zones + out-of-bounds	Scripts/Game/TBD/Zones/** (new)
 4	T-181.19	Map markers from mission JSON	Scripts/Game/TBD/Markers/** (new)
+4	T-181.20	Golden mission fixture with loadout block (schema CI gap)	packages/tbd-schema/golden-missions/**
