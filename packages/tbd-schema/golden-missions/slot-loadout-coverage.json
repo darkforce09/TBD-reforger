@@ -1,0 +1,297 @@
+{
+  "schemaVersion": "1.1",
+  "meta": {
+    "id": "msn_5c1de7",
+    "name": "Arsenal Trials at Saint-Pierre",
+    "author": "quartermaster@tbdevent.eu",
+    "terrain": "everon",
+    "templateId": "attack_defend_v1",
+    "playerRange": [7, 14]
+  },
+  "environment": {
+    "dateTime": "1989-07-11T08:15:00Z",
+    "weatherPreset": "clear",
+    "windDirDeg": 75
+  },
+  "factions": [
+    {
+      "key": "blufor",
+      "displayName": "US Army",
+      "presetId": "preset:us_army_82nd",
+      "tickets": 0,
+      "color": "#2b6cb0"
+    },
+    {
+      "key": "opfor",
+      "displayName": "Soviet Motor Rifles",
+      "presetId": "preset:sov_msr",
+      "tickets": 0,
+      "color": "#c53030"
+    }
+  ],
+  "orbat": {
+    "blufor": {
+      "groups": [
+        {
+          "callsign": "Ranger",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:us_sl", "count": 1, "radio": ["net:cmd", "net:ranger"] },
+            { "slot": "RFL", "kit": "kit:us_rifleman", "count": 2, "radio": [] },
+            { "slot": "MED", "kit": "kit:us_medic", "count": 1, "radio": ["net:ranger"] }
+          ]
+        }
+      ]
+    },
+    "opfor": {
+      "groups": [
+        {
+          "callsign": "Ural",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:sov_sl", "count": 1, "radio": ["net:cmd_op"] },
+            { "slot": "RFL", "kit": "kit:sov_rifleman", "count": 2, "radio": [] }
+          ]
+        }
+      ]
+    }
+  },
+  "radioPlan": {
+    "nets": [
+      { "id": "net:cmd", "label": "BLUFOR Command", "freqMHz": 44.0, "faction": "blufor", "range": "long" },
+      { "id": "net:ranger", "label": "Ranger Squad", "freqMHz": 45.5, "faction": "blufor", "range": "short" },
+      { "id": "net:cmd_op", "label": "OPFOR Command", "freqMHz": 55.0, "faction": "opfor", "range": "long" }
+    ]
+  },
+  "zones": [
+    {
+      "id": "sp_blufor",
+      "type": "spawn",
+      "faction": "blufor",
+      "shape": { "circle": { "x": 3210.0, "z": 9140.0, "r": 100 } }
+    },
+    {
+      "id": "sp_opfor",
+      "type": "spawn",
+      "faction": "opfor",
+      "shape": { "circle": { "x": 3620.0, "z": 9480.0, "r": 100 } }
+    },
+    {
+      "id": "obj_depot",
+      "type": "objective_capture",
+      "label": "Saint-Pierre Depot",
+      "shape": { "circle": { "x": 3415.0, "z": 9310.0, "r": 70 } },
+      "rules": { "captureSeconds": 90, "contestable": true, "points": 100 }
+    }
+  ],
+  "flow": {
+    "briefingSeconds": 300,
+    "safeStartSeconds": 120,
+    "timeLimitSeconds": 3600,
+    "jip": "until_safestart_end"
+  },
+  "winConditions": {
+    "mode": "points_then_attrition",
+    "endOn": ["time_limit", "all_objectives_captured"]
+  },
+  "briefings": {
+    "blufor": {
+      "situation": "A Soviet motor rifle element is holding the Saint-Pierre depot.",
+      "mission": "Take the depot and hold it to the time limit.",
+      "execution": "Ranger advances from the southern hedgerow.",
+      "markers": [{ "x": 3415, "z": 9310, "icon": "objective", "label": "OBJ DEPOT" }]
+    },
+    "opfor": {
+      "situation": "US airborne infantry is moving on the depot from the south.",
+      "mission": "Deny the depot for the duration of the operation.",
+      "execution": "Ural holds the depot perimeter.",
+      "markers": [{ "x": 3415, "z": 9310, "icon": "defend", "label": "HOLD DEPOT" }]
+    }
+  },
+  "settings": {
+    "respawn": "none",
+    "spectatorPolicy": "own_side_delayed_60s",
+    "nightVision": false
+  },
+  "slots": [
+    {
+      "id": "blufor:Ranger:SL:0",
+      "uid": "slot_ranger_sl",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "SL",
+      "kit": "kit:us_sl",
+      "x": 3205.4,
+      "z": 9135.2,
+      "headingDeg": 45,
+      "loadout": {
+        "gear": {
+          "primary": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+          "optic": "{F358F46ADA42A197}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_base.et",
+          "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+          "uniform": "{293F577C298061E3}Prefabs/Characters/Uniforms/Jacket_US_BDU_02.et",
+          "vest": "{477A190AF2A17B8A}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_MG.et",
+          "helmet": "{B74A4FF0DD8BB116}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01.et",
+          "pants": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
+          "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et",
+          "handwear": "{8266820FFDE17477}Prefabs/Characters/Handwear/Gloves_Wool_01/Gloves_Wool_01.et",
+          "backpack": "{06B68C58B72EAAC6}Prefabs/Items/Equipment/Backpacks/Backpack_ALICE_Medium.et"
+        },
+        "cargo": [
+          {
+            "container": "vest",
+            "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+            "qty": 6
+          },
+          {
+            "container": "jacket",
+            "item": "{D70216B1B2889129}Prefabs/Items/Medicine/Tourniquet_01/Tourniquet_US_01.et",
+            "qty": 1
+          },
+          {
+            "container": "backpack",
+            "item": "{13772C903CB5E4F7}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded.et",
+            "qty": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blufor:Ranger:RFL:0",
+      "uid": "slot_ranger_rfl_0",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 3199.8,
+      "z": 9141.6,
+      "headingDeg": 0,
+      "loadout": {
+        "gear": {
+          "primary": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+          "magazine": "{A9A385FE1F7BF4BD}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M856_Tracer.et",
+          "uniform": "{A080C1AEBF921DC4}Prefabs/Characters/Uniforms/Jacket_US_BDU_rolledup_02.et",
+          "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et"
+        }
+      }
+    },
+    {
+      "id": "blufor:Ranger:RFL:1",
+      "uid": "slot_ranger_rfl_1",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 3214.1,
+      "z": 9141.6,
+      "headingDeg": 315,
+      "loadout": {
+        "cargo": [
+          {
+            "container": "pants",
+            "item": "{C3F1FA1E2EC2B345}Prefabs/Items/Medicine/FieldDressing_01/FieldDressing_USSR_01.et",
+            "qty": 2
+          }
+        ]
+      }
+    },
+    {
+      "id": "blufor:Ranger:MED:0",
+      "uid": "slot_ranger_med",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "MED",
+      "kit": "kit:us_medic",
+      "x": 3207.0,
+      "z": 9147.9,
+      "headingDeg": 350,
+      "loadout": {
+        "gear": {
+          "uniform": "{3D17E4FA8F819ECD}Prefabs/Characters/Uniforms/Jacket_US_BDU_TigerStripe.et",
+          "vest": "{9CEA24A1A9CC2675}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_sniper.et",
+          "helmet": "{FE5C49069C2499D9}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01_cover.et",
+          "pants": "{C6BE0A871E7DE807}Prefabs/Characters/Uniforms/Pants_US_BDU_TigerStripe.et",
+          "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et",
+          "handwear": "{D19C474FA0F42CC4}Prefabs/Characters/Handwear/Gloves_Pilot_US_01/Gloves_Pilot_US_01.et",
+          "backpack": "{06B68C58B72EAAC6}Prefabs/Items/Equipment/Backpacks/Backpack_ALICE_Medium.et"
+        },
+        "cargo": [
+          {
+            "container": "backpack",
+            "item": "{AE578EEA4244D41F}Prefabs/Items/Equipment/Kits/MedicalKit_01/MedicalKit_01_US.et",
+            "qty": 1
+          },
+          {
+            "container": "backpack",
+            "item": "{0D9A5DCF89AE7AA9}Prefabs/Items/Medicine/MorphineInjection_01/MorphineInjection_01.et",
+            "qty": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "opfor:Ural:SL:0",
+      "uid": "slot_ural_sl",
+      "faction": "opfor",
+      "groupCallsign": "Ural",
+      "role": "SL",
+      "kit": "kit:sov_sl",
+      "x": 3624.7,
+      "z": 9484.3,
+      "headingDeg": 225,
+      "loadout": {
+        "gear": {
+          "primary": "{43497A18DD888667}Prefabs/Weapons/Rifles/AK74/Rifle_AK74_base.et",
+          "optic": "{ACDF49FACD0701A8}Prefabs/Weapons/Attachments/Optics/Optic_1P29/Optic_1P29.et",
+          "magazine": "{63C1E699345B24F9}Prefabs/Weapons/Magazines/Magazine_545x39_AK_30rnd_Base.et",
+          "uniform": "{9F546CCA2582D16F}Prefabs/Characters/Uniforms/Jacket_M88.et",
+          "vest": "{ADE19B33DCBB9005}Prefabs/Characters/Vests/Vest_6B2/Vest_6B2.et",
+          "helmet": "{E49D9EE7E2B3016C}Prefabs/Characters/HeadGear/Helmet_ZSh5_01/Helmet_ZSh5_01.et",
+          "pants": "{DCF980831E880F6A}Prefabs/Characters/Uniforms/Pants_M88.et",
+          "boots": "{4C6029AB8BF5C044}Prefabs/Characters/Footwear/CombatBoots_Soviet_01_Dirty.et"
+        },
+        "cargo": [
+          {
+            "container": "vest",
+            "item": "{63C1E699345B24F9}Prefabs/Weapons/Magazines/Magazine_545x39_AK_30rnd_Base.et",
+            "qty": 5
+          },
+          {
+            "container": "jacket",
+            "item": "{80E75A71C29190DB}Prefabs/Items/Medicine/Tourniquet_01/Tourniquet_USSR_01.et",
+            "qty": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "opfor:Ural:RFL:0",
+      "uid": "slot_ural_rfl_0",
+      "faction": "opfor",
+      "groupCallsign": "Ural",
+      "role": "RFL",
+      "kit": "kit:sov_rifleman",
+      "x": 3616.2,
+      "z": 9490.1,
+      "headingDeg": 200
+    },
+    {
+      "id": "opfor:Ural:RFL:1",
+      "uid": "slot_ural_rfl_1",
+      "faction": "opfor",
+      "groupCallsign": "Ural",
+      "role": "RFL",
+      "kit": "kit:sov_rifleman",
+      "x": 3631.9,
+      "z": 9490.1,
+      "headingDeg": 250,
+      "loadout": {
+        "gear": {
+          "primary": "{EB404DC9E1BCB750}Prefabs/Weapons/Rifles/AK74/Rifle_AK74N_1P29.et",
+          "optic": "{C850A33226B8F9C1}Prefabs/Weapons/Attachments/Optics/Optic_PSO1/Optic_PSO1.et",
+          "magazine": "{BC74DAC891D48540}Prefabs/Weapons/Magazines/Magazine_545x39_RPK_45rnd_Ball.et"
+        }
+      }
+    }
+  ]
+}
