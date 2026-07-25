@@ -217,7 +217,32 @@ class TBD_LobbyClient
 	protected static string m_sRejectedKey;
 
 	//! Set once the server has accepted a deploy, so the screen can stand down.
+	//!
+	//! T-181.29 — note what this is and is NOT. It is "the authority accepted MY deploy click", and
+	//! only a `V DEPLOY ok` verdict sets it. It is not "I am in the world" — see `m_bInWorld`, which
+	//! is the fact that answers that, and which is what the screen actually needed.
 	protected static bool m_bDeployed;
+
+	//! T-181.29 — the authority's answer to "does this player already have a body", refreshed from
+	//! every roster that arrives (2 s at worst, immediately on screen open).
+	//!
+	//! ── The bug this closes ─────────────────────────────────────────────────────────────────
+	//! The screen only ever stood down on `m_bDeployed`, and `m_bDeployed` is set by exactly one
+	//! event: the reply to a deploy the player CLICKED. `TBD_SpawnManager`'s LOBBY auto-deploy wave
+	//! (`m_bAutoDeploy`, still 1 — it deploys everyone ~250 ms into LOBBY) never sets it, and neither
+	//! does the JIP `DeployJoiner` path or `AdminRespawn`. All three are server-side and silent to
+	//! this client, so a player any of them deployed got a character AND kept the picker on top of
+	//! it, permanently: `TBD_LobbyStage.Tick`'s T-181.28 guard suppresses the RE-raise but has
+	//! nothing to say about a screen that is already up.
+	//!
+	//! ── Separate from m_bDeployed on purpose ────────────────────────────────────────────────
+	//! Folding this into `m_bDeployed` would have been one line fewer and wrong in two directions.
+	//! `m_bDeployed` is LATCHED and must stay latched — `AcceptDeployVerdict` sets it on a verdict
+	//! that will not be repeated, and a later roster must not un-set it. This one must NOT latch:
+	//! it is an observation, so a wrong reading self-corrects on the next refresh and the picker
+	//! returns via `TBD_LobbyStage.Tick`'s unconditional re-raise. Keeping them apart is what lets
+	//! each have the lifetime it needs.
+	protected static bool m_bInWorld;
 
 	//! A deploy request is in flight. Lives here rather than on the screen so the footer derives
 	//! the button's enabled state from ONE place — a screen that disabled its own button would be
@@ -263,6 +288,24 @@ class TBD_LobbyClient
 	static bool IsDeployed()
 	{
 		return m_bDeployed;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.29 — is this player already in the world, by the authority's own reckoning? True for a
+	//! body that arrived by ANY door, including the ones this client never asked for.
+	static bool IsInWorld()
+	{
+		return m_bInWorld;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.29 — the one question the screen asks before deciding to stand down: is there a
+	//! character under this menu? Either half is sufficient and they cover different windows —
+	//! `IsDeployed` fires on the player's own verdict with no round trip to wait for, `IsInWorld`
+	//! catches every server-side deploy the client was never told about.
+	static bool ShouldStandDown()
+	{
+		return m_bDeployed || m_bInWorld;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -442,6 +485,14 @@ class TBD_LobbyClient
 
 		m_Roster = incoming;
 
+		// T-181.29 — refreshed from EVERY reply, including a plain refresh and an unavailable
+		// roster, because the doors that make it true (the LOBBY auto-deploy wave, JIP, admin
+		// respawn) send no verdict of their own. Assigned rather than OR-ed into: this is an
+		// observation with the lifetime of the roster that carried it, so a body that goes away
+		// takes the fact with it and the picker is allowed back. `m_bDeployed` above is the one
+		// that latches.
+		m_bInWorld = incoming.m_bInWorld;
+
 		// Has the authority ruled on the intent we are still holding? Only the MATCHING verdict
 		// retires it. A verdict for a seat the player has already moved on from is stale: it must
 		// neither retire the current intent nor put its reason in the status line, or clicking
@@ -572,6 +623,7 @@ class TBD_LobbyClient
 		m_sStatus = string.Empty;
 		m_sRejectedKey = string.Empty;
 		m_bDeployed = false;
+		m_bInWorld = false;
 		m_bDeployPending = false;
 		m_sPendingClaimKey = string.Empty;
 		m_bPendingRelease = false;
@@ -689,10 +741,22 @@ class TBD_LobbyStage
 		// unconditional on purpose: if this test were ever wrong, gating the initial open would
 		// mean the picker silently never appears, which is a far worse failure than one that can
 		// be dismissed.
+		//
+		// ── T-181.29: this guard was only ever HALF the answer ───────────────────────────────
+		// Standing the re-raise down does nothing for a screen that is ALREADY OPEN, and that is the
+		// case the auto-deploy wave produces: the wave fires ~250 ms into LOBBY, this watcher raises
+		// the picker on the same transition, and the result was a picker sitting over a live
+		// character with only Esc to get rid of it. The close now lives where it belongs — on the
+		// roster, in `TBD_LobbyScreen.OnRosterChanged` via `TBD_LobbyClient.ShouldStandDown()`.
+		//
+		// `ShouldStandDown()` replaces the bare `IsDeployed()` here so the re-raise and the close
+		// test the same predicate. It is a strict superset of what this line asked before, so it can
+		// only suppress a raise that used to happen, never permit one that did not — and every input
+		// to it either latches for the round or self-corrects on the next 2 s refresh.
 		if (stage != TBD_EGameStage.LOBBY)
 			return;
 
-		if (TBD_LobbyClient.IsDeployed() || SCR_PlayerController.GetLocalControlledEntity())
+		if (TBD_LobbyClient.ShouldStandDown() || SCR_PlayerController.GetLocalControlledEntity())
 			return;
 
 		Raise();
@@ -735,6 +799,34 @@ class TBD_LobbyStage
 	//------------------------------------------------------------------------------------------------
 	//! The single entry point for "the round changed phase" as far as the lobby is concerned.
 	//! Kept public and complete so wiring it to the real replication hook is one line.
+	//!
+	//! ── T-181.29: the other OnStageChanged, and why m_bAutoDeploy is still 1 ────────────────
+	//! `TBD_SpawnManager.OnStageChanged` reacts to this same transition by scheduling
+	//! `DeployAllConnectedPlayers` 250 ms out. Two handlers, one transition: this one raises the
+	//! picker, that one puts everybody in the world. They race, and until this slice the race had no
+	//! loser-recovery — whichever order they landed in, the picker stayed up.
+	//!
+	//! The obvious other fix is to flip `m_bAutoDeploy` to 0 and let the picker be the only way in.
+	//! It is a real fix, it is almost certainly the right END state, and it is NOT taken here:
+	//!
+	//!   * The wave's stated reason for defaulting ON — "on a framework world this wave is currently
+	//!     the ONLY working way into the world", because no screen could open — expired when
+	//!     T-181.25 unblocked the menu presets. The premise is genuinely gone.
+	//!   * But flipping it makes this picker LOAD-BEARING on its first ever live run. `TBD_GameMode.et`
+	//!     does not override the attribute, so the `[Attribute("1")]` default in `TBD_SpawnManager`
+	//!     is what ships — a one-character change takes effect immediately, and if the picker does
+	//!     not open on a real client, nobody can deploy at all. `TBD_MenuStack.Open` returning null
+	//!     is a failure this class already carries a latch for (`s_bPresetUnavailable`), which is
+	//!     the measure of how plausible it still is.
+	//!   * The fix in this slice is additive: it removes a screen that should not be there, and
+	//!     changes nothing about how a player gets into the world. It is correct whether the wave
+	//!     stays on or goes off, and it is correct whether or not the symptom it was filed for
+	//!     turns out to be real.
+	//!
+	//! So: flip `TBD_SpawnManager.m_bAutoDeploy` to 0 in its own slice, gated on ONE observation —
+	//! an operator confirming a live client sees the picker and can deploy from it. Until then the
+	//! wave is the safety net and this slice is what stops the safety net from leaving a menu on
+	//! the screen.
 	static void OnStageChanged(TBD_EGameStage stage)
 	{
 		if (stage == TBD_EGameStage.LOBBY)
