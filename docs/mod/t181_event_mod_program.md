@@ -326,6 +326,17 @@ picker can open would ship a mod nobody can deploy into.
   fabricate `Foo.BarThatDoesNotExist()` alongside the real call and require the fake to error.
   Two separate slices have now had to correct this program's probe guidance; treat every probe
   technique here as provisional until its control has failed in the same run.
+- **`GetGame().GetWorkspace()` is NON-NULL on a HEADLESS DEDICATED SERVER** (engine 1.7.0.54,
+  measured T-181.28). It is therefore **not** a dedicated-server test, and shipped code used it as
+  one: `TBD_LobbyStage.Start()` gates on `if (!GetGame().GetWorkspace()) return;`, so on a headless
+  boot with ZERO players it proceeds and tries to open the lobby, producing
+  `[TBD][ui] preset 60 did not open` — the intermittent `world-boot` failure. The same false claim
+  is documented on `TBD_FrameworkManager.NotifyLocalStageUI()`, harmless there only because the very
+  next line checks the player controller. **The reliable test is a null LOCAL PLAYER CONTROLLER.**
+- **`world-boot.sh`'s settle window makes late errors nondeterministic.** The default 4 s usually
+  ends before the lobby watcher fires; `TBD_WORLDBOOT_SETTLE=12` makes the flake above reproduce
+  3/3 on a clean baseline. When attributing an intermittent gate failure, raise the settle and
+  re-run the BASELINE before blaming a change.
 - **`world-boot.sh --mission=` does NOT exercise any PLAYER-TRIGGERED path — it has ZERO players.**
   It runs the boot-time spine: loader, validator, zone registry, objective registry, radio plan,
   slot materialisation. It does **not** run `BuildForPlayer`, `Serialise`, `Parse`, any RPC, any

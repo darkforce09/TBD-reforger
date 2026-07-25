@@ -431,6 +431,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		line += RollCallEntry(owner, TBD_RadioComponent, "Radio", missing);
 		line += RollCallEntry(owner, TBD_ObjectivesComponent, "Objectives", missing);
 
+		// T-181.26/.30 — arm the briefing wire self-check HERE rather than lazily on first
+		// Serialise. A world-boot has zero players, so Serialise never runs and a lazily-armed
+		// check is invisible to the gate; the roll-call always executes, which is what makes it
+		// gated. Once-only guarded internally, and does not recurse into Serialise.
+		TBD_BriefingService.SelfCheckWire();
+
 		// PrintFormat, not Print: `Print(someLocalVariable)` emits the DECLARATION
 		// (`string line = '…'`) rather than the value, which made the log line awkward to match
 		// and the world-boot selftest fixtures diverge from reality. Measured, not assumed.

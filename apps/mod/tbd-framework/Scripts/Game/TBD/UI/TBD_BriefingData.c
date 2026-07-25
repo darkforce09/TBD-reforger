@@ -949,6 +949,17 @@ class TBD_BriefingService
 	//! product.
 	static bool SelfCheckWire()
 	{
+		// T-181.30 — the once-only guard lives HERE, not only in `Serialise`. It used to be set
+		// solely by `Serialise` before it called in, which made this method safe from that one
+		// caller and from nowhere else: the roll-call arming added at boot called it directly, the
+		// flag was still false, `SelfCheckWire` re-entered `Serialise`, and the check ran and
+		// logged TWICE. Guarding at the entry point makes every call site idempotent, which is what
+		// a self-check that anything may arm actually needs.
+		if (s_bWireChecked)
+			return true;
+
+		s_bWireChecked = true;
+
 		// ── Direct observation of the behaviour this whole scheme refuses to depend on ──
 		array<string> probe = {};
 		string sample = "a" + FIELD_SEP + FIELD_SEP + "b";
