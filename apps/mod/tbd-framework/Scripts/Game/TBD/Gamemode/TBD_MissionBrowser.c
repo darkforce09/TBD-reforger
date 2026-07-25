@@ -4,6 +4,21 @@
 //!
 //! Added as methods on the player controller (which is replicated and owned by
 //! one client), so server->owner replies route to the requesting admin only.
+//!
+//! ── T-181.11.2 — why the admin MENU transport also lives in this block ──────────────────────
+//! It is a third client<->server admin channel, and it belongs on the player controller for the
+//! same reason the two above it do: `RplRcver.Owner` delivers to exactly one client, which is
+//! what makes a targeted, non-broadcast reply possible.
+//!
+//! It is NOT a third `modded class SCR_PlayerController` block. Two already exist in this addon
+//! (here, and `TBD_BriefingController.c` from T-181.9.2). **Two blocks are measured to compile
+//! and interoperate; three are not.** The spectator slice (T-181.12) hit the same question and
+//! answered it by hosting on a game-mode component instead — that route is unavailable here,
+//! because a game-mode component has no per-client owner and so no way to answer one admin
+//! privately. Extending the block that already exists costs nothing and adds no unmeasured
+//! behaviour, so this file gains the methods and the logic stays in `TBD_AdminService` /
+//! `TBD_AdminSnapshotService`. The rule "one modded SCR_PlayerController per addon" is the reason
+//! these are here rather than in the UI folder with the rest of the admin screen.
 modded class SCR_PlayerController
 {
 	//! Client-side cache of the last received mission list (display lines).
@@ -40,8 +55,22 @@ modded class SCR_PlayerController
 
 		im.AddActionListener("TBD_MissionCycle", EActionTrigger.DOWN, TBD_OnCycleAction);
 		im.AddActionListener("TBD_MissionLoad", EActionTrigger.DOWN, TBD_OnLoadAction);
+
+		// T-181.11.2 — the admin menu. Registered for every client, not just admins, because the
+		// client genuinely does not know whether it is one: nothing on a client is authoritative
+		// about the admin list. A non-admin who presses it gets a screen containing the server's
+		// refusal and nothing else — no roster, no mission, no audit trail (see TBD_AdminData.c).
+		im.AddActionListener("TBD_AdminMenu", EActionTrigger.DOWN, TBD_OnAdminMenuAction);
+
 		m_TBD_ListenersRegistered = true;
-		Print("[TBD][browser] admin mission keybinds registered (TBD_MissionCycle / TBD_MissionLoad).");
+		Print("[TBD][browser] admin keybinds registered (TBD_MissionCycle / TBD_MissionLoad / TBD_AdminMenu).");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.11.2 — raise or drop the admin screen on this client.
+	protected void TBD_OnAdminMenuAction(float value, EActionTrigger trigger)
+	{
+		TBD_AdminClient.Toggle();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -147,6 +176,127 @@ modded class SCR_PlayerController
 	array<string> TBD_GetMissionLines()
 	{
 		return m_TBD_MissionLines;
+	}
+
+	// ══ T-181.11.2 — admin menu transport ═══════════════════════════════════════════════════
+	//
+	// Two request/reply pairs and one push, all owner-targeted. Every one of them re-derives the
+	// caller from `GetPlayerId()` on THIS replicated controller — the client cannot name a player
+	// id, so it cannot claim to be somebody else. Neither RPC below decides anything: the read
+	// gate lives in `TBD_AdminSnapshotService.BuildForAdmin` and the write gate in
+	// `TBD_AdminService.Execute`, so a future transport cannot forget to check.
+
+	//------------------------------------------------------------------------------------------------
+	//! CLIENT (owner) -> SERVER: ask for the admin snapshot. On a listen host the caller IS the
+	//! authority, so build in place instead of RPCing ourselves.
+	void TBD_RequestAdminSnapshot()
+	{
+		// Authority only — the snapshot reads server-owned state (slot map, life ledger, mission
+		// document), none of which exists in a client's process. Off the authority, ask for it.
+		if (RplSession.Mode() == RplMode.Client)
+		{
+			Rpc(TBD_RpcAsk_AdminSnapshot);
+			return;
+		}
+
+		TBD_AdminClient.Accept(TBD_AdminSnapshotService.BuildForAdmin(GetPlayerId()));
+	}
+
+	//! @authority server — builds the snapshot the caller is entitled to. A non-admin gets a
+	//! payload carrying a refusal and no data at all, which is also what makes the reply safe to
+	//! send unconditionally: there is nothing in it to leak.
+	//! @rpc Reliable Server
+	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
+	protected void TBD_RpcAsk_AdminSnapshot()
+	{
+		Rpc(TBD_RpcDo_AdminSnapshot, TBD_AdminSnapshotService.Serialise(
+			TBD_AdminSnapshotService.BuildForAdmin(GetPlayerId())));
+	}
+
+	//! @authority owner — executes on the requesting client only (RplRcver.Owner).
+	//! @rpc Reliable Owner
+	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+	protected void TBD_RpcDo_AdminSnapshot(string wire)
+	{
+		TBD_AdminClient.Accept(TBD_AdminSnapshotService.Parse(wire));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! CLIENT (owner) -> SERVER: run one admin power. The enum crosses the wire as a plain int;
+	//! an unknown value falls through `TBD_AdminService.Execute` to "unknown admin action".
+	void TBD_RequestAdminAction(TBD_EAdminAction action, int targetId)
+	{
+		int actionId = action;
+
+		// Authority only — the power itself runs server-side. Off the authority, ask for it.
+		if (RplSession.Mode() == RplMode.Client)
+		{
+			Rpc(TBD_RpcAsk_AdminAction, actionId, targetId);
+			return;
+		}
+
+		bool ok;
+		string message = TBD_AdminService.Execute(GetPlayerId(), action, targetId, ok);
+		TBD_AdminClient.AcceptActionResult(message, ok);
+		TBD_AdminClient.Accept(TBD_AdminSnapshotService.BuildForAdmin(GetPlayerId()));
+	}
+
+	//! @authority server — the caller is `GetPlayerId()` of this controller, never an argument.
+	//! `TBD_AdminService.Execute` re-checks the admin list before touching anything and audits the
+	//! attempt either way.
+	//! @rpc Reliable Server
+	[RplRpc(RplChannel.Reliable, RplRcver.Server)]
+	protected void TBD_RpcAsk_AdminAction(int actionId, int targetId)
+	{
+		int playerId = GetPlayerId();
+
+		bool ok;
+		// The int came off the wire: normalise it to a known action (or NONE) before it is used as
+		// one. Enfusion assigns any int to an enum without complaint, so this is the boundary.
+		string message = TBD_AdminService.Execute(playerId, TBD_AdminService.FromWire(actionId), targetId, ok);
+
+		Rpc(TBD_RpcDo_AdminActionResult, message, ok);
+
+		// A fresh snapshot on the same round trip: the admin sees the outcome AND the world it
+		// produced, without a poll interval of staleness in between.
+		Rpc(TBD_RpcDo_AdminSnapshot, TBD_AdminSnapshotService.Serialise(
+			TBD_AdminSnapshotService.BuildForAdmin(playerId)));
+	}
+
+	//! @authority owner
+	//! @rpc Reliable Owner
+	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+	protected void TBD_RpcDo_AdminActionResult(string message, bool ok)
+	{
+		TBD_AdminClient.AcceptActionResult(message, ok);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! SERVER -> owner: raise the admin screen on this player's client. Driven by `#tbd menu`, so
+	//! an admin can reach the panel with no keybind bound and no ActionContext registered — the
+	//! chat path is the one surface that works on a stock client today.
+	//! @authority server
+	void TBD_OpenAdminMenuOnOwner()
+	{
+		// Listen host: the requesting admin IS this machine. An owner-targeted RPC from the
+		// authority to itself is not a delivery worth relying on, so open in place — same
+		// short-circuit the snapshot request uses, expressed as "is this the local controller"
+		// because that is the question that is true on a host and false on a dedicated server.
+		if (GetGame().GetWorkspace() && GetGame().GetPlayerController() == this)
+		{
+			TBD_AdminClient.Open();
+			return;
+		}
+
+		Rpc(TBD_RpcDo_OpenAdminMenu);
+	}
+
+	//! @authority owner
+	//! @rpc Reliable Owner
+	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
+	protected void TBD_RpcDo_OpenAdminMenu()
+	{
+		TBD_AdminClient.Open();
 	}
 }
 
