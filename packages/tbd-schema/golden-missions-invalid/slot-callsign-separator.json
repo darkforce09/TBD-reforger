@@ -1,0 +1,76 @@
+{
+  "$comment": "T-181.43 negative golden. Identical to a valid document except slots[0].groupCallsign reads 'AL<TAB>PHA' instead of 'Alpha'. This is the EXACT value from the T-181.42 incident, and before the wireSafeString pattern it was a SCHEMA-VALID mission: mission.schema.json put minLength:1 and no pattern on the field, TBD_SpawnManager.BuildSlotRoster formatted it into a tab-delimited roster row, and the extra column shifted every field after it — role rendered as 'PHA', the real role landed in the STATE column so the seat matched neither OPEN nor DEAD and became UNSELECTABLE, and holderId parsed from \"OPEN\".ToInt() = 0. The mod now rewrites the character at the source (TBD_SpawnManager.RosterField) and the lobby parser is pinned to exact arity, so this fixture guards the LAST line rather than the only one — but a rewritten callsign is still not the callsign the author wrote. See README.md for the wrapper format — this is NOT a mission document.",
+  "mustFail": {
+    "gate": "schema",
+    "at": "/slots/0/groupCallsign",
+    "because": "a TAB in an authored callsign opens a seventh column in the tab-delimited roster wire; every field after it shifts and the seat becomes unselectable rather than failing loudly"
+  },
+  "document": {
+    "schemaVersion": "1.1",
+    "meta": {
+      "id": "msn_bad002",
+      "name": "NEGATIVE FIXTURE — separator in callsign",
+      "terrain": "everon",
+      "templateId": "attack_defend_v1",
+      "playerRange": [2, 2]
+    },
+    "factions": [
+      { "key": "blufor", "displayName": "US Army", "presetId": "preset:us_army_82nd", "tickets": 0 },
+      { "key": "opfor", "displayName": "Soviet Army", "presetId": "preset:sov_vdv", "tickets": 0 }
+    ],
+    "orbat": {
+      "blufor": {
+        "groups": [
+          {
+            "callsign": "Alpha",
+            "type": "rifle_squad",
+            "roles": [{ "slot": "RFL", "kit": "kit:us_rifleman", "count": 1 }]
+          }
+        ]
+      },
+      "opfor": {
+        "groups": [
+          {
+            "callsign": "Ural",
+            "type": "rifle_squad",
+            "roles": [{ "slot": "RFL", "kit": "kit:sov_rifleman", "count": 1 }]
+          }
+        ]
+      }
+    },
+    "zones": [
+      {
+        "id": "sp_blufor",
+        "type": "spawn",
+        "faction": "blufor",
+        "shape": { "circle": { "x": 3210.0, "z": 9140.0, "r": 100 } }
+      }
+    ],
+    "flow": { "briefingSeconds": 60, "safeStartSeconds": 60, "timeLimitSeconds": 600, "jip": "disabled" },
+    "winConditions": { "mode": "points_then_attrition", "endOn": ["time_limit"] },
+    "slots": [
+      {
+        "id": "blufor:Alpha:RFL:0",
+        "uid": "slot_alpha_rfl_0",
+        "faction": "blufor",
+        "groupCallsign": "AL\tPHA",
+        "role": "RFL",
+        "kit": "kit:us_rifleman",
+        "x": 3205.4,
+        "z": 9135.2,
+        "headingDeg": 45
+      },
+      {
+        "id": "opfor:Ural:RFL:0",
+        "uid": "slot_ural_rfl_0",
+        "faction": "opfor",
+        "groupCallsign": "Ural",
+        "role": "RFL",
+        "kit": "kit:sov_rifleman",
+        "x": 3624.7,
+        "z": 9484.3,
+        "headingDeg": 225
+      }
+    ]
+  }
+}
