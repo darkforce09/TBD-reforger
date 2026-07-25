@@ -11,20 +11,13 @@
 # Max 3 slices per wave (disk: one worktree each).
 #
 wave	slice	title	owns
-1	T-181.7	UI framework (menu stack, listbox, Aegis tokens)	Scripts/Game/TBD/UI/**, UI/layouts/**
-1	T-181.10	JSON-driven loadouts	TBD_LoadoutEquipHelper.c, TBD_LoadoutEquipComponent.c
-1	T-181.14	Mission validation + thin logging	Scripts/Game/TBD/Validate/** (new)
-1.5	T-181.21	ONE-LIFE integrity blocker fix (verifier wave 1)	TBD_SpawnManager.c, TBD_SCR_MenuSpawnLogic.c, TBD_SCR_RespawnSystemComponent.c
-2	T-181.22	ONE-LIFE hardening (re-verifier: dead backstop + name-hash identity)	TBD_SpawnManager.c, TBD_SCR_RespawnSystemComponent.c
-2	T-181.12	Spectator (free cam / follow / unit list)	Scripts/Game/TBD/Spectator/** (new)
-2	T-181.9.2	Briefing screen	Scripts/Game/TBD/UI/Briefing/** (new)
 3	T-181.9.1	Lobby / slot picker UI (supersedes T-068.13)	Scripts/Game/TBD/UI/Lobby/** (new)
 3	T-181.11.2	Admin menu (respawn/teleport/broadcast/heal/settings)	Scripts/Game/TBD/UI/Admin/** (new)
-4	T-181.17	Safestart / warmup + damage-off	TBD_FrameworkManager.c
-4	T-181.18	AO / play area poly-zones + out-of-bounds	Scripts/Game/TBD/Zones/** (new)
-4	T-181.19	Map markers from mission JSON	Scripts/Game/TBD/Markers/** (new)
-4	T-181.20	Golden mission fixture with loadout block (schema CI gap)	packages/tbd-schema/golden-missions/**
 3	T-181.23	Mission-doc parser gaps: briefings prose, zone label, stage hook	TBD_MissionLoader.c, TBD_FrameworkManager.c
-4	T-181.24	Spectator streaming host (possess a dummy so the free cam sees the world)	TBD_SpawnManager.c
 4	T-181.15	Dedicated / JIP reconnect reclaim	TBD_SpawnManager.c
-5	T-181.13.1	Thin end-of-round results POST	Scripts/Game/TBD/Backend/** (new)
+4	T-181.17	Safestart / warmup + damage-off	TBD_FrameworkManager.c
+4	T-181.20	Golden mission fixture with loadout block (schema CI gap)	packages/tbd-schema/golden-missions/**
+5	T-181.24	Spectator streaming host (possess a dummy so the free cam sees the world)	TBD_SpawnManager.c
+5	T-181.18	AO / play area poly-zones + out-of-bounds	Scripts/Game/TBD/Zones/** (new)
+5	T-181.19	Map markers from mission JSON	Scripts/Game/TBD/Markers/** (new)
+6	T-181.13.1	Thin end-of-round results POST	Scripts/Game/TBD/Backend/** (new)
