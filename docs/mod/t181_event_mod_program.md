@@ -139,6 +139,10 @@ is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave 
 
 - `[RplProp(onRplName:)]` fires automatically **only on the proxy**; authority must invoke its
   own handler (CRF says so at `CRF_Gamemode.c:8`).
+- **Corollary that bites: on a LISTEN HOST, authority IS the local player**, so an `onRplName`
+  handler alone never drives that player's UI. Client-side UI must be driven from BOTH the
+  replicated callback (proxy) and the authority-side setter, through one guarded helper. Wiring only
+  the callback silently breaks the host — and a poll, however ugly, does not have this bug.
 - The join hook is `OnPlayerAuditSuccess(int)`, **not** `OnPlayerConnected`
   (`CRF_Gamemode.c:411`). Disconnect takes 3 args (`:465`).
 - `SetInitialMainEntity` possesses a body but is **not a spawn** — the client hangs on the

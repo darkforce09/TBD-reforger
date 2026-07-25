@@ -154,6 +154,15 @@ distrobox-host-exec ./scripts/ticket check    # registry valid
 distrobox-host-exec cargo test -p tbd-tools --lib enf::
 ```
 
+## Known-broken, unrelated to slices
+
+`make schema-validate` exits 2 on `PNG decode: Invalid PNG signature`. **Pre-existing and not a
+slice regression** — proved by stashing slice edits and re-running on a clean tree. Cause:
+`git-lfs` is not installed, so `packages/map-assets/everon/dem/everon-dem-16bit.png` is a 133-byte
+LFS pointer rather than an image. The golden-mission checks inside that target still PASS; it is the
+later DEM step that dies. Not in the wave gate, so it does not block a wave — but do not mistake it
+for something a slice broke.
+
 ## What agents cannot do
 
 Nothing here returns a framebuffer. Agents can prove **compilation**, not **appearance** or
