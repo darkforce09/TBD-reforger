@@ -6532,7 +6532,7 @@
             "mod"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "notes": "Make the lobby raise path survivable and observable. MEASURED: TBD_GameMode is constructed TWICE per Workbench session (World Editor 20:39:34, Play 20:39:59) while all TBD_LobbyStage state is static and survives between them. TBD_LobbyStage.Start is a one-shot CallLater(...,false) behind three guards that log NOTHING, and it fires ~200ms BEFORE the framework manager is ready (Start ~20:40:01.32 vs roll-call 20:40:01.523) - losing that race is permanent and silent. Nine of eleven guards on the path emit no log at all. Also: TBD_MenuStack.Reset()/CloseAll() have ZERO callers, so a stale weak entry makes Raise()'s IsOpen check true forever. Fix: self-healing retry arm, statics reset on arm not only teardown, wire up MenuStack.Reset, log every guard, and replace the GetWorkspace() authority test with RplSession.Mode()==RplMode.Dedicated (neither oracle ever used GetWorkspace for this)."
         },
         "T-181.50": {
@@ -6540,7 +6540,7 @@
             "mod"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "notes": "Pre-slot body + kill the vanilla loading placeholder. Vanilla SCR_RespawnSystemComponent.OnInit:270 builds a loading splash DIRECTLY on the workspace (above menu-manager menus) and mutes SFX; it is destroyed ONLY from the vanilla spawn pipeline, which we bypass and actively block in CanRequestSpawn_S. Our modded class overrides OnPlayerRegistered_S/OnPlayerAuditSuccess_S/CanRequestSpawn_S but NOT OnInit, so nothing ever tears it down. Second and larger half: with auto-deploy off the player has NO controlled entity, therefore no camera, therefore nothing to render behind the picker - every session where the picker was visible had a body. Adopt PlayableSelector's ghost pattern (invisible AI-less character in a per-player cell far off map, SetInitialMainEntity, deleted on slot commit) plus a spectator camera."
         },
         "T-181.51": {
@@ -6549,7 +6549,7 @@
             "website"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "notes": "Two backend calls share ONE root cause, not two URL typos. ServiceAuth (middleware/auth.rs:108) reads only x-service-token; TBD_MissionListLoader:99 and TBD_RosterLoader:127 both send 'Authorization, Bearer' while the three loaders that work all send X-Service-Token. Fixing only the URLs turns 404 into 401. list_missions is owner-scoped (push_filters ... me) so ServiceAuth cannot be bolted onto it, and NO roster route has ever existed (full-crate grep). Add GET /api/v1/ingest/missions and GET /api/v1/ingest/events/{id}/roster, both ServiceAuth, mirroring the /ingest/link-confirm pattern; repoint both mod loaders and fix their stale @route comments."
         },
         "T-181.52": {
@@ -6557,7 +6557,7 @@
             "mod"
           ],
           "executor": "claude-code",
-          "status": "ready",
+          "status": "shipped",
           "notes": "Log-noise demotion + oracle lane gap. Demote the magazine first-attempt 'mount refused' line from WARNING to INFO (the deterministic-swap design intends it; it reads as a fault). Document cargo:backpack DEGRADED as a mission/kit authoring mismatch, not a mod bug. Separately: scripts/mod/slice-worktree.sh links only crf_framework and vanilla_reference, so slice agents have NO PlayableSelector oracle - it sits outside the repo at ~/Projects/Archive/Reforger_Lobby/PlayableSelector-main. T-181.50 copies its design, so the lane must be linked (design-mirror ONLY - no licence, never copy code)."
         }
       },
