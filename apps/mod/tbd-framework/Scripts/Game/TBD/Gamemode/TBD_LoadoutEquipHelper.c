@@ -87,23 +87,46 @@ class TBD_LoadoutApplication : Managed
 
 	// T-181.41 — AUDIT-ONLY MODE (kit-only slots). See RunKitWornAudit.
 	//
-	// The audit POLLS rather than firing once after a fixed delay, and that is the whole
-	// safety argument: a poll that exits the moment the body is decent CANNOT raise a false
-	// NAKED early. It can only be late, and lateness is bounded by the deadline below. So the
-	// number does not have to be right — it only has to be generous, and being generous is free
-	// because the happy path returns on the first tick.
+	// THE ANCHOR, MEASURED — kit clothing is present SYNCHRONOUSLY.
+	// The real question this slice had to answer was "what signal says the body has finished
+	// dressing?", because auditing early emits a false NAKED, and a TBD-owned script ERROR is a
+	// hard fail in world-boot.sh. The answer is not a timer at all: it is `SpawnEntityPrefab`
+	// RETURNING. Measured on a live boot of golden-missions/bridgehead-at-levie.json (engine
+	// 1.7.0.54), reading the decency areas in the same statement sequence as the spawn, before
+	// any CallLater:
 	//
-	// The deadline is 3 s (12 x 250 ms). Rationale, in order of weight:
-	//   * MEASURED: on a live boot of golden-missions/bridgehead-at-levie.json all 18 kit-only
-	//     bodies read decent on attempt 1 — the kit prefab's clothing is already resolvable
-	//     250 ms after SpawnEntityPrefab returns. The deadline is pure insurance against a
-	//     slower body, not a load-bearing settle time.
-	//   * It is strictly longer than the clothing settle window this same file already trusts
-	//     for the JSON path (6 x 500 ms verify ticks) minus its first tick — i.e. anything that
-	//     dresses slower than this would already be failing the loadout path today.
-	//   * It is well inside the ~4 s world-boot settle window, so the gate observes the verdict.
+	//     17 of 18 slot bodies:  storageComp=1 jacket=1 pants=1     <- t = 0 ms, already dressed
+	//      1 of 18 (control):    storageComp=1 jacket=0 pants=0     <- deliberately bare prefab
+	//
+	// Every one of the 17 also read decent on the first 25 ms poll tick, and the 1 stayed bare
+	// for all 100 of them. So there is no async settle on this path to wait for, and the reason
+	// is structural rather than lucky: kit clothing is baked into the PREFAB's entity hierarchy,
+	// it is not applied by the async EquipCloth call the A2 rework had to poll for. That is the
+	// same fact that makes IssueEquip's empty-ResourceName early-return leave kit clothing intact.
+	//
+	// WHY POLL AT ALL, THEN. Because the requirement is 0 ms and the cost of insurance is also
+	// ~0: the happy path exits on the first tick and never schedules a second. A poll that stops
+	// the instant the body is decent CANNOT accuse a body that was merely still dressing — it can
+	// only be LATE, and lateness is bounded. Reading once and reporting would trade a free
+	// guarantee for a bet on an unobserved slow case (a future engine build, a modded kit), and
+	// losing that bet breaks the gate for every slice, not just this one.
+	//
+	// THE DEADLINE IS 1 s (4 x 250 ms), bounded from BOTH sides:
+	//   * Lower — measured need is 0 ms across 17/17 real kits, on two independent readings
+	//     (synchronous, and a 25 ms tick). 1 s is 40x the first observation point.
+	//   * Upper — the verdict has to land inside world-boot's capture window or the guard is not
+	//     gated at all. MEASURED: on a default run the slot bodies spawn at T+3.0 s of the
+	//     `mission result=` line the harness polls for, and the server is killed 3.13 s later. A
+	//     3 s deadline raced that kill and the NAKED verdict was lost — caught by the negative
+	//     control below, not by reasoning. 1 s leaves ~3x margin.
+	//   * It is also exactly the grace this file already gives its other fast-settling class
+	//     (WEAPON_TICK_MS x WEAPON_MAX_ATTEMPTS), so it is not a fresh invented number.
+	//
+	// PROVEN TO FAIL, not just to pass: pointing kit:us_sl at a bare `Character_US_Base.et`
+	// produced `NAKED after kit spawn` on exactly that slot, the other 17 stayed clean, and
+	// world-boot.sh went to FAIL. A guard that has only ever been seen to pass is not a guard.
 	protected const int AUDIT_TICK_MS = 250;
-	protected const int AUDIT_MAX_ATTEMPTS = 12;
+	protected const int AUDIT_MAX_ATTEMPTS = 4;
 
 	protected IEntity m_Character;
 	protected ref TBD_SlotLoadoutStruct m_Loadout;
@@ -1061,7 +1084,10 @@ class TBD_LoadoutApplication : Managed
 	//! wolf breaks the gate for every future slice. A single reading after a chosen delay is a bet
 	//! on that delay. A poll is not: it reports success the instant the body IS decent, so it can
 	//! never accuse a body that was merely still dressing. The only thing the deadline buys is how
-	//! long a genuinely-naked body stays unreported, and 3 s of that costs nothing.
+	//! long a genuinely-naked body stays unreported, and 1 s of that costs nothing.
+	//!
+	//! In practice — measured — this returns on attempt 1 every time, because kit clothing is
+	//! already there synchronously (see AUDIT_TICK_MS). The loop is insurance, not a wait.
 	//!
 	//! The OK line carries the attempt it settled on precisely so this stops being an argument:
 	//! if a future engine build starts dressing bodies slower, the number climbs in the log long
