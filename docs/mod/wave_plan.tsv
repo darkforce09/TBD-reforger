@@ -29,3 +29,4 @@
 10	T-181.43	Schema pattern: forbid tab/CR/LF in authored slot strings	packages/tbd-schema/**
 11	T-181.44	Save-time control-char check + surface /compiled rejection reasons	crates/map-engine-core + apps/website
 11	T-181.45	.meta sidecars for the 10 action .conf files (keybinds)	apps/mod/tbd-framework/Configs/**
+11	T-181.46	Operator: fix the live mission so it validates (opfor has no slots)	mission data
