@@ -119,7 +119,14 @@ class TBD_RadioTuner
 	//!
 	//! `freqKHz` and `longRange` are parallel: element i of each describes net i, in the order
 	//! `TBD_RadioService` resolved them for this player's side. Never returns null.
-	static TBD_RadioTuneReport TunePlayer(int playerId, notnull array<int> freqKHz, notnull array<bool> longRange)
+	//!
+	//! `longRange` is `array<int>` carrying 0/1 rather than `array<bool>`, because these same two
+	//! arrays are the RPC parameters in `TBD_RadioController`: `array<int>` and `array<string>` are
+	//! the only array element types that appear in EITHER oracle's replicated methods (8 and 4 uses
+	//! in CRF, 1 in the carved vanilla source), and `array<bool>` appears in neither. It compiles,
+	//! but compiling is not the same as crossing the wire, and this program has been bitten by that
+	//! distinction repeatedly. The proven type costs nothing here.
+	static TBD_RadioTuneReport TunePlayer(int playerId, notnull array<int> freqKHz, notnull array<int> longRange)
 	{
 		TBD_RadioTuneReport report = new TBD_RadioTuneReport();
 		report.m_iRequested = freqKHz.Count();
@@ -172,7 +179,7 @@ class TBD_RadioTuner
 
 		for (int i = 0; i < freqKHz.Count(); i++)
 		{
-			TBD_RadioSet radioSet = PickRadio(sets, longRange[i]);
+			TBD_RadioSet radioSet = PickRadio(sets, longRange[i] == 1);
 			if (!radioSet)
 			{
 				noRoom++;

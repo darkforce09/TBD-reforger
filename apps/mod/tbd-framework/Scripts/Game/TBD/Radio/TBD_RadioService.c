@@ -35,8 +35,10 @@
 //! behaviour is a RUNTIME property no probe on this lane can settle, and a net `label` is authored
 //! free text that may legally contain any delimiter we picked. So there is no delimiter: four
 //! parallel `array<...>` RPC parameters carry the fields positionally, element i of each being
-//! field i of net i. `array<int>` / `array<string>` / `array<bool>` as RPC parameters follow the
-//! shape already proven and shipped by `TBD_MarkerController.TBD_RpcDo_Markers`.
+//! field i of net i. Both array types used here are `array<int>` / `array<string>` — the only two
+//! that appear as replicated-method parameters in EITHER oracle, and the shape already proven and
+//! shipped by `TBD_MarkerController.TBD_RpcDo_Markers`. The long-range flag is therefore an int
+//! 0/1 rather than the `array<bool>` that would read more naturally.
 //!
 //! Frequencies cross the wire as INTEGER kHz, not as the schema's float MHz: kHz is the unit the
 //! engine's own radio API speaks, integers have no formatting ambiguity, and the client formats
@@ -126,7 +128,7 @@ class TBD_RadioService
 			wire.m_aId.Insert(net.id);
 			wire.m_aLabel.Insert(net.label);
 			wire.m_aFreqKHz.Insert(khz);
-			wire.m_aLongRange.Insert(IsLongRange(net.range));
+			wire.m_aLongRange.Insert(LongRangeFlag(net.range));
 		}
 
 		TBD_RadioTuneReport report = TBD_RadioTuner.TunePlayer(playerId, wire.m_aFreqKHz, wire.m_aLongRange);
@@ -188,7 +190,11 @@ class TBD_RadioService
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Schema `range` -> "this net wants the long-range set".
+	//! Schema `range` -> "this net wants the long-range set", as 0/1.
+	//!
+	//! An `int` flag and not a `bool`, because this value goes into `m_aLongRange`, which IS an RPC
+	//! parameter — and `array<int>` is proven in both oracles while `array<bool>` appears in
+	//! neither. See `TBD_RadioTuner.TunePlayer`.
 	//!
 	//! `short`, `any` and ABSENT all mean a handheld will do; only `long` asks for the backpack.
 	//! Absent is `any` by the schema's own `default`, and `JsonLoadContext` leaves a missing string
@@ -198,9 +204,12 @@ class TBD_RadioService
 	//! MUTATES IN PLACE AND RETURNS A COUNT in Enfusion, so the obvious normalising one-liner does
 	//! not do what it looks like it does, and an authored value outside the enum is a document that
 	//! never passed schema validation.
-	protected static bool IsLongRange(string range)
+	protected static int LongRangeFlag(string range)
 	{
-		return range == "long";
+		if (range == "long")
+			return 1;
+
+		return 0;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -305,7 +314,7 @@ class TBD_RadioWire
 	ref array<string> m_aId = {};       //!< `net:<id>`, stable channel key.
 	ref array<string> m_aLabel = {};    //!< Display name, already length-capped.
 	ref array<int> m_aFreqKHz = {};     //!< Kilohertz — the unit the engine's radio API speaks.
-	ref array<bool> m_aLongRange = {};  //!< True when `range: long` asked for the backpack set.
+	ref array<int> m_aLongRange = {};   //!< 1 when `range: long` asked for the backpack set, else 0.
 
 	//! `TBD_ERadioTuneResult` by NAME, so the client can render the truth without importing the
 	//! enum's numeric values across a wire that would then be version-coupled to them.

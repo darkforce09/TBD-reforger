@@ -60,7 +60,7 @@ class TBD_RadioClient
 	protected static ref array<string> s_aId;
 	protected static ref array<string> s_aLabel;
 	protected static ref array<int> s_aFreqKHz;
-	protected static ref array<bool> s_aLongRange;
+	protected static ref array<int> s_aLongRange;
 
 	protected static string s_sMissionId;
 	protected static string s_sTuneResult;
@@ -127,7 +127,7 @@ class TBD_RadioClient
 	//! player yet, and the poll keeps running. Nothing is cached from an unserved reply, so a
 	//! refusal can never overwrite a good answer with an empty one.
 	static void Accept(array<string> ids, array<string> labels, array<int> freqKHz,
-		array<bool> longRange, string missionId, string tuneResult, int tuned, bool served)
+		array<int> longRange, string missionId, string tuneResult, int tuned, bool served)
 	{
 		if (!served)
 			return;
@@ -179,7 +179,7 @@ class TBD_RadioClient
 			return string.Empty;
 
 		string band = "SR";
-		if (s_aLongRange && index < s_aLongRange.Count() && s_aLongRange[index])
+		if (s_aLongRange && index < s_aLongRange.Count() && s_aLongRange[index] == 1)
 			band = "LR";
 
 		// Appended in steps — a long `+` chain trips `Formula too complex`, whose second

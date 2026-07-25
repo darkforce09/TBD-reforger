@@ -86,7 +86,7 @@ modded class SCR_PlayerController
 	//! @rpc Reliable Owner
 	[RplRpc(RplChannel.Reliable, RplRcver.Owner)]
 	protected void TBD_RpcDo_RadioNets(array<string> ids, array<string> labels, array<int> freqKHz,
-		array<bool> longRange, string missionId, string tuneResult, int tuned, bool served)
+		array<int> longRange, string missionId, string tuneResult, int tuned, bool served)
 	{
 		TBD_RadioClient.Accept(ids, labels, freqKHz, longRange, missionId, tuneResult, tuned, served);
 	}

@@ -15,12 +15,16 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 	//! Nothing is lost by being late: the client polls until it is served.
 	static const int START_DELAY_MS = 2500;
 
-	//! The world's entity graph is still being built during `OnPostInit`, so the backbone question
-	//! is asked a beat later — otherwise a world that DOES place a `RadioManagerEntity` could be
-	//! reported as lacking one purely because we asked first. Same reasoning as the marker slice's
-	//! availability report, longer fuse because this one waits on world entities and not on a
-	//! sibling component.
-	static const int REPORT_DELAY_MS = 3000;
+	//! The report is nudged past init so the answer is not "missing" merely because we asked first.
+	//!
+	//! 1500 ms and not longer, MEASURED: `world-boot.sh` breaks its wait as soon as the roll-call
+	//! (or the mission verdict) appears and then settles for only `TBD_WORLDBOOT_SETTLE` seconds,
+	//! default 4. A 3000 ms fuse landed inside that window on a plain boot and fell OFF THE END of
+	//! a `--mission=` boot, so the single most important diagnostic in this slice was missing from
+	//! exactly the run that had a radio plan to report. The world's entities are created during
+	//! `Game::LoadEntities`, which the boot log shows completing BEFORE the game mode entity is
+	//! constructed, so there is nothing left to wait for anyway.
+	static const int REPORT_DELAY_MS = 1500;
 
 	//------------------------------------------------------------------------------------------------
 	override void OnPostInit(IEntity owner)
@@ -31,7 +35,7 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 		// question no oracle in this repo could: whether this world can support radio at all.
 		// `world-boot.sh` prints the answer, so it is a fact in the boot log rather than an
 		// assumption in a comment.
-		GetGame().GetCallqueue().CallLater(ReportBackbone, REPORT_DELAY_MS, false);
+		GetGame().GetCallqueue().CallLater(ReportRadio, REPORT_DELAY_MS, false);
 
 		// A dedicated server has no workspace at all (measured — see TBD_UILayouts). That is the
 		// cleanest available "am I a machine with a screen" test, and the one the rest of the UI
@@ -51,7 +55,7 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 		ScriptCallQueue queue = GetGame().GetCallqueue();
 		if (queue)
 		{
-			queue.Remove(ReportBackbone);
+			queue.Remove(ReportRadio);
 			queue.Remove(TBD_RadioClient.Start);
 		}
 
@@ -78,6 +82,42 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 	//!
 	//! NORMAL / WARNING only, never ERROR: a world without a radio backbone is a legitimate world,
 	//! and `world-boot.sh` triages any TBD-owned `SCRIPT (E)` line as a gate failure.
+	protected void ReportRadio()
+	{
+		ReportBackbone();
+		ReportPlan();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! @authority server — how many nets this mission actually authored, once, at boot.
+	//!
+	//! This is what makes the `radioPlan` parse a RUNTIME fact rather than a compile-time hope. The
+	//! parse is otherwise lazy — nothing touches it until a player asks — so a headless boot with
+	//! zero players would exercise none of it, and `world-boot.sh --mission=<golden>` would pass
+	//! while the projection quietly bound nothing. Asking here means the gate reads
+	//! `plan mission=msn_8f3a2c authored=4 accepted=4 rejected=0` off a real golden document.
+	//!
+	//! Clients hold no mission document, so they have nothing to report and say nothing.
+	protected void ReportPlan()
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (!TBD_MissionLoader.IsValid())
+		{
+			// Ordinary on a boot with no configured mission — the plan is parsed lazily the moment
+			// one loads, so there is nothing to fix and nothing to warn about.
+			TBD_Log.Kv(TBD_RadioPlan.CH_RADIO, "plan", "no mission loaded yet — radio plan will parse on load.");
+			return;
+		}
+
+		// The call itself is what triggers `EnsureParsed`, which emits the detailed `plan` line
+		// (and one warning per rejected net). The count is logged too so the two can be compared.
+		int nets = TBD_RadioPlan.GetTotalNetCount();
+		TBD_Log.Kv(TBD_RadioPlan.CH_RADIO, "plan-ready", string.Format("usableNets=%1", nets));
+	}
+
+	//------------------------------------------------------------------------------------------------
 	protected void ReportBackbone()
 	{
 		if (TBD_RadioTuner.IsBackboneAvailable())
