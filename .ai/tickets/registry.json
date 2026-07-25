@@ -6430,6 +6430,38 @@
           "executor": "claude-code",
           "status": "ready",
           "notes": "golden-missions/slot-loadout-coverage.json is REJECTED by the mod at runtime — a committed fixture the server refuses to run. Caught by the new mission-seeded world-boot gate: '[TBD][Validate] ERROR slot:slot_ranger_med — kit alias ...' -> 'MISSION REJECTED — 1 error(s). The server stays in LOADING until the mission is fixed.' Cause: the fixture references kit:us_medic, which is NOT in apps/mod/tbd-framework/Data/registry.json (which knows only kit:us_ar, kit:us_rifleman, kit:us_sl, kit:us_tl, kit:sov_ar, kit:sov_rifleman, kit:sov_sl). make schema-validate passes it because mission.schema.json types `kit` as a bare string with no vocabulary — the SAME class of gap as T-181.34's cargo container. Fix is a judgement call, state it explicitly: either add a us_medic entry to the registry (if a medic kit is real) or change the fixture to an existing alias. Then close the class: the kit alias vocabulary should be checked by a gate, not discovered at mission load. NOTE this fixture is one of T-181.20's, which shipped green because the wave gate validated JSON SCHEMA only and never booted a mission."
+        },
+        "T-181.37": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Validator must REFUSE (or loudly warn on) an endOn trigger the mod cannot actually evaluate. Today CheckWinConditions only checks the trigger is a legal schema value, so a mission authoring ['time_limit','all_objectives_captured'] validates CLEAN and then RUNS FOREVER — only faction_eliminated is implemented (TBD_FrameworkManager.TickWinConditions). empty-warning-fields.json authors exactly that pair and can never end except by admin. This is the 'looks like it works' failure mode on the mod's most important terminal behaviour. Smallest, highest-value of the win-condition group: it converts a silent forever-round into a named diagnostic, and it is the guard that would have surfaced T-181.38/.39 on their own. Must stay honest as triggers land — the list of evaluable triggers has to live next to the code that evaluates them, not be duplicated."
+        },
+        "T-181.38": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Parse and HONOUR the mission `flow` block — JSON IS THE CONTRACT (§2 non-negotiable) and this whole block is currently unparsed. `flow` is NOT in TBD_MissionDocumentStruct at all, yet every golden authors all four fields: briefingSeconds (600/480/300), safeStartSeconds (300/180/120), timeLimitSeconds (5400/3000/3600), jip (until_safestart_end / disabled). Consequences measured: (1) timeLimitSeconds is authored by ALL FOUR goldens and evaluated by none — TBD_FrameworkManager.TickWinConditions implements only faction_eliminated, so a mission declaring time_limit runs forever; empty-warning-fields.json declares ONLY time_limit + all_objectives_captured and can never end except by admin. (2) TBD_SafestartManager hardcodes DEFAULT_COUNTDOWN_SECONDS=300 and m_iConfiguredSeconds=300 — which matches bridgehead's authored 300 BY COINCIDENCE, while montfort's 180 and slot-loadout-coverage's 120 are silently ignored. (3) last-stand-at-montfort.json authors jip:'disabled' and T-181.15 deliberately allows JIP at any stage LOBBY..LIVE, so an authored constraint is silently violated — that decision was defensible when nothing carried the author's intent, and is not once flow is parsed. Owns TBD_FrameworkManager.c + the loader struct addition. safeStartSeconds must be handed to TBD_SafestartManager through its existing configured-seconds seam rather than by editing that file (another slice owns it). End the round through the SAME END path faction_eliminated uses — do not add a second way to end a round."
+        },
+        "T-181.39": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Objectives — spine capability #9 in TBD_MOD_DESIGN §4, currently PARSED BUT NEVER ACTED ON. mission.schema.json zone.type includes objective_capture / objective_destroy / objective_hold_until, and TBD_ZoneRegistry already resolves their rules (captureSeconds, contestable, points) as free-form rules, but nothing captures, destroys or times out anything. Consequently three of the five endOn triggers — all_objectives_captured, objective_destroyed, hold_expired — can never fire. Builds on T-181.18's zone geometry (point-in-circle/polygon, 1 Hz server tick) rather than duplicating it. Owns Scripts/Game/TBD/Objectives/** (new); must not edit Zones/** or TBD_FrameworkManager.c. Largest remaining mod slice — likely needs sub-slices per objective type."
+        },
+        "T-181.40": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Radio plan from radioPlan.nets[] — replace TBD_RadioBridgeStub, every method of which is a deliberate no-op. Named in TBD_MOD_DESIGN §6 as WANTED but explicitly NOT via CRF's route: CRF depends on the external CVON workshop mod and TBD must not. Schema is ready: radioPlan.nets[] with {id, label, freqMHz (30-512), faction?, range: short|long|any}. Per-faction like orbat, so the same side-discipline as markers/orders applies — a client must only learn its own side's nets, enforced at the wire. Scope the VOIP question honestly: if Reforger's own radio cannot be driven from script without a partner mod, SAY SO and deliver the net assignment + briefing display half rather than faking it."
         }
       },
       "active_slice": "T-181.15",
