@@ -315,6 +315,20 @@ class TBD_ListBox : ScriptedWidgetComponent
 			return null;
 		}
 
+		// T-181.47 — pin the row to the full width of the content column.
+		//
+		// TBD_ListRow.layout already declares HorizontalAlign 3 (Stretch) on its root slot, and
+		// that is how every shipped listbox element does it. But a root slot only exists once the
+		// widget has a parent, and this one gets its parent from CreateWidgets() at runtime, so
+		// relying on the file alone makes the row's width depend on an engine detail we cannot
+		// see from here. Setting it explicitly costs one call per row *created* (not per refresh
+		// — rows are pooled) and removes the dependency.
+		//
+		// The failure this guards against is not subtle: with no stretch the row falls back to
+		// its desired width, and the whole list renders as a column of clipped text a few pixels
+		// wide. That shipped once.
+		AlignableSlot.SetHorizontalAlign(rowWidget, LayoutHorizontalAlign.Stretch);
+
 		TBD_ListBoxRow row = TBD_ListBoxRow.Cast(rowWidget.FindHandler(TBD_ListBoxRow));
 		if (!row)
 		{
