@@ -706,6 +706,12 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 			return;
 		}
 
+		// T-181.32 — ONE LIFE cannot be enforced while this host hands out non-durable player
+		// keys, so SAFE_START/LIVE are refused until it can (or an admin signs the waiver).
+		m_sLastStageRefusal = TBD_SpawnManager.StageRefusalFor(stage);
+		if (!m_sLastStageRefusal.IsEmpty())
+			return;
+
 		m_sLastStageRefusal = string.Empty;
 		TBD_EGameStage previous = m_Stage;
 		m_Stage = stage;
