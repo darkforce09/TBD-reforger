@@ -833,10 +833,47 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 				state = "DEAD";
 			}
 
+			// T-181.42 — sanitise at the SOURCE. These four are authored strings, and
+			// `mission.schema.json` puts `minLength: 1` but NO `pattern` on any of them, so a
+			// callsign written `AL<TAB>PHA` is a legal mission that produced a seven-field row:
+			// it sailed past the consumer's `< 6` guard, shifted every column, and made the seat
+			// unselectable (role read as the state, holder parsed from "OPEN" as 0). T-181.42
+			// hardened the lobby's parser, but every other BuildSlotRoster consumer was still
+			// exposed — a per-consumer guard is a patch, this is the fix.
 			roster.Insert(string.Format("%1\t%2\t%3\t%4\t%5\t%6",
-				slot.Key(), slot.faction, slot.groupCallsign, slot.role, state, holder));
+				RosterField(slot.Key()), RosterField(slot.faction),
+				RosterField(slot.groupCallsign), RosterField(slot.role), state, holder));
 		}
 		return roster;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Strip the field and record separators out of an authored string before it enters the
+	//! tab-delimited roster wire. Returns the value unchanged in the overwhelming case; a rewrite
+	//! is logged once per distinct value so an author learns their mission has an unrenderable
+	//! field rather than silently getting a mangled roster.
+	protected static ref map<string, bool> s_mRosterRewrites;
+	protected static string RosterField(string value)
+	{
+		if (!value.Contains("\t") && !value.Contains("\n") && !value.Contains("\r"))
+			return value;
+
+		string cleaned = value;
+		cleaned.Replace("\t", " ");
+		cleaned.Replace("\r", " ");
+		cleaned.Replace("\n", " ");
+
+		if (!s_mRosterRewrites)
+			s_mRosterRewrites = new map<string, bool>();
+
+		if (!s_mRosterRewrites.Contains(value))
+		{
+			s_mRosterRewrites.Set(value, true);
+			PrintFormat("[TBD][Spawn] roster field contained a separator and was rewritten: '%1' -> '%2'. Fix the mission; the schema permits this but the wire cannot carry it.",
+				value, cleaned, level: LogLevel.WARNING);
+		}
+
+		return cleaned;
 	}
 
 	//------------------------------------------------------------------------------------------------
