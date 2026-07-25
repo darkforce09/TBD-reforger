@@ -4,6 +4,7 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
   TBD_FrameworkManager "{CF7EB40B6E5F2618}" {
   }
   TBD_SpawnManager "{AC1D5E7F9B3D2610}" {
+   m_bAutoDeploy 0
   }
   TBD_SafestartManager "{F3A6D2B84C071E95}" {
   }

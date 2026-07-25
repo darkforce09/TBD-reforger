@@ -100,8 +100,14 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//!   2. The reason it used to be unsafe next to ONE LIFE — a LOBBY re-entry re-running
 	//!      the wave and mass-resurrecting the dead — is now structurally impossible: the
 	//!      wave goes through DeployPlayerEx, and DeployPlayerEx refuses a spent life.
-	//! The safety comes from the guard, not from this flag. Turn it off when the picker lands.
-	[Attribute("1", desc: "Auto-deploy all connected players on LOBBY (PIE/dev wave; slot picker turns this off). Safe next to one life: the wave goes through DeployPlayerEx, which refuses a spent life.")]
+	//! The safety comes from the guard, not from this flag.
+	//!
+	//! T-181.48 — the code default is still "1" so a bare prefab keeps the dev wave, but
+	//! `Prefabs/Systems/TBD_GameMode.et` now overrides it to **0**: the picker has landed, and the
+	//! two cannot coexist. With the wave on, T-181.29's `ShouldStandDown()` closes the picker ~500 ms
+	//! after it opens — the roster reports the player already has a body — so the operator sees no
+	//! UI at all and nothing in the log says why. That combination was live for exactly one session.
+	[Attribute("1", desc: "Auto-deploy all connected players on LOBBY (PIE/dev wave). MUTUALLY EXCLUSIVE with the slot picker — TBD_GameMode.et overrides this to 0. Safe next to one life either way: the wave goes through DeployPlayerEx, which refuses a spent life.")]
 	protected bool m_bAutoDeploy;
 
 	//! Pause between death and the automatic redeploy. Vanilla's deploy menu used to be
@@ -1892,8 +1898,22 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		m_eStage = stage;
 
-		if (stage == TBD_EGameStage.LOBBY && m_bAutoDeploy)
+		if (stage != TBD_EGameStage.LOBBY)
+			return;
+
+		// T-181.48 — say which route into the world is live, because the failure mode when this is
+		// wrong is INVISIBLE: with the wave ON, the picker raises and is then closed ~500 ms later
+		// by ShouldStandDown() as soon as the roster reports the player already has a body, so the
+		// operator sees no UI and no error. One line here turns that into something a log answers.
+		if (m_bAutoDeploy)
+		{
+			PrintFormat("[TBD][Spawn] LOBBY: auto-deploy wave ON — seating everyone in 250 ms. The slot picker will open and then close itself; set m_bAutoDeploy 0 on TBD_GameMode.et to use the picker.",
+				level: LogLevel.WARNING);
 			ScheduleDeployAllConnectedPlayers();
+			return;
+		}
+
+		PrintFormat("[TBD][Spawn] LOBBY: auto-deploy wave OFF — the slot picker is the way in (admin override: '#tbd deploy <playerId>').");
 	}
 
 	//------------------------------------------------------------------------------------------------
