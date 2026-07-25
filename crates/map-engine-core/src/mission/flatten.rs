@@ -299,6 +299,28 @@ pub struct MissionMeta {
 const COMPILE_DATE_ANCHOR: &str = "1989-06-14";
 const SPAWN_ZONE_RADIUS_M: f64 = 150.0;
 
+/// `mission.schema.json#/$defs/meta/name` — `maxLength: 120`.
+const META_NAME_MAX_CHARS: usize = 120;
+
+/// Stand-in for a slot the author never gave a role. The schema demands
+/// `minLength: 1` on both `slots[].role` and `orbat.*.groups[].roles[].slot`;
+/// the editor does not require the field, so the compile must supply something
+/// rather than emit a document we would then reject (T-181.31).
+const ROLE_FALLBACK: &str = "unassigned";
+
+/// Stand-in for a squad with neither `callsign` nor `name`. Only reached when the
+/// squad also has no id, because the id is preferred — two unnamed squads must not
+/// collapse onto one callsign, or their derived slot ids collide and the mod's
+/// duplicate-id check (a hard error there) rejects the whole document.
+const CALLSIGN_FALLBACK: &str = "squad";
+
+/// The schema's `minLength: 1` string fields cannot take the empty string, and the
+/// editor does not guarantee these are set. Substitute rather than emit a document
+/// that fails our own contract.
+fn or_fallback<'a>(value: &'a str, fallback: &'a str) -> &'a str {
+    if value.is_empty() { fallback } else { value }
+}
+
 /// Lowercase into the schema's `^[a-z][a-z0-9_]*$` pattern.
 fn slug_key(raw: &str, fallback: &str) -> String {
     let mut out = String::with_capacity(raw.len());
@@ -447,8 +469,10 @@ pub fn flatten_to_mod_document(
             }
             rows.sort_by_key(|s| s.index); // stable
 
+            // callsign → name → squad id → literal. The id rung keeps two unnamed
+            // squads distinct so their derived slot ids stay unique.
             let callsign = if sq.callsign.is_empty() {
-                sq.name.clone()
+                or_fallback(or_fallback(&sq.name, &sq.id), CALLSIGN_FALLBACK).to_string()
             } else {
                 sq.callsign.clone()
             };
@@ -458,19 +482,20 @@ pub fn flatten_to_mod_document(
             let mut roles: Vec<ModOrbatRole> = Vec::new();
 
             for sl in &rows {
-                let occurrence = *role_counters.get(sl.role.as_str()).unwrap_or(&0);
-                role_counters.insert(sl.role.as_str(), occurrence + 1);
+                let role = or_fallback(&sl.role, ROLE_FALLBACK);
+                let occurrence = *role_counters.get(role).unwrap_or(&0);
+                role_counters.insert(role, occurrence + 1);
 
                 let kit = aliases
                     .kit_for_resource(&sl.asset_id)
                     .map_or_else(|| default_kit.to_string(), String::from);
 
-                if let Some(&idx) = role_index.get(sl.role.as_str()) {
+                if let Some(&idx) = role_index.get(role) {
                     roles[idx].count += 1;
                 } else {
-                    role_index.insert(sl.role.as_str(), roles.len());
+                    role_index.insert(role, roles.len());
                     roles.push(ModOrbatRole {
-                        slot: sl.role.clone(),
+                        slot: role.to_string(),
                         kit: kit.clone(),
                         count: 1,
                     });
@@ -487,11 +512,11 @@ pub fn flatten_to_mod_document(
                 };
 
                 doc_slots.push(ModSlot {
-                    id: format!("{faction_key}:{callsign}:{}:{occurrence}", sl.role),
+                    id: format!("{faction_key}:{callsign}:{role}:{occurrence}"),
                     uid: sl.id.clone(),
                     faction: faction_key.clone(),
                     group_callsign: callsign.clone(),
-                    role: sl.role.clone(),
+                    role: role.to_string(),
                     kit,
                     x,
                     z,
@@ -587,10 +612,11 @@ pub fn flatten_to_mod_document(
 
     let meta = ModMeta {
         id: mission_doc_id(&mission.id),
+        // maxLength is counted in characters, not bytes — truncate on a char boundary.
         name: if mission.title.is_empty() {
             "Untitled Mission".to_string()
         } else {
-            mission.title.clone()
+            mission.title.chars().take(META_NAME_MAX_CHARS).collect()
         },
         author: mission.author.clone(),
         terrain: slug_key(&terrain, "everon"),
