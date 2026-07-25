@@ -48,6 +48,14 @@ main ──┬── wave N ──┬── worktree slice/T-181.7   → agent A
 9. **Agents must leave their tree compiling green** and must put throwaway API probes in `/tmp`,
    never in the mod tree. (A dead agent once left `ZZ_Probe.c` in `Scripts/Game/TBD/UI/` and broke
    the build for everyone.)
+10. **EVERY agent runs on Opus 5 — slice agents, verifiers, throwaway research agents alike.**
+    Operator instruction, verbatim: *"I don't want you to use Sonnet for any of the agents… I don't
+    care what it is. Always use Opus five for the agents."* Pass `model: "opus"` explicitly on every
+    dispatch. **Do not downgrade to work around API 529s, rate limits, latency or cost** — retry
+    Opus, or do the work inline in the command center and say so. This rule exists because the
+    command center once moved a blocked adversarial verifier to Sonnet to keep the loop moving:
+    reasonable-sounding, but the tradeoff (weaker review of unattended work that then gets merged)
+    was the operator's to make, not the agent's. If a tier change ever seems warranted, **ask**.
 
 ## Deviation from CLAUDE.md, recorded
 
