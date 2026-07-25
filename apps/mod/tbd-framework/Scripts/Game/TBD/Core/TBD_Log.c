@@ -20,6 +20,7 @@ class TBD_Log
 	static const string CH_MISSION  = "Mission";  //!< Mission document fetch / parse / cache.
 	static const string CH_VALIDATE = "Validate"; //!< TBD_MissionValidator findings and verdict.
 	static const string CH_STAGE    = "Stage";    //!< Gamemode stage machine transitions.
+	static const string CH_SAFESTART = "Safestart"; //!< T-181.17 warmup: damage-off, countdown, lift.
 
 	//! Rule used by Banner(). Wide enough that it cannot be mistaken for a normal line.
 	protected static const string RULE = "========================================================";
