@@ -174,6 +174,19 @@ new `.et`/`.conf`/`.layout` files: the spectator streaming host is prefab-free
 distinct values (unprovable from the compile lane), and whether three `modded class
 SCR_PlayerController` blocks coexist at runtime.
 
+**SECOND JOB IN THE SAME SITTING (T-181.40) — place a `RadioManagerEntity` in the world.**
+Radio tuning turned out to be fully reachable from script; the blocker is a missing world asset.
+The engine says so itself on every boot: `DEFAULT (W): World doesn't contain RadioManagerEntity to
+support any BaseRadioComponent.` `worlds/TBD_Dev_POC.ent` is a 62-byte bare SubScene of vanilla
+`Eden.ent` and places nothing. The whole tuning chain
+(`SCR_GadgetManagerComponent.GetGadgetManager` → `GetGadgetsByType(EGadgetType.RADIO)` →
+`SCR_RadioComponent.GetRadioComponent()` → `BaseRadioComponent.GetTransceiver(i)` →
+`BaseTransceiver.SetFrequency(kHz)`) is `proto external` and compile-proved with a failing negative
+control. So this is a world edit, not a code change — and once it lands, automatic tuning works with
+**no code change**, because `TBD_RadioTuner` already reads the frequency back and only counts a net
+as tuned when it observes it. Until then it honestly says *"Radio tuning is unavailable on this
+world — dial these in by hand."*
+
 **Green light:** the `Menu preset … not found!` lines disappear from
 `<profile>/logs/logs_*/error.log`. That check is headless and takes ~20 s — no GUI needed to confirm.
 
@@ -274,6 +287,21 @@ picker can open would ship a mod nobody can deploy into.
   does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
 - **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
   which is how the spectator camera avoids the rdb blocker entirely.
+- **CORRECTION #2 to the probe advice: assign-to-expected-type is NOT a complete control either.**
+  It discriminates for SCALARS (`string x = tsv.GetFrequency()` correctly errors) but **a class
+  reference assigns to `int` silently** — `int wrong = world.GetRadioManager();` compiles clean.
+  So for anything returning a CLASS, the only reliable control is an **undefined-symbol** probe:
+  fabricate `Foo.BarThatDoesNotExist()` alongside the real call and require the fake to error.
+  Two separate slices have now had to correct this program's probe guidance; treat every probe
+  technique here as provisional until its control has failed in the same run.
+- **`set` and `out` are RESERVED in Enfusion.** `TBD_RadioSet set` → *"Variable name 'set' is
+  already used as type name"*; `array<X> out` → *"Expected name, not a keyword 'out'"*.
+- **`Rpc` takes at most 8 parameters** — nine gives *"Too many parameters for 'Rpc' method"*.
+- **`array<bool>` is not a safe RPC parameter type.** It compiles, but `array<int>` / `array<string>`
+  are the ONLY array element types appearing in replicated methods across both oracles (12 sites);
+  `array<bool>` appears in neither. Use `array<int>` 0/1.
+- **BI's own docs transpose `GetMinFrequency` / `GetMaxFrequency`** — each describes the other.
+  Order them by value, not by name.
 - **`string.Length()` counts BYTES and `Substring` is BYTE-INDEXED.** Measured: `"…".Length()` is
   3, `"·".Length()` is 2, and `"café latte".Substring(0,4)` returns a **broken UTF-8 sequence**.
   Any truncation of authored prose must back off to a space (0x20 cannot appear inside a multi-byte
@@ -336,15 +364,20 @@ picker can open would ship a mod nobody can deploy into.
   Any new struct added to `TBD_MissionLoader.c` needs the same treatment. Related dead guards that
   can never fire for this reason (harmless today, filed under T-181.30): `if (!mission.meta)` in the
   validator and `if (!doc.winConditions)` in `TBD_BriefingData`.
-  - **Does this also affect `ref array<>` / `ref map<>`? Behaviourally it does not matter, so do not
-    spend a runtime experiment on it.** Audited all eight container null-tests in the tree
-    (`orbat`, `factions`, `slots`, `zones`, `endOn`, `briefings`, `markers`): every one is either
-    paired with `IsEmpty()` or falls straight through to a `foreach`. An allocated-empty container
-    and a null one therefore produce **identical behaviour** at every site — return 0 vs iterate
-    nothing and return 0. The danger is specific to `ref <class>` with SCALAR fields, where an
-    all-zeros object is indistinguishable from authored data (`circle` with `r=0` reading as a real
-    circle at the map origin). T-181.19's assumption that `markers` is null when absent is safe
-    either way for this reason.
+  - **`ref array<>` is NOT over-allocated — only `ref <class>` is. MEASURED, and this corrects an
+    earlier entry here that told agents not to bother checking.** T-181.13.1 instrumented a boot
+    dumping `loadoutNull/gearNull/gearRefs/cargoNull/cargoCount` per slot and saw **both polarities
+    in one run**: `loadout.cargo` came back non-null on exactly the slots authoring a `cargo` key
+    and null on every slot that did not, while `ref <class>` fields were allocated regardless.
+    **It matters, and this doc previously said it did not.** A non-null `ref array<>` is genuine
+    PROOF the key was authored, which is the only way to tell an authored-but-empty block from an
+    absent one — `gear` presence is unobservable (absent `gear` and `gear: {}` both parse to ten
+    empty strings with no sentinel), but `cargo` presence is knowable. That is what finally made
+    `CheckSlotLoadout`'s "neither gear nor cargo" branch reachable.
+    The old reasoning was that every container null-test in the tree is paired with `IsEmpty()` or
+    falls through to a `foreach`, so the two cases behave identically. That is true of the sites
+    that existed then, and it is the wrong thing to conclude from: it says the distinction was
+    unused, not that it was unavailable.
 - **In `mission.schema.json`, `required` does NOT mean non-empty.** Most string fields declare no
   `minLength`, so a key can be present and blank and still validate. `$defs/marker` requires all
   four of `x/z/icon/label`, yet `golden-missions/empty-warning-fields.json` ships a committed
@@ -358,7 +391,9 @@ picker can open would ship a mod nobody can deploy into.
   compile fine"); both wave-5 agents caught it. The measured facts, and only these:
   - **N blocks COMPILE fine and methods declared in one are callable from the others.** Verified at
     N=2, 3, and now **5** — `TBD_MissionBrowser.c`, `TBD_BriefingController.c`,
-    `TBD_LobbyController.c`, `TBD_SpectatorHost.c`, `TBD_MarkerController.c`.
+    `TBD_LobbyController.c`, `TBD_SpectatorHost.c`, `TBD_MarkerController.c`,
+    `TBD_RadioController.c`. Re-checked at N=6: still no duplicate method name, still exactly one
+    vanilla override across the whole set, still every RPC handler name unique.
   - **Runtime coexistence has NEVER been observed.** No gate on the fast lane can see it:
     `world-boot.sh` boots with zero players, and every one of these blocks only does anything when
     a client is connected. "Compiles" is not "works".

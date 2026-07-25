@@ -256,6 +256,10 @@ class TBD_MissionDocumentStruct
 	//! is not in the schema's top-level `required` list and every mission authored before it
 	//! existed has none, so this stays null and that is legal.
 	ref map<string, ref TBD_MissionBriefingStruct> briefings;
+	//! T-181.40 — the radio plan. OPTIONAL: missions authored before it exists carry none, and
+	//! `empty-warning-fields.json` deliberately authors none, so null here is legal not an error.
+	//! @contract mission.schema.json#/$defs/radioPlan
+	ref TBD_MissionRadioPlanStruct radioPlan;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.

@@ -174,9 +174,14 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
         continue
       fi
 
+      # "No commits beyond main" is ambiguous: it means UNSTARTED (fresh tree, nothing written)
+      # AND it means MERGED (the commits are now in main). Those need opposite outcomes, and
+      # conflating them is what destroyed five worktrees. The distinguisher is main's own history:
+      # `merge` leaves a "Merge branch 'slice/<id>'" commit, so if that exists the work landed.
       commits="$(git rev-list --count "main..$b" 2>/dev/null || echo 0)"
-      if [ "${commits:-0}" = "0" ]; then
-        echo "KEPT   $s — branch has no commits beyond main (unstarted, not merged)." >&2
+      landed="$(git log main --merges --oneline --grep="slice/$s\$" 2>/dev/null | head -1)"
+      if [ "${commits:-0}" = "0" ] && [ -z "$landed" ]; then
+        echo "KEPT   $s — no commits beyond main and no merge in main's history (unstarted)." >&2
         continue
       fi
 

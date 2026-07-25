@@ -1641,6 +1641,17 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			action = "DENIED-life-spent";
 			deploy = false;
 		}
+		else if (!TBD_MissionFlow.AllowsJoinAtStage(m_eStage))
+		{
+			// T-181.38 — the mission's own flow.jip policy. `always` (and an absent key) returns
+			// true at every stage, so this cannot change behaviour for a mission that did not ask.
+			// Placed ABOVE the auto-deploy branch deliberately, so the log names the POLICY that
+			// refused rather than the picker that would have handled it. Kept out of
+			// IsStageDeployable(), which answers a different question (is the world ready) —
+			// merging them would make the refusal reason unloggable.
+			action = "DENIED-jip-" + TBD_MissionFlow.JipPolicyName();
+			deploy = false;
+		}
 		else if (!m_bAutoDeploy)
 		{
 			action = "PICKER-auto-deploy-off";

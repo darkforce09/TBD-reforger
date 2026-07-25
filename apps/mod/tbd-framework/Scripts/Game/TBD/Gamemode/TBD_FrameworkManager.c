@@ -418,6 +418,8 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		line += RollCallEntry(owner, TBD_LobbyComponent, "Lobby", missing);
 		line += RollCallEntry(owner, TBD_PlayAreaComponent, "PlayArea", missing);
 		line += RollCallEntry(owner, TBD_MarkerComponent, "Markers", missing);
+		line += RollCallEntry(owner, TBD_RadioComponent, "Radio", missing);
+		line += RollCallEntry(owner, TBD_ObjectivesComponent, "Objectives", missing);
 
 		// PrintFormat, not Print: `Print(someLocalVariable)` emits the DECLARATION
 		// (`string line = '…'`) rather than the value, which made the log line awkward to match
@@ -829,7 +831,18 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority server
 	protected void ArmFactionEliminated()
 	{
-		if (!TBD_MissionLoader.HasEndTrigger("faction_eliminated"))
+		// T-181.39 — arm on ANY supported trigger. The old guard checked only
+		// faction_eliminated, so a mission declaring just `all_objectives_captured` never armed
+		// the win tick at all and ran silently to the time limit.
+		bool anyTrigger = TBD_MissionLoader.HasEndTrigger("faction_eliminated");
+		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED))
+			anyTrigger = true;
+		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_DESTROYED))
+			anyTrigger = true;
+		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_HOLD_EXPIRED))
+			anyTrigger = true;
+
+		if (!anyTrigger)
 		{
 			Print("[TBD][Win] no faction_eliminated trigger in mission — round runs until admin ends it");
 			return;
@@ -1041,6 +1054,20 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (m_Stage != TBD_EGameStage.LIVE)
 		{
 			GetGame().GetCallqueue().Remove(TickWinConditions);
+			return;
+		}
+
+		// T-181.39 — objective-driven end triggers, evaluated BEFORE the attrition check so a
+		// mission that wins on objectives does not have to also eliminate a faction. The registry
+		// gates each branch on HasEndTrigger itself, and returns empty when it never built (its
+		// component absent from the prefab), so this degrades to a no-op rather than a crash.
+		string objectiveWinner;
+		string objectiveTrigger = TBD_ObjectiveRegistry.EvaluateEndTriggers(objectiveWinner);
+		if (!objectiveTrigger.IsEmpty())
+		{
+			GetGame().GetCallqueue().Remove(TickWinConditions);
+			PrintFormat("[TBD][Win] %1 — winner=%2", objectiveTrigger, objectiveWinner);
+			SetStage(TBD_EGameStage.END);
 			return;
 		}
 
