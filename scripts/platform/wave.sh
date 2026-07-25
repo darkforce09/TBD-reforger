@@ -40,8 +40,15 @@ REGISTRY=".ai/tickets/registry.json"
 WORKTREES=".ai/artifacts/worktrees"
 COLLIDE="scripts/platform/slice-collisions.py"
 
-# See note 1. Every worktree build lands in the root target dir.
-export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
+# See note 1. Every worktree build must land in the MAIN repo's target dir.
+#
+# `$ROOT` is this script's own repo — which inside a worktree IS the worktree, so defaulting to
+# "$ROOT/target" pointed each slice at its own target and defeated the entire mitigation. Resolve
+# the main checkout instead: --git-common-dir is shared by every worktree and points at the main
+# repo's .git, so its parent is the main working tree.
+_git_common="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || echo "$ROOT/.git")"
+MAIN_ROOT="$(dirname "$_git_common")"
+export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$MAIN_ROOT/target}"
 
 # The container's glibc (2.36) is older than the host's (2.43), so binaries built on the host —
 # including target/debug/xtask — refuse to run in here. Route those through the host when we can.
