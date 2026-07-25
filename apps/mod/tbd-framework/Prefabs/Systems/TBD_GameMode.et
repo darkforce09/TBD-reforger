@@ -22,7 +22,12 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
   }
   TBD_ObjectivesComponent "{B9E2C4A70D15F836}" {
   }
+  TBD_PreSlotComponent "{D1F4A9C3705E6B82}" {
+  }
   SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
+  }
+  SCR_RespawnSystemComponent "{56B2B4793051E7C9}" {
+   m_sLoadingLayout ""
   }
  }
  PlayerControllerPrefab "{1A1ABD939E1E8423}Prefabs/Systems/TBD_PlayerController.et"

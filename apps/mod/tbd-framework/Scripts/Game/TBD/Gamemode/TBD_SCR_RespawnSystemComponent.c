@@ -65,6 +65,60 @@ modded class SCR_RespawnSystemComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.50 — TEAR DOWN THE VANILLA LOADING SPLASH. Belt and braces behind the prefab.
+	//!
+	//! ── THE DEFECT ──────────────────────────────────────────────────────────────────────────────
+	//! Vanilla `SCR_RespawnSystemComponent.OnInit` calls `CreateLoadingPlaceholder()` whenever this
+	//! is not a console app (`vanilla_reference/Source/SCR_RespawnSystemComponent.c:270-271`). That
+	//! builds `m_sLoadingLayout` straight onto the WORKSPACE
+	//! (`GetGame().GetWorkspace().CreateWidgets(...)`, `:300`) — a raw workspace widget, which sits
+	//! ABOVE anything the menu manager puts up, i.e. above our slot picker — and mutes SFX with
+	//! `AudioSystem.Pause(1 << AudioSystem.SFX)` (`:304`).
+	//!
+	//! `DestroyLoadingPlaceholder()` (`:343`) has exactly three callers in the whole of vanilla, and
+	//! all three sit on the vanilla spawn pipeline: `SCR_SpawnRequestComponent.c:521`,
+	//! `SCR_SpawnLogic.c:529` (`#ifdef WORKBENCH`) and `SCR_ReconnectSynchronizationComponent.c:33`.
+	//! This class bypasses that pipeline entirely and actively refuses it in `CanRequestSpawn_S`, so
+	//! on a framework world the splash is built and NOTHING ever tears it down. It also takes the
+	//! SFX mute with it — the unmute lives inside the same function.
+	//!
+	//! ── THE FIX, IN TWO PLACES, AND WHY BOTH ────────────────────────────────────────────────────
+	//! The primary fix is the PREFAB: `Prefabs/Systems/TBD_GameMode.et` now blanks `m_sLoadingLayout`
+	//! on the inherited vanilla component, which makes `UsesLoadingPlaceholder()` (`:313`, literally
+	//! an is-empty test) false, so the widget is never created and the mute never happens. That is
+	//! CRF's approach — `crf_framework/Prefabs/Systems/!Lobby/CRF_Lobby.et:80-83` does exactly this
+	//! and nothing else (read for idiom; not copied — CRF has no modded respawn system at all and
+	//! never calls `DestroyLoadingPlaceholder`).
+	//!
+	//! This override is the belt and braces, and it is not redundant, because a prefab attribute is
+	//! the single most fragile thing in this repo: it lives in a file the engine reads by GUID, it is
+	//! invisible to `compile.sh`, and a mis-typed component GUID fails SILENTLY. Two independent
+	//! mechanisms means the splash is gone even if the prefab edit is lost in a merge, and even on a
+	//! world that reaches this class through some other game-mode prefab.
+	//!
+	//! It runs AFTER `super`, not instead of it: `OnInit` is where the spawn logic, the faction
+	//! manager check and the loadout manager check all happen (`:234-272`), and skipping those to
+	//! avoid one widget would trade a cosmetic defect for a broken respawn system.
+	//! `DestroyLoadingPlaceholder` is idempotent, is a no-op when the prefab already blanked the
+	//! layout (the widget handle is null), and — importantly — is also what RESUMES the SFX bus, so
+	//! it is the correct call rather than just removing the widget ourselves.
+	//!
+	//! The guard is resolved off `owner` rather than through `TBD_FrameworkManager.IsFrameworkWorld()`
+	//! / `TBD_IsManaged()`: this is component init time, `GetGame().GetGameMode()` is not reliably
+	//! wired yet, and `owner` IS the game mode entity (vanilla casts it as one on the line above).
+	//! A plain vanilla world therefore keeps its splash exactly as before.
+	override void OnInit(IEntity owner)
+	{
+		super.OnInit(owner);
+
+		if (!owner || !owner.FindComponent(TBD_FrameworkManager))
+			return;
+
+		DestroyLoadingPlaceholder();
+		Print("[TBD][Spawn] vanilla loading placeholder torn down (framework world) — it is a raw workspace widget that outranks every menu, and nothing on our spawn path would ever have destroyed it");
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! @authority server — the registration that hands a player to the spawn logic (and
 	//! opens the vanilla deploy flow). Swallowed on framework worlds: TBD_SpawnManager
 	//! deploys from the stage machine instead.
