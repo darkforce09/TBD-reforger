@@ -15,6 +15,38 @@ enum TBD_EDeployResult
 	DENIED,
 }
 
+//! T-181.22 — ONE authorized spawn: one player, one target entity, spent on first use.
+//!
+//! The T-181.21 ticket was per-player, non-consuming and entity-blind: a single AuthorizeSpawn
+//! opened a 5 s window in which ANY number of requests naming ANY entity were honoured. Since
+//! the only live request type is POSSESS and its RPC takes a client-supplied RplId, that window
+//! was wide enough to take over somebody else's slot body. Binding the ticket to the exact body
+//! DeployPlayerEx chose, and spending it when the spawn lands, closes both.
+class TBD_SpawnTicket
+{
+	//! Which AuthorizeSpawn issued it — the timeout arm may only close its own.
+	int epoch;
+	//! The ONLY entity this ticket authorizes. Never null: AuthorizeSpawn refuses to issue
+	//! a ticket without a body, and a null target can therefore never match.
+	IEntity target;
+}
+
+//! T-181.22 — a seat whose holder spent their life and then left, keyed on the SLOT.
+//!
+//! It used to be keyed on the departed player's bind key, which quietly under-counted:
+//! two players resolving to the same key (see PlayerBindKey — a name-derived identity on a
+//! listen server does exactly that) overwrote each other's row, so CountClaimedForFaction lost
+//! a seat and TBD_FrameworkManager.TickWinConditions could call a side eliminated early.
+//! Slot keys are unique by construction and one player holds at most one slot, so keying on the
+//! slot is injective — and it makes IsSlotHeldByAnother/BuildSlotRoster O(1) lookups instead of
+//! scans.
+class TBD_DepartedSeat
+{
+	//! Durable-ish key of the player who left. Used to hand the seat back to the same person.
+	string bindKey;
+	ref TBD_MissionSlotStruct slot;
+}
+
 [ComponentEditorProps(category: "TBD/Framework", description: "Server-only: slot-body materialization + claim/bind deploy from mission JSON.")]
 class TBD_SpawnManagerClass : SCR_BaseGameModeComponentClass {}
 
@@ -114,17 +146,29 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//!     bug: dedicated servers reuse playerIds, so the next joiner to be handed that number
 	//!     would silently inherit a dead man's seat (and his materialized body). Keyed on
 	//!     identity there is nothing to inherit.
-	protected ref map<string, ref TBD_MissionSlotStruct> m_mDepartedSlots;
+	//!
+	//! T-181.22 — now SLOT-keyed (slotKey → TBD_DepartedSeat, which carries the bind key as a
+	//! field). Same guarantees, but two departed players who resolve to the same bind key no
+	//! longer overwrite each other's seat. See TBD_DepartedSeat.
+	protected ref map<string, ref TBD_DepartedSeat> m_mDepartedSlots;
 
-	//! T-181.21 — players for whom THIS manager has an authorized spawn request in flight,
-	//! playerId → ticket epoch. The vanilla spawn authority
-	//! (TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S) refuses every request that is not in
-	//! here, which is what finally stands the vanilla DEATH door down. Opened only by
-	//! DeployPlayerEx — i.e. only after the one-life guard has passed.
+	//! T-181.21 — players for whom THIS manager has an authorized spawn request in flight.
+	//! The spawn authority refuses every request that is not in here, which is what finally
+	//! stands the vanilla DEATH door down. Opened only by DeployPlayerInternal — i.e. only after
+	//! the one-life guard has passed.
+	//!
+	//! T-181.22 — the value is a TBD_SpawnTicket, not a bare epoch: it names the ONE entity the
+	//! ticket authorizes, and IsSpawnAuthorizedFor will not match anything else. Two enforcement
+	//! points read it, and between them they cover every handler:
+	//!   * TBD_SCR_PossessSpawnHandlerComponent — the POSSESS route (the only live request type
+	//!     on a framework world, and the one the T-181.21 backstop could never reach because
+	//!     vanilla's CanRequestSpawn_S short-circuits on m_bIgnoreConditions);
+	//!   * TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S — every OTHER handler, which does not
+	//!     short-circuit and so still funnels through the respawn system.
 	//!
 	//! The epoch exists so the timeout arm can only close the ticket it was issued for: a
 	//! second deploy inside the window would otherwise be cut short by the first deploy's timer.
-	protected ref map<int, int> m_mSpawnAuthorized;
+	protected ref map<int, ref TBD_SpawnTicket> m_mSpawnAuthorized;
 	protected int m_iSpawnAuthEpoch;
 
 	//! T-181.21 — deny-log latch so a client that re-asks in a loop cannot flood the log.
@@ -183,8 +227,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mDeadPlayers = new map<string, bool>();
 		m_mIdentityReclaim = new map<string, string>();
 		m_mBindKeyCache = new map<int, string>();
-		m_mDepartedSlots = new map<string, ref TBD_MissionSlotStruct>();
-		m_mSpawnAuthorized = new map<int, int>();
+		m_mDepartedSlots = new map<string, ref TBD_DepartedSeat>();
+		m_mSpawnAuthorized = new map<int, ref TBD_SpawnTicket>();
 		m_mDenyLogged = new map<int, bool>();
 		m_mAdminRespawnPending = new map<int, bool>();
 	}
@@ -225,13 +269,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 				return true;
 		}
 
-		string bindKey = PlayerBindKey(playerId);
-		foreach (string otherKey, TBD_MissionSlotStruct departed : m_mDepartedSlots)
-		{
-			if (!departed || otherKey == bindKey || departed.Key() != slotKey)
-				continue;
+		// T-181.22 — slot-keyed, so this is one lookup rather than a scan, and a second departed
+		// player with a colliding bind key can no longer erase the first one's hold.
+		TBD_DepartedSeat departed;
+		if (m_mDepartedSlots.Find(slotKey, departed) && departed && departed.bindKey != PlayerBindKey(playerId))
 			return true;
-		}
 
 		return false;
 	}
@@ -240,11 +282,24 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! Assign mission slot to player (roster or round-robin). Idempotent per player.
 	//!
 	//! T-181.21 — this path had NO exclusivity check at all. ClaimSlot got first-come
-	//! exclusivity in T-181.9, but AssignSlotForPlayer — which runs on every join and is what
-	//! actually seats people today — only asked "does this player already have one", so a roster
-	//! entry pointing two people at one slot, or a round-robin wrapping past the slot count, sat
-	//! two players on the same seat and the same materialized body. Every candidate is now
-	//! checked, and the round-robin fallback SCANS for a free slot instead of trusting modulo.
+	//! exclusivity in T-181.9, but AssignSlotForPlayer only asked "does this player already have
+	//! one", so a roster entry pointing two people at one slot, or a round-robin wrapping past the
+	//! slot count, sat two players on the same seat and the same materialized body. Every
+	//! candidate is now checked, and the round-robin fallback SCANS for a free slot instead of
+	//! trusting modulo.
+	//!
+	//! T-181.22 — the T-181.21 comment here claimed this "runs on every join". IT DOES NOT, and
+	//! saying so hid a real gap. Its only join-time caller was
+	//! TBD_SCR_MenuSpawnLogic.OnPlayerAuditSuccess_S, which is dead on a framework world:
+	//! TBD_SCR_RespawnSystemComponent.OnPlayerAuditSuccess_S returns before
+	//! `m_SpawnLogic.OnPlayerAuditSuccess_S(playerId)` ever runs (vanilla
+	//! SCR_RespawnSystemComponent.c:196-199). So in practice this is reached only from
+	//! DeployPlayerInternal — and a spent life is DENIED there long before, which made the
+	//! departed-seat reclaim below unreachable on every ordinary rejoin.
+	//! The seat hand-back now happens at the join hook that genuinely fires,
+	//! TBD_SpawnManager.OnPlayerAuditSuccess -> ReclaimDepartedSeat; this call is the second,
+	//! idempotent chance (it still matters on the admin-respawn path, which passes the one-life
+	//! guard and lands here).
 	void AssignSlotForPlayer(int playerId)
 	{
 		if (m_mPlayerSlot.Contains(playerId))
@@ -259,20 +314,15 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		string bindKey = PlayerBindKey(playerId);
 
-		// T-181.21 — a spent life coming back takes its own seat back, ahead of everything
-		// else. The row moves out of m_mDepartedSlots and into m_mPlayerSlot under whatever
-		// numeric id the server handed them this time; they are still dead (m_mDeadPlayers is
-		// identity-keyed), so DeployPlayerEx will still refuse them — they get their seat and
-		// their place in the win-condition count back, not their life.
-		TBD_MissionSlotStruct slot;
-		if (m_mDepartedSlots.Find(bindKey, slot))
-		{
-			m_mDepartedSlots.Remove(bindKey);
-			Print(string.Format("[TBD][Spawn] player=%1 rejoined on a spent life — slot %2 handed back (still dead)", playerId, slot.Key()));
-		}
+		// A spent life coming back takes its own seat back, ahead of everything else. They are
+		// still dead (m_mDeadPlayers is identity-keyed), so a deploy still refuses them — they get
+		// their seat and their place in the win-condition count back, not their life.
+		if (ReclaimDepartedSeat(playerId, bindKey))
+			return;
 
 		// A6 — reconnect reclaim beats roster/round-robin: same identity → same slot.
-		if (!slot && IsDurableKey(bindKey))
+		TBD_MissionSlotStruct slot;
+		if (IsDurableKey(bindKey))
 		{
 			string reclaimId;
 			if (m_mIdentityReclaim.Find(bindKey, reclaimId))
@@ -322,6 +372,54 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		m_mPlayerSlot.Insert(playerId, slot);
 		Print(string.Format("[TBD] SpawnManager: assigned slot %1 to player %2 at (%3)", slot.id, playerId, slot.x.ToString() + "," + slot.z.ToString()));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.22 — hand a returning spent life its own seat back.
+	//!
+	//! Called from the join hook that actually fires on a framework world
+	//! (TBD_SpawnManager.OnPlayerAuditSuccess) and again from AssignSlotForPlayer. Moving the row
+	//! out of m_mDepartedSlots and into m_mPlayerSlot under the numeric id the server handed them
+	//! THIS time is what puts them back in `#tbd` listings, in CountAliveForFaction's denominator
+	//! and within reach of AdminRespawn; it does not give the life back (m_mDeadPlayers is keyed on
+	//! the durable key, which is the same key that matched here).
+	//!
+	//! Iteration never mutates the map: the slot key is found first and removed after the loop.
+	//! @authority server
+	protected bool ReclaimDepartedSeat(int playerId, string bindKey)
+	{
+		if (bindKey.IsEmpty() || m_mPlayerSlot.Contains(playerId))
+			return false;
+
+		string foundSlotKey;
+		TBD_DepartedSeat found;
+		foreach (string slotKey, TBD_DepartedSeat seat : m_mDepartedSlots)
+		{
+			if (!seat || seat.bindKey != bindKey || !seat.slot)
+				continue;
+
+			foundSlotKey = slotKey;
+			found = seat;
+			break;
+		}
+
+		if (!found)
+			return false;
+
+		// The same exclusivity rule every other seating path obeys. It can only ever fire when two
+		// people resolve to one bind key (a name-derived identity — see PlayerBindKey), and in that
+		// case handing the seat over would put two players on one body. The row stays put, so the
+		// seat is still counted and still off the market.
+		if (IsSlotHeldByAnother(foundSlotKey, playerId))
+		{
+			Print(string.Format("[TBD][Spawn] player=%1 hand-back of departed slot %2 refused — held by someone else (colliding bind key?)", playerId, foundSlotKey), LogLevel.WARNING);
+			return false;
+		}
+
+		m_mDepartedSlots.Remove(foundSlotKey);
+		m_mPlayerSlot.Insert(playerId, found.slot);
+		Print(string.Format("[TBD][Spawn] player=%1 rejoined on a spent life — slot %2 handed back (still dead)", playerId, foundSlotKey));
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -470,16 +568,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 				else
 					state = "HELD";
 			}
-			else
+			else if (m_mDepartedSlots.Contains(slot.Key()))
 			{
-				foreach (string bindKey, TBD_MissionSlotStruct departed : m_mDepartedSlots)
-				{
-					if (departed && departed.Key() == slot.Key())
-					{
-						state = "DEAD";
-						break;
-					}
-				}
+				// T-181.22 — slot-keyed, so this is a lookup rather than a scan of every seat.
+				state = "DEAD";
 			}
 
 			roster.Insert(string.Format("%1\t%2\t%3\t%4\t%5\t%6",
@@ -727,11 +819,32 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//!   * A player being torn down (disconnect) no longer answers the identity lookup, but we
 	//!     still have to know who held that seat. Hence the cache.
 	//!
-	//! WHAT THE `player:<id>` FALLBACK MEANS, said plainly: on a host that hands out no
-	//! identities at all (pure local PIE), one life degrades to exactly the old numeric-id
-	//! behaviour and a rejoin CAN buy a fresh life. That is not fixable from script — there is
-	//! no other durable handle — so it is logged loudly once (NoteIdentityDegraded) instead of
-	//! being hidden.
+	//! ── T-181.22: THE THREE MODES THIS FUNCTION HAS, said plainly ──────────────────────────────
+	//! The T-181.21 comment described two, and the one it described as loud never fired on the
+	//! host most likely to hit it. Vanilla SCR_PlayerIdentityUtils.GetPlayerIdentityId is:
+	//!
+	//!     string uid = GetGame().GetBackendApi().GetPlayerIdentityId(playerId);
+	//!     if (uid.IsEmpty() && RplSession.Mode() != RplMode.Dedicated)
+	//!         uid = string.Format("00bbbddd-%1-%2-%3-%4%5", ...);   // Hash() of GetPlayerName()
+	//!
+	//! so it does not fail on a listen/hosted server — it SYNTHESIZES a uuid from the player's
+	//! display NAME and returns a perfectly well-formed, non-null UUID.
+	//!
+	//!   1. BACKEND identity (correctly configured dedicated server). Durable. The event case.
+	//!   2. SYNTHESIZED `00bbbddd-…` identity (listen / hosted / local host). Stable only while
+	//!      the NAME is. Used as the key — a player who reconnects under the same name keeps their
+	//!      spent life, which is the ONE-LIFE-preserving direction and the common case — but it is
+	//!      classified NOT DURABLE (IsDurableKey) so it never reaches m_mIdentityReclaim, where a
+	//!      stale row could hand a seat to a different person who happens to share a name. Two
+	//!      real limits remain, and they are inherent to a name hash rather than something script
+	//!      can fix: changing your name buys a fresh life, and two players with the same name
+	//!      share one. NoteIdentityDegraded says exactly that, once, at WARNING.
+	//!   3. `player:<id>` fallback — a MISCONFIGURED DEDICATED server (backend uid empty and no
+	//!      synthesis, because Mode() == Dedicated), or a player already being torn down with no
+	//!      cached key. Not durable at all; a rejoin buys a fresh life. Also logged loudly.
+	//!
+	//! Only mode 1 is acceptable for an event. Modes 2 and 3 are both announced rather than
+	//! papered over — that is the whole point of this block.
 	protected string PlayerBindKey(int playerId)
 	{
 		UUID identity = SCR_PlayerIdentityUtils.GetPlayerIdentityId(playerId);
@@ -740,6 +853,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			string identityId = string.Format("%1", identity);
 			if (!identityId.IsEmpty())
 			{
+				if (IsSyntheticIdentity(identityId))
+					NoteIdentityDegraded(playerId, "this host issues NAME-DERIVED identities (vanilla's 00bbbddd- peer-tool fallback, listen/hosted server), so changing your display name buys a fresh life and two players sharing a name share one life and one seat");
+
 				m_mBindKeyCache.Set(playerId, identityId);
 				return identityId;
 			}
@@ -751,8 +867,17 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (m_mBindKeyCache.Find(playerId, cached))
 			return cached;
 
-		NoteIdentityDegraded(playerId);
+		NoteIdentityDegraded(playerId, "this host issues NO identity at all (misconfigured dedicated server, or local PIE), so ONE LIFE is only as durable as the numeric playerId and a reconnect buys a fresh life");
 		return string.Format("player:%1", playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.22 — vanilla stamps every SYNTHESIZED identity with this prefix
+	//! (SCR_PlayerIdentityUtils.c:33 — `string.Format("00bbbddd-%1-%2-%3-%4%5", ...)`), which makes
+	//! it the one reliable way to tell a real backend uuid from a name hash.
+	protected bool IsSyntheticIdentity(string key)
+	{
+		return key.StartsWith("00bbbddd-");
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -760,21 +885,28 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! Anything keyed on the fallback is NOT durable across a reconnect and must not be written
 	//! into the reclaim map, where a different person inheriting the numeric id would inherit
 	//! the seat with it.
-	protected static bool IsDurableKey(string key)
+	//!
+	//! T-181.22 — a synthesized `00bbbddd-` identity is not durable either, and used to pass this
+	//! test purely because it did not start with "player:". It was therefore written into
+	//! m_mIdentityReclaim as if it were a backend uuid — where a name change orphans the row and a
+	//! shared name aliases it onto the wrong person. Durability is a property of the SOURCE of the
+	//! key, not of its shape.
+	protected bool IsDurableKey(string key)
 	{
-		return !key.IsEmpty() && !key.StartsWith("player:");
+		return !key.IsEmpty() && !key.StartsWith("player:") && !IsSyntheticIdentity(key);
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-181.21 — say it once, loudly: on this host ONE LIFE is only as durable as the numeric
-	//! playerId, so die → quit → rejoin can buy a fresh life. Operators need to know that before
-	//! they run an event on it, not after.
-	protected void NoteIdentityDegraded(int playerId)
+	//! T-181.21 — say it once, loudly: on this host ONE LIFE is not durably enforceable.
+	//! T-181.22 — `why` names which of the two degraded modes this is, because the operator's
+	//! mitigation differs (mode 2: tell people not to rename mid-event; mode 3: fix the server's
+	//! backend config — see the publicAddress note in vanilla SCR_PlayerIdentityUtils).
+	protected void NoteIdentityDegraded(int playerId, string why)
 	{
 		if (m_bIdentityDegradedLogged)
 			return;
 		m_bIdentityDegradedLogged = true;
-		Print(string.Format("[TBD][Spawn] player=%1 has NO durable identity — ONE LIFE falls back to the numeric playerId on this host, so a reconnect can buy a fresh life. Expected in local PIE; NOT acceptable for an event server.", playerId), LogLevel.WARNING);
+		Print(string.Format("[TBD][Spawn] player=%1 has NO durable identity — %2. Expected on a local/listen host; NOT acceptable for an event server.", playerId, why), LogLevel.WARNING);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -783,6 +915,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! resolve here means the bind-key cache is refreshed for a joining player BEFORE anything
 	//! reads it — which is what stops a recycled numeric id from inheriting the previous
 	//! occupant's cached identity (and therefore their death).
+	//!
+	//! T-181.22 — this is ALSO where a spent life gets its seat back, because this is the join
+	//! hook that actually fires on a framework world. The one the T-181.21 comments credited —
+	//! TBD_SCR_MenuSpawnLogic.OnPlayerAuditSuccess_S — never runs there: it hangs off
+	//! SCR_RespawnSystemComponent.OnPlayerAuditSuccess_S, which TBD_SCR_RespawnSystemComponent
+	//! swallows. This hook is a SCR_BaseGameModeComponent virtual driven by the game mode itself,
+	//! so it is unaffected by that suppression.
 	//! @authority server
 	override void OnPlayerAuditSuccess(int playerId)
 	{
@@ -793,6 +932,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		m_mBindKeyCache.Remove(playerId);
 		string bindKey = PlayerBindKey(playerId);
+		ReclaimDepartedSeat(playerId, bindKey);
 		Print(string.Format("[TBD][Spawn] player=%1 audit ok — bindKey=%2 durable=%3 lifeSpent=%4",
 			playerId, bindKey, IsDurableKey(bindKey), IsBindKeyDead(bindKey)));
 	}
@@ -863,8 +1003,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! T-181.10 — `forceFreshBody` makes the re-equip guarantee unconditional for the ONE
 	//! LIFE return path (AdminRespawn): whatever is standing on the slot is abandoned and a
 	//! newly dressed body is materialized, so an admin respawn can never hand back a body
-	//! carrying the life that was just spent. Defaulted, so every existing caller is
-	//! unchanged and keeps the ordinary "reuse if it is alive and yours" behaviour.
+	//! carrying the life that was just spent.
 	//!
 	//! T-181.21 — THIS FUNCTION IS THE ONE-LIFE ENFORCEMENT BOUNDARY. Read this before
 	//! "simplifying" the guard below away.
@@ -873,16 +1012,37 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! the world — so the invariant the whole design calls non-negotiable was not actually
 	//! enforced anywhere. `DeployPlayerEx` is the only door: every path in the framework ends
 	//! here (the LOBBY wave, the pull path in TBD_SCR_MenuSpawnLogic.DoSpawn_S, RedeployAfterDeath,
-	//! RetryDeploy, AdminRespawn), and the vanilla doors are refused by
-	//! TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S unless THIS function authorized them.
+	//! RetryDeploy, AdminRespawn), and the spawn-request doors are refused unless THIS function
+	//! authorized them, for the exact body it chose:
+	//!   * POSSESS requests — TBD_SCR_PossessSpawnHandlerComponent (T-181.22). This is the one
+	//!     that matters: it is the only request type TBD_PlayerController.et leaves enabled.
+	//!   * every other handler — TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S.
 	//! So: one guard, on the choke point, plus a backstop that only opens for this function.
 	//!
 	//! `adminOverride` is the one documented bypass — the glitch-death escape hatch the design
 	//! doc §2 requires ("an admin can respawn a player who died to a glitch — that path must
-	//! always exist"). It is opt-in, never defaulted on, and only AdminRespawn (and the retry it
-	//! owns) passes it.
+	//! always exist").
+	//!
+	//! T-181.22 — IT IS NO LONGER REACHABLE FROM OUTSIDE THIS CLASS. It used to be a public
+	//! defaulted parameter on this very function, which meant any future caller (the T-068.13
+	//! slot picker being the obvious one) could switch the one-life boundary off with a third
+	//! positional `true` and nothing would stop them — the safest bypass is the one that is not
+	//! in the public signature at all. The public entry point below takes a playerId and nothing
+	//! else; the bypass lives on the `protected` overload, whose only two callers are
+	//! AdminRespawn and the retry AdminRespawn owns.
 	//! @authority server
-	TBD_EDeployResult DeployPlayerEx(int playerId, bool forceFreshBody = false, bool adminOverride = false)
+	TBD_EDeployResult DeployPlayerEx(int playerId)
+	{
+		return DeployPlayerInternal(playerId, false, false);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.22 — the real body of DeployPlayerEx. `protected` on purpose: `adminOverride`
+	//! disables ONE LIFE for this call, so the compiler — not a code-review convention — is what
+	//! keeps it inside the class. Callers: DeployPlayerEx (never overrides), AdminRespawn, and
+	//! RetryDeploy (which carries the flag only for a retry AdminRespawn queued).
+	//! @authority server
+	protected TBD_EDeployResult DeployPlayerInternal(int playerId, bool forceFreshBody, bool adminOverride)
 	{
 		// Authority only — slot assignment + binding run on the server.
 		if (RplSession.Mode() == RplMode.Client)
@@ -1007,10 +1167,13 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// when the request component is missing or refuses.
 		//
 		// T-181.21 — open the spawn ticket FIRST. The possess route is a vanilla spawn request,
-		// and the vanilla authority now refuses every request this manager did not authorize
-		// (TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S). Without this our own deploy would
-		// be the first casualty of the backstop.
-		AuthorizeSpawn(playerId);
+		// and the authority now refuses every request this manager did not authorize
+		// (TBD_SCR_PossessSpawnHandlerComponent for the possess route,
+		// TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S for every other handler). Without this
+		// our own deploy would be the first casualty of the backstop.
+		// T-181.22 — the ticket names `body`, so it authorizes a takeover of THAT entity and
+		// nothing else, and the possess handler spends it as soon as vanilla hands it over.
+		AuthorizeSpawn(playerId, body);
 		bool possessed = PossessSlotBody(pc, body, playerId);
 		if (!possessed)
 			pc.SetInitialMainEntity(body);
@@ -1037,17 +1200,34 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-181.21 — open a spawn ticket for a player DeployPlayerEx has just cleared.
+	//! T-181.21 — open a spawn ticket for a player DeployPlayerInternal has just cleared.
+	//! T-181.22 — bound to ONE body. `target` is the entity the player is being put on; nothing
+	//! else will match, so a client that forges a possess RPC for a different slot body is
+	//! refused even inside its own deploy window.
 	//!
 	//! The window only has to cover the request's trip into ProcessRequest_S: vanilla
-	//! SCR_SpawnHandlerComponent.HandleRequest_S asks CanHandleRequest_S (→ CanRequestSpawn_S)
-	//! before it spawns anything, i.e. before preload and long before finalize. The ticket is
-	//! normally closed sooner than the timeout, by OnPlayerSpawnedHook.
+	//! SCR_SpawnHandlerComponent.HandleRequest_S asks CanHandleRequest_S before it spawns
+	//! anything, i.e. before preload and long before finalize. The ticket is normally closed
+	//! sooner than the timeout — by ConsumeSpawnAuthorization when the possess handler accepts,
+	//! or by OnPlayerSpawnedHook.
 	//! @authority server
-	protected void AuthorizeSpawn(int playerId)
+	protected void AuthorizeSpawn(int playerId, IEntity target)
 	{
+		if (!target)
+		{
+			// Never issue an unbound ticket: an entity-blind ticket is the exact weakness this
+			// slice exists to remove. No body means no deploy, so there is nothing to authorize.
+			Print(string.Format("[TBD][Spawn] refusing to authorize a spawn for player=%1 with no target body", playerId), LogLevel.ERROR);
+			return;
+		}
+
 		m_iSpawnAuthEpoch++;
-		m_mSpawnAuthorized.Set(playerId, m_iSpawnAuthEpoch);
+
+		TBD_SpawnTicket ticket = new TBD_SpawnTicket();
+		ticket.epoch = m_iSpawnAuthEpoch;
+		ticket.target = target;
+		m_mSpawnAuthorized.Set(playerId, ticket);
+
 		m_mDenyLogged.Remove(playerId);
 		GetGame().GetCallqueue().CallLater(ExpireSpawnAuthorization, SPAWN_AUTH_WINDOW_MS, false, playerId, m_iSpawnAuthEpoch);
 	}
@@ -1057,9 +1237,27 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! inside the window is not cut short by the previous deploy's timer.
 	protected void ExpireSpawnAuthorization(int playerId, int epoch)
 	{
-		int held;
-		if (m_mSpawnAuthorized.Find(playerId, held) && held == epoch)
+		TBD_SpawnTicket held;
+		if (m_mSpawnAuthorized.Find(playerId, held) && held && held.epoch == epoch)
 			m_mSpawnAuthorized.Remove(playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.22 — SPEND the ticket. Called by TBD_SCR_PossessSpawnHandlerComponent once vanilla
+	//! has actually handed the body over, so one authorization buys exactly one takeover instead
+	//! of an open 5 s season on it.
+	//!
+	//! Returns false when there was nothing matching to spend — which is not an error at the call
+	//! site (the fallback SetInitialMainEntity route never consumes; the timeout arm collects it).
+	//! @authority server
+	bool ConsumeSpawnAuthorization(int playerId, IEntity target)
+	{
+		TBD_SpawnTicket held;
+		if (!target || !m_mSpawnAuthorized.Find(playerId, held) || !held || held.target != target)
+			return false;
+
+		m_mSpawnAuthorized.Remove(playerId);
+		return true;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1072,27 +1270,57 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! T-181.21 — the question TBD_SCR_RespawnSystemComponent.CanRequestSpawn_S asks of every
-	//! spawn request on a framework world.
+	//! T-181.21 — the question every spawn request on a framework world has to answer.
+	//! T-181.22 — and it is now a question about a SPECIFIC BODY, not just about a player.
 	//!
-	//! This is the backstop for B2: vanilla routes death → SCR_RespawnSystemComponent.OnPlayerKilled_S
-	//! → SCR_SpawnLogic.OnPlayerKilled_S → OnPlayerEntityLost_S → (SCR_MenuSpawnLogic)
-	//! NotifyReadyForSpawn_S, which invites the client to ask for a spawn — a door the JOIN-side
-	//! suppression (OnPlayerRegistered_S / OnPlayerAuditSuccess_S) never touched. Rather than
-	//! chase each such chain, every request has to prove that THIS manager issued it, and this
-	//! manager only issues one after the one-life guard in DeployPlayerEx has passed.
+	//! This is the backstop for the DEATH door: vanilla routes death →
+	//! SCR_RespawnSystemComponent.OnPlayerKilled_S → SCR_SpawnLogic.OnPlayerKilled_S →
+	//! OnPlayerEntityLost_S → (SCR_MenuSpawnLogic) NotifyReadyForSpawn_S, which invites the client
+	//! to ask for a spawn — a door the JOIN-side suppression (OnPlayerRegistered_S /
+	//! OnPlayerAuditSuccess_S) never touched. Rather than chase each such chain, every request has
+	//! to prove that THIS manager issued it FOR THAT ENTITY, and this manager only issues one
+	//! after the one-life guard in DeployPlayerInternal has passed.
+	//!
+	//! A null `target` never matches. That is deliberate and load-bearing: the non-possess
+	//! handlers carry no entity in their SCR_SpawnData, and on a framework world TBD never issues
+	//! a non-possess request — so "no target" is always "not ours", and is refused.
 	//!
 	//! `denyLogOnce` keeps a client that re-asks in a loop from flooding the log while still
 	//! making the first refusal visible.
-	bool IsSpawnAuthorized(int playerId, out bool denyLogOnce)
+	bool IsSpawnAuthorizedFor(int playerId, IEntity target, out bool denyLogOnce)
 	{
-		if (m_mSpawnAuthorized.Contains(playerId))
+		TBD_SpawnTicket held;
+		if (target && m_mSpawnAuthorized.Find(playerId, held) && held && held.target == target)
 			return true;
 
 		denyLogOnce = !m_mDenyLogged.Contains(playerId);
 		if (denyLogOnce)
 			m_mDenyLogged.Set(playerId, true);
 		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.22 — the entity a spawn request is aiming at, or null when the request type does not
+	//! name one. Shared by both enforcement points so there is exactly one definition.
+	//!
+	//! Mirrors vanilla SCR_PossessSpawnHandlerComponent.GetEntity (SCR_PossessSpawnHandlerComponent.c:61-72):
+	//! the RplId travels over the wire, so it is resolved through Replication.FindItem rather than
+	//! trusted as a handle.
+	static IEntity ResolveSpawnDataEntity(SCR_SpawnData data)
+	{
+		SCR_PossessSpawnData possessData = SCR_PossessSpawnData.Cast(data);
+		if (!possessData)
+			return null;
+
+		RplId rplId = possessData.GetRplId();
+		if (!rplId.IsValid())
+			return null;
+
+		RplComponent rplComponent = RplComponent.Cast(Replication.FindItem(rplId));
+		if (!rplComponent)
+			return null;
+
+		return rplComponent.GetEntity();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1250,22 +1478,28 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 		// T-181.21 — close any spawn ticket this player still holds. A request authorized a
-		// moment before the kill must not be honoured by the vanilla authority after it.
+		// moment before the kill must not be honoured by the spawn authority after it.
 		RevokeSpawnAuthorization(playerId);
+		// T-181.22 — these two were cleared only inside the `if (m_bOneLife)` below, so with one
+		// life OFF they leaked for the whole session: a stale m_mAdminRespawnPending row would
+		// silently hand adminOverride to an ordinary retry, and a stale m_mDenyLogged row would
+		// swallow the FIRST refusal of the player's next life. OnPlayerDisconnected always cleared
+		// both unconditionally; death now matches it.
+		m_mAdminRespawnPending.Remove(playerId);
+		m_mDenyLogged.Remove(playerId);
 
 		// T-181.11 — ONE LIFE: death is terminal. The slot deliberately STAYS claimed so the
 		// seat is not recycled and a reconnecting player still resolves to it. Only
 		// AdminRespawn() can clear this.
 		//
 		// T-181.21 — the mark goes in FIRST, before anything else can run. Every door into the
-		// world funnels through DeployPlayerEx, which reads it; a retry already sitting in the
-		// callqueue from before the kill (ScheduleDeployRetry fires ~500 ms later and used to
+		// world funnels through DeployPlayerInternal, which reads it; a retry already sitting in
+		// the callqueue from before the kill (ScheduleDeployRetry fires ~500 ms later and used to
 		// carry no death check at all) therefore finds a spent life when it lands and is
 		// refused with DENIED, which also ends the retry loop.
 		if (m_bOneLife)
 		{
 			MarkLifeSpent(playerId);
-			m_mAdminRespawnPending.Remove(playerId);
 			Print(string.Format("[TBD][Spawn] player=%1 KILLED — one life spent (key=%2), slot retained, awaiting admin",
 				playerId, PlayerBindKey(playerId)));
 			return;
@@ -1303,8 +1537,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	{
 		string bindKey = PlayerBindKey(playerId);
 		m_mDeadPlayers.Set(bindKey, true);
+		// PlayerBindKey already warns for both degraded modes; this is the belt-and-braces call
+		// for a key that arrived from the cache and so skipped the live resolve.
 		if (!IsDurableKey(bindKey))
-			NoteIdentityDegraded(playerId);
+			NoteIdentityDegraded(playerId, "the key this death was recorded against is not durable, so it may not survive a reconnect");
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1345,6 +1581,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! T-181.21 — now includes the seats of players who died and then quit. Without them the
 	//! last man of a side dying and leaving dropped his faction to 0 claimed, TickWinConditions
 	//! read that as "never fielded", and the round could never end.
+	//!
+	//! T-181.22 — and that count is now exact. m_mDepartedSlots was keyed on the departed
+	//! player's bind key, so two players who resolved to the SAME key (which a name-derived
+	//! identity makes possible — see PlayerBindKey) overwrote one another and this under-reported
+	//! by one seat per collision. Keyed on the slot, every departed seat is counted exactly once.
 	int CountClaimedForFaction(string factionKey)
 	{
 		int claimed;
@@ -1353,9 +1594,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			if (slot && slot.faction == factionKey)
 				claimed++;
 		}
-		foreach (string bindKey, TBD_MissionSlotStruct departed : m_mDepartedSlots)
+		foreach (string slotKey, TBD_DepartedSeat departed : m_mDepartedSlots)
 		{
-			if (departed && departed.faction == factionKey)
+			if (departed && departed.slot && departed.slot.faction == factionKey)
 				claimed++;
 		}
 		return claimed;
@@ -1401,9 +1642,10 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		// T-181.10 — forceFreshBody: the admin route always gets a NEWLY materialized,
 		// newly dressed body from the mission JSON. Never the one the spent life left behind.
-		// T-181.21 — adminOverride: the documented, opt-in bypass of the one-life boundary in
-		// DeployPlayerEx. This call site and the retry it owns are the only two that pass it.
-		TBD_EDeployResult r = DeployPlayerEx(playerId, true, true);
+		// T-181.21 — adminOverride: the documented, opt-in bypass of the one-life boundary.
+		// T-181.22 — it now lives on the protected DeployPlayerInternal, so this call site and
+		// the retry it owns are the only two that CAN pass it, not merely the only two that do.
+		TBD_EDeployResult r = DeployPlayerInternal(playerId, true, true);
 		Print(string.Format("[TBD][Admin] respawn player=%1 by=%2 result=%3",
 			playerId, byAdmin, typename.EnumToString(TBD_EDeployResult, r)));
 
@@ -1472,8 +1714,12 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! seat keeps the side fielded and keeps the man counted as dead, so the elimination fires
 	//! exactly when it should, and keeps the seat off the market — the ONE LIFE rule ("nobody
 	//! else takes your seat") applied consistently instead of only while the corpse is still
-	//! connected. Identity-keyed, so the next player handed his recycled numeric playerId
-	//! inherits nothing.
+	//! connected. Nothing about the retained row is keyed on the numeric playerId, so the next
+	//! player handed that recycled number inherits nothing.
+	//!
+	//! T-181.22 — the row is now keyed on the SLOT and carries the departed player's bind key as a
+	//! field (see TBD_DepartedSeat). It is handed back at the next join by
+	//! OnPlayerAuditSuccess -> ReclaimDepartedSeat.
 	//! @authority server
 	override void OnPlayerDisconnected(int playerId, KickCauseCode cause, int timeout)
 	{
@@ -1504,7 +1750,14 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mDenyLogged.Remove(playerId);
 
 		if (lifeSpent && slot)
-			m_mDepartedSlots.Set(bindKey, slot);
+		{
+			// T-181.22 — keyed on the SLOT, with the bind key carried as a field, so two departed
+			// players who resolve to the same key cannot overwrite each other's seat.
+			TBD_DepartedSeat seat = new TBD_DepartedSeat();
+			seat.bindKey = bindKey;
+			seat.slot = slot;
+			m_mDepartedSlots.Set(slotKey, seat);
+		}
 
 		// The numeric id is released back to the server here, so everything keyed on it goes
 		// with it — including the bind-key cache, or the next holder of that number would
@@ -1593,7 +1846,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		}
 		m_mRetryCount.Set(playerId, n + 1);
 
-		TBD_EDeployResult r = DeployPlayerEx(playerId, adminRespawn, adminRespawn);
+		TBD_EDeployResult r = DeployPlayerInternal(playerId, adminRespawn, adminRespawn);
 		Print(string.Format("[TBD][Spawn] path=retry player=%1 attempt=%2 admin=%3 result=%4",
 			playerId, n + 1, adminRespawn, typename.EnumToString(TBD_EDeployResult, r)));
 

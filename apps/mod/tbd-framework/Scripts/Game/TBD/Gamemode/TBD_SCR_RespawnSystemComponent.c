@@ -19,8 +19,15 @@
 //! T-181.21 — the two registration overrides only covered the JOIN doors. The DEATH door
 //! (OnPlayerKilled_S -> ... -> NotifyReadyForSpawn_S -> a client spawn request) was still wide
 //! open, which meant the ONE LIFE invariant could be walked straight around. CanRequestSpawn_S
-//! below is the answer: every spawn request on the server passes through it, and on a framework
-//! world it now refuses anything TBD_SpawnManager did not authorize.
+//! below refuses, on a framework world, anything TBD_SpawnManager did not authorize.
+//!
+//! T-181.22 — CORRECTION TO THE ABOVE. It said "every spawn request on the server passes through
+//! it". It does not. SCR_PossessSpawnHandlerComponent overrides CanRequestSpawn_S as
+//! `m_bIgnoreConditions || super...` and that attribute ships defaulted to "1", so `||`
+//! short-circuits and a POSSESS request never reaches this class — and possess is the ONLY
+//! request type TBD_PlayerController.et leaves enabled. The possess route is now gated in
+//! TBD_SCR_PossessSpawnHandlerComponent, at a call vanilla cannot skip; this file keeps every
+//! other handler honest. Read the block on CanRequestSpawn_S below before changing either.
 //!
 //! Every override is GUARDED on TBD_FrameworkManager.IsFrameworkWorld(): this mod is loaded
 //! world-globally, and on a plain vanilla world the whole class must behave as if absent.
@@ -101,13 +108,28 @@ modded class SCR_RespawnSystemComponent
 	//!                   -> ProcessRequest_S -> SCR_SpawnHandlerComponent.HandleRequest_S
 	//!                     -> CanHandleRequest_S -> CanRequestSpawn_S  <-- WE ARE HERE
 	//!
-	//! Every spawn request on the server funnels through this one call — death-driven, JIP,
-	//! deploy menu, diag menu, and our own possess request. So instead of chasing each chain
-	//! (which is how the guard ended up on ClaimSlot/ReleaseSlot, functions that cannot put
-	//! anybody in the world), the rule is inverted: on a framework world a request is refused
-	//! unless TBD_SpawnManager issued it. TBD_SpawnManager only issues one from DeployPlayerEx,
-	//! which is where ONE LIFE is enforced — so the invariant is checked once, in one place, and
-	//! this closes every route around it.
+	//! On a framework world a request is refused unless TBD_SpawnManager issued it, for the exact
+	//! entity it names. TBD_SpawnManager only issues one from DeployPlayerInternal, which is where
+	//! ONE LIFE is enforced.
+	//!
+	//! ── T-181.22: WHAT THIS OVERRIDE DOES *NOT* COVER, AND WHY THAT IS NOW FINE ────────────────
+	//! The chain above claims "every spawn request funnels through this one call". That was wrong
+	//! for the one handler that matters. Vanilla SCR_PossessSpawnHandlerComponent.c:98-101 is:
+	//!
+	//!     override bool CanRequestSpawn_S(...)
+	//!     { return m_bIgnoreConditions || super.CanRequestSpawn_S(requestComponent, data, result); }
+	//!
+	//! `||` short-circuits, and `m_bIgnoreConditions` ships defaulted to "1" — so for a POSSESS
+	//! request `super` (and therefore this override) may never be reached. Since
+	//! Prefabs/Systems/TBD_PlayerController.et disables the free-spawn and spawn-point request
+	//! components (`Enabled 0`), POSSESS was BOTH the only live request type and the only one that
+	//! could walk past this guard. That is why TBD_SCR_PossessSpawnHandlerComponent now gates the
+	//! possess route at CanHandleRequest_S/HandleRequest_S, which cannot be short-circuited.
+	//!
+	//! This override remains load-bearing for every OTHER handler (free spawn, spawn point, and
+	//! anything a future prefab re-enables): none of them override CanRequestSpawn_S, so they all
+	//! still funnel through here. It also still covers POSSESS if `m_bIgnoreConditions` turns out
+	//! to be 0 — belt and braces, and neither depends on knowing which.
 	//!
 	//! Why not just override IsRespawnEnabled() to false? Because vanilla :149 makes it the
 	//! blanket gate on CanRequestSpawn_S, so it would also reject OUR possess request — the only
@@ -119,7 +141,7 @@ modded class SCR_RespawnSystemComponent
 	{
 		if (TBD_IsManaged())
 		{
-			if (!TBD_IsSpawnAuthorized(requestComponent))
+			if (!TBD_IsSpawnAuthorized(requestComponent, data))
 			{
 				result = SCR_ESpawnResult.SPAWN_NOT_ALLOWED;
 				return false;
@@ -130,12 +152,17 @@ modded class SCR_RespawnSystemComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Did TBD_SpawnManager authorize this specific request?
+	//! Did TBD_SpawnManager authorize this specific request, for this specific entity?
+	//!
+	//! T-181.22 — the entity half is new, and it is what makes a refusal here meaningful rather
+	//! than decorative. A handler whose SCR_SpawnData names no entity (free spawn, spawn point)
+	//! resolves to null, and null never matches a ticket — correct, because TBD only ever deploys
+	//! through POSSESS, so a non-possess request on a framework world is by definition not ours.
 	//!
 	//! Fails CLOSED. A framework world whose spawn manager is missing must not quietly fall back
 	//! to vanilla spawning — that is the double-spawn/vanilla-kit class this mod exists to
 	//! prevent — so "cannot ask" is refused, loudly, rather than allowed.
-	protected bool TBD_IsSpawnAuthorized(SCR_SpawnRequestComponent requestComponent)
+	protected bool TBD_IsSpawnAuthorized(SCR_SpawnRequestComponent requestComponent, SCR_SpawnData data)
 	{
 		if (!requestComponent)
 			return false;
@@ -149,12 +176,14 @@ modded class SCR_RespawnSystemComponent
 			return false;
 		}
 
+		IEntity target = TBD_SpawnManager.ResolveSpawnDataEntity(data);
+
 		bool logOnce;
-		if (sm.IsSpawnAuthorized(playerId, logOnce))
+		if (sm.IsSpawnAuthorizedFor(playerId, target, logOnce))
 			return true;
 
 		if (logOnce)
-			Print(string.Format("[TBD][Spawn] vanilla spawn request REFUSED player=%1 — TBD_SpawnManager did not authorize it (deploy goes through DeployPlayerEx)", playerId), LogLevel.WARNING);
+			Print(string.Format("[TBD][Spawn] vanilla spawn request REFUSED player=%1 target=%2 — TBD_SpawnManager did not authorize it (deploy goes through DeployPlayerEx)", playerId, target), LogLevel.WARNING);
 
 		return false;
 	}

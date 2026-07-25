@@ -41,7 +41,19 @@ modded class SCR_MenuSpawnLogic
 
 	//------------------------------------------------------------------------------------------------
 	//! @authority server — the _S suffix is vanilla's server-side audit hook.
-	//! Assignment is ours; the vanilla continuation runs only off framework worlds.
+	//!
+	//! T-181.22 — DEAD ON A FRAMEWORK WORLD, and nothing here should be relied on. Vanilla only
+	//! reaches this through `SCR_RespawnSystemComponent.OnPlayerAuditSuccess_S ->
+	//! m_SpawnLogic.OnPlayerAuditSuccess_S(playerId)` (vanilla SCR_RespawnSystemComponent.c:196-199),
+	//! and TBD_SCR_RespawnSystemComponent swallows that call on framework worlds. So the
+	//! `AssignSlotForPlayer` below runs on VANILLA worlds only — where TBD_SpawnManager does not
+	//! exist and the guard short-circuits anyway. It is kept purely so a framework mission left
+	//! loaded on a non-framework world still seats people.
+	//!
+	//! The join-time work that must actually happen on a framework world lives in
+	//! TBD_SpawnManager.OnPlayerAuditSuccess (a SCR_BaseGameModeComponent virtual the game mode
+	//! drives directly, unaffected by the suppression above): bind-key resolve, and handing a
+	//! returning spent life its seat back.
 	override void OnPlayerAuditSuccess_S(int playerId)
 	{
 		TBD_SpawnManager sm = TBD_SpawnManager.GetInstance();
