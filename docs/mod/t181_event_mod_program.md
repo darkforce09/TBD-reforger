@@ -274,6 +274,22 @@ picker can open would ship a mod nobody can deploy into.
   does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
 - **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
   which is how the spectator camera avoids the rdb blocker entirely.
+- **`RegisterScriptHandler` compile-checks NOTHING about the callback** — not the event name (a
+  string), not the arity, not the parameter types. Measured: `void H(int)` and
+  `void H(string,string,string)` BOTH bind clean to the same 3-arg event, and the function returns
+  `void` so there is no registration status to test. This does NOT match `CallLater`, whose arity
+  IS checked — the intuition does not carry over, which is what makes it dangerous. The only oracle
+  is a live test; for safestart's projectile sink that means one shot during SAFE_START, read back
+  via `#tbd safestart status`.
+- **`SCR_CharacterDamageManagerComponent.IsDamageHandlingEnabled()` exists** and is a general-purpose
+  state query, not a set-then-confirm idiom — corroborated by two shipped vanilla sites that read it
+  without ever having set it (`SCR_DamageDisabledTooltipDetail.c:20`, `SCR_HealthTooltipDetail.c:21`).
+- **`make schema-validate` is a MAIN-TREE target and dies inside a slice worktree.** LFS content is
+  not smudged there, so `packages/map-assets/**` is ~133-byte pointers and `schema height-labels`
+  fails with `PNG decode: Invalid PNG signature` while passing on main. TWO agents burned effort on
+  this. Inside a worktree run `cargo run -p xtask -- schema validate` instead. Do NOT "fix" it by
+  symlinking the real assets in — tried and reverted, because git then reports all 983 tracked files
+  under that path as DELETED and every worktree is permanently dirty.
 - **`$profile:` resolves to `<-profile-arg>/profile/`, NOT `<-profile-arg>/`.** Seeding a mission or
   config one level up loads **nothing, silently** — the loader just reports the file missing. Cost
   the wave-5 verifier two dead boots before it noticed.

@@ -94,6 +94,20 @@ case "$cmd" in
       echo "REFUSING: $dir has no usable oracle lane — an agent here would guess at Enfusion." >&2
       exit 1
     fi
+
+    # NOTE for anyone tempted to "fix" the LFS pointers here: DON'T symlink them.
+    # LFS content is deliberately not smudged in a worktree (see the filter neutralisation at the
+    # top of this file), so `packages/map-assets/**` arrives as ~133-byte pointer files. That makes
+    # `make schema-validate` die inside a worktree at its `schema height-labels` step ("PNG decode:
+    # Invalid PNG signature") while passing on main, and two separate agents burned real effort
+    # diagnosing it. Symlinking the real assets in DOES fix the target — and was tried and reverted,
+    # because git then reports all 983 tracked files under that path as DELETED, which leaves every
+    # worktree permanently dirty and `wave.sh land` refuses to merge a dirty tree. Hiding that with
+    # `git update-index --skip-worktree` would make working-tree changes INVISIBLE, which in a
+    # program that merges unattended agent work is a way to silently lose a slice.
+    # The pointers are correct and cheap. `make schema-validate` is a MAIN-TREE target; inside a
+    # worktree run the specific sub-gate instead: `cargo run -p xtask -- schema validate`.
+    echo "  note: packages/map-assets is LFS pointers here — run 'xtask schema validate', not 'make schema-validate'"
     echo "worktree: $ROOT/$dir   branch: $branch"
     ;;
 
@@ -132,17 +146,51 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
   reap)
     # Delete every slice worktree whose branch is already merged into main — the
     # post-wave cleanup step. Disk is the constraint; do not skip this.
+    # ── THIS DESTROYED FIVE LIVE AGENTS' WORK ONCE. Read before changing. ────────────────────
+    # The old test was `merge-base --is-ancestor <branch> main` alone, which is TRUE for a branch
+    # that has NO COMMITS AT ALL — a freshly-created worktree sits exactly at the branch point,
+    # and the branch point is trivially an ancestor of main. So "no work done yet" was
+    # indistinguishable from "work merged". Combined with `worktree remove --force`, which
+    # deliberately overrides git's own refusal to delete a dirty tree, a single reap wiped five
+    # worktrees whose agents were mid-slice with uncommitted files. Nothing in git could recover
+    # them; only the agents' own context could.
+    # Three independent guards now, because any one of them alone would have prevented it:
+    #   1. never reap a tree with uncommitted changes or untracked files
+    #   2. never reap a branch that has no commits beyond main (unstarted != merged)
+    #   3. no --force, so git's own safety check is a backstop rather than something we suppress
     n=0
     for d in "$BASE"/*/; do
       [ -d "$d" ] || continue
       s="$(basename "$d")"; b="slice/$s"
-      if git show-ref --verify --quiet "refs/heads/$b" && git merge-base --is-ancestor "$b" main 2>/dev/null; then
-        git worktree remove --force "$d" 2>/dev/null || rm -rf "$d"
+
+      if ! git show-ref --verify --quiet "refs/heads/$b"; then
+        echo "kept   $s (no branch)"
+        continue
+      fi
+
+      dirty="$("${GIT[@]}" -C "$d" status --porcelain 2>/dev/null | wc -l | tr -d ' ')"
+      if [ "${dirty:-0}" != "0" ]; then
+        echo "KEPT   $s — $dirty uncommitted change(s). An agent may still be working here." >&2
+        continue
+      fi
+
+      commits="$(git rev-list --count "main..$b" 2>/dev/null || echo 0)"
+      if [ "${commits:-0}" = "0" ]; then
+        echo "KEPT   $s — branch has no commits beyond main (unstarted, not merged)." >&2
+        continue
+      fi
+
+      if ! git merge-base --is-ancestor "$b" main 2>/dev/null; then
+        echo "kept   $s ($commits commit(s) not merged into main)"
+        continue
+      fi
+
+      if git worktree remove "$d" 2>/dev/null; then
         git branch -d "$b" 2>/dev/null || true
-        echo "reaped $s (merged)"
+        echo "reaped $s (merged, clean)"
         n=$((n+1))
       else
-        echo "kept   $s (not merged into main)"
+        echo "KEPT   $s — git refused to remove it; inspect by hand." >&2
       fi
     done
     git worktree prune
