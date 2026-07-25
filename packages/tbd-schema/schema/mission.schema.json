@@ -91,6 +91,11 @@
       "description": "Worn container a cargo row is inserted into. CLOSED vocabulary (T-181.34) — unlike kit:/preset: aliases these four are fixed by the ENGINE's worn-garment areas, not by extensible content, so an enum here can never fight the registry. TBD_LoadoutEquipHelper.GarmentForContainer maps exactly these to LoadoutVestArea (+ LoadoutArmoredVestSlotArea), LoadoutJacketArea, LoadoutPantsArea and LoadoutBackpackArea, and the Arsenal UI offers exactly these (arsenal_rules.rs CARGO_CONTAINERS). Before this enum a typo validated clean and then DEGRADED at runtime: GarmentForContainer returned null and InsertCargo fell through to TryInsertItem anywhere, so the cargo silently landed in the wrong place instead of failing. armoredVest is deliberately NOT a key — it shares the vest container (single-vest collapse).",
       "enum": ["vest", "pants", "jacket", "backpack"]
     },
+    "wireSafeString": {
+      "type": "string",
+      "description": "A free-text authored string that reaches a DELIMITED wire, and therefore may not contain a character that FRAMES one. TBD_SpawnManager.BuildSlotRoster, TBD_BriefingData, TBD_LobbyData and TBD_AdminData all serialise to tab-separated fields joined by newlines, so a TAB in an authored value opens a new column and a CR/LF opens a new row. T-181.42 recorded the consequence end to end: a callsign authored `AL<TAB>PHA` was a SCHEMA-VALID mission that produced a seven-field roster row, sailed past the consumer's `< 6` guard, shifted every column, rendered `role` as `PHA`, made the real role read as the STATE (so the seat matched neither OPEN nor DEAD and became UNSELECTABLE), and parsed `holderId` from `\"OPEN\".ToInt()` = 0. The mod now sanitises at the source (TBD_SpawnManager.RosterField / TBD_BriefingData.Sanitise, both substituting a space and warning once per distinct value) and the lobby parser is pinned to exact arity, so this is DEFENCE IN DEPTH — but the schema is where the class dies, because a rewritten field is still a field the author did not write.\n\nSCOPE — the pattern bans the C0 control block plus DEL, not just the three framing characters. That is a strict superset of \\t, \\r and \\n at zero cost to legitimate authoring (no web-editor author types a control character into a callsign on purpose), it is a CLOSED character class that cannot drift, and it covers the un-sanitised siblings: NUL is a C-string terminator on a byte-indexed engine (`string.Length()` counts BYTES here), and VT/FF are treated as line breaks by enough downstream tooling to be the next hazard. Nothing in the mod strips those three today.\n\nDELIBERATELY NOT BANNED. `.` — the per-field marker (TBD_BriefingData.FIELD_MARK) is BIJECTIVE by construction, `Unmark(Field(x)) == Sanitise(x)` for every x including `.` and the empty string, so an authored dot cannot confuse a reader. `~` — the RETIRED TBD_LobbyData.EMPTY sentinel, replaced precisely because it was lossy; forbidding it would enshrine a convention the tree abandoned. `:` — load-bearing INSIDE slot.id (`{faction}:{groupCallsign}:{role}:{index}`). Zero-width joiners, bidi/RTL overrides and U+2028/U+2029 — a display-SPOOFING class, not a wire-FRAMING one: none of them can shift a column, an open-ended Unicode blocklist is exactly the drifting vocabulary T-181.34 correctly refused to close, and folding two unrelated defects behind one pattern means a failure no longer names its cause. If spoofing is worth gating it deserves its own check and its own negative fixture.\n\nBriefing prose (briefing.situation/mission/execution) is deliberately EXCLUDED from this $ref: it does not ride a delimited wire at all — TBD_BriefingService ships it as parallel `array<string>` RPC parameters, so an embedded newline there is legitimate authoring, not a hazard.",
+      "pattern": "^[^\\x00-\\x1F\\x7F]*$"
+    },
     "factionKey": {
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]*$"
@@ -113,7 +118,7 @@
           "description": "Content-hash id assigned on publish. Optional in hand-written drafts.",
           "pattern": "^msn_[a-z0-9]+$"
         },
-        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "name": { "$ref": "#/$defs/wireSafeString", "minLength": 1, "maxLength": 120 },
         "author": { "type": "string" },
         "terrain": {
           "type": "string",
@@ -148,7 +153,7 @@
       "additionalProperties": false,
       "properties": {
         "key": { "$ref": "#/$defs/factionKey" },
-        "displayName": { "type": "string", "minLength": 1 },
+        "displayName": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
         "presetId": {
           "type": "string",
           "pattern": "^preset:[a-z0-9_]+$"
@@ -184,7 +189,11 @@
       "required": ["callsign", "type", "roles"],
       "additionalProperties": false,
       "properties": {
-        "callsign": { "type": "string", "minLength": 1 },
+        "callsign": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "The ORBAT-side CAUSE of slot.groupCallsign. flatten.rs copies this verbatim into slot.groupCallsign and interpolates it into slot.id, and nothing re-validates the compiled document — so constraining only the slot fields would forbid the symptom while permitting the cause."
+        },
         "type": { "type": "string", "minLength": 1 },
         "roles": {
           "type": "array",
@@ -198,7 +207,11 @@
       "required": ["slot", "kit", "count"],
       "additionalProperties": false,
       "properties": {
-        "slot": { "type": "string", "minLength": 1 },
+        "slot": {
+          "$ref": "#/$defs/wireSafeString",
+          "minLength": 1,
+          "description": "The ORBAT-side CAUSE of slot.role — flatten.rs copies it into slot.role and into slot.id. Same reasoning as group.callsign."
+        },
         "kit": {
           "type": "string",
           "pattern": "^kit:[a-z0-9_]+$"
@@ -217,18 +230,18 @@
       "additionalProperties": false,
       "properties": {
         "id": {
-          "type": "string",
+          "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "Human-readable slot label: {faction}:{groupCallsign}:{role}:{index}. DERIVED each compile — shifts under role renames/reorders/deletes; key durable references on uid instead."
+          "description": "Human-readable slot label: {faction}:{groupCallsign}:{role}:{index}. DERIVED each compile — shifts under role renames/reorders/deletes; key durable references on uid instead. Reaches the roster wire as column 1 via slot.Key() when uid is absent."
         },
         "uid": {
-          "type": "string",
+          "$ref": "#/$defs/wireSafeString",
           "minLength": 1,
-          "description": "Stable slot identity (B1): the editor document's slot id, carried verbatim so the identity survives recompiles and ORBAT edits. Spawn points, rosters and logs key on this. Optional for pre-B1 documents. (Named uid, not ref — ref is an EnforceScript keyword.)"
+          "description": "Stable slot identity (B1): the editor document's slot id, carried verbatim so the identity survives recompiles and ORBAT edits. Spawn points, rosters and logs key on this. Optional for pre-B1 documents. (Named uid, not ref — ref is an EnforceScript keyword.) Reaches the roster wire as column 1 — slot.Key() prefers it over id."
         },
         "faction": { "$ref": "#/$defs/factionKey" },
-        "groupCallsign": { "type": "string", "minLength": 1 },
-        "role": { "type": "string", "minLength": 1 },
+        "groupCallsign": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
+        "role": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
         "kit": {
           "type": "string",
           "pattern": "^kit:[a-z0-9_]+$"
@@ -351,7 +364,7 @@
       "required": ["id", "type", "shape"],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
+        "id": { "$ref": "#/$defs/wireSafeString", "minLength": 1 },
         "type": {
           "type": "string",
           "enum": [
@@ -363,7 +376,10 @@
             "base_protection"
           ]
         },
-        "label": { "type": "string" },
+        "label": {
+          "$ref": "#/$defs/wireSafeString",
+          "description": "Optional human name. Reaches the briefing Z record via TBD_BriefingService.PrettyZoneTitle, which falls back to type + zone.id when this is empty — so both keys are on that wire. No minLength: an empty label is a committed golden (empty-warning-fields.json) and means \"use the fallback\"."
+        },
         "faction": { "$ref": "#/$defs/factionKey" },
         "shape": { "$ref": "#/$defs/shape" },
         "rules": {
