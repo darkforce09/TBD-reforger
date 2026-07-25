@@ -4,7 +4,8 @@
 //! Three things live here, in the order they matter:
 //!   1. `TBD_BriefingReadyRegistry` — SERVER: who has marked ready, and the per-side tally.
 //!   2. `SCR_PlayerController` (modded) — the wire: two request/reply RPC pairs, plus the
-//!      client-side stage watcher that opens and closes the screen.
+//!      client-side stage handler that opens and closes the screen (pushed by
+//!      `TBD_FrameworkManager` since T-181.23; it used to poll).
 //!   3. `TBD_BriefingClient` — CLIENT: the last payload received, and the invokers the screen
 //!      listens to so it never has to poll.
 //!
@@ -144,86 +145,35 @@ class TBD_BriefingReadyRegistry
 	}
 }
 
-//! The wire, and the client-side stage watcher.
+//! The wire, and the client-side stage handler.
 modded class SCR_PlayerController
 {
-	//! Client: guards the one-time watcher registration.
-	protected bool m_TBD_BriefingWatchStarted;
-
 	//! Client: last stage we acted on, so open/close fire on TRANSITIONS only.
 	protected TBD_EGameStage m_TBD_LastStage = TBD_EGameStage.LOADING;
 
 	//------------------------------------------------------------------------------------------------
-	override void OnControlledEntityChanged(IEntity from, IEntity to)
-	{
-		super.OnControlledEntityChanged(from, to);
-		TBD_TryStartBriefingWatch();
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Start the client-side stage watcher exactly once, on the local player's controller.
+	//! The single entry point for "the round changed phase" on this client.
 	//!
-	//! ── Why a poll and not a callback ──────────────────────────────────────────────────────
-	//! `TBD_FrameworkManager.m_Stage` is an `[RplProp(onRplName: "OnStageReplicated")]`, so the
-	//! VALUE is replicated and `GetStage()` is correct on a client. But `OnStageReplicated()` is
-	//! an empty stub whose body comment reads "Client-side UI reacts to stage changes here" — and
-	//! `TBD_FrameworkManager.c` belongs to another slice this wave, so this slice must not write
-	//! into it.
+	//! ── T-181.23: the 500 ms poll is gone ───────────────────────────────────────────────────
+	//! T-181.9.2 had to poll `TBD_FrameworkManager.GetStage()` every 500 ms because
+	//! `OnStageReplicated()` was an empty stub and `TBD_FrameworkManager.c` belonged to another
+	//! slice that wave. That hook is now wired, so the manager PUSHES the stage here instead:
+	//!   • proxy path     — `OnStageReplicated()`, the `[RplProp(onRplName:)]` callback;
+	//!   • authority path — `SetStage()`, because onRplName never fires on authority, which is
+	//!                      what keeps a listen host working now that nothing polls.
+	//! Both funnel through `TBD_FrameworkManager.NotifyLocalStageUI()`, which is also where the
+	//! "dedicated server has no workspace" guard now lives.
 	//!
-	//! A 500 ms poll of the replicated value is therefore the self-contained way to be correct
-	//! today. It costs one enum compare per tick and stops the moment this stops being the local
-	//! controller. When the one-line hook lands (see the slice report), delete the poll and call
-	//! `TBD_OnStageChanged` from `OnStageReplicated` instead — nothing else changes.
-	protected void TBD_TryStartBriefingWatch()
+	//! The transition test below is retained from the poll and is load-bearing, not vestigial: a
+	//! redundant replication callback carrying an unchanged value would otherwise call
+	//! `TBD_BriefingClient.Reset()` and wipe a payload the player had already received.
+	void TBD_OnStageChanged(TBD_EGameStage stage)
 	{
-		if (m_TBD_BriefingWatchStarted)
-			return;
-
-		if (GetGame().GetPlayerController() != this)
-			return; // local client's controller only
-
-		// A dedicated server has no workspace and must never try to open a menu.
-		if (!GetGame().GetWorkspace())
-			return;
-
-		if (!TBD_FrameworkManager.IsFrameworkWorld())
-			return;
-
-		m_TBD_BriefingWatchStarted = true;
-		m_TBD_LastStage = TBD_EGameStage.LOADING;
-
-		GetGame().GetCallqueue().CallLater(TBD_TickBriefingStage, 500, true);
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! Raise the briefing when the round enters BRIEFING; drop it when the round leaves.
-	protected void TBD_TickBriefingStage()
-	{
-		// Self-cancel rather than leak a tick into the next world/controller.
-		if (GetGame().GetPlayerController() != this)
-		{
-			GetGame().GetCallqueue().Remove(TBD_TickBriefingStage);
-			m_TBD_BriefingWatchStarted = false;
-			return;
-		}
-
-		TBD_FrameworkManager fm = TBD_FrameworkManager.GetInstance();
-		if (!fm)
-			return;
-
-		TBD_EGameStage stage = fm.GetStage();
 		if (stage == m_TBD_LastStage)
 			return;
 
 		m_TBD_LastStage = stage;
-		TBD_OnStageChanged(stage);
-	}
 
-	//------------------------------------------------------------------------------------------------
-	//! The single entry point for "the round changed phase" on this client. Kept public and
-	//! side-effect-complete so the eventual `OnStageReplicated` hook is a one-line call.
-	void TBD_OnStageChanged(TBD_EGameStage stage)
-	{
 		if (stage == TBD_EGameStage.BRIEFING)
 		{
 			TBD_BriefingClient.Reset();

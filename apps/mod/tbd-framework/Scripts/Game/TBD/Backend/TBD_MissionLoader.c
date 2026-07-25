@@ -38,21 +38,29 @@ class TBD_MissionZoneStruct
 {
 	string id;
 	string type;
+	//! Human name authored in the editor ("Levie Bridge"). OPTIONAL in the schema — a zone that
+	//! omits it parses to an empty string, which is why callers fall back to `type`+`id` rather
+	//! than assuming a label exists.
+	string label;
 	string faction;
 	ref TBD_MissionShapeStruct shape;
 }
 
-//! One ORBAT role line (its fill count).
+//! One ORBAT role line.
 //! @contract mission.schema.json#/$defs/role
 class TBD_MissionOrbatRoleStruct
 {
-	int count; //!< Number of slots to materialize for this role.
+	string slot;  //!< Role label within the squad ("Squad Leader"). Schema-required.
+	string kit;   //!< Loadout alias (kit:<id>). Schema-required.
+	int count;    //!< Number of slots to materialize for this role.
 }
 
 //! One ORBAT group (squad) and its roles.
 //! @contract mission.schema.json#/$defs/group
 class TBD_MissionOrbatGroupStruct
 {
+	string callsign; //!< Squad callsign ("Alpha"). Schema-required.
+	string type;     //!< Group type label authored in the editor ("infantry_squad"). Schema-required.
 	ref array<ref TBD_MissionOrbatRoleStruct> roles;
 }
 
@@ -75,6 +83,37 @@ class TBD_MissionWinConditionsStruct
 	ref array<string> endOn;   //!< One or more end triggers.
 }
 
+//! One map marker authored on a faction's briefing. All four keys are schema-required, so a
+//! marker that exists at all is complete — there is no partial-marker case to defend against.
+//! @contract mission.schema.json#/$defs/marker
+class TBD_MissionMarkerStruct
+{
+	float x;      //!< World X, metres.
+	float z;      //!< World Z, metres.
+	string icon;  //!< Icon key authored in the editor ("objective", "defend", "destroy").
+	string label; //!< Marker caption ("OBJ BRIDGE").
+}
+
+//! T-181.23 — one faction's WRITTEN ORDERS. This is the Arma-3 briefing text the whole briefing
+//! screen exists to display; before this slice the document modelled the mission's structure but
+//! not a word of its prose.
+//!
+//! Every field is OPTIONAL in the schema (`briefing` declares no `required`), so a partially
+//! authored briefing parses to empty strings rather than failing. Callers must treat an empty
+//! string as "not authored" and render nothing, never a blank heading.
+//!
+//! `markers` is modelled rather than dropped: the mod's standing rule is that an authored mission
+//! never silently loses data it declared (same reasoning as `winConditions.endOn`). It is null
+//! when the briefing omits the key.
+//! @contract mission.schema.json#/$defs/briefing
+class TBD_MissionBriefingStruct
+{
+	string situation;  //!< What is happening.
+	string mission;    //!< What this side must achieve.
+	string execution;  //!< How they are to do it.
+	ref array<ref TBD_MissionMarkerStruct> markers; //!< Optional map markers; null when absent.
+}
+
 //! Full mission document parsed from the backend — the canonical contract the loader
 //! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
@@ -88,6 +127,10 @@ class TBD_MissionDocumentStruct
 	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat; //!< ORBAT keyed by faction.
 	ref array<ref TBD_MissionSlotStruct> slots;               //!< Flattened spawn slots (schema 1.1).
 	ref TBD_MissionWinConditionsStruct winConditions;         //!< T-181.13 round-end triggers.
+	//! T-181.23 — written orders keyed by faction key, exactly like `orbat`. OPTIONAL: the block
+	//! is not in the schema's top-level `required` list and every mission authored before it
+	//! existed has none, so this stays null and that is legal.
+	ref map<string, ref TBD_MissionBriefingStruct> briefings;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -172,6 +215,29 @@ class TBD_MissionLoader
 				return true;
 		}
 		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.23 — the written orders for ONE faction, or null when this mission authored none for
+	//! that side.
+	//!
+	//! Faction-keyed exactly like `orbat`, so a caller passes the same key it already resolved from
+	//! the player's slot — which is what keeps side discipline enforceable: the server hands out one
+	//! side's orders and never the other's.
+	//!
+	//! Returns null (not an empty struct) so a caller can tell "this mission has no orders for me"
+	//! apart from "orders exist but are blank". Absent `briefings` is LEGAL — the block is optional
+	//! and predates nothing; missions in the wild simply have none.
+	static TBD_MissionBriefingStruct GetBriefingForFaction(string factionKey)
+	{
+		if (!s_Mission || !s_Mission.briefings || factionKey.IsEmpty())
+			return null;
+
+		TBD_MissionBriefingStruct briefing;
+		if (!s_Mission.briefings.Find(factionKey, briefing))
+			return null;
+
+		return briefing;
 	}
 
 	//------------------------------------------------------------------------------------------------
