@@ -459,8 +459,19 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! any record whose stamp has moved on. One mechanism, one definition of "still the same
 	//! person", borrowed rather than reinvented.
 	//!
-	//! These two are the ONLY public surface added for it. Deliberately read-only: nothing outside
-	//! this class can open, close or advance an epoch.
+	//! These two are the ONLY public surface added for it.
+	//!
+	//! T-181.30 — this used to add "Deliberately read-only: nothing outside this class can open,
+	//! close or advance an epoch", which was never true of this function: it is `EnsureConnectEpoch`,
+	//! so an external caller asking about an id with no epoch OPENS one. Accurately: a caller cannot
+	//! CLOSE or ADVANCE an epoch (only disconnect and the join hook do that), and since T-181.30 it
+	//! can only open one for a player who is actually connected — so the surface is now as narrow as
+	//! the old sentence claimed, for a reason the old sentence did not give.
+	//!
+	//! Returns 0 for a departed or unknown id, and `IsConnectionCurrent(id, 0)` is false, so a record
+	//! stamped 0 is retired rather than trusted. `TBD_SpectatorHost` only calls this once it has
+	//! already resolved that player's controller and read back a successful possession, so in
+	//! practice it never sees the 0.
 	//! @authority server
 	int ConnectionEpochFor(int playerId)
 	{
