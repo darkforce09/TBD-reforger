@@ -64,6 +64,10 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	{
 		super.OnPostInit(owner);
 
+		// Deferred one frame so sibling components are certainly constructed — the roll-call
+		// must not report MISSING merely because it asked too early.
+		GetGame().GetCallqueue().CallLater(PrintComponentRollCall, 0);
+
 		// Authority only — clients never drive mission load or the stage machine.
 		if (RplSession.Mode() == RplMode.Client)
 			return;
@@ -71,6 +75,59 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		SetStage(TBD_EGameStage.LOADING);
 		TBD_MissionLoader.BeginLoad();
 		GetGame().GetCallqueue().CallLater(TickLoading, 1000, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One-shot component roll-call for the entity that owns the framework.
+	//!
+	//! Why this exists: a component whose class fails to resolve is dropped from the prefab
+	//! SILENTLY. `TBD_GameMode.et` still lists it, every script still compiles clean, and the
+	//! only symptom is a feature that never runs. Three components (lobby, spectator,
+	//! safestart) were added to that prefab across three separate slices with nothing anywhere
+	//! proving they instantiate — the compile gate cannot see prefab wiring at all.
+	//!
+	//! `scripts/mod/world-boot.sh` boots the real scenario headlessly and asserts this line, so
+	//! a dropped component fails the wave gate instead of surfacing mid-event. The framework
+	//! manager itself is not listed: it is the thing printing, so its presence is self-evident.
+	protected void PrintComponentRollCall()
+	{
+		IEntity owner = GetOwner();
+		if (!owner)
+		{
+			Print("[TBD] roll-call: no owner entity — cannot enumerate components.", LogLevel.ERROR);
+			return;
+		}
+
+		array<string> missing = new array<string>();
+		string line = "[TBD] roll-call:";
+		line += RollCallEntry(owner, TBD_SpawnManager, "SpawnManager", missing);
+		line += RollCallEntry(owner, TBD_SafestartManager, "Safestart", missing);
+		line += RollCallEntry(owner, TBD_LoadoutEquipComponent, "LoadoutEquip", missing);
+		line += RollCallEntry(owner, TBD_SpectatorComponent, "Spectator", missing);
+		line += RollCallEntry(owner, TBD_LobbyComponent, "Lobby", missing);
+
+		if (missing.IsEmpty())
+		{
+			Print(line);
+			return;
+		}
+
+		Print(line, LogLevel.ERROR);
+		Print(string.Format("[TBD] roll-call: %1 component(s) declared on TBD_GameMode.et did not instantiate.",
+			missing.Count()), LogLevel.ERROR);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One roll-call cell. Returns the " Label=ok" / " Label=MISSING" fragment and records the
+	//! misses, so the caller builds the whole verdict in one line without a ternary (Enfusion
+	//! Script has none).
+	protected string RollCallEntry(notnull IEntity owner, typename componentType, string label, notnull array<string> missing)
+	{
+		if (owner.FindComponent(componentType))
+			return " " + label + "=ok";
+
+		missing.Insert(label);
+		return " " + label + "=MISSING";
 	}
 
 	//------------------------------------------------------------------------------------------------

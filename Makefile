@@ -6,7 +6,7 @@ WEB := apps/website/api
 # ~/go/bin is prepended for the editorconfig-checker binary (`make verify-editorconfig`).
 export PATH := $(HOME)/.cargo/bin:$(HOME)/.local/go/bin:$(HOME)/go/bin:$(PATH)
 
-.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
+.PHONY: help db-up db-down db-logs seed registry-import api leptos leptos-debug leptos-build leptos-gates test build tickets ticket-list ticket-sync ticket-check ticket-check-strict schema-validate schema-codegen verify-citations mod-compile mod-compile-selftest mod-world-boot mod-world-boot-selftest enf-index enf-carve enf-apidoc verify-capability verify-oracle verify-no-crf-leak verify-coding-standards verify-doc-layout verify-editorconfig verify-t180 verify-terrain verify-no-python verify-no-node map-water-everon map-cartographic-everon map-cartographic-verify mcp-selftest mcp-smoke ci-local ci-local-leptos ci-local-schema rust-api rust-build rust-test rust-test-it rust-fmt rust-clippy rust-ci rust-sqlx-prepare wasm-ci lfs-dem lfs-sat
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -160,6 +160,12 @@ mod-compile-selftest: ## T-181.1 prove the compile gate still catches a broken .
 	else \
 		echo "SELFTEST OK: gate correctly rejected broken source"; \
 	fi
+
+mod-world-boot: ## T-181.17 boot the real scenario headlessly — asserts the TBD_GameMode component roll-call
+	bash scripts/mod/world-boot.sh
+
+mod-world-boot-selftest: ## T-181.17 prove the world-boot verdict logic can FAIL
+	bash scripts/mod/world-boot.sh --selftest
 
 verify-coding-standards: ## SIZE file length + doc layout (CODING_STANDARDS §11). Rust GO-2..9/ERR-4/LOG-3 analogs are enforced by clippy + the centralized ApiError type + `cargo fmt`.
 	$(MAKE) verify-doc-layout

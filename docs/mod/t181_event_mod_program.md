@@ -166,6 +166,28 @@ picker can open would ship a mod nobody can deploy into.
 
 ## Landmines (measured — do not relearn)
 
+- **`-config` and `-addons` are MUTUALLY EXCLUSIVE** on `ArmaReforgerServer` (measured 2026-07-25,
+  engine 1.7.0.54). Passing both is a hard fatal: `DEFAULT (F): -config cannot be used together with
+  addons!` → `ENGINE (E): Unable to initialize the game`. To boot a world with a LOCAL addon, pass
+  `-addonsDir <dir>` **and** list the addon in the config's `game.mods[]` keyed by the **GUID from
+  `addon.gproj`** (not a Workshop id): `"mods":[{"modId":"B2C3D4E5F6A78901","name":"TBD_Framework"}]`.
+- **`-addons` + `-scenarioId` with no `-config` looks like it works and does not.** The engine prints
+  `Game successfully created` and then idles — it never starts hosting, so the world never loads and
+  no game-mode prefab is ever instantiated. This is the harness that previously "proved" the
+  components could not be verified; it proves nothing either way. Absence of `[TBD]` output under it
+  is not evidence.
+- **A component listed on a prefab whose class fails to resolve is dropped SILENTLY** — the `.et`
+  still lists it, every script still compiles clean, and the only symptom is a feature that never
+  runs. The compile gate cannot see prefab wiring at all. `TBD_FrameworkManager.PrintComponentRollCall()`
+  now prints `[TBD] roll-call: …=ok|MISSING` one frame after `OnPostInit`, and
+  `scripts/mod/world-boot.sh` (wired into `wave.sh gate`) boots the real scenario and fails on any
+  `MISSING`. Negative control performed: deleting `TBD_LobbyComponent` from `TBD_GameMode.et` flips
+  the line to `Lobby=MISSING` and the gate to FAIL.
+- **Booting the real Eden world emits VANILLA script errors the mod does not own** (measured:
+  `'SCR_BaseResupplySupportStationComponent' needs a entity catalog manager!`). `world-boot.sh`
+  therefore fails only on errors tagged `[TBD]` or pathed under `Scripts/Game/TBD/`, and reports
+  vanilla ones as a note. Do not "fix" this into a blanket error check — it will cry wolf and then
+  get silenced wholesale.
 - `[RplProp(onRplName:)]` fires automatically **only on the proxy**; authority must invoke its
   own handler (CRF says so at `CRF_Gamemode.c:8`).
 - **Corollary that bites: on a LISTEN HOST, authority IS the local player**, so an `onRplName`

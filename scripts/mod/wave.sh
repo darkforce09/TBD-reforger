@@ -119,6 +119,11 @@ cmd_gate() {
   }
   run "compile"            bash scripts/mod/compile.sh
   run "compile-selftest"   distrobox-host-exec make mod-compile-selftest
+  # The compile gate is blind to prefab wiring: a component listed on TBD_GameMode.et whose
+  # class fails to resolve is dropped SILENTLY and everything still compiles clean.
+  # world-boot.sh boots the real scenario and asserts the game mode's component roll-call.
+  run "world boot"          bash scripts/mod/world-boot.sh
+  run "world-boot selftest" bash scripts/mod/world-boot.sh --selftest
   run "capability"         distrobox-host-exec make verify-capability
   run "oracle citations"   distrobox-host-exec make verify-oracle
   run "no-crf-leak"        distrobox-host-exec make verify-no-crf-leak
