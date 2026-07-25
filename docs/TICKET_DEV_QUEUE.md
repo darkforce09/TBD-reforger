@@ -16,7 +16,7 @@ Only `ready` tickets with `executor: claude-code` (or active slice).
 
 ## T-181 — TBD Framework — Arma-3-parity event mod (factory + spine)
 
-- **Active slice:** `T-181.7`
+- **Active slice:** `T-181.12`
 - **Slice spec:** `docs/mod/t181_event_mod_program.md`
 - **Program hub:** `docs/mod/t181_event_mod_program.md`
 - **Branch:** `main`

@@ -252,26 +252,48 @@ fi
 
 # ── LOAD-COUNT GUARD ────────────────────────────────────────────────────────────────────
 # Measured (T-181.7): if resourceDatabase.rdb is missing or stale, the engine silently skips
-# script compilation for every LOOSE addon — the Game module falls from 5663 to 5633 files
-# (vanilla only) — and this gate still reported "compiled clean". A green gate that is not
-# actually compiling our code is worse than no gate.
+# script compilation for every LOOSE addon — the Game module falls back to vanilla-only — and
+# this gate still reported "compiled clean". A green gate that is not compiling our code is
+# worse than no gate. (A canary addon cannot detect this: it dies with the mod. Verified.)
 #
-# A canary addon cannot detect it (it dies with the mod, verified). The file COUNT is the only
-# signal that survives, so we ratchet: remember the best count seen and fail if a run loses more
-# than the mod could possibly account for. Counts only ever grow as files are added, so a large
-# drop is always suspicious.
+# The check is EXACT rather than a fudge factor: measure the vanilla-only count once, then
+# require strictly more than that. Any TBD script at all pushes the count above vanilla; the
+# silent-failure mode lands exactly ON it. An earlier version compared against a ratcheting
+# best-seen count with an 80%-of-.c-files threshold — the wave-1 verifier proved that fired
+# with a margin of ONE file and would have silently stopped working after two more
+# WorkbenchGame scripts (which never enter the Game module), and that a fresh clone could
+# record a BROKEN count as its baseline.
+VANILLA_BASELINE_FILE="$ROOT/.compile-vanilla-baseline"
 loaded=$(grep -o "Module: Game; loaded [0-9]*x files" "$console" | tail -1 | grep -o "[0-9]*" || echo 0)
-BASELINE_FILE="$ROOT/.compile-load-baseline"
-mod_c=$(find "$MOD_SRC" -name '*.c' -not -path '*/EnfusionMCP/*' | wc -l)
-best=$(cat "$BASELINE_FILE" 2>/dev/null || echo 0)
-if [ "${loaded:-0}" -gt "${best:-0}" ]; then
-  echo "$loaded" > "$BASELINE_FILE"
-elif [ "${best:-0}" -gt 0 ] && [ $(( best - loaded )) -ge $(( mod_c * 4 / 5 )) ]; then
+if [ ! -s "$VANILLA_BASELINE_FILE" ]; then
+  echo "    (calibrating vanilla-only baseline, one time)"
+  cal_dir="$(mktemp -d "${TMPDIR:-/tmp}/tbd-cal.XXXXXX")"
+  mkdir -p "$cal_dir/addons" "$cal_dir/profile"
+  hostrun env -C "$SERVER_DIR" setsid sh -c '
+    echo $$ > "$1/server.pid"
+    exec timeout 120 ./ArmaReforgerServer -addonsDir "$1/addons" -profile "$1/profile" -maxFPS 15
+  ' _ "$cal_dir" >/dev/null 2>&1 &
+  cal_pid=$!
+  cal_console=""
+  cal_deadline=$(( SECONDS + 120 ))
+  while [ $SECONDS -lt $cal_deadline ]; do
+    [ -z "$cal_console" ] && { d=$(ls -1d "$cal_dir"/profile/logs/logs_* 2>/dev/null | tail -1 || true); [ -n "$d" ] && cal_console="$d/console.log"; }
+    [ -n "$cal_console" ] && grep -q "Module: Game; loaded" "$cal_console" 2>/dev/null && break
+    sleep 0.3
+  done
+  cal_n=$(grep -o "Module: Game; loaded [0-9]*x files" "$cal_console" 2>/dev/null | tail -1 | grep -o "[0-9]*" || echo 0)
+  [ "${cal_n:-0}" -gt 0 ] && echo "$cal_n" > "$VANILLA_BASELINE_FILE"
+  [ -f "$cal_dir/server.pid" ] && hostrun kill -9 -- "-$(cat "$cal_dir/server.pid")" >/dev/null 2>&1 || true
+  kill "$cal_pid" 2>/dev/null || true
+  rm -rf "$cal_dir"
+fi
+vanilla=$(cat "$VANILLA_BASELINE_FILE" 2>/dev/null || echo 0)
+if [ "${vanilla:-0}" -gt 0 ] && [ "${loaded:-0}" -le "${vanilla:-0}" ]; then
   echo
   echo "FAIL: the mod's scripts did not compile."
-  echo "  Game module loaded $loaded files; best seen was $best (mod has $mod_c .c files)."
-  echo "  A drop this size means tbd-framework was NOT compiled even though the run was clean."
-  echo "  Most likely cause: resourceDatabase.rdb is missing or stale."
+  echo "  Game module loaded $loaded files; vanilla-only is $vanilla."
+  echo "  Loading no more than vanilla means tbd-framework was NOT compiled, even though the"
+  echo "  run itself was clean. Most likely cause: resourceDatabase.rdb missing or stale."
   echo "  Fix: open apps/mod/tbd-framework in Workbench once so it regenerates the rdb."
   exit 1
 fi

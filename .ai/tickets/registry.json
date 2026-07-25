@@ -6087,8 +6087,8 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "Capability row 0 — blocks every screen."
+          "status": "shipped",
+          "notes": "UI framework @ fb36da81. TBD_MenuStack/TBD_MenuBase/TBD_ShellScreen/TBD_ListBox + TBD_UITheme (Aegis tokens) + 2 .layout + chimeraMenus.conf. Listbox POOLS and re-binds rows (vanilla SCR_ListBoxComponent creates/destroys per item — wrong for 128 slots). BLOCKER: chimeraMenus.conf is invisible to the engine until Workbench regenerates resourceDatabase.rdb — 'GUI (E): Menu preset TBD_UIShell not found!'. Proven by elimination across 4 path/meta variants; no script escape hatch (RegisterPreset/OpenMenuByLayout do not exist). Needs one slow-lane Workbench pass. COMPILE-VERIFIED ONLY — no visual claim."
         },
         "T-181.8": {
           "targets": [
@@ -6141,8 +6141,8 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "Per-slot loadout from the compiled mission document; re-equip every spawn."
+          "status": "shipped",
+          "notes": "JSON loadouts @ 4b1ff732. optic+magazine were parsed and DISCARDED — now mounted into weapon storage. Honest per-field failure lines naming slot+item; nakedness guard. Closed a real hole: body reuse now keyed on IDENTITY, so a player taking a vacated slot cannot inherit the previous occupant's fired mags/damage, while a mid-life reconnect still gets its own body. AdminRespawn forces a fresh body. IsBodyDead treated a missing CharacterControllerComponent as ALIVE (bug). COMPILE-VERIFIED ONLY — magazine chambering and optic mounting need eyes."
         },
         "T-181.11": {
           "targets": [
@@ -6204,8 +6204,8 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "Fail fast on a bad mission JSON."
+          "status": "shipped",
+          "notes": "Mission validation @ 915b78a8. TBD_MissionValidator (27 checks, all run in one pass, ERROR vs WARNING) + TBD_Log. Rejected mission holds the server in LOADING via the existing IsValid gate — no FrameworkManager edit. '#tbd validate' replays findings in game; every #tbd reply leads with a failure banner. Decision table verified offline against both golden missions + 14 mutations (proves the table, NOT the Enfusion runtime). Needs a hook: TBD_Log.Stage(prev,next) has no caller."
         },
         "T-181.15": {
           "targets": [
@@ -6259,7 +6259,7 @@
           "notes": "Found by the T-181.10 slice agent, outside its scope: NO golden mission in packages/tbd-schema/golden-missions/ carries a slot `loadout` block, so schema CI never exercises the JSON-loadout path that T-181.10 just built. Add a fixture with gear + cargo so the contract is regression-tested rather than only compile-checked."
         }
       },
-      "active_slice": "T-181.7",
+      "active_slice": "T-181.12",
       "depends_on": [
         "T-068"
       ],
