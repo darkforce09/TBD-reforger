@@ -6010,7 +6010,9 @@
         "T-181.16",
         "T-181.20",
         "T-181.23",
-        "T-181.24"
+        "T-181.24",
+        "T-181.25",
+        "T-181.26"
       ],
       "slice_plan": {
         "T-181.0": {
@@ -6293,6 +6295,22 @@
           "executor": "claude-code",
           "status": "ready",
           "notes": "Spectator streaming host, requested by T-181.12. Under one life a dead player still controls their corpse, so their replication origin is pinned where they fell — fly the free camera far and the world is EMPTY because those entities were never sent to that client. CRF solves it by possessing a physics/damage-disabled dummy the camera drags along, which needs possess authority (SCR_PossessSpawnData / SCR_PossessSpawnRequestComponent) in files T-181.22 owned. Wanted: server-authoritative PossessSpectatorHost(playerId) / ReleaseSpectatorHost(playerId), refusing anyone not dead. Mitigated meanwhile, not solved: the roster reports an honest 'N more not in view — fly closer' rather than offering targets it cannot render. Also optional: a ScriptInvoker GetOnLifeSpent() to replace the client's 250ms inference."
+        },
+        "T-181.25": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "human",
+          "status": "ready",
+          "notes": "CROSS-SLICE RISK, must be settled by the Workbench rdb pass. FOUR separate `modded enum ChimeraMenuPreset` blocks now exist — TBD_UIShell (T-181.7), TBD_Spectator (T-181.12), TBD_UIBriefing (T-181.9.2), TBD_UILobby (T-181.9.1) — and the admin menu may add a fifth. Whether they yield DISTINCT values is unprovable from the compile lane: duplicate switch case labels compile clean, so the obvious probe (and its negative control) both pass. IF THEY COLLIDE THE WRONG MENU OPENS. Also: THREE `modded class SCR_PlayerController` blocks now coexist (TBD_MissionBrowser, briefing, lobby) — the spectator slice's own header calls a second one 'a collision waiting to happen', and it worked around the problem by hosting on a game-mode component instead. Verify both at the first Workbench pass / live run; if enums collide, move all presets into ONE modded enum block."
+        },
+        "T-181.26": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Latent wire-format fragility found by T-181.9.1. `string.Split`'s empty-token behaviour is native, has no source in any oracle, and is unproven. The lobby designed around it with a `~` sentinel for empty fields; TBD_BriefingService (T-181.9.2, already merged) did NOT — its `M` record serialises mission name / terrain / factionKey / factionName POSITIONALLY, so a mission with an empty terrain or faction displayName could shift every field after it and mis-render the briefing. Either adopt the sentinel or prove Split's behaviour with a negative-controlled probe."
         }
       },
       "active_slice": "T-181.15",

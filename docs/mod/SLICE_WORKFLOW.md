@@ -108,6 +108,12 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | Probe dir hygiene | **Use a FRESH, uniquely-named dir per probe** (`/tmp/probe-$$`). Probe dirs are shared and sticky — a leftover file from another agent silently polluted a run. `compile.sh` now lists what it stages so contamination is visible. |
 | Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
 
+**A GREEN PROBE IS MEANINGLESS WITHOUT A NEGATIVE CONTROL.** Always compile a variant that MUST
+fail, and confirm it does. Measured: duplicate `switch` case labels compile clean in Enfusion, so a
+T-181.9.1 probe testing enum distinctness passed — **and so did its negative control**. The probe
+proved nothing, and only running the control revealed that. If your control passes, your probe
+cannot support any conclusion.
+
 **PROBE BY ASSIGNING TO THE EXPECTED TYPE, never by printing.** A T-181.9.2 probe "proved"
 `s = s.Replace(a,b)` worked because `Print(s.Replace(...))` compiles — `Print` accepts an int, and
 `string.Replace` mutates in place and returns a COUNT. The probe passed for the wrong reason and the

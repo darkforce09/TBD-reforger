@@ -135,6 +135,28 @@ of claiming it:
 dropped: the picker ships on the new gamemode state machine. `ClaimSlot` in `TBD_SpawnManager`
 is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave when it lands.
 
+## The Workbench pass — what it unblocks and what it settles
+
+One slow-lane pass (open `apps/mod/tbd-framework` in Workbench so it regenerates
+`resourceDatabase.rdb`) is now gating FOUR screens and settling two open risks. Do it before the
+first live test, then verify headlessly.
+
+**Unblocks** — every modded menu preset currently fails with `GUI (E): Menu preset '<name>' not
+found!`, so none of these can open: `TBD_UIShell`, `TBD_Spectator`, `TBD_UIBriefing`, `TBD_UILobby`
+(+ admin). Non-script resources (`.conf`, `.layout`) are invisible to the engine until the rdb is
+rewritten; `.c` files are directory-scanned and are NOT affected.
+
+**Settles** — T-181.25: whether four separate `modded enum ChimeraMenuPreset` blocks produce
+distinct values (unprovable from the compile lane), and whether three `modded class
+SCR_PlayerController` blocks coexist at runtime.
+
+**Green light:** the `Menu preset … not found!` lines disappear from
+`<profile>/logs/logs_*/error.log`. That check is headless and takes ~20 s — no GUI needed to confirm.
+
+**Then, and only then:** flip `m_bAutoDeploy` to `0` in `TBD_SpawnManager`. It is `1` today because
+the LOBBY auto-deploy wave is currently the ONLY working way into the world; flipping it before the
+picker can open would ship a mod nobody can deploy into.
+
 ## Landmines (measured — do not relearn)
 
 - `[RplProp(onRplName:)]` fires automatically **only on the proxy**; authority must invoke its
@@ -161,6 +183,8 @@ is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave 
   returns early for `RplMode.Client` before `BeginLoad()`, and `m_mPlayerSlot` is a plain map, not
   an `RplProp`. Every client-side screen must be SERVER-FED over RPC — which is also what makes
   side-discipline enforceable at the wire instead of in a widget.
+- **Duplicate `switch` case labels compile CLEAN** — so a switch cannot be used to prove enum
+  values are distinct, and any probe built on one is worthless without a failing negative control.
 - **THERE IS NO TERNARY OPERATOR.** `cond ? a : b` fails with `Broken expression (missing ';'?)`
   pointing at the whole statement and never mentioning `?`.
 - **A `class X : SomeClass {}` component descriptor may need a trailing `;`** — without it the NEXT
