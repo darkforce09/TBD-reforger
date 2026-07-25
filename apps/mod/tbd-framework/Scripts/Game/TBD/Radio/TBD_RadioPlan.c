@@ -279,12 +279,14 @@ class TBD_RadioPlan
 		int total = authored.Count();
 		int rejected = 0;
 
+		map<string, bool> knownFactions = CollectFactionKeys();
+
 		foreach (TBD_MissionNetStruct net : authored)
 		{
 			if (s_aNets.Count() >= MAX_NETS)
 				break;
 
-			string fault = Fault(net);
+			string fault = Fault(net, knownFactions);
 			if (!fault.IsEmpty())
 			{
 				rejected++;
@@ -310,12 +312,40 @@ class TBD_RadioPlan
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Every faction key the mission actually declares. `map<string, bool>` and not `set<string>`
+	//! because Enforce's `set` removal is by INDEX, which is a recorded landmine in this program.
+	protected static map<string, bool> CollectFactionKeys()
+	{
+		map<string, bool> keys = new map<string, bool>();
+
+		array<ref TBD_MissionFactionStruct> factions = TBD_MissionLoader.GetFactions();
+		if (!factions)
+			return keys;
+
+		foreach (TBD_MissionFactionStruct faction : factions)
+		{
+			if (faction && !faction.key.IsEmpty())
+				keys.Set(faction.key, true);
+		}
+
+		return keys;
+	}
+
 	//! Empty string = this net is usable. Anything else is the reason it is not, phrased for the
 	//! mission author who has to fix it.
 	//!
 	//! `freqMHz` is checked FIRST and against the band, because that is the check that also
 	//! distinguishes an authored net from a struct `JsonLoadContext` allocated out of nothing.
-	protected static string Fault(TBD_MissionNetStruct net)
+	//!
+	//! ── The cross-reference the JSON schema structurally cannot make ────────────────────────
+	//! `net.faction` is a `factionKey` by PATTERN (`^[a-z][a-z0-9_]*$`) and nothing more: no schema
+	//! keyword can require it to name a faction this document actually declares. A typo therefore
+	//! validates perfectly and then matches no player on either side, so the net is served to
+	//! NOBODY and the mission author is told nothing. That is precisely the silent half-load this
+	//! program keeps getting bitten by, so it is an explicit rejection with a named reason here.
+	//! Same shape as T-181.34's kit-alias decision: the vocabulary is not a closed enum, so
+	//! existence is checked against the document the game server is actually reading.
+	protected static string Fault(TBD_MissionNetStruct net, map<string, bool> knownFactions)
 	{
 		if (!net)
 			return "null entry";
@@ -331,6 +361,15 @@ class TBD_RadioPlan
 
 		if (net.label.IsEmpty())
 			return string.Format("id='%1' has an empty label — a player would see a blank net", net.id);
+
+		// An empty faction is LEGAL and means "shared net", so only a NAMED faction is checked.
+		// `knownFactions` empty means the document declared no factions at all, which the mission
+		// validator already refuses on its own account — do not pile a second complaint on top.
+		if (!net.faction.IsEmpty() && !knownFactions.IsEmpty() && !knownFactions.Contains(net.faction))
+		{
+			return string.Format("id='%1' is scoped to faction '%2', which this mission does not declare — it would be served to nobody",
+				net.id, net.faction);
+		}
 
 		return string.Empty;
 	}
