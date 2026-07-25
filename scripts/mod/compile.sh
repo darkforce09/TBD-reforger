@@ -250,6 +250,32 @@ if [ "$verdict" = fail ] || { [ -n "$errlog" ] && grep -q "SCRIPT    (E):" "$err
   exit 1
 fi
 
+# ── LOAD-COUNT GUARD ────────────────────────────────────────────────────────────────────
+# Measured (T-181.7): if resourceDatabase.rdb is missing or stale, the engine silently skips
+# script compilation for every LOOSE addon — the Game module falls from 5663 to 5633 files
+# (vanilla only) — and this gate still reported "compiled clean". A green gate that is not
+# actually compiling our code is worse than no gate.
+#
+# A canary addon cannot detect it (it dies with the mod, verified). The file COUNT is the only
+# signal that survives, so we ratchet: remember the best count seen and fail if a run loses more
+# than the mod could possibly account for. Counts only ever grow as files are added, so a large
+# drop is always suspicious.
+loaded=$(grep -o "Module: Game; loaded [0-9]*x files" "$console" | tail -1 | grep -o "[0-9]*" || echo 0)
+BASELINE_FILE="$ROOT/.compile-load-baseline"
+mod_c=$(find "$MOD_SRC" -name '*.c' -not -path '*/EnfusionMCP/*' | wc -l)
+best=$(cat "$BASELINE_FILE" 2>/dev/null || echo 0)
+if [ "${loaded:-0}" -gt "${best:-0}" ]; then
+  echo "$loaded" > "$BASELINE_FILE"
+elif [ "${best:-0}" -gt 0 ] && [ $(( best - loaded )) -ge $(( mod_c * 4 / 5 )) ]; then
+  echo
+  echo "FAIL: the mod's scripts did not compile."
+  echo "  Game module loaded $loaded files; best seen was $best (mod has $mod_c .c files)."
+  echo "  A drop this size means tbd-framework was NOT compiled even though the run was clean."
+  echo "  Most likely cause: resourceDatabase.rdb is missing or stale."
+  echo "  Fix: open apps/mod/tbd-framework in Workbench once so it regenerates the rdb."
+  exit 1
+fi
+
 files=$(grep -o "Module: Game; loaded [0-9]*x files; [0-9]*x classes" "$console" | tail -1 || true)
 took=$(grep -o "Compiling Game scripts took: [0-9.]* ms" "$console" | tail -1 || true)
 warn=$(grep -c "SCRIPT    (W): @\"Scripts/Game/TBD/" "$errlog" 2>/dev/null || echo 0)

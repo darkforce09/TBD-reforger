@@ -146,4 +146,13 @@ is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave 
 - The dedicated server **exits 0 even when compilation fails**. Read the logs, never `$?`.
 - `int x = ;` compiles clean — Enfusion is lenient. Undefined symbols are what actually error.
 - Enforce `set`/`array.Remove` is **by index**.
+- **`resourceDatabase.rdb` gates NON-SCRIPT resources.** New `.c` files are directory-scanned and
+  compile without an rdb entry, but new `.conf`/`.layout` files stay INVISIBLE to the engine until
+  Workbench rewrites the rdb. A modded menu preset therefore cannot resolve from a script-only slice.
+- **A missing/stale rdb makes the engine skip script compilation for every LOOSE addon** — the Game
+  module silently drops to vanilla-only and the compile gate used to still print "compiled clean".
+  `compile.sh` now ratchets the loaded-file count and fails on a large drop. A canary addon does NOT
+  work for this (it dies with the mod — measured).
+- **The headless server validates menu presets**: `GUI (E): Menu preset '<name>' not found!` is a
+  free, ~20 s, no-Workbench check that a modded preset is wired up.
 - `wb_reload` never recompiles; Workbench must restart per compile (the fast lane avoids this).
