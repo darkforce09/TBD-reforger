@@ -7,6 +7,8 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
   }
   TBD_LoadoutEquipComponent "{B2F0C7A14D6E9A33}" {
   }
+  TBD_SpectatorComponent "{E4A9C1730B6D5F82}" {
+  }
   SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
   }
  }
