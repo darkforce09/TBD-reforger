@@ -274,6 +274,23 @@ picker can open would ship a mod nobody can deploy into.
   does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
 - **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
   which is how the spectator camera avoids the rdb blocker entirely.
+- **`string.Length()` counts BYTES and `Substring` is BYTE-INDEXED.** Measured: `"…".Length()` is
+  3, `"·".Length()` is 2, and `"café latte".Substring(0,4)` returns a **broken UTF-8 sequence**.
+  Any truncation of authored prose must back off to a space (0x20 cannot appear inside a multi-byte
+  sequence) or it will emit invalid UTF-8. Known remaining exposure: `TBD_MarkerService.CapLabel`.
+- **`string.Trim()` is NOT in the mutate-in-place family** — it returns a real string. The landmine
+  holds for `Replace`/`ToUpper`/`ToLower` (all three measured returning an int count), but not for
+  `Trim`. Do not generalise the family by guessing which members belong.
+- **CORRECTION to this program's own probe advice: `int n = s.Foo()` proves NOTHING.** Enfusion
+  coerces **string → int implicitly** (but not int → string), so an int-returning method AND a
+  string-returning one both compile under `int n = …`. The discriminating test is the other
+  direction — **`string x = s.Foo();`**, which FAILS with `Incompatible parameter` for the
+  int-returning ones. Earlier guidance here recommended the useless direction; it has been used in
+  real probes and would have "confirmed" either answer.
+- **NEVER `git stash` inside a slice worktree.** It runs despite the git-lfs hook error and deletes
+  all 983 `packages/map-assets/**` pointer files. Recoverable with a filter-neutralised
+  `git checkout -- packages/map-assets`, but it looks like catastrophic data loss when it happens.
+- **`\uXXXX` escapes are not supported** — Enfusion drops the backslash silently.
 - **`RegisterScriptHandler` compile-checks NOTHING about the callback** — not the event name (a
   string), not the arity, not the parameter types. Measured: `void H(int)` and
   `void H(string,string,string)` BOTH bind clean to the same 3-arg event, and the function returns

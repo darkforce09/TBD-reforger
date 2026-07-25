@@ -138,11 +138,22 @@ T-181.9.1 probe testing enum distinctness passed — **and so did its negative c
 proved nothing, and only running the control revealed that. If your control passes, your probe
 cannot support any conclusion.
 
-**PROBE BY ASSIGNING TO THE EXPECTED TYPE, never by printing.** A T-181.9.2 probe "proved"
-`s = s.Replace(a,b)` worked because `Print(s.Replace(...))` compiles — `Print` accepts an int, and
-`string.Replace` mutates in place and returns a COUNT. The probe passed for the wrong reason and the
-compile gate caught what the probe missed. Write `string out = s.Replace(a,b);` — if the type is
-wrong, the compiler says so.
+**PROBE BY ASSIGNING TO THE EXPECTED TYPE, never by printing — AND ASSIGN TO `string`, NOT `int`.**
+A T-181.9.2 probe "proved" `s = s.Replace(a,b)` worked because `Print(s.Replace(...))` compiles —
+`Print` accepts an int, and `string.Replace` mutates in place and returns a COUNT.
+
+**The direction matters, and this doc had it wrong until T-181.27 measured it.** Enfusion coerces
+**string → int implicitly** (but NOT int → string). So `int n = s.Foo();` compiles whether `Foo`
+returns an int or a string — it discriminates nothing, and it was recommended here and used in real
+probes. The test that actually discriminates is the other way round:
+
+```c
+string out = s.Replace(a, b);   // FAILS: "Incompatible parameter" — so Replace returns an int
+string out = s.Trim();          // compiles — so Trim really does return a string
+```
+
+Always probe toward the **narrower** type. If a probe direction would compile under both answers, it
+is not a probe.
 
 **Two kinds of Enfusion class, two different oracles** — know which you are asking about:
 
