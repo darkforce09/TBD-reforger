@@ -15,4 +15,6 @@
 7	T-181.28	Briefing JIP catch-up (push-only has no late-join path)	Scripts/Game/TBD/UI/TBD_BriefingController.c
 7	T-181.31	Validate the /compiled document before serving it to the mod	apps/website/api/src/handlers/missions.rs
 8	T-181.29	Lobby raise must skip already-deployed players	Scripts/Game/TBD/UI/Lobby/**
-8	T-181.30	Truth-in-comments + audit-ring hardening	Scripts/Game/TBD/Gamemode/**
+8	T-181.33	Safestart Restore must restore prior value, not force true	TBD_SafestartManager.c
+8	T-181.34	Cargo container enum in mission schema	packages/tbd-schema/**
+9	T-181.30	Truth-in-comments + audit-ring hardening	Scripts/Game/TBD/Gamemode/**
