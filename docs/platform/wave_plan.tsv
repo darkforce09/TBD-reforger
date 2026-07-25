@@ -3,7 +3,7 @@
 # Waves are packed by FILE-DISJOINTNESS in priority order.
 # Regenerate: python3 scripts/platform/slice-collisions.py --repack
 #
-1	T-182	Arsenal silently drops three of four weapon slots at compile	crates/map-engine-core/src/mission/flatten.rs
+1	T-182	Arsenal silently drops three of four weapon slots at compile	packages/tbd-schema/schema/mission.schema.json; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionSlotStruct.c; apps/mod/tbd-framework/Scripts/Game/TBD/Gamemode/TBD_LoadoutEquipHelper.c; apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_MissionValidator.c; crates/map-engine-core/src/mission/flatten.rs
 1	T-185	A transient Discord failure demotes an admin to enlisted	apps/website/api/src/handlers/oauth.rs
 1	T-186	Add make mod-world-boot-compiled — API output into the real Enfusion parser	scripts/mod/world-boot.sh
 1	T-187	Fix setup-server-profile.sh — it copies a golden that does not exist	scripts/mod/setup-server-profile.sh; golden-missions/msn_8f3a2c.json
