@@ -137,20 +137,40 @@ class TBD_Objective
 	//! would freeze the map at whatever the first thirty seconds produced.
 	bool m_bComplete;
 
+	// ── Announcement bookkeeping ────────────────────────────────────────────────────────────
 	//! Seconds since the last progress message to the players standing on this objective.
 	float m_fSinceAnnounce;
 
+	//! The contested state the players were last TOLD about. Kept separate from `m_bContested` so a
+	//! message is sent on the TRANSITION only — a 1 Hz tick that re-announced a standing state would
+	//! bury the log and the chat window in the same line sixty times a minute.
+	bool m_bAnnouncedContested;
+
+	//! HOLD_UNTIL: how far down the remaining-time announcement ladder this objective has got.
+	//! See `TBD_ObjectivesComponent.NextHoldMark`.
+	int m_iHoldMarkIndex;
+
+	//! What the players standing ON this objective should be told at the end of this tick, or empty.
+	//! Set during the advance pass and consumed by the single delivery walk, so one tick costs at
+	//! most two passes over the player list however many objectives changed.
+	string m_sPendingInsideMessage;
+
 	//! Scratch for one tick's presence sample: parallel arrays of faction key and living body
-	//! count. Reused rather than reallocated — this is walked once per objective per second for
-	//! the whole round, and a fresh map per objective per tick is garbage for no benefit.
+	//! count, plus the ids of the players who were inside. Reused rather than reallocated — this is
+	//! walked once per objective per second for the whole round, and a fresh map per objective per
+	//! tick is garbage for no benefit.
 	ref array<string> m_aPresentFactions;
 	ref array<int> m_aPresentCounts;
+	//! Player ids sampled inside this objective this tick. Recorded during sampling rather than
+	//! recomputed at delivery so containment is tested exactly once per player per objective.
+	ref array<int> m_aPresentPlayers;
 
 	//------------------------------------------------------------------------------------------------
 	void TBD_Objective()
 	{
 		m_aPresentFactions = new array<string>();
 		m_aPresentCounts = new array<int>();
+		m_aPresentPlayers = new array<int>();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -169,10 +189,16 @@ class TBD_Objective
 
 	//------------------------------------------------------------------------------------------------
 	//! Start a fresh presence sample.
+	//! Clears the pending message too, and deliberately HERE rather than in the advance pass: the
+	//! advance pass skips objectives that are not usable, so a message left on an objective that
+	//! went inert mid-round would be re-delivered every tick forever. `BeginSample` runs for every
+	//! objective, usable or not, which makes it the only correct place for this.
 	void BeginSample()
 	{
 		m_aPresentFactions.Clear();
 		m_aPresentCounts.Clear();
+		m_aPresentPlayers.Clear();
+		m_sPendingInsideMessage = string.Empty;
 	}
 
 	//------------------------------------------------------------------------------------------------
