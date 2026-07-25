@@ -609,7 +609,13 @@ class TBD_LobbyStage
 	protected static bool s_bPresetUnavailable;
 
 	//------------------------------------------------------------------------------------------------
-	//! @authority client — a dedicated server has no workspace and must never open a menu.
+	//! @authority client — only a machine with a local player may open a menu.
+	//!
+	//! The workspace check below is kept as a cheap "is there a GUI subsystem at all" filter, but it
+	//! is NOT the dedicated-server test this comment used to claim it was: `GetGame().GetWorkspace()`
+	//! is non-null on a headless dedicated server (measured — see `Raise`, which carries the
+	//! evidence and the actual guard). Starting the poll on a server is harmless; RAISING a menu is
+	//! not, so that is where the real test lives.
 	static void Start()
 	{
 		if (s_bRunning)
@@ -694,8 +700,28 @@ class TBD_LobbyStage
 
 	//------------------------------------------------------------------------------------------------
 	//! Put the picker up, at most once per round if the preset cannot resolve.
+	//!
+	//! ── T-181.42: this is where "do I have a screen" is actually decided ────────────────────
+	//! **`GetGame().GetWorkspace()` is NON-NULL on a headless dedicated server** (engine 1.7.0.54).
+	//! It is not a dedicated-server test, and this class used to treat it as one. MEASURED in this
+	//! repo: `world-boot.sh --mission=bridgehead-at-levie` with `TBD_WORLDBOOT_SETTLE=12` failed
+	//! **3/3** with `SCRIPT (E): [TBD][ui] preset 60 did not open`, ~1000 ms (two poll ticks) after
+	//! `LOADING -> LOBBY`, on a boot with ZERO players. For that line to be reachable at all, BOTH
+	//! workspace guards on the path (`TBD_LobbyComponent.OnPostInit` and `Start`) must have passed
+	//! on a headless machine — the failing log is its own proof. The default 4 s settle usually
+	//! ended before the watcher fired, which is why this read as an intermittent gate flake.
+	//!
+	//! The reliable test is a null LOCAL PLAYER CONTROLLER — the idiom `TBD_MissionBrowser.c:285`
+	//! already uses. It goes HERE rather than in `Start()` deliberately: `Tick` polls every 500 ms,
+	//! so gating the raise is self-healing — a client whose controller is not up yet simply raises
+	//! on a later tick. Gating `Start()` would be a one-shot test with a race, and losing that race
+	//! would mean the picker silently NEVER appears, which is far worse than raising it late. Same
+	//! reasoning the `Tick` comment already gives for keeping the first open unconditional.
 	protected static void Raise()
 	{
+		if (!GetGame().GetPlayerController())
+			return;
+
 		if (s_bPresetUnavailable)
 			return;
 
