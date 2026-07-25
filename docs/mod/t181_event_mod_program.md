@@ -257,11 +257,32 @@ picker can open would ship a mod nobody can deploy into.
   does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
 - **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
   which is how the spectator camera avoids the rdb blocker entirely.
-- **Only ONE `modded class SCR_PlayerController` per addon is safe.**
-- **`string.Replace()` / `ToUpper()` mutate in place and return a COUNT**, not the new string.
-  `s = s.Replace(a,b)` fails to compile.
-- **Two `modded class SCR_PlayerController` blocks in one addon compile fine**, and methods declared
-  in one are callable from the other.
+- **In `mission.schema.json`, `required` does NOT mean non-empty.** Most string fields declare no
+  `minLength`, so a key can be present and blank and still validate. `$defs/marker` requires all
+  four of `x/z/icon/label`, yet `golden-missions/empty-warning-fields.json` ships a committed
+  marker with `icon: ""` **and** `label: ""`. The command center briefed a wave-5 agent that "all
+  four required, so a marker that exists is complete" — that is true of PRESENCE and false of
+  CONTENT, and the agent was right to correct it. Consequences: never use a required string as a
+  delimiter-safe wire field, and never treat empty as impossible. (The four `minLength: 1` fields
+  behind T-181.26/.31 are the exception, not the rule.)
+- **`modded class SCR_PlayerController` — how many are safe is UNSETTLED, and the count keeps
+  growing.** Two earlier entries here flatly contradicted each other ("only ONE is safe" vs "two
+  compile fine"); both wave-5 agents caught it. The measured facts, and only these:
+  - **N blocks COMPILE fine and methods declared in one are callable from the others.** Verified at
+    N=2, 3, and now **5** — `TBD_MissionBrowser.c`, `TBD_BriefingController.c`,
+    `TBD_LobbyController.c`, `TBD_SpectatorHost.c`, `TBD_MarkerController.c`.
+  - **Runtime coexistence has NEVER been observed.** No gate on the fast lane can see it:
+    `world-boot.sh` boots with zero players, and every one of these blocks only does anything when
+    a client is connected. "Compiles" is not "works".
+  - The "only ONE is safe" claim appears to have been an inference, not a measurement, and is
+    recorded as such rather than deleted — if it turns out to be true, the cost is high and this
+    note is where to look.
+  - **Mitigation in force:** each new block is written to minimise blast radius — the two added in
+    wave 5 override **no** vanilla method and add **no** `modded enum ChimeraMenuPreset` entry, so
+    they contribute nothing to the menu-preset collision that is the substance of T-181.25.
+  - **This is the first thing T-181.25 (operator, dedicated server) must settle.**
+- **`string.Replace()` / `ToUpper()` / `ToLower()` mutate in place and return a COUNT**, not the new
+  string. `s = s.Replace(a,b)` fails to compile; `int n = s.ToLower();` is what actually typechecks.
 - **The headless server validates menu presets**: `GUI (E): Menu preset '<name>' not found!` is a
   free, ~20 s, no-Workbench check that a modded preset is wired up.
 - `wb_reload` never recompiles; Workbench must restart per compile (the fast lane avoids this).
