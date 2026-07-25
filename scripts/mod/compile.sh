@@ -164,7 +164,11 @@ GPROJ
   cp "$PROBE_DIR"/*.c "$RUN_DIR/addons/tbd-probe/Scripts/Game/" 2>/dev/null || {
     echo "compile.sh: no .c files in $PROBE_DIR" >&2; exit 2; }
   ADDONS="$ADDONS,TBD_ApiProbe"
-  echo "    (probing $(ls -1 "$PROBE_DIR"/*.c 2>/dev/null | wc -l) file(s) from $PROBE_DIR)"
+  # LIST the files, do not just count them. Probe dirs are shared and sticky: a previous
+  # agent's leftover TBD_Probe.c in /tmp/tbdprobe silently polluted a T-181.12 run and made it
+  # believe an API existed. Naming what is staged makes contamination visible immediately.
+  echo "    (probing from $PROBE_DIR)"
+  for f in "$PROBE_DIR"/*.c; do echo "      $(basename "$f")"; done
 fi
 
 echo "==> compiling tbd-framework (native headless server, no Workbench)"

@@ -105,6 +105,7 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | Fetch more vanilla source | `bash scripts/mod/fetch-vanilla-source.sh <File.c>` — **polite: one person's site, never `--all`** |
 | How does a working framework do it? | `rg <pat> apps/mod/crf_framework/` — CRF, Arma Public License, **reference only** |
 | Does my change compile? | `bash scripts/mod/compile.sh` — ~1.3 s, native server, **no Workbench** |
+| Probe dir hygiene | **Use a FRESH, uniquely-named dir per probe** (`/tmp/probe-$$`). Probe dirs are shared and sticky — a leftover file from another agent silently polluted a run. `compile.sh` now lists what it stages so contamination is visible. |
 | Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
 
 **PROBE BY ASSIGNING TO THE EXPECTED TYPE, never by printing.** A T-181.9.2 probe "proved"

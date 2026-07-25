@@ -157,6 +157,16 @@ is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave 
   returns early for `RplMode.Client` before `BeginLoad()`, and `m_mPlayerSlot` is a plain map, not
   an `RplProp`. Every client-side screen must be SERVER-FED over RPC — which is also what makes
   side-discipline enforceable at the wire instead of in a widget.
+- **THERE IS NO TERNARY OPERATOR.** `cond ? a : b` fails with `Broken expression (missing ';'?)`
+  pointing at the whole statement and never mentioning `?`.
+- **A `class X : SomeClass {}` component descriptor may need a trailing `;`** — without it the NEXT
+  class fails with a misleading `Syntax error` / `Unexpected scope`.
+- **The cached vanilla source is a DIFFERENT BUILD from the retail runtime.** Measured:
+  `SCR_AIGroup.GetCallsignSingleString()` is called in cached `SCR_GroupsManagerComponent.c:434` but
+  does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
+- **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
+  which is how the spectator camera avoids the rdb blocker entirely.
+- **Only ONE `modded class SCR_PlayerController` per addon is safe.**
 - **`string.Replace()` / `ToUpper()` mutate in place and return a COUNT**, not the new string.
   `s = s.Replace(a,b)` fails to compile.
 - **Two `modded class SCR_PlayerController` blocks in one addon compile fine**, and methods declared
