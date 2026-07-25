@@ -133,6 +133,12 @@ cmd_gate() {
   # T-181.20 shipped golden mission fixtures whose whole purpose is to make a schema regression
   # fail. Platform CI validates them; the wave gate did not, so a broken fixture landed green
   # here and was only caught later. A slice's own deliverable must be gated by its own wave.
+  # A layout only loads when a menu opens, which needs a client — so nothing else in this gate
+  # can see a UI regression. This checks the structural invariants that actually broke: an empty
+  # slot block (a child with no HorizontalAlign keeps its DESIRED size, which for a Frame is ZERO),
+  # slot classes used on the wrong parent, geometry that disagrees with itself, and the
+  # FindAnyWidget name contract between layout and script.
+  run "ui layouts"         bash scripts/mod/verify-ui-layouts.sh
   run "schema validate"    distrobox-host-exec make schema-validate
   run "capability"         distrobox-host-exec make verify-capability
   run "oracle citations"   distrobox-host-exec make verify-oracle

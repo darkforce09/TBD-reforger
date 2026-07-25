@@ -365,6 +365,23 @@ picker can open would ship a mod nobody can deploy into.
   `.conf` and `.layout` files still need a `.meta` sidecar to register at all — 10 action `.conf`
   files under `Configs/System/Actions/` still lack one (`resource not registered: Setting null
   GUID`), which is the spectator/admin KEYBINDS, a separate problem from the screens.
+- **An EMPTY `Slot` block collapses a widget to nothing.** With no `HorizontalAlign`, a child keeps
+  its **desired** size — and a `FrameWidgetClass`'s desired size is **ZERO**. `TBD_ListRow.layout`
+  had `Slot ButtonWidgetSlot { }` wrapping a Frame, so every list row rendered as a ~10px sliver,
+  and with no `Wrap 0` the text wrapped one character per line: the unreadable vertical column from
+  the first live load-in. `HorizontalAlign 3` = **Stretch**, confirmed from
+  `vanilla_reference/Scripts/Core/generated/UI/LayoutHorizontalAlign.c`, not inferred.
+  `scripts/mod/verify-ui-layouts.sh` now gates this class.
+- **The engine binary's string table is NOT a usable oracle for layout keywords — do not repeat this
+  mistake, the command center made it.** A brief told an agent that `Anchor`/`SizeX`/`SizeY` were
+  absent from the binary and therefore invalid. With controls, `ImageWidgetClass`, `TextWidgetClass`,
+  `HorizontalAlign`, `Padding` and `HeightOverride` **all miss too**, and all are unquestionably
+  valid. A hit may be evidence; **a miss is evidence of nothing**. Worse, the first probe returned a
+  silent all-miss because `strings` is absent in the container and stderr was suppressed — a
+  "no results" that looked like a finding. `Anchor` IS honoured: `PrimaryAction` uses
+  `Anchor 1 1 1 1` with `OffsetLeft -288` and renders bottom-right on the operator's screen.
+  **Shipped `.layout` usage is the real oracle** (CRF has 89, vanilla's generated UI enums are
+  authoritative for values).
 - **`GetGame().GetWorkspace()` is NON-NULL on a HEADLESS DEDICATED SERVER** (engine 1.7.0.54,
   measured T-181.28). It is therefore **not** a dedicated-server test, and shipped code used it as
   one: `TBD_LobbyStage.Start()` gates on `if (!GetGame().GetWorkspace()) return;`, so on a headless
