@@ -6105,7 +6105,7 @@
             "root"
           ],
           "executor": "workbench",
-          "status": "queued",
+          "status": "deferred",
           "notes": "DEPRIORITISED: make mod-compile (native, 1.3s) removed most of the reason to open Workbench at all. Only world/prefab authoring and PIE visual checks still need it. Do this when a slice actually requires the editor."
         },
         "T-181.6": {
@@ -6114,7 +6114,7 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
+          "status": "deferred",
           "notes": "claude-code slices only; verify must exit 0 incl. mod-compile; never auto-ship; Workbench lockfile."
         },
         "T-181.7": {
@@ -6349,7 +6349,7 @@
           ],
           "executor": "claude-code",
           "status": "ready",
-          "notes": "REWRITTEN A THIRD TIME — each revision corrected the previous one, and this one rests on a measurement rather than an argument. The premise BOTH earlier versions accepted is FALSE: meta.name, meta.terrain, slot.groupCallsign and slot.role are schema ERRORS when empty (minLength:1, and a pattern on terrain — verified directly in mission.schema.json), not warnings. 'Warning' is only TBD_MissionValidator's RUNTIME severity; the mod validator is strictly MORE PERMISSIVE than the schema that produced the document. So a schema-valid mission can never carry those four empty, and no golden fixture can cover them. THE EXPOSURE IS STILL REAL, for a sharper reason: a document that BYPASSED schema validation can reach the mod. Confirmed at apps/website/api/src/handlers/missions.rs:820 — the /compiled endpoint calls flatten_to_mod_document and serves the result WITHOUT validating it; validate_mission_document exists only inside #[cfg(test)]. The WRITE path is guarded (validate_mission_editor_payload on save at :319 and :587); the READ path that feeds the mod is not. CONSEQUENCE: the mod-side defensive layer is LOAD-BEARING, not redundant. Fix stays as scoped — one sentinel convention across the three wire formats plus pack/sanitise at TBD_SpawnManager.c:577 — but the justification is 'the server can hand us an unvalidated document', not 'a legal mission has empty fields'. See T-181.31 for closing it at the source."
+          "notes": "REWRITTEN A FOURTH TIME — the third version's justification was closed by T-181.31 shipping. Track the history, because each revision corrected the last: (v1/v2) claimed meta.name/terrain/slot.groupCallsign/role are 'warnings' — FALSE, they are schema ERRORS (minLength:1, plus a pattern on terrain); 'warning' is only TBD_MissionValidator's RUNTIME severity, and the mod validator is strictly MORE PERMISSIVE than the schema that produced the document. (v3) argued the mod-side layer is load-bearing because /compiled served UNVALIDATED documents — TRUE AT THE TIME, now FALSE: T-181.31 shipped and get_compiled_mission calls validate_mission_document on the exact bytes it serves (handlers/missions.rs:831). (v4, current) THE EXPOSURE THAT SURVIVES is the LOCAL-FILE FALLBACK: TBD_MissionLoader.c:508 reads $profile:missions/<id>.json, opens and parses it with NO schema validation whatsoever — that is how world-boot.sh --mission= seeds missions and how an operator stages one by hand on a dedicated box. So an unvalidated document still reaches the mod, just not over HTTP any more. The mod-side sentinel remains load-bearing for that path only. ALSO: the note's old citation TBD_SpawnManager.c:577 is STALE — that line is now T-181.15 bind-key code. Re-locate the pack/sanitise sites before editing. Scope unchanged: one sentinel convention across the wire formats so an empty field cannot be confused with a missing one (string.Split's empty-token behaviour is a RUNTIME property, unprovable by compile probe)."
         },
         "T-181.27": {
           "targets": [
