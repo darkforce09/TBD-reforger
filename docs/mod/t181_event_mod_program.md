@@ -326,6 +326,21 @@ picker can open would ship a mod nobody can deploy into.
   fabricate `Foo.BarThatDoesNotExist()` alongside the real call and require the fake to error.
   Two separate slices have now had to correct this program's probe guidance; treat every probe
   technique here as provisional until its control has failed in the same run.
+- **`world-boot.sh --mission=` does NOT exercise any PLAYER-TRIGGERED path — it has ZERO players.**
+  It runs the boot-time spine: loader, validator, zone registry, objective registry, radio plan,
+  slot materialisation. It does **not** run `BuildForPlayer`, `Serialise`, `Parse`, any RPC, any
+  briefing/lobby/admin/marker payload, or any stage past LOBBY. The command center repeatedly told
+  agents to "use `--mission=empty-warning-fields` to exercise your empty-field handling for real";
+  for anything player-facing that is FALSE, and T-181.26 measured it (`grep -i briefing` over a full
+  `--mission` console log returns only `flow.briefingSeconds`). **Corollary worth designing around:
+  a service that self-checks AT BOOT is gated by this harness; one that self-checks lazily on first
+  use is not.**
+- **`string.Split` KEEPS empty tokens** (measured on engine 1.7.0.54 — previously recorded here as
+  an unprovable runtime unknown). The briefing wire was therefore *accidentally* correct on this
+  build and its empty-field defect was **latent, not live**. Do not read this as "delimited wire
+  formats are safe": it is one measured behaviour of one engine build, and the bijective
+  `FIELD_MARK` convention (`TBD_AdminData`, now `TBD_BriefingData`) does not depend on it.
+  `TBD_LobbyData` still uses a lossy `~` sentinel and is now the odd one out.
 - **`set` and `out` are RESERVED in Enfusion.** `TBD_RadioSet set` → *"Variable name 'set' is
   already used as type name"*; `array<X> out` → *"Expected name, not a keyword 'out'"*.
 - **`Rpc` takes at most 8 parameters** — nine gives *"Too many parameters for 'Rpc' method"*.
