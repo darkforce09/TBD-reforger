@@ -14,6 +14,9 @@
 //!      protectable body. This is a BOOLEAN GATE, not a scale: damage is off, not reduced, and it
 //!      is indifferent to who fired, so self-harm is covered by the same call. The API was proven
 //!      by compile probe against a negative control that failed (slice report).
+//!      **It is a SAVE/RESTORE, not a set-to-true** (T-181.33): each body's damage-handling value
+//!      is read once, before safestart's first mutation of it, and that value — not `true` — is
+//!      what the lift hands back. See `TBD_SafestartHold` and `RestoreOne`.
 //!   2. PROJECTILES DELETED — `OnProjectileShot` / `OnGrenadeThrown` script handlers destroy the
 //!      round the instant it exists. This is what makes damage-off cover bystanders whose damage
 //!      manager we could not find, and what stops a grenade cooking through the lift.
@@ -35,6 +38,11 @@
 //!     after the setter — "we called the setter" is not evidence.
 //!   * A watchdog keeps re-lifting every 5 s while any entity is unrestored, and keeps saying so
 //!     at ERROR the whole time. It stops itself the moment the set is empty.
+//!   * The save/restore is written so a wrong pre-read cannot make the lift a no-op. Turning
+//!     damage OFF is unconditional and never consults the getter, so arming cannot fail because
+//!     of it; and the one path that deliberately leaves a body invulnerable is COUNTED and logged
+//!     at WARNING (`leftDisabled=`), so the failure mode stays loud instead of becoming a silent
+//!     server full of bulletproof players. `leftDisabled=0` is the expected line for a normal round.
 //!
 //! ── Reference ───────────────────────────────────────────────────────────────────────────────
 //! Shape learned from CRF's `CRF_SafestartManager` (Arma Public License — read, never copied):
@@ -54,9 +62,47 @@
 //!   * A body created between one sweep and the next is unprotected for up to SWEEP_MS.
 //!   * Vehicles, static weapons and world objects keep their own damage managers; this manager
 //!     touches characters only.
+//!   * A body that was ALREADY invulnerable when safestart swept it comes out of safestart still
+//!     invulnerable. That is the save/restore working, not failing — safestart never disabled that
+//!     body's damage handling, so it has nothing to hand back, and making it damageable would be
+//!     safestart overruling whoever did. It is reported (`leftDisabled=` on the lift line, plus a
+//!     WARNING and a note in `StatusLine()`), so it is a visible outcome rather than a silent one.
 //!
 //! @authority server — the phase, the countdown and every mutation run on the authority. The
 //! only client-side code here is the countdown read-out.
+
+//! T-181.33 — everything safestart owes ONE body, in one object.
+//!
+//! Two facts have to travel together for the lift to be a restore: which arm's script handlers are
+//! live on the body, and what its damage handling was BEFORE safestart touched it. They were one
+//! `int` and nothing; two parallel maps would have been the obvious fix and the wrong one, because
+//! `Restore()` rebuilds the map every pass and two maps rebuilt in lockstep is a desync waiting for
+//! its first edit. One value object cannot desync from itself.
+class TBD_SafestartHold
+{
+	//! The arm generation whose suppression handlers are registered on this body; 0 = none.
+	//!
+	//! A generation rather than a bool because a body whose restore could not be VERIFIED stays
+	//! held with its handlers already removed. A bool would read as "still suppressed" on the next
+	//! arm and quietly skip re-registering them.
+	int m_iGeneration;
+
+	//! Damage handling as safestart FOUND it — read once, before the first mutation of this body,
+	//! and never re-read (from the next sweep on, the honest answer would be "off, because we did
+	//! that"). This is the value the lift hands back.
+	//!
+	//! `true` is the fail-safe direction: a body we know nothing about gets its damage back rather
+	//! than being left invulnerable. Under ONE LIFE, erring the other way is the whole event — a
+	//! wrong `false` here is a server of bulletproof players, which is the exact disaster the lift
+	//! is built to prevent.
+	//!
+	//! The initializer is documentation and a second line of defence, NOT the mechanism: every site
+	//! that constructs a hold assigns `true` explicitly first. Whether Enforce applies a field
+	//! initializer to a `new`-ed plain script class is a RUNTIME property, and no probe on the
+	//! compile lane can observe it — so nothing whose failure looks like this is allowed to rest
+	//! on it.
+	bool m_bDamageWasEnabled = true;
+}
 
 [ComponentEditorProps(category: "TBD/Framework", description: "TBD safestart — damage-off warmup between BRIEFING and LIVE.")]
 class TBD_SafestartManagerClass : SCR_BaseGameModeComponentClass {}
@@ -96,15 +142,15 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	protected bool m_bArmed;
 	protected int m_iConfiguredSeconds = 300;
 
-	//! Every body we have touched -> the arm generation whose script handlers are live on it
-	//! (0 = none). Membership alone means "we owe this body a restore", and a body is inserted
-	//! BEFORE its first mutation, so there is no window in which we have altered an entity the
-	//! lift would not visit.
+	//! Every body we have touched -> what we owe it (`TBD_SafestartHold`). Membership alone means
+	//! "we owe this body a restore", and a body is inserted BEFORE its first mutation, so there is
+	//! no window in which we have altered an entity the lift would not visit.
 	//!
-	//! The value is a generation rather than a bool because a body whose restore could not be
-	//! VERIFIED stays in this map with its handlers already removed. A bool would read as "still
-	//! suppressed" on the next arm and quietly skip re-registering them.
-	protected ref map<IEntity, int> m_mHeld = new map<IEntity, int>();
+	//! The hold OBJECT is created once per body and then carried — by every sweep, by every restore
+	//! pass, and across a re-arm — never recomputed. That is what makes restoring twice harmless:
+	//! the second pass reads the same recorded prior value as the first, because it is the same
+	//! object, not a fresh observation of a world safestart has already altered.
+	protected ref map<IEntity, ref TBD_SafestartHold> m_mHeld = new map<IEntity, ref TBD_SafestartHold>();
 
 	//! Increments on every Arm(). Starts at 1 so it can never collide with the 0 that means
 	//! "no handlers registered".
@@ -118,6 +164,16 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	protected int m_iSuppressedThrows;
 	//! Entities the last restore pass could not verify. Non-zero means players may be invulnerable.
 	protected int m_iUnrestored;
+
+	//! T-181.33 — bodies this arm first touched while their damage handling was ALREADY off.
+	//! Reset per arm, incremented only when a hold is created, so a body carried over from a failed
+	//! lift is not double-counted. The early warning: it is known during the warmup, minutes before
+	//! the lift, and for a round of live players it should be 0.
+	protected int m_iFoundDisabled;
+	//! Bodies the LAST restore pass deliberately left with damage handling off, because that is how
+	//! it found them. Authoritative over m_iFoundDisabled (it is computed over the whole owed set,
+	//! every pass). A large number here is the signature of a wrong pre-read, not of unusual bodies.
+	protected int m_iLeftDisabled;
 	protected bool m_bWatchdogRunning;
 	protected bool m_bLiftFailureAnnounced;
 	protected int m_iWatchdogPasses;
@@ -147,6 +203,43 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 			return null;
 
 		return TBD_SafestartManager.Cast(gameMode.FindComponent(TBD_SafestartManager));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The two sibling managers this file asks questions of, resolved the same way `GetInstance()`
+	//! resolves itself — off the LIVE game mode, never through their own constructor-set statics.
+	//!
+	//! T-181.33 fixes an asymmetry, not a live bug. `GetInstance()` above carries a paragraph
+	//! explaining why a static that outlives its world is the one wrong answer it must never give
+	//! — and then `TickCountdown`/`GoLive` called `TBD_FrameworkManager.GetInstance()` and
+	//! `CollectProtectables` called `TBD_SpawnManager.GetInstance()`, both of which are exactly the
+	//! plain `return s_Instance;` that reasoning rejects. Both stale directions happen to fail safe
+	//! (a stale framework answers "not SAFE_START" and we lift; a stale spawn manager yields no
+	//! slot bodies), so nothing was broken — but "happens to fail safe" is not the same as "is
+	//! right", and the next reader should not have to re-derive that twice.
+	//!
+	//! Fixed HERE rather than in those files because this slice does not own them, and because a
+	//! caller asking the live world is correct regardless of what the callee's static holds.
+	//! `TBD_FrameworkManager.IsFrameworkWorld()` already resolves this way for the same stated
+	//! reason, so this is the house idiom, not a new one.
+	protected static TBD_FrameworkManager LiveFrameworkManager()
+	{
+		SCR_BaseGameMode gameMode = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
+		if (!gameMode)
+			return null;
+
+		return TBD_FrameworkManager.Cast(gameMode.FindComponent(TBD_FrameworkManager));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! @see LiveFrameworkManager
+	protected static TBD_SpawnManager LiveSpawnManager()
+	{
+		SCR_BaseGameMode gameMode = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
+		if (!gameMode)
+			return null;
+
+		return TBD_SpawnManager.Cast(gameMode.FindComponent(TBD_SpawnManager));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -220,15 +313,31 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		m_iSuppressedShots = 0;
 		m_iSuppressedThrows = 0;
 		m_iUnrestored = 0;
+		m_iFoundDisabled = 0;
+		m_iLeftDisabled = 0;
 		m_bLiftFailureAnnounced = false;
 		m_mNegligentDischarge = new map<int, bool>();
 
+		// NOT cleared: m_mHeld. A failed lift leaves bodies in it that are still owed a restore,
+		// each carrying the damage-handling value safestart found on it. Clearing here would throw
+		// that value away and the next lift would be back to guessing.
 		int covered = SweepApply();
 
 		SetCountdown(m_iConfiguredSeconds);
 
 		TBD_Log.Kv(TBD_Log.CH_SAFESTART, "armed",
-			string.Format("seconds=%1 bodies=%2", m_iSecondsRemaining, covered));
+			string.Format("seconds=%1 bodies=%2 foundAlreadyOff=%3",
+				m_iSecondsRemaining, covered, m_iFoundDisabled));
+
+		// Worth a line during the warmup rather than a surprise at go-live: these bodies will NOT
+		// have damage handling turned on for them at lift, because safestart did not turn it off.
+		if (m_iFoundDisabled > 0)
+		{
+			string alreadyOff = "found ";
+			alreadyOff += m_iFoundDisabled.ToString();
+			alreadyOff += " body(s) with damage handling ALREADY off — safestart will leave them off at lift, not force them on.";
+			TBD_Log.Warn(TBD_Log.CH_SAFESTART, alreadyOff);
+		}
 
 		string msg = "[TBD] SAFESTART — damage OFF, weapons cold. Live in ";
 		msg += FormatClock(m_iSecondsRemaining);
@@ -271,6 +380,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		m_iUnrestored = Restore();
 
 		string kv = string.Format("reason=%1 bodies=%2 unrestored=%3", reason, owed, m_iUnrestored);
+		kv += string.Format(" leftDisabled=%1", m_iLeftDisabled);
 		kv += string.Format(" suppressedShots=%1 suppressedThrows=%2", m_iSuppressedShots, m_iSuppressedThrows);
 		TBD_Log.Kv(TBD_Log.CH_SAFESTART, "lift", kv);
 
@@ -295,7 +405,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
-		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
+		TBD_FrameworkManager framework = LiveFrameworkManager();
 		if (framework && framework.GetStage() == TBD_EGameStage.SAFE_START)
 		{
 			framework.SetStage(TBD_EGameStage.LIVE);
@@ -323,7 +433,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 
 		// Defence in depth: if the stage moved off SAFE_START without OnStageChanged reaching us,
 		// the countdown is the last thing still running that can notice. Lift immediately.
-		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
+		TBD_FrameworkManager framework = LiveFrameworkManager();
 		if (framework && framework.GetStage() != TBD_EGameStage.SAFE_START)
 		{
 			TBD_Log.Warn(TBD_Log.CH_SAFESTART, "stage left SAFE_START without notifying safestart — lifting now");
@@ -407,26 +517,58 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		if (!ent)
 			return false;
 
+		// Resolved before the hold is created, because creating one requires reading this
+		// component while it still holds the value safestart has not yet changed.
+		SCR_CharacterDamageManagerComponent damage = SCR_CharacterDamageManagerComponent.Cast(
+			ent.FindComponent(SCR_CharacterDamageManagerComponent));
+
 		// Recorded BEFORE anything is mutated. If the mutation below only half-lands, the entity
 		// is still on the list the lift walks — an unrecorded half-disabled body is precisely the
 		// thing that would survive the lift and eat bullets all round.
 		// Contains-then-Get rather than a bare Get: what an Enforce `map.Get()` does with an
 		// absent key is not something the compile lane can prove, and this runs on every body on
 		// every sweep — not a place to find out it logs (ENF-1).
-		int suppressedGeneration = 0;
+		TBD_SafestartHold hold;
 		if (m_mHeld.Contains(ent))
-			suppressedGeneration = m_mHeld.Get(ent);
+			hold = m_mHeld.Get(ent);
 
-		m_mHeld.Set(ent, suppressedGeneration);
+		if (!hold)
+		{
+			// T-181.33 — THE READ THAT MAKES THE LIFT A RESTORE INSTEAD OF A SET-TO-TRUE.
+			//
+			// It happens exactly once per body, here, before safestart's first mutation of it, and
+			// is never taken again: from the next sweep on the honest answer is "off, because we
+			// did that". This is also why a body carried over from a failed lift keeps its old hold
+			// rather than being re-read — re-reading would record safestart's own handiwork as the
+			// body's prior state and cement it as invulnerable.
+			//
+			// No damage manager -> the default `true` stands. That is the fail-safe direction: if
+			// one appears later (a body rebuilt underneath us), the lift hands damage back rather
+			// than withholding it.
+			hold = new TBD_SafestartHold();
+			hold.m_bDamageWasEnabled = true;
+			if (damage)
+				hold.m_bDamageWasEnabled = damage.IsDamageHandlingEnabled();
+
+			m_mHeld.Set(ent, hold);
+
+			if (!hold.m_bDamageWasEnabled)
+				m_iFoundDisabled++;
+		}
 
 		// LAYER 1 — damage off. A boolean gate, re-asserted on every sweep because a heal, a
 		// re-equip or a fresh materialisation can turn it back on underneath us.
-		SCR_CharacterDamageManagerComponent damage = SCR_CharacterDamageManagerComponent.Cast(
-			ent.FindComponent(SCR_CharacterDamageManagerComponent));
+		//
+		// Deliberately UNCONDITIONAL, and never gated on the read above. `IsDamageHandlingEnabled()`
+		// is proven to EXIST (compile probe + three failing negative controls) but its runtime
+		// semantics are not observable from the compile lane, so a getter that lied must not be
+		// able to stop safestart ARMING. Arming is the property that cannot depend on it; the
+		// recorded value only decides how the lift hands it back, and that path is counted and
+		// logged precisely so a wrong read is loud rather than silent.
 		if (damage)
 			damage.EnableDamageHandling(false);
 
-		if (suppressedGeneration == m_iArmGeneration)
+		if (hold.m_iGeneration == m_iArmGeneration)
 			return false;
 
 		// LAYER 3 — weapon safety. Cosmetic-grade: the player can switch it back.
@@ -437,6 +579,19 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 
 		// LAYER 2 — the projectile sink. Registered once per body per arm; registering twice
 		// would leave a second handler behind at lift time.
+		//
+		// MEASURED (T-181.33 probes, each against a failing negative control): this binding is
+		// unverifiable from the compile lane in EVERY dimension, not just the obvious one.
+		//   * the event NAME is a string, so a typo is a runtime no-op;
+		//   * `RegisterScriptHandler` returns `void` ("Can't condition 'void' type"), so there is
+		//     no status to check at registration either;
+		//   * the callback ARITY is NOT checked — `void H(int)` binds clean to this 3-arg event;
+		//   * the callback PARAM TYPES are NOT checked — `void H(string, string, string)` also
+		//     compiles clean.
+		// That last pair is the surprise: `CallLater` arity IS compile-checked (recorded landmine),
+		// and the intuition does not carry over. The only real oracle for this binding is a live
+		// test shot during safestart — `m_iSuppressedShots`, visible in `StatusLine()` via
+		// `#tbd safestart status`, is the readout. Nothing headless can see it.
 		EventHandlerManagerComponent events = EventHandlerManagerComponent.Cast(
 			ent.FindComponent(EventHandlerManagerComponent));
 		if (events)
@@ -445,7 +600,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 			events.RegisterScriptHandler("OnGrenadeThrown", this, OnSafestartGrenade);
 		}
 
-		m_mHeld.Set(ent, m_iArmGeneration);
+		hold.m_iGeneration = m_iArmGeneration;
 		return true;
 	}
 
@@ -495,7 +650,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 			}
 		}
 
-		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
+		TBD_SpawnManager spawn = LiveSpawnManager();
 		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
 		if (!spawn || !slots)
 			return;
@@ -519,25 +674,29 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	//! Walk everything we owe a restore to and give it back. Returns how many bodies could NOT be
 	//! verified as restored — the number that decides whether this was a lift or a disaster.
 	//!
-	//! Scope is exactly `m_mHeld`, never "every body in the world". Turning damage handling ON for
-	//! an entity we never turned it off for would trample whatever else disabled it (a spectator
-	//! dummy, a cutscene prop) — a safestart must not have that blast radius.
+	//! Scope is exactly `m_mHeld`, never "every body in the world" — and since T-181.33 the VALUE
+	//! is exactly what each body had before safestart touched it, not `true`. Those are two
+	//! different promises and the manager used to keep only the first: turning damage handling ON
+	//! for a body that was deliberately invulnerable (a spectator anchor, a cutscene prop, an
+	//! unpossessed slot body somebody else is holding) is the same trampling the scope rule exists
+	//! to prevent, just applied to the state instead of the set.
 	//! @authority server
 	protected int Restore()
 	{
-		array<IEntity> owed = {};
-		foreach (IEntity held, int generation : m_mHeld)
-			owed.Insert(held);
-
 		// Rebuilt rather than mutated in place: an entity that has been deleted reads back as
 		// null, and a null key cannot be removed from the map it is still sitting in. Rebuilding
 		// is also what keeps a deleted body from counting as a lift failure forever.
-		m_mHeld = new map<IEntity, int>();
+		//
+		// Nothing here writes to `m_mHeld` while it is being walked — the survivors go into a
+		// separate map that replaces it at the end — and every survivor carries its ORIGINAL hold
+		// object across, so the watchdog's next pass restores the same recorded value this one did.
+		map<IEntity, ref TBD_SafestartHold> stillOwed = new map<IEntity, ref TBD_SafestartHold>();
 
 		int failures = 0;
 		int gone = 0;
+		int leftDisabled = 0;
 
-		foreach (IEntity ent : owed)
+		foreach (IEntity ent, TBD_SafestartHold held : m_mHeld)
 		{
 			// The body was deleted (disconnect, cleanup). It cannot hurt or be hurt, and it is
 			// not a lift failure — dropping it is how the watchdog eventually goes quiet.
@@ -547,27 +706,81 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 				continue;
 			}
 
-			if (RestoreOne(ent))
+			// A hold is written before a body's first mutation and carried by every rebuild, so
+			// there is no path that reaches here without one. If one ever does, take the fail-safe
+			// branch — assume damage was on and give it back — rather than leave a body bulletproof
+			// on the strength of a missing record.
+			TBD_SafestartHold hold = held;
+			if (!hold)
+			{
+				hold = new TBD_SafestartHold();
+				hold.m_bDamageWasEnabled = true;
+			}
+
+			// Initialized at the call site as well as inside the callee. Enfusion is lenient about
+			// uninitialized locals, and a garbage read here would invent a WARNING about bodies
+			// that are perfectly fine — which is exactly the kind of false alarm that teaches an
+			// operator to ignore this line.
+			bool wasLeftDisabled = false;
+			bool settled = RestoreOne(ent, hold, wasLeftDisabled);
+			if (wasLeftDisabled)
+				leftDisabled++;
+
+			if (settled)
 				continue;
 
 			// Still owed, and its handlers are gone (RestoreOne removes them unconditionally) —
-			// so generation 0, not the arm generation.
-			m_mHeld.Set(ent, 0);
+			// so generation 0, not the arm generation. The recorded prior value rides along.
+			hold.m_iGeneration = 0;
+			stillOwed.Set(ent, hold);
 			failures++;
 		}
 
+		m_mHeld = stillOwed;
+		m_iLeftDisabled = leftDisabled;
+
 		if (gone > 0)
 			TBD_Log.Kv(TBD_Log.CH_SAFESTART, "restore", string.Format("droppedDeletedBodies=%1", gone));
+
+		// Deliberately loud even though it is the CORRECT behaviour. Leaving a body invulnerable is
+		// the one outcome this manager exists to make impossible by accident, so the path that does
+		// it on purpose still has to announce itself. For a round of live players this is 0; a
+		// number anywhere near the body count means the pre-read is wrong, not that the round is.
+		if (leftDisabled > 0)
+		{
+			string kept = "left ";
+			kept += leftDisabled.ToString();
+			kept += " body(s) with damage handling OFF — that is how safestart found them, so it never turned it off and has nothing to give back.";
+			kept += " Expected 0 for a round of live players.";
+			TBD_Log.Warn(TBD_Log.CH_SAFESTART, kept);
+		}
 
 		return failures;
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! Restore one body. True only when damage handling is READ BACK as enabled — calling the
-	//! setter is not evidence that it took, and under ONE LIFE the difference is the whole event.
+	//! Put one body back the way safestart found it. True means SETTLED — this body owes nothing
+	//! more and can be dropped from `m_mHeld`.
+	//!
+	//! For the normal case (a live player whose damage handling was on) settled still means READ
+	//! BACK as enabled: calling the setter is not evidence that it took, and under ONE LIFE the
+	//! difference is the whole event.
+	//!
+	//! T-181.33 — this used to call `EnableDamageHandling(true)` unconditionally, which is not a
+	//! restore, it is a set-to-true. The old comment on `Restore()` said the blast radius was
+	//! "exactly `m_mHeld`", and that was true of WHICH entities were touched and false of WHAT they
+	//! were set to. `CollectProtectables` sweeps three sources including `TBD_SpawnManager`'s
+	//! unpossessed slot bodies, so the set of things that can arrive here was never just "live
+	//! players"; anything with a reason to be invulnerable had that reason overwritten at lift.
+	//!
+	//! @param leftDisabled out — true when this body was already invulnerable before safestart
+	//! touched it and has deliberately been left that way. The caller counts and logs it, because a
+	//! mass of these is the signature of a broken pre-read rather than of unusual bodies.
 	//! @authority server
-	protected bool RestoreOne(IEntity ent)
+	protected bool RestoreOne(IEntity ent, notnull TBD_SafestartHold hold, out bool leftDisabled)
 	{
+		leftDisabled = false;
+
 		// Suppression teardown first, and unconditionally: these are best-effort by construction,
 		// and `m_bArmed` has already made both inert, so a failure here is cosmetic.
 		CharacterControllerComponent controller = CharacterControllerComponent.Cast(
@@ -589,6 +802,19 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		{
 			// No damage manager now means none to re-enable. If one existed when we armed, this
 			// body has been rebuilt underneath us and the new one was never disabled.
+			return true;
+		}
+
+		if (!hold.m_bDamageWasEnabled)
+		{
+			// Something else had already disabled this body's damage handling before safestart
+			// ever reached it. Safestart therefore never turned it off and has nothing to hand
+			// back — and forcing it ON would silently overrule whoever owns that decision, on a
+			// body they have no reason to think safestart is even aware of.
+			//
+			// Nothing is owed, so this is settled and the body is dropped from `m_mHeld`. It is
+			// NOT silent: `leftDisabled` carries it out to a WARNING line and to `StatusLine()`.
+			leftDisabled = true;
 			return true;
 		}
 
@@ -756,12 +982,24 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 			string idle = string.Format("TBD safestart: OFF (next arm = %1). ", FormatClock(m_iConfiguredSeconds));
 			if (m_iUnrestored > 0)
 				return idle + string.Format("!! %1 body(s) NOT restored — damage may be off for them.", m_iUnrestored);
-			return idle + "Damage is live.";
+
+			idle += "Damage is live.";
+			// The one place an admin can see the save/restore's exceptional path without reading
+			// the server log. Appended rather than substituted: damage IS live for everyone
+			// safestart turned it off for, and these are the bodies it never turned it off for.
+			if (m_iLeftDisabled > 0)
+			{
+				idle += string.Format(" (%1 body(s) were already invulnerable before safestart and were left that way.)",
+					m_iLeftDisabled);
+			}
+			return idle;
 		}
 
 		string armed = string.Format("TBD safestart: ON, live in %1. ", FormatClock(m_iSecondsRemaining));
 		armed += string.Format("bodies=%1 suppressed shots=%2 grenades=%3",
 			m_mHeld.Count(), m_iSuppressedShots, m_iSuppressedThrows);
+		if (m_iFoundDisabled > 0)
+			armed += string.Format(" — %1 of those were ALREADY damage-off when swept", m_iFoundDisabled);
 		return armed;
 	}
 
