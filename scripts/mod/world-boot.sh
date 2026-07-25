@@ -27,14 +27,23 @@
 #   "mods": [ { "modId": "B2C3D4E5F6A78901", "name": "TBD_Framework" } ]
 #
 # ── What it asserts ────────────────────────────────────────────────────────────────────────
-#   1. the world actually loaded          ("Starting new playthrough ... <scenarioId>")
-#   2. the roll-call printed              (proves TBD_FrameworkManager itself instantiated)
-#   3. no component reported MISSING      (proves every sibling on the prefab resolved)
-#   4. no unexpected SCRIPT (E)           (allowlist below — boot runs without a backend)
+#   1. the world actually loaded            ("Starting new playthrough ... <scenarioId>")
+#   2. no unresolvable class / VM exception (`WORLD (E): Unknown class`, engine-reported)
+#   3. the roll-call printed                (proves TBD_FrameworkManager itself instantiated)
+#   4. no roll-call entry reported MISSING  (proves the LISTED siblings resolved)
+#   5. no TBD-owned and no UNRECOGNISED script error (fail-closed; see VANILLA_BENIGN)
 #
-# The roll-call is emitted by TBD_FrameworkManager.PrintComponentRollCall(). Its negative
-# control is recorded in docs/mod/t181_event_mod_program.md: removing TBD_LobbyComponent from
-# the prefab flips the line to `Lobby=MISSING` and this script to FAIL.
+# ── What it does NOT assert (do not over-read a green result) ──────────────────────────────
+# * **Only checks 2 and 4 together cover the prefab.** The roll-call is a hand-maintained list of
+#   names, so on its own it is blind to a component nobody added to it — the wave-4 verifier
+#   proved this by adding `TBD_ThisComponentDoesNotExist` to the prefab and getting a PASS.
+#   Check 2 is what actually generalises. `SCR_EditableEntityComponent` is on the prefab and
+#   deliberately not in the roll-call, which is fine precisely because check 2 exists.
+# * **No runtime behaviour.** The boot has no backend and no configured mission, so the loader
+#   correctly refuses, the stage machine never leaves LOADING, no slot body is materialised,
+#   safestart never arms and no player ever joins. A green world-boot says the game mode WIRES
+#   UP. It says nothing about whether any of it WORKS. That needs T-181.16/.25 (dedicated
+#   server + real clients).
 #
 # Usage:
 #   bash scripts/mod/world-boot.sh              # the gate
@@ -62,10 +71,26 @@ for arg in "$@"; do
   esac
 done
 
-# SCRIPT (E) lines that are CORRECT on a bare boot: no backend is running and no mission is
-# configured, so the loader is supposed to refuse. Anything else is a real runtime error.
-# Kept as a grep -E alternation; widen only with a comment saying why the error is expected.
+# Errors that are CORRECT on a bare boot: no backend is running and no mission is configured, so
+# the loader is supposed to refuse. Widen only with a comment saying why the error is expected.
 EXPECTED_ERRORS='missionId not configured'
+
+# Engine diagnostics that mean STRUCTURAL breakage, failed regardless of who "owns" the message.
+# `WORLD (E): Unknown class` is the important one: it is how the engine reports a component on a
+# prefab whose class does not resolve, it names the offending class itself, and — unlike the
+# roll-call — it needs no per-component maintenance and covers EVERY prefab in the mod, not just
+# TBD_GameMode.et. The wave-4 verifier proved the roll-call alone is insufficient by adding
+# `TBD_ThisComponentDoesNotExist` to the prefab and getting a PASS; this line is what catches it.
+# `Virtual Machine Exception` is a script crash that does not always carry a `SCRIPT (E)` tag.
+HARD_FAIL='WORLD +\(E\): Unknown class|Virtual Machine Exception|Unable to find component class|Cannot find component'
+
+# Vanilla script errors known to be emitted by the stock Eden world, which the mod neither causes
+# nor can fix. This is an ALLOWLIST and the check is FAIL-CLOSED: an error matching nothing here
+# and nothing in TBD is reported as unrecognised and FAILS. That inversion is deliberate — the
+# previous rule classified by message text ("not obviously TBD, therefore vanilla, therefore fine")
+# and the verifier passed six different genuine TBD failures through it, including one that
+# differed only in the case of `Scripts/Game/`. Add a pattern here only with a reason.
+VANILLA_BENIGN='needs a entity catalog manager'
 
 # ── verdict logic, factored out so --selftest can exercise it against a synthetic log ──────
 # Prints findings and returns non-zero on any failure.
@@ -79,8 +104,24 @@ assess_log() {
     echo "  ok    world loaded"
   fi
 
+  # Structural breakage first — these fail whoever "owns" the text, and catch the component-does-
+  # not-resolve case by name rather than by a list this script has to keep in sync with a prefab.
+  local hard
+  hard="$(grep -E "$HARD_FAIL" "$log" || true)"
+  if [ -n "$hard" ]; then
+    echo "  FAIL  engine reported structural breakage:"
+    printf '%s\n' "$hard" | sed -E 's/^[0-9:. ]*//' | sort -u | head -6 | sed 's/^/        /'
+    rc=1
+  else
+    echo "  ok    no unresolvable classes / VM exceptions"
+  fi
+
+  # `Print(someLocalVariable)` in Enfusion emits the DECLARATION, not just the value
+  # (`string line = '[TBD] roll-call: …'`), so this must not anchor to start-of-field, and the
+  # trailing quote is stripped below rather than assumed absent. Measured, not guessed.
   local rollcall
-  rollcall="$(grep -oE '\[TBD\] roll-call:[^"]{0,200}' "$log" | head -1)"
+  rollcall="$(grep -oE "\[TBD\] roll-call:.*" "$log" | head -1)"
+  rollcall="${rollcall%\'}"
   if [ -z "$rollcall" ]; then
     echo "  FAIL  no roll-call line — TBD_FrameworkManager did not instantiate"
     rc=1
@@ -92,16 +133,16 @@ assess_log() {
     echo "  ok    roll-call clean: ${rollcall#*roll-call: }"
   fi
 
-  # Attribution matters here. Booting the real Eden world runs a lot of vanilla content, and
-  # vanilla emits its own script errors that the mod neither causes nor can fix (measured:
-  # `'SCR_BaseResupplySupportStationComponent' needs a entity catalog manager!`). Failing on
-  # those would make the gate cry wolf until someone silences it wholesale — so the verdict
-  # is scoped to errors TBD OWNS (a `[TBD]` tag or a Scripts/Game/TBD/ path), and vanilla
-  # noise is reported with a count so a genuine change in it is still visible to a human.
-  local errors mine theirs
+  # Script errors, triaged fail-closed. `mine` is matched case-INSENSITIVELY and on the bare
+  # `TBD` token as well as `[TBD]`/path, because the engine emits both `@"Scripts/Game/…"` and
+  # `@"scripts/Game/…"` in one run, and messages like `Instance of class TBD_SpawnManager is
+  # null` carry neither a tag nor a path. Anything left over is UNRECOGNISED and fails.
+  local errors mine benign unknown
   errors="$(grep -E 'SCRIPT +\(E\)' "$log" | grep -vE "$EXPECTED_ERRORS" || true)"
-  mine="$(printf '%s\n' "$errors" | grep -E '\[TBD\]|Scripts/Game/TBD/' || true)"
-  theirs="$(printf '%s\n' "$errors" | grep -vE '\[TBD\]|Scripts/Game/TBD/' | grep -E 'SCRIPT' || true)"
+  errors="$(printf '%s' "$errors" | grep -E 'SCRIPT' || true)"
+  mine="$(printf '%s\n' "$errors" | grep -iE '\[tbd\]|tbd_|/tbd/' || true)"
+  benign="$(printf '%s\n' "$errors" | grep -ivE '\[tbd\]|tbd_|/tbd/' | grep -E "$VANILLA_BENIGN" || true)"
+  unknown="$(printf '%s\n' "$errors" | grep -ivE '\[tbd\]|tbd_|/tbd/' | grep -vE "$VANILLA_BENIGN" | grep -E 'SCRIPT' || true)"
 
   if [ -n "$mine" ]; then
     echo "  FAIL  TBD script error(s) at boot:"
@@ -111,11 +152,19 @@ assess_log() {
     echo "  ok    no TBD script errors"
   fi
 
-  if [ -n "$theirs" ]; then
+  if [ -n "$unknown" ]; then
+    echo "  FAIL  unrecognised script error(s) — neither TBD-owned nor a known-benign vanilla"
+    echo "        pattern. If genuinely vanilla and harmless, add it to VANILLA_BENIGN with a"
+    echo "        reason; do NOT widen the TBD match to make it disappear."
+    printf '%s\n' "$unknown" | sed -E 's/.*SCRIPT +\(E\): //' | sort -u | head -6 | sed 's/^/        /'
+    rc=1
+  fi
+
+  if [ -n "$benign" ]; then
     local n
-    n="$(printf '%s\n' "$theirs" | wc -l | tr -d ' ')"
-    echo "  note  $n vanilla script error(s) (not TBD-owned, not failing):"
-    printf '%s\n' "$theirs" | sed -E 's/.*SCRIPT +\(E\): //' | sort -u | head -4 | sed 's/^/        /'
+    n="$(printf '%s\n' "$benign" | wc -l | tr -d ' ')"
+    echo "  note  $n known-benign vanilla script error(s), not failing:"
+    printf '%s\n' "$benign" | sed -E 's/.*SCRIPT +\(E\): //' | sort -u | head -4 | sed 's/^/        /'
   fi
 
   return "$rc"
@@ -129,29 +178,65 @@ if [ "$SELFTEST" -eq 1 ]; then
   t="$(mktemp -d "${TMPDIR:-/tmp}/tbd-wb-selftest.XXXXXX")"
   trap 'rm -rf "$t"' EXIT
 
+  # NOTE the roll-call shape: `Print(localVar)` in Enfusion emits the DECLARATION and quotes the
+  # value. These fixtures use the REAL measured shape — the earlier ones used an idealised
+  # `SCRIPT : [TBD] roll-call: …` that never occurs, so the selftest was not exercising reality.
   cat >"$t/good.log" <<'EOF'
 DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
 SCRIPT    (E): [TBD] missionId not configured — cannot load mission.
 EOF
   cat >"$t/bad-missing.log" <<'EOF'
 DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT    (E): [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=MISSING
+SCRIPT    (E): string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=MISSING'
 EOF
   cat >"$t/bad-noworld.log" <<'EOF'
 ENGINE       : Game successfully created.
 EOF
   cat >"$t/bad-scripterr.log" <<'EOF'
 DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
 SCRIPT    (E): @"Scripts/Game/TBD/Boom.c,12": null pointer to instance
 EOF
 
-  # Vanilla noise must NOT fail the gate — this pins the attribution rule so nobody later
-  # "fixes" it into a blanket error check that then gets silenced wholesale.
+  # ── the wave-4 verifier's escapes ────────────────────────────────────────────────────────
+  # Every one of these PASSED the original message-text attribution rule. They are pinned here
+  # so the fail-closed triage can never silently regress to "not obviously TBD, therefore fine".
+  #
+  # bad-unknown-class is the big one: a component on the prefab whose class does not exist. The
+  # roll-call CANNOT catch it (it only checks names it was told about), so this is caught by the
+  # engine's own `WORLD (E): Unknown class` diagnostic instead.
+  cat >"$t/bad-unknown-class.log" <<'EOF'
+DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
+WORLD     (E): Unknown class 'TBD_ThisComponentDoesNotExist' at offset 530(0x212)
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
+EOF
+  cat >"$t/bad-vm-exception.log" <<'EOF'
+DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
+SCRIPT       : Virtual Machine Exception - Null pointer to instance in TBD_SafestartManager::Restore
+EOF
+  cat >"$t/bad-lowercase-path.log" <<'EOF'
+DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
+SCRIPT    (E): @"scripts/game/tbd/Gamemode/TBD_SpawnManager.c,1400": null pointer to instance
+EOF
+  cat >"$t/bad-untagged-tbd.log" <<'EOF'
+DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
+SCRIPT    (E): Instance of class TBD_SpawnManager is null
+EOF
+  cat >"$t/bad-unrecognised.log" <<'EOF'
+DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
+SCRIPT    (E): Resource file worlds/SomeOther.ent not found
+EOF
+
+  # Known-benign vanilla noise must NOT fail the gate — this pins the one allowlisted pattern so
+  # nobody later "fixes" it into a blanket error check that then gets silenced wholesale.
   cat >"$t/good-vanilla-noise.log" <<'EOF'
 DEFAULT      : [SaveGameManager] Starting new playthrough nr.0 '' for mission '{69A85365FC09E2CA}Missions/TBD_Dev_POC.conf'.
-SCRIPT       : [TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok
+SCRIPT       : string line = '[TBD] roll-call: SpawnManager=ok Safestart=ok LoadoutEquip=ok Spectator=ok Lobby=ok'
 SCRIPT    (E): 'SCR_BaseResupplySupportStationComponent' needs a entity catalog manager!
 EOF
 
@@ -161,7 +246,8 @@ EOF
     echo "-- $good (must PASS)"
     if assess_log "$t/$good.log" "$SCEN" >/dev/null 2>&1; then echo "   PASS"; else echo "   FAIL: rejected $good"; st=1; fi
   done
-  for bad in bad-missing bad-noworld bad-scripterr; do
+  for bad in bad-missing bad-noworld bad-scripterr bad-unknown-class bad-vm-exception \
+             bad-lowercase-path bad-untagged-tbd bad-unrecognised; do
     echo "-- $bad (must FAIL)"
     if assess_log "$t/$bad.log" "$SCEN" >/dev/null 2>&1; then
       echo "   FAIL: accepted $bad"; st=1
@@ -214,10 +300,22 @@ trap cleanup EXIT
 
 # The config the engine actually gets: the committed dev config with the local addon injected
 # into game.mods[]. Generated rather than committed so the GUID can never drift from the gproj.
-python3 - "$DEV_CONFIG" "$RUN_DIR/server.json" "$ADDON_GUID" <<'PY'
+#
+# Ports are moved off the committed dev values (2001 / 17777). The gate never needs a REACHABLE
+# server — only a loaded world — so binding the real dev ports buys nothing and costs a collision
+# with the operator's own dev server or with a second concurrent gate run. Derived from the PID so
+# two parallel runs differ. (The wave-4 verifier hit exactly this and had to hand-repoint to 2051.)
+BIND_PORT=$(( 21000 + ($$ % 4000) ))
+A2S_PORT=$(( 26000 + ($$ % 4000) ))
+python3 - "$DEV_CONFIG" "$RUN_DIR/server.json" "$ADDON_GUID" "$BIND_PORT" "$A2S_PORT" <<'PY'
 import json, sys
 src, dst, guid = sys.argv[1], sys.argv[2], sys.argv[3]
+bind_port, a2s_port = int(sys.argv[4]), int(sys.argv[5])
 cfg = json.load(open(src))
+cfg["bindPort"] = bind_port
+cfg["publicPort"] = bind_port
+if isinstance(cfg.get("a2s"), dict):
+    cfg["a2s"]["port"] = a2s_port
 cfg.setdefault("game", {})["mods"] = [{"modId": guid, "name": "TBD_Framework"}]
 json.dump(cfg, open(dst, "w"), indent=2)
 PY
@@ -231,7 +329,9 @@ hostrun env -C "$SERVER_DIR" setsid sh -c '
 SRV_WAIT=$!
 
 # Poll for the roll-call (the last thing we need) or a fatal, rather than always burning the
-# full timeout. The roll-call fires one frame after the game mode's OnPostInit.
+# full timeout. Measured: the roll-call fires on the first callqueue tick after the world enters
+# the online game state, ~1.6 s after the game mode entity is initialised — NOT literally one
+# frame after OnPostInit, though one frame would be sufficient for its purpose.
 LOG=""
 for _ in $(seq 1 "$((MAX_WAIT * 2))"); do
   LOG="$(ls -1d "$RUN_DIR"/profile/logs/logs_* 2>/dev/null | tail -1)/console.log"
@@ -241,6 +341,14 @@ for _ in $(seq 1 "$((MAX_WAIT * 2))"); do
   fi
   sleep 0.5
 done
+
+# Settle before killing. Without this the capture window ends the instant the roll-call appears,
+# which is non-deterministic with respect to everything the world is still doing: two runs of the
+# identical tree differed by two vanilla errors purely on timing. That matters in both directions
+# — a late TBD error would be missed, and the fail-closed unknown-error check would be flaky.
+# The window is still BOUNDED, so this is not proof that no error ever occurs after it; it just
+# makes the same tree give the same verdict.
+sleep "${TBD_WORLDBOOT_SETTLE:-4}"
 
 kill_run
 # NOTE: do not infer failure from $SRV_WAIT — under setsid the local launcher returns early.

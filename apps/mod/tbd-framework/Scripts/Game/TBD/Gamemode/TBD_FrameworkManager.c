@@ -78,6 +78,30 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! Cancel every callqueue entry this component owns.
+	//!
+	//! Why this is not optional: `SelectMissionByNumber` restarts the scenario IN-PROCESS via
+	//! `GameStateTransitions.RequestScenarioRestart()`, and a recorded landmine in this program is
+	//! that statics outlive a world inside one process. Without this, all four timers survive the
+	//! teardown and fire against a dead component on the next world — `GetOwner()` returns null and
+	//! the roll-call would report a phantom failure, while the tick functions would run their logic
+	//! against a stale instance. `ScriptCallQueue.Remove` cancels BY FUNCTION, which is exactly
+	//! right here: there is one instance of each of these per world.
+	override void OnDelete(IEntity owner)
+	{
+		ScriptCallQueue queue = GetGame().GetCallqueue();
+		if (queue)
+		{
+			queue.Remove(PrintComponentRollCall);
+			queue.Remove(TickLoading);
+			queue.Remove(TickRosterSettle);
+			queue.Remove(TickWinConditions);
+		}
+
+		super.OnDelete(owner);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! One-shot component roll-call for the entity that owns the framework.
 	//!
 	//! Why this exists: a component whose class fails to resolve is dropped from the prefab
@@ -106,13 +130,16 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		line += RollCallEntry(owner, TBD_SpectatorComponent, "Spectator", missing);
 		line += RollCallEntry(owner, TBD_LobbyComponent, "Lobby", missing);
 
+		// PrintFormat, not Print: `Print(someLocalVariable)` emits the DECLARATION
+		// (`string line = '…'`) rather than the value, which made the log line awkward to match
+		// and the world-boot selftest fixtures diverge from reality. Measured, not assumed.
 		if (missing.IsEmpty())
 		{
-			Print(line);
+			PrintFormat("%1", line);
 			return;
 		}
 
-		Print(line, LogLevel.ERROR);
+		PrintFormat("%1", line, level: LogLevel.ERROR);
 		Print(string.Format("[TBD] roll-call: %1 component(s) declared on TBD_GameMode.et did not instantiate.",
 			missing.Count()), LogLevel.ERROR);
 	}

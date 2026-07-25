@@ -124,6 +124,10 @@ cmd_gate() {
   # world-boot.sh boots the real scenario and asserts the game mode's component roll-call.
   run "world boot"          bash scripts/mod/world-boot.sh
   run "world-boot selftest" bash scripts/mod/world-boot.sh --selftest
+  # T-181.20 shipped golden mission fixtures whose whole purpose is to make a schema regression
+  # fail. Platform CI validates them; the wave gate did not, so a broken fixture landed green
+  # here and was only caught later. A slice's own deliverable must be gated by its own wave.
+  run "schema validate"    distrobox-host-exec make schema-validate
   run "capability"         distrobox-host-exec make verify-capability
   run "oracle citations"   distrobox-host-exec make verify-oracle
   run "no-crf-leak"        distrobox-host-exec make verify-no-crf-leak

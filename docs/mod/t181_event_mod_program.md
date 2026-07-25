@@ -178,16 +178,30 @@ picker can open would ship a mod nobody can deploy into.
   is not evidence.
 - **A component listed on a prefab whose class fails to resolve is dropped SILENTLY** — the `.et`
   still lists it, every script still compiles clean, and the only symptom is a feature that never
-  runs. The compile gate cannot see prefab wiring at all. `TBD_FrameworkManager.PrintComponentRollCall()`
-  now prints `[TBD] roll-call: …=ok|MISSING` one frame after `OnPostInit`, and
-  `scripts/mod/world-boot.sh` (wired into `wave.sh gate`) boots the real scenario and fails on any
-  `MISSING`. Negative control performed: deleting `TBD_LobbyComponent` from `TBD_GameMode.et` flips
-  the line to `Lobby=MISSING` and the gate to FAIL.
+  runs. The compile gate cannot see prefab wiring at all. `scripts/mod/world-boot.sh` (in
+  `wave.sh gate`) boots the real scenario and catches this **two** ways, and you need both:
+  - `WORLD (E): Unknown class '<Name>'` — the engine's own diagnostic. **This is the load-bearing
+    one**: name-independent, needs no maintenance, and covers every prefab in the mod.
+  - `TBD_FrameworkManager.PrintComponentRollCall()` → `[TBD] roll-call: …=ok|MISSING`, which
+    catches a class that *exists* but is not on the prefab.
+  **The roll-call ALONE is not sufficient and must not be trusted as if it were.** The wave-4
+  verifier added `TBD_ThisComponentDoesNotExist` to `TBD_GameMode.et` and the gate PASSED with
+  `roll-call clean` — it only checks the five names it was handed, and `SCR_EditableEntityComponent`
+  is on the prefab and deliberately not among them. Both negative controls are now reproduced in
+  the selftest.
+- **`Print(someLocalVariable)` emits the DECLARATION, not the value** — the log reads
+  `string line = '[TBD] roll-call: …'`, quotes included. Use `PrintFormat("%1", v)` when the value
+  is what matters. This silently broke a selftest: its fixtures used an idealised shape that never
+  occurs, so it passed without ever exercising the real one.
+- **The engine emits BOTH `@"Scripts/Game/…"` and `@"scripts/Game/…"` in the same run** (differing
+  case), and plenty of TBD-relevant errors carry neither a `[TBD]` tag nor a path at all — e.g.
+  `Instance of class TBD_SpawnManager is null`, or a `Virtual Machine Exception` with no `(E)`
+  marker. **Never classify error ownership by message text and let the remainder pass.** That rule
+  let six genuine TBD failures through. `world-boot.sh` now triages **fail-closed**: TBD-owned (case
+  -insensitive) fails, an explicit vanilla allowlist is noted, and anything unrecognised **fails**.
 - **Booting the real Eden world emits VANILLA script errors the mod does not own** (measured:
-  `'SCR_BaseResupplySupportStationComponent' needs a entity catalog manager!`). `world-boot.sh`
-  therefore fails only on errors tagged `[TBD]` or pathed under `Scripts/Game/TBD/`, and reports
-  vanilla ones as a note. Do not "fix" this into a blanket error check — it will cry wolf and then
-  get silenced wholesale.
+  `'SCR_BaseResupplySupportStationComponent' needs a entity catalog manager!`). They are allowlisted
+  by exact pattern with a reason — not by "it doesn't look like ours".
 - `[RplProp(onRplName:)]` fires automatically **only on the proxy**; authority must invoke its
   own handler (CRF says so at `CRF_Gamemode.c:8`).
 - **Corollary that bites: on a LISTEN HOST, authority IS the local player**, so an `onRplName`
