@@ -5,8 +5,8 @@
 class TBD_SlotGearStruct
 {
 	string primary;  //!< Primary weapon ResourceName.
-	string optic;    //!< Optic ResourceName (informational until the attachments slice).
-	string magazine; //!< Magazine ResourceName (informational until the attachments slice).
+	string optic;    //!< Optic ResourceName. T-181.10 — mounted into the primary weapon's storage.
+	string magazine; //!< Magazine ResourceName. T-181.10 — loaded into the primary weapon's storage.
 	string uniform;  //!< Jacket/uniform ResourceName.
 	string vest;     //!< Vest ResourceName (armoredVest wins in the compiler).
 	string helmet;   //!< Head cover ResourceName.
@@ -27,6 +27,8 @@ class TBD_SlotCargoStruct
 
 //! Optional per-slot Arsenal loadout (T-068.11): the kit prefab stays the base
 //! character; T-068.12 layers this on the spawned HUMAN player.
+//! T-181.10 — applied by TBD_LoadoutApplication on EVERY spawn of the slot body (mission
+//! load and every rematerialization), so a life never inherits the previous one's state.
 //! @contract mission.schema.json#/$defs/slot (loadout)
 class TBD_SlotLoadoutStruct
 {

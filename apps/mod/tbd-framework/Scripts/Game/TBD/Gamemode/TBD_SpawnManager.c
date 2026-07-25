@@ -64,6 +64,12 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	protected ref map<int, ref TBD_MissionSlotStruct> m_mPlayerSlot;
 	//! Slot key (uid-else-id) → the materialized slot body standing in the world.
 	protected ref map<string, IEntity> m_mSlotBodies;
+	//! T-181.10 — slot key → the IDENTITY a slot body has already been handed to.
+	//! Keyed on identity, not playerId, because a mid-life reconnect must get its OWN body
+	//! back (numeric ids are reused/reassigned on dedicated servers) while a genuinely
+	//! different person taking a vacated slot must NOT inherit the previous occupant's
+	//! state. See the re-equip block in DeployPlayerEx.
+	protected ref map<string, string> m_mBodyBoundTo;
 	protected int m_iRoundRobin;
 	protected bool m_bSlotBodiesMaterialized;
 	protected ref map<int, bool> m_mDeployRequested;
@@ -87,6 +93,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		s_Instance = this;
 		m_mPlayerSlot = new map<int, ref TBD_MissionSlotStruct>();
 		m_mSlotBodies = new map<string, IEntity>();
+		m_mBodyBoundTo = new map<string, string>();
 		m_mDeployRequested = new map<int, bool>();
 		m_mRetryCount = new map<int, int>();
 		m_mSpawnSeen = new map<int, bool>();
@@ -346,6 +353,8 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		int built = 0;
 		int loadouts = 0;
+		int kitOnly = 0;
+		int failed = 0;
 		int number = 0;
 		foreach (TBD_MissionSlotStruct slot : slots)
 		{
@@ -355,18 +364,30 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 			IEntity body = SpawnSlotBody(slot, number);
 			if (!body)
+			{
+				failed++;
 				continue;
+			}
 
 			m_mSlotBodies.Set(slot.Key(), body);
 			built++;
 			if (slot.loadout)
 				loadouts++;
+			else
+				kitOnly++;
 		}
 
 		if (built > 0)
 			m_bSlotBodiesMaterialized = true;
 
-		Print(string.Format("[TBD][Slots] materialized %1 bodies (%2 loadouts applied)", built, loadouts));
+		// T-181.10 — kit-only slots are legal (the kit prefab dresses them), but a mission
+		// that meant to author loadouts and shipped none has to be visible at a glance, and
+		// a slot whose body never spawned is an outright error, not a quiet shortfall.
+		Print(string.Format("[TBD][Slots] materialized %1/%2 bodies — %3 with a JSON loadout, %4 kit-only, %5 failed",
+			built, number, loadouts, kitOnly, failed));
+		if (failed > 0)
+			Print(string.Format("[TBD][Slots] %1 of %2 slot bodies FAILED to materialize — see the kit resolve / prefab errors above",
+				failed, number), LogLevel.ERROR);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -485,6 +506,35 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.10 — stop any loadout pass still dressing a body we are about to abandon.
+	//! Without this a superseded body keeps spawning and verifying items for seconds after
+	//! its replacement exists, and its ERROR lines carry the same slot id as the live body's.
+	protected void CancelLoadoutAppsFor(IEntity body)
+	{
+		if (!body)
+			return;
+
+		foreach (TBD_LoadoutApplication app : m_aLoadoutApps)
+		{
+			if (!app.IsDone() && app.GetCharacter() == body)
+				app.Cancel("slot body superseded by a fresh spawn");
+		}
+		PruneDoneLoadoutApps();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-181.10 — the durable "who is this" key for body ownership. Identity first (numeric
+	//! playerIds are reused/reassigned on dedicated servers, so a mid-life reconnect must
+	//! still resolve to its own body); the numeric id only as a PIE/local fallback.
+	protected string PlayerBindKey(int playerId)
+	{
+		string identityId = string.Format("%1", SCR_PlayerIdentityUtils.GetPlayerIdentityId(playerId));
+		if (!identityId.IsEmpty())
+			return identityId;
+		return string.Format("player:%1", playerId);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	void OnStageChanged(TBD_EGameStage stage)
 	{
 		if (stage == TBD_EGameStage.LOBBY && m_bAutoDeploy)
@@ -536,8 +586,14 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! takeover; the vanilla RequestSpawn pipeline (measured double-spawn source) is
 	//! never used. Tri-state spawn-authority contract (A1): NOT_MINE is the only
 	//! result that may reach vanilla spawn; ALREADY/FAILED mean "vanilla stands down".
+	//!
+	//! T-181.10 — `forceFreshBody` makes the re-equip guarantee unconditional for the ONE
+	//! LIFE return path (AdminRespawn): whatever is standing on the slot is abandoned and a
+	//! newly dressed body is materialized, so an admin respawn can never hand back a body
+	//! carrying the life that was just spent. Defaulted, so every existing caller is
+	//! unchanged and keeps the ordinary "reuse if it is alive and yours" behaviour.
 	//! @authority server
-	TBD_EDeployResult DeployPlayerEx(int playerId)
+	TBD_EDeployResult DeployPlayerEx(int playerId, bool forceFreshBody = false)
 	{
 		// Authority only — slot assignment + binding run on the server.
 		if (RplSession.Mode() == RplMode.Client)
@@ -559,16 +615,49 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!slot)
 			return TBD_EDeployResult.RETRY;
 
-		// Body must exist and be alive; a dead one (previous life) is replaced by a
-		// fresh dressed body at the slot transform — the corpse stays where it fell.
+		// T-181.10 — RE-EQUIP ON EVERY SPAWN (operator-locked). A standing slot body is only
+		// reused when it is alive AND belongs to the identity asking for it. Everything else
+		// is a new life or a new occupant, and gets a brand-new body materialized at the slot
+		// transform — SpawnSlotBody re-applies the JSON loadout, so nobody ever inherits the
+		// previous life's fired mags, dropped kit or damage. The old body stays where it is
+		// (the corpse-stays rule); an abandoned LIVE body is logged so the settle census's
+		// characters/bodies delta stays explainable.
+		string bindKey = PlayerBindKey(playerId);
 		IEntity body = m_mSlotBodies.Get(slot.Key());
-		if (!body || IsBodyDead(body))
+		string remakeReason;
+		if (!body)
 		{
+			remakeReason = "no standing body";
+		}
+		else if (forceFreshBody)
+		{
+			remakeReason = "fresh body enforced by the caller (admin respawn)";
+		}
+		else if (IsBodyDead(body))
+		{
+			remakeReason = "previous life spent";
+		}
+		else
+		{
+			string boundTo;
+			if (m_mBodyBoundTo.Find(slot.Key(), boundTo) && boundTo != bindKey)
+				remakeReason = "body already used by another occupant";
+		}
+
+		if (!remakeReason.IsEmpty())
+		{
+			if (body && !IsBodyDead(body))
+				Print(string.Format("[TBD][Slots] slot=%1 abandoning a LIVE body (%2) — it stays in the world", slot.Key(), remakeReason), LogLevel.WARNING);
+
+			// Stop anything still dressing the outgoing body first: its pending items are
+			// cleaned up, and its loadout log lines cannot be confused with the new body's.
+			CancelLoadoutAppsFor(body);
+
 			body = SpawnSlotBody(slot, 0);
 			if (!body)
 				return TBD_EDeployResult.FAILED;
 			m_mSlotBodies.Set(slot.Key(), body);
-			Print(string.Format("[TBD][Slots] rematerialized body for slot %1 (respawn)", slot.Key()));
+			Print(string.Format("[TBD][Slots] rematerialized body for slot %1 (%2) — freshly dressed from mission JSON", slot.Key(), remakeReason));
 		}
 
 		SCR_PlayerController pc = SCR_PlayerController.Cast(
@@ -620,6 +709,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 			pc.SetInitialMainEntity(body);
 
 		m_mDeployRequested.Set(playerId, true);
+		// T-181.10 — this body is now spoken for. A later deploy by anyone else on this slot
+		// sees the mismatch and materializes a fresh dressed body instead of inheriting it.
+		m_mBodyBoundTo.Set(slot.Key(), bindKey);
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 		Print(string.Format("[TBD] SpawnManager: bound player %1 to slot %2 body (kit %3)", playerId, slot.Key(), slot.kit));
@@ -712,13 +804,19 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 	//------------------------------------------------------------------------------------------------
 	//! True when a materialized body is destroyed/dead (corpse — respawn replaces it).
+	//! T-181.10: a character with NO controller counts as dead too. It used to count as
+	//! alive, so a half-torn-down body could be handed to a player with no re-equip — the
+	//! exact "inherits the previous life" case the operator locked out. Rematerializing is
+	//! always the safe answer here: the worst case is one extra fresh dressed body.
 	protected static bool IsBodyDead(IEntity body)
 	{
 		ChimeraCharacter character = ChimeraCharacter.Cast(body);
 		if (!character)
 			return true;
 		CharacterControllerComponent ccc = character.GetCharacterController();
-		return ccc && ccc.IsDead();
+		if (!ccc)
+			return true;
+		return ccc.IsDead();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -870,7 +968,9 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mRetryCount.Remove(playerId);
 		m_mSpawnSeen.Remove(playerId);
 
-		TBD_EDeployResult r = DeployPlayerEx(playerId);
+		// T-181.10 — forceFreshBody: the admin route always gets a NEWLY materialized,
+		// newly dressed body from the mission JSON. Never the one the spent life left behind.
+		TBD_EDeployResult r = DeployPlayerEx(playerId, true);
 		Print(string.Format("[TBD][Admin] respawn player=%1 by=%2 result=%3",
 			playerId, byAdmin, typename.EnumToString(TBD_EDeployResult, r)));
 

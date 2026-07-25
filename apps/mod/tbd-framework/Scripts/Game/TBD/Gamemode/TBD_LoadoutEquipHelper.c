@@ -1,8 +1,8 @@
 /**
- * TBD_LoadoutEquipHelper.c - shared loadout application (T-068.12, reworked A2).
+ * TBD_LoadoutEquipHelper.c - shared loadout application (T-068.12, reworked A2; T-181.10).
  *
  * One in-flight equip pass, shared by the dev harness (TestNPC) and the SpawnManager
- * player path so both run the SAME proven APIs with only the log tag differing.
+ * slot-body path so both run the SAME proven APIs with only the log tag differing.
  *
  * A2 determinism rework:
  *  - poll-until-worn VERIFY (500 ms ticks, 6 attempts) replaces the old fixed +1000 ms
@@ -15,6 +15,24 @@
  *    `IsRootedOn`-only verifies log `swap-deferred` and never guess-delete;
  *  - cargo runs strictly AFTER the wear verify (FinishRest) so container resolution
  *    sees the NEW garments.
+ *
+ * T-181.10 — JSON-driven loadouts are now COMPLETE and HONEST:
+ *  - WEAPON PHASE: `gear.optic` and `gear.magazine` were previously parsed and dropped
+ *    ("informational until the attachments slice"). They are now mounted into the primary
+ *    weapon's own storage — the mechanic CRF uses for gearscript attachments
+ *    (TrySpawnPrefabToStorage into the weapon's BaseInventoryStorageComponent, which on a
+ *    Reforger weapon is the SCR_WeaponAttachmentsStorageComponent that carries both
+ *    attachment slots and the magazine well). The phase runs AFTER the wear verify so the
+ *    primary is really in hand, and re-verifies by scanning that storage.
+ *  - HONEST FAILURE: every failure path names the SLOT and the OFFENDING ITEM on one
+ *    `[TBD]` ERROR line, is counted, and is repeated in an end-of-pass verdict. A pass that
+ *    could not deliver everything the JSON asked for ends on `INCOMPLETE`, never silence.
+ *  - NAKEDNESS GUARD: the pass ends with a worn audit of the decency areas; a character
+ *    that ends up with no jacket and/or no pants is an ERROR naming the slot, so a bad kit
+ *    prefab or a bad loadout can never quietly ship a naked player.
+ *
+ * The whole file is server-authority code: it spawns entities and mutates inventories.
+ * @authority server
  */
 
 //------------------------------------------------------------------------------------------------
@@ -32,20 +50,49 @@ class TBD_PendingEquip
 }
 
 //------------------------------------------------------------------------------------------------
-//! One loadout application: equip gear -> poll worn-verify (+swap) -> cargo.
+//! T-181.10 — one weapon-mounted item (optic / magazine) awaiting its mount verify.
+//! These do not go through EquipCloth/EquipWeapon: they are spawned straight into the
+//! primary weapon's storage, so they need their own (much shorter) verify loop.
+class TBD_PendingWeaponItem
+{
+	string label;    //!< "optic" / "magazine"
+	string resName;  //!< item ResourceName
+	bool mountIssued; //!< TrySpawnPrefabToStorage accepted the spawn-to-weapon call
+}
+
+//------------------------------------------------------------------------------------------------
+//! One loadout application: equip gear -> poll worn-verify (+swap) -> mount weapon items
+//! -> cargo -> worn audit + verdict.
 //! The owner must hold a strong ref until `IsDone()` (CallLater does not keep one).
 class TBD_LoadoutApplication : Managed
 {
 	protected const int VERIFY_TICK_MS = 500;
 	protected const int VERIFY_MAX_ATTEMPTS = 6;
+	//! Weapon-mounted items settle far faster than worn garments (no animation graph in
+	//! the way) — 4 x 250 ms is a full second of grace, measured against nothing but the
+	//! same async-settle class the A2 rework found for EquipCloth.
+	protected const int WEAPON_TICK_MS = 250;
+	protected const int WEAPON_MAX_ATTEMPTS = 4;
 
 	protected IEntity m_Character;
 	protected ref TBD_SlotLoadoutStruct m_Loadout;
-	protected string m_sTag;    // "[TBD][Loadout][Player]" / "[TBD][Loadout][TestNPC]"
+	protected string m_sTag;    // "[TBD][Loadout][Slot]" / "[TBD][Loadout][TestNPC]"
 	protected string m_sLabel;  // slot id / harness label for log context
 	protected ref array<ref TBD_PendingEquip> m_aPending = {};
 	protected ref array<ref TBD_PendingEquip> m_aVerified = {};
 	protected bool m_bDone;
+
+	// --- T-181.10 accounting: what the JSON asked for vs what the character got --------
+	protected ref array<ref TBD_PendingWeaponItem> m_aWeaponPending = {};
+	protected IEntity m_PrimaryWeapon;
+	//! One-shot guard for the magazine-well swap retry (below) — never loop on it.
+	protected bool m_bWeaponSwapRetried;
+	protected ref array<string> m_aFailures = {};  //!< item never reached the character
+	protected ref array<string> m_aDegraded = {};  //!< item reached the character, wrong place
+	protected int m_iGearRequested;
+	protected int m_iGearApplied;
+	protected int m_iCargoRequested;
+	protected int m_iCargoInserted;
 
 	//------------------------------------------------------------------------------------------------
 	void TBD_LoadoutApplication(IEntity character, TBD_SlotLoadoutStruct loadout, string tag, string label)
@@ -69,9 +116,17 @@ class TBD_LoadoutApplication : Managed
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.10 — true when the finished pass delivered everything the JSON asked for.
+	//! Meaningless before IsDone().
+	bool IsComplete()
+	{
+		return m_aFailures.IsEmpty() && m_aDegraded.IsEmpty();
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! A2 — abort an in-flight application whose body was reaped (vanilla
-	//! double-spawn): loose not-yet-rooted spawned items are deleted; equipped ones
-	//! die with the body. Idempotent.
+	//! double-spawn) or superseded by a respawn: loose not-yet-rooted spawned items are
+	//! deleted; equipped ones die with the body. Idempotent.
 	void Cancel(string reason)
 	{
 		if (m_bDone)
@@ -82,8 +137,63 @@ class TBD_LoadoutApplication : Managed
 				SCR_EntityHelper.DeleteEntityAndChildren(p.item);
 		}
 		m_aPending.Clear();
-		Print(string.Format("%1 loadout application cancelled (%2) [%3]", m_sTag, reason, m_sLabel));
+		m_aWeaponPending.Clear();
+		Print(string.Format("%1 slot=%2 loadout application cancelled (%3)", m_sTag, m_sLabel, reason));
 		m_bDone = true;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! HONEST FAILURE (T-181.10): the item never made it onto the character. One line,
+	//! naming the slot AND the offending item AND why, plus a counted entry that the
+	//! end-of-pass verdict repeats so a failure can never scroll away unnoticed.
+	protected void Fail(string label, string resName, string reason)
+	{
+		Print(string.Format("%1 slot=%2 %3 FAILED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.ERROR);
+		m_aFailures.Insert(string.Format("%1=%2 (%3)", label, resName, reason));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The item IS on the character but not where the JSON put it (e.g. an optic that
+	//! would not mount and had to be stowed loose). Loud, counted, but not fatal.
+	protected void Degrade(string label, string resName, string reason)
+	{
+		Print(string.Format("%1 slot=%2 %3 DEGRADED item=%4 — %5", m_sTag, m_sLabel, label, resName, reason), LogLevel.WARNING);
+		m_aDegraded.Insert(string.Format("%1=%2 (%3)", label, resName, reason));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	protected static string JoinIssues(notnull array<string> issues)
+	{
+		string joined;
+		for (int i = 0; i < issues.Count(); i++)
+		{
+			if (i > 0)
+				joined += ", ";
+			joined += issues[i];
+		}
+		return joined;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! How many gear ResourceNames this loadout actually asks for (the denominator of the
+	//! verdict line). Absent fields are empty strings — the compiler omits them.
+	protected static int CountGear(TBD_SlotGearStruct gear)
+	{
+		if (!gear)
+			return 0;
+
+		int n;
+		if (!gear.primary.IsEmpty())  n++;
+		if (!gear.optic.IsEmpty())    n++;
+		if (!gear.magazine.IsEmpty()) n++;
+		if (!gear.uniform.IsEmpty())  n++;
+		if (!gear.vest.IsEmpty())     n++;
+		if (!gear.helmet.IsEmpty())   n++;
+		if (!gear.pants.IsEmpty())    n++;
+		if (!gear.boots.IsEmpty())    n++;
+		if (!gear.handwear.IsEmpty()) n++;
+		if (!gear.backpack.IsEmpty()) n++;
+		return n;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -98,6 +208,18 @@ class TBD_LoadoutApplication : Managed
 		}
 
 		TBD_SlotGearStruct gear = m_Loadout.gear;
+		m_iGearRequested = CountGear(gear);
+		if (m_Loadout.cargo)
+		{
+			foreach (TBD_SlotCargoStruct row : m_Loadout.cargo)
+			{
+				// A malformed qty must not corrupt the verdict's denominator — the row is
+				// rejected with its own named ERROR in InsertCargo.
+				if (row && row.qty > 0)
+					m_iCargoRequested += row.qty;
+			}
+		}
+
 		if (gear)
 		{
 			IssueEquip("primary",  gear.primary,  true,  LoadoutAreaType); // areaType unused for weapon
@@ -109,6 +231,8 @@ class TBD_LoadoutApplication : Managed
 			IssueEquip("boots",    gear.boots,    false, LoadoutBootsArea);
 			IssueEquip("handwear", gear.handwear, false, LoadoutHandwearSlotArea);
 			IssueEquip("backpack", gear.backpack, false, LoadoutBackpackArea);
+			// optic + magazine are NOT worn — they mount onto the primary once it is in
+			// hand, which is the BeginWeaponPhase step after this verify loop drains.
 		}
 
 		GetGame().GetCallqueue().CallLater(VerifyTick, VERIFY_TICK_MS, false, 1);
@@ -149,7 +273,7 @@ class TBD_LoadoutApplication : Managed
 			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
 		if (!mgr)
 		{
-			Print(string.Format("%1 %2 FAILED: no inventory manager (%3)", m_sTag, label, resName), LogLevel.ERROR);
+			Fail(label, resName, "character has no SCR_InventoryStorageManagerComponent");
 			return;
 		}
 
@@ -173,7 +297,8 @@ class TBD_LoadoutApplication : Managed
 			}
 			if (pending.oldWeapon && PrefabOf(pending.oldWeapon) == resName)
 			{
-				Print(string.Format("%1 %2 swap-skipped (already worn) %3 [%4]", m_sTag, label, resName, m_sLabel));
+				Print(string.Format("%1 slot=%2 %3 swap-skipped (already worn) %4", m_sTag, m_sLabel, label, resName));
+				m_iGearApplied++;
 				return;
 			}
 		}
@@ -192,7 +317,8 @@ class TBD_LoadoutApplication : Managed
 					pending.incumbents.Insert(area, worn);
 					if (PrefabOf(worn) == resName)
 					{
-						Print(string.Format("%1 %2 swap-skipped (already worn) %3 [%4]", m_sTag, label, resName, m_sLabel));
+						Print(string.Format("%1 slot=%2 %3 swap-skipped (already worn) %4", m_sTag, m_sLabel, label, resName));
+						m_iGearApplied++;
 						return;
 					}
 				}
@@ -202,7 +328,7 @@ class TBD_LoadoutApplication : Managed
 		IEntity item = SpawnAtCharacter(resName);
 		if (!item)
 		{
-			Print(string.Format("%1 %2 FAILED to load/spawn %3", m_sTag, label, resName), LogLevel.ERROR);
+			Fail(label, resName, "prefab failed to load/spawn (bad or missing asset)");
 			return;
 		}
 		pending.item = item;
@@ -263,7 +389,7 @@ class TBD_LoadoutApplication : Managed
 
 	//------------------------------------------------------------------------------------------------
 	//! Poll pass: verify pending equips; verified items trigger their swap-delete and
-	//! move out. All settled (or attempts exhausted) → FinishRest.
+	//! move out. All settled (or attempts exhausted) → the weapon phase.
 	protected void VerifyTick(int attempt)
 	{
 		if (m_bDone)
@@ -282,7 +408,10 @@ class TBD_LoadoutApplication : Managed
 
 		if (!charStorage && !m_aPending.IsEmpty())
 		{
-			Print(m_sTag + " FAILED: no SCR_CharacterInventoryStorageComponent (cannot verify worn state)", LogLevel.ERROR);
+			foreach (TBD_PendingEquip broken : m_aPending)
+			{
+				Fail(broken.label, broken.resName, "character has no SCR_CharacterInventoryStorageComponent (cannot verify worn state)");
+			}
 			m_aPending.Clear();
 		}
 
@@ -295,7 +424,8 @@ class TBD_LoadoutApplication : Managed
 			if (!worn)
 				continue;
 
-			Print(string.Format("%1 %2 equip OK %3 [%4]", m_sTag, p.label, p.resName, detail));
+			Print(string.Format("%1 slot=%2 %3 equip OK %4 [%5]", m_sTag, m_sLabel, p.label, p.resName, detail));
+			m_iGearApplied++;
 			SwapDelete(charStorage, p, foundArea);
 			m_aVerified.Insert(p);
 			m_aPending.Remove(i);
@@ -308,15 +438,15 @@ class TBD_LoadoutApplication : Managed
 		}
 
 		// Attempts exhausted: stragglers are honestly failed + removed (never worn).
-		foreach (TBD_PendingEquip p : m_aPending)
+		foreach (TBD_PendingEquip straggler : m_aPending)
 		{
-			Print(string.Format("%1 %2 FAILED (not worn after %3 ticks) %4", m_sTag, p.label, VERIFY_MAX_ATTEMPTS, p.resName), LogLevel.ERROR);
-			if (p.item)
-				SCR_EntityHelper.DeleteEntityAndChildren(p.item);
+			Fail(straggler.label, straggler.resName, string.Format("not worn after %1 verify ticks — deleted", VERIFY_MAX_ATTEMPTS));
+			if (straggler.item)
+				SCR_EntityHelper.DeleteEntityAndChildren(straggler.item);
 		}
 		m_aPending.Clear();
 
-		FinishRest();
+		BeginWeaponPhase();
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -371,7 +501,7 @@ class TBD_LoadoutApplication : Managed
 			IEntity old = p.oldWeapon;
 			if (!old || old == p.item || IsOwnIssuedItem(old))
 				return;
-			Print(string.Format("%1 swapped area=weapon out=%2 in=%3 [%4]", m_sTag, PrefabOf(old), p.resName, m_sLabel));
+			Print(string.Format("%1 slot=%2 swapped area=weapon out=%3 in=%4", m_sTag, m_sLabel, PrefabOf(old), p.resName));
 			SCR_EntityHelper.DeleteEntityAndChildren(old);
 			return;
 		}
@@ -379,7 +509,7 @@ class TBD_LoadoutApplication : Managed
 		if (!foundArea)
 		{
 			// IsRootedOn-only verify — landing area unknown; never guess-delete.
-			Print(string.Format("%1 swap-deferred (no area resolution) %2 [%3]", m_sTag, p.resName, m_sLabel));
+			Print(string.Format("%1 slot=%2 swap-deferred (no area resolution) %3", m_sTag, m_sLabel, p.resName));
 			return;
 		}
 
@@ -392,16 +522,290 @@ class TBD_LoadoutApplication : Managed
 		if (charStorage && charStorage.GetClothFromArea(foundArea) == incumbent)
 			return;
 
-		Print(string.Format("%1 swapped area=%2 out=%3 in=%4 [%5]", m_sTag, foundArea.ToString(), PrefabOf(incumbent), p.resName, m_sLabel));
+		Print(string.Format("%1 slot=%2 swapped area=%3 out=%4 in=%5", m_sTag, m_sLabel, foundArea.ToString(), PrefabOf(incumbent), p.resName));
 		SCR_EntityHelper.DeleteEntityAndChildren(incumbent);
 	}
 
+	//====================================================================================
+	// T-181.10 — WEAPON PHASE: optic + magazine onto the primary
+	//====================================================================================
+
 	//------------------------------------------------------------------------------------------------
-	//! Post-verify tail: cargo insert (against the NEW garments) + completion line.
+	//! Which weapon entity the JSON's optic/magazine belong to. Prefer an exact prefab
+	//! match against `gear.primary` (the CRF FindWeaponByResource pattern) so a character
+	//! holding a pistol at settle time still gets its rifle kitted; fall back to whatever
+	//! is currently in hand when the loadout authored no primary of its own.
+	protected IEntity ResolvePrimaryWeapon(string primaryRes)
+	{
+		BaseWeaponManagerComponent weaponMgr = BaseWeaponManagerComponent.Cast(
+			m_Character.FindComponent(BaseWeaponManagerComponent));
+		if (!weaponMgr)
+			return null;
+
+		if (!primaryRes.IsEmpty())
+		{
+			array<IEntity> weapons = {};
+			weaponMgr.GetWeaponsList(weapons);
+			foreach (IEntity weapon : weapons)
+			{
+				if (PrefabOf(weapon) == primaryRes)
+					return weapon;
+			}
+		}
+
+		BaseWeaponComponent current = weaponMgr.GetCurrentWeapon();
+		if (current)
+			return current.GetOwner();
+
+		return null;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! A Reforger weapon carries its attachments AND its magazine well in one storage
+	//! component (SCR_WeaponAttachmentsStorageComponent : BaseInventoryStorageComponent).
+	protected static BaseInventoryStorageComponent WeaponStorageOf(IEntity weapon)
+	{
+		if (!weapon)
+			return null;
+		return BaseInventoryStorageComponent.Cast(weapon.FindComponent(BaseInventoryStorageComponent));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! True when the weapon storage already holds an item of that prefab (mounted optic /
+	//! loaded magazine). Includes child components so a mag inside a well still counts.
+	protected static bool WeaponStorageHas(BaseInventoryStorageComponent storage, string resName)
+	{
+		if (!storage)
+			return false;
+
+		array<IEntity> items = {};
+		storage.GetAll(items, true);
+		foreach (IEntity item : items)
+		{
+			if (PrefabOf(item) == resName)
+				return true;
+		}
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Gear settled → mount the weapon-borne JSON items. Nothing to do (or nothing to
+	//! mount onto) short-circuits straight to the tail.
+	protected void BeginWeaponPhase()
+	{
+		if (m_bDone)
+			return;
+		if (!m_Character)
+		{
+			Cancel("body superseded");
+			return;
+		}
+
+		TBD_SlotGearStruct gear = m_Loadout.gear;
+		if (!gear || (gear.optic.IsEmpty() && gear.magazine.IsEmpty()))
+		{
+			FinishRest();
+			return;
+		}
+
+		m_PrimaryWeapon = ResolvePrimaryWeapon(gear.primary);
+		if (!m_PrimaryWeapon)
+		{
+			if (!gear.optic.IsEmpty())
+				Fail("optic", gear.optic, "no primary weapon on the character to mount it on");
+			if (!gear.magazine.IsEmpty())
+				Fail("magazine", gear.magazine, "no primary weapon on the character to load it into");
+			FinishRest();
+			return;
+		}
+
+		IssueWeaponItem("optic", gear.optic);
+		IssueWeaponItem("magazine", gear.magazine);
+
+		if (m_aWeaponPending.IsEmpty())
+		{
+			FinishRest();
+			return;
+		}
+
+		GetGame().GetCallqueue().CallLater(WeaponVerifyTick, WEAPON_TICK_MS, false, 1);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Spawn one weapon-borne item straight into the primary's storage. This is CRF's
+	//! gearscript attachment mechanic (TrySpawnPrefabToStorage into the weapon storage,
+	//! slot auto-select) — the storage picks the matching attachment slot / magazine well
+	//! itself, which is why we do not hand-pick an AttachmentSlotComponent.
+	protected void IssueWeaponItem(string label, string resName)
+	{
+		if (resName.IsEmpty())
+			return;
+
+		// A bad ResourceName must not reach the inventory system as a silent no-op.
+		Resource probe = Resource.Load(resName);
+		if (!probe || !probe.IsValid())
+		{
+			Fail(label, resName, "prefab failed to load (bad or missing asset)");
+			return;
+		}
+
+		BaseInventoryStorageComponent storage = WeaponStorageOf(m_PrimaryWeapon);
+		if (!storage)
+		{
+			Fail(label, resName, string.Format("primary weapon %1 has no attachment storage", PrefabOf(m_PrimaryWeapon)));
+			return;
+		}
+
+		if (WeaponStorageHas(storage, resName))
+		{
+			Print(string.Format("%1 slot=%2 %3 mount-skipped (already on weapon) %4", m_sTag, m_sLabel, label, resName));
+			m_iGearApplied++;
+			return;
+		}
+
+		SCR_InventoryStorageManagerComponent mgr = SCR_InventoryStorageManagerComponent.Cast(
+			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
+		if (!mgr)
+		{
+			Fail(label, resName, "character has no SCR_InventoryStorageManagerComponent");
+			return;
+		}
+
+		TBD_PendingWeaponItem pending = new TBD_PendingWeaponItem();
+		pending.label = label;
+		pending.resName = resName;
+		pending.mountIssued = mgr.TrySpawnPrefabToStorage(resName, storage, -1, EStoragePurpose.PURPOSE_ANY);
+		if (!pending.mountIssued)
+			Print(string.Format("%1 slot=%2 %3 mount refused up front by the weapon storage %4 — the verify pass will retry and then fall back",
+				m_sTag, m_sLabel, label, resName), LogLevel.WARNING);
+		m_aWeaponPending.Insert(pending);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Evict whatever magazine the weapon came with so the JSON's magazine can take the
+	//! well, then re-issue it. Returns true when something was actually cleared (the caller
+	//! only spends another verify round in that case). Optic incumbents are deliberately
+	//! NOT swept: an occupied optic rail is rare on a freshly spawned weapon, and blindly
+	//! deleting attachments we cannot positively identify as being in the way is exactly
+	//! the guess-delete this file refuses to make elsewhere.
+	protected bool ClearBlockingMagazine()
+	{
+		BaseInventoryStorageComponent storage = WeaponStorageOf(m_PrimaryWeapon);
+		SCR_InventoryStorageManagerComponent mgr = SCR_InventoryStorageManagerComponent.Cast(
+			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
+		if (!storage || !mgr)
+			return false;
+
+		bool cleared = false;
+		foreach (TBD_PendingWeaponItem p : m_aWeaponPending)
+		{
+			if (p.label != "magazine")
+				continue;
+
+			array<IEntity> items = {};
+			storage.GetAll(items, true);
+			foreach (IEntity item : items)
+			{
+				if (!item.FindComponent(BaseMagazineComponent))
+					continue;
+				if (PrefabOf(item) == p.resName)
+					continue; // already the requested magazine — nothing is in the way
+
+				Print(string.Format("%1 slot=%2 magazine swapping out the weapon's own %3 for %4",
+					m_sTag, m_sLabel, PrefabOf(item), p.resName), LogLevel.WARNING);
+				SCR_EntityHelper.DeleteEntityAndChildren(item);
+				cleared = true;
+			}
+
+			if (cleared)
+				p.mountIssued = mgr.TrySpawnPrefabToStorage(p.resName, storage, -1, EStoragePurpose.PURPOSE_ANY);
+		}
+
+		return cleared;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Poll the weapon storage until each issued item shows up. Stragglers get one
+	//! honest fallback (loose into the character's own inventory) so a player is never
+	//! left with an unloaded weapon and no ammo at all — that fallback is DEGRADED, not
+	//! success, and says so.
+	protected void WeaponVerifyTick(int attempt)
+	{
+		if (m_bDone)
+			return;
+		if (!m_Character)
+		{
+			Cancel("body superseded");
+			return;
+		}
+
+		BaseInventoryStorageComponent storage = WeaponStorageOf(m_PrimaryWeapon);
+
+		for (int i = m_aWeaponPending.Count() - 1; i >= 0; i--)
+		{
+			TBD_PendingWeaponItem p = m_aWeaponPending[i];
+			if (!WeaponStorageHas(storage, p.resName))
+				continue;
+
+			Print(string.Format("%1 slot=%2 %3 mount OK %4 (on %5)", m_sTag, m_sLabel, p.label, p.resName, PrefabOf(m_PrimaryWeapon)));
+			m_iGearApplied++;
+			m_aWeaponPending.Remove(i);
+		}
+
+		if (!m_aWeaponPending.IsEmpty() && attempt < WEAPON_MAX_ATTEMPTS)
+		{
+			GetGame().GetCallqueue().CallLater(WeaponVerifyTick, WEAPON_TICK_MS, false, attempt + 1);
+			return;
+		}
+
+		// Deterministic magazine swap, one shot only. The usual reason a magazine will not
+		// mount is that the weapon prefab already shipped with its own in the well, so the
+		// JSON's choice has nowhere to go. Clear the incumbent and re-issue ONCE — deferred
+		// this late on purpose, so we never take a working magazine away on speculation.
+		if (!m_aWeaponPending.IsEmpty() && !m_bWeaponSwapRetried)
+		{
+			m_bWeaponSwapRetried = true;
+			if (ClearBlockingMagazine())
+			{
+				GetGame().GetCallqueue().CallLater(WeaponVerifyTick, WEAPON_TICK_MS, false, 1);
+				return;
+			}
+		}
+
+		SCR_InventoryStorageManagerComponent mgr = SCR_InventoryStorageManagerComponent.Cast(
+			m_Character.FindComponent(SCR_InventoryStorageManagerComponent));
+
+		foreach (TBD_PendingWeaponItem straggler : m_aWeaponPending)
+		{
+			bool stowed = false;
+			if (mgr)
+				stowed = mgr.TrySpawnPrefabToStorage(straggler.resName, null, -1, EStoragePurpose.PURPOSE_ANY);
+
+			if (stowed)
+				Degrade(straggler.label, straggler.resName, "would not mount on the primary — stowed loose in the character's inventory");
+			else
+				Fail(straggler.label, straggler.resName, "would not mount on the primary and would not fit in the inventory");
+		}
+		m_aWeaponPending.Clear();
+
+		FinishRest();
+	}
+
+	//====================================================================================
+	// Tail: cargo, worn audit, verdict
+	//====================================================================================
+
+	//------------------------------------------------------------------------------------------------
+	//! Post-verify tail: cargo insert (against the NEW garments), the nakedness audit,
+	//! and the one verdict line that says whether the JSON was honoured.
 	protected void FinishRest()
 	{
+		if (m_bDone)
+			return;
+
 		InsertCargo();
-		Print(string.Format("%1 loadout pass complete [%2]", m_sTag, m_sLabel));
+		AuditWorn();
+		ReportVerdict();
 		m_bDone = true;
 	}
 
@@ -427,8 +831,8 @@ class TBD_LoadoutApplication : Managed
 
 	//------------------------------------------------------------------------------------------------
 	//! Insert every cargo row into its resolved container storage. Failure ladder per unit:
-	//! targeted TryInsertItemInStorage -> TryInsertItem anywhere (WARN) -> delete (ERROR).
-	//! No silent drops: every row logs an outcome.
+	//! targeted TryInsertItemInStorage -> TryInsertItem anywhere (DEGRADED) -> delete (FAILED).
+	//! No silent drops: every row logs an outcome naming the slot and the item.
 	protected void InsertCargo()
 	{
 		if (!m_Loadout.cargo || m_Loadout.cargo.IsEmpty())
@@ -440,31 +844,44 @@ class TBD_LoadoutApplication : Managed
 			m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
 		if (!mgr || !charStorage)
 		{
-			Print(m_sTag + " cargo FAILED: character missing inventory components", LogLevel.ERROR);
+			foreach (TBD_SlotCargoStruct broken : m_Loadout.cargo)
+			{
+				if (broken)
+					Fail("cargo:" + broken.container, broken.item, "character missing inventory components");
+			}
 			return;
 		}
 
 		foreach (TBD_SlotCargoStruct row : m_Loadout.cargo)
 		{
-			if (!row || row.item.IsEmpty() || row.qty < 1)
+			if (!row)
 				continue;
+			if (row.item.IsEmpty())
+			{
+				Fail("cargo:" + row.container, "<empty>", "cargo row carries no item ResourceName");
+				continue;
+			}
+			if (row.qty < 1)
+			{
+				Fail("cargo:" + row.container, row.item, string.Format("cargo row qty=%1 is below the schema minimum of 1", row.qty));
+				continue;
+			}
 
 			IEntity garment = GarmentForContainer(charStorage, row.container);
 			BaseInventoryStorageComponent storage;
 			if (garment)
 				storage = BaseInventoryStorageComponent.Cast(garment.FindComponent(BaseInventoryStorageComponent));
 			if (!storage)
-				Print(string.Format("%1 cargo %2: no worn '%3' storage — falling back to any-storage insert",
-					m_sTag, row.item, row.container), LogLevel.WARNING);
+				Degrade("cargo:" + row.container, row.item, "no worn container of that kind — falling back to any-storage insert");
 
 			int inserted = 0;
+			string stopReason;
 			for (int u = 0; u < row.qty; u++)
 			{
 				IEntity item = SpawnAtCharacter(row.item);
 				if (!item)
 				{
-					Print(string.Format("%1 cargo FAILED to load/spawn %2 (unit %3/%4)",
-						m_sTag, row.item, u + 1, row.qty), LogLevel.ERROR);
+					stopReason = string.Format("prefab failed to load/spawn at unit %1/%2 (bad or missing asset)", u + 1, row.qty);
 					break; // resource problems won't fix themselves for later units
 				}
 
@@ -475,8 +892,7 @@ class TBD_LoadoutApplication : Managed
 				{
 					ok = mgr.TryInsertItem(item);
 					if (ok && storage)
-						Print(string.Format("%1 cargo %2 fell back to any-storage (container '%3' full?)",
-							m_sTag, row.item, row.container), LogLevel.WARNING);
+						Degrade("cargo:" + row.container, row.item, string.Format("unit %1/%2 did not fit the container — inserted elsewhere", u + 1, row.qty));
 				}
 
 				if (ok)
@@ -485,15 +901,76 @@ class TBD_LoadoutApplication : Managed
 				}
 				else
 				{
-					Print(string.Format("%1 cargo FAILED to insert %2 into '%3' (unit %4/%5) — deleting",
-						m_sTag, row.item, row.container, u + 1, row.qty), LogLevel.ERROR);
 					SCR_EntityHelper.DeleteEntityAndChildren(item);
+					stopReason = string.Format("no storage would accept unit %1/%2 (character full)", u + 1, row.qty);
 					break; // a full character won't accept later units either
 				}
 			}
 
-			Print(string.Format("%1 cargo %2 x%3/%4 -> %5 [%6]",
-				m_sTag, row.item, inserted, row.qty, row.container, m_sLabel));
+			m_iCargoInserted += inserted;
+			Print(string.Format("%1 slot=%2 cargo %3 x%4/%5 -> %6", m_sTag, m_sLabel, row.item, inserted, row.qty, row.container));
+			if (!stopReason.IsEmpty())
+				Fail("cargo:" + row.container, row.item, stopReason);
 		}
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! NAKEDNESS GUARD (T-181.10). Whatever the kit prefab and the JSON between them did,
+	//! the pass ends by looking at what the character is actually wearing. A body with no
+	//! jacket and/or no pants is an ERROR naming the slot — a naked or half-dressed player
+	//! must never leave this code silently.
+	protected void AuditWorn()
+	{
+		SCR_CharacterInventoryStorageComponent charStorage = SCR_CharacterInventoryStorageComponent.Cast(
+			m_Character.FindComponent(SCR_CharacterInventoryStorageComponent));
+		if (!charStorage)
+		{
+			Print(string.Format("%1 slot=%2 worn-audit SKIPPED — character has no SCR_CharacterInventoryStorageComponent", m_sTag, m_sLabel), LogLevel.ERROR);
+			return;
+		}
+
+		bool jacket = charStorage.GetClothFromArea(LoadoutJacketArea) != null;
+		bool pants = charStorage.GetClothFromArea(LoadoutPantsArea) != null;
+		bool boots = charStorage.GetClothFromArea(LoadoutBootsArea) != null;
+
+		if (jacket && pants)
+		{
+			Print(string.Format("%1 slot=%2 worn-audit jacket=1 pants=1 boots=%3", m_sTag, m_sLabel, boots));
+			return;
+		}
+
+		if (!jacket && !pants)
+		{
+			Print(string.Format("%1 slot=%2 NAKED after loadout pass — no jacket and no pants worn (kit prefab and JSON loadout both left the body bare)",
+				m_sTag, m_sLabel), LogLevel.ERROR);
+			return;
+		}
+
+		Print(string.Format("%1 slot=%2 HALF-DRESSED after loadout pass — jacket=%3 pants=%4 boots=%5",
+			m_sTag, m_sLabel, jacket, pants, boots), LogLevel.ERROR);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The one line an operator greps for: did this slot get the loadout its JSON asked
+	//! for? Complete passes log a single OK line; anything less repeats every offending
+	//! item so the verdict is self-contained.
+	protected void ReportVerdict()
+	{
+		string counts = string.Format("gear=%1/%2 cargo=%3/%4",
+			m_iGearApplied, m_iGearRequested, m_iCargoInserted, m_iCargoRequested);
+
+		if (m_aFailures.IsEmpty() && m_aDegraded.IsEmpty())
+		{
+			Print(string.Format("%1 slot=%2 loadout pass complete %3", m_sTag, m_sLabel, counts));
+			return;
+		}
+
+		if (!m_aFailures.IsEmpty())
+			Print(string.Format("%1 slot=%2 loadout INCOMPLETE %3 — failed: %4",
+				m_sTag, m_sLabel, counts, JoinIssues(m_aFailures)), LogLevel.ERROR);
+
+		if (!m_aDegraded.IsEmpty())
+			Print(string.Format("%1 slot=%2 loadout DEGRADED %3 — %4",
+				m_sTag, m_sLabel, counts, JoinIssues(m_aDegraded)), LogLevel.WARNING);
 	}
 }
