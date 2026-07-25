@@ -748,9 +748,18 @@ class TBD_LoadoutApplication : Managed
 		pending.label = label;
 		pending.resName = resName;
 		pending.mountIssued = mgr.TrySpawnPrefabToStorage(resName, storage, -1, EStoragePurpose.PURPOSE_ANY);
+		// T-181.52: NOT A FAULT — do not put this back to WARNING. A weapon prefab normally spawns
+		// with its OWN magazine already in the well, so the first mount attempt for the JSON's
+		// magazine is EXPECTED to be declined. ClearBlockingMagazine() then evicts the incumbent and
+		// WeaponVerifyTick re-issues, which succeeds — that is the T-181.10 deterministic swap
+		// working as designed, not a degradation. Logging the expected refusal at WARNING put a
+		// `SCRIPT (W):` line in the middle of a fully successful sequence and cost the operator a
+		// fault hunt through a log they scan for real faults. The genuine failure — retried, still
+		// would not mount, stowed loose or dropped — is reported by Degrade()/Fail() at the bottom
+		// of WeaponVerifyTick and STAYS at WARNING/ERROR.
 		if (!pending.mountIssued)
-			Print(string.Format("%1 slot=%2 %3 mount refused up front by the weapon storage %4 — the verify pass will retry and then fall back",
-				m_sTag, m_sLabel, label, resName), LogLevel.WARNING);
+			Print(string.Format("%1 slot=%2 %3 first mount attempt declined by the weapon storage %4 — EXPECTED, not an error: the verify pass clears the weapon's own incumbent and re-issues",
+				m_sTag, m_sLabel, label, resName));
 		m_aWeaponPending.Insert(pending);
 	}
 
@@ -784,8 +793,18 @@ class TBD_LoadoutApplication : Managed
 				if (PrefabOf(item) == p.resName)
 					continue; // already the requested magazine — nothing is in the way
 
-				Print(string.Format("%1 slot=%2 magazine swapping out the weapon's own %3 for %4",
-					m_sTag, m_sLabel, PrefabOf(item), p.resName), LogLevel.WARNING);
+				// T-181.52: NOT A FAULT — do not put this back to WARNING either. Reaching here means
+				// the deterministic swap is doing exactly the job it exists for: the weapon shipped
+				// with its own magazine, the JSON asked for a different one, so the incumbent is
+				// evicted and the requested magazine is re-issued below. Together with the
+				// first-attempt "declined" line in IssueWeaponItem(), this completes a sequence that
+				// ENDS IN SUCCESS, and the whole sequence is now logged at normal level. That is the
+				// point: a fully successful magazine issue must produce NO `SCRIPT (W):` at all, so
+				// any (W) the operator still sees in this sequence is a REAL fault worth chasing.
+				// The genuine failures stay loud — Degrade()/Fail() at the bottom of
+				// WeaponVerifyTick when the retry is exhausted.
+				Print(string.Format("%1 slot=%2 magazine deterministic swap: evicting the weapon's own %3 so the mission's %4 can take the well — intended, not a problem",
+					m_sTag, m_sLabel, PrefabOf(item), p.resName));
 				SCR_EntityHelper.DeleteEntityAndChildren(item);
 				cleared = true;
 			}
@@ -944,8 +963,18 @@ class TBD_LoadoutApplication : Managed
 			BaseInventoryStorageComponent storage;
 			if (garment)
 				storage = BaseInventoryStorageComponent.Cast(garment.FindComponent(BaseInventoryStorageComponent));
+			// T-181.52: NOT A MOD BUG, and the message must say so. This fires when the mission asks
+			// for cargo in a container the slot's kit does not wear — e.g. cargo[].container ==
+			// "backpack" against kit:us_rifleman, which has no backpack. That is an AUTHORING
+			// mismatch between the mission document and the kit prefab; the fix belongs in one of
+			// those two, never in this file. The item is NOT lost: the any-storage fallback below
+			// still inserts it. Severity is deliberately left at DEGRADED (behaviour unchanged) —
+			// the JSON did not get the placement it asked for, so it must stay counted in the
+			// end-of-pass verdict — but an operator reading the line should stop here, not go
+			// hunting through mod code.
 			if (!storage)
-				Degrade("cargo:" + row.container, row.item, "no worn container of that kind — falling back to any-storage insert");
+				Degrade("cargo:" + row.container, row.item,
+					string.Format("this slot's kit wears no %1 — mission/kit authoring mismatch, NOT a mod fault; the item is still inserted via the any-storage fallback", row.container));
 
 			int inserted = 0;
 			string stopReason;

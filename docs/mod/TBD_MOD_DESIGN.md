@@ -53,7 +53,12 @@ hands you nothing. **That gap is the program.**
 - **CRF is an oracle, never a dependency.** Arma Public License. Indexed, cited, never vendored.
   `tbd-framework` takes **no workshop dependencies** — its only `addon.gproj` dependency is the
   vanilla data addon `58D0FB3206B6F859`.
-- **PlayableSelector is design-mirror only.** No licence; never copy code.
+- **PlayableSelector is design-mirror only.** It ships with **no licence file at all**, which is
+  worse than APL rather than better: default copyright applies, so there is **no permission to copy,
+  adapt or redistribute any of it**. Read it to learn how a lobby / slot picker is *shaped*, then
+  write ours. Never a line. Linked into each slice worktree as `apps/mod/playable_selector` (it
+  lives outside the repo, so absence warns rather than refuses) and enforced by the `PS_` lane of
+  `make verify-no-crf-leak`. Full rules: [`SLICE_WORKFLOW.md`](SLICE_WORKFLOW.md) §Oracle lanes.
 
 ## 3. The event loop
 

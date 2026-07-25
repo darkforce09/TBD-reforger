@@ -69,25 +69,67 @@ case "$cmd" in
         "${GIT[@]}" worktree add -b "$branch" "$dir" main
       fi
     fi
-    # The oracle sources are GITIGNORED, so a fresh worktree has neither. Without them an
+    # ── ORACLE LANES ────────────────────────────────────────────────────────────────────────
+    # The oracle sources are GITIGNORED, so a fresh worktree has none of them. Without them an
     # agent cannot query CRF or read vanilla source and will fall back on training-data guesses
-    # about Enfusion — which are wrong. Link them from the main tree (read-only reference; no
-    # disk cost, no risk of a slice mutating them).
+    # about Enfusion — which are wrong. Link them in (read-only reference; no disk cost, no risk
+    # of a slice mutating them). `ln -sfn` makes the whole step idempotent, so re-running `new`
+    # on an existing tree repairs a missing lane instead of skipping it.
+    #
+    # LICENCE — the lanes are NOT equivalent, and the next agent must know which is which:
+    #   crf_framework      Arma Public License. Read, cite, design-mirror. Never vendored.
+    #   vanilla_reference  Bohemia game source, carved by `enf carve`. Read-only, never committed.
+    #   playable_selector  NO LICENCE AT ALL — DESIGN-MIRROR ONLY. Absence of a licence is worse
+    #                      than APL, not better: default copyright applies, so there is no
+    #                      permission to copy, adapt or redistribute a single line. Read it to
+    #                      understand how a lobby/slot-picker is SHAPED, then write our own.
+    # `make verify-no-crf-leak` enforces all of that (CRF_ and PS_ identifier + asset-GUID gates).
+    #
+    # REQUIRED vs OPTIONAL, and why PlayableSelector is optional (T-181.52 decision):
+    #   The refuse-on-missing rule exists for one failure mode — an agent with no way to CHECK an
+    #   Enfusion API fact will invent one. crf_framework and vanilla_reference are the two lanes
+    #   that answer that question, they live inside the repo, and repo tooling provisions them, so
+    #   their absence means a broken local setup: REFUSE.
+    #   playable_selector is a DESIGN mirror, not an API oracle. It proves no Enfusion fact, it
+    #   cannot be compiled against, and it sits OUTSIDE the repo on one operator's disk — on CI or
+    #   any other machine it is legitimately absent. Refusing there would break `new` for everyone
+    #   but Sam over something that is not a correctness problem, while the failure mode the refuse
+    #   guards against stays covered by the two required lanes. So: WARN, loudly, naming what the
+    #   agent has lost. The licence risk is unaffected either way, because the leak gate runs on
+    #   our tree, not on the oracle, and passes whether or not the lane is present.
+    PS_ORACLE="${TBD_PS_ORACLE:-$HOME/Projects/Archive/Reforger_Lobby/PlayableSelector-main}"
+    oracle_lanes=(
+      "crf_framework|$ROOT/apps/mod/crf_framework|required"
+      "vanilla_reference|$ROOT/apps/mod/vanilla_reference|required"
+      "playable_selector|$PS_ORACLE|optional"
+    )
     missing_oracle=0
-    for ref in crf_framework vanilla_reference; do
-      if [ ! -d "$ROOT/apps/mod/$ref" ]; then
-        echo "  WARNING: $ROOT/apps/mod/$ref missing on main — cannot link that oracle lane" >&2
-        missing_oracle=1
+    for lane in "${oracle_lanes[@]}"; do
+      ref="${lane%%|*}"; lane_rest="${lane#*|}"
+      src="${lane_rest%|*}"; policy="${lane_rest##*|}"
+
+      if [ ! -d "$src" ]; then
+        if [ "$policy" = required ]; then
+          echo "  ERROR: $src missing — cannot link the $ref oracle lane" >&2
+          missing_oracle=1
+        else
+          echo "  WARNING: no $ref oracle at $src — this tree has NO PlayableSelector lane." >&2
+          echo "           Design work that would cite it must STOP and ask, not guess." >&2
+          echo "           If the checkout moved, re-run with TBD_PS_ORACLE=/path/to/PlayableSelector-main" >&2
+        fi
         continue
       fi
-      ln -sfn "$ROOT/apps/mod/$ref" "$dir/apps/mod/$ref"
+
+      ln -sfn "$src" "$dir/apps/mod/$ref"
       # Verify rather than trust. This whole block used to be unreachable and nothing noticed,
       # because nobody checked the result — the agents just quietly lost their proof lanes.
       if [ -d "$dir/apps/mod/$ref" ]; then
-        echo "  oracle ok: apps/mod/$ref"
+        echo "  oracle ok: apps/mod/$ref -> $src"
       else
         echo "  ERROR: failed to link apps/mod/$ref into $dir" >&2
-        missing_oracle=1
+        if [ "$policy" = required ]; then
+          missing_oracle=1
+        fi
       fi
     done
     if [ "$missing_oracle" -ne 0 ]; then

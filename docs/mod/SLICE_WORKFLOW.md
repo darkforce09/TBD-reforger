@@ -128,6 +128,7 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | What does vanilla actually DO? | `rg <pat> apps/mod/vanilla_reference/Source/` — real source **with bodies** |
 | Fetch more vanilla source | `bash scripts/mod/fetch-vanilla-source.sh <File.c>` — **polite: one person's site, never `--all`** |
 | How does a working framework do it? | `rg <pat> apps/mod/crf_framework/` — CRF, Arma Public License, **reference only** |
+| How is a lobby / slot picker SHAPED? | `rg <pat> apps/mod/playable_selector/` — PlayableSelector, **NO LICENCE, design-mirror only** (§Oracle lanes) |
 | Does my change compile? | `bash scripts/mod/compile.sh` — ~1.3 s, native server, **no Workbench** |
 | Probe dir hygiene | **Use a FRESH, uniquely-named dir per probe** (`/tmp/probe-$$`). Probe dirs are shared and sticky — a leftover file from another agent silently polluted a run. `compile.sh` now lists what it stages so contamination is visible. |
 | Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
@@ -171,6 +172,50 @@ model's priors are wrong. An agent asked to summarise one CRF file invented four
 exist (`RequestSlotChange`, `ReleaseSlot`, `GetInstance`, a wrong base class). That incident is why
 every index is mechanically generated and `make verify-oracle` gates prose citations.
 
+## Oracle lanes — what each one is licensed for
+
+`scripts/mod/slice-worktree.sh new` symlinks these into every worktree; they are all gitignored, so
+a fresh tree has none of them until that step runs. **They are not equivalent, and the difference is
+legal, not stylistic.** Read the row before you read the code.
+
+| Lane | Licence | You may | You may NOT | Missing? |
+|---|---|---|---|---|
+| `apps/mod/vanilla_reference` | Bohemia game source, carved by `enf carve` | read for behaviour, cite | commit it, ship it | **REFUSE** — tree not handed over |
+| `apps/mod/crf_framework` | **Arma Public License** | read, cite (`@idx crf#Symbol`), design-mirror | copy code, reuse asset GUIDs, vendor it | **REFUSE** — tree not handed over |
+| `apps/mod/playable_selector` | **NONE AT ALL** | read to understand *design* | copy **a single line**, adapt, redistribute | **WARN** — tree still handed over |
+
+**"No licence" is worse than APL, not better.** APL at least grants terms. PlayableSelector ships
+with no licence file, so **default copyright applies and there is no permission to copy, adapt or
+redistribute any of it.** It is a **design-mirror only** lane: read it to learn how a lobby /
+slot-picker is *shaped*, close it, then write ours. If you find yourself with a PS file open and our
+file open beside it, you are already doing it wrong.
+
+**Why PlayableSelector WARNs while the other two REFUSE** (T-181.52). The refusal rule exists for
+exactly one failure mode: an agent with no way to *check* an Enfusion API fact will invent one. The
+vanilla and CRF lanes are what answer that question, they live inside the repo, and repo tooling
+provisions them — so their absence means a broken setup and the tree is withheld. PlayableSelector
+answers *design* questions, not API questions; it proves no Enfusion fact, cannot be compiled
+against, and lives **outside the repo** on one operator's disk, so on CI or any other machine it is
+legitimately absent. Refusing there would break `new` everywhere but that one machine over something
+that is not a correctness problem. Absence is loud, and design work that would have cited it must
+**stop and ask, not guess**. Point the lane elsewhere with `TBD_PS_ORACLE=/path/to/PlayableSelector-main`.
+
+**The gate.** `make verify-no-crf-leak` (name kept for the wave runner; it now covers every lane)
+fails the build on a `CRF_` **or** `PS_` identifier in `apps/mod/tbd-framework/**`, and on any
+oracle-only asset GUID reused in ours. Comments naming an oracle are allowed and encouraged —
+citing what you design-mirrored is the practice we want; it is the prefix in *code* that fails.
+
+**The other half of the gate is the deploy.** `scripts/mod/deploy-staging.sh` `--exclude`s every
+lane from the rsync. The staging server only ever runs `apps/mod/tbd-framework`, so an oracle on
+that box is pure licence exposure for zero benefit — and unlike a worktree, the main checkout holds
+these as *real directories*, so a missing exclude ships the whole tree. Measured at T-181.52: only
+`crf_framework` was excluded, and every deploy was rsyncing **3,797** carved Bohemia source files
+to staging.
+
+**Adding an oracle lane means three edits, not one:** the link step in `slice-worktree.sh`, the
+prefix in `verify-no-crf-leak.sh`, and the `--exclude` in `deploy-staging.sh`. A lane missing any
+of the three is a liability, not a convenience.
+
 ## The environment fact every prompt must carry
 
 Agent shells run inside a **`debian:12` podman container**: glibc 2.36, **no C toolchain**. The real
@@ -190,7 +235,7 @@ bash scripts/mod/compile.sh                   # 0 clean
 distrobox-host-exec make mod-compile-selftest # gate still catches a broken .c
 distrobox-host-exec make verify-capability    # 0 UNTRIAGED
 distrobox-host-exec make verify-oracle        # every @idx resolves
-distrobox-host-exec make verify-no-crf-leak   # no APL code in prod
+distrobox-host-exec make verify-no-crf-leak   # no oracle code in prod (CRF + PlayableSelector)
 distrobox-host-exec ./scripts/ticket check    # registry valid
 distrobox-host-exec cargo test -p tbd-tools --lib enf::
 ```
