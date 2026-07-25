@@ -61,19 +61,39 @@ SERVER_BIN="$SERVER_DIR/ArmaReforgerServer"
 DEV_CONFIG="$ROOT/scripts/mod/tbd-dev-server.config.json"
 MAX_WAIT="${TBD_WORLDBOOT_TIMEOUT:-240}"
 
+GOLDENS="$ROOT/packages/tbd-schema/golden-missions"
+WARN_BASELINE="$ROOT/.world-boot-warning-baseline"
+
 KEEP_LOGS=0
 SELFTEST=0
+MISSION=""
 for arg in "$@"; do
   case "$arg" in
     --keep-logs) KEEP_LOGS=1 ;;
     --selftest)  SELFTEST=1 ;;
+    --mission=*) MISSION="${arg#--mission=}" ;;
+    --mission)   echo "use --mission=<file|name>" >&2; exit 2 ;;
     *) echo "unknown argument: $arg" >&2; exit 2 ;;
   esac
 done
 
+# Resolve a bare golden name ("bridgehead-at-levie") to its file.
+if [ -n "$MISSION" ] && [ ! -f "$MISSION" ]; then
+  if [ -f "$GOLDENS/$MISSION.json" ]; then
+    MISSION="$GOLDENS/$MISSION.json"
+  elif [ -f "$GOLDENS/$MISSION" ]; then
+    MISSION="$GOLDENS/$MISSION"
+  else
+    echo "ERROR: no such mission '$MISSION' (looked in $GOLDENS)" >&2; exit 2
+  fi
+fi
+
 # Errors that are CORRECT on a bare boot: no backend is running and no mission is configured, so
 # the loader is supposed to refuse. Widen only with a comment saying why the error is expected.
-EXPECTED_ERRORS='missionId not configured'
+# `MissionList: backend not configured` is correct on a --mission boot: the mission comes from the
+# local file fallback and there is deliberately no backend URL, so the browser has nothing to list.
+# (It is logged at ERROR level for a legal state — a truth-in-logging nit filed under T-181.30.)
+EXPECTED_ERRORS='missionId not configured|MissionList: backend not configured'
 
 # Engine diagnostics that mean STRUCTURAL breakage, failed regardless of who "owns" the message.
 # `WORLD (E): Unknown class` is the important one: it is how the engine reports a component on a
@@ -165,6 +185,41 @@ assess_log() {
     n="$(printf '%s\n' "$benign" | wc -l | tr -d ' ')"
     echo "  note  $n known-benign vanilla script error(s), not failing:"
     printf '%s\n' "$benign" | sed -E 's/.*SCRIPT +\(E\): //' | sort -u | head -4 | sed 's/^/        /'
+  fi
+
+  # ── mission-seeded assertions ────────────────────────────────────────────────────────────
+  if [ -n "${MISSION_ID:-}" ]; then
+    local verdict errs warns budget
+    verdict="$(grep -oE 'mission result=[A-Z]+ errors=[0-9]+ warnings=[0-9]+' "$log" | tail -1)"
+    if [ -z "$verdict" ]; then
+      echo "  FAIL  mission '$MISSION_ID' never reached the validator (no result line)"
+      return 1
+    fi
+    errs="$(printf '%s' "$verdict"  | sed -E 's/.*errors=([0-9]+).*/\1/')"
+    warns="$(printf '%s' "$verdict" | sed -E 's/.*warnings=([0-9]+).*/\1/')"
+
+    if printf '%s' "$verdict" | grep -q 'result=PASS' && [ "$errs" = "0" ]; then
+      echo "  ok    mission validated: $verdict"
+    else
+      echo "  FAIL  mission did not validate: $verdict"
+      grep -oE '\[TBD\]\[Validate\][^"]{0,120}' "$log" | grep -iE 'error' | head -6 | sed 's/^/        /'
+      rc=1
+    fi
+
+    # Warning RATCHET, same idea as compile.sh's vanilla baseline: a rise is a regression and
+    # fails; a fall is progress and asks you to tighten the file. A budget you never tighten
+    # decays into a rubber stamp, so the drop case is deliberately noisy.
+    budget="$(grep -E "^$MISSION_ID[[:space:]]" "$WARN_BASELINE" 2>/dev/null | awk '{print $2}')"
+    if [ -z "$budget" ]; then
+      echo "  note  no warning baseline for $MISSION_ID (observed $warns) — add: '$MISSION_ID $warns' to $(basename "$WARN_BASELINE")"
+    elif [ "$warns" -gt "$budget" ]; then
+      echo "  FAIL  validator warnings rose: $warns > baseline $budget for $MISSION_ID"
+      rc=1
+    elif [ "$warns" -lt "$budget" ]; then
+      echo "  note  warnings IMPROVED ($warns < baseline $budget) — tighten $(basename "$WARN_BASELINE") to '$MISSION_ID $warns'"
+    else
+      echo "  ok    validator warnings at baseline ($warns)"
+    fi
   fi
 
   return "$rc"
@@ -273,6 +328,33 @@ RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tbd-worldboot.XXXXXX")"
 mkdir -p "$RUN_DIR/addons" "$RUN_DIR/profile"
 ln -sfn "$MOD_SRC" "$RUN_DIR/addons/tbd-framework"
 
+# ── --mission: seed a real mission so the document path actually RUNS ───────────────────────
+# Without this the gate proves only that the game mode wires up: the loader refuses ("missionId
+# not configured"), the stage machine never leaves LOADING, and the validator, zone registry,
+# slot materialisation and marker service are ALL un-gated. The wave-5 verifier found two live
+# MAJOR bugs sitting in exactly that blind spot, both visible in the first ~40 s of a
+# mission-seeded boot.
+#
+# No backend is needed: TBD_MissionLoader falls back to a local file at
+# `$profile:missions/<missionId>.json` (TBD_MissionLoader.c:508).
+#
+# LANDMINE: `$profile:` resolves to `<-profile-arg>/profile/`, NOT `<-profile-arg>/`. Seeding one
+# level up loads nothing, silently — measured by the wave-5 verifier after two dead boots.
+MISSION_ID=""
+if [ -n "$MISSION" ]; then
+  MISSION_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1])).get('meta',{}).get('id',''))" "$MISSION")"
+  [ -n "$MISSION_ID" ] || { echo "ERROR: $MISSION has no meta.id" >&2; exit 1; }
+  mkdir -p "$RUN_DIR/profile/profile/missions"
+  cp "$MISSION" "$RUN_DIR/profile/profile/missions/$MISSION_ID.json"
+  printf '{"backendUrl":"","serverToken":"","missionId":"%s","eventId":""}\n' \
+    "$MISSION_ID" > "$RUN_DIR/profile/profile/TBD_BackendConfig.json"
+  # The registry's primary path is `$TBD_Framework:Data/registry.json`, and that alias does NOT
+  # resolve for a loose addon — `Data/*.json` is a non-script resource, so it is gated by the same
+  # stale `resourceDatabase.rdb` as the menu presets. Without the profile fallback every slot fails
+  # with "kit resolve failed", which is a real TBD error and correctly fails this gate.
+  cp "$MOD_SRC/Data/registry.json" "$RUN_DIR/profile/profile/TBD_Registry.json"
+fi
+
 # Same kill discipline as compile.sh: the launcher runs under `setsid`, so the recorded PID
 # is a PROCESS GROUP LEADER and we signal the whole group. Never widen this to a name match —
 # a broad `pkill -f ArmaReforgerServer` would take out the operator's own dev server.
@@ -336,7 +418,12 @@ LOG=""
 for _ in $(seq 1 "$((MAX_WAIT * 2))"); do
   LOG="$(ls -1d "$RUN_DIR"/profile/logs/logs_* 2>/dev/null | tail -1)/console.log"
   if [ -f "$LOG" ]; then
-    grep -q '\[TBD\] roll-call' "$LOG" && break
+    if [ -n "${MISSION_ID:-}" ]; then
+      # Mission mode waits for the validator verdict, which lands well after the roll-call.
+      grep -q 'mission result=' "$LOG" && break
+    else
+      grep -q '\[TBD\] roll-call' "$LOG" && break
+    fi
     grep -qE '\(F\):|Unable to initialize the game' "$LOG" && break
   fi
   sleep 0.5

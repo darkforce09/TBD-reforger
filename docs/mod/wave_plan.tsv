@@ -19,3 +19,4 @@
 8	T-181.34	Cargo container enum in mission schema	packages/tbd-schema/**
 9	T-181.30	Truth-in-comments + audit-ring hardening	Scripts/Game/TBD/Gamemode/**
 9	T-181.35	In-game identity linking (#tbd link) — makes attendance real	Scripts/Game/TBD/Backend/** + chat
+9	T-181.36	slot-loadout-coverage.json is rejected at runtime (kit:us_medic)	packages/tbd-schema/golden-missions/**

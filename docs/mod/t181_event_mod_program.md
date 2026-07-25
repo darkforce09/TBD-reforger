@@ -274,6 +274,19 @@ picker can open would ship a mod nobody can deploy into.
   does not exist at runtime. The cache is a strong hint, never proof — **probe anyway**.
 - **`GetGame().SpawnEntity(typename, world, params)` spawns a scripted entity with NO prefab** —
   which is how the spectator camera avoids the rdb blocker entirely.
+- **`$profile:` resolves to `<-profile-arg>/profile/`, NOT `<-profile-arg>/`.** Seeding a mission or
+  config one level up loads **nothing, silently** — the loader just reports the file missing. Cost
+  the wave-5 verifier two dead boots before it noticed.
+- **`Data/*.json` is rdb-gated exactly like `.conf`/`.layout`.** `$TBD_Framework:Data/registry.json`
+  does **not** resolve for a loose addon, so every slot fails with `kit resolve failed` and the
+  mission is rejected. The `$profile:TBD_Registry.json` fallback is not a convenience — it is the
+  only working path until Workbench rewrites the rdb. `world-boot.sh --mission=` seeds it for this
+  reason. Only `.c` files are directory-scanned and rdb-independent.
+- **`pgrep` through `distrobox-host-exec` can return a FALSE NEGATIVE.** A `ArmaReforgerServer`
+  orphan was live for 2 h 38 m while `pgrep -a ArmaReforgerServer` through the bridge reported
+  nothing; `ps -o pid,pgid -p <pid>` saw it immediately. Confirm a process is really gone with `ps`
+  against the specific PID, not a name search — and kill by the PGID `ps` reports, not the one you
+  assumed (mine differed, so the first kill silently hit nothing).
 - **`JsonLoadContext` ALLOCATES a nested `ref <class>` field even when the JSON key is ABSENT — so
   a null check is NOT a presence test.** Measured 2026-07-25 on a live boot against
   `golden-missions/bridgehead-at-levie.json`: zone `z4` authors a polygon and **no** circle, yet

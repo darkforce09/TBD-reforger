@@ -1,0 +1,18 @@
+# Validator warning ratchet for `world-boot.sh --mission=<name>`.
+#
+# Format: <missionId> <max-warnings>
+#
+# A RISE fails the gate (regression). A FALL prints a loud note asking you to tighten this file,
+# because a budget nobody tightens decays into a rubber stamp.
+#
+# These numbers are NOT a target — they are a debt marker. The wave-5 adversarial verifier proved
+# that across all four goldens, 27 warnings are emitted and only 2 are correct. The cause is the
+# JsonLoadContext landmine in TBD_MissionValidator.CheckSlotLoadout: `slot.loadout` and
+# `loadout.gear` are `ref <class>` fields that are allocated even when the JSON key is absent, so
+# every slot that authors NO loadout is reported as "loadout.gear is present but every gear ref is
+# empty", and the "neither gear nor cargo" branch is unreachable dead code. Filed for T-181.13.1,
+# which owns Backend/**. When it lands these should collapse toward 0 and this file must be cut.
+msn_8f3a2c 18
+msn_0e77ab 7
+msn_5c1de7 2
+msn_2d91be 1
