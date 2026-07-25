@@ -179,7 +179,15 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
       # conflating them is what destroyed five worktrees. The distinguisher is main's own history:
       # `merge` leaves a "Merge branch 'slice/<id>'" commit, so if that exists the work landed.
       commits="$(git rev-list --count "main..$b" 2>/dev/null || echo 0)"
+      # Two shapes count as landed: the `merge` subcommand's own merge commit, AND a conflicted
+      # merge that the command center resolved and completed inside a normal commit (which carries
+      # a different message entirely). The second shape is why this also asks whether the branch
+      # tip itself is an ancestor of main.
       landed="$(git log main --merges --oneline --grep="slice/$s\$" 2>/dev/null | head -1)"
+      if [ -z "$landed" ] && git merge-base --is-ancestor "$b" main 2>/dev/null \
+         && [ "$(git rev-parse "$b")" != "$(git merge-base "$b" main)" ]; then
+        landed="ancestor"
+      fi
       if [ "${commits:-0}" = "0" ] && [ -z "$landed" ]; then
         echo "KEPT   $s — no commits beyond main and no merge in main's history (unstarted)." >&2
         continue
