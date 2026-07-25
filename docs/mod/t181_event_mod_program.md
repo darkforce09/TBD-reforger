@@ -259,9 +259,41 @@ picker can open would ship a mod nobody can deploy into.
 - **`Formula too complex`** on a long `+` chain (measured at 9 fields). Worse, the SECOND diagnostic
   on that line is a misleading `Incompatible parameter` that sends you hunting a type error that does
   not exist. Fix: append in steps.
-- **`string.Split`'s empty-token behaviour is a RUNTIME property** — unprovable by compile probe, and
-  absent from every oracle. Every wire format in the mod must therefore avoid ever emitting an empty
-  field (use a sentinel), or be proven once on a live run.
+- **`string.Split(sep, out, false)` KEEPS empty tokens — MEASURED, and this retires the entry that
+  said it was unknowable.** Engine 1.7.0.54, live dedicated boot, 2026-07-25 (T-181.26): `"a\t\tb"`
+  splits to **three** tokens. Negative control in the same run — the same code on `"a\tb"` reported
+  two, so the verdict reads the real count and is not a constant. The old entry here was right that
+  a *compile probe* cannot settle it and wrong to conclude the program could not know: the answer
+  was one `SelfCheckWire()` and one boot away, and four shipped files hand-rolled splitters to avoid
+  a question nobody had asked the engine. **"Unprovable from the compile lane" is not "unobservable"
+  — if a runtime property is load-bearing, arm a self-check and boot.**
+  Two things this does NOT license:
+  - **Do not delete the hand-rolled splitters.** The measurement pins ONE build of one engine;
+    `TBD_BriefingService.SplitLines`'s output is determined by its own code on every build. Nine
+    lines is cheaper than a re-measurement per engine bump.
+  - **Do not drop the wire sentinels.** Every wire format still marks or sentinels its fields
+    (`TBD_AdminData.FIELD_MARK`, `TBD_BriefingService.FIELD_MARK`, `TBD_LobbyData.EMPTY`), because
+    the correctness of a format should not rest on a fact that could change under it — and a
+    `trim = true` caller reintroduces the hazard immediately.
+  Consequence worth stating: the pre-T-181.26 briefing wire was **accidentally correct** on this
+  build. Its empty-field defect was latent, not live.
+- **Three delimited wire formats, three different answers — converging.** `TBD_AdminData.FIELD_MARK`
+  (`<TAB>.<value>` on every field) is **bijective**: `Unmark(Field(x)) == x` for every `x`.
+  `TBD_LobbyData.EMPTY = "~"` is a plausibility argument and is **lossy** where it is wrong — a field
+  authored as literally `~` round-trips to the empty string. T-181.26 put `TBD_BriefingData` on the
+  marker, so `TBD_LobbyData` is now the odd one out; converging it is a two-helper change.
+  The marker must stay a **single ASCII byte**: `Unmark` is `Substring(1, len - 1)` and `Substring`
+  is BYTE-indexed, so a prettier multi-byte marker would corrupt every accented field.
+- **`world-boot.sh` does NOT exercise any client-fed screen, and reading it as coverage is a
+  mistake that has already been briefed to a slice agent.** MEASURED 2026-07-25: a `--mission=` boot
+  runs with **zero players**, so `TBD_BriefingService.BuildForPlayer` / `Serialise` / `Parse` never
+  execute and `grep -i briefing` over the whole console log returns only `flow.briefingSeconds` and
+  the JIP stage list. The same holds for the lobby, admin, marker and radio payloads. The gate proves
+  the game mode wires up and the mission document parses — not that a screen's wire format works.
+  What it CAN do is catch a self-check: a deliberately broken `Unmark` produced
+  `SCRIPT (E): [TBD][Briefing] wire self-check FAIL …` and the fail-closed triage turned it into
+  `WORLD BOOT: FAIL`. So a service that self-checks at boot IS gated; one that self-checks lazily on
+  first use is not.
 - **`→` is not in the proven glyph set.** `·`, `—`, `…` are rendered by shipped screens; `→` is used
   nowhere. Prefer `->` on anything load-bearing rather than risk a tofu box.
 - **Duplicate `switch` case labels compile CLEAN** — so a switch cannot be used to prove enum
