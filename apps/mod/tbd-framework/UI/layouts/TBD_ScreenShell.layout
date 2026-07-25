@@ -1,0 +1,305 @@
+FrameWidgetClass {
+ Name "ScreenRoot"
+ {
+  ImageWidgetClass "{7BD1A70000000710}" {
+   Name "Backdrop"
+   Slot FrameWidgetSlot "{7BD1A70000000711}" {
+    Anchor 0 0 1 1
+    PositionX 0
+    OffsetLeft 0
+    PositionY 0
+    OffsetTop 0
+    SizeX 0
+    OffsetRight 0
+    SizeY 0
+    OffsetBottom 0
+   }
+   Color 0.031 0.055 0.114 0.72
+  }
+  FrameWidgetClass "{7BD1A70000000712}" {
+   Name "PanelFrame"
+   Slot FrameWidgetSlot "{7BD1A70000000713}" {
+    Anchor 0 0 1 1
+    PositionX 240
+    OffsetLeft 240
+    PositionY 120
+    OffsetTop 120
+    SizeX 0
+    OffsetRight 240
+    SizeY 0
+    OffsetBottom 120
+   }
+   {
+    ImageWidgetClass "{7BD1A70000000714}" {
+     Name "Panel"
+     Slot FrameWidgetSlot "{7BD1A70000000715}" {
+      Anchor 0 0 1 1
+      PositionX 0
+      OffsetLeft 0
+      PositionY 0
+      OffsetTop 0
+      SizeX 0
+      OffsetRight 0
+      SizeY 0
+      OffsetBottom 0
+     }
+     Color 0.051 0.075 0.133 1
+    }
+    TextWidgetClass "{7BD1A70000000716}" {
+     Name "Title"
+     Slot FrameWidgetSlot "{7BD1A70000000717}" {
+      Anchor 0 0 1 0
+      PositionX 40
+      OffsetLeft 40
+      PositionY 32
+      OffsetTop 32
+      SizeX 0
+      OffsetRight 280
+      SizeY 40
+      OffsetBottom -72
+     }
+     Color 0.867 0.886 0.969 1
+     Text "TBD FRAMEWORK"
+     "Font Size" 30
+    }
+    TextWidgetClass "{7BD1A70000000718}" {
+     Name "Subtitle"
+     Slot FrameWidgetSlot "{7BD1A70000000719}" {
+      Anchor 0 0 1 0
+      PositionX 40
+      OffsetLeft 40
+      PositionY 80
+      OffsetTop 80
+      SizeX 0
+      OffsetRight 280
+      SizeY 26
+      OffsetBottom -106
+     }
+     Color 0.769 0.776 0.816 1
+     Text ""
+     "Font Size" 16
+    }
+    ButtonWidgetClass "{7BD1A7000000071A}" {
+     Name "BackAction"
+     Slot FrameWidgetSlot "{7BD1A7000000071B}" {
+      Anchor 1 0 1 0
+      PositionX -184
+      OffsetLeft -184
+      PositionY 36
+      OffsetTop 36
+      SizeX 144
+      OffsetRight -40
+      SizeY 40
+      OffsetBottom -76
+     }
+     Color 1 1 1 0
+     components {
+      TBD_UIButton "{7BD1A7000000071C}" {
+       m_bPrimary 0
+       m_sLabel "BACK"
+      }
+     }
+     {
+      ImageWidgetClass "{7BD1A7000000071D}" {
+       Name "Background"
+       Slot ButtonWidgetSlot "{7BD1A7000000071E}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0 0 0 0
+      }
+      TextWidgetClass "{7BD1A7000000071F}" {
+       Name "Label"
+       Slot ButtonWidgetSlot "{7BD1A70000000720}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 10
+        OffsetTop 10
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 8
+       }
+       Color 0.678 0.776 1 1
+       Text "BACK"
+       "Font Size" 14
+       "Horizontal Alignment" Center
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A70000000721}" {
+     Name "HeaderRule"
+     Slot FrameWidgetSlot "{7BD1A70000000722}" {
+      Anchor 0 0 1 0
+      PositionX 40
+      OffsetLeft 40
+      PositionY 128
+      OffsetTop 128
+      SizeX 0
+      OffsetRight 40
+      SizeY 2
+      OffsetBottom -130
+     }
+     Color 0.267 0.278 0.310 1
+    }
+    FrameWidgetClass "{7BD1A70000000723}" {
+     Name "List"
+     Slot FrameWidgetSlot "{7BD1A70000000724}" {
+      Anchor 0 0 1 1
+      PositionX 40
+      OffsetLeft 40
+      PositionY 152
+      OffsetTop 152
+      SizeX 0
+      OffsetRight 40
+      SizeY 0
+      OffsetBottom 128
+     }
+     components {
+      TBD_ListBox "{7BD1A70000000725}" {
+       m_sContentName "Content"
+       m_sEmptyStateName "EmptyState"
+      }
+     }
+     {
+      ScrollLayoutWidgetClass "{7BD1A70000000726}" {
+       Name "Scroll"
+       Slot FrameWidgetSlot "{7BD1A70000000727}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       {
+        VerticalLayoutWidgetClass "{7BD1A70000000728}" {
+         Name "Content"
+         Slot AlignableSlot "{7BD1A70000000729}" {
+          HorizontalAlign 3
+         }
+        }
+       }
+      }
+      TextWidgetClass "{7BD1A7000000072A}" {
+       Name "EmptyState"
+       Slot FrameWidgetSlot "{7BD1A7000000072B}" {
+        Anchor 0 0 1 0
+        PositionX 0
+        OffsetLeft 0
+        PositionY 24
+        OffsetTop 24
+        SizeX 0
+        OffsetRight 0
+        SizeY 26
+        OffsetBottom -50
+       }
+       Color 0.769 0.776 0.816 1
+       Text "Nothing here yet."
+       "Font Size" 16
+      }
+     }
+    }
+    ImageWidgetClass "{7BD1A7000000072C}" {
+     Name "FooterRule"
+     Slot FrameWidgetSlot "{7BD1A7000000072D}" {
+      Anchor 0 1 1 1
+      PositionX 40
+      OffsetLeft 40
+      PositionY -104
+      OffsetTop -104
+      SizeX 0
+      OffsetRight 40
+      SizeY 2
+      OffsetBottom -102
+     }
+     Color 0.267 0.278 0.310 1
+    }
+    TextWidgetClass "{7BD1A7000000072E}" {
+     Name "Status"
+     Slot FrameWidgetSlot "{7BD1A7000000072F}" {
+      Anchor 0 1 1 1
+      PositionX 40
+      OffsetLeft 40
+      PositionY -74
+      OffsetTop -74
+      SizeX 0
+      OffsetRight 360
+      SizeY 26
+      OffsetBottom -48
+     }
+     Color 0.769 0.776 0.816 1
+     Text ""
+     "Font Size" 16
+    }
+    ButtonWidgetClass "{7BD1A70000000730}" {
+     Name "PrimaryAction"
+     Slot FrameWidgetSlot "{7BD1A70000000731}" {
+      Anchor 1 1 1 1
+      PositionX -280
+      OffsetLeft -280
+      PositionY -84
+      OffsetTop -84
+      SizeX 240
+      OffsetRight -40
+      SizeY 52
+      OffsetBottom -32
+     }
+     Color 1 1 1 0
+     components {
+      TBD_UIButton "{7BD1A70000000732}" {
+       m_bPrimary 1
+       m_sLabel ""
+      }
+     }
+     {
+      ImageWidgetClass "{7BD1A70000000733}" {
+       Name "Background"
+       Slot ButtonWidgetSlot "{7BD1A70000000734}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 0
+        OffsetTop 0
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 0
+       }
+       Color 0.231 0.510 0.965 1
+      }
+      TextWidgetClass "{7BD1A70000000735}" {
+       Name "Label"
+       Slot ButtonWidgetSlot "{7BD1A70000000736}" {
+        Anchor 0 0 1 1
+        PositionX 0
+        OffsetLeft 0
+        PositionY 15
+        OffsetTop 15
+        SizeX 0
+        OffsetRight 0
+        SizeY 0
+        OffsetBottom 13
+       }
+       Color 1 1 1 1
+       Text ""
+       "Font Size" 16
+       "Horizontal Alignment" Center
+      }
+     }
+    }
+   }
+  }
+ }
+}
