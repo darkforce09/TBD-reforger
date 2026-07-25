@@ -190,6 +190,51 @@ class TBD_MissionBriefingStruct
 	ref array<ref TBD_MissionMarkerStruct> markers; //!< Optional map markers; null when absent.
 }
 
+//! T-181.38 — the mission `flow` block: the numbers that PACE an event.
+//!
+//! Every golden mission authors all four fields and, until this slice, the block was not in
+//! `TBD_MissionDocumentStruct` at all — so `safeStartSeconds` was overridden by a hardcoded 300,
+//! `timeLimitSeconds` was authored by every mission and evaluated by none, and `jip: "disabled"`
+//! was silently violated. "JSON is the contract" (TBD_MOD_DESIGN.md §2) is exactly what that
+//! failed.
+//!
+//! ══ EVERY FIELD IS OPTIONAL, AND `0` IS NOT `absent` ═══════════════════════════════════════════
+//! `flow` itself is schema-required, but it declares no `required` PROPERTIES, so a mission may
+//! author `"flow": {}` — `golden-missions/empty-warning-fields.json` does exactly that, and it must
+//! behave identically to a build that never saw a flow block.
+//!
+//! `JsonLoadContext` ALLOCATES a nested `ref <class>` field even when the JSON key is ABSENT
+//! (measured 2026-07-25 — see the landmine header on `TBD_MissionShapeStruct` above), so
+//! `if (doc.flow)` is ALWAYS TRUE and is not a presence test. Worse, an absent integer key would
+//! read back as `0` — and `0` is a REAL authored value here: `timeLimitSeconds: 0` means "no time
+//! limit", a deliberate statement rather than silence. A plain zero-test would erase the
+//! distinction between "the author said no limit" and "the author said nothing".
+//!
+//! Hence the ABSENT sentinel, the same device `TBD_MissionSlotStruct.Y_ABSENT` and
+//! `TBD_MissionZoneRulesStruct.ABSENT` use and for the same reason: `JsonLoadContext` leaves a
+//! missing key at its field INITIALIZER, and standard JSON cannot carry NaN. No sane authored
+//! duration approaches -1e6, so the initializer doubles as the presence flag — which is also what
+//! lets a NEGATIVE authored value (illegal under the schema's `minimum: 0`) be reported as a fault
+//! instead of mistaken for "not authored".
+//!
+//! `jip` uses the empty string for the same purpose, exactly like
+//! `TBD_MissionZoneRulesStruct.penalty`.
+//!
+//! Nothing here validates. An out-of-range value parses fine and is caught, named and reported
+//! where it is APPLIED — `TBD_MissionFlow` / `TBD_FrameworkManager.ApplyMissionFlow`, which is the
+//! only place these turn into behaviour.
+//! @contract mission.schema.json#/$defs/flow
+class TBD_MissionFlowStruct
+{
+	//! "key absent from JSON". A presence flag, not a magic default — see the header.
+	static const int ABSENT = -1000000;
+
+	int briefingSeconds = ABSENT;  //!< Intended length of the BRIEFING stage. Schema: integer >= 0.
+	int safeStartSeconds = ABSENT; //!< Safestart countdown length. Schema: integer >= 0.
+	int timeLimitSeconds = ABSENT; //!< Round length; an authored 0 means "no limit". Schema: >= 0.
+	string jip;                    //!< "disabled" | "until_safestart_end" | "always". Empty = absent.
+}
+
 //! Full mission document parsed from the backend — the canonical contract the loader
 //! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
@@ -203,6 +248,10 @@ class TBD_MissionDocumentStruct
 	ref map<string, ref TBD_MissionOrbatFactionStruct> orbat; //!< ORBAT keyed by faction.
 	ref array<ref TBD_MissionSlotStruct> slots;               //!< Flattened spawn slots (schema 1.1).
 	ref TBD_MissionWinConditionsStruct winConditions;         //!< T-181.13 round-end triggers.
+	//! T-181.38 — event pacing. ALWAYS non-null after a parse, even for a mission with no `flow`
+	//! key: `JsonLoadContext` allocates it regardless. Test its FIELDS against
+	//! `TBD_MissionFlowStruct.ABSENT`, never this reference against null.
+	ref TBD_MissionFlowStruct flow;
 	//! T-181.23 — written orders keyed by faction key, exactly like `orbat`. OPTIONAL: the block
 	//! is not in the schema's top-level `required` list and every mission authored before it
 	//! existed has none, so this stays null and that is legal.

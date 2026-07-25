@@ -1,3 +1,275 @@
+//! T-181.38 — JOIN-IN-PROGRESS POLICY, straight from `flow.jip`.
+//!
+//! The three schema values, in order of how much of the round they let a latecomer into. Read it as
+//! a ladder: each one closes the door one stage earlier than the last.
+//!
+//! There is no `switch` on this enum anywhere, on purpose: duplicate `switch` case labels compile
+//! CLEAN in Enfusion (measured landmine), so a switch cannot be trusted to prove these values are
+//! distinct. The resolvers below are explicit `if` chains against NAMED stages, which are also
+//! immune to someone reordering `TBD_EGameStage`.
+enum TBD_EJipPolicy
+{
+	//! `"always"` — a join is permitted at every deployable stage. This is TBD's behaviour BEFORE
+	//! this slice (T-181.15 deliberately allowed a deploy at any stage LOBBY..LIVE), and therefore
+	//! the default when the mission authors nothing: an absent field must not change behaviour.
+	ALWAYS,
+	//! `"until_safestart_end"` — the roster stays open through planning and warmup, and closes the
+	//! moment the round goes LIVE.
+	UNTIL_SAFESTART_END,
+	//! `"disabled"` — the roster closes when the event starts. LOBBY only.
+	DISABLED
+}
+
+//! T-181.38 — the ONE place the mission's `flow` block is turned into answers.
+//!
+//! ── Why a separate class and not four scattered reads ───────────────────────────────────────
+//! Three different subsystems consume `flow`, and one of them (`TBD_SpawnManager`'s JIP door) is
+//! owned by a different slice. Concentrating the presence rules, the defaults and the vocabulary
+//! here means a consumer asks ONE question and cannot get the sentinel handling subtly wrong —
+//! which is precisely the class of bug the `JsonLoadContext` landmine keeps producing.
+//!
+//! ── The rule that governs every accessor here ───────────────────────────────────────────────
+//! `JsonLoadContext` allocates `doc.flow` even when the mission has no `flow` key, so a null test
+//! on it is ALWAYS TRUE and proves nothing. Every read below therefore tests CONTENT against
+//! `TBD_MissionFlowStruct.ABSENT`. The null tests that DO appear guard `doc` itself, which really
+//! can be null: clients never have a mission document (`TBD_FrameworkManager.OnPostInit` returns
+//! before `BeginLoad()` on `RplMode.Client`), and neither does the server before the load lands.
+//!
+//! ── Stateless on purpose ────────────────────────────────────────────────────────────────────
+//! Nothing is cached. An admin switching missions restarts the scenario in-process, and a cached
+//! flow would outlive the world it came from — the same statics-outlive-a-world landmine
+//! `IsFrameworkWorld()` exists to dodge. Every call is a fresh read of the live document, and
+//! nothing here sits on a per-frame path (ENF-1).
+class TBD_MissionFlow
+{
+	//! Greppable log channel for everything this block drives. Declared locally rather than in
+	//! `TBD_Log` for the same reason `TBD_BriefingService.CH_BRIEFING` and `TBD_AdminAudit` are:
+	//! the tag belongs next to the code that emits it.
+	static const string CH_FLOW = "Flow";
+
+	//! Returned by the seconds accessors when the mission authored nothing usable. Deliberately
+	//! NEGATIVE, because an authored `0` is a real value with real meaning (`timeLimitSeconds: 0`
+	//! is "no limit" — a statement the author made) and must never collide with "said nothing".
+	static const int UNSET = -1;
+
+	//! `source` labels from ResolveSeconds. Constants rather than literals so a caller comparing
+	//! against them cannot drift from the producer.
+	static const string SRC_AUTHORED = "authored";
+	static const string SRC_DEFAULT  = "default";
+	static const string SRC_INVALID  = "INVALID";
+
+	//------------------------------------------------------------------------------------------------
+	//! The raw block, or null when no mission document exists at all.
+	//!
+	//! NOTE what this does NOT mean: a non-null return says nothing about whether the mission
+	//! authored a `flow` key. It is allocated either way. Callers get raw fields and must test them
+	//! against ABSENT — which is exactly why this is protected and the typed accessors are not.
+	protected static TBD_MissionFlowStruct Block()
+	{
+		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
+		if (!doc)
+			return null;
+
+		return doc.flow;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static int RawBriefingSeconds()
+	{
+		TBD_MissionFlowStruct flow = Block();
+		if (!flow)
+			return TBD_MissionFlowStruct.ABSENT;
+
+		return flow.briefingSeconds;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static int RawSafeStartSeconds()
+	{
+		TBD_MissionFlowStruct flow = Block();
+		if (!flow)
+			return TBD_MissionFlowStruct.ABSENT;
+
+		return flow.safeStartSeconds;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static int RawTimeLimitSeconds()
+	{
+		TBD_MissionFlowStruct flow = Block();
+		if (!flow)
+			return TBD_MissionFlowStruct.ABSENT;
+
+		return flow.timeLimitSeconds;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static string RawJip()
+	{
+		TBD_MissionFlowStruct flow = Block();
+		if (!flow)
+			return string.Empty;
+
+		return flow.jip;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! ONE resolution rule for all three durations, so absent / 0 / negative are treated the same
+	//! way everywhere and the log can say which of the three it was.
+	//!
+	//! A negative is neither clamped nor silently defaulted: the schema declares `minimum: 0` on all
+	//! three, so a negative means the PRODUCER is broken and the operator needs to hear about it. It
+	//! comes back as UNSET with `source = SRC_INVALID`, and the caller reports it.
+	static int ResolveSeconds(int raw, out string source)
+	{
+		if (raw == TBD_MissionFlowStruct.ABSENT)
+		{
+			source = SRC_DEFAULT;
+			return UNSET;
+		}
+
+		if (raw < 0)
+		{
+			source = SRC_INVALID;
+			return UNSET;
+		}
+
+		source = SRC_AUTHORED;
+		return raw;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Authored BRIEFING length in seconds, or UNSET. Advisory only — see
+	//! `TBD_FrameworkManager.OnEnterBriefing` for why nothing auto-advances on it.
+	static int BriefingSeconds()
+	{
+		string source;
+		return ResolveSeconds(RawBriefingSeconds(), source);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Authored safestart countdown length in seconds, or UNSET.
+	static int SafeStartSeconds()
+	{
+		string source;
+		return ResolveSeconds(RawSafeStartSeconds(), source);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Authored round length in seconds, or UNSET. `0` is a legal and meaningful answer: the author
+	//! explicitly declared NO limit. Callers must distinguish `0` from UNSET.
+	static int TimeLimitSeconds()
+	{
+		string source;
+		return ResolveSeconds(RawTimeLimitSeconds(), source);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The resolved policy. Anything unrecognised — including the empty string an absent key leaves
+	//! behind — resolves to ALWAYS, which is byte-for-byte today's behaviour. An unrecognised string
+	//! is NAMED once at load (`TBD_FrameworkManager.ReportJip`) rather than swallowed here; this
+	//! function is on the join path and must stay silent (ENF-1).
+	static TBD_EJipPolicy JipPolicy()
+	{
+		return PolicyFromString(RawJip());
+	}
+
+	//------------------------------------------------------------------------------------------------
+	static TBD_EJipPolicy PolicyFromString(string raw)
+	{
+		if (raw == "disabled")
+			return TBD_EJipPolicy.DISABLED;
+
+		if (raw == "until_safestart_end")
+			return TBD_EJipPolicy.UNTIL_SAFESTART_END;
+
+		return TBD_EJipPolicy.ALWAYS;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! True when `raw` is a value THIS BUILD understands. Used only by the load-time report, so a
+	//! string the schema allows but this build does not implement gets named instead of silently
+	//! collapsing into the default.
+	static bool IsKnownPolicyString(string raw)
+	{
+		return raw == "disabled" || raw == "until_safestart_end" || raw == "always";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The resolved policy as the schema spells it — for logs, and for the JIP door's refusal label.
+	static string JipPolicyName()
+	{
+		TBD_EJipPolicy policy = JipPolicy();
+
+		if (policy == TBD_EJipPolicy.DISABLED)
+			return "disabled";
+
+		if (policy == TBD_EJipPolicy.UNTIL_SAFESTART_END)
+			return "until_safestart_end";
+
+		return "always";
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! ══ THE JIP DOOR'S QUESTION ══════════════════════════════════════════════════════════════
+	//! May a player arriving NOW, with the round at `stage`, be put into the world?
+	//!
+	//! This answers the AUTHOR'S question only. It deliberately knows nothing about one life, spent
+	//! lives, auto-deploy or whether slot bodies exist — those are `TBD_SpawnManager`'s guards and
+	//! they all still run. A `true` here is PERMISSION, not an instruction.
+	//!
+	//! LOADING is permitted because this policy has no opinion about it: nothing is materialised
+	//! yet, and `TBD_SpawnManager.IsStageDeployable()` already refuses that stage on world-readiness
+	//! grounds. Two gates answering the same question two ways is how they drift apart.
+	static bool AllowsJoinAtStage(TBD_EGameStage stage)
+	{
+		TBD_EJipPolicy policy = JipPolicy();
+
+		if (policy == TBD_EJipPolicy.ALWAYS)
+			return true;
+
+		// Before the event starts, nobody is joining anything IN PROGRESS. Both remaining policies
+		// allow it, and must: everyone arrives during LOBBY.
+		if (stage == TBD_EGameStage.LOADING || stage == TBD_EGameStage.LOBBY)
+			return true;
+
+		// DISABLED closes the roster the moment the side starts planning together. A player who
+		// arrives after that has missed the brief their squad built around them.
+		if (policy == TBD_EJipPolicy.DISABLED)
+			return false;
+
+		// UNTIL_SAFESTART_END — open through planning and warmup, shut at LIVE. END and DEBRIEF fall
+		// through to false, which is also what IsStageDeployable() says about them.
+		return stage == TBD_EGameStage.BRIEFING || stage == TBD_EGameStage.SAFE_START;
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Comma-separated list of the stages a join is permitted in, for the load-time report.
+	//!
+	//! Built by ASKING `AllowsJoinAtStage`, never from a second hand-written table: a label that can
+	//! disagree with the rule it describes is worse than no label at all.
+	static string JoinsPermittedLabel()
+	{
+		string label = string.Empty;
+
+		for (int i = TBD_EGameStage.LOBBY; i <= TBD_EGameStage.LIVE; i++)
+		{
+			if (!AllowsJoinAtStage(i))
+				continue;
+
+			if (!label.IsEmpty())
+				label += ",";
+
+			label += typename.EnumToString(TBD_EGameStage, i);
+		}
+
+		if (label.IsEmpty())
+			return "none";
+
+		return label;
+	}
+}
+
 [ComponentEditorProps(category: "TBD/Framework", description: "TBD platform game mode manager — mission load and stage machine.")]
 class TBD_FrameworkManagerClass : SCR_BaseGameModeComponentClass {}
 
