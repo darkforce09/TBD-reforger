@@ -43,10 +43,21 @@ COLLIDE="scripts/platform/slice-collisions.py"
 # See note 1. Every worktree build lands in the root target dir.
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT/target}"
 
-# The container's glibc (2.36) is older than the host's (2.39), so binaries built on the host —
+# The container's glibc (2.36) is older than the host's (2.43), so binaries built on the host —
 # including target/debug/xtask — refuse to run in here. Route those through the host when we can.
-if command -v distrobox-host-exec >/dev/null 2>&1; then hostrun() { distrobox-host-exec "$@"; }
-else hostrun() { "$@"; }; fi
+#
+# MEASURED 2026-07-26: `distrobox-host-exec` does NOT forward the environment.
+#   $ FOO=bar distrobox-host-exec sh -c 'echo [$FOO]'  ->  []
+# So the `export CARGO_TARGET_DIR` above is invisible to cargo on the host, and every worktree
+# silently builds its own target/ — 1.4 GB within 25 s of a single `cargo check`, ~44 GB for a full
+# build. Eight worktrees would exhaust 129 GB of free disk around the third slice, and every gate
+# after that fails with a No-space error that reads exactly like a compile error.
+# It must be passed explicitly through `env`.
+if command -v distrobox-host-exec >/dev/null 2>&1; then
+  hostrun() { distrobox-host-exec env "CARGO_TARGET_DIR=$CARGO_TARGET_DIR" "$@"; }
+else
+  hostrun() { "$@"; }
+fi
 
 plan_rows() { grep -v '^#' "$PLAN" 2>/dev/null | grep -v '^wave[[:space:]]' | sed '/^\s*$/d'; }
 ticket_title() { plan_rows | awk -F'\t' -v s="$1" '$2==s {print $3; exit}'; }
