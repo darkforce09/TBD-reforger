@@ -18,3 +18,4 @@
 8	T-181.33	Safestart Restore must restore prior value, not force true	TBD_SafestartManager.c
 8	T-181.34	Cargo container enum in mission schema	packages/tbd-schema/**
 9	T-181.30	Truth-in-comments + audit-ring hardening	Scripts/Game/TBD/Gamemode/**
+9	T-181.35	In-game identity linking (#tbd link) — makes attendance real	Scripts/Game/TBD/Backend/** + chat

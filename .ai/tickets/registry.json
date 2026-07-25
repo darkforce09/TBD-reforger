@@ -6414,6 +6414,14 @@
           "executor": "claude-code",
           "status": "ready",
           "notes": "Add a container enum to mission.schema.json loadout.cargo[].container. Wave-4 verifier: the field is {type:string, minLength:1}, so a typo validates and then degrades SILENTLY at runtime to 'insert anywhere'. The authoritative four keys already exist twice in the repo — apps/website/frontend/src/arsenal_rules.rs:595 (CARGO_CONTAINERS = vest/pants/jacket/backpack) and TBD_LoadoutEquipHelper.c:814-830 (GarmentForContainer). T-181.20 added golden fixtures with correct containers, but a fixture cannot protect a vocabulary the schema does not define. Single source of truth + schema enum + a golden fixture that must fail."
+        },
+        "T-181.35": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "In-game identity linking — the missing half of the results contract. FOUND while briefing T-181.13.1: the backend has a complete two-step link flow (POST /api/v1/me/link creates a code for a logged-in user; POST /api/v1/ingest/link-confirm, service-token, is the GAME SERVER confirming {code, arma_id, arma_character} and is what actually sets users.arma_id — apps/website/api/src/handlers/me.rs:160-205, routes at app.rs:34-40). THE MOD IMPLEMENTS NEITHER — grep for link-confirm across Scripts/ returns nothing, and there is no #tbd link command. So outside the dev seed (dev.rs, 'dev-arma-76561190000000001') NO production user has an arma_id. Consequence: POST /ingest/match-results resolves players by 'SELECT discord_id FROM users WHERE arma_id = $1' (telemetry.rs:238), so it matches NOBODY — the POST returns success while attendance marking, user-stat recompute and leaderboard refresh all silently do nothing. That is the exact 'looks like it worked' failure this program keeps finding. Build: a player-facing chat command (e.g. '#tbd link <code>' — NOT admin-gated, every player needs it) that posts the player's durable identity from SCR_PlayerIdentityUtils.GetPlayerIdentityId plus their character name to /ingest/link-confirm, with honest handling of the backend's 404 'invalid or expired code' and 409 'arma id already linked to another account'. Whatever value is sent here MUST be byte-identical to the arma_id T-181.13.1 later sends in match-results — same accessor, ideally one shared helper, or the two halves silently disagree. Owns Backend/** + the chat surface; must not share a wave with T-181.13.1."
         }
       },
       "active_slice": "T-181.15",
