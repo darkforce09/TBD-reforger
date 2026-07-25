@@ -6000,6 +6000,8 @@
         "T-181.11",
         "T-181.11.1",
         "T-181.11.2",
+        "T-181.21",
+        "T-181.22",
         "T-181.12",
         "T-181.13",
         "T-181.13.1",
@@ -6257,6 +6259,22 @@
           "executor": "claude-code",
           "status": "queued",
           "notes": "Found by the T-181.10 slice agent, outside its scope: NO golden mission in packages/tbd-schema/golden-missions/ carries a slot `loadout` block, so schema CI never exercises the JSON-loadout path that T-181.10 just built. Add a fixture with gear + cargo so the contract is regression-tested rather than only compile-checked."
+        },
+        "T-181.21": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "ONE-LIFE integrity enforced @ dd79266d. Guard moved to DeployPlayerEx (the actual choke point) returning a new DENIED result, with AdminRespawn as the one documented opt-in bypass. The agent FALSIFIED the brief: death does NOT reach DoSpawn_S (that path is dead on a framework world since audit is swallowed) — it reaches SCR_RespawnComponent.NotifyReadyForSpawn_S, which invites a CLIENT spawn request and would have produced a fully VANILLA body. Closed by overriding CanRequestSpawn_S to refuse any request TBD_SpawnManager did not ticket (epoch-stamped, closed on spawn/kill/disconnect/5s timeout, fails closed). m_mDeadPlayers rekeyed to the durable PlayerBindKey — which required fixing a latent bug first: GetPlayerIdentityId returns a UUID and a NULL uuid formats to the same constant for everyone, so identity-keyed death tracking on the old string test would have made the first death kill the whole server. Also: departed dead players' seats retained (fixes round-never-ends when the last man rage-quits), AdminRespawn is now dead-until-proven-DEPLOYED, AssignSlotForPlayer got real exclusivity + a scanning round-robin. RetryDeploy race closed BY the choke-point guard rather than a duplicate check. UNVERIFIED, highest risk: the 5s possess-ticket window — if the request RPC lands outside it, deploys break outright. Needs a live run."
+        },
+        "T-181.22": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Re-verifier findings against T-181.21. TWO MAJORs. (1) The B2 backstop is DEAD CODE: vanilla SCR_PossessSpawnHandlerComponent.CanRequestSpawn_S returns `m_bIgnoreConditions || super...` with the attribute defaulting to \"1\", so it short-circuits and TBD's SCR_RespawnSystemComponent override never runs — and possess is the ONLY request type left enabled on TBD_PlayerController.et (the other two are Enabled 0). So the epoch ticket is decorative, and a modded client can Rpc_RequestRespawn_S onto any alive un-deployed slot body = one-life bypass. Proven by fetching the real vanilla source + a compile probe confirming the field exists on that class. (2) PlayerBindKey's degraded mode is wrong: on a listen/hosted server vanilla SYNTHESIZES a uuid from the PLAYER NAME hash (00bbbddd-...), so the `player:<id>` fallback and its loud warning never fire — a name change grants a fresh life, and two players sharing a name share one life (their m_mDepartedSlots rows overwrite). The misconfigured-DEDICATED case IS handled correctly. Plus MINORs: the ticket is non-consuming and entity-blind; adminOverride is a public defaulted param; revoke-on-kill is ordered after vanilla's spawn invitation (latency argument, not structural); AssignSlotForPlayer's reclaim block and TBD_SCR_MenuSpawnLogic.OnPlayerAuditSuccess_S are dead code so two comments claiming 'runs on every join' are false."
         }
       },
       "active_slice": "T-181.12",
