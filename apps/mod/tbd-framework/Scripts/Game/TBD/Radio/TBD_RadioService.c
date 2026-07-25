@@ -182,6 +182,13 @@ class TBD_RadioService
 			served++;
 			if (wire.m_iTuned > 0)
 				tuned++;
+
+			// Push the SAME wire that was just measured. `BuildForPlayer` performed the tune, so
+			// the player's display and their radio are updated from one measurement rather than
+			// two — and a client whose poll already stopped still learns that its radio changed.
+			SCR_PlayerController controller = SCR_PlayerController.Cast(players.GetPlayerController(ids[i]));
+			if (controller)
+				controller.TBD_PushRadioNets(wire);
 		}
 
 		TBD_Log.Kv(TBD_RadioPlan.CH_RADIO, "sweep", string.Format(

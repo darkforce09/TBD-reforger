@@ -50,6 +50,38 @@ modded class SCR_PlayerController
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! @authority server — SERVER -> one client, unprompted.
+	//!
+	//! Why this exists: `TBD_RadioService.OnStageChanged` re-tunes every player's radio at
+	//! SAFE_START and LIVE. Without a push, that tune would land on the radio while the player's
+	//! on-screen net list still said "not tuned automatically" — the client's poll stops once it
+	//! has been served, so it would not find out until it next opened the map. A feature telling
+	//! the player something that stopped being true is the exact failure mode this slice is built
+	//! to avoid, so the sweep pushes the same wire it just measured.
+	//!
+	//! THE LISTEN-HOST BRANCH IS NOT OPTIONAL. On a listen host the authority IS the local player,
+	//! and an `RplRcver.Owner` RPC is not delivered to the machine that sent it — so wiring only
+	//! the Rpc would silently leave the host player's own display stale, which is a recorded
+	//! landmine in this program ("client-side UI must be driven from BOTH paths through one guarded
+	//! helper"). `GetGame().GetPlayerController() == this` is the same test `TBD_MissionBrowser`
+	//! already uses for it.
+	void TBD_PushRadioNets(notnull TBD_RadioWire wire)
+	{
+		if (RplSession.Mode() == RplMode.Client)
+			return;
+
+		if (GetGame().GetPlayerController() == this)
+		{
+			TBD_RadioClient.Accept(wire.m_aId, wire.m_aLabel, wire.m_aFreqKHz, wire.m_aLongRange,
+				wire.m_sMissionId, wire.m_sTuneResult, wire.m_iTuned, wire.m_bServed);
+			return;
+		}
+
+		Rpc(TBD_RpcDo_RadioNets, wire.m_aId, wire.m_aLabel, wire.m_aFreqKHz, wire.m_aLongRange,
+			wire.m_sMissionId, wire.m_sTuneResult, wire.m_iTuned, wire.m_bServed);
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! @authority server — resolve the caller's side from server-owned state and answer with THAT
 	//! side's nets only.
 	//! @rpc Reliable Server
