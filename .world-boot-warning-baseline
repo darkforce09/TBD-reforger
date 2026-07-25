@@ -30,7 +30,31 @@
 #
 # These are no longer a debt marker — they are the floor. Every remaining warning is one somebody
 # should act on. Tighten again on any further fall.
+#
+# ── T-181.37 (2026-07-25): msn_0e77ab 2 -> 3, and it is a real finding ─────────────────────────
+# The validator now checks that each `winConditions.endOn` trigger CAN fire in the document that
+# declares it, not just that it is a legal schema enum value. Exactly one golden trips it:
+#
+#   msn_0e77ab   2 -> 3   `empty-warning-fields.json` declares endOn: ["time_limit",
+#                         "all_objectives_captured"] and authors `"flow": {}`. The capture half is
+#                         fine — it has an `objective_capture` zone (obj_morton). The clock half is
+#                         not: with no `flow.timeLimitSeconds`, TBD_FrameworkManager.ArmRoundClock
+#                         has no duration to arm, so that round genuinely cannot end on time.
+#                         The fix is in the FIXTURE, not the mod: author a timeLimitSeconds, or drop
+#                         the trigger. Tighten this line back to 2 when that happens.
+#
+# The other three are unchanged and that is the measured result, not an assumption:
+#   msn_8f3a2c 0   bridgehead — time_limit(5400) + all_objectives_captured(z3) + faction_eliminated
+#                  (blufor and opfor both hold slots). All three reachable.
+#   msn_5c1de7 0   slot-loadout-coverage — time_limit(3600) + all_objectives_captured(obj_depot).
+#   msn_2d91be 1   montfort — all four of its triggers carry their piece IN THE DOCUMENT:
+#                  time_limit(3000), objective_destroyed(obj2), hold_expired(obj1), and
+#                  faction_eliminated is not assessed because the fixture has no slots[] at all
+#                  (which is already its one warning). Its `objective_destroy` target does not
+#                  resolve at LIVE — `comp:ammo_cache` is not in Data/registry.json and the mod does
+#                  not place `entities[]` — but that is TBD_ObjectiveRegistry.ArmDestroyTargets's
+#                  verdict, not a document defect, and it is deliberately NOT restated here.
 msn_8f3a2c 0
-msn_0e77ab 2
+msn_0e77ab 3
 msn_5c1de7 0
 msn_2d91be 1
