@@ -37,10 +37,14 @@ class TBD_RadioComponent : SCR_BaseGameModeComponent
 		// assumption in a comment.
 		GetGame().GetCallqueue().CallLater(ReportRadio, REPORT_DELAY_MS, false);
 
-		// A dedicated server has no workspace at all (measured — see TBD_UILayouts). That is the
-		// cleanest available "am I a machine with a screen" test, and the one the rest of the UI
-		// framework already trusts. No screen, nobody to show a net list to.
-		if (!GetGame().GetWorkspace())
+		// T-181.49 — this was `if (!GetGame().GetWorkspace())`, on the belief that a dedicated
+		// server has no workspace. It does: `GetGame().GetWorkspace()` is MEASURED NON-NULL on the
+		// headless dedicated server `world-boot.sh` runs (engine 1.7.0.54), so this guard let the
+		// client-side radio poll start on the server and excluded nothing at all. The replication
+		// mode is the real answer to "am I a machine with a player at a screen", and it is what
+		// `TBD_FrameworkManager`, `TBD_AdminService` and `TBD_RadioController` already ask.
+		// No screen, nobody to show a net list to.
+		if (RplSession.Mode() == RplMode.Dedicated)
 			return;
 
 		GetGame().GetCallqueue().CallLater(TBD_RadioClient.Start, START_DELAY_MS, false);
