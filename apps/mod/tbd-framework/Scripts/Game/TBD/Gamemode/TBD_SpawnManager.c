@@ -146,6 +146,20 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! the previous occupant's identity.
 	protected ref map<int, string> m_mBindKeyCache;
 
+	//! T-181.30 — playerId → the bind key `OnPlayerAuditSuccess` resolved when it last ran to
+	//! completion for this connection. The duplicate-audit early-out keys on THIS, not on
+	//! m_mBindKeyCache above.
+	//!
+	//! The distinction is the whole point and is easy to lose: m_mBindKeyCache is a general
+	//! identity cache that ANY caller of `PlayerBindKey` fills, including `IsPlayerDead` on the
+	//! LOBBY deploy wave. Reading it as "we already audited this player" let an unrelated caller
+	//! disarm the join hook. This map has exactly one writer — the audit itself — so it cannot be
+	//! populated by anything whose meaning is not "the audit ran".
+	//!
+	//! Erased on disconnect alongside the other per-connection rows, so a recycled numeric id is
+	//! audited from scratch rather than inheriting the previous occupant's verdict.
+	protected ref map<int, string> m_mAuditedKey;
+
 	//! T-181.21 — seats belonging to players who SPENT THEIR LIFE AND THEN LEFT, keyed on the
 	//! durable player key.
 	//!
@@ -266,7 +280,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! THIS IS THE ANSWER TO playerId REUSE, and the audit that produced it is worth stating,
 	//! because the obvious suspects were all innocent. Every per-player MAP in this class
 	//! (m_mPlayerSlot, m_mDeployRequested, m_mRetryCount, m_mSpawnSeen, m_mAdminRespawnPending,
-	//! m_mDenyLogged, m_mSpawnAuthorized, m_mBindKeyCache) is already erased in
+	//! m_mDenyLogged, m_mSpawnAuthorized, m_mBindKeyCache, m_mAuditedKey) is already erased in
 	//! OnPlayerDisconnected, so a recycled id inherits nothing from any of them.
 	//!
 	//! What was NOT erased is the CALLQUEUE. Half a dozen deferred callbacks carry a raw int
@@ -317,6 +331,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		m_mDeadPlayers = new map<string, bool>();
 		m_mIdentityReclaim = new map<string, string>();
 		m_mBindKeyCache = new map<int, string>();
+		m_mAuditedKey = new map<int, string>();
 		m_mDepartedSlots = new map<string, ref TBD_DepartedSeat>();
 		m_mSpawnAuthorized = new map<int, ref TBD_SpawnTicket>();
 		m_mDenyLogged = new map<int, bool>();
@@ -384,12 +399,38 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! never recover from a transient RETRY — a deploy regression on exactly the topology used for
 	//! local testing. Opening an epoch on demand keeps the guard meaningful for everyone without
 	//! depending on a hook that does not fire on every host type.
+	//!
+	//! T-181.30 — BUT ONLY FOR SOMEBODY ACTUALLY SITTING ON THAT NUMBER. The lazy branch used to
+	//! mint unconditionally, which broke the invariant `ConnectEpochOf` states three lines up: "0
+	//! means nobody is connected under that number ... so an unknown id fails the check". It did
+	//! not fail — the first Ensure minted a live-looking epoch for ANY int, including one whose
+	//! occupant had already disconnected (their row is erased in OnPlayerDisconnected), so
+	//! `IsSameConnection` then answered TRUE for a departed player. The guard's whole purpose is to
+	//! answer FALSE there.
+	//!
+	//! Gating on a live controller also closes the leak: an id that never connects can no longer
+	//! take a permanent row in m_mConnectEpoch, because only a connected player gets one and every
+	//! connected player is eventually removed by OnPlayerDisconnected.
+	//!
+	//! Returning 0 is the FAIL-CLOSED direction and is safe at every caller: a 0-stamped deferred
+	//! callback is rejected by IsSameConnection and no-ops. That is the wanted outcome for all six
+	//! call sites — there is nobody there to deploy, retry, finalize or log for. The measured
+	//! worst case this whole mechanism exists to stop (RedeployAfterDeath seating a fresh joiner in
+	//! a dead player's slot) is on the safe side of that.
+	//!
+	//! The listen-host fix is preserved: the host is a connected player with a controller, so
+	//! player 1 still gets an epoch on demand without ever passing through the audit hook.
+	//! COMPILE-VERIFIED ONLY — no live listen host has been run against this lane.
 	//! @authority server
 	protected int EnsureConnectEpoch(int playerId)
 	{
 		int epoch = ConnectEpochOf(playerId);
 		if (epoch != 0)
 			return epoch;
+
+		PlayerManager players = GetGame().GetPlayerManager();
+		if (!players || !players.GetPlayerController(playerId))
+			return 0;
 
 		m_iConnectEpochSeq++;
 		m_mConnectEpoch.Set(playerId, m_iConnectEpochSeq);
@@ -1583,19 +1624,30 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
-		// A second audit for a connection we already processed. The test is the bind-key CACHE, not
-		// the epoch: EnsureConnectEpoch can open an epoch lazily for a player who never reached this
-		// hook, so an epoch existing does NOT mean "already joined". The cache does — it is written
-		// only by a successful identity resolve and erased on disconnect, so an identity-shaped
-		// entry here means we resolved this same person since they last connected.
+		// A second audit for a connection we already processed. The test is NOT the epoch:
+		// EnsureConnectEpoch can open one lazily for a player who never reached this hook, so an
+		// epoch existing does not mean "already joined".
 		//
-		// Swallowed ONLY when that cached key was a real identity. If it was not, this second call
-		// is very likely the one the vanilla TODO above is apologising for (audit fired at
+		// T-181.30 — AND IT IS NOT m_mBindKeyCache EITHER, WHICH IS WHAT IT USED TO BE. That map
+		// looks like an audit record and is not: `PlayerBindKey` writes it on EVERY successful
+		// identity resolve, from any caller. `DeployAllConnectedPlayers` — the LOBBY wave, 250 ms
+		// after LOBBY entry — calls `IsPlayerDead` on every connected player, which is
+		// `IsBindKeyDead(PlayerBindKey(playerId))`, so it cached an identity-shaped key for players
+		// who had not been audited yet. Their genuine audit then hit this early-out and skipped the
+		// forced epoch bump, m_mSeenKeys, NoteLateNonDurableJoin, ReclaimDepartedSeat, LogJoinVerdict
+		// and the deploy — and because m_mSeenKeys never learned them, a later reconnect logged
+		// FIRST. A join hook must not be disarmed by an unrelated caller reading a player's identity.
+		//
+		// m_mAuditedKey is written HERE and nowhere else, so it means exactly what this test needs
+		// it to mean: "this hook already ran to completion for this connection".
+		//
+		// Swallowed ONLY when the key resolved THEN was a real identity. If it was not, this second
+		// call is very likely the one the vanilla TODO above is apologising for (audit fired at
 		// registration, before the identity was available), and re-running is how a player gets
 		// upgraded from a `player:<id>` lease to a durable key instead of being stuck on the bad
 		// one for the whole round.
 		string priorKey;
-		if (m_mBindKeyCache.Find(playerId, priorKey) && IsIdentityKey(priorKey))
+		if (m_mAuditedKey.Find(playerId, priorKey) && IsIdentityKey(priorKey))
 		{
 			Print(string.Format("[TBD][JIP] player=%1 duplicate audit ignored — already joined this connection as %2", playerId, priorKey));
 			return;
@@ -1603,6 +1655,12 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 
 		m_mBindKeyCache.Remove(playerId);
 		string bindKey = PlayerBindKey(playerId);
+
+		// T-181.30 — record that THIS hook resolved THIS key, which is what the early-out above
+		// tests. Written before the work below rather than after it because the swallow's question
+		// is "has the audit already claimed this connection", and a re-entrant second audit must be
+		// refused even if the first is still unwinding.
+		m_mAuditedKey.Set(playerId, bindKey);
 
 		// Open a FRESH connection epoch before anything is scheduled against this player, so every
 		// deferred callback below is stamped with it and the previous occupant's in-flight timers
@@ -2699,6 +2757,7 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		// Remove() is by function, so it would cancel every player's timer, not this player's.
 		m_mPlayerSlot.Remove(playerId);
 		m_mBindKeyCache.Remove(playerId);
+		m_mAuditedKey.Remove(playerId);
 		m_mConnectEpoch.Remove(playerId);
 
 		if (lifeSpent)

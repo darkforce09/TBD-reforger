@@ -701,6 +701,20 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 	//! @authority server — mutates the replicated m_Stage and calls Replication.BumpMe() to push it.
 	void SetStage(TBD_EGameStage stage)
 	{
+		// T-181.30 — clear the refusal reason FIRST, before the same-stage early-out.
+		//
+		// It used to be cleared further down, past that early-out, which made it stale-readable:
+		// `TBD_AdminService.AdvanceStage` detects a refusal by comparing the stage either side of
+		// this call and then reads `GetLastStageRefusal()` for the why. A no-op command (`#tbd stage
+		// LOBBY` while already in LOBBY) leaves the stage unchanged, so it takes that same
+		// "REFUSED" branch — and with the old ordering it replayed whatever reason a genuinely
+		// refused transition had left behind minutes earlier, as if it were the reason for THIS
+		// command. Empty is the truthful answer there: nothing refused it, it was already the stage.
+		//
+		// Every early-out below either sets its own reason or is a genuine no-op, so clearing here
+		// cannot erase a reason that is still current.
+		m_sLastStageRefusal = string.Empty;
+
 		if (m_Stage == stage)
 			return;
 
@@ -724,7 +738,6 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		if (!m_sLastStageRefusal.IsEmpty())
 			return;
 
-		m_sLastStageRefusal = string.Empty;
 		TBD_EGameStage previous = m_Stage;
 		m_Stage = stage;
 		Replication.BumpMe();
