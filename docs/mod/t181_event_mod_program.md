@@ -349,15 +349,20 @@ picker can open would ship a mod nobody can deploy into.
   ends before the lobby watcher fires; `TBD_WORLDBOOT_SETTLE=12` makes the flake above reproduce
   3/3 on a clean baseline. When attributing an intermittent gate failure, raise the settle and
   re-run the BASELINE before blaming a change.
-- **`world-boot.sh --mission=` does NOT exercise any PLAYER-TRIGGERED path — it has ZERO players.**
-  It runs the boot-time spine: loader, validator, zone registry, objective registry, radio plan,
-  slot materialisation. It does **not** run `BuildForPlayer`, `Serialise`, `Parse`, any RPC, any
-  briefing/lobby/admin/marker payload, or any stage past LOBBY. The command center repeatedly told
-  agents to "use `--mission=empty-warning-fields` to exercise your empty-field handling for real";
-  for anything player-facing that is FALSE, and T-181.26 measured it (`grep -i briefing` over a full
-  `--mission` console log returns only `flow.briefingSeconds`). **Corollary worth designing around:
-  a service that self-checks AT BOOT is gated by this harness; one that self-checks lazily on first
-  use is not.**
+- **What `world-boot.sh --mission=` does and does not exercise — the line is MISSION-START vs
+  PLAYER-TRIGGERED, not "no runtime at all".** Both halves were measured, and the command center got
+  this wrong in both directions before it was pinned:
+  - **DOES run, with zero clients connected:** loader, validator, zone registry, objective registry,
+    radio plan, **and the entire slot lineup** — `TBD_SpawnManager` materialises every slot body at
+    MISSION START, not on join. T-181.41 measured 18 bodies dressed and **18 worn-audits executed**
+    on `bridgehead-at-levie`. So kit equipping and the nakedness audit are among the few things
+    proven END-TO-END by this gate rather than compile-only — and a false ERROR there breaks the
+    gate for every future slice.
+  - **Does NOT run:** `BuildForPlayer`, `Serialise`, `Parse`, any RPC, any briefing/lobby/admin/
+    marker payload, any screen, or any stage past LOBBY. T-181.26 measured this (`grep -i briefing`
+    over a full `--mission` log returns only `flow.briefingSeconds`).
+  **Corollary worth designing around:** a service that self-checks AT BOOT is gated by this harness;
+  one that self-checks lazily on first player use is not.
 - **`string.Split` KEEPS empty tokens** (measured on engine 1.7.0.54 — previously recorded here as
   an unprovable runtime unknown). The briefing wire was therefore *accidentally* correct on this
   build and its empty-field defect was **latent, not live**. Do not read this as "delimited wire

@@ -1,5 +1,5 @@
 {
-  "next_id": 182,
+  "next_id": 296,
   "tickets": [
     {
       "id": "T-001",
@@ -6468,8 +6468,8 @@
             "mod"
           ],
           "executor": "claude-code",
-          "status": "ready",
-          "notes": "Re-home the worn-kit (nakedness) audit, which T-181.32 correctly narrowed out of coverage. TBD_LoadoutApplication.AuditWorn was explicitly written to catch 'a bad KIT PREFAB' — a player spawning naked — but it was reachable only because CheckSlotLoadout's JsonLoadContext bug made every slot look like it carried a JSON loadout. T-181.32 fixed that (bridgehead now correctly reports '0 with a JSON loadout, 18 kit-only'), which is right, and the side effect is that the audit no longer runs on kit-only slots — i.e. on exactly the case it was written for. Re-homing needs a public entry point in TBD_LoadoutEquipHelper.c and a JUSTIFIED delay: audit too early and you emit a false NAKED ERROR, which fails world-boot.sh (TBD-owned script errors are a hard fail). Not a regression introduced by carelessness — a safety net that was hanging on a bug, now needs a real anchor."
+          "status": "shipped",
+          "notes": "Worn-kit audit re-homed onto the kit-only path, and the deadline VERIFIED rather than inherited. The resumed agent did not take its predecessor's 'from measurement, not feel' claim on trust — it reproduced the measurement with a temporary probe plus a failing control in the same run, then reverted both and confirmed byte-identical files by md5. The claim HOLDS (kit clothing is synchronous: 17 slots settled on attempt 1 at 250 ms; the control, pointing kit:us_sl at a base character prefab, produced exactly one NAKED ERROR and failed the gate) — but the UPPER BOUND WAS UNDERSTATED. Measured on two independent boots: bodies materialise +2.947/+2.983 s after the line the harness polls for, and 'Game destroyed' lands +2.985/+2.968 s after that. The predecessor wrote that a 3 s deadline 'raced' the kill; it does not race, it LOSES BY 32 ms. The shipped 1 s deadline leaves 1.97 s of margin, and that margin IS TBD_WORLDBOOT_SETTLE — now said out loud in-code. Two structural checks back the design: grep for Callqueue().Remove across the mod (20 hits, none in either touched file) proves the T-181.15 by-function cancel hazard cannot reach the audit ticks; and SpawnEntityPrefab appears exactly once in TBD_SpawnManager, inside SpawnSlotBody, which has two call sites — so coverage is total with no second body path. CORRECTED A PREMISE IN ITS OWN BRIEF: 'world-boot has zero players so the audit never executes there' is FALSE for --mission= mode, because the slot lineup materialises at MISSION START not on join. Recorded one lifetime caveat rather than fixing it on speculation: CallLater holds no reference, so Cancel -> m_bDone -> PruneDoneLoadoutApps can drop the last strong ref with a tick queued. That shape predates this slice, is shared with VerifyTick, and this slice moves exposure DOWN (250 ms vs up to 3 s); reaching it needs a live client, so it is labelled unproven and the note warns that lengthening AUDIT_TICK_MS widens it."
         },
         "T-181.42": {
           "targets": [
@@ -6507,6 +6507,2192 @@
         "mod",
         "root",
         "shared",
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-182",
+      "title": "Arsenal silently drops three of four weapon slots at compile",
+      "summary": "mod_slot_loadout (flatten.rs:381-393) reads only slotIndex==0 and slotType==primary. Launcher, handgun and throwable are authorable, persisted and discarded — ModSlotGear has no fields for them. The player spawns without them with no warning. Also armoredVest||vest collapses a chest rig under a plate carrier.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2000,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-183",
+      "title": "INDFOR squads spawn as US Army bodies",
+      "summary": "kit-aliases.json:38-42 has no indfor entry and fallbackFaction is blufor. kit.rs:53-60 falls back, kit.rs:107-110 has a test asserting unknown maps to blufor, and flatten.rs:455 consumes it — while the mod assigns engine faction FIA.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2010,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-184",
+      "title": "Single-faction missions compile clean then hard-reject in game",
+      "summary": "flatten.rs:657 unconditionally emits winConditions.endOn=[time_limit,faction_eliminated], but flatten.rs:567-582 pads a zero-slot stub faction when only one is authored. TBD_MissionValidator.c:809-813 raises a blocking ERROR when faction_eliminated is declared with fewer than 2 slot-bearing factions, so the server never leaves LOADING. All four goldens are two-faction, so nothing catches it.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2020,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-185",
+      "title": "A transient Discord failure demotes an admin to enlisted",
+      "summary": "oauth.rs:83-90 collapses an error and an empty result into one empty vec; sync_roles then deletes all user_discord_roles rows, resolves Enlisted and persists it. A timeout during login destroys the snapshot so resync_all_roles cannot restore it. A blank DISCORD_GUILD_ID silently makes everyone enlisted with no log line, and manual role edits are clobbered at next login.",
+      "program": "platform",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "discord"
+      ],
+      "status": "idea",
+      "order": 2030,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-186",
+      "title": "Add make mod-world-boot-compiled — API output into the real Enfusion parser",
+      "summary": "No test anywhere feeds compiler output to the mod. world-boot.sh already supports --mission=<path>, meta.id derivation and console-log assertion; only the curl-the-compiled-doc step is new (~15 lines). This single test would have caught the single-faction hard-reject on day one.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2040,
+      "stream": "mod-framework",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-187",
+      "title": "Fix setup-server-profile.sh — it copies a golden that does not exist",
+      "summary": "scripts/mod/setup-server-profile.sh:38 copies golden-missions/msn_8f3a2c.json, which is nowhere in the repo. With set -euo pipefail the script aborts. This is the script that prepares a server profile for testing missions.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2050,
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-188",
+      "title": "ORBAT Manager slots spawn at world origin with no character",
+      "summary": "orbat_add_slot (editor_ops.rs:1189-1191) passes None, None, 0.0, 0.0, 0.0, 0.0 — every ORBAT-Manager slot lands at (0,0) with no character, while orbat_add_vehicle:1386 correctly uses squad_anchor_xy. No UI anywhere sets a character after placement.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2060,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-189",
+      "title": "No beforeunload guard, and the dirty flag lies after reload",
+      "summary": "mission_history.rs:53 documents 'the beforeunload guard'; a repo-wide grep finds only that comment. There is no SPA navigation guard either. Worse, the IDB-restored doc calls refresh_hud() rather than after_local_edit() (mission_editor.rs:436), so dirty starts false while unsaved edits exist and the user sees no dot.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2070,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-190",
+      "title": "Two browser tabs on one mission silently clobber each other",
+      "summary": "yrs_persist.rs:60-69 is a bare whole-blob put that never reads and merges. There is no BroadcastChannel, storage listener, navigator.locks or SharedWorker anywhere in the repo. Whichever tab's five-second debounce fires last wins. The CRDT can merge and is never asked to.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2080,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-191",
+      "title": "Load server version destroys local work non-undoably, then overwrites the backup",
+      "summary": "mission_hydrate.rs:164-185 runs under INIT origin while the UndoManager tracks only LOCAL, so Ctrl+Z cannot recover it. hydrate clears all nine root maps, then after_local_edit overwrites the local IndexedDB blob about five seconds later. The conflict modal offers two buttons with no diff, no change count and no backup.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2090,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-192",
+      "title": "Mission settings never reach the compiled document and are silently reverted",
+      "summary": "The dialog writes meta.environment.{time,weather} into the CRDT doc (eden_chrome.rs:1707-1765) but flatten reads the DB missions row instead (mission_compile.rs:24-29). No editor path PATCHes the row, and apply_row_meta overwrites the doc from the row on every hydrate. The author's edit is dropped on the wire and lost locally on reload.",
+      "program": "eden",
+      "surfaces": [
+        "ATTR"
+      ],
+      "impact": [
+        "mc-settings"
+      ],
+      "status": "idea",
+      "order": 2100,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-193",
+      "title": "viewDistance and thermals are authored into a schema-forbidden field",
+      "summary": "eden_chrome.rs:1726-1741,1769-1784 write meta.environment.{viewDistance,thermals}, but mission.schema.json:138 sets environment.additionalProperties:false with only dateTime, weatherPreset and windDirDeg. Two working UI controls produce data no downstream surface can carry.",
+      "program": "eden",
+      "surfaces": [
+        "ATTR"
+      ],
+      "impact": [
+        "mc-settings"
+      ],
+      "status": "idea",
+      "order": 2110,
+      "stream": "mission-creator",
+      "targets": [
+        "root",
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-194",
+      "title": "Seed a populated content golden — root cause of every dead page",
+      "summary": "Every fixture in frontend/tests/fixtures/api/ is empty, so the gates only ever prove the empty state renders. That is exactly why the populated branches were never written and why the server_fps mismatch shipped. Build a seeded golden database and capture populated fixtures first; the page tickets below depend on it.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2120,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-195",
+      "title": "Leaderboards actively throws away real data",
+      "summary": "leaderboards.rs:307-309 sets rows to an empty vec whenever the API returns anything, so a populated ladder renders 'No operators match your search'. Until then an eight-row fabricated table displays as the real ladder. All five tabs, the search box and View Dossier are dead, and GET /users/{id}/stats has no caller anywhere.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2130,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-196",
+      "title": "T-181 slices[] lists 39 of 54 slices",
+      "summary": "T-181.17, .17.1, .18, .19 and .32 through .42 are absent from the slices[] array and therefore invisible to every tool that reads it — which is why five capability tickets looked untouched. T-181 also has zero git tags despite 44 shipped slices, against 215 tags for every prior ticket.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2140,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-197",
+      "title": "241 attachment edges and 26 attachment items are unreachable",
+      "summary": "Only three of nine compat edge types are read by the UI; arsenal.rs:198 hardcodes attachments to an empty array. ammo_in_mag has zero edges generated.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2150,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-198",
+      "title": "cargoContainer cannot express a vehicle or a crate",
+      "summary": "The enum is closed to four worn garments — vest, pants, jacket, backpack — in both mission.schema.json:89 and loadout-export.schema.json:67, and GarmentForContainer resolves only to worn areas. No code path anywhere puts an item into a vehicle, and the 311 crate rows are unreachable from any UI.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2160,
+      "stream": "mission-creator",
+      "targets": [
+        "root",
+        "mod",
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-199",
+      "title": "The Arsenal download button emits a file that violates its own schema",
+      "summary": "arsenal.rs:557-579 writes {version,wear,weapons,cargo,summary} — missing required loadoutVersion, modpackId and gear, and adding two keys against additionalProperties:false. It fails both oneOf branches and TBD_LoadoutEquipComponent.c:112-114 would reject it. Nothing in the repo generates a conforming loadout export.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2170,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-200",
+      "title": "Only 8 of 354 registry characters have a kit alias",
+      "summary": "flatten.rs:489-491 silently substitutes the faction default for the other 346 and, unlike the file's own $comment, emits no warning.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2180,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-201",
+      "title": "Emit zones[] beyond the synthetic spawn circle",
+      "summary": "flatten hardcodes type=spawn and r=150.0 at the slot centroid (flatten.rs:300,584-600); ModZoneShape has no polygon variant (flatten.rs:142-145). The mod already enforces boundary and base_protection in both circle and polygon (TBD_ZoneRegistry.c). Consequence today: every website mission ships with zero play-area restriction.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2190,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-202",
+      "title": "Emit briefings[] — unlocks briefing prose and all map markers",
+      "summary": "briefings is absent from ModMissionDocument (flatten.rs:204-218). The mod's briefing screen (TBD_BriefingData.c:423-432) and the entire five-file replicated marker pipeline (TBD_MarkerData.c:132-160) read only this block. Two shipped mod subsystems are dark because of one missing emitter.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2200,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-203",
+      "title": "Emit radioPlan — unlocks the seven-file radio subsystem",
+      "summary": "TBD_RadioPlan.c:46-67, TBD_RadioService.c:119-135 and TBD_RadioTuner are complete and read all five net fields. flatten emits nothing and no UI authors nets. This is also the partner VOIP bridge contract (mission.schema.json:285).",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2210,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-204",
+      "title": "Emit mission flow and winConditions instead of hardcoding them",
+      "summary": "flatten.rs:649-658 hardcodes briefingSeconds=600, safeStartSeconds=300, timeLimitSeconds=5400, jip=until_safestart_end, mode=attrition. Every website mission gets identical pacing. timeLimitSeconds is the owner's mission duration.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2220,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-205",
+      "title": "Vehicle data has no seats, crew roles, cargo capacity or turret bindings",
+      "summary": "There are 218 vehicle and 87 vehicle_weapon registry rows, but they carry the same 14 fields as a helmet. vehicles.rs is a four-row hardcoded doctrine page with prose strings, unrelated to the editor. mission.schema.json has zero occurrences of vehicle.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2230,
+      "stream": "mission-creator",
+      "targets": [
+        "root",
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-206",
+      "title": "Item data is 78% empty",
+      "summary": "The schema has 14 fields but no ammo type, calibre, magazine capacity or attachment-slot list. Of 1,857 generated items, weight_kg is present on 406 (21.9%) and on zero of 107 weapons; arsenal_type and icon_url are populated on zero rows. The default dev seed is 21 items.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2240,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-207",
+      "title": "Point the OAuth flow at real Discord and prove it",
+      "summary": "The OAuth2 implementation is complete — state cookie, constant-time compare, token exchange, role sync, bounded 429 retry — but has never been run against live Discord in this tree. This is a credentials and verification task, not a build task.",
+      "program": "platform",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "discord"
+      ],
+      "status": "idea",
+      "order": 2250,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-208",
+      "title": "Add a compiler-shaped golden mission",
+      "summary": "All four goldens author radioPlan, briefings, settings and multi-type zones — none resembles flatten output, so the mod's test corpus systematically over-represents what the website can emit. Add a golden containing exactly the nine blocks flatten produces.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2260,
+      "stream": "mod-framework",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-209",
+      "title": "Run the mod compile and world-boot gates in CI",
+      "summary": "compile.sh and world-boot.sh are the best regression instruments in the repo and grep of .github/workflows for mod-compile or mod-world-boot returns nothing. 29k lines of mod code have zero automated verification on push.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2270,
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-210",
+      "title": "In-game admin mission switch calls a route that does not exist",
+      "summary": "TBD_MissionListLoader.c:99 calls GET /api/missions, but the API only nests under /api/v1.",
+      "program": "infra",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "infra"
+      ],
+      "status": "idea",
+      "order": 2280,
+      "stream": "infra",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-211",
+      "title": "Zone and play-area draw tool",
+      "summary": "No draw tool, no circle, no polygon anywhere in the editor, and the doc has no zone root at all (store.rs:51-65). The mod already implements union semantics, per-faction boundaries, strictest-wins and base_protection. Needs a doc root, mutators, a map tool and an Attributes panel for rules.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2290,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-212",
+      "title": "Objectives authoring UI",
+      "summary": "objectivesById exists in the doc (store.rs:174) and compiles into the payload (compile.rs:91) but has no mutator and no control — a dead container. The mod's TBD_ObjectiveRegistry implements capture, destroy and hold-until with progress, ownership and completion, wired to winConditions.endOn.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2300,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-213",
+      "title": "Marker placement",
+      "summary": "eden_chrome.rs:1528 is a stub reading 'Marker placement lands in T-069'. The doc has a markers root (store.rs:1106) and compile.rs:92 emits markersById, but flatten never reads it. Mod-side is fully shipped and side-scoped, capped at 64.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2310,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-214",
+      "title": "Briefing text editor — situation, mission, execution, per faction",
+      "summary": "No control exists and the export envelope hardcodes briefing to an empty string (compile.rs:166). The mod's briefing screen reads situation/mission/execution per faction.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2320,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-215",
+      "title": "Vehicle placement on the map with position and cargo",
+      "summary": "Vehicle placement exists but is ORBAT-only with an auto-derived position (leader +/-30m, editor_ops.rs:1386-1388); the map palette is a stub (eden_chrome.rs:1520-1525). add_vehicle writes only {id,resourceName,position,squadId} (store.rs:527-548) and flatten never reads vehiclesById at all, so squad vehicles are silently discarded at compile.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2330,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-216",
+      "title": "flatten drops leaderSlotId, tag, callsign, rank, stance and all vehicles",
+      "summary": "Three T-180 headline features die at the compile boundary that verify-t180 never crosses. The ORBAT block reaches the mod as a count-parity skeleton only.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2340,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-217",
+      "title": "Apply Template silently deletes squads",
+      "summary": "FactionDoc has no squad level — flat roles[] plus vehicles[]. Apply reuses the side's first squad and deletes every other squad on that side (apply_faction.rs:102-107); the inverse flattens all squads into one list, dropping boundaries, leader, callsign, rank and positions. Save-as then Apply collapses N squads into 1. APPLY_ANCHOR_X/Y is an Everon constant, so applying on Arland places everything off-map.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2350,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-218",
+      "title": "Rejection reasons are silently discarded",
+      "summary": "The backend expects RejectInput{reason} (api/handlers/approvals.rs:126-130); the frontend posts an empty json object (approvals.rs:317). The reviewer types a reason and it evaporates.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "mc-collab"
+      ],
+      "status": "idea",
+      "order": 2360,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-219",
+      "title": "The editor silently deletes any top-level key it does not understand",
+      "summary": "mission-editor-payload.schema.json has no additionalProperties:false and no required, so the API stores arbitrary keys. But hydrate reads exactly seven paths (store.rs:1097-1158) and compile_payload rebuilds from a json! literal (compile.rs:85-99). A server-first field or migration will appear to work, persist, and be quietly erased on next Save. MissionDocCore::hydrate has zero unit tests.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2370,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-220",
+      "title": "Five more silent round-trip losses",
+      "summary": "schemaVersion is regenerated as literal 1 so a stored 2 downgrades; map.bounds is recomputed and other map.* keys dropped; array order is not preserved (preserve_order is on in xtask/tools but not in map-engine-core, frontend or api); position sub-keys die on first edit; copy/paste strips unknown slot fields. A hydrate-then-compile property test catches all of them.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2380,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-221",
+      "title": "IndexedDB is not user-scoped and survives sign-out",
+      "summary": "The key is the mission id alone (yrs_persist.rs:60-69). Sign-out clears auth but leaves the doc blob, adopted markers and session marker. On a shared machine user B opening the same mission restores user A's unsaved draft, and a Save posts it under B's account.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2390,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-222",
+      "title": "CLIENT_ID is hardcoded to 1 for every peer",
+      "summary": "store.rs:26. Sound only because no peer updates ever arrive. Any sync transport must fix this first or merges will corrupt documents. Hard blocker on realtime collaboration.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2400,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-223",
+      "title": "Conflict detection is marker-based, not content-based",
+      "summary": "mission_hydrate.rs:88-99 compares only an adopted localStorage semver against the server's. has_content() exists with zero callers. Clearing site data produces a spurious conflict on an unmodified doc, and two people who both adopted the same semver and both edited will both silently take the trust-local branch with no warning.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "mc-integrity"
+      ],
+      "status": "idea",
+      "order": 2410,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-224",
+      "title": "Mission settings block — duration, respawn, spectator policy, NVG, tickets, JIP",
+      "summary": "Six contract fields with no control anywhere. flow is four hardcoded constants and tickets is a hardcoded 0. Ship the UI, doc fields and flatten emission together; half of settings also needs mod readers.",
+      "program": "eden",
+      "surfaces": [
+        "ATTR"
+      ],
+      "impact": [
+        "mc-settings"
+      ],
+      "status": "idea",
+      "order": 2420,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-225",
+      "title": "Event state machine and lifecycle automation",
+      "summary": "EventStatus has six values but the only writer is the caller-less PATCH /events/{id}, with no transition validation. Nothing auto-transitions on start_time, on results ingest or on any timer — the API's only background tasks are token purge and the audit poller. Registration therefore stays open forever after an op ends.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2430,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-226",
+      "title": "Events can never be edited or detached from the UI",
+      "summary": "PATCH /events/{id} has no caller so events can never be edited and status can never be set; DELETE /events/{id}/missions/{emid} has no caller so missions can never be detached; the /events list page renders nothing.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2440,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-227",
+      "title": "Silent zero-slot event attach allows unlimited registration",
+      "summary": "orbat_template_for_mission returns an empty vec on a missing version, a swallowed DB error or an unparseable orbat — and add_event_mission still commits and returns 201 with the admin UI toasting success. Capacity is then count(orbat_slots)=0, so the capacity guard never fires. events.max_slots is validated on create and never consulted for capacity anywhere.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2450,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-228",
+      "title": "ORBAT unique index omits faction — cross-faction squad names 500 on attach",
+      "summary": "idx_orbat_slot is (event_mission_id, squad, slot_index) with no faction column, so two factions each with a squad named Alpha 1-1 produce a duplicate key and the attach returns 500. The same blindness affects get_orbat grouping, orbat_reservations uniqueness and can_manage_squad.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2460,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-229",
+      "title": "Match ingest silently drops unlinked players and never backfills",
+      "summary": "telemetry.rs:243-247 skips a player whose arma_id does not resolve, still inserts the row with a null discord_id and reports only the submitted count. leaderboard_totals filters on non-null discord_id so those rows are permanently invisible, and because the upsert key includes arma_id, linking later does not backfill.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2470,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-230",
+      "title": "Attendance marks every mission in the event and breaks the roster counters",
+      "summary": "telemetry.rs:279-288 sets attended for all event_missions of the event, not the one played, and only when match.event_id parses. Side effect: decorate_events and the dashboard count only registered and waitlisted, so a completed op's roster collapses to zero. Withdraw also stops promoting the waitlist once state is attended, and the withdrawn and no_show enum values are never written by anything.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2480,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-231",
+      "title": "Identity linking last mile",
+      "summary": "TBD_IdentityLink.c shipped at T-181.35 and the website side is complete, but it has never been exercised by a live player on a dedicated server, the code is typed in public chat and cannot be suppressed, and existing match_player_stats rows with a null discord_id are never backfilled after a later link. Needs an in-game UI field, an E2E gate and a backfill job.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2490,
+      "stream": "web-platform",
+      "targets": [
+        "mod",
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-232",
+      "title": "Six pages render literally nothing when real data arrives",
+      "summary": "The content-golden-gated branches are not untested code, they are absent — each is a literal ().into_any(): announcements.rs:67, events.rs:63,72, audit.rs:68,72, deployments.rs:163,189, dashboard.rs:341. Three also have an unconditionally empty detail pane with no selection state.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2500,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-233",
+      "title": "Deployments page shows fabricated K/D and win rate as real telemetry",
+      "summary": "deployments.rs:18-23 defines MOCK_KD 2.45, MOCK_WIN_RATE 68% and fake favourite weapon/asset, rendered at :132-133 as live stats. Only total_operations is real.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2510,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-234",
+      "title": "Mission approvals queue can never fill",
+      "summary": "POST /missions/{id}/submit (missions.rs:541) is the only writer of pending_approval and nothing in the SPA calls it. So /admin/approvals is permanently empty in production while the page displays mock approved and rejected lists that also drive the tab counters. Two destructive-sounding buttons do nothing.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2520,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-235",
+      "title": "Server registry CRUD plus an admin server form",
+      "summary": "No code path anywhere creates a servers row — INSERT INTO servers exists only in three test files. There is no POST/PUT/DELETE route and no seed, so GET /servers returns an empty list on any production database forever.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 2530,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-236",
+      "title": "server_fps type mismatch would silently drop every live frame",
+      "summary": "models/telemetry.rs:102 serializes f64; frontend/src/dto.rs:101 deserializes i64. serde rejects 44.5 into i64, so every real status frame would fail to parse at sse.rs:80 and be dropped with no error. Never caught because the servers fixture is empty. Also server_intel.rs:155 reads a terrain field that exists on neither the model nor the table.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 2540,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-237",
+      "title": "ticket ship verifies nothing and check ignores the schema",
+      "summary": "xtask/src/cmds.rs:534 sets status to shipped and returns. xtask/src/check.rs contains zero references to schema.json and hand-rolls a narrower subset, so 314 schema violations are invisible: program Platform, invented impact and surfaces values, shipped_at which is not in the schema at all, and 13 null active_slice entries.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2550,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-238",
+      "title": "Add ticket check to CI",
+      "summary": "make ticket-check exists but grep of .github/workflows for ticket returns nothing, so nothing prevents the registry drifting again.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2560,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-239",
+      "title": "Unticketed XSS hardening item from the Go purge",
+      "summary": "T-015 is used in commits but absent from the registry. The bluemonday sanitisation survived the Go purge as ammonia (services/text.rs:10-16, wired at cms.rs:109,194), and text.rs:6-9 records an open security item: the exact UGCPolicy-to-ammonia allowlist mapping plus a golden corpus and a no-XSS property test.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2570,
+      "stream": "infra",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-240",
+      "title": "Cargo capacity is warn-only and never blocks",
+      "summary": "A real capacity model exists — CARGO_CONTAINERS (arsenal_rules.rs:595), grid dims, VOLUME_PER_CELL_CM3=50, CargoBudget (:721-754) — but over() (:729) never blocks save, export or compile, and nothing is recursive.",
+      "program": "eden",
+      "surfaces": [
+        "ARS"
+      ],
+      "impact": [
+        "arsenal"
+      ],
+      "status": "idea",
+      "order": 2580,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-241",
+      "title": "Declare zones[].rules properties in the schema",
+      "summary": "mission.schema.json:369-373 declares rules as an open object with zero properties, while the mod reads 16 named keys: graceSeconds, warnEverySeconds, penalty (TBD_MissionLoader.c:102-104) and 14 objective keys (TBD_ObjectiveRules.c:85-100). A typo validates clean and degrades silently at runtime.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2590,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-242",
+      "title": "Add vehicle and entity inventory to the entity schema",
+      "summary": "$defs/entity is {alias,x,z,headingDeg,faction} (mission.schema.json:376-387) with no inventory model. The editor's vehicle row is {id,resourceName,position,squadId} (store.rs:527-548), also with no cargo. Vehicle inventory has no representation on any of the three surfaces.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2600,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-243",
+      "title": "Wire or delete the unused wasm flatten binding",
+      "summary": "flatten_mod_document is exported at crates/map-engine-wasm/src/lib.rs:766-771 as the client twin of /compiled but has zero call sites. Export downloads the editor-superset envelope instead. There is no way for an author to preview the document the game server will actually receive.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2610,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-244",
+      "title": "No vehicle lane in the map-object catalogue",
+      "summary": "The Workbench export plus Rust classifier pipeline is real and produces 1,623 prefabs and 1.2M instances for Everon, but the kind enum covers building, tree, vegetation, rock, prop, utility, water and road — there is no vehicle kind. This is adding a lane to an existing pipeline, not building one.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2620,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-245",
+      "title": "Registry fetch is unpaginated — about 7MB on every editor open",
+      "summary": "mission_editor.rs:196,215 fetch /registry and /registry/compat whole: 1,857 items and 20,908 edges. cargo_defaults_by_character then walks all 20,908 to build a seed map.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2630,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-246",
+      "title": "push-discord skips the published check",
+      "summary": "cms.rs:268-289 force-pushes any announcement — unlike the create and patch paths it does not verify status is published, so a draft or archived post can be broadcast to the guild. It is unreachable from the SPA today, which is the only thing hiding it.",
+      "program": "platform",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "discord"
+      ],
+      "status": "idea",
+      "order": 2640,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-247",
+      "title": "POST /admin/roles/sync has no UI and no scheduler",
+      "summary": "resync_all_roles works and is routed but has no frontend caller — it is curl-only. There is no scheduled sync either; the architecture doc claims a nightly cron, which is aspirational. The seed also ships a placeholder snowflake for the leader role.",
+      "program": "platform",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "discord"
+      ],
+      "status": "idea",
+      "order": 2650,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-248",
+      "title": "oauth_state cookie survives the two early-return error paths",
+      "summary": "The clear-cookie string is built after the missing_code and invalid_state early returns, so both leave the ten-minute CSRF cookie live. DISCORD_CLIENT_SECRET and DISCORD_REDIRECT_URL also have no startup guard, so a misconfigured secret is reported to the user as discord_unreachable — a misconfig disguised as an outage.",
+      "program": "platform",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "discord"
+      ],
+      "status": "idea",
+      "order": 2660,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-249",
+      "title": "Add a slot.y fixture",
+      "summary": "No golden authors slots[].y, so the entire schema-1.2 path — Y_ABSENT sentinel (TBD_MissionSlotStruct.c:47,57), HasJsonY(), TBD_SpawnManager.c:957-973 — is untested end to end despite T-092.1 shipping it.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2670,
+      "stream": "mod-framework",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-250",
+      "title": "Warn on unconsumed mission-document keys",
+      "summary": "TBD_MissionValidator has no unconsumed-key warning, so nothing tells an author that environment, settings, entities, layers, tickets or roles[].radio were silently discarded on load.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "e2e"
+      ],
+      "status": "idea",
+      "order": 2680,
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-251",
+      "title": "Production deployment story",
+      "summary": "No Dockerfile, no docker-compose.staging.yml (referenced by deploy.env.example and HOME_SERVER.md but absent), no deploy-website.sh, no deploy job in any of the four CI workflows, no TLS or reverse-proxy config in-repo, no pg_dump backup script, and no metrics, Sentry or OTel dependency.",
+      "program": "infra",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "infra"
+      ],
+      "status": "idea",
+      "order": 2690,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-252",
+      "title": "Stale docs that would break a real deploy",
+      "summary": "HOME_SERVER.md instructs npm ci and npm run build (Node was eradicated at T-165) and points at the wrong .env path. deploy.env.example names GAME_SERVER_TOKENS while the code reads SERVICE_TOKEN, and references a docker-compose.staging.yml that does not exist. CLAUDE.md says Discord credentials are blank; they are populated. The backend ROADMAP still lists Go filenames.",
+      "program": "infra",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "infra"
+      ],
+      "status": "idea",
+      "order": 2700,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-253",
+      "title": "Reclaim 65GB and stop double-compiling",
+      "summary": "target/ is 52GB, target-ci/ another 12GB, and .git/lfs holds 1.6GB of objects from tile pyramids untracked back on 2026-07-03. Disk is at 87%. Also no CARGO_TARGET_DIR is set, so the moment Rust work is sliced across worktrees each one starts a cold build.",
+      "program": "infra",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "infra"
+      ],
+      "status": "idea",
+      "order": 2710,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-254",
+      "title": "Entity and object placement — the whole entities[] block",
+      "summary": "The Objects chip is a stub (eden_chrome.rs:1466-1470), place_at no-ops in objects mode (editor_ops.rs:1598-1602), the palette filters to kind==character (asset_catalog.rs:63), and the doc has no entities map. The mod has no reader either. Also blocks objective_destroy, which resolves rules.targetAlias against entities[].",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2720,
+      "stream": "mission-creator",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-255",
+      "title": "Asset palette is not side-aware",
+      "summary": "build_catalog_tree (asset_catalog.rs:60) takes no side and filters kind==character, so a BLUFOR chip plus a USSR character is accepted silently — even though the registry categories already encode the side. T-153 specified the Faction Library should replace the raw registry dump here; the Leptos port reverted it and documents the revert in its own header.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2730,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-256",
+      "title": "Faction library is empty on every fresh install",
+      "summary": "faction-library.sample.json is one faction, two roles, one vehicle, and both roles point at the same prefab. It is a schema fixture. There is no seed and no import path, so Load Predefined ORBAT has zero entries until someone hand-builds one.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2740,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-257",
+      "title": "Markers and objectives will be non-undoable the day they land",
+      "summary": "hydrate clears loadouts, items, objectives and markers (store.rs:1102-1120) but those four roots are not in the UndoManager expand_scope (store.rs:101-106). Harmless today because nothing mutates them — a silent trap for the marker and objective work.",
+      "program": "eden",
+      "surfaces": [
+        "MAP",
+        "PLACE"
+      ],
+      "impact": [
+        "mc-authoring"
+      ],
+      "status": "idea",
+      "order": 2750,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-258",
+      "title": "POST /versions is unaudited and does not bump updated_at",
+      "summary": "No trail of who saved what. The mission library orders by updated_at and the approvals queue reports it as submitted_at, so both show stale ordering. editor_notes is write-only — typed, POSTed, never read back, not even on the DTO.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "mc-collab"
+      ],
+      "status": "idea",
+      "order": 2760,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-259",
+      "title": "The mod has no reader for the settings block",
+      "summary": "mission.schema.json:451-462 defines respawn, spectatorPolicy and nightVision. TBD_MissionDocumentStruct has no settings member and flatten has no settings field. The block appears only in the schema, the four hand-written goldens and one doc.",
+      "program": "eden",
+      "surfaces": [
+        "ATTR"
+      ],
+      "impact": [
+        "mc-settings"
+      ],
+      "status": "idea",
+      "order": 2770,
+      "stream": "mission-creator",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-260",
+      "title": "Events carry no server or modpack",
+      "summary": "Grep for server_id or modpack_id over events.rs and models/event.rs returns zero, and the events table has no such columns. The Event Hub modpack chip fetches the global /modpacks/current, so every event shows the same pack.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2780,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-261",
+      "title": "Leaderboard materialized view has no scheduled refresh",
+      "summary": "refresh_leaderboard has exactly one caller, inside results ingest. If ingest never fires the ladder is frozen at the WITH NO DATA state from migration 0002 forever. No cron, no interval, no admin refresh button.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2790,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-262",
+      "title": "Zero foreign keys in the entire schema",
+      "summary": "Grep for FOREIGN KEY or REFERENCES across all seven migrations returns zero. Deleting a mission, event or user orphans every dependent row, and DELETE /events/{id} sets deleted_at only while the confirm dialog claims a cascade. assigned_to, discord_id and reserved_by are unconstrained free text.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 2800,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-263",
+      "title": "Wiki and Vehicle Database are fully hardcoded",
+      "summary": "wiki.rs makes zero API calls; content is a const and EDIT mode writes to a session signal with no Save button and no PUT. vehicles.rs likewise makes zero API calls. Meanwhile GET/PUT /wiki, GET /wiki/{slug} and GET /vehicle-database all exist and work. vehicle_databases also has no INSERT path and no seed.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2810,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-264",
+      "title": "Bookmarked tab with no bookmark button",
+      "summary": "missions.rs:21 ships a bookmarked scope with backend support, but there is no bookmark control anywhere in the SPA and POST/DELETE /missions/{id}/bookmark are orphaned, so the tab can only ever be empty.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2820,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-265",
+      "title": "Leave-of-Absence feature has zero UI",
+      "summary": "Four endpoints and the leave_requests table are fully implemented and tested, with no page, no nav entry and no caller. An entire shipped backend feature nobody can reach.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2830,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-266",
+      "title": "No pagination anywhere in the SPA",
+      "summary": "Every list endpoint returns data, total, limit and offset (audit uses next_cursor), but no page reads any of them — audit.rs fetches a cursor list and discards next_cursor. Every list is silently truncated at the default limit of 20.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2840,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-267",
+      "title": "CMS announcements can be created but never edited, deleted or re-pushed",
+      "summary": "content.rs makes exactly one API call and discards the returned id, so re-clicking Publish duplicates. PATCH, DELETE, uploads and push-discord are all orphaned. The SOP category never hits the API at all — it toasts success with no network call. Five markdown tools toast mock.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2850,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-268",
+      "title": "Personnel — Issue Warning is a mock over a working endpoint, and there is no unban",
+      "summary": "personnel.rs:379-382 toasts 'Warning issued (mock)' while POST /admin/users/{id}/warnings exists and works. DELETE ban (unban) has no control at all, so a ban is irreversible from the UI. Sort and Filter are stubs and the Deployments dossier stat is hardcoded.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 2860,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-269",
+      "title": "Real RCON transport — the current endpoint is a no-op that reports success",
+      "summary": "POST /admin/servers/{id}/rcon (admin.rs:331-379) validates the action enum, explicitly discards the command at admin.rs:361, writes an audit row and returns 202 accepted:true. Grep for std::process, Command::new, tokio::process or ssh over the api returns zero hits.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 2870,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-270",
+      "title": "Wire the Server Control page — ten dead controls",
+      "summary": "server_control.rs is 312 lines with zero on: handlers, and selected is bound to MOCK_SERVERS[0] as a compile-time constant. Restart, Stop, Launch, four Quick Actions, the RCON input and send are all inert, and there is no Start control at all. The console renders a fabricated log including a fake RCON listener line.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 2880,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-271",
+      "title": "Modpack CRUD plus workshop-id columns",
+      "summary": "/modpacks is get-only and the handler contains no DML; the only INSERT is the offline registry importer. modpack_mods has name, is_key_dependency and sort_order but no workshop_id, mod_guid or version, so it structurally cannot express a Reforger game.mods[] entry. The frontend page is fully mock and its Save writes to an in-memory map while toasting success.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 2890,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-272",
+      "title": "Server-status producer — close the SSE loop",
+      "summary": "The whole SSE chain is built (realtime.rs hub, the stream route, sse.rs client) but the only publisher is inside POST /ingest/server-status, and nothing calls it. The stream connects, flips connected=true and delivers zero frames forever.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 2900,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-273",
+      "title": "schema.json is a month stale and would now reject nearly every ticket",
+      "summary": "Last touched 2026-06-26; it predates slice_plan.status, notes and shipped_at, so additionalProperties:false would reject most current tickets. Regenerate it from the registry's actual shape.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2910,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-274",
+      "title": "Record the untracked spawn-determinism program",
+      "summary": "57 commits carry no ticket id, including a full spawn determinism program (7a5ab1e3 1065 lines, f4b25440, a18eeb2e), a new gate scripts/mod/tbd-spawn-determinism.sh with an 18.7KB verify log and no Makefile target, the B2 ORBAT mutate-in-place rewrite, and the map-assets LFS slim.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "registry-hygiene"
+      ],
+      "status": "idea",
+      "order": 2920,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-275",
+      "title": "Declare mod-enforced limits in the schema",
+      "summary": "The mod clamps values the schema is silent about: MAX_NETS=32 (TBD_RadioPlan.c:91), MAX_LABEL_CHARS=48 (:94), MAX_GRACE_SECONDS=3600 (TBD_ZoneRegistry.c:52), MAX_DURATION_SECONDS=21600 (TBD_ObjectiveRegistry.c:60), MISSION_FILE_MAX_BYTES=8MB. A document can validate and still be silently clamped.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2930,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-276",
+      "title": "Close the marker.icon vocabulary",
+      "summary": "mission.schema.json:446 is a bare string with no enum and no minLength. TBD_MarkerIcons.c:43-45,165 falls back to a dot and logs once. This is the exact degradation cargoContainer was closed to prevent.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 2940,
+      "stream": "mission-creator",
+      "targets": [
+        "root",
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-277",
+      "title": "27.4% of the shipped map catalogue is unclassified",
+      "summary": "444 of 1,623 prefabs fall through to the fallback rule against only 66 classify rules. vegetation and utility are both zero despite P3_vegetation being listed as shipped, and the road census reports zero while roads.json.gz ships 888 segments across five classes.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2950,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-278",
+      "title": "No paks-to-registry pipeline and no Makefile target to regenerate the catalogue",
+      "summary": "Data comes out of the game via Enfusion Workbench plugins, then a human copies two files by hand into packages/tbd-schema/registry/ and commits them. make registry-import ingests the committed artifacts. A PakVfs reader exists and is used for terrain, satellite and roads, but nothing in the repo parses .et prefab structure.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2960,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-279",
+      "title": "Discord bot — greenfield",
+      "summary": "There is no bot skeleton at all. Grep for serenity, twilight, poise, discord.js, gateway, application command or ed25519 across every file type returns zero hits. DISCORD_BOT_TOKEN is loaded at config.rs:46,87 and never read by any consumer. No interactions endpoint, no signature verification, no inbound Discord surface.",
+      "program": "platform",
+      "surfaces": [
+        "CONN"
+      ],
+      "impact": [
+        "discord"
+      ],
+      "status": "idea",
+      "order": 2970,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-280",
+      "title": "No observability, no backups, no durable rate limiting",
+      "summary": "Zero prometheus, metrics, sentry or opentelemetry in the api. No /metrics endpoint; /healthz pings the database only. No pg_dump or pg_restore anywhere. Rate limiting is in-memory single-instance so it resets on every restart and cannot scale past one process.",
+      "program": "infra",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "infra"
+      ],
+      "status": "idea",
+      "order": 2980,
+      "stream": "infra",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-281",
+      "title": "apps/mod README falsely claims the compile route does not exist",
+      "summary": "apps/mod/tbd-framework/README.md:23 says the route is not in the current backend and cites the wrong path without /v1. Both are false — contradicted by app.rs:158-161 and TBD_MissionLoader.c:506.",
+      "program": "infra",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "infra"
+      ],
+      "status": "idea",
+      "order": 2990,
+      "stream": "infra",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-282",
+      "title": "Mission version history — differ and timeline",
+      "summary": "mission_versions already stores immutable full JSON snapshots per semver, so this is build a differ, not build versioning. Blockers: no parent_version_id, no list-versions endpoint (only POST and GET-by-id), the by-id GET is never called, and the History button is present but disabled. Old versions are retained and unreachable from any UI.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "mc-collab"
+      ],
+      "status": "idea",
+      "order": 3000,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-283",
+      "title": "Mission review and commenting workflow",
+      "summary": "No comments table in any migration. approvals.rs:274-284 is a reviewer comment box backed by a local signal, explicitly marked mock until a review-comments API lands, never POSTed. missions.rs:884-896 reads 'Comments coming soon'. Coarse approve/reject exists; the iterative loop does not.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "mc-collab"
+      ],
+      "status": "idea",
+      "order": 3010,
+      "stream": "mission-creator",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-284",
+      "title": "events.match_id is dead weight and clear_slot is unreachable",
+      "summary": "events.match_id is selected in every event query and never written by any insert or update — the real link runs the other way via matches.event_id. Separately, clear_slot has no frontend caller, so an admin can never free a claimed slot.",
+      "program": "platform",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "idea",
+      "order": 3020,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-285",
+      "title": "Field tools — solutions never persist and inject writes to a dead directory",
+      "summary": "POST /fire-missions and GET /events/{id}/fire-missions are orphaned, so every computed solution is lost on reload. The mortar map preview is fixed CSS that never moves with the inputs, and weapon_system is hardcoded while the heading claims to show the returned system. POST /missions/{id}/inject writes a mission.json nothing reads.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 3030,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-286",
+      "title": "Dead scaffolding and a non-reactive role read",
+      "summary": "PageStub and ApiPage are defined and routed nowhere. missions.rs:87 is a one-shot non-reactive role read evaluated before AuthGate resolves; combined with nav.rs:41-46 returning true for None, a not-yet-bootstrapped session yields is_maker=true and never corrects. faction_manager.rs deletes with no confirmation dialog, unlike every sibling page.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 3040,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-287",
+      "title": "SSE reader leaks one connection per SPA navigation",
+      "summary": "Self-documented at sse.rs:8-12: the stream is never torn down on route change because Leptos on_cleanup is Send-bound and AbortController is not. Harmless today only because the stream never emits.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-pages"
+      ],
+      "status": "idea",
+      "order": 3050,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-288",
+      "title": "Modpack to server-config renderer and push",
+      "summary": "The database modpack concept and the server's actual mod list are unconnected universes. deploy-staging.sh:258-260 hardcodes a single mod from an env var and never reads the modpacks table.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 3060,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-289",
+      "title": "Server-host deploy agent for start, stop and status",
+      "summary": "The only start/stop in the repo is out-of-band bash (deploy-staging.sh:287-289 systemctl restart). The API has no shell-out, no SSH and no container control. Needs an authenticated agent or a token-guarded local socket the API can drive.",
+      "program": "platform",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "platform-server"
+      ],
+      "status": "idea",
+      "order": 3070,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-290",
+      "title": "Resolve nine dead-output fields flatten emits that the mod never reads",
+      "summary": "meta.author, meta.templateId, meta.playerRange, the whole environment block, factions[].tickets, orbat[].type, winConditions.mode, flow.briefingSeconds (advisory only), and the entire orbat block (parity-check only). Either add mod readers or annotate them non-consumed so the next audit does not re-derive this.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 3080,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-291",
+      "title": "Resolve five schema fields implemented on no surface",
+      "summary": "environment.windDirDeg, factions[].color, roles[].radio, layers[], and settings.{respawn,spectatorPolicy,nightVision} are declared in the contract with zero implementation in flatten or the mod. spectatorPolicy is dead despite Spectator/ being a shipped seven-file subsystem.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 3090,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-292",
+      "title": "net.range short is parsed then discarded",
+      "summary": "TBD_RadioService.c:214-220 maps only long to a nonzero value; short and any both collapse to 0 and are behaviourally identical. The schema advertises a three-value enum (mission.schema.json:308) the runtime does not honour.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 3100,
+      "stream": "mission-creator",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-293",
+      "title": "TBD_RadioPlan re-parses raw JSON instead of the parsed field",
+      "summary": "TBD_RadioPlan.c:4-6 claims the document struct has no radioPlan member. It does — TBD_MissionLoader.c:262. The class re-parses GetRawJson() through a separate projection (:233,258-264), so there are now two parse paths for one block.",
+      "program": "eden",
+      "surfaces": [
+        "DATA"
+      ],
+      "impact": [
+        "contract"
+      ],
+      "status": "idea",
+      "order": 3110,
+      "stream": "mission-creator",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-294",
+      "title": "Only one of two registered terrains has object data",
+      "summary": "terrain-registry.json declares everon (active, all five phases shipped) and arland (queued, P1 only) but arland has only a 756-byte manifest and zero object data.",
+      "program": "eden",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 3120,
+      "stream": "mission-creator",
+      "targets": [
+        "root"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-295",
+      "title": "Realtime collaborative editing",
+      "summary": "yrs is wired to IndexedDB only; apply_update has two callers. No websocket anywhere — axum is built without the ws feature and there is no yrs-sync or awareness dependency. The server has no optimistic concurrency: POST /versions is a bare INSERT and the only 409 means you reused a semver, not someone edited since you loaded.",
+      "program": "eden",
+      "surfaces": [
+        "SHELL"
+      ],
+      "impact": [
+        "mc-collab"
+      ],
+      "status": "idea",
+      "order": 3130,
+      "stream": "mission-creator",
+      "targets": [
         "website"
       ],
       "executor": "claude-code"
