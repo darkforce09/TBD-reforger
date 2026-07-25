@@ -4,6 +4,7 @@
 //!   #tbd mission <n>          — load mission number n (reloads the world)
 //!   #tbd backend <url> [tok]  — repoint the backend + refresh the list
 //!   #tbd refresh              — refresh the mission list
+//!   #tbd validate             — replay the mission validation findings (T-181.14)
 //!
 //! The custom menu (Phase D) calls the same TBD_FrameworkManager methods.
 modded class SCR_ChatComponent
@@ -52,6 +53,15 @@ class TBD_AdminCommands
 		if (parts.Count() > 1)
 			sub = parts[1];
 
+		// T-181.14 — a mission rejected by TBD_MissionValidator is invisible from in-game: the
+		// stage machine simply never leaves LOADING and nothing on screen says why. Lead with it
+		// on every #tbd reply rather than waiting for an admin to think of asking.
+		if (TBD_MissionValidator.HasRun() && !TBD_MissionValidator.Passed())
+		{
+			Reply(chat, senderId, string.Format("TBD: !! mission FAILED validation (%1 error(s)) — run '#tbd validate'.",
+				TBD_MissionValidator.GetErrorCount()));
+		}
+
 		if (sub.IsEmpty() || sub == "missions" || sub == "list")
 		{
 			array<string> lines = fm.BuildMissionListText();
@@ -64,6 +74,17 @@ class TBD_AdminCommands
 		{
 			fm.RefreshMissionList();
 			Reply(chat, senderId, "TBD: refreshing mission list…");
+			return;
+		}
+
+		//! T-181.14 — replay the mission validation findings in game. Every problem from the
+		//! last parse, errors first, so an admin can diagnose a rejected mission without SSHing
+		//! to the server and reading console.log.
+		if (sub == "validate")
+		{
+			array<string> lines = TBD_MissionValidator.BuildReportLines();
+			foreach (string line : lines)
+				Reply(chat, senderId, line);
 			return;
 		}
 
@@ -140,7 +161,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | respawn <playerId> | dead");
+		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | respawn <playerId> | dead");
 	}
 
 	//------------------------------------------------------------------------------------------------
