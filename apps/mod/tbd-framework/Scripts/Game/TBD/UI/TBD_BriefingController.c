@@ -251,11 +251,22 @@ modded class SCR_PlayerController
 		if (m_TBD_StageCaughtUp)
 			return;
 
-		// Not this machine's player. Always true on a dedicated server, which must never open a menu.
+		// ── THE load-bearing guard, and it must stay FIRST ──────────────────────────────────
+		// Not this machine's player. On a dedicated server `GetPlayerController()` is null, so this
+		// is false for every controller and nothing below ever runs. It is the same test vanilla
+		// itself makes inside `super` to decide `m_bIsLocalPlayerController`, and the same one
+		// `TBD_MissionBrowser` and `TBD_RadioController` already rely on — if it could ever be true
+		// on a server, vanilla would be binding local input there.
 		if (GetGame().GetPlayerController() != this)
 			return;
 
-		// No workspace = headless. Belt to the test above, and the guard NotifyLocalStageUI uses.
+		// Cheap belt, NOT a dedicated-server test. MEASURED 2026-07-25 on this slice's own gate:
+		// `GetGame().GetWorkspace()` is NON-NULL on the headless dedicated server that
+		// `world-boot.sh` runs — `TBD_LobbyStage.Start()` passes this very check there and then
+		// logs `preset 60 did not open` two poll ticks after LOADING -> LOBBY, with zero players
+		// connected. So "no workspace = dedicated server" is FALSE on engine 1.7.0.54, and the
+		// guard above is what actually protects this path. Kept only because a null workspace is
+		// still a reason not to drive a menu.
 		if (!GetGame().GetWorkspace())
 			return;
 
@@ -299,7 +310,11 @@ modded class SCR_PlayerController
 	//!   • authority path — `SetStage()`, because onRplName never fires on authority, which is
 	//!                      what keeps a listen host working now that nothing polls.
 	//! Both funnel through `TBD_FrameworkManager.NotifyLocalStageUI()`, which is also where the
-	//! "dedicated server has no workspace" guard now lives.
+	//! "dedicated server has no workspace" guard now lives. **That guard does not do what its name
+	//! says** — measured on this slice's gate, `GetGame().GetWorkspace()` is NON-NULL on the
+	//! headless dedicated server `world-boot.sh` runs (see `TBD_CatchUpStage`). What actually keeps
+	//! a server out of both paths is the null local player controller, which is checked separately
+	//! two lines below it there and first in the catch-up here.
 	//!
 	//! ── T-181.23's blind spot, closed by T-181.28 ────────────────────────────────────────────
 	//! BOTH of those are PUSHES, and `NotifyLocalStageUI` drops one silently when this client has
