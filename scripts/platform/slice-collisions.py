@@ -1,0 +1,160 @@
+#!/usr/bin/env python3
+"""Compute the maximum FILE-DISJOINT set of platform tickets that can run concurrently.
+
+The parallelism limit on this program is not disk and not CPU — it is merge conflicts.
+Worktrees make concurrent edits *safe* (no clobbering) but do nothing to prevent two agents
+editing the same file and colliding at merge. That is a mechanical property of the `owns`
+column in docs/platform/wave_plan.tsv, so it is computed here rather than eyeballed.
+
+  python3 scripts/platform/slice-collisions.py                 # max concurrent set from the next wave
+  python3 scripts/platform/slice-collisions.py T-190 T-191     # what may JOIN those already in flight
+  python3 scripts/platform/slice-collisions.py --repack        # rebuild wave_plan.tsv from the registry
+  python3 scripts/platform/slice-collisions.py --check T-190   # is T-190 safe against everything running?
+
+Unlike the T-181 mod version this takes the plan path from TBD_WAVE_PLAN, so the same logic
+serves any program. Default is the platform plan.
+"""
+import csv, json, os, sys, subprocess, collections
+
+ROOT = subprocess.run(['git', 'rev-parse', '--show-toplevel'],
+                      capture_output=True, text=True).stdout.strip()
+PLAN = os.environ.get('TBD_WAVE_PLAN', os.path.join(ROOT, 'docs/platform/wave_plan.tsv'))
+REGISTRY = os.path.join(ROOT, '.ai/tickets/registry.json')
+# Integration attention, not disk, is the real ceiling: every agent returns a dense report the
+# command center must actually read. Measured on T-181: three was far too low, twenty is too many
+# to integrate in one sitting. Eight is the working compromise — raise it if you are keeping up.
+MAX_CONCURRENT = int(os.environ.get('TBD_MAX_CONCURRENT', '8'))
+
+
+def plan_rows():
+    if not os.path.exists(PLAN):
+        sys.exit(f"no wave plan at {PLAN} (set TBD_WAVE_PLAN)")
+    with open(PLAN) as fh:
+        for r in csv.reader(fh, delimiter='\t'):
+            if not r or r[0].startswith('#') or r[0] == 'wave':
+                continue
+            if len(r) < 4:
+                continue
+            yield {'wave': r[0], 'id': r[1], 'title': r[2],
+                   'owns': [p.strip() for p in r[3].split(';') if p.strip()]}
+
+
+def registry():
+    with open(REGISTRY) as fh:
+        return {t['id']: t for t in json.load(fh)['tickets']}
+
+
+def shipped(tid, reg):
+    return reg.get(tid, {}).get('status') in ('shipped', 'cancelled')
+
+
+def collides(a, b):
+    """Two tickets collide if any owned path overlaps — including prefix containment,
+    so `apps/website/api/src/` collides with `apps/website/api/src/handlers/admin.rs`."""
+    for x in a:
+        for y in b:
+            if x == y or x.startswith(y.rstrip('/') + '/') or y.startswith(x.rstrip('/') + '/'):
+                return True
+    return False
+
+
+def pack(cands, already=()):
+    """Greedy maximum disjoint set, honouring plan order (which is priority order)."""
+    chosen, used = [], list(already)
+    for c in cands:
+        if any(collides(c['owns'], u) for u in used):
+            continue
+        chosen.append(c)
+        used.append(c['owns'])
+        if len(chosen) + len(already) >= MAX_CONCURRENT:
+            break
+    return chosen
+
+
+def repack():
+    """Rebuild the plan from the registry, re-packing every unshipped ticket by disjointness.
+    Preserves each row's `owns` — only the wave numbers move."""
+    reg = registry()
+    rows = [r for r in plan_rows() if not shipped(r['id'], reg)]
+    done = [r for r in plan_rows() if shipped(r['id'], reg)]
+    waves, remaining, n = [], list(rows), 0
+    while remaining:
+        n += 1
+        w = pack(remaining)
+        if not w:                      # everything left collides with everything: emit singly
+            w = [remaining[0]]
+        for r in w:
+            remaining.remove(r)
+        waves.append(w)
+    out = ["# Platform wave plan — WHICH tickets run together, and in what order.",
+           "# Columns: wave <TAB> ticket <TAB> title <TAB> owns (semicolon-separated paths)",
+           "# Waves are packed by FILE-DISJOINTNESS in priority order.",
+           "# Regenerate: python3 scripts/platform/slice-collisions.py --repack", "#"]
+    for r in done:
+        out.append(f"0\t{r['id']}\t{r['title']}\t{'; '.join(r['owns'])}")
+    for i, w in enumerate(waves, 1):
+        for r in w:
+            out.append(f"{i}\t{r['id']}\t{r['title']}\t{'; '.join(r['owns'])}")
+    with open(PLAN, 'w') as fh:
+        fh.write('\n'.join(out) + '\n')
+    print(f"repacked {sum(len(w) for w in waves)} open tickets into {len(waves)} waves "
+          f"({len(done)} already shipped, parked at wave 0)")
+
+
+def main():
+    args = [a for a in sys.argv[1:] if not a.startswith('--')]
+    flags = {a for a in sys.argv[1:] if a.startswith('--')}
+    if '--repack' in flags:
+        return repack()
+
+    reg = registry()
+    rows = [r for r in plan_rows() if not shipped(r['id'], reg)]
+    by_id = {r['id']: r for r in rows}
+
+    if '--check' in flags:
+        if not args:
+            sys.exit("--check needs a ticket id")
+        t = by_id.get(args[0])
+        if not t:
+            sys.exit(f"{args[0]} is not an open ticket in {os.path.relpath(PLAN, ROOT)}")
+        bad = [o['id'] for o in rows if o['id'] != t['id'] and collides(t['owns'], o['owns'])]
+        print(f"{t['id']} owns: {'; '.join(t['owns'])}")
+        print("collides with:", ', '.join(bad) if bad else "nothing — safe to run alongside anything")
+        return
+
+    running = [by_id[a] for a in args if a in by_id]
+    for a in args:
+        if a not in by_id:
+            print(f"warning: {a} is not an open ticket in the plan", file=sys.stderr)
+
+    cands = [r for r in rows if r['id'] not in {x['id'] for x in running}]
+    picked = pack(cands, already=[r['owns'] for r in running])
+
+    if running:
+        print(f"already in flight ({len(running)}):")
+        for r in running:
+            print(f"  {r['id']:8s} {r['title'][:60]}")
+        print(f"\nmay join them ({len(picked)}, cap {MAX_CONCURRENT}):")
+    else:
+        nxt = min((r['wave'] for r in rows), key=lambda w: int(w))
+        print(f"next wave is {nxt}. Max disjoint dispatch set ({len(picked)}, cap {MAX_CONCURRENT}):")
+    for r in picked:
+        print(f"  {r['id']:8s} {r['title'][:60]}")
+        print(f"           owns: {'; '.join(r['owns'])}")
+    if not picked:
+        print("  (none — everything left collides with what is already running)")
+
+    blocked = collections.Counter()
+    for c in cands:
+        if c not in picked:
+            for r in picked + running:
+                if collides(c['owns'], r['owns']):
+                    blocked[r['id']] += 1
+    if blocked:
+        print("\nmost-contended tickets (blocking the most others):")
+        for tid, n in blocked.most_common(5):
+            print(f"  {tid} blocks {n}")
+
+
+if __name__ == '__main__':
+    main()

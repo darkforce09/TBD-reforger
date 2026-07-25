@@ -47,6 +47,13 @@ class TBD_MissionFlow
 	//! the tag belongs next to the code that emits it.
 	static const string CH_FLOW = "Flow";
 
+	//! T-181.37 — the two endOn triggers evaluated HERE rather than by TBD_ObjectiveRegistry.
+	//! Named so TBD_MissionValidator can ask this class for them instead of spelling the strings a
+	//! second time; a duplicated trigger name is exactly the drift that slice exists to catch.
+	//! @contract mission.schema.json#/$defs/winConditions/properties/endOn
+	static const string TRIGGER_TIME_LIMIT = "time_limit";
+	static const string TRIGGER_FACTION_ELIMINATED = "faction_eliminated";
+
 	//! Returned by the seconds accessors when the mission authored nothing usable. Deliberately
 	//! NEGATIVE, because an authored `0` is a real value with real meaning (`timeLimitSeconds: 0`
 	//! is "no limit" — a statement the author made) and must never collide with "said nothing".
@@ -863,7 +870,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		// T-181.39 — arm on ANY supported trigger. The old guard checked only
 		// faction_eliminated, so a mission declaring just `all_objectives_captured` never armed
 		// the win tick at all and ran silently to the time limit.
-		bool anyTrigger = TBD_MissionLoader.HasEndTrigger("faction_eliminated");
+		bool anyTrigger = TBD_MissionLoader.HasEndTrigger(TBD_MissionFlow.TRIGGER_FACTION_ELIMINATED);
 		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_ALL_CAPTURED))
 			anyTrigger = true;
 		if (TBD_MissionLoader.HasEndTrigger(TBD_ObjectiveRegistry.TRIGGER_DESTROYED))
@@ -911,7 +918,7 @@ class TBD_FrameworkManager : SCR_BaseGameModeComponent
 		GetGame().GetCallqueue().Remove(TickRoundClock);
 
 		int limit = TBD_MissionFlow.TimeLimitSeconds();
-		bool declared = TBD_MissionLoader.HasEndTrigger("time_limit");
+		bool declared = TBD_MissionLoader.HasEndTrigger(TBD_MissionFlow.TRIGGER_TIME_LIMIT);
 
 		if (!declared)
 		{
