@@ -262,11 +262,14 @@ modded class SCR_PlayerController
 
 		// Cheap belt, NOT a dedicated-server test. MEASURED 2026-07-25 on this slice's own gate:
 		// `GetGame().GetWorkspace()` is NON-NULL on the headless dedicated server that
-		// `world-boot.sh` runs — `TBD_LobbyStage.Start()` passes this very check there and then
-		// logs `preset 60 did not open` two poll ticks after LOADING -> LOBBY, with zero players
-		// connected. So "no workspace = dedicated server" is FALSE on engine 1.7.0.54, and the
-		// guard above is what actually protects this path. Kept only because a null workspace is
-		// still a reason not to drive a menu.
+		// `world-boot.sh` runs, so "no workspace = dedicated server" is FALSE on engine 1.7.0.54.
+		// The `GetPlayerController() != this` guard above is what actually protects this path.
+		// Kept only because a null workspace is still a reason not to drive a menu.
+		//
+		// T-181.49 — the worked example this comment used to cite (`TBD_LobbyStage.Start()`
+		// passing this same check on a zero-player boot, then logging `preset 60 did not open`)
+		// is GONE: that class now tests `RplSession.Mode() == RplMode.Dedicated`, which is what
+		// both oracles use. The measurement above still stands — only the example was stale.
 		if (!GetGame().GetWorkspace())
 			return;
 
