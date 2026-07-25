@@ -276,6 +276,19 @@ class TBD_MenuStack
 	//------------------------------------------------------------------------------------------------
 	//! Drop all bookkeeping without touching the engine. For mission teardown, where the menus are
 	//! already gone.
+	//!
+	//! ── T-181.49: why this exists and who calls it ──────────────────────────────────────────
+	//! Until T-181.49 this had ZERO callers, which made invariant 2 above conditional on the
+	//! engine always firing `OnMenuClose`. It does not on world teardown. `m_aStack` holds
+	//! deliberately weak elements popped only via `NotifyClosed`, so a menu the engine destroyed
+	//! behind our back leaves an entry in a STATIC array that outlives the world — and the next
+	//! world's `IsOpen(preset)` then answers true forever, for a screen that no longer exists.
+	//! `TBD_LobbyStage.Start` is the caller: a new world arming its watcher is the unambiguous
+	//! moment at which nothing from the previous world may still be believed.
+	//!
+	//! `CloseAll()` still has no caller. That is correct — it drives the ENGINE, so it is only
+	//! valid while the menus are alive, and nothing in the addon currently needs a bulk close.
+	//! Do not wire it to teardown to "match" this: teardown is exactly when those menus are gone.
 	static void Reset()
 	{
 		EnsureStack();

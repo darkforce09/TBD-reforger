@@ -44,12 +44,13 @@ class TBD_LobbyComponent : SCR_BaseGameModeComponent
 		// guard lives at `SelfCheckWire`'s own entry, not here, so a second caller cannot double it.
 		TBD_LobbyService.SelfCheckWire();
 
-		// NOT a dedicated-server test — `GetGame().GetWorkspace()` is non-null on a headless
-		// dedicated server (measured; see `TBD_LobbyStage.Raise`, which carries the evidence and the
-		// real guard). Kept as a cheap "is there a GUI subsystem at all" filter only.
-		if (!GetGame().GetWorkspace())
-			return;
-
+		// ── T-181.49: the workspace pre-filter that used to sit here is GONE ─────────────────
+		// It never excluded anything — `GetGame().GetWorkspace()` is MEASURED NON-NULL on the
+		// headless dedicated server `world-boot.sh` runs — and it made the one machine that
+		// legitimately has nothing to do here refuse SILENTLY, before any line could say so.
+		// `TBD_LobbyStage.Start` now carries the real authority test (`RplSession.Mode()`) and
+		// LOGS its refusal, so arming unconditionally is what makes the outcome observable on
+		// every machine, server included.
 		GetGame().GetCallqueue().CallLater(TBD_LobbyStage.Start, START_DELAY_MS, false);
 	}
 
@@ -57,13 +58,19 @@ class TBD_LobbyComponent : SCR_BaseGameModeComponent
 	//! Statics outlive a world inside one process (measured landmine in this codebase), so the
 	//! watcher MUST be torn down here or the next round starts polling a framework manager that
 	//! belongs to a world that no longer exists.
+	//!
+	//! T-181.49 — UNCONDITIONAL. This was wrapped in `if (GetGame().GetWorkspace())`, which is the
+	//! same non-test as above, and a teardown that can be skipped is worse than no teardown at
+	//! all: it is the mechanism by which the World Editor instance of `TBD_GameMode` left
+	//! `TBD_LobbyStage`'s statics latched for the Play instance that followed it in the same
+	//! process. Teardown must be the one thing on this path that cannot be conditional.
 	override void OnDelete(IEntity owner)
 	{
-		if (GetGame().GetWorkspace())
-		{
-			GetGame().GetCallqueue().Remove(TBD_LobbyStage.Start);
-			TBD_LobbyStage.Shutdown();
-		}
+		ScriptCallQueue queue = GetGame().GetCallqueue();
+		if (queue)
+			queue.Remove(TBD_LobbyStage.Start);
+
+		TBD_LobbyStage.Shutdown();
 
 		super.OnDelete(owner);
 	}

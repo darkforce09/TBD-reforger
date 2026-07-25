@@ -114,12 +114,17 @@ class TBD_AdminClient
 	// ── Screen lifecycle ────────────────────────────────────────────────────────────────────
 
 	//------------------------------------------------------------------------------------------------
-	//! Raise the admin screen. Safe to call from anywhere on a client: a machine with no workspace
-	//! (dedicated server) does nothing, and a non-admin gets a screen that shows only the refusal
-	//! the server sends back.
+	//! Raise the admin screen. Safe to call from anywhere on a client: a dedicated server does
+	//! nothing, and a non-admin gets a screen that shows only the refusal the server sends back.
+	//!
+	//! T-181.49 — the guard below was `if (!GetGame().GetWorkspace())`, which does NOT mean "no
+	//! screen": `GetGame().GetWorkspace()` is MEASURED NON-NULL on a headless dedicated server
+	//! (engine 1.7.0.54), so a server reaching `#tbd menu` would have tried to open a menu. The
+	//! test both oracles use, and the one the rest of this addon already uses, is the replication
+	//! mode.
 	static void Open()
 	{
-		if (!GetGame().GetWorkspace())
+		if (RplSession.Mode() == RplMode.Dedicated)
 			return;
 
 		// Already up (a second `#tbd menu`, say): refresh it rather than blanking the panel out

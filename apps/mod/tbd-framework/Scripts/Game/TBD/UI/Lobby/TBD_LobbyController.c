@@ -615,9 +615,17 @@ class TBD_LobbyClient
 	//------------------------------------------------------------------------------------------------
 	//! New lobby phase: forget the last round's answers, and drop any pending rejection timer so
 	//! it cannot fire into a screen that no longer exists.
+	//!
+	//! T-181.49 — the queue is null-checked now. This used to be reached only behind
+	//! `TBD_LobbyComponent.OnDelete`'s workspace test; that test is gone (it never excluded a
+	//! server anyway), so this runs on world teardown on every machine, which is exactly the
+	//! moment a subsystem is most likely to already be down. Same shape `TBD_RadioComponent`
+	//! already uses in its own `OnDelete`.
 	static void Reset()
 	{
-		GetGame().GetCallqueue().Remove(ClearRejection);
+		ScriptCallQueue queue = GetGame().GetCallqueue();
+		if (queue)
+			queue.Remove(ClearRejection);
 
 		m_Roster = null;
 		m_sStatus = string.Empty;
@@ -651,6 +659,26 @@ class TBD_LobbyStage
 {
 	static const int POLL_MS = 500;
 
+	//! T-181.49 — the arming retry. `Start()` used to be one-shot, so losing a race it had no
+	//! reason to expect to win was PERMANENT. See `Start` for the measurement.
+	static const int ARM_RETRY_MS = 250;
+	static const int ARM_MAX_ATTEMPTS = 60; //!< 60 x 250 ms = 15 s, then give up LOUDLY.
+
+	//! Greppable prefix. One vocabulary for the whole raise path, so
+	//! `grep '\[TBD\]\[Lobby\]' console.log` returns the entire lifecycle of the picker.
+	static const string LOG_TAG = "[TBD][Lobby] ";
+
+	//! Outcome of the last `Raise()`. `Raise` runs on a 500 ms poll, so an unlatched log line
+	//! there would emit twice a second forever and bury the signal it exists to carry. Logging
+	//! only on a CHANGE of outcome gives exactly one line per transition, which is what an
+	//! operator actually needs: not "it refused", but "it started refusing, for this reason".
+	static const int RAISE_UNSEEN        = 0; //!< nothing decided yet on this world.
+	static const int RAISE_OPENED        = 1;
+	static const int RAISE_NO_CONTROLLER = 2;
+	static const int RAISE_PRESET_DEAD   = 3;
+	static const int RAISE_ALREADY_OPEN  = 4;
+	static const int RAISE_OPEN_FAILED   = 5;
+
 	protected static bool s_bRunning;
 	protected static TBD_EGameStage s_LastStage;
 
@@ -660,39 +688,156 @@ class TBD_LobbyStage
 	//! for to know whether the Workbench pass worked.
 	protected static bool s_bPresetUnavailable;
 
+	protected static int s_iArmAttempts;
+	protected static int s_iLastRaiseOutcome;
+
+	//------------------------------------------------------------------------------------------------
+	//! One line, one shape, one grep. `PrintFormat` and NEVER `Print(localVariable)` — MEASURED in
+	//! this codebase: `Print` emits the DECLARATION of a local, not its value, which is why the
+	//! roll-call assertion in `world-boot.sh` has to strip a trailing quote.
+	protected static void Log(string message)
+	{
+		PrintFormat("%1", LOG_TAG + message, level: LogLevel.NORMAL);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! WARNING, not ERROR, and deliberately: `world-boot.sh` triages any TBD-owned `SCRIPT (E)`
+	//! line as a gate failure, so shouting at ERROR about a state the gate can legitimately reach
+	//! would turn a diagnostic into a false red. MEASURED this slice: WARNING lines DO reach
+	//! `console.log` (`[TBD][Radio] backbone: MISSING` is one), so nothing is lost by the level.
+	protected static void LogWarn(string message)
+	{
+		PrintFormat("%1", LOG_TAG + message, level: LogLevel.WARNING);
+	}
+
 	//------------------------------------------------------------------------------------------------
 	//! @authority client — only a machine with a local player may open a menu.
 	//!
-	//! The workspace check below is kept as a cheap "is there a GUI subsystem at all" filter, but it
-	//! is NOT the dedicated-server test this comment used to claim it was: `GetGame().GetWorkspace()`
-	//! is non-null on a headless dedicated server (measured — see `Raise`, which carries the
-	//! evidence and the actual guard). Starting the poll on a server is harmless; RAISING a menu is
-	//! not, so that is where the real test lives.
+	//! ── T-181.49: this used to be a one-shot with three silent exits ─────────────────────────
+	//! `TBD_LobbyComponent.OnPostInit` arms this with `CallLater(..., false)` at +2000 ms. That
+	//! made `IsFrameworkWorld()` a COIN FLIP, and losing it was permanent AND invisible:
+	//!
+	//!   MEASURED 2026-07-25, `world-boot.sh --mission=bridgehead-at-levie`, engine 1.7.0.54:
+	//!     21:02:13.963  [TBD][Lobby] wire self-check PASS   <- TBD_LobbyComponent.OnPostInit
+	//!     21:02:15.96   (Start fires: +2000 ms from the line above)
+	//!     21:02:16.201  [TBD] roll-call: ... Lobby=ok       <- TBD_FrameworkManager's CallLater(…, 0)
+	//!
+	//! `Start` fires ~240 ms BEFORE the framework manager's own deferred roll-call. The call queue
+	//! does not tick during world load, so both callbacks are flushed together when it starts and
+	//! their relative order is not something this class gets to choose. Ask `IsFrameworkWorld()`
+	//! once, at that instant, and the answer is whatever the flush order happened to be.
+	//!
+	//! So it now RETRIES. The bound exists so a genuinely broken world says so instead of spinning
+	//! forever, and the give-up is logged — the point of this whole slice is that no exit on this
+	//! path is silent.
+	//!
+	//! ── Statics are reset HERE, not only in Shutdown() ───────────────────────────────────────
+	//! `TBD_GameMode` is constructed TWICE per Workbench session (once for the World Editor, once
+	//! for Play) while every static below survives between them. If the editor instance's
+	//! `OnDelete` is skipped, `Shutdown()` never runs and the Play instance inherits `s_bRunning`
+	//! true and a stale `TBD_MenuStack` entry — and the old `if (s_bRunning) return;` turned that
+	//! into a picker that never opens again for the life of the process. A new world arming its
+	//! watcher is unambiguous proof the previous world is gone, so that is the moment to clear.
+	//! `Shutdown()` keeps doing it too; belt and braces, not one or the other.
 	static void Start()
 	{
-		if (s_bRunning)
+		ScriptCallQueue queue = GetGame().GetCallqueue();
+		if (!queue)
+		{
+			LogWarn("Start refused — no call queue on this machine. The slot picker cannot arm.");
 			return;
+		}
 
-		if (!GetGame().GetWorkspace())
+		// Idempotent re-arm. Removing first is strictly safer than the `if (s_bRunning) return;`
+		// this replaces: it cannot leave two timers running, and it cannot latch the watcher OFF
+		// for the rest of the process when a previous world failed to tear itself down.
+		queue.Remove(Tick);
+		queue.Remove(TryArm);
+
+		s_bRunning = false;
+		s_LastStage = TBD_EGameStage.LOADING;
+		s_bPresetUnavailable = false;
+		s_iArmAttempts = 0;
+		s_iLastRaiseOutcome = RAISE_UNSEEN;
+
+		// A menu the engine destroyed during world teardown without firing `OnMenuClose` leaves a
+		// stale weak entry in `TBD_MenuStack`'s static array, and `Raise`'s `IsOpen` check then
+		// returns true forever — silently, without even latching `s_bPresetUnavailable`. Nothing
+		// else in the addon calls `Reset()`; this is its one caller and this is the safe moment
+		// for it, before anything on THIS world has opened a screen.
+		TBD_MenuStack.Reset();
+
+		// ── The real authority test ──────────────────────────────────────────────────────────
+		// NOT `GetGame().GetWorkspace()`, which this line used to ask: that is MEASURED NON-NULL
+		// on the headless dedicated server `world-boot.sh` runs, so it never excluded anything.
+		// `RplSession.Mode() == RplMode.Dedicated` is what both oracles use for this question and
+		// what the rest of this addon already uses (TBD_FrameworkManager, TBD_AdminService, …).
+		if (RplSession.Mode() == RplMode.Dedicated)
+		{
+			Log("Start refused — dedicated server (RplSession.Mode()==Dedicated). The picker is a client screen; nothing to raise here.");
+			return;
+		}
+
+		Log(string.Format("Start — arming watcher: retrying IsFrameworkWorld() every %1 ms, up to %2 attempts.",
+			ARM_RETRY_MS, ARM_MAX_ATTEMPTS));
+
+		queue.CallLater(TryArm, ARM_RETRY_MS, true);
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! Retry until this world admits it is a framework world, then promote to the real `Tick` and
+	//! cancel this. Bounded so a world that will never qualify says so once and stops.
+	protected static void TryArm()
+	{
+		s_iArmAttempts++;
+
+		ScriptCallQueue queue = GetGame().GetCallqueue();
+		if (!queue)
 			return;
 
 		if (!TBD_FrameworkManager.IsFrameworkWorld())
+		{
+			if (s_iArmAttempts < ARM_MAX_ATTEMPTS)
+				return;
+
+			queue.Remove(TryArm);
+			LogWarn(string.Format("Start GAVE UP — IsFrameworkWorld() still false after %1 attempts over %2 ms. The slot picker will NOT open on this world. This is a wiring failure, not a timing one: check that TBD_FrameworkManager is on the same game mode prefab as TBD_LobbyComponent.",
+				s_iArmAttempts, s_iArmAttempts * ARM_RETRY_MS));
 			return;
+		}
+
+		queue.Remove(TryArm);
 
 		s_bRunning = true;
 		s_LastStage = TBD_EGameStage.LOADING;
 
-		GetGame().GetCallqueue().CallLater(Tick, POLL_MS, true);
+		queue.CallLater(Tick, POLL_MS, true);
+
+		Log(string.Format("Tick ARMED after %1 attempt(s) (%2 ms) — polling the replicated stage every %3 ms.",
+			s_iArmAttempts, s_iArmAttempts * ARM_RETRY_MS, POLL_MS));
 	}
 
 	//------------------------------------------------------------------------------------------------
 	//! Statics outlive a world inside one process, so this MUST run on world teardown or the next
 	//! round starts with a tick pointed at a framework manager that no longer exists.
+	//!
+	//! Deliberately does NOT call `TBD_MenuStack.Reset()`: teardown is exactly when the briefing
+	//! and spectator screens may still be legitimately stacked, and wiping their entries here
+	//! would strand THEIR bookkeeping to fix ours. The arm path is the safe place for that, and it
+	//! is where it now lives.
 	static void Shutdown()
 	{
-		GetGame().GetCallqueue().Remove(Tick);
+		ScriptCallQueue queue = GetGame().GetCallqueue();
+		if (queue)
+		{
+			queue.Remove(Tick);
+			queue.Remove(TryArm);
+		}
+
 		s_bRunning = false;
 		s_LastStage = TBD_EGameStage.LOADING;
+		s_iArmAttempts = 0;
+		s_iLastRaiseOutcome = RAISE_UNSEEN;
 
 		// Cleared with the world: the next round gets a fresh chance to open the preset, which
 		// matters precisely because the Workbench pass that registers it may land between rounds.
@@ -771,9 +916,11 @@ class TBD_LobbyStage
 	//! repo: `world-boot.sh --mission=bridgehead-at-levie` with `TBD_WORLDBOOT_SETTLE=12` failed
 	//! **3/3** with `SCRIPT (E): [TBD][ui] preset 60 did not open`, ~1000 ms (two poll ticks) after
 	//! `LOADING -> LOBBY`, on a boot with ZERO players. For that line to be reachable at all, BOTH
-	//! workspace guards on the path (`TBD_LobbyComponent.OnPostInit` and `Start`) must have passed
-	//! on a headless machine — the failing log is its own proof. The default 4 s settle usually
-	//! ended before the watcher fired, which is why this read as an intermittent gate flake.
+	//! workspace guards then on the path (`TBD_LobbyComponent.OnPostInit` and `Start`) must have
+	//! passed on a headless machine — the failing log is its own proof. The default 4 s settle
+	//! usually ended before the watcher fired, which is why this read as an intermittent gate flake.
+	//! (Both of those guards are gone as of T-181.49; `Start` now refuses on `RplMode.Dedicated`
+	//! and says so, so a headless boot no longer reaches this function at all.)
 	//!
 	//! The reliable test is a null LOCAL PLAYER CONTROLLER — the idiom `TBD_MissionBrowser.c:285`
 	//! already uses. It goes HERE rather than in `Start()` deliberately: `Tick` polls every 500 ms,
@@ -781,19 +928,52 @@ class TBD_LobbyStage
 	//! on a later tick. Gating `Start()` would be a one-shot test with a race, and losing that race
 	//! would mean the picker silently NEVER appears, which is far worse than raising it late. Same
 	//! reasoning the `Tick` comment already gives for keeping the first open unconditional.
+	//!
+	//! ── T-181.49: all four exits are now observable ──────────────────────────────────────────
+	//! Every one of these used to `return` in silence. Nine of the eleven guards on the whole
+	//! raise path did, which made "the picker did not open" a fact with no evidence attached —
+	//! the real defect this slice fixes. `LogOutcome` latches on the OUTCOME so the 500 ms poll
+	//! emits one line per transition, never a flood.
 	protected static void Raise()
 	{
 		if (!GetGame().GetPlayerController())
+		{
+			LogOutcome(RAISE_NO_CONTROLLER, "raise deferred — no local player controller yet. The 500 ms poll will retry; this is self-healing, not a failure.");
 			return;
+		}
 
 		if (s_bPresetUnavailable)
+		{
+			LogOutcome(RAISE_PRESET_DEAD, "raise refused — preset latched unavailable for this round (TBD_MenuStack.Open returned null once). Cleared on world teardown or the next arm.");
 			return;
+		}
 
 		if (TBD_MenuStack.IsOpen(ChimeraMenuPreset.TBD_UILobby))
+		{
+			LogOutcome(RAISE_ALREADY_OPEN, "raise skipped — TBD_UILobby is already on the stack.");
 			return;
+		}
 
 		if (!TBD_MenuStack.Open(ChimeraMenuPreset.TBD_UILobby))
+		{
 			s_bPresetUnavailable = true;
+			LogOutcome(RAISE_OPEN_FAILED, "raise FAILED — TBD_MenuStack.Open returned null. Latched off for this round; see the [TBD][ui] error above for the preset id.");
+			return;
+		}
+
+		LogOutcome(RAISE_OPENED, "picker OPEN — TBD_UILobby raised.");
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! One line per CHANGE of raise outcome. `Raise` is called from a 500 ms poll, so this latch is
+	//! what keeps four honest diagnostics from becoming a log flood that hides them.
+	protected static void LogOutcome(int outcome, string message)
+	{
+		if (s_iLastRaiseOutcome == outcome)
+			return;
+
+		s_iLastRaiseOutcome = outcome;
+		Log(message);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -829,6 +1009,11 @@ class TBD_LobbyStage
 	//! the screen.
 	static void OnStageChanged(TBD_EGameStage stage)
 	{
+		// T-181.49 — the transition itself, named. Without this line "the picker never appeared"
+		// and "the watcher never saw LOBBY" are indistinguishable from the log, and they need
+		// completely different fixes.
+		Log(string.Format("stage -> %1", typename.EnumToString(TBD_EGameStage, stage)));
+
 		if (stage == TBD_EGameStage.LOBBY)
 		{
 			TBD_LobbyClient.Reset();
