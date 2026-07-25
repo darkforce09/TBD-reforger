@@ -6008,7 +6008,8 @@
         "T-181.14",
         "T-181.15",
         "T-181.16",
-        "T-181.20"
+        "T-181.20",
+        "T-181.23"
       ],
       "slice_plan": {
         "T-181.0": {
@@ -6275,6 +6276,14 @@
           "executor": "claude-code",
           "status": "ready",
           "notes": "Re-verifier findings against T-181.21. TWO MAJORs. (1) The B2 backstop is DEAD CODE: vanilla SCR_PossessSpawnHandlerComponent.CanRequestSpawn_S returns `m_bIgnoreConditions || super...` with the attribute defaulting to \"1\", so it short-circuits and TBD's SCR_RespawnSystemComponent override never runs — and possess is the ONLY request type left enabled on TBD_PlayerController.et (the other two are Enabled 0). So the epoch ticket is decorative, and a modded client can Rpc_RequestRespawn_S onto any alive un-deployed slot body = one-life bypass. Proven by fetching the real vanilla source + a compile probe confirming the field exists on that class. (2) PlayerBindKey's degraded mode is wrong: on a listen/hosted server vanilla SYNTHESIZES a uuid from the PLAYER NAME hash (00bbbddd-...), so the `player:<id>` fallback and its loud warning never fire — a name change grants a fresh life, and two players sharing a name share one life (their m_mDepartedSlots rows overwrite). The misconfigured-DEDICATED case IS handled correctly. Plus MINORs: the ticket is non-consuming and entity-blind; adminOverride is a public defaulted param; revoke-on-kill is ordered after vanilla's spawn invitation (latency argument, not structural); AssignSlotForPlayer's reclaim block and TBD_SCR_MenuSpawnLogic.OnPlayerAuditSuccess_S are dead code so two comments claiming 'runs on every join' are false."
+        },
+        "T-181.23": {
+          "targets": [
+            "mod"
+          ],
+          "executor": "claude-code",
+          "status": "ready",
+          "notes": "Mission-document parser gaps found by T-181.9.2, blocking the briefing screen's actual purpose. (1) `briefings` is NOT parsed: the JSON carries a per-faction block with situation/mission/execution/markers[] (verified in golden-missions/bridgehead-at-levie.json) — that is the Arma-3 briefing TEXT the screen exists to show, and the screen currently renders structure without orders. Add TBD_MissionBriefingStruct + `ref map<string, ref TBD_MissionBriefingStruct> briefings` to the document; the payload and screen already have the slots. (2) Add `string label;` to TBD_MissionZoneStruct — one field, turns 'Objective capture — z3' into 'Levie Bridge'. (3) TBD_MissionOrbatGroupStruct models only `roles`/`count`, dropping callsign/slot/kit, which is why the briefing derives ORBAT from slots[] instead. (4) Wire TBD_FrameworkManager.OnStageReplicated() (currently an empty stub whose own comment says client UI reacts here) to call SCR_PlayerController.TBD_OnStageChanged — two lines, and it deletes the 500ms polling watcher the briefing slice had to add because the hook was unavailable."
         }
       },
       "active_slice": "T-181.12",

@@ -153,6 +153,14 @@ is already the backend it binds to; `m_bAutoDeploy` turns off the PIE auto-wave 
   module silently drops to vanilla-only and the compile gate used to still print "compiled clean".
   `compile.sh` now ratchets the loaded-file count and fails on a large drop. A canary addon does NOT
   work for this (it dies with the mod — measured).
+- **Clients have NO mission document and no slot assignment.** `TBD_FrameworkManager.OnPostInit`
+  returns early for `RplMode.Client` before `BeginLoad()`, and `m_mPlayerSlot` is a plain map, not
+  an `RplProp`. Every client-side screen must be SERVER-FED over RPC — which is also what makes
+  side-discipline enforceable at the wire instead of in a widget.
+- **`string.Replace()` / `ToUpper()` mutate in place and return a COUNT**, not the new string.
+  `s = s.Replace(a,b)` fails to compile.
+- **Two `modded class SCR_PlayerController` blocks in one addon compile fine**, and methods declared
+  in one are callable from the other.
 - **The headless server validates menu presets**: `GUI (E): Menu preset '<name>' not found!` is a
   free, ~20 s, no-Workbench check that a modded preset is wired up.
 - `wb_reload` never recompiles; Workbench must restart per compile (the fast lane avoids this).

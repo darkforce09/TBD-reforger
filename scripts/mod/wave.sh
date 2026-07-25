@@ -46,16 +46,21 @@ print(' '.join(k for k,v in t['slice_plan'].items() if v.get('status')=='shipped
   echo "done"
 }
 
+# A sub-slice lives in its PARENT's worktree (SLICE_WORKFLOW.md rule 1): T-181.9.2 -> T-181.9.
+# wave.sh must apply the same normalisation slice-worktree.sh does, or it looks for a tree that
+# was deliberately never created and reports the slice as permanently absent.
+parent_slice() { echo "$1" | sed -E 's/^(T-[0-9]+\.[0-9]+).*/\1/'; }
+
 # committed | dirty | absent
 tree_state() {
-  local d="$BASE/$1"
+  local d="$BASE/$(parent_slice "$1")"
   [ -d "$d" ] || { echo absent; return; }
   if [ -n "$(git -C "$d" status --porcelain 2>/dev/null)" ]; then echo dirty; else echo committed; fi
 }
 
 # Has this slice's branch got commits main does not have?
 has_work() {
-  local b="slice/$1"
+  local b="slice/$(parent_slice "$1")"
   git show-ref --verify --quiet "refs/heads/$b" || return 1
   [ -n "$(git log --oneline "main..$b" 2>/dev/null)" ]
 }

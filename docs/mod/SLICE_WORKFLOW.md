@@ -107,6 +107,12 @@ Every slice prompt must point at these. They exist so an agent proves rather tha
 | Does my change compile? | `bash scripts/mod/compile.sh` — ~1.3 s, native server, **no Workbench** |
 | Does this API EXIST? (definitive) | `bash scripts/mod/compile.sh --probe=/tmp/p` — call it in a throwaway `.c` under `/tmp`; compiles clean = exists, errors = does not. Never put probes in the mod tree. |
 
+**PROBE BY ASSIGNING TO THE EXPECTED TYPE, never by printing.** A T-181.9.2 probe "proved"
+`s = s.Replace(a,b)` worked because `Print(s.Replace(...))` compiles — `Print` accepts an int, and
+`string.Replace` mutates in place and returns a COUNT. The probe passed for the wrong reason and the
+compile gate caught what the probe missed. Write `string out = s.Replace(a,b);` — if the type is
+wrong, the compiler says so.
+
 **Two kinds of Enfusion class, two different oracles** — know which you are asking about:
 
 | Kind | Example | Where it lives | How to check it |

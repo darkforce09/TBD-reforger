@@ -32,6 +32,12 @@ hands you nothing. **That gap is the program.**
 - **One life.** TBD events are one life. Death is terminal by design. An **admin can respawn**
   a player who died to a glitch — that path must always exist. CRF is wave/ticket respawn; we
   deliberately diverge.
+  **OPERATIONAL CONSEQUENCE — run real events on a DEDICATED server only.** One life is not
+  durably enforceable on a listen/hosted server, and this is an engine limit, not a bug we can fix:
+  with no backend identity, vanilla `SCR_PlayerIdentityUtils` synthesizes a uuid from the player's
+  NAME hash. Durable-across-reconnect and collision-free are therefore mutually exclusive there.
+  TBD chooses durable (a same-name reconnect keeps its spent life) and shouts the cost once at
+  WARNING: a name change buys a fresh life, and two players sharing a name share one life.
 - **JSON is the contract.** Missions, slots, loadouts, objectives, zones and radio plan all come
   from the compiled mission document. No `.conf` gearscript concept — CRF's 520 gearscript files
   are replaced by per-slot loadout data.
