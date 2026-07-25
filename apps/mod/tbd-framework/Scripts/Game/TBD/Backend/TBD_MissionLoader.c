@@ -25,11 +25,83 @@ class TBD_MissionCircleStruct
 	float r;
 }
 
-//! Zone shape wrapper. Only `circle` is modelled in Phase 1 (polygon zones parse to null).
+//! Zone shape wrapper. The schema is `oneOf` circle | polygon, so exactly one of the two is
+//! AUTHORED on a well-formed zone.
+//!
+//! ══ MEASURED LANDMINE — a null check is NOT a presence test ═════════════════════════════════
+//! `JsonLoadContext.ReadValue` ALLOCATES a nested `ref <class>` field even when the JSON key is
+//! absent. Measured 2026-07-25 on a live world boot against
+//! `packages/tbd-schema/golden-missions/bridgehead-at-levie.json`, whose zone `z4` authors a
+//! polygon and NO circle: `shape.circle` came back non-null with `x=0 z=0 r=0`, and zone `z5`,
+//! which authors no `rules` key at all, came back with a non-null `rules` object full of
+//! sentinels. So `if (shape.circle)` is ALWAYS TRUE and tells you nothing.
+//!
+//! The only reliable presence test for a nested object is a SCALAR SENTINEL on one of its fields
+//! (`circle.r > 0`; `TBD_MissionZoneRulesStruct.ABSENT`) or a container's element count. Every
+//! consumer in this file and in `TBD_ZoneRegistry` tests for CONTENT, never for non-null. This
+//! generalises: any future struct added here needs the same treatment.
+//!
+//! T-181.18 — `polygon` is modelled as of this slice. It was deliberately absent before, which
+//! meant every polygon-shaped zone in an authored mission parsed to a shape with nothing in it
+//! and was silently unusable. The nested container type is the schema's own shape: an array of
+//! `[x, z]` pairs (`#/$defs/polygon`, minItems 3, inner arrays exactly 2 numbers).
+//!
+//! **Proven, not assumed** (T-181.18): `ref array<ref array<float>>` is a legal Enfusion field
+//! type and `JsonLoadContext.ReadValue` compiles against a class containing one — compile probe
+//! with a failing negative control (`ref array<ref array<TypeThatDoesNotExist>>` -> `Unknown type`,
+//! so the compiler really does check the inner generic argument). Runtime population was then
+//! confirmed on a live world boot; see `TBD_ZoneRegistry` for the diagnostic that proves it in
+//! every run rather than only in the one that was measured.
+//!
+//! Nothing here validates the polygon — a ring with fewer than 3 vertices or a pair that is not
+//! exactly 2 numbers is legal as far as this struct is concerned and is caught (and reported by
+//! zone id) when `TBD_ZoneRegistry` prepares the zone for use.
 //! @contract mission.schema.json#/$defs/shape
 class TBD_MissionShapeStruct
 {
 	ref TBD_MissionCircleStruct circle;
+	//! Outer array = vertices; inner array = exactly [x, z] in world metres. Null when the zone
+	//! authored a circle instead (the two are mutually exclusive per the schema's `oneOf`).
+	ref array<ref array<float>> polygon;
+}
+
+//! T-181.18 — the zone `rules` object, as much of it as a TYPED parser can see.
+//!
+//! ── The problem, stated honestly ────────────────────────────────────────────────────────────
+//! `mission.schema.json#/$defs/zone/rules` is `{"type":"object","additionalProperties":true}` with
+//! **no declared properties at all**. Enfusion's `JsonLoadContext` maps JSON keys onto named class
+//! fields; it cannot model an open object, so it can only ever see keys this class declares by
+//! name. Keys it does not declare are invisible — not rejected, not logged, simply absent. That is
+//! a real limitation of the lane and it is written down here rather than papered over.
+//!
+//! ── The decision ────────────────────────────────────────────────────────────────────────────
+//! Carry the rules the framework actually consumes as named fields with ABSENT sentinels, and make
+//! the absence detectable. `TBD_ZoneRegistry.ResolveRules` then reports, per zone and by id:
+//!   * a `rules` object that parsed but yielded no key this build understands  -> WARNING
+//!   * a key present but out of range                                          -> ERROR + default
+//!   * a `penalty` string this build does not recognise                        -> ERROR + default
+//! so an authored rule that cannot be honoured is LOUD, never a silent default. What it cannot do
+//! is name an unknown key, because a typed parser never sees one. Adding a rule to the vocabulary
+//! is a field here plus a case in `ResolveRules` — that is the whole cost.
+//!
+//! ── The vocabulary (additive; legal under `additionalProperties: true`) ─────────────────────
+//! `graceSeconds`     number >= 0 — seconds a player may remain in violation before the penalty.
+//! `warnEverySeconds` number >  0 — how often the player is told, while in violation.
+//! `penalty`          string      — "none" | "warn" | "kill". See TBD_EZonePenalty for why the
+//!                                  default is deliberately NOT "kill" under one life.
+//! @contract mission.schema.json#/$defs/zone (rules)
+class TBD_MissionZoneRulesStruct
+{
+	//! Sentinel for "key absent from JSON". Same device `TBD_MissionSlotStruct.Y_ABSENT` uses and
+	//! for the same reason: `JsonLoadContext` leaves a missing key at its field initializer, and
+	//! standard JSON cannot carry NaN. No sane authored value approaches -1e6, so the initializer
+	//! doubles as the presence flag — which is what lets a bad authored value (a NEGATIVE grace,
+	//! say) be reported as an error instead of being mistaken for "not authored".
+	static const float ABSENT = -1000000;
+
+	float graceSeconds = ABSENT;
+	float warnEverySeconds = ABSENT;
+	string penalty;   //!< Empty string = absent (JsonLoadContext leaves it at the initializer).
 }
 
 //! One entry from the mission `zones[]` array (spawn, objective, boundary, …).
@@ -44,6 +116,10 @@ class TBD_MissionZoneStruct
 	string label;
 	string faction;
 	ref TBD_MissionShapeStruct shape;
+	//! T-181.18 — OPTIONAL in the schema; null when the zone authored no rules at all. A non-null
+	//! rules block whose every field is still at its sentinel means "authored, but nothing in it
+	//! was legible to this build" and is reported as such.
+	ref TBD_MissionZoneRulesStruct rules;
 }
 
 //! One ORBAT role line.
@@ -251,7 +327,39 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.18 — the raw `zones[]` array, or null when no VALID mission is loaded.
+	//!
+	//! Gated on `s_Valid` (not merely `s_Mission`) exactly like `GetSlots()`: a document that
+	//! failed validation must not hand out zones that a play-area enforcer would then confine
+	//! players with. `GetSpawnZoneForFaction` below predates this and reads `s_Mission` directly;
+	//! it is left alone rather than quietly tightened, because that is a behaviour change on a
+	//! path this slice does not own.
+	static array<ref TBD_MissionZoneStruct> GetZones()
+	{
+		if (!s_Valid || !s_Mission)
+			return null;
+
+		return s_Mission.zones;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! World-space spawn point for a faction key. Returns vector.Zero if no spawn zone exists.
+	//!
+	//! T-181.18 note: still CIRCLE-ONLY on purpose. Polygons now parse (see
+	//! `TBD_MissionShapeStruct`), but teaching spawn placement to pick a point inside a polygon is
+	//! a different problem from testing containment — it needs a point that is on navigable ground,
+	//! not just inside the ring, and a centroid is not that for a concave AO. Out of scope for the
+	//! play-area slice; a polygon spawn zone remains unusable here, and it now says so instead of
+	//! quietly answering with the wrong coordinates.
+	//!
+	//! T-181.18 BUG FIX (found by the runtime probe, latent until now): the old guard was
+	//! `if (!zone.shape || !zone.shape.circle) continue;`. `shape.circle` is ALWAYS non-null — see
+	//! the landmine on `TBD_MissionShapeStruct` — so a polygon-shaped spawn zone slipped past the
+	//! guard and this returned `Vector(0, GetSurfaceY(0,0), 0)`: the corner of the map. It was
+	//! latent only because no shipped mission yet authors a polygon spawn zone. The guard now tests
+	//! the radius, which is real data. The matching dead guard in
+	//! `TBD_MissionValidator.CheckZones` (same shape, same reason it can never fire) is reported to
+	//! the command center rather than edited from here — that file is not this slice's to write.
 	static vector GetSpawnZoneForFaction(string factionKey)
 	{
 		if (!s_Mission || !s_Mission.zones)
@@ -265,7 +373,7 @@ class TBD_MissionLoader
 			if (!zone || zone.type != "spawn" || zone.faction != factionKey)
 				continue;
 
-			if (!zone.shape || !zone.shape.circle)
+			if (!zone.shape || !zone.shape.circle || zone.shape.circle.r <= 0)
 				continue;
 
 			float x = zone.shape.circle.x;
