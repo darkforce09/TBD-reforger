@@ -151,21 +151,41 @@ gate_slice() {
 }
 
 # Full gate — runs once per wave on merged main.
+#
+# Takes the wave's BASE commit (the SHA main was at before this wave's merges). Two things depend
+# on it, and getting it wrong is silent:
+#   * the frontend check. It used to diff HEAD~1..HEAD, which after landing N slices sees only the
+#     LAST merge — so a frontend-touching slice merged first, followed by a backend slice, skipped
+#     the trunk build entirely and a frontend regression landed green.
+#   * anything else that needs to reason about "what this wave changed".
+# With no base argument it falls back to HEAD~1, which is correct only for a single-slice wave.
 cmd_gate() {
-  echo "═══ platform wave gate ═══"
+  local base="${1:-HEAD~1}"
+  echo "═══ platform wave gate (base ${base:0:12}) ═══"
   local fail=0
-  run() { local l="$1"; shift; printf "  %-24s " "$l"
-    if out="$("$@" 2>&1)"; then echo PASS; else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi; }
+  # Every gate is wrapped in `timeout`. Without it, `out="$("$@" 2>&1)"` blocks forever: one wedged
+  # cargo test or trunk build consumes the whole run and emits a single log line. `timeout` needs a
+  # real binary, so shell functions run unwrapped — they are all bounded git/rustfmt calls.
+  local T="${TBD_GATE_TIMEOUT:-1200}"
+  run() {
+    local l="$1"; shift
+    printf "  %-24s " "$l"
+    if command -v "$1" >/dev/null 2>&1; then out="$(timeout "$T" "$@" 2>&1)"; else out="$("$@" 2>&1)"; fi
+    local rc=$?
+    if [ "$rc" -eq 0 ]; then echo PASS
+    elif [ "$rc" -eq 124 ]; then echo "FAIL (TIMEOUT after ${T}s)"; fail=1
+    else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi
+  }
   run "cargo check"      hostrun cargo check --workspace --quiet
   run "fmt (changed)"    fmt_changed
   run "cargo clippy"     hostrun cargo clippy --workspace --all-targets --quiet -- -D warnings
   run "cargo test"       hostrun cargo test --workspace --quiet
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
-  # when the wave actually touched the frontend.
-  if git diff --name-only HEAD~1..HEAD 2>/dev/null | grep -q '^apps/website/frontend/'; then
+  # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
+  if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
     run "trunk build"    hostrun make ci-local-leptos
   else
-    printf "  %-24s SKIP (frontend untouched)\n" "trunk build"
+    printf "  %-24s SKIP (frontend untouched this wave)\n" "trunk build"
   fi
   run "ticket registry"  hostrun ./scripts/ticket check
   echo
@@ -195,22 +215,69 @@ cmd_land() {
     return 0
   fi
 
-  local merged=0
+  # The base is the last known-GREEN main. It is the gate's diff anchor and the revert target.
+  local base; base="$(git rev-parse HEAD)"
+  echo "wave base: $base"
+
+  local landed=()
   for t in "${ready[@]}"; do
     echo "── landing $t: $(ticket_title "$t")"
     if git merge --no-ff "slice/$t" -m "$t: $(ticket_title "$t")"; then
-      merged=$((merged+1))
-      bash scripts/mod/slice-worktree.sh drop "$t" || echo "  (worktree drop failed — remove by hand)"
+      landed+=("$t")
     else
       echo "  MERGE FAILED — resolve by hand, then re-run land"
+      echo "  (nothing dropped; every worktree is intact)"
       return 1
     fi
   done
+
   echo
-  echo "landed $merged slice(s). Running the wave gate on merged main:"
-  cmd_gate || { echo "GATE RED AFTER MERGE — fix on main before dispatching more"; return 1; }
+  echo "landed ${#landed[@]} slice(s). Running the wave gate on merged main:"
+  if ! cmd_gate "$base"; then
+    # DO NOT DROP. slice-worktree.sh drop is `worktree remove --force` + `branch -D`, so dropping
+    # here would destroy the tree and branch of every slice in the wave BEFORE anyone can see which
+    # one broke it — the exact failure the T-181 reap incident (643c5233) was fixed to prevent, and
+    # which this script originally reproduced by dropping inside the merge loop.
+    echo "GATE RED AFTER MERGE — all ${#landed[@]} worktree(s) KEPT for inspection: ${landed[*]}"
+    echo "  fix on main and re-run:  bash scripts/platform/wave.sh gate $base"
+    echo "  or roll back the wave :  bash scripts/platform/wave.sh revert $base"
+    return 1
+  fi
+
+  # Green. Only now is it safe to destroy the evidence.
+  local t2
+  for t2 in "${landed[@]}"; do
+    bash scripts/mod/slice-worktree.sh drop "$t2" || echo "  (drop failed for $t2 — remove by hand)"
+  done
+
+  # Rule 5: work must not be trapped on one machine. This was missing entirely.
+  cmd_push || echo "PUSH FAILED — work is landed on local main but not on origin"
+
   [ "${#blocked[@]}" -gt 0 ] && echo "still in flight: ${blocked[*]}"
   return 0
+}
+
+# Roll main back to a known-green commit, keeping the slice branches alive.
+#
+# The bounded-rollback half of self-healing: when a wave cannot be fixed within its retry budget,
+# main returns to green and the offending slices are quarantined rather than left broken. Uses
+# `revert`, never `reset --hard` — main is pushed, so history must not be rewritten.
+cmd_revert() {
+  local base="${1:-}"
+  [ -z "$base" ] && { echo "usage: wave.sh revert <known-green-sha>"; return 1; }
+  git rev-parse --verify "$base^{commit}" >/dev/null 2>&1 || { echo "no such commit: $base"; return 1; }
+  local n; n="$(git rev-list --count "$base..HEAD")"
+  [ "$n" -eq 0 ] && { echo "already at $base"; return 0; }
+  echo "reverting $n commit(s) back to $base"
+  local c
+  for c in $(git rev-list "$base..HEAD"); do
+    if [ "$(git rev-list --parents -n1 "$c" | wc -w)" -gt 2 ]; then
+      git revert --no-edit -m 1 "$c" || { echo "revert of merge $c failed — resolve by hand"; return 1; }
+    else
+      git revert --no-edit "$c" || { echo "revert of $c failed — resolve by hand"; return 1; }
+    fi
+  done
+  echo "main is back at the $base tree. Slice branches were NOT deleted."
 }
 
 cmd_push() {
@@ -225,8 +292,9 @@ cmd_push() {
 case "${1:-status}" in
   status) cmd_status ;;
   prep)   cmd_prep ;;
-  gate)   if [ "${2:-}" = "--slice" ]; then gate_slice "${3:-}"; else cmd_gate; fi ;;
+  gate)   if [ "${2:-}" = "--slice" ]; then gate_slice "${3:-}"; else cmd_gate "${2:-}"; fi ;;
   land)   cmd_land "${2:-}" ;;
+  revert) cmd_revert "${2:-}" ;;
   push)   cmd_push ;;
   *) sed -n '2,40p' "$0"; exit 1 ;;
 esac
