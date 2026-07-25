@@ -206,43 +206,6 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! The two sibling managers this file asks questions of, resolved the same way `GetInstance()`
-	//! resolves itself — off the LIVE game mode, never through their own constructor-set statics.
-	//!
-	//! T-181.33 fixes an asymmetry, not a live bug. `GetInstance()` above carries a paragraph
-	//! explaining why a static that outlives its world is the one wrong answer it must never give
-	//! — and then `TickCountdown`/`GoLive` called `TBD_FrameworkManager.GetInstance()` and
-	//! `CollectProtectables` called `TBD_SpawnManager.GetInstance()`, both of which are exactly the
-	//! plain `return s_Instance;` that reasoning rejects. Both stale directions happen to fail safe
-	//! (a stale framework answers "not SAFE_START" and we lift; a stale spawn manager yields no
-	//! slot bodies), so nothing was broken — but "happens to fail safe" is not the same as "is
-	//! right", and the next reader should not have to re-derive that twice.
-	//!
-	//! Fixed HERE rather than in those files because this slice does not own them, and because a
-	//! caller asking the live world is correct regardless of what the callee's static holds.
-	//! `TBD_FrameworkManager.IsFrameworkWorld()` already resolves this way for the same stated
-	//! reason, so this is the house idiom, not a new one.
-	protected static TBD_FrameworkManager LiveFrameworkManager()
-	{
-		SCR_BaseGameMode gameMode = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
-		if (!gameMode)
-			return null;
-
-		return TBD_FrameworkManager.Cast(gameMode.FindComponent(TBD_FrameworkManager));
-	}
-
-	//------------------------------------------------------------------------------------------------
-	//! @see LiveFrameworkManager
-	protected static TBD_SpawnManager LiveSpawnManager()
-	{
-		SCR_BaseGameMode gameMode = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
-		if (!gameMode)
-			return null;
-
-		return TBD_SpawnManager.Cast(gameMode.FindComponent(TBD_SpawnManager));
-	}
-
-	//------------------------------------------------------------------------------------------------
 	//! @authority server
 	override void OnPostInit(IEntity owner)
 	{
@@ -405,7 +368,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 		if (RplSession.Mode() == RplMode.Client)
 			return;
 
-		TBD_FrameworkManager framework = LiveFrameworkManager();
+		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
 		if (framework && framework.GetStage() == TBD_EGameStage.SAFE_START)
 		{
 			framework.SetStage(TBD_EGameStage.LIVE);
@@ -433,7 +396,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 
 		// Defence in depth: if the stage moved off SAFE_START without OnStageChanged reaching us,
 		// the countdown is the last thing still running that can notice. Lift immediately.
-		TBD_FrameworkManager framework = LiveFrameworkManager();
+		TBD_FrameworkManager framework = TBD_FrameworkManager.GetInstance();
 		if (framework && framework.GetStage() != TBD_EGameStage.SAFE_START)
 		{
 			TBD_Log.Warn(TBD_Log.CH_SAFESTART, "stage left SAFE_START without notifying safestart — lifting now");
@@ -650,7 +613,7 @@ class TBD_SafestartManager : SCR_BaseGameModeComponent
 			}
 		}
 
-		TBD_SpawnManager spawn = LiveSpawnManager();
+		TBD_SpawnManager spawn = TBD_SpawnManager.GetInstance();
 		array<ref TBD_MissionSlotStruct> slots = TBD_MissionLoader.GetSlots();
 		if (!spawn || !slots)
 			return;

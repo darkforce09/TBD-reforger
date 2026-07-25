@@ -86,8 +86,6 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//! larger deltas usually mean a stale DEM or a mis-authored slot. Start 2.0 (T-092.1).
 	protected const float MAX_Y_DELTA_M = 2.0;
 
-	protected static TBD_SpawnManager s_Instance;
-
 	//! A1 — the LOBBY auto-deploy wave (PIE/dev convenience: deploy everyone on stage
 	//! entry without the deploy menu). The T-068.13 slot picker will default this off;
 	//! the pull path (SCR_MenuSpawnLogic → DeployPlayerEx) is the production entry.
@@ -310,7 +308,6 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	//------------------------------------------------------------------------------------------------
 	void TBD_SpawnManager(IEntityComponentSource src, IEntity ent, IEntity parent)
 	{
-		s_Instance = this;
 		m_mPlayerSlot = new map<int, ref TBD_MissionSlotStruct>();
 		m_mSlotBodies = new map<string, IEntity>();
 		m_mBodyBoundTo = new map<string, string>();
@@ -331,9 +328,31 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! The spawn manager on the CURRENTLY loaded world, or null if this world has none.
+	//!
+	//! T-181.30 — this used to be `return s_Instance;` off a constructor-set static. Statics outlive
+	//! a world inside one process (measured landmine), and `TBD_FrameworkManager.SelectMissionByNumber`
+	//! restarts the scenario in-process, so a stale manager from a dead world could answer for a live
+	//! one — carrying a dead roster, dead slot bodies and a dead ONE LIFE ledger with it. The static
+	//! is now gone entirely rather than left unread: a field that does not exist cannot be
+	//! stale-read by the next edit.
+	//!
+	//! Safe at every call site because none of them can run before the game-mode entity is complete:
+	//! all 29 are ticks, RPC/chat handlers, vanilla spawn hooks, stage transitions or per-player
+	//! builds. `TBD_FrameworkManager.PrintComponentRollCall` runs strictly earlier than any of them
+	//! (`CallLater(…, 0)` from `OnPostInit`) and already resolves THIS class by `FindComponent` on
+	//! the game-mode entity, with `world-boot.sh` asserting the resulting `SpawnManager=ok` — which
+	//! is the runtime proof that the lookup resolves this early.
+	//!
+	//! Matches `TBD_SafestartManager.GetInstance()` and `TBD_FrameworkManager.IsFrameworkWorld()`;
+	//! this is the house idiom, not a new one.
 	static TBD_SpawnManager GetInstance()
 	{
-		return s_Instance;
+		SCR_BaseGameMode gameMode = SCR_BaseGameMode.Cast(GetGame().GetGameMode());
+		if (!gameMode)
+			return null;
+
+		return TBD_SpawnManager.Cast(gameMode.FindComponent(TBD_SpawnManager));
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -1342,10 +1361,11 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		if (!RequiresDurableIdentity(stage))
 			return string.Empty;
 
-		if (!s_Instance)
+		TBD_SpawnManager spawn = GetInstance();
+		if (!spawn)
 			return string.Empty;
 
-		return s_Instance.IdentityRefusalFor(stage);
+		return spawn.IdentityRefusalFor(stage);
 	}
 
 	//------------------------------------------------------------------------------------------------
