@@ -17,6 +17,8 @@ SCR_BaseGameMode : "{1B76F75A3175E85C}Prefabs/MP/Modes/Plain/GameMode_Plain.et" 
   }
   TBD_MarkerComponent "{A7D3E60F5C81B924}" {
   }
+  TBD_RadioComponent "{B93C2F5A17E6D04C}" {
+  }
   SCR_EditableEntityComponent "{D8BE94B38E91B5D0}" {
   }
  }
