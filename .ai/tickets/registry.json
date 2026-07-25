@@ -6129,8 +6129,8 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "macOS methodology + Aegis tokens. SUPERSEDES T-068.13."
+          "status": "shipped",
+          "notes": "Lobby slot picker @ 56ad6d16. SUPERSEDES T-068.13. Server-fed roster parsed from BuildSlotRoster() and nothing else, so it cannot disagree with the authority. Optimistic claim held as a pending intent keyed on the slot until the authority rules on THAT seat — without it a refresh in flight makes the seat flicker away and back, which reads exactly like losing it. Refusal names the actual winner off the authority's own roster. Deploy is deliberately NOT optimistic. Back button hidden (the stack is empty beneath LOBBY, so 'back' is a trap). Deliberately does NOT filter the other side — you cannot pick a side you cannot see; side discipline starts at the briefing. m_bAutoDeploy REPORTED not flipped: the wave is currently the only working way into the world."
         },
         "T-181.9.2": {
           "targets": [
@@ -6174,8 +6174,8 @@
             "root"
           ],
           "executor": "claude-code",
-          "status": "queued",
-          "notes": "Respawn/reset gear/teleport/broadcast/heal/live settings + audit log."
+          "status": "shipped",
+          "notes": "Admin menu @ c4708f72. A FRONT-END onto the same server authority as the chat commands, not a second implementation — TBD_AdminService is the single choke point and permission is checked at four entry points including the READ gate, so a non-admin's snapshot contains a refusal string and nothing else (no roster to render even with a patched client). Deploy and Respawn deliberately kept separate: AdminRespawn refuses anyone not dead and DeployPlayerEx refuses anyone who is, so one button would silently no-op half the time. Force-stage is armed-then-confirmed. Audit ring is capped at 60 with repeat refusals console-only, so a client spamming refusals cannot flush real actions out of an admin's view. Avoided a 4th modded SCR_PlayerController by extending the existing block. PERMISSION IS PROVEN BY CONSTRUCTION, NOT BY A LIVE NON-ADMIN ATTEMPT — needs the operator."
         },
         "T-181.12": {
           "targets": [
@@ -6285,8 +6285,8 @@
             "mod"
           ],
           "executor": "claude-code",
-          "status": "ready",
-          "notes": "Mission-document parser gaps found by T-181.9.2, blocking the briefing screen's actual purpose. (1) `briefings` is NOT parsed: the JSON carries a per-faction block with situation/mission/execution/markers[] (verified in golden-missions/bridgehead-at-levie.json) — that is the Arma-3 briefing TEXT the screen exists to show, and the screen currently renders structure without orders. Add TBD_MissionBriefingStruct + `ref map<string, ref TBD_MissionBriefingStruct> briefings` to the document; the payload and screen already have the slots. (2) Add `string label;` to TBD_MissionZoneStruct — one field, turns 'Objective capture — z3' into 'Levie Bridge'. (3) TBD_MissionOrbatGroupStruct models only `roles`/`count`, dropping callsign/slot/kit, which is why the briefing derives ORBAT from slots[] instead. (4) Wire TBD_FrameworkManager.OnStageReplicated() (currently an empty stub whose own comment says client UI reacts here) to call SCR_PlayerController.TBD_OnStageChanged — two lines, and it deletes the 500ms polling watcher the briefing slice had to add because the hook was unavailable."
+          "status": "shipped",
+          "notes": "Parser gaps @ 94e72e3d. briefings/markers/zone label/ORBAT callsign+slot+kit all added, every field name verified against mission.schema.json rather than assumed. CAUGHT AN ERROR IN ITS BRIEF: wiring only OnStageReplicated would have regressed the LISTEN HOST, because onRplName fires only on the proxy and on a listen host authority IS the local player — so both the callback and the authority setter now call one guarded helper. Poll deleted. schema-validate's golden missions still PASS; that target's overall exit 2 is a pre-existing LFS/DEM issue, proved on a clean tree."
         },
         "T-181.24": {
           "targets": [
@@ -6310,7 +6310,7 @@
           ],
           "executor": "claude-code",
           "status": "ready",
-          "notes": "Latent wire-format fragility found by T-181.9.1. `string.Split`'s empty-token behaviour is native, has no source in any oracle, and is unproven. The lobby designed around it with a `~` sentinel for empty fields; TBD_BriefingService (T-181.9.2, already merged) did NOT — its `M` record serialises mission name / terrain / factionKey / factionName POSITIONALLY, so a mission with an empty terrain or faction displayName could shift every field after it and mis-render the briefing. Either adopt the sentinel or prove Split's behaviour with a negative-controlled probe."
+          "notes": "CONFIRMED BY TWO INDEPENDENT AGENTS. `string.Split`'s empty-token behaviour is native, absent from every oracle, and a RUNTIME property no compile probe can settle. Both T-181.9.1 (lobby) and T-181.11.2 (admin) hit it and each designed around it — lobby with a `~` sentinel, admin with a leading `.` marker so no field is ever empty. TBD_BriefingService (merged) did NOT, and has TWO exposures: the `M` record serialises mission name / terrain / factionKey / factionName positionally, and `Record3(\"S\", group, role, kit)` is parsed with `f.Count() >= 4` while `kit` is frequently empty — if Split drops empty tokens, 'YOUR SEAT' vanishes for every kit-less slot and the header fields shift. Fix: adopt one sentinel convention across all three wire formats. Settle Split's actual behaviour with ONE live run rather than three defensive designs."
         }
       },
       "active_slice": "T-181.15",

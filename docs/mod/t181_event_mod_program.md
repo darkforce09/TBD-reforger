@@ -183,6 +183,14 @@ picker can open would ship a mod nobody can deploy into.
   returns early for `RplMode.Client` before `BeginLoad()`, and `m_mPlayerSlot` is a plain map, not
   an `RplProp`. Every client-side screen must be SERVER-FED over RPC — which is also what makes
   side-discipline enforceable at the wire instead of in a widget.
+- **`Formula too complex`** on a long `+` chain (measured at 9 fields). Worse, the SECOND diagnostic
+  on that line is a misleading `Incompatible parameter` that sends you hunting a type error that does
+  not exist. Fix: append in steps.
+- **`string.Split`'s empty-token behaviour is a RUNTIME property** — unprovable by compile probe, and
+  absent from every oracle. Every wire format in the mod must therefore avoid ever emitting an empty
+  field (use a sentinel), or be proven once on a live run.
+- **`→` is not in the proven glyph set.** `·`, `—`, `…` are rendered by shipped screens; `→` is used
+  nowhere. Prefer `->` on anything load-bearing rather than risk a tofu box.
 - **Duplicate `switch` case labels compile CLEAN** — so a switch cannot be used to prove enum
   values are distinct, and any probe built on one is worthless without a failing negative control.
 - **THERE IS NO TERNARY OPERATOR.** `cond ? a : b` fails with `Broken expression (missing ';'?)`
