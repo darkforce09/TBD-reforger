@@ -6065,6 +6065,31 @@
           "status": "shipped",
           "notes": "enf carve + index vanilla + make enf-carve. PARTIAL BY NATURE: only a subset of vanilla script ships uncompressed. Got 610 files / 41,958 LOC / 1,106 declarations (882 SCR_*) — AI/behaviour-tree, camera, actions, UI components, WB plugins. SCR_BaseGameMode / SCR_PossessSpawnData / SCR_PossessSpawnRequestComponent / SCR_RespawnSystemComponent / ChimeraMenuBase are ABSENT as plaintext (compressed) — recorded as known-missing in docs/mod/vanilla_carve_coverage.md, not faked. Output gitignored (BI copyright); only the derived index is committed. Follow-up: inflate compressed pak blocks via PakVfs and re-carve."
         },
+        "T-181.3.1": {
+          "targets": [
+            "mod",
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "Official BI Script API mirror + parser (enf apidoc, scripts/mod/fetch-vanilla-api.sh, make enf-apidoc). 7,990 classes indexed. CLOSES the T-181.3 gap: SCR_BaseGameMode/PossessSpawnData/PossessSpawnRequestComponent/RespawnSystemComponent/ChimeraMenuBase all resolve with full member lists incl. `static SCR_PossessSpawnData FromEntity(notnull IEntity)`. Signatures only, no bodies — CRF stays the behavioural oracle. Operator's suggestion that the data exists online was correct."
+        },
+        "T-181.3.2": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "enf extract — pulls vanilla scripts BY REAL PATH from the pak FILE table (operator asked 'what about the MCP?' — the MCP's game_browse DOES list them; its game_read fails). Fixed PakVfs to fall back zlib->raw deflate. Result: 2,483/6,495 scripts extracted (all the UNCOMPRESSED ones); combined vanilla index now 2,099 files / 72,226 LOC / 1,659 declarations. BARRIER: the 4,012 compressed entries use a codec that is neither zlib nor deflate, with no method flag (all-zero method bytes). enfusion-mcp only calls inflateSync so it cannot read them either — that error is why vanilla source looked unavailable. Follow-up T-181.3.3: identify the codec (LZ4 block is the hypothesis) to unlock the gameplay layer."
+        },
+        "T-181.3.3": {
+          "targets": [
+            "root"
+          ],
+          "executor": "claude-code",
+          "status": "shipped",
+          "notes": "SOLVED — but not by cracking the codec. Operator found arexplorer.zeroy.com: a Doxygen build of the SAME game version (1.7.0.54) with SOURCE_BROWSER on, 6,495 *_source.html pages exactly matching the pak script count, each with FULL METHOD BODIES. Built scripts/mod/fetch-vanilla-source.sh (curated by default, cached, rate-limited — it is one person's site) + `enf source` (Doxygen page -> real .c, incl. name demangling _s_c_r___base_game_mode_8c -> SCR_BaseGameMode.c). Vanilla index now 2,116 files / 88,670 LOC / 1,702 decls. SCR_BaseGameMode, SCR_RespawnSystemComponent, ChimeraMenuBase, SCR_SpawnRequestComponent all resolve to real source. The pak-codec RE is now MOOT — negative results retained in docs/mod/vanilla_carve_coverage.md only so nobody repeats them."
+        },
         "T-181.4": {
           "targets": [
             "mod",
@@ -6236,30 +6261,30 @@
           "status": "queued",
           "notes": "Dedicated server + 2 real clients, full loop."
         },
-        "T-181.3.1": {
+        "T-181.17": {
           "targets": [
             "mod",
             "root"
           ],
           "executor": "claude-code",
           "status": "shipped",
-          "notes": "Official BI Script API mirror + parser (enf apidoc, scripts/mod/fetch-vanilla-api.sh, make enf-apidoc). 7,990 classes indexed. CLOSES the T-181.3 gap: SCR_BaseGameMode/PossessSpawnData/PossessSpawnRequestComponent/RespawnSystemComponent/ChimeraMenuBase all resolve with full member lists incl. `static SCR_PossessSpawnData FromEntity(notnull IEntity)`. Signatures only, no bodies — CRF stays the behavioural oracle. Operator's suggestion that the data exists online was correct."
+          "notes": "Safestart / warmup phase. Damage suppressed via EnableDamageHandling(false) with VERIFIED restoration and a watchdog, so a failed restore cannot leave an event permanently invulnerable. Admin surface: '#tbd safestart [status|go|<seconds>]' answers 'is damage actually off right now' in one command. THE MOST VALUABLE THING THIS SLICE PRODUCED WAS A HOLE, NOT A FEATURE: the agent reported that it could not verify its component instantiates, because -scenarioId alone does not load the world on the headless server. Chasing that found the real cause — -config and -addons are MUTUALLY EXCLUSIVE, and -addons+-scenarioId with no -config prints 'Game successfully created' and then idles without ever hosting. Three slices had by then added components to TBD_GameMode.et with NOTHING proving any of them instantiates. Closed by T-181.17.1."
         },
-        "T-181.3.2": {
+        "T-181.18": {
           "targets": [
-            "root"
+            "mod"
           ],
           "executor": "claude-code",
-          "status": "shipped",
-          "notes": "enf extract — pulls vanilla scripts BY REAL PATH from the pak FILE table (operator asked 'what about the MCP?' — the MCP's game_browse DOES list them; its game_read fails). Fixed PakVfs to fall back zlib->raw deflate. Result: 2,483/6,495 scripts extracted (all the UNCOMPRESSED ones); combined vanilla index now 2,099 files / 72,226 LOC / 1,659 declarations. BARRIER: the 4,012 compressed entries use a codec that is neither zlib nor deflate, with no method flag (all-zero method bytes). enfusion-mcp only calls inflateSync so it cannot read them either — that error is why vanilla source looked unavailable. Follow-up T-181.3.3: identify the codec (LZ4 block is the hypothesis) to unlock the gameplay layer."
+          "status": "ready",
+          "notes": "AO / play area poly-zones + out-of-bounds, driven by the compiled mission JSON. Wave 5."
         },
-        "T-181.3.3": {
+        "T-181.19": {
           "targets": [
-            "root"
+            "mod"
           ],
           "executor": "claude-code",
-          "status": "shipped",
-          "notes": "SOLVED — but not by cracking the codec. Operator found arexplorer.zeroy.com: a Doxygen build of the SAME game version (1.7.0.54) with SOURCE_BROWSER on, 6,495 *_source.html pages exactly matching the pak script count, each with FULL METHOD BODIES. Built scripts/mod/fetch-vanilla-source.sh (curated by default, cached, rate-limited — it is one person's site) + `enf source` (Doxygen page -> real .c, incl. name demangling _s_c_r___base_game_mode_8c -> SCR_BaseGameMode.c). Vanilla index now 2,116 files / 88,670 LOC / 1,702 decls. SCR_BaseGameMode, SCR_RespawnSystemComponent, ChimeraMenuBase, SCR_SpawnRequestComponent all resolve to real source. The pak-codec RE is now MOOT — negative results retained in docs/mod/vanilla_carve_coverage.md only so nobody repeats them."
+          "status": "ready",
+          "notes": "Map markers from mission JSON. Wave 5."
         },
         "T-181.20": {
           "targets": [
