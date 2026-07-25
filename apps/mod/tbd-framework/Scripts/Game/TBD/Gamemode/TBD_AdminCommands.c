@@ -10,6 +10,7 @@
 //!   #tbd deploy  <playerId>   — put a live player with no body into the world (T-181.11.2)
 //!   #tbd stage [next|<NAME>]  — force the stage machine (T-181.11.2)
 //!   #tbd safestart [status|go|<seconds>] — warmup phase: is damage off, end it, set its length (T-181.17)
+//!   #tbd identity [status|override <phrase>|enforce] — can this host enforce ONE LIFE (T-181.32)
 //!   #tbd audit                — replay the admin audit trail (T-181.11.2)
 //!   #tbd menu                 — raise the admin screen on the caller's client (T-181.11.2)
 //!
@@ -186,6 +187,25 @@ class TBD_AdminCommands
 			return;
 		}
 
+		//! T-181.32 — can this host enforce ONE LIFE at all, and the waiver if it cannot.
+		//! `status` answers it in one line; `override <phrase>` signs for running without it;
+		//! `enforce` re-arms. The phrase is a separate argument on purpose — see
+		//! TBD_AdminService.Identity for why a waiver is not shaped like a flag.
+		if (sub == "identity")
+		{
+			string identityArg = "status";
+			if (parts.Count() > 2)
+				identityArg = parts[2];
+
+			string identityConfirm;
+			if (parts.Count() > 3)
+				identityConfirm = parts[3];
+
+			bool identityOk;
+			Reply(chat, senderId, TBD_AdminService.Identity(senderId, identityArg, identityConfirm, identityOk));
+			return;
+		}
+
 		//! T-181.11.2 — who did what to whom, newest first. The same trail the admin screen
 		//! renders, readable without the screen.
 		if (sub == "audit")
@@ -225,7 +245,7 @@ class TBD_AdminCommands
 			return;
 		}
 
-		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | audit | menu");
+		Reply(chat, senderId, "TBD: #tbd missions | mission <n> | backend <url> [token] | refresh | validate | dead | respawn <playerId> | deploy <playerId> | stage [next|<NAME>] | safestart [status|go|<seconds>] | identity [status|override <phrase>|enforce] | audit | menu");
 	}
 
 	//------------------------------------------------------------------------------------------------
