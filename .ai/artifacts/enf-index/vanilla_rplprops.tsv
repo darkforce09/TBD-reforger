@@ -12,8 +12,10 @@ SCR_BaseGameMode	m_aDisabledResourceTypes	OnResourceTypeEnabledChanged	Source/SC
 SCR_ChimeraCharacter	m_bRecruitable		Source/SCR_ChimeraCharacter.c	45
 SCR_ChimeraCharacter	m_bIsRecruited		Source/SCR_ChimeraCharacter.c	51
 SCR_FactionManager	m_aPlayerFactionInfo	OnPlayerFactionInfoChanged	Source/SCR_FactionManager.c	22
+SCR_LoadoutManager	m_aPlayerLoadoutInfo	OnPlayerLoadoutInfoChanged	Source/SCR_LoadoutManager.c	14
 SCR_PlayerController	m_MainEntityID	OnRplMainEntityFromID	Source/SCR_PlayerController.c	56
 SCR_PlayerController	m_bIsPossessing		Source/SCR_PlayerController.c	60
+SCR_PlayerListedAdminManagerComponent	m_aAdminPlayers	OnListedAdminsChanged	Source/SCR_PlayerListedAdminManagerComponent.c	14
 SCR_SpawnPoint	m_sFaction	OnSetFactionKey	Source/SCR_SpawnPoint.c	40
 SCR_SpawnPoint	m_iPriority		Source/SCR_SpawnPoint.c	49
 SCR_SpawnPoint	m_fRespawnTime		Source/SCR_SpawnPoint.c	64
