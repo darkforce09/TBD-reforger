@@ -184,14 +184,26 @@ class TBD_LobbyScreen : TBD_ShellScreen
 	{
 		AdoptRoster(roster);
 
-		// A deploy the authority accepted ends this screen: the player is in the world, and a
-		// picker over the top of a live character is a menu nobody asked for.
+		// A body ends this screen: a picker over the top of a live character is a menu nobody asked
+		// for, and one that cannot be dismissed for good is a trap.
+		//
+		// ── T-181.29: it is a BODY that ends it, not a click ─────────────────────────────────
+		// This used to read `IsDeployed()`, which is set by exactly one event — the verdict on a
+		// deploy the player clicked. Every server-side door into the world is silent to this client:
+		// `TBD_SpawnManager`'s LOBBY auto-deploy wave (`m_bAutoDeploy`, still 1 — it deploys every
+		// connected player ~250 ms into LOBBY), the JIP `DeployJoiner` path, and `AdminRespawn`.
+		// A player any of them deployed got a character with the picker still on top of it and
+		// nothing that would ever take it down: the T-181.28 guard in `TBD_LobbyStage.Tick` stands
+		// the RE-raise down, but says nothing about a screen that is already open.
+		//
+		// `ShouldStandDown()` adds the authority's own "this player has a body" to the click, so
+		// every door closes the screen and the picker is no longer the only one that does.
 		//
 		// Deferred by one frame, deliberately. This runs INSIDE `ScriptInvoker.Invoke`, and closing
 		// the screen synchronously would reach `OnScreenClose` and remove this very handler from
 		// the invoker that is mid-iteration over it. One frame costs nothing and sidesteps the
 		// whole question.
-		if (TBD_LobbyClient.IsDeployed())
+		if (TBD_LobbyClient.ShouldStandDown())
 			GetGame().GetCallqueue().Call(DeferredClose);
 	}
 
@@ -484,9 +496,14 @@ class TBD_LobbyScreen : TBD_ShellScreen
 			return;
 		}
 
+		// T-181.29 — `ShouldStandDown` rather than `IsDeployed`, for the same reason the close above
+		// uses it. The close makes this nearly moot, but only nearly: the roster that reports the
+		// body arrives one frame before the deferred close runs, and a DEPLOY button that is live
+		// for a player who already has a character is wrong in that frame too. Belt and braces on
+		// the one irreversible control.
 		bool ready = m_Roster.HasOwnSlot()
 			&& !m_Roster.m_bLifeSpent
-			&& !TBD_LobbyClient.IsDeployed()
+			&& !TBD_LobbyClient.ShouldStandDown()
 			&& !TBD_LobbyClient.IsDeployPending();
 
 		SetPrimaryAction("DEPLOY", ready);

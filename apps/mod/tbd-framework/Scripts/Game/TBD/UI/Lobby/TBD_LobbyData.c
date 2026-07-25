@@ -125,6 +125,29 @@ class TBD_LobbyRoster
 	//! the authority, so the screen says so up front instead of letting them find out by clicking.
 	bool m_bLifeSpent;
 
+	//! T-181.29 — the authority's answer to "does this reader already have a body?".
+	//!
+	//! ── Why the client cannot answer this for itself, and why the screen needed it ───────────
+	//! The screen stands down on `TBD_LobbyClient.IsDeployed()`, which is latched by exactly ONE
+	//! event: a DEPLOY verdict the player's own click asked for. Every OTHER door into the world is
+	//! server-side and silent to this client — `TBD_SpawnManager`'s LOBBY auto-deploy wave
+	//! (`m_bAutoDeploy`, still 1), the JIP `DeployJoiner` path, and `AdminRespawn`. A player any of
+	//! those put in the world therefore had a live character AND the picker sitting on top of it,
+	//! with nothing that would ever take it down.
+	//!
+	//! So the fact travels the same way every other fact this screen draws travels: computed on the
+	//! authority in `BuildForPlayer`, carried on the wire, rebuilt on the client. It sits next to
+	//! `m_bLifeSpent` because it is the same KIND of fact — something only the server can know about
+	//! this player, which changes what the screen is allowed to offer.
+	//!
+	//! ── Deliberately NOT latched ────────────────────────────────────────────────────────────
+	//! `m_bDeployed` latches for good; this does not. It is a per-roster observation, so a reading
+	//! that turns out to be wrong is corrected by the very next refresh (2 s at worst) and the
+	//! picker comes back on `TBD_LobbyStage.Tick`'s unconditional re-raise. That property is what
+	//! makes closing on it safe: the worst case is a picker that flickers, never one that is gone
+	//! for good — which is the failure `Raise()` is deliberately built to avoid.
+	bool m_bInWorld;
+
 	ref array<ref TBD_LobbySide> m_aSides;
 
 	//! Set when the server could not answer. The screen shows this instead of an empty frame —
@@ -361,6 +384,28 @@ class TBD_LobbyService
 		if (fm)
 			roster.m_sStage = typename.EnumToString(TBD_EGameStage, fm.GetStage());
 
+		PlayerManager players = GetGame().GetPlayerManager();
+
+		// T-181.29 — resolved FIRST, ahead of every early return below, because it is the one fact
+		// on this roster that stays true when the rest of it cannot be built. A player the deploy
+		// wave already put in the world must be told so even on a reply whose body is
+		// "Mission is still loading." — otherwise the exact reply that says the roster is
+		// unavailable is also the one that leaves the picker sitting over their character.
+		//
+		// `GetPlayerControlledEntity` is this tree's established in-world test, not a new one:
+		// `TBD_AdminData` (:270) derives its `in world` column from it, `TBD_SpectatorHost`,
+		// `TBD_SafestartManager`, `TBD_PlayAreaComponent`, `TBD_ObjectivesComponent` and
+		// `TBD_SpawnManager` itself all ask it the same question. It is also the SERVER-side twin of
+		// `SCR_PlayerController.GetLocalControlledEntity()`, which `TBD_LobbyStage.Tick` (T-181.28)
+		// already calls the reliable half of its re-raise guard.
+		// Written as a guarded assignment rather than `players && ... != null` deliberately: the
+		// field already defaults to false, so the guard is complete, and this is character-for-
+		// character the idiom `TBD_AdminData` (:270) uses for the same question. A `&&` whose left
+		// operand is a class ref compiles here, but "compiles" and "means what it reads as" are
+		// different claims in this language and only one of them is worth resting a screen on.
+		if (players)
+			roster.m_bInWorld = players.GetPlayerControlledEntity(playerId) != null;
+
 		TBD_MissionDocumentStruct doc = TBD_MissionLoader.GetMission();
 		if (!doc || !TBD_MissionLoader.IsValid())
 		{
@@ -395,8 +440,6 @@ class TBD_LobbyService
 		string ownKey;
 		if (own)
 			ownKey = own.Key();
-
-		PlayerManager players = GetGame().GetPlayerManager();
 
 		foreach (string row : rows)
 		{
@@ -654,6 +697,7 @@ class TBD_LobbyService
 	//!   `M` mission   name / terrain / stage
 	//!   `X` unavailable reason (terminal — nothing else follows)
 	//!   `L` life      "1" when this reader has spent theirs
+	//!   `D` deployed  "1" when this reader already has a body (T-181.29)
 	//!   `V` verdict   action / ok / reason / slotKey — what the server just did on their behalf
 	//!   `F` side      key / name                    (subsequent `G` lines attach to it)
 	//!   `G` group     callsign                      (subsequent `S` lines attach to it)
@@ -676,6 +720,13 @@ class TBD_LobbyService
 
 		if (roster.m_bLifeSpent)
 			lines.Insert(Record(1, "L", "1", string.Empty, string.Empty, string.Empty, string.Empty));
+
+		// T-181.29 — emitted ABOVE the `X` early return, alongside `L`, for the reason
+		// `BuildForPlayer` resolves it first: "you already have a body" has to survive a reply whose
+		// roster could not be built, or the unavailable-roster case is exactly the one that strands
+		// the picker over a live character.
+		if (roster.m_bInWorld)
+			lines.Insert(Record(1, "D", "1", string.Empty, string.Empty, string.Empty, string.Empty));
 
 		if (!roster.IsAvailable())
 		{
@@ -762,6 +813,14 @@ class TBD_LobbyService
 			else if (kind == "L" && f.Count() >= 2)
 			{
 				roster.m_bLifeSpent = IsSet(f[1]);
+			}
+			else if (kind == "D" && f.Count() >= 2)
+			{
+				// T-181.29. Absent record = false = "not in the world" = keep the picker up, which
+				// is the safe default: `IsSet` already fails a corrupt token to false, so every way
+				// this record can go wrong leaves the player looking at the screen rather than
+				// silently robbed of it.
+				roster.m_bInWorld = IsSet(f[1]);
 			}
 			else if (kind == "X" && f.Count() >= 2)
 			{
@@ -904,6 +963,7 @@ class TBD_LobbyService
 		sent.m_sTerrain = "~";                   // the RETIRED sentinel, as a literal value
 		sent.m_sStage = "LOBBY";
 		sent.m_bLifeSpent = true;
+		sent.m_bInWorld = true;                  // T-181.29 — see the assertion below
 		sent.m_sAction = ACTION_CLAIM;
 		sent.m_bActionOk = false;
 		sent.m_sActionReason = string.Empty;
@@ -934,6 +994,19 @@ class TBD_LobbyService
 
 		if (!got.m_bLifeSpent)
 			faults.Insert("lifeSpent");
+
+		// T-181.29 — the ONE thing about this slice the gate can actually execute.
+		//
+		// MEASURED (T-181.26, restated in this function's header): `world-boot.sh --mission=` runs
+		// with ZERO players, so `BuildForPlayer` never resolves a real `GetPlayerControlledEntity`,
+		// no RPC moves, no screen opens, and nothing closes. The BEHAVIOUR this slice adds is
+		// therefore unobservable from the harness end to end. What IS observable is that the fact
+		// survives the wire — and a `D` record that silently failed to round-trip would leave the
+		// picker exactly as stuck as it was before, with no symptom anywhere else. So it is pinned
+		// here, where a break becomes `wire self-check FAIL ... lost=inWorld` and `world-boot.sh`'s
+		// fail-closed triage turns that into `WORLD BOOT: FAIL`.
+		if (!got.m_bInWorld)
+			faults.Insert("inWorld");
 
 		if (got.m_sAction != ACTION_CLAIM || got.m_bActionOk || !got.m_sActionReason.IsEmpty() || got.m_sActionKey != FIELD_MARK)
 			faults.Insert("verdict");
