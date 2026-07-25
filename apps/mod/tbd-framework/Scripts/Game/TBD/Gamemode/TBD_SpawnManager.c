@@ -1002,21 +1002,27 @@ class TBD_SpawnManager : SCR_BaseGameModeComponent
 		Print(string.Format("[TBD][Spawn] slot=%1 Y=%2 jsonY=%3 surfaceY=%4 delta=%5 heading=%6",
 			slot.id, spawnY, jsonYLabel, surfaceY, delta, slot.headingDeg));
 
-		// T-181.32 — only when the JSON actually asks for something. This used to be
-		// `if (slot.loadout)`, which is always true, so EVERY body on EVERY spawn built a
+		// T-181.32 — the EQUIP PASS runs only when the JSON actually asks for something. This used
+		// to be `if (slot.loadout)`, which is always true, so EVERY body on EVERY spawn built a
 		// TBD_LoadoutApplication, ran it, and got a deferred 500 ms verify tick for a loadout with
 		// nothing in it. Measured: 36 `[TBD][Loadout][Slot] … gear=0/0 cargo=0/0` lines on a boot of
 		// a mission that authors no loadouts at all. Nothing was DAMAGED by it — IssueEquip
 		// early-returns on an empty ResourceName, so the kit prefab's own clothing survives
 		// (`worn-audit jacket=1 pants=1 boots=1`) — but it is wasted per-body work on every single
 		// life, and a log full of empty passes hides the ones that matter.
+		// T-181.41 — an application is built either way; what it DOES differs. A slot that
+		// authors a loadout gets the full equip pass. A kit-only slot gets ONLY the nakedness
+		// audit, which is the case that guard was written for and the case it stopped seeing
+		// when the presence test above was fixed. Both register here so the existing
+		// CancelLoadoutAppsFor / PruneDoneLoadoutApps lifecycle covers both without a second
+		// mechanism.
+		PruneDoneLoadoutApps();
+		TBD_LoadoutApplication app = new TBD_LoadoutApplication(body, slot.loadout, "[TBD][Loadout][Slot]", slot.id);
+		m_aLoadoutApps.Insert(app);
 		if (HasAuthoredLoadout(slot.loadout))
-		{
-			PruneDoneLoadoutApps();
-			TBD_LoadoutApplication app = new TBD_LoadoutApplication(body, slot.loadout, "[TBD][Loadout][Slot]", slot.id);
-			m_aLoadoutApps.Insert(app);
 			app.Run();
-		}
+		else
+			app.RunKitWornAudit(slot.kit);
 
 		return body;
 	}
