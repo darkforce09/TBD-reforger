@@ -8,3 +8,4 @@ pub mod compile;
 pub mod flatten;
 pub mod kit;
 pub mod orbat;
+pub mod wire_safety;

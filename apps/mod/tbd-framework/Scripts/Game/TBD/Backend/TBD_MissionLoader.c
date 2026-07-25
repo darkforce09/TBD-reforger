@@ -270,6 +270,12 @@ class TBD_MissionLoader
 	//! Read() and then fail JSON parse with a misleading error — reject it up front (T-130.4 F1-16).
 	protected static const int MISSION_FILE_MAX_BYTES = 8 * 1024 * 1024;
 
+	//! Cap on a backend error body echoed into the log (T-181.44). Print() discards a line over
+	//! 1024 bytes rather than truncating it, so the body must be cut here or it is never seen.
+	//! Sized so the cut body plus the `[TBD][Mission] … http=… body=` prefix and the truncation
+	//! marker still clear 1024 — the whole point is that this line SURVIVES.
+	protected static const int ERROR_BODY_LOG_MAX_BYTES = 900;
+
 	protected static ref TBD_MissionDocumentStruct s_Mission;
 	protected static string s_RawJson;
 	protected static bool s_Loaded;
@@ -533,11 +539,44 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-181.44 — the response body is the ONLY place the reason lives, and this used to bin it.
+	//!
+	//! `/compiled` validates the document before serving it (T-181.31) and answers 500 with the
+	//! deduped, capped findings when it does not hold — `/slots/3/groupCallsign does not match
+	//! wireSafeString` for a callsign somebody typed a TAB into, `winConditions.endOn declares
+	//! faction_eliminated but only 1 faction has slots`, a dangling kit alias. That is EVERY schema
+	//! rejection, not one class of them. Discarding it left the operator with the symptom alone —
+	//! "the server is still running the previous mission" — and the cause in an API log on another
+	//! host, which is the definition of undiagnosable.
+	//!
+	//! `RestCallback.GetData()` is documented as readable from the error callback ("you can access
+	//! data if any were provided by the RestApi"). On a transport failure it is empty; that is still
+	//! information, and the message says which case it is rather than printing a bare blank.
+	//! `TBD_ResultsReporter.OnSendError` already logs its body for the same reason.
 	protected static void OnBackendFetchError(RestCallback cb)
 	{
 		s_LoadInFlight = false;
-		Print("[TBD] Backend mission fetch failed — trying profile fallback.", LogLevel.WARNING);
+
+		int httpCode = cb.GetHttpCode();
+		TBD_Log.Error(TBD_Log.CH_MISSION, string.Format(
+			"backend refused the mission fetch — http=%1 body=%2", httpCode, FetchFailureBody(cb.GetData())));
+
 		TryProfileFallbackAfterRestFailure();
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! The error body, made safe to log. `Print()` drops a line over 1024 bytes ENTIRELY rather
+	//! than truncating it, so an uncapped body would log nothing at all — the exact failure mode
+	//! this is here to fix. The cap leaves room for the `[TBD][Mission] … http=… body=` prefix.
+	protected static string FetchFailureBody(string body)
+	{
+		if (body.IsEmpty())
+			return "<none — the request did not reach the API, or it answered with nothing>";
+
+		if (body.Length() > ERROR_BODY_LOG_MAX_BYTES)
+			return body.Substring(0, ERROR_BODY_LOG_MAX_BYTES) + "…<truncated>";
+
+		return body;
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -547,7 +586,13 @@ class TBD_MissionLoader
 		if (LoadFromProfileFile(missionId))
 		{
 			s_Loaded = true;
-			LogLoaded("profile");
+			// T-181.44 — name what the operator is actually looking at. The cache holds whatever
+			// the backend last served SUCCESSFULLY, so a refused fetch silently leaves the server
+			// hosting the PREVIOUS mission. That is the reported symptom; say it here, next to the
+			// reason, instead of logging an indistinguishable `source=profile`.
+			TBD_Log.Warn(TBD_Log.CH_MISSION,
+				"RUNNING A CACHED MISSION — this is the last document the backend served successfully, not the one configured. Fix the failure logged above and restart the server.");
+			LogLoaded("profile-fallback");
 		}
 		else
 		{

@@ -12,6 +12,7 @@
 use std::sync::OnceLock;
 
 use jsonschema::Validator;
+use map_engine_core::mission::wire_safety;
 use serde_json::Value;
 
 const EDITOR_SCHEMA: &str =
@@ -43,6 +44,21 @@ fn run(
     raw: &[u8],
     bad_json: &str,
 ) -> Result<Vec<String>, ContractError> {
+    run_with(cell, schema_src, raw, bad_json, |_| Vec::new())
+}
+
+/// [`run`] plus a code-side pass over the SAME parsed instance. `extra` exists for rules that are
+/// true of the document but deliberately not expressed in its schema — see
+/// [`validate_mission_editor_payload`]. It reuses the parse rather than taking `&[u8]`, because
+/// re-parsing a save payload (hundreds of MB at editor scale) to run a second check would cost
+/// orders of magnitude more than the check.
+fn run_with(
+    cell: &'static OnceLock<Result<Validator, String>>,
+    schema_src: &str,
+    raw: &[u8],
+    bad_json: &str,
+    extra: fn(&Value) -> Vec<String>,
+) -> Result<Vec<String>, ContractError> {
     let compiled = cell.get_or_init(|| compile(schema_src));
     let validator = compiled
         .as_ref()
@@ -52,7 +68,7 @@ fn run(
         return Ok(vec![bad_json.to_string()]);
     };
 
-    let details = validator
+    let mut details: Vec<String> = validator
         .iter_errors(&instance)
         .map(|e| {
             let loc = e.instance_path().to_string();
@@ -60,16 +76,30 @@ fn run(
             format!("{loc}: {e}")
         })
         .collect();
+    details.extend(extra(&instance));
     Ok(details)
 }
 
 /// Validate a raw mission-version payload against `mission-editor-payload.schema.json`
 /// (the write-side editor superset). Used by CreateMission + CreateVersion.
 ///
-/// @contract mission-editor-payload.schema.json#/
+/// Two passes, one parse. The schema pass leaves `editor.slots[]` unconstrained on purpose so it
+/// stays O(1) on missions with hundreds of thousands of slots; the second pass
+/// ([`wire_safety::scan_editor_payload`], T-181.44) covers the one rule that omission lets through —
+/// a control character in an authored callsign / role, which compiles into a `wireSafeString` field
+/// and is then rejected at `GET /missions/:id/compiled`, hours later, in front of the wrong human.
+/// Its findings join the same `details` array, so callers and the wire shape are unchanged.
+///
+/// @contract mission-editor-payload.schema.json#/ + mission.schema.json#/$defs/wireSafeString
 pub fn validate_mission_editor_payload(raw: &[u8]) -> Result<Vec<String>, ContractError> {
     static V: OnceLock<Result<Validator, String>> = OnceLock::new();
-    run(&V, EDITOR_SCHEMA, raw, "payload is not valid JSON")
+    run_with(
+        &V,
+        EDITOR_SCHEMA,
+        raw,
+        "payload is not valid JSON",
+        wire_safety::scan_editor_payload,
+    )
 }
 
 /// Validate a compiled mod mission document against `mission.schema.json` (the
@@ -129,6 +159,34 @@ mod tests {
     fn invalid_json_reports_detail_not_error() {
         let details = validate_mission_editor_payload(b"not json").expect("compiles");
         assert_eq!(details, vec!["payload is not valid JSON".to_string()]);
+    }
+
+    /// T-181.44 — the save-time catch, on the channel `create_version` already answers 400 with.
+    /// Before this, the same payload validated CLEAN here and only failed later at `/compiled`,
+    /// as a 500 the author never saw.
+    #[test]
+    fn control_character_in_an_authored_slot_string_is_a_save_time_finding() {
+        let bad = br#"{"schemaVersion":1,"editor":{"factions":[],
+            "squads":[{"id":"sq1","callsign":"AL\tPHA","slotIds":["s1"]}],
+            "slots":[{"id":"s1","role":"SL"}],"editorLayers":[]}}"#;
+        let details = validate_mission_editor_payload(bad).expect("compiles");
+        assert_eq!(details.len(), 1, "{details:?}");
+        assert!(
+            details[0].starts_with("/editor/squads/0/callsign:"),
+            "{details:?}"
+        );
+        assert!(details[0].contains("TAB (U+0009)"), "{details:?}");
+
+        // The schema half of the same call is untouched: a payload that is merely wire-safe still
+        // has to satisfy `mission-editor-payload.schema.json`.
+        let ok = br#"{"schemaVersion":1,"editor":{"factions":[],
+            "squads":[{"id":"sq1","callsign":"ALPHA","slotIds":["s1"]}],
+            "slots":[{"id":"s1","role":"SL"}],"editorLayers":[]}}"#;
+        assert!(
+            validate_mission_editor_payload(ok)
+                .expect("compiles")
+                .is_empty()
+        );
     }
 
     #[test]

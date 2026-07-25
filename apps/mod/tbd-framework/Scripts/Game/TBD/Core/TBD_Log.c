@@ -69,7 +69,9 @@ class TBD_Log
 	}
 
 	//------------------------------------------------------------------------------------------------
-	//! `[TBD][Mission] loaded id=… name='…' slots=… source=backend|profile`
+	//! `[TBD][Mission] loaded id=… name='…' slots=… source=backend|profile|profile-fallback`
+	//! (T-181.44 — `profile-fallback` is the CACHE after the backend refused the fetch, which is a
+	//! different situation from `profile`, a host deliberately configured without a backend.)
 	static void MissionLoaded(string missionId, string name, int slotCount, string source)
 	{
 		Kv(CH_MISSION, "loaded", string.Format("id=%1 name='%2' slots=%3 source=%4",
