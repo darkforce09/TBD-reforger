@@ -1,0 +1,182 @@
+{
+  "schemaVersion": "1.1",
+  "meta": {
+    "id": "msn_0e77ab",
+    "name": "Blank Fields at Morton",
+    "author": "",
+    "terrain": "everon",
+    "templateId": "attack_defend_v1",
+    "playerRange": [7, 14]
+  },
+  "environment": {
+    "dateTime": "1989-08-03T19:05:00Z",
+    "weatherPreset": "",
+    "windDirDeg": 0
+  },
+  "factions": [
+    {
+      "key": "blufor",
+      "displayName": "US Army",
+      "presetId": "preset:us_army_82nd",
+      "tickets": 0,
+      "color": "#2b6cb0"
+    },
+    {
+      "key": "opfor",
+      "displayName": "Soviet VDV",
+      "presetId": "preset:sov_vdv",
+      "tickets": 0,
+      "color": "#c53030"
+    }
+  ],
+  "orbat": {
+    "blufor": {
+      "groups": [
+        {
+          "callsign": "Wraith",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:us_sl", "count": 1, "radio": [] },
+            { "slot": "RFL", "kit": "kit:us_rifleman", "count": 3, "radio": [] }
+          ]
+        }
+      ]
+    },
+    "opfor": {
+      "groups": [
+        {
+          "callsign": "Sokol",
+          "type": "rifle_squad",
+          "roles": [
+            { "slot": "SL", "kit": "kit:sov_sl", "count": 1, "radio": [] },
+            { "slot": "RFL", "kit": "kit:sov_rifleman", "count": 2, "radio": [] }
+          ]
+        }
+      ]
+    }
+  },
+  "zones": [
+    {
+      "id": "sp_blufor",
+      "type": "spawn",
+      "label": "",
+      "faction": "blufor",
+      "shape": { "circle": { "x": 7420.0, "z": 4180.0, "r": 110 } },
+      "rules": {}
+    },
+    {
+      "id": "sp_opfor",
+      "type": "spawn",
+      "label": "",
+      "faction": "opfor",
+      "shape": { "circle": { "x": 7810.0, "z": 4520.0, "r": 110 } }
+    },
+    {
+      "id": "obj_morton",
+      "type": "objective_capture",
+      "label": "",
+      "shape": { "circle": { "x": 7615.0, "z": 4350.0, "r": 75 } },
+      "rules": {}
+    }
+  ],
+  "entities": [],
+  "layers": [],
+  "flow": {},
+  "winConditions": {
+    "mode": "points_then_attrition",
+    "endOn": ["time_limit", "all_objectives_captured"]
+  },
+  "briefings": {
+    "blufor": {
+      "situation": "",
+      "mission": "",
+      "execution": "",
+      "markers": [{ "x": 7615, "z": 4350, "icon": "", "label": "" }]
+    },
+    "opfor": {}
+  },
+  "settings": {},
+  "slots": [
+    {
+      "id": "blufor:Wraith:SL:0",
+      "uid": "slot_wraith_sl",
+      "faction": "blufor",
+      "groupCallsign": "Wraith",
+      "role": "SL",
+      "kit": "kit:us_sl",
+      "x": 7415.6,
+      "z": 4175.1,
+      "headingDeg": 45,
+      "loadout": {}
+    },
+    {
+      "id": "blufor:Wraith:RFL:0",
+      "uid": "slot_wraith_rfl_0",
+      "faction": "blufor",
+      "groupCallsign": "Wraith",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 7410.2,
+      "z": 4181.4,
+      "headingDeg": 0,
+      "loadout": { "gear": {} }
+    },
+    {
+      "id": "blufor:Wraith:RFL:1",
+      "uid": "slot_wraith_rfl_1",
+      "faction": "blufor",
+      "groupCallsign": "Wraith",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 7424.9,
+      "z": 4181.4,
+      "headingDeg": 315,
+      "loadout": { "cargo": [] }
+    },
+    {
+      "id": "blufor:Wraith:RFL:2",
+      "uid": "slot_wraith_rfl_2",
+      "faction": "blufor",
+      "groupCallsign": "Wraith",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 7417.5,
+      "z": 4187.8,
+      "headingDeg": 350,
+      "loadout": { "gear": {}, "cargo": [] }
+    },
+    {
+      "id": "opfor:Sokol:SL:0",
+      "uid": "slot_sokol_sl",
+      "faction": "opfor",
+      "groupCallsign": "Sokol",
+      "role": "SL",
+      "kit": "kit:sov_sl",
+      "x": 7814.8,
+      "z": 4524.6,
+      "headingDeg": 225
+    },
+    {
+      "id": "opfor:Sokol:RFL:0",
+      "uid": "slot_sokol_rfl_0",
+      "faction": "opfor",
+      "groupCallsign": "Sokol",
+      "role": "RFL",
+      "kit": "kit:sov_rifleman",
+      "x": 7806.1,
+      "z": 4530.2,
+      "headingDeg": 200
+    },
+    {
+      "id": "opfor:Sokol:RFL:1",
+      "uid": "slot_sokol_rfl_1",
+      "faction": "opfor",
+      "groupCallsign": "Sokol",
+      "role": "RFL",
+      "kit": "kit:sov_rifleman",
+      "x": 7821.7,
+      "z": 4530.2,
+      "headingDeg": 250
+    }
+  ]
+}
