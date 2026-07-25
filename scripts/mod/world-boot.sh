@@ -336,7 +336,15 @@ ln -sfn "$MOD_SRC" "$RUN_DIR/addons/tbd-framework"
 # mission-seeded boot.
 #
 # No backend is needed: TBD_MissionLoader falls back to a local file at
-# `$profile:missions/<missionId>.json` (TBD_MissionLoader.c:508).
+# `$profile:missions/<missionId>.json` (TBD_MissionLoader.LoadFromProfileFile — cite the NAME; the
+# `:508` that used to be here had drifted to :561 by T-181.26).
+#
+# That fallback is also the mod's remaining UNVALIDATED input. T-181.31 made `GET /compiled`
+# validate the exact bytes it serves, but LoadFromProfileFile applies NO json-schema validation at
+# all — only TBD_MissionValidator, which is strictly more permissive than the schema. So a
+# hand-staged or `--mission=`-seeded document can carry shapes the schema forbids (a blank
+# `meta.name`, a blank `slot.groupCallsign`, a `slot.faction` that breaks its own pattern), and
+# every consumer downstream has to treat empty and malformed as reachable states.
 #
 # LANDMINE: `$profile:` resolves to `<-profile-arg>/profile/`, NOT `<-profile-arg>/`. Seeding one
 # level up loads nothing, silently — measured by the wave-5 verifier after two dead boots.
