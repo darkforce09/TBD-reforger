@@ -91,6 +91,43 @@ pub struct WikiInput {
 
 /// `PUT /api/v1/wiki/:slug` — create or replace a wiki page (admin).
 ///
+/// **The `slug` guard below is T-349, and it is `require`-and-refuse, not `trim`-and-store.**
+/// `slug` is the unique key (`idx_wiki_pages_slug`) *and* the `ON CONFLICT` target, and until
+/// T-349 it carried no guard of any kind — the same shape T-358 found in `handlers/factions.rs`,
+/// where `POST "USA"` then `POST "USA "` both answered 201 because the byte strings differ.
+///
+/// Measured on the pre-fix binary: `PUT /wiki/t349-medical-sop` then
+/// `PUT /wiki/t349-medical-sop%20` both answered **200** and inserted **two rows with two
+/// different ids** — the unique index never fired, because to Postgres `'x'` and `'x '` are
+/// simply not equal. `PUT /wiki/%20` and `PUT /wiki/%09` likewise answered 200 and created pages
+/// whose entire slug is one space and one tab. All four then render as separate rows in the
+/// `GET /wiki` SOP nav, while `GET /wiki/t349-medical-sop` reaches only the first — so the padded
+/// twin is a nav entry no reader can open. Worse, this route is `PUT` (create *or replace*): an
+/// author fixing a typo at a slug they pasted with a trailing space does not replace the page
+/// they meant, they silently mint a second one, and the readers keep seeing the stale original.
+///
+/// **Why refuse rather than normalise.** Both were live options here, because — unlike T-343's
+/// `orbat_reservations.squad` ↔ `orbat_slots.squad` and T-346's armory `faction` ↔
+/// `orbat_slots.faction` — nothing in the repo joins `wiki_pages.slug` to another column. Its
+/// only readers are [`get_wiki_page`] (`WHERE slug = $1`) and the `ON CONFLICT (slug)` below,
+/// and *both* derive the value from the same URL path segment, so there is no cross-table
+/// agreement to preserve. What settles it is what normalising would *do*: trimming the write key
+/// would make `PUT /wiki/medical-sop%20` overwrite `medical-sop` — retargeting a **full-row
+/// replace** onto a different page than the URL names. Turning a caller's typo into a silent
+/// destructive overwrite of someone else's page is a worse outcome than a 400. Refusing also
+/// touches **no read at all**, which is the only option structurally incapable of the T-343
+/// hazard (a write-side trim disagreeing with a read-side that never got one).
+///
+/// **Both halves are needed** (T-358): the emptiness check alone would still admit
+/// `PUT /wiki/x%20`, and a padding check alone would still admit `PUT /wiki/%09`, because a
+/// tab-only slug is a *content* problem, not a *padding* problem. `PUT /wiki/` — a genuinely
+/// empty segment — already 404s at the router and never reaches here; the check stays anyway so
+/// a future route change cannot quietly reopen it.
+///
+/// Reads are deliberately left alone. A padded slug on `GET /wiki/:slug` is a 404, which is the
+/// right answer, and any padded row already in a deployed database stays readable at the exact
+/// bytes it was written with rather than becoming unreachable the moment this ships.
+///
 /// @route PUT /api/v1/wiki/:slug
 pub async fn upsert_wiki_page(
     State(state): State<AppState>,
@@ -98,6 +135,16 @@ pub async fn upsert_wiki_page(
     Path(slug): Path<String>,
     body: Result<Json<WikiInput>, JsonRejection>,
 ) -> Result<Json<WikiPage>, ApiError> {
+    // Checked before the body, because the slug is the identity of the resource being written:
+    // a caller who addressed the wrong row needs to hear about the row, not about its contents.
+    if slug.trim().is_empty() {
+        return Err(ApiError::bad_request("slug is required"));
+    }
+    if slug != slug.trim() {
+        return Err(ApiError::bad_request(
+            "slug must not have leading or trailing whitespace",
+        ));
+    }
     // Names all five, because after T-319 all five must be *present* — an omitted `icon` or
     // `nav_order` lands here as a decode error, and a 400 that only lists the other three
     // sends the caller hunting for a field they already sent.
