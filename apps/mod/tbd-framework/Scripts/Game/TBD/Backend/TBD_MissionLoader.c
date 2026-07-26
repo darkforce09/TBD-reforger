@@ -247,6 +247,24 @@ class TBD_MissionEntityStruct
 	string faction;    //!< Faction key. OPTIONAL — empty when absent.
 }
 
+//! Mission policy block (`mission.schema.json#/$defs/settings`) — T-259.
+//!
+//! All three fields are OPTIONAL. Empty string on `respawn` / `spectatorPolicy` means the key was
+//! absent (JsonLoadContext leaves string fields at `""`). `nightVision` defaults to `false`, so
+//! "absent" and "authored false" are indistinguishable — that matches the schema's boolean with
+//! no presence flag, and the default is "NVG off".
+//!
+//! `JsonLoadContext` ALLOCATES this nested `ref` even when the JSON key is ABSENT — same trap as
+//! `flow`. Callers that care about "was settings authored?" must not null-check this reference;
+//! they read field values (or the raw JSON via `GetRawJson`).
+//! @contract mission.schema.json#/$defs/settings
+class TBD_MissionSettingsStruct
+{
+	string respawn;          //!< "none" | "tickets" | "wave". Empty = absent.
+	string spectatorPolicy;  //!< "none" | "own_side_delayed_60s" | "free". Empty = absent.
+	bool nightVision;        //!< Authored NVG policy. Default false = off / absent.
+}
+
 //! Full mission document parsed from the backend — the canonical contract the loader
 //! consumes. schemaVersion is the canonical STRING ("1.0"/"1.1"/"1.2"), distinct from the
 //! website's integer editor/export version. Field names must equal the JSON keys.
@@ -277,6 +295,11 @@ class TBD_MissionDocumentStruct
 	//! `empty-warning-fields.json` deliberately authors none, so null here is legal not an error.
 	//! @contract mission.schema.json#/$defs/radioPlan
 	ref TBD_MissionRadioPlanStruct radioPlan;
+	//! T-259 — mission policy (respawn / spectator / NVG). ALWAYS non-null after a parse even
+	//! when the JSON key is absent — `JsonLoadContext` allocates nested `ref` fields regardless.
+	//! Read field values (empty string / false), do not null-check this reference.
+	//! @contract mission.schema.json#/$defs/settings
+	ref TBD_MissionSettingsStruct settings;
 }
 
 //! Loads Mission JSON from backend REST or $profile fallback.
@@ -437,6 +460,22 @@ class TBD_MissionLoader
 	}
 
 	//------------------------------------------------------------------------------------------------
+	//! T-259 — the mission policy block (`settings`), or null when no VALID mission is loaded.
+	//!
+	//! The reference itself is ALWAYS allocated after a successful parse (JsonLoadContext), even
+	//! when the JSON key was absent — read `respawn` / `spectatorPolicy` (empty = absent) and
+	//! `nightVision` rather than null-checking the return. Returns null only when no valid
+	//! mission is loaded, mirroring `GetEntities` / `GetZones`.
+	//! @contract mission.schema.json#/$defs/settings
+	static TBD_MissionSettingsStruct GetSettings()
+	{
+		if (!s_Valid || !s_Mission)
+			return null;
+
+		return s_Mission.settings;
+	}
+
+	//------------------------------------------------------------------------------------------------
 	//! T-254 — spawn every authored `entities[]` row into the world so destroy-alias resolution
 	//! (`TBD_ObjectiveRegistry.ArmDestroyTargets`) can find matching prefabs inside its zone.
 	//!
@@ -502,6 +541,54 @@ class TBD_MissionLoader
 		}
 
 		Print(string.Format("[TBD][Entities] spawn done spawned=%1 skipped=%2", spawned, skipped));
+	}
+
+	//------------------------------------------------------------------------------------------------
+	//! T-259 — apply authored `settings` through the smallest published seams this loader can
+	//! reach without editing files outside its owns.
+	//!
+	//! `spectatorPolicy`:
+	//!   - `"free"`                 → `TBD_SpectatorTargets.SetFactionRestricted(false)`
+	//!   - `"own_side_delayed_60s"` → `SetFactionRestricted(true)` (own-side follow-cam; the 60 s
+	//!     delay itself is owned by SpectatorController and is NOT switched here)
+	//!   - `"none"` / empty         → leave the SpectatorTargets default (restricted ON). Full
+	//!     "black screen, no spectator" needs SpectatorController entry points — outside owns.
+	//!
+	//! `respawn` and `nightVision` have no published setter reachable from this file. Logged so
+	//! an authored value is visible in the boot log rather than silently ignored.
+	//! @authority server
+	protected static void ApplyMissionSettings()
+	{
+		TBD_MissionSettingsStruct s = GetSettings();
+		if (!s)
+			return;
+
+		if (s.spectatorPolicy == "free")
+		{
+			TBD_SpectatorTargets.SetFactionRestricted(false);
+			Print("[TBD][Settings] spectatorPolicy=free → faction restriction OFF", LogLevel.NORMAL);
+		}
+		else if (s.spectatorPolicy == "own_side_delayed_60s")
+		{
+			TBD_SpectatorTargets.SetFactionRestricted(true);
+			Print("[TBD][Settings] spectatorPolicy=own_side_delayed_60s → faction restriction ON (delay owned by SpectatorController)", LogLevel.NORMAL);
+		}
+		else if (s.spectatorPolicy == "none")
+		{
+			Print("[TBD][Settings] spectatorPolicy=none — no black-screen seam in MissionLoader owns; SpectatorTargets left at default", LogLevel.WARNING);
+		}
+		else if (!s.spectatorPolicy.IsEmpty())
+		{
+			Print(string.Format("[TBD][Settings] spectatorPolicy='%1' unrecognised — SpectatorTargets left at default", s.spectatorPolicy), LogLevel.WARNING);
+		}
+
+		if (!s.respawn.IsEmpty())
+			Print(string.Format("[TBD][Settings] respawn='%1' authored but no respawn-pool setter in MissionLoader owns", s.respawn), LogLevel.WARNING);
+
+		// nightVision: bool defaults false, so only log the authored-true case as the interesting
+		// one. Authored false and absent both read as false — no NVG seam here either.
+		if (s.nightVision)
+			Print("[TBD][Settings] nightVision=true authored but no NVG setter in MissionLoader owns", LogLevel.WARNING);
 	}
 
 	//------------------------------------------------------------------------------------------------
@@ -803,6 +890,10 @@ class TBD_MissionLoader
 		// T-254 — place authored entities[] so destroy targets can exist in the world. Registry
 		// Resolve auto-loads; unknown aliases are warned and skipped inside SpawnMissionEntities.
 		SpawnMissionEntities();
+
+		// T-259 — hand spectatorPolicy to the published SpectatorTargets seam. Respawns and NVG
+		// have no published setter inside this file's owns; see ApplyMissionSettings.
+		ApplyMissionSettings();
 
 		// T-181.13.1 — a valid mission document is the earliest moment an end-of-round results
 		// report could mean anything, and this is a server-only path (BeginLoad is reached only
