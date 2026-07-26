@@ -125,9 +125,21 @@ pub async fn approve_mission(
     )?))
 }
 
-#[derive(Debug, Deserialize, Default)]
+/// The rejection body.
+///
+/// **`reason` is deliberately required — do not add `#[serde(default)]` to it (T-218).**
+/// This is the third time tonight a defaulted field turned a malformed request into a
+/// destructive write (T-185 wiped a user's roles off a 200 with no `roles`; T-218's first
+/// pass had this page POST `{}` and overwrite `rejection_reason` with `""`). The shape is
+/// always the same: the default is not "no data", it decodes as an affirmative empty value
+/// and gets bound straight into an `UPDATE`.
+///
+/// Here the column is the only thing the author is ever told about why their mission came
+/// back, so `""` is strictly worse than a 400 — the reviewer believes they explained
+/// themselves and the author sees a blank rejection. Requiring the field turns `{}` into a
+/// decode error, which the handler maps to 400 instead of a silent clobber.
+#[derive(Debug, Deserialize)]
 pub struct RejectInput {
-    #[serde(default)]
     reason: String,
 }
 
@@ -141,12 +153,23 @@ pub async fn reject_mission(
     body: Result<Json<RejectInput>, JsonRejection>,
 ) -> Result<Json<Mission>, ApiError> {
     let m = load_pending(&state, &id).await?;
-    let reason = body.ok().map(|Json(b)| b.reason).unwrap_or_default();
+    // `.ok()` here collapsed *every* extractor failure — a missing body, a wrong
+    // `Content-Type`, malformed JSON — into `""` and wrote it. The client guard added in
+    // T-218 was the only thing standing between a fat-fingered request and a blanked
+    // column. `map_err` is what the other ~25 handlers in this crate do; this one was the
+    // outlier.
+    let Json(input) = body.map_err(|_| ApiError::bad_request("reason is required"))?;
+    // A reason of spaces is the same lie as no reason, and `trim` is what the frontend
+    // guard checks — the two ends have to agree or the client is still the only guard.
+    let reason = input.reason.trim();
+    if reason.is_empty() {
+        return Err(ApiError::bad_request("reason is required"));
+    }
     let reviewer = &admin.0.discord_id;
     sqlx::query(
         "UPDATE missions SET status = 'rejected', rejection_reason = $1, reviewed_by = $2, reviewed_at = now() WHERE id = $3",
     )
-    .bind(&reason)
+    .bind(reason)
     .bind(reviewer)
     .bind(m.id)
     .execute(&state.pool)
