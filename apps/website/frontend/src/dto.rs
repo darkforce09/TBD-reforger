@@ -9,6 +9,29 @@
 //! `Leaderboard` are fully typed (every field asserted). List bodies whose *item* type isn't ported
 //! yet ride `Paginated<Value>` / `DataEnvelope<Value>` — the envelope contract is proven exactly,
 //! the item type gets typed + strengthened when its page lands (T-159.8+).
+//!
+//! **T-306 — a `Value`-typed golden is only honest while no DTO reads that endpoint.** `Value`
+//! round-trips anything, so such a test asserts the envelope and *nothing at all* about the DTO it
+//! exists to protect. That is not hypothetical: `/servers` was pinned as `DataEnvelope<Value>` and
+//! passed for a month while `ServerStatusDto` could not deserialize the very fixture it was pinned
+//! against (`server_fps: 58.7` into an `i64`), which silently dropped every live SSE telemetry frame.
+//!
+//! So the rule this file now follows: **if the SPA reads an endpoint through a DTO, that endpoint's
+//! golden is typed with the same DTO.** Every such endpoint was enumerated rather than eyeballed
+//! (T-329's lesson) by cross-referencing each `client::api_get::<T>` call against its `r_api` test —
+//! six were mismatched, and typing them found two more latent drifts that no page had hit yet
+//! (`EventListItem::percent` `f64`→`i64`, `OrbatSlot::assigned_to` wrongly skipped). The goldens
+//! still on `Value` are the ones with **no** typed consumer — `/announcements`, `/wiki`,
+//! `/vehicle-database`, `/modpacks` (list), `/admin/audit-logs` — where `Value` is the accurate
+//! statement, not an escape hatch.
+//!
+//! Two known gaps left, both outside this slice's file ownership:
+//!   * `DashboardResponse::server_status` is still `Option<Value>` — the *third* read site of the
+//!     same telemetry payload. Typing it as `Option<ServerStatusDto>` is the obvious follow-up, but
+//!     `dashboard.rs` reads it through `Value` helpers (T-232's `vf64`) and would need changing with
+//!     it.
+//!   * `/members`, `/registry/compat` and `POST /fire-missions/solve` have live typed DTOs and **no
+//!     fixture at all**, so the gate cannot speak to them either way.
 use crate::auth::User;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -84,31 +107,191 @@ pub struct EventListItem {
     pub registered: i64,
     pub filled: i64,
     pub total_slots: i64,
-    pub percent: f64,
+    /// T-306 sweep — `i64`, not `f64`: the backend computes `filled * 100 / total` on `i64`
+    /// (`handlers/events.rs`), so the wire is always a whole number. As an `f64` this deserialized
+    /// fine (serde widens an integer) but re-serialized as `55.0` where the wire says `55`, so it
+    /// was latent golden drift rather than a live defect — invisible only because the `/events`
+    /// golden is typed `Paginated<Value>` while the Event Manager page reads
+    /// `Paginated<EventListItem>`. See the `r_api` §`Value`-typed goldens note.
+    pub percent: i64,
     #[serde(flatten)]
     pub extra: serde_json::Map<String, Value>,
 }
 
 /// Live server telemetry frame — mirrors `types/models/telemetry` `ServerStatus` (SSE `data:`
 /// payload + the `status` field of a server row). T-159.25.
+///
+/// **T-306 — `server_fps` is `f64`, and every field here was swept against
+/// `api/src/models/telemetry.rs::ServerStatus` and the `server_statuses` column types. It is the
+/// only field that was wrong; the other nine agree.** It had been `i64` since T-159.25 while the
+/// model is `f64` over a `numeric(5,1)` column that the query casts (`server_fps::float8`), so a
+/// healthy operator frame carries `58.7`. Because this struct is the *whole* SSE payload, an `i64`
+/// there did not degrade one readout — it failed the entire frame's deserialization, and both read
+/// sites dropped the result, so a complete healthy frame rendered as a dead server. T-232 traced
+/// the same root cause to a confident `FPS: 0` on the dashboard card and fixed that one locally.
+///
+/// **Do not round the wire value to an integer.** `numeric(5,1)` carries a tenth on purpose and the
+/// operator's frame really is `58.7`; `{}`-formatting an `f64` prints `58.7` for a fractional value
+/// and `30` for a whole one, which is exactly what the React original produced from a JS number.
+///
+/// No `#[serde(flatten)] extra` catch-all: nothing in the SPA ever read `.extra` (it existed only
+/// for forward-compat), and while it was there the newly-typed `/servers` golden would still have
+/// round-tripped cleanly the day the backend grew a status field — silently re-emitting a field the
+/// DTO does not model is the same "gate asserts nothing" defect as typing the fixture as `Value`.
+/// Dropping it does not make the live read stricter (serde ignores unknown fields either way); it
+/// makes the *gate* strict, because an unmodelled field now goes missing on re-serialize and fails
+/// the byte-equality.
+// `Debug` (unlike its siblings) so a rejected `SseFrame` can print what it decoded, and so a test
+// failure names the frame instead of the variant.
 #[allow(dead_code)]
-#[derive(Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct ServerStatusDto {
     pub server_id: String,
     pub is_online: bool,
     pub player_count: i64,
     pub max_players: i64,
-    pub server_fps: i64,
+    /// `numeric(5,1)` → `f64` (backend `ServerStatus::server_fps`). See the struct note.
+    pub server_fps: f64,
     pub uptime_seconds: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub current_match_id: Option<String>,
+    /// Backend-side this is a `String` with `skip_serializing_if = "String::is_empty"`, so `""`
+    /// never reaches the wire and absent is the only "no value" encoding — `Option` round-trips it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ingame_time: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ingame_weather: Option<String>,
     pub updated_at: String,
-    #[serde(flatten)]
-    pub extra: serde_json::Map<String, Value>,
+}
+
+/// What one `\n\n`-delimited SSE frame from `/servers/:id/status/stream` turned out to be.
+///
+/// Lives here rather than in `sse.rs` because `sse.rs` is `#[cfg(target_arch = "wasm32")]`, so a
+/// test module inside it is never compiled by `cargo test` — see that file's header note. Decoding a
+/// frame *is* wire-contract work, and this is the wire-contract module, next to the captured live
+/// frame the R-api gate pins it against.
+// `dead_code` on the native target only: the sole non-test consumer is `sse.rs`, which `main.rs`
+// gates to wasm32. Same reason every DTO in this file carries the attribute.
+#[allow(dead_code)]
+#[derive(Debug, PartialEq)]
+pub enum SseFrame {
+    /// A `data:` frame that deserialized into a telemetry status. Boxed: the variant would otherwise
+    /// make the enum as large as the whole DTO.
+    Status(Box<ServerStatusDto>),
+    /// A `data:` frame that did **not** deserialize, carrying the serde error and the payload.
+    ///
+    /// T-306: the point of the variant is that it is not `None`. A bare `Option` made "the DTO
+    /// cannot read this backend's frames" indistinguishable from "no frame has arrived yet", and the
+    /// page rendered the second while the first was true.
+    Rejected { error: String, payload: String },
+    /// Not a `data:` frame — an SSE comment/keepalive (`:`), an `event:`/`id:`/`retry:` line, or the
+    /// empty tail. Silence is correct here; auditing these would drown the signal that matters.
+    NotData,
+}
+
+/// Decode one raw SSE frame (the text between `\n\n` boundaries) into an [`SseFrame`].
+#[allow(dead_code)]
+pub fn decode_server_status_frame(frame: &str) -> SseFrame {
+    let Some(data) = frame.trim().strip_prefix("data:") else {
+        return SseFrame::NotData;
+    };
+    let data = data.trim();
+    match serde_json::from_str::<ServerStatusDto>(data) {
+        Ok(dto) => SseFrame::Status(Box::new(dto)),
+        Err(e) => SseFrame::Rejected {
+            error: e.to_string(),
+            payload: data.chars().take(PAYLOAD_AUDIT_CHARS).collect(),
+        },
+    }
+}
+
+/// How much of a rejected payload to quote. Enough to identify the offending field, short enough
+/// that a warn stays readable.
+pub const PAYLOAD_AUDIT_CHARS: usize = 400;
+
+/// Report a telemetry payload the DTO refused, and return the message so a caller can also surface
+/// it in the UI. Shared by the SSE loop and `server_intel`'s cached-row read.
+///
+/// **Deduped, because one caller is a realtime stream.** A DTO/wire mismatch does not fail one
+/// frame, it fails *every* frame, so a per-frame warn would bury its own message within seconds. The
+/// first occurrence of each distinct serde error warns in full; after that only the powers of ten
+/// do, which still shows a broken stream is *still* broken and at what volume. Same warn-once
+/// reasoning as `yrs_persist::note_orphan`, with a counter added.
+///
+/// Returns the message rather than logging blind so the `error` signal and the console agree —
+/// `mission_hydrate::restore_snapshot`'s two-channel precedent.
+pub fn audit_rejected_frame(context: &str, error: &str, payload: &str) -> String {
+    use std::cell::RefCell;
+    use std::collections::HashMap;
+    thread_local! {
+        static SEEN: RefCell<HashMap<String, u64>> = RefCell::new(HashMap::new());
+    }
+    let n = SEEN.with(|s| {
+        let mut s = s.borrow_mut();
+        let c = s.entry(error.to_string()).or_insert(0);
+        *c += 1;
+        *c
+    });
+    let msg = format!(
+        "[t306] {context}: telemetry frame REJECTED and dropped — {error}. The stream is connected \
+         and the payload arrived intact, so this is a DTO/wire contract mismatch, not a network \
+         fault: dto.rs ServerStatusDto disagrees with api/src/models/telemetry.rs ServerStatus. \
+         {n} dropped so far with this error. Payload: {payload}"
+    );
+    if n == 1 || is_power_of_ten(n) {
+        #[cfg(target_arch = "wasm32")]
+        web_sys::console::warn_1(&wasm_bindgen::JsValue::from_str(&msg));
+        #[cfg(not(target_arch = "wasm32"))]
+        eprintln!("{msg}");
+    }
+    msg
+}
+
+/// Is `n` one of 10, 100, 1000, …? The warn ladder above — **not** `u64::is_power_of_two`. `1` is
+/// excluded on purpose: the first drop is already covered by the `n == 1` arm, and counting it here
+/// too would warn twice on frame one.
+fn is_power_of_ten(n: u64) -> bool {
+    let mut p = 10u64;
+    loop {
+        if p == n {
+            return true;
+        }
+        if p > n {
+            return false;
+        }
+        match p.checked_mul(10) {
+            Some(next) => p = next,
+            None => return false,
+        }
+    }
+}
+
+/// One `GET /servers` row — the backend `handlers::servers::ServerIntelDto`: a flattened `Server`
+/// plus its live `status` and required modpack.
+///
+/// **`status` is deliberately NOT `skip_serializing_if`.** The backend field is a plain
+/// `Option<ServerStatus>`, so a server with no telemetry row serializes as an explicit
+/// `"status": null` — which the third row of the committed golden carries. Omitting it here would
+/// break the canonical byte-equality. `required_modpack` *is* skipped, matching the backend.
+///
+/// No `#[serde(flatten)] extra` catch-all, on purpose: a catch-all re-emits fields the struct does
+/// not know about, so the round-trip would still pass the day the backend grows a field — the exact
+/// "asserts nothing" failure T-306 was filed for. Without one, an added field is dropped on
+/// deserialize, goes missing on re-serialize, and the golden gate fails loudly.
+#[allow(dead_code)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct ServerRowDto {
+    pub id: String,
+    pub name: String,
+    /// Postgres `inet`, served as text (`host(ip)`).
+    pub ip: String,
+    pub port: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_modpack_id: Option<String>,
+    pub is_active: bool,
+    pub status: Option<ServerStatusDto>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub required_modpack: Option<ModpackDto>,
 }
 
 /// One approvals-queue row — mirrors `types/api` `ApprovalRow` (`GET /approvals`).
@@ -160,7 +343,17 @@ pub struct OrbatSlot {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tag: Option<String>,
     pub slot_index: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// **T-306 — `default` but deliberately NOT `skip_serializing_if`.** The backend
+    /// `handlers::events::OrbatSlotDto::assigned_to` is a bare `Option<String>` with no
+    /// `skip_serializing_if`, so an unclaimed slot serializes as an explicit `"assigned_to": null` —
+    /// which the committed orbat golden carries on every unclaimed slot. Skipping it emitted a
+    /// payload with the key missing, and the round-trip drifted.
+    ///
+    /// Found by typing the orbat golden: it was `DataEnvelope<Value>`, so nothing checked, even
+    /// though the ORBAT selector reads `DataEnvelope<OrbatSquad>` live. Same shape as the `/servers`
+    /// hole this ticket was filed for; contrast `assigned_name`, which the backend *does* skip
+    /// (`skip_serializing_if = "String::is_empty"`) and which is therefore correct as-is.
+    #[serde(default)]
     pub assigned_to: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assigned_name: Option<String>,
@@ -641,8 +834,10 @@ mod tests {
 // thing: does the DTO's serialized field-set + values match the live backend's? Any drop / rename /
 // type change fails it. This is the load-bearing R-api proof (stronger than a browser round-trip:
 // deterministic, no network, compile-time-pinned goldens).
+// `pub(crate)` so `sse.rs`'s own tests can drive the one captured live SSE frame
+// (`LIVE_SSE_FRAME`) through the real decoder instead of keeping a second, drifting copy of it.
 #[cfg(test)]
-mod r_api {
+pub(crate) mod r_api {
     use super::*;
     use serde::de::DeserializeOwned;
 
@@ -730,48 +925,103 @@ mod r_api {
             "GET__events__c71a4d1a-a616-4b88-ba7a-fccbc5ca26b7.json"
         ));
     }
+    /// T-306 — was `DataEnvelope<Value>` while the ORBAT selector reads `DataEnvelope<OrbatSquad>`
+    /// live. Typing it immediately failed and found `OrbatSlot::assigned_to` skipping a key the
+    /// backend emits as an explicit `null`.
     #[test]
     fn orbat_envelope() {
-        assert_golden::<DataEnvelope<Value>>(golden!(
+        assert_golden::<DataEnvelope<OrbatSquad>>(golden!(
             "GET__event-missions__89b1b731-37a8-4926-901a-3c7ff7de5eb3__orbat.json"
         ));
     }
 
     // ── paginated `{data,total,limit,offset}` envelopes (item type ported per page) ──
+    /// T-306 — was `Paginated<Value>` while `event_manager` reads `Paginated<EventListItem>`. Typing
+    /// it pinned `percent` as the `i64` the backend actually sends (the golden's `37` re-serialized
+    /// as `37.0` from the old `f64`).
     #[test]
     fn events_envelope() {
-        assert_golden::<Paginated<Value>>(golden!("GET__events.json"));
+        assert_golden::<Paginated<EventListItem>>(golden!("GET__events.json"));
     }
+    /// T-306 — was `Paginated<Value>` while the Mission Library reads `Paginated<MissionCard>`.
     #[test]
     fn missions_envelope() {
-        assert_golden::<Paginated<Value>>(golden!("GET__missions.json"));
+        assert_golden::<Paginated<MissionCard>>(golden!("GET__missions.json"));
     }
+    /// Still `Value`, and that is the honest statement: no DTO reads `/announcements` — the page
+    /// itself takes `Paginated<Value>`. Type this the day an `AnnouncementDto` lands.
     #[test]
     fn announcements_envelope() {
         assert_golden::<Paginated<Value>>(golden!("GET__announcements.json"));
     }
+    /// T-306 — was `Paginated<Value>` while the approvals queue reads `Paginated<ApprovalRow>`.
     #[test]
     fn approvals_envelope() {
-        assert_golden::<Paginated<Value>>(golden!("GET__approvals.json"));
+        assert_golden::<Paginated<ApprovalRow>>(golden!("GET__approvals.json"));
     }
+    /// T-306 — was `Paginated<Value>`; the faction manager reads `FactionListResponse`, which is not
+    /// even the same envelope shape the test was asserting.
     #[test]
     fn factions_envelope() {
-        assert_golden::<Paginated<Value>>(golden!("GET__factions.json"));
+        assert_golden::<FactionListResponse>(golden!("GET__factions.json"));
     }
     #[test]
     fn admin_users_envelope() {
         assert_golden::<Paginated<AdminUserRow>>(golden!("GET__admin__users.json"));
     }
+    /// Cursor envelope, not offset/total — and `Value` is honest here: the audit page reads
+    /// `CursorList<Value>` too.
     #[test]
     fn audit_logs_envelope() {
-        // audit logs use a cursor envelope, not offset/total.
         assert_golden::<CursorList<Value>>(golden!("GET__admin__audit-logs.json"));
     }
 
     // ── `{data}` envelopes ──
+    /// T-306 — this used to be `DataEnvelope<Value>`, and that is why a month-old wire/DTO type
+    /// mismatch shipped: `Value` round-trips *any* payload, so the gate passed while the real
+    /// `ServerStatusDto` could not deserialize the very golden it was pinned against. Typed, this
+    /// test fails on `server_fps: 58.7` against an `i64` field with
+    /// `invalid type: floating point 58.7, expected i64` — the defect, caught by the gate that
+    /// exists to catch it.
     #[test]
     fn servers_envelope() {
-        assert_golden::<DataEnvelope<Value>>(golden!("GET__servers.json"));
+        assert_golden::<DataEnvelope<ServerRowDto>>(golden!("GET__servers.json"));
+    }
+
+    /// One **live** `GET /servers/:id/status/stream` frame, captured byte-exact off a running Axum
+    /// stack (`curl -sN .../status/stream`) whose `server_statuses` row reproduces the
+    /// `GET__servers.json` golden. Includes the `data: ` prefix and the `\n\n` terminator the
+    /// `sse.rs` splitter keys on, so the fixture is the wire and not a paraphrase of it.
+    ///
+    /// The SSE payload had **no golden of any kind** before T-306 — the fixture corpus is all `GET`
+    /// bodies — so nothing pinned the one DTO that a realtime consumer deserializes on every frame.
+    pub(crate) const LIVE_SSE_FRAME: &str = concat!(
+        r#"data: {"server_id":"00000000-0000-4000-d000-000000000001","is_online":true,"#,
+        r#""player_count":47,"max_players":64,"server_fps":58.7,"uptime_seconds":19842,"#,
+        r#""current_match_id":"00000000-0000-4000-f000-000000000003","ingame_time":"06:42","#,
+        r#""ingame_weather":"overcast","updated_at":"2026-07-26T05:00:00Z"}"#,
+        "\n\n"
+    );
+
+    /// The captured live frame must deserialize, and must carry the tenth the `numeric(5,1)`
+    /// column really holds — rounding it away would be a second, quieter version of this bug.
+    #[test]
+    fn live_sse_frame_deserializes_with_its_fractional_fps() {
+        let payload = LIVE_SSE_FRAME
+            .trim()
+            .strip_prefix("data:")
+            .expect("captured frame is a data: frame")
+            .trim();
+        let dto: ServerStatusDto = serde_json::from_str(payload)
+            .unwrap_or_else(|e| panic!("R-api: live SSE frame does not deserialize: {e}"));
+        assert_eq!(dto.server_fps, 58.7, "the wire tenth must survive the DTO");
+        assert_eq!(dto.player_count, 47);
+        assert_eq!(dto.max_players, 64);
+        assert_eq!(dto.uptime_seconds, 19842);
+        assert_eq!(dto.ingame_time.as_deref(), Some("06:42"));
+        assert_eq!(dto.ingame_weather.as_deref(), Some("overcast"));
+        // The frame is also a golden: it must re-serialize canonically byte-equal.
+        assert_eq!(canon(payload), canon(&serde_json::to_string(&dto).unwrap()));
     }
     #[test]
     fn wiki_envelope() {
@@ -791,5 +1041,93 @@ mod r_api {
     #[test]
     fn fixture_dir_constant_documented() {
         assert!(FX.ends_with("fixtures/api/"));
+    }
+
+    // ── SSE frame decode (T-306) ──
+    //
+    // These live beside the R-api gate because the module that *uses* them (`sse.rs`) is
+    // wasm32-only and therefore untestable by `cargo test` — the reason the decode moved here.
+
+    /// The captured live frame through the real decoder. Before T-306 this returned `Rejected` —
+    /// every live telemetry frame did — and the read loop dropped it without a word.
+    #[test]
+    fn a_live_frame_decodes_into_a_status() {
+        match decode_server_status_frame(LIVE_SSE_FRAME) {
+            SseFrame::Status(dto) => {
+                assert_eq!(dto.server_fps, 58.7);
+                assert_eq!(dto.player_count, 47);
+                assert_eq!(dto.max_players, 64);
+                assert!(dto.is_online);
+            }
+            other => panic!("live frame must decode into a status, got {other:?}"),
+        }
+    }
+
+    /// The `i64` regression, pinned: a fractional `server_fps` must never be why a frame is dropped.
+    #[test]
+    fn a_fractional_fps_is_not_a_reason_to_reject_a_frame() {
+        for fps in ["58.7", "0.0", "29.4", "60", "100.0", "19.9"] {
+            let frame = format!(
+                "data: {{\"server_id\":\"s\",\"is_online\":true,\"player_count\":1,\
+                 \"max_players\":2,\"server_fps\":{fps},\"uptime_seconds\":3,\
+                 \"updated_at\":\"t\"}}\n\n"
+            );
+            assert!(
+                matches!(decode_server_status_frame(&frame), SseFrame::Status(_)),
+                "server_fps={fps} must decode"
+            );
+        }
+    }
+
+    /// A malformed payload must come back carrying its reason. A bare `None` here is exactly what
+    /// made this class of defect invisible.
+    #[test]
+    fn a_bad_payload_is_rejected_with_its_reason_not_silently_dropped() {
+        match decode_server_status_frame("data: {\"server_id\":\"s\",\"is_online\":\"yes\"}\n\n") {
+            SseFrame::Rejected { error, payload } => {
+                assert!(error.contains("invalid type"), "unexpected error: {error}");
+                assert!(payload.contains("server_id"), "payload must be reported");
+            }
+            other => panic!("expected Rejected, got {other:?}"),
+        }
+    }
+
+    /// Keepalives and non-`data:` lines are NOT rejections — auditing them would drown the real
+    /// signal, which is the failure mode the audit exists to avoid.
+    #[test]
+    fn non_data_frames_are_not_audited_as_rejections() {
+        for f in [": keepalive\n\n", "event: ping\n\n", "\n\n", "id: 7\n\n"] {
+            assert_eq!(
+                decode_server_status_frame(f),
+                SseFrame::NotData,
+                "frame {f:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_warn_ladder_is_first_then_powers_of_ten() {
+        for n in [10u64, 100, 1000, 10_000] {
+            assert!(is_power_of_ten(n), "{n} should be on the ladder");
+        }
+        for n in [0u64, 1, 2, 9, 11, 99, 101, 1001] {
+            assert!(!is_power_of_ten(n), "{n} should not be on the ladder");
+        }
+    }
+
+    /// The audit returns a message that names the field and the two structs to reconcile — a warn
+    /// that just said "parse failed" would have cost T-306 the same month.
+    #[test]
+    fn the_audit_message_names_the_offending_field_and_both_structs() {
+        let SseFrame::Rejected { error, payload } = decode_server_status_frame(
+            "data: {\"server_id\":\"s\",\"is_online\":true,\"player_count\":1,\
+             \"max_players\":2,\"server_fps\":\"nope\",\"uptime_seconds\":3,\"updated_at\":\"t\"}\n\n",
+        ) else {
+            panic!("expected Rejected");
+        };
+        let msg = audit_rejected_frame("test", &error, &payload);
+        assert!(msg.contains("server_fps"), "must name the field: {msg}");
+        assert!(msg.contains("ServerStatusDto") && msg.contains("ServerStatus"));
+        assert!(msg.contains("REJECTED and dropped"));
     }
 }

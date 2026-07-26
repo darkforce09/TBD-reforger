@@ -26,6 +26,17 @@ fn v_bool(v: &Value, k: &str) -> bool {
     v.get(k).and_then(|x| x.as_bool()).unwrap_or_default()
 }
 
+/// The FPS the panel calls "Optimal", from the React original's `status.server_fps >= 30`.
+///
+/// **Not the same number as the backend's alert floor, and not a mistake.** `handlers/telemetry.rs`
+/// raises its "FPS dropped below 20" audit at `LOW_FPS_THRESHOLD = 20.0`; this is a cosmetic label
+/// on a live panel. Unifying them would either start calling a 25-FPS server "Optimal" or start
+/// implying an alert fired when none did.
+///
+/// `f64` since T-306 — the wire is `numeric(5,1)`, so an `i64` threshold no longer type-checks
+/// against the field, which is how this constant came to be named at all.
+const FPS_OPTIMAL_FLOOR: f64 = 30.0;
+
 /// lib/format.ts `formatUptime` — HH:MM:SS zero-padded.
 fn format_uptime(seconds: i64) -> String {
     let h = seconds / 3600;
@@ -145,9 +156,38 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
     #[cfg(not(target_arch = "wasm32"))]
     let _ = copy_text;
     // Cached row status (fallback until the first SSE frame lands).
-    let row_status: Option<ServerStatusDto> = s
-        .get("status")
-        .and_then(|v| serde_json::from_value(v.clone()).ok());
+    //
+    // T-306 — this was `.and_then(|v| serde_json::from_value(..).ok())`, and the `.ok()` absorbed
+    // two completely different events as if they were one:
+    //
+    //   * `"status": null` (or absent) — a registered server with no telemetry row yet. Entirely
+    //     expected; the third row of the committed `/servers` golden is exactly this. Warning here
+    //     would cry wolf on every render of a healthy staging box.
+    //   * a **present** status object the DTO cannot read — a wire/DTO contract breach, which is
+    //     what a `server_fps` of `58.7` against an `i64` field was for a month.
+    //
+    // So the two are split rather than blanket-logged: absent stays silent, present-but-unparseable
+    // is audited through the same deduped channel as a rejected SSE frame. Still best-effort — the
+    // panel renders with the live stream's frames and its own `—` fallbacks either way.
+    let row_status: Option<ServerStatusDto> = match s.get("status") {
+        None | Some(Value::Null) => None,
+        Some(v) => match serde_json::from_value::<ServerStatusDto>(v.clone()) {
+            Ok(dto) => Some(dto),
+            Err(e) => {
+                let payload: String = v
+                    .to_string()
+                    .chars()
+                    .take(crate::dto::PAYLOAD_AUDIT_CHARS)
+                    .collect();
+                crate::dto::audit_rejected_frame(
+                    "server_intel cached row status",
+                    &e.to_string(),
+                    &payload,
+                );
+                None
+            }
+        },
+    };
     let row_status = StoredValue::new(row_status);
     let live = move || live_sig.get().or_else(|| row_status.get_value());
     let modpack = s.get("required_modpack").cloned().filter(|m| !m.is_null());
@@ -263,7 +303,8 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
                         <div class="flex items-center justify-between text-code-md text-on-surface-variant">
                             <span>"Server FPS:"</span>
                             <span class=move || {
-                                if live().map(|l| l.server_fps >= 30).unwrap_or(false) {
+                                if live().map(|l| l.server_fps >= FPS_OPTIMAL_FLOOR).unwrap_or(false)
+                                {
                                     "text-tactical-yellow"
                                 } else {
                                     "text-error"
@@ -272,7 +313,16 @@ fn server_panel(s: Value, live_sig: RwSignal<Option<ServerStatusDto>>) -> impl I
                                 {move || {
                                     live()
                                         .map(|l| {
-                                            let opt = if l.server_fps >= 30 { "Optimal" } else { "Low" };
+                                            let opt = if l.server_fps >= FPS_OPTIMAL_FLOOR {
+                                                "Optimal"
+                                            } else {
+                                                "Low"
+                                            };
+                                            // `{}` on an f64 prints `58.7` for a fractional value and
+                                            // `30` for a whole one — the same text React's
+                                            // `${status.server_fps}` produced from a JS number. Do not
+                                            // reach for `{:.1}`: that would print `30.0` where the
+                                            // byte-verified original prints `30`.
                                             format!("{} ({opt})", l.server_fps)
                                         })
                                         .unwrap_or_else(|| "—".into())

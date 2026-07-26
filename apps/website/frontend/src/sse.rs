@@ -10,8 +10,24 @@
 //! `on_cleanup` is Send-bound, and the `AbortController` handle is `!Send`) — the connection ends
 //! when the tab closes or the server drops it. One page = one stream; navigation leaks at most one
 //! idle reader, the documented editor-host tradeoff.
+//!
+//! **T-306 — a rejected frame is audited, not swallowed.** The parse used to be
+//! `if let Ok(json) = serde_json::from_str::<ServerStatusDto>(..)`, so a frame the DTO could not
+//! read was dropped with no trace on a stream that had already reported `connected = true`. That is
+//! how a `server_fps: i64`/`f64` mismatch survived a month: the page looked like a dead server while
+//! the backend was sending complete, healthy frames. The frame is still best-effort — one bad frame
+//! must not tear down a live feed — but it now leaves a `console.warn` audit trail and sets the
+//! `error` signal, the same best-effort-with-audit shape T-316/T-326 used rather than either
+//! propagating or dropping in silence.
+//!
+//! The decode itself lives in [`crate::dto`] ([`decode_server_status_frame`]), not here, and that
+//! placement is deliberate: **this module is `#[cfg(target_arch = "wasm32")]` in `main.rs`, so a
+//! `#[cfg(test)] mod` in this file would never be compiled, let alone run, by `cargo test`.** A
+//! frame-decoding policy nobody can test is how the original defect stayed invisible, so the pure
+//! half sits in the natively-compiled wire-contract module beside the golden that pins it, and this
+//! file keeps only the `web_sys` transport.
 use crate::auth::AuthStore;
-use crate::dto::ServerStatusDto;
+use crate::dto::{decode_server_status_frame, ServerStatusDto, SseFrame};
 use leptos::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -75,11 +91,29 @@ pub fn stream_server_status(
                 while let Some(pos) = buf.windows(2).position(|w| w == b"\n\n") {
                     let frame: Vec<u8> = buf.drain(..pos + 2).collect();
                     let text = String::from_utf8_lossy(&frame);
-                    let line = text.trim();
-                    if let Some(data) = line.strip_prefix("data:") {
-                        if let Ok(json) = serde_json::from_str::<ServerStatusDto>(data.trim()) {
-                            status.set(Some(json));
+                    match decode_server_status_frame(&text) {
+                        SseFrame::Status(dto) => {
+                            status.set(Some(*dto));
+                            // A good frame clears a previous rejection, so a transient bad frame
+                            // does not leave the panel permanently accusing the stream.
+                            error.set(None);
                         }
+                        SseFrame::Rejected {
+                            error: e,
+                            payload: p,
+                        } => {
+                            // Best-effort: keep reading, keep `connected` true (it *is* connected —
+                            // claiming otherwise would be a second lie), but stop pretending nothing
+                            // happened. `status` is deliberately left as-is rather than cleared: the
+                            // last good frame is better intel than a blank panel.
+                            let msg = crate::dto::audit_rejected_frame(
+                                "sse stream_server_status",
+                                &e,
+                                &p,
+                            );
+                            error.set(Some(msg));
+                        }
+                        SseFrame::NotData => {}
                     }
                 }
             }
