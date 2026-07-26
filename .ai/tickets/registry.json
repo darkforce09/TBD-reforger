@@ -9643,7 +9643,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3150,
       "stream": "web-platform",
       "targets": [
@@ -10860,7 +10860,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3209,
       "stream": "web-platform",
       "targets": [
@@ -10881,7 +10881,7 @@
       "impact": [
         "platform-lifecycle"
       ],
-      "status": "ready",
+      "status": "shipped",
       "order": 3210,
       "stream": "web-platform",
       "targets": [
@@ -10930,6 +10930,173 @@
       ],
       "executor": "claude-code",
       "priority": 1
+    },
+    {
+      "id": "T-397",
+      "title": "Absent telemetry counters materialise as 0 on first INSERT, and leaderboard_totals aggregates the zero",
+      "summary": "MAJOR, found by wave 1's adversarial verifier against merged main, MEASURED not reasoned. Deferred by operator triage 2026-07-26: it neither destroys operator-authored work nor blocks a backlog feature, and the state it leaves is strictly better than the pre-T-393 state (which was: all ingest 400s, nothing stored at all). Do not read \"T-393 shipped\" as \"telemetry is now correct\".\n\nT-393 split PlayerStatInput into a required identity core plus an OPTIONAL counters object, so that omitting counters stops being a write. The UPDATE half of that claim HOLDS — handlers/telemetry.rs:734-749's counters-absent statement names only discord_id and role_played, no column is re-bound to its own value, no read-modify-write race. Verified by reading the SQL.\n\nTHE INSERT HALF DOES NOT. migrations/0001_initial_schema.sql:251-265 declares the counter columns NOT NULL DEFAULT 0 / DEFAULT false, so a FIRST insert with counters absent materialises zeros, and a stored 0 is indistinguishable from a genuinely scored 0. Because T-393 moved `deaths` into the counters block, the shipping mod's top-level \"deaths\" is now silently dropped — T-393's own test asserts rows[0].deaths == 0 for a player it reported with deaths:1.\n\nMEASURED on a cold DB (BEGIN..ROLLBACK), one linked player, two matches:\n  row A (mod path, counters absent): kills=0  deaths=0\n  row B (full-fidelity report):      kills=17 deaths=3\n  REFRESH MATERIALIZED VIEW leaderboard_totals -> kills=17 deaths=3 kd_ratio=5.67\nTrue deaths is 4; the honest kd is 4.25. The zero is not inert, it is summed.\n\nThis is T-316's failure shape — silence becoming a value — relocated from the UPDATE path to the INSERT path. The mod's own class header (TBD_ResultsReporter.c:19-21) states the intended semantics verbatim: \"an absent field says 'not measured' where a 0 would claim 'measured, and it was none'.\" The backend now does the opposite.\n\nNOTE THE TRADE BEFORE \"FIXING\" IT BY MOVING deaths BACK. deaths-in-the-required-core is correct on a first insert but corrupt on a mixed re-ingest of the same row (a full report writes 17/3, a later mod-only report overwrites deaths->1 and leaves kills=17, giving kd 17). deaths-in-counters is correct on re-ingest and lossy on first insert. T-393 chose the anti-corruption side, which is defensible and consistent with T-316. The placement is NOT the real defect — even with deaths in the core, kills/team_kills/longest_kill_m/vehicles_destroyed would still materialise as 0 on a first insert.\n\nTHE ACTUAL FIX is at the schema: make the counter columns NULLable so absent = NULL = \"not measured\", and make leaderboard_totals NULL-aware. That is a migration plus a materialized-view change plus a backfill decision for existing rows. Sized accordingly; do not attempt it as a patch.\n\nSECOND HALF, MOD SIDE, executor: workbench — TBD_ResultsReporter.c BuildPlayerRow should emit a complete counters object once the engine exposes kills/team_kills/longest_kill/vehicles_destroyed per player. Check whether Enfusion exposes them at all before committing; if it does not, the NULL-semantics fix above is the whole answer. Its class header at :19-21 also now describes the backend falsely (claims the fields are #[serde(default)]) and needs correcting.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "MOD",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3213,
+      "stream": "web-platform",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-398",
+      "title": "Concurrent slices share mutable gate state — one worktree's build and DB writes silently corrupt another's gate result",
+      "summary": "BLOCKER-severity by the always-blocker rule (a gate reporting on code it never examined), but DEFERRED by operator triage 2026-07-26 because its only manifestation is CONCURRENT gates, and wave 1's authoritative verification was a single serial gate on merged main. Promote before any wave that gates more than one slice at a time. Two independent mechanisms, one root cause.\n\nMECHANISM 1 — ARTIFACT CLOBBERING. Observed directly by T-334's agent: target/debug/deps/events-120088c1974e0f68 AND target-gate-api/debug/deps/events-12108c0722165edc were both overwritten mid-session by a sibling worktree's build; the binaries contained main's t324-/t227- literals minutes after its own had been built there, with ps confirming a concurrent gate_test_api from another tree. The per-STEP private dirs (target-gate-api, -frontend, -mapengine) are private per step but SHARED ACROSS WORKTREES, so same package + same version = same artifact hash = clobbering. wave.sh:398-407 documents this hazard as already fixed; it is not. Consequence: a slice's \"N passed\" may not be its own code — the exact entry already in PLATFORM_FACTORY.md's signature-defect table. Only an immediate post-run byte-scan of the binary can tell you what a gate actually tested.\n\nMECHANISM 2 — SHARED GATE DATABASE. wave.sh:93-105 (ensure_gate_db) hands every slice the same tbd_gate_it and deliberately does not drop it, while tests/registry_compat.rs:38-60 DELETEs and re-imports two FIXED modpack UUIDs. Two gates at once make each other fail. Three distinct symptoms observed by T-393's agent: registry_compat.rs:255 inserted 0 vs 10604; registry_compat.rs:511 (0,5) vs (16,7); an ETag assertion 200 vs 304. Deterministic repro, roughly 1 in 2:\n  distrobox-host-exec env TEST_DATABASE_URL=postgres://tbd:tbd@localhost:5434/tbd_gate_it?sslmode=disable \\\n    bash -c 'B=/home/Samuel/Projects/TBD-Reforger/target/debug/deps/registry_compat-*; (\"$B\" &) ; \"$B\"'\nOne process fails, the other passes; run alone it always passes.\n\nBoth are FALSE-RED rather than false-green, so they waste budget rather than hide bugs — which is why this is deferred rather than fixed. But false-red is the most expensive failure shape this program has: the honest response to a red gate is to go looking for a bug in your own diff, and an unattended fix agent will spend its entire retry budget doing exactly that.\n\nCHEAPEST DURABLE FIX: serialise the gate with an flock around gate_slice/cmd_gate, so two worktrees cannot gate concurrently. That closes both mechanisms at once and costs a few lines. It trades wall clock for trustworthiness, which is the correct trade here — a gate nobody can believe is worth less than a slow one. The alternatives (per-worktree CARGO_TARGET_DIR, per-slice gate DB) both fight PLATFORM_FACTORY correction 1's shared-target-dir economics and cost ~40 GB per tree.",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3214,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-399",
+      "title": "admin_field.rs approvals assertion fails deterministically once the gate DB accumulates 20 pending_approval rows",
+      "summary": "Filed 2026-07-26 after it turned the wave-1 post-merge gate red for a reason that had nothing to do with the wave. Diagnosed by T-334's agent and independently confirmed by the command center against both the handler and the live DB.\n\ntests/admin_field.rs:377 asserts its just-submitted mission appears on the FIRST PAGE of GET /api/v1/approvals. handlers/approvals.rs:99-105 pages LIMIT 20 OFFSET 0 ORDER BY COALESCE(updated_at, created_at, ...) ASC — oldest first. Nothing ever deletes pending_approval missions from tbd_gate_it, and admin_field.rs:369 plus missions.rs:963/1138/1156 all write them. Every run adds one; once the count exceeds 20 the newest is off page 1 and the assertion fails FOREVER, on every branch, for everyone.\n\nCONFIRMED on the shared gate DB 2026-07-26: 23 pending_approval rows, all titled \"T234 draft by 999000000000000009\", accumulating one per run since 12:25. The wave-1 merge gate failed on exactly this test; the same tree then passed 11/11 against a fresh cold database (tbd_wave1_cold). So the fix is not in any slice's code.\n\nThis is the \"green then red on an identical tree\" shape the program keeps paying for, with an unusually nasty property: it is not a flake but a RATCHET — once crossed it never goes back, so it reads as \"the change I just made broke approvals\".\n\nRepro: psql -d tbd_gate_it -c \"SELECT count(*) FROM missions WHERE status='pending_approval' AND deleted_at IS NULL\" — if > 20, cargo test -p website-api --test admin_field admin_approvals_cms_field fails.\n\nTWO THINGS TO FIX, and the second matters more:\n 1. The test should not assume page 1 — query with a filter, or assert over the paged set, or clean up after itself.\n 2. NOTHING resets the gate database. ensure_gate_db (wave.sh:93-105) deliberately never drops tbd_gate_it for speed, so every suite's residue accumulates forever and this class of ratchet is guaranteed to recur in a different suite. Consider a periodic reset, or per-wave DB names, alongside T-398 whose mechanism 2 is the same shared database.\n\nImmediate operational workaround, no permission needed: create a fresh DB and set TBD_GATE_DB to it. That is what wave 1 shipped against.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3215,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-400",
+      "title": "Integration-test shared-fixture isolation — the 17 suites T-334 did not cover",
+      "summary": "The residual of T-334, filed by the command center at dispatch time (NOT by the slice agent — three agents claimed to have filed follow-ups on 2026-07-26 and none had, so this one is filed by the party that owns the registry). T-334 was deliberately narrowed to its owns row: it created tests/common/mod.rs with a diagnostic dev-login helper and gave tests/events.rs private actor ids. Everything below is what it did not touch. Nothing here was judged wrong — only not now.\n\nThe 22 test binaries share one gate database and mutate each other's rows. From an 18-file inventory:\n\n - admin_field.rs:332 calls POST /admin/roles/sync, which loops EVERY users row and demotes anyone with no user_discord_roles — it fires T-372's admin lockout INSIDE the suite, silently demoting the shared dev row for every other binary. No amount of per-suite actor isolation survives a handler that rewrites every row, so this one has to go or be scoped first.\n - identity_link.rs is the heaviest writer: :26 nulls the shared row's arma_id with the error swallowed by `let _`, :106 unlinks it, :124-134 relinks it. dev.rs:47-49's ON CONFLICT does NOT restore arma_id and me.rs:77 computes arma_linked from the DATABASE row rather than the JWT claim, so auth_refresh.rs:100 (assert_eq!(me_body[\"arma_linked\"], true)) fails whenever identity_link's setup interleaves ahead of it. Two binaries, one row, cargo test runs them concurrently. This pair is the live mechanism, confirmed by T-334's agent.\n - tests/telemetry.rs:17 PLAYER_DISCORD is still 000000000000000003, which is also seeds/content_golden.sql:166 ('Vance'). T-334 vacated the events.rs half of that double-booking; the telemetry half is untouched, and its seed carries ON CONFLICT ... DO UPDATE SET arma_id = EXCLUDED.arma_id, so it rewrites whatever another binary seeded.\n - factions.rs:18 DELETE FROM user_factions is the ONLY unscoped destructive statement in the corpus; it wipes null_tolerance.rs:589's faction. factions.rs:26-27 and registry_compat.rs both rewrite the shared role and leave it on enlisted, while misc_integration.rs:88 asserts role=='admin' by READING the DB and therefore fails when another suite leaves it lower.\n - idx_users_arma_id (migrations/0001_initial_schema.sql:887) is a NON-PARTIAL unique index, so arma_id = '' is a single global slot across the whole database, not a null-ish default. A second suite writing '' for a different discord_id hits a unique violation that ON CONFLICT (discord_id) cannot absorb. admin_field.rs:251-252 already documents this and uses NULL; nothing enforces it.\n - 17 unchecked header-index sites across 13 files still panic bare. tests/common/mod.rs now exists and its dev_login_token() reports status, body and asking suite — migrating the remaining suites onto it is most of the value here and is mechanical.\n\nPatterns worth copying: null_tolerance.rs avoids dev-login entirely, owns ...099 and serialises its DB tests with a lock; misc_integration.rs mints via state.jwt.issue_access, which writes nothing.\n\nDO THIS WITH T-381 (nothing validates the TEST_DATABASE_URL target name) and T-399 (nothing ever resets the gate DB) — same shared-database hazard, three different consequences.\n\nCORRECTION TO THE RECORD, verified twice: T-365's stated mechanism is WRONG. dev_login has no ban check — handlers/dev.rs:24-64 never reads is_banned and calls issue_session unconditionally; handlers/auth.rs:35-47 issue_session loads no user row. The ban bites at POST /auth/refresh (handlers/auth.rs:144-150 -> 403). Confirmed statically and empirically on an isolated DB. Do not re-derive this a fourth time.",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3216,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 1
+    },
+    {
+      "id": "T-401",
+      "title": "git-lfs is absent while filter.lfs.process is set, so git status silently returns nothing and wave.sh change detection is half dead",
+      "summary": "Found independently by two wave-1 slice agents. Not a repo defect — an environment one — but it degrades a gate SILENTLY, which puts it in the family this program cares about most.\n\ngit-lfs is installed on neither the container nor the host PATH, while filter.lfs.process is configured globally. Any git operation that refreshes the index over an LFS path aborts:\n  packages/map-assets/everon/dem/everon-dem-16bit.png: clean filter 'lfs' failed\nRepro: `git status --porcelain; echo $?` -> exit 128, NO STDOUT.\n\nTHE SILENT PART: wave.sh:283 (wasm_changed) and the identical union in fmt_changed compute their change set as the union of `git diff --name-only <base>` and `git status --porcelain 2>/dev/null`. The 2>/dev/null swallows the abort, so the working-tree half contributes nothing and UNCOMMITTED changes are invisible to the gate even when the base resolves correctly. A pre-commit gate run in this container therefore examines only what is already committed, while reporting as though it examined everything. wave.sh:146-152 already works around this for tree_state, so the workaround is known — it is just not applied at the change-detection sites.\n\nPractical consequences today:\n - Committing before gating is mandatory, and nothing says so. Every wave-1 slice happened to do it.\n - git add/commit need -c filter.lfs.process= -c filter.lfs.clean=cat -c filter.lfs.smudge=cat -c filter.lfs.required=false. All three slice agents discovered this independently and scoped it to their own non-LFS paths so no pointer was re-hashed.\n - PLATFORM_FACTORY.md already records that plain `git push` fails for this reason (hence wave.sh push); add/status/diff are the same family and are not recorded.\n\nTWO FIXES, do both: install git-lfs (the real answer, and it also un-breaks push), and stop swallowing the error at wave.sh:283 and in fmt_changed so a dead working-tree probe is loud instead of empty. The second matters even with lfs installed — any future git failure there is currently indistinguishable from \"nothing changed\".",
+      "program": "platform",
+      "surfaces": [
+        "INFRA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3217,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-402",
+      "title": "T-393 follow-ups: legacy-counter tripwire gaps and the unpinned terrain value space",
+      "summary": "Three MINOR findings against the shipped T-393 contract split, from wave 1's adversarial verifier. None affects the shipping mod; all are cheap. Grouped because they are one file and one sitting.\n\n1. command_win is missing from the legacy tripwire and the comment is false. handlers/telemetry.rs:483-508 lists kills/team_kills/longest_kill_m/vehicles_destroyed/is_command. SEVEN fields moved into the counters object; deaths is excluded deliberately and correctly (including it would 400 every production report, since the mod emits deaths at top level), but command_win is excluded SILENTLY while the comment asserts \"Nothing else that moved is tolerated.\" Harmless in practice — a genuine pre-split sender carries the other five and trips anyway — but the comment states something untrue about the code beneath it.\n\n2. A JSON null escapes the tripwire. Option<IgnoredAny> under serde_json's deserialize_option maps null -> None, so legacy_counter_key() returns None and {\"kills\": null, ...} passes as a modern body. No known sender does this. Reasoned from serde semantics, not compiled — confirm before fixing.\n\n3. The golden pins one instantiation of the mod's format string, not the mod's value space. The T-393 golden hard-codes terrain \"everon\". GetTerrain() returns mission.meta.terrain verbatim and packages/tbd-schema/schema/mission.schema.json:124 constrains it only to ^[a-z][a-z0-9_]*$, while valid_terrain (telemetry.rs:31-38) accepts exactly everon|arland|custom and upsert_match (telemetry.rs:854) 400s anything else — REJECTING THE WHOLE REPORT, not degrading the field. So a community terrain still produces the T-393 headline failure and the new golden cannot see it. Pre-existing and outside T-393's stated scope, but it means \"all production ingest 400s\" is not fully retired for non-allowlisted terrains. Either widen the allowlist, or degrade to NULL like the other unparseable fields do (parse_uuid_opt, telemetry.rs:49-54, is the model), or pin the value space in the golden.\n\nVerified as NOT defects while checking these: the golden's bytes match BuildPayload/BuildPlayerRow exactly, key order included; the tripwire cannot reject anything the mod sends; started_at/ended_at cannot arrive blank because s_bSawLive guards the report (TBD_ResultsReporter.c:215).",
+      "program": "platform",
+      "surfaces": [
+        "API"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3218,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-403",
+      "title": "Golden corpus has vacuous fixtures — ArmoryFaction/ArmoryItem have literally zero coverage",
+      "summary": "T-394 made assert_golden structurally able to see a dropped field under #[serde(flatten)]. It cannot rescue a golden that has no rows to check, and several do not. This is T-359's draft-capture hazard, measured at struct granularity instead of field granularity.\n\nPROVEN TOTAL, not estimated. The verifier put #[serde(skip)] on EVERY field of ArmoryFaction (both `faction` and `items`), reducing the type to a total no-op, and cargo test -p website-frontend stayed 169 passed / 0 failed. armory_by_faction is [] in GET__events__c71a4d1a....json, the only golden that reaches it, so there is nothing to poison and nothing to compare. ArmoryItem is in the same position. Blast radius: total — the entire type is unverified.\n\nChecked for the same shape across the rest of the corpus: `mods` is [] in four goldens and MissionDetail::armory in two, but both are Vec<Value> — no typed item type to lose, so those are merely uninformative rather than dangerous. ArmoryFaction/ArmoryItem are the only typed item types with zero rows.\n\nField-level gaps in the same family, all confirmed:\n - MissionDetail: custom_terrain_name and thumbnail_url absent from BOTH goldens (draft and rejected). The draft golden GET__missions__512d8658....json is additionally absent for rejection_reason/reviewed_by/reviewed_at/briefing — already documented in-code by T-389.\n - MissionCard: custom_terrain_name 1/4 and thumbnail_url 2/4 in GET__missions.json, but 0/7 for both in GET__missions__scope-mine-rejected.json; rejection_reason is 0/4 in GET__missions.json and only 1/7 in the rejected golden.\n\nTHE FIX IS FIXTURE CAPTURE, NOT MORE TEST CODE: recapture the event golden from an event whose missions actually carry armory rows, and the mission goldens from rows that populate the fields under test. T-359's warning applies directly — a golden captured from a row that does not populate a field proves nothing about that field in either direction, so capturing must be deliberate about WHICH row, not just which endpoint.\n\nNote the honest limit of T-394's own fix while you are here: its module header slightly oversells, in that the structural check covers types the goldens instantiate and says nothing about types they do not. This ticket is that gap.",
+      "program": "platform",
+      "surfaces": [
+        "FRONTEND",
+        "DATA"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3219,
+      "stream": "web-platform",
+      "targets": [
+        "website"
+      ],
+      "executor": "claude-code",
+      "priority": 2
+    },
+    {
+      "id": "T-404",
+      "title": "Doc/comment hygiene: three in-code statements that are now false",
+      "summary": "NITs from wave 1, batched so they cost one sitting rather than three. Each is a comment or citation that asserts something untrue about the code beside it — cheap to fix, and the kind of thing that costs a future reader a re-derivation.\n\n1. apps/website/api/tests/common/mod.rs:5-13 contradicts itself. It says \"NOT a 23rd test binary\" and \"builds 22 test binaries\" in the same block that correctly states \"19 test targets before and after\". cargo metadata --no-deps confirms 19 [\"test\"] targets and that tests/common/mod.rs is not among them. The 22/23 arithmetic is wrong in both the comment and T-334's commit message. The substantive claim — that a tests/<dir>/mod.rs is compiled INTO the suite that declares `mod common;` rather than becoming its own target — is correct and worth keeping.\n\n2. apps/website/api/src/handlers/deployments.rs:27 cites \"PlayerStatInput (telemetry.rs:391-403)\". The citation was already stale before wave 1 (the struct sat at 400 on main) and T-393 moved it to 458. The claim it supports — that the struct has no weapon field — remains TRUE; only the pointer is broken.\n\n3. apps/mod/tbd-framework/Scripts/Game/TBD/Backend/TBD_ResultsReporter.c:19-21 states that the omitted counters are \"#[serde(default)] on the backend so the row still writes\". That was true pre-T-316, false from T-316 (they became required, which is the P0 T-393 fixed), and false again post-T-393 (they are now an optional nested object, and an absent block writes nothing on update — but see T-397 for what it does on insert). EXECUTOR: workbench — mod scripts are not claude-code's to edit, so this line ships with T-397's mod-side half or with a workbench pass.",
+      "program": "platform",
+      "surfaces": [
+        "API",
+        "MOD"
+      ],
+      "impact": [
+        "platform-lifecycle"
+      ],
+      "status": "deferred",
+      "order": 3220,
+      "stream": "web-platform",
+      "targets": [
+        "website",
+        "mod"
+      ],
+      "executor": "workbench",
+      "priority": 3
     }
   ]
 }
