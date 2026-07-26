@@ -219,10 +219,30 @@ wasm_changed() {
   hostrun cargo check -p website-frontend --target wasm32-unknown-unknown --quiet
 }
 
+# Force cargo to actually recompile what this slice changed.
+#
+# The shared CARGO_TARGET_DIR is necessary (a per-worktree target is ~44 GB) but it lets cargo hand
+# one worktree an artifact built from ANOTHER worktree's source. OBSERVED by T-193: `cargo test`
+# reported 113 passing from a binary that did not contain its new tests, and `--list` showed main's
+# 15 eden_chrome tests rather than its own 18. Touching the source forced a real rebuild and the
+# true numbers appeared.
+#
+# That means a slice gate can print PASS on source it never compiled — which makes every other
+# check in this file advisory. Bumping mtime on the changed files invalidates the fingerprint.
+touch_changed() {
+  local base="${1:-main...HEAD}" f
+  for f in $( { git diff --name-only "$base" 2>/dev/null
+                git status --porcelain 2>/dev/null | sed 's/^...//'
+              } | grep '\.rs$' | sort -u ); do
+    [ -f "$f" ] && touch "$f"
+  done
+}
+
 # Cheap gate — what a slice agent runs before reporting done. Target: ~10 s warm.
 gate_slice() {
   local tid="${1:-}"
   echo "═══ slice gate ${tid} ═══"
+  touch_changed
   local fail=0
   run() { local l="$1"; shift; printf "  %-24s " "$l"
     if out="$("$@" 2>&1)"; then echo PASS; else echo FAIL; printf '%s\n' "$out" | tail -15 | sed 's/^/      /'; fail=1; fi; }
@@ -246,6 +266,7 @@ gate_slice() {
 cmd_gate() {
   local base="${1:-HEAD~1}"
   echo "═══ platform wave gate (base ${base:0:12}) ═══"
+  touch_changed "$base..HEAD"
   local fail=0
   # hostrun applies the timeout host-side; run() only has to report 124 distinctly from a real fail.
   run() {
@@ -284,7 +305,15 @@ cmd_gate() {
   # which is the most contended file in the backlog and the one T-182 inverted a pinning assertion
   # in last wave. Measured 2026-07-26: bare 116, --features mission 142. Found by T-183's agent.
   run "test map-engine"  hostrun cargo test -p map-engine-core --features mission -p map-engine-render --quiet
-  run "test frontend"    hostrun cargo test -p website-frontend --quiet
+  # Frontend tests get a PRIVATE target dir. Two agents (T-193, T-195) independently proved that
+  # with the shared CARGO_TARGET_DIR, `cargo test -p website-frontend` runs a stale
+  # website_frontend-<hash> test binary built from ANOTHER worktree: T-193 saw 113 passing from a
+  # binary lacking its new tests; T-195 hit it twice and had to use a private dir to get true
+  # numbers. Same package name + version across worktrees = same artifact hash = clobbering.
+  # A silent PASS on code that was never compiled makes every other check advisory, so this one
+  # step is worth the extra disk. Builds only this crate's tree, not the 609-crate workspace.
+  run "test frontend"    hostrun env "CARGO_TARGET_DIR=$MAIN_ROOT/target-gate-frontend" \
+                                  cargo test -p website-frontend --quiet
   # The Leptos build is the single most expensive gate (2-6 min warm). Wave-level only, and only
   # when the wave actually touched the frontend — measured across the WHOLE wave, not the last merge.
   if git diff --name-only "$base..HEAD" 2>/dev/null | grep -q '^apps/website/frontend/'; then
