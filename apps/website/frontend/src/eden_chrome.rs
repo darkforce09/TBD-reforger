@@ -3189,8 +3189,82 @@ mod tests {
         CARRIED_ENV_KEYS, EDEN_SIDE_CHIPS, ENV_UNCARRIED_NOTE, FLOW_DEFAULT_BRIEFING_S,
         FLOW_DEFAULT_JIP, FLOW_DEFAULT_SAFESTART_S, FLOW_DEFAULT_TIMELIMIT_S, JIP_OPTIONS,
         MIRROR_DEBOUNCE_MS, MIRROR_TIME, MIRROR_WEATHER, OBJECTS_COMING_SOON, SETTINGS_UNREAD_NOTE,
+        VEHICLE_CARGO_KINDS,
     };
     use leptos::prelude::*;
+
+    // ── T-215 — the Vehicles tab ────────────────────────────────────────────────────────────────
+
+    /// The tab was a one-line promise that placement would arrive in T-070, and the only vehicle
+    /// path was the ORBAT Manager's derived position. Both halves of the replacement are pinned:
+    /// the placeholder is gone, and a Vehicles leaf arms the **vehicle** place, not the character
+    /// one.
+    ///
+    /// Source inspection, following `orbat_manager`'s precedent, because the thing under test is a
+    /// Leptos view whose handlers are `#[cfg(target_arch = "wasm32")]` — a native test cannot mount
+    /// it or fire the `pointerdown`. What it can do is fail loudly if the wiring is unpicked.
+    ///
+    /// **Every needle is assembled at run time, and must stay that way.** This test searches the
+    /// file it is written in, so a needle spelled out contiguously — in an assertion, or in prose
+    /// *about* an assertion — puts itself into the haystack: absence checks can then never pass and
+    /// presence checks can never fail. That happened three times while writing this, and the third
+    /// was caught only by perturbation: a bare-symbol `contains` for the vehicle arm stayed GREEN
+    /// after the leaf was rewired to the character path, because the test's own literal satisfied
+    /// it. This program's signature defect in miniature — a check reporting success over an input
+    /// it never examined. The needle is therefore the whole call **expression**, which the file's
+    /// prose (which names the bare function) never contains.
+    #[test]
+    fn vehicles_tab_places_instead_of_promising() {
+        const SRC: &str = include_str!("eden_chrome.rs");
+        let stub = |what: &str, ticket: &str| format!("{what} placement {} {ticket}.", "lands in");
+        let arm = |f: &str| format!("editor_ops::{f}{}", "(payload.clone())");
+
+        assert!(
+            !SRC.contains(&stub("Vehicle", "T-070")),
+            "the Vehicles tab placeholder must be gone"
+        );
+        assert!(
+            SRC.contains(&arm("begin_place_vehicle")),
+            "a Vehicles leaf must arm the vehicle place path"
+        );
+        // The Markers tab is deliberately still a stub (T-069) — if this ever stops being true the
+        // assertion above stops proving that THIS tab is the one that got wired.
+        assert!(
+            SRC.contains(&stub("Marker", "T-069")),
+            "the Markers stub is out of scope and must be untouched"
+        );
+
+        let ops = include_str!("editor_ops.rs");
+        assert!(
+            ops.contains("pub fn begin_place_vehicle"),
+            "editor_ops must expose the vehicle arm"
+        );
+        assert!(
+            ops.contains("core.add_vehicle("),
+            "the vehicle place must reach the core mutator"
+        );
+    }
+
+    /// A vehicle's cargo picker must never offer a person or another vehicle. `character` rows are
+    /// crews (ORBAT slots, not freight) and nesting a vehicle inside a vehicle is not something the
+    /// engine's storage does — either would author a document whose only failure mode is silence.
+    #[test]
+    fn vehicle_cargo_picker_excludes_people_and_vehicles() {
+        for banned in ["character", "vehicle", "vehicle_weapon", "other"] {
+            assert!(
+                !VEHICLE_CARGO_KINDS.contains(&banned),
+                "{banned} must not be offered as vehicle cargo"
+            );
+        }
+        // …and it is a genuine superset of the worn-garment list, which is the whole reason it is a
+        // separate constant rather than a reuse of `arsenal::CARGO_ADD_KINDS`.
+        for expected in ["magazine", "ammo", "gear_primary", "gear_backpack"] {
+            assert!(
+                VEHICLE_CARGO_KINDS.contains(&expected),
+                "{expected} is exactly what a resupply vehicle carries"
+            );
+        }
+    }
 
     #[test]
     fn time_scrubber_roundtrip() {
