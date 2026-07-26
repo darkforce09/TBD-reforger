@@ -1898,7 +1898,10 @@ mod t245_registry_session {
         assert_eq!(hit.len(), 1);
         assert_eq!(hit[0].resource_name, "Prefab.Character.Test");
         let (feed_hit, _) = registry_session::cached_compat().expect("compat session hit");
-        assert_eq!(feed_hit.status, CompatStatus::Ready);
+        assert!(
+            matches!(feed_hit.status, CompatStatus::Ready),
+            "cached compat feed must stay Ready"
+        );
     }
 
     /// Mount source must consult the session gate before calling `api_get` for either path.
