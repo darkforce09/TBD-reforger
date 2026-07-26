@@ -74,6 +74,9 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
    **Symptom seen by the harness:** `cdp: ws call timed out (Runtime.evaluate)` or
    `timeout waiting for Page.loadEventFired` ~200–400 ms after navigating the editor. It is not a
    slow page — the browser is a corpse and nothing will ever answer that websocket.
+   **This signature is NOT unique to this mode.** An undrained output pipe (KB-003, §Known harness
+   gaps) produces the identical message from a browser that is still alive. **P-1 separates them by
+   curl exit code** — do that before concluding "font abort".
    **Why only the editor route:** `/` and every other SPA route (`/dashboard`, `/missions`,
    `/missions/:id`, `/vehicles`, `/mortar` — all verified) render inside fonts they already matched
    and survive with the errors above; only the mission editor reaches a per-character fallback.
@@ -84,6 +87,58 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
 
 ## Known harness gaps (not wedges — read before blaming the app)
 
+- **Chrome's output pipes MUST be drained (KB-003 / T-354, fixed in `cdp::launch`).** A pipe holds
+  **64 KiB**. Pipe chrome's stdout/stderr and never read them, and the first `write(2)` past that
+  blocks **the chrome thread that issued it** — permanently, because a pipe nobody drains never
+  drains. `cdp::launch` had `.stdout(piped())` + `.stderr(piped())` and no reader, so this was a
+  **live intermittent fault in the committed gate**, not only a trap for hand-rolled probes.
+  **How chatty is chromium?** MEASURED with `--enable-logging=stderr --v=1`, written to a file so
+  nothing throttled it: **87,583 bytes of stderr in the first second** on `about:blank` alone
+  (109,581 by t+6 s) — 1.34× the buffer before a page exists. T-320's broken-font environment on its
+  own produces 250–400 `render_text_harfbuzz` lines per launch. You do not need an exotic page to
+  cross 64 KiB.
+  **Why it is intermittent:** whichever chrome thread happens to own the write that crosses the
+  threshold is the thread that parks. A `ThreadPoolForeground` thread parking is survivable; the
+  **browser main thread** parking stops the DevTools endpoint dead. That is scheduling roulette, so
+  it takes out a fraction of runs and reads as flake. MEASURED A/B over `gate doctor` against a
+  deliberately chatty chrome, identical but for `cdp.rs`: **undrained 4 PASS / 2 FAIL of 6; drained
+  18 PASS / 0 FAIL of 18** — and 6 s per run instead of 11–16 s, because the launch poll was
+  stalling on the same block.
+  **Symptom seen by the harness — and this is the trap:** the *exact* wedge-mode-4 signature.
+  `cdp: ws call timed out (Runtime.evaluate)`, or `error sending request for .../json/new` when the
+  block lands earlier, and `gate doctor` reporting **"the headless browser process DIED"**. It has
+  not died. It is alive and blocked in `write`. T-232 lost its second hand-rolled harness to this;
+  T-320 lost five sessions to that same signature from a genuinely different cause. **Do not read
+  that message as a font abort until P-1 below has ruled this out.**
+  **Fixed by:** `cdp::drain_pipe` — both pipes drained from spawn, last 200 lines kept and readable
+  via `Browser::recent_output()` (chrome's stderr is the only copy of its own abort reason, and
+  `launch` used to discard it). **If you write a probe that spawns chromium yourself, drain it or
+  use `Stdio::null()`.** `doctor::check_fonts` shows the other correct answer: hand chrome a *file*,
+  and never `Command::output()` — that waits for EOF on pipes chrome's zygote/crashpad children
+  inherit, so it can block long after the browser itself exited.
+  **Does this explain T-338's top-level-document wedge?** Probably not, and it should not be assumed
+  to. T-338 wedged on **four consecutive** attempts doing IndexedDB + wasm-bridge work in a
+  top-level editor document, and was stable once the editor moved into an iframe. This gap is
+  scheduling-dependent rather than reproducible four times running, and document topology has no
+  obvious path to stderr volume. But T-338's per-step timeout races would not have defeated a pipe
+  block either, so it is **worth re-running that repro now that the pipes are drained** — and if it
+  still wedges, `Browser::recent_output()` will for the first time show what chrome said about it.
+- **`innerText` returns the text CSS *renders*, so `text-transform: uppercase` is applied.** An
+  assertion against `'Attached Missions'` fails against a rendered `'ATTACHED MISSIONS'`. Not
+  hypothetical for this gate: `smokes::render_check` matches `--expect` against
+  `document.body.innerText`, and both "Attached Missions" headings (`events.rs:398`,
+  `event_manager.rs:1206`) carry the Tailwind `uppercase` class. MEASURED on the pinned chromium: a
+  `text-transform: uppercase` element yields `innerText` `"ATTACHED MISSIONS"` and `textContent`
+  `"Attached Missions"`; on `/` the live `<h3>`s report `textContent` `"Command Center"` against
+  `innerText` `"COMMAND CENTER"`. **Use `textContent` for source-fidelity text assertions**, or
+  compare case-insensitively. This cost T-232 part of a misleading 26/44 and led T-226 to "fix" a
+  non-bug before it caught itself.
+- **An `<aside>` selector is ambiguous — there are two.** The platform sidebar (`layout.rs:296`,
+  `hidden … lg:flex`) and the mobile drawer (`layout.rs:97`, `fixed inset-y-0 … lg:hidden`) are both
+  `<aside>`. At the gate's 1440×900 viewport the desktop sidebar is the visible one, but
+  `document.querySelector('aside')` returns whichever comes first in the DOM regardless of which is
+  displayed — not a stable thing to assert on. Select on a discriminating class or scope to a
+  landmark. Also part of T-232's 26/44.
 - **`render-check` never proxies `/api`.** `smokes::render_check` builds its `Harness` with
   `api_proxy: None` (`smokes.rs`), so an `/api/v1/...` fetch falls through to the SPA index.html
   instead of a backend. Harmless for the editor route — verified: it boots, installs
@@ -102,9 +157,19 @@ demand + gate/editor-path PRs) runs the same, with a Postgres service + a curl-i
 
 When a smoke hangs/fails and the doctor doesn't already name it:
 
-- **P-1 — is the browser still alive?** Ask it, not the page: `curl -s http://127.0.0.1:<debug-port>/json/version`
-  while the call is "hanging". No answer = it crashed, and every timeout after that is a symptom, not
-  the fault (T-320). Then go straight to P2 — the abort reason is on chromium's stderr.
+- **P-1 — is the browser still alive?** Ask it, not the page:
+  `curl -sv http://127.0.0.1:<debug-port>/json/version` while the call is "hanging". No answer means
+  every timeout after that is a symptom, not the fault (T-320). **Read curl's exit code — "no
+  answer" has two distinct causes** (T-354, both measured):
+  - **exit 7, connection refused** — nothing is listening. The browser is genuinely gone (a crash /
+    `SK_ABORT`). Go to P2; the abort reason is on chromium's stderr, or already in
+    `Browser::recent_output()`.
+  - **exit 52, empty reply** — the socket is accepted and then nothing is written. The browser is
+    **alive** but its main thread is blocked. Confirm with
+    `cat /proc/<browser-pid>/syscall` (leading `1` = `write`) and `/proc/<browser-pid>/wchan`
+    (`anon_pipe_write` = a full, undrained output pipe → the KB-003 gap above, not a crash).
+    A `--headless=new` browser blocked this way still shows all threads in state `S`, so `ps` alone
+    will not tell you.
 - **P0 — process + resources:** `pgrep -af 'chrome-headless-shell|chrome_crashpad'` + `uptime`;
   `/proc/meminfo` `MemAvailable`; cgroup `memory.max`. Kill strays / free RAM → retry.
 - **P1 — env drift:** resolved chromium `--version` vs `gate-env.json`; `rustc`/`trunk` `--version`;
