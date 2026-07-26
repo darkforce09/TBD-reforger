@@ -1,5 +1,5 @@
 {
-  "next_id": 304,
+  "next_id": 306,
   "tickets": [
     {
       "id": "T-001",
@@ -6867,14 +6867,15 @@
       "impact": [
         "mc-settings"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2110,
       "stream": "mission-creator",
       "targets": [
         "root",
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "b30f5490"
     },
     {
       "id": "T-194",
@@ -6906,13 +6907,14 @@
       "impact": [
         "platform-pages"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2130,
       "stream": "web-platform",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "c0c357e2"
     },
     {
       "id": "T-196",
@@ -6945,13 +6947,14 @@
       "impact": [
         "arsenal"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2150,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "slice/T-197"
     },
     {
       "id": "T-198",
@@ -7111,7 +7114,7 @@
     {
       "id": "T-206",
       "title": "Item data is 78% empty",
-      "summary": "The schema has 14 fields but no ammo type, calibre, magazine capacity or attachment-slot list. Of 1,857 generated items, weight_kg is present on 406 (21.9%) and on zero of 107 weapons; arsenal_type and icon_url are populated on zero rows. The default dev seed is 21 items.",
+      "summary": "BLOCKED, but PROVEN OBTAINABLE (2026-07-26, refused by its slice agent with measured evidence). The paks are readable offline and the data is there: all 1,857 registry prefabs resolve to a pak entry, zero misses, across 222,536 entries / 19,422 .et prefabs. Obtainable WITHOUT Workbench: weight_kg/volume_cm3 (+423 fillable, 103/107 weapons), magazine capacity, calibre and ammo type (113/125 magazines, from MagazineComponent), weapon-mag compat (88/107), attachment slots (99/107), arsenal_type (373/1857 via the EntityCatalog configs). NOT obtainable: icon_url — paks carry .edds assets, a served URL needs extraction/transcoding/hosting, which is an asset pipeline. CORRECTNESS CONTROL: on chains where exactly one component class serializes ItemPhysAttributes the extractor reproduced the existing Workbench value 323/323 EXACTLY; it disagrees only on the 66 ambiguous chains, and there the export is wrong. BLOCKED ON: (1) registry-items.schema.json is additionalProperties:false with no properties for ammo type, calibre, magazine capacity or attachment slots — a schema slice must land first; (2) the extractor has no in-tree home (verify-no-python bans .py repo-wide) so writing 455 hand-computed numbers into a file labelled a Workbench export would be an unreproducible artifact and would pre-empt T-278, the paks->registry pipeline. ORDER: fix pak.rs offset -> fix ReadPhysAttrsPass (workbench) -> schema slice -> build the T-278 extractor in Rust and regenerate. The extraction logic is proven; it needs a home that is not /tmp.",
       "program": "eden",
       "surfaces": [
         "REG"
@@ -7119,7 +7122,7 @@
       "impact": [
         "data-pipeline"
       ],
-      "status": "idea",
+      "status": "deferred",
       "order": 2240,
       "stream": "mission-creator",
       "targets": [
@@ -8983,6 +8986,44 @@
       "stream": "web-platform",
       "targets": [
         "website"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-304",
+      "title": "TBD_RegistryScan ReadPhysAttrsPass: weapon weight never read, and 32 rows carry WRONG weights",
+      "summary": "Found by T-206 while proving the pak data is readable offline. Two defects in ReadPhysAttrsPass. (1) Weapon weight is never read at all: on weapons ItemPhysAttributes hangs off SCR_WeaponAttachmentsStorageComponent, whose name ends in StorageComponent, so the pass sets isStorage=true/isInvItem=false and reads only m_fMaxWeight/MaxCumulativeVolume, never touching Attributes.ItemPhysAttributes. Rifle_AK74_base.et plainly serializes Weight 3.07 / ItemVolume 1500. That is the entire reason weight_kg is present on 0 of 107 weapons. (2) `foreach (string cls, array<BaseContainer> bucket : comps)` iterates a map keyed by component CLASS. The doc comment claims 'leaf override wins — buckets are most-derived-first', which holds WITHIN a bucket but not ACROSS classes, so the winner is hash order, not derivation depth. 32 rows consequently carry Item_Base.et's generic Weight 0.01 instead of the real value: Part_M252_Barrel 14.2kg -> 0.01, Part_NSV_Tripod 16kg -> 0.01, Part_2B14_BasePlate 17kg -> 0.01, Radio_R107M 18.5kg -> 0.01, Part_M3_Tripod 19.96kg -> 0.01. Those are WORSE THAN ABSENT — they will silently poison any cargo-budget work. Do not patch the 32 values by hand while the scanner bug stands; the next export silently reverts them. executor: workbench.",
+      "program": "eden",
+      "surfaces": [
+        "MOD"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2304,
+      "stream": "mod-framework",
+      "targets": [
+        "mod"
+      ],
+      "executor": "claude-code"
+    },
+    {
+      "id": "T-305",
+      "title": "pak.rs reads at the wrong offset — entry offsets are absolute, not relative to data_start",
+      "summary": "Found by T-206. tools/tbd-tools/src/world/pak.rs read_file/read_raw seek `data_start + entry.offset`, but entry offsets are ABSOLUTE from the start of the pak. Measured over 300 compressed entries: 300/300 inflate correctly at `entry.offset`, only 3/300 at `data_start + offset`. Uncompressed reads come back rotated by exactly 56 bytes, which is data_start in every shipped pak. `enf extract` goes through this path, so anything built on it is reading shifted bytes. The pak reader is otherwise sound — the T-206 probe used it to resolve all 1,857 registry prefabs with zero misses once the offset was corrected.",
+      "program": "infra",
+      "surfaces": [
+        "REG"
+      ],
+      "impact": [
+        "data-pipeline"
+      ],
+      "status": "idea",
+      "order": 2305,
+      "stream": "infra",
+      "targets": [
+        "root"
       ],
       "executor": "claude-code"
     }
