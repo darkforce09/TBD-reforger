@@ -43,11 +43,20 @@ fn game_mode_label(m: &str) -> &str {
 }
 
 /// Mission visibility badge — status → (label, badge variant), missions.tsx `VISIBILITY`.
+///
+/// **T-389 — `rejected` was missing and fell through to the `other` arm**, which renders the raw
+/// database string (`rejected`, lowercase, unlabelled) in the neutral grey used for `draft` and
+/// `archived`. That is the one status an author most needs to notice, shown as the least noticeable
+/// thing on the card. `missions.status` is a Postgres enum with exactly five values (`draft`,
+/// `pending_approval`, `live`, `rejected`, `archived` — `migrations/01_enums.sql`), so with this arm
+/// every reachable status is now named and the `other` fallback is genuinely unreachable defence
+/// rather than a silent hole.
 fn visibility_badge(status: &str) -> impl IntoView + use<> {
     let (label, variant) = match status {
         "draft" => ("Draft".to_string(), "neutral"),
         "pending_approval" => ("Open for review".to_string(), "warning"),
         "live" => ("Live".to_string(), "success"),
+        "rejected" => ("Returned".to_string(), "error"),
         "archived" => ("Archived".to_string(), "neutral"),
         other => (other.to_string(), "neutral"),
     };
@@ -93,6 +102,13 @@ pub fn MissionLibraryPage() -> impl IntoView {
     let preview_id = RwSignal::new(None::<String>);
     let create_open = RwSignal::new(false);
     let sheet_open = RwSignal::new(false);
+    // T-389 — the viewer's own discord_id, so a card can tell "my mission came back" from "someone
+    // else's". `GET /missions` already refuses to list a non-live mission to anyone but its author
+    // (`push_filters`: `status = 'live' OR (author_id = me AND …)`), so this is belt-and-braces
+    // rather than the only guard — but the `bookmarked` scope has no status predicate at all, and
+    // relying on a server-side WHERE clause to keep a reviewer's private note off someone else's
+    // screen is exactly the kind of implicit coupling that breaks quietly.
+    let me_id = StoredValue::new(store.user.get_untracked().map(|u| u.discord_id));
 
     let missions = LocalResource::new(move || {
         let url = missions_query(
@@ -215,6 +231,7 @@ pub fn MissionLibraryPage() -> impl IntoView {
                                                     terrain,
                                                     mode,
                                                     players,
+                                                    me_id,
                                                     open_preview,
                                                     open_create,
                                                 )
@@ -322,6 +339,7 @@ fn body(
     terrain: RwSignal<String>,
     mode: RwSignal<String>,
     players: RwSignal<String>,
+    me_id: StoredValue<Option<String>>,
     open_preview: impl Fn(String) + Copy + 'static,
     open_create: impl Fn() + Copy + 'static,
 ) -> impl IntoView {
@@ -470,7 +488,7 @@ fn body(
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {missions
                             .into_iter()
-                            .map(|m| mission_card(m, open_preview))
+                            .map(|m| mission_card(m, me_id, open_preview))
                             .collect_view()}
                     </div>
                 }
@@ -480,12 +498,35 @@ fn body(
     }
 }
 
-fn mission_card(m: MissionCard, open_preview: impl Fn(String) + Copy + 'static) -> impl IntoView {
+fn mission_card(
+    m: MissionCard,
+    me_id: StoredValue<Option<String>>,
+    open_preview: impl Fn(String) + Copy + 'static,
+) -> impl IntoView {
     let art = m
         .thumbnail_url
         .clone()
         .filter(|u| !u.is_empty())
         .unwrap_or_else(|| PLACEHOLDER_ART.into());
+    // T-389 — the returned-mission line. `rejection_reason` is the only channel by which an author
+    // ever learns why a mission came back (`handlers/approvals.rs:217` is its sole writer), and
+    // `GET /approvals` is admin-tier, so the author cannot go and look. Shown here rather than only
+    // in the dossier because the card is what they see first, and a "Returned" badge with no reason
+    // beside it just sends them hunting.
+    //
+    // Own missions only, and only when there is actually a reason: an admin rejecting without one
+    // leaves the empty string, which the backend then omits from the wire entirely
+    // (`skip_serializing_if`), so `None` and `Some("")` both mean "no reason given" and neither
+    // should render an empty box.
+    let rejection_note = (m.status == "rejected"
+        && me_id.get_value().as_deref() == Some(m.author_id.as_str()))
+    .then(|| {
+        m.rejection_reason
+            .clone()
+            .map(|r| r.trim().to_string())
+            .filter(|r| !r.is_empty())
+    })
+    .flatten();
     let initial = m
         .author_name
         .chars()
@@ -538,6 +579,23 @@ fn mission_card(m: MissionCard, open_preview: impl Fn(String) + Copy + 'static) 
                     </span>
                 </div>
                 <h3 class="text-headline-sm font-bold text-on-surface">{m.title.clone()}</h3>
+                {rejection_note
+                    .map(|reason| {
+                        view! {
+                            <div class="mt-3 flex items-start gap-2 rounded-lg border border-error-alert/30 bg-error-alert/10 px-3 py-2 text-left">
+                                <MaterialIcon
+                                    name="assignment_return"
+                                    class="text-[16px] leading-5 text-error-alert"
+                                />
+                                <span class="text-label-md text-on-surface-variant line-clamp-2">
+                                    <span class="font-semibold text-error-alert">
+                                        "Returned: "
+                                    </span>
+                                    {reason}
+                                </span>
+                            </div>
+                        }
+                    })}
                 <div class="mt-3 flex flex-wrap gap-2">
                     <span class="rounded-md border border-white/5 bg-black/30 px-2 py-0.5 font-mono text-label-sm text-on-surface-variant">
                         {terrain_label(&m.terrain)}
@@ -612,11 +670,34 @@ fn MissionDossierSheet(
                         Some(m) => {
                             let is_owner = me.get_value().as_deref()
                                 == Some(m.author_id.as_str());
+                            // `can_edit` gates the things that need the EDITOR: the Mission Creator
+                            // CTA and the collaboration row. `/missions/:id/edit` really is
+                            // `auth: "mission_maker"` (`router.rs:88`), so promising it to a
+                            // non-maker would just bounce them off a role gate.
                             let can_edit = is_maker && (is_owner || is_admin);
+                            // T-389 — `can_manage` gates the LIFECYCLE (submit / archive / delete)
+                            // and the rejection feedback, and it deliberately drops `is_maker` to
+                            // match the API exactly: `submit_mission`, `update_mission` and
+                            // `delete_mission` all take a plain `AuthUser` and test
+                            // `can_edit(u, m)` = `author || admin` (`handlers/missions.rs:116`) —
+                            // no maker tier anywhere. Only `create_mission` requires
+                            // `MissionMakerUser`, which is why the "New Mission" button stays
+                            // maker-gated.
+                            //
+                            // The old single `can_edit` was stricter than the backend, and the gap
+                            // is reachable: Discord role sync can demote a mission_maker to
+                            // enlisted while they still own missions. Such an author kept full API
+                            // rights but was shown no Manage section at all — so once this slice
+                            // put a rejection reason behind that same gate, the one person who
+                            // needs to read it would have been the one person who could not. That
+                            // is the feedback loop this ticket exists to close, so the gate moves
+                            // with it rather than being left as a matching trap.
+                            let can_manage = is_owner || is_admin;
                             dossier_sheet_body(
                                     m,
                                     id_sv,
                                     can_edit,
+                                    can_manage,
                                     sheet_open,
                                     comments_open,
                                     invite_open,
@@ -654,6 +735,7 @@ fn dossier_sheet_body(
     m: MissionDetail,
     id_sv: StoredValue<String>,
     can_edit: bool,
+    can_manage: bool,
     sheet_open: RwSignal<bool>,
     comments_open: RwSignal<bool>,
     invite_open: RwSignal<bool>,
@@ -672,6 +754,30 @@ fn dossier_sheet_body(
     let is_archived = m.status == "archived";
     let status_busy = RwSignal::new(false);
     let delete_busy = RwSignal::new(false);
+    let submit_busy = RwSignal::new(false);
+    // T-389 — the only two statuses `POST /missions/:id/submit` accepts; everything else answers 409
+    // ("only draft or rejected missions can be submitted", `handlers/missions.rs:626`). Gating the
+    // button on the same predicate means the author never sees an action that is guaranteed to fail.
+    let can_submit = can_manage && (m.status == "draft" || m.status == "rejected");
+    // "Resubmit" on a returned mission: it tells the author the queue accepts a second attempt,
+    // which is the whole point of the `rejected` → `pending_approval` transition existing.
+    let submit_label = if m.status == "rejected" {
+        "Resubmit for review"
+    } else {
+        "Submit for review"
+    };
+    // The reviewer's note, for the author's own dossier. Empty/absent → nothing to show (an admin
+    // may reject without typing a reason, and the backend omits the empty string from the wire).
+    let rejection_reason = (m.status == "rejected" && can_manage)
+        .then(|| {
+            m.rejection_reason
+                .clone()
+                .map(|r| r.trim().to_string())
+                .filter(|r| !r.is_empty())
+        })
+        .flatten();
+    let reviewed_at = m.reviewed_at.clone();
+    let show_returned = m.status == "rejected" && can_manage;
 
     // toggleArchive — useSetMissionStatus port (PATCH /missions/:id {status}).
     let toggle_archive = move |_| {
@@ -710,6 +816,47 @@ fn dossier_sheet_body(
                     )),
                 }
                 status_busy.set(false);
+            });
+        }
+    };
+
+    // T-389 — submit for review: the SPA's FIRST caller of `POST /missions/:id/submit`.
+    //
+    // That endpoint is the sole writer of `pending_approval` in the whole crate — `apply_status_patch`
+    // refuses the value outright, so `GET /approvals` can only ever show rows this route wrote. T-234
+    // proved the SPA never called it, which means `/admin/approvals` was structurally empty in
+    // production no matter how many missions existed: there was no door. This button is the door.
+    //
+    // Shape mirrors `toggle_archive` above (and `approvals.rs:302`'s approve/reject): busy latch,
+    // `api_post_ok` with an empty body, toast either way, then `changed.run(())` so the card grid and
+    // the dossier both re-read the new status instead of showing a stale "Draft".
+    //
+    // `api_error_message` rather than a fixed string because the two failures a real author will hit
+    // say different things and only the backend knows which: 409 "only draft or rejected missions can
+    // be submitted" (someone else already queued it, or it was archived under them) vs 403 "not your
+    // mission". Swallowing those into "Could not submit" would leave them re-clicking a button that
+    // cannot work.
+    let submit_for_review = move |_| {
+        #[cfg(target_arch = "wasm32")]
+        {
+            if submit_busy.get_untracked() {
+                return;
+            }
+            submit_busy.set(true);
+            let toasts = crate::toast::use_toasts();
+            let path = format!("/missions/{}/submit", id_sv.get_value());
+            leptos::task::spawn_local(async move {
+                match crate::client::api_post_ok(store, &path, serde_json::json!({})).await {
+                    Ok(()) => {
+                        toasts.success("Submitted for review");
+                        changed.run(());
+                    }
+                    Err(e) => toasts.error(crate::client::api_error_message(
+                        &e,
+                        "Could not submit mission for review",
+                    )),
+                }
+                submit_busy.set(false);
             });
         }
     };
@@ -786,6 +933,58 @@ fn dossier_sheet_body(
         // Scrollable content — pb-32 clears the sticky footer.
         <div class="custom-scrollbar flex-1 overflow-y-auto px-8 pt-6 pb-32">
             <div class="space-y-8">
+                // T-389 — "Returned by review", above the dossier body because it is the reason the
+                // author opened this sheet. `rejection_reason` is the ONLY thing they are ever told
+                // (T-313 owns any richer review history); `GET /approvals` is admin-tier, so there
+                // is no queue for them to go and read instead.
+                {show_returned
+                    .then(|| {
+                        view! {
+                            <section class="rounded-xl border border-error-alert/30 bg-error-alert/10 p-5">
+                                <div class="flex items-center gap-2">
+                                    <MaterialIcon
+                                        name="assignment_return"
+                                        class="text-[20px] text-error-alert"
+                                    />
+                                    <h3 class="font-mono text-label-md tracking-widest text-error-alert uppercase">
+                                        "Returned by review"
+                                    </h3>
+                                </div>
+                                {match rejection_reason {
+                                    Some(reason) => {
+                                        view! {
+                                            <p class="mt-3 text-body-md whitespace-pre-line text-on-surface">
+                                                {reason}
+                                            </p>
+                                        }
+                                            .into_any()
+                                    }
+                                    // Rejected with an empty reason. Saying so is strictly better than
+                                    // rendering a blank panel the author reads as a loading bug.
+                                    None => {
+                                        view! {
+                                            <p class="mt-3 text-body-md text-on-surface-variant italic">
+                                                "The reviewer did not leave a reason."
+                                            </p>
+                                        }
+                                            .into_any()
+                                    }
+                                }}
+                                {reviewed_at
+                                    .map(|at| {
+                                        view! {
+                                            <p class="mt-3 font-mono text-label-sm text-on-surface-variant">
+                                                "Reviewed " {crate::datefmt::format_local_datetime(&at)}
+                                            </p>
+                                        }
+                                    })}
+                                <p class="mt-4 text-label-md text-on-surface-variant">
+                                    "Address the notes above, then use Submit for review to put it back in the queue."
+                                </p>
+                            </section>
+                        }
+                    })}
+
                 {crate::mission_overview::dossier_body(&m)}
 
                 <section>
@@ -823,7 +1022,9 @@ fn dossier_sheet_body(
                 </section>
 
                 // Author/admin lifecycle actions (T-130.6): archive acts directly; delete confirms.
-                {can_edit
+                // T-389: gated on `can_manage` (author||admin, the API's own predicate) rather than
+                // `can_edit`, and submit-for-review joins the row — see the `can_manage` comment.
+                {can_manage
                     .then(|| {
                         view! {
                             <section>
@@ -831,6 +1032,23 @@ fn dossier_sheet_body(
                                     "Manage"
                                 </h3>
                                 <div class="flex flex-wrap gap-2">
+                                    // T-389 — the submit door. Primary-styled because on a draft it
+                                    // is the only action that moves the mission forward, and it sat
+                                    // unbuilt while `/admin/approvals` rendered an empty queue.
+                                    {can_submit
+                                        .then(|| {
+                                            view! {
+                                                <button
+                                                    type="button"
+                                                    on:click=submit_for_review
+                                                    prop:disabled=move || submit_busy.get()
+                                                    class="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/15 px-4 py-2 text-label-md font-semibold text-primary transition-colors hover:bg-primary/25 disabled:opacity-60"
+                                                >
+                                                    <MaterialIcon name="send" class="text-[16px]" />
+                                                    {submit_label}
+                                                </button>
+                                            }
+                                        })}
                                     <button
                                         type="button"
                                         on:click=toggle_archive

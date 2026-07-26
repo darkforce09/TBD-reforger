@@ -1,0 +1,30 @@
+{
+    "armory": [],
+    "author_avatar": "",
+    "author_id": "000000000000000001",
+    "author_name": "Dev Operator",
+    "bookmarked": false,
+    "briefing": "T-389 round-trip probe.",
+    "created_at": "2026-07-26T13:10:57.135777Z",
+    "current_version": {
+        "created_at": "2026-07-26T13:10:57.135777Z",
+        "created_by": "000000000000000001",
+        "id": "94dcc728-92b5-45e0-a853-880ae2384616",
+        "json_payload": {},
+        "mission_id": "82b937fc-c88e-4bb9-abb3-0bef67379398",
+        "semver": "0.1.0"
+    },
+    "current_version_id": "94dcc728-92b5-45e0-a853-880ae2384616",
+    "game_mode": "pve_coop",
+    "id": "82b937fc-c88e-4bb9-abb3-0bef67379398",
+    "max_players": 32,
+    "rejection_reason": "ORBAT has two squad leaders in Bravo and no medic anywhere. Fix the roster and resubmit.",
+    "reviewed_at": "2026-07-26T13:11:09.949271Z",
+    "reviewed_by": "000000000000000001",
+    "status": "rejected",
+    "terrain": "everon",
+    "time_of_day": "06:30:00",
+    "title": "Operation Feedback Loop",
+    "updated_at": "2026-07-26T13:10:57.167418Z",
+    "weather": "overcast"
+}
