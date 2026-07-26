@@ -165,16 +165,9 @@ const OPTION_FIELDS: &[(&str, &str)] = &[
 /// Keyed by file, not `file:line`, so an unrelated edit above the defect does not break it.
 /// Do not add entries for files you own. Fix those.
 const KNOWN_OPEN: &[(&str, &str, &str)] = &[
-    // T-324's file, and STILL OPEN on main as of ccbcda8b — T-324 shipped without fixing it.
-    // `SELECT title, terrain, game_mode, briefing, thumbnail_url FROM missions` decodes into a
-    // tuple of non-optional `String`s, so either nullable column 500s `GET /api/v1/events/{id}`.
-    // T-325 reported `briefing`; `thumbnail_url` in the same query is a second instance.
-    ("src/handlers/events.rs", "briefing", "T-324 — still open"),
-    (
-        "src/handlers/events.rs",
-        "thumbnail_url",
-        "T-324 — still open",
-    ),
+    // T-340 pruned the two `src/handlers/events.rs` entries (`briefing`, `thumbnail_url`) that
+    // stood here: the Event Hub's mission-dossier read now coalesces both, so the scan no longer
+    // finds them and a tolerance entry would be indistinguishable from no fix on the next run.
     // UNFILED (found by T-329): `SELECT event_registrations.*` — the same bare-`*` shape as the
     // T-329 dashboard bug, in the file the ticket held up as the correct example. Benign *today*
     // only because `event_registrations`' one nullable column (`slot_id`) happens to map to an
@@ -201,11 +194,9 @@ const BASELINE_CAP: usize = 6;
 /// slack. The precise cause of each is pinned by [`KNOWN_OPEN`]; this list only records that the
 /// route is user-visibly broken while that defect stands.
 const KNOWN_OPEN_ROUTES: &[(&str, &str, &str)] = &[
-    (
-        "/events/{id}",
-        "missions.briefing + missions.thumbnail_url, handlers/events.rs:832",
-        "T-324 — still open on main",
-    ),
+    // T-340 pruned `/events/{id}` from here in the same commit as the two `KNOWN_OPEN` entries
+    // that pinned its cause: the route now serves 200 under the full NULL blast, so leaving the
+    // line would have read as "still broken" on a run where it is not.
     (
         "/approvals",
         "missions.updated_at, handlers/approvals.rs:54",
