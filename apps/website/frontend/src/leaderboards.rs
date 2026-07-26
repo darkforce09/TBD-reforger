@@ -92,11 +92,22 @@ fn parse_row(v: &Value, index: usize) -> Row {
     }
 }
 
+/// `command_win_rate` is a **0..1 fraction** on the wire — `leaderboard_totals` computes it as
+/// `round(command_wins::numeric / command_games::numeric, 3)` (migration `0001_initial_schema.sql`).
+/// The deleted MOCK stored it in percent (`81.0`), which is why `{:.0}%` read correctly against
+/// fabricated rows and would have read `0%` for every real operator on the Command Win Rate tab.
+///
+/// Not to be confused with `users.attendance_rate`, which the telemetry recompute already
+/// multiplies by 100 (`handlers/telemetry.rs`) and which the dossier therefore does not scale.
+fn win_rate_pct(fraction: f64) -> String {
+    format!("{:.0}%", fraction * 100.0)
+}
+
 /// (primary, secondary, accent) per category — mirrors statFor().
 fn stat_for(r: &Row, category: &str) -> (String, String, &'static str) {
     match category {
         "command_win" => (
-            format!("{:.0}%", r.command_win_rate),
+            win_rate_pct(r.command_win_rate),
             format!("{} Ops", r.missions_played),
             "text-success",
         ),
@@ -562,6 +573,28 @@ mod tests {
     }
 
     #[test]
+    fn command_win_rate_renders_the_wire_fraction_as_a_percentage() {
+        // `leaderboard_totals.command_win_rate` = round(wins/games, 3). The MOCK stored 81.0 where
+        // the wire sends 0.81, so the old `{:.0}%` read "81%" off fabricated rows and "0%" off
+        // every real one.
+        assert_eq!(win_rate_pct(0.81), "81%");
+        assert_eq!(win_rate_pct(0.0), "0%");
+        assert_eq!(win_rate_pct(1.0), "100%");
+
+        let mut v = wire();
+        v["command_win_rate"] = Value::from(0.812);
+        let r = parse_row(&v, 0);
+        assert_eq!(stat_for(&r, "command_win").0, "81%");
+    }
+
+    #[test]
+    fn stat_for_leaves_kd_ratio_unscaled() {
+        // kd_ratio is kills/deaths, not a proportion — scaling it would be the mirror mistake.
+        let r = parse_row(&wire(), 0);
+        assert_eq!(stat_for(&r, "kd").0, "1.50");
+    }
+
+    #[test]
     fn initials_cover_the_empty_avatar_url_the_api_actually_sends() {
         assert_eq!(initials("Dev Operator"), "DO");
         assert_eq!(initials("Reaper"), "R");
@@ -586,12 +619,13 @@ fn dossier_stats(body: &Value) -> impl IntoView {
         stat_tile("Command Wins", v_i64(&s, "command_wins").to_string()),
         stat_tile(
             "Command Win Rate",
-            format!("{:.0}%", v_f64(&s, "command_win_rate")),
+            win_rate_pct(v_f64(&s, "command_win_rate")),
         ),
         stat_tile(
             "Total Operations",
             v_i64(body, "total_operations").to_string(),
         ),
+        // Already a percentage where command_win_rate is a fraction — see `win_rate_pct`.
         stat_tile(
             "Attendance",
             format!("{:.0}%", v_f64(body, "attendance_rate")),
