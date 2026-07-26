@@ -190,7 +190,13 @@ file_edition() {
 # through five consecutive green wave gates.
 fmt_changed() {
   local base="${1:-main...HEAD}" files f ed rc=0
-  files="$(git diff --name-only "$base" 2>/dev/null | grep '\.rs$' || true)"
+  # Union of COMMITTED and WORKING-TREE changes. Diffing the base alone means an agent running the
+  # slice gate before committing gets "no Rust files changed" and a vacuous PASS — observed on both
+  # T-182 and T-185, where the same gate went red the moment the work was committed. A gate that
+  # only works if you already did the right thing is not a gate.
+  files="$( { git diff --name-only "$base" 2>/dev/null
+              git status --porcelain 2>/dev/null | sed 's/^...//'
+            } | grep '\.rs$' | sort -u || true)"
   [ -z "$files" ] && { echo "no Rust files changed"; return 0; }
   for f in $files; do
     [ -f "$f" ] || continue
@@ -206,8 +212,10 @@ fmt_changed() {
 # for wasm32 or the gate is decorative. Warm cost measured: 0.16s.
 wasm_changed() {
   local base="${1:-main...HEAD}"
-  git diff --name-only "$base" 2>/dev/null | grep -q '^apps/website/frontend/' || {
-    echo "frontend untouched"; return 0; }
+  # Same union as fmt_changed, for the same reason.
+  { git diff --name-only "$base" 2>/dev/null
+    git status --porcelain 2>/dev/null | sed 's/^...//'
+  } | grep -q '^apps/website/frontend/' || { echo "frontend untouched"; return 0; }
   hostrun cargo check -p website-frontend --target wasm32-unknown-unknown --quiet
 }
 
