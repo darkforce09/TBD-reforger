@@ -961,6 +961,13 @@ Cure: point deploy-staging.sh (and any twin bootstrap) at apps/website/docker-co
 Repro: place a non-checkpoint Objects leaf → compile entities[] → world-boot → spawn warns and skips; only checkpoint_small resolves.
 
 Cure: export/register prop: and comp: rows for Objects-eligible kinds (or narrow palette to known aliases until registry catches up).
+- **T-440** (deferred) — Cold/schema gates never apply make seed / faction_library.sql [INFRA, CI] — Residual from T-256 / wave 10 adversarial MAJOR. Cold wave gate validates faction-library.sample.json via schema but never runs `make seed` or applies apps/website/api/seeds/faction_library.sql. Deleting the Makefile seed line still greens the cold gate — false authority that T-256's seed wiring was examined.
+
+Repro: remove `seeds/faction_library.sql` from Makefile seed recipe; `bash scripts/platform/wave.sh gate <base>` still PASS; `make schema-validate` still PASS sample.
+
+Manual prove seed works: apply SQL on throwaway DB → 2 starter rows.
+
+Cure: gate tripwire (Makefile verify target + wave.sh step, or IT that asserts seed recipe + applies SQL on cold DB).
 - **T-133** (idea) — OFCR timed objectives [DATA, MAP] — Editor + export: objectives that evaluate at mission time T+N (scheduled checks). Extends capture/destroy/hold (T-115) with timeline graph.
 - **T-135** (idea) — Mission modset manager [DATA] — Per-mission Workshop modset presets + export validation against registry aliases. Ties to license matrix in platform build plan.
 - **T-136** (idea) — 3D AAR / OCAP-style replay [DATA, SHELL] — Post-event replay: telemetry ingest → timeline → map scrubber; stretch 3D viewer. Backend placeholders exist; pipeline not built.
