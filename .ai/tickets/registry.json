@@ -7067,13 +7067,14 @@
       "impact": [
         "contract"
       ],
-      "status": "idea",
+      "status": "shipped",
       "order": 2210,
       "stream": "mission-creator",
       "targets": [
         "website"
       ],
-      "executor": "claude-code"
+      "executor": "claude-code",
+      "shipped_at": "d039a6fe"
     },
     {
       "id": "T-204",
