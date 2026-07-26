@@ -16,13 +16,19 @@
 //! `&HistoryCtx` to the private helpers; a private helper never calls a `pub fn` (no re-entrancy).
 //! `undo`/`redo` take `&mut MissionDocCore`, so their `borrow_mut` is scoped and dropped before
 //! [`after_doc_change`] opens its read borrows.
+//!
+//! **T-189 — the unsaved-work guard.** [`register_unload_guard`] installs the `beforeunload`
+//! listener that warns before a tab close / reload discards unsaved editor work. It lives here
+//! because [`HistoryCtx::dirty`] is the flag it reads. It is the ONE editor listener that is not
+//! `.forget()`ed: see [`UNLOAD_GUARD`] for how it is torn down without `on_cleanup` ever holding a
+//! `!Send` value.
 #![cfg(target_arch = "wasm32")]
 
 use std::cell::{Cell, RefCell};
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
 
-use leptos::prelude::{RwSignal, Set};
+use leptos::prelude::{GetUntracked, RwSignal, Set};
 use map_engine_core::doc::{MissionDocCore, SlotSoa};
 use map_engine_core::squad_links::build_squad_link_segments;
 use map_engine_render::RenderEngine;
@@ -48,15 +54,34 @@ struct HistoryCtx {
     can_redo: RwSignal<bool>,
     obj_count: RwSignal<usize>,
     sel_count: RwSignal<usize>,
-    /// T-159.26 — unsaved-changes flag. Set by any doc-change edit; cleared by a successful Save
-    /// (`mark_saved`) or a hydrate/conflict adopt (`set_dirty(false)`). Drives the TopCommandStrip
-    /// unsaved indicator and the beforeunload guard.
+    /// T-159.26 — unsaved-changes flag. Set by any doc-change edit (and by the T-189 IDB-restore
+    /// path, whose blob IS unsaved work); cleared by a successful Save (`mission_commands`) or a
+    /// hydrate/conflict adopt (`set_dirty(false)`). Drives the TopCommandStrip unsaved indicator and
+    /// — since T-189 — the `beforeunload` guard in [`register_unload_guard`].
     dirty: RwSignal<bool>,
 }
 
+/// T-189 — the parked `beforeunload` closure's type. A named alias only so the `thread_local`
+/// below reads as one thing (and clears clippy's `type_complexity`).
+type UnloadClosure = Closure<dyn FnMut(web_sys::Event)>;
+
 thread_local! {
     static HISTORY_CTX: RefCell<Option<HistoryCtx>> = const { RefCell::new(None) };
+    /// T-189 — the live `beforeunload` closure, parked here instead of `.forget()`ed.
+    ///
+    /// This is the workaround for the documented `sse.rs` trap: `on_cleanup` is `Send + Sync`-bound
+    /// and a `wasm_bindgen::Closure` is `!Send`, so the cleanup can never OWN the handle. It can,
+    /// however, be a zero-capture fn pointer (`Send + Sync`) that calls
+    /// [`unregister_unload_guard`], which reaches this `thread_local` — wasm is single-threaded, so
+    /// the cleanup always runs on the thread that installed the closure. Result: a guard that is
+    /// genuinely removed on route-leave, not one more leaked listener.
+    static UNLOAD_GUARD: RefCell<Option<UnloadClosure>> = const { RefCell::new(None) };
 }
+
+/// Legacy `returnValue` payload for the `beforeunload` prompt. Every current browser ignores the
+/// text and shows its own generic "Leave site?" copy — the string only has to be NON-EMPTY, which is
+/// what pre-119 Chromium/WebKit key the prompt off (modern engines key off `preventDefault`).
+const UNSAVED_PROMPT: &str = "You have unsaved mission changes.";
 
 /// Install the history context (once, from `on_load`, after the doc is seeded/registered).
 #[allow(clippy::too_many_arguments)]
@@ -95,13 +120,100 @@ pub fn doc_handle() -> Option<crate::mission_doc::DocHandle> {
 }
 
 /// Mark the doc clean (a successful Save) or force a dirty state. Used by `mission_commands` on a
-/// 201 and by the hydrate/conflict adopt path.
+/// 201, by the hydrate/conflict adopt path, and by the T-189 IDB-restore path.
 pub fn set_dirty(value: bool) {
     HISTORY_CTX.with(|c| {
         if let Some(ctx) = c.borrow().as_ref() {
             ctx.dirty.set(value);
         }
     });
+}
+
+/// T-189 — true when the live doc holds unsaved work (the same mirror the strip's `•` binds).
+///
+/// `try_get_untracked`, not `get_untracked`: `HISTORY_CTX` outlives the route by design (it is never
+/// cleared), so after a route-leave the signal's reactive owner is disposed and a plain read would
+/// panic. A disposed signal simply means "no editor, nothing to warn about".
+#[must_use]
+pub fn is_dirty() -> bool {
+    HISTORY_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .and_then(|ctx| ctx.dirty.try_get_untracked())
+            .unwrap_or(false)
+    })
+}
+
+/// T-189 — does this mission id have a server Save target? Only a real (UUID) mission can be saved,
+/// so only there does "unsaved" mean anything: on the gate route (`/missions/smoke/edit`) and the
+/// `draft` fallback the POST would 404, `dirty` could never be cleared, and the guard would prompt
+/// forever. Same carve-out, same predicate as `mission_hydrate::is_uuid` — which skips the whole
+/// hydrate/dirty machinery for exactly these ids so the 12 editor smokes stay untouched. (Duplicated
+/// rather than shared: `is_uuid` is private to that module and `mission_hydrate` is not this
+/// slice's file to change.)
+fn saves_to_server(mission_id: &str) -> bool {
+    let b = mission_id.as_bytes();
+    b.len() == 36
+        && b.iter().enumerate().all(|(i, &c)| match i {
+            8 | 13 | 18 | 23 => c == b'-',
+            _ => c.is_ascii_hexdigit(),
+        })
+}
+
+/// T-189 — install the `beforeunload` guard: a tab close / reload / hard navigation while the doc is
+/// dirty gets the browser's "Leave site?" confirmation instead of silently discarding the work.
+///
+/// The doc comment on [`HistoryCtx::dirty`] claimed this guard existed since T-159.26; it did not —
+/// a repo-wide grep found the comment and nothing else. This is the guard.
+///
+/// Idempotent: re-arms exactly one listener on a remount (route-leave → route-enter), because it
+/// unregisters first. No-op for a mission with no server Save target (see [`saves_to_server`]) and
+/// before [`set_ctx`] has run. Pairs with [`unregister_unload_guard`] under the caller's
+/// `on_cleanup` — do NOT `.forget()` this one.
+pub fn register_unload_guard() {
+    unregister_unload_guard();
+    let Some(win) = web_sys::window() else {
+        return;
+    };
+    let armed = HISTORY_CTX.with(|c| {
+        c.borrow()
+            .as_ref()
+            .is_some_and(|ctx| saves_to_server(&ctx.mission_id))
+    });
+    if !armed {
+        return;
+    }
+    // Captures nothing: the dirty state is read through the thread_local at fire time, so the
+    // closure can never hold a stale signal handle or a disposed owner.
+    let cb = Closure::<dyn FnMut(web_sys::Event)>::new(|ev: web_sys::Event| {
+        if !is_dirty() {
+            return; // saved / clean → never interrupt the navigation
+        }
+        ev.prevent_default();
+        let _ = js_sys::Reflect::set(
+            &ev,
+            &JsValue::from_str("returnValue"),
+            &JsValue::from_str(UNSAVED_PROMPT),
+        );
+    });
+    let _ = win.add_event_listener_with_callback("beforeunload", cb.as_ref().unchecked_ref());
+    UNLOAD_GUARD.with(|g| *g.borrow_mut() = Some(cb));
+}
+
+/// T-189 — remove the `beforeunload` guard and free its closure. Zero-capture (so it is a plain
+/// `fn` item: `Send + Sync + 'static`, i.e. `on_cleanup`-compatible) and idempotent.
+///
+/// Order matters: the listener is removed BEFORE the `Closure` drops, or a `beforeunload` firing in
+/// between would invoke a freed closure ("closure invoked after being dropped").
+pub fn unregister_unload_guard() {
+    let taken = UNLOAD_GUARD.with(|g| g.borrow_mut().take());
+    if let Some(cb) = taken {
+        if let Some(win) = web_sys::window() {
+            let _ = win
+                .remove_event_listener_with_callback("beforeunload", cb.as_ref().unchecked_ref());
+        }
+        drop(cb);
+    }
 }
 
 /// Undo the last LOCAL transaction; `true` if anything was undone. No-op (and `false`) on an empty

@@ -340,6 +340,18 @@ pub fn MissionEditorPage() -> impl IntoView {
 
             crate::mission_history::register_editor_history();
             crate::mission_history::register_key_handler();
+            // T-189 — the unsaved-work guard (`beforeunload`). Registered after `set_ctx` above,
+            // which is what supplies both the `dirty` flag it reads and the mission id it arms on.
+            //
+            // This is the ONE editor listener that must come down on route-leave: it is installed on
+            // `window`, so a leaked copy would keep prompting on every later tab close — off a
+            // `dirty` signal whose owner this route's teardown disposed. The `sse.rs` trap is why
+            // that is not the usual `.forget()`: `on_cleanup` is `Send + Sync`-bound and a `Closure`
+            // is `!Send`, so the cleanup cannot own the handle. It doesn't have to — the closure
+            // parks in a `mission_history` thread_local and the cleanup below is a zero-capture fn
+            // item (`Send + Sync`) that removes and drops it.
+            crate::mission_history::register_unload_guard();
+            on_cleanup(crate::mission_history::unregister_unload_guard);
             crate::mission_history::refresh_hud();
 
             // T-159.26 — editor keyboard actions (MissionCreatorPage onKeyDown): Delete/Backspace
@@ -434,6 +446,25 @@ pub fn MissionEditorPage() -> impl IntoView {
                                 // the pre-restore counts. Not `after_local_edit`: nothing was edited,
                                 // and re-arming the persist writer here would echo the restore back.
                                 crate::mission_history::refresh_hud();
+                                // T-189 — but DO tell the truth about `dirty`. The restored blob is
+                                // local work that has never been through a Save (a Save is the only
+                                // thing that clears the flag), and leaving `dirty` at its `false`
+                                // mount default meant the strip showed no modified dot and the
+                                // unload guard stayed silent on exactly the state it exists to
+                                // protect. This is the flag ONLY — still not `after_local_edit`, for
+                                // the reason above.
+                                //
+                                // The hydrate below is what can prove local is clean: both adopt
+                                // paths (`adopt_payload` → `set_dirty(false)`) correct this to
+                                // false. The one path that neither proves nor disproves — local
+                                // derives from the exact server semver, so hydrate trusts it — keeps
+                                // dirty=true, which is that path's own stated premise ("the delta is
+                                // the user's own unsaved edits"). A save-then-immediately-reopen
+                                // therefore shows the dot with a zero delta: the adopted marker
+                                // records a semver, not a document digest, so nothing on this path
+                                // can tell that case apart — and over-warning is the safe side of
+                                // the failure it replaces (silent loss).
+                                crate::mission_history::set_dirty(true);
                             }
                         }
                     }
@@ -1234,7 +1265,8 @@ pub fn MissionEditorPage() -> impl IntoView {
             // The engine + these listeners intentionally leak on route-leave: `on_cleanup` is
             // `Send`-bound and can't hold the `!Send` engine, so we only move `disposed` (Send) into
             // it. Stopping the loop is what prevents a runaway render; a proper `!Send` drop handle
-            // is a later polish.
+            // is a later polish. The T-189 `beforeunload` guard is the one exception — it is torn
+            // down (see its `on_cleanup` above), because a leaked unload prompt is user-visible.
             onwheel.forget();
             onresize.forget();
             onpointerdown.forget();
