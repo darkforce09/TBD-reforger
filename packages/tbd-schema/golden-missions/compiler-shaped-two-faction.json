@@ -1,0 +1,280 @@
+{
+  "schemaVersion": "1.1",
+  "meta": {
+    "id": "msn_4c7e1b089a354d62b1f7e30d5a86c941",
+    "name": "Grid Sweep at Montignac",
+    "author": "184472930165846017",
+    "terrain": "everon",
+    "templateId": "editor_v1",
+    "playerRange": [
+      1,
+      12
+    ]
+  },
+  "environment": {
+    "dateTime": "1989-06-14T06:15:00Z",
+    "weatherPreset": "overcast"
+  },
+  "factions": [
+    {
+      "key": "blufor",
+      "displayName": "US Army",
+      "presetId": "preset:us_army_82nd",
+      "tickets": 0
+    },
+    {
+      "key": "opfor",
+      "displayName": "Soviet VDV",
+      "presetId": "preset:sov_vdv",
+      "tickets": 0
+    }
+  ],
+  "orbat": {
+    "blufor": {
+      "groups": [
+        {
+          "callsign": "Ranger",
+          "type": "rifle_squad",
+          "roles": [
+            {
+              "slot": "SL",
+              "kit": "kit:us_sl",
+              "count": 1
+            },
+            {
+              "slot": "AR",
+              "kit": "kit:us_ar",
+              "count": 1
+            },
+            {
+              "slot": "AT",
+              "kit": "kit:us_rifleman",
+              "count": 1
+            },
+            {
+              "slot": "RFL",
+              "kit": "kit:us_rifleman",
+              "count": 2
+            }
+          ]
+        }
+      ]
+    },
+    "opfor": {
+      "groups": [
+        {
+          "callsign": "Grom",
+          "type": "rifle_squad",
+          "roles": [
+            {
+              "slot": "SL",
+              "kit": "kit:sov_sl",
+              "count": 1
+            },
+            {
+              "slot": "AR",
+              "kit": "kit:sov_ar",
+              "count": 1
+            },
+            {
+              "slot": "RFL",
+              "kit": "kit:sov_rifleman",
+              "count": 1
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "slots": [
+    {
+      "id": "blufor:Ranger:SL:0",
+      "uid": "n0",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "SL",
+      "kit": "kit:us_sl",
+      "x": 4837.6,
+      "z": 7710.8,
+      "headingDeg": 45.0,
+      "loadout": {
+        "gear": {
+          "primary": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+          "optic": "{F358F46ADA42A197}Prefabs/Weapons/Attachments/Optics/Optic_4x20/Optic_4x20_base.et",
+          "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+          "handgun": "{1353C6EAD1DCFE43}Prefabs/Weapons/Handguns/M9/Handgun_M9.et",
+          "throwable": "{E8F00BF730225B00}Prefabs/Weapons/Grenades/Grenade_M67.et",
+          "uniform": "{293F577C298061E3}Prefabs/Characters/Uniforms/Jacket_US_BDU_02.et",
+          "vest": "{477A190AF2A17B8A}Prefabs/Characters/Vests/Vest_ALICE/Variants/Vest_ALICE_MG.et",
+          "helmet": "{B74A4FF0DD8BB116}Prefabs/Characters/HeadGear/Helmet_PASGT_01/Helmet_PASGT_01.et",
+          "pants": "{604BB72BE8E023C2}Prefabs/Characters/Uniforms/Pants_US_BDU.et",
+          "boots": "{DAAFD15478BDE1C3}Prefabs/Characters/Footwear/CombatBoots_US_01.et",
+          "handwear": "{8266820FFDE17477}Prefabs/Characters/Handwear/Gloves_Wool_01/Gloves_Wool_01.et",
+          "backpack": "{06B68C58B72EAAC6}Prefabs/Items/Equipment/Backpacks/Backpack_ALICE_Medium.et"
+        },
+        "cargo": [
+          {
+            "container": "vest",
+            "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+            "qty": 6
+          },
+          {
+            "container": "jacket",
+            "item": "{D70216B1B2889129}Prefabs/Items/Medicine/Tourniquet_01/Tourniquet_US_01.et",
+            "qty": 1
+          },
+          {
+            "container": "backpack",
+            "item": "{13772C903CB5E4F7}Prefabs/Items/Equipment/Maps/Map_Paper_01/PaperMap_01_folded.et",
+            "qty": 1
+          }
+        ]
+      }
+    },
+    {
+      "id": "blufor:Ranger:AR:0",
+      "uid": "n1",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "AR",
+      "kit": "kit:us_ar",
+      "x": 4844.9,
+      "z": 7716.4,
+      "headingDeg": 45.0
+    },
+    {
+      "id": "blufor:Ranger:AT:0",
+      "uid": "n2",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "AT",
+      "kit": "kit:us_rifleman",
+      "x": 4833.2,
+      "z": 7721.5,
+      "headingDeg": 40.0,
+      "loadout": {
+        "gear": {
+          "primary": "{3E413771E1834D2F}Prefabs/Weapons/Rifles/M16/Rifle_M16A2.et",
+          "magazine": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+          "launcher": "{9C5C20FB0E01E64F}Prefabs/Weapons/Launchers/M72/Launcher_M72A3.et"
+        }
+      }
+    },
+    {
+      "id": "blufor:Ranger:RFL:0",
+      "uid": "n3",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 4850.1,
+      "z": 7727.2,
+      "headingDeg": 50.0
+    },
+    {
+      "id": "blufor:Ranger:RFL:1",
+      "uid": "n4",
+      "faction": "blufor",
+      "groupCallsign": "Ranger",
+      "role": "RFL",
+      "kit": "kit:us_rifleman",
+      "x": 4844.2,
+      "z": 7719.1,
+      "headingDeg": 45.0,
+      "loadout": {
+        "cargo": [
+          {
+            "container": "vest",
+            "item": "{2EBF60EF24B108FC}Prefabs/Weapons/Magazines/Magazine_556x45_STANAG_30rnd_M855_Ball.et",
+            "qty": 4
+          }
+        ]
+      }
+    },
+    {
+      "id": "opfor:Grom:SL:0",
+      "uid": "n5",
+      "faction": "opfor",
+      "groupCallsign": "Grom",
+      "role": "SL",
+      "kit": "kit:sov_sl",
+      "x": 5182.7,
+      "z": 7982.4,
+      "headingDeg": 225.0,
+      "loadout": {
+        "gear": {
+          "primary": "{43497A18DD888667}Prefabs/Weapons/Rifles/AK74/Rifle_AK74_base.et",
+          "optic": "{ACDF49FACD0701A8}Prefabs/Weapons/Attachments/Optics/Optic_1P29/Optic_1P29.et",
+          "magazine": "{63C1E699345B24F9}Prefabs/Weapons/Magazines/Magazine_545x39_AK_30rnd_Base.et",
+          "throwable": "{645C73791ECA1698}Prefabs/Weapons/Grenades/Grenade_RGD5.et",
+          "uniform": "{9F546CCA2582D16F}Prefabs/Characters/Uniforms/Jacket_M88.et",
+          "vest": "{ADE19B33DCBB9005}Prefabs/Characters/Vests/Vest_6B2/Vest_6B2.et",
+          "helmet": "{E49D9EE7E2B3016C}Prefabs/Characters/HeadGear/Helmet_ZSh5_01/Helmet_ZSh5_01.et",
+          "pants": "{DCF980831E880F6A}Prefabs/Characters/Uniforms/Pants_M88.et",
+          "boots": "{4C6029AB8BF5C044}Prefabs/Characters/Footwear/CombatBoots_Soviet_01_Dirty.et"
+        }
+      }
+    },
+    {
+      "id": "opfor:Grom:AR:0",
+      "uid": "n6",
+      "faction": "opfor",
+      "groupCallsign": "Grom",
+      "role": "AR",
+      "kit": "kit:sov_ar",
+      "x": 5190.1,
+      "z": 7988.6,
+      "headingDeg": 230.0
+    },
+    {
+      "id": "opfor:Grom:RFL:0",
+      "uid": "n7",
+      "faction": "opfor",
+      "groupCallsign": "Grom",
+      "role": "RFL",
+      "kit": "kit:sov_rifleman",
+      "x": 5179.2,
+      "z": 7993.0,
+      "headingDeg": 220.0
+    }
+  ],
+  "zones": [
+    {
+      "id": "z_spawn_blufor",
+      "type": "spawn",
+      "faction": "blufor",
+      "shape": {
+        "circle": {
+          "x": 4842.0,
+          "z": 7719.0,
+          "r": 150.0
+        }
+      }
+    },
+    {
+      "id": "z_spawn_opfor",
+      "type": "spawn",
+      "faction": "opfor",
+      "shape": {
+        "circle": {
+          "x": 5184.0,
+          "z": 7988.0,
+          "r": 150.0
+        }
+      }
+    }
+  ],
+  "flow": {
+    "briefingSeconds": 600,
+    "safeStartSeconds": 300,
+    "timeLimitSeconds": 5400,
+    "jip": "until_safestart_end"
+  },
+  "winConditions": {
+    "mode": "attrition",
+    "endOn": [
+      "time_limit",
+      "faction_eliminated"
+    ]
+  }
+}

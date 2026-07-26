@@ -54,8 +54,35 @@
 #                  resolve at LIVE — `comp:ammo_cache` is not in Data/registry.json and the mod does
 #                  not place `entities[]` — but that is TBD_ObjectiveRegistry.ArmDestroyTargets's
 #                  verdict, not a document defect, and it is deliberately NOT restated here.
+#
+# ── T-208 (2026-07-26): the first COMPILER-SHAPED golden ───────────────────────────────────────
+# `golden-missions/compiler-shaped-two-faction.json` is the byte-for-byte output of
+# `crates/map-engine-core/src/mission/flatten.rs` over an editor graph — the nine blocks it emits
+# and nothing else. The four goldens above are hand-authored and strictly RICHER than anything the
+# compiler can produce (radioPlan, briefings, settings, objective/boundary zones, entities), so
+# until now every mod-side consumer was gated exclusively against documents the website cannot
+# serve. That asymmetry is how the T-181.46 single-faction hard-reject shipped.
+#
+#   msn_4c7e1b089a354d62b1f7e30d5a86c941 0
+#
+# ZERO IS THE HONEST NUMBER, and it is a choice worth stating because the neighbouring lane is not
+# zero. `compiled 1` below is the T-186 `--compiled` boot, whose fixture holds ONE faction: flatten
+# pads a slot-less stub opponent to satisfy the schema's >= 2 rule, and the validator correctly
+# reports "faction:opfor — declared but has no slots — nobody can play this side". That is **T-299**,
+# it is a real product defect, and it is deliberately left standing on that lane rather than
+# baselined away here. This golden holds TWO factions that both hold slots, so it never reaches the
+# padding branch — which is also what makes it the only fixture anywhere exercising the compiler's
+# TWO-SIDED output: `endOn: ["time_limit", "faction_eliminated"]` (the branch T-181.46 rewrote), two
+# synthetic `z_spawn_<faction>` circles, and a multi-key `orbat`. The single-faction shape stays
+# covered by `compiled`. Between them the compiler's whole output space reaches the real parser.
+#
+# A RISE here means the mod started rejecting something the website emits today. Do not widen it —
+# fix the compiler or the mod, because a rise on THIS row is a production outage in rehearsal.
+# `schemaVersion` is "1.1" (no slot carries elevation, the common editor case); `compiled` covers
+# the "1.2" branch, so do not "align" the two fixtures.
 msn_8f3a2c 0
 msn_0e77ab 3
 msn_5c1de7 0
 msn_2d91be 1
+msn_4c7e1b089a354d62b1f7e30d5a86c941 0
 compiled 1
